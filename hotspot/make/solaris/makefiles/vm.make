@@ -108,11 +108,16 @@ ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 #   older libm before libCrun, just to make sure it's found and used first.
 LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc
 else
+ifeq ($(COMPILER_REV_NUMERIC), 502)
+# SC6.1 has it's own libm.so: specifying anything else provokes a name conflict.
+LIBS += -ldl -lthread -lsocket -lm -lsched -ldoor
+else
 LIBS += -ldl -lthread -lsocket $(LIBM) -lsched -ldoor
-endif
+endif # 502
+endif # 505
 else
 LIBS += -lsocket -lsched -ldl $(LIBM) -lthread -lc
-endif
+endif # sparcWorks
 
 # By default, link the *.o into the library, not the executable.
 LINK_INTO$(LINK_INTO) = LIBJVM
@@ -126,8 +131,9 @@ include $(MAKEFILES_DIR)/dtrace.make
 #----------------------------------------------------------------------
 # JVM
 
-JVM    = jvm$(G_SUFFIX)
-LIBJVM = lib$(JVM).so
+JVM      = jvm
+LIBJVM   = lib$(JVM).so
+LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 JVM_OBJ_FILES = $(Obj_Files) $(DTRACE_OBJS)
 
@@ -173,11 +179,12 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE)
 	-sbfast|-xsbfast) \
 	    ;; \
 	*) \
-	    echo Linking vm...;                                                  \
-	    $(LINK_LIB.CC/PRE_HOOK)                                              \
-	    $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM);                \
-	    $(LINK_LIB.CC/POST_HOOK)                                             \
-	    rm -f $@.1; ln -s $@ $@.1;                                           \
+	    echo Linking vm...; \
+	    $(LINK_LIB.CC/PRE_HOOK) \
+	    $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM); \
+	    $(LINK_LIB.CC/POST_HOOK) \
+	    rm -f $@.1; ln -s $@ $@.1; \
+	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
 	    ;; \
 	esac
 

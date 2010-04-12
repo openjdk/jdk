@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,15 +155,8 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 }
 
 
-address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, bool unbox) {
+address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step) {
   TosState incoming_state = state;
-  if (EnableInvokeDynamic) {
-    if (unbox) {
-      incoming_state = atos;
-    }
-  } else {
-    assert(!unbox, "old behavior");
-  }
 
   Label interpreter_entry;
   address compiled_entry = __ pc();
@@ -216,46 +209,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ restore_bcp();
   __ restore_locals();
 
-  Label L_fail;
-
-  if (unbox && state != atos) {
-    // cast and unbox
-    BasicType type = as_BasicType(state);
-    if (type == T_BYTE)  type = T_BOOLEAN; // FIXME
-    KlassHandle boxk = SystemDictionaryHandles::box_klass(type);
-    __ mov32(rbx, ExternalAddress((address) boxk.raw_value()));
-    __ testl(rax, rax);
-    Label L_got_value, L_get_value;
-    // convert nulls to zeroes (avoid NPEs here)
-    if (!(type == T_FLOAT || type == T_DOUBLE)) {
-      // if rax already contains zero bits, forge ahead
-      __ jcc(Assembler::zero, L_got_value);
-    } else {
-      __ jcc(Assembler::notZero, L_get_value);
-      __ fldz();
-      __ jmp(L_got_value);
-    }
-    __ bind(L_get_value);
-    __ cmp32(rbx, Address(rax, oopDesc::klass_offset_in_bytes()));
-    __ jcc(Assembler::notEqual, L_fail);
-    int offset = java_lang_boxing_object::value_offset_in_bytes(type);
-    // Cf. TemplateTable::getfield_or_static
-    switch (type) {
-      case T_BYTE:     // fall through:
-      case T_BOOLEAN:  __ load_signed_byte(rax, Address(rax, offset));    break;
-      case T_CHAR:     __ load_unsigned_short(rax, Address(rax, offset)); break;
-      case T_SHORT:    __ load_signed_short(rax, Address(rax, offset));   break;
-      case T_INT:      __ movl(rax, Address(rax, offset));                break;
-      case T_FLOAT:    __ fld_s(Address(rax, offset));                    break;
-      case T_DOUBLE:   __ fld_d(Address(rax, offset));                    break;
-      // Access to java.lang.Double.value does not need to be atomic:
-      case T_LONG:   { __ movl(rdx, Address(rax, offset + 4));
-                       __ movl(rax, Address(rax, offset + 0));  }         break;
-      default: ShouldNotReachHere();
-    }
-    __ bind(L_got_value);
-  }
-
   Label L_got_cache, L_giant_index;
   if (EnableInvokeDynamic) {
     __ cmpb(Address(rsi, 0), Bytecodes::_invokedynamic);
@@ -263,32 +216,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   }
   __ get_cache_and_index_at_bcp(rbx, rcx, 1, false);
   __ bind(L_got_cache);
-  if (unbox && state == atos) {
-    // insert a casting conversion, to keep verifier sane
-    Label L_ok, L_ok_pops;
-    __ testl(rax, rax);
-    __ jcc(Assembler::zero, L_ok);
-    __ push(rax);               // save the object to check
-    __ push(rbx);               // save CP cache reference
-    __ movl(rdx, Address(rax, oopDesc::klass_offset_in_bytes()));
-    __ movl(rbx, Address(rbx, rcx,
-                      Address::times_4, constantPoolCacheOopDesc::base_offset() +
-                      ConstantPoolCacheEntry::f1_offset()));
-    __ movl(rbx, Address(rbx, __ delayed_value(sun_dyn_CallSiteImpl::type_offset_in_bytes, rcx)));
-    __ movl(rbx, Address(rbx, __ delayed_value(java_dyn_MethodType::rtype_offset_in_bytes, rcx)));
-    __ movl(rax, Address(rbx, __ delayed_value(java_lang_Class::klass_offset_in_bytes, rcx)));
-    __ check_klass_subtype(rdx, rax, rbx, L_ok_pops);
-    __ pop(rcx);                // pop and discard CP cache
-    __ mov(rbx, rax);           // target supertype into rbx for L_fail
-    __ pop(rax);                // failed object into rax for L_fail
-    __ jmp(L_fail);
-
-    __ bind(L_ok_pops);
-    // restore pushed temp regs:
-    __ pop(rbx);
-    __ pop(rax);
-    __ bind(L_ok);
-  }
   __ movl(rbx, Address(rbx, rcx,
                     Address::times_ptr, constantPoolCacheOopDesc::base_offset() +
                     ConstantPoolCacheEntry::flags_offset()));
@@ -301,14 +228,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ bind(L_giant_index);
     __ get_cache_and_index_at_bcp(rbx, rcx, 1, true);
     __ jmp(L_got_cache);
-
-    if (unbox) {
-      __ bind(L_fail);
-      __ push(rbx);             // missed klass (required)
-      __ push(rax);             // bad object (actual)
-      __ movptr(rdx, ExternalAddress((address) &Interpreter::_throw_WrongMethodType_entry));
-      __ call(rdx);
-    }
   }
 
   return entry;
@@ -1512,6 +1431,23 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
 
 }
 
+// These should never be compiled since the interpreter will prefer
+// the compiled version to the intrinsic version.
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    :
+      return false;
+    default:
+      return true;
+  }
+}
+
 // How much stack a method activation needs in words.
 int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
 
@@ -1569,7 +1505,10 @@ int AbstractInterpreter::layout_activation(methodOop method,
 
   if (interpreter_frame != NULL) {
 #ifdef ASSERT
-    assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
+    if (!EnableMethodHandles)
+      // @@@ FIXME: Should we correct interpreter_frame_sender_sp in the calling sequences?
+      // Probably, since deoptimization doesn't work yet.
+      assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
     assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable(2)");
 #endif
 
@@ -1611,6 +1550,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
 void TemplateInterpreterGenerator::generate_throw_exception() {
   // Entry point in previous activation (i.e., if the caller was interpreted)
   Interpreter::_rethrow_exception_entry = __ pc();
+  const Register thread = rcx;
 
   // Restore sp to interpreter_frame_last_sp even though we are going
   // to empty the expression stack for the exception processing.
@@ -1659,10 +1599,10 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // Set the popframe_processing bit in pending_popframe_condition indicating that we are
   // currently handling popframe, so that call_VMs that may happen later do not trigger new
   // popframe handling cycles.
-  __ get_thread(rcx);
-  __ movl(rdx, Address(rcx, JavaThread::popframe_condition_offset()));
+  __ get_thread(thread);
+  __ movl(rdx, Address(thread, JavaThread::popframe_condition_offset()));
   __ orl(rdx, JavaThread::popframe_processing_bit);
-  __ movl(Address(rcx, JavaThread::popframe_condition_offset()), rdx);
+  __ movl(Address(thread, JavaThread::popframe_condition_offset()), rdx);
 
   {
     // Check to see whether we are returning to a deoptimized frame.
@@ -1690,8 +1630,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ subptr(rdi, rax);
     __ addptr(rdi, wordSize);
     // Save these arguments
-    __ get_thread(rcx);
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::popframe_preserve_args), rcx, rax, rdi);
+    __ get_thread(thread);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::popframe_preserve_args), thread, rax, rdi);
 
     __ remove_activation(vtos, rdx,
                          /* throw_monitor_exception */ false,
@@ -1699,8 +1639,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                          /* notify_jvmdi */ false);
 
     // Inform deoptimization that it is responsible for restoring these arguments
-    __ get_thread(rcx);
-    __ movl(Address(rcx, JavaThread::popframe_condition_offset()), JavaThread::popframe_force_deopt_reexecution_bit);
+    __ get_thread(thread);
+    __ movl(Address(thread, JavaThread::popframe_condition_offset()), JavaThread::popframe_force_deopt_reexecution_bit);
 
     // Continue in deoptimization handler
     __ jmp(rdx);
@@ -1726,12 +1666,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // expression stack if necessary.
   __ mov(rax, rsp);
   __ movptr(rbx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ get_thread(rcx);
+  __ get_thread(thread);
   // PC must point into interpreter here
-  __ set_last_Java_frame(rcx, noreg, rbp, __ pc());
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), rcx, rax, rbx);
-  __ get_thread(rcx);
-  __ reset_last_Java_frame(rcx, true, true);
+  __ set_last_Java_frame(thread, noreg, rbp, __ pc());
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), thread, rax, rbx);
+  __ get_thread(thread);
+  __ reset_last_Java_frame(thread, true, true);
   // Restore the last_sp and null it out
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
@@ -1745,8 +1685,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   }
 
   // Clear the popframe condition flag
-  __ get_thread(rcx);
-  __ movl(Address(rcx, JavaThread::popframe_condition_offset()), JavaThread::popframe_inactive);
+  __ get_thread(thread);
+  __ movl(Address(thread, JavaThread::popframe_condition_offset()), JavaThread::popframe_inactive);
 
   __ dispatch_next(vtos);
   // end of PopFrame support
@@ -1755,27 +1695,27 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(rax);
-  __ get_thread(rcx);
-  __ movptr(Address(rcx, JavaThread::vm_result_offset()), rax);
+  __ get_thread(thread);
+  __ movptr(Address(thread, JavaThread::vm_result_offset()), rax);
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, rdx, false, true, false);
   // restore exception
-  __ get_thread(rcx);
-  __ movptr(rax, Address(rcx, JavaThread::vm_result_offset()));
-  __ movptr(Address(rcx, JavaThread::vm_result_offset()), NULL_WORD);
+  __ get_thread(thread);
+  __ movptr(rax, Address(thread, JavaThread::vm_result_offset()));
+  __ movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
   __ verify_oop(rax);
 
   // Inbetween activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects
   // the following registers set up:
   //
-  // rax,: exception
+  // rax: exception
   // rdx: return address/pc that threw exception
   // rsp: expression stack of caller
-  // rbp,: rbp, of caller
+  // rbp: rbp, of caller
   __ push(rax);                                  // save exception
   __ push(rdx);                                  // save return address
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rdx);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), thread, rdx);
   __ mov(rbx, rax);                              // save exception handler
   __ pop(rdx);                                   // restore return address
   __ pop(rax);                                   // restore exception
@@ -1789,6 +1729,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 //
 address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state) {
   address entry = __ pc();
+  const Register thread = rcx;
 
   __ restore_bcp();
   __ restore_locals();
@@ -1796,8 +1737,8 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
   __ empty_FPU_stack();
   __ load_earlyret_value(state);
 
-  __ get_thread(rcx);
-  __ movptr(rcx, Address(rcx, JavaThread::jvmti_thread_state_offset()));
+  __ get_thread(thread);
+  __ movptr(rcx, Address(thread, JavaThread::jvmti_thread_state_offset()));
   const Address cond_addr(rcx, JvmtiThreadState::earlyret_state_offset());
 
   // Clear the earlyret state

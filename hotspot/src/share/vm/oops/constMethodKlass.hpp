@@ -77,15 +77,13 @@ public:
   int oop_oop_iterate(oop obj, OopClosure* blk);
   int oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr);
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on      (oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
+#ifndef PRODUCT
+  void oop_print_on      (oop obj, outputStream* st);
+#endif //PRODUCT
 
-#endif
-
- public:
   // Verify operations
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);

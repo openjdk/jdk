@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,8 @@ public abstract class PersistenceDelegate {
      *
      * @param oldInstance The instance that will be created by this expression.
      * @param out The stream to which this expression will be written.
+     *
+     * @throws NullPointerException if {@code out} is {@code null}
      */
     public void writeObject(Object oldInstance, Encoder out) {
         Object newInstance = out.get(oldInstance);
@@ -158,6 +160,8 @@ public abstract class PersistenceDelegate {
      * @param oldInstance The instance that will be created by this expression.
      * @param out The stream to which this expression will be written.
      * @return An expression whose value is <code>oldInstance</code>.
+     *
+     * @throws NullPointerException if {@code out} is {@code null}
      */
     protected abstract Expression instantiate(Object oldInstance, Encoder out);
 
@@ -196,6 +200,8 @@ public abstract class PersistenceDelegate {
      * @param oldInstance The instance to be copied.
      * @param newInstance The instance that is to be modified.
      * @param out The stream to which any initialization statements should be written.
+     *
+     * @throws NullPointerException if {@code out} is {@code null}
      */
     protected void initialize(Class<?> type,
                               Object oldInstance, Object newInstance,

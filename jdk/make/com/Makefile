@@ -32,6 +32,8 @@ PRODUCT = com
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = sun
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

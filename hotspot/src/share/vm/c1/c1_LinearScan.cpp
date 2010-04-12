@@ -2464,6 +2464,10 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
 
     case T_LONG: // fall through
     case T_DOUBLE: {
+#ifdef _LP64
+      scope_values->append(&_int_0_scope_value);
+      scope_values->append(new ConstantLongValue(c->as_jlong_bits()));
+#else
       if (hi_word_offset_in_bytes > lo_word_offset_in_bytes) {
         scope_values->append(new ConstantIntValue(c->as_jint_hi_bits()));
         scope_values->append(new ConstantIntValue(c->as_jint_lo_bits()));
@@ -2471,8 +2475,17 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
         scope_values->append(new ConstantIntValue(c->as_jint_lo_bits()));
         scope_values->append(new ConstantIntValue(c->as_jint_hi_bits()));
       }
-
+#endif
       return 2;
+    }
+
+    case T_ADDRESS: {
+#ifdef _LP64
+      scope_values->append(new ConstantLongValue(c->as_jint()));
+#else
+      scope_values->append(new ConstantIntValue(c->as_jint()));
+#endif
+      return 1;
     }
 
     default:
@@ -2503,17 +2516,18 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
   } else if (opr->is_single_cpu()) {
     bool is_oop = opr->is_oop_register();
     int cache_idx = opr->cpu_regnr() * 2 + (is_oop ? 1 : 0);
+    Location::Type int_loc_type = NOT_LP64(Location::normal) LP64_ONLY(Location::int_in_long);
 
     ScopeValue* sv = _scope_value_cache.at(cache_idx);
     if (sv == NULL) {
-      Location::Type loc_type = is_oop ? Location::oop : Location::normal;
+      Location::Type loc_type = is_oop ? Location::oop : int_loc_type;
       VMReg rname = frame_map()->regname(opr);
       sv = new LocationValue(Location::new_reg_loc(loc_type, rname));
       _scope_value_cache.at_put(cache_idx, sv);
     }
 
     // check if cached value is correct
-    DEBUG_ONLY(assert_equal(sv, new LocationValue(Location::new_reg_loc(is_oop ? Location::oop : Location::normal, frame_map()->regname(opr)))));
+    DEBUG_ONLY(assert_equal(sv, new LocationValue(Location::new_reg_loc(is_oop ? Location::oop : int_loc_type, frame_map()->regname(opr)))));
 
     scope_values->append(sv);
     return 1;

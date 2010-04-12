@@ -28,6 +28,8 @@ import java.awt.peer.FileDialogPeer;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.File;
+import sun.awt.AWTAccessor;
 
 /**
  * The <code>FileDialog</code> class displays a dialog window
@@ -93,6 +95,25 @@ public class FileDialog extends Dialog {
      */
     String file;
 
+    /**
+     * Contains the File instances for all the files that the user selects.
+     *
+     * @serial
+     * @see getFiles
+     * @since 1.7
+     */
+    private File[] files;
+
+    /**
+     * Represents whether the file dialog allows the multiple file selection.
+     *
+     * @serial
+     * @see #setMultipleMode
+     * @see #isMultipleMode
+     * @since 1.7
+     */
+    private boolean multipleMode = false;
+
     /*
      * The filter used as the file dialog's filename filter.
      * The file dialog will only be displaying files whose
@@ -121,6 +142,26 @@ public class FileDialog extends Dialog {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+    }
+
+    static {
+        AWTAccessor.setFileDialogAccessor(
+            new AWTAccessor.FileDialogAccessor() {
+                public void setFiles(FileDialog fileDialog, String directory, String files[]) {
+                    fileDialog.setFiles(directory, files);
+                }
+                public void setFile(FileDialog fileDialog, String file) {
+                    fileDialog.file = ("".equals(file)) ? null : file;
+                }
+                public void setDirectory(FileDialog fileDialog, String directory) {
+                    fileDialog.dir = ("".equals(directory)) ? null : directory;
+                }
+                public boolean isMultipleMode(FileDialog fileDialog) {
+                    synchronized (fileDialog.getObjectLock()) {
+                        return fileDialog.multipleMode;
+                    }
+                }
+            });
     }
 
     /**
@@ -371,6 +412,51 @@ public class FileDialog extends Dialog {
     }
 
     /**
+     * Returns files that the user selects.
+     * <p>
+     * If the user cancels the file dialog,
+     * then the method returns an empty array.
+     *
+     * @return    files that the user selects or an empty array
+     *            if the user cancels the file dialog.
+     * @see       #setFile(String)
+     * @see       #getFile
+     * @since 1.7
+     */
+    public File[] getFiles() {
+        synchronized (getObjectLock()) {
+            if (files != null) {
+                return files.clone();
+            } else {
+                return new File[0];
+            }
+        }
+    }
+
+    /**
+     * Stores the names of all the files that the user selects.
+     *
+     * Note that the method is private and it's intended to be used
+     * by the peers through the AWTAccessor API.
+     *
+     * @param directory the current directory
+     * @param files     the array that contains the short names of
+     *                  all the files that the user selects.
+     *
+     * @see #getFiles
+     * @since 1.7
+     */
+    private void setFiles(String directory, String files[]) {
+        synchronized (getObjectLock()) {
+            int filesNumber = (files != null) ? files.length : 0;
+            this.files = new File[filesNumber];
+            for (int i = 0; i < filesNumber; i++) {
+                this.files[i] = new File(directory, files[i]);
+            }
+        }
+    }
+
+    /**
      * Sets the selected file for this file dialog window to be the
      * specified file. This file becomes the default file if it is set
      * before the file dialog window is first shown.
@@ -380,13 +466,42 @@ public class FileDialog extends Dialog {
      * as the file.
      *
      * @param    file   the file being set
-     * @see      java.awt.FileDialog#getFile
+     * @see      #getFile
+     * @see      #getFiles
      */
     public void setFile(String file) {
         this.file = (file != null && file.equals("")) ? null : file;
         FileDialogPeer peer = (FileDialogPeer)this.peer;
         if (peer != null) {
             peer.setFile(this.file);
+        }
+    }
+
+    /**
+     * Enables or disables multiple file selection for the file dialog.
+     *
+     * @param enable    if {@code true}, multiple file selection is enabled;
+     *                  {@code false} - disabled.
+     * @see #isMultipleMode
+     * @since 1.7
+     */
+    public void setMultipleMode(boolean enable) {
+        synchronized (getObjectLock()) {
+            this.multipleMode = enable;
+        }
+    }
+
+    /**
+     * Returns whether the file dialog allows the multiple file selection.
+     *
+     * @return          {@code true} if the file dialog allows the multiple
+     *                  file selection; {@code false} otherwise.
+     * @see #setMultipleMode
+     * @since 1.7
+     */
+    public boolean isMultipleMode() {
+        synchronized (getObjectLock()) {
+            return multipleMode;
         }
     }
 

@@ -843,13 +843,15 @@ static bool count_find_witness_calls() {
     if (occasional_print || final_stats) {
       // Every now and then dump a little info about dependency searching.
       if (xtty != NULL) {
-        xtty->elem("deps_find_witness calls='%d' steps='%d' recursions='%d' singles='%d'",
+       ttyLocker ttyl;
+       xtty->elem("deps_find_witness calls='%d' steps='%d' recursions='%d' singles='%d'",
                    deps_find_witness_calls,
                    deps_find_witness_steps,
                    deps_find_witness_recursions,
                    deps_find_witness_singles);
       }
       if (final_stats || (TraceDependencies && WizardMode)) {
+        ttyLocker ttyl;
         tty->print_cr("Dependency check (find_witness) "
                       "calls=%d, steps=%d (avg=%.1f), recursions=%d, singles=%d",
                       deps_find_witness_calls,
@@ -1528,19 +1530,23 @@ void DepChange::print() {
   int nsup = 0, nint = 0;
   for (ContextStream str(*this); str.next(); ) {
     klassOop k = str.klass();
-    switch (str._change_type) {
+    switch (str.change_type()) {
     case Change_new_type:
       tty->print_cr("  dependee = %s", instanceKlass::cast(k)->external_name());
       break;
     case Change_new_sub:
-      if (!WizardMode)
-           ++nsup;
-      else tty->print_cr("  context super = %s", instanceKlass::cast(k)->external_name());
+      if (!WizardMode) {
+        ++nsup;
+      } else {
+        tty->print_cr("  context super = %s", instanceKlass::cast(k)->external_name());
+      }
       break;
     case Change_new_impl:
-      if (!WizardMode)
-           ++nint;
-      else tty->print_cr("  context interface = %s", instanceKlass::cast(k)->external_name());
+      if (!WizardMode) {
+        ++nint;
+      } else {
+        tty->print_cr("  context interface = %s", instanceKlass::cast(k)->external_name());
+      }
       break;
     }
   }

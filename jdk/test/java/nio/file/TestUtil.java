@@ -30,15 +30,18 @@ public class TestUtil {
     private TestUtil() {
     }
 
-    public static Path createTemporaryDirectory() throws IOException {
-        Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+    static Path createTemporaryDirectory(String where) throws IOException {
+        Path top = FileSystems.getDefault().getPath(where);
         Random r = new Random();
-
         Path dir;
         do {
-            dir = tmpdir.resolve("name" + r.nextInt());
+            dir = top.resolve("name" + r.nextInt());
         } while (dir.exists());
         return dir.createDirectory();
+    }
+
+    static Path createTemporaryDirectory() throws IOException {
+        return createTemporaryDirectory(System.getProperty("java.io.tmpdir"));
     }
 
     static void removeAll(Path dir) {

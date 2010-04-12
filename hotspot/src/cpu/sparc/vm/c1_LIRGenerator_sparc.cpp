@@ -144,17 +144,17 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_register()) {
     // apply the shift and accumulate the displacement
     if (shift > 0) {
-      LIR_Opr tmp = new_register(T_INT);
+      LIR_Opr tmp = new_pointer_register();
       __ shift_left(index, shift, tmp);
       index = tmp;
     }
     if (disp != 0) {
-      LIR_Opr tmp = new_register(T_INT);
+      LIR_Opr tmp = new_pointer_register();
       if (Assembler::is_simm13(disp)) {
-        __ add(tmp, LIR_OprFact::intConst(disp), tmp);
+        __ add(tmp, LIR_OprFact::intptrConst(disp), tmp);
         index = tmp;
       } else {
-        __ move(LIR_OprFact::intConst(disp), tmp);
+        __ move(LIR_OprFact::intptrConst(disp), tmp);
         __ add(tmp, index, tmp);
         index = tmp;
       }
@@ -162,8 +162,8 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
     }
   } else if (disp != 0 && !Assembler::is_simm13(disp)) {
     // index is illegal so replace it with the displacement loaded into a register
-    index = new_register(T_INT);
-    __ move(LIR_OprFact::intConst(disp), index);
+    index = new_pointer_register();
+    __ move(LIR_OprFact::intptrConst(disp), index);
     disp = 0;
   }
 

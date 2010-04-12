@@ -33,6 +33,8 @@ PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = dtrace
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build:
 	$(SUBDIRS-loop)
 clean clobber::

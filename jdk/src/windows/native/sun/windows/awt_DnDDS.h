@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,14 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
         // AwtDragSource
 
-        static void StartDrag(AwtDragSource* self, jobject cursor);
+        static void StartDrag(
+            AwtDragSource* self,
+            jobject cursor,
+            jintArray imageData,
+            jint imageWidth,
+            jint imageHeight,
+            jint x,
+            jint y);
 
         HRESULT ChangeCursor();
         void SetCursor(jobject cursor);
@@ -267,5 +274,10 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
         static jfieldID         awtIEmods;
 };
+
+extern const CLIPFORMAT CF_PERFORMEDDROPEFFECT;
+extern const CLIPFORMAT CF_FILEGROUPDESCRIPTORA;
+extern const CLIPFORMAT CF_FILEGROUPDESCRIPTORW;
+extern const CLIPFORMAT CF_FILECONTENTS;
 
 #endif /* AWT_DND_DS_H */

@@ -79,7 +79,7 @@
   THREAD);                                       \
   if (HAS_PENDING_EXCEPTION) {                   \
     if (PENDING_EXCEPTION->klass() ==            \
-        SystemDictionary::threaddeath_klass()) { \
+        SystemDictionary::ThreadDeath_klass()) { \
       /* Kill the compilation. */                \
       fatal("unhandled ci exception");           \
       return (result);                           \

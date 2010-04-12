@@ -35,6 +35,7 @@ include $(BUILDDIR)/common/Defs.gmk
 # Core.
 #
 SUBDIRS    = jdwp back front transport expr tty bdi gui
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

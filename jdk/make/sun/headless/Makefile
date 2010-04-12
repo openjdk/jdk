@@ -30,6 +30,7 @@ MOTIF_VERSION = none
 MOTIF_VERSION_STRING=none
 LIB_LOCATION = $(LIBDIR)/$(LIBARCH)/headless
 
+MODULE  = awt
 PACKAGE = sun.awt
 LIBRARY = mawt
 LIBRARY_OUTPUT = headless

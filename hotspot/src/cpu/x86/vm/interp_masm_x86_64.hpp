@@ -95,9 +95,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
   void get_cache_and_index_at_bcp(Register cache, Register index,
-                                  int bcp_offset);
+                                  int bcp_offset, bool giant_index = false);
   void get_cache_entry_pointer_at_bcp(Register cache, Register tmp,
-                                      int bcp_offset);
+                                      int bcp_offset, bool giant_index = false);
+  void get_cache_index_at_bcp(Register index, int bcp_offset, bool giant_index = false);
 
 
   void pop_ptr(Register r = rax);
@@ -221,10 +222,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2);
+                               Register reg2, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2,
-                                      int start_row, Label& done);
+                                      Register reg2, int start_row,
+                                      Label& done, bool is_virtual_call);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -236,7 +237,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp,
-                            Register scratch2);
+                            Register scratch2,
+                            bool receiver_can_be_null = false);
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass, Register scratch);

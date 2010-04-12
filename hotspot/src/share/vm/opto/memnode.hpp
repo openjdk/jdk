@@ -583,9 +583,22 @@ public:
 // Preceeding equivalent StoreCMs may be eliminated.
 class StoreCMNode : public StoreNode {
  private:
+  virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
+  virtual uint cmp( const Node &n ) const {
+    return _oop_alias_idx == ((StoreCMNode&)n)._oop_alias_idx
+      && StoreNode::cmp(n);
+  }
+  virtual uint size_of() const { return sizeof(*this); }
   int _oop_alias_idx;   // The alias_idx of OopStore
+
 public:
-  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) : StoreNode(c,mem,adr,at,val,oop_store), _oop_alias_idx(oop_alias_idx) {}
+  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) :
+    StoreNode(c,mem,adr,at,val,oop_store),
+    _oop_alias_idx(oop_alias_idx) {
+    assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
+           _oop_alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
+           "bad oop alias idx");
+  }
   virtual int Opcode() const;
   virtual Node *Identity( PhaseTransform *phase );
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -717,7 +730,10 @@ public:
 //------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
 public:
-  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base ) : Node(ctrl,arymem,word_cnt,base) {}
+  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base )
+    : Node(ctrl,arymem,word_cnt,base) {
+    init_class_id(Class_ClearArray);
+  }
   virtual int         Opcode() const;
   virtual const Type *bottom_type() const { return Type::MEMORY; }
   // ClearArray modifies array elements, and so affects only the
@@ -743,6 +759,9 @@ public:
                             Node* start_offset,
                             Node* end_offset,
                             PhaseGVN* phase);
+  // Return allocation input memory edge if it is different instance
+  // or itself if it is the one we are looking for.
+  static bool step_through(Node** np, uint instance_id, PhaseTransform* phase);
 };
 
 //------------------------------StrComp-------------------------------------

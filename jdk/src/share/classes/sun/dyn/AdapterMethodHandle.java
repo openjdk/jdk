@@ -30,7 +30,7 @@ import sun.dyn.util.Wrapper;
 import java.dyn.*;
 import java.util.Arrays;
 import static sun.dyn.MethodHandleNatives.Constants.*;
-import static sun.dyn.MethodHandleImpl.newIllegalArgumentException;
+import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
  * This method handle performs simple conversion or checking of a single argument.
@@ -302,7 +302,22 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      */
     private static int type2size(int type) {
         assert(type >= T_BOOLEAN && type <= T_OBJECT);
-        return (type == T_FLOAT || type == T_DOUBLE) ? 2 : 1;
+        return (type == T_LONG || type == T_DOUBLE) ? 2 : 1;
+    }
+    private static int type2size(Class<?> type) {
+        return type2size(basicType(type));
+    }
+
+    /** The given stackMove is the number of slots pushed.
+     * It might be negative.  Scale it (multiply) by the
+     * VM's notion of how an address changes with a push,
+     * to get the raw SP change for stackMove.
+     * Then shift and mask it into the correct field.
+     */
+    private static long insertStackMove(int stackMove) {
+        // following variable must be long to avoid sign extension after '<<'
+        long spChange = stackMove * MethodHandleNatives.JVM_STACK_MOVE_UNIT;
+        return (spChange & CONV_STACK_MOVE_MASK) << CONV_STACK_MOVE_SHIFT;
     }
 
     /** Construct an adapter conversion descriptor for a single-argument conversion. */
@@ -310,16 +325,16 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         assert(src  == (src  & 0xF));
         assert(dest == (dest & 0xF));
         assert(convOp >= OP_CHECK_CAST && convOp <= OP_PRIM_TO_REF);
-        long stackMove = type2size(dest) - type2size(src);
+        int stackMove = type2size(dest) - type2size(src);
         return ((long) argnum << 32 |
                 (long) convOp << CONV_OP_SHIFT |
                 (int)  src    << CONV_SRC_TYPE_SHIFT |
                 (int)  dest   << CONV_DEST_TYPE_SHIFT |
-                stackMove     << CONV_STACK_MOVE_SHIFT
+                insertStackMove(stackMove)
                 );
     }
     private static long makeConv(int convOp, int argnum, int stackMove) {
-        assert(convOp >= OP_SWAP_ARGS && convOp <= OP_SPREAD_ARGS);
+        assert(convOp >= OP_DUP_ARGS && convOp <= OP_SPREAD_ARGS);
         byte src = 0, dest = 0;
         if (convOp >= OP_COLLECT_ARGS && convOp <= OP_SPREAD_ARGS)
             src = dest = T_OBJECT;
@@ -327,12 +342,21 @@ public class AdapterMethodHandle extends BoundMethodHandle {
                 (long) convOp << CONV_OP_SHIFT |
                 (int)  src    << CONV_SRC_TYPE_SHIFT |
                 (int)  dest   << CONV_DEST_TYPE_SHIFT |
-                stackMove     << CONV_STACK_MOVE_SHIFT
+                insertStackMove(stackMove)
+                );
+    }
+    private static long makeSwapConv(int convOp, int srcArg, byte type, int destSlot) {
+        assert(convOp >= OP_SWAP_ARGS && convOp <= OP_ROT_ARGS);
+        return ((long) srcArg << 32 |
+                (long) convOp << CONV_OP_SHIFT |
+                (int)  type   << CONV_SRC_TYPE_SHIFT |
+                (int)  type   << CONV_DEST_TYPE_SHIFT |
+                (int)  destSlot << CONV_VMINFO_SHIFT
                 );
     }
     private static long makeConv(int convOp) {
-        assert(convOp == OP_RETYPE_ONLY);
-        return (long) convOp << CONV_OP_SHIFT;   // stackMove, src, dst, argnum all zero
+        assert(convOp == OP_RETYPE_ONLY || convOp == OP_RETYPE_RAW);
+        return ((long)-1 << 32) | (convOp << CONV_OP_SHIFT);   // stackMove, src, dst all zero
     }
     private static int convCode(long conv) {
         return (int)conv;
@@ -347,16 +371,6 @@ public class AdapterMethodHandle extends BoundMethodHandle {
 
     /** One of OP_RETYPE_ONLY, etc. */
     int conversionOp() { return (conversion & CONV_OP_MASK) >> CONV_OP_SHIFT; }
-
-    @Override
-    public String toString() {
-        return addTypeString(this, "Adapted[" + basicToString(nonAdapter((MethodHandle)vmtarget)) + "]");
-    }
-
-    private static MethodHandle nonAdapter(MethodHandle mh) {
-        return (MethodHandle)
-            MethodHandleNatives.getTarget(mh, ETF_DIRECT_HANDLE);
-    }
 
     /* Return one plus the position of the first non-trivial difference
      * between the given types.  This is not a symmetric operation;
@@ -399,14 +413,14 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         //if (false)  return 1;  // never adaptable!
         return -1;  // some significant difference
     }
-    private static int diffParamTypes(MethodType adapterType, int tstart,
-                                      MethodType targetType, int astart,
+    private static int diffParamTypes(MethodType adapterType, int astart,
+                                      MethodType targetType, int tstart,
                                       int nargs, boolean raw) {
         assert(nargs >= 0);
         int res = 0;
         for (int i = 0; i < nargs; i++) {
-            Class<?> src  = adapterType.parameterType(tstart+i);
-            Class<?> dest = targetType.parameterType(astart+i);
+            Class<?> src  = adapterType.parameterType(astart+i);
+            Class<?> dest = targetType.parameterType(tstart+i);
             if ((!raw
                  ? VerifyType.canPassUnchecked(src, dest)
                  : VerifyType.canPassRaw(src, dest)
@@ -422,7 +436,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
 
     /** Can a retyping adapter (alone) validly convert the target to newType? */
     public static boolean canRetypeOnly(MethodType newType, MethodType targetType) {
-        return canRetypeOnly(newType, targetType, false);
+        return canRetype(newType, targetType, false);
     }
     /** Can a retyping adapter (alone) convert the target to newType?
      *  It is allowed to widen subword types and void to int, to make bitwise
@@ -430,14 +444,14 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  reference conversions on return.  This last feature requires that the
      *  caller be trusted, and perform explicit cast conversions on return values.
      */
-    static boolean canRawRetypeOnly(MethodType newType, MethodType targetType) {
-        return canRetypeOnly(newType, targetType, true);
+    public static boolean canRetypeRaw(MethodType newType, MethodType targetType) {
+        return canRetype(newType, targetType, true);
     }
-    static boolean canRetypeOnly(MethodType newType, MethodType targetType, boolean raw) {
-        if (!convOpSupported(OP_RETYPE_ONLY))  return false;
+    static boolean canRetype(MethodType newType, MethodType targetType, boolean raw) {
+        if (!convOpSupported(raw ? OP_RETYPE_RAW : OP_RETYPE_ONLY))  return false;
         int diff = diffTypes(newType, targetType, raw);
         // %%% This assert is too strong.  Factor diff into VerifyType and reconcile.
-        assert((diff == 0) == VerifyType.isNullConversion(newType, targetType));
+        assert(raw || (diff == 0) == VerifyType.isNullConversion(newType, targetType));
         return diff == 0;
     }
 
@@ -447,19 +461,21 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      */
     public static MethodHandle makeRetypeOnly(Access token,
                 MethodType newType, MethodHandle target) {
-        return makeRetypeOnly(token, newType, target, false);
+        return makeRetype(token, newType, target, false);
     }
-    public static MethodHandle makeRawRetypeOnly(Access token,
+    public static MethodHandle makeRetypeRaw(Access token,
                 MethodType newType, MethodHandle target) {
-        return makeRetypeOnly(token, newType, target, true);
+        return makeRetype(token, newType, target, true);
     }
-    static MethodHandle makeRetypeOnly(Access token,
+    static MethodHandle makeRetype(Access token,
                 MethodType newType, MethodHandle target, boolean raw) {
         Access.check(token);
-        if (!canRetypeOnly(newType, target.type(), raw))
+        MethodType oldType = target.type();
+        if (oldType == newType)  return target;
+        if (!canRetype(newType, oldType, raw))
             return null;
         // TO DO:  clone the target guy, whatever he is, with new type.
-        return new AdapterMethodHandle(target, newType, makeConv(OP_RETYPE_ONLY));
+        return new AdapterMethodHandle(target, newType, makeConv(raw ? OP_RETYPE_RAW : OP_RETYPE_ONLY));
     }
 
     /** Can a checkcast adapter validly convert the target to newType?
@@ -492,7 +508,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         Access.check(token);
         if (!canCheckCast(newType, target.type(), arg, castType))
             return null;
-        long conv = makeConv(OP_CHECK_CAST, arg, 0);
+        long conv = makeConv(OP_CHECK_CAST, arg, T_OBJECT, T_OBJECT);
         return new AdapterMethodHandle(target, newType, conv, castType);
     }
 
@@ -537,10 +553,9 @@ public class AdapterMethodHandle extends BoundMethodHandle {
                 int arg, Class<?> convType) {
         Access.check(token);
         MethodType oldType = target.type();
-        Class<?> src = newType.parameterType(arg);
-        Class<?> dst = oldType.parameterType(arg);
         if (!canPrimCast(newType, oldType, arg, convType))
             return null;
+        Class<?> src = newType.parameterType(arg);
         long conv = makeConv(OP_PRIM_TO_PRIM, arg, basicType(src), basicType(convType));
         return new AdapterMethodHandle(target, newType, conv);
     }
@@ -607,8 +622,6 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return null;
     }
 
-    // TO DO: makeSwapArguments, makeRotateArguments, makeDuplicateArguments
-
     /** Can an adapter simply drop arguments to convert the target to newType? */
     public static boolean canDropArguments(MethodType newType, MethodType targetType,
                 int dropArgPos, int dropArgCount) {
@@ -643,26 +656,195 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         Access.check(token);
         if (dropArgCount == 0)
             return makeRetypeOnly(IMPL_TOKEN, newType, target);
-        MethodType mt = target.type();
-        int argCount  = mt.parameterCount();
-        if (!canDropArguments(newType, mt, dropArgPos, dropArgCount))
+        if (!canDropArguments(newType, target.type(), dropArgPos, dropArgCount))
             return null;
-        int dropSlotCount, dropSlotPos;
-        if (dropArgCount >= argCount) {
-            assert(dropArgPos == argCount-1);
-            dropSlotPos = 0;
-            dropSlotCount = mt.parameterSlotCount();
+        // in  arglist: [0: ...keep1 | dpos: drop... | dpos+dcount: keep2... ]
+        // out arglist: [0: ...keep1 |                        dpos: keep2... ]
+        int keep2InPos  = dropArgPos + dropArgCount;
+        int dropSlot    = newType.parameterSlotDepth(keep2InPos);
+        int keep1InSlot = newType.parameterSlotDepth(dropArgPos);
+        int slotCount   = keep1InSlot - dropSlot;
+        assert(slotCount >= dropArgCount);
+        assert(target.type().parameterSlotCount() + slotCount == newType.parameterSlotCount());
+        long conv = makeConv(OP_DROP_ARGS, dropArgPos + dropArgCount - 1, -slotCount);
+        return new AdapterMethodHandle(target, newType, conv);
+    }
+
+    /** Can an adapter duplicate an argument to convert the target to newType? */
+    public static boolean canDupArguments(MethodType newType, MethodType targetType,
+                int dupArgPos, int dupArgCount) {
+        if (!convOpSupported(OP_DUP_ARGS))  return false;
+        if (diffReturnTypes(newType, targetType, false) != 0)
+            return false;
+        int nptypes = newType.parameterCount();
+        if (dupArgCount < 0 || dupArgPos + dupArgCount > nptypes)
+            return false;
+        if (targetType.parameterCount() != nptypes + dupArgCount)
+            return false;
+        // parameter types must be the same up to the duplicated arguments
+        if (diffParamTypes(newType, 0, targetType, 0, nptypes, false) != 0)
+            return false;
+        // duplicated types must be, well, duplicates
+        if (diffParamTypes(newType, dupArgPos, targetType, nptypes, dupArgCount, false) != 0)
+            return false;
+        return true;
+    }
+
+    /** Factory method:  Duplicate the selected argument.
+     *  Return null if this is not possible.
+     */
+    public static MethodHandle makeDupArguments(Access token,
+                MethodType newType, MethodHandle target,
+                int dupArgPos, int dupArgCount) {
+        Access.check(token);
+        if (!canDupArguments(newType, target.type(), dupArgPos, dupArgCount))
+            return null;
+        if (dupArgCount == 0)
+            return target;
+        // in  arglist: [0: ...keep1 | dpos: dup... | dpos+dcount: keep2... ]
+        // out arglist: [0: ...keep1 | dpos: dup... | dpos+dcount: keep2... | dup... ]
+        int keep2InPos  = dupArgPos + dupArgCount;
+        int dupSlot     = newType.parameterSlotDepth(keep2InPos);
+        int keep1InSlot = newType.parameterSlotDepth(dupArgPos);
+        int slotCount   = keep1InSlot - dupSlot;
+        assert(target.type().parameterSlotCount() - slotCount == newType.parameterSlotCount());
+        long conv = makeConv(OP_DUP_ARGS, dupArgPos + dupArgCount - 1, slotCount);
+        return new AdapterMethodHandle(target, newType, conv);
+    }
+
+    /** Can an adapter swap two arguments to convert the target to newType? */
+    public static boolean canSwapArguments(MethodType newType, MethodType targetType,
+                int swapArg1, int swapArg2) {
+        if (!convOpSupported(OP_SWAP_ARGS))  return false;
+        if (diffReturnTypes(newType, targetType, false) != 0)
+            return false;
+        if (swapArg1 >= swapArg2)  return false;  // caller resp
+        int nptypes = newType.parameterCount();
+        if (targetType.parameterCount() != nptypes)
+            return false;
+        if (swapArg1 < 0 || swapArg2 >= nptypes)
+            return false;
+        if (diffParamTypes(newType, 0, targetType, 0, swapArg1, false) != 0)
+            return false;
+        if (diffParamTypes(newType, swapArg1, targetType, swapArg2, 1, false) != 0)
+            return false;
+        if (diffParamTypes(newType, swapArg1+1, targetType, swapArg1+1, swapArg2-swapArg1-1, false) != 0)
+            return false;
+        if (diffParamTypes(newType, swapArg2, targetType, swapArg1, 1, false) != 0)
+            return false;
+        if (diffParamTypes(newType, swapArg2+1, targetType, swapArg2+1, nptypes-swapArg2-1, false) != 0)
+            return false;
+        return true;
+    }
+
+    /** Factory method:  Swap the selected arguments.
+     *  Return null if this is not possible.
+     */
+    public static MethodHandle makeSwapArguments(Access token,
+                MethodType newType, MethodHandle target,
+                int swapArg1, int swapArg2) {
+        Access.check(token);
+        if (swapArg1 == swapArg2)
+            return target;
+        if (swapArg1 > swapArg2) { int t = swapArg1; swapArg1 = swapArg2; swapArg2 = t; }
+        if (!canSwapArguments(newType, target.type(), swapArg1, swapArg2))
+            return null;
+        Class<?> swapType = newType.parameterType(swapArg1);
+        // in  arglist: [0: ...keep1 | pos1: a1 | pos1+1: keep2... | pos2: a2 | pos2+1: keep3... ]
+        // out arglist: [0: ...keep1 | pos1: a2 | pos1+1: keep2... | pos2: a1 | pos2+1: keep3... ]
+        int swapSlot2  = newType.parameterSlotDepth(swapArg2 + 1);
+        long conv = makeSwapConv(OP_SWAP_ARGS, swapArg1, basicType(swapType), swapSlot2);
+        return new AdapterMethodHandle(target, newType, conv);
+    }
+
+    static int positiveRotation(int argCount, int rotateBy) {
+        assert(argCount > 0);
+        if (rotateBy >= 0) {
+            if (rotateBy < argCount)
+                return rotateBy;
+            return rotateBy % argCount;
+        } else if (rotateBy >= -argCount) {
+            return rotateBy + argCount;
         } else {
-            // arglist: [0: keep... | dpos: drop... | dpos+dcount: keep... ]
-            int lastDroppedArg = dropArgPos + dropArgCount - 1;
-            int lastKeptArg    = dropArgPos - 1;  // might be -1, which is OK
-            dropSlotPos      = mt.parameterSlotDepth(1+lastDroppedArg);
-            int lastKeptSlot = mt.parameterSlotDepth(1+lastKeptArg);
-            dropSlotCount = lastKeptSlot - dropSlotPos;
-            assert(dropSlotCount >= dropArgCount);
+            return (-1-((-1-rotateBy) % argCount)) + argCount;
         }
-        long conv = makeConv(OP_DROP_ARGS, dropArgPos, +dropSlotCount);
-        return new AdapterMethodHandle(target, newType, dropSlotCount, conv);
+    }
+
+    final static int MAX_ARG_ROTATION = 1;
+
+    /** Can an adapter rotate arguments to convert the target to newType? */
+    public static boolean canRotateArguments(MethodType newType, MethodType targetType,
+                int firstArg, int argCount, int rotateBy) {
+        if (!convOpSupported(OP_ROT_ARGS))  return false;
+        if (argCount <= 2)  return false;  // must be a swap, not a rotate
+        rotateBy = positiveRotation(argCount, rotateBy);
+        if (rotateBy == 0)  return false;  // no rotation
+        if (rotateBy > MAX_ARG_ROTATION && rotateBy < argCount - MAX_ARG_ROTATION)
+            return false;  // too many argument positions
+        // Rotate incoming args right N to the out args, N in 1..(argCouunt-1).
+        if (diffReturnTypes(newType, targetType, false) != 0)
+            return false;
+        int nptypes = newType.parameterCount();
+        if (targetType.parameterCount() != nptypes)
+            return false;
+        if (firstArg < 0 || firstArg >= nptypes)  return false;
+        int argLimit = firstArg + argCount;
+        if (argLimit > nptypes)  return false;
+        if (diffParamTypes(newType, 0, targetType, 0, firstArg, false) != 0)
+            return false;
+        int newChunk1 = argCount - rotateBy, newChunk2 = rotateBy;
+        // swap new chunk1 with target chunk2
+        if (diffParamTypes(newType, firstArg, targetType, argLimit-newChunk1, newChunk1, false) != 0)
+            return false;
+        // swap new chunk2 with target chunk1
+        if (diffParamTypes(newType, firstArg+newChunk1, targetType, firstArg, newChunk2, false) != 0)
+            return false;
+        return true;
+    }
+
+    /** Factory method:  Rotate the selected argument range.
+     *  Return null if this is not possible.
+     */
+    public static MethodHandle makeRotateArguments(Access token,
+                MethodType newType, MethodHandle target,
+                int firstArg, int argCount, int rotateBy) {
+        Access.check(token);
+        rotateBy = positiveRotation(argCount, rotateBy);
+        if (!canRotateArguments(newType, target.type(), firstArg, argCount, rotateBy))
+            return null;
+        // Decide whether it should be done as a right or left rotation,
+        // on the JVM stack.  Return the number of stack slots to rotate by,
+        // positive if right, negative if left.
+        int limit = firstArg + argCount;
+        int depth0 = newType.parameterSlotDepth(firstArg);
+        int depth1 = newType.parameterSlotDepth(limit-rotateBy);
+        int depth2 = newType.parameterSlotDepth(limit);
+        int chunk1Slots = depth0 - depth1; assert(chunk1Slots > 0);
+        int chunk2Slots = depth1 - depth2; assert(chunk2Slots > 0);
+        // From here on out, it assumes a single-argument shift.
+        assert(MAX_ARG_ROTATION == 1);
+        int srcArg, dstArg;
+        byte basicType;
+        if (chunk2Slots <= chunk1Slots) {
+            // Rotate right/down N (rotateBy = +N, N small, c2 small):
+            // in  arglist: [0: ...keep1 | arg1: c1...  | limit-N: c2 | limit: keep2... ]
+            // out arglist: [0: ...keep1 | arg1: c2 | arg1+N: c1...   | limit: keep2... ]
+            srcArg = limit-1;
+            dstArg = firstArg;
+            basicType = basicType(newType.parameterType(srcArg));
+            assert(chunk2Slots == type2size(basicType));
+        } else {
+            // Rotate left/up N (rotateBy = -N, N small, c1 small):
+            // in  arglist: [0: ...keep1 | arg1: c1 | arg1+N: c2...   | limit: keep2... ]
+            // out arglist: [0: ...keep1 | arg1: c2 ... | limit-N: c1 | limit: keep2... ]
+            srcArg = firstArg;
+            dstArg = limit-1;
+            basicType = basicType(newType.parameterType(srcArg));
+            assert(chunk1Slots == type2size(basicType));
+        }
+        int dstSlot = newType.parameterSlotDepth(dstArg + 1);
+        long conv = makeSwapConv(OP_ROT_ARGS, srcArg, basicType, dstSlot);
+        return new AdapterMethodHandle(target, newType, conv);
     }
 
     /** Can an adapter spread an argument to convert the target to newType? */
@@ -676,10 +858,10 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         if (spreadArgPos != 0 && diffParamTypes(newType, 0, targetType, 0, spreadArgPos, false) != 0)
             return false;
         int afterPos = spreadArgPos + spreadArgCount;
-        int afterCount = nptypes - afterPos;
+        int afterCount = nptypes - (spreadArgPos + 1);
         if (spreadArgPos < 0 || spreadArgPos >= nptypes ||
             spreadArgCount < 0 ||
-            targetType.parameterCount() != nptypes - 1 + spreadArgCount)
+            targetType.parameterCount() != afterPos + afterCount)
             return false;
         // parameter types after the spread point must also be the same
         if (afterCount != 0 && diffParamTypes(newType, spreadArgPos+1, targetType, afterPos, afterCount, false) != 0)
@@ -697,32 +879,40 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return true;
     }
 
+
     /** Factory method:  Spread selected argument. */
     public static MethodHandle makeSpreadArguments(Access token,
                 MethodType newType, MethodHandle target,
                 Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
         Access.check(token);
-        MethodType mt = target.type();
-        int argCount  = mt.parameterCount();
-        if (!canSpreadArguments(newType, mt, spreadArgType, spreadArgPos, spreadArgCount))
+        MethodType targetType = target.type();
+        if (!canSpreadArguments(newType, targetType, spreadArgType, spreadArgPos, spreadArgCount))
             return null;
-        int spreadSlotCount, spreadSlotPos;
-        if (spreadArgCount >= argCount) {
-            assert(spreadArgPos == argCount-1);
-            spreadSlotPos = 0;
-            spreadSlotCount = mt.parameterSlotCount();
-        } else {
-            // arglist: [0: keep... | dpos: spread... | dpos+dcount: keep... ]
-            int lastSpreadArg = spreadArgPos + spreadArgCount - 1;
-            int lastKeptArg   = spreadArgPos - 1;  // might be -1, which is OK
-            spreadSlotPos     = mt.parameterSlotDepth(1+lastSpreadArg);
-            int lastKeptSlot  = mt.parameterSlotDepth(1+lastKeptArg);
-            spreadSlotCount = lastKeptSlot - spreadSlotPos;
-            assert(spreadSlotCount >= spreadArgCount);
-        }
-        long conv = makeConv(OP_SPREAD_ARGS, spreadArgPos, spreadSlotCount);
-        return new AdapterMethodHandle(target, newType, conv, spreadArgType);
+        // in  arglist: [0: ...keep1 | spos: spreadArg | spos+1:      keep2... ]
+        // out arglist: [0: ...keep1 | spos: spread... | spos+scount: keep2... ]
+        int keep2OutPos  = spreadArgPos + spreadArgCount;
+        int spreadSlot   = targetType.parameterSlotDepth(keep2OutPos);
+        int keep1OutSlot = targetType.parameterSlotDepth(spreadArgPos);
+        int slotCount    = keep1OutSlot - spreadSlot;
+        assert(spreadSlot == newType.parameterSlotDepth(spreadArgPos+1));
+        assert(slotCount >= spreadArgCount);
+        long conv = makeConv(OP_SPREAD_ARGS, spreadArgPos, slotCount-1);
+        MethodHandle res = new AdapterMethodHandle(target, newType, conv, spreadArgType);
+        assert(res.type().parameterType(spreadArgPos) == spreadArgType);
+        return res;
     }
 
     // TO DO: makeCollectArguments, makeFlyby, makeRicochet
+
+    @Override
+    public String toString() {
+        return nonAdapter((MethodHandle)vmtarget).toString();
+    }
+
+    private static MethodHandle nonAdapter(MethodHandle mh) {
+        while (mh instanceof AdapterMethodHandle) {
+            mh = (MethodHandle) mh.vmtarget;
+        }
+        return mh;
+    }
 }

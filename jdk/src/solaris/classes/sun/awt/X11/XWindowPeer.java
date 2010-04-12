@@ -2144,9 +2144,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         // Outside this toplevel hierarchy
                         // According to the specification of UngrabEvent, post it
                         // when press occurs outside of the window and not on its owned windows
-                        grabLog.fine("Generating UngrabEvent on {0} because not inside of shell", this);
-                        postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
-                        return;
+                        if (xbe.get_type() == XConstants.ButtonPress) {
+                            grabLog.fine("Generating UngrabEvent on {0} because not inside of shell", this);
+                            postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                            return;
+                        }
                     }
                     // First, get the toplevel
                     XWindowPeer toplevel = target.getToplevelXWindow();

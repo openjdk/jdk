@@ -28,33 +28,23 @@
 #
 
 BUILDDIR = ..
+MODULE  = tools
 PACKAGE = launchers
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-# Run MAKE $@ for a launcher: 
+# Run MAKE $@ for a launcher for the corba module:
 #   $(call make-launcher, name, mainclass, java-args, main-args)
-define make-launcher
+define make-corba-launcher
+$(CD) $(BUILDDIR)/launchers && \
 $(MAKE) -f Makefile.launcher \
-	PROGRAM=$(strip $1) \
-	MAIN_CLASS=$(strip $2) \
-	MAIN_JAVA_ARGS="$(strip $3)" \
-	MAIN_ARGS="$(strip $4)" $@
+        MODULE=corba \
+        PROGRAM=$(strip $1) \
+        MAIN_CLASS=$(strip $2) \
+        MAIN_JAVA_ARGS="$(strip $3)" \
+        MAIN_ARGS="$(strip $4)"
 endef
 
-# Run MAKE $@ for all launchers
-ifeq ($(PLATFORM),windows)
-# Run MAKE $@ for all platform specific launchers
-define make-platform-specific-launchers
-$(call make-launcher, kinit, sun.security.krb5.internal.tools.Kinit, , )
-$(call make-launcher, klist, sun.security.krb5.internal.tools.Klist, , )
-$(call make-launcher, ktab, sun.security.krb5.internal.tools.Ktab, , )
-endef
-else
-# Run MAKE $@ for all platform specific launchers
-define make-platform-specific-launchers
-endef
-endif
 # Run MAKE $@ for all generic launchers
 define make-all-launchers
 $(call make-launcher, appletviewer, sun.applet.Main, , )
@@ -85,36 +75,29 @@ $(call make-launcher, jstack, sun.tools.jstack.JStack, \
   -J-Dsun.jvm.hotspot.debugger.useWindbgDebugger, )
 $(call make-launcher, jstat, sun.tools.jstat.Jstat, , )
 $(call make-launcher, jstatd, sun.tools.jstatd.Jstatd, , )
-$(call make-launcher, keytool, sun.security.tools.KeyTool, , )
 $(call make-launcher, native2ascii, sun.tools.native2ascii.Main, , )
-$(call make-launcher, orbd, com.sun.corba.se.impl.activation.ORBD, \
+$(call make-launcher, rmic, sun.rmi.rmic.Main, , )
+$(call make-launcher, schemagen, com.sun.tools.internal.jxc.SchemaGenerator, , )
+$(call make-launcher, serialver, sun.tools.serialver.SerialVer, , )
+$(call make-launcher, xjc, com.sun.tools.internal.xjc.Driver, , )
+$(call make-launcher, wsgen, com.sun.tools.internal.ws.WsGen, , )
+$(call make-launcher, wsimport, com.sun.tools.internal.ws.WsImport, , )
+$(call make-corba-launcher, orbd, com.sun.corba.se.impl.activation.ORBD, \
   -J-Dcom.sun.CORBA.activation.DbDir=./orb.db \
   -J-Dcom.sun.CORBA.activation.Port=1049 \
   -J-Dcom.sun.CORBA.POA.ORBServerId=1, )
-$(call make-launcher, pack200, com.sun.java.util.jar.pack.Driver, , --pack)
-$(call make-launcher, policytool, sun.security.tools.PolicyTool, , )
-$(call make-launcher, rmic, sun.rmi.rmic.Main, , )
-$(call make-launcher, rmid, sun.rmi.server.Activation, , )
-$(call make-launcher, rmiregistry, sun.rmi.registry.RegistryImpl, , )
-$(call make-launcher, schemagen, com.sun.tools.internal.jxc.SchemaGenerator, , )
-$(call make-launcher, serialver, sun.tools.serialver.SerialVer, , )
-$(call make-launcher, servertool, com.sun.corba.se.impl.activation.ServerTool, , )
-$(call make-launcher, tnameserv, com.sun.corba.se.impl.naming.cosnaming.TransientNameServer, \
+$(call make-corba-launcher, servertool, com.sun.corba.se.impl.activation.ServerTool, , )
+$(call make-corba-launcher, tnameserv, com.sun.corba.se.impl.naming.cosnaming.TransientNameServer, \
   -J-Dcom.sun.CORBA.activation.DbDir=./orb.db \
   -J-Djava.util.logging.LoggingPermission=contol \
   -J-Dcom.sun.CORBA.POA.ORBServerId=1, )
-$(call make-launcher, wsgen, com.sun.tools.internal.ws.WsGen, , )
-$(call make-launcher, wsimport, com.sun.tools.internal.ws.WsImport, , )
-$(call make-launcher, xjc, com.sun.tools.internal.xjc.Driver, , )
 endef
 
 build:
 	$(make-all-launchers)
-	$(make-platform-specific-launchers)
 
 clean clobber::
 	$(make-all-launchers)
-	$(make-platform-specific-launchers)
 
 include $(BUILDDIR)/common/Rules.gmk
 

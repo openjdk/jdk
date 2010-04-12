@@ -27,6 +27,7 @@
 # agent, supporting java.lang.instrument
 
 BUILDDIR = ../..
+MODULE  = instrument
 PACKAGE = sun.instrument
 LIBRARY = instrument
 PRODUCT = sun

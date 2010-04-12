@@ -74,6 +74,10 @@ public:
   double davg() const; // decaying average
   double dvariance() const; // decaying variance
   double dsd() const; // decaying "standard deviation"
+
+  // Debugging/Printing
+  virtual void dump();
+  virtual void dump_on(outputStream* s);
 };
 
 class NumberSeq: public AbsSeq {
@@ -91,6 +95,9 @@ public:
   virtual void add(double val);
   virtual double maximum() const { return _maximum; }
   virtual double last() const { return _last; }
+
+  // Debugging/Printing
+  virtual void dump_on(outputStream* s);
 };
 
 class TruncatedSeq: public AbsSeq {
@@ -114,4 +121,7 @@ public:
 
   double oldest() const; // the oldest valid value in the sequence
   double predict_next() const; // prediction based on linear regression
+
+  // Debugging/Printing
+  virtual void dump_on(outputStream* s);
 };

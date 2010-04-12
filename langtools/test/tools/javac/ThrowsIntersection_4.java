@@ -30,6 +30,8 @@
  * @run compile/fail ThrowsIntersection_4.java
  */
 
+package ThrowsIntersection_4;
+
 // Note:  This is the test that actually failed for 4042259.  The others are for completeness.
 
 class Ex1 extends Exception {}

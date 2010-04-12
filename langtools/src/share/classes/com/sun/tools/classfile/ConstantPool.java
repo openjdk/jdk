@@ -40,7 +40,7 @@ import java.util.Iterator;
  */
 public class ConstantPool {
 
-    public class InvalidIndex extends ConstantPoolException {
+    public static class InvalidIndex extends ConstantPoolException {
         private static final long serialVersionUID = -4350294289300939730L;
         InvalidIndex(int index) {
             super(index);
@@ -53,7 +53,7 @@ public class ConstantPool {
         }
     }
 
-    public class UnexpectedEntry extends ConstantPoolException {
+    public static class UnexpectedEntry extends ConstantPoolException {
         private static final long serialVersionUID = 6986335935377933211L;
         UnexpectedEntry(int index, int expected_tag, int found_tag) {
             super(index);
@@ -71,7 +71,7 @@ public class ConstantPool {
         public final int found_tag;
     }
 
-    public class InvalidEntry extends ConstantPoolException {
+    public static class InvalidEntry extends ConstantPoolException {
         private static final long serialVersionUID = 1000087545585204447L;
         InvalidEntry(int index, int tag) {
             super(index);
@@ -87,7 +87,7 @@ public class ConstantPool {
         public final int tag;
     }
 
-    public class EntryNotFound extends ConstantPoolException {
+    public static class EntryNotFound extends ConstantPoolException {
         private static final long serialVersionUID = 2885537606468581850L;
         EntryNotFound(Object value) {
             super(-1);
@@ -694,7 +694,7 @@ public class ConstantPool {
         public int byteLength() {
             class SizeOutputStream extends OutputStream {
                 @Override
-                public void write(int b) throws IOException {
+                public void write(int b) {
                     size++;
                 }
                 int size;

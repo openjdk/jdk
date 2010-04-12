@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 #
 
 BUILDDIR = ../..
+MODULE   = base
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #
@@ -32,19 +34,34 @@ include $(BUILDDIR)/common/Defs.gmk
 
 FILES_h = $(INCLUDEDIR)/jni.h 			\
 	  $(PLATFORM_INCLUDE)/jni_md.h		\
-          $(INCLUDEDIR)/jvmti.h			\
+	  $(INCLUDEDIR)/jvmti.h			\
+	  $(INCLUDEDIR)/jvmticmlr.h		\
 	  $(INCLUDEDIR)/classfile_constants.h
 
 $(INCLUDEDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
-	$(install-file)
+	$(install-non-module-file)
 
 $(PLATFORM_INCLUDE)/%.h: $(PLATFORM_SRC)/javavm/export/%.h
+	$(install-non-module-file)
+
+JVMCFG = $(LIBDIR)/$(LIBARCH)/jvm.cfg
+
+#
+# How to install jvm.cfg.
+#
+ifeq ($(ZERO_BUILD), true)
+JVMCFG_ARCH = zero
+else
+JVMCFG_ARCH = $(ARCH)
+endif
+
+$(JVMCFG): $(PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
 	$(install-file)
 
 all: build
 
-build: $(FILES_h)
+build: $(FILES_h) $(JVMCFG)
 
 clean clobber:: 
-	$(RM) $(FILES_h)
+	$(RM) $(FILES_h) $(JVMCFG)
 

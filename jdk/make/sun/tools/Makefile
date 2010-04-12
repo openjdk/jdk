@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = tools
 PACKAGE = sun.tools
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

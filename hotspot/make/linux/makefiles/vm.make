@@ -113,20 +113,28 @@ include $(MAKEFILES_DIR)/dtrace.make
 #----------------------------------------------------------------------
 # JVM
 
-JVM    = jvm$(G_SUFFIX)
-LIBJVM = lib$(JVM).so
+JVM      = jvm
+LIBJVM   = lib$(JVM).so
+LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE)
+mapfile : $(MAPFILE) vm.def
 	rm -f $@
-	cat $^ > $@
+	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
+                 { system ("cat vm.def"); }		\
+               else					\
+                 { print $$0 }				\
+             }' > $@ < $(MAPFILE)
 
 mapfile_reorder : mapfile $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
+
+vm.def: $(Res_Files) $(Obj_Files)
+	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
 ifeq ($(ZERO_LIBARCH), ppc64)
   STATIC_CXX = false
@@ -201,6 +209,7 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 		       $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM);       \
 	    $(LINK_LIB.CC/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
+	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
 	    if [ -x /usr/sbin/selinuxenabled ] ; then                   \
 	      /usr/sbin/selinuxenabled;                                 \
               if [ $$? = 0 ] ; then					\

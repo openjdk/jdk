@@ -104,7 +104,9 @@ public class SocketOptionTests {
             sc.setOption(SCTP_NODELAY, true);
             checkOption(sc, SCTP_NODELAY, true);
             sc.setOption(SO_SNDBUF, 16*1024);
+            checkOption(sc, SO_SNDBUF, 16*1024);
             sc.setOption(SO_RCVBUF, 16*1024);
+            checkOption(sc, SO_RCVBUF, 16*1024);
             checkOption(sc, SO_LINGER, -1);  /* default should be negative */
             sc.setOption(SO_LINGER, 2000);
             checkOption(sc, SO_LINGER, 2000);

@@ -378,7 +378,9 @@ LRESULT CALLBACK AwtComponent::WndProc(HWND hWnd, UINT message,
     TRY;
 
     AwtComponent * self = AwtComponent::GetComponentImpl(hWnd);
-    if (self == NULL || self->GetHWnd() != hWnd) {
+    if (self == NULL || self->GetHWnd() != hWnd ||
+        message == WM_UNDOCUMENTED_CLIENTSHUTDOWN) // handle log-off gracefully
+    {
         return ComCtl32Util::GetInstance().DefWindowProc(NULL, hWnd, message, wParam, lParam);
     } else {
         return self->WindowProc(message, wParam, lParam);

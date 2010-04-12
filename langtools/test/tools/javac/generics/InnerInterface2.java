@@ -30,7 +30,7 @@
  * @compile  InnerInterface2.java
  */
 
-package test.tools.javac.generics.InnerInterface2;
+package InnerInterface2;
 
 class Builder<Community> {
 

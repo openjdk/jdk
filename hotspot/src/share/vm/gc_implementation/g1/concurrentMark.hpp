@@ -24,8 +24,8 @@
 
 class G1CollectedHeap;
 class CMTask;
-typedef GenericTaskQueue<oop> CMTaskQueue;
-typedef GenericTaskQueueSet<oop> CMTaskQueueSet;
+typedef GenericTaskQueue<oop>            CMTaskQueue;
+typedef GenericTaskQueueSet<CMTaskQueue> CMTaskQueueSet;
 
 // A generic CM bit map.  This is essentially a wrapper around the BitMap
 // class, with one bit per (1<<_shifter) HeapWords.

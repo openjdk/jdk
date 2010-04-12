@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.lang.annotation.*;
+import static java.lang.annotation.ElementType.*;
 
 /**
  * A program element annotated &#64;Deprecated is one that programmers
@@ -38,5 +39,6 @@ import java.lang.annotation.*;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
+@Target(value={CONSTRUCTOR, FIELD, LOCAL_VARIABLE, METHOD, PACKAGE, PARAMETER, TYPE})
 public @interface Deprecated {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,10 @@ class MethodHandles: AllStatic {
   static const char*        _entry_names[_EK_LIMIT+1];
   static jobject            _raise_exception_method;
 
+  // Adapters.
+  static MethodHandlesAdapterBlob* _adapter_code;
+  static int                       _adapter_code_size;
+
   static bool ek_valid(EntryKind ek)            { return (uint)ek < (uint)_EK_LIMIT; }
   static bool conv_op_valid(int op)             { return (uint)op < (uint)CONV_OP_LIMIT; }
 
@@ -131,6 +135,43 @@ class MethodHandles: AllStatic {
     assert(ek_valid(ek), "oob");
     assert(_entries[ek] == NULL, "no double initialization");
     _entries[ek] = me;
+  }
+
+  // Some adapter helper functions.
+  static void get_ek_bound_mh_info(EntryKind ek, BasicType& arg_type, int& arg_mask, int& arg_slots) {
+    switch (ek) {
+    case _bound_int_mh        : // fall-thru
+    case _bound_int_direct_mh : arg_type = T_INT;    arg_mask = _INSERT_INT_MASK;  break;
+    case _bound_long_mh       : // fall-thru
+    case _bound_long_direct_mh: arg_type = T_LONG;   arg_mask = _INSERT_LONG_MASK; break;
+    case _bound_ref_mh        : // fall-thru
+    case _bound_ref_direct_mh : arg_type = T_OBJECT; arg_mask = _INSERT_REF_MASK;  break;
+    default: ShouldNotReachHere();
+    }
+    arg_slots = type2size[arg_type];
+  }
+
+  static void get_ek_adapter_opt_swap_rot_info(EntryKind ek, int& swap_bytes, int& rotate) {
+    int swap_slots = 0;
+    switch (ek) {
+    case _adapter_opt_swap_1:     swap_slots = 1; rotate =  0; break;
+    case _adapter_opt_swap_2:     swap_slots = 2; rotate =  0; break;
+    case _adapter_opt_rot_1_up:   swap_slots = 1; rotate =  1; break;
+    case _adapter_opt_rot_1_down: swap_slots = 1; rotate = -1; break;
+    case _adapter_opt_rot_2_up:   swap_slots = 2; rotate =  1; break;
+    case _adapter_opt_rot_2_down: swap_slots = 2; rotate = -1; break;
+    default: ShouldNotReachHere();
+    }
+    // Return the size of the stack slots to move in bytes.
+    swap_bytes = swap_slots * Interpreter::stackElementSize();
+  }
+
+  static int get_ek_adapter_opt_spread_info(EntryKind ek) {
+    switch (ek) {
+    case _adapter_opt_spread_0: return  0;
+    case _adapter_opt_spread_1: return  1;
+    default                   : return -1;
+    }
   }
 
   static methodOop raise_exception_method() {
@@ -230,7 +271,10 @@ class MethodHandles: AllStatic {
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
-  // called from InterpreterGenerator and StubGenerator
+  // Generate MethodHandles adapters.
+  static void generate_adapters();
+
+  // Called from InterpreterGenerator and MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm);
   static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek);
 
@@ -385,13 +429,13 @@ class MethodHandles: AllStatic {
   static void insert_arg_slots(MacroAssembler* _masm,
                                RegisterOrConstant arg_slots,
                                int arg_mask,
-                               Register rax_argslot,
-                               Register rbx_temp, Register rdx_temp);
+                               Register argslot_reg,
+                               Register temp_reg, Register temp2_reg);
 
   static void remove_arg_slots(MacroAssembler* _masm,
                                RegisterOrConstant arg_slots,
-                               Register rax_argslot,
-                               Register rbx_temp, Register rdx_temp);
+                               Register argslot_reg,
+                               Register temp_reg, Register temp2_reg);
 };
 
 
@@ -447,3 +491,14 @@ class MethodHandleEntry {
 
 address MethodHandles::from_compiled_entry(EntryKind ek) { return entry(ek)->from_compiled_entry(); }
 address MethodHandles::from_interpreted_entry(EntryKind ek) { return entry(ek)->from_interpreted_entry(); }
+
+
+//------------------------------------------------------------------------------
+// MethodHandlesAdapterGenerator
+//
+class MethodHandlesAdapterGenerator : public StubCodeGenerator {
+public:
+  MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
+
+  void generate();
+};

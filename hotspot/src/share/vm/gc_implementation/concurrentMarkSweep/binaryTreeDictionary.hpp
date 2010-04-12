@@ -42,9 +42,6 @@ class TreeList: public FreeList {
   friend class AscendTreeCensusClosure;
   friend class DescendTreeCensusClosure;
   friend class DescendTreeSearchClosure;
-  TreeList* _parent;
-  TreeList* _left;
-  TreeList* _right;
 
  protected:
   TreeList* parent() const { return _parent; }
@@ -81,6 +78,11 @@ class TreeList: public FreeList {
   // Returns the first available chunk in the free list as a pointer
   // to a TreeChunk.
   TreeChunk* first_available();
+
+  // Returns the block with the largest heap address amongst
+  // those in the list for this size; potentially slow and expensive,
+  // use with caution!
+  TreeChunk* largest_address();
 
   // removeChunkReplaceIfNeeded() removes the given "tc" from the TreeList.
   // If "tc" is the first chunk in the list, it is also the
@@ -254,8 +256,9 @@ class BinaryTreeDictionary: public FreeBlockDictionary {
   // Methods called at the beginning of a sweep to prepare the
   // statistics for the sweep.
   void       beginSweepDictCensus(double coalSurplusPercent,
-                                  float sweep_current,
-                                  float sweep_estimate);
+                                  float inter_sweep_current,
+                                  float inter_sweep_estimate,
+                                  float intra_sweep_estimate);
   // Methods called after the end of a sweep to modify the
   // statistics for the sweep.
   void       endSweepDictCensus(double splitSurplusPercent);
@@ -269,6 +272,7 @@ class BinaryTreeDictionary: public FreeBlockDictionary {
   // Print the statistcis for all the lists in the tree.  Also may
   // print out summaries.
   void       printDictCensus(void) const;
+  void       print_free_lists(outputStream* st) const;
 
   // For debugging.  Returns the sum of the _returnedBytes for
   // all lists in the tree.

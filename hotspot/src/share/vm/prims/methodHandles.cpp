@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,10 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
   NULL
 };
 
+// Adapters.
+MethodHandlesAdapterBlob* MethodHandles::_adapter_code      = NULL;
+int                       MethodHandles::_adapter_code_size = StubRoutines::method_handles_adapters_code_size;
+
 jobject MethodHandles::_raise_exception_method;
 
 #ifdef ASSERT
@@ -94,6 +98,41 @@ bool MethodHandles::spot_check_entry_names() {
   return true;
 }
 #endif
+
+
+//------------------------------------------------------------------------------
+// MethodHandles::generate_adapters
+//
+void MethodHandles::generate_adapters() {
+  if (!EnableMethodHandles || SystemDictionary::MethodHandle_klass() == NULL)  return;
+
+  assert(_adapter_code == NULL, "generate only once");
+
+  ResourceMark rm;
+  TraceTime timer("MethodHandles adapters generation", TraceStartupTime);
+  _adapter_code = MethodHandlesAdapterBlob::create(_adapter_code_size);
+  if (_adapter_code == NULL)
+    vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
+  CodeBuffer code(_adapter_code->instructions_begin(), _adapter_code->instructions_size());
+
+  MethodHandlesAdapterGenerator g(&code);
+  g.generate();
+}
+
+
+//------------------------------------------------------------------------------
+// MethodHandlesAdapterGenerator::generate
+//
+void MethodHandlesAdapterGenerator::generate() {
+  // Generate generic method handle adapters.
+  for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
+       ek < MethodHandles::_EK_LIMIT;
+       ek = MethodHandles::EntryKind(1 + (int)ek)) {
+    StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+    MethodHandles::generate_method_handle_stub(_masm, ek);
+  }
+}
+
 
 void MethodHandles::set_enabled(bool z) {
   if (_enabled != z) {
@@ -132,8 +171,9 @@ methodOop MethodHandles::decode_vmtarget(oop vmtarget, int vmindex, oop mtype,
     }
     return m;
   } else {
-    decode_flags_result |= MethodHandles::_dmf_does_dispatch;
     assert(vmtarget->is_klass(), "must be class or interface");
+    decode_flags_result |= MethodHandles::_dmf_does_dispatch;
+    decode_flags_result |= MethodHandles::_dmf_has_receiver;
     receiver_limit_result = (klassOop)vmtarget;
     Klass* tk = Klass::cast((klassOop)vmtarget);
     if (tk->is_interface()) {
@@ -142,7 +182,7 @@ methodOop MethodHandles::decode_vmtarget(oop vmtarget, int vmindex, oop mtype,
       return klassItable::method_for_itable_index((klassOop)vmtarget, vmindex);
     } else {
       if (!tk->oop_is_instance())
-        tk = instanceKlass::cast(SystemDictionary::object_klass());
+        tk = instanceKlass::cast(SystemDictionary::Object_klass());
       return ((instanceKlass*)tk)->method_at_vtable(vmindex);
     }
   }
@@ -179,8 +219,10 @@ methodOop MethodHandles::decode_BoundMethodHandle(oop mh, klassOop& receiver_lim
         // short-circuits directly to the methodOop.
         // (It might be another argument besides a receiver also.)
         assert(target->is_method(), "must be a simple method");
-        methodOop m = (methodOop) target;
         decode_flags_result |= MethodHandles::_dmf_binds_method;
+        methodOop m = (methodOop) target;
+        if (!m->is_static())
+          decode_flags_result |= MethodHandles::_dmf_has_receiver;
         return m;
       }
     }
@@ -233,8 +275,8 @@ methodOop MethodHandles::decode_methodOop(methodOop m, int& decode_flags_result)
     BasicType recv_bt = char2type(sig->byte_at(1));
     // Note: recv_bt might be T_ILLEGAL if byte_at(2) is ')'
     assert(sig->byte_at(0) == '(', "must be method sig");
-    if (recv_bt == T_OBJECT || recv_bt == T_ARRAY)
-      decode_flags_result |= _dmf_has_receiver;
+//     if (recv_bt == T_OBJECT || recv_bt == T_ARRAY)
+//       decode_flags_result |= _dmf_has_receiver;
   } else {
     // non-static method
     decode_flags_result |= _dmf_has_receiver;
@@ -261,14 +303,14 @@ methodOop MethodHandles::decode_method(oop x, klassOop& receiver_limit_result, i
     return decode_MemberName(x, receiver_limit_result, decode_flags_result);
   } else if (java_dyn_MethodHandle::is_subclass(xk)) {
     return decode_MethodHandle(x, receiver_limit_result, decode_flags_result);
-  } else if (xk == SystemDictionary::reflect_method_klass()) {
+  } else if (xk == SystemDictionary::reflect_Method_klass()) {
     oop clazz  = java_lang_reflect_Method::clazz(x);
     int slot   = java_lang_reflect_Method::slot(x);
     klassOop k = java_lang_Class::as_klassOop(clazz);
     if (k != NULL && Klass::cast(k)->oop_is_instance())
       return decode_methodOop(instanceKlass::cast(k)->method_with_idnum(slot),
                               decode_flags_result);
-  } else if (xk == SystemDictionary::reflect_constructor_klass()) {
+  } else if (xk == SystemDictionary::reflect_Constructor_klass()) {
     oop clazz  = java_lang_reflect_Constructor::clazz(x);
     int slot   = java_lang_reflect_Constructor::slot(x);
     klassOop k = java_lang_Class::as_klassOop(clazz);
@@ -325,7 +367,7 @@ enum {
 };
 
 void MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
-  if (target_oop->klass() == SystemDictionary::reflect_field_klass()) {
+  if (target_oop->klass() == SystemDictionary::reflect_Field_klass()) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     int mods  = java_lang_reflect_Field::modifiers(target_oop);
@@ -410,7 +452,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   if (defc_klassOop == NULL)  return;  // a primitive; no resolution possible
   if (!Klass::cast(defc_klassOop)->oop_is_instance()) {
     if (!Klass::cast(defc_klassOop)->oop_is_array())  return;
-    defc_klassOop = SystemDictionary::object_klass();
+    defc_klassOop = SystemDictionary::Object_klass();
   }
   instanceKlassHandle defc(THREAD, defc_klassOop);
   defc_klassOop = NULL;  // safety
@@ -746,7 +788,7 @@ oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
       return NULL;                // unformed MH
     }
     klassOop tklass = target->klass();
-    if (Klass::cast(tklass)->is_subclass_of(SystemDictionary::object_klass())) {
+    if (Klass::cast(tklass)->is_subclass_of(SystemDictionary::Object_klass())) {
       return target;              // target is another MH (or something else?)
     }
   }
@@ -818,26 +860,26 @@ static bool is_always_null_type(klassOop klass) {
   for (int i = 0; ; i++) {
     const char* test_name = always_null_names[i];
     if (test_name == NULL)  break;
-    if (name->equals(test_name, (int) strlen(test_name)))
+    if (name->equals(test_name))
       return true;
   }
   return false;
 }
 
 bool MethodHandles::class_cast_needed(klassOop src, klassOop dst) {
-  if (src == dst || dst == SystemDictionary::object_klass())
+  if (src == dst || dst == SystemDictionary::Object_klass())
     return false;                               // quickest checks
   Klass* srck = Klass::cast(src);
   Klass* dstk = Klass::cast(dst);
   if (dstk->is_interface()) {
     // interface receivers can safely be viewed as untyped,
     // because interface calls always include a dynamic check
-    //dstk = Klass::cast(SystemDictionary::object_klass());
+    //dstk = Klass::cast(SystemDictionary::Object_klass());
     return false;
   }
   if (srck->is_interface()) {
     // interface arguments must be viewed as untyped
-    //srck = Klass::cast(SystemDictionary::object_klass());
+    //srck = Klass::cast(SystemDictionary::Object_klass());
     return true;
   }
   if (is_always_null_type(src)) {
@@ -850,7 +892,7 @@ bool MethodHandles::class_cast_needed(klassOop src, klassOop dst) {
 }
 
 static oop object_java_mirror() {
-  return Klass::cast(SystemDictionary::object_klass())->java_mirror();
+  return Klass::cast(SystemDictionary::Object_klass())->java_mirror();
 }
 
 bool MethodHandles::same_basic_type_for_arguments(BasicType src,
@@ -1446,7 +1488,7 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
       break;
     }
     // check subrange of Integer.value, if necessary
-    if (argument == NULL || argument->klass() != SystemDictionary::int_klass()) {
+    if (argument == NULL || argument->klass() != SystemDictionary::Integer_klass()) {
       err = "bound integer argument must be of type java.lang.Integer";
       break;
     }
@@ -1469,7 +1511,7 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
       BasicType argbox = java_lang_boxing_object::basic_type(argument);
       if (argbox != ptype) {
         err = check_argument_type_change(T_OBJECT, (argument == NULL
-                                                    ? SystemDictionary::object_klass()
+                                                    ? SystemDictionary::Object_klass()
                                                     : argument->klass()),
                                          ptype, ptype_klass(), argnum);
         assert(err != NULL, "this must be an error");
@@ -1487,8 +1529,9 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
       int target_pushes = decode_MethodHandle_stack_pushes(target());
       assert(this_pushes == slots_pushed + target_pushes, "BMH stack motion must be correct");
       // do not blow the stack; use a Java-based adapter if this limit is exceeded
-      if (slots_pushed + target_pushes > MethodHandlePushLimit)
-        err = "too many bound parameters";
+      // FIXME
+      // if (slots_pushed + target_pushes > MethodHandlePushLimit)
+      //   err = "too many bound parameters";
     }
   }
 
@@ -1518,6 +1561,11 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     verify_vmslots(mh, CHECK);
   }
 
+  // Get bound type and required slots.
+  oop ptype_oop = java_dyn_MethodType::ptype(java_dyn_MethodHandle::type(target()), argnum);
+  BasicType ptype = java_lang_Class::as_BasicType(ptype_oop);
+  int slots_pushed = type2size[ptype];
+
   // If (a) the target is a direct non-dispatched method handle,
   // or (b) the target is a dispatched direct method handle and we
   // are binding the receiver, cut out the middle-man.
@@ -1529,7 +1577,7 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     int decode_flags = 0; klassOop receiver_limit_oop = NULL;
     methodHandle m(THREAD, decode_method(target(), receiver_limit_oop, decode_flags));
     if (m.is_null()) { THROW_MSG(vmSymbols::java_lang_InternalError(), "DMH failed to decode"); }
-    DEBUG_ONLY(int m_vmslots = m->size_of_parameters() - 1); // pos. of 1st arg.
+    DEBUG_ONLY(int m_vmslots = m->size_of_parameters() - slots_pushed); // pos. of 1st arg.
     assert(sun_dyn_BoundMethodHandle::vmslots(mh()) == m_vmslots, "type w/ m sig");
     if (argnum == 0 && (decode_flags & _dmf_has_receiver) != 0) {
       KlassHandle receiver_limit(THREAD, receiver_limit_oop);
@@ -1554,10 +1602,6 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   }
 
   // Next question:  Is this a ref, int, or long bound value?
-  oop ptype_oop = java_dyn_MethodType::ptype(java_dyn_MethodHandle::type(target()), argnum);
-  BasicType ptype = java_lang_Class::as_BasicType(ptype_oop);
-  int slots_pushed = type2size[ptype];
-
   MethodHandleEntry* me = NULL;
   if (ptype == T_OBJECT) {
     if (direct_to_method)  me = MethodHandles::entry(_bound_ref_direct_mh);
@@ -2170,7 +2214,7 @@ JVM_ENTRY(void, MHI_init_MT(JNIEnv *env, jobject igcls, jobject erased_jh)) {
       symbolOop name = vmSymbols::toString_name(), sig = vmSymbols::void_string_signature();
       JavaCallArguments args(Handle(THREAD, JNIHandles::resolve_non_null(erased_jh)));
       JavaValue result(T_OBJECT);
-      JavaCalls::call_virtual(&result, SystemDictionary::object_klass(), name, sig,
+      JavaCalls::call_virtual(&result, SystemDictionary::Object_klass(), name, sig,
                               &args, CHECK);
       Handle str(THREAD, (oop)result.get_jobject());
       java_lang_String::print(str, tty);
@@ -2347,9 +2391,9 @@ JVM_END
 JVM_ENTRY(void, MH_linkCallSite(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
   // No special action required, yet.
   oop site_oop = JNIHandles::resolve(site_jh);
-  if (site_oop == NULL || site_oop->klass() != SystemDictionary::CallSiteImpl_klass())
+  if (site_oop == NULL || site_oop->klass() != SystemDictionary::CallSite_klass())
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "call site");
-  sun_dyn_CallSiteImpl::set_target(site_oop, JNIHandles::resolve(target_jh));
+  java_dyn_CallSite::set_target(site_oop, JNIHandles::resolve(target_jh));
 }
 JVM_END
 
@@ -2365,6 +2409,7 @@ JVM_END
 #define OBJ   LANG"Object;"
 #define CLS   LANG"Class;"
 #define STRG  LANG"String;"
+#define CST   JDYN"CallSite;"
 #define MT    JDYN"MethodType;"
 #define MH    JDYN"MethodHandle;"
 #define MHI   IDYN"MethodHandleImpl;"
@@ -2372,7 +2417,6 @@ JVM_END
 #define AMH   IDYN"AdapterMethodHandle;"
 #define BMH   IDYN"BoundMethodHandle;"
 #define DMH   IDYN"DirectMethodHandle;"
-#define CSTI  IDYN"CallSiteImpl;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -2398,7 +2442,7 @@ static JNINativeMethod methods[] = {
 
 // More entry points specifically for EnableInvokeDynamic.
 static JNINativeMethod methods2[] = {
-  {CC"linkCallSite",            CC"("CSTI MH")V",               FN_PTR(MH_linkCallSite)}
+  {CC"linkCallSite",            CC"("CST MH")V",                FN_PTR(MH_linkCallSite)}
 };
 
 

@@ -101,7 +101,7 @@ public class CompileProperties {
         boolean ok = true;
         /* Original usage */
         if (args.length == 2 && args[0].charAt(0) != '-' ) {
-            ok = createFile(args[0], args[1], "ListResourceBundle");
+            ok = createFile(args[0], args[1], "java.util.ListResourceBundle");
         } else if (args.length == 3) {
             ok = createFile(args[0], args[1], args[2]);
         } else if (args.length == 0) {
@@ -285,9 +285,9 @@ public class CompileProperties {
         log.info("    java CompileProperties {-compile path_to_properties_file path_to_java_output_file super_class} -or- -optionsfile filename");
         log.info("");
         log.info("Example:");
-        log.info("    java CompileProperties -compile test.properties test.java ListResourceBundle");
+        log.info("    java CompileProperties -compile test.properties test.java java.util.ListResourceBundle");
         log.info("    java CompileProperties -optionsfile option_file");
-        log.info("option_file contains: -compile test.properties test.java ListResourceBundle");
+        log.info("option_file contains: -compile test.properties test.java java.util.ListResourceBundle");
     }
 
     private static String escape(String theString) {
@@ -379,7 +379,6 @@ public class CompileProperties {
 
     private static final String FORMAT =
             "{0}" +
-            "import java.util.ListResourceBundle;\n\n" +
             "public final class {1} extends {2} '{'\n" +
             "    protected final Object[][] getContents() '{'\n" +
             "        return new Object[][] '{'\n" +

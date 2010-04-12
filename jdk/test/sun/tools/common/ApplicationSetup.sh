@@ -45,7 +45,11 @@ startApplication()
   # "java" process.
   if [ "$OS" = "Windows" ]; then
     sleep 2
-    realpid=`ps -o pid,ppid,comm|grep ${pid}|grep "java"|cut -c1-6`
+    if [ "${isCygwin}" = "true" ] ; then
+      realpid=`ps -p ${pid} | tail -1 | awk '{print $4;}'`
+    else
+      realpid=`ps -o pid,ppid,comm|grep ${pid}|grep "java"|cut -c1-6`
+    fi
     pid=${realpid}
   fi
                                                                                                      

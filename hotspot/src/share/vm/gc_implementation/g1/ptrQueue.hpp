@@ -27,8 +27,10 @@
 // the addresses of modified old-generation objects.  This type supports
 // this operation.
 
-class PtrQueueSet;
+// The definition of placement operator new(size_t, void*) in the <new>.
+#include <new>
 
+class PtrQueueSet;
 class PtrQueue VALUE_OBJ_CLASS_SPEC {
 
 protected:
@@ -60,7 +62,7 @@ protected:
 public:
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet*, bool perm = false);
+  PtrQueue(PtrQueueSet*, bool perm = false, bool active = false);
   // Release any contained resources.
   void flush();
   // Calls flush() when destroyed.
@@ -77,7 +79,7 @@ public:
     else enqueue_known_active(ptr);
   }
 
-  inline void handle_zero_index();
+  void handle_zero_index();
   void locking_enqueue_completed_buffer(void** buf);
 
   void enqueue_known_active(void* ptr);
@@ -98,6 +100,8 @@ public:
       assert(_index == _sz, "invariant: queues are empty when activated.");
     }
   }
+
+  bool is_active() { return _active; }
 
   static int byte_index_to_index(int ind) {
     assert((ind % oopSize) == 0, "Invariant.");
@@ -126,34 +130,65 @@ public:
 
 };
 
+class BufferNode {
+  size_t _index;
+  BufferNode* _next;
+public:
+  BufferNode() : _index(0), _next(NULL) { }
+  BufferNode* next() const     { return _next;  }
+  void set_next(BufferNode* n) { _next = n;     }
+  size_t index() const         { return _index; }
+  void set_index(size_t i)     { _index = i;    }
+
+  // Align the size of the structure to the size of the pointer
+  static size_t aligned_size() {
+    static const size_t alignment = round_to(sizeof(BufferNode), sizeof(void*));
+    return alignment;
+  }
+
+  // BufferNode is allocated before the buffer.
+  // The chunk of memory that holds both of them is a block.
+
+  // Produce a new BufferNode given a buffer.
+  static BufferNode* new_from_buffer(void** buf) {
+    return new (make_block_from_buffer(buf)) BufferNode;
+  }
+
+  // The following are the required conversion routines:
+  static BufferNode* make_node_from_buffer(void** buf) {
+    return (BufferNode*)make_block_from_buffer(buf);
+  }
+  static void** make_buffer_from_node(BufferNode *node) {
+    return make_buffer_from_block(node);
+  }
+  static void* make_block_from_node(BufferNode *node) {
+    return (void*)node;
+  }
+  static void** make_buffer_from_block(void* p) {
+    return (void**)((char*)p + aligned_size());
+  }
+  static void* make_block_from_buffer(void** p) {
+    return (void*)((char*)p - aligned_size());
+  }
+};
+
 // A PtrQueueSet represents resources common to a set of pointer queues.
 // In particular, the individual queues allocate buffers from this shared
 // set, and return completed buffers to the set.
 // All these variables are are protected by the TLOQ_CBL_mon. XXX ???
 class PtrQueueSet VALUE_OBJ_CLASS_SPEC {
-
 protected:
-
-  class CompletedBufferNode: public CHeapObj {
-  public:
-    void** buf;
-    size_t index;
-    CompletedBufferNode* next;
-    CompletedBufferNode() : buf(NULL),
-      index(0), next(NULL){ }
-  };
-
   Monitor* _cbl_mon;  // Protects the fields below.
-  CompletedBufferNode* _completed_buffers_head;
-  CompletedBufferNode* _completed_buffers_tail;
-  size_t _n_completed_buffers;
-  size_t _process_completed_threshold;
+  BufferNode* _completed_buffers_head;
+  BufferNode* _completed_buffers_tail;
+  int _n_completed_buffers;
+  int _process_completed_threshold;
   volatile bool _process_completed;
 
   // This (and the interpretation of the first element as a "next"
   // pointer) are protected by the TLOQ_FL_lock.
   Mutex* _fl_lock;
-  void** _buf_free_list;
+  BufferNode* _buf_free_list;
   size_t _buf_free_list_sz;
   // Queue set can share a freelist. The _fl_owner variable
   // specifies the owner. It is set to "this" by default.
@@ -170,6 +205,7 @@ protected:
   // Maximum number of elements allowed on completed queue: after that,
   // enqueuer does the work itself.  Zero indicates no maximum.
   int _max_completed_queue;
+  int _completed_queue_padding;
 
   int completed_buffers_list_length();
   void assert_completed_buffer_list_len_correct_locked();
@@ -191,9 +227,12 @@ public:
   // Because of init-order concerns, we can't pass these as constructor
   // arguments.
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                  int max_completed_queue = 0,
+                  int process_completed_threshold,
+                  int max_completed_queue,
                   PtrQueueSet *fl_owner = NULL) {
     _max_completed_queue = max_completed_queue;
+    _process_completed_threshold = process_completed_threshold;
+    _completed_queue_padding = 0;
     assert(cbl_mon != NULL && fl_lock != NULL, "Init order issue?");
     _cbl_mon = cbl_mon;
     _fl_lock = fl_lock;
@@ -208,16 +247,19 @@ public:
   void deallocate_buffer(void** buf);
 
   // Declares that "buf" is a complete buffer.
-  void enqueue_complete_buffer(void** buf, size_t index = 0,
-                               bool ignore_max_completed = false);
+  void enqueue_complete_buffer(void** buf, size_t index = 0);
+
+  // To be invoked by the mutator.
+  bool process_or_enqueue_complete_buffer(void** buf);
 
   bool completed_buffers_exist_dirty() {
     return _n_completed_buffers > 0;
   }
 
   bool process_completed_buffers() { return _process_completed; }
+  void set_process_completed(bool x) { _process_completed = x; }
 
-  bool active() { return _all_active; }
+  bool is_active() { return _all_active; }
 
   // Set the buffer size.  Should be called before any "enqueue" operation
   // can be called.  And should only be called once.
@@ -226,15 +268,24 @@ public:
   // Get the buffer size.
   size_t buffer_size() { return _sz; }
 
-  // Set the number of completed buffers that triggers log processing.
-  void set_process_completed_threshold(size_t sz);
+  // Get/Set the number of completed buffers that triggers log processing.
+  void set_process_completed_threshold(int sz) { _process_completed_threshold = sz; }
+  int process_completed_threshold() const { return _process_completed_threshold; }
 
   // Must only be called at a safe point.  Indicates that the buffer free
   // list size may be reduced, if that is deemed desirable.
   void reduce_free_list();
 
-  size_t completed_buffers_num() { return _n_completed_buffers; }
+  int completed_buffers_num() { return _n_completed_buffers; }
 
   void merge_bufferlists(PtrQueueSet* src);
-  void merge_freelists(PtrQueueSet* src);
+
+  void set_max_completed_queue(int m) { _max_completed_queue = m; }
+  int max_completed_queue() { return _max_completed_queue; }
+
+  void set_completed_queue_padding(int padding) { _completed_queue_padding = padding; }
+  int completed_queue_padding() { return _completed_queue_padding; }
+
+  // Notify the consumer if the number of buffers crossed the threshold
+  void notify_if_necessary();
 };

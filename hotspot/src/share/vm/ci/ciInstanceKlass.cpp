@@ -75,7 +75,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _java_mirror = NULL;
 
   if (is_shared()) {
-    if (h_k() != SystemDictionary::object_klass()) {
+    if (h_k() != SystemDictionary::Object_klass()) {
       super();
     }
     java_mirror();
@@ -232,8 +232,48 @@ bool ciInstanceKlass::is_java_lang_Object() {
 // ------------------------------------------------------------------
 // ciInstanceKlass::uses_default_loader
 bool ciInstanceKlass::uses_default_loader() {
-  VM_ENTRY_MARK;
-  return loader() == NULL;
+  // Note:  We do not need to resolve the handle or enter the VM
+  // in order to test null-ness.
+  return _loader == NULL;
+}
+
+// ------------------------------------------------------------------
+// ciInstanceKlass::is_in_package
+//
+// Is this klass in the given package?
+bool ciInstanceKlass::is_in_package(const char* packagename, int len) {
+  // To avoid class loader mischief, this test always rejects application classes.
+  if (!uses_default_loader())
+    return false;
+  GUARDED_VM_ENTRY(
+    return is_in_package_impl(packagename, len);
+  )
+}
+
+bool ciInstanceKlass::is_in_package_impl(const char* packagename, int len) {
+  ASSERT_IN_VM;
+
+  // If packagename contains trailing '/' exclude it from the
+  // prefix-test since we test for it explicitly.
+  if (packagename[len - 1] == '/')
+    len--;
+
+  if (!name()->starts_with(packagename, len))
+    return false;
+
+  // Test if the class name is something like "java/lang".
+  if ((len + 1) > name()->utf8_length())
+    return false;
+
+  // Test for trailing '/'
+  if ((char) name()->byte_at(len) != '/')
+    return false;
+
+  // Make sure it's not actually in a subpackage:
+  if (name()->index_of_at(len+1, "/", 1) >= 0)
+    return false;
+
+  return true;
 }
 
 // ------------------------------------------------------------------
@@ -334,6 +374,20 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
   instanceKlass* k = get_instanceKlass();
   fieldDescriptor fd;
   if (!k->find_field_from_offset(field_offset, is_static, &fd)) {
+    return NULL;
+  }
+  ciField* field = new (CURRENT_THREAD_ENV->arena()) ciField(&fd);
+  return field;
+}
+
+// ------------------------------------------------------------------
+// ciInstanceKlass::get_field_by_name
+ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static) {
+  VM_ENTRY_MARK;
+  instanceKlass* k = get_instanceKlass();
+  fieldDescriptor fd;
+  klassOop def = k->find_field(name->get_symbolOop(), signature->get_symbolOop(), is_static, &fd);
+  if (def == NULL) {
     return NULL;
   }
   ciField* field = new (CURRENT_THREAD_ENV->arena()) ciField(&fd);

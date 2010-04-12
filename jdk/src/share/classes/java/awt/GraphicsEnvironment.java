@@ -110,7 +110,7 @@ public abstract class GraphicsEnvironment {
 //          long t1 = System.currentTimeMillis();
 //          System.out.println("GE creation took " + (t1-t0)+ "ms.");
             if (isHeadless()) {
-                localEnv = new HeadlessGraphicsEnvironment(localEnv);
+                ge = new HeadlessGraphicsEnvironment(ge);
             }
         } catch (ClassNotFoundException e) {
             throw new Error("Could not find class: "+nm);

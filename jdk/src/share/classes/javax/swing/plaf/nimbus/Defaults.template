@@ -90,6 +90,10 @@ final class ${LAF_NAME}Defaults {
      */
     private Map<String, Region> registeredRegions =
             new HashMap<String, Region>();
+
+    private Map<JComponent, Map<Region, SynthStyle>> overridesCache =
+            new WeakHashMap<JComponent, Map<Region, SynthStyle>>();
+    
     /**
      * Our fallback style to avoid NPEs if the proper style cannot be found in
      * this class. Not sure if relying on DefaultSynthStyle is the best choice.
@@ -251,7 +255,11 @@ ${UI_DEFAULT_INIT}
         }
 
         //return the style, if found, or the default style if not found
-        return foundStyle == null ? defaultStyle : foundStyle.getStyle(comp);
+        return foundStyle == null ? defaultStyle : foundStyle.getStyle(comp, r);
+    }
+
+    public void clearOverridesCache(JComponent c) {
+        overridesCache.remove(c);
     }
 
     /*
@@ -457,15 +465,6 @@ ${UI_DEFAULT_INIT}
          * Cached shared style.
          */
         private NimbusStyle style;
-        /**
-         * A weakly referenced hash map such that if the reference JComponent
-         * key is garbage collected then the entry is removed from the map.
-         * This cache exists so that when a JComponent has nimbus overrides
-         * in its client map, a unique style will be created and returned
-         * for that JComponent instance, always. In such a situation each
-         * JComponent instance must have its own instance of NimbusStyle.
-         */
-        private WeakHashMap<JComponent, WeakReference<NimbusStyle>> overridesCache;
 
         /**
          * Create a new LazyStyle.
@@ -513,17 +512,21 @@ ${UI_DEFAULT_INIT}
          * Gets the style. Creates it if necessary.
          * @return the style
          */
-        SynthStyle getStyle(JComponent c) {
+        SynthStyle getStyle(JComponent c, Region r) {
             // if the component has overrides, it gets its own unique style
             // instead of the shared style.
             if (c.getClientProperty("Nimbus.Overrides") != null) {
-                if (overridesCache == null)
-                    overridesCache = new WeakHashMap<JComponent, WeakReference<NimbusStyle>>();
-                WeakReference<NimbusStyle> ref = overridesCache.get(c);
-                NimbusStyle s = ref == null ? null : ref.get();
+                Map<Region, SynthStyle> map = overridesCache.get(c);
+                SynthStyle s = null;
+                if (map == null) {
+                    map = new HashMap<Region, SynthStyle>();
+                    overridesCache.put(c, map);
+                } else {
+                    s = map.get(r);
+                }
                 if (s == null) {
                     s = new NimbusStyle(prefix, c);
-                    overridesCache.put(c, new WeakReference<NimbusStyle>(s));
+                    map.put(r, s);
                 }
                 return s;
             }

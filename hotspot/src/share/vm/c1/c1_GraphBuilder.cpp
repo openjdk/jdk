@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,7 @@ void BlockListBuilder::make_loop_header(BlockBegin* block) {
     if (_next_loop_index < 31) _next_loop_index++;
   } else {
     // block already marked as loop header
-    assert(is_power_of_2(_loop_map.at(block->block_id())), "exactly one bit must be set");
+    assert(is_power_of_2((unsigned int)_loop_map.at(block->block_id())), "exactly one bit must be set");
   }
 }
 
@@ -1524,18 +1524,14 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code = Bytecodes::_invokespecial;
   }
 
-  if (code == Bytecodes::_invokedynamic) {
-    BAILOUT("invokedynamic NYI"); // FIXME
-    return;
-  }
-
   // NEEDS_CLEANUP
   // I've added the target-is_loaded() test below but I don't really understand
   // how klass->is_loaded() can be true and yet target->is_loaded() is false.
   // this happened while running the JCK invokevirtual tests under doit.  TKR
   ciMethod* cha_monomorphic_target = NULL;
   ciMethod* exact_target = NULL;
-  if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded()) {
+  if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
+      !target->is_method_handle_invoke()) {
     Value receiver = NULL;
     ciInstanceKlass* receiver_klass = NULL;
     bool type_is_exact = false;
@@ -1681,11 +1677,20 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   CHECK_BAILOUT();
 
   // inlining not successful => standard invoke
-  bool is_static = code == Bytecodes::_invokestatic;
-  ValueType* result_type = as_ValueType(target->return_type());
-  Values* args = state()->pop_arguments(target->arg_size_no_receiver());
-  Value recv = is_static ? NULL : apop();
   bool is_loaded = target->is_loaded();
+  bool has_receiver =
+    code == Bytecodes::_invokespecial   ||
+    code == Bytecodes::_invokevirtual   ||
+    code == Bytecodes::_invokeinterface;
+  bool is_invokedynamic = code == Bytecodes::_invokedynamic;
+  ValueType* result_type = as_ValueType(target->return_type());
+
+  // We require the debug info to be the "state before" because
+  // invokedynamics may deoptimize.
+  ValueStack* state_before = is_invokedynamic ? state()->copy() : NULL;
+
+  Values* args = state()->pop_arguments(target->arg_size_no_receiver());
+  Value recv = has_receiver ? apop() : NULL;
   int vtable_index = methodOopDesc::invalid_vtable_index;
 
 #ifdef SPARC
@@ -1723,7 +1728,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     profile_call(recv, target_klass);
   }
 
-  Invoke* result = new Invoke(code, result_type, recv, args, vtable_index, target);
+  Invoke* result = new Invoke(code, result_type, recv, args, vtable_index, target, state_before);
   // push result
   append_split(result);
 
@@ -2862,20 +2867,18 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   _initial_state = state_at_entry();
   start_block->merge(_initial_state);
 
-  BlockBegin* sync_handler = NULL;
-  if (method()->is_synchronized() || _compilation->env()->dtrace_method_probes()) {
-    // setup an exception handler to do the unlocking and/or notification
-    sync_handler = new BlockBegin(-1);
-    sync_handler->set(BlockBegin::exception_entry_flag);
-    sync_handler->set(BlockBegin::is_on_work_list_flag);
-    sync_handler->set(BlockBegin::default_exception_handler_flag);
+  // setup an exception handler to do the unlocking and/or
+  // notification and unwind the frame.
+  BlockBegin* sync_handler = new BlockBegin(-1);
+  sync_handler->set(BlockBegin::exception_entry_flag);
+  sync_handler->set(BlockBegin::is_on_work_list_flag);
+  sync_handler->set(BlockBegin::default_exception_handler_flag);
 
-    ciExceptionHandler* desc = new ciExceptionHandler(method()->holder(), 0, method()->code_size(), -1, 0);
-    XHandler* h = new XHandler(desc);
-    h->set_entry_block(sync_handler);
-    scope_data()->xhandlers()->append(h);
-    scope_data()->set_has_handler();
-  }
+  ciExceptionHandler* desc = new ciExceptionHandler(method()->holder(), 0, method()->code_size(), -1, 0);
+  XHandler* h = new XHandler(desc);
+  h->set_entry_block(sync_handler);
+  scope_data()->xhandlers()->append(h);
+  scope_data()->set_has_handler();
 
   // complete graph
   _vmap        = new ValueMap();

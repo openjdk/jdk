@@ -25,6 +25,7 @@
  * @test
  * @bug 6220064
  * @summary make sure everything works ok in the Turkish local (dotted/dotless i problem)
+ * @run main/othervm Turkish
  * @author Andreas Sterbenz
  */
 

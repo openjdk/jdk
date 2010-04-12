@@ -55,7 +55,7 @@ void CallInfo::set_interface(KlassHandle resolved_klass, KlassHandle selected_kl
   // we should pick the vtable index from the resolved method.
   // Other than that case, there is no valid vtable index to specify.
   int vtable_index = methodOopDesc::invalid_vtable_index;
-  if (resolved_method->method_holder() == SystemDictionary::object_klass()) {
+  if (resolved_method->method_holder() == SystemDictionary::Object_klass()) {
     assert(resolved_method->vtable_index() == selected_method->vtable_index(), "sanity check");
     vtable_index = resolved_method->vtable_index();
   }
@@ -75,11 +75,23 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
   _selected_method = selected_method;
   _vtable_index    = vtable_index;
   if (CompilationPolicy::mustBeCompiled(selected_method)) {
+    // This path is unusual, mostly used by the '-Xcomp' stress test mode.
+
     // Note: with several active threads, the mustBeCompiled may be true
     //       while canBeCompiled is false; remove assert
     // assert(CompilationPolicy::canBeCompiled(selected_method), "cannot compile");
     if (THREAD->is_Compiler_thread()) {
       // don't force compilation, resolve was on behalf of compiler
+      return;
+    }
+    if (instanceKlass::cast(selected_method->method_holder())->is_not_initialized()) {
+      // 'is_not_initialized' means not only '!is_initialized', but also that
+      // initialization has not been started yet ('!being_initialized')
+      // Do not force compilation of methods in uninitialized classes.
+      // Note that doing this would throw an assert later,
+      // in CompileBroker::compile_method.
+      // We sometimes use the link resolver to do reflective lookups
+      // even before classes are initialized.
       return;
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
@@ -181,7 +193,7 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
   // We'll check for the method name first, as that's most likely
   // to be false (so we'll short-circuit out of these tests).
   if (sel_method->name() == vmSymbols::clone_name() &&
-      sel_klass() == SystemDictionary::object_klass() &&
+      sel_klass() == SystemDictionary::Object_klass() &&
       resolved_klass->oop_is_array()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");
@@ -219,6 +231,18 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle& re
   symbolHandle method_name      (THREAD, pool->name_ref_at(index));
   symbolHandle method_signature (THREAD, pool->signature_ref_at(index));
   KlassHandle  current_klass(THREAD, pool->pool_holder());
+
+  resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, CHECK);
+}
+
+void LinkResolver::resolve_dynamic_method(methodHandle& resolved_method, KlassHandle& resolved_klass, constantPoolHandle pool, int index, TRAPS) {
+  // The class is java.dyn.MethodHandle
+  resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
+
+  symbolHandle method_name = vmSymbolHandles::invoke_name();
+
+  symbolHandle method_signature(THREAD, pool->signature_ref_at(index));
+  KlassHandle  current_klass   (THREAD, pool->pool_holder());
 
   resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, CHECK);
 }
@@ -1015,11 +1039,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
 
   // This guy is reached from InterpreterRuntime::resolve_invokedynamic.
 
-  assert(constantPoolCacheOopDesc::is_secondary_index(raw_index), "must be secondary index");
-  int nt_index = pool->map_instruction_operand_to_index(raw_index);
-
   // At this point, we only need the signature, and can ignore the name.
-  symbolHandle method_signature(THREAD, pool->nt_signature_ref_at(nt_index));
+  symbolHandle method_signature(THREAD, pool->signature_ref_at(raw_index));  // raw_index works directly
   symbolHandle method_name = vmSymbolHandles::invoke_name();
   KlassHandle resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
 

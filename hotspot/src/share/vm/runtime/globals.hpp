@@ -47,8 +47,8 @@ define_pd_global(intx, Tier4BackEdgeThreshold,       0);
 define_pd_global(intx, OnStackReplacePercentage,     0);
 define_pd_global(bool, ResizeTLAB,                   false);
 define_pd_global(intx, FreqInlineSize,               0);
+define_pd_global(intx, InlineSmallCode,              0);
 define_pd_global(intx, NewSizeThreadIncrease,        4*K);
-define_pd_global(intx, NewRatio,                     4);
 define_pd_global(intx, InlineClassNatives,           true);
 define_pd_global(intx, InlineUnsafeOps,              true);
 define_pd_global(intx, InitialCodeCacheSize,         160*K);
@@ -58,7 +58,7 @@ define_pd_global(intx, CodeCacheMinBlockLength,      1);
 define_pd_global(uintx,PermSize,    ScaleForWordSize(4*M));
 define_pd_global(uintx,MaxPermSize, ScaleForWordSize(64*M));
 define_pd_global(bool, NeverActAsServerClassMachine, true);
-define_pd_global(uintx, DefaultMaxRAM,               1*G);
+define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
 #else
 
@@ -112,6 +112,10 @@ struct Flag {
   bool is_uintx() const       { return strcmp(type, "uintx") == 0; }
   uintx get_uintx() const     { return *((uintx*) addr); }
   void set_uintx(uintx value) { *((uintx*) addr) = value; }
+
+  bool is_uint64_t() const          { return strcmp(type, "uint64_t") == 0; }
+  uint64_t get_uint64_t() const     { return *((uint64_t*) addr); }
+  void set_uint64_t(uint64_t value) { *((uint64_t*) addr) = value; }
 
   bool is_double() const        { return strcmp(type, "double") == 0; }
   double get_double() const     { return *((double*) addr); }
@@ -188,6 +192,11 @@ class CommandLineFlags {
   static bool uintxAtPut(char* name, size_t len, uintx* value, FlagValueOrigin origin);
   static bool uintxAtPut(char* name, uintx* value, FlagValueOrigin origin) { return uintxAtPut(name, strlen(name), value, origin); }
 
+  static bool uint64_tAt(char* name, size_t len, uint64_t* value);
+  static bool uint64_tAt(char* name, uint64_t* value) { return uint64_tAt(name, strlen(name), value); }
+  static bool uint64_tAtPut(char* name, size_t len, uint64_t* value, FlagValueOrigin origin);
+  static bool uint64_tAtPut(char* name, uint64_t* value, FlagValueOrigin origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
+
   static bool doubleAt(char* name, size_t len, double* value);
   static bool doubleAt(char* name, double* value)    { return doubleAt(name, strlen(name), value); }
   static bool doubleAtPut(char* name, size_t len, double* value, FlagValueOrigin origin);
@@ -202,7 +211,7 @@ class CommandLineFlags {
   static bool wasSetOnCmdline(const char* name, bool* value);
   static void printSetFlags();
 
-  static void printFlags() PRODUCT_RETURN;
+  static void printFlags();
 
   static void verify() PRODUCT_RETURN;
 };
@@ -317,9 +326,6 @@ class CommandLineFlags {
    * been re-added (see 6401008) */                                         \
   product(bool, UseMembar, false,                                           \
           "(Unstable) Issues membars on thread state transitions")          \
-                                                                            \
-  product(bool, PrintCommandLineFlags, false,                               \
-          "Prints flags that appeared on the command line")                 \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
@@ -736,6 +742,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintAdapterHandlers, false,                             \
           "Print code generated for i2c/c2i adapters")                      \
                                                                             \
+  develop(bool, VerifyAdapterSharing, false,                                \
+          "Verify that the code for shared adapters is the equivalent")     \
+                                                                            \
   diagnostic(bool, PrintAssembly, false,                                    \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
@@ -785,7 +794,7 @@ class CommandLineFlags {
   product(bool, ProfilerRecordPC, false,                                    \
           "Collects tick for each 16 byte interval of compiled code")       \
                                                                             \
-  product(bool, ProfileVM,  false,                                          \
+  product(bool, ProfileVM, false,                                           \
           "Profiles ticks that fall within VM (either in the VM Thread "    \
           "or VM code called through stubs)")                               \
                                                                             \
@@ -815,7 +824,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, RegisterFinalizersAtInit, true,                             \
           "Register finalizable objects at end of Object.<init> or "        \
-          "after allocation.")                                              \
+          "after allocation")                                               \
                                                                             \
   develop(bool, RegisterReferences, true,                                   \
           "Tells whether the VM should register soft/weak/final/phantom "   \
@@ -862,14 +871,14 @@ class CommandLineFlags {
   product(bool, AlwaysLockClassLoader, false,                               \
           "Require the VM to acquire the class loader lock before calling " \
           "loadClass() even for class loaders registering "                 \
-          "as parallel capable. Default false. ")                           \
+          "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
-          "registering as parallel capable. Default false")                 \
+          "registering as parallel capable")                                \
                                                                             \
   product(bool, MustCallLoadClassInternal, false,                           \
-          "Call loadClassInternal() rather than loadClass().Default false") \
+          "Call loadClassInternal() rather than loadClass()")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls (for SOLARIS only)")       \
@@ -921,9 +930,9 @@ class CommandLineFlags {
          "(Unstable, Linux-specific)"                                       \
          " avoid NPTL-FUTEX hang pthread_cond_timedwait" )                  \
                                                                             \
-  product(bool, FilterSpuriousWakeups , true,                               \
-          "Prevent spurious or premature wakeups from object.wait"              \
-          "(Solaris only)")                                                     \
+  product(bool, FilterSpuriousWakeups, true,                                \
+          "Prevent spurious or premature wakeups from object.wait "         \
+          "(Solaris only)")                                                 \
                                                                             \
   product(intx, NativeMonitorTimeout, -1, "(Unstable)" )                    \
   product(intx, NativeMonitorFlags, 0, "(Unstable)" )                       \
@@ -973,7 +982,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseAltSigs, false,                                          \
           "Use alternate signals instead of SIGUSR1 & SIGUSR2 for VM "      \
-          "internal signals. (Solaris only)")                               \
+          "internal signals (Solaris only)")                                \
                                                                             \
   product(bool, UseSpinning, false,                                         \
           "Use spinning in monitor inflation and before entry")             \
@@ -1195,7 +1204,7 @@ class CommandLineFlags {
   product(bool, UseSerialGC, false,                                         \
           "Use the serial garbage collector")                               \
                                                                             \
-  experimental(bool, UseG1GC, false,                                        \
+  product(bool, UseG1GC, false,                                             \
           "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
@@ -1236,9 +1245,6 @@ class CommandLineFlags {
   product(uintx, ParallelGCThreads, 0,                                      \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
-  product(uintx, ParallelCMSThreads, 0,                                     \
-          "Max number of threads CMS will use for concurrent work")         \
-                                                                            \
   develop(bool, ParallelOldGCSplitALot, false,                              \
           "Provoke splitting (copying data from a young gen space to"       \
           "multiple destination spaces)")                                   \
@@ -1249,8 +1255,8 @@ class CommandLineFlags {
   develop(bool, TraceRegionTasksQueuing, false,                             \
           "Trace the queuing of the region tasks")                          \
                                                                             \
-  product(uintx, ParallelMarkingThreads, 0,                                 \
-          "Number of marking threads concurrent gc will use")               \
+  product(uintx, ConcGCThreads, 0,                                          \
+          "Number of threads concurrent gc will use")                       \
                                                                             \
   product(uintx, YoungPLABSize, 4096,                                       \
           "Size of young gen promotion labs (in HeapWords)")                \
@@ -1265,12 +1271,12 @@ class CommandLineFlags {
           "Always tenure objects in eden. (ParallelGC only)")               \
                                                                             \
   product(bool, NeverTenure, false,                                         \
-          "Never tenure objects in eden, May tenure on overflow"            \
-          " (ParallelGC only)")                                             \
+          "Never tenure objects in eden, May tenure on overflow "           \
+          "(ParallelGC only)")                                              \
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
-          "Scavenge youngest generation before each full GC,"               \
-          " used with UseParallelGC")                                       \
+          "Scavenge youngest generation before each full GC, "              \
+          "used with UseParallelGC")                                        \
                                                                             \
   develop(bool, ScavengeWithObjectsInToSpace, false,                        \
           "Allow scavenges to occur when to_space contains objects.")       \
@@ -1283,9 +1289,9 @@ class CommandLineFlags {
           " (effective only when UseConcMarkSweepGC)")                      \
                                                                             \
   product(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false,        \
-          "A System.gc() request invokes a concurrent collection and"       \
-          " also unloads classes during such a concurrent gc cycle  "       \
-          " (effective only when UseConcMarkSweepGC)")                      \
+          "A System.gc() request invokes a concurrent collection and "      \
+          "also unloads classes during such a concurrent gc cycle "         \
+          "(effective only when UseConcMarkSweepGC)")                       \
                                                                             \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
@@ -1340,26 +1346,62 @@ class CommandLineFlags {
           "Whether we should simulate work queue overflow in ParNew")       \
                                                                             \
   notproduct(uintx, ParGCWorkQueueOverflowInterval, 1000,                   \
-          "An `interval' counter that determines how frequently"            \
-          " we simulate overflow; a smaller number increases frequency")    \
+          "An `interval' counter that determines how frequently "           \
+          "we simulate overflow; a smaller number increases frequency")     \
                                                                             \
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
-  product(uintx, CMSParPromoteBlocksToClaim, 50,                            \
+  product(uintx, CMSParPromoteBlocksToClaim, 16,                             \
           "Number of blocks to attempt to claim when refilling CMS LAB for "\
           "parallel GC.")                                                   \
+                                                                            \
+  product(uintx, OldPLABWeight, 50,                                         \
+          "Percentage (0-100) used to weight the current sample when"       \
+          "computing exponentially decaying average for resizing CMSParPromoteBlocksToClaim.") \
+                                                                            \
+  product(bool, ResizeOldPLAB, true,                                        \
+          "Dynamically resize (old gen) promotion labs")                    \
+                                                                            \
+  product(bool, PrintOldPLAB, false,                                        \
+          "Print (old gen) promotion labs sizing decisions")                \
+                                                                            \
+  product(uintx, CMSOldPLABMin, 16,                                         \
+          "Min size of CMS gen promotion lab caches per worker per blksize")\
+                                                                            \
+  product(uintx, CMSOldPLABMax, 1024,                                       \
+          "Max size of CMS gen promotion lab caches per worker per blksize")\
+                                                                            \
+  product(uintx, CMSOldPLABNumRefills, 4,                                   \
+          "Nominal number of refills of CMS gen promotion lab cache"        \
+          " per worker per block size")                                     \
+                                                                            \
+  product(bool, CMSOldPLABResizeQuicker, false,                             \
+          "Whether to react on-the-fly during a scavenge to a sudden"       \
+          " change in block demand rate")                                   \
+                                                                            \
+  product(uintx, CMSOldPLABToleranceFactor, 4,                              \
+          "The tolerance of the phase-change detector for on-the-fly"       \
+          " PLAB resizing during a scavenge")                               \
+                                                                            \
+  product(uintx, CMSOldPLABReactivityFactor, 2,                             \
+          "The gain in the feedback loop for on-the-fly PLAB resizing"      \
+          " during a scavenge")                                             \
+                                                                            \
+  product(uintx, CMSOldPLABReactivityCeiling, 10,                           \
+          "The clamping of the gain in the feedback loop for on-the-fly"    \
+          " PLAB resizing during a scavenge")                               \
                                                                             \
   product(bool, AlwaysPreTouch, false,                                      \
           "It forces all freshly committed pages to be pre-touched.")       \
                                                                             \
   product(bool, CMSUseOldDefaults, false,                                   \
-          "A flag temporarily  introduced to allow reverting to some older" \
-          "default settings; older as of 6.0 ")                             \
+          "A flag temporarily introduced to allow reverting to some "       \
+          "older default settings; older as of 6.0")                        \
                                                                             \
   product(intx, CMSYoungGenPerWorker, 16*M,                                 \
           "The amount of young gen chosen by default per GC worker "        \
-          "thread available ")                                              \
+          "thread available")                                               \
                                                                             \
   product(bool, GCOverheadReporting, false,                                 \
          "Enables the GC overhead reporting facility")                      \
@@ -1380,43 +1422,71 @@ class CommandLineFlags {
           "automatically adjusted")                                         \
                                                                             \
   product(uintx, CMSIncrementalDutyCycleMin, 0,                             \
-          "Lower bound on the duty cycle when CMSIncrementalPacing is"      \
-          "enabled (a percentage, 0-100).")                                 \
+          "Lower bound on the duty cycle when CMSIncrementalPacing is "     \
+          "enabled (a percentage, 0-100)")                                  \
                                                                             \
   product(uintx, CMSIncrementalSafetyFactor, 10,                            \
-          "Percentage (0-100) used to add conservatism when computing the"  \
-          "duty cycle.")                                                    \
+          "Percentage (0-100) used to add conservatism when computing the " \
+          "duty cycle")                                                     \
                                                                             \
   product(uintx, CMSIncrementalOffset, 0,                                   \
           "Percentage (0-100) by which the CMS incremental mode duty cycle" \
-          "is shifted to the right within the period between young GCs")    \
+          " is shifted to the right within the period between young GCs")   \
                                                                             \
-  product(uintx, CMSExpAvgFactor, 25,                                       \
+  product(uintx, CMSExpAvgFactor, 50,                                       \
           "Percentage (0-100) used to weight the current sample when"       \
           "computing exponential averages for CMS statistics.")             \
                                                                             \
-  product(uintx, CMS_FLSWeight, 50,                                         \
+  product(uintx, CMS_FLSWeight, 75,                                         \
           "Percentage (0-100) used to weight the current sample when"       \
           "computing exponentially decating averages for CMS FLS statistics.") \
                                                                             \
-  product(uintx, CMS_FLSPadding, 2,                                         \
+  product(uintx, CMS_FLSPadding, 1,                                         \
           "The multiple of deviation from mean to use for buffering"        \
           "against volatility in free list demand.")                        \
                                                                             \
   product(uintx, FLSCoalescePolicy, 2,                                      \
           "CMS: Aggression level for coalescing, increasing from 0 to 4")   \
                                                                             \
-  product(uintx, CMS_SweepWeight, 50,                                       \
-          "Percentage (0-100) used to weight the current sample when"       \
-          "computing exponentially decaying average for inter-sweep duration.") \
+  product(bool, FLSAlwaysCoalesceLarge, false,                              \
+          "CMS: Larger free blocks are always available for coalescing")    \
                                                                             \
-  product(uintx, CMS_SweepPadding, 2,                                       \
-          "The multiple of deviation from mean to use for buffering"        \
+  product(double, FLSLargestBlockCoalesceProximity, 0.99,                   \
+          "CMS: the smaller the percentage the greater the coalition force")\
+                                                                            \
+  product(double, CMSSmallCoalSurplusPercent, 1.05,                         \
+          "CMS: the factor by which to inflate estimated demand of small"   \
+          " block sizes to prevent coalescing with an adjoining block")     \
+                                                                            \
+  product(double, CMSLargeCoalSurplusPercent, 0.95,                         \
+          "CMS: the factor by which to inflate estimated demand of large"   \
+          " block sizes to prevent coalescing with an adjoining block")     \
+                                                                            \
+  product(double, CMSSmallSplitSurplusPercent, 1.10,                        \
+          "CMS: the factor by which to inflate estimated demand of small"   \
+          " block sizes to prevent splitting to supply demand for smaller"  \
+          " blocks")                                                        \
+                                                                            \
+  product(double, CMSLargeSplitSurplusPercent, 1.00,                        \
+          "CMS: the factor by which to inflate estimated demand of large"   \
+          " block sizes to prevent splitting to supply demand for smaller"  \
+          " blocks")                                                        \
+                                                                            \
+  product(bool, CMSExtrapolateSweep, false,                                 \
+          "CMS: cushion for block demand during sweep")                     \
+                                                                            \
+  product(uintx, CMS_SweepWeight, 75,                                       \
+          "Percentage (0-100) used to weight the current sample when "      \
+          "computing exponentially decaying average for inter-sweep "       \
+          "duration")                                                       \
+                                                                            \
+  product(uintx, CMS_SweepPadding, 1,                                       \
+          "The multiple of deviation from mean to use for buffering "       \
           "against volatility in inter-sweep duration.")                    \
                                                                             \
   product(uintx, CMS_SweepTimerThresholdMillis, 10,                         \
           "Skip block flux-rate sampling for an epoch unless inter-sweep "  \
-          " duration exceeds this threhold in milliseconds")                \
+          "duration exceeds this threhold in milliseconds")                 \
                                                                             \
   develop(bool, CMSTraceIncrementalMode, false,                             \
           "Trace CMS incremental mode")                                     \
@@ -1449,17 +1519,24 @@ class CommandLineFlags {
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
           "Replenish and indexed free list with this number of chunks")     \
                                                                             \
+  product(bool, CMSReplenishIntermediate, true,                             \
+          "Replenish all intermediate free-list caches")                    \
+                                                                            \
+  product(bool, CMSSplitIndexedFreeListBlocks, true,                        \
+          "When satisfying batched demand, splot blocks from the "          \
+          "IndexedFreeList whose size is a multiple of requested size")     \
+                                                                            \
   product(bool, CMSLoopWarn, false,                                         \
           "Warn in case of excessive CMS looping")                          \
                                                                             \
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Whether preserved marks should be restored early")               \
                                                                             \
-  product(uintx, CMSMarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),           \
-          "Size of CMS marking stack")                                      \
+  product(uintx, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),              \
+          "Size of marking stack")                                          \
                                                                             \
-  product(uintx, CMSMarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),       \
-          "Max size of CMS marking stack")                                  \
+  product(uintx, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),          \
+          "Max size of marking stack")                                      \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
           "Whether we should simulate frequent marking stack / work queue"  \
@@ -1583,6 +1660,18 @@ class CommandLineFlags {
           "Bitmap operations should process at most this many bits"         \
           "between yields")                                                 \
                                                                             \
+  product(bool, CMSDumpAtPromotionFailure, false,                           \
+          "Dump useful information about the state of the CMS old "         \
+          " generation upon a promotion failure.")                          \
+                                                                            \
+  product(bool, CMSPrintChunksInDump, false,                                \
+          "In a dump enabled by CMSDumpAtPromotionFailure, include "        \
+          " more detailed information about the free chunks.")              \
+                                                                            \
+  product(bool, CMSPrintObjectsInDump, false,                               \
+          "In a dump enabled by CMSDumpAtPromotionFailure, include "        \
+          " more detailed information about the allocated objects.")        \
+                                                                            \
   diagnostic(bool, FLSVerifyAllHeapReferences, false,                       \
           "Verify that all refs across the FLS boundary "                   \
           " are to valid objects")                                          \
@@ -1617,35 +1706,43 @@ class CommandLineFlags {
                                                                             \
   product(intx, CMSTriggerRatio, 80,                                        \
           "Percentage of MinHeapFreeRatio in CMS generation that is "       \
-          "  allocated before a CMS collection cycle commences")            \
+          "allocated before a CMS collection cycle commences")              \
                                                                             \
   product(intx, CMSTriggerPermRatio, 80,                                    \
-          "Percentage of MinHeapFreeRatio in the CMS perm generation that"  \
-          "  is allocated before a CMS collection cycle commences, that  "  \
-          "  also collects the perm generation")                            \
+          "Percentage of MinHeapFreeRatio in the CMS perm generation that " \
+          "is allocated before a CMS collection cycle commences, that "     \
+          "also collects the perm generation")                              \
                                                                             \
   product(uintx, CMSBootstrapOccupancy, 50,                                 \
           "Percentage CMS generation occupancy at which to "                \
-          " initiate CMS collection for bootstrapping collection stats")    \
+          "initiate CMS collection for bootstrapping collection stats")     \
                                                                             \
   product(intx, CMSInitiatingOccupancyFraction, -1,                         \
           "Percentage CMS generation occupancy to start a CMS collection "  \
-          " cycle (A negative value means that CMSTriggerRatio is used)")   \
+          "cycle. A negative value means that CMSTriggerRatio is used")     \
+                                                                            \
+  product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
+          "Percentage of the (entire) heap occupancy to start a "           \
+          "concurrent GC cycle. It us used by GCs that trigger a "          \
+          "concurrent GC cycle based on the occupancy of the entire heap, " \
+          "not just one of the generations (e.g., G1). A value of 0 "       \
+          "denotes 'do constant GC cycles'.")                               \
                                                                             \
   product(intx, CMSInitiatingPermOccupancyFraction, -1,                     \
-          "Percentage CMS perm generation occupancy to start a CMScollection"\
-          " cycle (A negative value means that CMSTriggerPermRatio is used)")\
+          "Percentage CMS perm generation occupancy to start a "            \
+          "CMScollection cycle. A negative value means that "               \
+          "CMSTriggerPermRatio is used")                                    \
                                                                             \
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a crierion for starting a CMS collection") \
                                                                             \
   product(intx, CMSIsTooFullPercentage, 98,                                 \
-          "An absolute ceiling above which CMS will always consider the"    \
-          " perm gen ripe for collection")                                  \
+          "An absolute ceiling above which CMS will always consider the "   \
+          "perm gen ripe for collection")                                   \
                                                                             \
   develop(bool, CMSTestInFreeList, false,                                   \
           "Check if the coalesced range is already in the "                 \
-          "free lists as claimed.")                                         \
+          "free lists as claimed")                                          \
                                                                             \
   notproduct(bool, CMSVerifyReturnedBytes, false,                           \
           "Check that all the garbage collected was returned to the "       \
@@ -1663,8 +1760,12 @@ class CommandLineFlags {
           "Enforce ScavengeALot/GCALot at all potential safepoints")        \
                                                                             \
   product(bool, HandlePromotionFailure, true,                               \
-          "The youngest generation collection does not require"             \
-          " a guarantee of full promotion of all live objects.")            \
+          "The youngest generation collection does not require "            \
+          "a guarantee of full promotion of all live objects.")             \
+                                                                            \
+  product(bool, PrintPromotionFailure, false,                               \
+          "Print additional diagnostic information following "              \
+          " promotion failure")                                             \
                                                                             \
   notproduct(bool, PromotionFailureALot, false,                             \
           "Use promotion failure handling on every youngest generation "    \
@@ -1692,7 +1793,11 @@ class CommandLineFlags {
           "Ratio of hard spins to calls to yield")                          \
                                                                             \
   product(uintx, PreserveMarkStackSize, 1024,                               \
-           "Size for stack used in promotion failure handling")             \
+          "Size for stack used in promotion failure handling")              \
+                                                                            \
+  develop(uintx, ObjArrayMarkingStride, 512,                                \
+          "Number of ObjArray elements to push onto the marking stack"      \
+          "before pushing a continuation entry")                            \
                                                                             \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
@@ -1720,14 +1825,27 @@ class CommandLineFlags {
   product(bool, AlwaysActAsServerClassMachine, false,                       \
           "Always act like a server-class machine")                         \
                                                                             \
-  product_pd(uintx, DefaultMaxRAM,                                          \
-          "Maximum real memory size for setting server class heap size")    \
+  product_pd(uint64_t, MaxRAM,                                              \
+          "Real memory size (in bytes) used to set maximum heap size")      \
+                                                                            \
+  product(uintx, ErgoHeapSizeLimit, 0,                                      \
+          "Maximum ergonomically set heap size (in bytes); zero means use " \
+          "MaxRAM / MaxRAMFraction")                                        \
+                                                                            \
+  product(uintx, MaxRAMFraction, 4,                                         \
+          "Maximum fraction (1/n) of real memory used for maximum heap "    \
+          "size")                                                           \
                                                                             \
   product(uintx, DefaultMaxRAMFraction, 4,                                  \
-          "Fraction (1/n) of real memory used for server class max heap")   \
+          "Maximum fraction (1/n) of real memory used for maximum heap "    \
+          "size; deprecated: to be renamed to MaxRAMFraction")              \
                                                                             \
-  product(uintx, DefaultInitialRAMFraction, 64,                             \
-          "Fraction (1/n) of real memory used for server class initial heap")  \
+  product(uintx, MinRAMFraction, 2,                                         \
+          "Minimum fraction (1/n) of real memory used for maxmimum heap "   \
+          "size on systems with small physical memory size")                \
+                                                                            \
+  product(uintx, InitialRAMFraction, 64,                                    \
+          "Fraction (1/n) of real memory used for initial heap size")       \
                                                                             \
   product(bool, UseAutoGCSelectPolicy, false,                               \
           "Use automatic collection selection policy")                      \
@@ -1778,7 +1896,7 @@ class CommandLineFlags {
           "Number of collections before the adaptive sizing is started")    \
                                                                             \
   product(uintx, AdaptiveSizePolicyOutputInterval, 0,                       \
-          "Collecton interval for printing information, zero => never")     \
+          "Collecton interval for printing information; zero => never")     \
                                                                             \
   product(bool, UseAdaptiveSizePolicyFootprintGoal, true,                   \
           "Use adaptive minimum footprint as a goal")                       \
@@ -1808,7 +1926,8 @@ class CommandLineFlags {
           "Allowed collection cost difference between generations")         \
                                                                             \
   product(uintx, AdaptiveSizePolicyCollectionCostMargin, 50,                \
-          "If collection costs are within margin, reduce both by full delta") \
+          "If collection costs are within margin, reduce both by full "     \
+          "delta")                                                          \
                                                                             \
   product(uintx, YoungGenerationSizeIncrement, 20,                          \
           "Adaptive size percentage change in young generation")            \
@@ -1904,6 +2023,10 @@ class CommandLineFlags {
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
                                                                             \
+  diagnostic(bool, DeferInitialCardMark, false,                             \
+          "When +ReduceInitialCardMarks, explicitly defer any that "        \
+           "may arise from new_pre_store_barrier")                          \
+                                                                            \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
                                                                             \
@@ -1941,9 +2064,6 @@ class CommandLineFlags {
   product(uintx, CMSYieldSleepCount, 0,                                     \
           "number of times a GC thread (minus the coordinator) "            \
           "will sleep while yielding before giving up and resuming GC")     \
-                                                                            \
-  notproduct(bool, PrintFlagsFinal, false,                                  \
-          "Print all command line flags after argument processing")         \
                                                                             \
   /* gc tracing */                                                          \
   manageable(bool, PrintGC, false,                                          \
@@ -2173,6 +2293,10 @@ class CommandLineFlags {
           "print safepoint statistics only when safepoint takes"            \
           " more than PrintSafepointSatisticsTimeout in millis")            \
                                                                             \
+  product(bool, TraceSafepointCleanupTime, false,                           \
+          "print the break down of clean up tasks performed during"         \
+          " safepoint")                                                     \
+                                                                            \
   develop(bool, InlineAccessors, true,                                      \
           "inline accessor methods (get/set)")                              \
                                                                             \
@@ -2244,10 +2368,19 @@ class CommandLineFlags {
          "If false, restricts profiled locations to the root method only")  \
                                                                             \
   product(bool, PrintVMOptions, trueInDebug,                                \
-         "print VM flag settings")                                          \
+         "Print flags that appeared on the command line")                   \
                                                                             \
   product(bool, IgnoreUnrecognizedVMOptions, false,                         \
          "Ignore unrecognized VM options")                                  \
+                                                                            \
+  product(bool, PrintCommandLineFlags, false,                               \
+         "Print flags specified on command line or set by ergonomics")      \
+                                                                            \
+  product(bool, PrintFlagsInitial, false,                                   \
+         "Print all VM flags before argument processing and exit VM")       \
+                                                                            \
+  product(bool, PrintFlagsFinal, false,                                     \
+         "Print all VM flags after argument and ergonomic processing")      \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \
@@ -2328,6 +2461,9 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, CompileTheWorldIgnoreInitErrors, false,                  \
           "Compile all methods although class initializer failed")          \
+                                                                            \
+  notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
+          "Force a safepoint every n compiles so sweeper can keep up")      \
                                                                             \
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
@@ -2527,8 +2663,11 @@ class CommandLineFlags {
                                                                             \
   develop(bool, VerifyCompiledCode, false,                                  \
           "Include miscellaneous runtime verifications in nmethod code; "   \
-          "off by default because it disturbs nmethod size heuristics.")    \
+          "default off because it disturbs nmethod size heuristics")        \
                                                                             \
+  notproduct(bool, CrashGCForDumpingJavaThread, false,                      \
+          "Manually make GC thread crash then dump java stack trace;  "     \
+          "Test only")                                                      \
                                                                             \
   /* compilation */                                                         \
   product(bool, UseCompiler, true,                                          \
@@ -2644,10 +2783,10 @@ class CommandLineFlags {
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  develop(intx, MaxInlineLevel, 9,                                          \
+  product(intx, MaxInlineLevel, 9,                                          \
           "maximum number of nested calls that are inlined")                \
                                                                             \
-  develop(intx, MaxRecursiveInlineLevel, 1,                                 \
+  product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
@@ -2660,10 +2799,10 @@ class CommandLineFlags {
   product_pd(intx, FreqInlineSize,                                          \
           "maximum bytecode size of a frequent method to be inlined")       \
                                                                             \
-  develop(intx, MaxTrivialSize, 6,                                          \
+  product(intx, MaxTrivialSize, 6,                                          \
           "maximum bytecode size of a trivial method to be inlined")        \
                                                                             \
-  develop(intx, MinInliningThreshold, 250,                                  \
+  product(intx, MinInliningThreshold, 250,                                  \
           "min. invocation count a method needs to have to be inlined")     \
                                                                             \
   develop(intx, AlignEntryCode, 4,                                          \
@@ -2740,7 +2879,7 @@ class CommandLineFlags {
   product(intx, PerMethodRecompilationCutoff, 400,                          \
           "After recompiling N times, stay in the interpreter (-1=>'Inf')") \
                                                                             \
-  product(intx, PerBytecodeRecompilationCutoff, 100,                        \
+  product(intx, PerBytecodeRecompilationCutoff, 200,                        \
           "Per-BCI limit on repeated recompilation (-1=>'Inf')")            \
                                                                             \
   product(intx, PerMethodTrapLimit,  100,                                   \
@@ -2789,20 +2928,28 @@ class CommandLineFlags {
           "an OS lock")                                                     \
                                                                             \
   /* gc parameters */                                                       \
-  product(uintx, MaxHeapSize, ScaleForWordSize(64*M),                       \
-          "Default maximum size for object heap (in bytes)")                \
+  product(uintx, InitialHeapSize, 0,                                        \
+          "Initial heap size (in bytes); zero means OldSize + NewSize")     \
                                                                             \
-  product_pd(uintx, NewSize,                                                \
-          "Default size of new generation (in bytes)")                      \
+  product(uintx, MaxHeapSize, ScaleForWordSize(96*M),                       \
+          "Maximum heap size (in bytes)")                                   \
+                                                                            \
+  product(uintx, OldSize, ScaleForWordSize(4*M),                            \
+          "Initial tenured generation size (in bytes)")                     \
+                                                                            \
+  product(uintx, NewSize, ScaleForWordSize(1*M),                            \
+          "Initial new generation size (in bytes)")                         \
                                                                             \
   product(uintx, MaxNewSize, max_uintx,                                     \
-          "Maximum size of new generation (in bytes)")                      \
+          "Maximum new generation size (in bytes), max_uintx means set "    \
+          "ergonomically")                                                  \
                                                                             \
   product(uintx, PretenureSizeThreshold, 0,                                 \
-          "Max size in bytes of objects allocated in DefNew generation")    \
+          "Maximum size in bytes of objects allocated in DefNew "           \
+          "generation; zero means no maximum")                              \
                                                                             \
-  product_pd(uintx, TLABSize,                                               \
-          "Default (or starting) size of TLAB (in bytes)")                  \
+  product(uintx, TLABSize, 0,                                               \
+          "Starting TLAB size (in bytes); zero means set ergonomically")    \
                                                                             \
   product(uintx, MinTLABSize, 2*K,                                          \
           "Minimum allowed TLAB size (in bytes)")                           \
@@ -2819,10 +2966,10 @@ class CommandLineFlags {
   product(uintx, TLABWasteIncrement,    4,                                  \
           "Increment allowed waste at slow allocation")                     \
                                                                             \
-  product_pd(intx, SurvivorRatio,                                           \
+  product(intx, SurvivorRatio, 8,                                           \
           "Ratio of eden/survivor space size")                              \
                                                                             \
-  product_pd(intx, NewRatio,                                                \
+  product(intx, NewRatio, 2,                                                \
           "Ratio of new/old generation sizes")                              \
                                                                             \
   product(uintx, MaxLiveObjectEvacuationRatio, 100,                         \
@@ -2832,11 +2979,8 @@ class CommandLineFlags {
           "Additional size added to desired new generation size per "       \
           "non-daemon thread (in bytes)")                                   \
                                                                             \
-  product(uintx, OldSize, ScaleForWordSize(4096*K),                         \
-          "Default size of tenured generation (in bytes)")                  \
-                                                                            \
   product_pd(uintx, PermSize,                                               \
-          "Default size of permanent generation (in bytes)")                \
+          "Initial size of permanent generation (in bytes)")                \
                                                                             \
   product_pd(uintx, MaxPermSize,                                            \
           "Maximum size of permanent generation (in bytes)")                \
@@ -2987,6 +3131,15 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache.")                         \
+                                                                            \
+  product(bool, UseCodeCacheFlushing, false,                                \
+          "Attempt to clean the code cache before shutting off compiler")   \
+                                                                            \
+  product(intx,  MinCodeCacheFlushingInterval, 30,                          \
+          "Min number of seconds between code cache cleaning sessions")     \
+                                                                            \
+  product(uintx,  CodeCacheFlushingMinimumFreeSpace, 1500*K,                \
+          "When less than X space left, start code cache cleaning")         \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
@@ -3333,6 +3486,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
+                                                                            \
+  experimental(bool, TrustFinalNonStaticFields, false,                      \
+          "trust final non-static declarations for constant folding")       \
                                                                             \
   experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \

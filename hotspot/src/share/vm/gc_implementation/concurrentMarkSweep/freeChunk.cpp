@@ -67,3 +67,8 @@ void FreeChunk::verifyList() const {
   }
 }
 #endif
+
+void FreeChunk::print_on(outputStream* st) {
+  st->print_cr("Next: " PTR_FORMAT " Prev: " PTR_FORMAT " %s",
+    next(), prev(), cantCoalesce() ? "[can't coalesce]" : "");
+}

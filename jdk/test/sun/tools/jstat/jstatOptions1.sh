@@ -35,4 +35,4 @@ JSTAT="${TESTJAVA}/bin/jstat"
 rm -f jstat.out 2>/dev/null
 ${JSTAT} -options > jstat.out 2>&1
 
-diff jstat.out ${TESTSRC}/options1.out
+diff -w jstat.out ${TESTSRC}/options1.out

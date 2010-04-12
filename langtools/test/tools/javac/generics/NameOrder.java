@@ -27,22 +27,22 @@
  * @summary generics: type inference failure due to a bug in ClassSymbol.isLess
  * @author gafter
  *
- * @compile  NameOrder.java
+ * @compile NameOrder.java
  */
 
-package test.tools.javac.generics.NameOrder;
+package NameOrder;
 
 interface a {}
 interface b {}
 interface c {}
 
-class A implements a, b {}
-class B implements c, a {}
+class AB implements a, b {}
+class CA implements c, a {}
 
 // this is how to trigger a symptom:
-abstract class C {
+abstract class X {
     <T> T f(T t1, T t2) { return null; }
     void g() {
-        a x = f( new A(), new B() );
+        a x = f( new AB(), new CA() );
     }
 }

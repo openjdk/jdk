@@ -138,8 +138,16 @@ public:
 
   // Get the constant value of this field.
   ciConstant constant_value() {
-    assert(is_constant(), "illegal call to constant_value()");
+    assert(is_static() && is_constant(), "illegal call to constant_value()");
     return _constant_value;
+  }
+
+  // Get the constant value of non-static final field in the given
+  // object.
+  ciConstant constant_value_of(ciObject* object) {
+    assert(!is_static() && is_constant(), "only if field is non-static constant");
+    assert(object->is_instance(), "must be instance");
+    return object->as_instance()->field_value(this);
   }
 
   // Check for link time errors.  Accessing a field from a

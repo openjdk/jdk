@@ -26,6 +26,16 @@
 /**
  * Interfaces used to model elements of the Java programming language.
  *
+ * The term "element" in this package is used to refer to program
+ * elements, the declared entities that make up a program.  Elements
+ * include classes, interfaces, methods, constructors, and fields.
+ * The interfaces in this package do not model the structure of a
+ * program inside a method body; for example there is no
+ * representation of a {@code for} loop or {@code try}-{@code finally}
+ * block.  However, the interfaces can model some structures only
+ * appearing inside method bodies, such as local variables and
+ * anonymous classes.
+ *
  * <p>When used in the context of annotation processing, an accurate
  * model of the element being represented must be returned.  As this
  * is a language model, the source code provides the fiducial

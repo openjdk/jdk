@@ -45,6 +45,24 @@ package java.dyn;
  * class or interface supertype, or an object type; it can never be instantiated.
  * Logically, it denotes a source of all dynamically typed methods.
  * It may be viewed as a pure syntactic marker (an importable one) of static calls.
+ * <p>
+ * Here are some examples of usage:
+ * <p><blockquote><pre>
+ * Object x; String s; int i;
+ * x = InvokeDynamic.greet("world"); // greet(Ljava/lang/String;)Ljava/lang/Object;
+ * s = InvokeDynamic.&lt;String&gt;hail(x); // hail(Ljava/lang/Object;)Ljava/lang/String;
+ * InvokeDynamic.&lt;void&gt;cogito(); // cogito()V
+ * i = InvokeDynamic.&lt;int&gt;#"op:+"(2, 3); // "op:+"(II)I
+ * </pre></blockquote>
+ * Each of the above calls generates a single invokedynamic instruction
+ * with the name-and-type descriptors indicated in the comments.
+ * The argument types are taken directly from the actual arguments,
+ * while the return type is taken from the type parameter.
+ * (This type parameter may be a primtive, and it defaults to {@code Object}.)
+ * The final example uses a special syntax for uttering non-Java names.
+ * Any name legal to the JVM may be given between the double quotes.
+ * None of these calls is complete without a bootstrap method,
+ * which must be registered by the static initializer of the enclosing class.
  * @author John Rose, JSR 292 EG
  */
 public final class InvokeDynamic {

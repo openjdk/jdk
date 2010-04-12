@@ -30,7 +30,7 @@
  * @compile -Werror -Xlint:unchecked  Casting4.java
  */
 
-package test.tools.javac.generics.Casting4;
+package Casting4;
 
 class Casting4 {
     <M> Integer f(Comparable<M> c) {

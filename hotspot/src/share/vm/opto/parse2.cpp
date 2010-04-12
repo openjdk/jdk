@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,6 +278,11 @@ void Parse::do_tableswitch() {
   if (len < 1) {
     // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    if (should_add_predicate(default_dest)){
+      _sp += 1; // set original stack for use by uncommon_trap
+      add_predicate();
+      _sp -= 1;
+    }
     merge(default_dest);
     return;
   }
@@ -324,6 +329,11 @@ void Parse::do_lookupswitch() {
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    if (should_add_predicate(default_dest)){
+      _sp += 1; // set original stack for use by uncommon_trap
+      add_predicate();
+      _sp -= 1;
+    }
     merge(default_dest);
     return;
   }
@@ -731,6 +741,9 @@ void Parse::do_jsr() {
   push(_gvn.makecon(ret_addr));
 
   // Flow to the jsr.
+  if (should_add_predicate(jsr_bci)){
+    add_predicate();
+  }
   merge(jsr_bci);
 }
 
@@ -881,7 +894,7 @@ bool Parse::seems_never_taken(float prob) {
 
 //-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
-inline void Parse::repush_if_args() {
+inline int Parse::repush_if_args() {
 #ifndef PRODUCT
   if (PrintOpto && WizardMode) {
     tty->print("defending against excessive implicit null exceptions on %s @%d in ",
@@ -895,6 +908,7 @@ inline void Parse::repush_if_args() {
   assert(argument(0) != NULL, "must exist");
   assert(bc_depth == 1 || argument(1) != NULL, "two must exist");
   _sp += bc_depth;
+  return bc_depth;
 }
 
 //----------------------------------do_ifnull----------------------------------
@@ -954,8 +968,14 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       // Update method data
       profile_taken_branch(target_bci);
       adjust_map_after_if(btest, c, prob, branch_block, next_block);
-      if (!stopped())
+      if (!stopped()) {
+        if (should_add_predicate(target_bci)){ // add a predicate if it branches to a loop
+          int nargs = repush_if_args(); // set original stack for uncommon_trap
+          add_predicate();
+          _sp -= nargs;
+        }
         merge(target_bci);
+      }
     }
   }
 
@@ -1076,8 +1096,14 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       // Update method data
       profile_taken_branch(target_bci);
       adjust_map_after_if(taken_btest, c, prob, branch_block, next_block);
-      if (!stopped())
+      if (!stopped()) {
+        if (should_add_predicate(target_bci)){ // add a predicate if it branches to a loop
+          int nargs = repush_if_args(); // set original stack for the uncommon_trap
+          add_predicate();
+          _sp -= nargs;
+        }
         merge(target_bci);
+      }
     }
   }
 
@@ -2053,13 +2079,6 @@ void Parse::do_one_bytecode() {
     // null exception oop throws NULL pointer exception
     do_null_check(peek(), T_OBJECT);
     if (stopped())  return;
-    if (env()->jvmti_can_post_exceptions()) {
-      // "Full-speed throwing" is not necessary here,
-      // since we're notifying the VM on every throw.
-      uncommon_trap(Deoptimization::Reason_unhandled,
-                    Deoptimization::Action_none);
-      return;
-    }
     // Hook the thrown exception directly to subsequent handlers.
     if (BailoutToInterpreterForThrows) {
       // Keep method interpreted from now on.
@@ -2067,6 +2086,11 @@ void Parse::do_one_bytecode() {
                     Deoptimization::Action_make_not_compilable);
       return;
     }
+    if (env()->jvmti_can_post_on_exceptions()) {
+      // check if we must post exception events, take uncommon trap if so (with must_throw = false)
+      uncommon_trap_if_should_post_on_exceptions(Deoptimization::Reason_unhandled, false);
+    }
+    // Here if either can_post_on_exceptions or should_post_on_exceptions is false
     add_exception_state(make_exception_state(peek()));
     break;
 
@@ -2080,6 +2104,10 @@ void Parse::do_one_bytecode() {
     // Update method data
     profile_taken_branch(target_bci);
 
+    // Add loop predicate if it goes to a loop
+    if (should_add_predicate(target_bci)){
+      add_predicate();
+    }
     // Merge the current control into the target basic block
     merge(target_bci);
 

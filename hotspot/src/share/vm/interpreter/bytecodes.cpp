@@ -357,7 +357,7 @@ void Bytecodes::initialize() {
   def(_invokespecial       , "invokespecial"       , "bjj"  , NULL    , T_ILLEGAL, -1, true);
   def(_invokestatic        , "invokestatic"        , "bjj"  , NULL    , T_ILLEGAL,  0, true);
   def(_invokeinterface     , "invokeinterface"     , "bjj__", NULL    , T_ILLEGAL, -1, true);
-  def(_invokedynamic       , "invokedynamic"       , "bjjjj", NULL    , T_ILLEGAL, -1, true );
+  def(_invokedynamic       , "invokedynamic"       , "bjjjj", NULL    , T_ILLEGAL,  0, true );
   def(_new                 , "new"                 , "bii"  , NULL    , T_OBJECT ,  1, true );
   def(_newarray            , "newarray"            , "bc"   , NULL    , T_OBJECT ,  0, true );
   def(_anewarray           , "anewarray"           , "bii"  , NULL    , T_OBJECT ,  0, true );

@@ -145,7 +145,10 @@ public class Log extends AbstractLog {
         private int getIntOption(Options options, String optionName, int defaultValue) {
             String s = options.get(optionName);
             try {
-                if (s != null) return Integer.parseInt(s);
+                if (s != null) {
+                    int n = Integer.parseInt(s);
+                    return (n <= 0 ? Integer.MAX_VALUE : n);
+                }
             } catch (NumberFormatException e) {
                 // silently ignore ill-formed numbers
             }
@@ -188,6 +191,12 @@ public class Log extends AbstractLog {
     /** The number of warnings encountered so far.
      */
     public int nwarnings = 0;
+
+    /**
+     * Whether or not an unrecoverable error has been seen.
+     * Unrecoverable errors prevent subsequent annotation processing.
+     */
+    public boolean unrecoverableError;
 
     /** A set of all errors generated so far. This is used to avoid printing an
      *  error message more than once. For each error, a pair consisting of the

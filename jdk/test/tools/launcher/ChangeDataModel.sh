@@ -29,6 +29,9 @@
 
 OS=`uname -s`;
 
+# To remove CR from output, needed for java apps in CYGWIN, harmless otherwise
+SED_CR="sed -e s@\\r@@g"
+
 case "$OS" in
 	Windows* | CYGWIN* )
 	  PATHSEP=";"
@@ -79,10 +82,10 @@ $JAVAC GetDataModel.java
 
 # Verify data model flag for default data model is accepted
 
-DM=`$JAVA GetDataModel`
+DM=`$JAVA GetDataModel | ${SED_CR}`
 case "$DM" in
         32 )
-		DM2=`${JAVA} -d32 GetDataModel`	
+		DM2=`${JAVA} -d32 GetDataModel | ${SED_CR}`	
 		if [ "${DM2}" != "32" ]
 		then
 	  	echo "Data model flag -d32 not accepted or had improper effect."
@@ -91,7 +94,7 @@ case "$DM" in
         ;;
 
         64 )
-		DM2=`${JAVA} -d64 GetDataModel`	
+		DM2=`${JAVA} -d64 GetDataModel | ${SED_CR}`	
 		if [ "${DM2}" != "64" ]
 		then
 	  	echo "Data model flag -d64 not accepted or had improper effect."
@@ -227,10 +230,10 @@ then
 else
 # Negative tests for non-dual mode platforms to ensure the other data model is 
 # rejected
-	DM=`$JAVA GetDataModel`
+	DM=`$JAVA GetDataModel | ${SED_CR}`
 	case "$DM" in
 	   32 )
-		DM2=`${JAVA} -d64 GetDataModel`	
+		DM2=`${JAVA} -d64 GetDataModel | ${SED_CR}`	
 		if [ "x${DM2}" != "x" ]
 		then
 		   echo "Data model flag -d64 was accepted."
@@ -239,7 +242,7 @@ else
            ;;
 
 	   64 )
-		DM2=`${JAVA} -d32 GetDataModel`	
+		DM2=`${JAVA} -d32 GetDataModel | ${SED_CR}`	
 		if [ "x${DM2}" != "x" ]
 		  then
 		    echo "Data model flag -d32 was accepted."

@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../../../..
+MODULE  = security-xmldsig
 PACKAGE = com.sun.org.apache.xml
 PRODUCT = xml
 include $(BUILDDIR)/common/Defs.gmk

@@ -117,26 +117,57 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
         }
     }
 
-    // NOTE: This method is called by privileged threads.
-    //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    void handleSelected(final String file) {
-        final FileDialog fileDialog = (FileDialog)target;
-        WToolkit.executeOnEventHandlerThread(fileDialog, new Runnable() {
-            public void run() {
-                int index = file.lastIndexOf(java.io.File.separatorChar);/*2509*//*ibm*/
-                String dir;
+    /*
+     * The function converts the file names (the buffer parameter)
+     * in the Windows format into the Java format and saves the results
+     * into the FileDialog instance.
+     *
+     * If it's the multi-select mode, the buffer contains the current
+     * directory followed by the short names of the files.
+     * The directory and file name strings are NULL separated.
+     * If it's the single-select mode, the buffer doesn't have the NULL
+     * separator between the path and the file name.
+     *
+     * NOTE: This method is called by privileged threads.
+     *       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
+     */
+    void handleSelected(final char[] buffer)
+    {
+        String[] wFiles = (new String(buffer)).split("\0"); // NULL is the delimiter
+        boolean multiple = (wFiles.length > 1);
 
-                if (index == -1) {
-                    dir = "."+java.io.File.separator;
-                    fileDialog.setFile(file);
-                }
-                else {
-                    dir = file.substring(0, index + 1);
-                    fileDialog.setFile(file.substring(index + 1));
-                }
-                fileDialog.setDirectory(dir);
-                fileDialog.hide();
+        String jDirectory = null;
+        String jFile = null;
+        String jFiles[] = null;
+
+        if (multiple) {
+            jDirectory = wFiles[0];
+            jFiles = new String[wFiles.length - 1];
+            System.arraycopy(wFiles, 1, jFiles, 0, jFiles.length);
+            jFile = jFiles[1]; // choose any file
+        } else {
+            int index = wFiles[0].lastIndexOf(java.io.File.separatorChar);
+            if (index == -1) {
+                jDirectory = "."+java.io.File.separator;
+                jFile = wFiles[0];
+            } else {
+                jDirectory = wFiles[0].substring(0, index + 1);
+                jFile = wFiles[0].substring(index + 1);
             }
+            jFiles = new String[] { jFile };
+        }
+
+        final FileDialog fileDialog = (FileDialog)target;
+        AWTAccessor.FileDialogAccessor fileDialogAccessor = AWTAccessor.getFileDialogAccessor();
+
+        fileDialogAccessor.setDirectory(fileDialog, jDirectory);
+        fileDialogAccessor.setFile(fileDialog, jFile);
+        fileDialogAccessor.setFiles(fileDialog, jDirectory, jFiles);
+
+        WToolkit.executeOnEventHandlerThread(fileDialog, new Runnable() {
+             public void run() {
+                 fileDialog.hide();
+             }
         });
     } // handleSelected()
 
@@ -144,11 +175,14 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     void handleCancel() {
         final FileDialog fileDialog = (FileDialog)target;
+
+        AWTAccessor.getFileDialogAccessor().setFile(fileDialog, null);
+        AWTAccessor.getFileDialogAccessor().setFiles(fileDialog, null, null);
+
         WToolkit.executeOnEventHandlerThread(fileDialog, new Runnable() {
-            public void run() {
-                fileDialog.setFile(null);
-                fileDialog.hide();
-            }
+             public void run() {
+                 fileDialog.hide();
+             }
         });
     } // handleCancel()
 
@@ -244,4 +278,9 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     public void createScreenSurface(boolean isResize) {}
     @Override
     public void replaceSurfaceData() {}
+
+    public boolean isMultipleMode() {
+        FileDialog fileDialog = (FileDialog)target;
+        return AWTAccessor.getFileDialogAccessor().isMultipleMode(fileDialog);
+    }
 }

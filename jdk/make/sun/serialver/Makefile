@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = serialver
 PACKAGE = sun.tools.serialver
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

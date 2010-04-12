@@ -54,7 +54,7 @@ _JUNK_ := $(shell echo >&2 ""\
  "Please use 'gnumake jvmg' to build debug JVM.                            \n" \
  "-------------------------------------------------------------------------\n")
 
-G_SUFFIX =
+G_SUFFIX = _g
 VERSION = debug
 SYSDEFS += -DASSERT -DDEBUG
 PICFLAGS = DEFAULT

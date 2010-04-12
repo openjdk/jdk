@@ -26,7 +26,6 @@
 package java.lang;
 
 import java.lang.annotation.*;
-import java.lang.annotation.ElementType;
 import static java.lang.annotation.ElementType.*;
 
 /**
@@ -45,7 +44,7 @@ import static java.lang.annotation.ElementType.*;
  * @since 1.5
  * @author Josh Bloch
  */
-@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})
+@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, TYPE_PARAMETER})
 @Retention(RetentionPolicy.SOURCE)
 public @interface SuppressWarnings {
     /**

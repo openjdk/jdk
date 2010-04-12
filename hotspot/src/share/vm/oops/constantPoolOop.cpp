@@ -110,7 +110,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
         }
 
         if (!PENDING_EXCEPTION->
-              is_a(SystemDictionary::linkageError_klass())) {
+              is_a(SystemDictionary::LinkageError_klass())) {
           // Just throw the exception and don't prevent these classes from
           // being loaded due to virtual machine errors like StackOverflow
           // and OutOfMemoryError, etc, or if the thread was hit by stop()
@@ -262,25 +262,48 @@ symbolOop constantPoolOopDesc::impl_signature_ref_at(int which, bool uncached) {
 
 
 int constantPoolOopDesc::impl_name_and_type_ref_index_at(int which, bool uncached) {
-  jint ref_index = field_or_method_at(which, uncached);
+  int i = which;
+  if (!uncached && cache() != NULL) {
+    if (constantPoolCacheOopDesc::is_secondary_index(which))
+      // Invokedynamic indexes are always processed in native order
+      // so there is no question of reading a native u2 in Java order here.
+      return cache()->main_entry_at(which)->constant_pool_index();
+    // change byte-ordering and go via cache
+    i = remap_instruction_operand_from_cache(which);
+  } else {
+    if (tag_at(which).is_name_and_type())
+      // invokedynamic index is a simple name-and-type
+      return which;
+  }
+  assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
+  jint ref_index = *int_at_addr(i);
   return extract_high_short_from_int(ref_index);
 }
 
 
 int constantPoolOopDesc::impl_klass_ref_index_at(int which, bool uncached) {
-  jint ref_index = field_or_method_at(which, uncached);
+  guarantee(!constantPoolCacheOopDesc::is_secondary_index(which),
+            "an invokedynamic instruction does not have a klass");
+  int i = which;
+  if (!uncached && cache() != NULL) {
+    // change byte-ordering and go via cache
+    i = remap_instruction_operand_from_cache(which);
+  }
+  assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
+  jint ref_index = *int_at_addr(i);
   return extract_low_short_from_int(ref_index);
 }
 
 
 
-int constantPoolOopDesc::map_instruction_operand_to_index(int operand) {
-  if (constantPoolCacheOopDesc::is_secondary_index(operand)) {
-    return cache()->main_entry_at(operand)->constant_pool_index();
-  }
+int constantPoolOopDesc::remap_instruction_operand_from_cache(int operand) {
+  // Operand was fetched by a stream using get_Java_u2, yet was stored
+  // by Rewriter::rewrite_member_reference in native order.
+  // So now we have to fix the damage by swapping back to native order.
   assert((int)(u2)operand == operand, "clean u2");
-  int index = Bytes::swap_u2(operand);
-  return cache()->entry_at(index)->constant_pool_index();
+  int cpc_index = Bytes::swap_u2(operand);
+  int member_index = cache()->entry_at(cpc_index)->constant_pool_index();
+  return member_index;
 }
 
 

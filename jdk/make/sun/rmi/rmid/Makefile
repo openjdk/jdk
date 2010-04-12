@@ -29,11 +29,12 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = rmi-activation
 PACKAGE = sun.rmi.activation
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-build: stubs 
+build: stubs rmid
 
 #
 # Resources
@@ -75,4 +76,5 @@ stubs: $(FILES_stubs)
 #
 include $(BUILDDIR)/common/Classes.gmk
 
-
+rmid:
+	$(call make-launcher, rmid, sun.rmi.server.Activation, , )

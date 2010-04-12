@@ -35,7 +35,7 @@ case "$OS" in
     PATHSEP=":"
     FILESEP="/"
     ;;
-  Windows* )
+  Windows* | CYGWIN* )
     PATHSEP=";"
     FILESEP="\\"
     ;;
@@ -63,7 +63,7 @@ else
 fi
 
 if [ -d "${JRE_EXT_DIR}" ]; then
-    NEW_EXT_DIR=${JRE_EXT_DIR}${PATHSEP}${TESTSRC}
+    NEW_EXT_DIR="${JRE_EXT_DIR}${PATHSEP}${TESTSRC}"
 else
     NEW_EXT_DIR=${TESTSRC}
 fi

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 // machine.
 class ciSymbol : public ciObject {
   CI_PACKAGE_ACCESS
+  // These friends all make direct use of get_symbolOop:
   friend class ciEnv;
   friend class ciInstanceKlass;
   friend class ciSignature;
@@ -38,13 +39,13 @@ private:
   ciSymbol(symbolOop s) : ciObject(s) {}
   ciSymbol(symbolHandle s);   // for use with vmSymbolHandles
 
-  symbolOop get_symbolOop() { return (symbolOop)get_oop(); }
+  symbolOop get_symbolOop() const { return (symbolOop)get_oop(); }
 
   const char* type_string() { return "ciSymbol"; }
 
   void print_impl(outputStream* st);
 
-  int         byte_at(int i);
+  // This is public in symbolOop but private here, because the base can move:
   jbyte*      base();
 
   // Make a ciSymbol from a C string (implementation).
@@ -54,6 +55,15 @@ public:
   // The text of the symbol as a null-terminated utf8 string.
   const char* as_utf8();
   int         utf8_length();
+
+  // Return the i-th utf8 byte, where i < utf8_length
+  int         byte_at(int i);
+
+  // Tests if the symbol starts with the given prefix.
+  bool starts_with(const char* prefix, int len) const;
+
+  // Determines where the symbol contains the given substring.
+  int index_of_at(int i, const char* str, int len) const;
 
   // What kind of ciObject is this?
   bool is_symbol() { return true; }

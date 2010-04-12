@@ -28,27 +28,33 @@ import java.util.*;
 
 /**
  * Invokes Files.walkFileTree to traverse a file tree and prints
- * each of the directories and files. The -L option causes symbolic
- * links to be followed.
+ * each of the directories and files. The -follow option causes symbolic
+ * links to be followed and the -printCycles option will print links
+ * where the target of the link is an ancestor directory.
  */
 
 public class PrintFileTree {
 
     public static void main(String[] args) throws Exception {
         boolean followLinks = false;
-        Path dir;
-
-        if (args[0].equals("-L")) {
-            followLinks = true;
-            dir = Paths.get(args[1]);
-        } else {
-            dir = Paths.get(args[0]);
+        boolean printCycles = false;
+        int i = 0;
+        while (i < (args.length-1)) {
+            switch (args[i]) {
+                case "-follow"      : followLinks = true; break;
+                case "-printCycles" : printCycles = true;  break;
+                default:
+                    throw new RuntimeException(args[i] + " not recognized");
+            }
+            i++;
         }
+        Path dir = Paths.get(args[i]);
 
         Set<FileVisitOption> options = new HashSet<FileVisitOption>();
         if (followLinks)
             options.add(FileVisitOption.FOLLOW_LINKS);
 
+        final boolean reportCycles = printCycles;
         Files.walkFileTree(dir, options, Integer.MAX_VALUE, new FileVisitor<FileRef>() {
             public FileVisitResult preVisitDirectory(FileRef dir) {
                 System.out.println(dir);
@@ -59,7 +65,8 @@ public class PrintFileTree {
                 return FileVisitResult.CONTINUE;
             }
             public FileVisitResult visitFile(FileRef file, BasicFileAttributes attrs) {
-                System.out.println(file);
+                if (!attrs.isDirectory() || reportCycles)
+                    System.out.println(file);
                 return FileVisitResult.CONTINUE;
             }
             public FileVisitResult postVisitDirectory(FileRef dir, IOException exc) {

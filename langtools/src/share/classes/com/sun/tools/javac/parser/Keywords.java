@@ -51,12 +51,10 @@ public class Keywords {
         return instance;
     }
 
-    private final Log log;
     private final Names names;
 
     protected Keywords(Context context) {
         context.put(keywordsKey, this);
-        log = Log.instance(context);
         names = Names.instance(context);
 
         for (Token t : Token.values()) {

@@ -390,6 +390,30 @@ public final class AWTAccessor {
         boolean isTrayIconPopup(PopupMenu popupMenu);
     }
 
+    /*
+     * An accessor for the FileDialog class
+     */
+    public interface FileDialogAccessor {
+        /*
+         * Sets the files the user selects
+         */
+        void setFiles(FileDialog fileDialog, String directory, String files[]);
+
+        /*
+         * Sets the file the user selects
+         */
+        void setFile(FileDialog fileDialog, String file);
+
+        /*
+         * Sets the directory the user selects
+         */
+        void setDirectory(FileDialog fileDialog, String directory);
+
+        /*
+         * Returns whether the file dialog allows the multiple file selection.
+         */
+        boolean isMultipleMode(FileDialog fileDialog);
+    }
 
     /*
      * The java.awt.Component class accessor object.
@@ -430,6 +454,11 @@ public final class AWTAccessor {
      * The java.awt.PopupMenu class accessor object.
      */
     private static PopupMenuAccessor popupMenuAccessor;
+
+    /*
+     * The java.awt.FileDialog class accessor object.
+     */
+    private static FileDialogAccessor fileDialogAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -567,4 +596,22 @@ public final class AWTAccessor {
         }
         return popupMenuAccessor;
     }
+
+    /*
+     * Set an accessor object for the java.awt.FileDialog class.
+     */
+    public static void setFileDialogAccessor(FileDialogAccessor fda) {
+        fileDialogAccessor = fda;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.FileDialog class.
+     */
+    public static FileDialogAccessor getFileDialogAccessor() {
+        if (fileDialogAccessor == null) {
+            unsafe.ensureClassInitialized(FileDialog.class);
+        }
+        return fileDialogAccessor;
+    }
+
 }

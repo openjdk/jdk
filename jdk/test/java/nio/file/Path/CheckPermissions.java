@@ -197,7 +197,7 @@ public class CheckPermissions {
     }
 
     public static void main(String[] args) throws IOException {
-        Path dir = Paths.get(System.getProperty("test.src", "."));
+        Path dir = Paths.get(System.getProperty("test.dir", "."));
         Path file = dir.resolve("file1234").createFile();
         try {
             LoggingSecurityManager.install();

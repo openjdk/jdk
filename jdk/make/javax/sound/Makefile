@@ -26,6 +26,7 @@
 # WARNING: Make sure the OPENJDK plugs are up-to-date, see make/common/internal/BinaryPlugs.gmk
 
 BUILDDIR = ../..
+MODULE  = sound
 PACKAGE = javax.sound
 LIBRARY = jsound
 PRODUCT = sun
@@ -158,6 +159,7 @@ vpath %.cpp $(PLATFORM_SRC)/native/com/sun/media/sound
 # Include rules
 #
 include $(BUILDDIR)/common/Library.gmk
+include $(BUILDDIR)/common/Subdirs.gmk
 
 #
 # Rules that copy files.

@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = base
 PACKAGE = java.security
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -38,11 +39,9 @@ AUTO_FILES_JAVA_DIRS = java/security
 #
 
 PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security
-SUNPKCS11   =
 
 ifeq ($(PLATFORM), solaris)
 PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-solaris
-SUNPKCS11   = sunpkcs11
 
 else # PLATFORM
 
@@ -57,9 +56,6 @@ endif # PLATFORM
 
 PROPS_BUILD = $(LIBDIR)/security/java.security
 
-SUNPKCS11_SRC   = $(TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
-SUNPKCS11_BUILD = $(LIBDIR)/security/sunpkcs11-solaris.cfg
-
 POLICY_SRC =	$(TOPDIR)/src/share/lib/security/java.policy
 POLICY_BUILD = $(LIBDIR)/security/java.policy
 
@@ -73,22 +69,17 @@ FILES_class = $(FILES_java:%.java=$(CLASSBINDIR)/%.class)
 #
 include $(BUILDDIR)/common/Rules.gmk
 
-build: properties $(SUNPKCS11) policy cacerts
+build: properties policy cacerts
 
 install: all
 
 properties: classes  $(PROPS_BUILD)
-
-sunpkcs11: classes $(SUNPKCS11_BUILD)
 
 policy: classes  $(POLICY_BUILD)
 
 cacerts: classes $(CACERTS_BUILD)
 
 $(PROPS_BUILD): $(PROPS_SRC)
-	$(install-file)
-
-$(SUNPKCS11_BUILD): $(SUNPKCS11_SRC)
 	$(install-file)
 
 $(POLICY_BUILD): $(POLICY_SRC)
@@ -99,7 +90,7 @@ $(CACERTS_BUILD): $(CACERTS_SRC)
 
 clean clobber:: .delete.classlist
 	$(RM) -r $(CLASSBINDIR)/java/security
-	$(RM) $(PROPS_BUILD) $(POLICY_BUILD) $(CACERTS_BUILD) $(SUNPKCS11_BUILD)
+	$(RM) $(PROPS_BUILD) $(POLICY_BUILD) $(CACERTS_BUILD)
 
 # Additional Rule for building sun.security.util
 $(CLASSBINDIR)/%.class: $(SHARE_SRC)/sun/%.java

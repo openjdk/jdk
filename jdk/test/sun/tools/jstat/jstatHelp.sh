@@ -35,7 +35,7 @@ JSTAT="${TESTJAVA}/bin/jstat"
 rm -f jstat.out 2>/dev/null
 ${JSTAT} -? > jstat.out 2>&1
 
-diff jstat.out ${TESTSRC}/usage.out
+diff -w jstat.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
   echo "Output of jstat -? differ from expected output. Failed."
@@ -45,7 +45,7 @@ fi
 rm -f jstat.out 2>/dev/null
 ${JSTAT} -help > jstat.out 2>&1
 
-diff jstat.out ${TESTSRC}/usage.out
+diff -w jstat.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
   echo "Output of jstat -help differ from expected output. Failed."

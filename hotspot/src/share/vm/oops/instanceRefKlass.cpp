@@ -78,9 +78,9 @@ void instanceRefKlass::oop_follow_contents(oop obj) {
 
 #ifndef SERIALGC
 template <class T>
-static void specialized_oop_follow_contents(instanceRefKlass* ref,
-                                            ParCompactionManager* cm,
-                                            oop obj) {
+void specialized_oop_follow_contents(instanceRefKlass* ref,
+                                     ParCompactionManager* cm,
+                                     oop obj) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(
@@ -397,7 +397,7 @@ void instanceRefKlass::update_nonstatic_oop_maps(klassOop k) {
 
   // Check that we have the right class
   debug_only(static bool first_time = true);
-  assert(k == SystemDictionary::reference_klass() && first_time,
+  assert(k == SystemDictionary::Reference_klass() && first_time,
          "Invalid update of maps");
   debug_only(first_time = false);
   assert(ik->nonstatic_oop_map_count() == 1, "just checking");

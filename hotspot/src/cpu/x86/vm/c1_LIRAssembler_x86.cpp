@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,22 +301,25 @@ void LIR_Assembler::osr_entry() {
   Register OSR_buf = osrBufferPointer()->as_pointer_register();
   { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
     int monitor_offset = BytesPerWord * method()->max_locals() +
-      (BasicObjectLock::size() * BytesPerWord) * (number_of_locks - 1);
+      (2 * BytesPerWord) * (number_of_locks - 1);
+    // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
+    // the OSR buffer using 2 word entries: first the lock and then
+    // the oop.
     for (int i = 0; i < number_of_locks; i++) {
-      int slot_offset = monitor_offset - ((i * BasicObjectLock::size()) * BytesPerWord);
+      int slot_offset = monitor_offset - ((i * 2) * BytesPerWord);
 #ifdef ASSERT
       // verify the interpreter's monitor has a non-null object
       {
         Label L;
-        __ cmpptr(Address(OSR_buf, slot_offset + BasicObjectLock::obj_offset_in_bytes()), (int32_t)NULL_WORD);
+        __ cmpptr(Address(OSR_buf, slot_offset + 1*BytesPerWord), (int32_t)NULL_WORD);
         __ jcc(Assembler::notZero, L);
         __ stop("locked object is NULL");
         __ bind(L);
       }
 #endif
-      __ movptr(rbx, Address(OSR_buf, slot_offset + BasicObjectLock::lock_offset_in_bytes()));
+      __ movptr(rbx, Address(OSR_buf, slot_offset + 0));
       __ movptr(frame_map()->address_for_monitor_lock(i), rbx);
-      __ movptr(rbx, Address(OSR_buf, slot_offset + BasicObjectLock::obj_offset_in_bytes()));
+      __ movptr(rbx, Address(OSR_buf, slot_offset + 1*BytesPerWord));
       __ movptr(frame_map()->address_for_monitor_object(i), rbx);
     }
   }
@@ -415,13 +418,12 @@ int LIR_Assembler::initial_frame_size_in_bytes() {
 }
 
 
-void LIR_Assembler::emit_exception_handler() {
+int LIR_Assembler::emit_exception_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
   // failures when searching for the corresponding bci => add a nop
   // (was bug 5/14/1999 - gri)
-
   __ nop();
 
   // generate code for exception handler
@@ -429,61 +431,36 @@ void LIR_Assembler::emit_exception_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
-    return;
+    return -1;
   }
-#ifdef ASSERT
+
   int offset = code_offset();
-#endif // ASSERT
 
-  compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
-
-  // if the method does not have an exception handler, then there is
-  // no reason to search for one
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
-    // the exception oop and pc are in rax, and rdx
-    // no other registers need to be preserved, so invalidate them
-    __ invalidate_registers(false, true, true, false, true, true);
-
-    // check that there is really an exception
-    __ verify_not_null_oop(rax);
-
-    // search an exception handler (rax: exception oop, rdx: throwing pc)
-    __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_nofpu_id)));
-
-    // if the call returns here, then the exception handler for particular
-    // exception doesn't exist -> unwind activation and forward exception to caller
-  }
-
-  // the exception oop is in rax,
+  // the exception oop and pc are in rax, and rdx
   // no other registers need to be preserved, so invalidate them
-  __ invalidate_registers(false, true, true, true, true, true);
+  __ invalidate_registers(false, true, true, false, true, true);
 
   // check that there is really an exception
   __ verify_not_null_oop(rax);
 
-  // unlock the receiver/klass if necessary
-  // rax,: exception
-  ciMethod* method = compilation()->method();
-  if (method->is_synchronized() && GenerateSynchronizationCode) {
-    monitorexit(FrameMap::rbx_oop_opr, FrameMap::rcx_opr, SYNC_header, 0, rax);
-  }
+  // search an exception handler (rax: exception oop, rdx: throwing pc)
+  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_nofpu_id)));
 
-  // unwind activation and forward exception to caller
-  // rax,: exception
-  __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+  __ stop("should not reach here");
 
   assert(code_offset() - offset <= exception_handler_size, "overflow");
-
   __ end_a_stub();
+
+  return offset;
 }
 
-void LIR_Assembler::emit_deopt_handler() {
+
+int LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
   // failures when searching for the corresponding bci => add a nop
   // (was bug 5/14/1999 - gri)
-
   __ nop();
 
   // generate code for exception handler
@@ -491,23 +468,19 @@ void LIR_Assembler::emit_deopt_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
-    return;
+    return -1;
   }
-#ifdef ASSERT
+
   int offset = code_offset();
-#endif // ASSERT
-
-  compilation()->offsets()->set_value(CodeOffsets::Deopt, code_offset());
-
   InternalAddress here(__ pc());
-  __ pushptr(here.addr());
 
+  __ pushptr(here.addr());
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
   assert(code_offset() - offset <= deopt_handler_size, "overflow");
-
   __ end_a_stub();
 
+  return offset;
 }
 
 
@@ -600,7 +573,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   }
 
   // Pop the stack before the safepoint code
-  __ leave();
+  __ remove_frame(initial_frame_size_in_bytes());
 
   bool result_is_oop = result->is_valid() ? result->is_oop() : false;
 
@@ -655,7 +628,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   LIR_Const* c = src->as_constant_ptr();
 
   switch (c->type()) {
-    case T_INT: {
+    case T_INT:
+    case T_ADDRESS: {
       assert(patch_code == lir_patch_none, "no patching handled here");
       __ movl(dest->as_register(), c->as_jint());
       break;
@@ -738,6 +712,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   switch (c->type()) {
     case T_INT:  // fall through
     case T_FLOAT:
+    case T_ADDRESS:
       __ movl(frame_map()->address_for_slot(dest->single_stack_ix()), c->as_jint_bits());
       break;
 
@@ -773,6 +748,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   switch (type) {
     case T_INT:    // fall through
     case T_FLOAT:
+    case T_ADDRESS:
       __ movl(as_Address(addr), c->as_jint_bits());
       break;
 
@@ -785,7 +761,13 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
           ShouldNotReachHere();
           __ movoop(as_Address(addr, noreg), c->as_jobject());
         } else {
+#ifdef _LP64
+          __ movoop(rscratch1, c->as_jobject());
+          null_check_here = code_offset();
+          __ movptr(as_Address_lo(addr), rscratch1);
+#else
           __ movoop(as_Address(addr), c->as_jobject());
+#endif
         }
       }
       break;
@@ -1118,8 +1100,14 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
       __ pushptr(frame_map()->address_for_slot(src ->single_stack_ix()));
       __ popptr (frame_map()->address_for_slot(dest->single_stack_ix()));
     } else {
+#ifndef _LP64
       __ pushl(frame_map()->address_for_slot(src ->single_stack_ix()));
       __ popl (frame_map()->address_for_slot(dest->single_stack_ix()));
+#else
+      //no pushl on 64bits
+      __ movl(rscratch1, frame_map()->address_for_slot(src ->single_stack_ix()));
+      __ movl(frame_map()->address_for_slot(dest->single_stack_ix()), rscratch1);
+#endif
     }
 
   } else if (src->is_double_stack()) {
@@ -2733,6 +2721,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
     switch (code) {
       case lir_static_call:
       case lir_optvirtual_call:
+      case lir_dynamic_call:
         offset += NativeCall::displacement_offset;
         break;
       case lir_icvirtual_call:
@@ -2748,29 +2737,40 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 
-void LIR_Assembler::call(address entry, relocInfo::relocType rtype, CodeEmitInfo* info) {
+void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   assert(!os::is_MP() || (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
-  __ call(AddressLiteral(entry, rtype));
-  add_call_info(code_offset(), info);
+  __ call(AddressLiteral(op->addr(), rtype));
+  add_call_info(code_offset(), op->info(), op->is_method_handle_invoke());
 }
 
 
-void LIR_Assembler::ic_call(address entry, CodeEmitInfo* info) {
+void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc());
   __ movoop(IC_Klass, (jobject)Universe::non_oop_word());
   assert(!os::is_MP() ||
          (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
-  __ call(AddressLiteral(entry, rh));
-  add_call_info(code_offset(), info);
+  __ call(AddressLiteral(op->addr(), rh));
+  add_call_info(code_offset(), op->info(), op->is_method_handle_invoke());
 }
 
 
 /* Currently, vtable-dispatch is only enabled for sparc platforms */
-void LIR_Assembler::vtable_call(int vtable_offset, CodeEmitInfo* info) {
+void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere();
 }
+
+
+void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
+  __ movptr(FrameMap::method_handle_invoke_SP_save_opr()->as_register(), rsp);
+}
+
+
+void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
+  __ movptr(rsp, FrameMap::method_handle_invoke_SP_save_opr()->as_register());
+}
+
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
@@ -2824,10 +2824,12 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
     } else {
       unwind_id = Runtime1::handle_exception_nofpu_id;
     }
+    __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
   } else {
-    unwind_id = Runtime1::unwind_exception_id;
+    // remove the activation
+    __ remove_frame(initial_frame_size_in_bytes());
+    __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
   }
-  __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
   // enough room for two byte trap
   __ nop();
@@ -3136,8 +3138,10 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #ifdef _LP64
   assert_different_registers(c_rarg0, dst, dst_pos, length);
+  __ movl2ptr(src_pos, src_pos); //higher 32bits must be null
   __ lea(c_rarg0, Address(src, src_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
   assert_different_registers(c_rarg1, length);
+  __ movl2ptr(dst_pos, dst_pos); //higher 32bits must be null
   __ lea(c_rarg1, Address(dst, dst_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
   __ mov(c_rarg2, length);
 
@@ -3202,7 +3206,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   Register mdo  = op->mdo()->as_register();
   __ movoop(mdo, md->constant_encoding());
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-  __ addl(counter_addr, DataLayout::counter_increment);
   Bytecodes::Code bc = method->java_code_at_bci(bci);
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
@@ -3269,14 +3272,18 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         __ jcc(Assembler::notEqual, next_test);
         __ movptr(recv_addr, recv);
         __ movl(Address(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i))), DataLayout::counter_increment);
-        if (i < (VirtualCallData::row_limit() - 1)) {
-          __ jmp(update_done);
-        }
+        __ jmp(update_done);
         __ bind(next_test);
       }
+      // Receiver did not match any saved receiver and there is no empty row for it.
+      // Increment total counter to indicate polymorphic case.
+      __ addl(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
     }
+  } else {
+    // Static call
+    __ addl(counter_addr, DataLayout::counter_increment);
   }
 }
 

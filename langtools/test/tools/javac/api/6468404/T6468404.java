@@ -105,7 +105,6 @@ class DummyFO extends SimpleJavaFileObject {
 }
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 class P extends AbstractProcessor {
     boolean ran = false;
 
@@ -144,5 +143,10 @@ class P extends AbstractProcessor {
             System.err.println();
         }
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 }

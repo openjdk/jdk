@@ -123,7 +123,26 @@ JvmtiEnvBase::is_valid() {
 }
 
 
-JvmtiEnvBase::JvmtiEnvBase() : _env_event_enable() {
+bool
+JvmtiEnvBase::use_version_1_0_semantics() {
+  int major, minor, micro;
+
+  JvmtiExport::decode_version_values(_version, &major, &minor, &micro);
+  return major == 1 && minor == 0;  // micro version doesn't matter here
+}
+
+
+bool
+JvmtiEnvBase::use_version_1_1_semantics() {
+  int major, minor, micro;
+
+  JvmtiExport::decode_version_values(_version, &major, &minor, &micro);
+  return major == 1 && minor == 1;  // micro version doesn't matter here
+}
+
+
+JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
+  _version = version;
   _env_local_storage = NULL;
   _tag_map = NULL;
   _native_method_prefix_count = 0;
@@ -508,7 +527,7 @@ JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
 JavaThread *
 JvmtiEnvBase::get_JavaThread(jthread jni_thread) {
   oop t = JNIHandles::resolve_external_guard(jni_thread);
-  if (t == NULL || !t->is_a(SystemDictionary::thread_klass())) {
+  if (t == NULL || !t->is_a(SystemDictionary::Thread_klass())) {
     return NULL;
   }
   // The following returns NULL if the thread has not yet run or is in
@@ -1250,7 +1269,7 @@ VM_GetThreadListStackTraces::doit() {
   for (int i = 0; i < _thread_count; ++i) {
     jthread jt = _thread_list[i];
     oop thread_oop = JNIHandles::resolve_external_guard(jt);
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
       set_result(JVMTI_ERROR_INVALID_THREAD);
       return;
     }

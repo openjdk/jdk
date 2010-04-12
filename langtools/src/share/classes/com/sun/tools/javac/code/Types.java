@@ -2504,7 +2504,7 @@ public class Types {
             }
             @Override
             public int hashCode() {
-                return 127 * Types.this.hashCode(t1) + Types.this.hashCode(t2);
+                return 127 * Types.hashCode(t1) + Types.hashCode(t2);
             }
             @Override
             public boolean equals(Object obj) {
@@ -3375,7 +3375,7 @@ public class Types {
             this.t = t;
         }
         public int hashCode() {
-            return Types.this.hashCode(t);
+            return Types.hashCode(t);
         }
         public boolean equals(Object obj) {
             return (obj instanceof SingletonType) &&

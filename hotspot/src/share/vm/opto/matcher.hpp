@@ -117,8 +117,9 @@ public:
   static const int base2reg[];        // Map Types to machine register types
   // Convert ideal machine register to a register mask for spill-loads
   static const RegMask *idealreg2regmask[];
-  RegMask *idealreg2spillmask[_last_machine_leaf];
-  RegMask *idealreg2debugmask[_last_machine_leaf];
+  RegMask *idealreg2spillmask  [_last_machine_leaf];
+  RegMask *idealreg2debugmask  [_last_machine_leaf];
+  RegMask *idealreg2mhdebugmask[_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
   static uint mreg2regmask_max;
@@ -297,6 +298,8 @@ public:
   // Register for MODL projection of divmodL
   static RegMask modL_proj_mask();
 
+  static const RegMask method_handle_invoke_SP_save_mask();
+
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
 
@@ -370,8 +373,8 @@ public:
   // to implement the UseStrictFP mode.
   static const bool strict_fp_requires_explicit_rounding;
 
-  // Do floats take an entire double register or just half?
-  static const bool float_in_double;
+  // Are floats conerted to double when stored to stack during deoptimization?
+  static bool float_in_double();
   // Do ints take an entire long register or just half?
   static const bool int_in_long;
 

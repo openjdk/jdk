@@ -28,6 +28,7 @@
 #
 
 BUILDDIR     = ../../..
+MODULE       = base
 LIBRARY      = hpi
 PRODUCT      = java
 THREADDIR    = native_threads

@@ -792,25 +792,25 @@ public class Items {
         }
 
         Chain jumpTrue() {
-            if (tree == null) return code.mergeChains(trueJumps, code.branch(opcode));
+            if (tree == null) return Code.mergeChains(trueJumps, code.branch(opcode));
             // we should proceed further in -Xjcov mode only
             int startpc = code.curPc();
-            Chain c = code.mergeChains(trueJumps, code.branch(opcode));
+            Chain c = Code.mergeChains(trueJumps, code.branch(opcode));
             code.crt.put(tree, CRTable.CRT_BRANCH_TRUE, startpc, code.curPc());
             return c;
         }
 
         Chain jumpFalse() {
-            if (tree == null) return code.mergeChains(falseJumps, code.branch(code.negate(opcode)));
+            if (tree == null) return Code.mergeChains(falseJumps, code.branch(Code.negate(opcode)));
             // we should proceed further in -Xjcov mode only
             int startpc = code.curPc();
-            Chain c = code.mergeChains(falseJumps, code.branch(code.negate(opcode)));
+            Chain c = Code.mergeChains(falseJumps, code.branch(Code.negate(opcode)));
             code.crt.put(tree, CRTable.CRT_BRANCH_FALSE, startpc, code.curPc());
             return c;
         }
 
         CondItem negate() {
-            CondItem c = new CondItem(code.negate(opcode), falseJumps, trueJumps);
+            CondItem c = new CondItem(Code.negate(opcode), falseJumps, trueJumps);
             c.tree = tree;
             return c;
         }

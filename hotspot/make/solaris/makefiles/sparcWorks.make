@@ -281,8 +281,6 @@ else
 OPT_CFLAGS=-xO4 $(EXTRA_OPT_CFLAGS)
 endif
 
-CFLAGS += $(GAMMADIR)/src/os_cpu/solaris_sparc/vm/solaris_sparc.il
-
 endif # sparc
 
 ifeq ("${Platform_arch_model}", "x86_32")
@@ -293,12 +291,13 @@ OPT_CFLAGS=-xtarget=pentium $(EXTRA_OPT_CFLAGS)
 # [phh] Is this still true for 6.1?
 OPT_CFLAGS+=-xO3
 
-CFLAGS += $(GAMMADIR)/src/os_cpu/solaris_x86/vm/solaris_x86_32.il
-
 endif # 32bit x86
 
 # no more exceptions
 CFLAGS/NOEX=-noex
+
+# Inline functions
+CFLAGS += $(GAMMADIR)/src/os_cpu/solaris_${Platform_arch}/vm/solaris_${Platform_arch_model}.il
 
 # Reduce code bloat by reverting back to 5.0 behavior for static initializers
 CFLAGS += -Qoption ccfe -one_static_init
@@ -311,6 +310,15 @@ PICFLAG/DEFAULT = $(PICFLAG)
 #PICFLAG/BETTER  = -pic
 PICFLAG/BETTER  = $(PICFLAG/DEFAULT)
 PICFLAG/BYFILE  = $(PICFLAG/$@)$(PICFLAG/DEFAULT$(PICFLAG/$@))
+
+# Use $(MAPFLAG:FILENAME=real_file_name) to specify a map file.
+MAPFLAG = -M FILENAME
+
+# Use $(SONAMEFLAG:SONAME=soname) to specify the intrinsic name of a shared obj
+SONAMEFLAG = -h SONAME
+
+# Build shared library
+SHARED_FLAG = -G
 
 # Would be better if these weren't needed, since we link with CC, but
 # at present removing them causes run-time errors

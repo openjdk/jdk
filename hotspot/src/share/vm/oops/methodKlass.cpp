@@ -308,6 +308,7 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+#endif //PRODUCT
 
 void methodKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_method(), "must be method");
@@ -322,8 +323,6 @@ void methodKlass::oop_print_value_on(oop obj, outputStream* st) {
   if (WizardMode) st->print("[%d,%d]", m->size_of_parameters(), m->max_locals());
   if (WizardMode && m->code() != NULL) st->print(" ((nmethod*)%p)", m->code());
 }
-
-#endif // PRODUCT
 
 const char* methodKlass::internal_name() const {
   return "{method}";

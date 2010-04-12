@@ -270,9 +270,30 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 			6:30	-	CCT	# Cocos Islands Time
 
 # Fiji
+# From Alexander Krivenyshev (2009-11-10):
+# According to Fiji Broadcasting Corporation,  Fiji plans to re-introduce DST
+# from November 29th 2009  to April 25th 2010.
+#
+# "Daylight savings to commence this month"
+# <a href="http://www.radiofiji.com.fj/fullstory.php?id=23719">
+# http://www.radiofiji.com.fj/fullstory.php?id=23719
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_fiji01.html">
+# http://www.worldtimezone.com/dst_news/dst_news_fiji01.html
+# </a>
+
+# From Steffen Thorsen (2009-11-10):
+# The Fiji Government has posted some more details about the approved
+# amendments:
+# <a href="http://www.fiji.gov.fj/publish/page_16198.shtml">
+# http://www.fiji.gov.fj/publish/page_16198.shtml
+# </a>
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
+Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
+Rule	Fiji	2010	only	-	Apr	25	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,4 +140,25 @@ public class PropertyChangeEvent extends java.util.EventObject {
      * @see #getPropagationId
      */
     private Object propagationId;
+
+    /**
+     * Returns a string representation of the object.
+     *
+     * @return a string representation of the object
+     *
+     * @since 1.7
+     */
+    public String toString() {
+        StringBuilder sb = new StringBuilder(getClass().getName());
+        sb.append("[propertyName=").append(getPropertyName());
+        appendTo(sb);
+        sb.append("; oldValue=").append(getOldValue());
+        sb.append("; newValue=").append(getNewValue());
+        sb.append("; propagationId=").append(getPropagationId());
+        sb.append("; source=").append(getSource());
+        return sb.append("]").toString();
+    }
+
+    void appendTo(StringBuilder sb) {
+    }
 }

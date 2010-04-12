@@ -39,7 +39,6 @@ import static javax.lang.model.util.ElementFilter.*;
 
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_7 )
 public class T6439826 extends AbstractProcessor {
     public static void main(String... args) {
         String testSrc = System.getProperty("test.src", ".");
@@ -74,6 +73,11 @@ public class T6439826 extends AbstractProcessor {
                 writeBadFile();
         }
         return false;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     private void writeBadFile() {

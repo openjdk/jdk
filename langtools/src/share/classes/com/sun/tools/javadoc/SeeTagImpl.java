@@ -349,12 +349,12 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
     // (int i, String s) ==> [0] = "int",  [1] = String
     // (int[][], String[]) ==> [0] = "int[][]" // [1] = "String[]"
     class ParameterParseMachine {
-        final int START = 0;
-        final int TYPE = 1;
-        final int NAME = 2;
-        final int TNSPACE = 3;  // space between type and name
-        final int ARRAYDECORATION = 4;
-        final int ARRAYSPACE = 5;
+        static final int START = 0;
+        static final int TYPE = 1;
+        static final int NAME = 2;
+        static final int TNSPACE = 3;  // space between type and name
+        static final int ARRAYDECORATION = 4;
+        static final int ARRAYSPACE = 5;
 
         String parameters;
 

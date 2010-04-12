@@ -22,17 +22,16 @@
  *
  */
 
-//
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
-//
 
-define_pd_global(bool,  ConvertSleepToYield,      true);
-define_pd_global(bool,  ShareVtableStubs,         true);
-define_pd_global(bool,  CountInterpCalls,         true);
+define_pd_global(bool, ConvertSleepToYield,      true);
+define_pd_global(bool, ShareVtableStubs,         true);
+define_pd_global(bool, CountInterpCalls,         true);
+define_pd_global(bool, NeedsDeoptSuspend,        false); // only register window machines need this
 
-define_pd_global(bool, ImplicitNullChecks,          true);  // Generate code for implicit null checks
-define_pd_global(bool, UncommonNullCast,            true);  // Uncommon-trap NULLs past to check cast
+define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for implicit null checks
+define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs past to check cast
 
 // See 4827828 for this change. There is no globals_core_i486.hpp. I can't
 // assign a different value for C2 without touching a number of files. Use
@@ -42,29 +41,24 @@ define_pd_global(bool, UncommonNullCast,            true);  // Uncommon-trap NUL
 // the uep and the vep doesn't get real alignment but just slops on by
 // only assured that the entry instruction meets the 5 byte size requirement.
 #ifdef COMPILER2
-define_pd_global(intx,  CodeEntryAlignment,       32);
+define_pd_global(intx, CodeEntryAlignment,       32);
 #else
-define_pd_global(intx,  CodeEntryAlignment,       16);
+define_pd_global(intx, CodeEntryAlignment,       16);
 #endif // COMPILER2
+define_pd_global(intx, InlineFrequencyCount,     100);
+define_pd_global(intx, InlineSmallCode,          1000);
 
-define_pd_global(bool, NeedsDeoptSuspend,           false); // only register window machines need this
-
-define_pd_global(uintx, TLABSize,                 0);
+define_pd_global(intx, StackYellowPages, 2);
+define_pd_global(intx, StackRedPages, 1);
 #ifdef AMD64
-define_pd_global(uintx, NewSize, ScaleForWordSize(2048 * K));
 // Very large C++ stack frames using solaris-amd64 optimized builds
 // due to lack of optimization caused by C++ compiler bugs
 define_pd_global(intx, StackShadowPages, SOLARIS_ONLY(20) NOT_SOLARIS(6) DEBUG_ONLY(+2));
 #else
-define_pd_global(uintx, NewSize,                  1024 * K);
 define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
 #endif // AMD64
-define_pd_global(intx,  InlineFrequencyCount,     100);
-define_pd_global(intx,  InlineSmallCode,          1000);
-define_pd_global(intx,  PreInflateSpin,           10);
 
-define_pd_global(intx, StackYellowPages, 2);
-define_pd_global(intx, StackRedPages, 1);
+define_pd_global(intx, PreInflateSpin,           10);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);

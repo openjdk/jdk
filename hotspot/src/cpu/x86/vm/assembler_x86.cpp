@@ -2251,6 +2251,7 @@ void Assembler::popf() {
   emit_byte(0x9D);
 }
 
+#ifndef _LP64 // no 32bit push/pop on amd64
 void Assembler::popl(Address dst) {
   // NOTE: this will adjust stack by 8byte on 64bits
   InstructionMark im(this);
@@ -2258,6 +2259,7 @@ void Assembler::popl(Address dst) {
   emit_byte(0x8F);
   emit_operand(rax, dst);
 }
+#endif
 
 void Assembler::prefetch_prefix(Address src) {
   prefix(src);
@@ -2428,6 +2430,7 @@ void Assembler::pushf() {
   emit_byte(0x9C);
 }
 
+#ifndef _LP64 // no 32bit push/pop on amd64
 void Assembler::pushl(Address src) {
   // Note this will push 64bit on 64bit
   InstructionMark im(this);
@@ -2435,6 +2438,7 @@ void Assembler::pushl(Address src) {
   emit_byte(0xFF);
   emit_operand(rsi, src);
 }
+#endif
 
 void Assembler::pxor(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
@@ -5591,7 +5595,12 @@ void MacroAssembler::align(int modulus) {
 }
 
 void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src) {
-  andpd(dst, as_Address(src));
+  if (reachable(src)) {
+    andpd(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    andpd(dst, Address(rscratch1, 0));
+  }
 }
 
 void MacroAssembler::andptr(Register dst, int32_t imm32) {
@@ -6078,11 +6087,21 @@ void MacroAssembler::cmpxchgptr(Register reg, Address adr) {
 }
 
 void MacroAssembler::comisd(XMMRegister dst, AddressLiteral src) {
-  comisd(dst, as_Address(src));
+  if (reachable(src)) {
+    comisd(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    comisd(dst, Address(rscratch1, 0));
+  }
 }
 
 void MacroAssembler::comiss(XMMRegister dst, AddressLiteral src) {
-  comiss(dst, as_Address(src));
+  if (reachable(src)) {
+    comiss(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    comiss(dst, Address(rscratch1, 0));
+  }
 }
 
 
@@ -7647,7 +7666,7 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 
 #ifdef ASSERT
   Label L;
-  testl(tmp, tmp);
+  testptr(tmp, tmp);
   jccb(Assembler::notZero, L);
   hlt();
   bind(L);
@@ -8441,6 +8460,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
   subptr(str1, result); // Restore counter
   shrl(str1, 1);
   addl(cnt1, str1);
+  decrementl(cnt1);
   lea(str1, Address(result, 2)); // Reload string
 
   // Load substr

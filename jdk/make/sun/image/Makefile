@@ -43,6 +43,8 @@ ifeq ($(PLATFORM),solaris)
   endif
 endif
 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

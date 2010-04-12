@@ -185,6 +185,27 @@ public class Send {
             /* TEST 5: getRemoteAddresses(Association) */
             channel.getRemoteAddresses(assoc);
 
+            /* TEST 6: Send from heap buffer to force implementation to
+             * substitute with a native buffer, then check that its position
+             * is updated correctly */
+            info = MessageInfo.createOutgoing(assoc, null, 0);
+            buffer.clear();
+            buffer.put(Util.SMALL_MESSAGE.getBytes("ISO-8859-1"));
+            buffer.flip();
+            final int offset = 1;
+            buffer.position(offset);
+            remaining = buffer.remaining();
+
+            try {
+                sent = channel.send(buffer, info);
+
+                check(sent == remaining, "sent should be equal to remaining");
+                check(buffer.position() == (offset + sent),
+                        "buffers position should have been incremented by sent");
+            } catch (IllegalArgumentException iae) {
+                fail(iae + ", Error updating buffers position");
+            }
+
         } catch (IOException ioe) {
             unexpected(ioe);
         } finally {
@@ -283,6 +304,30 @@ public class Send {
                 buffer.flip();
                 bytes = serverChannel.send(buffer, info);
                 debug("Server: sent " + bytes + "bytes");
+
+                /* TEST 6 */
+                ByteBuffer expected = ByteBuffer.allocate(Util.SMALL_BUFFER);
+                expected.put(Util.SMALL_MESSAGE.getBytes("ISO-8859-1"));
+                expected.flip();
+                final int offset = 1;
+                expected.position(offset);
+                buffer.clear();
+                do {
+                    info = serverChannel.receive(buffer, null, null);
+                    if (info == null) {
+                        fail("Server: unexpected null from receive");
+                        return;
+                    }
+                } while (!info.isComplete());
+
+                buffer.flip();
+                check(info != null, "info is null");
+                check(info.streamNumber() == 0, "message not sent on the correct stream");
+                check(info.bytes() == expected.remaining(),
+                    "bytes received not equal to message length");
+                check(info.bytes() == buffer.remaining(), "bytes != remaining");
+                check(expected.equals(buffer),
+                    "received message not the same as sent message");
 
                 clientFinishedLatch.await(10L, TimeUnit.SECONDS);
                 serverFinishedLatch.countDown();

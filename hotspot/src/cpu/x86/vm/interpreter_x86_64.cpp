@@ -277,12 +277,11 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   address entry_point = __ pc();
 
   // abstract method entry
-  // remove return address. Not really needed, since exception
-  // handling throws away expression stack
-  __ pop(rbx);
 
-  // adjust stack to what a normal return would do
-  __ mov(rsp, r13);
+  //  pop return address, reset last_sp to NULL
+  __ empty_expression_stack();
+  __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
 
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -300,7 +299,10 @@ address InterpreterGenerator::generate_method_handle_entry(void) {
   if (!EnableMethodHandles) {
     return generate_abstract_entry();
   }
-  return generate_abstract_entry(); //6815692//
+
+  address entry_point = MethodHandles::generate_method_handle_interpreter_entry(_masm);
+
+  return entry_point;
 }
 
 

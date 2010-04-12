@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = logging
 PACKAGE = java.util.logging
 PRODUCT = java
 include $(BUILDDIR)/common/Defs.gmk

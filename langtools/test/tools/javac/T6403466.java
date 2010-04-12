@@ -41,7 +41,6 @@ import com.sun.tools.javac.api.JavacTool;
 
 @Wrap
 @SupportedAnnotationTypes("Wrap")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class T6403466 extends AbstractProcessor {
 
     static final String testSrcDir = System.getProperty("test.src");
@@ -73,23 +72,30 @@ public class T6403466 extends AbstractProcessor {
     }
 
     public boolean process(Set<? extends TypeElement> annos, RoundEnvironment rEnv) {
-        Filer filer = processingEnv.getFiler();
-        for (TypeElement anno: annos) {
-            Set<? extends Element> elts = rEnv.getElementsAnnotatedWith(anno);
-            System.err.println("anno: " + anno);
-            System.err.println("elts: " + elts);
-            for (TypeElement te: ElementFilter.typesIn(elts)) {
-                try {
-                    Writer out = filer.createSourceFile(te.getSimpleName() + "Wrapper").openWriter();
-                    out.write("class " + te.getSimpleName() + "Wrapper { }");
-                    out.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+        if (!rEnv.processingOver()) {
+            Filer filer = processingEnv.getFiler();
+            for (TypeElement anno: annos) {
+                Set<? extends Element> elts = rEnv.getElementsAnnotatedWith(anno);
+                System.err.println("anno: " + anno);
+                System.err.println("elts: " + elts);
+                for (TypeElement te: ElementFilter.typesIn(elts)) {
+                    try {
+                        Writer out = filer.createSourceFile(te.getSimpleName() + "Wrapper").openWriter();
+                        out.write("class " + te.getSimpleName() + "Wrapper { }");
+                        out.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
-            }
 
+            }
         }
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 }
 

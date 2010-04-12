@@ -605,8 +605,12 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     }
 
     iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&remote_addr, &port);
+#ifdef AF_INET6
     family = (*env)->GetIntField(env, iaObj, ia_familyID) == IPv4?
         AF_INET : AF_INET6;
+#else
+    family = AF_INET;
+#endif
     if (family == AF_INET) { /* this api can't handle IPV6 addresses */
         int address = (*env)->GetIntField(env, iaObj, ia_addressID);
         (*env)->SetIntField(env, addressObj, ia_addressID, address);
@@ -812,9 +816,9 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
     jboolean retry;
 #ifdef __linux__
     jboolean connected = JNI_FALSE;
-    jobject connectedAddress;
-    jint connectedPort;
-    jlong prevTime;
+    jobject connectedAddress = NULL;
+    jint connectedPort = 0;
+    jlong prevTime = 0;
 #endif
 
     if (IS_NULL(fdObj)) {
@@ -1186,6 +1190,7 @@ static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject val
  * Set outgoing multicast interface designated by a NetworkInterface.
  * Throw exception if failed.
  */
+#ifdef AF_INET6
 static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject value) {
     static jfieldID ni_indexID;
     int index;
@@ -1222,6 +1227,7 @@ static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject val
     }
 #endif
 }
+#endif /* AF_INET6 */
 
 /*
  * Set outgoing multicast interface designated by an InetAddress.
@@ -1251,6 +1257,7 @@ static void mcast_set_if_by_addr_v4(JNIEnv *env, jobject this, int fd, jobject v
  * Set outgoing multicast interface designated by an InetAddress.
  * Throw exception if failed.
  */
+#ifdef AF_INET6
 static void mcast_set_if_by_addr_v6(JNIEnv *env, jobject this, int fd, jobject value) {
     static jclass ni_class;
     if (ni_class == NULL) {
@@ -1272,6 +1279,7 @@ static void mcast_set_if_by_addr_v6(JNIEnv *env, jobject this, int fd, jobject v
 
     mcast_set_if_by_if_v6(env, this, fd, value);
 }
+#endif
 
 /*
  * Sets the multicast interface.
@@ -1307,6 +1315,7 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
         /*
          * value is an InetAddress.
          */
+#ifdef AF_INET6
 #ifdef __solaris__
         if (ipv6_available()) {
             mcast_set_if_by_addr_v6(env, this, fd, value);
@@ -1320,12 +1329,16 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
             mcast_set_if_by_addr_v6(env, this, fd, value);
         }
 #endif
+#else
+        mcast_set_if_by_addr_v4(env, this, fd, value);
+#endif  /* AF_INET6 */
     }
 
     if (opt == java_net_SocketOptions_IP_MULTICAST_IF2) {
         /*
          * value is a NetworkInterface.
          */
+#ifdef AF_INET6
 #ifdef __solaris__
         if (ipv6_available()) {
             mcast_set_if_by_if_v6(env, this, fd, value);
@@ -1339,6 +1352,9 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
             mcast_set_if_by_if_v6(env, this, fd, value);
         }
 #endif
+#else
+        mcast_set_if_by_if_v4(env, this, fd, value);
+#endif  /* AF_INET6 */
     }
 }
 
@@ -1368,6 +1384,7 @@ static void mcast_set_loop_v4(JNIEnv *env, jobject this, int fd, jobject value) 
 /*
  * Enable/disable local loopback of multicast datagrams.
  */
+#ifdef AF_INET6
 static void mcast_set_loop_v6(JNIEnv *env, jobject this, int fd, jobject value) {
     jclass cls;
     jfieldID fid;
@@ -1397,12 +1414,14 @@ static void mcast_set_loop_v6(JNIEnv *env, jobject this, int fd, jobject value) 
     }
 #endif
 }
+#endif  /* AF_INET6 */
 
 /*
  * Sets the multicast loopback mode.
  */
 static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
                                   jint opt, jobject value) {
+#ifdef AF_INET6
 #ifdef __solaris__
     if (ipv6_available()) {
         mcast_set_loop_v6(env, this, fd, value);
@@ -1416,6 +1435,9 @@ static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
         mcast_set_loop_v6(env, this, fd, value);
     }
 #endif
+#else
+    mcast_set_loop_v4(env, this, fd, value);
+#endif  /* AF_INET6 */
 }
 
 /*
@@ -1838,7 +1860,7 @@ Java_java_net_PlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
     if (opt == java_net_SocketOptions_SO_BINDADDR) {
         /* find out local IP address */
         SOCKADDR him;
-        int len = 0;
+        socklen_t len = 0;
         int port;
         jobject iaObj;
 
@@ -1941,6 +1963,7 @@ static void setTTL(JNIEnv *env, int fd, jint ttl) {
 /*
  * Set hops limit for a socket. Throw exception if failed.
  */
+#ifdef AF_INET6
 static void setHopLimit(JNIEnv *env, int fd, jint ttl) {
     int ittl = (int)ttl;
     if (JVM_SetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
@@ -1949,6 +1972,7 @@ static void setHopLimit(JNIEnv *env, int fd, jint ttl) {
                        "Error setting socket option");
     }
 }
+#endif
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
@@ -1971,6 +1995,7 @@ Java_java_net_PlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobject this,
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
     }
     /* setsockopt to be correct ttl */
+#ifdef AF_INET6
 #ifdef __solaris__
     if (ipv6_available()) {
         setHopLimit(env, fd, ttl);
@@ -1986,7 +2011,10 @@ Java_java_net_PlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobject this,
             (*env)->SetIntField(env, this, pdsi_ttlID, ttl);
         }
     }
-#endif
+#endif  // __linux__
+#else
+    setTTL(env, fd, ttl);
+#endif  /* AF_INET6 */
 }
 
 /*

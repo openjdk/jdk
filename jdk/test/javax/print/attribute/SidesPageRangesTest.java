@@ -64,7 +64,7 @@ public class SidesPageRangesTest {
                         System.out.println("\nPageRanges Attribute category is supported");
                 } else {
                         System.out.println("\nPageRanges Attribute category is not supported. terminating...");
-                        System.exit(1);
+                        return;
                 }
 
                 flavors = defService.getSupportedDocFlavors();

@@ -27,7 +27,6 @@ package sun.dyn;
 
 import java.dyn.JavaMethodHandle;
 import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
 import java.dyn.MethodType;
 
 /**
@@ -42,16 +41,21 @@ public class FilterOneArgument extends JavaMethodHandle {
     protected final MethodHandle filter;  // Object -> Object
     protected final MethodHandle target;  // Object -> Object
 
-    protected Object entryPoint(Object argument) {
-        Object filteredArgument = filter.<Object>invoke(argument);
-        return target.<Object>invoke(filteredArgument);
+    @Override
+    public String toString() {
+        return target.toString();
     }
 
-    private static final MethodHandle entryPoint =
-        MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "entryPoint", MethodType.makeGeneric(1));
+    protected Object invoke(Object argument) throws Throwable {
+        Object filteredArgument = filter.invoke(argument);
+        return target.invoke(filteredArgument);
+    }
+
+    private static final MethodHandle INVOKE =
+        MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "invoke", MethodType.genericMethodType(1));
 
     protected FilterOneArgument(MethodHandle filter, MethodHandle target) {
-        super(entryPoint);
+        super(INVOKE);
         this.filter = filter;
         this.target = target;
     }
@@ -60,10 +64,6 @@ public class FilterOneArgument extends JavaMethodHandle {
         if (filter == null)  return target;
         if (target == null)  return filter;
         return new FilterOneArgument(filter, target);
-    }
-
-    public String toString() {
-        return filter + "|>" + target;
     }
 
 //    MethodHandle make(MethodHandle filter1, MethodHandle filter2, MethodHandle target) {

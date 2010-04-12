@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = font
 PACKAGE = sun.font
 LIBRARY = fontmanager
 PRODUCT = sun
@@ -121,16 +122,21 @@ FILES_m=mapfile-vers.openjdk
 #
 #TODO: rework this to avoid hardcoding library name in the makefile
 #
-library:: $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX)
-
-$(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX):
 ifeq ($(PLATFORM), windows)
-	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@
+    FREETYPE_LIB = $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX)
+    OTHER_LDLIBS += $(FREETYPE_LIB_PATH)/freetype.lib
 else 
   ifeq ($(USING_SYSTEM_FT_LIB), false)
-	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@.6
+    FREETYPE_LIB = $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX).6
   endif
+  OTHER_LDLIBS += -L$(FREETYPE_LIB_PATH) -lfreetype
 endif 
+
+library:: $(FREETYPE_LIB)
+
+$(FREETYPE_LIB):
+	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@
+	$(install-module-file)
 endif
 
 #ifeq ($(PLATFORM), solaris)
@@ -158,7 +164,6 @@ ifndef OPENJDK
   CPPFLAGS += -I$(CLOSED_SRC)/share/native/$(PKGDIR)/t2k
 else
   CPPFLAGS += -I$(FREETYPE_HEADERS_PATH) -I$(FREETYPE_HEADERS_PATH)/freetype2
-  OTHER_LDLIBS += $(FREETYPE_LIB)
 endif
 
 ifeq ($(PLATFORM), windows)

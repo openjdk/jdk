@@ -67,9 +67,9 @@ SATBMarkQueueSet::SATBMarkQueueSet() :
 {}
 
 void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                                  int max_completed_queue,
+                                  int process_completed_threshold,
                                   Mutex* lock) {
-  PtrQueueSet::initialize(cbl_mon, fl_lock, max_completed_queue);
+  PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
   if (ParallelGCThreads > 0) {
     _par_closures = NEW_C_HEAP_ARRAY(ObjectClosure*, ParallelGCThreads);
@@ -82,9 +82,57 @@ void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   t->satb_mark_queue().handle_zero_index();
 }
 
-void SATBMarkQueueSet::set_active_all_threads(bool b) {
+#ifdef ASSERT
+void SATBMarkQueueSet::dump_active_values(JavaThread* first,
+                                          bool expected_active) {
+  gclog_or_tty->print_cr("SATB queue active values for Java Threads");
+  gclog_or_tty->print_cr(" SATB queue set: active is %s",
+                         (is_active()) ? "TRUE" : "FALSE");
+  gclog_or_tty->print_cr(" expected_active is %s",
+                         (expected_active) ? "TRUE" : "FALSE");
+  for (JavaThread* t = first; t; t = t->next()) {
+    bool active = t->satb_mark_queue().is_active();
+    gclog_or_tty->print_cr("  thread %s, active is %s",
+                           t->name(), (active) ? "TRUE" : "FALSE");
+  }
+}
+#endif // ASSERT
+
+void SATBMarkQueueSet::set_active_all_threads(bool b,
+                                              bool expected_active) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+  JavaThread* first = Threads::first();
+
+#ifdef ASSERT
+  if (_all_active != expected_active) {
+    dump_active_values(first, expected_active);
+
+    // I leave this here as a guarantee, instead of an assert, so
+    // that it will still be compiled in if we choose to uncomment
+    // the #ifdef ASSERT in a product build. The whole block is
+    // within an #ifdef ASSERT so the guarantee will not be compiled
+    // in a product build anyway.
+    guarantee(false,
+              "SATB queue set has an unexpected active value");
+  }
+#endif // ASSERT
   _all_active = b;
-  for(JavaThread* t = Threads::first(); t; t = t->next()) {
+
+  for (JavaThread* t = first; t; t = t->next()) {
+#ifdef ASSERT
+    bool active = t->satb_mark_queue().is_active();
+    if (active != expected_active) {
+      dump_active_values(first, expected_active);
+
+      // I leave this here as a guarantee, instead of an assert, so
+      // that it will still be compiled in if we choose to uncomment
+      // the #ifdef ASSERT in a product build. The whole block is
+      // within an #ifdef ASSERT so the guarantee will not be compiled
+      // in a product build anyway.
+      guarantee(false,
+                "thread has an unexpected active value in its SATB queue");
+    }
+#endif // ASSERT
     t->satb_mark_queue().set_active(b);
   }
 }
@@ -122,12 +170,12 @@ void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
 
 bool SATBMarkQueueSet::apply_closure_to_completed_buffer_work(bool par,
                                                               int worker) {
-  CompletedBufferNode* nd = NULL;
+  BufferNode* nd = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
     if (_completed_buffers_head != NULL) {
       nd = _completed_buffers_head;
-      _completed_buffers_head = nd->next;
+      _completed_buffers_head = nd->next();
       if (_completed_buffers_head == NULL) _completed_buffers_tail = NULL;
       _n_completed_buffers--;
       if (_n_completed_buffers == 0) _process_completed = false;
@@ -135,9 +183,9 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer_work(bool par,
   }
   ObjectClosure* cl = (par ? _par_closures[worker] : _closure);
   if (nd != NULL) {
-    ObjPtrQueue::apply_closure_to_buffer(cl, nd->buf, 0, _sz);
-    deallocate_buffer(nd->buf);
-    delete nd;
+    void **buf = BufferNode::make_buffer_from_node(nd);
+    ObjPtrQueue::apply_closure_to_buffer(cl, buf, 0, _sz);
+    deallocate_buffer(buf);
     return true;
   } else {
     return false;
@@ -145,13 +193,13 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer_work(bool par,
 }
 
 void SATBMarkQueueSet::abandon_partial_marking() {
-  CompletedBufferNode* buffers_to_delete = NULL;
+  BufferNode* buffers_to_delete = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
     while (_completed_buffers_head != NULL) {
-      CompletedBufferNode* nd = _completed_buffers_head;
-      _completed_buffers_head = nd->next;
-      nd->next = buffers_to_delete;
+      BufferNode* nd = _completed_buffers_head;
+      _completed_buffers_head = nd->next();
+      nd->set_next(buffers_to_delete);
       buffers_to_delete = nd;
     }
     _completed_buffers_tail = NULL;
@@ -159,10 +207,9 @@ void SATBMarkQueueSet::abandon_partial_marking() {
     DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
   }
   while (buffers_to_delete != NULL) {
-    CompletedBufferNode* nd = buffers_to_delete;
-    buffers_to_delete = nd->next;
-    deallocate_buffer(nd->buf);
-    delete nd;
+    BufferNode* nd = buffers_to_delete;
+    buffers_to_delete = nd->next();
+    deallocate_buffer(BufferNode::make_buffer_from_node(nd));
   }
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   // So we can safely manipulate these queues.

@@ -1,5 +1,5 @@
 //
-// Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1803,8 +1803,9 @@ void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
 // to implement the UseStrictFP mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
-// Do floats take an entire double register or just half?
-const bool Matcher::float_in_double = false;
+// Are floats conerted to double when stored to stack during deoptimization?
+// Sparc does not handle callee-save floats.
+bool Matcher::float_in_double() { return false; }
 
 // Do ints take an entire long register or just half?
 // Note that we if-def off of _LP64.
@@ -1882,6 +1883,10 @@ RegMask Matcher::divL_proj_mask() {
 // Register for MODL projection of divmodL
 RegMask Matcher::modL_proj_mask() {
   ShouldNotReachHere();
+  return RegMask();
+}
+
+const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
 
@@ -6664,7 +6669,7 @@ instruct cmovII_imm(cmpOp cmp, flagsReg icc, iRegI dst, immI11 src) %{
   ins_pipe(ialu_imm);
 %}
 
-instruct cmovII_U_reg(cmpOpU cmp, flagsRegU icc, iRegI dst, iRegI src) %{
+instruct cmovIIu_reg(cmpOpU cmp, flagsRegU icc, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp icc) (Binary dst src)));
   ins_cost(150);
   size(4);
@@ -6673,7 +6678,7 @@ instruct cmovII_U_reg(cmpOpU cmp, flagsRegU icc, iRegI dst, iRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct cmovII_U_imm(cmpOpU cmp, flagsRegU icc, iRegI dst, immI11 src) %{
+instruct cmovIIu_imm(cmpOpU cmp, flagsRegU icc, iRegI dst, immI11 src) %{
   match(Set dst (CMoveI (Binary cmp icc) (Binary dst src)));
   ins_cost(140);
   size(4);
@@ -6719,6 +6724,16 @@ instruct cmovNI_reg(cmpOp cmp, flagsReg icc, iRegN dst, iRegN src) %{
   ins_pipe(ialu_reg);
 %}
 
+// This instruction also works with CmpN so we don't need cmovNN_reg.
+instruct cmovNIu_reg(cmpOpU cmp, flagsRegU icc, iRegN dst, iRegN src) %{
+  match(Set dst (CMoveN (Binary cmp icc) (Binary dst src)));
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $icc,$src,$dst" %}
+  ins_encode( enc_cmov_reg(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovNF_reg(cmpOpF cmp, flagsRegF fcc, iRegN dst, iRegN src) %{
   match(Set dst (CMoveN (Binary cmp fcc) (Binary dst src)));
   ins_cost(150);
@@ -6756,7 +6771,27 @@ instruct cmovPI_reg(cmpOp cmp, flagsReg icc, iRegP dst, iRegP src) %{
   ins_pipe(ialu_reg);
 %}
 
+instruct cmovPIu_reg(cmpOpU cmp, flagsRegU icc, iRegP dst, iRegP src) %{
+  match(Set dst (CMoveP (Binary cmp icc) (Binary dst src)));
+  ins_cost(150);
+
+  size(4);
+  format %{ "MOV$cmp  $icc,$src,$dst\t! ptr" %}
+  ins_encode( enc_cmov_reg(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovPI_imm(cmpOp cmp, flagsReg icc, iRegP dst, immP0 src) %{
+  match(Set dst (CMoveP (Binary cmp icc) (Binary dst src)));
+  ins_cost(140);
+
+  size(4);
+  format %{ "MOV$cmp  $icc,$src,$dst\t! ptr" %}
+  ins_encode( enc_cmov_imm(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovPIu_imm(cmpOpU cmp, flagsRegU icc, iRegP dst, immP0 src) %{
   match(Set dst (CMoveP (Binary cmp icc) (Binary dst src)));
   ins_cost(140);
 
@@ -6805,6 +6840,17 @@ instruct cmovFI_reg(cmpOp cmp, flagsReg icc, regF dst, regF src) %{
   ins_pipe(int_conditional_float_move);
 %}
 
+instruct cmovFIu_reg(cmpOpU cmp, flagsRegU icc, regF dst, regF src) %{
+  match(Set dst (CMoveF (Binary cmp icc) (Binary dst src)));
+  ins_cost(150);
+
+  size(4);
+  format %{ "FMOVS$cmp $icc,$src,$dst" %}
+  opcode(0x101);
+  ins_encode( enc_cmovf_reg(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(int_conditional_float_move);
+%}
+
 // Conditional move,
 instruct cmovFF_reg(cmpOpF cmp, flagsRegF fcc, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp fcc) (Binary dst src)));
@@ -6828,6 +6874,17 @@ instruct cmovDP_reg(cmpOpP cmp, flagsRegP pcc, regD dst, regD src) %{
 %}
 
 instruct cmovDI_reg(cmpOp cmp, flagsReg icc, regD dst, regD src) %{
+  match(Set dst (CMoveD (Binary cmp icc) (Binary dst src)));
+  ins_cost(150);
+
+  size(4);
+  format %{ "FMOVD$cmp $icc,$src,$dst" %}
+  opcode(0x102);
+  ins_encode( enc_cmovf_reg(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(int_conditional_double_move);
+%}
+
+instruct cmovDIu_reg(cmpOpU cmp, flagsRegU icc, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp icc) (Binary dst src)));
   ins_cost(150);
 
@@ -6867,6 +6924,17 @@ instruct cmovLP_imm(cmpOpP cmp, flagsRegP pcc, iRegL dst, immI11 src) %{
 %}
 
 instruct cmovLI_reg(cmpOp cmp, flagsReg icc, iRegL dst, iRegL src) %{
+  match(Set dst (CMoveL (Binary cmp icc) (Binary dst src)));
+  ins_cost(150);
+
+  size(4);
+  format %{ "MOV$cmp  $icc,$src,$dst\t! long" %}
+  ins_encode( enc_cmov_reg(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(ialu_reg);
+%}
+
+
+instruct cmovLIu_reg(cmpOpU cmp, flagsRegU icc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp icc) (Binary dst src)));
   ins_cost(150);
 

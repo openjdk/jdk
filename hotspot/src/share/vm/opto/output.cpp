@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,7 +678,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 #endif //_LP64
     else if( (t->base() == Type::FloatBot || t->base() == Type::FloatCon) &&
                OptoReg::is_reg(regnum) ) {
-      array->append(new_loc_value( _regalloc, regnum, Matcher::float_in_double
+      array->append(new_loc_value( _regalloc, regnum, Matcher::float_in_double()
                                    ? Location::float_in_dbl : Location::normal ));
     } else if( t->base() == Type::Int && OptoReg::is_reg(regnum) ) {
       array->append(new_loc_value( _regalloc, regnum, Matcher::int_in_long
@@ -794,6 +794,8 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
 #endif
 
   int safepoint_pc_offset = current_offset;
+  bool is_method_handle_invoke = false;
+  bool return_oop = false;
 
   // Add the safepoint in the DebugInfoRecorder
   if( !mach->is_MachCall() ) {
@@ -801,6 +803,20 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
   } else {
     mcall = mach->as_MachCall();
+
+    // Is the call a MethodHandle call?
+    if (mcall->is_MachCallJava()) {
+      if (mcall->as_MachCallJava()->_method_handle_invoke) {
+        assert(has_method_handle_invokes(), "must have been set during call generation");
+        is_method_handle_invoke = true;
+      }
+    }
+
+    // Check if a call returns an object.
+    if (mcall->return_value_is_used() &&
+        mcall->tf()->range()->field_at(TypeFunc::Parms)->isa_ptr()) {
+      return_oop = true;
+    }
     safepoint_pc_offset += mcall->ret_addr_offset();
     debug_info()->add_safepoint(safepoint_pc_offset, mcall->_oop_map);
   }
@@ -911,9 +927,9 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     ciMethod* scope_method = method ? method : _method;
     // Describe the scope here
     assert(jvms->bci() >= InvocationEntryBci && jvms->bci() <= 0x10000, "must be a valid or entry BCI");
-    assert(!jvms->should_reexecute() || depth==max_depth, "reexecute allowed only for the youngest");
+    assert(!jvms->should_reexecute() || depth == max_depth, "reexecute allowed only for the youngest");
     // Now we can describe the scope.
-    debug_info()->describe_scope(safepoint_pc_offset,scope_method,jvms->bci(),jvms->should_reexecute(),locvals,expvals,monvals);
+    debug_info()->describe_scope(safepoint_pc_offset, scope_method, jvms->bci(), jvms->should_reexecute(), is_method_handle_invoke, return_oop, locvals, expvals, monvals);
   } // End jvms loop
 
   // Mark the end of the scope set.
@@ -1080,14 +1096,26 @@ void Compile::Fill_buffer() {
   deopt_handler_req += MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
+
   if (StressCodeBuffers)
     code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
-  int total_req = code_req + pad_req + stub_req + exception_handler_req + deopt_handler_req + const_req;
+
+  int total_req =
+    code_req +
+    pad_req +
+    stub_req +
+    exception_handler_req +
+    deopt_handler_req +              // deopt handler
+    const_req;
+
+  if (has_method_handle_invokes())
+    total_req += deopt_handler_req;  // deopt MH handler
+
   CodeBuffer* cb = code_buffer();
   cb->initialize(total_req, locs_req);
 
   // Have we run out of code space?
-  if (cb->blob() == NULL) {
+  if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     turn_off_compiler(this);
     return;
   }
@@ -1308,7 +1336,7 @@ void Compile::Fill_buffer() {
 
       // Verify that there is sufficient space remaining
       cb->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
-      if (cb->blob() == NULL) {
+      if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
         turn_off_compiler(this);
         return;
       }
@@ -1424,10 +1452,17 @@ void Compile::Fill_buffer() {
     _code_offsets.set_value(CodeOffsets::Exceptions, emit_exception_handler(*cb));
     // Emit the deopt handler code.
     _code_offsets.set_value(CodeOffsets::Deopt, emit_deopt_handler(*cb));
+
+    // Emit the MethodHandle deopt handler code (if required).
+    if (has_method_handle_invokes()) {
+      // We can use the same code as for the normal deopt handler, we
+      // just need a different entry point address.
+      _code_offsets.set_value(CodeOffsets::DeoptMH, emit_deopt_handler(*cb));
+    }
   }
 
   // One last check for failed CodeBuffer::expand:
-  if (cb->blob() == NULL) {
+  if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     turn_off_compiler(this);
     return;
   }

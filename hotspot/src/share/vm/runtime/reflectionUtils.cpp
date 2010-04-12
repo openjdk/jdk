@@ -63,15 +63,15 @@ GrowableArray<FilteredField*> *FilteredFieldsMap::_filtered_fields =
 void FilteredFieldsMap::initialize() {
   int offset;
   offset = java_lang_Throwable::get_backtrace_offset();
-  _filtered_fields->append(new FilteredField(SystemDictionary::throwable_klass(), offset));
+  _filtered_fields->append(new FilteredField(SystemDictionary::Throwable_klass(), offset));
   // The latest version of vm may be used with old jdk.
   if (JDK_Version::is_gte_jdk16x_version()) {
     // The following class fields do not exist in
     // previous version of jdk.
     offset = sun_reflect_ConstantPool::cp_oop_offset();
-    _filtered_fields->append(new FilteredField(SystemDictionary::reflect_constant_pool_klass(), offset));
+    _filtered_fields->append(new FilteredField(SystemDictionary::reflect_ConstantPool_klass(), offset));
     offset = sun_reflect_UnsafeStaticFieldAccessorImpl::base_offset();
-    _filtered_fields->append(new FilteredField(SystemDictionary::reflect_unsafe_static_field_accessor_impl_klass(), offset));
+    _filtered_fields->append(new FilteredField(SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));
   }
 }
 

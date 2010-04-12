@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,8 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      * @param  oldInstance The instance to be instantiated.
      * @param  out The code output stream.
      * @return An expression whose value is <code>oldInstance</code>.
+     *
+     * @throws NullPointerException if {@code out} is {@code null}
      *
      * @see #DefaultPersistenceDelegate(String[])
      */
@@ -366,6 +368,8 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      * @param oldInstance The instance to be copied.
      * @param newInstance The instance that is to be modified.
      * @param out The stream to which any initialization statements should be written.
+     *
+     * @throws NullPointerException if {@code out} is {@code null}
      *
      * @see java.beans.Introspector#getBeanInfo
      * @see java.beans.PropertyDescriptor

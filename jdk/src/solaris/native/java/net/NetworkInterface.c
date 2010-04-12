@@ -253,8 +253,12 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
     (JNIEnv *env, jclass cls, jobject iaObj) {
 
     netif *ifs, *curr;
+#ifdef AF_INET6
     int family = (*env)->GetIntField(env, iaObj, ni_iafamilyID) == IPv4?
         AF_INET : AF_INET6;
+#else
+    int family = AF_INET;
+#endif
     jobject obj = NULL;
     jboolean match = JNI_FALSE;
 
@@ -1528,6 +1532,7 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
     strcpy((caddr_t)&(lifr.lifr_name), name_utf);
     if (ioctl(sock, SIOCGLIFMTU, (caddr_t)&lifr) >= 0) {
       ret = lifr.lifr_mtu;
+#ifdef AF_INET6
     } else {
       /* Try wIth an IPv6 socket in case the interface has only IPv6 addresses assigned to it */
       close(sock);
@@ -1547,6 +1552,12 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
                                      "IOCTL failed");
       }
     }
+#else
+    } else {
+        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                     "IOCTL failed");
+    }
+#endif
 #endif
     close(sock);
   }

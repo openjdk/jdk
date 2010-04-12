@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
 # include "incls/_precompiled.incl"
 # include "incls/_symbolOop.cpp.incl"
 
+
+// ------------------------------------------------------------------
+// symbolOopDesc::equals
+//
+// Compares the symbol with a string of the given length.
 bool symbolOopDesc::equals(const char* str, int len) const {
   int l = utf8_length();
   if (l != len) return false;
@@ -35,6 +40,48 @@ bool symbolOopDesc::equals(const char* str, int len) const {
   assert(l == -1, "we should be at the beginning");
   return true;
 }
+
+
+// ------------------------------------------------------------------
+// symbolOopDesc::starts_with
+//
+// Tests if the symbol starts with the specified prefix of the given
+// length.
+bool symbolOopDesc::starts_with(const char* prefix, int len) const {
+  if (len > utf8_length()) return false;
+  while (len-- > 0) {
+    if (prefix[len] != (char) byte_at(len))
+      return false;
+  }
+  assert(len == -1, "we should be at the beginning");
+  return true;
+}
+
+
+// ------------------------------------------------------------------
+// symbolOopDesc::index_of
+//
+// Finds if the given string is a substring of this symbol's utf8 bytes.
+// Return -1 on failure.  Otherwise return the first index where str occurs.
+int symbolOopDesc::index_of_at(int i, const char* str, int len) const {
+  assert(i >= 0 && i <= utf8_length(), "oob");
+  if (len <= 0)  return 0;
+  char first_char = str[0];
+  address bytes = (address) ((symbolOopDesc*)this)->base();
+  address limit = bytes + utf8_length() - len;  // inclusive limit
+  address scan = bytes + i;
+  if (scan > limit)
+    return -1;
+  for (;;) {
+    scan = (address) memchr(scan, first_char, (limit + 1 - scan));
+    if (scan == NULL)
+      return -1;  // not found
+    assert(scan >= bytes+i && scan <= limit, "scan oob");
+    if (memcmp(scan, str, len) == 0)
+      return (int)(scan - bytes);
+  }
+}
+
 
 char* symbolOopDesc::as_C_string(char* buf, int size) const {
   if (size > 0) {

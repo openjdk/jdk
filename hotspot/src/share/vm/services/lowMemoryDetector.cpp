@@ -32,7 +32,7 @@ volatile jint LowMemoryDetector::_disabled_count = 0;
 void LowMemoryDetector::initialize() {
   EXCEPTION_MARK;
 
-  instanceKlassHandle klass (THREAD,  SystemDictionary::thread_klass());
+  instanceKlassHandle klass (THREAD,  SystemDictionary::Thread_klass());
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 
   const char thread_name[] = "Low Memory Detector";

@@ -69,7 +69,7 @@ DRAFT = '<br><strong>DRAFT&nbsp;'$(MILESTONE)-$(BUILD_NUMBER)'</strong>'
 THIS_YEAR := $(shell $(DATE) | $(SED) -e 's/  / /g' | $(CUT) -d' ' -f6)
 TRADEMARK = &\#x2122;
 
-IGNORED_TAGS =	beaninfo revised since.unbundled spec Note ToDo
+IGNORED_TAGS =	beaninfo revised since.unbundled spec specdefault Note ToDo
 
 JLS3_URL = http://java.sun.com/docs/books/jls/
 JLS3_CITE = <a href="$(JLS3_URL)"> \

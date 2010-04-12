@@ -1,5 +1,5 @@
 #
-# Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ Instructions on adding a jvmti demo agent.
 
 Basically you want to mimic the jvmti demo agent "mtrace".
 
-* Create and populate a source directory at src/demo/jvmti
-  (Try and re-use code in agent_util area like src/demo/jvmti/mtrace)
+* Create and populate a source directory at src/share/demo/jvmti
+  (Try and re-use code in agent_util area like src/share/demo/jvmti/mtrace)
   (This should include a small README.txt document on what this demo is)
 
 * Make sure the appropriate "demo" copyright notice is added to all the
@@ -44,7 +44,7 @@ Basically you want to mimic the jvmti demo agent "mtrace".
 * Create test directory at test/demo/jvmti, create at least one test
   (Use test/demo/jvmti/mtrace as a template)
 
-* Don't forget to SCCS in all the new files
+* Don't forget to check in all the new files
 
 * Build and create images (cd make && gnumake && gnumake images)
   (Do this on Solaris, Linux, and at least one Windows platform)
@@ -54,5 +54,5 @@ Basically you want to mimic the jvmti demo agent "mtrace".
 * Run the tests: cd test/demo/jvmti && runregress .
   (Do this on Solaris, Linux, and at least one Windows platform)
 
-Contact: jk-svc-group@sun.com for more information or help.
+Contact: serviceability-dev@openjdk.java.net for more information or help.
 
