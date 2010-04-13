@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,6 +248,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* Set if the user is manually setting the Authorization or Proxy-Authorization headers */
     boolean isUserServerAuth;
     boolean isUserProxyAuth;
+
+    String serverAuthKey, proxyAuthKey;
 
     /* Progress source */
     protected ProgressSource pi;
@@ -1258,6 +1260,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         doingNTLMp2ndStage = false;
                         continue;
                     }
+                } else {
+                    inNegotiateProxy = false;
+                    doingNTLMp2ndStage = false;
+                    if (!isUserProxyAuth)
+                        requests.remove("Proxy-Authorization");
                 }
 
                 // cache proxy authentication info
@@ -1303,7 +1310,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             serverAuthentication.getAuthScheme() != NTLM) {
                             if (serverAuthentication.isAuthorizationStale (raw)) {
                                 /* we can retry with the current credentials */
-                                disconnectInternal();
+                                disconnectWeb();
                                 redirects++;
                                 requests.set(serverAuthentication.getHeaderName(),
                                             serverAuthentication.getHeaderValue(url, method));
@@ -1318,7 +1325,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         currentServerCredentials = serverAuthentication;
 
                         if (serverAuthentication != null) {
-                            disconnectInternal();
+                            disconnectWeb();
                             redirects++; // don't let things loop ad nauseum
                             setCookieHeader();
                             continue;
@@ -1327,7 +1334,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         reset ();
                         /* header not used for ntlm */
                         if (!serverAuthentication.setHeaders(this, null, raw)) {
-                            disconnectInternal();
+                            disconnectWeb();
                             throw new IOException ("Authentication failure");
                         }
                         doingNTLM2ndStage = false;
@@ -1498,11 +1505,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             throw e;
         } finally {
-            if (respCode == HTTP_PROXY_AUTH && proxyAuthentication != null) {
-                proxyAuthentication.endAuthRequest();
+            if (proxyAuthKey != null) {
+                AuthenticationInfo.endAuthRequest(proxyAuthKey);
             }
-            else if (respCode == HTTP_UNAUTHORIZED && serverAuthentication != null) {
-                serverAuthentication.endAuthRequest();
+            if (serverAuthKey != null) {
+                AuthenticationInfo.endAuthRequest(serverAuthKey);
             }
         }
     }
@@ -1715,8 +1722,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                       statusLine + "\"");
             }
         } finally  {
-            if (respCode == HTTP_PROXY_AUTH && proxyAuthentication != null) {
-                proxyAuthentication.endAuthRequest();
+            if (proxyAuthKey != null) {
+                AuthenticationInfo.endAuthRequest(proxyAuthKey);
             }
         }
 
@@ -1832,10 +1839,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             if (realm == null)
                 realm = "";
-            ret = AuthenticationInfo.getProxyAuth(host,
-                                                  port,
-                                                  realm,
-                                                  authScheme);
+            proxyAuthKey = AuthenticationInfo.getProxyAuthKey(host, port, realm, authScheme);
+            ret = AuthenticationInfo.getProxyAuth(proxyAuthKey);
             if (ret == null) {
                 switch (authScheme) {
                 case BASIC:
@@ -1976,7 +1981,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             domain = p.findValue ("domain");
             if (realm == null)
                 realm = "";
-            ret = AuthenticationInfo.getServerAuth(url, realm, authScheme);
+            serverAuthKey = AuthenticationInfo.getServerAuthKey(url, realm, authScheme);
+            ret = AuthenticationInfo.getServerAuth(serverAuthKey);
             InetAddress addr = null;
             if (ret == null) {
                 try {
@@ -2317,6 +2323,22 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responseCode = -1;
         responses = new MessageHeader();
         connected = false;
+    }
+
+    /**
+     * Disconnect from the web server at the first 401 error. Do not
+     * disconnect when using a proxy, a good proxy should have already
+     * closed the connection to the web server.
+     */
+    private void disconnectWeb() throws IOException {
+        if (usingProxy()) {
+            responseCode = -1;
+            // clean up, particularly, skip the content part
+            // of a 401 error response
+            reset();
+        } else {
+            disconnectInternal();
+        }
     }
 
     /**

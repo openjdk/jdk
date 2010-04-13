@@ -36,6 +36,8 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
+import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
 import static java.util.zip.ZipConstants64.*;
 
 /**
@@ -77,6 +79,17 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     private static native void initIDs();
+
+    private static final boolean usemmap;
+
+    static {
+        // A system prpperty to disable mmap use to avoid vm crash when
+        // in-use zip file is accidently overwritten by others.
+        String prop = AccessController.doPrivileged(
+            new GetPropertyAction("sun.zip.disableMemoryMapping"));
+        usemmap = (prop == null ||
+                   !(prop.length() == 0 || prop.equalsIgnoreCase("true")));
+    }
 
     /**
      * Opens a zip file for reading.
@@ -196,7 +209,7 @@ class ZipFile implements ZipConstants, Closeable {
             throw new NullPointerException("charset is null");
         this.zc = ZipCoder.get(charset);
         long t0 = System.nanoTime();
-        jzfile = open(name, mode, file.lastModified());
+        jzfile = open(name, mode, file.lastModified(), usemmap);
         sun.misc.PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
         sun.misc.PerfCounter.getZipFileCount().increment();
         this.name = name;
@@ -673,8 +686,8 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
 
-    private static native long open(String name, int mode, long lastModified)
-        throws IOException;
+    private static native long open(String name, int mode, long lastModified,
+                                    boolean usemmap) throws IOException;
     private static native int getTotal(long jzfile);
     private static native int read(long jzfile, long jzentry,
                                    long pos, byte[] b, int off, int len);

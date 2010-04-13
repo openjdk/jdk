@@ -24,8 +24,12 @@
 /* @test
  * @summary Unit test for java.net.CookieHandler
  * @bug 4696506
+ * @run main/othervm CookieHandlerTest
  * @author Yingxian Wang
  */
+
+// Run in othervm since a default cookier handler is set and this
+// can effect other HTTP related tests.
 
 import java.net.*;
 import java.util.*;

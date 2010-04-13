@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,13 @@
  * have any questions.
  */
 
-/*
- */
-
 package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
+import static sun.nio.cs.CharsetMapping.*;
 
 public class Big5_HKSCS extends Charset implements HistoricallyNamedCharset
 {
@@ -57,33 +55,35 @@ public class Big5_HKSCS extends Charset implements HistoricallyNamedCharset
         return new Encoder(this);
     }
 
-    private static class Decoder extends HKSCS_2001.Decoder {
+    static class Decoder extends HKSCS.Decoder {
+        private static DoubleByte.Decoder big5 =
+            (DoubleByte.Decoder)new Big5().newDecoder();
 
-        Big5.Decoder big5Dec;
-
-        protected char decodeDouble(int byte1, int byte2) {
-            char c = super.decodeDouble(byte1, byte2);
-            return (c != REPLACE_CHAR) ? c : big5Dec.decodeDouble(byte1, byte2);
+        private static char[][] b2cBmp = new char[0x100][];
+        private static char[][] b2cSupp = new char[0x100][];
+        static {
+            initb2c(b2cBmp, HKSCSMapping.b2cBmpStr);
+            initb2c(b2cSupp, HKSCSMapping.b2cSuppStr);
         }
 
         private Decoder(Charset cs) {
-            super(cs);
-            big5Dec = new Big5.Decoder(cs);
+            super(cs, big5, b2cBmp, b2cSupp);
         }
     }
 
-    private static class Encoder extends HKSCS_2001.Encoder {
+    static class Encoder extends HKSCS.Encoder {
+        private static DoubleByte.Encoder big5 =
+            (DoubleByte.Encoder)new Big5().newEncoder();
 
-        private Big5.Encoder big5Enc;
-
-        protected int encodeDouble(char ch) {
-            int r = super.encodeDouble(ch);
-            return (r != 0) ? r : big5Enc.encodeDouble(ch);
+        static char[][] c2bBmp = new char[0x100][];
+        static char[][] c2bSupp = new char[0x100][];
+        static {
+            initc2b(c2bBmp, HKSCSMapping.b2cBmpStr, HKSCSMapping.pua);
+            initc2b(c2bSupp, HKSCSMapping.b2cSuppStr, null);
         }
 
         private Encoder(Charset cs) {
-            super(cs);
-            big5Enc = new Big5.Encoder(cs);
+            super(cs, big5, c2bBmp, c2bSupp);
         }
     }
 }
