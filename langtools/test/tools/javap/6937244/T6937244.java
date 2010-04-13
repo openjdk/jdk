@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,37 @@
  * have any questions.
  */
 
-import java.io.*;
-
 /*
  * @test
- * @bug 6715753
- * @summary Use javap to inquire about a specific inner class
+ * @bug 6937244
+ * @summary fields display with JVMS names, not Java names
  */
 
-public class T6715753 {
-    public static void main(String... args) throws Exception {
-        new T6715753().run();
+import java.io.*;
+
+public class T6937244 {
+    public static void main(String[] args) throws Exception {
+        new T6937244().run();
     }
 
     void run() throws Exception {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String[] args = { "-notAnOption" };
+        String[] args = { "java.lang.String" };
         int rc = com.sun.tools.javap.Main.run(args, pw);
-        String log = sw.toString();
-        if (rc == 0
-            || log.indexOf("-notAnOption") == -1
-            || log.indexOf("javap") == -1) { // locale-independent indication of usage message
-            System.err.println("rc: " + rc + ", log=\n" + log);
-            throw new Exception("test failed");
+        pw.close();
+        String out = sw.toString();
+        System.err.println(out);
+        if (rc != 0)
+            throw new Exception("unexpected exit from javap: " + rc);
+        for (String line: out.split("[\r\n]+")) {
+            if (line.contains("CASE_INSENSITIVE_ORDER")) {
+                if (line.matches("\\s*\\Qpublic static final java.util.Comparator<java.lang.String> CASE_INSENSITIVE_ORDER;\\E\\s*"))
+                    return;
+                throw new Exception("declaration not shown as expected");
+            }
         }
+        throw new Exception("declaration of CASE_INSENSITIVE_ORDER not found");
     }
 }
+
