@@ -865,7 +865,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     thread->set_exception_stack_size(0);
 
     // Check if the exception PC is a MethodHandle call site.
-    thread->set_is_method_handle_exception(nm->is_method_handle_return(pc));
+    thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
   }
 
   // Restore correct return pc.  Was saved above.
