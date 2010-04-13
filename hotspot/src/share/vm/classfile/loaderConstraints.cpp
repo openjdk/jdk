@@ -334,33 +334,6 @@ klassOop LoaderConstraintTable::find_constrained_klass(symbolHandle name,
   return NULL;
 }
 
-
-klassOop LoaderConstraintTable::find_constrained_elem_klass(symbolHandle name,
-                                                            symbolHandle elem_name,
-                                                            Handle loader,
-                                                            TRAPS) {
-  LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
-  if (p != NULL) {
-    assert(p->klass() == NULL, "Expecting null array klass");
-
-    // The array name has a constraint, but it will not have a class. Check
-    // each loader for an associated elem
-    for (int i = 0; i < p->num_loaders(); i++) {
-      Handle no_protection_domain;
-
-      klassOop k = SystemDictionary::find(elem_name, p->loader(i), no_protection_domain, THREAD);
-      if (k != NULL) {
-        // Return the first elem klass found.
-        return k;
-      }
-    }
-  }
-
-  // No constraints, or else no klass loaded yet.
-  return NULL;
-}
-
-
 void LoaderConstraintTable::ensure_loader_constraint_capacity(
                                                      LoaderConstraintEntry *p,
                                                     int nfree) {
