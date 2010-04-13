@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -570,10 +570,6 @@ class CMSCollector: public CHeapObj {
   ConcurrentMarkSweepPolicy* _collector_policy;
   ConcurrentMarkSweepPolicy* collector_policy() { return _collector_policy; }
 
-  // Check whether the gc time limit has been
-  // exceeded and set the size policy flag
-  // appropriately.
-  void check_gc_time_limit();
   // XXX Move these to CMSStats ??? FIX ME !!!
   elapsedTimer _inter_sweep_timer;   // time between sweeps
   elapsedTimer _intra_sweep_timer;   // time _in_ sweeps

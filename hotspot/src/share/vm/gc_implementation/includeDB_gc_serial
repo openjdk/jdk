@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 2007-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //   
 // This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ adaptiveSizePolicy.hpp			allocation.hpp
 adaptiveSizePolicy.hpp			universe.hpp
 
 adaptiveSizePolicy.cpp			adaptiveSizePolicy.hpp
+adaptiveSizePolicy.cpp			collectorPolicy.hpp
 adaptiveSizePolicy.cpp			gcCause.hpp
 adaptiveSizePolicy.cpp			ostream.hpp
 adaptiveSizePolicy.cpp			timer.hpp

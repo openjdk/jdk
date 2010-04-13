@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,13 @@ PSGCAdaptivePolicyCounters::PSGCAdaptivePolicyCounters(const char* name_arg,
       PerfData::U_Bytes, (jlong) ps_size_policy()->avg_base_footprint()->average(), CHECK);
 
     cname = PerfDataManager::counter_name(name_space(), "gcTimeLimitExceeded");
-    _gc_time_limit_exceeded = PerfDataManager::create_variable(SUN_GC, cname,
-      PerfData::U_Events, ps_size_policy()->gc_time_limit_exceeded(), CHECK);
+    _gc_overhead_limit_exceeded_counter =
+      PerfDataManager::create_variable(SUN_GC, cname,
+      PerfData::U_Events, ps_size_policy()->gc_overhead_limit_exceeded(), CHECK);
 
     cname = PerfDataManager::counter_name(name_space(), "liveAtLastFullGc");
-    _live_at_last_full_gc = PerfDataManager::create_variable(SUN_GC, cname,
+    _live_at_last_full_gc_counter =
+      PerfDataManager::create_variable(SUN_GC, cname,
       PerfData::U_Bytes, ps_size_policy()->live_at_last_full_gc(), CHECK);
 
     cname = PerfDataManager::counter_name(name_space(), "majorPauseOldSlope");
@@ -189,6 +191,8 @@ void PSGCAdaptivePolicyCounters::update_counters_from_policy() {
     update_minor_pause_old_slope();
     update_major_pause_young_slope();
     update_minor_collection_slope_counter();
+    update_gc_overhead_limit_exceeded_counter();
+    update_live_at_last_full_gc_counter();
   }
 }
 

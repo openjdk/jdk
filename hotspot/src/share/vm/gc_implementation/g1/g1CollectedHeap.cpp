@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -920,13 +920,19 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
 
+  const bool do_clear_all_soft_refs = clear_all_soft_refs ||
+                           collector_policy()->should_clear_all_soft_refs();
+
+  ClearedAllSoftRefs casr(do_clear_all_soft_refs, collector_policy());
+
   {
     IsGCActiveMark x;
 
     // Timing
     gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t(full ? "Full GC (System.gc())" : "Full GC", PrintGC, true, gclog_or_tty);
+    TraceTime t(full ? "Full GC (System.gc())" : "Full GC",
+                PrintGC, true, gclog_or_tty);
 
     TraceMemoryManagerStats tms(true /* fullGC */);
 
@@ -985,12 +991,12 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     ReferenceProcessorIsAliveMutator rp_is_alive_null(ref_processor(), NULL);
 
     ref_processor()->enable_discovery();
-    ref_processor()->setup_policy(clear_all_soft_refs);
+    ref_processor()->setup_policy(do_clear_all_soft_refs);
 
     // Do collection work
     {
       HandleMark hm;  // Discard invalid handles created during gc
-      G1MarkSweep::invoke_at_safepoint(ref_processor(), clear_all_soft_refs);
+      G1MarkSweep::invoke_at_safepoint(ref_processor(), do_clear_all_soft_refs);
     }
     // Because freeing humongous regions may have added some unclean
     // regions, it is necessary to tear down again before rebuilding.
@@ -1207,6 +1213,9 @@ G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
     assert(is_in(result), "result not in heap");
     return result;
   }
+
+  assert(!collector_policy()->should_clear_all_soft_refs(),
+    "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more

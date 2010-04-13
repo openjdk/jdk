@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 class AdjoiningGenerations;
 class GCTaskManager;
 class PSAdaptiveSizePolicy;
+class GenerationSizer;
+class CollectorPolicy;
 
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
@@ -42,6 +44,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   size_t _perm_gen_alignment;
   size_t _young_gen_alignment;
   size_t _old_gen_alignment;
+
+  GenerationSizer* _collector_policy;
 
   inline size_t set_alignment(size_t& var, size_t val);
 
@@ -71,6 +75,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   ParallelScavengeHeap::Name kind() const {
     return CollectedHeap::ParallelScavengeHeap;
   }
+
+CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
+  // GenerationSizer* collector_policy() const { return _collector_policy; }
 
   static PSYoungGen* young_gen()     { return _young_gen; }
   static PSOldGen* old_gen()         { return _old_gen; }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,13 +428,19 @@ void GenCollectedHeap::do_collection(bool  full,
   assert(my_thread->is_VM_thread() ||
          my_thread->is_ConcurrentGC_thread(),
          "incorrect thread type capability");
-  assert(Heap_lock->is_locked(), "the requesting thread should have the Heap_lock");
+  assert(Heap_lock->is_locked(),
+         "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
   assert(max_level < n_gens(), "sanity check");
 
   if (GC_locker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
   }
+
+  const bool do_clear_all_soft_refs = clear_all_soft_refs ||
+                          collector_policy()->should_clear_all_soft_refs();
+
+  ClearedAllSoftRefs casr(do_clear_all_soft_refs, collector_policy());
 
   const size_t perm_prev_used = perm_gen()->used();
 
@@ -560,11 +566,11 @@ void GenCollectedHeap::do_collection(bool  full,
           if (rp->discovery_is_atomic()) {
             rp->verify_no_references_recorded();
             rp->enable_discovery();
-            rp->setup_policy(clear_all_soft_refs);
+            rp->setup_policy(do_clear_all_soft_refs);
           } else {
             // collect() below will enable discovery as appropriate
           }
-          _gens[i]->collect(full, clear_all_soft_refs, size, is_tlab);
+          _gens[i]->collect(full, do_clear_all_soft_refs, size, is_tlab);
           if (!rp->enqueuing_is_done()) {
             rp->enqueue_discovered_references();
           } else {
