@@ -1,12 +1,10 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,25 @@
  * have any questions.
  */
 
-package sun.io;
-
-import sun.nio.cs.ext.HKSCS;
-
-/**
- * Tables and data to convert HKSCS to Unicode
- *
- * @author  ConverterGenerator tool
+/*
+ * @test
+ * @bug 6707226
+ * @summary Tests the value updating in Expression
+ * @author Sergey Malenkov
  */
 
-public class ByteToCharHKSCS extends ByteToCharDoubleByte {
+import java.beans.Expression;
 
-    public String getCharacterEncoding() {
-        return "HKSCS";
-    }
+public class Test6707226 {
+    public static void main(String[] args) throws Exception {
+        Object value = new Object();
 
-    public ByteToCharHKSCS() {
-        super.index1 = HKSCS.getDecoderIndex1();
-        super.index2= HKSCS.getDecoderIndex2();
-        start = 0x40;
-        end = 0xFE;
+        Expression expression = new Expression(value, Object.class, "new", null);
+        if (!value.equals(expression.getValue()))
+            throw new Error("the value is updated unexpectedly");
+
+        expression.execute();
+        if (value.equals(expression.getValue()))
+            throw new Error("the value is not updated as expected");
     }
 }
