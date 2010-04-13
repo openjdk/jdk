@@ -1,6 +1,5 @@
-
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +21,13 @@
  * have any questions.
  */
 
-/**
- * Dummy type to compile.
+/*
+ * @test
+ * @bug 6937417
+ * @summary Test -Xprint on enum type with no constants
+ * @author  Joseph D. Darcy
+ * @compile -Xprint VacuousEnum.java
  */
-public class Foo {
+public enum VacuousEnum {
+    // But alas, no enum constants!
 }
