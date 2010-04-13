@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1923,31 +1923,32 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
 //
 // Note that this method should only be called from the vm_thread while at a
 // safepoint.
+//
+// Note that the all_soft_refs_clear flag in the collector policy
+// may be true because this method can be called without intervening
+// activity.  For example when the heap space is tight and full measure
+// are being taken to free space.
 void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
+
   ParallelScavengeHeap* heap = gc_heap();
   GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
   PSAdaptiveSizePolicy* policy = heap->size_policy();
+  IsGCActiveMark mark;
 
-  // Before each allocation/collection attempt, find out from the
-  // policy object if GCs are, on the whole, taking too long. If so,
-  // bail out without attempting a collection.  The exceptions are
-  // for explicitly requested GC's.
-  if (!policy->gc_time_limit_exceeded() ||
-      GCCause::is_user_requested_gc(gc_cause) ||
-      GCCause::is_serviceability_requested_gc(gc_cause)) {
-    IsGCActiveMark mark;
-
-    if (ScavengeBeforeFullGC) {
-      PSScavenge::invoke_no_policy();
-    }
-
-    PSParallelCompact::invoke_no_policy(maximum_heap_compaction);
+  if (ScavengeBeforeFullGC) {
+    PSScavenge::invoke_no_policy();
   }
+
+  const bool clear_all_soft_refs =
+    heap->collector_policy()->should_clear_all_soft_refs();
+
+  PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
+                                      maximum_heap_compaction);
 }
 
 bool ParallelCompactData::region_contains(size_t region_index, HeapWord* addr) {
@@ -1975,6 +1976,11 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   PSOldGen* old_gen = heap->old_gen();
   PSPermGen* perm_gen = heap->perm_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
+
+  // The scope of casr should end after code that can change
+  // CollectorPolicy::_should_clear_all_soft_refs.
+  ClearedAllSoftRefs casr(maximum_heap_compaction,
+                          heap->collector_policy());
 
   if (ZapUnusedHeapArea) {
     // Save information needed to minimize mangling
@@ -2109,7 +2115,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                               old_gen->max_gen_size(),
                               max_eden_size,
                               true /* full gc*/,
-                              gc_cause);
+                              gc_cause,
+                              heap->collector_policy());
 
         heap->resize_old_gen(
           size_policy->calculated_old_free_size_in_bytes());
@@ -2157,19 +2164,6 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
-
-    if (PrintGCDetails) {
-      if (size_policy->print_gc_time_limit_would_be_exceeded()) {
-        if (size_policy->gc_time_limit_exceeded()) {
-          gclog_or_tty->print_cr("      GC time is exceeding GCTimeLimit "
-            "of %d%%", GCTimeLimit);
-        } else {
-          gclog_or_tty->print_cr("      GC time would exceed GCTimeLimit "
-            "of %d%%", GCTimeLimit);
-        }
-      }
-      size_policy->set_print_gc_time_limit_would_be_exceeded(false);
-    }
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {

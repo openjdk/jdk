@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,28 @@ class CollectorPolicy : public CHeapObj {
   size_t _min_alignment;
   size_t _max_alignment;
 
+  // The sizing of the heap are controlled by a sizing policy.
+  AdaptiveSizePolicy* _size_policy;
+
+  // Set to true when policy wants soft refs cleared.
+  // Reset to false by gc after it clears all soft refs.
+  bool _should_clear_all_soft_refs;
+  // Set to true by the GC if the just-completed gc cleared all
+  // softrefs.  This is set to true whenever a gc clears all softrefs, and
+  // set to false each time gc returns to the mutator.  For example, in the
+  // ParallelScavengeHeap case the latter would be done toward the end of
+  // mem_allocate() where it returns op.result()
+  bool _all_soft_refs_clear;
+
   CollectorPolicy() :
     _min_alignment(1),
     _max_alignment(1),
     _initial_heap_byte_size(0),
     _max_heap_byte_size(0),
-    _min_heap_byte_size(0)
+    _min_heap_byte_size(0),
+    _size_policy(NULL),
+    _should_clear_all_soft_refs(false),
+    _all_soft_refs_clear(false)
   {}
 
  public:
@@ -97,6 +113,19 @@ class CollectorPolicy : public CHeapObj {
     ASConcurrentMarkSweepPolicyKind,
     G1CollectorPolicyKind
   };
+
+  AdaptiveSizePolicy* size_policy() { return _size_policy; }
+  bool should_clear_all_soft_refs() { return _should_clear_all_soft_refs; }
+  void set_should_clear_all_soft_refs(bool v) { _should_clear_all_soft_refs = v; }
+  // Returns the current value of _should_clear_all_soft_refs.
+  // _should_clear_all_soft_refs is set to false as a side effect.
+  bool use_should_clear_all_soft_refs(bool v);
+  bool all_soft_refs_clear() { return _all_soft_refs_clear; }
+  void set_all_soft_refs_clear(bool v) { _all_soft_refs_clear = v; }
+
+  // Called by the GC after Soft Refs have been cleared to indicate
+  // that the request in _should_clear_all_soft_refs has been fulfilled.
+  void cleared_all_soft_refs();
 
   // Identification methods.
   virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
@@ -165,6 +194,22 @@ class CollectorPolicy : public CHeapObj {
 
 };
 
+class ClearedAllSoftRefs : public StackObj {
+  bool _clear_all_soft_refs;
+  CollectorPolicy* _collector_policy;
+ public:
+  ClearedAllSoftRefs(bool clear_all_soft_refs,
+                     CollectorPolicy* collector_policy) :
+    _clear_all_soft_refs(clear_all_soft_refs),
+    _collector_policy(collector_policy) {}
+
+  ~ClearedAllSoftRefs() {
+    if (_clear_all_soft_refs) {
+      _collector_policy->cleared_all_soft_refs();
+    }
+  }
+};
+
 class GenCollectorPolicy : public CollectorPolicy {
  protected:
   size_t _min_gen0_size;
@@ -172,10 +217,6 @@ class GenCollectorPolicy : public CollectorPolicy {
   size_t _max_gen0_size;
 
   GenerationSpec **_generations;
-
-  // The sizing of the different generations in the heap are controlled
-  // by a sizing policy.
-  AdaptiveSizePolicy* _size_policy;
 
   // Return true if an allocation should be attempted in the older
   // generation if it fails in the younger generation.  Return
@@ -236,13 +277,10 @@ class GenCollectorPolicy : public CollectorPolicy {
   virtual size_t large_typearray_limit();
 
   // Adaptive size policy
-  AdaptiveSizePolicy* size_policy() { return _size_policy; }
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
-
 };
-
 
 // All of hotspot's current collectors are subtypes of this
 // class. Currently, these collectors all use the same gen[0],

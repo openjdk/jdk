@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,11 @@ void CollectorPolicy::initialize_perm_generation(PermGen::Name pgnm) {
   }
 }
 
+bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
+  bool result = _should_clear_all_soft_refs;
+  set_should_clear_all_soft_refs(false);
+  return result;
+}
 
 GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
                                            int max_covered_regions) {
@@ -125,6 +130,17 @@ GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
     return NULL;
   }
 }
+
+void CollectorPolicy::cleared_all_soft_refs() {
+  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
+  // have been cleared in the last collection but if the gc overhear
+  // limit continues to be near, SoftRefs should still be cleared.
+  if (size_policy() != NULL) {
+    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
+  }
+  _all_soft_refs_clear = true;
+}
+
 
 // GenCollectorPolicy methods.
 
@@ -489,6 +505,12 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
 
   debug_only(gch->check_for_valid_allocation_state());
   assert(gch->no_gc_in_progress(), "Allocation during gc not allowed");
+
+  // In general gc_overhead_limit_was_exceeded should be false so
+  // set it so here and reset it to true only if the gc time
+  // limit is being exceeded as checked below.
+  *gc_overhead_limit_was_exceeded = false;
+
   HeapWord* result = NULL;
 
   // Loop until the allocation is satisified,
@@ -523,12 +545,6 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
         assert(gch->is_in_reserved(result), "result not in heap");
         return result;
       }
-
-      // There are NULL's returned for different circumstances below.
-      // In general gc_overhead_limit_was_exceeded should be false so
-      // set it so here and reset it to true only if the gc time
-      // limit is being exceeded as checked below.
-      *gc_overhead_limit_was_exceeded = false;
 
       if (GC_locker::is_active_and_needs_gc()) {
         if (is_tlab) {
@@ -568,18 +584,6 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
       gc_count_before = Universe::heap()->total_collections();
     }
 
-    // Allocation has failed and a collection is about
-    // to be done.  If the gc time limit was exceeded the
-    // last time a collection was done, return NULL so
-    // that an out-of-memory will be thrown.  Clear
-    // gc_time_limit_exceeded so that subsequent attempts
-    // at a collection will be made.
-    if (size_policy()->gc_time_limit_exceeded()) {
-      *gc_overhead_limit_was_exceeded = true;
-      size_policy()->set_gc_time_limit_exceeded(false);
-      return NULL;
-    }
-
     VM_GenCollectForAllocation op(size,
                                   is_tlab,
                                   gc_count_before);
@@ -589,6 +593,24 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
       if (op.gc_locked()) {
          assert(result == NULL, "must be NULL if gc_locked() is true");
          continue;  // retry and/or stall as necessary
+      }
+
+      // Allocation has failed and a collection
+      // has been done.  If the gc time limit was exceeded the
+      // this time, return NULL so that an out-of-memory
+      // will be thrown.  Clear gc_overhead_limit_exceeded
+      // so that the overhead exceeded does not persist.
+
+      const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
+      const bool softrefs_clear = all_soft_refs_clear();
+      assert(!limit_exceeded || softrefs_clear, "Should have been cleared");
+      if (limit_exceeded && softrefs_clear) {
+        *gc_overhead_limit_was_exceeded = true;
+        size_policy()->set_gc_overhead_limit_exceeded(false);
+        if (op.result() != NULL) {
+          CollectedHeap::fill_with_object(op.result(), size);
+        }
+        return NULL;
       }
       assert(result == NULL || gch->is_in_reserved(result),
              "result not in heap");
@@ -687,6 +709,9 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
     assert(gch->is_in_reserved(result), "result not in heap");
     return result;
   }
+
+  assert(!should_clear_all_soft_refs(),
+    "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more

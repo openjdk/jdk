@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ class BarrierSet;
 class ThreadClosure;
 class AdaptiveSizePolicy;
 class Thread;
+class CollectorPolicy;
 
 //
 // CollectedHeap
@@ -505,6 +506,9 @@ class CollectedHeap : public CHeapObj {
 
   // Return the AdaptiveSizePolicy for the heap.
   virtual AdaptiveSizePolicy* size_policy() = 0;
+
+  // Return the CollectorPolicy for the heap
+  virtual CollectorPolicy* collector_policy() const = 0;
 
   // Iterate over all the ref-containing fields of all objects, calling
   // "cl.do_oop" on each. This includes objects in permanent memory.

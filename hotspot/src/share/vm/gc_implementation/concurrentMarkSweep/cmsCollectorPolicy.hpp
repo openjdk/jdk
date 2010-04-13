@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,10 @@ class ConcurrentMarkSweepPolicy : public TwoGenerationCollectorPolicy {
   ConcurrentMarkSweepPolicy* as_concurrent_mark_sweep_policy() { return this; }
 
   void initialize_gc_policy_counters();
-#if 1
+
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
-#endif
 
   // Returns true if the incremental mode is enabled.
   virtual bool has_soft_ended_eden();
