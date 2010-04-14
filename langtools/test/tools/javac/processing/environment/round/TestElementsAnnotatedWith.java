@@ -89,7 +89,7 @@ public class TestElementsAnnotatedWith extends AbstractProcessor {
                 // Verify that the annotation information is as
                 // expected.
 
-                Set<String> expectedNames = new HashSet<>(Arrays.asList(annotatedElementInfo.names()));
+                Set<String> expectedNames = new HashSet<String>(Arrays.asList(annotatedElementInfo.names()));
 
                 resultsMeta =
                     roundEnvironment.
