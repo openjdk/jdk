@@ -131,7 +131,6 @@ public class JavacParser implements Parser {
         this.allowForeach = source.allowForeach();
         this.allowStaticImport = source.allowStaticImport();
         this.allowAnnotations = source.allowAnnotations();
-        this.allowDiamond = source.allowDiamond();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.keepDocComments = keepDocComments;
         if (keepDocComments)
@@ -148,10 +147,6 @@ public class JavacParser implements Parser {
     /** Switch: Should generics be recognized?
      */
     boolean allowGenerics;
-
-    /** Switch: Should diamond operator be recognized?
-     */
-    boolean allowDiamond;
 
     /** Switch: Should varargs be recognized?
      */
@@ -199,7 +194,6 @@ public class JavacParser implements Parser {
     static final int TYPE = 2;
     static final int NOPARAMS = 4;
     static final int TYPEARG = 8;
-    static final int DIAMOND = 16;
 
     /** The current mode.
      */
@@ -1349,11 +1343,6 @@ public class JavacParser implements Parser {
         ListBuffer<JCExpression> args = lb();
         if (S.token() == LT) {
             S.nextToken();
-            if (S.token() == GT && (mode & DIAMOND) != 0) {
-                checkDiamond();
-                S.nextToken();
-                return List.nil();
-            }
             args.append(((mode & EXPR) == 0) ? typeArgument() : parseType());
             while (S.token() == COMMA) {
                 S.nextToken();
@@ -1527,7 +1516,7 @@ public class JavacParser implements Parser {
             t = F.AnnotatedType(newAnnotations, t);
 
         int oldmode = mode;
-        mode = TYPE | DIAMOND;
+        mode = TYPE;
         if (S.token() == LT) {
             checkGenerics();
             t = typeArguments(t);
@@ -1580,11 +1569,8 @@ public class JavacParser implements Parser {
     JCExpression innerCreator(int newpos, List<JCExpression> typeArgs, JCExpression encl) {
         JCExpression t = toP(F.at(S.pos()).Ident(ident()));
         if (S.token() == LT) {
-            int oldmode = mode;
-            mode |= DIAMOND;
             checkGenerics();
             t = typeArguments(t);
-            mode = oldmode;
         }
         return classCreatorRest(newpos, encl, typeArgs, t);
     }
@@ -3151,12 +3137,6 @@ public class JavacParser implements Parser {
         }
     }
 
-    void checkDiamond() {
-        if (!allowDiamond) {
-            log.error(S.pos(), "diamond.not.supported.in.source", source.name);
-            allowDiamond = true;
-        }
-    }
     void checkGenerics() {
         if (!allowGenerics) {
             log.error(S.pos(), "generics.not.supported.in.source", source.name);

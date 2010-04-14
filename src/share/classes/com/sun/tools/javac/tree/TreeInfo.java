@@ -204,15 +204,6 @@ public class TreeInfo {
         return (JCMethodInvocation)exec.expr;
     }
 
-    /** Return true if a tree represents a diamond new expr. */
-    public static boolean isDiamond(JCTree tree) {
-        switch(tree.getTag()) {
-            case JCTree.TYPEAPPLY: return ((JCTypeApply)tree).getTypeArguments().isEmpty();
-            case JCTree.NEWCLASS: return isDiamond(((JCNewClass)tree).clazz);
-            default: return false;
-        }
-    }
-
     /** Return true if a tree represents the null literal. */
     public static boolean isNull(JCTree tree) {
         if (tree.getTag() != JCTree.LITERAL)
