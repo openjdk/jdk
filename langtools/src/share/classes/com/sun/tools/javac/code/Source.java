@@ -122,9 +122,6 @@ public enum Source {
     public boolean allowGenerics() {
         return compareTo(JDK1_5) >= 0;
     }
-    public boolean allowDiamond() {
-        return compareTo(JDK1_7) >= 0;
-    }
     public boolean allowEnums() {
         return compareTo(JDK1_5) >= 0;
     }
