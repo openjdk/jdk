@@ -2194,8 +2194,10 @@ public:
     assert(o != NULL, "Huh?");
     if (!_g1h->is_obj_dead_cond(o, _use_prev_marking)) {
       o->oop_iterate(&isLive);
-      if (!_hr->obj_allocated_since_prev_marking(o))
-        _live_bytes += (o->size() * HeapWordSize);
+      if (!_hr->obj_allocated_since_prev_marking(o)) {
+        size_t obj_size = o->size();    // Make sure we don't overflow
+        _live_bytes += (obj_size * HeapWordSize);
+      }
     }
   }
   size_t live_bytes() { return _live_bytes; }
