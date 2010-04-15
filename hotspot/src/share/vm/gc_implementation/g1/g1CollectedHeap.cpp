@@ -913,7 +913,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
   }
 
   if (full && DisableExplicitGC) {
-    gclog_or_tty->print("\n\n\nDisabling Explicit GC\n\n\n");
     return;
   }
 
