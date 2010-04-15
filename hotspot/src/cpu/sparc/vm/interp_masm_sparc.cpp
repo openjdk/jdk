@@ -244,9 +244,10 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register scratch_reg) 
 }
 
 
-void InterpreterMacroAssembler::super_call_VM_leaf(Register thread_cache, address entry_point, Register arg_1) {
+void InterpreterMacroAssembler::super_call_VM_leaf(Register thread_cache, address entry_point, Register arg_1, Register arg_2) {
   mov(arg_1, O0);
-  MacroAssembler::call_VM_leaf_base(thread_cache, entry_point, 1);
+  mov(arg_2, O1);
+  MacroAssembler::call_VM_leaf_base(thread_cache, entry_point, 2);
 }
 #endif /* CC_INTERP */
 

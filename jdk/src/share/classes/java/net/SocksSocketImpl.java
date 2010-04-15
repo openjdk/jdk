@@ -98,11 +98,31 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         super.connect(new InetSocketAddress(host, port), timeout);
     }
 
+    private static int remainingMillis(long deadlineMillis) throws IOException {
+        if (deadlineMillis == 0L)
+            return 0;
+
+        final long remaining = deadlineMillis - System.currentTimeMillis();
+        if (remaining > 0)
+            return (int) remaining;
+
+        throw new SocketTimeoutException();
+    }
+
     private int readSocksReply(InputStream in, byte[] data) throws IOException {
+        return readSocksReply(in, data, 0L);
+    }
+
+    private int readSocksReply(InputStream in, byte[] data, long deadlineMillis) throws IOException {
         int len = data.length;
         int received = 0;
         for (int attempts = 0; received < len && attempts < 3; attempts++) {
-            int count = in.read(data, received, len - received);
+            int count;
+            try {
+                count = ((SocketInputStream)in).read(data, received, len - received, remainingMillis(deadlineMillis));
+            } catch (SocketTimeoutException e) {
+                throw new SocketTimeoutException("Connect timed out");
+            }
             if (count < 0)
                 throw new SocketException("Malformed reply from SOCKS server");
             received += count;
@@ -115,6 +135,12 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
      */
     private boolean authenticate(byte method, InputStream in,
                                  BufferedOutputStream out) throws IOException {
+        return authenticate(method, in, out, 0L);
+    }
+
+    private boolean authenticate(byte method, InputStream in,
+                                 BufferedOutputStream out,
+                                 long deadlineMillis) throws IOException {
         // No Authentication required. We're done then!
         if (method == NO_AUTH)
             return true;
@@ -162,7 +188,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 out.write(0);
             out.flush();
             byte[] data = new byte[2];
-            int i = readSocksReply(in, data);
+            int i = readSocksReply(in, data, deadlineMillis);
             if (i != 2 || data[1] != 0) {
                 /* RFC 1929 specifies that the connection MUST be closed if
                    authentication fails */
@@ -201,18 +227,18 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
 //                      out.write(outToken);
 //                      out.flush();
 //                      data = new byte[2];
-//                      i = readSocksReply(in, data);
+//                      i = readSocksReply(in, data, deadlineMillis);
 //                      if (i != 2 || data[1] == 0xff) {
 //                          in.close();
 //                          out.close();
 //                          return false;
 //                      }
-//                      i = readSocksReply(in, data);
+//                      i = readSocksReply(in, data, deadlineMillis);
 //                      int len = 0;
 //                      len = ((int)data[0] & 0xff) << 8;
 //                      len += data[1];
 //                      data = new byte[len];
-//                      i = readSocksReply(in, data);
+//                      i = readSocksReply(in, data, deadlineMillis);
 //                      if (i == len)
 //                          return true;
 //                      in.close();
@@ -231,7 +257,8 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     }
 
     private void connectV4(InputStream in, OutputStream out,
-                           InetSocketAddress endpoint) throws IOException {
+                           InetSocketAddress endpoint,
+                           long deadlineMillis) throws IOException {
         if (!(endpoint.getAddress() instanceof Inet4Address)) {
             throw new SocketException("SOCKS V4 requires IPv4 only addresses");
         }
@@ -249,7 +276,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         out.write(0);
         out.flush();
         byte[] data = new byte[8];
-        int n = readSocksReply(in, data);
+        int n = readSocksReply(in, data, deadlineMillis);
         if (n != 8)
             throw new SocketException("Reply from SOCKS server has bad length: " + n);
         if (data[0] != 0 && data[0] != 4)
@@ -296,6 +323,15 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
      */
     @Override
     protected void connect(SocketAddress endpoint, int timeout) throws IOException {
+        final long deadlineMillis;
+
+        if (timeout == 0) {
+            deadlineMillis = 0L;
+        } else {
+            long finish = System.currentTimeMillis() + timeout;
+            deadlineMillis = finish < 0 ? Long.MAX_VALUE : finish;
+        }
+
         SecurityManager security = System.getSecurityManager();
         if (endpoint == null || !(endpoint instanceof InetSocketAddress))
             throw new IllegalArgumentException("Unsupported address type");
@@ -322,7 +358,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 /*
                  * No default proxySelector --> direct connection
                  */
-                super.connect(epoint, timeout);
+                super.connect(epoint, remainingMillis(deadlineMillis));
                 return;
             }
             URI uri;
@@ -345,13 +381,13 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             java.util.Iterator<Proxy> iProxy = null;
             iProxy = sel.select(uri).iterator();
             if (iProxy == null || !(iProxy.hasNext())) {
-                super.connect(epoint, timeout);
+                super.connect(epoint, remainingMillis(deadlineMillis));
                 return;
             }
             while (iProxy.hasNext()) {
                 p = iProxy.next();
                 if (p == null || p == Proxy.NO_PROXY) {
-                    super.connect(epoint, timeout);
+                    super.connect(epoint, remainingMillis(deadlineMillis));
                     return;
                 }
                 if (p.type() != Proxy.Type.SOCKS)
@@ -364,7 +400,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
 
                 // Connects to the SOCKS server
                 try {
-                    privilegedConnect(server, serverPort, timeout);
+                    privilegedConnect(server, serverPort, remainingMillis(deadlineMillis));
                     // Worked, let's get outta here
                     break;
                 } catch (IOException e) {
@@ -388,7 +424,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         } else {
             // Connects to the SOCKS server
             try {
-                privilegedConnect(server, serverPort, timeout);
+                privilegedConnect(server, serverPort, remainingMillis(deadlineMillis));
             } catch (IOException e) {
                 throw new SocketException(e.getMessage());
             }
@@ -403,7 +439,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
                 throw new UnknownHostException(epoint.toString());
-            connectV4(in, out, epoint);
+            connectV4(in, out, epoint, deadlineMillis);
             return;
         }
 
@@ -414,7 +450,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         out.write(USER_PASSW);
         out.flush();
         byte[] data = new byte[2];
-        int i = readSocksReply(in, data);
+        int i = readSocksReply(in, data, deadlineMillis);
         if (i != 2 || ((int)data[0]) != PROTO_VERS) {
             // Maybe it's not a V5 sever after all
             // Let's try V4 before we give up
@@ -422,12 +458,12 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
                 throw new UnknownHostException(epoint.toString());
-            connectV4(in, out, epoint);
+            connectV4(in, out, epoint, deadlineMillis);
             return;
         }
         if (((int)data[1]) == NO_METHODS)
             throw new SocketException("SOCKS : No acceptable methods");
-        if (!authenticate(data[1], in, out)) {
+        if (!authenticate(data[1], in, out, deadlineMillis)) {
             throw new SocketException("SOCKS : authentication failed");
         }
         out.write(PROTO_VERS);
@@ -457,7 +493,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         }
         out.flush();
         data = new byte[4];
-        i = readSocksReply(in, data);
+        i = readSocksReply(in, data, deadlineMillis);
         if (i != 4)
             throw new SocketException("Reply from SOCKS server has bad length");
         SocketException ex = null;
@@ -469,33 +505,33 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             switch(data[3]) {
             case IPV4:
                 addr = new byte[4];
-                i = readSocksReply(in, addr);
+                i = readSocksReply(in, addr, deadlineMillis);
                 if (i != 4)
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 data = new byte[2];
-                i = readSocksReply(in, data);
+                i = readSocksReply(in, data, deadlineMillis);
                 if (i != 2)
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 break;
             case DOMAIN_NAME:
                 len = data[1];
                 byte[] host = new byte[len];
-                i = readSocksReply(in, host);
+                i = readSocksReply(in, host, deadlineMillis);
                 if (i != len)
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 data = new byte[2];
-                i = readSocksReply(in, data);
+                i = readSocksReply(in, data, deadlineMillis);
                 if (i != 2)
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 break;
             case IPV6:
                 len = data[1];
                 addr = new byte[len];
-                i = readSocksReply(in, addr);
+                i = readSocksReply(in, addr, deadlineMillis);
                 if (i != len)
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 data = new byte[2];
-                i = readSocksReply(in, data);
+                i = readSocksReply(in, data, deadlineMillis);
                 if (i != 2)
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 break;

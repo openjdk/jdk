@@ -22,6 +22,8 @@
  *
  */
 
+# define __STDC_FORMAT_MACROS
+
 // do not include  precompiled  header file
 # include "incls/_os_linux.cpp.incl"
 
@@ -53,6 +55,8 @@
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
+# include <stdint.h>
+# include <inttypes.h>
 
 #define MAX_PATH    (2 * K)
 
@@ -2490,6 +2494,91 @@ bool os::uncommit_memory(char* addr, size_t size) {
   return ::mmap(addr, size, PROT_NONE,
                 MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0)
     != MAP_FAILED;
+}
+
+// Linux uses a growable mapping for the stack, and if the mapping for
+// the stack guard pages is not removed when we detach a thread the
+// stack cannot grow beyond the pages where the stack guard was
+// mapped.  If at some point later in the process the stack expands to
+// that point, the Linux kernel cannot expand the stack any further
+// because the guard pages are in the way, and a segfault occurs.
+//
+// However, it's essential not to split the stack region by unmapping
+// a region (leaving a hole) that's already part of the stack mapping,
+// so if the stack mapping has already grown beyond the guard pages at
+// the time we create them, we have to truncate the stack mapping.
+// So, we need to know the extent of the stack mapping when
+// create_stack_guard_pages() is called.
+
+// Find the bounds of the stack mapping.  Return true for success.
+//
+// We only need this for stacks that are growable: at the time of
+// writing thread stacks don't use growable mappings (i.e. those
+// creeated with MAP_GROWSDOWN), and aren't marked "[stack]", so this
+// only applies to the main thread.
+static bool
+get_stack_bounds(uintptr_t *bottom, uintptr_t *top)
+{
+  FILE *f = fopen("/proc/self/maps", "r");
+  if (f == NULL)
+    return false;
+
+  while (!feof(f)) {
+    size_t dummy;
+    char *str = NULL;
+    ssize_t len = getline(&str, &dummy, f);
+    if (len == -1) {
+      fclose(f);
+      return false;
+    }
+
+    if (len > 0 && str[len-1] == '\n') {
+      str[len-1] = 0;
+      len--;
+    }
+
+    static const char *stack_str = "[stack]";
+    if (len > (ssize_t)strlen(stack_str)
+       && (strcmp(str + len - strlen(stack_str), stack_str) == 0)) {
+      if (sscanf(str, "%" SCNxPTR "-%" SCNxPTR, bottom, top) == 2) {
+        uintptr_t sp = (uintptr_t)__builtin_frame_address(0);
+        if (sp >= *bottom && sp <= *top) {
+          free(str);
+          fclose(f);
+          return true;
+        }
+      }
+    }
+    free(str);
+  }
+  fclose(f);
+  return false;
+}
+
+// If the (growable) stack mapping already extends beyond the point
+// where we're going to put our guard pages, truncate the mapping at
+// that point by munmap()ping it.  This ensures that when we later
+// munmap() the guard pages we don't leave a hole in the stack
+// mapping.
+bool os::create_stack_guard_pages(char* addr, size_t size) {
+  uintptr_t stack_extent, stack_base;
+  if (get_stack_bounds(&stack_extent, &stack_base)) {
+    if (stack_extent < (uintptr_t)addr)
+      ::munmap((void*)stack_extent, (uintptr_t)addr - stack_extent);
+  }
+
+  return os::commit_memory(addr, size);
+}
+
+// If this is a growable mapping, remove the guard pages entirely by
+// munmap()ping them.  If not, just call uncommit_memory().
+bool os::remove_stack_guard_pages(char* addr, size_t size) {
+  uintptr_t stack_extent, stack_base;
+  if (get_stack_bounds(&stack_extent, &stack_base)) {
+    return ::munmap(addr, size) == 0;
+  }
+
+  return os::uncommit_memory(addr, size);
 }
 
 static address _highest_vm_reserved_address = NULL;

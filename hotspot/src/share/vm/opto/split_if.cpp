@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,10 +187,20 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   }
 #endif
 
+  // ConvI2L may have type information on it which becomes invalid if
+  // it moves up in the graph so change any clones so widen the type
+  // to TypeLong::INT when pushing it up.
+  const Type* rtype = NULL;
+  if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::INT) {
+    rtype = TypeLong::INT;
+  }
+
   // Now actually split-up this guy.  One copy per control path merging.
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
+    // Widen the type of the ConvI2L when pushing up.
+    if (rtype != NULL) x->as_Type()->set_type(rtype);
     if( n->in(0) && n->in(0) == blk1 )
       x->set_req( 0, blk1->in(j) );
     for( uint i = 1; i < n->req(); i++ ) {

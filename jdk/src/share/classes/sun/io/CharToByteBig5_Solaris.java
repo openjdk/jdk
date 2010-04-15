@@ -23,48 +23,21 @@
  * have any questions.
  */
 
-
 package sun.io;
 
-/**
- */
+import sun.nio.cs.ext.DoubleByte;
+import sun.nio.cs.ext.Big5_Solaris;
 
-public class CharToByteBig5_Solaris extends CharToByteBig5 {
+public class CharToByteBig5_Solaris extends CharToByteDBCS_ASCII {
+
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new Big5_Solaris().newEncoder();
 
     public String getCharacterEncoding() {
         return "Big5_Solaris";
     }
 
-    protected int getNative(char ch) {
-        int nativeVal;
-
-        if ((nativeVal = super.getNative(ch)) != 0) {
-            return nativeVal;
-        }
-
-        switch (ch) {
-            case 0x7881:
-                nativeVal = 0xF9D6;
-                break;
-            case 0x92B9:
-                nativeVal = 0xF9D7;
-                break;
-            case 0x88CF:
-                nativeVal = 0xF9D8;
-                break;
-            case 0x58BB:
-                nativeVal = 0xF9D9;
-                break;
-            case 0x6052:
-                nativeVal = 0xF9DA;
-                break;
-            case 0x7CA7:
-                nativeVal = 0xF9DB;
-                break;
-            case 0x5AFA:
-                nativeVal = 0xF9DC;
-                break;
-            }
-        return nativeVal;
+    public CharToByteBig5_Solaris() {
+        super(enc);
     }
 }

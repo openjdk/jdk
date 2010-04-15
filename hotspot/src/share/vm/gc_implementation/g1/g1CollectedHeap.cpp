@@ -583,7 +583,7 @@ HeapRegion* G1CollectedHeap::newAllocRegion_work(size_t word_size,
            res->zero_fill_state() == HeapRegion::Allocated)),
          "Non-young alloc Regions must be zero filled (and non-H)");
 
-  if (G1PrintRegions) {
+  if (G1PrintHeapRegions) {
     if (res != NULL) {
       gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT", "PTR_FORMAT"], "
                              "top "PTR_FORMAT,
@@ -2102,18 +2102,21 @@ size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   // Return the remaining space in the cur alloc region, but not less than
   // the min TLAB size.
-  // Also, no more than half the region size, since we can't allow tlabs to
-  // grow big enough to accomodate humongous objects.
 
-  // We need to story it locally, since it might change between when we
-  // test for NULL and when we use it later.
+  // Also, this value can be at most the humongous object threshold,
+  // since we can't allow tlabs to grow big enough to accomodate
+  // humongous objects.
+
+  // We need to store the cur alloc region locally, since it might change
+  // between when we test for NULL and when we use it later.
   ContiguousSpace* cur_alloc_space = _cur_alloc_region;
+  size_t max_tlab_size = _humongous_object_threshold_in_words * wordSize;
+
   if (cur_alloc_space == NULL) {
-    return HeapRegion::GrainBytes/2;
+    return max_tlab_size;
   } else {
-    return MAX2(MIN2(cur_alloc_space->free(),
-                     (size_t)(HeapRegion::GrainBytes/2)),
-                (size_t)MinTLABSize);
+    return MIN2(MAX2(cur_alloc_space->free(), (size_t)MinTLABSize),
+                max_tlab_size);
   }
 }
 
@@ -2477,7 +2480,7 @@ void G1CollectedHeap::print_tracing_info() const {
   if (G1SummarizeRSetStats) {
     g1_rem_set()->print_summary_info();
   }
-  if (G1SummarizeConcurrentMark) {
+  if (G1SummarizeConcMark) {
     concurrent_mark()->print_summary_info();
   }
   if (G1SummarizeZFStats) {
@@ -3480,7 +3483,7 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
   HeapRegion* r = heap_region_containing(old);
   if (!r->evacuation_failed()) {
     r->set_evacuation_failed(true);
-    if (G1PrintRegions) {
+    if (G1PrintHeapRegions) {
       gclog_or_tty->print("evacuation failed in heap region "PTR_FORMAT" "
                           "["PTR_FORMAT","PTR_FORMAT")\n",
                           r, r->bottom(), r->end());
@@ -4002,9 +4005,7 @@ public:
       _g1h->g1_policy()->record_obj_copy_time(i, elapsed_ms-term_ms);
       _g1h->g1_policy()->record_termination_time(i, term_ms);
     }
-    if (G1UseSurvivorSpaces) {
-      _g1h->g1_policy()->record_thread_age_table(pss.age_table());
-    }
+    _g1h->g1_policy()->record_thread_age_table(pss.age_table());
     _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
     // Clean up any par-expanded rem sets.

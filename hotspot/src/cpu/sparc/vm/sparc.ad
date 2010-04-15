@@ -1803,8 +1803,9 @@ void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
 // to implement the UseStrictFP mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
-// Do floats take an entire double register or just half?
-const bool Matcher::float_in_double = false;
+// Are floats conerted to double when stored to stack during deoptimization?
+// Sparc does not handle callee-save floats.
+bool Matcher::float_in_double() { return false; }
 
 // Do ints take an entire long register or just half?
 // Note that we if-def off of _LP64.

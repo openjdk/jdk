@@ -606,7 +606,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     assert(_modUnionTable.covers(_span), "_modUnionTable inconsistency?");
   }
 
-  if (!_markStack.allocate(CMSMarkStackSize)) {
+  if (!_markStack.allocate(MarkStackSize)) {
     warning("Failed to allocate CMS Marking Stack");
     return;
   }
@@ -617,13 +617,13 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for multi-threaded concurrent phases
   if (ParallelGCThreads > 0 && CMSConcurrentMTEnabled) {
-    if (FLAG_IS_DEFAULT(ParallelCMSThreads)) {
+    if (FLAG_IS_DEFAULT(ConcGCThreads)) {
       // just for now
-      FLAG_SET_DEFAULT(ParallelCMSThreads, (ParallelGCThreads + 3)/4);
+      FLAG_SET_DEFAULT(ConcGCThreads, (ParallelGCThreads + 3)/4);
     }
-    if (ParallelCMSThreads > 1) {
+    if (ConcGCThreads > 1) {
       _conc_workers = new YieldingFlexibleWorkGang("Parallel CMS Threads",
-                                 ParallelCMSThreads, true);
+                                 ConcGCThreads, true);
       if (_conc_workers == NULL) {
         warning("GC/CMS: _conc_workers allocation failure: "
               "forcing -CMSConcurrentMTEnabled");
@@ -634,13 +634,13 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     }
   }
   if (!CMSConcurrentMTEnabled) {
-    ParallelCMSThreads = 0;
+    ConcGCThreads = 0;
   } else {
     // Turn off CMSCleanOnEnter optimization temporarily for
     // the MT case where it's not fixed yet; see 6178663.
     CMSCleanOnEnter = false;
   }
-  assert((_conc_workers != NULL) == (ParallelCMSThreads > 1),
+  assert((_conc_workers != NULL) == (ConcGCThreads > 1),
          "Inconsistency");
 
   // Parallel task queues; these are shared for the
@@ -648,7 +648,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   // are not shared with parallel scavenge (ParNew).
   {
     uint i;
-    uint num_queues = (uint) MAX2(ParallelGCThreads, ParallelCMSThreads);
+    uint num_queues = (uint) MAX2(ParallelGCThreads, ConcGCThreads);
 
     if ((CMSParallelRemarkEnabled || CMSConcurrentMTEnabled
          || ParallelRefProcEnabled)
@@ -723,8 +723,9 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing survivor space rescan
   if (CMSParallelRemarkEnabled && CMSParallelSurvivorRemarkEnabled) {
-    size_t max_plab_samples = cp->max_gen0_size()/
-                                ((SurvivorRatio+2)*MinTLABSize);
+    const size_t max_plab_samples =
+      ((DefNewGeneration*)_young_gen)->max_survivor_size()/MinTLABSize;
+
     _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads);
     _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, 2*max_plab_samples);
     _cursor               = NEW_C_HEAP_ARRAY(size_t, ParallelGCThreads);
@@ -3657,7 +3658,7 @@ bool CMSCollector::markFromRootsWork(bool asynch) {
   assert(_revisitStack.isEmpty(), "tabula rasa");
   DEBUG_ONLY(RememberKlassesChecker cmx(should_unload_classes());)
   bool result = false;
-  if (CMSConcurrentMTEnabled && ParallelCMSThreads > 0) {
+  if (CMSConcurrentMTEnabled && ConcGCThreads > 0) {
     result = do_marking_mt(asynch);
   } else {
     result = do_marking_st(asynch);
@@ -4174,10 +4175,10 @@ void CMSConcMarkingTask::coordinator_yield() {
 }
 
 bool CMSCollector::do_marking_mt(bool asynch) {
-  assert(ParallelCMSThreads > 0 && conc_workers() != NULL, "precondition");
+  assert(ConcGCThreads > 0 && conc_workers() != NULL, "precondition");
   // In the future this would be determined ergonomically, based
   // on #cpu's, # active mutator threads (and load), and mutation rate.
-  int num_workers = ParallelCMSThreads;
+  int num_workers = ConcGCThreads;
 
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
   CompactibleFreeListSpace* perm_space = _permGen->cmsSpace();
@@ -6429,8 +6430,8 @@ bool CMSMarkStack::allocate(size_t size) {
 // For now we take the expedient path of just disabling the
 // messages for the problematic case.)
 void CMSMarkStack::expand() {
-  assert(_capacity <= CMSMarkStackSizeMax, "stack bigger than permitted");
-  if (_capacity == CMSMarkStackSizeMax) {
+  assert(_capacity <= MarkStackSizeMax, "stack bigger than permitted");
+  if (_capacity == MarkStackSizeMax) {
     if (_hit_limit++ == 0 && !CMSConcurrentMTEnabled && PrintGCDetails) {
       // We print a warning message only once per CMS cycle.
       gclog_or_tty->print_cr(" (benign) Hit CMSMarkStack max size limit");
@@ -6438,7 +6439,7 @@ void CMSMarkStack::expand() {
     return;
   }
   // Double capacity if possible
-  size_t new_capacity = MIN2(_capacity*2, CMSMarkStackSizeMax);
+  size_t new_capacity = MIN2(_capacity*2, MarkStackSizeMax);
   // Do not give up existing stack until we have managed to
   // get the double capacity that we desired.
   ReservedSpace rs(ReservedSpace::allocation_align_size_up(

@@ -270,14 +270,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
 
-  if (G1UseSurvivorSpaces) {
-    // if G1FixedSurvivorSpaceSize is 0 which means the size is not
-    // fixed, then _max_survivor_regions will be calculated at
-    // calculate_young_list_target_config during initialization
-    _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
-  } else {
-    _max_survivor_regions = 0;
-  }
+  // if G1FixedSurvivorSpaceSize is 0 which means the size is not
+  // fixed, then _max_survivor_regions will be calculated at
+  // calculate_young_list_target_config during initialization
+  _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
 
   initialize_all();
 }
@@ -296,28 +292,54 @@ void G1CollectorPolicy::initialize_flags() {
   CollectorPolicy::initialize_flags();
 }
 
+// The easiest way to deal with the parsing of the NewSize /
+// MaxNewSize / etc. parameteres is to re-use the code in the
+// TwoGenerationCollectorPolicy class. This is similar to what
+// ParallelScavenge does with its GenerationSizer class (see
+// ParallelScavengeHeap::initialize()). We might change this in the
+// future, but it's a good start.
+class G1YoungGenSizer : public TwoGenerationCollectorPolicy {
+  size_t size_to_region_num(size_t byte_size) {
+    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
+  }
+
+public:
+  G1YoungGenSizer() {
+    initialize_flags();
+    initialize_size_info();
+  }
+
+  size_t min_young_region_num() {
+    return size_to_region_num(_min_gen0_size);
+  }
+  size_t initial_young_region_num() {
+    return size_to_region_num(_initial_gen0_size);
+  }
+  size_t max_young_region_num() {
+    return size_to_region_num(_max_gen0_size);
+  }
+};
+
 void G1CollectorPolicy::init() {
   // Set aside an initial future to_space.
   _g1 = G1CollectedHeap::heap();
-  size_t regions = Universe::heap()->capacity() / HeapRegion::GrainBytes;
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
-
-  if (G1SteadyStateUsed < 50) {
-    vm_exit_during_initialization("G1SteadyStateUsed must be at least 50%.");
-  }
 
   initialize_gc_policy_counters();
 
   if (G1Gen) {
     _in_young_gc_mode = true;
 
-    if (G1YoungGenSize == 0) {
+    G1YoungGenSizer sizer;
+    size_t initial_region_num = sizer.initial_young_region_num();
+
+    if (UseAdaptiveSizePolicy) {
       set_adaptive_young_list_length(true);
       _young_list_fixed_length = 0;
     } else {
       set_adaptive_young_list_length(false);
-      _young_list_fixed_length = (G1YoungGenSize / HeapRegion::GrainBytes);
+      _young_list_fixed_length = initial_region_num;
     }
      _free_regions_at_end_of_collection = _g1->free_regions();
      _scan_only_regions_at_end_of_collection = 0;
@@ -455,7 +477,7 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
   guarantee( adaptive_young_list_length(), "pre-condition" );
 
   double start_time_sec = os::elapsedTime();
-  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1MinReservePercent);
+  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1ReservePercent);
   min_reserve_perc = MIN2((size_t) 50, min_reserve_perc);
   size_t reserve_regions =
     (size_t) ((double) min_reserve_perc * (double) _g1->n_regions() / 100.0);
@@ -1110,10 +1132,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   size_t short_lived_so_length = _young_list_so_prefix_length;
   _short_lived_surv_rate_group->record_scan_only_prefix(short_lived_so_length);
   tag_scan_only(short_lived_so_length);
-
-  if (G1UseSurvivorSpaces) {
-    _survivors_age_table.clear();
-  }
+  _survivors_age_table.clear();
 
   assert( verify_young_ages(), "region age verification" );
 }
@@ -1432,7 +1451,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       record_concurrent_mark_init_end_pre(0.0);
 
     size_t min_used_targ =
-      (_g1->capacity() / 100) * (G1SteadyStateUsed - G1SteadyStateUsedDelta);
+      (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
 
     if (cur_used_bytes > min_used_targ) {
       if (cur_used_bytes <= _prev_collection_pause_used_at_end_bytes) {
@@ -1916,7 +1935,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   calculate_young_list_target_config();
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
-  double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSUpdatePauseFractionPercent / 100.0;
+  double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
 
   // </NEW PREDICTION>
@@ -1932,7 +1951,7 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   ConcurrentG1Refine *cg1r = G1CollectedHeap::heap()->concurrent_g1_refine();
 
-  if (G1AdaptiveConcRefine) {
+  if (G1UseAdaptiveConcRefinement) {
     const int k_gy = 3, k_gr = 6;
     const double inc_k = 1.1, dec_k = 0.9;
 
@@ -2607,9 +2626,6 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
 // Calculates survivor space parameters.
 void G1CollectorPolicy::calculate_survivors_policy()
 {
-  if (!G1UseSurvivorSpaces) {
-    return;
-  }
   if (G1FixedSurvivorSpaceSize == 0) {
     _max_survivor_regions = _young_list_target_length / SurvivorRatio;
   } else {
@@ -2628,13 +2644,6 @@ bool
 G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
                                                                word_size) {
   assert(_g1->regions_accounted_for(), "Region leakage!");
-  // Initiate a pause when we reach the steady-state "used" target.
-  size_t used_hard = (_g1->capacity() / 100) * G1SteadyStateUsed;
-  size_t used_soft =
-   MAX2((_g1->capacity() / 100) * (G1SteadyStateUsed - G1SteadyStateUsedDelta),
-        used_hard/2);
-  size_t used = _g1->used();
-
   double max_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
 
   size_t young_list_length = _g1->young_list_length();
@@ -2867,7 +2876,7 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
 // estimate of the number of live bytes.
 void G1CollectorPolicy::
 add_to_collection_set(HeapRegion* hr) {
-  if (G1PrintRegions) {
+  if (G1PrintHeapRegions) {
     gclog_or_tty->print_cr("added region to cset %d:["PTR_FORMAT", "PTR_FORMAT"], "
                   "top "PTR_FORMAT", young %s",
                   hr->hrs_index(), hr->bottom(), hr->end(),

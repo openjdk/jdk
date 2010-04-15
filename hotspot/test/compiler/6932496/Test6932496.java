@@ -1,12 +1,10 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,28 +19,33 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
+ *
  */
-
-package sun.io;
-
-import sun.nio.cs.ext.HKSCS_2001;
 
 /**
- * Tables and data to convert HKSCS (2001 revision) to Unicode
+ * @test
+ * @bug 6932496
+ * @summary incorrect deopt of jsr subroutine on 64 bit c1
  *
- * @author  ConverterGenerator tool
+ * @compile -source 1.5 -target 1.5 -XDjsrlimit=0 Test6932496.java
+ * @run main/othervm -Xcomp -XX:CompileOnly=Test6932496.m Test6932496
  */
 
-public class ByteToCharHKSCS_2001 extends ByteToCharDoubleByte {
-
-    public String getCharacterEncoding() {
-        return "HKSCS_2001";
+public class Test6932496 {
+    static class A {
+        volatile boolean flag = false;
     }
 
-    public ByteToCharHKSCS_2001() {
-        super.index1 = HKSCS_2001.getDecoderIndex1();
-        super.index2= HKSCS_2001.getDecoderIndex2();
-        start = 0x40;
-        end = 0xFE;
+    static void m() {
+        try {
+        } finally {
+            A a = new A();
+            a.flag = true;
+        }
+    }
+
+
+    static public void main(String[] args) {
+        m();
     }
 }

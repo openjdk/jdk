@@ -994,6 +994,8 @@ public final class ProcessBuilder
         // Must convert to array first -- a malicious user-supplied
         // list might try to circumvent the security check.
         String[] cmdarray = command.toArray(new String[command.size()]);
+        cmdarray = cmdarray.clone();
+
         for (String arg : cmdarray)
             if (arg == null)
                 throw new NullPointerException();
