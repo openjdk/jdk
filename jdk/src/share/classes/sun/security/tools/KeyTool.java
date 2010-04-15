@@ -977,44 +977,33 @@ public final class KeyTool {
             if (filename != null) {
                 inStream = new FileInputStream(filename);
             }
-            // Read the full stream before feeding to X509Factory,
-            // otherwise, keytool -gencert | keytool -importcert
-            // might not work properly, since -gencert is slow
-            // and there's no data in the pipe at the beginning.
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            String importAlias = (alias!=null)?alias:keyAlias;
             try {
-                byte[] b = new byte[4096];
-                while (true) {
-                    int len = inStream.read(b);
-                    if (len < 0) break;
-                    bout.write(b, 0, len);
+                if (keyStore.entryInstanceOf(
+                        importAlias, KeyStore.PrivateKeyEntry.class)) {
+                    kssave = installReply(importAlias, inStream);
+                    if (kssave) {
+                        System.err.println(rb.getString
+                            ("Certificate reply was installed in keystore"));
+                    } else {
+                        System.err.println(rb.getString
+                            ("Certificate reply was not installed in keystore"));
+                    }
+                } else if (!keyStore.containsAlias(importAlias) ||
+                        keyStore.entryInstanceOf(importAlias,
+                            KeyStore.TrustedCertificateEntry.class)) {
+                    kssave = addTrustedCert(importAlias, inStream);
+                    if (kssave) {
+                        System.err.println(rb.getString
+                            ("Certificate was added to keystore"));
+                    } else {
+                        System.err.println(rb.getString
+                            ("Certificate was not added to keystore"));
+                    }
                 }
             } finally {
                 if (inStream != System.in) {
                     inStream.close();
-                }
-            }
-            inStream = new ByteArrayInputStream(bout.toByteArray());
-            String importAlias = (alias!=null)?alias:keyAlias;
-            if (keyStore.entryInstanceOf(importAlias, KeyStore.PrivateKeyEntry.class)) {
-                kssave = installReply(importAlias, inStream);
-                if (kssave) {
-                    System.err.println(rb.getString
-                        ("Certificate reply was installed in keystore"));
-                } else {
-                    System.err.println(rb.getString
-                        ("Certificate reply was not installed in keystore"));
-                }
-            } else if (!keyStore.containsAlias(importAlias) ||
-                    keyStore.entryInstanceOf(importAlias,
-                        KeyStore.TrustedCertificateEntry.class)) {
-                kssave = addTrustedCert(importAlias, inStream);
-                if (kssave) {
-                    System.err.println(rb.getString
-                        ("Certificate was added to keystore"));
-                } else {
-                    System.err.println(rb.getString
-                        ("Certificate was not added to keystore"));
                 }
             }
         } else if (command == IMPORTKEYSTORE) {
@@ -2149,18 +2138,7 @@ public final class KeyTool {
                 inStream = new FileInputStream(filename);
             }
             try {
-                // Read the full stream before feeding to X509Factory,
-                // otherwise, keytool -gencert | keytool -printcert
-                // might not work properly, since -gencert is slow
-                // and there's no data in the pipe at the beginning.
-                ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                byte[] b = new byte[4096];
-                while (true) {
-                    int len = inStream.read(b);
-                    if (len < 0) break;
-                    bout.write(b, 0, len);
-                }
-                printCertFromStream(new ByteArrayInputStream(bout.toByteArray()), out);
+                printCertFromStream(inStream, out);
             } finally {
                 if (inStream != System.in) {
                     inStream.close();

@@ -457,21 +457,21 @@ void CounterDecay::decay() {
 // Various cleaning tasks that should be done periodically at safepoints
 void SafepointSynchronize::do_cleanup_tasks() {
   {
-    TraceTime t1("deflating idle monitors", TraceSafepoint);
+    TraceTime t1("deflating idle monitors", TraceSafepointCleanupTime);
     ObjectSynchronizer::deflate_idle_monitors();
   }
 
   {
-    TraceTime t2("updating inline caches", TraceSafepoint);
+    TraceTime t2("updating inline caches", TraceSafepointCleanupTime);
     InlineCacheBuffer::update_inline_caches();
   }
 
   if(UseCounterDecay && CounterDecay::is_decay_needed()) {
-    TraceTime t3("decaying counter", TraceSafepoint);
+    TraceTime t3("decaying counter", TraceSafepointCleanupTime);
     CounterDecay::decay();
   }
 
-  TraceTime t4("sweeping nmethods", TraceSafepoint);
+  TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
   NMethodSweeper::sweep();
 }
 

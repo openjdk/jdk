@@ -1579,7 +1579,7 @@ static int getInetAddrFromIf (JNIEnv *env, int family, jobject nif, jobject *iad
     jobject addr;
     int i;
 
-    if (ni_addrsID == NULL) {
+    if (ni_addrsID == NULL || ia_familyID == NULL) {
         jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
         CHECK_NULL_RETURN (c, -1);
         ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
