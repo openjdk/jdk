@@ -657,9 +657,6 @@ public class IPAddressDNSIdentities {
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.setNeedClientAuth(true);
-        if (sslSocket instanceof SSLSocketImpl) {
-            ((SSLSocketImpl)sslSocket).trySetHostnameVerification("HTTPS");
-        }
 
         PrintStream out =
                 new PrintStream(sslSocket.getOutputStream());
