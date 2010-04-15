@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,18 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+package sun.misc;
 
+import java.security.PermissionCollection;
+import java.security.ProtectionDomain;
 
-
-package sun.io;
-
-import sun.nio.cs.ext.HKSCS_2001;
-
-/**
- * Tables and data to convert Unicode to HKSCS (2001 revision)
- *
- * @author  ConverterGenerator tool
- */
-
-public class CharToByteHKSCS_2001 extends CharToByteDoubleByte {
-
-    public String getCharacterEncoding() {
-        return "HKSCS_2001";
+public interface JavaSecurityProtectionDomainAccess {
+    interface ProtectionDomainCache {
+        void put(ProtectionDomain pd, PermissionCollection pc);
+        PermissionCollection get(ProtectionDomain pd);
     }
-
-    public CharToByteHKSCS_2001() {
-        super.index1 = HKSCS_2001.getEncoderIndex1();
-        super.index2 = HKSCS_2001.getEncoderIndex2();
-    }
+    /**
+     * Returns the ProtectionDomainCache.
+     */
+    ProtectionDomainCache getProtectionDomainCache();
 }

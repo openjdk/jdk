@@ -447,7 +447,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     gclog_or_tty->print_cr("[global] init, heap start = "PTR_FORMAT", "
                            "heap end = "PTR_FORMAT, _heap_start, _heap_end);
 
-  _markStack.allocate(G1MarkStackSize);
+  _markStack.allocate(MarkStackSize);
   _regionStack.allocate(G1MarkRegionStackSize);
 
   // Create & start a ConcurrentMark thread.
@@ -461,7 +461,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   assert(_markBitMap2.covers(rs), "_markBitMap2 inconsistency");
 
   SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
-  satb_qs.set_buffer_size(G1SATBLogBufferSize);
+  satb_qs.set_buffer_size(G1SATBBufferSize);
 
   int size = (int) MAX2(ParallelGCThreads, (size_t)1);
   _par_cleanup_thread_state = NEW_C_HEAP_ARRAY(ParCleanupThreadState*, size);
@@ -483,8 +483,8 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     _accum_task_vtime[i] = 0.0;
   }
 
-  if (ParallelMarkingThreads > ParallelGCThreads) {
-    vm_exit_during_initialization("Can't have more ParallelMarkingThreads "
+  if (ConcGCThreads > ParallelGCThreads) {
+    vm_exit_during_initialization("Can't have more ConcGCThreads "
                                   "than ParallelGCThreads.");
   }
   if (ParallelGCThreads == 0) {
@@ -494,11 +494,11 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     _sleep_factor             = 0.0;
     _marking_task_overhead    = 1.0;
   } else {
-    if (ParallelMarkingThreads > 0) {
-      // notice that ParallelMarkingThreads overwrites G1MarkingOverheadPercent
+    if (ConcGCThreads > 0) {
+      // notice that ConcGCThreads overwrites G1MarkingOverheadPercent
       // if both are set
 
-      _parallel_marking_threads = ParallelMarkingThreads;
+      _parallel_marking_threads = ConcGCThreads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
     } else if (G1MarkingOverheadPercent > 0) {
@@ -760,7 +760,10 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  satb_mq_set.set_active_all_threads(true);
+  // This is the start of  the marking cycle, we're expected all
+  // threads to have SATB queues with active set to false.
+  satb_mq_set.set_active_all_threads(true, /* new active value */
+                                     false /* expected_active */);
 
   // update_g1_committed() will be called at the end of an evac pause
   // when marking is on. So, it's also called at the end of the
@@ -1079,7 +1082,11 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
   } else {
     // We're done with marking.
-    JavaThread::satb_mark_queue_set().set_active_all_threads(false);
+    // This is the end of  the marking cycle, we're expected all
+    // threads to have SATB queues with active set to true.
+    JavaThread::satb_mark_queue_set().set_active_all_threads(
+                                                  false, /* new active value */
+                                                  true /* expected_active */);
 
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
@@ -2586,7 +2593,11 @@ void ConcurrentMark::abort() {
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
-  satb_mq_set.set_active_all_threads(false);
+  // This can be called either during or outside marking, we'll read
+  // the expected_active value from the SATB queue set.
+  satb_mq_set.set_active_all_threads(
+                                 false, /* new active value */
+                                 satb_mq_set.is_active() /* expected_active */);
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,
@@ -3704,7 +3715,14 @@ void CMTask::do_marking_step(double time_target_ms) {
         // enough to point to the next possible object header (the
         // bitmap knows by how much we need to move it as it knows its
         // granularity).
-        move_finger_to(_nextMarkBitMap->nextWord(_finger));
+        assert(_finger < _region_limit, "invariant");
+        HeapWord* new_finger = _nextMarkBitMap->nextWord(_finger);
+        // Check if bitmap iteration was aborted while scanning the last object
+        if (new_finger >= _region_limit) {
+            giveup_current_region();
+        } else {
+            move_finger_to(new_finger);
+        }
       }
     }
     // At this point we have either completed iterating over the

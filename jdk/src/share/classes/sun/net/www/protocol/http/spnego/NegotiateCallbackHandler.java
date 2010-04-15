@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,36 @@ public class NegotiateCallbackHandler implements CallbackHandler {
     private String username;
     private char[] password;
 
+    /**
+     * Authenticator asks for username and password in a single prompt,
+     * but CallbackHandler checks one by one. So, no matter which callback
+     * gets handled first, make sure Authenticator is only called once.
+     */
+    private boolean answered;
+
     private final HttpCallerInfo hci;
 
     public NegotiateCallbackHandler(HttpCallerInfo hci) {
         this.hci = hci;
+    }
+
+    private void getAnswer() {
+        if (!answered) {
+            answered = true;
+            PasswordAuthentication passAuth =
+                    Authenticator.requestPasswordAuthentication(
+                    hci.host, hci.addr, hci.port, hci.protocol,
+                    hci.prompt, hci.scheme, hci.url, hci.authType);
+            /**
+             * To be compatible with existing callback handler implementations,
+             * when the underlying Authenticator is canceled, username and
+             * password are assigned null. No exception is thrown.
+             */
+            if (passAuth != null) {
+                username = passAuth.getUserName();
+                password = passAuth.getPassword();
+            }
+        }
     }
 
     public void handle(Callback[] callbacks) throws
@@ -57,31 +83,12 @@ public class NegotiateCallbackHandler implements CallbackHandler {
             Callback callBack = callbacks[i];
 
             if (callBack instanceof NameCallback) {
-                if (username == null) {
-                    PasswordAuthentication passAuth =
-                            Authenticator.requestPasswordAuthentication(
-                            hci.host, hci.addr, hci.port, hci.protocol,
-                            hci.prompt, hci.scheme, hci.url, hci.authType);
-                    username = passAuth.getUserName();
-                    password = passAuth.getPassword();
-                }
-                NameCallback nameCallback =
-                        (NameCallback)callBack;
-                nameCallback.setName(username);
-
+                getAnswer();
+                ((NameCallback)callBack).setName(username);
             } else if (callBack instanceof PasswordCallback) {
-                PasswordCallback passwordCallback =
-                        (PasswordCallback)callBack;
-                if (password == null) {
-                    PasswordAuthentication passAuth =
-                            Authenticator.requestPasswordAuthentication(
-                            hci.host, hci.addr, hci.port, hci.protocol,
-                            hci.prompt, hci.scheme, hci.url, hci.authType);
-                    username = passAuth.getUserName();
-                    password = passAuth.getPassword();
-                }
-                passwordCallback.setPassword(password);
-                Arrays.fill(password, ' ');
+                getAnswer();
+                ((PasswordCallback)callBack).setPassword(password);
+                if (password != null) Arrays.fill(password, ' ');
             } else {
                 throw new UnsupportedCallbackException(callBack,
                         "Call back not supported");

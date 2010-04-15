@@ -2479,6 +2479,15 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
       return 2;
     }
 
+    case T_ADDRESS: {
+#ifdef _LP64
+      scope_values->append(new ConstantLongValue(c->as_jint()));
+#else
+      scope_values->append(new ConstantIntValue(c->as_jint()));
+#endif
+      return 1;
+    }
+
     default:
       ShouldNotReachHere();
       return -1;

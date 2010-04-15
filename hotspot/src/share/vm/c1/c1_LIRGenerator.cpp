@@ -2284,7 +2284,7 @@ void LIRGenerator::do_OsrEntry(OsrEntry* x) {
 
 
 void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR_OprList* arg_list) {
-  int i = x->has_receiver() ? 1 : 0;
+  int i = (x->has_receiver() || x->is_invokedynamic()) ? 1 : 0;
   for (; i < args->length(); i++) {
     LIRItem* param = args->at(i);
     LIR_Opr loc = arg_list->at(i);
@@ -2321,6 +2321,10 @@ LIRItemList* LIRGenerator::invoke_visit_arguments(Invoke* x) {
   if (x->has_receiver()) {
     LIRItem* receiver = new LIRItem(x->receiver(), this);
     argument_items->append(receiver);
+  }
+  if (x->is_invokedynamic()) {
+    // Insert a dummy for the synthetic MethodHandle argument.
+    argument_items->append(NULL);
   }
   int idx = x->has_receiver() ? 1 : 0;
   for (int i = 0; i < x->number_of_arguments(); i++) {
@@ -2371,6 +2375,9 @@ void LIRGenerator::do_Invoke(Invoke* x) {
 
   CodeEmitInfo* info = state_for(x, x->state());
 
+  // invokedynamics can deoptimize.
+  CodeEmitInfo* deopt_info = x->is_invokedynamic() ? state_for(x, x->state_before()) : NULL;
+
   invoke_load_arguments(x, args, arg_list);
 
   if (x->has_receiver()) {
@@ -2407,6 +2414,47 @@ void LIRGenerator::do_Invoke(Invoke* x) {
         __ call_virtual(x->target(), receiver, result_register, vtable_offset, arg_list, info);
       }
       break;
+    case Bytecodes::_invokedynamic: {
+      ciBytecodeStream bcs(x->scope()->method());
+      bcs.force_bci(x->bci());
+      assert(bcs.cur_bc() == Bytecodes::_invokedynamic, "wrong stream");
+      ciCPCache* cpcache = bcs.get_cpcache();
+
+      // Get CallSite offset from constant pool cache pointer.
+      int index = bcs.get_method_index();
+      size_t call_site_offset = cpcache->get_f1_offset(index);
+
+      // If this invokedynamic call site hasn't been executed yet in
+      // the interpreter, the CallSite object in the constant pool
+      // cache is still null and we need to deoptimize.
+      if (cpcache->is_f1_null_at(index)) {
+        // Cannot re-use same xhandlers for multiple CodeEmitInfos, so
+        // clone all handlers.  This is handled transparently in other
+        // places by the CodeEmitInfo cloning logic but is handled
+        // specially here because a stub isn't being used.
+        x->set_exception_handlers(new XHandlers(x->exception_handlers()));
+
+        DeoptimizeStub* deopt_stub = new DeoptimizeStub(deopt_info);
+        __ jump(deopt_stub);
+      }
+
+      // Use the receiver register for the synthetic MethodHandle
+      // argument.
+      receiver = LIR_Assembler::receiverOpr();
+      LIR_Opr tmp = new_register(objectType);
+
+      // Load CallSite object from constant pool cache.
+      __ oop2reg(cpcache->constant_encoding(), tmp);
+      __ load(new LIR_Address(tmp, call_site_offset, T_OBJECT), tmp);
+
+      // Load target MethodHandle from CallSite object.
+      __ load(new LIR_Address(tmp, java_dyn_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
+
+      __ call_dynamic(x->target(), receiver, result_register,
+                      SharedRuntime::get_resolve_opt_virtual_call_stub(),
+                      arg_list, info);
+      break;
+    }
     default:
       ShouldNotReachHere();
       break;

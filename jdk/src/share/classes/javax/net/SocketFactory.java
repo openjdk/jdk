@@ -27,8 +27,10 @@
 package javax.net;
 
 import java.io.IOException;
-import java.net.*;
-
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 /**
  * This class creates sockets.  It may be subclassed by other factories,
@@ -113,7 +115,17 @@ public abstract class SocketFactory
      * @see java.net.Socket#Socket()
      */
     public Socket createSocket() throws IOException {
-        throw new SocketException("Unconnected sockets not implemented");
+        //
+        // bug 6771432:
+        // The Exception is used by HttpsClient to signal that
+        // unconnected sockets have not been implemented.
+        //
+        UnsupportedOperationException uop = new
+                UnsupportedOperationException();
+        SocketException se =  new SocketException(
+                "Unconnected sockets not implemented");
+        se.initCause(uop);
+        throw se;
     }
 
 
