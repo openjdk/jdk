@@ -77,6 +77,12 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
   }
 }
 
+void MarkSweep::push_objarray(oop obj, size_t index) {
+  ObjArrayTask task(obj, index);
+  assert(task.is_valid(), "bad ObjArrayTask");
+  _objarray_stack->push(task);
+}
+
 template <class T> inline void MarkSweep::adjust_pointer(T* p, bool isroot) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {

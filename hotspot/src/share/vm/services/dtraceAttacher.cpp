@@ -135,4 +135,9 @@ void DTrace::set_extended_dprobes(bool flag) {
   }
 }
 
+void DTrace::set_monitor_dprobes(bool flag) {
+  // explicit setting of DTraceMonitorProbes flag
+  set_bool_flag("DTraceMonitorProbes", flag);
+}
+
 #endif /* SOLARIS */

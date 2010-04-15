@@ -93,13 +93,17 @@ final class ClientHandshaker extends Handshaker {
      * Constructors
      */
     ClientHandshaker(SSLSocketImpl socket, SSLContextImpl context,
-            ProtocolList enabledProtocols) {
+            ProtocolList enabledProtocols,
+            ProtocolVersion activeProtocolVersion) {
         super(socket, context, enabledProtocols, true, true);
+        this.activeProtocolVersion = activeProtocolVersion;
     }
 
     ClientHandshaker(SSLEngineImpl engine, SSLContextImpl context,
-            ProtocolList enabledProtocols) {
+            ProtocolList enabledProtocols,
+            ProtocolVersion activeProtocolVersion) {
         super(engine, context, enabledProtocols, true, true);
+        this.activeProtocolVersion = activeProtocolVersion;
     }
 
     /*
@@ -275,7 +279,42 @@ final class ClientHandshaker extends Handshaker {
         // sent the "client hello" but the server's not seen it.
         //
         if (state < HandshakeMessage.ht_client_hello) {
-            kickstart();
+            if (!renegotiable) {    // renegotiation is not allowed.
+                if (activeProtocolVersion.v >= ProtocolVersion.TLS10.v) {
+                    // response with a no_negotiation warning,
+                    warningSE(Alerts.alert_no_negotiation);
+
+                    // invalidate the handshake so that the caller can
+                    // dispose this object.
+                    invalidated = true;
+
+                    // If there is still unread block in the handshake
+                    // input stream, it would be truncated with the disposal
+                    // and the next handshake message will become incomplete.
+                    //
+                    // However, according to SSL/TLS specifications, no more
+                    // handshake message could immediately follow ClientHello
+                    // or HelloRequest. But in case of any improper messages,
+                    // we'd better check to ensure there is no remaining bytes
+                    // in the handshake input stream.
+                    if (input.available() > 0) {
+                        fatalSE(Alerts.alert_unexpected_message,
+                            "HelloRequest followed by an unexpected  " +
+                            "handshake message");
+                    }
+
+                } else {
+                    // For SSLv3, send the handshake_failure fatal error.
+                    // Note that SSLv3 does not define a no_negotiation alert
+                    // like TLSv1. However we cannot ignore the message
+                    // simply, otherwise the other side was waiting for a
+                    // response that would never come.
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "renegotiation is not allowed");
+                }
+            } else {
+                kickstart();
+            }
         }
     }
 

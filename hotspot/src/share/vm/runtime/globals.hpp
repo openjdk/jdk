@@ -1795,6 +1795,10 @@ class CommandLineFlags {
   product(uintx, PreserveMarkStackSize, 1024,                               \
           "Size for stack used in promotion failure handling")              \
                                                                             \
+  develop(uintx, ObjArrayMarkingStride, 512,                                \
+          "Number of ObjArray elements to push onto the marking stack"      \
+          "before pushing a continuation entry")                            \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
@@ -2288,6 +2292,10 @@ class CommandLineFlags {
   product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
           "print safepoint statistics only when safepoint takes"            \
           " more than PrintSafepointSatisticsTimeout in millis")            \
+                                                                            \
+  product(bool, TraceSafepointCleanupTime, false,                           \
+          "print the break down of clean up tasks performed during"         \
+          " safepoint")                                                     \
                                                                             \
   develop(bool, InlineAccessors, true,                                      \
           "inline accessor methods (get/set)")                              \

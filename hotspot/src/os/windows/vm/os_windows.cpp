@@ -2803,6 +2803,14 @@ bool os::release_memory(char* addr, size_t bytes) {
   return VirtualFree(addr, 0, MEM_RELEASE) != 0;
 }
 
+bool os::create_stack_guard_pages(char* addr, size_t size) {
+  return os::commit_memory(addr, size);
+}
+
+bool os::remove_stack_guard_pages(char* addr, size_t size) {
+  return os::uncommit_memory(addr, size);
+}
+
 // Set protections specified
 bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
                         bool is_committed) {

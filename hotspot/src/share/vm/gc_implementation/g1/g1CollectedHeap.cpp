@@ -2102,18 +2102,21 @@ size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   // Return the remaining space in the cur alloc region, but not less than
   // the min TLAB size.
-  // Also, no more than half the region size, since we can't allow tlabs to
-  // grow big enough to accomodate humongous objects.
 
-  // We need to story it locally, since it might change between when we
-  // test for NULL and when we use it later.
+  // Also, this value can be at most the humongous object threshold,
+  // since we can't allow tlabs to grow big enough to accomodate
+  // humongous objects.
+
+  // We need to store the cur alloc region locally, since it might change
+  // between when we test for NULL and when we use it later.
   ContiguousSpace* cur_alloc_space = _cur_alloc_region;
+  size_t max_tlab_size = _humongous_object_threshold_in_words * wordSize;
+
   if (cur_alloc_space == NULL) {
-    return HeapRegion::GrainBytes/2;
+    return max_tlab_size;
   } else {
-    return MAX2(MIN2(cur_alloc_space->free(),
-                     (size_t)(HeapRegion::GrainBytes/2)),
-                (size_t)MinTLABSize);
+    return MIN2(MAX2(cur_alloc_space->free(), (size_t)MinTLABSize),
+                max_tlab_size);
   }
 }
 

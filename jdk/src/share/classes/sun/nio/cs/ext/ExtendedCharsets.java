@@ -55,10 +55,15 @@ public class ExtendedCharsets
                     "csBig5"
                 });
 
+        charset("x-MS950-HKSCS-XP", "MS950_HKSCS_XP",
+                new String[] {
+                    "MS950_HKSCS_XP"  // JDK historical;
+                });
+
         charset("x-MS950-HKSCS", "MS950_HKSCS",
                 new String[] {
                     // IANA aliases
-                    "MS950_HKSCS"  // JDK historical;
+                    "MS950_HKSCS"     // JDK historical;
                 });
 
         charset("x-windows-950", "MS950",
@@ -86,8 +91,16 @@ public class ExtendedCharsets
                     "Big5_HKSCS", // JDK historical
                     "big5hk",
                     "big5-hkscs",
+                    "big5hkscs"   // Linux alias
+                });
+
+        charset("x-Big5-HKSCS-2001", "Big5_HKSCS_2001",
+                new String[] {
+                    "Big5_HKSCS_2001",
+                    "big5hk-2001",
+                    "big5-hkscs-2001",
                     "big5-hkscs:unicode3.0",
-                    "big5hkscs" // Linux alias
+                    "big5hkscs-2001",
                 });
 
         charset("x-Big5-Solaris", "Big5_Solaris",
