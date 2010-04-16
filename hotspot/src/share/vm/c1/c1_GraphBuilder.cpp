@@ -829,12 +829,8 @@ void GraphBuilder::ScopeData::setup_jsr_xhandlers() {
     // should be left alone since there can be only one and all code
     // should dispatch to the same one.
     XHandler* h = handlers->handler_at(i);
-    if (h->handler_bci() != SynchronizationEntryBCI) {
-      h->set_entry_block(block_at(h->handler_bci()));
-    } else {
-      assert(h->entry_block()->is_set(BlockBegin::default_exception_handler_flag),
-             "should be the synthetic unlock block");
-    }
+    assert(h->handler_bci() != SynchronizationEntryBCI, "must be real");
+    h->set_entry_block(block_at(h->handler_bci()));
   }
   _jsr_xhandlers = handlers;
 }
@@ -2867,19 +2863,6 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   _initial_state = state_at_entry();
   start_block->merge(_initial_state);
 
-  // setup an exception handler to do the unlocking and/or
-  // notification and unwind the frame.
-  BlockBegin* sync_handler = new BlockBegin(-1);
-  sync_handler->set(BlockBegin::exception_entry_flag);
-  sync_handler->set(BlockBegin::is_on_work_list_flag);
-  sync_handler->set(BlockBegin::default_exception_handler_flag);
-
-  ciExceptionHandler* desc = new ciExceptionHandler(method()->holder(), 0, method()->code_size(), -1, 0);
-  XHandler* h = new XHandler(desc);
-  h->set_entry_block(sync_handler);
-  scope_data()->xhandlers()->append(h);
-  scope_data()->set_has_handler();
-
   // complete graph
   _vmap        = new ValueMap();
   scope->compute_lock_stack_size();
@@ -2929,19 +2912,6 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
     break;
   }
   CHECK_BAILOUT();
-
-  if (sync_handler && sync_handler->state() != NULL) {
-    Value lock = NULL;
-    if (method()->is_synchronized()) {
-      lock = method()->is_static() ? new Constant(new InstanceConstant(method()->holder()->java_mirror())) :
-                                     _initial_state->local_at(0);
-
-      sync_handler->state()->unlock();
-      sync_handler->state()->lock(scope, lock);
-
-    }
-    fill_sync_handler(lock, sync_handler, true);
-  }
 
   _start = setup_start_block(osr_bci, start_block, _osr_entry, _initial_state);
 
