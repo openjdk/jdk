@@ -1628,11 +1628,10 @@ LEAF(BlockBegin, StateSplit)
     backward_branch_target_flag   = 1 << 4,
     is_on_work_list_flag          = 1 << 5,
     was_visited_flag              = 1 << 6,
-    default_exception_handler_flag = 1 << 8, // identify block which represents the default exception handler
-    parser_loop_header_flag       = 1 << 9,  // set by parser to identify blocks where phi functions can not be created on demand
-    critical_edge_split_flag      = 1 << 10, // set for all blocks that are introduced when critical edges are split
-    linear_scan_loop_header_flag  = 1 << 11, // set during loop-detection for LinearScan
-    linear_scan_loop_end_flag     = 1 << 12  // set during loop-detection for LinearScan
+    parser_loop_header_flag       = 1 << 7,  // set by parser to identify blocks where phi functions can not be created on demand
+    critical_edge_split_flag      = 1 << 8, // set for all blocks that are introduced when critical edges are split
+    linear_scan_loop_header_flag  = 1 << 9, // set during loop-detection for LinearScan
+    linear_scan_loop_end_flag     = 1 << 10  // set during loop-detection for LinearScan
   };
 
   void set(Flag f)                               { _flags |= f; }

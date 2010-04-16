@@ -229,6 +229,10 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
   CHECK_BAILOUT();
 
+  // Emit the handler to remove the activation from the stack and
+  // dispatch to the caller.
+  offsets()->set_value(CodeOffsets::UnwindHandler, assembler->emit_unwind_handler());
+
   // done
   masm()->flush();
 }
