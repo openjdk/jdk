@@ -781,7 +781,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
 
   // Restore SP from BP if the exception PC is a MethodHandle call site.
   NOT_LP64(__ get_thread(thread);)
-  __ cmpl(Address(thread, JavaThread::is_method_handle_exception_offset()), 0);
+  __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
   __ cmovptr(Assembler::notEqual, rsp, rbp);
 
   // continue at exception handler (return address removed)
