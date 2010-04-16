@@ -232,6 +232,9 @@ private:
   // current collection.
   HeapRegion* _gc_alloc_region_list;
 
+  // Determines PLAB size for a particular allocation purpose.
+  static size_t desired_plab_sz(GCAllocPurpose purpose);
+
   // When called by par thread, require par_alloc_during_gc_lock() to be held.
   void push_gc_alloc_region(HeapRegion* hr);
 
@@ -1367,12 +1370,18 @@ private:
     return BitsPerWord << shifter();
   }
 
-  static size_t gclab_word_size() {
-    return G1ParallelGCAllocBufferSize / HeapWordSize;
+  size_t gclab_word_size() const {
+    return _gclab_word_size;
   }
 
-  static size_t bitmap_size_in_bits() {
-    size_t bits_in_bitmap = gclab_word_size() >> shifter();
+  // Calculates actual GCLab size in words
+  size_t gclab_real_word_size() const {
+    return bitmap_size_in_bits(pointer_delta(_real_end_word, _start_word))
+           / BitsPerWord;
+  }
+
+  static size_t bitmap_size_in_bits(size_t gclab_word_size) {
+    size_t bits_in_bitmap = gclab_word_size >> shifter();
     // We are going to ensure that the beginning of a word in this
     // bitmap also corresponds to the beginning of a word in the
     // global marking bitmap. To handle the case where a GCLab
@@ -1382,13 +1391,13 @@ private:
     return bits_in_bitmap + BitsPerWord - 1;
   }
 public:
-  GCLabBitMap(HeapWord* heap_start)
-    : BitMap(bitmap_size_in_bits()),
+  GCLabBitMap(HeapWord* heap_start, size_t gclab_word_size)
+    : BitMap(bitmap_size_in_bits(gclab_word_size)),
       _cm(G1CollectedHeap::heap()->concurrent_mark()),
       _shifter(shifter()),
       _bitmap_word_covers_words(bitmap_word_covers_words()),
       _heap_start(heap_start),
-      _gclab_word_size(gclab_word_size()),
+      _gclab_word_size(gclab_word_size),
       _real_start_word(NULL),
       _real_end_word(NULL),
       _start_word(NULL)
@@ -1483,7 +1492,7 @@ public:
       mark_bitmap->mostly_disjoint_range_union(this,
                                 0, // always start from the start of the bitmap
                                 _start_word,
-                                size_in_words());
+                                gclab_real_word_size());
       _cm->grayRegionIfNecessary(MemRegion(_real_start_word, _real_end_word));
 
 #ifndef PRODUCT
@@ -1495,9 +1504,10 @@ public:
     }
   }
 
-  static size_t bitmap_size_in_words() {
-    return (bitmap_size_in_bits() + BitsPerWord - 1) / BitsPerWord;
+  size_t bitmap_size_in_words() const {
+    return (bitmap_size_in_bits(gclab_word_size()) + BitsPerWord - 1) / BitsPerWord;
   }
+
 };
 
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {
@@ -1507,10 +1517,10 @@ private:
   GCLabBitMap _bitmap;
 
 public:
-  G1ParGCAllocBuffer() :
-    ParGCAllocBuffer(G1ParallelGCAllocBufferSize / HeapWordSize),
+  G1ParGCAllocBuffer(size_t gclab_word_size) :
+    ParGCAllocBuffer(gclab_word_size),
     _during_marking(G1CollectedHeap::heap()->mark_in_progress()),
-    _bitmap(G1CollectedHeap::heap()->reserved_region().start()),
+    _bitmap(G1CollectedHeap::heap()->reserved_region().start(), gclab_word_size),
     _retired(false)
   { }
 
@@ -1549,8 +1559,10 @@ protected:
   typedef GrowableArray<StarTask> OverflowQueue;
   OverflowQueue* _overflowed_refs;
 
-  G1ParGCAllocBuffer _alloc_buffers[GCAllocPurposeCount];
-  ageTable           _age_table;
+  G1ParGCAllocBuffer  _surviving_alloc_buffer;
+  G1ParGCAllocBuffer  _tenured_alloc_buffer;
+  G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
+  ageTable            _age_table;
 
   size_t           _alloc_buffer_waste;
   size_t           _undo_waste;
@@ -1619,7 +1631,7 @@ public:
   ageTable*         age_table()       { return &_age_table;       }
 
   G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
-    return &_alloc_buffers[purpose];
+    return _alloc_buffers[purpose];
   }
 
   size_t alloc_buffer_waste()                    { return _alloc_buffer_waste; }
@@ -1684,15 +1696,15 @@ public:
   HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
 
     HeapWord* obj = NULL;
-    if (word_sz * 100 <
-        (size_t)(G1ParallelGCAllocBufferSize / HeapWordSize) *
-                                                  ParallelGCBufferWastePct) {
+    size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
+    if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
       G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
+      assert(gclab_word_size == alloc_buf->word_sz(),
+             "dynamic resizing is not supported");
       add_to_alloc_buffer_waste(alloc_buf->words_remaining());
       alloc_buf->retire(false, false);
 
-      HeapWord* buf =
-        _g1h->par_allocate_during_gc(purpose, G1ParallelGCAllocBufferSize / HeapWordSize);
+      HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.
       // Otherwise.
       alloc_buf->set_buf(buf);
@@ -1786,9 +1798,9 @@ public:
 
   void retire_alloc_buffers() {
     for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-      size_t waste = _alloc_buffers[ap].words_remaining();
+      size_t waste = _alloc_buffers[ap]->words_remaining();
       add_to_alloc_buffer_waste(waste);
-      _alloc_buffers[ap].retire(true, false);
+      _alloc_buffers[ap]->retire(true, false);
     }
   }
 
