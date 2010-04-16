@@ -28,9 +28,6 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw) \
                                                                             \
-  product(intx, G1ParallelGCAllocBufferSize, 8*K,                           \
-          "Size of parallel G1 allocation buffers in to-space.")            \
-                                                                            \
   product(intx, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
                                                                             \

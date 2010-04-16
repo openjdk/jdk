@@ -2946,6 +2946,25 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
   }
 }
 
+size_t G1CollectedHeap::desired_plab_sz(GCAllocPurpose purpose)
+{
+  size_t gclab_word_size;
+  switch (purpose) {
+    case GCAllocForSurvived:
+      gclab_word_size = YoungPLABSize;
+      break;
+    case GCAllocForTenured:
+      gclab_word_size = OldPLABSize;
+      break;
+    default:
+      assert(false, "unknown GCAllocPurpose");
+      gclab_word_size = OldPLABSize;
+      break;
+  }
+  return gclab_word_size;
+}
+
+
 void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   assert(purpose >= 0 && purpose < GCAllocPurposeCount, "invalid purpose");
   // make sure we don't call set_gc_alloc_region() multiple times on
@@ -3680,6 +3699,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
     _g1_rem(g1h->g1_rem_set()),
     _hash_seed(17), _queue_num(queue_num),
     _term_attempts(0),
+    _surviving_alloc_buffer(g1h->desired_plab_sz(GCAllocForSurvived)),
+    _tenured_alloc_buffer(g1h->desired_plab_sz(GCAllocForTenured)),
     _age_table(false),
 #if G1_DETAILED_STATS
     _pushes(0), _pops(0), _steals(0),
@@ -3705,6 +3726,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
   memset(_surviving_young_words, 0, real_length * sizeof(size_t));
 
   _overflowed_refs = new OverflowQueue(10);
+
+  _alloc_buffers[GCAllocForSurvived] = &_surviving_alloc_buffer;
+  _alloc_buffers[GCAllocForTenured]  = &_tenured_alloc_buffer;
 
   _start = os::elapsedTime();
 }
