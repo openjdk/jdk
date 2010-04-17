@@ -678,7 +678,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 #endif //_LP64
     else if( (t->base() == Type::FloatBot || t->base() == Type::FloatCon) &&
                OptoReg::is_reg(regnum) ) {
-      array->append(new_loc_value( _regalloc, regnum, Matcher::float_in_double
+      array->append(new_loc_value( _regalloc, regnum, Matcher::float_in_double()
                                    ? Location::float_in_dbl : Location::normal ));
     } else if( t->base() == Type::Int && OptoReg::is_reg(regnum) ) {
       array->append(new_loc_value( _regalloc, regnum, Matcher::int_in_long

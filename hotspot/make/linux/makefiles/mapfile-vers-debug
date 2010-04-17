@@ -290,6 +290,9 @@ SUNWprivate_1.1 {
 
                 # This is for Forte Analyzer profiling support.
                 AsyncGetCallTrace;
+
+		# INSERT VTABLE SYMBOLS HERE
+
         local:
                 *;
 };

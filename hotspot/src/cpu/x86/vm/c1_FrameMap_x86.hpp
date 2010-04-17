@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,3 +126,6 @@
     assert(i >= 0 && i < nof_caller_save_xmm_regs, "out of bounds");
     return _caller_save_xmm_regs[i];
   }
+
+  // JSR 292
+  static LIR_Opr& method_handle_invoke_SP_save_opr() { return rbp_opr; }

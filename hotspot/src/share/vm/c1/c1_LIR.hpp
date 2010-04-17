@@ -85,9 +85,10 @@ class LIR_Const: public LIR_OprPtr {
 
   void type_check(BasicType t) const   { assert(type() == t, "type check"); }
   void type_check(BasicType t1, BasicType t2) const   { assert(type() == t1 || type() == t2, "type check"); }
+  void type_check(BasicType t1, BasicType t2, BasicType t3) const   { assert(type() == t1 || type() == t2 || type() == t3, "type check"); }
 
  public:
-  LIR_Const(jint i)                              { _value.set_type(T_INT);     _value.set_jint(i); }
+  LIR_Const(jint i, bool is_address=false)       { _value.set_type(is_address?T_ADDRESS:T_INT); _value.set_jint(i); }
   LIR_Const(jlong l)                             { _value.set_type(T_LONG);    _value.set_jlong(l); }
   LIR_Const(jfloat f)                            { _value.set_type(T_FLOAT);   _value.set_jfloat(f); }
   LIR_Const(jdouble d)                           { _value.set_type(T_DOUBLE);  _value.set_jdouble(d); }
@@ -105,7 +106,7 @@ class LIR_Const: public LIR_OprPtr {
   virtual BasicType type()       const { return _value.get_type(); }
   virtual LIR_Const* as_constant()     { return this; }
 
-  jint      as_jint()    const         { type_check(T_INT   ); return _value.get_jint(); }
+  jint      as_jint()    const         { type_check(T_INT, T_ADDRESS); return _value.get_jint(); }
   jlong     as_jlong()   const         { type_check(T_LONG  ); return _value.get_jlong(); }
   jfloat    as_jfloat()  const         { type_check(T_FLOAT ); return _value.get_jfloat(); }
   jdouble   as_jdouble() const         { type_check(T_DOUBLE); return _value.get_jdouble(); }
@@ -120,7 +121,7 @@ class LIR_Const: public LIR_OprPtr {
 #endif
 
 
-  jint      as_jint_bits() const       { type_check(T_FLOAT, T_INT); return _value.get_jint(); }
+  jint      as_jint_bits() const       { type_check(T_FLOAT, T_INT, T_ADDRESS); return _value.get_jint(); }
   jint      as_jint_lo_bits() const    {
     if (type() == T_DOUBLE) {
       return low(jlong_cast(_value.get_jdouble()));
@@ -718,6 +719,7 @@ class LIR_OprFact: public AllStatic {
   static LIR_Opr intptrConst(void* p)            { return (LIR_Opr)(new LIR_Const(p)); }
   static LIR_Opr intptrConst(intptr_t v)         { return (LIR_Opr)(new LIR_Const((void*)v)); }
   static LIR_Opr illegal()                       { return (LIR_Opr)-1; }
+  static LIR_Opr addressConst(jint i)            { return (LIR_Opr)(new LIR_Const(i, true)); }
 
   static LIR_Opr value_type(ValueType* type);
   static LIR_Opr dummy_value_type(ValueType* type);
@@ -840,6 +842,7 @@ enum LIR_Code {
       , lir_optvirtual_call
       , lir_icvirtual_call
       , lir_virtual_call
+      , lir_dynamic_call
   , end_opJavaCall
   , begin_opArrayCopy
       , lir_arraycopy
@@ -1051,6 +1054,16 @@ class LIR_OpJavaCall: public LIR_OpCall {
 
   LIR_Opr receiver() const                       { return _receiver; }
   ciMethod* method() const                       { return _method;   }
+
+  // JSR 292 support.
+  bool is_invokedynamic() const                  { return code() == lir_dynamic_call; }
+  bool is_method_handle_invoke() const {
+    return
+      is_invokedynamic()  // An invokedynamic is always a MethodHandle call site.
+      ||
+      (method()->holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
+       method()->name()           == ciSymbol::invoke_name());
+  }
 
   intptr_t vtable_offset() const {
     assert(_code == lir_virtual_call, "only have vtable for real vcall");
@@ -1765,6 +1778,10 @@ class LIR_List: public CompilationResourceObj {
   void call_virtual(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
                     intptr_t vtable_offset, LIR_OprList* arguments, CodeEmitInfo* info) {
     append(new LIR_OpJavaCall(lir_virtual_call, method, receiver, result, vtable_offset, arguments, info));
+  }
+  void call_dynamic(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
+                    address dest, LIR_OprList* arguments, CodeEmitInfo* info) {
+    append(new LIR_OpJavaCall(lir_dynamic_call, method, receiver, result, dest, arguments, info));
   }
 
   void get_thread(LIR_Opr result)                { append(new LIR_Op0(lir_get_thread, result)); }

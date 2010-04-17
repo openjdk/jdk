@@ -24,8 +24,8 @@
 
 class G1CollectedHeap;
 class CMTask;
-typedef GenericTaskQueue<oop> CMTaskQueue;
-typedef GenericTaskQueueSet<oop> CMTaskQueueSet;
+typedef GenericTaskQueue<oop>            CMTaskQueue;
+typedef GenericTaskQueueSet<CMTaskQueue> CMTaskQueueSet;
 
 // A generic CM bit map.  This is essentially a wrapper around the BitMap
 // class, with one bit per (1<<_shifter) HeapWords.
@@ -252,9 +252,19 @@ public:
   // with other "push" operations (no pops).
   void push(MemRegion mr);
 
+#if 0
+  // This is currently not used. See the comment in the .cpp file.
+
   // Lock-free; assumes that it will only be called in parallel
   // with other "pop" operations (no pushes).
   MemRegion pop();
+#endif // 0
+
+  // These two are the implementations that use a lock. They can be
+  // called concurrently with each other but they should not be called
+  // concurrently with the lock-free versions (push() / pop()).
+  void push_with_lock(MemRegion mr);
+  MemRegion pop_with_lock();
 
   bool isEmpty()    { return _index == 0; }
   bool isFull()     { return _index == _capacity; }
@@ -540,6 +550,10 @@ public:
 
   // Manipulation of the region stack
   bool region_stack_push(MemRegion mr) {
+    // Currently we only call the lock-free version during evacuation
+    // pauses.
+    assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
+
     _regionStack.push(mr);
     if (_regionStack.overflow()) {
       set_has_overflown();
@@ -547,7 +561,33 @@ public:
     }
     return true;
   }
-  MemRegion region_stack_pop()          { return _regionStack.pop(); }
+#if 0
+  // Currently this is not used. See the comment in the .cpp file.
+  MemRegion region_stack_pop() { return _regionStack.pop(); }
+#endif // 0
+
+  bool region_stack_push_with_lock(MemRegion mr) {
+    // Currently we only call the lock-based version during either
+    // concurrent marking or remark.
+    assert(!SafepointSynchronize::is_at_safepoint() || !concurrent(),
+           "if we are at a safepoint it should be the remark safepoint");
+
+    _regionStack.push_with_lock(mr);
+    if (_regionStack.overflow()) {
+      set_has_overflown();
+      return false;
+    }
+    return true;
+  }
+  MemRegion region_stack_pop_with_lock() {
+    // Currently we only call the lock-based version during either
+    // concurrent marking or remark.
+    assert(!SafepointSynchronize::is_at_safepoint() || !concurrent(),
+           "if we are at a safepoint it should be the remark safepoint");
+
+    return _regionStack.pop_with_lock();
+  }
+
   int region_stack_size()               { return _regionStack.size(); }
   bool region_stack_overflow()          { return _regionStack.overflow(); }
   bool region_stack_empty()             { return _regionStack.isEmpty(); }

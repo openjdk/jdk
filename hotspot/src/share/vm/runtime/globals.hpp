@@ -1052,7 +1052,8 @@ class CommandLineFlags {
           "Use SSE2 MOVDQU instruction for Arraycopy")                      \
                                                                             \
   product(intx, FieldsAllocationStyle, 1,                                   \
-          "0 - type based with oops first, 1 - with oops last")             \
+          "0 - type based with oops first, 1 - with oops last, "            \
+          "2 - oops in super and sub classes are together")                 \
                                                                             \
   product(bool, CompactFields, true,                                        \
           "Allocate nonstatic fields in gaps between previous fields")      \
@@ -1245,9 +1246,6 @@ class CommandLineFlags {
   product(uintx, ParallelGCThreads, 0,                                      \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
-  product(uintx, ParallelCMSThreads, 0,                                     \
-          "Max number of threads CMS will use for concurrent work")         \
-                                                                            \
   develop(bool, ParallelOldGCSplitALot, false,                              \
           "Provoke splitting (copying data from a young gen space to"       \
           "multiple destination spaces)")                                   \
@@ -1258,8 +1256,8 @@ class CommandLineFlags {
   develop(bool, TraceRegionTasksQueuing, false,                             \
           "Trace the queuing of the region tasks")                          \
                                                                             \
-  product(uintx, ParallelMarkingThreads, 0,                                 \
-          "Number of marking threads concurrent gc will use")               \
+  product(uintx, ConcGCThreads, 0,                                          \
+          "Number of threads concurrent gc will use")                       \
                                                                             \
   product(uintx, YoungPLABSize, 4096,                                       \
           "Size of young gen promotion labs (in HeapWords)")                \
@@ -1535,11 +1533,11 @@ class CommandLineFlags {
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Whether preserved marks should be restored early")               \
                                                                             \
-  product(uintx, CMSMarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),           \
-          "Size of CMS marking stack")                                      \
+  product(uintx, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),              \
+          "Size of marking stack")                                          \
                                                                             \
-  product(uintx, CMSMarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),       \
-          "Max size of CMS marking stack")                                  \
+  product(uintx, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),          \
+          "Max size of marking stack")                                      \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
           "Whether we should simulate frequent marking stack / work queue"  \
@@ -1724,6 +1722,13 @@ class CommandLineFlags {
           "Percentage CMS generation occupancy to start a CMS collection "  \
           "cycle. A negative value means that CMSTriggerRatio is used")     \
                                                                             \
+  product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
+          "Percentage of the (entire) heap occupancy to start a "           \
+          "concurrent GC cycle. It us used by GCs that trigger a "          \
+          "concurrent GC cycle based on the occupancy of the entire heap, " \
+          "not just one of the generations (e.g., G1). A value of 0 "       \
+          "denotes 'do constant GC cycles'.")                               \
+                                                                            \
   product(intx, CMSInitiatingPermOccupancyFraction, -1,                     \
           "Percentage CMS perm generation occupancy to start a "            \
           "CMScollection cycle. A negative value means that "               \
@@ -1790,6 +1795,10 @@ class CommandLineFlags {
                                                                             \
   product(uintx, PreserveMarkStackSize, 1024,                               \
           "Size for stack used in promotion failure handling")              \
+                                                                            \
+  develop(uintx, ObjArrayMarkingStride, 512,                                \
+          "Number of ObjArray elements to push onto the marking stack"      \
+          "before pushing a continuation entry")                            \
                                                                             \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
@@ -2285,6 +2294,10 @@ class CommandLineFlags {
           "print safepoint statistics only when safepoint takes"            \
           " more than PrintSafepointSatisticsTimeout in millis")            \
                                                                             \
+  product(bool, TraceSafepointCleanupTime, false,                           \
+          "print the break down of clean up tasks performed during"         \
+          " safepoint")                                                     \
+                                                                            \
   develop(bool, InlineAccessors, true,                                      \
           "inline accessor methods (get/set)")                              \
                                                                             \
@@ -2489,10 +2502,6 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, TraceSpilling, false,                                    \
           "Trace spilling")                                                 \
-                                                                            \
-  develop(bool, DeutschShiffmanExceptions, true,                            \
-          "Fast check to find exception handler for precisely typed "       \
-          "exceptions")                                                     \
                                                                             \
   product(bool, SplitIfBlocks, true,                                        \
           "Clone compares and control flow through merge points to fold "   \
@@ -2699,7 +2708,8 @@ class CommandLineFlags {
   product(intx,  AllocatePrefetchStyle, 1,                                  \
           "0 = no prefetch, "                                               \
           "1 = prefetch instructions for each allocation, "                 \
-          "2 = use TLAB watermark to gate allocation prefetch")             \
+          "2 = use TLAB watermark to gate allocation prefetch, "            \
+          "3 = use BIS instruction on Sparc for allocation prefetch")       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer")               \
@@ -2925,7 +2935,7 @@ class CommandLineFlags {
   product(uintx, OldSize, ScaleForWordSize(4*M),                            \
           "Initial tenured generation size (in bytes)")                     \
                                                                             \
-  product(uintx, NewSize, ScaleForWordSize(4*M),                            \
+  product(uintx, NewSize, ScaleForWordSize(1*M),                            \
           "Initial new generation size (in bytes)")                         \
                                                                             \
   product(uintx, MaxNewSize, max_uintx,                                     \
@@ -3101,6 +3111,9 @@ class CommandLineFlags {
                                                                             \
   develop_pd(intx, CodeEntryAlignment,                                      \
           "Code entry alignment for generated code (in bytes)")             \
+                                                                            \
+  product_pd(intx, OptoLoopAlignment,                                       \
+          "Align inner loops to zero relative to this modulus")             \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \

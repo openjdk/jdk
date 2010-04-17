@@ -998,15 +998,16 @@ os::closedir(DIR *dirp)
 
 const char* os::dll_file_extension() { return ".dll"; }
 
-const char * os::get_temp_directory()
-{
-    static char path_buf[MAX_PATH];
-    if (GetTempPath(MAX_PATH, path_buf)>0)
-      return path_buf;
-    else{
-      path_buf[0]='\0';
-      return path_buf;
-    }
+const char* os::get_temp_directory() {
+  const char *prop = Arguments::get_property("java.io.tmpdir");
+  if (prop != 0) return prop;
+  static char path_buf[MAX_PATH];
+  if (GetTempPath(MAX_PATH, path_buf)>0)
+    return path_buf;
+  else{
+    path_buf[0]='\0';
+    return path_buf;
+  }
 }
 
 static bool file_exists(const char* filename) {
@@ -2801,6 +2802,14 @@ bool os::uncommit_memory(char* addr, size_t bytes) {
 
 bool os::release_memory(char* addr, size_t bytes) {
   return VirtualFree(addr, 0, MEM_RELEASE) != 0;
+}
+
+bool os::create_stack_guard_pages(char* addr, size_t size) {
+  return os::commit_memory(addr, size);
+}
+
+bool os::remove_stack_guard_pages(char* addr, size_t size) {
+  return os::uncommit_memory(addr, size);
 }
 
 // Set protections specified

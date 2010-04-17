@@ -1,6 +1,6 @@
 /*
  * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@
 //
 
 define_pd_global(bool,  DontYieldALot,           false);
-#ifdef _LP64
 define_pd_global(intx,  ThreadStackSize,         1536);
+#ifdef _LP64
 define_pd_global(intx,  VMThreadStackSize,       1024);
 #else
-define_pd_global(intx,  ThreadStackSize,         1024);
 define_pd_global(intx,  VMThreadStackSize,       512);
 #endif // _LP64
 define_pd_global(intx,  SurvivorRatio,           8);
