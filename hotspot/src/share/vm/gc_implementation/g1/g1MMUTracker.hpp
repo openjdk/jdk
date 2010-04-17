@@ -101,7 +101,7 @@ private:
   // If the array is full, an easy fix is to look for the pauses with
   // the shortest gap between them and consolidate them.
   // For now, we have taken the expedient alternative of forgetting
-  // the oldest entry in the event that +G1ForgetfulMMUTracker, thus
+  // the oldest entry in the event that +G1UseFixedWindowMMUTracker, thus
   // potentially violating MMU specs for some time thereafter.
 
   G1MMUTrackerQueueElem _array[QueueLength];

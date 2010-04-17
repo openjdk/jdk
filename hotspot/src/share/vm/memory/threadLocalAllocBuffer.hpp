@@ -111,7 +111,22 @@ public:
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
-  static size_t alignment_reserve()              { return align_object_size(typeArrayOopDesc::header_size(T_INT)); }
+
+  // Reserve space at the end of TLAB
+  static size_t end_reserve() {
+    int reserve_size = typeArrayOopDesc::header_size(T_INT);
+    if (AllocatePrefetchStyle == 3) {
+      // BIS is used to prefetch - we need a space for it.
+      // +1 for rounding up to next cache line +1 to be safe
+      int lines = AllocatePrefetchLines + 2;
+      int step_size = AllocatePrefetchStepSize;
+      int distance = AllocatePrefetchDistance;
+      int prefetch_end = (distance + step_size*lines)/(int)HeapWordSize;
+      reserve_size = MAX2(reserve_size, prefetch_end);
+    }
+    return reserve_size;
+  }
+  static size_t alignment_reserve()              { return align_object_size(end_reserve()); }
   static size_t alignment_reserve_in_bytes()     { return alignment_reserve() * HeapWordSize; }
 
   // Return tlab size or remaining space in eden such that the

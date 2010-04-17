@@ -178,8 +178,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // so the hack is to do the cast  QQQ FIXME
   _pauses_btwn_concurrent_mark((size_t)G1PausesBtwnConcMark),
   _n_marks_since_last_pause(0),
-  _conc_mark_initiated(false),
-  _should_initiate_conc_mark(false),
+  _initiate_conc_mark_if_possible(false),
+  _during_initial_mark_pause(false),
   _should_revert_to_full_young_gcs(false),
   _last_full_young_gc(false),
 
@@ -198,7 +198,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recorded_survivor_regions(0),
   _recorded_survivor_head(NULL),
   _recorded_survivor_tail(NULL),
-  _survivors_age_table(true)
+  _survivors_age_table(true),
+
+  _gc_overhead_perc(0.0)
 
 {
   // Set up the region size and associated fields. Given that the
@@ -270,14 +272,15 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
 
-  if (G1UseSurvivorSpaces) {
-    // if G1FixedSurvivorSpaceSize is 0 which means the size is not
-    // fixed, then _max_survivor_regions will be calculated at
-    // calculate_young_list_target_config during initialization
-    _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
-  } else {
-    _max_survivor_regions = 0;
-  }
+  // if G1FixedSurvivorSpaceSize is 0 which means the size is not
+  // fixed, then _max_survivor_regions will be calculated at
+  // calculate_young_list_target_config during initialization
+  _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
+
+  assert(GCTimeRatio > 0,
+         "we should have set it to a default value set_g1_gc_flags() "
+         "if a user set it to 0");
+  _gc_overhead_perc = 100.0 * (1.0 / (1.0 + GCTimeRatio));
 
   initialize_all();
 }
@@ -296,28 +299,54 @@ void G1CollectorPolicy::initialize_flags() {
   CollectorPolicy::initialize_flags();
 }
 
+// The easiest way to deal with the parsing of the NewSize /
+// MaxNewSize / etc. parameteres is to re-use the code in the
+// TwoGenerationCollectorPolicy class. This is similar to what
+// ParallelScavenge does with its GenerationSizer class (see
+// ParallelScavengeHeap::initialize()). We might change this in the
+// future, but it's a good start.
+class G1YoungGenSizer : public TwoGenerationCollectorPolicy {
+  size_t size_to_region_num(size_t byte_size) {
+    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
+  }
+
+public:
+  G1YoungGenSizer() {
+    initialize_flags();
+    initialize_size_info();
+  }
+
+  size_t min_young_region_num() {
+    return size_to_region_num(_min_gen0_size);
+  }
+  size_t initial_young_region_num() {
+    return size_to_region_num(_initial_gen0_size);
+  }
+  size_t max_young_region_num() {
+    return size_to_region_num(_max_gen0_size);
+  }
+};
+
 void G1CollectorPolicy::init() {
   // Set aside an initial future to_space.
   _g1 = G1CollectedHeap::heap();
-  size_t regions = Universe::heap()->capacity() / HeapRegion::GrainBytes;
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
-
-  if (G1SteadyStateUsed < 50) {
-    vm_exit_during_initialization("G1SteadyStateUsed must be at least 50%.");
-  }
 
   initialize_gc_policy_counters();
 
   if (G1Gen) {
     _in_young_gc_mode = true;
 
-    if (G1YoungGenSize == 0) {
+    G1YoungGenSizer sizer;
+    size_t initial_region_num = sizer.initial_young_region_num();
+
+    if (UseAdaptiveSizePolicy) {
       set_adaptive_young_list_length(true);
       _young_list_fixed_length = 0;
     } else {
       set_adaptive_young_list_length(false);
-      _young_list_fixed_length = (G1YoungGenSize / HeapRegion::GrainBytes);
+      _young_list_fixed_length = initial_region_num;
     }
      _free_regions_at_end_of_collection = _g1->free_regions();
      _scan_only_regions_at_end_of_collection = 0;
@@ -455,7 +484,7 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
   guarantee( adaptive_young_list_length(), "pre-condition" );
 
   double start_time_sec = os::elapsedTime();
-  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1MinReservePercent);
+  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1ReservePercent);
   min_reserve_perc = MIN2((size_t) 50, min_reserve_perc);
   size_t reserve_regions =
     (size_t) ((double) min_reserve_perc * (double) _g1->n_regions() / 100.0);
@@ -764,7 +793,7 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
                            elapsed_time_ms,
                            calculations,
                            full_young_gcs() ? "full" : "partial",
-                           should_initiate_conc_mark() ? " i-m" : "",
+                           during_initial_mark_pause() ? " i-m" : "",
                            _in_marking_window,
                            _in_marking_window_im);
 #endif // TRACE_CALC_YOUNG_CONFIG
@@ -1011,7 +1040,8 @@ void G1CollectorPolicy::record_full_collection_end() {
   set_full_young_gcs(true);
   _last_full_young_gc = false;
   _should_revert_to_full_young_gcs = false;
-  _should_initiate_conc_mark = false;
+  clear_initiate_conc_mark_if_possible();
+  clear_during_initial_mark_pause();
   _known_garbage_bytes = 0;
   _known_garbage_ratio = 0.0;
   _in_marking_window = false;
@@ -1110,10 +1140,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   size_t short_lived_so_length = _young_list_so_prefix_length;
   _short_lived_surv_rate_group->record_scan_only_prefix(short_lived_so_length);
   tag_scan_only(short_lived_so_length);
-
-  if (G1UseSurvivorSpaces) {
-    _survivors_age_table.clear();
-  }
+  _survivors_age_table.clear();
 
   assert( verify_young_ages(), "region age verification" );
 }
@@ -1160,7 +1187,8 @@ void G1CollectorPolicy::record_concurrent_mark_init_start() {
 void G1CollectorPolicy::record_concurrent_mark_init_end_pre(double
                                                    mark_init_elapsed_time_ms) {
   _during_marking = true;
-  _should_initiate_conc_mark = false;
+  assert(!initiate_conc_mark_if_possible(), "we should have cleared it by now");
+  clear_during_initial_mark_pause();
   _cur_mark_stop_world_time_ms = mark_init_elapsed_time_ms;
 }
 
@@ -1231,7 +1259,6 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_end_work2() {
   }
   _n_pauses_at_mark_end = _n_pauses;
   _n_marks_since_last_pause++;
-  _conc_mark_initiated = false;
 }
 
 void
@@ -1427,17 +1454,24 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
 #endif // PRODUCT
 
   if (in_young_gc_mode()) {
-    last_pause_included_initial_mark = _should_initiate_conc_mark;
+    last_pause_included_initial_mark = during_initial_mark_pause();
     if (last_pause_included_initial_mark)
       record_concurrent_mark_init_end_pre(0.0);
 
     size_t min_used_targ =
-      (_g1->capacity() / 100) * (G1SteadyStateUsed - G1SteadyStateUsedDelta);
+      (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
 
-    if (cur_used_bytes > min_used_targ) {
-      if (cur_used_bytes <= _prev_collection_pause_used_at_end_bytes) {
-      } else if (!_g1->mark_in_progress() && !_last_full_young_gc) {
-        _should_initiate_conc_mark = true;
+
+    if (!_g1->mark_in_progress() && !_last_full_young_gc) {
+      assert(!last_pause_included_initial_mark, "invariant");
+      if (cur_used_bytes > min_used_targ &&
+          cur_used_bytes > _prev_collection_pause_used_at_end_bytes) {
+        assert(!during_initial_mark_pause(), "we should not see this here");
+
+        // Note: this might have already been set, if during the last
+        // pause we decided to start a cycle but at the beginning of
+        // this pause we decided to postpone it. That's OK.
+        set_initiate_conc_mark_if_possible();
       }
     }
 
@@ -1728,7 +1762,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
 
   bool new_in_marking_window = _in_marking_window;
   bool new_in_marking_window_im = false;
-  if (_should_initiate_conc_mark) {
+  if (during_initial_mark_pause()) {
     new_in_marking_window = true;
     new_in_marking_window_im = true;
   }
@@ -1916,7 +1950,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   calculate_young_list_target_config();
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
-  double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSUpdatePauseFractionPercent / 100.0;
+  double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
 
   // </NEW PREDICTION>
@@ -1932,7 +1966,7 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   ConcurrentG1Refine *cg1r = G1CollectedHeap::heap()->concurrent_g1_refine();
 
-  if (G1AdaptiveConcRefine) {
+  if (G1UseAdaptiveConcRefinement) {
     const int k_gy = 3, k_gr = 6;
     const double inc_k = 1.1, dec_k = 0.9;
 
@@ -2147,7 +2181,13 @@ void G1CollectorPolicy::check_if_region_is_too_expensive(double
   if (predicted_time_ms > _expensive_region_limit_ms) {
     if (!in_young_gc_mode()) {
         set_full_young_gcs(true);
-      _should_initiate_conc_mark = true;
+        // We might want to do something different here. However,
+        // right now we don't support the non-generational G1 mode
+        // (and in fact we are planning to remove the associated code,
+        // see CR 6814390). So, let's leave it as is and this will be
+        // removed some time in the future
+        ShouldNotReachHere();
+        set_during_initial_mark_pause();
     } else
       // no point in doing another partial one
       _should_revert_to_full_young_gcs = true;
@@ -2269,7 +2309,7 @@ G1CollectorPolicy::conservative_avg_survival_fraction_work(double avg,
 }
 
 size_t G1CollectorPolicy::expansion_amount() {
-  if ((int)(recent_avg_pause_time_ratio() * 100.0) > G1GCPercent) {
+  if ((recent_avg_pause_time_ratio() * 100.0) > _gc_overhead_perc) {
     // We will double the existing space, or take
     // G1ExpandByPercentOfAvailable % of the available expansion
     // space, whichever is smaller, bounded below by a minimum
@@ -2607,9 +2647,6 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
 // Calculates survivor space parameters.
 void G1CollectorPolicy::calculate_survivors_policy()
 {
-  if (!G1UseSurvivorSpaces) {
-    return;
-  }
   if (G1FixedSurvivorSpaceSize == 0) {
     _max_survivor_regions = _young_list_target_length / SurvivorRatio;
   } else {
@@ -2628,13 +2665,6 @@ bool
 G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
                                                                word_size) {
   assert(_g1->regions_accounted_for(), "Region leakage!");
-  // Initiate a pause when we reach the steady-state "used" target.
-  size_t used_hard = (_g1->capacity() / 100) * G1SteadyStateUsed;
-  size_t used_soft =
-   MAX2((_g1->capacity() / 100) * (G1SteadyStateUsed - G1SteadyStateUsedDelta),
-        used_hard/2);
-  size_t used = _g1->used();
-
   double max_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
 
   size_t young_list_length = _g1->young_list_length();
@@ -2679,6 +2709,50 @@ bool G1CollectorPolicy_BestRegionsFirst::assertMarkedBytesDataOK() {
   return true;
 }
 #endif
+
+void
+G1CollectorPolicy::decide_on_conc_mark_initiation() {
+  // We are about to decide on whether this pause will be an
+  // initial-mark pause.
+
+  // First, during_initial_mark_pause() should not be already set. We
+  // will set it here if we have to. However, it should be cleared by
+  // the end of the pause (it's only set for the duration of an
+  // initial-mark pause).
+  assert(!during_initial_mark_pause(), "pre-condition");
+
+  if (initiate_conc_mark_if_possible()) {
+    // We had noticed on a previous pause that the heap occupancy has
+    // gone over the initiating threshold and we should start a
+    // concurrent marking cycle. So we might initiate one.
+
+    bool during_cycle = _g1->concurrent_mark()->cmThread()->during_cycle();
+    if (!during_cycle) {
+      // The concurrent marking thread is not "during a cycle", i.e.,
+      // it has completed the last one. So we can go ahead and
+      // initiate a new cycle.
+
+      set_during_initial_mark_pause();
+
+      // And we can now clear initiate_conc_mark_if_possible() as
+      // we've already acted on it.
+      clear_initiate_conc_mark_if_possible();
+    } else {
+      // The concurrent marking thread is still finishing up the
+      // previous cycle. If we start one right now the two cycles
+      // overlap. In particular, the concurrent marking thread might
+      // be in the process of clearing the next marking bitmap (which
+      // we will use for the next cycle if we start one). Starting a
+      // cycle now will be bad given that parts of the marking
+      // information might get cleared by the marking thread. And we
+      // cannot wait for the marking thread to finish the cycle as it
+      // periodically yields while clearing the next marking bitmap
+      // and, if it's in a yield point, it's waiting for us to
+      // finish. So, at this point we will not start a cycle and we'll
+      // let the concurrent marking thread complete the last one.
+    }
+  }
+}
 
 void
 G1CollectorPolicy_BestRegionsFirst::
@@ -2867,7 +2941,7 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
 // estimate of the number of live bytes.
 void G1CollectorPolicy::
 add_to_collection_set(HeapRegion* hr) {
-  if (G1PrintRegions) {
+  if (G1PrintHeapRegions) {
     gclog_or_tty->print_cr("added region to cset %d:["PTR_FORMAT", "PTR_FORMAT"], "
                   "top "PTR_FORMAT", young %s",
                   hr->hrs_index(), hr->bottom(), hr->end(),

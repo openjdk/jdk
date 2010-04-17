@@ -375,7 +375,8 @@ int SolarisAttachListener::create_door() {
     return -1;
   }
 
-  sprintf(door_path, "%s/.java_pid%d", os::get_temp_directory(), os::current_process_id());
+  snprintf(door_path, sizeof(door_path), "%s/.java_pid%d",
+           os::get_temp_directory(), os::current_process_id());
   RESTARTABLE(::creat(door_path, S_IRUSR | S_IWUSR), fd);
 
   if (fd == -1) {
@@ -591,13 +592,14 @@ bool AttachListener::is_init_trigger() {
   if (init_at_startup() || is_initialized()) {
     return false;               // initialized at startup or already initialized
   }
-  char fn[32];
+  char fn[128];
   sprintf(fn, ".attach_pid%d", os::current_process_id());
   int ret;
   struct stat64 st;
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
-    sprintf(fn, "/tmp/.attach_pid%d", os::current_process_id());
+    snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
+             os::get_temp_directory(), os::current_process_id());
     RESTARTABLE(::stat64(fn, &st), ret);
   }
   if (ret == 0) {
@@ -668,13 +670,18 @@ jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
     }
   }
 
-  if (strcmp(name, "ExtendedDTraceProbes") != 0) {
-    out->print_cr("flag '%s' cannot be changed", name);
-    return JNI_ERR;
+  if (strcmp(name, "ExtendedDTraceProbes") == 0) {
+    DTrace::set_extended_dprobes(flag);
+    return JNI_OK;
   }
 
-  DTrace::set_extended_dprobes(flag);
-  return JNI_OK;
+  if (strcmp(name, "DTraceMonitorProbes") == 0) {
+    DTrace::set_monitor_dprobes(flag);
+    return JNI_OK;
+  }
+
+  out->print_cr("flag '%s' cannot be changed", name);
+  return JNI_ERR;
 }
 
 void AttachListener::pd_detachall() {
