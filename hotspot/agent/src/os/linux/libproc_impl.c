@@ -174,7 +174,7 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
       return NULL;
    }
 
-   newlib->symtab = build_symtab(newlib->fd);
+   newlib->symtab = build_symtab(newlib->fd, libname);
    if (newlib->symtab == NULL) {
       print_debug("symbol table build failed for %s\n", newlib->name);
    }

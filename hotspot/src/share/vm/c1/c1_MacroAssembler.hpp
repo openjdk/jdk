@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class C1_MacroAssembler: public MacroAssembler {
 
   void inline_cache_check(Register receiver, Register iCache);
   void build_frame(int frame_size_in_bytes);
-  void method_exit(bool restore_frame);
+  void remove_frame(int frame_size_in_bytes);
 
   void unverified_entry(Register receiver, Register ic_klass);
   void verified_entry();

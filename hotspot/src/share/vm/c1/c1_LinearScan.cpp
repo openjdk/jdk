@@ -2479,6 +2479,15 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
       return 2;
     }
 
+    case T_ADDRESS: {
+#ifdef _LP64
+      scope_values->append(new ConstantLongValue(c->as_jint()));
+#else
+      scope_values->append(new ConstantIntValue(c->as_jint()));
+#endif
+      return 1;
+    }
+
     default:
       ShouldNotReachHere();
       return -1;
@@ -2599,12 +2608,17 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
     } else if (opr->is_double_xmm()) {
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation");
       VMReg rname_first  = opr->as_xmm_double_reg()->as_VMReg();
+#  ifdef _LP64
+      first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
+      second = &_int_0_scope_value;
+#  else
       first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
       // %%% This is probably a waste but we'll keep things as they were for now
       if (true) {
         VMReg rname_second = rname_first->next();
         second = new LocationValue(Location::new_reg_loc(Location::normal, rname_second));
       }
+#  endif
 #endif
 
     } else if (opr->is_double_fpu()) {
@@ -2630,13 +2644,17 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #endif
 
       VMReg rname_first = frame_map()->fpu_regname(opr->fpu_regnrHi());
-
+#ifdef _LP64
+      first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
+      second = &_int_0_scope_value;
+#else
       first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
       // %%% This is probably a waste but we'll keep things as they were for now
       if (true) {
         VMReg rname_second = rname_first->next();
         second = new LocationValue(Location::new_reg_loc(Location::normal, rname_second));
       }
+#endif
 
     } else {
       ShouldNotReachHere();

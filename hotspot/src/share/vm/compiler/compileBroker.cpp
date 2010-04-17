@@ -988,10 +988,12 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     }
     if (method->is_not_compilable(comp_level)) return NULL;
 
-    nmethod* saved = CodeCache::find_and_remove_saved_code(method());
-    if (saved != NULL) {
-      method->set_code(method, saved);
-      return saved;
+    if (UseCodeCacheFlushing) {
+      nmethod* saved = CodeCache::find_and_remove_saved_code(method());
+      if (saved != NULL) {
+        method->set_code(method, saved);
+        return saved;
+      }
     }
 
   } else {
@@ -1412,9 +1414,14 @@ void CompileBroker::init_compiler_thread_log() {
     intx thread_id = os::current_thread_id();
     for (int try_temp_dir = 1; try_temp_dir >= 0; try_temp_dir--) {
       const char* dir = (try_temp_dir ? os::get_temp_directory() : NULL);
-      if (dir == NULL)  dir = "";
-      sprintf(fileBuf, "%shs_c" UINTX_FORMAT "_pid%u.log",
-              dir, thread_id, os::current_process_id());
+      if (dir == NULL) {
+        jio_snprintf(fileBuf, sizeof(fileBuf), "hs_c" UINTX_FORMAT "_pid%u.log",
+                     thread_id, os::current_process_id());
+      } else {
+        jio_snprintf(fileBuf, sizeof(fileBuf),
+                     "%s%shs_c" UINTX_FORMAT "_pid%u.log", dir,
+                     os::file_separator(), thread_id, os::current_process_id());
+      }
       fp = fopen(fileBuf, "at");
       if (fp != NULL) {
         file = NEW_C_HEAP_ARRAY(char, strlen(fileBuf)+1);

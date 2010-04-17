@@ -132,8 +132,8 @@ public class Statement {
     }
 
     /**
-     * The execute method finds a method whose name is the same
-     * as the methodName property, and invokes the method on
+     * The {@code execute} method finds a method whose name is the same
+     * as the {@code methodName} property, and invokes the method on
      * the target.
      *
      * When the target's class defines many methods with the given name
@@ -141,7 +141,7 @@ public class Statement {
      * the algorithm specified in the Java Language Specification
      * (15.11). The dynamic class of the target and arguments are used
      * in place of the compile-time type information and, like the
-     * <code>java.lang.reflect.Method</code> class itself, conversion between
+     * {@link java.lang.reflect.Method} class itself, conversion between
      * primitive values and their associated wrapper classes is handled
      * internally.
      * <p>
@@ -152,13 +152,22 @@ public class Statement {
      * <li>
      * The reserved method name "new" may be used to call a class's constructor
      * as if all classes defined static "new" methods. Constructor invocations
-     * are typically considered <code>Expression</code>s rather than <code>Statement</code>s
+     * are typically considered {@code Expression}s rather than {@code Statement}s
      * as they return a value.
      * <li>
-     * The method names "get" and "set" defined in the <code>java.util.List</code>
+     * The method names "get" and "set" defined in the {@link java.util.List}
      * interface may also be applied to array instances, mapping to
-     * the static methods of the same name in the <code>Array</code> class.
+     * the static methods of the same name in the {@code Array} class.
      * </ul>
+     *
+     * @throws NullPointerException if the value of the {@code target} or
+     *                              {@code methodName} property is {@code null}
+     * @throws NoSuchMethodException if a matching method is not found
+     * @throws SecurityException if a security manager exists and
+     *                           it denies the method invocation
+     * @throws Exception that is thrown by the invoked method
+     *
+     * @see java.lang.reflect.Method
      */
     public void execute() throws Exception {
         invoke();

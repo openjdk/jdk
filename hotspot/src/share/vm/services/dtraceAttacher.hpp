@@ -41,4 +41,6 @@ class DTrace : public AllStatic {
   static void detach_all_clients();
   // set ExtendedDTraceProbes flag
   static void set_extended_dprobes(bool value);
+  // set DTraceMonitorProbes flag
+  static void set_monitor_dprobes(bool value);
 };

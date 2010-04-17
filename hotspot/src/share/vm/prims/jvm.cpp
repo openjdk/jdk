@@ -26,6 +26,10 @@
 #include "incls/_jvm.cpp.incl"
 #include <errno.h>
 
+HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__begin, long long);
+HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__end, int);
+HS_DTRACE_PROBE_DECL0(hotspot, thread__yield);
+
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
   such ctors and calls MUST NOT come between an oop declaration/init and its
@@ -2762,6 +2766,7 @@ JVM_END
 JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   JVMWrapper("JVM_Yield");
   if (os::dont_yield()) return;
+  HS_DTRACE_PROBE0(hotspot, thread__yield);
   // When ConvertYieldToSleep is off (default), this matches the classic VM use of yield.
   // Critical for similar threading behaviour
   if (ConvertYieldToSleep) {
@@ -2787,6 +2792,8 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   // And set new thread state to SLEEPING.
   JavaThreadSleepState jtss(thread);
 
+  HS_DTRACE_PROBE1(hotspot, thread__sleep__begin, millis);
+
   if (millis == 0) {
     // When ConvertSleepToYield is on, this matches the classic VM implementation of
     // JVM_Sleep. Critical for similar threading behaviour (Win32)
@@ -2807,6 +2814,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
       // An asynchronous exception (e.g., ThreadDeathException) could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
+        HS_DTRACE_PROBE1(hotspot, thread__sleep__end,1);
         // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
         // to properly restore the thread state.  That's likely wrong.
         THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
@@ -2814,6 +2822,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     }
     thread->osthread()->set_state(old_state);
   }
+  HS_DTRACE_PROBE1(hotspot, thread__sleep__end,0);
 JVM_END
 
 JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))

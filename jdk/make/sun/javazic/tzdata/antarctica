@@ -79,6 +79,33 @@ Rule	ChileAQ	1999	only	-	Apr	 4	3:00u	0	-
 Rule	ChileAQ	1999	max	-	Oct	Sun>=9	4:00u	1:00	S
 Rule	ChileAQ	2000	max	-	Mar	Sun>=9	3:00u	0	-
 
+# These rules are stolen from the `australasia' file.
+Rule	AusAQ	1917	only	-	Jan	 1	0:01	1:00	-
+Rule	AusAQ	1917	only	-	Mar	25	2:00	0	-
+Rule	AusAQ	1942	only	-	Jan	 1	2:00	1:00	-
+Rule	AusAQ	1942	only	-	Mar	29	2:00	0	-
+Rule	AusAQ	1942	only	-	Sep	27	2:00	1:00	-
+Rule	AusAQ	1943	1944	-	Mar	lastSun	2:00	0	-
+Rule	AusAQ	1943	only	-	Oct	 3	2:00	1:00	-
+Rule	ATAQ	1967	only	-	Oct	Sun>=1	2:00s	1:00	-
+Rule	ATAQ	1968	only	-	Mar	lastSun	2:00s	0	-
+Rule	ATAQ	1968	1985	-	Oct	lastSun	2:00s	1:00	-
+Rule	ATAQ	1969	1971	-	Mar	Sun>=8	2:00s	0	-
+Rule	ATAQ	1972	only	-	Feb	lastSun	2:00s	0	-
+Rule	ATAQ	1973	1981	-	Mar	Sun>=1	2:00s	0	-
+Rule	ATAQ	1982	1983	-	Mar	lastSun	2:00s	0	-
+Rule	ATAQ	1984	1986	-	Mar	Sun>=1	2:00s	0	-
+Rule	ATAQ	1986	only	-	Oct	Sun>=15	2:00s	1:00	-
+Rule	ATAQ	1987	1990	-	Mar	Sun>=15	2:00s	0	-
+Rule	ATAQ	1987	only	-	Oct	Sun>=22	2:00s	1:00	-
+Rule	ATAQ	1988	1990	-	Oct	lastSun	2:00s	1:00	-
+Rule	ATAQ	1991	1999	-	Oct	Sun>=1	2:00s	1:00	-
+Rule	ATAQ	1991	2005	-	Mar	lastSun	2:00s	0	-
+Rule	ATAQ	2000	only	-	Aug	lastSun	2:00s	1:00	-
+Rule	ATAQ	2001	max	-	Oct	Sun>=1	2:00s	1:00	-
+Rule	ATAQ	2006	only	-	Apr	Sun>=1	2:00s	0	-
+Rule	ATAQ	2007	only	-	Mar	lastSun	2:00s	0	-
+Rule	ATAQ	2008	max	-	Apr	Sun>=1	2:00s	0	-
 
 # Argentina - year-round bases
 # Belgrano II, Confin Coast, -770227-0343737, since 1972-02-05
@@ -120,20 +147,52 @@ Rule	ChileAQ	2000	max	-	Mar	Sun>=9	3:00u	0	-
 # http://www.timeanddate.com/news/time/antarctica-new-times.html
 # </a>
 
+# From Steffen Thorsen (2010-03-10):
+# We got these changes from the Australian Antarctic Division:
+# - Macquarie Island will stay on UTC+11 for winter and therefore not
+# switch back from daylight savings time when other parts of Australia do
+# on 4 April.
+#
+# - Casey station reverted to its normal time of UTC+8 on 5 March 2010.
+# The change to UTC+11 is being considered as a regular summer thing but
+# has not been decided yet.
+#
+# - Davis station will revert to its normal time of UTC+7 at 10 March 2010
+# 20:00 UTC.
+#
+# - Mawson station stays on UTC+5.
+#
+# In addition to the Rule changes for Casey/Davis, it means that Macquarie
+# will no longer be like Hobart and will have to have its own Zone created.
+#
+# Background:
+# <a href="http://www.timeanddate.com/news/time/antartica-time-changes-2010.html">
+# http://www.timeanddate.com/news/time/antartica-time-changes-2010.html
+# </a>
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Casey	0	-	zzz	1969
 			8:00	-	WST	2009 Oct 18 2:00
 						# Western (Aus) Standard Time
-			11:00	-	CAST	# Casey Time
+			11:00	-	CAST	2010 Mar 5 2:00
+						# Casey Time
+			8:00	-	WST
 Zone Antarctica/Davis	0	-	zzz	1957 Jan 13
 			7:00	-	DAVT	1964 Nov # Davis Time
 			0	-	zzz	1969 Feb
 			7:00	-	DAVT	2009 Oct 18 2:00
-			5:00	-	DAVT
+			5:00	-	DAVT	2010 Mar 10 20:00u
+			7:00	-	DAVT
 Zone Antarctica/Mawson	0	-	zzz	1954 Feb 13
 			6:00	-	MAWT	2009 Oct 18 2:00
 						# Mawson Time
 			5:00	-	MAWT
+Zone Antarctica/Macquarie 0	-	zzz	1911
+			10:00	-	EST	1916 Oct 1 2:00
+			10:00	1:00	EST	1917 Feb
+			10:00	AusAQ	EST	1967
+			10:00	ATAQ	EST	2010 Apr 4 3:00
+			11:00	-	MIST	# Macquarie Island Time
 # References:
 # <a href="http://www.antdiv.gov.au/aad/exop/sfo/casey/casey_aws.html">
 # Casey Weather (1998-02-26)

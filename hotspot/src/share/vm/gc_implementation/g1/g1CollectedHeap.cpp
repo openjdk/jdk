@@ -583,7 +583,7 @@ HeapRegion* G1CollectedHeap::newAllocRegion_work(size_t word_size,
            res->zero_fill_state() == HeapRegion::Allocated)),
          "Non-young alloc Regions must be zero filled (and non-H)");
 
-  if (G1PrintRegions) {
+  if (G1PrintHeapRegions) {
     if (res != NULL) {
       gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT", "PTR_FORMAT"], "
                              "top "PTR_FORMAT,
@@ -902,6 +902,10 @@ public:
 
 void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
                                     size_t word_size) {
+  if (GC_locker::check_active_before_gc()) {
+    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
+  }
+
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -915,10 +919,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
 
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
-
-  if (GC_locker::is_active()) {
-    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
-  }
 
   {
     IsGCActiveMark x;
@@ -2102,18 +2102,21 @@ size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   // Return the remaining space in the cur alloc region, but not less than
   // the min TLAB size.
-  // Also, no more than half the region size, since we can't allow tlabs to
-  // grow big enough to accomodate humongous objects.
 
-  // We need to story it locally, since it might change between when we
-  // test for NULL and when we use it later.
+  // Also, this value can be at most the humongous object threshold,
+  // since we can't allow tlabs to grow big enough to accomodate
+  // humongous objects.
+
+  // We need to store the cur alloc region locally, since it might change
+  // between when we test for NULL and when we use it later.
   ContiguousSpace* cur_alloc_space = _cur_alloc_region;
+  size_t max_tlab_size = _humongous_object_threshold_in_words * wordSize;
+
   if (cur_alloc_space == NULL) {
-    return HeapRegion::GrainBytes/2;
+    return max_tlab_size;
   } else {
-    return MAX2(MIN2(cur_alloc_space->free(),
-                     (size_t)(HeapRegion::GrainBytes/2)),
-                (size_t)MinTLABSize);
+    return MIN2(MAX2(cur_alloc_space->free(), (size_t)MinTLABSize),
+                max_tlab_size);
   }
 }
 
@@ -2477,7 +2480,7 @@ void G1CollectedHeap::print_tracing_info() const {
   if (G1SummarizeRSetStats) {
     g1_rem_set()->print_summary_info();
   }
-  if (G1SummarizeConcurrentMark) {
+  if (G1SummarizeConcMark) {
     concurrent_mark()->print_summary_info();
   }
   if (G1SummarizeZFStats) {
@@ -2655,12 +2658,21 @@ struct PrepareForRSScanningClosure : public HeapRegionClosure {
 
 void
 G1CollectedHeap::do_collection_pause_at_safepoint() {
+  if (GC_locker::check_active_before_gc()) {
+    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
+  }
+
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
 
   {
     ResourceMark rm;
+
+    // This call will decide whether this pause is an initial-mark
+    // pause. If it is, during_initial_mark_pause() will return true
+    // for the duration of this pause.
+    g1_policy()->decide_on_conc_mark_initiation();
 
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
@@ -2670,7 +2682,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       else
         strcat(verbose_str, "(partial)");
     }
-    if (g1_policy()->should_initiate_conc_mark())
+    if (g1_policy()->during_initial_mark_pause())
       strcat(verbose_str, " (initial-mark)");
 
     // if PrintGCDetails is on, we'll print long statistics information
@@ -2692,10 +2704,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
     if (g1_policy()->in_young_gc_mode()) {
       assert(check_young_list_well_formed(),
              "young list should be well formed");
-    }
-
-    if (GC_locker::is_active()) {
-      return; // GC is disabled (e.g. JNI GetXXXCritical operation)
     }
 
     bool abandoned = false;
@@ -2753,7 +2761,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       _young_list->print();
 #endif // SCAN_ONLY_VERBOSE
 
-      if (g1_policy()->should_initiate_conc_mark()) {
+      if (g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPre();
       }
       save_marks();
@@ -2855,7 +2863,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       }
 
       if (g1_policy()->in_young_gc_mode() &&
-          g1_policy()->should_initiate_conc_mark()) {
+          g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPost();
         set_marking_started();
         // CAUTION: after the doConcurrentMark() call below,
@@ -2934,6 +2942,9 @@ void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   // the same region
   assert(r == NULL || !r->is_gc_alloc_region(),
          "shouldn't already be a GC alloc region");
+  assert(r == NULL || !r->isHumongous(),
+         "humongous regions shouldn't be used as GC alloc regions");
+
   HeapWord* original_top = NULL;
   if (r != NULL)
     original_top = r->top();
@@ -3076,12 +3087,17 @@ void G1CollectedHeap::get_gc_alloc_regions() {
 
       if (alloc_region->in_collection_set() ||
           alloc_region->top() == alloc_region->end() ||
-          alloc_region->top() == alloc_region->bottom()) {
-        // we will discard the current GC alloc region if it's in the
-        // collection set (it can happen!), if it's already full (no
-        // point in using it), or if it's empty (this means that it
-        // was emptied during a cleanup and it should be on the free
-        // list now).
+          alloc_region->top() == alloc_region->bottom() ||
+          alloc_region->isHumongous()) {
+        // we will discard the current GC alloc region if
+        // * it's in the collection set (it can happen!),
+        // * it's already full (no point in using it),
+        // * it's empty (this means that it was emptied during
+        // a cleanup and it should be on the free list now), or
+        // * it's humongous (this means that it was emptied
+        // during a cleanup and was added to the free list, but
+        // has been subseqently used to allocate a humongous
+        // object that may be less than the region size).
 
         alloc_region = NULL;
       }
@@ -3480,7 +3496,7 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
   HeapRegion* r = heap_region_containing(old);
   if (!r->evacuation_failed()) {
     r->set_evacuation_failed(true);
-    if (G1PrintRegions) {
+    if (G1PrintHeapRegions) {
       gclog_or_tty->print("evacuation failed in heap region "PTR_FORMAT" "
                           "["PTR_FORMAT","PTR_FORMAT")\n",
                           r, r->bottom(), r->end());
@@ -3974,7 +3990,7 @@ public:
     OopsInHeapRegionClosure        *scan_perm_cl;
     OopsInHeapRegionClosure        *scan_so_cl;
 
-    if (_g1h->g1_policy()->should_initiate_conc_mark()) {
+    if (_g1h->g1_policy()->during_initial_mark_pause()) {
       scan_root_cl = &scan_mark_root_cl;
       scan_perm_cl = &scan_mark_perm_cl;
       scan_so_cl   = &scan_mark_heap_rs_cl;
@@ -4002,9 +4018,7 @@ public:
       _g1h->g1_policy()->record_obj_copy_time(i, elapsed_ms-term_ms);
       _g1h->g1_policy()->record_termination_time(i, term_ms);
     }
-    if (G1UseSurvivorSpaces) {
-      _g1h->g1_policy()->record_thread_age_table(pss.age_table());
-    }
+    _g1h->g1_policy()->record_thread_age_table(pss.age_table());
     _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
     // Clean up any par-expanded rem sets.
@@ -4139,7 +4153,7 @@ G1CollectedHeap::scan_scan_only_set(OopsInHeapRegionClosure* oc,
   FilterAndMarkInHeapRegionAndIntoCSClosure scan_and_mark(this, &boc, concurrent_mark());
 
   OopsInHeapRegionClosure *foc;
-  if (g1_policy()->should_initiate_conc_mark())
+  if (g1_policy()->during_initial_mark_pause())
     foc = &scan_and_mark;
   else
     foc = &scan_only;
