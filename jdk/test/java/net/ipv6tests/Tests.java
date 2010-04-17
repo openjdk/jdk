@@ -38,10 +38,23 @@ public class Tests {
         OutputStream o1 = s1.getOutputStream();
         OutputStream o2 = s2.getOutputStream();
 
-        simpleWrite (o1, 100);
-        simpleWrite (o2, 200);
+        startSimpleWriter("SimpleWriter-1", o1, 100);
+        startSimpleWriter("SimpleWriter-2", o2, 200);
         simpleRead (i2, 100);
         simpleRead (i1, 200);
+    }
+
+    static void startSimpleWriter(String threadName, final OutputStream os, final int start) {
+        (new Thread(new Runnable() {
+            public void run() {
+                try { simpleWrite(os, start); }
+                catch (Exception e) {unexpected(e); }
+            }}, threadName)).start();
+    }
+
+    static void unexpected(Exception e ) {
+        System.out.println("Unexcepted Exception: " + e);
+        e.printStackTrace();
     }
 
     /**
@@ -247,13 +260,15 @@ public class Tests {
         }
 
         private NetworkInterface getNextIf () {
-            while (ifs.hasMoreElements()) {
-                NetworkInterface nic = (NetworkInterface)ifs.nextElement();
-                try {
-                    if (nic.isUp() && !nic.isLoopback())
-                        return nic;
-                } catch (SocketException e) {
-                    // ignore
+            if (ifs != null) {
+                while (ifs.hasMoreElements()) {
+                    NetworkInterface nic = (NetworkInterface)ifs.nextElement();
+                    try {
+                        if (nic.isUp() && !nic.isLoopback())
+                            return nic;
+                    } catch (SocketException e) {
+                        // ignore
+                    }
                 }
             }
 

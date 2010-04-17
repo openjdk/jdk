@@ -80,7 +80,6 @@ define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 // Ergonomics related flags
 define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
 #endif // AMD64
-define_pd_global(intx, OptoLoopAlignment,            16);
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 
 // Peephole and CISC spilling both break the graph, and so makes the

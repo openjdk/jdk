@@ -25,15 +25,27 @@
 
 package sun.io;
 
-public class ByteToCharMS950_HKSCS extends ByteToCharHKSCS {
-    ByteToCharMS950 bcMS950 = new ByteToCharMS950();
+import sun.nio.cs.ext.HKSCS;
+import sun.nio.cs.ext.MS950_HKSCS;
+import static sun.nio.cs.CharsetMapping.*;
+
+public class ByteToCharMS950_HKSCS extends ByteToCharDBCS_ASCII {
+
+    private static HKSCS.Decoder dec =
+        (HKSCS.Decoder)new MS950_HKSCS().newDecoder();
 
     public String getCharacterEncoding() {
         return "MS950_HKSCS";
     }
 
-    protected char getUnicode(int byte1, int byte2) {
-        char c = super.getUnicode(byte1, byte2);
-        return (c != REPLACE_CHAR) ? c : bcMS950.decodeDouble(byte1, byte2);
+    public ByteToCharMS950_HKSCS() {
+        super(dec);
+    }
+
+    protected char decodeDouble(int byte1, int byte2) {
+        char c = dec.decodeDouble(byte1, byte2);
+        if (c == UNMAPPABLE_DECODING)
+            c = dec.decodeBig5(byte1, byte2);
+        return c;
     }
 }

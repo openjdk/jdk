@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,6 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   size += round_to(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
-
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) BufferBlob(name, size);
   }
@@ -271,7 +270,6 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   unsigned int size = allocation_size(cb, sizeof(BufferBlob));
   assert(name != NULL, "must provide a name");
   {
-
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) BufferBlob(name, size, cb);
   }
@@ -298,9 +296,47 @@ void BufferBlob::free( BufferBlob *blob ) {
   MemoryService::track_code_cache_memory_usage();
 }
 
-bool BufferBlob::is_adapter_blob() const {
-  return (strcmp(AdapterHandlerEntry::name, name()) == 0);
+
+//----------------------------------------------------------------------------------------------------
+// Implementation of AdapterBlob
+
+AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  AdapterBlob* blob = NULL;
+  unsigned int size = allocation_size(cb, sizeof(AdapterBlob));
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) AdapterBlob(size, cb);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
 }
+
+
+//----------------------------------------------------------------------------------------------------
+// Implementation of MethodHandlesAdapterBlob
+
+MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  MethodHandlesAdapterBlob* blob = NULL;
+  unsigned int size = sizeof(MethodHandlesAdapterBlob);
+  // align the size to CodeEntryAlignment
+  size = align_code_offset(size);
+  size += round_to(buffer_size, oopSize);
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) MethodHandlesAdapterBlob(size);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of RuntimeStub

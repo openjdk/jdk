@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,17 @@ package java.security;
 
 import java.io.*;
 import java.lang.RuntimePermission;
+import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
-import java.util.StringTokenizer;
 import java.util.PropertyPermission;
-
-import java.lang.reflect.*;
-
+import java.util.StringTokenizer;
+import java.util.Vector;
 import java.util.WeakHashMap;
-import sun.security.util.Debug;
 import sun.security.jca.GetInstance;
+import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
 
 
@@ -113,8 +111,8 @@ public abstract class Policy {
 
     private static final Debug debug = Debug.getInstance("policy");
 
-    // Cache mapping  ProtectionDomain to PermissionCollection
-    private WeakHashMap<ProtectionDomain, PermissionCollection> pdMapping;
+    // Cache mapping ProtectionDomain.Key to PermissionCollection
+    private WeakHashMap<ProtectionDomain.Key, PermissionCollection> pdMapping;
 
     /** package private for AccessControlContext */
     static boolean isSet()
@@ -307,7 +305,7 @@ public abstract class Policy {
         synchronized (p) {
             if (p.pdMapping == null) {
                 p.pdMapping =
-                    new WeakHashMap<ProtectionDomain, PermissionCollection>();
+                    new WeakHashMap<ProtectionDomain.Key, PermissionCollection>();
            }
         }
 
@@ -323,7 +321,7 @@ public abstract class Policy {
 
             synchronized (p.pdMapping) {
                 // cache of pd to permissions
-                p.pdMapping.put(policyDomain, policyPerms);
+                p.pdMapping.put(policyDomain.key, policyPerms);
             }
         }
         return;
@@ -638,7 +636,7 @@ public abstract class Policy {
         }
 
         synchronized (pdMapping) {
-            pc = pdMapping.get(domain);
+            pc = pdMapping.get(domain.key);
         }
 
         if (pc != null) {
@@ -697,7 +695,7 @@ public abstract class Policy {
         }
 
         synchronized (pdMapping) {
-            pc = pdMapping.get(domain);
+            pc = pdMapping.get(domain.key);
         }
 
         if (pc != null) {
@@ -711,7 +709,7 @@ public abstract class Policy {
 
         synchronized (pdMapping) {
             // cache it
-            pdMapping.put(domain, pc);
+            pdMapping.put(domain.key, pc);
         }
 
         return pc.implies(permission);
@@ -747,21 +745,25 @@ public abstract class Policy {
             this.params = params;
         }
 
-        public String getType() { return type; }
+        @Override public String getType() { return type; }
 
-        public Policy.Parameters getParameters() { return params; }
+        @Override public Policy.Parameters getParameters() { return params; }
 
-        public Provider getProvider() { return p; }
+        @Override public Provider getProvider() { return p; }
 
+        @Override
         public PermissionCollection getPermissions(CodeSource codesource) {
             return spi.engineGetPermissions(codesource);
         }
+        @Override
         public PermissionCollection getPermissions(ProtectionDomain domain) {
             return spi.engineGetPermissions(domain);
         }
+        @Override
         public boolean implies(ProtectionDomain domain, Permission perm) {
             return spi.engineImplies(domain, perm);
         }
+        @Override
         public void refresh() {
             spi.engineRefresh();
         }
@@ -803,7 +805,7 @@ public abstract class Policy {
          * @exception SecurityException - if this PermissionCollection object
          *                                has been marked readonly
          */
-        public void add(Permission permission) {
+        @Override public void add(Permission permission) {
             perms.add(permission);
         }
 
@@ -816,7 +818,7 @@ public abstract class Policy {
          * @return true if "permission" is implied by the  permissions in
          * the collection, false if not.
          */
-        public boolean implies(Permission permission) {
+        @Override public boolean implies(Permission permission) {
             return perms.implies(permission);
         }
 
@@ -826,7 +828,7 @@ public abstract class Policy {
          *
          * @return an enumeration of all the Permissions.
          */
-        public Enumeration<Permission> elements() {
+        @Override public Enumeration<Permission> elements() {
             return perms.elements();
         }
     }

@@ -150,10 +150,14 @@ static class NameVerifier implements HostnameVerifier {
         }
     }
     public static void main(String args[]) throws Exception {
-        ResponseCache.setDefault(new MyResponseCache());
-        FNPrefix = System.getProperty("test.src", ".")+"/";
-        OutFNPrefix = System.getProperty("test.scratch", ".")+"/";
-        new ResponseCacheTest();
+        try {
+            ResponseCache.setDefault(new MyResponseCache());
+            FNPrefix = System.getProperty("test.src", ".")+"/";
+            OutFNPrefix = System.getProperty("test.scratch", ".")+"/";
+            new ResponseCacheTest();
+        } finally{
+            ResponseCache.setDefault(null);
+        }
     }
 
     static class MyResponseCache extends ResponseCache {

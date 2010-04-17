@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,6 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     C->record_method_not_compilable("OSR in empty or breakpointed method");
     return;
   }
-  MethodLivenessResult raw_live_locals = method()->raw_liveness_at_bci(osr_bci());
 
   // Extract the needed locals from the interpreter frame.
   Node *locals_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals-1)*wordSize);
@@ -306,6 +305,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   SafePointNode* bad_type_exit = clone_map();
   bad_type_exit->set_control(new (C, 1) RegionNode(1));
 
+  assert(osr_block->flow()->jsrs()->size() == 0, "should be no jsrs live at osr point");
   for (index = 0; index < max_locals; index++) {
     if (stopped())  break;
     Node* l = local(index);
@@ -317,8 +317,18 @@ void Parse::load_interpreter_state(Node* osr_buf) {
         continue;
       }
     }
-    if (type->basic_type() == T_ADDRESS && !raw_live_locals.at(index)) {
-      // Skip type check for dead address locals
+    if (osr_block->flow()->local_type_at(index)->is_return_address()) {
+      // In our current system it's illegal for jsr addresses to be
+      // live into an OSR entry point because the compiler performs
+      // inlining of jsrs.  ciTypeFlow has a bailout that detect this
+      // case and aborts the compile if addresses are live into an OSR
+      // entry point.  Because of that we can assume that any address
+      // locals at the OSR entry point are dead.  Method liveness
+      // isn't precise enought to figure out that they are dead in all
+      // cases so simply skip checking address locals all
+      // together. Any type check is guaranteed to fail since the
+      // interpreter type is the result of a load which might have any
+      // value and the expected type is a constant.
       continue;
     }
     set_local(index, check_interpreter_type(l, type, bad_type_exit));
@@ -788,67 +798,6 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   initial_gvn()->transform_no_reclaim(exit);
 }
 
-bool Parse::can_rerun_bytecode() {
-  switch (bc()) {
-  case Bytecodes::_ldc:
-  case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-  case Bytecodes::_getfield:
-  case Bytecodes::_putfield:
-  case Bytecodes::_getstatic:
-  case Bytecodes::_putstatic:
-  case Bytecodes::_arraylength:
-  case Bytecodes::_baload:
-  case Bytecodes::_caload:
-  case Bytecodes::_iaload:
-  case Bytecodes::_saload:
-  case Bytecodes::_faload:
-  case Bytecodes::_aaload:
-  case Bytecodes::_laload:
-  case Bytecodes::_daload:
-  case Bytecodes::_bastore:
-  case Bytecodes::_castore:
-  case Bytecodes::_iastore:
-  case Bytecodes::_sastore:
-  case Bytecodes::_fastore:
-  case Bytecodes::_aastore:
-  case Bytecodes::_lastore:
-  case Bytecodes::_dastore:
-  case Bytecodes::_irem:
-  case Bytecodes::_idiv:
-  case Bytecodes::_lrem:
-  case Bytecodes::_ldiv:
-  case Bytecodes::_frem:
-  case Bytecodes::_fdiv:
-  case Bytecodes::_drem:
-  case Bytecodes::_ddiv:
-  case Bytecodes::_checkcast:
-  case Bytecodes::_instanceof:
-  case Bytecodes::_anewarray:
-  case Bytecodes::_newarray:
-  case Bytecodes::_multianewarray:
-  case Bytecodes::_new:
-  case Bytecodes::_monitorenter:  // can re-run initial null check, only
-  case Bytecodes::_return:
-    return true;
-    break;
-
-  // Don't rerun athrow since it's part of the exception path.
-  case Bytecodes::_athrow:
-  case Bytecodes::_invokestatic:
-  case Bytecodes::_invokedynamic:
-  case Bytecodes::_invokespecial:
-  case Bytecodes::_invokevirtual:
-  case Bytecodes::_invokeinterface:
-    return false;
-    break;
-
-  default:
-    assert(false, "unexpected bytecode produced an exception");
-    return true;
-  }
-}
-
 //---------------------------do_exceptions-------------------------------------
 // Process exceptions arising from the current bytecode.
 // Send caught exceptions to the proper handler within this method.
@@ -861,9 +810,6 @@ void Parse::do_exceptions() {
     while (pop_exception_state() != NULL) ;
     return;
   }
-
-  // Make sure we can classify this bytecode if we need to.
-  debug_only(can_rerun_bytecode());
 
   PreserveJVMState pjvms(this, false);
 
