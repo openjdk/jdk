@@ -461,7 +461,7 @@ bool AttachListener::is_init_trigger() {
   if (init_at_startup() || is_initialized()) {
     return false;               // initialized at startup or already initialized
   }
-  char fn[128];
+  char fn[PATH_MAX+1];
   sprintf(fn, ".attach_pid%d", os::current_process_id());
   int ret;
   struct stat64 st;

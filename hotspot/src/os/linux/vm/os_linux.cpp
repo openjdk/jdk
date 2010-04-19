@@ -2305,7 +2305,7 @@ void linux_wrap_code(char* base, size_t size) {
     return;
   }
 
-  char buf[40];
+  char buf[PATH_MAX+1];
   int num = Atomic::add(1, &cnt);
 
   snprintf(buf, sizeof(buf), "%s/hs-vm-%d-%d",
