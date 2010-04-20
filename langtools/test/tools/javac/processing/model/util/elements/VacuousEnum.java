@@ -1,12 +1,10 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,13 @@
  * have any questions.
  */
 
-package sun.io;
-
-import sun.nio.cs.ext.HKSCS_2001;
-
-/**
- * Tables and data to convert HKSCS (2001 revision) to Unicode
- *
- * @author  ConverterGenerator tool
+/*
+ * @test
+ * @bug 6937417
+ * @summary Test -Xprint on enum type with no constants
+ * @author  Joseph D. Darcy
+ * @compile -Xprint VacuousEnum.java
  */
-
-public class ByteToCharHKSCS_2001 extends ByteToCharDoubleByte {
-
-    public String getCharacterEncoding() {
-        return "HKSCS_2001";
-    }
-
-    public ByteToCharHKSCS_2001() {
-        super.index1 = HKSCS_2001.getDecoderIndex1();
-        super.index2= HKSCS_2001.getDecoderIndex2();
-        start = 0x40;
-        end = 0xFE;
-    }
+public enum VacuousEnum {
+    // But alas, no enum constants!
 }

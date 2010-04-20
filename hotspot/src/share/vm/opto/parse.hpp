@@ -551,9 +551,6 @@ class Parse : public GraphKit {
   // Also handles exceptions for individual bytecodes.
   void catch_inline_exceptions(SafePointNode* ex_map);
 
-  // Bytecode classifier, helps decide to use uncommon_trap vs. rethrow_C.
-  bool can_rerun_bytecode();
-
   // Merge the given map into correct exceptional exit state.
   // Assumes that there is no applicable local handler.
   void throw_to_exit(SafePointNode* ex_map);
