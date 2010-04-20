@@ -61,6 +61,11 @@ public class Redirect {
     volatile static boolean serverReady = false;
 
     /*
+     * Is the connection ready to close?
+     */
+    volatile static boolean closeReady = false;
+
+    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
@@ -98,24 +103,33 @@ public class Redirect {
         serverReady = true;
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
-        BufferedReader br = new BufferedReader(new InputStreamReader(sslIS));
-        PrintStream ps = new PrintStream(sslOS);
-        // process HTTP POST request from client
-        System.out.println("status line: "+br.readLine());
+        try {
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
+            BufferedReader br =
+                        new BufferedReader(new InputStreamReader(sslIS));
+            PrintStream ps = new PrintStream(sslOS);
 
-        ps.println("HTTP/1.1 307 Redirect");
-        ps.println("Location: https://localhost:"+serverPort+"/index.html\n\n");
-        ps.flush();
-        sslSocket = (SSLSocket) sslServerSocket.accept();
-        sslOS = sslSocket.getOutputStream();
-        ps = new PrintStream(sslOS);
-        ps.println("HTTP/1.1 200 Redirect succeeded\n\n");
-        ps.flush();
-        Thread.sleep(2000);
-        sslSocket.close();
-        sslServerSocket.close();
+            // process HTTP POST request from client
+            System.out.println("status line: "+br.readLine());
+
+            ps.println("HTTP/1.1 307 Redirect");
+            ps.println("Location: https://localhost:" + serverPort +
+                                                            "/index.html\n\n");
+            ps.flush();
+            sslSocket = (SSLSocket) sslServerSocket.accept();
+            sslOS = sslSocket.getOutputStream();
+            ps = new PrintStream(sslOS);
+            ps.println("HTTP/1.1 200 Redirect succeeded\n\n");
+            ps.flush();
+        } finally {
+            // close the socket
+            while (!closeReady) {
+                Thread.sleep(50);
+            }
+            sslSocket.close();
+            sslServerSocket.close();
+        }
     }
 
     /*
@@ -139,10 +153,14 @@ public class Redirect {
         HttpsURLConnection.setDefaultHostnameVerifier(
                                       new NameVerifier());
         HttpsURLConnection http = (HttpsURLConnection)url.openConnection();
-
-        System.out.println("response header: "+http.getHeaderField(0));
-        if (http.getResponseCode() != 200) {
-            throw new RuntimeException("test Failed");
+        try {
+            System.out.println("response header: "+http.getHeaderField(0));
+            if (http.getResponseCode() != 200) {
+                throw new RuntimeException("test Failed");
+            }
+        } finally {
+            http.disconnect();
+            closeReady = true;
         }
     }
 
