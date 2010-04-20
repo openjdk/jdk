@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4777124 6920545
+ * @bug 4777124 6920545 6911753
  * @summary Verify that all Charset subclasses are available through the API
  */
 
@@ -65,8 +65,6 @@ public class NIOCharsetAvailabilityTest {
         // remove the known pseudo-charsets that serve only to implement
         // other charsets, but shouldn't be known to the public
         charsets.remove(Class.forName("sun.nio.cs.Unicode"));
-        charsets.remove(Class.forName("sun.nio.cs.ext.HKSCS"));
-        charsets.remove(Class.forName("sun.nio.cs.ext.HKSCS_2001"));
         charsets.remove(Class.forName("sun.nio.cs.ext.ISO2022"));
         charsets.remove(Class.forName("sun.nio.cs.ext.ISO2022_CN_GB"));
         charsets.remove(Class.forName("sun.nio.cs.ext.ISO2022_CN_CNS"));

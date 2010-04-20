@@ -297,6 +297,11 @@ void CMRegionStack::push(MemRegion mr) {
   }
 }
 
+// Currently we do not call this at all. Normally we would call it
+// during the concurrent marking / remark phases but we now call
+// the lock-based version instead. But we might want to resurrect this
+// code in the future. So, we'll leave it here commented out.
+#if 0
 MemRegion CMRegionStack::pop() {
   while (true) {
     // Otherwise...
@@ -319,6 +324,41 @@ MemRegion CMRegionStack::pop() {
       }
     }
     // Otherwise, we need to try again.
+  }
+}
+#endif // 0
+
+void CMRegionStack::push_with_lock(MemRegion mr) {
+  assert(mr.word_size() > 0, "Precondition");
+  MutexLockerEx x(CMRegionStack_lock, Mutex::_no_safepoint_check_flag);
+
+  if (isFull()) {
+    _overflow = true;
+    return;
+  }
+
+  _base[_index] = mr;
+  _index += 1;
+}
+
+MemRegion CMRegionStack::pop_with_lock() {
+  MutexLockerEx x(CMRegionStack_lock, Mutex::_no_safepoint_check_flag);
+
+  while (true) {
+    if (_index == 0) {
+      return MemRegion();
+    }
+    _index -= 1;
+
+    MemRegion mr = _base[_index];
+    if (mr.start() != NULL) {
+      assert(mr.end() != NULL, "invariant");
+      assert(mr.word_size() > 0, "invariant");
+      return mr;
+    } else {
+      // that entry was invalidated... let's skip it
+      assert(mr.end() == NULL, "invariant");
+    }
   }
 }
 
@@ -668,24 +708,46 @@ ConcurrentMark::~ConcurrentMark() {
 //
 
 void ConcurrentMark::clearNextBitmap() {
-   guarantee(!G1CollectedHeap::heap()->mark_in_progress(), "Precondition.");
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
 
-   // clear the mark bitmap (no grey objects to start with).
-   // We need to do this in chunks and offer to yield in between
-   // each chunk.
-   HeapWord* start  = _nextMarkBitMap->startWord();
-   HeapWord* end    = _nextMarkBitMap->endWord();
-   HeapWord* cur    = start;
-   size_t chunkSize = M;
-   while (cur < end) {
-     HeapWord* next = cur + chunkSize;
-     if (next > end)
-       next = end;
-     MemRegion mr(cur,next);
-     _nextMarkBitMap->clearRange(mr);
-     cur = next;
-     do_yield_check();
-   }
+  // Make sure that the concurrent mark thread looks to still be in
+  // the current cycle.
+  guarantee(cmThread()->during_cycle(), "invariant");
+
+  // We are finishing up the current cycle by clearing the next
+  // marking bitmap and getting it ready for the next cycle. During
+  // this time no other cycle can start. So, let's make sure that this
+  // is the case.
+  guarantee(!g1h->mark_in_progress(), "invariant");
+
+  // clear the mark bitmap (no grey objects to start with).
+  // We need to do this in chunks and offer to yield in between
+  // each chunk.
+  HeapWord* start  = _nextMarkBitMap->startWord();
+  HeapWord* end    = _nextMarkBitMap->endWord();
+  HeapWord* cur    = start;
+  size_t chunkSize = M;
+  while (cur < end) {
+    HeapWord* next = cur + chunkSize;
+    if (next > end)
+      next = end;
+    MemRegion mr(cur,next);
+    _nextMarkBitMap->clearRange(mr);
+    cur = next;
+    do_yield_check();
+
+    // Repeat the asserts from above. We'll do them as asserts here to
+    // minimize their overhead on the product. However, we'll have
+    // them as guarantees at the beginning / end of the bitmap
+    // clearing to get some checking in the product.
+    assert(cmThread()->during_cycle(), "invariant");
+    assert(!g1h->mark_in_progress(), "invariant");
+  }
+
+  // Repeat the asserts from above.
+  guarantee(cmThread()->during_cycle(), "invariant");
+  guarantee(!g1h->mark_in_progress(), "invariant");
 }
 
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
@@ -3363,7 +3425,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
       gclog_or_tty->print_cr("[%d] draining region stack, size = %d",
                              _task_id, _cm->region_stack_size());
 
-    MemRegion mr = _cm->region_stack_pop();
+    MemRegion mr = _cm->region_stack_pop_with_lock();
     // it returns MemRegion() if the pop fails
     statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
 
@@ -3384,7 +3446,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
         if (has_aborted())
           mr = MemRegion();
         else {
-          mr = _cm->region_stack_pop();
+          mr = _cm->region_stack_pop_with_lock();
           // it returns MemRegion() if the pop fails
           statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
         }
@@ -3417,7 +3479,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
           }
           // Now push the part of the region we didn't scan on the
           // region stack to make sure a task scans it later.
-          _cm->region_stack_push(newRegion);
+          _cm->region_stack_push_with_lock(newRegion);
         }
         // break from while
         mr = MemRegion();
