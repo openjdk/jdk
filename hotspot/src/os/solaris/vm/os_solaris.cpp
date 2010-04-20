@@ -676,15 +676,6 @@ bool os::have_special_privileges() {
 }
 
 
-static char* get_property(char* name, char* buffer, int buffer_size) {
-  if (os::getenv(name, buffer, buffer_size)) {
-    return buffer;
-  }
-  static char empty[] = "";
-  return empty;
-}
-
-
 void os::init_system_properties_values() {
   char arch[12];
   sysinfo(SI_ARCHITECTURE, arch, sizeof(arch));
@@ -1826,7 +1817,10 @@ void os::set_error_file(const char *logfile) {}
 
 const char* os::dll_file_extension() { return ".so"; }
 
-const char* os::get_temp_directory() { return "/tmp/"; }
+const char* os::get_temp_directory() {
+  const char *prop = Arguments::get_property("java.io.tmpdir");
+  return prop == NULL ? "/tmp" : prop;
+}
 
 static bool file_exists(const char* filename) {
   struct stat statbuf;

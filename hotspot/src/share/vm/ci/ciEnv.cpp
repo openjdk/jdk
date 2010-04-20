@@ -385,11 +385,6 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                                                      KILL_COMPILE_ON_FATAL_(fail_type));
   }
 
-  if (found_klass != NULL) {
-    // Found it.  Build a CI handle.
-    return get_object(found_klass)->as_klass();
-  }
-
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
   // In either case, if we can find the element type in the system dictionary,
@@ -412,6 +407,11 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
       // Now make an array for it
       return ciObjArrayKlass::make_impl(elem_klass);
     }
+  }
+
+  if (found_klass != NULL) {
+    // Found it.  Build a CI handle.
+    return get_object(found_klass)->as_klass();
   }
 
   if (require_local)  return NULL;
