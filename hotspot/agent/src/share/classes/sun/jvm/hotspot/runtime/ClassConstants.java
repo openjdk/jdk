@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ public interface ClassConstants
 
     // Temporary tag while constructing constant pool
     public static final int JVM_CONSTANT_StringIndex        = 103;
+
+    // Temporary tag while constructing constant pool
+    public static final int JVM_CONSTANT_UnresolvedClassInError = 104;
 
     // 1.5 major/minor version numbers from JVM spec. 3rd edition
     public static final short MAJOR_VERSION = 49;
