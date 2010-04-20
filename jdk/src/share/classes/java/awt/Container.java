@@ -4492,7 +4492,10 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             retargetMouseEvent(mouseOver, id, e);
         break;
             }
-            e.consume();
+            //Consuming of wheel events is implemented in "retargetMouseEvent".
+            if (id != MouseEvent.MOUSE_WHEEL) {
+                e.consume();
+            }
     }
     return e.isConsumed();
     }
@@ -4799,6 +4802,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                 } else {
                     target.dispatchEvent(retargeted);
                 }
+            }
+            if (id == MouseEvent.MOUSE_WHEEL && retargeted.isConsumed()) {
+                //An exception for wheel bubbling to the native system.
+                //In "processMouseEvent" total event consuming for wheel events is skipped.
+                //Protection from bubbling of Java-accepted wheel events.
+                e.consume();
             }
         }
     }
