@@ -2621,12 +2621,10 @@ public class Attr extends JCTree.Visitor {
             }
             if (useVarargs) {
                 JCTree tree = env.tree;
-                Type argtype = owntype.getParameterTypes().last();
-                if (!types.isReifiable(argtype))
-                    chk.warnUnchecked(env.tree.pos(),
-                                      "unchecked.generic.array.creation",
-                                      argtype);
-                Type elemtype = types.elemtype(argtype);
+                if (owntype.getReturnType().tag != FORALL || warned) {
+                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes());
+                }
+                Type elemtype = types.elemtype(owntype.getParameterTypes().last());
                 switch (tree.getTag()) {
                 case JCTree.APPLY:
                     ((JCMethodInvocation) tree).varargsElement = elemtype;
