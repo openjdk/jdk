@@ -290,8 +290,12 @@ public final class NetworkInterface {
      *          If the specified address is <tt>null</tt>.
      */
     public static NetworkInterface getByInetAddress(InetAddress addr) throws SocketException {
-        if (addr == null)
+        if (addr == null) {
             throw new NullPointerException();
+        }
+        if (!(addr instanceof Inet4Address || addr instanceof Inet6Address)) {
+            throw new IllegalArgumentException ("invalid address type");
+        }
         return getByInetAddress0(addr);
     }
 

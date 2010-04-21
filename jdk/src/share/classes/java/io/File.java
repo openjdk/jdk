@@ -2064,11 +2064,12 @@ public class File
     private synchronized void readObject(java.io.ObjectInputStream s)
          throws IOException, ClassNotFoundException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField fields = s.readFields();
+        String pathField = (String)fields.get("path", null);
         char sep = s.readChar(); // read the previous separator char
         if (sep != separatorChar)
-            this.path = this.path.replace(sep, separatorChar);
-        this.path = fs.normalize(this.path);
+            pathField = pathField.replace(sep, separatorChar);
+        this.path = fs.normalize(pathField);
         this.prefixLength = fs.prefixLength(this.path);
     }
 
