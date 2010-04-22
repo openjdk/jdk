@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -732,6 +732,19 @@ public:
   // It registers a collection set heap region with CM. This is used
   // to determine whether any heap regions are located above the finger.
   void registerCSetRegion(HeapRegion* hr);
+
+  // Registers the maximum region-end associated with a set of
+  // regions with CM. Again this is used to determine whether any
+  // heap regions are located above the finger.
+  void register_collection_set_finger(HeapWord* max_finger) {
+    // max_finger is the highest heap region end of the regions currently
+    // contained in the collection set. If this value is larger than
+    // _min_finger then we need to gray objects.
+    // This routine is like registerCSetRegion but for an entire
+    // collection of regions.
+    if (max_finger > _min_finger)
+      _should_gray_objects = true;
+  }
 
   // Returns "true" if at least one mark has been completed.
   bool at_least_one_mark_complete() { return _at_least_one_mark_complete; }

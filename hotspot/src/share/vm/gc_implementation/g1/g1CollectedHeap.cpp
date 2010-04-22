@@ -30,7 +30,7 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // turn it on so that the contents of the young list (scan-only /
 // to-be-collected) are printed at "strategic" points before / during
 // / after the collection --- this is useful for debugging
-#define SCAN_ONLY_VERBOSE 0
+#define YOUNG_LIST_VERBOSE 0
 // CURRENT STATUS
 // This file is under construction.  Search for "FIXME".
 
@@ -133,8 +133,7 @@ public:
 
 YoungList::YoungList(G1CollectedHeap* g1h)
   : _g1h(g1h), _head(NULL),
-    _scan_only_head(NULL), _scan_only_tail(NULL), _curr_scan_only(NULL),
-    _length(0), _scan_only_length(0),
+    _length(0),
     _last_sampled_rs_lengths(0),
     _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0)
 {
@@ -166,48 +165,6 @@ void YoungList::add_survivor_region(HeapRegion* hr) {
   ++_survivor_length;
 }
 
-HeapRegion* YoungList::pop_region() {
-  while (_head != NULL) {
-    assert( length() > 0, "list should not be empty" );
-    HeapRegion* ret = _head;
-    _head = ret->get_next_young_region();
-    ret->set_next_young_region(NULL);
-    --_length;
-    assert(ret->is_young(), "region should be very young");
-
-    // Replace 'Survivor' region type with 'Young'. So the region will
-    // be treated as a young region and will not be 'confused' with
-    // newly created survivor regions.
-    if (ret->is_survivor()) {
-      ret->set_young();
-    }
-
-    if (!ret->is_scan_only()) {
-      return ret;
-    }
-
-    // scan-only, we'll add it to the scan-only list
-    if (_scan_only_tail == NULL) {
-      guarantee( _scan_only_head == NULL, "invariant" );
-
-      _scan_only_head = ret;
-      _curr_scan_only = ret;
-    } else {
-      guarantee( _scan_only_head != NULL, "invariant" );
-      _scan_only_tail->set_next_young_region(ret);
-    }
-    guarantee( ret->get_next_young_region() == NULL, "invariant" );
-    _scan_only_tail = ret;
-
-    // no need to be tagged as scan-only any more
-    ret->set_young();
-
-    ++_scan_only_length;
-  }
-  assert( length() == 0, "list should be empty" );
-  return NULL;
-}
-
 void YoungList::empty_list(HeapRegion* list) {
   while (list != NULL) {
     HeapRegion* next = list->get_next_young_region();
@@ -224,12 +181,6 @@ void YoungList::empty_list() {
   empty_list(_head);
   _head = NULL;
   _length = 0;
-
-  empty_list(_scan_only_head);
-  _scan_only_head = NULL;
-  _scan_only_tail = NULL;
-  _scan_only_length = 0;
-  _curr_scan_only = NULL;
 
   empty_list(_survivor_head);
   _survivor_head = NULL;
@@ -248,11 +199,11 @@ bool YoungList::check_list_well_formed() {
   HeapRegion* curr = _head;
   HeapRegion* last = NULL;
   while (curr != NULL) {
-    if (!curr->is_young() || curr->is_scan_only()) {
+    if (!curr->is_young()) {
       gclog_or_tty->print_cr("### YOUNG REGION "PTR_FORMAT"-"PTR_FORMAT" "
-                             "incorrectly tagged (%d, %d)",
+                             "incorrectly tagged (y: %d, surv: %d)",
                              curr->bottom(), curr->end(),
-                             curr->is_young(), curr->is_scan_only());
+                             curr->is_young(), curr->is_survivor());
       ret = false;
     }
     ++length;
@@ -267,47 +218,10 @@ bool YoungList::check_list_well_formed() {
                            length, _length);
   }
 
-  bool scan_only_ret = true;
-  length = 0;
-  curr = _scan_only_head;
-  last = NULL;
-  while (curr != NULL) {
-    if (!curr->is_young() || curr->is_scan_only()) {
-      gclog_or_tty->print_cr("### SCAN-ONLY REGION "PTR_FORMAT"-"PTR_FORMAT" "
-                             "incorrectly tagged (%d, %d)",
-                             curr->bottom(), curr->end(),
-                             curr->is_young(), curr->is_scan_only());
-      scan_only_ret = false;
-    }
-    ++length;
-    last = curr;
-    curr = curr->get_next_young_region();
-  }
-  scan_only_ret = scan_only_ret && (length == _scan_only_length);
-
-  if ( (last != _scan_only_tail) ||
-       (_scan_only_head == NULL && _scan_only_tail != NULL) ||
-       (_scan_only_head != NULL && _scan_only_tail == NULL) ) {
-     gclog_or_tty->print_cr("## _scan_only_tail is set incorrectly");
-     scan_only_ret = false;
-  }
-
-  if (_curr_scan_only != NULL && _curr_scan_only != _scan_only_head) {
-    gclog_or_tty->print_cr("### _curr_scan_only is set incorrectly");
-    scan_only_ret = false;
-   }
-
-  if (!scan_only_ret) {
-    gclog_or_tty->print_cr("### SCAN-ONLY LIST seems not well formed!");
-    gclog_or_tty->print_cr("###   list has %d entries, _scan_only_length is %d",
-                  length, _scan_only_length);
-  }
-
-  return ret && scan_only_ret;
+  return ret;
 }
 
-bool YoungList::check_list_empty(bool ignore_scan_only_list,
-                                 bool check_sample) {
+bool YoungList::check_list_empty(bool check_sample) {
   bool ret = true;
 
   if (_length != 0) {
@@ -327,28 +241,7 @@ bool YoungList::check_list_empty(bool ignore_scan_only_list,
     gclog_or_tty->print_cr("### YOUNG LIST does not seem empty");
   }
 
-  if (ignore_scan_only_list)
-    return ret;
-
-  bool scan_only_ret = true;
-  if (_scan_only_length != 0) {
-    gclog_or_tty->print_cr("### SCAN-ONLY LIST should have 0 length, not %d",
-                  _scan_only_length);
-    scan_only_ret = false;
-  }
-  if (_scan_only_head != NULL) {
-    gclog_or_tty->print_cr("### SCAN-ONLY LIST does not have a NULL head");
-     scan_only_ret = false;
-  }
-  if (_scan_only_tail != NULL) {
-    gclog_or_tty->print_cr("### SCAN-ONLY LIST does not have a NULL tail");
-    scan_only_ret = false;
-  }
-  if (!scan_only_ret) {
-    gclog_or_tty->print_cr("### SCAN-ONLY LIST does not seem empty");
-  }
-
-  return ret && scan_only_ret;
+  return ret;
 }
 
 void
@@ -365,7 +258,18 @@ YoungList::rs_length_sampling_more() {
 void
 YoungList::rs_length_sampling_next() {
   assert( _curr != NULL, "invariant" );
-  _sampled_rs_lengths += _curr->rem_set()->occupied();
+  size_t rs_length = _curr->rem_set()->occupied();
+
+  _sampled_rs_lengths += rs_length;
+
+  // The current region may not yet have been added to the
+  // incremental collection set (it gets added when it is
+  // retired as the current allocation region).
+  if (_curr->in_collection_set()) {
+    // Update the collection set policy information for this region
+    _g1h->g1_policy()->update_incremental_cset_info(_curr, rs_length);
+  }
+
   _curr = _curr->get_next_young_region();
   if (_curr == NULL) {
     _last_sampled_rs_lengths = _sampled_rs_lengths;
@@ -375,54 +279,46 @@ YoungList::rs_length_sampling_next() {
 
 void
 YoungList::reset_auxilary_lists() {
-  // We could have just "moved" the scan-only list to the young list.
-  // However, the scan-only list is ordered according to the region
-  // age in descending order, so, by moving one entry at a time, we
-  // ensure that it is recreated in ascending order.
-
   guarantee( is_empty(), "young list should be empty" );
   assert(check_list_well_formed(), "young list should be well formed");
 
   // Add survivor regions to SurvRateGroup.
   _g1h->g1_policy()->note_start_adding_survivor_regions();
   _g1h->g1_policy()->finished_recalculating_age_indexes(true /* is_survivors */);
+
   for (HeapRegion* curr = _survivor_head;
        curr != NULL;
        curr = curr->get_next_young_region()) {
     _g1h->g1_policy()->set_region_survivors(curr);
+
+    // The region is a non-empty survivor so let's add it to
+    // the incremental collection set for the next evacuation
+    // pause.
+    _g1h->g1_policy()->add_region_to_incremental_cset_rhs(curr);
   }
   _g1h->g1_policy()->note_stop_adding_survivor_regions();
 
+  _head   = _survivor_head;
+  _length = _survivor_length;
   if (_survivor_head != NULL) {
-    _head           = _survivor_head;
-    _length         = _survivor_length + _scan_only_length;
-    _survivor_tail->set_next_young_region(_scan_only_head);
-  } else {
-    _head           = _scan_only_head;
-    _length         = _scan_only_length;
+    assert(_survivor_tail != NULL, "cause it shouldn't be");
+    assert(_survivor_length > 0, "invariant");
+    _survivor_tail->set_next_young_region(NULL);
   }
 
-  for (HeapRegion* curr = _scan_only_head;
-       curr != NULL;
-       curr = curr->get_next_young_region()) {
-    curr->recalculate_age_in_surv_rate_group();
-  }
-  _scan_only_head   = NULL;
-  _scan_only_tail   = NULL;
-  _scan_only_length = 0;
-  _curr_scan_only   = NULL;
+  // Don't clear the survivor list handles until the start of
+  // the next evacuation pause - we need it in order to re-tag
+  // the survivor regions from this evacuation pause as 'young'
+  // at the start of the next.
 
-  _survivor_head    = NULL;
-  _survivor_tail   = NULL;
-  _survivor_length  = 0;
   _g1h->g1_policy()->finished_recalculating_age_indexes(false /* is_survivors */);
 
   assert(check_list_well_formed(), "young list should be well formed");
 }
 
 void YoungList::print() {
-  HeapRegion* lists[] = {_head,   _scan_only_head, _survivor_head};
-  const char* names[] = {"YOUNG", "SCAN-ONLY",     "SURVIVOR"};
+  HeapRegion* lists[] = {_head,   _survivor_head};
+  const char* names[] = {"YOUNG", "SURVIVOR"};
 
   for (unsigned int list = 0; list < ARRAY_SIZE(lists); ++list) {
     gclog_or_tty->print_cr("%s LIST CONTENTS", names[list]);
@@ -431,7 +327,7 @@ void YoungList::print() {
       gclog_or_tty->print_cr("  empty");
     while (curr != NULL) {
       gclog_or_tty->print_cr("  [%08x-%08x], t: %08x, P: %08x, N: %08x, C: %08x, "
-                             "age: %4d, y: %d, s-o: %d, surv: %d",
+                             "age: %4d, y: %d, surv: %d",
                              curr->bottom(), curr->end(),
                              curr->top(),
                              curr->prev_top_at_mark_start(),
@@ -439,7 +335,6 @@ void YoungList::print() {
                              curr->top_at_conc_mark_count(),
                              curr->age_in_surv_rate_group_cond(),
                              curr->is_young(),
-                             curr->is_scan_only(),
                              curr->is_survivor());
       curr = curr->get_next_young_region();
     }
@@ -707,6 +602,12 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // region below.
     if (_cur_alloc_region != NULL) {
       // We're finished with the _cur_alloc_region.
+      // As we're builing (at least the young portion) of the collection
+      // set incrementally we'll add the current allocation region to
+      // the collection set here.
+      if (_cur_alloc_region->is_young()) {
+        g1_policy()->add_region_to_incremental_cset_lhs(_cur_alloc_region);
+      }
       _summary_bytes_used += _cur_alloc_region->used();
       _cur_alloc_region = NULL;
     }
@@ -820,6 +721,12 @@ void G1CollectedHeap::abandon_cur_alloc_region() {
       _free_regions++;
       free_region(_cur_alloc_region);
     } else {
+      // As we're builing (at least the young portion) of the collection
+      // set incrementally we'll add the current allocation region to
+      // the collection set here.
+      if (_cur_alloc_region->is_young()) {
+        g1_policy()->add_region_to_incremental_cset_lhs(_cur_alloc_region);
+      }
       _summary_bytes_used += _cur_alloc_region->used();
     }
     _cur_alloc_region = NULL;
@@ -975,6 +882,15 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     g1_rem_set()->as_HRInto_G1RemSet()->cleanupHRRS();
     tear_down_region_lists();
     set_used_regions_to_need_zero_fill();
+
+    // We may have added regions to the current incremental collection
+    // set between the last GC or pause and now. We need to clear the
+    // incremental collection set and then start rebuilding it afresh
+    // after this full GC.
+    abandon_collection_set(g1_policy()->inc_cset_head());
+    g1_policy()->clear_incremental_cset();
+    g1_policy()->stop_incremental_cset_building();
+
     if (g1_policy()->in_young_gc_mode()) {
       empty_young_list();
       g1_policy()->set_full_young_gcs(true);
@@ -1058,6 +974,15 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
       perm()->compute_new_size();
     }
 
+    // Start a new incremental collection set for the next pause
+    assert(g1_policy()->collection_set() == NULL, "must be");
+    g1_policy()->start_incremental_cset_building();
+
+    // Clear the _cset_fast_test bitmap in anticipation of adding
+    // regions to the incremental collection set for the next
+    // evacuation pause.
+    clear_cset_fast_test();
+
     double end = os::elapsedTime();
     g1_policy()->record_full_collection_end();
 
@@ -1076,7 +1001,9 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
 
   if (g1_policy()->in_young_gc_mode()) {
     _young_list->reset_sampled_info();
-    assert( check_young_list_empty(false, false),
+    // At this point there should be no regions in the
+    // entire heap tagged as young.
+    assert( check_young_list_empty(true /* check_heap */),
             "young list should be empty at this point");
   }
 
@@ -1572,6 +1499,20 @@ jint G1CollectedHeap::initialize() {
                                              heap_word_size(init_byte_size));
 
   _g1h = this;
+
+   _in_cset_fast_test_length = max_regions();
+   _in_cset_fast_test_base = NEW_C_HEAP_ARRAY(bool, _in_cset_fast_test_length);
+
+   // We're biasing _in_cset_fast_test to avoid subtracting the
+   // beginning of the heap every time we want to index; basically
+   // it's the same with what we do with the card table.
+   _in_cset_fast_test = _in_cset_fast_test_base -
+                ((size_t) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
+
+   // Clear the _cset_fast_test bitmap in anticipation of adding
+   // regions to the incremental collection set for the first
+   // evacuation pause.
+   clear_cset_fast_test();
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2751,25 +2692,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       double start_time_sec = os::elapsedTime();
       size_t start_used_bytes = used();
 
+#if YOUNG_LIST_VERBOSE
+      gclog_or_tty->print_cr("\nBefore recording pause start.\nYoung_list:");
+      _young_list->print();
+      g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
+#endif // YOUNG_LIST_VERBOSE
+
       g1_policy()->record_collection_pause_start(start_time_sec,
                                                  start_used_bytes);
 
-      guarantee(_in_cset_fast_test == NULL, "invariant");
-      guarantee(_in_cset_fast_test_base == NULL, "invariant");
-      _in_cset_fast_test_length = max_regions();
-      _in_cset_fast_test_base =
-                             NEW_C_HEAP_ARRAY(bool, _in_cset_fast_test_length);
-      memset(_in_cset_fast_test_base, false,
-                                     _in_cset_fast_test_length * sizeof(bool));
-      // We're biasing _in_cset_fast_test to avoid subtracting the
-      // beginning of the heap every time we want to index; basically
-      // it's the same with what we do with the card table.
-      _in_cset_fast_test = _in_cset_fast_test_base -
-              ((size_t) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
-
-#if SCAN_ONLY_VERBOSE
+#if YOUNG_LIST_VERBOSE
+      gclog_or_tty->print_cr("\nAfter recording pause start.\nYoung_list:");
       _young_list->print();
-#endif // SCAN_ONLY_VERBOSE
+#endif // YOUNG_LIST_VERBOSE
 
       if (g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPre();
@@ -2796,12 +2731,15 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       if (mark_in_progress())
         concurrent_mark()->newCSet();
 
-      // Now choose the CS.
-      g1_policy()->choose_collection_set();
+#if YOUNG_LIST_VERBOSE
+      gclog_or_tty->print_cr("\nBefore choosing collection set.\nYoung_list:");
+      _young_list->print();
+      g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
+#endif // YOUNG_LIST_VERBOSE
 
-      // We may abandon a pause if we find no region that will fit in the MMU
-      // pause.
-      bool abandoned = (g1_policy()->collection_set() == NULL);
+      // Now choose the CS. We may abandon a pause if we find no
+      // region that will fit in the MMU pause.
+      bool abandoned = g1_policy()->choose_collection_set();
 
       // Nothing to do if we were unable to choose a collection set.
       if (!abandoned) {
@@ -2819,40 +2757,64 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
 
         // Actually do the work...
         evacuate_collection_set();
+
         free_collection_set(g1_policy()->collection_set());
         g1_policy()->clear_collection_set();
 
-        FREE_C_HEAP_ARRAY(bool, _in_cset_fast_test_base);
-        // this is more for peace of mind; we're nulling them here and
-        // we're expecting them to be null at the beginning of the next GC
-        _in_cset_fast_test = NULL;
-        _in_cset_fast_test_base = NULL;
-
         cleanup_surviving_young_words();
+
+        // Start a new incremental collection set for the next pause.
+        g1_policy()->start_incremental_cset_building();
+
+        // Clear the _cset_fast_test bitmap in anticipation of adding
+        // regions to the incremental collection set for the next
+        // evacuation pause.
+        clear_cset_fast_test();
 
         if (g1_policy()->in_young_gc_mode()) {
           _young_list->reset_sampled_info();
-          assert(check_young_list_empty(true),
-                 "young list should be empty");
 
-#if SCAN_ONLY_VERBOSE
+          // Don't check the whole heap at this point as the
+          // GC alloc regions from this pause have been tagged
+          // as survivors and moved on to the survivor list.
+          // Survivor regions will fail the !is_young() check.
+          assert(check_young_list_empty(false /* check_heap */),
+              "young list should be empty");
+
+#if YOUNG_LIST_VERBOSE
+          gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
           _young_list->print();
-#endif // SCAN_ONLY_VERBOSE
+#endif // YOUNG_LIST_VERBOSE
 
           g1_policy()->record_survivor_regions(_young_list->survivor_length(),
                                           _young_list->first_survivor_region(),
                                           _young_list->last_survivor_region());
+
           _young_list->reset_auxilary_lists();
         }
       } else {
-        if (_in_cset_fast_test != NULL) {
-          assert(_in_cset_fast_test_base != NULL, "Since _in_cset_fast_test isn't");
-          FREE_C_HEAP_ARRAY(bool, _in_cset_fast_test_base);
-          //  this is more for peace of mind; we're nulling them here and
-          // we're expecting them to be null at the beginning of the next GC
-          _in_cset_fast_test = NULL;
-          _in_cset_fast_test_base = NULL;
-        }
+        // We have abandoned the current collection. This can only happen
+        // if we're not doing young or partially young collections, and
+        // we didn't find an old region that we're able to collect within
+        // the allowed time.
+
+        assert(g1_policy()->collection_set() == NULL, "should be");
+        assert(_young_list->length() == 0, "because it should be");
+
+        // This should be a no-op.
+        abandon_collection_set(g1_policy()->inc_cset_head());
+
+        g1_policy()->clear_incremental_cset();
+        g1_policy()->stop_incremental_cset_building();
+
+        // Start a new incremental collection set for the next pause.
+        g1_policy()->start_incremental_cset_building();
+
+        // Clear the _cset_fast_test bitmap in anticipation of adding
+        // regions to the incremental collection set for the next
+        // evacuation pause.
+        clear_cset_fast_test();
+
         // This looks confusing, because the DPT should really be empty
         // at this point -- since we have not done any collection work,
         // there should not be any derived pointers in the table to update;
@@ -2886,9 +2848,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
         doConcurrentMark();
       }
 
-#if SCAN_ONLY_VERBOSE
+#if YOUNG_LIST_VERBOSE
+      gclog_or_tty->print_cr("\nEnd of the pause.\nYoung_list:");
       _young_list->print();
-#endif // SCAN_ONLY_VERBOSE
+      g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
+#endif // YOUNG_LIST_VERBOSE
 
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
@@ -4027,16 +3991,13 @@ public:
 
     OopsInHeapRegionClosure        *scan_root_cl;
     OopsInHeapRegionClosure        *scan_perm_cl;
-    OopsInHeapRegionClosure        *scan_so_cl;
 
     if (_g1h->g1_policy()->during_initial_mark_pause()) {
       scan_root_cl = &scan_mark_root_cl;
       scan_perm_cl = &scan_mark_perm_cl;
-      scan_so_cl   = &scan_mark_heap_rs_cl;
     } else {
       scan_root_cl = &only_scan_root_cl;
       scan_perm_cl = &only_scan_perm_cl;
-      scan_so_cl   = &only_scan_heap_rs_cl;
     }
 
     pss.start_strong_roots();
@@ -4044,7 +4005,6 @@ public:
                                   SharedHeap::SO_AllClasses,
                                   scan_root_cl,
                                   &push_heap_rs_cl,
-                                  scan_so_cl,
                                   scan_perm_cl,
                                   i);
     pss.end_strong_roots();
@@ -4106,7 +4066,6 @@ g1_process_strong_roots(bool collecting_perm_gen,
                         SharedHeap::ScanningOption so,
                         OopClosure* scan_non_heap_roots,
                         OopsInHeapRegionClosure* scan_rs,
-                        OopsInHeapRegionClosure* scan_so,
                         OopsInGenClosure* scan_perm,
                         int worker_i) {
   // First scan the strong roots, including the perm gen.
@@ -4126,6 +4085,7 @@ g1_process_strong_roots(bool collecting_perm_gen,
                        &buf_scan_non_heap_roots,
                        &eager_scan_code_roots,
                        &buf_scan_perm);
+
   // Finish up any enqueued closure apps.
   buf_scan_non_heap_roots.done();
   buf_scan_perm.done();
@@ -4148,9 +4108,6 @@ g1_process_strong_roots(bool collecting_perm_gen,
 
   // XXX What should this be doing in the parallel case?
   g1_policy()->record_collection_pause_end_CH_strong_roots();
-  if (scan_so != NULL) {
-    scan_scan_only_set(scan_so, worker_i);
-  }
   // Now scan the complement of the collection set.
   if (scan_rs != NULL) {
     g1_rem_set()->oops_into_collection_set_do(scan_rs, worker_i);
@@ -4161,54 +4118,6 @@ g1_process_strong_roots(bool collecting_perm_gen,
   }
   g1_policy()->record_collection_pause_end_G1_strong_roots();
   _process_strong_tasks->all_tasks_completed();
-}
-
-void
-G1CollectedHeap::scan_scan_only_region(HeapRegion* r,
-                                       OopsInHeapRegionClosure* oc,
-                                       int worker_i) {
-  HeapWord* startAddr = r->bottom();
-  HeapWord* endAddr = r->used_region().end();
-
-  oc->set_region(r);
-
-  HeapWord* p = r->bottom();
-  HeapWord* t = r->top();
-  guarantee( p == r->next_top_at_mark_start(), "invariant" );
-  while (p < t) {
-    oop obj = oop(p);
-    p += obj->oop_iterate(oc);
-  }
-}
-
-void
-G1CollectedHeap::scan_scan_only_set(OopsInHeapRegionClosure* oc,
-                                    int worker_i) {
-  double start = os::elapsedTime();
-
-  BufferingOopsInHeapRegionClosure boc(oc);
-
-  FilterInHeapRegionAndIntoCSClosure scan_only(this, &boc);
-  FilterAndMarkInHeapRegionAndIntoCSClosure scan_and_mark(this, &boc, concurrent_mark());
-
-  OopsInHeapRegionClosure *foc;
-  if (g1_policy()->during_initial_mark_pause())
-    foc = &scan_and_mark;
-  else
-    foc = &scan_only;
-
-  HeapRegion* hr;
-  int n = 0;
-  while ((hr = _young_list->par_get_next_scan_only_region()) != NULL) {
-    scan_scan_only_region(hr, foc, worker_i);
-    ++n;
-  }
-  boc.done();
-
-  double closure_app_s = boc.closure_app_seconds();
-  g1_policy()->record_obj_copy_time(worker_i, closure_app_s * 1000.0);
-  double ms = (os::elapsedTime() - start - closure_app_s)*1000.0;
-  g1_policy()->record_scan_only_time(worker_i, ms, n);
 }
 
 void
@@ -4409,17 +4318,14 @@ void G1CollectedHeap::dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRe
 class G1ParCleanupCTTask : public AbstractGangTask {
   CardTableModRefBS* _ct_bs;
   G1CollectedHeap* _g1h;
-  HeapRegion* volatile _so_head;
   HeapRegion* volatile _su_head;
 public:
   G1ParCleanupCTTask(CardTableModRefBS* ct_bs,
                      G1CollectedHeap* g1h,
-                     HeapRegion* scan_only_list,
                      HeapRegion* survivor_list) :
     AbstractGangTask("G1 Par Cleanup CT Task"),
     _ct_bs(ct_bs),
     _g1h(g1h),
-    _so_head(scan_only_list),
     _su_head(survivor_list)
   { }
 
@@ -4428,14 +4334,13 @@ public:
     while (r = _g1h->pop_dirty_cards_region()) {
       clear_cards(r);
     }
-    // Redirty the cards of the scan-only and survivor regions.
-    dirty_list(&this->_so_head);
+    // Redirty the cards of the survivor regions.
     dirty_list(&this->_su_head);
   }
 
   void clear_cards(HeapRegion* r) {
-    // Cards for Survivor and Scan-Only regions will be dirtied later.
-    if (!r->is_scan_only() && !r->is_survivor()) {
+    // Cards for Survivor regions will be dirtied later.
+    if (!r->is_survivor()) {
       _ct_bs->clear(MemRegion(r->bottom(), r->end()));
     }
   }
@@ -4468,7 +4373,7 @@ public:
   virtual bool doHeapRegion(HeapRegion* r)
   {
     MemRegion mr(r->bottom(), r->end());
-    if (r->is_scan_only() || r->is_survivor()) {
+    if (r->is_survivor()) {
       _ct_bs->verify_dirty_region(mr);
     } else {
       _ct_bs->verify_clean_region(mr);
@@ -4484,8 +4389,8 @@ void G1CollectedHeap::cleanUpCardTable() {
 
   // Iterate over the dirty cards region list.
   G1ParCleanupCTTask cleanup_task(ct_bs, this,
-                                  _young_list->first_scan_only_region(),
                                   _young_list->first_survivor_region());
+
   if (ParallelGCThreads > 0) {
     set_par_threads(workers()->total_workers());
     workers()->run_task(&cleanup_task);
@@ -4501,12 +4406,12 @@ void G1CollectedHeap::cleanUpCardTable() {
       }
       r->set_next_dirty_cards_region(NULL);
     }
-    // now, redirty the cards of the scan-only and survivor regions
+    // now, redirty the cards of the survivor regions
     // (it seemed faster to do it this way, instead of iterating over
     // all regions and then clearing / dirtying as appropriate)
-    dirtyCardsForYoungRegions(ct_bs, _young_list->first_scan_only_region());
     dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
   }
+
   double elapsed = os::elapsedTime() - start;
   g1_policy()->record_clear_ct_time( elapsed * 1000.0);
 #ifndef PRODUCT
@@ -4526,6 +4431,11 @@ void G1CollectedHeap::do_collection_pause_if_appropriate(size_t word_size) {
 void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
   double young_time_ms     = 0.0;
   double non_young_time_ms = 0.0;
+
+  // Since the collection set is a superset of the the young list,
+  // all we need to do to clear the young list is clear its
+  // head and length, and unlink any young regions in the code below
+  _young_list->clear();
 
   G1CollectorPolicy* policy = g1_policy();
 
@@ -4570,6 +4480,12 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
       guarantee( (size_t)index < policy->young_cset_length(), "invariant" );
       size_t words_survived = _surviving_young_words[index];
       cur->record_surv_words_in_group(words_survived);
+
+      // At this point the we have 'popped' cur from the collection set
+      // (linked via next_in_collection_set()) but it is still in the
+      // young list (linked via next_young_region()). Clear the
+      // _next_young_region field.
+      cur->set_next_young_region(NULL);
     } else {
       int index = cur->young_index_in_cset();
       guarantee( index == -1, "invariant" );
@@ -4585,7 +4501,6 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
              "Should not have empty regions in a CS.");
       free_region(cur);
     } else {
-      guarantee( !cur->is_scan_only(), "should not be scan only" );
       cur->uninstall_surv_rate_group();
       if (cur->is_young())
         cur->set_young_index_in_cset(-1);
@@ -4607,6 +4522,27 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
 
   policy->record_young_free_cset_time_ms(young_time_ms);
   policy->record_non_young_free_cset_time_ms(non_young_time_ms);
+}
+
+// This routine is similar to the above but does not record
+// any policy statistics or update free lists; we are abandoning
+// the current incremental collection set in preparation of a
+// full collection. After the full GC we will start to build up
+// the incremental collection set again.
+// This is only called when we're doing a full collection
+// and is immediately followed by the tearing down of the young list.
+
+void G1CollectedHeap::abandon_collection_set(HeapRegion* cs_head) {
+  HeapRegion* cur = cs_head;
+
+  while (cur != NULL) {
+    HeapRegion* next = cur->next_in_collection_set();
+    assert(cur->in_collection_set(), "bad CS");
+    cur->set_next_in_collection_set(NULL);
+    cur->set_in_collection_set(false);
+    cur->set_young_index_in_cset(-1);
+    cur = next;
+  }
 }
 
 HeapRegion*
@@ -4975,12 +4911,10 @@ public:
   bool success() { return _success; }
 };
 
-bool G1CollectedHeap::check_young_list_empty(bool ignore_scan_only_list,
-                                             bool check_sample) {
-  bool ret = true;
+bool G1CollectedHeap::check_young_list_empty(bool check_heap, bool check_sample) {
+  bool ret = _young_list->check_list_empty(check_sample);
 
-  ret = _young_list->check_list_empty(ignore_scan_only_list, check_sample);
-  if (!ignore_scan_only_list) {
+  if (check_heap) {
     NoYoungRegionsClosure closure;
     heap_region_iterate(&closure);
     ret = ret && closure.success();
