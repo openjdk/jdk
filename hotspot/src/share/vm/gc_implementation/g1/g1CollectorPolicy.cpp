@@ -231,20 +231,21 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
+  _par_last_gc_worker_start_times_ms = new double[_parallel_gc_threads];
   _par_last_ext_root_scan_times_ms = new double[_parallel_gc_threads];
   _par_last_mark_stack_scan_times_ms = new double[_parallel_gc_threads];
 
-  _par_last_update_rs_start_times_ms = new double[_parallel_gc_threads];
   _par_last_update_rs_times_ms = new double[_parallel_gc_threads];
   _par_last_update_rs_processed_buffers = new double[_parallel_gc_threads];
 
-  _par_last_scan_rs_start_times_ms = new double[_parallel_gc_threads];
   _par_last_scan_rs_times_ms = new double[_parallel_gc_threads];
   _par_last_scan_new_refs_times_ms = new double[_parallel_gc_threads];
 
   _par_last_obj_copy_times_ms = new double[_parallel_gc_threads];
 
   _par_last_termination_times_ms = new double[_parallel_gc_threads];
+  _par_last_termination_attempts = new double[_parallel_gc_threads];
+  _par_last_gc_worker_end_times_ms = new double[_parallel_gc_threads];
 
   // start conservatively
   _expensive_region_limit_ms = 0.5 * (double) MaxGCPauseMillis;
@@ -836,16 +837,17 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   // if they are not set properly
 
   for (int i = 0; i < _parallel_gc_threads; ++i) {
-    _par_last_ext_root_scan_times_ms[i] = -666.0;
-    _par_last_mark_stack_scan_times_ms[i] = -666.0;
-    _par_last_update_rs_start_times_ms[i] = -666.0;
-    _par_last_update_rs_times_ms[i] = -666.0;
-    _par_last_update_rs_processed_buffers[i] = -666.0;
-    _par_last_scan_rs_start_times_ms[i] = -666.0;
-    _par_last_scan_rs_times_ms[i] = -666.0;
-    _par_last_scan_new_refs_times_ms[i] = -666.0;
-    _par_last_obj_copy_times_ms[i] = -666.0;
-    _par_last_termination_times_ms[i] = -666.0;
+    _par_last_gc_worker_start_times_ms[i] = -1234.0;
+    _par_last_ext_root_scan_times_ms[i] = -1234.0;
+    _par_last_mark_stack_scan_times_ms[i] = -1234.0;
+    _par_last_update_rs_times_ms[i] = -1234.0;
+    _par_last_update_rs_processed_buffers[i] = -1234.0;
+    _par_last_scan_rs_times_ms[i] = -1234.0;
+    _par_last_scan_new_refs_times_ms[i] = -1234.0;
+    _par_last_obj_copy_times_ms[i] = -1234.0;
+    _par_last_termination_times_ms[i] = -1234.0;
+    _par_last_termination_attempts[i] = -1234.0;
+    _par_last_gc_worker_end_times_ms[i] = -1234.0;
   }
 #endif
 
@@ -996,9 +998,9 @@ T sum_of(T* sum_arr, int start, int n, int N) {
   return sum;
 }
 
-void G1CollectorPolicy::print_par_stats (int level,
-                                         const char* str,
-                                         double* data,
+void G1CollectorPolicy::print_par_stats(int level,
+                                        const char* str,
+                                        double* data,
                                          bool summary) {
   double min = data[0], max = data[0];
   double total = 0.0;
@@ -1027,10 +1029,10 @@ void G1CollectorPolicy::print_par_stats (int level,
   gclog_or_tty->print_cr("]");
 }
 
-void G1CollectorPolicy::print_par_buffers (int level,
-                                         const char* str,
-                                         double* data,
-                                         bool summary) {
+void G1CollectorPolicy::print_par_sizes(int level,
+                                        const char* str,
+                                        double* data,
+                                        bool summary) {
   double min = data[0], max = data[0];
   double total = 0.0;
   int j;
@@ -1375,15 +1377,22 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       }
       if (parallel) {
         print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
-        print_par_stats(2, "Update RS (Start)", _par_last_update_rs_start_times_ms, false);
+        print_par_stats(2, "GC Worker Start Time",
+                        _par_last_gc_worker_start_times_ms, false);
         print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-        print_par_buffers(3, "Processed Buffers",
-                          _par_last_update_rs_processed_buffers, true);
-        print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
-        print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
+        print_par_sizes(3, "Processed Buffers",
+                        _par_last_update_rs_processed_buffers, true);
+        print_par_stats(2, "Ext Root Scanning",
+                        _par_last_ext_root_scan_times_ms);
+        print_par_stats(2, "Mark Stack Scanning",
+                        _par_last_mark_stack_scan_times_ms);
         print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
         print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
         print_par_stats(2, "Termination", _par_last_termination_times_ms);
+        print_par_sizes(3, "Termination Attempts",
+                        _par_last_termination_attempts, true);
+        print_par_stats(2, "GC Worker End Time",
+                        _par_last_gc_worker_end_times_ms, false);
         print_stats(2, "Other", parallel_other_time);
         print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
       } else {
