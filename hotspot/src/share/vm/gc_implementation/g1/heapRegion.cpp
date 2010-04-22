@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,9 @@ HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
     _young_type(NotYoung), _next_young_region(NULL),
     _next_dirty_cards_region(NULL),
     _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
-    _rem_set(NULL), _zfs(NotZeroFilled)
+    _rem_set(NULL), _zfs(NotZeroFilled),
+    _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
+    _predicted_bytes_to_copy(0)
 {
   _orig_end = mr.end();
   // Note that initialize() will set the start of the unmarked area of the
@@ -733,7 +735,7 @@ void HeapRegion::print_on(outputStream* st) const {
   else
     st->print("   ");
   if (is_young())
-    st->print(is_scan_only() ? " SO" : (is_survivor() ? " SU" : " Y "));
+    st->print(is_survivor() ? " SU" : " Y ");
   else
     st->print("   ");
   if (is_empty())
