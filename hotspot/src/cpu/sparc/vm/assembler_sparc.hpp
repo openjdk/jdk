@@ -1065,7 +1065,7 @@ class Assembler : public AbstractAssembler  {
   }
   void assert_not_delayed(const char* msg) {
 #ifdef CHECK_DELAY
-    assert_msg ( delay_state == no_delay, msg);
+    assert(delay_state == no_delay, msg);
 #endif
   }
 

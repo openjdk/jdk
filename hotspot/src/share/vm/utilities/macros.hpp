@@ -188,6 +188,4 @@
 #define NOT_SPARC(code) code
 #endif
 
-#define FIX_THIS(code) report_assertion_failure("FIX_THIS",__FILE__, __LINE__, "")
-
 #define define_pd_global(type, name, value) const type pd_##name = value;

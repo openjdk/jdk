@@ -2124,7 +2124,7 @@ void nmethod::verify() {
   ResourceMark rm;
 
   if (!CodeCache::contains(this)) {
-    fatal1("nmethod at " INTPTR_FORMAT " not in zone", this);
+    fatal(err_msg("nmethod at " INTPTR_FORMAT " not in zone", this));
   }
 
   if(is_native_method() )
@@ -2132,7 +2132,8 @@ void nmethod::verify() {
 
   nmethod* nm = CodeCache::find_nmethod(verified_entry_point());
   if (nm != this) {
-    fatal1("findNMethod did not find this nmethod (" INTPTR_FORMAT ")", this);
+    fatal(err_msg("findNMethod did not find this nmethod (" INTPTR_FORMAT ")",
+                  this));
   }
 
   for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {

@@ -334,7 +334,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         }
         break;
       default:
-        fatal1("bad constant pool tag value %u", cp->tag_at(index).value());
+        fatal(err_msg("bad constant pool tag value %u",
+                      cp->tag_at(index).value()));
         ShouldNotReachHere();
         break;
     } // end of switch
