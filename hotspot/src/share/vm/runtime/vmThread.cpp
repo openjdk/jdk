@@ -593,7 +593,8 @@ void VMThread::execute(VM_Operation* op) {
       // Check the VM operation allows nested VM operation. This normally not the case, e.g., the compiler
       // does not allow nested scavenges or compiles.
       if (!prev_vm_operation->allow_nested_vm_operations()) {
-        fatal2("Nested VM operation %s requested by operation %s", op->name(), vm_operation()->name());
+        fatal(err_msg("Nested VM operation %s requested by operation %s",
+                      op->name(), vm_operation()->name()));
       }
       op->set_calling_thread(prev_vm_operation->calling_thread(), prev_vm_operation->priority());
     }
