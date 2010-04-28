@@ -1041,7 +1041,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public FileDialogPeer createFileDialog(FileDialog target) {
-        FileDialogPeer peer = new XFileDialogPeer(target);
+        // The current GtkFileChooser is available from GTK+ 2.4
+        FileDialogPeer peer = checkGtkVersion(2, 4, 0) ? new GtkFileDialogPeer(
+                target) : new XFileDialogPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
