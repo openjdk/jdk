@@ -82,8 +82,8 @@ public class LayerUI<V extends Component>
     }
 
     /**
-     * Dispatches {@code AWTEvent}s for {@code JLayer}
-     * and <b>all its subcomponents</b> to this {@code LayerUI} instance.
+     * Processes {@code AWTEvent}s for {@code JLayer}
+     * and <b>all its descendants</b> to this {@code LayerUI} instance.
      * <p/>
      * To enable the {@code AWTEvent}s of a particular type,
      * you call {@link JLayer#setLayerEventMask}
@@ -93,13 +93,14 @@ public class LayerUI<V extends Component>
      * By default this  method calls the appropriate
      * {@code process&lt;event&nbsp;type&gt;Event}
      * method for the given class of event.
+     * <p/>
+     * <b>Note:</b> Events are processed only for displayable {@code JLayer}s.
      *
      * @param e the event to be dispatched
      * @param l the layer this LayerUI is set to
      *
      * @see JLayer#setLayerEventMask(long)
-     * @see #installUI(javax.swing.JComponent)
-     * @see #uninstallUI(javax.swing.JComponent)
+     * @see Component#isDisplayable()
      * @see #processComponentEvent
      * @see #processFocusEvent
      * @see #processKeyEvent
