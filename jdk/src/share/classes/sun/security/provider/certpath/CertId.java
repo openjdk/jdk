@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,9 +96,9 @@ public class CertId {
             HexDumpEncoder encoder = new HexDumpEncoder();
             System.out.println("Issuer Certificate is " + issuerCert);
             System.out.println("issuerNameHash is " +
-                encoder.encode(issuerNameHash));
+                encoder.encodeBuffer(issuerNameHash));
             System.out.println("issuerKeyHash is " +
-                encoder.encode(issuerKeyHash));
+                encoder.encodeBuffer(issuerKeyHash));
             System.out.println("SerialNumber is " + serialNumber.getNumber());
         }
     }
