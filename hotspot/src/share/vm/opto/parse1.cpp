@@ -280,7 +280,13 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       continue;
     }
     // Construct code to access the appropriate local.
-    Node *value = fetch_interpreter_state(index, type->basic_type(), locals_addr, osr_buf);
+    BasicType bt = type->basic_type();
+    if (type == TypePtr::NULL_PTR) {
+      // Ptr types are mixed together with T_ADDRESS but NULL is
+      // really for T_OBJECT types so correct it.
+      bt = T_OBJECT;
+    }
+    Node *value = fetch_interpreter_state(index, bt, locals_addr, osr_buf);
     set_local(index, value);
   }
 
