@@ -1244,8 +1244,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       break;
 #endif // _L64
     case T_INT:
-      // %%% could this be a movl? this is safer but longer instruction
-      __ movl2ptr(dest->as_register(), from_addr);
+      __ movl(dest->as_register(), from_addr);
       break;
 
     case T_LONG: {
@@ -1303,7 +1302,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
         __ shll(dest_reg, 24);
         __ sarl(dest_reg, 24);
       }
-      // These are unsigned so the zero extension on 64bit is just what we need
       break;
     }
 
@@ -1315,8 +1313,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       } else {
         __ movw(dest_reg, from_addr);
       }
-      // This is unsigned so the zero extension on 64bit is just what we need
-      // __ movl2ptr(dest_reg, dest_reg);
       break;
     }
 
@@ -1329,8 +1325,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
         __ shll(dest_reg, 16);
         __ sarl(dest_reg, 16);
       }
-      // Might not be needed in 64bit but certainly doesn't hurt (except for code size)
-      __ movl2ptr(dest_reg, dest_reg);
       break;
     }
 

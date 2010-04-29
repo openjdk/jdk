@@ -1493,7 +1493,6 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
 Dependencies* GraphBuilder::dependency_recorder() const {
   assert(DeoptC1, "need debug information");
-  compilation()->set_needs_debug_information(true);
   return compilation()->dependency_recorder();
 }
 
