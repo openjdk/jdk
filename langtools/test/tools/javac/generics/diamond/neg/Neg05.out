@@ -1,19 +1,35 @@
 Neg05.java:19:48: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:19:35: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
 Neg05.java:20:58: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:20:45: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
 Neg05.java:21:43: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:21:30: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
 Neg05.java:22:56: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:22:43: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
 Neg05.java:24:48: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:24:35: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
 Neg05.java:25:58: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:25:45: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
 Neg05.java:26:43: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:26:30: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
 Neg05.java:27:56: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:27:43: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
 Neg05.java:29:48: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:29:35: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
 Neg05.java:30:59: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:30:46: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
 Neg05.java:31:44: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:31:31: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
 Neg05.java:32:57: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:32:44: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
 Neg05.java:34:49: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:34:36: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
 Neg05.java:35:59: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:35:46: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
 Neg05.java:36:44: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:36:31: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
 Neg05.java:37:57: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:37:44: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.anonymous.class: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
 Neg05.java:41:37: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:42:47: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:43:32: compiler.err.improperly.formed.type.inner.raw.param
@@ -30,4 +46,4 @@ Neg05.java:56:38: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:57:48: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:58:33: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:59:46: compiler.err.improperly.formed.type.inner.raw.param
-32 errors
+48 errors

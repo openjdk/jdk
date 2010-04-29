@@ -27,41 +27,19 @@
  *
  * @summary  Switch to 'complex' diamond inference scheme
  * @author mcimadamore
- * @compile Pos04.java
- * @run main Pos04
+ * @compile Pos05.java
  *
  */
 
-public class Pos04<U> {
+public class Pos05 {
 
-    void test() {
-        class Foo<V> {
-            Foo(V x) {}
-            <Z> Foo(V x, Z z) {}
-        }
-        Foo<Integer> p1 = new Foo<>(1);
-        Foo<? extends Integer> p2 = new Foo<>(1);
-        Foo<?> p3 = new Foo<>(1);
-        Foo<? super Integer> p4 = new Foo<>(1);
-
-        Foo<Integer> p5 = new Foo<>(1){};
-        Foo<? extends Integer> p6 = new Foo<>(1){};
-        Foo<?> p7 = new Foo<>(1){};
-        Foo<? super Integer> p8 = new Foo<>(1){};
-
-        Foo<Integer> p9 = new Foo<>(1, "");
-        Foo<? extends Integer> p10 = new Foo<>(1, "");
-        Foo<?> p11 = new Foo<>(1, "");
-        Foo<? super Integer> p12 = new Foo<>(1, "");
-
-        Foo<Integer> p13 = new Foo<>(1, ""){};
-        Foo<? extends Integer> p14 = new Foo<>(1, ""){};
-        Foo<?> p15 = new Foo<>(1, ""){};
-        Foo<? super Integer> p16 = new Foo<>(1, ""){};
+    static class Foo<X> {
+        Foo(X x) {}
     }
 
-    public static void main(String[] args) {
-        Pos04<String> p4 = new Pos04<>();
-        p4.test();
+    void m(Foo<Integer> fi) {}
+
+    void test() {
+        m(new Foo<>(1));
     }
 }
