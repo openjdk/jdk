@@ -1,31 +1,29 @@
 Neg04.java:18:13: compiler.err.not.within.bounds: java.lang.String
-Neg04.java:18:33: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<java.lang.String>)
+Neg04.java:18:26: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:19:13: compiler.err.not.within.bounds: ? extends java.lang.String
-Neg04.java:19:43: compiler.err.cant.apply.diamond: V, (compiler.misc.no.unique.maximal.instance.exists: V, java.lang.String,java.lang.Number)
-Neg04.java:20:21: compiler.err.cant.resolve.location.args: kindname.constructor, Foo, , java.lang.String, kindname.class, Foo<java.lang.Number>
+Neg04.java:19:36: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
+Neg04.java:20:21: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:21:13: compiler.err.not.within.bounds: ? super java.lang.String
-Neg04.java:21:41: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<? super java.lang.String>)
+Neg04.java:21:34: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:23:13: compiler.err.not.within.bounds: java.lang.String
-Neg04.java:23:33: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<java.lang.String>)
+Neg04.java:23:26: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:24:13: compiler.err.not.within.bounds: ? extends java.lang.String
-Neg04.java:24:43: compiler.err.cant.apply.diamond: V, (compiler.misc.no.unique.maximal.instance.exists: V, java.lang.String,java.lang.Number)
-Neg04.java:25:21: compiler.err.cant.resolve.location.args: kindname.constructor, Foo, , java.lang.String, kindname.class, Foo<java.lang.Number>
-Neg04.java:25:34: compiler.err.cant.resolve.location.args: kindname.constructor, Foo, , , kindname.class, Foo<java.lang.Number>
+Neg04.java:24:36: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
+Neg04.java:25:21: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:26:13: compiler.err.not.within.bounds: ? super java.lang.String
-Neg04.java:26:41: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<? super java.lang.String>)
+Neg04.java:26:34: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:28:13: compiler.err.not.within.bounds: java.lang.String
-Neg04.java:28:33: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<java.lang.String>)
+Neg04.java:28:26: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:29:13: compiler.err.not.within.bounds: ? extends java.lang.String
-Neg04.java:29:44: compiler.err.cant.apply.diamond: V, (compiler.misc.no.unique.maximal.instance.exists: V, java.lang.String,java.lang.Number)
-Neg04.java:30:22: compiler.err.cant.resolve.location.args: kindname.constructor, Foo, , java.lang.String,java.lang.String, kindname.class, Foo<java.lang.Number>
+Neg04.java:29:37: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
+Neg04.java:30:22: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:31:13: compiler.err.not.within.bounds: ? super java.lang.String
-Neg04.java:31:42: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<? super java.lang.String>)
+Neg04.java:31:35: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:33:13: compiler.err.not.within.bounds: java.lang.String
-Neg04.java:33:34: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<java.lang.String>)
+Neg04.java:33:27: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:34:13: compiler.err.not.within.bounds: ? extends java.lang.String
-Neg04.java:34:44: compiler.err.cant.apply.diamond: V, (compiler.misc.no.unique.maximal.instance.exists: V, java.lang.String,java.lang.Number)
-Neg04.java:35:22: compiler.err.cant.resolve.location.args: kindname.constructor, Foo, , java.lang.String,java.lang.String, kindname.class, Foo<java.lang.Number>
-Neg04.java:35:39: compiler.err.cant.resolve.location.args: kindname.constructor, Foo, , , kindname.class, Foo<java.lang.Number>
+Neg04.java:34:37: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
+Neg04.java:35:22: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
 Neg04.java:36:13: compiler.err.not.within.bounds: ? super java.lang.String
-Neg04.java:36:42: compiler.err.cant.apply.diamond: V, (compiler.misc.no.conforming.instance.exists: V, Foo<V>, Foo<? super java.lang.String>)
-30 errors
+Neg04.java:36:35: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Foo), null
+28 errors
