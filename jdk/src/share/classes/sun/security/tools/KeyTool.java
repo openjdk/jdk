@@ -2620,7 +2620,7 @@ public final class KeyTool {
                 if (v.length == 0) {
                     out.println(rb.getString("(Empty value)"));
                 } else {
-                    new sun.misc.HexDumpEncoder().encode(ext.getExtensionValue(), out);
+                    new sun.misc.HexDumpEncoder().encodeBuffer(ext.getExtensionValue(), out);
                     out.println();
                 }
             }
