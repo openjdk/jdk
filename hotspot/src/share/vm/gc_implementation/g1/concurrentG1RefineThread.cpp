@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ void ConcurrentG1RefineThread::sample_young_list_rs_lengths() {
   G1CollectorPolicy* g1p = g1h->g1_policy();
   if (g1p->adaptive_young_list_length()) {
     int regions_visited = 0;
-    g1h->young_list_rs_length_sampling_init();
-    while (g1h->young_list_rs_length_sampling_more()) {
-      g1h->young_list_rs_length_sampling_next();
+    g1h->young_list()->rs_length_sampling_init();
+    while (g1h->young_list()->rs_length_sampling_more()) {
+      g1h->young_list()->rs_length_sampling_next();
       ++regions_visited;
 
       // we try to yield every time we visit 10 regions
@@ -162,6 +162,7 @@ void ConcurrentG1RefineThread::run() {
   if (_worker_id >= cg1r()->worker_thread_num()) {
     run_young_rs_sampling();
     terminate();
+    return;
   }
 
   _vtime_start = os::elapsedVTime();

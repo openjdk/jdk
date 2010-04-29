@@ -39,21 +39,9 @@
 
 void CppInterpreter::normal_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
-  ZeroStack *stack = thread->zero_stack();
-
-  // Adjust the caller's stack frame to accomodate any additional
-  // local variables we have contiguously with our parameters.
-  int extra_locals = method->max_locals() - method->size_of_parameters();
-  if (extra_locals > 0) {
-    if (extra_locals > stack->available_words()) {
-      Unimplemented();
-    }
-    for (int i = 0; i < extra_locals; i++)
-      stack->push(0);
-  }
 
   // Allocate and initialize our frame.
-  InterpreterFrame *frame = InterpreterFrame::build(stack, method, thread);
+  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK);
   thread->push_zero_frame(frame);
 
   // Execute those bytecodes!
@@ -75,12 +63,6 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
 
   intptr_t *result = NULL;
   int result_slots = 0;
-
-  // Check we're not about to run out of stack
-  if (stack_overflow_imminent(thread)) {
-    CALL_VM_NOCHECK(InterpreterRuntime::throw_StackOverflowError(thread));
-    goto unwind_and_return;
-  }
 
   while (true) {
     // We can set up the frame anchor with everything we want at
@@ -123,9 +105,9 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
       int monitor_words = frame::interpreter_frame_monitor_size();
 
       // Allocate the space
-      if (monitor_words > stack->available_words()) {
-        Unimplemented();
-      }
+      stack->overflow_check(monitor_words, THREAD);
+      if (HAS_PENDING_EXCEPTION)
+        break;
       stack->alloc(monitor_words * wordSize);
 
       // Move the expression stack contents
@@ -172,8 +154,6 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
     }
   }
 
- unwind_and_return:
-
   // Unwind the current frame
   thread->pop_zero_frame();
 
@@ -193,16 +173,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
-  InterpreterFrame *frame = InterpreterFrame::build(stack, method, thread);
+  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK);
   thread->push_zero_frame(frame);
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
-
-  // Check we're not about to run out of stack
-  if (stack_overflow_imminent(thread)) {
-    CALL_VM_NOCHECK(InterpreterRuntime::throw_StackOverflowError(thread));
-    goto unwind_and_return;
-  }
 
   // Update the invocation counter
   if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
@@ -264,9 +238,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   assert(function != NULL, "should be set if signature handler is");
 
   // Build the argument list
-  if (handler->argument_count() * 2 > stack->available_words()) {
-    Unimplemented();
-  }
+  stack->overflow_check(handler->argument_count() * 2, THREAD);
+  if (HAS_PENDING_EXCEPTION)
+    goto unlock_unwind_and_return;
+
   void **arguments;
   void *mirror; {
     arguments =
@@ -503,9 +478,7 @@ void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   switch (entry->flag_state()) {
   case ltos:
   case dtos:
-    if (stack->available_words() < 1) {
-      Unimplemented();
-    }
+    stack->overflow_check(1, CHECK);
     stack->alloc(wordSize);
     break;
   }
@@ -601,39 +574,30 @@ void CppInterpreter::empty_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   stack->set_sp(stack->sp() + method->size_of_parameters());
 }
 
-bool CppInterpreter::stack_overflow_imminent(JavaThread *thread) {
-  // How is the ABI stack?
-  address stack_top = thread->stack_base() - thread->stack_size();
-  int free_stack = os::current_stack_pointer() - stack_top;
-  if (free_stack < StackShadowPages * os::vm_page_size()) {
-    return true;
+InterpreterFrame *InterpreterFrame::build(const methodOop method, TRAPS) {
+  JavaThread *thread = (JavaThread *) THREAD;
+  ZeroStack *stack = thread->zero_stack();
+
+  // Calculate the size of the frame we'll build, including
+  // any adjustments to the caller's frame that we'll make.
+  int extra_locals  = 0;
+  int monitor_words = 0;
+  int stack_words   = 0;
+
+  if (!method->is_native()) {
+    extra_locals = method->max_locals() - method->size_of_parameters();
+    stack_words  = method->max_stack();
   }
-
-  // How is the Zero stack?
-  // Throwing a StackOverflowError involves a VM call, which means
-  // we need a frame on the stack.  We should be checking here to
-  // ensure that methods we call have enough room to install the
-  // largest possible frame, but that's more than twice the size
-  // of the entire Zero stack we get by default, so we just check
-  // we have *some* space instead...
-  free_stack = thread->zero_stack()->available_words() * wordSize;
-  if (free_stack < StackShadowPages * os::vm_page_size()) {
-    return true;
+  if (method->is_synchronized()) {
+    monitor_words = frame::interpreter_frame_monitor_size();
   }
+  stack->overflow_check(
+    extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  return false;
-}
-
-InterpreterFrame *InterpreterFrame::build(ZeroStack*       stack,
-                                          const methodOop  method,
-                                          JavaThread*      thread) {
-  int monitor_words =
-    method->is_synchronized() ? frame::interpreter_frame_monitor_size() : 0;
-  int stack_words = method->is_native() ? 0 : method->max_stack();
-
-  if (header_words + monitor_words + stack_words > stack->available_words()) {
-    Unimplemented();
-  }
+  // Adjust the caller's stack frame to accomodate any additional
+  // local variables we have contiguously with our parameters.
+  for (int i = 0; i < extra_locals; i++)
+    stack->push(0);
 
   intptr_t *locals;
   if (method->is_native())
@@ -812,14 +776,13 @@ InterpreterGenerator::InterpreterGenerator(StubQueue* code)
 
 // Deoptimization helpers
 
-InterpreterFrame *InterpreterFrame::build(ZeroStack* stack, int size) {
+InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
+  ZeroStack *stack = ((JavaThread *) THREAD)->zero_stack();
+
   int size_in_words = size >> LogBytesPerWord;
   assert(size_in_words * wordSize == size, "unaligned");
   assert(size_in_words >= header_words, "too small");
-
-  if (size_in_words > stack->available_words()) {
-    Unimplemented();
-  }
+  stack->overflow_check(size_in_words, CHECK_NULL);
 
   stack->push(0); // next_frame, filled in later
   intptr_t *fp = stack->sp();

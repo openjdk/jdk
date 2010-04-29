@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ class MainBodySummary: public CHeapObj {
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
     define_num_seq(mark_stack_scan)
-    define_num_seq(scan_only)
     define_num_seq(update_rs)
     define_num_seq(scan_rs)
     define_num_seq(scan_new_refs) // Only for temp use; added to
@@ -174,8 +173,6 @@ protected:
 
   double* _par_last_ext_root_scan_times_ms;
   double* _par_last_mark_stack_scan_times_ms;
-  double* _par_last_scan_only_times_ms;
-  double* _par_last_scan_only_regions_scanned;
   double* _par_last_update_rs_start_times_ms;
   double* _par_last_update_rs_times_ms;
   double* _par_last_update_rs_processed_buffers;
@@ -196,7 +193,6 @@ protected:
   bool _adaptive_young_list_length;
   size_t _young_list_min_length;
   size_t _young_list_target_length;
-  size_t _young_list_so_prefix_length;
   size_t _young_list_fixed_length;
 
   size_t _young_cset_length;
@@ -234,7 +230,6 @@ private:
   TruncatedSeq* _pending_card_diff_seq;
   TruncatedSeq* _rs_length_diff_seq;
   TruncatedSeq* _cost_per_card_ms_seq;
-  TruncatedSeq* _cost_per_scan_only_region_ms_seq;
   TruncatedSeq* _fully_young_cards_per_entry_ratio_seq;
   TruncatedSeq* _partially_young_cards_per_entry_ratio_seq;
   TruncatedSeq* _cost_per_entry_ms_seq;
@@ -249,19 +244,16 @@ private:
   TruncatedSeq* _rs_lengths_seq;
 
   TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
-  TruncatedSeq* _cost_per_scan_only_region_ms_during_cm_seq;
 
   TruncatedSeq* _young_gc_eff_seq;
 
   TruncatedSeq* _max_conc_overhead_seq;
 
   size_t _recorded_young_regions;
-  size_t _recorded_scan_only_regions;
   size_t _recorded_non_young_regions;
   size_t _recorded_region_num;
 
   size_t _free_regions_at_end_of_collection;
-  size_t _scan_only_regions_at_end_of_collection;
 
   size_t _recorded_rs_lengths;
   size_t _max_rs_lengths;
@@ -277,7 +269,6 @@ private:
   double _predicted_survival_ratio;
   double _predicted_rs_update_time_ms;
   double _predicted_rs_scan_time_ms;
-  double _predicted_scan_only_scan_time_ms;
   double _predicted_object_copy_time_ms;
   double _predicted_constant_other_time_ms;
   double _predicted_young_other_time_ms;
@@ -343,8 +334,6 @@ public:
 #ifndef PRODUCT
   bool verify_young_ages();
 #endif // PRODUCT
-
-  void tag_scan_only(size_t short_lived_scan_only_length);
 
   double get_new_prediction(TruncatedSeq* seq) {
     return MAX2(seq->davg() + sigma() * seq->dsd(),
@@ -431,23 +420,6 @@ public:
         get_new_prediction(_partially_young_cost_per_entry_ms_seq);
   }
 
-  double predict_scan_only_time_ms_during_cm(size_t scan_only_region_num) {
-    if (_cost_per_scan_only_region_ms_during_cm_seq->num() < 3)
-      return 1.5 * (double) scan_only_region_num *
-        get_new_prediction(_cost_per_scan_only_region_ms_seq);
-    else
-      return (double) scan_only_region_num *
-        get_new_prediction(_cost_per_scan_only_region_ms_during_cm_seq);
-  }
-
-  double predict_scan_only_time_ms(size_t scan_only_region_num) {
-    if (_in_marking_window_im)
-      return predict_scan_only_time_ms_during_cm(scan_only_region_num);
-    else
-      return (double) scan_only_region_num *
-        get_new_prediction(_cost_per_scan_only_region_ms_seq);
-  }
-
   double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) {
     if (_cost_per_byte_ms_during_cm_seq->num() < 3)
       return 1.1 * (double) bytes_to_copy *
@@ -490,24 +462,21 @@ public:
   size_t predict_bytes_to_copy(HeapRegion* hr);
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool young);
 
-  // for use by: calculate_optimal_so_length(length)
-  void predict_gc_eff(size_t young_region_num,
-                      size_t so_length,
-                      double base_time_ms,
-                      double *gc_eff,
-                      double *pause_time_ms);
-
-  // for use by: calculate_young_list_target_config(rs_length)
-  bool predict_gc_eff(size_t young_region_num,
-                      size_t so_length,
-                      double base_time_with_so_ms,
-                      size_t init_free_regions,
-                      double target_pause_time_ms,
-                      double* gc_eff);
+    // for use by: calculate_young_list_target_length(rs_length)
+  bool predict_will_fit(size_t young_region_num,
+                        double base_time_ms,
+                        size_t init_free_regions,
+                        double target_pause_time_ms);
 
   void start_recording_regions();
-  void record_cset_region(HeapRegion* hr, bool young);
-  void record_scan_only_regions(size_t scan_only_length);
+  void record_cset_region_info(HeapRegion* hr, bool young);
+  void record_non_young_cset_region(HeapRegion* hr);
+
+  void set_recorded_young_regions(size_t n_regions);
+  void set_recorded_young_bytes(size_t bytes);
+  void set_recorded_rs_lengths(size_t rs_lengths);
+  void set_predicted_bytes_to_copy(size_t bytes);
+
   void end_recording_regions();
 
   void record_vtime_diff_ms(double vtime_diff_ms) {
@@ -638,10 +607,73 @@ protected:
   void update_recent_gc_times(double end_time_sec, double elapsed_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set.
+  // current collection set. Set from the incrementally built collection
+  // set at the start of the pause.
   HeapRegion* _collection_set;
+
+  // The number of regions in the collection set. Set from the incrementally
+  // built collection set at the start of an evacuation pause.
   size_t _collection_set_size;
+
+  // The number of bytes in the collection set before the pause. Set from
+  // the incrementally built collection set at the start of an evacuation
+  // pause.
   size_t _collection_set_bytes_used_before;
+
+  // The associated information that is maintained while the incremental
+  // collection set is being built with young regions. Used to populate
+  // the recorded info for the evacuation pause.
+
+  enum CSetBuildType {
+    Active,             // We are actively building the collection set
+    Inactive            // We are not actively building the collection set
+  };
+
+  CSetBuildType _inc_cset_build_state;
+
+  // The head of the incrementally built collection set.
+  HeapRegion* _inc_cset_head;
+
+  // The tail of the incrementally built collection set.
+  HeapRegion* _inc_cset_tail;
+
+  // The number of regions in the incrementally built collection set.
+  // Used to set _collection_set_size at the start of an evacuation
+  // pause.
+  size_t _inc_cset_size;
+
+  // Used as the index in the surving young words structure
+  // which tracks the amount of space, for each young region,
+  // that survives the pause.
+  size_t _inc_cset_young_index;
+
+  // The number of bytes in the incrementally built collection set.
+  // Used to set _collection_set_bytes_used_before at the start of
+  // an evacuation pause.
+  size_t _inc_cset_bytes_used_before;
+
+  // Used to record the highest end of heap region in collection set
+  HeapWord* _inc_cset_max_finger;
+
+  // The number of recorded used bytes in the young regions
+  // of the collection set. This is the sum of the used() bytes
+  // of retired young regions in the collection set.
+  size_t _inc_cset_recorded_young_bytes;
+
+  // The RSet lengths recorded for regions in the collection set
+  // (updated by the periodic sampling of the regions in the
+  // young list/collection set).
+  size_t _inc_cset_recorded_rs_lengths;
+
+  // The predicted elapsed time it will take to collect the regions
+  // in the collection set (updated by the periodic sampling of the
+  // regions in the young list/collection set).
+  double _inc_cset_predicted_elapsed_time_ms;
+
+  // The predicted bytes to copy for the regions in the collection
+  // set (updated by the periodic sampling of the regions in the
+  // young list/collection set).
+  size_t _inc_cset_predicted_bytes_to_copy;
 
   // Info about marking.
   int _n_marks; // Sticky at 2, so we know when we've done at least 2.
@@ -761,9 +793,8 @@ protected:
   double _mark_closure_time_ms;
 
   void   calculate_young_list_min_length();
-  void   calculate_young_list_target_config();
-  void   calculate_young_list_target_config(size_t rs_lengths);
-  size_t calculate_optimal_so_length(size_t young_list_length);
+  void   calculate_young_list_target_length();
+  void   calculate_young_list_target_length(size_t rs_lengths);
 
 public:
 
@@ -866,11 +897,6 @@ public:
 
   void record_mark_stack_scan_time(int worker_i, double ms) {
     _par_last_mark_stack_scan_times_ms[worker_i] = ms;
-  }
-
-  void record_scan_only_time(int worker_i, double ms, int n) {
-    _par_last_scan_only_times_ms[worker_i] = ms;
-    _par_last_scan_only_regions_scanned[worker_i] = (double) n;
   }
 
   void record_satb_drain_time(double ms) {
@@ -987,19 +1013,66 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  virtual void choose_collection_set() = 0;
-
-  void clear_collection_set() { _collection_set = NULL; }
+  virtual bool choose_collection_set() = 0;
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
   HeapRegion* collection_set() { return _collection_set; }
+
+  void clear_collection_set() { _collection_set = NULL; }
 
   // The number of elements in the current collection set.
   size_t collection_set_size() { return _collection_set_size; }
 
   // Add "hr" to the CS.
   void add_to_collection_set(HeapRegion* hr);
+
+  // Incremental CSet Support
+
+  // The head of the incrementally built collection set.
+  HeapRegion* inc_cset_head() { return _inc_cset_head; }
+
+  // The tail of the incrementally built collection set.
+  HeapRegion* inc_set_tail() { return _inc_cset_tail; }
+
+  // The number of elements in the incrementally built collection set.
+  size_t inc_cset_size() { return _inc_cset_size; }
+
+  // Initialize incremental collection set info.
+  void start_incremental_cset_building();
+
+  void clear_incremental_cset() {
+    _inc_cset_head = NULL;
+    _inc_cset_tail = NULL;
+  }
+
+  // Stop adding regions to the incremental collection set
+  void stop_incremental_cset_building() { _inc_cset_build_state = Inactive; }
+
+  // Add/remove information about hr to the aggregated information
+  // for the incrementally built collection set.
+  void add_to_incremental_cset_info(HeapRegion* hr, size_t rs_length);
+  void remove_from_incremental_cset_info(HeapRegion* hr);
+
+  // Update information about hr in the aggregated information for
+  // the incrementally built collection set.
+  void update_incremental_cset_info(HeapRegion* hr, size_t new_rs_length);
+
+private:
+  // Update the incremental cset information when adding a region
+  // (should not be called directly).
+  void add_region_to_incremental_cset_common(HeapRegion* hr);
+
+public:
+  // Add hr to the LHS of the incremental collection set.
+  void add_region_to_incremental_cset_lhs(HeapRegion* hr);
+
+  // Add hr to the RHS of the incremental collection set.
+  void add_region_to_incremental_cset_rhs(HeapRegion* hr);
+
+#ifndef PRODUCT
+  void print_collection_set(HeapRegion* list_head, outputStream* st);
+#endif // !PRODUCT
 
   bool initiate_conc_mark_if_possible()       { return _initiate_conc_mark_if_possible;  }
   void set_initiate_conc_mark_if_possible()   { _initiate_conc_mark_if_possible = true;  }
@@ -1191,7 +1264,7 @@ class G1CollectorPolicy_BestRegionsFirst: public G1CollectorPolicy {
   // If the estimated is less then desirable, resize if possible.
   void expand_if_possible(size_t numRegions);
 
-  virtual void choose_collection_set();
+  virtual bool choose_collection_set();
   virtual void record_collection_pause_start(double start_time_sec,
                                              size_t start_used);
   virtual void record_concurrent_mark_cleanup_end(size_t freed_bytes,
