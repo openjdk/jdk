@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1963,19 +1963,30 @@ void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits order_constrain
 // ----------------------------------------------------------------------------
 void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Register index) {
   assert(byte_no == 1 || byte_no == 2, "byte_no out of range");
+  bool is_invokedynamic = (bytecode() == Bytecodes::_invokedynamic);
+
   // Depends on cpCacheOop layout!
   const int shift_count = (1 + byte_no)*BitsPerByte;
   Label resolved;
 
-  __ get_cache_and_index_at_bcp(Rcache, index, 1);
-  __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
-                    ConstantPoolCacheEntry::indices_offset(), Lbyte_code);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
+  if (is_invokedynamic) {
+    // We are resolved if the f1 field contains a non-null CallSite object.
+    __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
+              ConstantPoolCacheEntry::f1_offset(), Lbyte_code);
+    __ tst(Lbyte_code);
+    __ br(Assembler::notEqual, false, Assembler::pt, resolved);
+    __ delayed()->set((int)bytecode(), O1);
+  } else {
+    __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
+              ConstantPoolCacheEntry::indices_offset(), Lbyte_code);
 
-  __ srl(  Lbyte_code, shift_count, Lbyte_code );
-  __ and3( Lbyte_code,        0xFF, Lbyte_code );
-  __ cmp(  Lbyte_code, (int)bytecode());
-  __ br(   Assembler::equal, false, Assembler::pt, resolved);
-  __ delayed()->set((int)bytecode(), O1);
+    __ srl(  Lbyte_code, shift_count, Lbyte_code );
+    __ and3( Lbyte_code,        0xFF, Lbyte_code );
+    __ cmp(  Lbyte_code, (int)bytecode());
+    __ br(   Assembler::equal, false, Assembler::pt, resolved);
+    __ delayed()->set((int)bytecode(), O1);
+  }
 
   address entry;
   switch (bytecode()) {
@@ -1987,12 +1998,13 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
     case Bytecodes::_invokespecial  : // fall through
     case Bytecodes::_invokestatic   : // fall through
     case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
+    case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic);  break;
     default                         : ShouldNotReachHere();                                 break;
   }
   // first time invocation - must resolve first
   __ call_VM(noreg, entry, O1);
   // Update registers with resolved info
-  __ get_cache_and_index_at_bcp(Rcache, index, 1);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
   __ bind(resolved);
 }
 
@@ -3130,7 +3142,42 @@ void TemplateTable::invokedynamic(int byte_no) {
     return;
   }
 
-  __ stop("invokedynamic NYI");//6815692//
+  // G5: CallSite object (f1)
+  // XX: unused (f2)
+  // G3: receiver address
+  // XX: flags (unused)
+
+  Register G5_callsite = G5_method;
+  Register Rscratch    = G3_scratch;
+  Register Rtemp       = G1_scratch;
+  Register Rret        = Lscratch;
+
+  load_invoke_cp_cache_entry(byte_no, G5_callsite, noreg, Rret, false);
+  __ mov(SP, O5_savedSP);  // record SP that we wanted the callee to restore
+
+  __ verify_oop(G5_callsite);
+
+  // profile this call
+  __ profile_call(O4);
+
+  // get return address
+  AddressLiteral table(Interpreter::return_5_addrs_by_index_table());
+  __ set(table, Rtemp);
+  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);  // get return type
+  // Make sure we don't need to mask Rret for tosBits after the above shift
+  ConstantPoolCacheEntry::verify_tosBits();
+  __ sll(Rret, LogBytesPerWord, Rret);
+  __ ld_ptr(Rtemp, Rret, Rret);  // get return address
+
+  __ ld_ptr(G5_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
+  __ null_check(G3_method_handle);
+
+  // Adjust Rret first so Llast_SP can be same as Rret
+  __ add(Rret, -frame::pc_return_offset, O7);
+  __ add(Lesp, BytesPerWord, Gargs);  // setup parameter pointer
+  __ jump_to_method_handle_entry(G3_method_handle, Rtemp, /* emit_delayed_nop */ false);
+  // Record SP so we can remove any stack space allocated by adapter transition
+  __ delayed()->mov(SP, Llast_SP);
 }
 
 

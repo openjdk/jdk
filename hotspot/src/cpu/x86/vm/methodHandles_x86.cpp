@@ -127,7 +127,8 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
                                      RegisterOrConstant arg_slots,
                                      int arg_mask,
                                      Register rax_argslot,
-                                     Register rbx_temp, Register rdx_temp) {
+                                     Register rbx_temp, Register rdx_temp, Register temp3_reg) {
+  assert(temp3_reg == noreg, "temp3 not required");
   assert_different_registers(rax_argslot, rbx_temp, rdx_temp,
                              (!arg_slots.is_register() ? rsp : arg_slots.as_register()));
 
@@ -185,7 +186,8 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
 void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
                                     RegisterOrConstant arg_slots,
                                     Register rax_argslot,
-                                    Register rbx_temp, Register rdx_temp) {
+                                     Register rbx_temp, Register rdx_temp, Register temp3_reg) {
+  assert(temp3_reg == noreg, "temp3 not required");
   assert_different_registers(rax_argslot, rbx_temp, rdx_temp,
                              (!arg_slots.is_register() ? rsp : arg_slots.as_register()));
 
