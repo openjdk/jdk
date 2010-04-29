@@ -814,22 +814,39 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(
 }
 
 
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset) {
+void InterpreterMacroAssembler::get_cache_index_at_bcp(Register cache, Register tmp,
+                                                       int bcp_offset, bool giant_index) {
+  assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
+  if (!giant_index) {
+    get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
+  } else {
+    assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
+    get_4_byte_integer_at_bcp(bcp_offset, cache, tmp);
+    assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
+    xor3(tmp, -1, tmp);  // convert to plain index
+  }
+}
+
+
+void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register tmp,
+                                                           int bcp_offset, bool giant_index) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert_different_registers(cache, tmp);
   assert_not_delayed();
-  get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
-              // convert from field index to ConstantPoolCacheEntry index
-              // and from word index to byte offset
+  get_cache_index_at_bcp(cache, tmp, bcp_offset, giant_index);
+  // convert from field index to ConstantPoolCacheEntry index and from
+  // word index to byte offset
   sll(tmp, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord), tmp);
   add(LcpoolCache, tmp, cache);
 }
 
 
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset) {
+void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp,
+                                                               int bcp_offset, bool giant_index) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert_different_registers(cache, tmp);
   assert_not_delayed();
+  assert(!giant_index,"NYI");
   get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
               // convert from field index to ConstantPoolCacheEntry index
               // and from word index to byte offset
@@ -1675,15 +1692,31 @@ void InterpreterMacroAssembler::profile_final_call(Register scratch) {
 // Count a virtual call in the bytecodes.
 
 void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
-                                                     Register scratch) {
+                                                     Register scratch,
+                                                     bool receiver_can_be_null) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(profile_continue);
 
+
+    Label skip_receiver_profile;
+    if (receiver_can_be_null) {
+      Label not_null;
+      tst(receiver);
+      brx(Assembler::notZero, false, Assembler::pt, not_null);
+      delayed()->nop();
+      // We are making a call.  Increment the count for null receiver.
+      increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
+      ba(false, skip_receiver_profile);
+      delayed()->nop();
+      bind(not_null);
+    }
+
     // Record the receiver type.
     record_klass_in_profile(receiver, scratch, true);
+    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(in_bytes(VirtualCallData::virtual_call_data_size()));

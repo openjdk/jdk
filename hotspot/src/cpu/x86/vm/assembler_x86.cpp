@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6492,24 +6492,19 @@ int MacroAssembler::load_unsigned_short(Register dst, Address src) {
 }
 
 void MacroAssembler::load_sized_value(Register dst, Address src,
-                                      int size_in_bytes, bool is_signed) {
-  switch (size_in_bytes ^ (is_signed ? -1 : 0)) {
+                                      size_t size_in_bytes, bool is_signed) {
+  switch (size_in_bytes) {
 #ifndef _LP64
   // For case 8, caller is responsible for manually loading
   // the second word into another register.
-  case ~8:  // fall through:
-  case  8:  movl(                dst, src ); break;
+  case  8: movl(dst, src); break;
 #else
-  case ~8:  // fall through:
-  case  8:  movq(                dst, src ); break;
+  case  8: movq(dst, src); break;
 #endif
-  case ~4:  // fall through:
-  case  4:  movl(                dst, src ); break;
-  case ~2:  load_signed_short(   dst, src ); break;
-  case  2:  load_unsigned_short( dst, src ); break;
-  case ~1:  load_signed_byte(    dst, src ); break;
-  case  1:  load_unsigned_byte(  dst, src ); break;
-  default:  ShouldNotReachHere();
+  case  4: movl(dst, src); break;
+  case  2: is_signed ? load_signed_short(dst, src) : load_unsigned_short(dst, src); break;
+  case  1: is_signed ? load_signed_byte( dst, src) : load_unsigned_byte( dst, src); break;
+  default: ShouldNotReachHere();
   }
 }
 
@@ -7706,6 +7701,7 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
 // method handle's MethodType.  This macro hides the distinction.
 void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
                                                 Register temp_reg) {
+  assert_different_registers(vmslots_reg, mh_reg, temp_reg);
   if (UseCompressedOops)  unimplemented();  // field accesses must decode
   // load mh.type.form.vmslots
   if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {

@@ -430,12 +430,12 @@ class MethodHandles: AllStatic {
                                RegisterOrConstant arg_slots,
                                int arg_mask,
                                Register argslot_reg,
-                               Register temp_reg, Register temp2_reg);
+                               Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 
   static void remove_arg_slots(MacroAssembler* _masm,
                                RegisterOrConstant arg_slots,
                                Register argslot_reg,
-                               Register temp_reg, Register temp2_reg);
+                               Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 };
 
 

@@ -191,8 +191,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                   Register   Rdst,
                                   setCCOrNot should_set_CC = dont_set_CC );
 
-  void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset);
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset);
+  void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
+  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
+  void get_cache_index_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
 
 
   // common code
@@ -304,7 +305,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_not_taken_branch(Register scratch);
   void profile_call(Register scratch);
   void profile_final_call(Register scratch);
-  void profile_virtual_call(Register receiver, Register scratch);
+  void profile_virtual_call(Register receiver, Register scratch, bool receiver_can_be_null = false);
   void profile_ret(TosState state, Register return_bci, Register scratch);
   void profile_null_seen(Register scratch);
   void profile_typecheck(Register klass, Register scratch);
