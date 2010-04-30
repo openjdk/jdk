@@ -306,7 +306,7 @@ void methodOopDesc::cleanup_inline_caches() {
 
 int methodOopDesc::extra_stack_words() {
   // not an inline function, to avoid a header dependency on Interpreter
-  return extra_stack_entries() * Interpreter::stackElementSize();
+  return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
 

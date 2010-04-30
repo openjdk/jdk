@@ -358,7 +358,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // Push arguments as if coming from the interpreter.
       Register O0_scratch = O0_argslot;
-      int stackElementSize = Interpreter::stackElementSize();
+      int stackElementSize = Interpreter::stackElementSize;
 
       // Make space on the stack for the arguments.
       __ sub(SP,    4*stackElementSize, SP);
@@ -679,7 +679,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       insert_arg_slots(_masm, stack_move_unit(), _INSERT_INT_MASK, O0_argslot, O1_scratch, O2_scratch, G5_index);
 
       Address arg_lsw(O0_argslot, 0);
-      Address arg_msw(O0_argslot, -Interpreter::stackElementSize());
+      Address arg_msw(O0_argslot, -Interpreter::stackElementSize);
 
       switch (ek) {
       case _adapter_opt_i2l:

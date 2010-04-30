@@ -3152,7 +3152,7 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
 RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
                                                    int extra_slot_offset) {
   // cf. TemplateTable::prepare_invoke(), if (load_receiver).
-  int stackElementSize = Interpreter::stackElementSize();
+  int stackElementSize = Interpreter::stackElementSize;
   int offset = extra_slot_offset * stackElementSize;
   if (arg_slot.is_constant()) {
     offset += arg_slot.as_constant() * stackElementSize;

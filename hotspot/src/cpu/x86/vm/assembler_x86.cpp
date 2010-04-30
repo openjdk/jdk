@@ -7740,7 +7740,7 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
 Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
                                          int extra_slot_offset) {
   // cf. TemplateTable::prepare_invoke(), if (load_receiver).
-  int stackElementSize = Interpreter::stackElementSize();
+  int stackElementSize = Interpreter::stackElementSize;
   int offset = Interpreter::expr_offset_in_bytes(extra_slot_offset+0);
 #ifdef ASSERT
   int offset1 = Interpreter::expr_offset_in_bytes(extra_slot_offset+1);

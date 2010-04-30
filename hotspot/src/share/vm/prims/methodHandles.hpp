@@ -163,7 +163,7 @@ class MethodHandles: AllStatic {
     default: ShouldNotReachHere();
     }
     // Return the size of the stack slots to move in bytes.
-    swap_bytes = swap_slots * Interpreter::stackElementSize();
+    swap_bytes = swap_slots * Interpreter::stackElementSize;
   }
 
   static int get_ek_adapter_opt_spread_info(EntryKind ek) {
@@ -219,7 +219,7 @@ class MethodHandles: AllStatic {
   // Offset in words that the interpreter stack pointer moves when an argument is pushed.
   // The stack_move value must always be a multiple of this.
   static int stack_move_unit() {
-    return frame::interpreter_frame_expression_stack_direction() * Interpreter::stackElementWords();
+    return frame::interpreter_frame_expression_stack_direction() * Interpreter::stackElementWords;
   }
 
   enum { CONV_VMINFO_SIGN_FLAG = 0x80 };
