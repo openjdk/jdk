@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,7 @@ public class BugSpot extends JPanel {
     attachDialog.setSize(400, 300);
     GraphicsUtilities.centerInContainer(attachDialog.getComponent(),
                                         getParentDimension(attachDialog.getComponent()));
-    attachDialog.show();
+    attachDialog.setVisible(true);
   }
 
   public void showThreadsDialog() {
@@ -321,7 +321,7 @@ public class BugSpot extends JPanel {
                                            getParentDimension(threadsDialog.getComponent()));
     GraphicsUtilities.centerInContainer(threadsDialog.getComponent(),
                                         getParentDimension(threadsDialog.getComponent()));
-    threadsDialog.show();
+    threadsDialog.setVisible(true);
   }
 
   public void showMemoryDialog() {
@@ -341,7 +341,7 @@ public class BugSpot extends JPanel {
                                            getParentDimension(memoryDialog.getComponent()));
     GraphicsUtilities.centerInContainer(memoryDialog.getComponent(),
                                         getParentDimension(memoryDialog.getComponent()));
-    memoryDialog.show();
+    memoryDialog.setVisible(true);
   }
 
   /** Changes the editor factory this debugger uses to display source
@@ -530,7 +530,7 @@ public class BugSpot extends JPanel {
       addFrame(stackFrame);
       stackFrame.setSize(400, 200);
       GraphicsUtilities.moveToInContainer(stackFrame.getComponent(), 0.0f, 1.0f, 0, 20);
-      stackFrame.show();
+      stackFrame.setVisible(true);
 
       // Create register panel
       registerPanel = new RegisterPanel();
@@ -544,7 +544,7 @@ public class BugSpot extends JPanel {
       registerFrame.setSize(225, 200);
       GraphicsUtilities.moveToInContainer(registerFrame.getComponent(),
                                           1.0f, 0.0f, 0, 0);
-      registerFrame.show();
+      registerFrame.setVisible(true);
 
       resetCurrentThread();
     } catch (DebuggerException e) {
@@ -979,7 +979,7 @@ public class BugSpot extends JPanel {
                                                1.0f,
                                                0.85f,
                                                getParentDimension(editorFrame.getComponent()));
-        editorFrame.show();
+        editorFrame.setVisible(true);
         shown = true;
       }
       code.showLineNumber(lineNo);

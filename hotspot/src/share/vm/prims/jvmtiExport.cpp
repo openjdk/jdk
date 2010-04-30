@@ -270,7 +270,6 @@ int               JvmtiExport::_field_access_count                        = 0;
 int               JvmtiExport::_field_modification_count                  = 0;
 
 bool              JvmtiExport::_can_access_local_variables                = false;
-bool              JvmtiExport::_can_examine_or_deopt_anywhere             = false;
 bool              JvmtiExport::_can_hotswap_or_post_breakpoint            = false;
 bool              JvmtiExport::_can_modify_any_class                      = false;
 bool              JvmtiExport::_can_walk_any_space                        = false;

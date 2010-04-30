@@ -297,6 +297,11 @@ void CMRegionStack::push(MemRegion mr) {
   }
 }
 
+// Currently we do not call this at all. Normally we would call it
+// during the concurrent marking / remark phases but we now call
+// the lock-based version instead. But we might want to resurrect this
+// code in the future. So, we'll leave it here commented out.
+#if 0
 MemRegion CMRegionStack::pop() {
   while (true) {
     // Otherwise...
@@ -319,6 +324,41 @@ MemRegion CMRegionStack::pop() {
       }
     }
     // Otherwise, we need to try again.
+  }
+}
+#endif // 0
+
+void CMRegionStack::push_with_lock(MemRegion mr) {
+  assert(mr.word_size() > 0, "Precondition");
+  MutexLockerEx x(CMRegionStack_lock, Mutex::_no_safepoint_check_flag);
+
+  if (isFull()) {
+    _overflow = true;
+    return;
+  }
+
+  _base[_index] = mr;
+  _index += 1;
+}
+
+MemRegion CMRegionStack::pop_with_lock() {
+  MutexLockerEx x(CMRegionStack_lock, Mutex::_no_safepoint_check_flag);
+
+  while (true) {
+    if (_index == 0) {
+      return MemRegion();
+    }
+    _index -= 1;
+
+    MemRegion mr = _base[_index];
+    if (mr.start() != NULL) {
+      assert(mr.end() != NULL, "invariant");
+      assert(mr.word_size() > 0, "invariant");
+      return mr;
+    } else {
+      // that entry was invalidated... let's skip it
+      assert(mr.end() == NULL, "invariant");
+    }
   }
 }
 
@@ -668,24 +708,46 @@ ConcurrentMark::~ConcurrentMark() {
 //
 
 void ConcurrentMark::clearNextBitmap() {
-   guarantee(!G1CollectedHeap::heap()->mark_in_progress(), "Precondition.");
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
 
-   // clear the mark bitmap (no grey objects to start with).
-   // We need to do this in chunks and offer to yield in between
-   // each chunk.
-   HeapWord* start  = _nextMarkBitMap->startWord();
-   HeapWord* end    = _nextMarkBitMap->endWord();
-   HeapWord* cur    = start;
-   size_t chunkSize = M;
-   while (cur < end) {
-     HeapWord* next = cur + chunkSize;
-     if (next > end)
-       next = end;
-     MemRegion mr(cur,next);
-     _nextMarkBitMap->clearRange(mr);
-     cur = next;
-     do_yield_check();
-   }
+  // Make sure that the concurrent mark thread looks to still be in
+  // the current cycle.
+  guarantee(cmThread()->during_cycle(), "invariant");
+
+  // We are finishing up the current cycle by clearing the next
+  // marking bitmap and getting it ready for the next cycle. During
+  // this time no other cycle can start. So, let's make sure that this
+  // is the case.
+  guarantee(!g1h->mark_in_progress(), "invariant");
+
+  // clear the mark bitmap (no grey objects to start with).
+  // We need to do this in chunks and offer to yield in between
+  // each chunk.
+  HeapWord* start  = _nextMarkBitMap->startWord();
+  HeapWord* end    = _nextMarkBitMap->endWord();
+  HeapWord* cur    = start;
+  size_t chunkSize = M;
+  while (cur < end) {
+    HeapWord* next = cur + chunkSize;
+    if (next > end)
+      next = end;
+    MemRegion mr(cur,next);
+    _nextMarkBitMap->clearRange(mr);
+    cur = next;
+    do_yield_check();
+
+    // Repeat the asserts from above. We'll do them as asserts here to
+    // minimize their overhead on the product. However, we'll have
+    // them as guarantees at the beginning / end of the bitmap
+    // clearing to get some checking in the product.
+    assert(cmThread()->during_cycle(), "invariant");
+    assert(!g1h->mark_in_progress(), "invariant");
+  }
+
+  // Repeat the asserts from above.
+  guarantee(cmThread()->during_cycle(), "invariant");
+  guarantee(!g1h->mark_in_progress(), "invariant");
 }
 
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
@@ -705,7 +767,8 @@ void ConcurrentMark::checkpointRootsInitialPre() {
   _has_aborted = false;
 
   if (G1PrintReachableAtInitialMark) {
-    print_reachable(true, "before");
+    print_reachable("at-cycle-start",
+                    true /* use_prev_marking */, true /* all */);
   }
 
   // Initialise marking structures. This has to be done in a STW phase.
@@ -1917,19 +1980,21 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
 #ifndef PRODUCT
 
-class ReachablePrinterOopClosure: public OopClosure {
+class PrintReachableOopClosure: public OopClosure {
 private:
   G1CollectedHeap* _g1h;
   CMBitMapRO*      _bitmap;
   outputStream*    _out;
   bool             _use_prev_marking;
+  bool             _all;
 
 public:
-  ReachablePrinterOopClosure(CMBitMapRO*   bitmap,
-                             outputStream* out,
-                             bool          use_prev_marking) :
+  PrintReachableOopClosure(CMBitMapRO*   bitmap,
+                           outputStream* out,
+                           bool          use_prev_marking,
+                           bool          all) :
     _g1h(G1CollectedHeap::heap()),
-    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
+    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking), _all(all) { }
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
   void do_oop(      oop* p) { do_oop_work(p); }
@@ -1939,9 +2004,11 @@ public:
     const char* str = NULL;
     const char* str2 = "";
 
-    if (!_g1h->is_in_g1_reserved(obj))
-      str = "outside G1 reserved";
-    else {
+    if (obj == NULL) {
+      str = "";
+    } else if (!_g1h->is_in_g1_reserved(obj)) {
+      str = " O";
+    } else {
       HeapRegion* hr  = _g1h->heap_region_containing(obj);
       guarantee(hr != NULL, "invariant");
       bool over_tams = false;
@@ -1950,74 +2017,67 @@ public:
       } else {
         over_tams = hr->obj_allocated_since_next_marking(obj);
       }
+      bool marked = _bitmap->isMarked((HeapWord*) obj);
 
       if (over_tams) {
-        str = "over TAMS";
-        if (_bitmap->isMarked((HeapWord*) obj)) {
+        str = " >";
+        if (marked) {
           str2 = " AND MARKED";
         }
-      } else if (_bitmap->isMarked((HeapWord*) obj)) {
-        str = "marked";
+      } else if (marked) {
+        str = " M";
       } else {
-        str = "#### NOT MARKED ####";
+        str = " NOT";
       }
     }
 
-    _out->print_cr("    "PTR_FORMAT" contains "PTR_FORMAT" %s%s",
+    _out->print_cr("  "PTR_FORMAT": "PTR_FORMAT"%s%s",
                    p, (void*) obj, str, str2);
   }
 };
 
-class ReachablePrinterClosure: public BitMapClosure {
+class PrintReachableObjectClosure : public ObjectClosure {
 private:
   CMBitMapRO*   _bitmap;
   outputStream* _out;
   bool          _use_prev_marking;
+  bool          _all;
+  HeapRegion*   _hr;
 
 public:
-  ReachablePrinterClosure(CMBitMapRO*   bitmap,
-                          outputStream* out,
-                          bool          use_prev_marking) :
-    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
-
-  bool do_bit(size_t offset) {
-    HeapWord* addr = _bitmap->offsetToHeapWord(offset);
-    ReachablePrinterOopClosure oopCl(_bitmap, _out, _use_prev_marking);
-
-    _out->print_cr("  obj "PTR_FORMAT", offset %10d (marked)", addr, offset);
-    oop(addr)->oop_iterate(&oopCl);
-    _out->print_cr("");
-
-    return true;
-  }
-};
-
-class ObjInRegionReachablePrinterClosure : public ObjectClosure {
-private:
-  CMBitMapRO*   _bitmap;
-  outputStream* _out;
-  bool          _use_prev_marking;
-
-public:
-  ObjInRegionReachablePrinterClosure(CMBitMapRO*   bitmap,
-                                     outputStream* out,
-                                     bool          use_prev_marking) :
-    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
+  PrintReachableObjectClosure(CMBitMapRO*   bitmap,
+                              outputStream* out,
+                              bool          use_prev_marking,
+                              bool          all,
+                              HeapRegion*   hr) :
+    _bitmap(bitmap), _out(out),
+    _use_prev_marking(use_prev_marking), _all(all), _hr(hr) { }
 
   void do_object(oop o) {
-    ReachablePrinterOopClosure oopCl(_bitmap, _out, _use_prev_marking);
+    bool over_tams;
+    if (_use_prev_marking) {
+      over_tams = _hr->obj_allocated_since_prev_marking(o);
+    } else {
+      over_tams = _hr->obj_allocated_since_next_marking(o);
+    }
+    bool marked = _bitmap->isMarked((HeapWord*) o);
+    bool print_it = _all || over_tams || marked;
 
-    _out->print_cr("  obj "PTR_FORMAT" (over TAMS)", (void*) o);
-    o->oop_iterate(&oopCl);
-    _out->print_cr("");
+    if (print_it) {
+      _out->print_cr(" "PTR_FORMAT"%s",
+                     o, (over_tams) ? " >" : (marked) ? " M" : "");
+      PrintReachableOopClosure oopCl(_bitmap, _out, _use_prev_marking, _all);
+      o->oop_iterate(&oopCl);
+    }
   }
 };
 
-class RegionReachablePrinterClosure : public HeapRegionClosure {
+class PrintReachableRegionClosure : public HeapRegionClosure {
 private:
   CMBitMapRO*   _bitmap;
   outputStream* _out;
   bool          _use_prev_marking;
+  bool          _all;
 
 public:
   bool doHeapRegion(HeapRegion* hr) {
@@ -2032,22 +2092,35 @@ public:
     }
     _out->print_cr("** ["PTR_FORMAT", "PTR_FORMAT"] top: "PTR_FORMAT" "
                    "TAMS: "PTR_FORMAT, b, e, t, p);
-    _out->print_cr("");
+    _out->cr();
 
-    ObjInRegionReachablePrinterClosure ocl(_bitmap, _out, _use_prev_marking);
-    hr->object_iterate_mem_careful(MemRegion(p, t), &ocl);
+    HeapWord* from = b;
+    HeapWord* to   = t;
+
+    if (to > from) {
+      _out->print_cr("Objects in ["PTR_FORMAT", "PTR_FORMAT"]", from, to);
+      _out->cr();
+      PrintReachableObjectClosure ocl(_bitmap, _out,
+                                      _use_prev_marking, _all, hr);
+      hr->object_iterate_mem_careful(MemRegion(from, to), &ocl);
+      _out->cr();
+    }
 
     return false;
   }
 
-  RegionReachablePrinterClosure(CMBitMapRO*   bitmap,
-                                outputStream* out,
-                                bool          use_prev_marking) :
-    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
+  PrintReachableRegionClosure(CMBitMapRO*   bitmap,
+                              outputStream* out,
+                              bool          use_prev_marking,
+                              bool          all) :
+    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking), _all(all) { }
 };
 
-void ConcurrentMark::print_reachable(bool use_prev_marking, const char* str) {
-  gclog_or_tty->print_cr("== Doing reachable object dump... ");
+void ConcurrentMark::print_reachable(const char* str,
+                                     bool use_prev_marking,
+                                     bool all) {
+  gclog_or_tty->cr();
+  gclog_or_tty->print_cr("== Doing heap dump... ");
 
   if (G1PrintReachableBaseFile == NULL) {
     gclog_or_tty->print_cr("  #### error: no base file defined");
@@ -2082,19 +2155,14 @@ void ConcurrentMark::print_reachable(bool use_prev_marking, const char* str) {
   out->print_cr("-- USING %s", (use_prev_marking) ? "PTAMS" : "NTAMS");
   out->cr();
 
-  RegionReachablePrinterClosure rcl(bitmap, out, use_prev_marking);
-  out->print_cr("--- ITERATING OVER REGIONS WITH TAMS < TOP");
+  out->print_cr("--- ITERATING OVER REGIONS");
   out->cr();
+  PrintReachableRegionClosure rcl(bitmap, out, use_prev_marking, all);
   _g1h->heap_region_iterate(&rcl);
   out->cr();
 
-  ReachablePrinterClosure cl(bitmap, out, use_prev_marking);
-  out->print_cr("--- ITERATING OVER MARKED OBJECTS ON THE BITMAP");
-  out->cr();
-  bitmap->iterate(&cl);
-  out->cr();
-
   gclog_or_tty->print_cr("  done");
+  gclog_or_tty->flush();
 }
 
 #endif // PRODUCT
@@ -3363,7 +3431,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
       gclog_or_tty->print_cr("[%d] draining region stack, size = %d",
                              _task_id, _cm->region_stack_size());
 
-    MemRegion mr = _cm->region_stack_pop();
+    MemRegion mr = _cm->region_stack_pop_with_lock();
     // it returns MemRegion() if the pop fails
     statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
 
@@ -3384,7 +3452,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
         if (has_aborted())
           mr = MemRegion();
         else {
-          mr = _cm->region_stack_pop();
+          mr = _cm->region_stack_pop_with_lock();
           // it returns MemRegion() if the pop fails
           statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
         }
@@ -3417,7 +3485,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
           }
           // Now push the part of the region we didn't scan on the
           // region stack to make sure a task scans it later.
-          _cm->region_stack_push(newRegion);
+          _cm->region_stack_push_with_lock(newRegion);
         }
         // break from while
         mr = MemRegion();

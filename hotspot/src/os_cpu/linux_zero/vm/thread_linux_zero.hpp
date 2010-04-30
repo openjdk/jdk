@@ -1,6 +1,6 @@
 /*
  * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,13 @@
 
  public:
   void set_last_Java_frame() {
-    JavaFrameAnchor *jfa = frame_anchor();
-    jfa->set_last_Java_sp((intptr_t *) top_zero_frame());
+    set_last_Java_frame(top_zero_frame());
   }
   void reset_last_Java_frame() {
-    JavaFrameAnchor *jfa = frame_anchor();
-    jfa->set_last_Java_sp(NULL);
+    set_last_Java_frame(NULL);
+  }
+  void set_last_Java_frame(ZeroFrame* frame) {
+    frame_anchor()->set_last_Java_sp((intptr_t *) frame);
   }
 
  private:

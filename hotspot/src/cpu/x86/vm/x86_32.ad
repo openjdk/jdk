@@ -1,5 +1,5 @@
 //
-// Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -6270,6 +6270,30 @@ instruct bytes_reverse_long(eRegL dst) %{
   ins_cost(125);
   ins_encode( bswap_long_bytes(dst) );
   ins_pipe( ialu_reg_reg);
+%}
+
+instruct bytes_reverse_unsigned_short(eRegI dst) %{
+  match(Set dst (ReverseBytesUS dst));
+
+  format %{ "BSWAP  $dst\n\t" 
+            "SHR    $dst,16\n\t" %}
+  ins_encode %{
+    __ bswapl($dst$$Register);
+    __ shrl($dst$$Register, 16); 
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reverse_short(eRegI dst) %{
+  match(Set dst (ReverseBytesS dst));
+
+  format %{ "BSWAP  $dst\n\t" 
+            "SAR    $dst,16\n\t" %}
+  ins_encode %{
+    __ bswapl($dst$$Register);
+    __ sarl($dst$$Register, 16); 
+  %}
+  ins_pipe( ialu_reg );
 %}
 
 

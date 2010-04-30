@@ -1,5 +1,5 @@
 //
-// Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -7369,6 +7369,30 @@ instruct bytes_reverse_long(rRegL dst) %{
   opcode(0x0F, 0xC8); /* Opcode 0F /C8 */
   ins_encode( REX_reg_wide(dst), OpcP, opc2_reg(dst) );
   ins_pipe( ialu_reg);
+%}
+
+instruct bytes_reverse_unsigned_short(rRegI dst) %{
+  match(Set dst (ReverseBytesUS dst));
+
+  format %{ "bswapl  $dst\n\t" 
+            "shrl    $dst,16\n\t" %}
+  ins_encode %{
+    __ bswapl($dst$$Register);
+    __ shrl($dst$$Register, 16); 
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reverse_short(rRegI dst) %{
+  match(Set dst (ReverseBytesS dst));
+
+  format %{ "bswapl  $dst\n\t" 
+            "sar     $dst,16\n\t" %}
+  ins_encode %{
+    __ bswapl($dst$$Register);
+    __ sarl($dst$$Register, 16); 
+  %}
+  ins_pipe( ialu_reg );
 %}
 
 instruct loadI_reversed(rRegI dst, memory src) %{

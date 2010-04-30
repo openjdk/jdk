@@ -113,10 +113,10 @@ public class TestAnonClassNames {
      */
     static void testClassName(String className) {
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-        List<String> classNames = new ArrayList<>();
+        List<String> classNames = new ArrayList<String>();
         classNames.add(className);
 
-        List<String> options = new ArrayList<>();
+        List<String> options = new ArrayList<String>();
         options.add("-proc:only");
         options.add("-classpath");
         options.add(System.getProperty("test.classes"));
@@ -128,7 +128,7 @@ public class TestAnonClassNames {
                                  options,
                                  classNames,
                                  null); // Sources
-        List<Processor> processors = new ArrayList<>();
+        List<Processor> processors = new ArrayList<Processor>();
         processors.add(new ClassNameProber());
         compileTask.setProcessors(processors);
         Boolean goodResult = compileTask.call();
