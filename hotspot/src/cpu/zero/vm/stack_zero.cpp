@@ -32,6 +32,7 @@ void ZeroStack::handle_overflow(TRAPS) {
   // Set up the frame anchor if it isn't already
   bool has_last_Java_frame = thread->has_last_Java_frame();
   if (!has_last_Java_frame) {
+    intptr_t *sp = thread->zero_stack()->sp();
     ZeroFrame *frame = thread->top_zero_frame();
     while (frame) {
       if (frame->is_shark_frame())
@@ -44,13 +45,14 @@ void ZeroStack::handle_overflow(TRAPS) {
           break;
       }
 
+      sp = ((intptr_t *) frame) + 1;
       frame = frame->next();
     }
 
     if (frame == NULL)
       fatal("unrecoverable stack overflow");
 
-    thread->set_last_Java_frame(frame);
+    thread->set_last_Java_frame(frame, sp);
   }
 
   // Throw the exception
@@ -71,3 +73,9 @@ void ZeroStack::handle_overflow(TRAPS) {
   if (!has_last_Java_frame)
     thread->reset_last_Java_frame();
 }
+
+#ifndef PRODUCT
+void ZeroStack::zap(int c) {
+  memset(_base, c, available_words() * wordSize);
+}
+#endif // PRODUCT

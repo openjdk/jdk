@@ -95,6 +95,9 @@ class ZeroStack {
   static void handle_overflow(TRAPS);
 
  public:
+  void zap(int c) PRODUCT_RETURN;
+
+ public:
   static ByteSize base_offset() {
     return byte_offset_of(ZeroStack, _base);
   }
