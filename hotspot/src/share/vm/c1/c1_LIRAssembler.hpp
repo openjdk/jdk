@@ -39,6 +39,8 @@ class LIR_Assembler: public CompilationResourceObj {
   Instruction*       _pending_non_safepoint;
   int                _pending_non_safepoint_offset;
 
+  Label              _unwind_handler_entry;
+
 #ifdef ASSERT
   BlockList          _branch_target_blocks;
   void check_no_unbound_labels();
@@ -134,6 +136,7 @@ class LIR_Assembler: public CompilationResourceObj {
 
   // code patterns
   int  emit_exception_handler();
+  int  emit_unwind_handler();
   void emit_exception_entries(ExceptionInfoList* info_list);
   int  emit_deopt_handler();
 
@@ -217,7 +220,8 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void build_frame();
 
-  void throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info, bool unwind);
+  void throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info);
+  void unwind_op(LIR_Opr exceptionOop);
   void monitor_address(int monitor_ix, LIR_Opr dst);
 
   void align_backward_branch_target();

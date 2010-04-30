@@ -35,6 +35,7 @@ define_pd_global(bool,  ImplicitNullChecks,   true);
 define_pd_global(bool,  UncommonNullCast,     true);
 
 define_pd_global(intx,  CodeEntryAlignment,   32);
+define_pd_global(intx,  OptoLoopAlignment,    16);
 define_pd_global(intx,  InlineFrequencyCount, 100);
 define_pd_global(intx,  PreInflateSpin,       10);
 

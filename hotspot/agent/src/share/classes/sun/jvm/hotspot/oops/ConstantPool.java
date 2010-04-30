@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,11 +263,12 @@ public class ConstantPool extends Oop implements ClassConstants {
     case JVM_CONSTANT_NameAndType:        return "JVM_CONSTANT_NameAndType";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
+    case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
     case JVM_CONSTANT_ClassIndex:         return "JVM_CONSTANT_ClassIndex";
     case JVM_CONSTANT_UnresolvedString:   return "JVM_CONSTANT_UnresolvedString";
     case JVM_CONSTANT_StringIndex:        return "JVM_CONSTANT_StringIndex";
     }
-    throw new InternalError("unknown tag");
+    throw new InternalError("Unknown tag: " + tag);
   }
 
   public void iterateFields(OopVisitor visitor, boolean doVMFields) {
@@ -304,6 +305,7 @@ public class ConstantPool extends Oop implements ClassConstants {
           index++;
           break;
 
+        case JVM_CONSTANT_UnresolvedClassInError:
         case JVM_CONSTANT_UnresolvedClass:
         case JVM_CONSTANT_Class:
         case JVM_CONSTANT_UnresolvedString:
@@ -409,6 +411,7 @@ public class ConstantPool extends Oop implements ClassConstants {
               }
 
               // case JVM_CONSTANT_ClassIndex:
+              case JVM_CONSTANT_UnresolvedClassInError:
               case JVM_CONSTANT_UnresolvedClass: {
                   dos.writeByte(JVM_CONSTANT_Class);
                   String klassName = getSymbolAt(ci).asString();
@@ -464,6 +467,8 @@ public class ConstantPool extends Oop implements ClassConstants {
                                           + ", type = " + signatureIndex);
                   break;
               }
+              default:
+                  throw new InternalError("unknown tag: " + cpConstType);
           } // switch
       }
       dos.flush();

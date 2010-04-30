@@ -259,13 +259,16 @@ JRT_END
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
   assert(frame::verify_return_pc(return_address), "must be a return pc");
 
+  // Reset MethodHandle flag.
+  thread->set_is_method_handle_return(false);
+
   // the fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   if (blob != NULL && blob->is_nmethod()) {
     nmethod* code = (nmethod*)blob;
     assert(code != NULL, "nmethod must be present");
     // Check if the return address is a MethodHandle call site.
-    thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
+    thread->set_is_method_handle_return(code->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
     assert(!code->is_native_method(), "no exception handler");
     assert(code->header_begin() != code->exception_begin(), "no exception handler");
@@ -292,7 +295,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       nmethod* code = (nmethod*)blob;
       assert(code != NULL, "nmethod must be present");
       // Check if the return address is a MethodHandle call site.
-      thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
+      thread->set_is_method_handle_return(code->is_method_handle_return(return_address));
       assert(code->header_begin() != code->exception_begin(), "no exception handler");
       return code->exception_begin();
     }
@@ -469,6 +472,13 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     // the bytecodes.
     t = table.entry_for(catch_pco, -1, 0);
   }
+
+#ifdef COMPILER1
+  if (t == NULL && nm->is_compiled_by_c1()) {
+    assert(nm->unwind_handler_begin() != NULL, "");
+    return nm->unwind_handler_begin();
+  }
+#endif
 
   if (t == NULL) {
     tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", ret_pc, handler_bci);
