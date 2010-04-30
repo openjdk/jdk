@@ -500,7 +500,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 #ifndef _LP64
         if (arg_slots == 2) {
           __ movl(rdx_temp, prim_value_addr.plus_disp(wordSize));
-          __ movl(Address(rax_argslot, Interpreter::stackElementSize()), rdx_temp);
+          __ movl(Address(rax_argslot, Interpreter::stackElementSize), rdx_temp);
         }
 #endif //_LP64
       }
@@ -596,7 +596,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           __ lea(rax_argslot, __ argument_address(rax_argslot, 1));
           remove_arg_slots(_masm, -stack_move_unit(),
                            rax_argslot, rbx_temp, rdx_temp);
-          vmarg = Address(rax_argslot, -Interpreter::stackElementSize());
+          vmarg = Address(rax_argslot, -Interpreter::stackElementSize);
           __ movl(rdx_temp, vmarg);
         }
         break;
@@ -665,8 +665,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ lea(rax_argslot, __ argument_address(rax_argslot, 1));
       insert_arg_slots(_masm, stack_move_unit(), _INSERT_INT_MASK,
                        rax_argslot, rbx_temp, rdx_temp);
-      Address vmarg1(rax_argslot, -Interpreter::stackElementSize());
-      Address vmarg2 = vmarg1.plus_disp(Interpreter::stackElementSize());
+      Address vmarg1(rax_argslot, -Interpreter::stackElementSize);
+      Address vmarg2 = vmarg1.plus_disp(Interpreter::stackElementSize);
 
       switch (ek) {
       case _adapter_opt_i2l:
@@ -718,7 +718,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         insert_arg_slots(_masm, stack_move_unit(), _INSERT_INT_MASK,
                          rax_argslot, rbx_temp, rdx_temp);
       }
-      Address vmarg(rax_argslot, -Interpreter::stackElementSize());
+      Address vmarg(rax_argslot, -Interpreter::stackElementSize);
 
 #ifdef _LP64
       if (ek == _adapter_opt_f2d) {
@@ -1016,7 +1016,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // Array length checks out.  Now insert any required stack slots.
       if (length_constant == -1) {
         // Form a pointer to the end of the affected region.
-        __ lea(rdx_argslot_limit, Address(rax_argslot, Interpreter::stackElementSize()));
+        __ lea(rdx_argslot_limit, Address(rax_argslot, Interpreter::stackElementSize));
         // 'stack_move' is negative number of words to insert
         Register rdi_stack_move = rdi;
         __ movl2ptr(rdi_stack_move, rcx_amh_conversion);
@@ -1054,7 +1054,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ movptr(rbx_temp, Address(rsi_source, 0));
         __ movptr(Address(rax_argslot, 0), rbx_temp);
         __ addptr(rsi_source, type2aelembytes(elem_type));
-        __ addptr(rax_argslot, Interpreter::stackElementSize());
+        __ addptr(rax_argslot, Interpreter::stackElementSize);
         __ cmpptr(rax_argslot, rdx_argslot_limit);
         __ jccb(Assembler::less, loop);
       } else if (length_constant == 0) {
@@ -1067,7 +1067,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           __ movptr(rbx_temp, Address(rsi_array, elem_offset));
           __ movptr(Address(rax_argslot, slot_offset), rbx_temp);
           elem_offset += type2aelembytes(elem_type);
-           slot_offset += Interpreter::stackElementSize();
+           slot_offset += Interpreter::stackElementSize;
         }
       }
 

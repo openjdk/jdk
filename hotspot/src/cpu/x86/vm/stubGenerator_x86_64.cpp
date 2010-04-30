@@ -278,11 +278,6 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(c_rarg2, parameters);       // parameter pointer
     __ movl(c_rarg1, c_rarg3);            // parameter counter is in c_rarg1
     __ BIND(loop);
-    if (TaggedStackInterpreter) {
-      __ movl(rax, Address(c_rarg2, 0)); // get tag
-      __ addptr(c_rarg2, wordSize);      // advance to next tag
-      __ push(rax);                      // pass tag
-    }
     __ movptr(rax, Address(c_rarg2, 0));// get parameter
     __ addptr(c_rarg2, wordSize);       // advance to next parameter
     __ decrementl(c_rarg1);             // decrement counter

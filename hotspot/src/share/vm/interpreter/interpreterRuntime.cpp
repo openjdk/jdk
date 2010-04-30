@@ -1067,7 +1067,7 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   jlong_accessor u;
   jint* newval = (jint*)value;
   u.words[0] = newval[0];
-  u.words[1] = newval[Interpreter::stackElementWords()]; // skip if tag
+  u.words[1] = newval[Interpreter::stackElementWords]; // skip if tag
   fvalue.j = u.long_value;
 #endif // _LP64
 
@@ -1252,6 +1252,6 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   ArgumentSizeComputer asc(invoke->signature());
   int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
   Copy::conjoint_bytes(src_address, dest_address,
-                       size_of_arguments * Interpreter::stackElementSize());
+                       size_of_arguments * Interpreter::stackElementSize);
 IRT_END
 #endif

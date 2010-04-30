@@ -197,7 +197,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ ld_ptr(cache, constantPoolCacheOopDesc::base_offset() +
                    ConstantPoolCacheEntry::flags_offset(), size);
   __ and3(size, 0xFF, size);                   // argument size in words
-  __ sll(size, Interpreter::logStackElementSize(), size); // each argument size in bytes
+  __ sll(size, Interpreter::logStackElementSize, size); // each argument size in bytes
   __ add(Lesp, size, Lesp);                    // pop arguments
   __ dispatch_next(state, step);
 
@@ -495,7 +495,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Set the saved SP after the register window save
   //
   assert_different_registers(Gargs, Glocals_size, Gframe_size, O5_savedSP);
-  __ sll(Glocals_size, Interpreter::logStackElementSize(), Otmp1);
+  __ sll(Glocals_size, Interpreter::logStackElementSize, Otmp1);
   __ add(Gargs, Otmp1, Gargs);
 
   if (native_call) {
@@ -511,7 +511,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ lduh( size_of_locals, Otmp1 );
     __ sub( Otmp1, Glocals_size, Glocals_size );
     __ round_to( Glocals_size, WordsPerLong );
-    __ sll( Glocals_size, Interpreter::logStackElementSize(), Glocals_size );
+    __ sll( Glocals_size, Interpreter::logStackElementSize, Glocals_size );
 
     // see if the frame is greater than one page in size. If so,
     // then we need to verify there is enough stack space remaining
@@ -519,7 +519,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ lduh( max_stack, Gframe_size );
     __ add( Gframe_size, extra_space, Gframe_size );
     __ round_to( Gframe_size, WordsPerLong );
-    __ sll( Gframe_size, Interpreter::logStackElementSize(), Gframe_size);
+    __ sll( Gframe_size, Interpreter::logStackElementSize, Gframe_size);
 
     // Add in java locals size for stack overflow check only
     __ add( Gframe_size, Glocals_size, Gframe_size );
@@ -1234,8 +1234,8 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // be updated!
   __ lduh( size_of_locals, O2 );
   __ lduh( size_of_parameters, O1 );
-  __ sll( O2, Interpreter::logStackElementSize(), O2);
-  __ sll( O1, Interpreter::logStackElementSize(), O1 );
+  __ sll( O2, Interpreter::logStackElementSize, O2);
+  __ sll( O1, Interpreter::logStackElementSize, O1 );
   __ sub( Llocals, O2, O2 );
   __ sub( Llocals, O1, O1 );
 
@@ -1470,8 +1470,8 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
        round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
   // callee_locals and max_stack are counts, not the size in frame.
   const int locals_size =
-       round_to(callee_extra_locals * Interpreter::stackElementWords(), WordsPerLong);
-  const int max_stack_words = max_stack * Interpreter::stackElementWords();
+       round_to(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
+  const int max_stack_words = max_stack * Interpreter::stackElementWords;
   return (round_to((max_stack_words
                    //6815692//+ methodOopDesc::extra_stack_words()
                    + rounded_vm_local_words
@@ -1570,11 +1570,11 @@ int AbstractInterpreter::layout_activation(methodOop method,
 
     // preallocate stack space
     intptr_t*  esp = monitors - 1 -
-                     (tempcount * Interpreter::stackElementWords()) -
+                     (tempcount * Interpreter::stackElementWords) -
                      popframe_extra_args;
 
-    int local_words = method->max_locals() * Interpreter::stackElementWords();
-    int parm_words  = method->size_of_parameters() * Interpreter::stackElementWords();
+    int local_words = method->max_locals() * Interpreter::stackElementWords;
+    int parm_words  = method->size_of_parameters() * Interpreter::stackElementWords;
     NEEDS_CLEANUP;
     intptr_t* locals;
     if (caller->is_interpreted_frame()) {
@@ -1662,7 +1662,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
     BasicObjectLock* mp = (BasicObjectLock*)monitors;
 
     assert(interpreter_frame->interpreter_frame_method() == method, "method matches");
-    assert(interpreter_frame->interpreter_frame_local_at(9) == (intptr_t *)((intptr_t)locals - (9 * Interpreter::stackElementSize())+Interpreter::value_offset_in_bytes()), "locals match");
+    assert(interpreter_frame->interpreter_frame_local_at(9) == (intptr_t *)((intptr_t)locals - (9 * Interpreter::stackElementSize)), "locals match");
     assert(interpreter_frame->interpreter_frame_monitor_end()   == mp, "monitor_end matches");
     assert(((intptr_t *)interpreter_frame->interpreter_frame_monitor_begin()) == ((intptr_t *)mp)+monitor_size, "monitor_begin matches");
     assert(interpreter_frame->interpreter_frame_tos_address()-1 == esp, "esp matches");
@@ -1758,7 +1758,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     // Compute size of arguments for saving when returning to deoptimized caller
     __ lduh(Lmethod, in_bytes(methodOopDesc::size_of_parameters_offset()), Gtmp1);
-    __ sll(Gtmp1, Interpreter::logStackElementSize(), Gtmp1);
+    __ sll(Gtmp1, Interpreter::logStackElementSize, Gtmp1);
     __ sub(Llocals, Gtmp1, Gtmp2);
     __ add(Gtmp2, wordSize, Gtmp2);
     // Save these arguments

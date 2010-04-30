@@ -1842,14 +1842,11 @@ class AdapterFingerPrint : public CHeapObj {
 
       case T_OBJECT:
       case T_ARRAY:
-        if (!TaggedStackInterpreter) {
 #ifdef _LP64
-          return T_LONG;
+        return T_LONG;
 #else
-          return T_INT;
+        return T_INT;
 #endif
-        }
-        return T_OBJECT;
 
       case T_INT:
       case T_LONG:
@@ -2595,17 +2592,9 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   // Copy the locals.  Order is preserved so that loading of longs works.
   // Since there's no GC I can copy the oops blindly.
   assert( sizeof(HeapWord)==sizeof(intptr_t), "fix this code");
-  if (TaggedStackInterpreter) {
-    for (int i = 0; i < max_locals; i++) {
-      // copy only each local separately to the buffer avoiding the tag
-      buf[i] = *fr.interpreter_frame_local_at(max_locals-i-1);
-    }
-  } else {
-    Copy::disjoint_words(
-                       (HeapWord*)fr.interpreter_frame_local_at(max_locals-1),
+  Copy::disjoint_words((HeapWord*)fr.interpreter_frame_local_at(max_locals-1),
                        (HeapWord*)&buf[0],
                        max_locals);
-  }
 
   // Inflate locks.  Copy the displaced headers.  Be careful, there can be holes.
   int i = max_locals;

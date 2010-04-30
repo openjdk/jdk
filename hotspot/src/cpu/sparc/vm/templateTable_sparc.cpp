@@ -580,7 +580,6 @@ void TemplateTable::saload() {
 
 void TemplateTable::iload(int n) {
   transition(vtos, itos);
-  debug_only(__ verify_local_tag(frame::TagValue, Llocals, Otos_i, n));
   __ ld( Llocals, Interpreter::local_offset_in_bytes(n), Otos_i );
 }
 
@@ -588,7 +587,6 @@ void TemplateTable::iload(int n) {
 void TemplateTable::lload(int n) {
   transition(vtos, ltos);
   assert(n+1 < Argument::n_register_parameters, "would need more code");
-  debug_only(__ verify_local_tag(frame::TagCategory2, Llocals, Otos_l, n));
   __ load_unaligned_long(Llocals, Interpreter::local_offset_in_bytes(n+1), Otos_l);
 }
 
@@ -596,7 +594,6 @@ void TemplateTable::lload(int n) {
 void TemplateTable::fload(int n) {
   transition(vtos, ftos);
   assert(n < Argument::n_register_parameters, "would need more code");
-  debug_only(__ verify_local_tag(frame::TagValue, Llocals, G3_scratch, n));
   __ ldf( FloatRegisterImpl::S, Llocals, Interpreter::local_offset_in_bytes(n),     Ftos_f );
 }
 
@@ -604,14 +601,12 @@ void TemplateTable::fload(int n) {
 void TemplateTable::dload(int n) {
   transition(vtos, dtos);
   FloatRegister dst = Ftos_d;
-  debug_only(__ verify_local_tag(frame::TagCategory2, Llocals, G3_scratch, n));
   __ load_unaligned_double(Llocals, Interpreter::local_offset_in_bytes(n+1), dst);
 }
 
 
 void TemplateTable::aload(int n) {
   transition(vtos, atos);
-  debug_only(__ verify_local_tag(frame::TagReference, Llocals, Otos_i, n));
   __ ld_ptr( Llocals, Interpreter::local_offset_in_bytes(n), Otos_i );
 }
 
@@ -707,12 +702,11 @@ void TemplateTable::dstore() {
 
 void TemplateTable::astore() {
   transition(vtos, vtos);
-  // astore tos can also be a returnAddress, so load and store the tag too
-  __ load_ptr_and_tag(0, Otos_i, Otos_l2);
-  __ inc(Lesp, Interpreter::stackElementSize());
+  __ load_ptr(0, Otos_i);
+  __ inc(Lesp, Interpreter::stackElementSize);
   __ verify_oop_or_return_address(Otos_i, G3_scratch);
   locals_index(G3_scratch);
-  __ store_local_ptr( G3_scratch, Otos_i, Otos_l2 );
+  __ store_local_ptr(G3_scratch, Otos_i);
 }
 
 
@@ -750,12 +744,11 @@ void TemplateTable::wide_dstore() {
 
 void TemplateTable::wide_astore() {
   transition(vtos, vtos);
-  // astore tos can also be a returnAddress, so load and store the tag too
-  __ load_ptr_and_tag(0, Otos_i, Otos_l2);
-  __ inc(Lesp, Interpreter::stackElementSize());
+  __ load_ptr(0, Otos_i);
+  __ inc(Lesp, Interpreter::stackElementSize);
   __ verify_oop_or_return_address(Otos_i, G3_scratch);
   locals_index_wide(G3_scratch);
-  __ store_local_ptr( G3_scratch, Otos_i, Otos_l2 );
+  __ store_local_ptr(G3_scratch, Otos_i);
 }
 
 
@@ -845,13 +838,13 @@ void TemplateTable::aastore() {
   do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i, G3_scratch, _bs->kind(), true);
 
   __ ba(false,done);
-  __ delayed()->inc(Lesp, 3* Interpreter::stackElementSize()); // adj sp (pops array, index and value)
+  __ delayed()->inc(Lesp, 3* Interpreter::stackElementSize); // adj sp (pops array, index and value)
 
   __ bind(is_null);
   do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), G0, G4_scratch, _bs->kind(), true);
 
   __ profile_null_seen(G3_scratch);
-  __ inc(Lesp, 3* Interpreter::stackElementSize());     // adj sp (pops array, index and value)
+  __ inc(Lesp, 3* Interpreter::stackElementSize);     // adj sp (pops array, index and value)
   __ bind(done);
 }
 
@@ -884,7 +877,6 @@ void TemplateTable::sastore() {
 
 void TemplateTable::istore(int n) {
   transition(itos, vtos);
-  __ tag_local(frame::TagValue, Llocals, Otos_i, n);
   __ st(Otos_i, Llocals, Interpreter::local_offset_in_bytes(n));
 }
 
@@ -892,7 +884,6 @@ void TemplateTable::istore(int n) {
 void TemplateTable::lstore(int n) {
   transition(ltos, vtos);
   assert(n+1 < Argument::n_register_parameters, "only handle register cases");
-  __ tag_local(frame::TagCategory2, Llocals, Otos_l, n);
   __ store_unaligned_long(Otos_l, Llocals, Interpreter::local_offset_in_bytes(n+1));
 
 }
@@ -901,7 +892,6 @@ void TemplateTable::lstore(int n) {
 void TemplateTable::fstore(int n) {
   transition(ftos, vtos);
   assert(n < Argument::n_register_parameters, "only handle register cases");
-  __ tag_local(frame::TagValue, Llocals, Otos_l, n);
   __ stf(FloatRegisterImpl::S, Ftos_f, Llocals, Interpreter::local_offset_in_bytes(n));
 }
 
@@ -909,30 +899,28 @@ void TemplateTable::fstore(int n) {
 void TemplateTable::dstore(int n) {
   transition(dtos, vtos);
   FloatRegister src = Ftos_d;
-  __ tag_local(frame::TagCategory2, Llocals, Otos_l, n);
   __ store_unaligned_double(src, Llocals, Interpreter::local_offset_in_bytes(n+1));
 }
 
 
 void TemplateTable::astore(int n) {
   transition(vtos, vtos);
-  // astore tos can also be a returnAddress, so load and store the tag too
-  __ load_ptr_and_tag(0, Otos_i, Otos_l2);
-  __ inc(Lesp, Interpreter::stackElementSize());
+  __ load_ptr(0, Otos_i);
+  __ inc(Lesp, Interpreter::stackElementSize);
   __ verify_oop_or_return_address(Otos_i, G3_scratch);
-  __ store_local_ptr( n, Otos_i, Otos_l2 );
+  __ store_local_ptr(n, Otos_i);
 }
 
 
 void TemplateTable::pop() {
   transition(vtos, vtos);
-  __ inc(Lesp, Interpreter::stackElementSize());
+  __ inc(Lesp, Interpreter::stackElementSize);
 }
 
 
 void TemplateTable::pop2() {
   transition(vtos, vtos);
-  __ inc(Lesp, 2 * Interpreter::stackElementSize());
+  __ inc(Lesp, 2 * Interpreter::stackElementSize);
 }
 
 
@@ -940,8 +928,8 @@ void TemplateTable::dup() {
   transition(vtos, vtos);
   // stack: ..., a
   // load a and tag
-  __ load_ptr_and_tag(0, Otos_i, Otos_l2);
-  __ push_ptr(Otos_i, Otos_l2);
+  __ load_ptr(0, Otos_i);
+  __ push_ptr(Otos_i);
   // stack: ..., a, a
 }
 
@@ -949,11 +937,11 @@ void TemplateTable::dup() {
 void TemplateTable::dup_x1() {
   transition(vtos, vtos);
   // stack: ..., a, b
-  __ load_ptr_and_tag(1, G3_scratch, G4_scratch);   // get a
-  __ load_ptr_and_tag(0, Otos_l1, Otos_l2);         // get b
-  __ store_ptr_and_tag(1, Otos_l1, Otos_l2);        // put b
-  __ store_ptr_and_tag(0, G3_scratch, G4_scratch);  // put a - like swap
-  __ push_ptr(Otos_l1, Otos_l2);                    // push b
+  __ load_ptr( 1, G3_scratch);  // get a
+  __ load_ptr( 0, Otos_l1);     // get b
+  __ store_ptr(1, Otos_l1);     // put b
+  __ store_ptr(0, G3_scratch);  // put a - like swap
+  __ push_ptr(Otos_l1);         // push b
   // stack: ..., b, a, b
 }
 
@@ -962,27 +950,27 @@ void TemplateTable::dup_x2() {
   transition(vtos, vtos);
   // stack: ..., a, b, c
   // get c and push on stack, reuse registers
-  __ load_ptr_and_tag(0, G3_scratch, G4_scratch);     // get c
-  __ push_ptr(G3_scratch, G4_scratch);               // push c with tag
+  __ load_ptr( 0, G3_scratch);  // get c
+  __ push_ptr(G3_scratch);      // push c with tag
   // stack: ..., a, b, c, c  (c in reg)  (Lesp - 4)
   // (stack offsets n+1 now)
-  __ load_ptr_and_tag(3, Otos_l1, Otos_l2);          // get a
-  __ store_ptr_and_tag(3, G3_scratch, G4_scratch);   // put c at 3
+  __ load_ptr( 3, Otos_l1);     // get a
+  __ store_ptr(3, G3_scratch);  // put c at 3
   // stack: ..., c, b, c, c  (a in reg)
-  __ load_ptr_and_tag(2, G3_scratch, G4_scratch);    // get b
-  __ store_ptr_and_tag(2, Otos_l1, Otos_l2);         // put a at 2
+  __ load_ptr( 2, G3_scratch);  // get b
+  __ store_ptr(2, Otos_l1);     // put a at 2
   // stack: ..., c, a, c, c  (b in reg)
-  __ store_ptr_and_tag(1, G3_scratch, G4_scratch);   // put b at 1
+  __ store_ptr(1, G3_scratch);  // put b at 1
   // stack: ..., c, a, b, c
 }
 
 
 void TemplateTable::dup2() {
   transition(vtos, vtos);
-  __ load_ptr_and_tag(1, G3_scratch, G4_scratch);     // get a
-  __ load_ptr_and_tag(0, Otos_l1, Otos_l2);           // get b
-  __ push_ptr(G3_scratch, G4_scratch);                // push a
-  __ push_ptr(Otos_l1, Otos_l2);                      // push b
+  __ load_ptr(1, G3_scratch);  // get a
+  __ load_ptr(0, Otos_l1);     // get b
+  __ push_ptr(G3_scratch);     // push a
+  __ push_ptr(Otos_l1);        // push b
   // stack: ..., a, b, a, b
 }
 
@@ -990,17 +978,17 @@ void TemplateTable::dup2() {
 void TemplateTable::dup2_x1() {
   transition(vtos, vtos);
   // stack: ..., a, b, c
-  __ load_ptr_and_tag(1, Lscratch, G1_scratch);       // get b
-  __ load_ptr_and_tag(2, Otos_l1, Otos_l2);           // get a
-  __ store_ptr_and_tag(2, Lscratch, G1_scratch);      // put b at a
+  __ load_ptr( 1, Lscratch);    // get b
+  __ load_ptr( 2, Otos_l1);     // get a
+  __ store_ptr(2, Lscratch);    // put b at a
   // stack: ..., b, b, c
-  __ load_ptr_and_tag(0, G3_scratch, G4_scratch);     // get c
-  __ store_ptr_and_tag(1, G3_scratch, G4_scratch);    // put c at b
+  __ load_ptr( 0, G3_scratch);  // get c
+  __ store_ptr(1, G3_scratch);  // put c at b
   // stack: ..., b, c, c
-  __ store_ptr_and_tag(0, Otos_l1, Otos_l2);          // put a at c
+  __ store_ptr(0, Otos_l1);     // put a at c
   // stack: ..., b, c, a
-  __ push_ptr(Lscratch, G1_scratch);                  // push b
-  __ push_ptr(G3_scratch, G4_scratch);                // push c
+  __ push_ptr(Lscratch);        // push b
+  __ push_ptr(G3_scratch);      // push c
   // stack: ..., b, c, a, b, c
 }
 
@@ -1010,18 +998,18 @@ void TemplateTable::dup2_x1() {
 void TemplateTable::dup2_x2() {
   transition(vtos, vtos);
   // stack: ..., a, b, c, d
-  __ load_ptr_and_tag(1, Lscratch, G1_scratch);       // get c
-  __ load_ptr_and_tag(3, Otos_l1, Otos_l2);           // get a
-  __ store_ptr_and_tag(3, Lscratch, G1_scratch);      // put c at 3
-  __ store_ptr_and_tag(1, Otos_l1, Otos_l2);          // put a at 1
+  __ load_ptr( 1, Lscratch);    // get c
+  __ load_ptr( 3, Otos_l1);     // get a
+  __ store_ptr(3, Lscratch);    // put c at 3
+  __ store_ptr(1, Otos_l1);     // put a at 1
   // stack: ..., c, b, a, d
-  __ load_ptr_and_tag(2, G3_scratch, G4_scratch);     // get b
-  __ load_ptr_and_tag(0, Otos_l1, Otos_l2);           // get d
-  __ store_ptr_and_tag(0, G3_scratch, G4_scratch);    // put b at 0
-  __ store_ptr_and_tag(2, Otos_l1, Otos_l2);          // put d at 2
+  __ load_ptr( 2, G3_scratch);  // get b
+  __ load_ptr( 0, Otos_l1);     // get d
+  __ store_ptr(0, G3_scratch);  // put b at 0
+  __ store_ptr(2, Otos_l1);     // put d at 2
   // stack: ..., c, d, a, b
-  __ push_ptr(Lscratch, G1_scratch);                  // push c
-  __ push_ptr(Otos_l1, Otos_l2);                      // push d
+  __ push_ptr(Lscratch);        // push c
+  __ push_ptr(Otos_l1);         // push d
   // stack: ..., c, d, a, b, c, d
 }
 
@@ -1029,10 +1017,10 @@ void TemplateTable::dup2_x2() {
 void TemplateTable::swap() {
   transition(vtos, vtos);
   // stack: ..., a, b
-  __ load_ptr_and_tag(1, G3_scratch, G4_scratch);     // get a
-  __ load_ptr_and_tag(0, Otos_l1, Otos_l2);           // get b
-  __ store_ptr_and_tag(0, G3_scratch, G4_scratch);    // put b
-  __ store_ptr_and_tag(1, Otos_l1, Otos_l2);          // put a
+  __ load_ptr( 1, G3_scratch);  // get a
+  __ load_ptr( 0, Otos_l1);     // get b
+  __ store_ptr(0, G3_scratch);  // put b
+  __ store_ptr(1, Otos_l1);     // put a
   // stack: ..., b, a
 }
 
@@ -1045,9 +1033,9 @@ void TemplateTable::iop2(Operation op) {
    case  sub:  __  sub(O1, Otos_i, Otos_i);  break;
      // %%%%% Mul may not exist: better to call .mul?
    case  mul:  __ smul(O1, Otos_i, Otos_i);  break;
-   case _and:  __  and3(O1, Otos_i, Otos_i);  break;
-   case  _or:  __   or3(O1, Otos_i, Otos_i);  break;
-   case _xor:  __  xor3(O1, Otos_i, Otos_i);  break;
+   case _and:  __ and3(O1, Otos_i, Otos_i);  break;
+   case  _or:  __  or3(O1, Otos_i, Otos_i);  break;
+   case _xor:  __ xor3(O1, Otos_i, Otos_i);  break;
    case  shl:  __  sll(O1, Otos_i, Otos_i);  break;
    case  shr:  __  sra(O1, Otos_i, Otos_i);  break;
    case ushr:  __  srl(O1, Otos_i, Otos_i);  break;
@@ -1061,17 +1049,17 @@ void TemplateTable::lop2(Operation op) {
   __ pop_l(O2);
   switch (op) {
 #ifdef _LP64
-   case  add:  __ add(O2, Otos_l, Otos_l);  break;
-   case  sub:  __ sub(O2, Otos_l, Otos_l);  break;
-   case _and:  __ and3( O2, Otos_l, Otos_l);  break;
-   case  _or:  __  or3( O2, Otos_l, Otos_l);  break;
-   case _xor:  __ xor3( O2, Otos_l, Otos_l);  break;
+   case  add:  __  add(O2, Otos_l, Otos_l);  break;
+   case  sub:  __  sub(O2, Otos_l, Otos_l);  break;
+   case _and:  __ and3(O2, Otos_l, Otos_l);  break;
+   case  _or:  __  or3(O2, Otos_l, Otos_l);  break;
+   case _xor:  __ xor3(O2, Otos_l, Otos_l);  break;
 #else
    case  add:  __ addcc(O3, Otos_l2, Otos_l2);  __ addc(O2, Otos_l1, Otos_l1);  break;
    case  sub:  __ subcc(O3, Otos_l2, Otos_l2);  __ subc(O2, Otos_l1, Otos_l1);  break;
-   case _and:  __ and3(  O3, Otos_l2, Otos_l2);  __ and3( O2, Otos_l1, Otos_l1);  break;
-   case  _or:  __  or3(  O3, Otos_l2, Otos_l2);  __  or3( O2, Otos_l1, Otos_l1);  break;
-   case _xor:  __ xor3(  O3, Otos_l2, Otos_l2);  __ xor3( O2, Otos_l1, Otos_l1);  break;
+   case _and:  __  and3(O3, Otos_l2, Otos_l2);  __ and3(O2, Otos_l1, Otos_l1);  break;
+   case  _or:  __   or3(O3, Otos_l2, Otos_l2);  __  or3(O2, Otos_l1, Otos_l1);  break;
+   case _xor:  __  xor3(O3, Otos_l2, Otos_l2);  __ xor3(O2, Otos_l1, Otos_l1);  break;
 #endif
    default: ShouldNotReachHere();
   }
@@ -1307,7 +1295,7 @@ void TemplateTable::iinc() {
   __ ldsb(Lbcp, 2, O2);  // load constant
   __ access_local_int(G3_scratch, Otos_i);
   __ add(Otos_i, O2, Otos_i);
-  __ st(Otos_i, G3_scratch, Interpreter::value_offset_in_bytes());    // access_local_int puts E.A. in G3_scratch
+  __ st(Otos_i, G3_scratch, 0);    // access_local_int puts E.A. in G3_scratch
 }
 
 
@@ -1317,7 +1305,7 @@ void TemplateTable::wide_iinc() {
   __ get_2_byte_integer_at_bcp( 4,  O2, O3, InterpreterMacroAssembler::Signed);
   __ access_local_int(G3_scratch, Otos_i);
   __ add(Otos_i, O3, Otos_i);
-  __ st(Otos_i, G3_scratch, Interpreter::value_offset_in_bytes());    // access_local_int puts E.A. in G3_scratch
+  __ st(Otos_i, G3_scratch, 0);    // access_local_int puts E.A. in G3_scratch
 }
 
 
@@ -1555,7 +1543,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Bump Lbcp to target of JSR
     __ add(Lbcp, O1_disp, Lbcp);
     // Push returnAddress for "ret" on stack
-    __ push_ptr(Otos_i, G0); // push ptr sized thing plus 0 for tag.
+    __ push_ptr(Otos_i);
     // And away we go!
     __ dispatch_next(vtos);
     return;
@@ -2754,7 +2742,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   Register Rflags  = G4_scratch;
   Register Rreceiver = Lscratch;
 
-  __ ld_ptr(Llocals, Interpreter::value_offset_in_bytes(), Rreceiver);
+  __ ld_ptr(Llocals, 0, Rreceiver);
 
   // access constant pool cache  (is resolved)
   __ get_cache_and_index_at_bcp(Rcache, G4_scratch, 2);
@@ -3696,7 +3684,7 @@ void TemplateTable::multianewarray() {
   transition(vtos, atos);
      // put ndims * wordSize into Lscratch
   __ ldub( Lbcp,     3,               Lscratch);
-  __ sll(  Lscratch, Interpreter::logStackElementSize(), Lscratch);
+  __ sll(  Lscratch, Interpreter::logStackElementSize, Lscratch);
      // Lesp points past last_dim, so set to O1 to first_dim address
   __ add(  Lesp,     Lscratch,        O1);
      call_VM(Otos_i, CAST_FROM_FN_PTR(address, InterpreterRuntime::multianewarray), O1);

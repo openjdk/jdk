@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
   // fail with a guarantee ("not enough space for interpreter generation");
   // if too small.
   // Run with +PrintInterpreter to get the VM to print out the size.
-  // Max size with JVMTI and TaggedStackInterpreter
+  // Max size with JVMTI
 
   // QQQ this is proably way too large for c++ interpreter
 
