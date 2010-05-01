@@ -807,9 +807,19 @@ bool methodOopDesc::should_not_be_cached() const {
   return false;
 }
 
+bool methodOopDesc::is_method_handle_invoke_name(vmSymbols::SID name_sid) {
+  switch (name_sid) {
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):  // FIXME: remove this transitional form
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name):
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
+    return true;
+  }
+  return false;
+}
+
 // Constant pool structure for invoke methods:
 enum {
-  _imcp_invoke_name = 1,        // utf8: 'invoke'
+  _imcp_invoke_name = 1,        // utf8: 'invokeExact' or 'invokeGeneric'
   _imcp_invoke_signature,       // utf8: (variable symbolOop)
   _imcp_method_type_value,      // string: (variable java/dyn/MethodType, sic)
   _imcp_limit
@@ -839,14 +849,15 @@ jint* methodOopDesc::method_type_offsets_chain() {
 //
 // Tests if this method is an internal adapter frame from the
 // MethodHandleCompiler.
+// Must be consistent with MethodHandleCompiler::get_method_oop().
 bool methodOopDesc::is_method_handle_adapter() const {
-  return ((name() == vmSymbols::invoke_name() &&
-           method_holder() == SystemDictionary::MethodHandle_klass())
-          ||
-          method_holder() == SystemDictionary::InvokeDynamic_klass());
+  return (is_method_handle_invoke_name(name()) &&
+          is_synthetic() &&
+          MethodHandleCompiler::klass_is_method_handle_adapter_holder(method_holder()));
 }
 
 methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
+                                               symbolHandle name,
                                                symbolHandle signature,
                                                Handle method_type, TRAPS) {
   methodHandle empty;
@@ -865,7 +876,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
     constantPoolOop cp_oop = oopFactory::new_constantPool(_imcp_limit, IsSafeConc, CHECK_(empty));
     cp = constantPoolHandle(THREAD, cp_oop);
   }
-  cp->symbol_at_put(_imcp_invoke_name,       vmSymbols::invoke_name());
+  cp->symbol_at_put(_imcp_invoke_name,       name());
   cp->symbol_at_put(_imcp_invoke_signature,  signature());
   cp->string_at_put(_imcp_method_type_value, vmSymbols::void_signature());
   cp->set_pool_holder(holder());
@@ -882,7 +893,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   m->set_constants(cp());
   m->set_name_index(_imcp_invoke_name);
   m->set_signature_index(_imcp_invoke_signature);
-  assert(m->name() == vmSymbols::invoke_name(), "");
+  assert(is_method_handle_invoke_name(m->name()), "");
   assert(m->signature() == signature(), "");
 #ifdef CC_INTERP
   ResultTypeFinder rtf(signature());
@@ -1033,6 +1044,24 @@ void methodOopDesc::init_intrinsic_id() {
       id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
       break;
     }
+    break;
+
+  // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*.
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_dyn_MethodHandle):
+    if (is_static() || !is_native())  break;
+    switch (name_id) {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
+      id = vmIntrinsics::_invokeGeneric; break;
+    default:
+      if (is_method_handle_invoke_name(name()))
+        id = vmIntrinsics::_invokeExact;
+      break;
+    }
+    break;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_dyn_InvokeDynamic):
+    if (!is_static() || !is_native())  break;
+    id = vmIntrinsics::_invokeDynamic;
+    break;
   }
 
   if (id != vmIntrinsics::_none) {

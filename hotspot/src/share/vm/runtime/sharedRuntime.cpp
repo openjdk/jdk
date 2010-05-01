@@ -1557,7 +1557,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     methodOop actual_method = MethodHandles::decode_method(actual,
                                                           kignore, fignore);
     if (actual_method != NULL) {
-      if (actual_method->name() == vmSymbols::invoke_name())
+      if (methodOopDesc::is_method_handle_invoke_name(actual_method->name()))
         mhName = "$";
       else
         mhName = actual_method->signature()->as_C_string();
