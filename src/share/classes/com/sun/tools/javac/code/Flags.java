@@ -230,6 +230,12 @@ public class Flags {
      */
     public static final long PROPRIETARY = 1L<<38;
 
+    /**
+     * Flag that marks a signature-polymorphic invoke method.
+     * (These occur inside java.dyn.MethodHandle.)
+     */
+    public static final long POLYMORPHIC_SIGNATURE = 1L<<39;
+
     /** Modifier masks.
      */
     public static final int
