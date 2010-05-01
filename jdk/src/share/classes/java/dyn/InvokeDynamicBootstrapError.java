@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,29 @@ package java.dyn;
 
 /**
  * Thrown to indicate that an {@code invokedynamic} instruction has
- * failed to find its bootstrap method, or the bootstrap method has
- * failed to provide a call site with a non-null target.
+ * failed to find its
+ * {@linkplain Linkage#registerBootstrapMethod(Class, MethodHandle) bootstrap method},
+ * or the bootstrap method has
+ * failed to provide a
+ * {@linkplain CallSite} call site with a non-null {@linkplain MethodHandle target}
+ * of the correct {@linkplain MethodType method type}.
  * <p>
- * The boostrap method must have been declared during a class's initialization
- * by a call to {@link Linkage#registerBootstrapMethod}.
+ * The bootstrap method must have been declared during a class's initialization
+ * by a call to one of the overloadings of
+ * {@link Linkage#registerBootstrapMethod registerBootstrapMethod}.
  *
  * @author John Rose, JSR 292 EG
  */
 public class InvokeDynamicBootstrapError extends LinkageError {
     /**
-     * Constructs a {@code InvokeDynamicBootstrapError} with no detail message.
+     * Constructs an {@code InvokeDynamicBootstrapError} with no detail message.
      */
     public InvokeDynamicBootstrapError() {
         super();
     }
 
     /**
-     * Constructs a {@code InvokeDynamicBootstrapError} with the specified
+     * Constructs an {@code InvokeDynamicBootstrapError} with the specified
      * detail message.
      *
      * @param s the detail message.

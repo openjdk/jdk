@@ -99,12 +99,12 @@ class ToGeneric {
             // reordering is required; build on top of a simpler ToGeneric
             ToGeneric va2 = ToGeneric.of(primsAtEnd);
             this.adapter = va2.adapter;
+            if (true) throw new UnsupportedOperationException("NYI: primitive parameters must follow references; entryType = "+entryType);
             this.entryPoint = MethodHandleImpl.convertArguments(Access.TOKEN,
                     va2.entryPoint, primsAtEnd, entryType, primsAtEndOrder);
             // example: for entryType of (int,Object,Object), the reordered
             // type is (Object,Object,int) and the order is {1,2,0},
-            // and putPAE is (mh,int0,obj1,obj2) => mh.invoke(obj1,obj2,int0)
-            if (true) throw new UnsupportedOperationException("NYI");
+            // and putPAE is (mh,int0,obj1,obj2) => mh.invokeExact(obj1,obj2,int0)
             return;
         }
 
@@ -341,7 +341,7 @@ class ToGeneric {
 
         @Override
         public String toString() {
-            return target.toString();
+            return target == null ? "prototype:"+convert : target.toString();
         }
 
         protected boolean isPrototype() { return target == null; }
@@ -371,33 +371,33 @@ class ToGeneric {
         // { return new ThisType(entryPoint, convert, target); }
 
         // Code to run when the arguments (<= 4) have all been boxed.
-        protected Object target()               throws Throwable { return invoker.<Object>invoke(target); }
-        protected Object target(Object a0)      throws Throwable { return invoker.<Object>invoke(target, a0); }
+        protected Object target()               throws Throwable { return invoker.<Object>invokeExact(target); }
+        protected Object target(Object a0)      throws Throwable { return invoker.<Object>invokeExact(target, a0); }
         protected Object target(Object a0, Object a1)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, a1); }
         protected Object target(Object a0, Object a1, Object a2)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2); }
         protected Object target(Object a0, Object a1, Object a2, Object a3)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3); }
         /*
-        protected Object target_0(Object... av) throws Throwable { return invoker.<Object>invoke(target, av); }
+        protected Object target_0(Object... av) throws Throwable { return invoker.<Object>invokeExact(target, av); }
         protected Object target_1(Object a0, Object... av)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, (Object)av); }
         protected Object target_2(Object a0, Object a1, Object... av)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, (Object)av); }
         protected Object target_3(Object a0, Object a1, Object a2, Object... av)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, (Object)av); }
         protected Object target_4(Object a0, Object a1, Object a2, Object a3, Object... av)
-                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, (Object)av); }
         // */
         // (For more than 4 arguments, generate the code in the adapter itself.)
 
         // Code to run when the generic target has finished and produced a value.
-        protected Object return_L(Object res) throws Throwable { return convert.<Object>invoke(res); }
-        protected int    return_I(Object res) throws Throwable { return convert.<int   >invoke(res); }
-        protected long   return_J(Object res) throws Throwable { return convert.<long  >invoke(res); }
-        protected float  return_F(Object res) throws Throwable { return convert.<float >invoke(res); }
-        protected double return_D(Object res) throws Throwable { return convert.<double>invoke(res); }
+        protected Object return_L(Object res) throws Throwable { return convert.<Object>invokeExact(res); }
+        protected int    return_I(Object res) throws Throwable { return convert.<int   >invokeExact(res); }
+        protected long   return_J(Object res) throws Throwable { return convert.<long  >invokeExact(res); }
+        protected float  return_F(Object res) throws Throwable { return convert.<float >invokeExact(res); }
+        protected double return_D(Object res) throws Throwable { return convert.<double>invokeExact(res); }
 
         static private final String CLASS_PREFIX; // "sun.dyn.ToGeneric$"
         static {
@@ -424,7 +424,7 @@ class ToGeneric {
         protected A1(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A1(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A1 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A1(e, i, c, t); }
-        protected Object target(Object a0)   throws Throwable { return invoker.<Object>invoke(target, a0); }
+        protected Object target(Object a0)   throws Throwable { return invoker.<Object>invokeExact(target, a0); }
         protected Object targetA1(Object a0) throws Throwable { return target(a0); }
         protected Object targetA1(int    a0) throws Throwable { return target(a0); }
         protected Object targetA1(long   a0) throws Throwable { return target(a0); }
@@ -462,7 +462,7 @@ class genclasses {
         "        protected @cat@(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype",
         "        protected @cat@(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }",
         "        protected @cat@ makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new @cat@(e, i, c, t); }",
-        "        protected Object target(@Ovav@)   throws Throwable { return invoker.<Object>invoke(target, @av@); }",
+        "        protected Object target(@Ovav@)   throws Throwable { return invoker.<Object>invokeExact(target, @av@); }",
         "        //@each-Tv@",
         "        protected Object target@cat@(@Tvav@) throws Throwable { return target(@av@); }",
         "        //@end-Tv@",
@@ -622,7 +622,7 @@ class genclasses {
         protected A0(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A0(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A0 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A0(e, i, c, t); }
-        protected Object target()   throws Throwable { return invoker.<Object>invoke(target); }
+        protected Object target()   throws Throwable { return invoker.<Object>invokeExact(target); }
         protected Object targetA0() throws Throwable { return target(); }
         protected Object invoke_L() throws Throwable { return return_L(targetA0()); }
         protected int    invoke_I() throws Throwable { return return_I(targetA0()); }
@@ -634,7 +634,7 @@ class genclasses {
         protected A1(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A1(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A1 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A1(e, i, c, t); }
-        protected Object target(Object a0)   throws Throwable { return invoker.<Object>invoke(target, a0); }
+        protected Object target(Object a0)   throws Throwable { return invoker.<Object>invokeExact(target, a0); }
         protected Object targetA1(Object a0) throws Throwable { return target(a0); }
         protected Object targetA1(int    a0) throws Throwable { return target(a0); }
         protected Object targetA1(long   a0) throws Throwable { return target(a0); }
@@ -658,7 +658,7 @@ class genclasses {
         protected A2(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A2(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A2 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A2(e, i, c, t); }
-        protected Object target(Object a0, Object a1)   throws Throwable { return invoker.<Object>invoke(target, a0, a1); }
+        protected Object target(Object a0, Object a1)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1); }
         protected Object targetA2(Object a0, Object a1) throws Throwable { return target(a0, a1); }
         protected Object targetA2(Object a0, int    a1) throws Throwable { return target(a0, a1); }
         protected Object targetA2(int    a0, int    a1) throws Throwable { return target(a0, a1); }
@@ -694,7 +694,7 @@ class genclasses {
         protected A3(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A3(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A3 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A3(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2); }
+        protected Object target(Object a0, Object a1, Object a2)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2); }
         protected Object targetA3(Object a0, Object a1, Object a2) throws Throwable { return target(a0, a1, a2); }
         protected Object targetA3(Object a0, Object a1, int    a2) throws Throwable { return target(a0, a1, a2); }
         protected Object targetA3(Object a0, int    a1, int    a2) throws Throwable { return target(a0, a1, a2); }
@@ -743,7 +743,7 @@ class genclasses {
         protected A4(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A4(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A4 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A4(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3); }
         protected Object targetA4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return target(a0, a1, a2, a3); }
         protected Object targetA4(Object a0, Object a1, Object a2, int    a3) throws Throwable { return target(a0, a1, a2, a3); }
         protected Object targetA4(Object a0, Object a1, int    a2, int    a3) throws Throwable { return target(a0, a1, a2, a3); }
@@ -785,7 +785,7 @@ class genclasses {
         protected A5(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A5(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A5 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A5(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, a4); }
         protected Object targetA5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
         protected Object targetA5(Object a0, Object a1, Object a2, Object a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
         protected Object targetA5(Object a0, Object a1, Object a2, int    a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
@@ -836,7 +836,7 @@ class genclasses {
         protected A6(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A6(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A6 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A6(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, a4, a5); }
         protected Object targetA6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
         protected Object targetA6(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
         protected Object targetA6(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
@@ -870,7 +870,7 @@ class genclasses {
         protected A7(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A7(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A7 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A7(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, a4, a5, a6); }
         protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
         protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
         protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
@@ -908,7 +908,7 @@ class genclasses {
         protected A8(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A8(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A8 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A8(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, a4, a5, a6, a7); }
         protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
         protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
         protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
@@ -950,7 +950,7 @@ class genclasses {
         protected A9(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A9(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A9 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A9(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, a4, a5, a6, a7, a8); }
         protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
         protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
         protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
@@ -996,7 +996,7 @@ class genclasses {
         protected A10(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A10(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A10 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A10(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9)   throws Throwable { return invoker.<Object>invokeExact(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
         protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
         protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
         protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }

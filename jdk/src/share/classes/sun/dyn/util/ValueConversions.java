@@ -655,7 +655,7 @@ public class ValueConversions {
         if (nargs < ARRAYS.length)
             return ARRAYS[nargs];
         // else need to spin bytecode or do something else fancy
-        throw new UnsupportedOperationException("NYI");
+        throw new UnsupportedOperationException("NYI: cannot form a varargs array of length "+nargs);
     }
 
     private static final List<Object> NO_ARGS_LIST = Arrays.asList(NO_ARGS_ARRAY);

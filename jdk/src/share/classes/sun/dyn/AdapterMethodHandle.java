@@ -366,7 +366,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     }
     private static boolean convOpSupported(int convOp) {
         assert(convOp >= 0 && convOp <= CONV_OP_LIMIT);
-        return ((1<<convOp) & CONV_OP_IMPLEMENTED_MASK) != 0;
+        return ((1<<convOp) & MethodHandleNatives.CONV_OP_IMPLEMENTED_MASK) != 0;
     }
 
     /** One of OP_RETYPE_ONLY, etc. */

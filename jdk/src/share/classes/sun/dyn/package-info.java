@@ -25,10 +25,6 @@
 
 /**
  * Implementation details for JSR 292 RI, package java.dyn.
- * This particular version is specific to Hotspot.
- * There is also a backport version of this sub-package which uses reflection,
- * and can therefore run (slowly) on older versions of Java.
- * Other JVM vendors may create their own versions of this sub-package.
  * @author jrose
  */
 
