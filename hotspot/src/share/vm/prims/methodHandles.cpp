@@ -366,6 +366,13 @@ enum {
   VM_INDEX_UNINITIALIZED = sun_dyn_MemberName::VM_INDEX_UNINITIALIZED
 };
 
+Handle MethodHandles::new_MemberName(TRAPS) {
+  Handle empty;
+  instanceKlassHandle k(THREAD, SystemDictionary::MemberName_klass());
+  if (!k->is_initialized())  k->initialize(CHECK_(empty));
+  return Handle(THREAD, k->allocate_instance(THREAD));
+}
+
 void MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
   if (target_oop->klass() == SystemDictionary::reflect_Field_klass()) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
@@ -394,16 +401,18 @@ void MethodHandles::init_MemberName(oop mname_oop, methodOop m, bool do_dispatch
   sun_dyn_MemberName::set_vmtarget(mname_oop, vmtarget);
   sun_dyn_MemberName::set_vmindex(mname_oop,  vmindex);
   sun_dyn_MemberName::set_flags(mname_oop,    flags);
+  sun_dyn_MemberName::set_clazz(mname_oop,    Klass::cast(m->method_holder())->java_mirror());
 }
 
 void MethodHandles::init_MemberName(oop mname_oop, klassOop field_holder, AccessFlags mods, int offset) {
   int flags = (IS_FIELD | (jushort)( mods.as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS ));
   oop vmtarget = field_holder;
-  int vmindex  = offset;  // implies no info yet
+  int vmindex  = offset;  // determines the field uniquely when combined with static bit
   assert(vmindex != VM_INDEX_UNINITIALIZED, "bad alias on vmindex");
   sun_dyn_MemberName::set_vmtarget(mname_oop, vmtarget);
   sun_dyn_MemberName::set_vmindex(mname_oop,  vmindex);
   sun_dyn_MemberName::set_flags(mname_oop,    flags);
+  sun_dyn_MemberName::set_clazz(mname_oop,    Klass::cast(field_holder)->java_mirror());
 }
 
 
@@ -467,7 +476,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   name_str = NULL;  // safety
 
   // convert the external string or reflective type to an internal signature
-  bool force_signature = (name() == vmSymbols::invoke_name());
+  bool force_signature = methodOopDesc::is_method_handle_invoke_name(name());
   symbolHandle type; {
     symbolOop type_sym = NULL;
     if (java_dyn_MethodType::is_instance(type_str)) {
@@ -774,6 +783,20 @@ int MethodHandles::find_MemberNames(klassOop k,
   return rfill + overflow;
 }
 
+
+// Decode this java.lang.Class object into an instanceKlass, if possible.
+// Throw IAE if not
+instanceKlassHandle MethodHandles::resolve_instance_klass(oop java_mirror_oop, TRAPS) {
+  instanceKlassHandle empty;
+  klassOop caller = NULL;
+  if (java_lang_Class::is_instance(java_mirror_oop)) {
+    caller = java_lang_Class::as_klassOop(java_mirror_oop);
+  }
+  if (caller == NULL || !Klass::cast(caller)->oop_is_instance()) {
+    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not a class", empty);
+  }
+  return instanceKlassHandle(THREAD, caller);
+}
 
 
 
@@ -2115,31 +2138,26 @@ JVM_ENTRY(void, MHI_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
     KlassHandle caller(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(caller_jh)));
     // If this were a bytecode, the first access check would be against
     // the "reference class" mentioned in the CONSTANT_Methodref.
-    // For that class, we use the defining class of m,
-    // or a more specific receiver limit if available.
-    klassOop reference_klass = m->method_holder();  // OK approximation
-    if (receiver_limit != NULL && receiver_limit != reference_klass) {
-      if (!Klass::cast(receiver_limit)->is_subtype_of(reference_klass))
-        THROW_MSG(vmSymbols::java_lang_InternalError(), "receiver limit out of bounds");  // Java code bug
-      reference_klass = receiver_limit;
-    }
-    // Emulate LinkResolver::check_klass_accessability.
-    if (!Reflection::verify_class_access(caller->as_klassOop(),
-                                         reference_klass,
-                                         true)) {
-      THROW_MSG(vmSymbols::java_lang_InternalError(), Klass::cast(m->method_holder())->external_name());
-    }
+    // We don't know at this point which class that was, and if we
+    // check against m.method_holder we might get the wrong answer.
+    // So we just make sure to handle this check when the resolution
+    // happens, when we call resolve_MemberName.
+    //
+    // (A public class can inherit public members from private supers,
+    // and it would be wrong to check access against the private super
+    // if the original symbolic reference was against the public class.)
+    //
     // If there were a bytecode, the next step would be to lookup the method
     // in the reference class, then then check the method's access bits.
     // Emulate LinkResolver::check_method_accessability.
     klassOop resolved_klass = m->method_holder();
     if (!Reflection::verify_field_access(caller->as_klassOop(),
-                                         resolved_klass, reference_klass,
+                                         resolved_klass, resolved_klass,
                                          m->access_flags(),
                                          true)) {
       // %%% following cutout belongs in Reflection::verify_field_access?
       bool same_pm = Reflection::is_same_package_member(caller->as_klassOop(),
-                                                        reference_klass, THREAD);
+                                                        resolved_klass, THREAD);
       if (!same_pm) {
         THROW_MSG(vmSymbols::java_lang_InternalError(), m->name_and_sig_as_C_string());
       }
@@ -2244,6 +2262,8 @@ JVM_ENTRY(jint, MHI_getConstant(JNIEnv *env, jobject igcls, jint which)) {
   case MethodHandles::GC_JVM_STACK_MOVE_UNIT:
     // return number of words per slot, signed according to stack direction
     return MethodHandles::stack_move_unit();
+  case MethodHandles::GC_CONV_OP_IMPLEMENTED_MASK:
+    return MethodHandles::adapter_conversion_ops_supported_mask();
   }
   return 0;
 }
@@ -2342,7 +2362,22 @@ JVM_END
 JVM_ENTRY(void, MHI_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
   if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
-  // %%% take caller into account!
+
+  // The trusted Java code that calls this method should already have performed
+  // access checks on behalf of the given caller.  But, we can verify this.
+  if (VerifyMethodHandles && caller_jh != NULL) {
+    klassOop reference_klass = java_lang_Class::as_klassOop(sun_dyn_MemberName::clazz(mname()));
+    if (reference_klass != NULL) {
+      // Emulate LinkResolver::check_klass_accessability.
+      klassOop caller = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(caller_jh));
+      if (!Reflection::verify_class_access(caller,
+                                           reference_klass,
+                                           true)) {
+        THROW_MSG(vmSymbols::java_lang_InternalError(), Klass::cast(reference_klass)->external_name());
+      }
+    }
+  }
+
   MethodHandles::resolve_MemberName(mname, CHECK);
 }
 JVM_END
@@ -2387,12 +2422,48 @@ JVM_ENTRY(jint, MHI_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
+JVM_ENTRY(void, MHI_registerBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh, jobject bsm_jh)) {
+  instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
+  ik->link_class(CHECK);
+  if (!java_dyn_MethodHandle::is_instance(JNIHandles::resolve(bsm_jh))) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "method handle");
+  }
+  const char* err = NULL;
+  if (ik->is_initialized() || ik->is_in_error_state()) {
+    err = "too late: class is already initialized";
+  } else {
+    ObjectLocker ol(ik, THREAD);  // note:  this should be a recursive lock
+    if (ik->is_not_initialized() ||
+        (ik->is_being_initialized() && ik->is_reentrant_initialization(THREAD))) {
+      if (ik->bootstrap_method() != NULL) {
+        err = "class is already equipped with a bootstrap method";
+      } else {
+        ik->set_bootstrap_method(JNIHandles::resolve_non_null(bsm_jh));
+        err = NULL;
+      }
+    } else {
+      err = "class is already initialized";
+      if (ik->is_being_initialized())
+        err = "class is already being initialized in a different thread";
+    }
+  }
+  if (err != NULL) {
+    THROW_MSG(vmSymbols::java_lang_IllegalStateException(), err);
+  }
+}
+JVM_END
 
-JVM_ENTRY(void, MH_linkCallSite(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
+JVM_ENTRY(jobject, MHI_getBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh)) {
+  instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
+  return JNIHandles::make_local(THREAD, ik->bootstrap_method());
+}
+JVM_END
+
+JVM_ENTRY(void, MHI_setCallSiteTarget(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
   // No special action required, yet.
   oop site_oop = JNIHandles::resolve(site_jh);
-  if (site_oop == NULL || site_oop->klass() != SystemDictionary::CallSite_klass())
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "call site");
+  if (!java_dyn_CallSite::is_instance(site_oop))
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "not a CallSite");
   java_dyn_CallSite::set_target(site_oop, JNIHandles::resolve(target_jh));
 }
 JVM_END
@@ -2442,7 +2513,9 @@ static JNINativeMethod methods[] = {
 
 // More entry points specifically for EnableInvokeDynamic.
 static JNINativeMethod methods2[] = {
-  {CC"linkCallSite",            CC"("CST MH")V",                FN_PTR(MH_linkCallSite)}
+  {CC"registerBootstrap",       CC"("CLS MH")V",                FN_PTR(MHI_registerBootstrap)},
+  {CC"getBootstrap",            CC"("CLS")"MH,                  FN_PTR(MHI_getBootstrap)},
+  {CC"setCallSiteTarget",       CC"("CST MH")V",                FN_PTR(MHI_setCallSiteTarget)}
 };
 
 

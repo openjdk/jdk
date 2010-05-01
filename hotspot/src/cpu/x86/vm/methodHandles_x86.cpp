@@ -262,6 +262,22 @@ void trace_method_handle_stub(const char* adaptername,
 }
 #endif //PRODUCT
 
+// which conversion op types are implemented here?
+int MethodHandles::adapter_conversion_ops_supported_mask() {
+  return ((1<<sun_dyn_AdapterMethodHandle::OP_RETYPE_ONLY)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_CHECK_CAST)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_PRIM_TO_PRIM)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_REF_TO_PRIM)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_SWAP_ARGS)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_ROT_ARGS)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_DUP_ARGS)
+         |(1<<sun_dyn_AdapterMethodHandle::OP_DROP_ARGS)
+         //|(1<<sun_dyn_AdapterMethodHandle::OP_SPREAD_ARGS) //BUG!
+         );
+  // FIXME: MethodHandlesTest gets a crash if we enable OP_SPREAD_ARGS.
+}
+
 // Generate an "entry" field for a method handle.
 // This determines how the method handle will respond to calls.
 void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek) {

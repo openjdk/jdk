@@ -691,24 +691,21 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
 
   methodHandle caller_method(thread, method(thread));
 
-  // first determine if there is a bootstrap method
-  {
-    KlassHandle caller_klass(thread, caller_method->method_holder());
-    Handle bootm = SystemDictionary::find_bootstrap_method(caller_klass, KlassHandle(), CHECK);
-    if (bootm.is_null()) {
-      // If there is no bootstrap method, throw IncompatibleClassChangeError.
-      // This is a valid generic error type for resolution (JLS 12.3.3).
-      char buf[200];
-      jio_snprintf(buf, sizeof(buf), "Class %s has not declared a bootstrap method for invokedynamic",
-                   (Klass::cast(caller_klass()))->external_name());
-      THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
-    }
-  }
+  // first find the bootstrap method
+  KlassHandle caller_klass(thread, caller_method->method_holder());
+  Handle bootm = SystemDictionary::find_bootstrap_method(caller_klass, CHECK);
 
   constantPoolHandle pool(thread, caller_method->constants());
   pool->set_invokedynamic();    // mark header to flag active call sites
 
-  int site_index = four_byte_index(thread);
+  int caller_bci = 0;
+  int site_index = 0;
+  { address caller_bcp = bcp(thread);
+    caller_bci = caller_method->bci_from(caller_bcp);
+    site_index = Bytes::get_native_u4(caller_bcp+1);
+  }
+  assert(site_index == four_byte_index(thread), "");
+  assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
   // there is a second CPC entries that is of interest; it caches signature info:
   int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();
 
@@ -732,23 +729,32 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   // The method (f2 entry) of the main entry is the MH.invoke for the
   // invokedynamic target call signature.
   intptr_t f2_value = pool->cache()->entry_at(main_index)->f2();
-  methodHandle mh_invdyn(THREAD, (methodOop) f2_value);
-  assert(mh_invdyn.not_null() && mh_invdyn->is_method() && mh_invdyn->is_method_handle_invoke(),
+  methodHandle signature_invoker(THREAD, (methodOop) f2_value);
+  assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
 
   symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
+
+  Handle info;  // NYI: Other metadata from a new kind of CP entry.  (Annotations?)
+
+  // this is the index which gets stored on the CallSite object (as "callerPosition"):
+  int call_site_position = constantPoolCacheOopDesc::decode_secondary_index(site_index);
+
   Handle call_site
-    = SystemDictionary::make_dynamic_call_site(caller_method->method_holder(),
-                                               caller_method->method_idnum(),
-                                               caller_method->bci_from(bcp(thread)),
+    = SystemDictionary::make_dynamic_call_site(bootm,
+                                               // Callee information:
                                                call_site_name,
-                                               mh_invdyn,
+                                               signature_invoker,
+                                               info,
+                                               // Caller information:
+                                               caller_method,
+                                               caller_bci,
                                                CHECK);
 
   // In the secondary entry, the f1 field is the call site, and the f2 (index)
-  // field is some data about the invoke site.
-  int extra_data = 0;
-  pool->cache()->secondary_entry_at(site_index)->set_dynamic_call(call_site(), extra_data);
+  // field is some data about the invoke site.  Currently, it is just the BCI.
+  // Later, it might be changed to help manage inlining dependencies.
+  pool->cache()->secondary_entry_at(site_index)->set_dynamic_call(call_site, signature_invoker);
 }
 IRT_END
 
