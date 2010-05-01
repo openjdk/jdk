@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ class Compilation: public StackObj {
   int                _max_spills;
   FrameMap*          _frame_map;
   C1_MacroAssembler* _masm;
-  bool               _needs_debug_information;
   bool               _has_exception_handlers;
   bool               _has_fpu_code;
   bool               _has_unsafe_access;
@@ -117,7 +116,6 @@ class Compilation: public StackObj {
   // accessors
   ciEnv* env() const                             { return _env; }
   AbstractCompiler* compiler() const             { return _compiler; }
-  bool needs_debug_information() const           { return _needs_debug_information; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
@@ -132,7 +130,6 @@ class Compilation: public StackObj {
   CodeOffsets* offsets()                         { return &_offsets; }
 
   // setters
-  void set_needs_debug_information(bool f)       { _needs_debug_information = f; }
   void set_has_exception_handlers(bool f)        { _has_exception_handlers = f; }
   void set_has_fpu_code(bool f)                  { _has_fpu_code = f; }
   void set_has_unsafe_access(bool f)             { _has_unsafe_access = f; }

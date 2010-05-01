@@ -28,6 +28,9 @@ package com.sun.tools.javac.main;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.MissingResourceException;
 
 import com.sun.tools.javac.code.Source;
@@ -281,6 +284,15 @@ public class Main {
         if (target.hasInvokedynamic()) {
             options.put("invokedynamic",  "invokedynamic");
         }
+
+        // handle this here so it works even if no other options given
+        String showClass = options.get("showClass");
+        if (showClass != null) {
+            if (showClass.equals("showClass")) // no value given for option
+                showClass = "com.sun.tools.javac.Main";
+            showClass(showClass);
+        }
+
         return filenames.toList();
     }
     // where
@@ -486,6 +498,37 @@ public class Main {
         Log.printLines(out,
                        getLocalizedString("msg.proc.annotation.uncaught.exception"));
         ex.getCause().printStackTrace();
+    }
+
+    /** Display the location and checksum of a class. */
+    void showClass(String className) {
+        out.println("javac: show class: " + className);
+        URL url = getClass().getResource('/' + className.replace('.', '/') + ".class");
+        if (url == null)
+            out.println("  class not found");
+        else {
+            out.println("  " + url);
+            try {
+                final String algorithm = "MD5";
+                byte[] digest;
+                MessageDigest md = MessageDigest.getInstance(algorithm);
+                DigestInputStream in = new DigestInputStream(url.openStream(), md);
+                try {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    do { n = in.read(buf); } while (n > 0);
+                    digest = md.digest();
+                } finally {
+                    in.close();
+                }
+                StringBuilder sb = new StringBuilder();
+                for (byte b: digest)
+                    sb.append(String.format("%02x", b));
+                out.println("  " + algorithm + " checksum: " + sb);
+            } catch (Exception e) {
+                out.println("  cannot compute digest: " + e);
+            }
+        }
     }
 
     private JavaFileManager fileManager;

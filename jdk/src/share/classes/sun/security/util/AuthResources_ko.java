@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ public class AuthResources_ko extends java.util.ListResourceBundle {
         {"Unable to properly expand config", "\uc801\uc808\ud788 \ud655\uc7a5\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. {0}"},
         {"extra_config (No such file or directory)",
                 "{0} (\ud574\ub2f9 \ud30c\uc77c\uc774\ub098 \ub514\ub809\ud1a0\ub9ac\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.)"},
-        {"Unable to locate a login configuration",
-                "\ub85c\uadf8\uc778 \uad6c\uc131\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4."},
+        {"Configuration Error:\n\tNo such file or directory",
+                "\uad6c\uc131 \uc624\ub958:\n\t\ud574\ub2f9 \ud30c\uc77c\uc774\ub098 \ub514\ub809\ud1a0\ub9ac\uac00 \uc5c6\uc2b5\ub2c8\ub2e4."},
         {"Configuration Error:\n\tInvalid control flag, flag",
                 "\uad6c\uc131 \uc624\ub958:\n\t\uc798\ubabb\ub41c \ucee8\ud2b8\ub864 \ud50c\ub798\uadf8, {0}"},
         {"Configuration Error:\n\tCan not specify multiple entries for appName",
