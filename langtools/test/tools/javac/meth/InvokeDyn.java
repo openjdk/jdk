@@ -47,7 +47,7 @@ package meth;
 import java.dyn.InvokeDynamic;
 
 public class InvokeDyn {
-    void test() {
+    void test() throws Throwable {
         Object x = "hello";
         InvokeDynamic.greet(x, "world", 123);
         InvokeDynamic.greet(x, "mundus", 456);
