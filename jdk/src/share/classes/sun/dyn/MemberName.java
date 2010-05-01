@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,29 @@ import java.util.List;
 import static sun.dyn.MethodHandleNatives.Constants.*;
 
 /**
- * Compact information which fully characterizes a method or field reference.
- * When resolved, it includes a direct pointer to JVM metadata.
+ * A {@code MemberName} is a compact symbolic datum which fully characterizes
+ * a method or field reference.
+ * A member name refers to a field, method, constructor, or member type.
+ * Every member name has a simple name (a string) and a type (either a Class or MethodType).
+ * A member name may also have a non-null declaring class, or it may be simply
+ * a naked name/type pair.
+ * A member name may also have non-zero modifier flags.
+ * Finally, a member name may be either resolved or unresolved.
+ * If it is resolved, the existence of the named
+ * <p>
+ * Whether resolved or not, a member name provides no access rights or
+ * invocation capability to its possessor.  It is merely a compact
+ * representation of all symbolic information necessary to link to
+ * and properly use the named member.
+ * <p>
+ * When resolved, a member name's internal implementation may include references to JVM metadata.
  * This representation is stateless and only decriptive.
  * It provides no private information and no capability to use the member.
  * <p>
- * By contrast, a java.lang.reflect.Method contains fuller information
+ * By contrast, a {@linkplain java.lang.reflect.Method} contains fuller information
  * about the internals of a method (except its bytecodes) and also
- * allows invocation.  A MemberName is much lighter than a reflect.Method,
- * since it contains about 7 fields to Method's 16 (plus its sub-arrays),
+ * allows invocation.  A MemberName is much lighter than a Method,
+ * since it contains about 7 fields to the 16 of Method (plus its sub-arrays),
  * and those seven fields omit much of the information in Method.
  * @author jrose
  */
@@ -63,6 +77,9 @@ public final class MemberName implements Member, Cloneable {
 
     { vmindex = VM_INDEX_UNINITIALIZED; }
 
+    /** Return the declaring class of this member.
+     *  In the case of a bare name and type, the declaring class will be null.
+     */
     public Class<?> getDeclaringClass() {
         if (clazz == null && isResolved()) {
             expandFromVM();
@@ -70,10 +87,16 @@ public final class MemberName implements Member, Cloneable {
         return clazz;
     }
 
+    /** Utility method producing the class loader of the declaring class. */
     public ClassLoader getClassLoader() {
         return clazz.getClassLoader();
     }
 
+    /** Return the simple name of this member.
+     *  For a type, it is the same as {@link Class#getSimpleName}.
+     *  For a method or field, it is the simple name of the member.
+     *  For a constructor, it is always {@code "&lt;init&gt;"}.
+     */
     public String getName() {
         if (name == null) {
             expandFromVM();
@@ -82,6 +105,9 @@ public final class MemberName implements Member, Cloneable {
         return name;
     }
 
+    /** Return the declared type of this member, which
+     *  must be a method or constructor.
+     */
     public MethodType getMethodType() {
         if (type == null) {
             expandFromVM();
@@ -109,6 +135,10 @@ public final class MemberName implements Member, Cloneable {
         throw new InternalError("bad method type "+type);
     }
 
+    /** Return the actual type under which this method or constructor must be invoked.
+     *  For non-static methods or constructors, this is the type with a leading parameter,
+     *  a reference to declaring class.  For static methods, it is the same as the declared type.
+     */
     public MethodType getInvocationType() {
         MethodType itype = getMethodType();
         if (!isStatic())
@@ -116,14 +146,20 @@ public final class MemberName implements Member, Cloneable {
         return itype;
     }
 
+    /** Utility method producing the parameter types of the method type. */
     public Class<?>[] getParameterTypes() {
         return getMethodType().parameterArray();
     }
 
+    /** Utility method producing the return type of the method type. */
     public Class<?> getReturnType() {
         return getMethodType().returnType();
     }
 
+    /** Return the declared type of this member, which
+     *  must be a field or type.
+     *  If it is a type member, that type itself is returned.
+     */
     public Class<?> getFieldType() {
         if (type == null) {
             expandFromVM();
@@ -144,10 +180,14 @@ public final class MemberName implements Member, Cloneable {
         throw new InternalError("bad field type "+type);
     }
 
+    /** Utility method to produce either the method type or field type of this member. */
     public Object getType() {
         return (isInvocable() ? getMethodType() : getFieldType());
     }
 
+    /** Utility method to produce the signature of this member,
+     *  used within the class file format to describe its type.
+     */
     public String getSignature() {
         if (type == null) {
             expandFromVM();
@@ -161,6 +201,9 @@ public final class MemberName implements Member, Cloneable {
             return BytecodeDescriptor.unparse(getFieldType());
     }
 
+    /** Return the modifier flags of this member.
+     *  @see java.lang.reflect.Modifier
+     */
     public int getModifiers() {
         return (flags & RECOGNIZED_MODIFIERS);
     }
@@ -180,21 +223,27 @@ public final class MemberName implements Member, Cloneable {
         return !testFlags(mask, 0);
     }
 
+    /** Utility method to query the modifier flags of this member. */
     public boolean isStatic() {
         return Modifier.isStatic(flags);
     }
+    /** Utility method to query the modifier flags of this member. */
     public boolean isPublic() {
         return Modifier.isPublic(flags);
     }
+    /** Utility method to query the modifier flags of this member. */
     public boolean isPrivate() {
         return Modifier.isPrivate(flags);
     }
+    /** Utility method to query the modifier flags of this member. */
     public boolean isProtected() {
         return Modifier.isProtected(flags);
     }
+    /** Utility method to query the modifier flags of this member. */
     public boolean isFinal() {
         return Modifier.isFinal(flags);
     }
+    /** Utility method to query the modifier flags of this member. */
     public boolean isAbstract() {
         return Modifier.isAbstract(flags);
     }
@@ -206,12 +255,15 @@ public final class MemberName implements Member, Cloneable {
     static final int SYNTHETIC = 0x00001000;
     static final int ANNOTATION= 0x00002000;
     static final int ENUM      = 0x00004000;
+    /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isBridge() {
         return testAllFlags(IS_METHOD | BRIDGE);
     }
+    /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isVarargs() {
         return testAllFlags(VARARGS) && isInvocable();
     }
+    /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isSynthetic() {
         return testAllFlags(SYNTHETIC);
     }
@@ -237,24 +289,31 @@ public final class MemberName implements Member, Cloneable {
     static final int IS_FIELD_OR_METHOD = IS_METHOD | IS_FIELD;
     static final int SEARCH_ALL_SUPERS = SEARCH_SUPERCLASSES | SEARCH_INTERFACES;
 
+    /** Utility method to query whether this member is a method or constructor. */
     public boolean isInvocable() {
         return testAnyFlags(IS_INVOCABLE);
     }
+    /** Utility method to query whether this member is a method, constructor, or field. */
     public boolean isFieldOrMethod() {
         return testAnyFlags(IS_FIELD_OR_METHOD);
     }
+    /** Query whether this member is a method. */
     public boolean isMethod() {
         return testAllFlags(IS_METHOD);
     }
+    /** Query whether this member is a constructor. */
     public boolean isConstructor() {
         return testAllFlags(IS_CONSTRUCTOR);
     }
+    /** Query whether this member is a field. */
     public boolean isField() {
         return testAllFlags(IS_FIELD);
     }
+    /** Query whether this member is a type. */
     public boolean isType() {
         return testAllFlags(IS_TYPE);
     }
+    /** Utility method to query whether this member is neither public, private, nor protected. */
     public boolean isPackage() {
         return !testAnyFlags(ALL_ACCESS);
     }
@@ -262,8 +321,8 @@ public final class MemberName implements Member, Cloneable {
     /** Initialize a query.   It is not resolved. */
     private void init(Class<?> defClass, String name, Object type, int flags) {
         // defining class is allowed to be null (for a naked name/type pair)
-        name.toString();  // null check
-        type.equals(type);  // null check
+        //name.toString();  // null check
+        //type.equals(type);  // null check
         // fill in fields:
         this.clazz = defClass;
         this.name = name;
@@ -285,6 +344,7 @@ public final class MemberName implements Member, Cloneable {
         assert((mods & ~RECOGNIZED_MODIFIERS) == 0);
         return flags | mods;
     }
+    /** Create a name for the given reflected method.  The resulting name will be in a resolved state. */
     public MemberName(Method m) {
         Object[] typeInfo = { m.getReturnType(), m.getParameterTypes() };
         init(m.getDeclaringClass(), m.getName(), typeInfo, flagsMods(IS_METHOD, m.getModifiers()));
@@ -292,6 +352,7 @@ public final class MemberName implements Member, Cloneable {
         MethodHandleNatives.init(this, m);
         assert(isResolved());
     }
+    /** Create a name for the given reflected constructor.  The resulting name will be in a resolved state. */
     public MemberName(Constructor ctor) {
         Object[] typeInfo = { void.class, ctor.getParameterTypes() };
         init(ctor.getDeclaringClass(), CONSTRUCTOR_NAME, typeInfo, flagsMods(IS_CONSTRUCTOR, ctor.getModifiers()));
@@ -299,12 +360,14 @@ public final class MemberName implements Member, Cloneable {
         MethodHandleNatives.init(this, ctor);
         assert(isResolved());
     }
+    /** Create a name for the given reflected field.  The resulting name will be in a resolved state. */
     public MemberName(Field fld) {
         init(fld.getDeclaringClass(), fld.getName(), fld.getType(), flagsMods(IS_FIELD, fld.getModifiers()));
         // fill in vmtarget, vmindex while we have fld in hand:
         MethodHandleNatives.init(this, fld);
         assert(isResolved());
     }
+    /** Create a name for the given class.  The resulting name will be in a resolved state. */
     public MemberName(Class<?> type) {
         init(type.getDeclaringClass(), type.getSimpleName(), type, flagsMods(IS_TYPE, type.getModifiers()));
         vmindex = 0;  // isResolved
@@ -326,28 +389,62 @@ public final class MemberName implements Member, Cloneable {
     // %%% define equals/hashcode?
 
     // Construction from symbolic parts, for queries:
+    /** Create a field or type name from the given components:  Declaring class, name, type, modifiers.
+     *  The declaring class may be supplied as null if this is to be a bare name and type.
+     *  The resulting name will in an unresolved state.
+     */
     public MemberName(Class<?> defClass, String name, Class<?> type, int modifiers) {
         init(defClass, name, type, IS_FIELD | (modifiers & RECOGNIZED_MODIFIERS));
     }
+    /** Create a field or type name from the given components:  Declaring class, name, type.
+     *  The declaring class may be supplied as null if this is to be a bare name and type.
+     *  The modifier flags default to zero.
+     *  The resulting name will in an unresolved state.
+     */
     public MemberName(Class<?> defClass, String name, Class<?> type) {
         this(defClass, name, type, 0);
     }
+    /** Create a method or constructor name from the given components:  Declaring class, name, type, modifiers.
+     *  It will be a constructor if and only if the name is {@code "&lt;init&gt;"}.
+     *  The declaring class may be supplied as null if this is to be a bare name and type.
+     *  The resulting name will in an unresolved state.
+     */
     public MemberName(Class<?> defClass, String name, MethodType type, int modifiers) {
         int flagBit = (name.equals(CONSTRUCTOR_NAME) ? IS_CONSTRUCTOR : IS_METHOD);
         init(defClass, name, type, flagBit | (modifiers & RECOGNIZED_MODIFIERS));
     }
+    /** Create a method or constructor name from the given components:  Declaring class, name, type, modifiers.
+     *  It will be a constructor if and only if the name is {@code "&lt;init&gt;"}.
+     *  The declaring class may be supplied as null if this is to be a bare name and type.
+     *  The modifier flags default to zero.
+     *  The resulting name will in an unresolved state.
+     */
     public MemberName(Class<?> defClass, String name, MethodType type) {
         this(defClass, name, type, 0);
     }
 
-    boolean isResolved() {
+    /** Query whether this member name is resolved.
+     *  A resolved member name is one for which the JVM has found
+     *  a method, constructor, field, or type binding corresponding exactly to the name.
+     *  (Document?)
+     */
+    public boolean isResolved() {
         return (vmindex != VM_INDEX_UNINITIALIZED);
     }
 
+    /** Query whether this member name is resolved to a non-static, non-final method.
+     */
     public boolean hasReceiverTypeDispatch() {
         return (isMethod() && getVMIndex(Access.TOKEN) >= 0);
     }
 
+    /** Produce a string form of this member name.
+     *  For types, it is simply the type's own string (as reported by {@code toString}).
+     *  For fields, it is {@code "DeclaringClass.name/type"}.
+     *  For methods and constructors, it is {@code "DeclaringClass.name(ptype...)rtype"}.
+     *  If the declaring class is null, the prefix {@code "DeclaringClass."} is omitted.
+     *  If the member is unresolved, a prefix {@code "*."} is prepended.
+     */
     @Override
     public String toString() {
         if (isType())
@@ -360,9 +457,15 @@ public final class MemberName implements Member, Cloneable {
             buf.append(getName(clazz));
             buf.append('.');
         }
-        buf.append(getName());
-        if (!isInvocable())  buf.append('/');
-        buf.append(getName(getType()));
+        String name = getName();
+        buf.append(name == null ? "*" : name);
+        Object type = getType();
+        if (!isInvocable()) {
+            buf.append('/');
+            buf.append(type == null ? "*" : getName(type));
+        } else {
+            buf.append(type == null ? "(*)*" : getName(type));
+        }
         /*
         buf.append('/');
         // key: Public, private, pRotected, sTatic, Final, sYnchronized,
@@ -374,7 +477,7 @@ public final class MemberName implements Member, Cloneable {
         for (int i = 0; i < modChars.length(); i++) {
             if ((flags & (1 << i)) != 0) {
                 char mc = modChars.charAt(i);
-                if (mc != '.')
+                if (mc != '?')
                     buf.append(mc);
             }
         }
@@ -388,6 +491,7 @@ public final class MemberName implements Member, Cloneable {
     }
 
     // Queries to the JVM:
+    /** Document? */
     public int getVMIndex(Access token) {
         Access.check(token);
         if (!isResolved())
@@ -411,9 +515,6 @@ public final class MemberName implements Member, Cloneable {
     public static NoAccessException newNoAccessException(MemberName name, Class<?> lookupClass) {
         return newNoAccessException("cannot access", name, lookupClass);
     }
-    public static NoAccessException newNoAccessException(MemberName name, MethodHandles.Lookup lookup) {
-        return newNoAccessException(name, lookup.lookupClass());
-    }
     public static NoAccessException newNoAccessException(String message,
             MemberName name, Class<?> lookupClass) {
         message += ": " + name;
@@ -429,6 +530,9 @@ public final class MemberName implements Member, Cloneable {
     public static Factory getFactory() {
         return getFactory(Access.getToken());
     }
+    /** A factory type for resolving member names with the help of the VM.
+     *  TBD: Define access-safe public constructors for this factory.
+     */
     public static class Factory {
         private Factory() { } // singleton pattern
         static Factory INSTANCE = new Factory();
@@ -494,6 +598,21 @@ public final class MemberName implements Member, Cloneable {
             return result;
         }
         boolean resolveInPlace(MemberName m, boolean searchSupers, Class<?> lookupClass) {
+            if (m.name == null || m.type == null) {  // find unique non-overloaded name
+                Class<?> defc = m.getDeclaringClass();
+                List<MemberName> choices = null;
+                if (m.isMethod())
+                    choices = getMethods(defc, searchSupers, m.name, (MethodType) m.type, lookupClass);
+                else if (m.isConstructor())
+                    choices = getConstructors(defc, lookupClass);
+                else if (m.isField())
+                    choices = getFields(defc, searchSupers, m.name, (Class<?>) m.type, lookupClass);
+                //System.out.println("resolving "+m+" to "+choices);
+                if (choices == null || choices.size() != 1)
+                    return false;
+                if (m.name == null)  m.name = choices.get(0).name;
+                if (m.type == null)  m.type = choices.get(0).type;
+            }
             MethodHandleNatives.resolve(m, lookupClass);
             if (m.isResolved())  return true;
             int matchFlags = m.flags | (searchSupers ? SEARCH_ALL_SUPERS : 0);
@@ -504,39 +623,82 @@ public final class MemberName implements Member, Cloneable {
             if (n != 1)  return false;
             return m.isResolved();
         }
+        /** Produce a resolved version of the given member.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  If lookup fails or access is not permitted, null is returned.
+         *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
+         */
         public MemberName resolveOrNull(MemberName m, boolean searchSupers, Class<?> lookupClass) {
             MemberName result = m.clone();
             if (resolveInPlace(result, searchSupers, lookupClass))
                 return result;
             return null;
         }
+        /** Produce a resolved version of the given member.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  If lookup fails or access is not permitted, a {@linkplain NoAccessException} is thrown.
+         *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
+         */
         public MemberName resolveOrFail(MemberName m, boolean searchSupers, Class<?> lookupClass) {
             MemberName result = resolveOrNull(m, searchSupers, lookupClass);
             if (result != null)
                 return result;
             throw newNoAccessException(m, lookupClass);
         }
+        /** Return a list of all methods defined by the given class.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  Inaccessible members are not added to the last.
+         */
         public List<MemberName> getMethods(Class<?> defc, boolean searchSupers,
                 Class<?> lookupClass) {
             return getMethods(defc, searchSupers, null, null, lookupClass);
         }
+        /** Return a list of matching methods defined by the given class.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Returned methods will match the name (if not null) and the type (if not null).
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  Inaccessible members are not added to the last.
+         */
         public List<MemberName> getMethods(Class<?> defc, boolean searchSupers,
                 String name, MethodType type, Class<?> lookupClass) {
             int matchFlags = IS_METHOD | (searchSupers ? SEARCH_ALL_SUPERS : 0);
             return getMembers(defc, name, type, matchFlags, lookupClass);
         }
+        /** Return a list of all constructors defined by the given class.
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  Inaccessible members are not added to the last.
+         */
         public List<MemberName> getConstructors(Class<?> defc, Class<?> lookupClass) {
             return getMembers(defc, null, null, IS_CONSTRUCTOR, lookupClass);
         }
+        /** Return a list of all fields defined by the given class.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  Inaccessible members are not added to the last.
+         */
         public List<MemberName> getFields(Class<?> defc, boolean searchSupers,
                 Class<?> lookupClass) {
             return getFields(defc, searchSupers, null, null, lookupClass);
         }
+        /** Return a list of all fields defined by the given class.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Returned fields will match the name (if not null) and the type (if not null).
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  Inaccessible members are not added to the last.
+         */
         public List<MemberName> getFields(Class<?> defc, boolean searchSupers,
                 String name, Class<?> type, Class<?> lookupClass) {
             int matchFlags = IS_FIELD | (searchSupers ? SEARCH_ALL_SUPERS : 0);
             return getMembers(defc, name, type, matchFlags, lookupClass);
         }
+        /** Return a list of all nested types defined by the given class.
+         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
+         *  Access checking is performed on behalf of the given {@code lookupClass}.
+         *  Inaccessible members are not added to the last.
+         */
         public List<MemberName> getNestedTypes(Class<?> defc, boolean searchSupers,
                 Class<?> lookupClass) {
             int matchFlags = IS_TYPE | (searchSupers ? SEARCH_ALL_SUPERS : 0);

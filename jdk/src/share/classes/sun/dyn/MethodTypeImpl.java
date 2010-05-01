@@ -88,6 +88,11 @@ public class MethodTypeImpl {
     }
     static private MethodTypeFriend METHOD_TYPE_FRIEND;
 
+    static MethodType makeImpl(Access token, Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
+        Access.check(token);
+        return METHOD_TYPE_FRIEND.makeImpl(rtype, ptypes, trusted);
+    }
+
     protected MethodTypeImpl(MethodType erasedType) {
         this.erasedType = erasedType;
 
@@ -233,8 +238,10 @@ public class MethodTypeImpl {
             return primsAtEnd = t;
 
         // known to have a mix of 2 or 3 of ref, int, long
-        return primsAtEnd = reorderParameters(t, primsAtEndOrder(t), null);
-
+        int[] reorder = primsAtEndOrder(t);
+        ct = reorderParameters(t, reorder, null);
+        //System.out.println("t="+t+" / reorder="+java.util.Arrays.toString(reorder)+" => "+ct);
+        return primsAtEnd = ct;
     }
 
     /** Compute a new ordering of parameters so that all references
@@ -273,7 +280,8 @@ public class MethodTypeImpl {
             else if (!hasTwoArgSlots(pt))      ord = ifill++;
             else                               ord = lfill++;
             if (ord != i)  changed = true;
-            paramOrder[i] = ord;
+            assert(paramOrder[ord] == 0);
+            paramOrder[ord] = i;
         }
         assert(rfill == argc - pac && ifill == argc - lac && lfill == argc);
         if (!changed) {
@@ -292,15 +300,15 @@ public class MethodTypeImpl {
         if (newParamOrder == null)  return mt;  // no-op reordering
         Class<?>[] ptypes = METHOD_TYPE_FRIEND.ptypes(mt);
         Class<?>[] ntypes = new Class<?>[newParamOrder.length];
-        int ordMax = ptypes.length + (moreParams == null ? 0 : moreParams.length);
+        int maxParam = ptypes.length + (moreParams == null ? 0 : moreParams.length);
         boolean changed = (ntypes.length != ptypes.length);
         for (int i = 0; i < newParamOrder.length; i++) {
-            int ord = newParamOrder[i];
-            if (ord != i)  changed = true;
+            int param = newParamOrder[i];
+            if (param != i)  changed = true;
             Class<?> nt;
-            if (ord < ptypes.length)   nt = ptypes[ord];
-            else if (ord == ordMax)    nt = mt.returnType();
-            else                       nt = moreParams[ord - ptypes.length];
+            if (param < ptypes.length)   nt = ptypes[param];
+            else if (param == maxParam)  nt = mt.returnType();
+            else                         nt = moreParams[param - ptypes.length];
             ntypes[i] = nt;
         }
         if (!changed)  return mt;

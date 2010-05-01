@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public abstract class MethodHandleImpl {
 
     public static void initLookup(Access token, Lookup lookup) {
         Access.check(token);
-        if (IMPL_LOOKUP_INIT != null || lookup.lookupClass() != null)
+        if (IMPL_LOOKUP_INIT != null)
             throw new InternalError();
         IMPL_LOOKUP_INIT = lookup;
     }
@@ -177,27 +177,175 @@ public abstract class MethodHandleImpl {
         Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
         MethodType rtype = mtype;
-        if (method.isStatic()) {
-            doDispatch = false;
-        } else {
+        if (!method.isStatic()) {
             // adjust the advertised receiver type to be exactly the one requested
             // (in the case of invokespecial, this will be the calling class)
             Class<?> recvType = method.getDeclaringClass();
             mtype = mtype.insertParameterTypes(0, recvType);
-            if (method.isConstructor())
-                doDispatch = true;
             // FIXME: JVM has trouble building MH.invoke sites for
             // classes off the boot class path
             rtype = mtype;
-            if (recvType.getClassLoader() != null)
+            if (recvType.getClassLoader() != null) {
                 rtype = rtype.changeParameterType(0, Object.class);
+            }
         }
         DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
         if (!mh.isValid())
             throw newNoAccessException(method, lookupClass);
-        MethodHandle rmh = AdapterMethodHandle.makePairwiseConvert(token, rtype, mh);
-        if (rmh == null)  throw new InternalError();
-        return rmh;
+        if (rtype != mtype) {
+            MethodHandle rmh = AdapterMethodHandle.makePairwiseConvert(token, rtype, mh);
+            if (rmh == null)  throw new InternalError();
+            return rmh;
+        }
+        assert(mh.type() == rtype);
+        return mh;
+    }
+
+    public static
+    MethodHandle makeAllocator(Access token, MethodHandle rawConstructor) {
+        Access.check(token);
+        MethodType rawConType = rawConstructor.type();
+        // Wrap the raw (unsafe) constructor with the allocation of a suitable object.
+        MethodHandle allocator
+            = AllocateObject.make(token, rawConType.parameterType(0), rawConstructor);
+        assert(allocator.type()
+               .equals(rawConType.dropParameterTypes(0, 1).changeReturnType(rawConType.parameterType(0))));
+        return allocator;
+    }
+
+    static final class AllocateObject<C> extends JavaMethodHandle {
+        private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+        private final Class<C> allocateClass;
+        private final MethodHandle rawConstructor;
+
+        private AllocateObject(MethodHandle invoker,
+                               Class<C> allocateClass, MethodHandle rawConstructor) {
+            super(invoker);
+            this.allocateClass = allocateClass;
+            this.rawConstructor = rawConstructor;
+        }
+        static MethodHandle make(Access token,
+                                 Class<?> allocateClass, MethodHandle rawConstructor) {
+            Access.check(token);
+            MethodType rawConType = rawConstructor.type();
+            assert(rawConType.parameterType(0) == allocateClass);
+            MethodType newType = rawConType.dropParameterTypes(0, 1).changeReturnType(allocateClass);
+            int nargs = rawConType.parameterCount() - 1;
+            if (nargs < INVOKES.length) {
+                MethodHandle invoke = INVOKES[nargs];
+                MethodType conType = CON_TYPES[nargs];
+                MethodHandle gcon = convertArguments(token, rawConstructor, conType, rawConType, null);
+                if (gcon == null)  return null;
+                MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
+                assert(galloc.type() == newType.generic());
+                return convertArguments(token, galloc, newType, galloc.type(), null);
+            } else {
+                MethodHandle invoke = VARARGS_INVOKE;
+                MethodType conType = CON_TYPES[nargs];
+                MethodHandle gcon = spreadArguments(token, rawConstructor, conType, 1);
+                if (gcon == null)  return null;
+                MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
+                return collectArguments(token, galloc, newType, 1, null);
+            }
+        }
+        @Override
+        public String toString() {
+            return allocateClass.getSimpleName();
+        }
+        @SuppressWarnings("unchecked")
+        private C allocate() throws InstantiationException {
+            return (C) unsafe.allocateInstance(allocateClass);
+        }
+        private C invoke_V(Object... av) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, av);
+            return obj;
+        }
+        private C invoke_L0() throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj);
+            return obj;
+        }
+        private C invoke_L1(Object a0) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0);
+            return obj;
+        }
+        private C invoke_L2(Object a0, Object a1) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1);
+            return obj;
+        }
+        private C invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2);
+            return obj;
+        }
+        private C invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3);
+            return obj;
+        }
+        private C invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4);
+            return obj;
+        }
+        private C invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5);
+            return obj;
+        }
+        private C invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6);
+            return obj;
+        }
+        private C invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
+            C obj = allocate();
+            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6, a7);
+            return obj;
+        }
+        static MethodHandle[] makeInvokes() {
+            ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
+            MethodHandles.Lookup lookup = IMPL_LOOKUP;
+            for (;;) {
+                int nargs = invokes.size();
+                String name = "invoke_L"+nargs;
+                MethodHandle invoke = null;
+                try {
+                    invoke = lookup.findVirtual(AllocateObject.class, name, MethodType.genericMethodType(nargs));
+                } catch (NoAccessException ex) {
+                }
+                if (invoke == null)  break;
+                invokes.add(invoke);
+            }
+            assert(invokes.size() == 9);  // current number of methods
+            return invokes.toArray(new MethodHandle[0]);
+        };
+        static final MethodHandle[] INVOKES = makeInvokes();
+        // For testing use this:
+        //static final MethodHandle[] INVOKES = Arrays.copyOf(makeInvokes(), 2);
+        static final MethodHandle VARARGS_INVOKE;
+        static {
+            try {
+                VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "invoke_V", MethodType.genericMethodType(0, true));
+            } catch (NoAccessException ex) {
+                throw new InternalError("");
+            }
+        }
+        // Corresponding generic constructor types:
+        static final MethodType[] CON_TYPES = new MethodType[INVOKES.length];
+        static {
+            for (int i = 0; i < INVOKES.length; i++)
+                CON_TYPES[i] = makeConType(INVOKES[i]);
+        }
+        static final MethodType VARARGS_CON_TYPE = makeConType(VARARGS_INVOKE);
+        static MethodType makeConType(MethodHandle invoke) {
+            MethodType invType = invoke.type();
+            return invType.changeParameterType(0, Object.class).changeReturnType(void.class);
+        }
     }
 
     public static
@@ -469,6 +617,7 @@ public abstract class MethodHandleImpl {
                                                 MethodType oldType,
                                                 int[] permutationOrNull) {
         Access.check(token);
+        assert(oldType.parameterCount() == target.type().parameterCount());
         if (permutationOrNull != null) {
             int outargs = oldType.parameterCount(), inargs = newType.parameterCount();
             if (permutationOrNull.length != outargs)
@@ -781,69 +930,93 @@ public abstract class MethodHandleImpl {
 
     private static class GuardWithTest extends JavaMethodHandle {
         private final MethodHandle test, target, fallback;
-        public GuardWithTest(MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            this(INVOKES[target.type().parameterCount()], test, target, fallback);
-        }
-        public GuardWithTest(MethodHandle invoker,
-                             MethodHandle test, MethodHandle target, MethodHandle fallback) {
+        private GuardWithTest(MethodHandle invoker,
+                              MethodHandle test, MethodHandle target, MethodHandle fallback) {
             super(invoker);
             this.test = test;
             this.target = target;
             this.fallback = fallback;
+        }
+        static MethodHandle make(Access token,
+                                 MethodHandle test, MethodHandle target, MethodHandle fallback) {
+            Access.check(token);
+            MethodType type = target.type();
+            int nargs = type.parameterCount();
+            if (nargs < INVOKES.length) {
+                MethodHandle invoke = INVOKES[nargs];
+                MethodType gtype = type.generic();
+                assert(invoke.type().dropParameterTypes(0,1) == gtype);
+                MethodHandle gtest = convertArguments(token, test, gtype.changeReturnType(boolean.class), test.type(), null);
+                MethodHandle gtarget = convertArguments(token, target, gtype, type, null);
+                MethodHandle gfallback = convertArguments(token, fallback, gtype, type, null);
+                if (gtest == null || gtarget == null || gfallback == null)  return null;
+                MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
+                return convertArguments(token, gguard, type, gtype, null);
+            } else {
+                MethodHandle invoke = VARARGS_INVOKE;
+                MethodType gtype = MethodType.genericMethodType(1);
+                assert(invoke.type().dropParameterTypes(0,1) == gtype);
+                MethodHandle gtest = spreadArguments(token, test, gtype.changeReturnType(boolean.class), 0);
+                MethodHandle gtarget = spreadArguments(token, target, gtype, 0);
+                MethodHandle gfallback = spreadArguments(token, fallback, gtype, 0);
+                MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
+                if (gtest == null || gtarget == null || gfallback == null)  return null;
+                return collectArguments(token, gguard, type, 0, null);
+            }
         }
         @Override
         public String toString() {
             return target.toString();
         }
         private Object invoke_V(Object... av) throws Throwable {
-            if (test.<boolean>invoke(av))
-                return target.<Object>invoke(av);
-            return fallback.<Object>invoke(av);
+            if (test.<boolean>invokeExact(av))
+                return target.<Object>invokeExact(av);
+            return fallback.<Object>invokeExact(av);
         }
         private Object invoke_L0() throws Throwable {
-            if (test.<boolean>invoke())
-                return target.<Object>invoke();
-            return fallback.<Object>invoke();
+            if (test.<boolean>invokeExact())
+                return target.<Object>invokeExact();
+            return fallback.<Object>invokeExact();
         }
         private Object invoke_L1(Object a0) throws Throwable {
-            if (test.<boolean>invoke(a0))
-                return target.<Object>invoke(a0);
-            return fallback.<Object>invoke(a0);
+            if (test.<boolean>invokeExact(a0))
+                return target.<Object>invokeExact(a0);
+            return fallback.<Object>invokeExact(a0);
         }
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
-            if (test.<boolean>invoke(a0, a1))
-                return target.<Object>invoke(a0, a1);
-            return fallback.<Object>invoke(a0, a1);
+            if (test.<boolean>invokeExact(a0, a1))
+                return target.<Object>invokeExact(a0, a1);
+            return fallback.<Object>invokeExact(a0, a1);
         }
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
-            if (test.<boolean>invoke(a0, a1, a2))
-                return target.<Object>invoke(a0, a1, a2);
-            return fallback.<Object>invoke(a0, a1, a2);
+            if (test.<boolean>invokeExact(a0, a1, a2))
+                return target.<Object>invokeExact(a0, a1, a2);
+            return fallback.<Object>invokeExact(a0, a1, a2);
         }
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-            if (test.<boolean>invoke(a0, a1, a2, a3))
-                return target.<Object>invoke(a0, a1, a2, a3);
-            return fallback.<Object>invoke(a0, a1, a2, a3);
+            if (test.<boolean>invokeExact(a0, a1, a2, a3))
+                return target.<Object>invokeExact(a0, a1, a2, a3);
+            return fallback.<Object>invokeExact(a0, a1, a2, a3);
         }
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
-            if (test.<boolean>invoke(a0, a1, a2, a3, a4))
-                return target.<Object>invoke(a0, a1, a2, a3, a4);
-            return fallback.<Object>invoke(a0, a1, a2, a3, a4);
+            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4))
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4);
+            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4);
         }
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
-            if (test.<boolean>invoke(a0, a1, a2, a3, a4, a5))
-                return target.<Object>invoke(a0, a1, a2, a3, a4, a5);
-            return fallback.<Object>invoke(a0, a1, a2, a3, a4, a5);
+            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5))
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
+            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
         }
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
-            if (test.<boolean>invoke(a0, a1, a2, a3, a4, a5, a6))
-                return target.<Object>invoke(a0, a1, a2, a3, a4, a5, a6);
-            return fallback.<Object>invoke(a0, a1, a2, a3, a4, a5, a6);
+            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5, a6))
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
+            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
         }
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
-            if (test.<boolean>invoke(a0, a1, a2, a3, a4, a5, a6, a7))
-                return target.<Object>invoke(a0, a1, a2, a3, a4, a5, a6, a7);
-            return fallback.<Object>invoke(a0, a1, a2, a3, a4, a5, a6, a7);
+            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7))
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
         }
         static MethodHandle[] makeInvokes() {
             ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
@@ -880,26 +1053,7 @@ public abstract class MethodHandleImpl {
                                    MethodHandle test,
                                    MethodHandle target,
                                    MethodHandle fallback) {
-        Access.check(token);
-        MethodType type = target.type();
-        int nargs = type.parameterCount();
-        if (nargs < GuardWithTest.INVOKES.length) {
-            MethodType gtype = type.generic();
-            MethodHandle gtest = convertArguments(token, test, gtype.changeReturnType(boolean.class), test.type(), null);
-            MethodHandle gtarget = convertArguments(token, target, gtype, type, null);
-            MethodHandle gfallback = convertArguments(token, fallback, gtype, type, null);
-            if (gtest == null || gtarget == null || gfallback == null)  return null;
-            MethodHandle gguard = new GuardWithTest(gtest, gtarget, gfallback);
-            return convertArguments(token, gguard, type, gtype, null);
-        } else {
-            MethodType gtype = MethodType.genericMethodType(0, true);
-            MethodHandle gtest = spreadArguments(token, test, gtype.changeReturnType(boolean.class), 0);
-            MethodHandle gtarget = spreadArguments(token, target, gtype, 0);
-            MethodHandle gfallback = spreadArguments(token, fallback, gtype, 0);
-            MethodHandle gguard = new GuardWithTest(GuardWithTest.VARARGS_INVOKE, gtest, gtarget, gfallback);
-            if (gtest == null || gtarget == null || gfallback == null)  return null;
-            return collectArguments(token, gguard, type, 0, null);
-        }
+        return GuardWithTest.make(token, test, target, fallback);
     }
 
     private static class GuardWithCatch extends JavaMethodHandle {
@@ -922,82 +1076,82 @@ public abstract class MethodHandleImpl {
         }
         private Object invoke_V(Object... av) throws Throwable {
             try {
-                return target.<Object>invoke(av);
+                return target.<Object>invokeExact(av);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, av);
+                return catcher.<Object>invokeExact(t, av);
             }
         }
         private Object invoke_L0() throws Throwable {
             try {
-                return target.<Object>invoke();
+                return target.<Object>invokeExact();
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t);
+                return catcher.<Object>invokeExact(t);
             }
         }
         private Object invoke_L1(Object a0) throws Throwable {
             try {
-                return target.<Object>invoke(a0);
+                return target.<Object>invokeExact(a0);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0);
+                return catcher.<Object>invokeExact(t, a0);
             }
         }
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1);
+                return target.<Object>invokeExact(a0, a1);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1);
+                return catcher.<Object>invokeExact(t, a0, a1);
             }
         }
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1, a2);
+                return target.<Object>invokeExact(a0, a1, a2);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1, a2);
+                return catcher.<Object>invokeExact(t, a0, a1, a2);
             }
         }
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1, a2, a3);
+                return target.<Object>invokeExact(a0, a1, a2, a3);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1, a2, a3);
+                return catcher.<Object>invokeExact(t, a0, a1, a2, a3);
             }
         }
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1, a2, a3, a4);
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1, a2, a3, a4);
+                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4);
             }
         }
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1, a2, a3, a4, a5);
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1, a2, a3, a4, a5);
+                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5);
             }
         }
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1, a2, a3, a4, a5, a6);
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1, a2, a3, a4, a5, a6);
+                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
             }
         }
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
             try {
-                return target.<Object>invoke(a0, a1, a2, a3, a4, a5, a6, a7);
+                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invoke(t, a0, a1, a2, a3, a4, a5, a6, a7);
+                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5, a6, a7);
             }
         }
         static MethodHandle[] makeInvokes() {
@@ -1105,5 +1259,15 @@ public abstract class MethodHandleImpl {
         default:
             throw new InternalError("unexpected code "+code+": "+message);
         }
+    }
+
+    // Linkage support:
+    public static void registerBootstrap(Access token, Class<?> callerClass, MethodHandle bootstrapMethod) {
+        Access.check(token);
+        MethodHandleNatives.registerBootstrap(callerClass, bootstrapMethod);
+    }
+    public static MethodHandle getBootstrap(Access token, Class<?> callerClass) {
+        Access.check(token);
+        return MethodHandleNatives.getBootstrap(callerClass);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,32 @@
 
 package java.dyn;
 
-import sun.dyn.util.BytecodeName;
 import sun.dyn.Access;
+import sun.dyn.MemberName;
 import sun.dyn.CallSiteImpl;
-import sun.dyn.MethodHandleImpl;
 
 /**
- * An {@code invokedynamic} call site, as reified by the
- * containing class's bootstrap method.
- * Every call site object corresponds to a distinct instance
- * of the <code>invokedynamic</code> instruction, and vice versa.
- * Every call site has one state variable, called the {@code target}.
- * It is typed as a {@link MethodHandle}.  This state is never null, and
- * it is the responsibility of the bootstrap method to produce call sites
- * which have been pre-linked to an initial target method.
+ * A {@code CallSite} reifies an {@code invokedynamic} instruction from bytecode,
+ * and controls its linkage.
+ * Every linked {@code CallSite} object corresponds to a distinct instance
+ * of the {@code invokedynamic} instruction, and vice versa.
  * <p>
- * (Note:  The bootstrap method may elect to produce call sites of a
+ * Every linked {@code CallSite} object has one state variable,
+ * a {@link MethodHandle} reference called the {@code target}.
+ * This reference is never null.  Though it can change its value
+ * successive values must always have exactly the {@link MethodType method type}
+ * called for by the bytecodes of the associated {@code invokedynamic} instruction
+ * <p>
+ * It is the responsibility of each class's
+ * {@link Linkage#registerBootstrapMethod(Class, MethodHandle) bootstrap method}
+ * to produce call sites which have been pre-linked to an initial target method.
+ * The required {@link MethodType type} for the target method is a parameter
+ * to each bootstrap method call.
+ * <p>
+ * The bootstrap method may elect to produce call sites of a
  * language-specific subclass of {@code CallSite}.  In such a case,
  * the subclass may claim responsibility for initializing its target to
- * a non-null value, by overriding {@link #initialTarget}.)
+ * a non-null value, by overriding {@link #initialTarget}.
  * <p>
  * An {@code invokedynamic} instruction which has not yet been executed
  * is said to be <em>unlinked</em>.  When an unlinked call site is executed,
@@ -52,54 +59,139 @@ import sun.dyn.MethodHandleImpl;
  * value to the new call site's target variable, the method {@link #initialTarget}
  * is called to produce the new call site's first target method.
  * <p>
+ * A freshly-created {@code CallSite} object is not yet in a linked state.
+ * An unlinked {@code CallSite} object reports null for its {@code callerClass}.
+ * When the JVM receives a {@code CallSite} object from a bootstrap method,
+ * it first ensures that its target is non-null and of the correct type.
+ * The JVM then links the {@code CallSite} object to the call site instruction,
+ * enabling the {@code callerClass} to return the class in which the instruction occurs.
+ * <p>
+ * Next, the JVM links the instruction to the {@code CallSite}, at which point
+ * any further execution of the {@code invokedynamic} instruction implicitly
+ * invokes the current target of the {@code CallSite} object.
+ * After this two-way linkage, both the instruction and the {@code CallSite}
+ * object are said to be linked.
+ * <p>
+ * This state of linkage continues until the method containing the
+ * dynamic call site is garbage collected, or the dynamic call site
+ * is invalidated by an explicit request.
+ * <p>
+ * Linkage happens once in the lifetime of any given {@code CallSite} object.
+ * Because of call site invalidation, this linkage can be repeated for
+ * a single {@code invokedynamic} instruction, with multiple {@code CallSite} objects.
+ * When a {@code CallSite} is unlinked from an {@code invokedynamic} instruction,
+ * the instruction is reset so that it is no longer associated with
+ * the {@code CallSite} object, but the {@code CallSite} does not change
+ * state.
+ * <p>
+ * Here is a sample use of call sites and bootstrap methods which links every
+ * dynamic call site to print its arguments:
+<blockquote><pre><!-- see indy-demo/src/PrintArgsDemo.java -->
+private static void printArgs(Object... args) {
+  System.out.println(java.util.Arrays.deepToString(args));
+}
+private static final MethodHandle printArgs;
+static {
+  MethodHandles.Lookup lookup = MethodHandles.lookup();
+  Class thisClass = lookup.lookupClass();  // (who am I?)
+  printArgs = lookup.findStatic(thisClass,
+      "printArgs", MethodType.methodType(void.class, Object[].class));
+  Linkage.registerBootstrapMethod("bootstrapDynamic");
+}
+private static CallSite bootstrapDynamic(Class caller, String name, MethodType type) {
+  // ignore caller and name, but match the type:
+  return new CallSite(MethodHandles.collectArguments(printArgs, type));
+}
+</pre></blockquote>
  * @see Linkage#registerBootstrapMethod(java.lang.Class, java.dyn.MethodHandle)
  * @author John Rose, JSR 292 EG
  */
 public class CallSite
-        // Note: This is an implementation inheritance hack, and will be removed
-        // with a JVM change which moves the required hidden state onto this class.
-        extends CallSiteImpl
 {
     private static final Access IMPL_TOKEN = Access.getToken();
 
-    /*
-
     // Fields used only by the JVM.  Do not use or change.
-    private Object vmmethod;
-    int callerMID, callerBCI;  // supplied by the JVM
+    private MemberName vmmethod; // supplied by the JVM (ref. to calling method)
+    private int        vmindex;  // supplied by the JVM (BCI within calling method)
 
+    // The actual payload of this call site:
     private MethodHandle target;
 
-    final Object caller;  // usually a class
-    final String name;
-    final MethodType type;
-    */
+    // Remove this field for PFD and delete deprecated methods:
+    private MemberName calleeNameRemoveForPFD;
 
     /**
-     * Make a call site given the parameters from a call to the bootstrap method.
-     * The resulting call site is in an unlinked state, which means that before
-     * it is returned from a bootstrap method call it must be provided with
-     * a target method via a call to {@link CallSite#setTarget}.
-     * @param caller the class in which the relevant {@code invokedynamic} instruction occurs
-     * @param name the name specified by the {@code invokedynamic} instruction
-     * @param type the method handle type derived from descriptor of the {@code invokedynamic} instruction
+     * Make a blank call site object.
+     * Before it is returned from a bootstrap method, this {@code CallSite} object
+     * must be provided with
+     * a target method via a call to {@link CallSite#setTarget(MethodHandle) setTarget},
+     * or by a subclass override of {@link CallSite#initialTarget(Class,String,MethodType) initialTarget}.
      */
-    public CallSite(Object caller, String name, MethodType type) {
-        super(IMPL_TOKEN, caller, name, type);
+    public CallSite() {
     }
 
-    private static void privateInitializeCallSite(CallSite site, int callerMID, int callerBCI) {
-        site.callerMID = callerMID;
-        site.callerBCI = callerBCI;
-        site.ensureTarget();
+    /**
+     * Make a blank call site object, possibly equipped with an initial target method handle.
+     * The initial target reference may be null, in which case the {@code CallSite} object
+     * must be provided with a target method via a call to {@link CallSite#setTarget},
+     * or by a subclass override of {@link CallSite#initialTarget}.
+     * @param target the method handle which will be the initial target of the call site, or null if there is none yet
+     */
+    public CallSite(MethodHandle target) {
+        this.target = target;
     }
-    private void ensureTarget() {
-        // Note use of super, which accesses the field directly,
-        // without deferring to possible subclass overrides.
-        if (super.getTarget() == null) {
-            super.setTarget(this.initialTarget());
-            super.getTarget().type();  // provoke NPE if still null
+
+    /** @deprecated transitional form defined in EDR but removed in PFD */
+    public CallSite(Class<?> caller, String name, MethodType type) {
+        this.calleeNameRemoveForPFD = new MemberName(caller, name, type);
+    }
+    /** @deprecated transitional form defined in EDR but removed in PFD */
+    public Class<?> callerClass() {
+        MemberName callee = this.calleeNameRemoveForPFD;
+        return callee == null ? null : callee.getDeclaringClass();
+    }
+    /** @deprecated transitional form defined in EDR but removed in PFD */
+    public String name() {
+        MemberName callee = this.calleeNameRemoveForPFD;
+        return callee == null ? null : callee.getName();
+    }
+    /** @deprecated transitional form defined in EDR but removed in PFD */
+    public MethodType type() {
+        MemberName callee = this.calleeNameRemoveForPFD;
+        return callee == null ? (target == null ? null : target.type()) : callee.getMethodType();
+    }
+    /** @deprecated transitional form defined in EDR but removed in PFD */
+    protected MethodHandle initialTarget() {
+        return initialTarget(callerClass(), name(), type());
+    }
+
+    /** Report if the JVM has linked this {@code CallSite} object to a dynamic call site instruction.
+     *  Once it is linked, it is never unlinked.
+     */
+    private boolean isLinked() {
+        return vmmethod != null;
+    }
+
+    /** Called from JVM (or low-level Java code) after the BSM returns the newly created CallSite.
+     *  The parameters are JVM-specific.
+     */
+    void initializeFromJVM(String name,
+                           MethodType type,
+                           MemberName callerMethod,
+                           int        callerBCI) {
+        if (this.isLinked()) {
+            throw new InvokeDynamicBootstrapError("call site has already been linked to an invokedynamic instruction");
         }
+        MethodHandle target = this.target;
+        if (target == null) {
+            this.target = target = this.initialTarget(callerMethod.getDeclaringClass(), name, type);
+        }
+        if (!target.type().equals(type)) {
+            throw wrongTargetType(target, type);
+        }
+        this.vmindex  = callerBCI;
+        this.vmmethod = callerMethod;
+        assert(this.isLinked());
     }
 
     /**
@@ -108,14 +200,18 @@ public class CallSite
      * the method {@code initialTarget} is called to produce an initial
      * non-null target.  (Live call sites must never have null targets.)
      * <p>
+     * The arguments are the same as those passed to the bootstrap method.
+     * Thus, a bootstrap method is free to ignore the arguments and simply
+     * create a "blank" {@code CallSite} object of an appropriate subclass.
+     * <p>
      * If the bootstrap method itself does not initialize the call site,
      * this method must be overridden, because it just raises an
      * {@code InvokeDynamicBootstrapError}, which in turn causes the
      * linkage of the {@code invokedynamic} instruction to terminate
      * abnormally.
      */
-    protected MethodHandle initialTarget() {
-        throw new InvokeDynamicBootstrapError("target must be initialized before call site is linked: "+this);
+    protected MethodHandle initialTarget(Class<?> callerClass, String name, MethodType type) {
+        throw new InvokeDynamicBootstrapError("target must be initialized before call site is linked: "+name+type);
     }
 
     /**
@@ -137,11 +233,11 @@ public class CallSite
      * @see #setTarget
      */
     public MethodHandle getTarget() {
-        return super.getTarget();
+        return target;
     }
 
     /**
-     * Link or relink the call site, by setting its target method.
+     * Set the target method of this call site.
      * <p>
      * The interactions of {@code setTarget} with memory are the same
      * as of a write to an ordinary variable, such as an array element or a
@@ -152,96 +248,46 @@ public class CallSite
      * Stronger guarantees can be created by putting appropriate operations
      * into the bootstrap method and/or the target methods used
      * at any given call site.
-     * @param target the new target, or null if it is to be unlinked
+     * @param newTarget the new target
      * @throws NullPointerException if the proposed new target is null
-     * @throws WrongMethodTypeException if the proposed new target
-     *         has a method type that differs from the call site's {@link #type()}
+     * @throws WrongMethodTypeException if the call site is linked and the proposed new target
+     *         has a method type that differs from the previous target
      */
-    public void setTarget(MethodHandle target) {
-        checkTarget(target);
-        super.setTarget(target);
+    public void setTarget(MethodHandle newTarget) {
+        MethodType newType = newTarget.type();  // null check!
+        MethodHandle oldTarget = this.target;
+        if (oldTarget == null) {
+            // CallSite is not yet linked.
+            assert(!isLinked());
+            this.target = newTarget;  // might be null!
+            return;
+        }
+        MethodType oldType = oldTarget.type();
+        if (!newTarget.type().equals(oldType))
+            throw wrongTargetType(newTarget, oldType);
+        if (oldTarget != newTarget)
+            CallSiteImpl.setCallSiteTarget(IMPL_TOKEN, this, newTarget);
     }
 
-    protected void checkTarget(MethodHandle target) {
-        target.type();  // provoke NPE
-        if (!canSetTarget(target))
-            throw new WrongMethodTypeException(String.valueOf(target)+target.type()+" should be of type "+type());
+    private static WrongMethodTypeException wrongTargetType(MethodHandle target, MethodType type) {
+        return new WrongMethodTypeException(String.valueOf(target)+target.type()+" should be of type "+type);
     }
 
-    protected boolean canSetTarget(MethodHandle target) {
-        return (target != null && target.type() == type());
-    }
-
-    /**
-     * Report the class containing the call site.
-     * This is an immutable property of the call site, set from the first argument to the constructor.
-     * @return class containing the call site
+    /** Produce a printed representation that displays information about this call site
+     *  that may be useful to the human reader.
      */
-    public Class<?> callerClass() {
-        return (Class) caller;
-    }
-
-    /**
-     * Report the method name specified in the {@code invokedynamic} instruction.
-     * This is an immutable property of the call site, set from the second argument to the constructor.
-     * <p>
-     * Note that the name is a JVM bytecode name, and as such can be any
-     * non-empty string, as long as it does not contain certain "dangerous"
-     * characters such as slash {@code '/'} and dot {@code '.'}.
-     * See the Java Virtual Machine specification for more details.
-     * <p>
-     * Application such as a language runtimes may need to encode
-     * arbitrary program element names and other configuration information
-     * into the name.  A standard convention for doing this is
-     * <a href="http://blogs.sun.com/jrose/entry/symbolic_freedom_in_the_vm">specified here</a>.
-     * @return method name specified by the call site
-     */
-    public String name() {
-        return name;
-    }
-
-    /**
-     * Report the method name specified in the {@code invokedynamic} instruction,
-     * as a series of components, individually demangled according to
-     * the standard convention
-     * <a href="http://blogs.sun.com/jrose/entry/symbolic_freedom_in_the_vm">specified here</a>.
-     * <p>
-     * Non-empty runs of characters between dangerous characters are demangled.
-     * Each component is either a completely arbitrary demangled string,
-     * or else a character constant for a punctuation character, typically ':'.
-     * (In principle, the character can be any dangerous character that the
-     * JVM lets through in a method name, such as '$' or ']'.
-     * Runtime implementors are encouraged to use colon ':' for building
-     * structured names.)
-     * <p>
-     * In the common case where the name contains no dangerous characters,
-     * the result is an array whose only element array is the demangled
-     * name at the call site.  Such a demangled name can be any sequence
-     * of any number of any unicode characters.
-     * @return method name components specified by the call site
-     */
-    public Object[] nameComponents() {
-        return BytecodeName.parseBytecodeName(name);
-    }
-
-    /**
-     * Report the resolved result and parameter types of this call site,
-     * which are derived from its bytecode-level invocation descriptor.
-     * The types are packaged into a {@link MethodType}.
-     * Any linked target of this call site must be exactly this method type.
-     * This is an immutable property of the call site, set from the third argument to the constructor.
-     * @return method type specified by the call site
-     */
-    public MethodType type() {
-        return type;
-    }
-
     @Override
     public String toString() {
-        return "CallSite#"+hashCode()+"["+name+type+" => "+getTarget()+"]";
+        StringBuilder buf = new StringBuilder("CallSite#");
+        buf.append(hashCode());
+        if (!isLinked())
+            buf.append("[unlinked]");
+        else
+            buf.append("[")
+                .append("from ").append(vmmethod.getDeclaringClass().getName())
+                .append(" : ").append(getTarget().type())
+                .append(" => ").append(getTarget())
+                .append("]");
+        return buf.toString();
     }
-
-    // Package-local constant:
-    static final MethodHandle GET_TARGET = MethodHandleImpl.getLookup(IMPL_TOKEN).
-            findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
 }
