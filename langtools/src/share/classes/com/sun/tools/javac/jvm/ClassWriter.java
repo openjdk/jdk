@@ -651,6 +651,13 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
+        if ((flags & POLYMORPHIC_SIGNATURE) != 0) {
+            if (target.majorVersion < 51)
+                throw new AssertionError("PolymorphicSignature attributes in java/dyn must be written with -target 7 (required major version is 51, current is"+target.majorVersion+")");
+            int alenIdx = writeAttr(names.PolymorphicSignature);
+            endAttr(alenIdx);
+            acount++;
+        }
         return acount;
     }
 

@@ -168,6 +168,10 @@ public enum Source {
     public boolean allowStringsInSwitch() {
         return compareTo(JDK1_7) >= 0;
     }
+    // JSR 292: recognize @PolymorphicSignature on java/dyn names
+    public boolean allowPolymorphicSignature() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:

@@ -48,28 +48,56 @@ public class InvokeMH {
     void test(MethodHandle mh_SiO,
               MethodHandle mh_vS,
               MethodHandle mh_vi,
-              MethodHandle mh_vv) {
+              MethodHandle mh_vv) throws Throwable {
         Object o; String s; int i;  // for return type testing
 
         // next five must have sig = (String,int)Object
-        mh_SiO.invoke("world", 123);
-        mh_SiO.invoke("mundus", 456);
+        mh_SiO.invokeExact("world", 123);
+        mh_SiO.invokeExact("mundus", 456);
         Object k = "kosmos";
-        mh_SiO.invoke((String)k, 789);
-        o = mh_SiO.invoke((String)null, 000);
-        o = mh_SiO.<Object>invoke("arda", -123);
+        mh_SiO.invokeExact((String)k, 789);
+        o = mh_SiO.invokeExact((String)null, 000);
+        o = mh_SiO.<Object>invokeExact("arda", -123);
 
         // sig = ()String
-        s = mh_vS.<String>invoke();
+        s = mh_vS.<String>invokeExact();
 
         // sig = ()int
-        i = mh_vi.<int>invoke();
-        o = mh_vi.<int>invoke();
-        //s = mh_vi.<int>invoke(); //BAD
-        mh_vi.<int>invoke();
+        i = mh_vi.<int>invokeExact();
+        o = mh_vi.<int>invokeExact();
+        //s = mh_vi.<int>invokeExact(); //BAD
+        mh_vi.<int>invokeExact();
 
         // sig = ()void
-        //o = mh_vv.<void>invoke(); //BAD
-        mh_vv.<void>invoke();
+        //o = mh_vv.<void>invokeExact(); //BAD
+        mh_vv.<void>invokeExact();
+    }
+
+    void testGen(MethodHandle mh_SiO,
+                 MethodHandle mh_vS,
+                 MethodHandle mh_vi,
+                 MethodHandle mh_vv) throws Throwable {
+        Object o; String s; int i;  // for return type testing
+
+        // next five must have sig = (*,*)*
+        mh_SiO.invokeGeneric((Object)"world", (Object)123);
+        mh_SiO.<void>invokeGeneric((Object)"mundus", (Object)456);
+        Object k = "kosmos";
+        mh_SiO.invokeGeneric(k, 789);
+        o = mh_SiO.invokeGeneric(null, 000);
+        o = mh_SiO.<Object>invokeGeneric("arda", -123);
+
+        // sig = ()String
+        o = mh_vS.invokeGeneric();
+
+        // sig = ()int
+        i = mh_vi.<int>invokeGeneric();
+        o = mh_vi.invokeGeneric();
+        //s = mh_vi.<int>invokeGeneric(); //BAD
+        mh_vi.<void>invokeGeneric();
+
+        // sig = ()void
+        //o = mh_vv.<void>invokeGeneric(); //BAD
+        o = mh_vv.invokeGeneric();
     }
 }
