@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ final class CardImpl extends Card {
             SCardEndTransaction(cardId, SCARD_LEAVE_CARD);
         } catch (PCSCException e) {
             handleError(e);
-            throw new CardException("beginExclusive() failed", e);
+            throw new CardException("endExclusive() failed", e);
         } finally {
             exclusiveThread = null;
         }

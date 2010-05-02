@@ -195,11 +195,11 @@ public class JavacParser implements Parser {
      *     mode = NOPARAMS    : no parameters allowed for type
      *     mode = TYPEARG     : type argument
      */
-    static final int EXPR = 1;
-    static final int TYPE = 2;
-    static final int NOPARAMS = 4;
-    static final int TYPEARG = 8;
-    static final int DIAMOND = 16;
+    static final int EXPR = 0x1;
+    static final int TYPE = 0x2;
+    static final int NOPARAMS = 0x4;
+    static final int TYPEARG = 0x8;
+    static final int DIAMOND = 0x10;
 
     /** The current mode.
      */
@@ -3151,12 +3151,6 @@ public class JavacParser implements Parser {
         }
     }
 
-    void checkDiamond() {
-        if (!allowDiamond) {
-            log.error(S.pos(), "diamond.not.supported.in.source", source.name);
-            allowDiamond = true;
-        }
-    }
     void checkGenerics() {
         if (!allowGenerics) {
             log.error(S.pos(), "generics.not.supported.in.source", source.name);
@@ -3191,6 +3185,12 @@ public class JavacParser implements Parser {
         if (!allowTypeAnnotations) {
             log.error(S.pos(), "type.annotations.not.supported.in.source", source.name);
             allowTypeAnnotations = true;
+        }
+    }
+    void checkDiamond() {
+        if (!allowDiamond) {
+            log.error(S.pos(), "diamond.not.supported.in.source", source.name);
+            allowDiamond = true;
         }
     }
 }
