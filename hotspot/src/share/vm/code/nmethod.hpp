@@ -154,6 +154,9 @@ class nmethod : public CodeBlob {
   // All deoptee's at a MethodHandle call site will resume execution
   // at this location described by this offset.
   int _deoptimize_mh_offset;
+  // Offset of the unwind handler if it exists
+  int _unwind_handler_offset;
+
 #ifdef HAVE_DTRACE_H
   int _trap_offset;
 #endif // def HAVE_DTRACE_H
@@ -341,6 +344,7 @@ class nmethod : public CodeBlob {
   address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
   address deopt_handler_begin   () const          { return           header_begin() + _deoptimize_offset    ; }
   address deopt_mh_handler_begin() const          { return           header_begin() + _deoptimize_mh_offset ; }
+  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
   address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
   address stub_end              () const          { return           header_begin() + _consts_offset        ; }
   address consts_begin          () const          { return           header_begin() + _consts_offset        ; }
