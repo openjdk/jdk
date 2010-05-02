@@ -179,13 +179,6 @@ private:
 
   OtherRegionsTable _other_regions;
 
-  // One set bit for every region that has an entry for this one.
-  BitMap _outgoing_region_map;
-
-  // Clear entries for the current region in any rem sets named in
-  // the _outgoing_region_map.
-  void clear_outgoing_entries();
-
   enum ParIterState { Unclaimed, Claimed, Complete };
   volatile ParIterState _iter_state;
   volatile jlong _iter_claimed;
@@ -242,10 +235,6 @@ public:
   void add_reference(OopOrNarrowOopStar from, int tid) {
     _other_regions.add_reference(from, tid);
   }
-
-  // Records the fact that the current region contains an outgoing
-  // reference into "to_hr".
-  void add_outgoing_reference(HeapRegion* to_hr);
 
   // Removes any entries shown by the given bitmaps to contain only dead
   // objects.

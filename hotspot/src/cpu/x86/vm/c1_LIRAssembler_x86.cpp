@@ -455,6 +455,60 @@ int LIR_Assembler::emit_exception_handler() {
 }
 
 
+// Emit the code to remove the frame from the stack in the exception
+// unwind path.
+int LIR_Assembler::emit_unwind_handler() {
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    _masm->block_comment("Unwind handler");
+  }
+#endif
+
+  int offset = code_offset();
+
+  // Fetch the exception from TLS and clear out exception related thread state
+  __ get_thread(rsi);
+  __ movptr(rax, Address(rsi, JavaThread::exception_oop_offset()));
+  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+
+  __ bind(_unwind_handler_entry);
+  __ verify_not_null_oop(rax);
+  if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
+    __ mov(rsi, rax);  // Preserve the exception
+  }
+
+  // Preform needed unlocking
+  MonitorExitStub* stub = NULL;
+  if (method()->is_synchronized()) {
+    monitor_address(0, FrameMap::rax_opr);
+    stub = new MonitorExitStub(FrameMap::rax_opr, true, 0);
+    __ unlock_object(rdi, rbx, rax, *stub->entry());
+    __ bind(*stub->continuation());
+  }
+
+  if (compilation()->env()->dtrace_method_probes()) {
+    __ movoop(Address(rsp, 0), method()->constant_encoding());
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit)));
+  }
+
+  if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
+    __ mov(rax, rsi);  // Restore the exception
+  }
+
+  // remove the activation and dispatch to the unwind handler
+  __ remove_frame(initial_frame_size_in_bytes());
+  __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+
+  // Emit the slow path assembly
+  if (stub != NULL) {
+    stub->emit_code(this);
+  }
+
+  return offset;
+}
+
+
 int LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
@@ -1190,8 +1244,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       break;
 #endif // _L64
     case T_INT:
-      // %%% could this be a movl? this is safer but longer instruction
-      __ movl2ptr(dest->as_register(), from_addr);
+      __ movl(dest->as_register(), from_addr);
       break;
 
     case T_LONG: {
@@ -1249,7 +1302,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
         __ shll(dest_reg, 24);
         __ sarl(dest_reg, 24);
       }
-      // These are unsigned so the zero extension on 64bit is just what we need
       break;
     }
 
@@ -1261,8 +1313,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       } else {
         __ movw(dest_reg, from_addr);
       }
-      // This is unsigned so the zero extension on 64bit is just what we need
-      // __ movl2ptr(dest_reg, dest_reg);
       break;
     }
 
@@ -1275,8 +1325,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
         __ shll(dest_reg, 16);
         __ sarl(dest_reg, 16);
       }
-      // Might not be needed in 64bit but certainly doesn't hurt (except for code size)
-      __ movl2ptr(dest_reg, dest_reg);
       break;
     }
 
@@ -2795,39 +2843,40 @@ void LIR_Assembler::emit_static_call_stub() {
 }
 
 
-void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info, bool unwind) {
+void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info) {
   assert(exceptionOop->as_register() == rax, "must match");
-  assert(unwind || exceptionPC->as_register() == rdx, "must match");
+  assert(exceptionPC->as_register() == rdx, "must match");
 
   // exception object is not added to oop map by LinearScan
   // (LinearScan assumes that no oops are in fixed registers)
   info->add_register_oop(exceptionOop);
   Runtime1::StubID unwind_id;
 
-  if (!unwind) {
-    // get current pc information
-    // pc is only needed if the method has an exception handler, the unwind code does not need it.
-    int pc_for_athrow_offset = __ offset();
-    InternalAddress pc_for_athrow(__ pc());
-    __ lea(exceptionPC->as_register(), pc_for_athrow);
-    add_call_info(pc_for_athrow_offset, info); // for exception handler
+  // get current pc information
+  // pc is only needed if the method has an exception handler, the unwind code does not need it.
+  int pc_for_athrow_offset = __ offset();
+  InternalAddress pc_for_athrow(__ pc());
+  __ lea(exceptionPC->as_register(), pc_for_athrow);
+  add_call_info(pc_for_athrow_offset, info); // for exception handler
 
-    __ verify_not_null_oop(rax);
-    // search an exception handler (rax: exception oop, rdx: throwing pc)
-    if (compilation()->has_fpu_code()) {
-      unwind_id = Runtime1::handle_exception_id;
-    } else {
-      unwind_id = Runtime1::handle_exception_nofpu_id;
-    }
-    __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
+  __ verify_not_null_oop(rax);
+  // search an exception handler (rax: exception oop, rdx: throwing pc)
+  if (compilation()->has_fpu_code()) {
+    unwind_id = Runtime1::handle_exception_id;
   } else {
-    // remove the activation
-    __ remove_frame(initial_frame_size_in_bytes());
-    __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+    unwind_id = Runtime1::handle_exception_nofpu_id;
   }
+  __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
   // enough room for two byte trap
   __ nop();
+}
+
+
+void LIR_Assembler::unwind_op(LIR_Opr exceptionOop) {
+  assert(exceptionOop->as_register() == rax, "must match");
+
+  __ jmp(_unwind_handler_entry);
 }
 
 

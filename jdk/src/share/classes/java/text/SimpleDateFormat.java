@@ -1235,6 +1235,20 @@ public class SimpleDateFormat extends DateFormat {
      * changed, the error index of <code>pos</code> is set to the index of
      * the character where the error occurred, and null is returned.
      *
+     * <p>This parsing operation uses the {@link DateFormat#calendar
+     * calendar} to produce a {@code Date}. All of the {@code
+     * calendar}'s date-time fields are {@linkplain Calendar#clear()
+     * cleared} before parsing, and the {@code calendar}'s default
+     * values of the date-time fields are used for any missing
+     * date-time information. For example, the year value of the
+     * parsed {@code Date} is 1970 with {@link GregorianCalendar} if
+     * no year value is given from the parsing operation.  The {@code
+     * TimeZone} value may be overwritten, depending on the given
+     * pattern and the time zone value in {@code text}. Any {@code
+     * TimeZone} value that has previously been set by a call to
+     * {@link #setTimeZone(java.util.TimeZone) setTimeZone} may need
+     * to be restored for further operations.
+     *
      * @param text  A <code>String</code>, part of which should be parsed.
      * @param pos   A <code>ParsePosition</code> object with index and error
      *              index information as described above.

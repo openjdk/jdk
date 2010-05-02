@@ -225,6 +225,13 @@ public abstract class Symbol implements Element {
             (owner.kind == TYP && owner.isLocal());
     }
 
+    /** Has this symbol an empty name? This includes anonymous
+     *  inner classses.
+     */
+    public boolean isAnonymous() {
+        return name.isEmpty();
+    }
+
     /** Is this symbol a constructor?
      */
     public boolean isConstructor() {
