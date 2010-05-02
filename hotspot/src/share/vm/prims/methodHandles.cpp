@@ -475,16 +475,25 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   if (name.is_null())  return;  // no such name
   name_str = NULL;  // safety
 
+  Handle polymorphic_method_type;
+  bool polymorphic_signature = false;
+  if ((flags & ALL_KINDS) == IS_METHOD &&
+      (defc() == SystemDictionary::InvokeDynamic_klass() ||
+       (defc() == SystemDictionary::MethodHandle_klass() &&
+        methodOopDesc::is_method_handle_invoke_name(name()))))
+    polymorphic_signature = true;
+
   // convert the external string or reflective type to an internal signature
-  bool force_signature = methodOopDesc::is_method_handle_invoke_name(name());
   symbolHandle type; {
     symbolOop type_sym = NULL;
     if (java_dyn_MethodType::is_instance(type_str)) {
-      type_sym = java_dyn_MethodType::as_signature(type_str, force_signature, CHECK);
+      type_sym = java_dyn_MethodType::as_signature(type_str, polymorphic_signature, CHECK);
+      if (polymorphic_signature)
+        polymorphic_method_type = Handle(THREAD, type_str);  //preserve exactly
     } else if (java_lang_Class::is_instance(type_str)) {
-      type_sym = java_lang_Class::as_signature(type_str, force_signature, CHECK);
+      type_sym = java_lang_Class::as_signature(type_str, false, CHECK);
     } else if (java_lang_String::is_instance(type_str)) {
-      if (force_signature) {
+      if (polymorphic_signature) {
         type     = java_lang_String::as_symbol(type_str, CHECK);
       } else {
         type_sym = java_lang_String::as_symbol_or_null(type_str);
@@ -517,7 +526,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         }
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION;
-          return;
+          break;  // go to second chance
         }
       }
       methodHandle m = result.resolved_method();
@@ -591,8 +600,42 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
       sun_dyn_MemberName::set_modifiers(mname(), mods);
       return;
     }
+  default:
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "unrecognized MemberName format");
   }
-  THROW_MSG(vmSymbols::java_lang_InternalError(), "unrecognized MemberName format");
+
+  // Second chance.
+  if (polymorphic_method_type.not_null()) {
+    // Look on a non-null class loader.
+    Handle cur_class_loader;
+    const int nptypes = java_dyn_MethodType::ptype_count(polymorphic_method_type());
+    for (int i = 0; i <= nptypes; i++) {
+      oop type_mirror;
+      if (i < nptypes)  type_mirror = java_dyn_MethodType::ptype(polymorphic_method_type(), i);
+      else              type_mirror = java_dyn_MethodType::rtype(polymorphic_method_type());
+      klassOop example_type = java_lang_Class::as_klassOop(type_mirror);
+      if (example_type == NULL)  continue;
+      oop class_loader = Klass::cast(example_type)->class_loader();
+      if (class_loader == NULL || class_loader == cur_class_loader())  continue;
+      cur_class_loader = Handle(THREAD, class_loader);
+      methodOop m = SystemDictionary::find_method_handle_invoke(name,
+                                                                type,
+                                                                KlassHandle(THREAD, example_type),
+                                                                THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+        m = NULL;
+        // try again with a different class loader...
+      }
+      if (m != NULL) {
+        int mods = (m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS);
+        sun_dyn_MemberName::set_vmtarget(mname(),  m);
+        sun_dyn_MemberName::set_vmindex(mname(),   m->vtable_index());
+        sun_dyn_MemberName::set_modifiers(mname(), mods);
+        return;
+      }
+    }
+  }
 }
 
 // Conversely, a member name which is only initialized from JVM internals
@@ -993,6 +1036,13 @@ void MethodHandles::verify_method_signature(methodHandle m,
       pnum += 1;
       mnum += 1;
     }
+    klassOop  pklass = NULL;
+    BasicType ptype  = T_OBJECT;
+    if (ptype_oop != NULL)
+      ptype = java_lang_Class::as_BasicType(ptype_oop, &pklass);
+    else
+      // null does not match any non-reference; use Object to report the error
+      pklass = SystemDictionary::Object_klass();
     klassOop  mklass = NULL;
     BasicType mtype  = ss.type();
     if (mtype == T_ARRAY)  mtype = T_OBJECT; // fold all refs to T_OBJECT
@@ -1001,21 +1051,22 @@ void MethodHandles::verify_method_signature(methodHandle m,
         // null matches any reference
         continue;
       }
+      KlassHandle pklass_handle(THREAD, pklass); pklass = NULL;
       // If we fail to resolve types at this point, we will throw an error.
       symbolOop    name_oop = ss.as_symbol(CHECK);
       symbolHandle name(THREAD, name_oop);
       instanceKlass* mk = instanceKlass::cast(m->method_holder());
       Handle loader(THREAD, mk->class_loader());
       Handle domain(THREAD, mk->protection_domain());
-      mklass = SystemDictionary::resolve_or_fail(name, loader, domain,
-                                                 true, CHECK);
+      mklass = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
+      pklass = pklass_handle();
+      if (mklass == NULL && pklass != NULL &&
+          Klass::cast(pklass)->name() == name() &&
+          m->is_method_handle_invoke()) {
+        // Assume a match.  We can't really decode the signature of MH.invoke*.
+        continue;
+      }
     }
-    if (ptype_oop == NULL) {
-      // null does not match any non-reference; use Object to report the error
-      ptype_oop = object_java_mirror();
-    }
-    klassOop  pklass = NULL;
-    BasicType ptype  = java_lang_Class::as_BasicType(ptype_oop, &pklass);
     if (!ss.at_return_type()) {
       err = check_argument_type_change(ptype, pklass, mtype, mklass, mnum);
     } else {

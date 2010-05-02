@@ -466,13 +466,12 @@ public:
   // find the java.dyn.MethodHandles::invoke method for a given signature
   static methodOop find_method_handle_invoke(symbolHandle name,
                                              symbolHandle signature,
-                                             Handle class_loader,
-                                             Handle protection_domain,
+                                             KlassHandle accessing_klass,
                                              TRAPS);
   // ask Java to compute a java.dyn.MethodType object for a given signature
   static Handle    find_method_handle_type(symbolHandle signature,
-                                           Handle class_loader,
-                                           Handle protection_domain,
+                                           KlassHandle accessing_klass,
+                                           bool& return_bcp_flag,
                                            TRAPS);
   // ask Java to create a dynamic call site, while linking an invokedynamic op
   static Handle    make_dynamic_call_site(Handle bootstrap_method,

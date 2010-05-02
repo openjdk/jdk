@@ -2343,12 +2343,9 @@ char* SystemDictionary::check_signature_loaders(symbolHandle signature,
 
 methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
                                                       symbolHandle signature,
-                                                      Handle class_loader,
-                                                      Handle protection_domain,
+                                                      KlassHandle accessing_klass,
                                                       TRAPS) {
   if (!EnableMethodHandles)  return NULL;
-  assert(class_loader.is_null() && protection_domain.is_null(),
-         "cannot load specialized versions of MethodHandle.invoke");
   if (invoke_method_table() == NULL) {
     // create this side table lazily
     _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
@@ -2358,30 +2355,36 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
   unsigned int hash  = invoke_method_table()->compute_hash(signature, name_id);
   int          index = invoke_method_table()->hash_to_index(hash);
   SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, name_id);
+  methodHandle non_cached_result;
   if (spe == NULL || spe->property_oop() == NULL) {
+    spe = NULL;
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     if (THREAD->is_Compiler_thread())
       return NULL;              // do not attempt from within compiler
-    Handle mt = find_method_handle_type(signature(),
-                                        class_loader, protection_domain,
-                                        CHECK_NULL);
+    bool found_on_bcp = false;
+    Handle mt = find_method_handle_type(signature(), accessing_klass, found_on_bcp, CHECK_NULL);
     KlassHandle  mh_klass = SystemDictionaryHandles::MethodHandle_klass();
     methodHandle m = methodOopDesc::make_invoke_method(mh_klass, name, signature,
                                                        mt, CHECK_NULL);
     // Now grab the lock.  We might have to throw away the new method,
     // if a racing thread has managed to install one at the same time.
-    {
+    if (found_on_bcp) {
       MutexLocker ml(SystemDictionary_lock, Thread::current());
       spe = invoke_method_table()->find_entry(index, hash, signature, name_id);
       if (spe == NULL)
         spe = invoke_method_table()->add_entry(index, hash, signature, name_id);
       if (spe->property_oop() == NULL)
         spe->set_property_oop(m());
+    } else {
+      non_cached_result = m;
     }
   }
-  methodOop m = (methodOop) spe->property_oop();
-  assert(m->is_method(), "");
-  return m;
+  if (spe != NULL && spe->property_oop() != NULL) {
+    assert(spe->property_oop()->is_method(), "");
+    return (methodOop) spe->property_oop();
+  } else {
+    return non_cached_result();
+  }
 }
 
 // Ask Java code to find or construct a java.dyn.MethodType for the given
@@ -2389,30 +2392,50 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
 // Because of class loader constraints, all method handle usage must be
 // consistent with this loader.
 Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
-                                                 Handle class_loader,
-                                                 Handle protection_domain,
+                                                 KlassHandle accessing_klass,
+                                                 bool& return_bcp_flag,
                                                  TRAPS) {
+  Handle class_loader, protection_domain;
+  bool is_on_bcp = true;  // keep this true as long as we can materialize from the boot classloader
   Handle empty;
   int npts = ArgumentCount(signature()).size();
   objArrayHandle pts = oopFactory::new_objArray(SystemDictionary::Class_klass(), npts, CHECK_(empty));
   int arg = 0;
   Handle rt;                            // the return type from the signature
   for (SignatureStream ss(signature()); !ss.is_done(); ss.next()) {
-    oop mirror;
-    if (!ss.is_object()) {
-      mirror = Universe::java_mirror(ss.type());
-    } else {
-      symbolOop    name_oop = ss.as_symbol(CHECK_(empty));
-      symbolHandle name(THREAD, name_oop);
-      klassOop klass = resolve_or_fail(name,
-                                       class_loader, protection_domain,
-                                       true, CHECK_(empty));
-      mirror = Klass::cast(klass)->java_mirror();
+    oop mirror = NULL;
+    if (is_on_bcp) {
+      mirror = ss.as_java_mirror(class_loader, protection_domain,
+                                 SignatureStream::ReturnNull, CHECK_(empty));
+      if (mirror == NULL) {
+        // fall back from BCP to accessing_klass
+        if (accessing_klass.not_null()) {
+          class_loader      = Handle(THREAD, instanceKlass::cast(accessing_klass())->class_loader());
+          protection_domain = Handle(THREAD, instanceKlass::cast(accessing_klass())->protection_domain());
+        }
+        is_on_bcp = false;
+      }
+    }
+    if (!is_on_bcp) {
+      // Resolve, throwing a real error if it doesn't work.
+      mirror = ss.as_java_mirror(class_loader, protection_domain,
+                                 SignatureStream::NCDFError, CHECK_(empty));
     }
     if (ss.at_return_type())
       rt = Handle(THREAD, mirror);
     else
       pts->obj_at_put(arg++, mirror);
+    // Check accessibility.
+    if (ss.is_object() && accessing_klass.not_null()) {
+      klassOop sel_klass = java_lang_Class::as_klassOop(mirror);
+      // Emulate constantPoolOopDesc::verify_constant_pool_resolve.
+      if (Klass::cast(sel_klass)->oop_is_objArray())
+        sel_klass = objArrayKlass::cast(sel_klass)->bottom_klass();
+      if (Klass::cast(sel_klass)->oop_is_instance()) {
+        KlassHandle sel_kh(THREAD, sel_klass);
+        LinkResolver::check_klass_accessability(accessing_klass, sel_kh, CHECK_(empty));
+      }
+    }
   }
   assert(arg == npts, "");
 
@@ -2425,6 +2448,9 @@ Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
                          vmSymbols::findMethodHandleType_name(),
                          vmSymbols::findMethodHandleType_signature(),
                          &args, CHECK_(empty));
+
+  // report back to the caller with the MethodType and the "on_bcp" flag
+  return_bcp_flag = is_on_bcp;
   return Handle(THREAD, (oop) result.get_jobject());
 }
 
