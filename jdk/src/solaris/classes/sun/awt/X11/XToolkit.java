@@ -307,22 +307,35 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         } finally {
             awtUnlock();
         }
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
-                if (peer != null) {
-                    peer.dispose();
+        PrivilegedAction<Void> a = new PrivilegedAction<Void>() {
+            public Void run() {
+                ThreadGroup mainTG = Thread.currentThread().getThreadGroup();
+                ThreadGroup parentTG = mainTG.getParent();
+                while (parentTG != null) {
+                    mainTG = parentTG;
+                    parentTG = mainTG.getParent();
                 }
-                if (xs != null) {
-                    ((XAWTXSettings)xs).dispose();
-                }
-                freeXKB();
-                if (log.isLoggable(PlatformLogger.FINE)) {
-                    dumpPeers();
-                }
+                Thread shutdownThread = new Thread(mainTG, "XToolkt-Shutdown-Thread") {
+                        public void run() {
+                            XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
+                            if (peer != null) {
+                                peer.dispose();
+                            }
+                            if (xs != null) {
+                                ((XAWTXSettings)xs).dispose();
+                            }
+                            freeXKB();
+                            if (log.isLoggable(PlatformLogger.FINE)) {
+                                dumpPeers();
+                            }
+                        }
+                    };
+                shutdownThread.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(shutdownThread);
+                return null;
             }
-        });
+        };
+        AccessController.doPrivileged(a);
     }
 
     static String getCorrectXIDString(String val) {

@@ -39,9 +39,5 @@
   static void main_loop(int recurse, TRAPS);
 
  private:
-  // Stack overflow checks
-  static bool stack_overflow_imminent(JavaThread *thread);
-
- private:
   // Fast result type determination
   static BasicType result_type_of(methodOop method);

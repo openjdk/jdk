@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ public interface FrameWrapper {
   public void       setVisible(boolean visible);
   public void       setSize(int x, int y);
   public void       pack();
-  public void       show();
   public void       dispose();
   public void       setBackground(Color color);
   public void       setResizable(boolean resizable);

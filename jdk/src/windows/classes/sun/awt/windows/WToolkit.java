@@ -266,27 +266,25 @@ public class WToolkit extends SunToolkit implements Runnable {
         boolean startPump = init();
 
         if (startPump) {
-            ThreadGroup mainTG = (ThreadGroup)AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public Object run() {
-                        ThreadGroup currentTG =
-                            Thread.currentThread().getThreadGroup();
-                        ThreadGroup parentTG = currentTG.getParent();
-                        while (parentTG != null) {
-                            currentTG = parentTG;
-                            parentTG = currentTG.getParent();
-                        }
-                        return currentTG;
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    ThreadGroup currentTG =
+                        Thread.currentThread().getThreadGroup();
+                    ThreadGroup parentTG = currentTG.getParent();
+                    while (parentTG != null) {
+                        currentTG = parentTG;
+                        parentTG = currentTG.getParent();
                     }
+                    Thread shutdown = new Thread(currentTG, new Runnable() {
+                            public void run() {
+                                shutdown();
+                            }
+                        });
+                    shutdown.setContextClassLoader(null);
+                    Runtime.getRuntime().addShutdownHook(shutdown);
+                    return null;
+                }
             });
-
-            Runtime.getRuntime().addShutdownHook(
-                new Thread(mainTG, new Runnable() {
-                    public void run() {
-                        shutdown();
-                    }
-                })
-            );
         }
 
         synchronized(this) {

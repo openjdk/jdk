@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,10 @@ class VMError : public StackObj {
 
   // generate an error report
   void report(outputStream* st);
+
+  // generate a stack trace
+  static void print_stack_trace(outputStream* st, JavaThread* jt,
+                                char* buf, int buflen, bool verbose = false);
 
   // accessor
   const char* message()         { return _message; }

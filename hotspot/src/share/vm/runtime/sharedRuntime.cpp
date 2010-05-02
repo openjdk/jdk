@@ -473,6 +473,13 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     t = table.entry_for(catch_pco, -1, 0);
   }
 
+#ifdef COMPILER1
+  if (t == NULL && nm->is_compiled_by_c1()) {
+    assert(nm->unwind_handler_begin() != NULL, "");
+    return nm->unwind_handler_begin();
+  }
+#endif
+
   if (t == NULL) {
     tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", ret_pc, handler_bci);
     tty->print_cr("   Exception:");
