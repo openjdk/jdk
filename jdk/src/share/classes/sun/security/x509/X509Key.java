@@ -171,7 +171,7 @@ public class X509Key implements PublicKey {
                                       in.data.getUnalignedBitString());
 
         } catch (InvalidKeyException e) {
-            throw new IOException("subject key, " + e.getMessage());
+            throw new IOException("subject key, " + e.getMessage(), e);
         }
 
         if (in.data.available() != 0)
@@ -224,7 +224,7 @@ public class X509Key implements PublicKey {
         } catch (NoSuchAlgorithmException e) {
             // Return generic X509Key with opaque key data (see below)
         } catch (InvalidKeySpecException e) {
-            throw new InvalidKeyException(e.getMessage());
+            throw new InvalidKeyException(e.getMessage(), e);
         }
 
         /*
