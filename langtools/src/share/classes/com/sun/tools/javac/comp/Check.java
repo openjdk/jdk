@@ -375,6 +375,8 @@ public class Check {
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
         if (req.tag == ERROR)
             return req;
+        if (found.tag == FORALL)
+            return instantiatePoly(pos, (ForAll)found, req, convertWarner(pos, found, req));
         if (req.tag == NONE)
             return found;
         if (types.isAssignable(found, req, convertWarner(pos, found, req)))
@@ -392,33 +394,6 @@ public class Check {
         return typeError(pos, diags.fragment("incompatible.types"), found, req);
     }
 
-    Type checkReturnType(DiagnosticPosition pos, Type found, Type req) {
-        if (found.tag == FORALL) {
-            try {
-                return instantiatePoly(pos, (ForAll) found, req, convertWarner(pos, found, req));
-            } catch (Infer.NoInstanceException ex) {
-                if (ex.isAmbiguous) {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    log.error(pos,
-                            "undetermined.type" + (d != null ? ".1" : ""),
-                            found, d);
-                    return types.createErrorType(req);
-                } else {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    return typeError(pos,
-                            diags.fragment("incompatible.types" + (d != null ? ".1" : ""), d),
-                            found, req);
-                }
-            } catch (Infer.InvalidInstanceException ex) {
-                JCDiagnostic d = ex.getDiagnostic();
-                log.error(pos, "invalid.inferred.types", ((ForAll)found).tvars, d);
-                return types.createErrorType(req);
-            }
-        } else {
-            return checkType(pos, found, req);
-        }
-    }
-
     /** Instantiate polymorphic type to some prototype, unless
      *  prototype is `anyPoly' in which case polymorphic type
      *  is returned unchanged.
@@ -432,9 +407,28 @@ public class Check {
         } else if (pt.tag == ERROR) {
             return pt;
         } else {
-            return infer.instantiateExpr(t, pt, warn);
+            try {
+                return infer.instantiateExpr(t, pt, warn);
+            } catch (Infer.NoInstanceException ex) {
+                if (ex.isAmbiguous) {
+                    JCDiagnostic d = ex.getDiagnostic();
+                    log.error(pos,
+                              "undetermined.type" + (d!=null ? ".1" : ""),
+                              t, d);
+                    return types.createErrorType(pt);
+                } else {
+                    JCDiagnostic d = ex.getDiagnostic();
+                    return typeError(pos,
+                                     diags.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
+                                     t, pt);
+                }
+            } catch (Infer.InvalidInstanceException ex) {
+                JCDiagnostic d = ex.getDiagnostic();
+                log.error(pos, "invalid.inferred.types", t.tvars, d);
+                return types.createErrorType(pt);
+            }
         }
-     }
+    }
 
     /** Check that a given type can be cast to a given target type.
      *  Return the result of the cast.
@@ -557,29 +551,6 @@ public class Check {
         return t;
     }
 
-    /** Check that type is a valid type for a new expression. If the type contains
-     * some uninferred type variables, instantiate them exploiting the expected
-     * type.
-     *
-     *  @param pos           Position to be used for error reporting.
-     *  @param t             The type to be checked.
-     *  @param noBounds    True if type bounds are illegal here.
-     *  @param pt          Expected type (used with diamond operator)
-     */
-    Type checkNewClassType(DiagnosticPosition pos, Type t, boolean noBounds, Type pt) {
-        if (t.tag == FORALL) {
-            try {
-                t = instantiatePoly(pos, (ForAll)t, pt, Warner.noWarnings);
-            }
-            catch (Infer.NoInstanceException ex) {
-                JCDiagnostic d = ex.getDiagnostic();
-                log.error(pos, "cant.apply.diamond", t.getTypeArguments(), d);
-                return types.createErrorType(pt);
-            }
-        }
-        return checkClassType(pos, t, noBounds);
-    }
-
     /** Check that type is a reifiable class, interface or array type.
      *  @param pos           Position to be used for error reporting.
      *  @param t             The type to be checked.
@@ -667,6 +638,43 @@ public class Check {
             return false;
         } else
             return true;
+    }
+
+    /** Check that the type inferred using the diamond operator does not contain
+     *  non-denotable types such as captured types or intersection types.
+     *  @param t the type inferred using the diamond operator
+     */
+    List<Type> checkDiamond(ClassType t) {
+        DiamondTypeChecker dtc = new DiamondTypeChecker();
+        ListBuffer<Type> buf = ListBuffer.lb();
+        for (Type arg : t.getTypeArguments()) {
+            if (!dtc.visit(arg, null)) {
+                buf.append(arg);
+            }
+        }
+        return buf.toList();
+    }
+
+    static class DiamondTypeChecker extends Types.SimpleVisitor<Boolean, Void> {
+        public Boolean visitType(Type t, Void s) {
+            return true;
+        }
+        @Override
+        public Boolean visitClassType(ClassType t, Void s) {
+            if (t.isCompound()) {
+                return false;
+            }
+            for (Type targ : t.getTypeArguments()) {
+                if (!visit(targ, s)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        @Override
+        public Boolean visitCapturedType(CapturedType t, Void s) {
+            return false;
+        }
     }
 
     /** Check that given modifiers are legal for given symbol and
@@ -936,8 +944,7 @@ public class Check {
                 }
 
                 checkCapture(tree);
-            }
-            if (tree.type.tag == CLASS || tree.type.tag == FORALL) {
+
                 // Check that this type is either fully parameterized, or
                 // not parameterized at all.
                 if (tree.type.getEnclosingType().isRaw())

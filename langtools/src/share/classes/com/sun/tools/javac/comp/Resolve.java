@@ -788,6 +788,8 @@ public class Resolve {
                                            operator);
                 }
             }
+            if (name == names.init)
+                break;
             //- System.out.println(" - " + bestSoFar);
             if (abstractok) {
                 Symbol concrete = methodNotFound;
@@ -1405,6 +1407,48 @@ public class Resolve {
             sym = access(methodResolutionCache.get(errPhase),
                     pos, site, names.init, true, argtypes, typeargtypes);
             env.info.varArgs = errPhase.isVarargsRequired();
+        }
+        return sym;
+    }
+
+    /** Resolve constructor using diamond inference.
+     *  @param pos       The position to use for error reporting.
+     *  @param env       The environment current at the constructor invocation.
+     *  @param site      The type of class for which a constructor is searched.
+     *                   The scope of this class has been touched in attribution.
+     *  @param argtypes  The types of the constructor invocation's value
+     *                   arguments.
+     *  @param typeargtypes  The types of the constructor invocation's type
+     *                   arguments.
+     */
+    Symbol resolveDiamond(DiagnosticPosition pos,
+                              Env<AttrContext> env,
+                              Type site,
+                              List<Type> argtypes,
+                              List<Type> typeargtypes, boolean reportErrors) {
+        Symbol sym = methodNotFound;
+        JCDiagnostic explanation = null;
+        List<MethodResolutionPhase> steps = methodResolutionSteps;
+        while (steps.nonEmpty() &&
+               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+               sym.kind >= ERRONEOUS) {
+            sym = resolveConstructor(pos, env, site, argtypes, typeargtypes,
+                    steps.head.isBoxingRequired(),
+                    env.info.varArgs = steps.head.isVarargsRequired());
+            methodResolutionCache.put(steps.head, sym);
+            if (sym.kind == WRONG_MTH &&
+                    ((InapplicableSymbolError)sym).explanation != null) {
+                //if the symbol is an inapplicable method symbol, then the
+                //explanation contains the reason for which inference failed
+                explanation = ((InapplicableSymbolError)sym).explanation;
+            }
+            steps = steps.tail;
+        }
+        if (sym.kind >= AMBIGUOUS && reportErrors) {
+            String key = explanation == null ?
+                "cant.apply.diamond" :
+                "cant.apply.diamond.1";
+            log.error(pos, key, diags.fragment("diamond", site.tsym), explanation);
         }
         return sym;
     }

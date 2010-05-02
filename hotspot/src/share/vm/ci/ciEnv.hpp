@@ -55,7 +55,6 @@ private:
 
   // Cache Jvmti state
   bool  _jvmti_can_hotswap_or_post_breakpoint;
-  bool  _jvmti_can_examine_or_deopt_anywhere;
   bool  _jvmti_can_access_local_variables;
   bool  _jvmti_can_post_on_exceptions;
 
@@ -257,7 +256,6 @@ public:
   // Cache Jvmti state
   void  cache_jvmti_state();
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
-  bool  jvmti_can_examine_or_deopt_anywhere()  const { return _jvmti_can_examine_or_deopt_anywhere; }
   bool  jvmti_can_access_local_variables()     const { return _jvmti_can_access_local_variables; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
 
