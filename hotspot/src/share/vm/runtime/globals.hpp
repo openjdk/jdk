@@ -327,6 +327,10 @@ class CommandLineFlags {
   product(bool, UseMembar, false,                                           \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
+  /* Temporary: See 6948537 */                                             \
+  experimental(bool, UseMemSetInBOT, true,                                  \
+          "(Unstable) uses memset in BOT updates in GC code")               \
+                                                                            \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
                                                                             \

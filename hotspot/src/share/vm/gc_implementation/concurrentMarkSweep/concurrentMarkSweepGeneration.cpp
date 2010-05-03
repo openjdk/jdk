@@ -789,6 +789,14 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _gc_counters = new CollectorCounters("CMS", 1);
   _completed_initialization = true;
   _inter_sweep_timer.start();  // start of time
+#ifdef SPARC
+  // Issue a stern warning, but allow use for experimentation and debugging.
+  if (VM_Version::is_sun4v() && UseMemSetInBOT) {
+    assert(!FLAG_IS_DEFAULT(UseMemSetInBOT), "Error");
+    warning("Experimental flag -XX:+UseMemSetInBOT is known to cause instability"
+            " on sun4v; please understand that you are using at your own risk!");
+  }
+#endif
 }
 
 const char* ConcurrentMarkSweepGeneration::name() const {
