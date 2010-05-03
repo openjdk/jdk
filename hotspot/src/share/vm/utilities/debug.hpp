@@ -22,28 +22,54 @@
  *
  */
 
+#include <stdarg.h>
+
+// Simple class to format the ctor arguments into a fixed-sized buffer.
+template <size_t bufsz = 256>
+class FormatBuffer {
+public:
+  inline FormatBuffer(const char * format, ...);
+  operator const char *() const { return _buf; }
+
+private:
+  FormatBuffer(const FormatBuffer &); // prevent copies
+
+private:
+  char _buf[bufsz];
+};
+
+template <size_t bufsz>
+FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) {
+  va_list argp;
+  va_start(argp, format);
+  vsnprintf(_buf, bufsz, format, argp);
+  va_end(argp);
+}
+
+// Used to format messages for assert(), guarantee(), fatal(), etc.
+typedef FormatBuffer<> err_msg;
+
 // assertions
 #ifdef ASSERT
-// Turn this off by default:
-//#define USE_REPEATED_ASSERTS
-#ifdef USE_REPEATED_ASSERTS
-  #define assert(p,msg)                                              \
-    { for (int __i = 0; __i < AssertRepeat; __i++) {                 \
-        if (!(p)) {                                                  \
-          report_assertion_failure(__FILE__, __LINE__,               \
-                                  "assert(" XSTR(p) ",\"" msg "\")");\
-          BREAKPOINT;                                                \
-        }                                                            \
-      }                                                              \
-    }
-#else
-  #define assert(p,msg)                                          \
-    if (!(p)) {                                                  \
-      report_assertion_failure(__FILE__, __LINE__,               \
-                              "assert(" XSTR(p) ",\"" msg "\")");\
-      BREAKPOINT;                                                \
-    }
-#endif
+#ifndef USE_REPEATED_ASSERTS
+#define assert(p, msg)                                                       \
+do {                                                                         \
+  if (!(p)) {                                                                \
+    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);       \
+    BREAKPOINT;                                                              \
+  }                                                                          \
+} while (0)
+#else // #ifndef USE_REPEATED_ASSERTS
+#define assert(p, msg)
+do {                                                                         \
+  for (int __i = 0; __i < AssertRepeat; __i++) {                             \
+    if (!(p)) {                                                              \
+      report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);     \
+      BREAKPOINT;                                                            \
+    }                                                                        \
+  }                                                                          \
+} while (0)
+#endif // #ifndef USE_REPEATED_ASSERTS
 
 // This version of assert is for use with checking return status from
 // library calls that return actual error values eg. EINVAL,
@@ -52,70 +78,83 @@
 // what status was actually returned, so we pass the status variable as
 // an extra arg and use strerror to convert it to a meaningful string
 // like "Invalid argument", "out of memory" etc
-#define assert_status(p, status, msg)                                     \
-   do {                                                                   \
-    if (!(p)) {                                                           \
-      char buf[128];                                                      \
-      snprintf(buf, 127,                                                  \
-               "assert_status(" XSTR(p) ", error: %s(%d), \"" msg "\")" , \
-               strerror((status)), (status));                             \
-      report_assertion_failure(__FILE__, __LINE__, buf);                  \
-      BREAKPOINT;                                                         \
-    }                                                                     \
-  } while (0)
-
-// Another version of assert where the message is not a string literal
-// The boolean condition is not printed out because cpp doesn't like it.
-#define assert_msg(p, msg)                                       \
-    if (!(p)) {                                                  \
-      report_assertion_failure(__FILE__, __LINE__, msg);         \
-      BREAKPOINT;                                                \
-    }
+#define assert_status(p, status, msg)                                        \
+do {                                                                         \
+  if (!(p)) {                                                                \
+    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed",             \
+                    err_msg("error %s(%d) %s", strerror(status),             \
+                            status, msg));                                   \
+    BREAKPOINT;                                                              \
+  }                                                                          \
+} while (0)
 
 // Do not assert this condition if there's already another error reported.
 #define assert_if_no_error(cond,msg) assert((cond) || is_error_reported(), msg)
-#else
+#else // #ifdef ASSERT
   #define assert(p,msg)
   #define assert_status(p,status,msg)
   #define assert_if_no_error(cond,msg)
-  #define assert_msg(cond,msg)
-#endif
-
-
-// fatals
-#define fatal(m)                             { report_fatal(__FILE__, __LINE__, m                          ); BREAKPOINT; }
-#define fatal1(m,x1)                         { report_fatal_vararg(__FILE__, __LINE__, m, x1               ); BREAKPOINT; }
-#define fatal2(m,x1,x2)                      { report_fatal_vararg(__FILE__, __LINE__, m, x1, x2           ); BREAKPOINT; }
-#define fatal3(m,x1,x2,x3)                   { report_fatal_vararg(__FILE__, __LINE__, m, x1, x2, x3       ); BREAKPOINT; }
-#define fatal4(m,x1,x2,x3,x4)                { report_fatal_vararg(__FILE__, __LINE__, m, x1, x2, x3, x4   ); BREAKPOINT; }
-
-// out of memory
-#define vm_exit_out_of_memory(s,m)              { report_vm_out_of_memory(__FILE__, __LINE__, s, m                       ); BREAKPOINT; }
-#define vm_exit_out_of_memory1(s,m,x1)          { report_vm_out_of_memory_vararg(__FILE__, __LINE__, s, m, x1            ); BREAKPOINT; }
-#define vm_exit_out_of_memory2(s,m,x1,x2)       { report_vm_out_of_memory_vararg(__FILE__, __LINE__, s, m, x1, x2        ); BREAKPOINT; }
-#define vm_exit_out_of_memory3(s,m,x1,x2,x3)    { report_vm_out_of_memory_vararg(__FILE__, __LINE__, s, m, x1, x2, x3    ); BREAKPOINT; }
-#define vm_exit_out_of_memory4(s,m,x1,x2,x3,x4) { report_vm_out_of_memory_vararg(__FILE__, __LINE__, s, m, x1, x2, x3, x4); BREAKPOINT; }
+#endif // #ifdef ASSERT
 
 // guarantee is like assert except it's always executed -- use it for
-// cheap tests that catch errors that would otherwise be hard to find
+// cheap tests that catch errors that would otherwise be hard to find.
 // guarantee is also used for Verify options.
-#define guarantee(b,msg)         { if (!(b)) fatal("guarantee(" XSTR(b) ",\"" msg "\")"); }
+#define guarantee(p, msg)                                                    \
+do {                                                                         \
+  if (!(p)) {                                                                \
+    report_vm_error(__FILE__, __LINE__, "guarantee(" #p ") failed", msg);    \
+    BREAKPOINT;                                                              \
+  }                                                                          \
+} while (0)
 
-#define ShouldNotCallThis()      { report_should_not_call        (__FILE__, __LINE__); BREAKPOINT; }
-#define ShouldNotReachHere()     { report_should_not_reach_here  (__FILE__, __LINE__); BREAKPOINT; }
-#define Unimplemented()          { report_unimplemented          (__FILE__, __LINE__); BREAKPOINT; }
-#define Untested(msg)            { report_untested               (__FILE__, __LINE__, msg); BREAKPOINT; }
+#define fatal(msg)                                                           \
+do {                                                                         \
+  report_fatal(__FILE__, __LINE__, msg);                                     \
+  BREAKPOINT;                                                                \
+} while (0)
+
+// out of memory
+#define vm_exit_out_of_memory(size, msg)                                     \
+do {                                                                         \
+  report_vm_out_of_memory(__FILE__, __LINE__, size, msg);                    \
+  BREAKPOINT;                                                                \
+} while (0)
+
+#define ShouldNotCallThis()                                                  \
+do {                                                                         \
+  report_should_not_call(__FILE__, __LINE__);                                \
+  BREAKPOINT;                                                                \
+} while (0)
+
+#define ShouldNotReachHere()                                                 \
+do {                                                                         \
+  report_should_not_reach_here(__FILE__, __LINE__);                          \
+  BREAKPOINT;                                                                \
+} while (0)
+
+#define Unimplemented()                                                      \
+do {                                                                         \
+  report_unimplemented(__FILE__, __LINE__);                                  \
+  BREAKPOINT;                                                                \
+} while (0)
+
+#define Untested(msg)                                                        \
+do {                                                                         \
+  report_untested(__FILE__, __LINE__, msg);                                  \
+  BREAKPOINT;                                                                \
+} while (0);
 
 // error reporting helper functions
-void report_assertion_failure(const char* file_name, int line_no, const char* message);
-void report_fatal_vararg(const char* file_name, int line_no, const char* format, ...);
-void report_fatal(const char* file_name, int line_no, const char* message);
-void report_vm_out_of_memory_vararg(const char* file_name, int line_no, size_t size, const char* format, ...);
-void report_vm_out_of_memory(const char* file_name, int line_no, size_t size, const char* message);
-void report_should_not_call(const char* file_name, int line_no);
-void report_should_not_reach_here(const char* file_name, int line_no);
-void report_unimplemented(const char* file_name, int line_no);
-void report_untested(const char* file_name, int line_no, const char* msg);
+void report_vm_error(const char* file, int line, const char* error_msg,
+                     const char* detail_msg = NULL);
+void report_fatal(const char* file, int line, const char* message);
+void report_vm_out_of_memory(const char* file, int line, size_t size,
+                             const char* message);
+void report_should_not_call(const char* file, int line);
+void report_should_not_reach_here(const char* file, int line);
+void report_unimplemented(const char* file, int line);
+void report_untested(const char* file, int line, const char* message);
+
 void warning(const char* format, ...);
 
 // out of memory reporting
@@ -124,6 +163,9 @@ void report_java_out_of_memory(const char* message);
 // Support for self-destruct
 bool is_error_reported();
 void set_error_reported();
+
+/* Test assert(), fatal(), guarantee(), etc. */
+NOT_PRODUCT(void test_error_handler(size_t test_num);)
 
 void pd_ps(frame f);
 void pd_obfuscate_location(char *buf, size_t buflen);

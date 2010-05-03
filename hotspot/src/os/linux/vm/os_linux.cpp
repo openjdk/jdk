@@ -3495,7 +3495,8 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal2("Encountered unexpected pre-existing sigaction handler %#lx for signal %d.", (long)oldhand, sig);
+      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
+                    "%#lx for signal %d.", (long)oldhand, sig));
     }
   }
 
@@ -3817,7 +3818,8 @@ void os::init(void) {
 
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
-    fatal1("os_linux.cpp: os::init: sysconf failed (%s)", strerror(errno));
+    fatal(err_msg("os_linux.cpp: os::init: sysconf failed (%s)",
+                  strerror(errno)));
   }
   init_page_sizes((size_t) Linux::page_size());
 

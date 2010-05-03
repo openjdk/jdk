@@ -899,7 +899,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   int nof_methods = methods()->length();
   HandleMark hm;
   KlassHandle klass = _klass;
-  assert(nof_methods > 0, "at least one method must exist for interface to be in vtable")
+  assert(nof_methods > 0, "at least one method must exist for interface to be in vtable");
   Handle interface_loader (THREAD, instanceKlass::cast(interf_h())->class_loader());
   int ime_num = 0;
 
@@ -1180,8 +1180,8 @@ void klassVtable::verify(outputStream* st, bool forced) {
   oop* end_of_obj = (oop*)_klass() + _klass()->size();
   oop* end_of_vtable = (oop *)&table()[_length];
   if (end_of_vtable > end_of_obj) {
-    fatal1("klass %s: klass object too short (vtable extends beyond end)",
-          _klass->internal_name());
+    fatal(err_msg("klass %s: klass object too short (vtable extends beyond "
+                  "end)", _klass->internal_name()));
   }
 
   for (int i = 0; i < _length; i++) table()[i].verify(this, st);
@@ -1224,7 +1224,7 @@ void vtableEntry::verify(klassVtable* vt, outputStream* st) {
 #ifndef PRODUCT
     print();
 #endif
-    fatal1("vtableEntry %#lx: method is from subclass", this);
+    fatal(err_msg("vtableEntry " PTR_FORMAT ": method is from subclass", this));
   }
 }
 
