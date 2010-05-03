@@ -118,7 +118,7 @@ TreeList* TreeList::removeChunkReplaceIfNeeded(TreeChunk* tc) {
     // TreeList from the first chunk to the next chunk and update all
     // the TreeList pointers in the chunks in the list.
     if (nextTC == NULL) {
-      assert(prevFC == NULL, "Not last chunk in the list")
+      assert(prevFC == NULL, "Not last chunk in the list");
       set_tail(NULL);
       set_head(NULL);
     } else {
