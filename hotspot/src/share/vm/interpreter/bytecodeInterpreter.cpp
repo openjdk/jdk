@@ -189,7 +189,7 @@
 
 // JavaStack Implementation
 #define MORE_STACK(count)  \
-    (topOfStack -= ((count) * Interpreter::stackElementWords()))
+    (topOfStack -= ((count) * Interpreter::stackElementWords))
 
 
 #define UPDATE_PC(opsize) {pc += opsize; }
@@ -1950,8 +1950,8 @@ run:
         jint size = STACK_INT(-1);
         // stack grows down, dimensions are up!
         jint *dimarray =
-                   (jint*)&topOfStack[dims * Interpreter::stackElementWords()+
-                                      Interpreter::stackElementWords()-1];
+                   (jint*)&topOfStack[dims * Interpreter::stackElementWords+
+                                      Interpreter::stackElementWords-1];
         //adjust pointer to start of stack element
         CALL_VM(InterpreterRuntime::multianewarray(THREAD, dimarray),
                 handle_exception);
@@ -2375,7 +2375,7 @@ run:
     assert(except_oop(), "No exception to process");
     intptr_t continuation_bci;
     // expression stack is emptied
-    topOfStack = istate->stack_base() - Interpreter::stackElementWords();
+    topOfStack = istate->stack_base() - Interpreter::stackElementWords;
     CALL_VM(continuation_bci = (intptr_t)InterpreterRuntime::exception_handler_for_exception(THREAD, except_oop()),
             handle_exception);
 

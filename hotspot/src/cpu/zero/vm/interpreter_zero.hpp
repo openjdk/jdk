@@ -36,14 +36,14 @@
 
  public:
   static int expr_index_at(int i) {
-    return stackElementWords() * i;
+    return stackElementWords * i;
   }
 
   static int expr_offset_in_bytes(int i) {
-    return stackElementSize() * i;
+    return stackElementSize * i;
   }
 
   static int local_index_at(int i) {
     assert(i <= 0, "local direction already negated");
-    return stackElementWords() * i;
+    return stackElementWords * i;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,8 +510,6 @@ static oop stack_object(intptr_t *tos, int offset);
 static jdouble stack_double(intptr_t *tos, int offset);
 static jlong stack_long(intptr_t *tos, int offset);
 
-static void tag_stack(intptr_t *tos, frame::Tag tag, int offset);
-
 // only used for value types
 static void set_stack_slot(intptr_t *tos, address value, int offset);
 static void set_stack_int(intptr_t *tos, int value, int offset);
@@ -537,8 +535,6 @@ static jlong locals_long(intptr_t* locals, int offset);
 static address locals_long_at(intptr_t* locals, int offset);
 static address locals_double_at(intptr_t* locals, int offset);
 
-static void tag_locals(intptr_t *locals, frame::Tag tag, int offset);
-
 static void set_locals_slot(intptr_t *locals, address value, int offset);
 static void set_locals_int(intptr_t *locals, jint value, int offset);
 static void set_locals_float(intptr_t *locals, jfloat value, int offset);
@@ -557,8 +553,6 @@ static void astore(intptr_t* topOfStack, int stack_offset,
 static void copy_stack_slot(intptr_t *tos, int from_offset, int to_offset);
 
 #ifndef PRODUCT
-static void verify_locals_tag(intptr_t *locals, frame::Tag tag, int offset);
-static void verify_stack_tag(intptr_t *tos, frame::Tag tag, int offset);
 static const char* C_msg(BytecodeInterpreter::messages msg);
 void print();
 #endif // PRODUCT
