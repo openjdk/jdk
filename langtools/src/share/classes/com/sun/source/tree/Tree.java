@@ -234,6 +234,11 @@ public interface Tree {
         PARAMETERIZED_TYPE(ParameterizedTypeTree.class),
 
         /**
+         * Used for instances of {@link DisjointTypeTree}.
+         */
+        DISJOINT_TYPE(DisjointTypeTree.class),
+
+        /**
          * Used for instances of {@link TypeCastTree}.
          */
         TYPE_CAST(TypeCastTree.class),
