@@ -176,28 +176,16 @@ public abstract class MethodHandleImpl {
             boolean doDispatch, Class<?> lookupClass) {
         Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
-        MethodType rtype = mtype;
         if (!method.isStatic()) {
             // adjust the advertised receiver type to be exactly the one requested
             // (in the case of invokespecial, this will be the calling class)
             Class<?> recvType = method.getDeclaringClass();
             mtype = mtype.insertParameterTypes(0, recvType);
-            // FIXME: JVM has trouble building MH.invoke sites for
-            // classes off the boot class path
-            rtype = mtype;
-            if (recvType.getClassLoader() != null) {
-                rtype = rtype.changeParameterType(0, Object.class);
-            }
         }
         DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
         if (!mh.isValid())
             throw newNoAccessException(method, lookupClass);
-        if (rtype != mtype) {
-            MethodHandle rmh = AdapterMethodHandle.makePairwiseConvert(token, rtype, mh);
-            if (rmh == null)  throw new InternalError();
-            return rmh;
-        }
-        assert(mh.type() == rtype);
+        assert(mh.type() == mtype);
         return mh;
     }
 
