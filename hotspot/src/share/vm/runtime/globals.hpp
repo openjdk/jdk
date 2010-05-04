@@ -1303,6 +1303,10 @@ class CommandLineFlags {
           "also unloads classes during such a concurrent gc cycle "         \
           "(effective only when UseConcMarkSweepGC)")                       \
                                                                             \
+  product(bool, GCLockerInvokesConcurrent, false,                           \
+          "The exit of a JNI CS necessitating a scavenge also"              \
+          " kicks off a bkgrd concurrent collection")                       \
+                                                                            \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
                                                                             \

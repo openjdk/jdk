@@ -1424,10 +1424,9 @@ bool ConcurrentMarkSweepGeneration::should_collect(bool   full,
 
 bool CMSCollector::shouldConcurrentCollect() {
   if (_full_gc_requested) {
-    assert(ExplicitGCInvokesConcurrent, "Unexpected state");
     if (Verbose && PrintGCDetails) {
       gclog_or_tty->print_cr("CMSCollector: collect because of explicit "
-                             " gc request");
+                             " gc request (or gc_locker)");
     }
     return true;
   }
