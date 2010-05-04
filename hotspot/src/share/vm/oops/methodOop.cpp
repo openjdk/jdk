@@ -1114,6 +1114,20 @@ extern "C" {
     return ( a < b ? -1 : (a == b ? 0 : 1));
   }
 
+  // We implement special compare versions for narrow oops to avoid
+  // testing for UseCompressedOops on every comparison.
+  static int method_compare_narrow(narrowOop* a, narrowOop* b) {
+    methodOop m = (methodOop)oopDesc::load_decode_heap_oop(a);
+    methodOop n = (methodOop)oopDesc::load_decode_heap_oop(b);
+    return m->name()->fast_compare(n->name());
+  }
+
+  static int method_compare_narrow_idempotent(narrowOop* a, narrowOop* b) {
+    int i = method_compare_narrow(a, b);
+    if (i != 0) return i;
+    return ( a < b ? -1 : (a == b ? 0 : 1));
+  }
+
   typedef int (*compareFn)(const void*, const void*);
 }
 
@@ -1166,7 +1180,7 @@ void methodOopDesc::sort_methods(objArrayOop methods,
 
     // Use a simple bubble sort for small number of methods since
     // qsort requires a functional pointer call for each comparison.
-    if (UseCompressedOops || length < 8) {
+    if (length < 8) {
       bool sorted = true;
       for (int i=length-1; i>0; i--) {
         for (int j=0; j<i; j++) {
@@ -1182,10 +1196,10 @@ void methodOopDesc::sort_methods(objArrayOop methods,
           sorted = true;
       }
     } else {
-      // XXX This doesn't work for UseCompressedOops because the compare fn
-      // will have to decode the methodOop anyway making it not much faster
-      // than above.
-      compareFn compare = (compareFn) (idempotent ? method_compare_idempotent : method_compare);
+      compareFn compare =
+        (UseCompressedOops ?
+         (compareFn) (idempotent ? method_compare_narrow_idempotent : method_compare_narrow):
+         (compareFn) (idempotent ? method_compare_idempotent : method_compare));
       qsort(methods->base(), length, heapOopSize, compare);
     }
 
