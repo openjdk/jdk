@@ -515,10 +515,6 @@ public class MethodHandlesTest {
         if (!positive)  return; // negative test failed as expected
         Class<?>[] paramsWithSelf = cat(array(Class[].class, (Class)defc), params);
         MethodType typeWithSelf = MethodType.methodType(ret, paramsWithSelf);
-        if (defc.getClassLoader() != null)  // detune due to 6939196
-            assertEquals(typeWithSelf.dropParameterTypes(0,1),
-                         target.type().dropParameterTypes(0,1));
-        else // FIXME: use only this test when 6939196 is fixed
         assertEquals(typeWithSelf, target.type());
         assertTrue(target.toString().contains(methodName));  // rough check
         if (!DO_MORE_CALLS && lookup != PRIVATE)  return;
@@ -714,10 +710,6 @@ public class MethodHandlesTest {
         if (isStatic) {
             assertEquals(typeMaybeWithSelf, target.type());
         } else {
-            if (defc.getClassLoader() != null)  // detune due to 6939196
-                assertEquals(typeMaybeWithSelf.dropParameterTypes(0,1),
-                             target.type().dropParameterTypes(0,1));
-            else // FIXME: use only this test when 6939196 is fixed
             if (isSpecial)
                 assertEquals(specialCaller, target.type().parameterType(0));
             else
@@ -1851,6 +1843,39 @@ public class MethodHandlesTest {
         }
     }
 
+    static Example userMethod(Object o, String s, int i) {
+        called("userMethod", o, s, i);
+        return null;
+    }
+
+    @Test
+    public void testUserClassInSignature() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("testUserClassInSignature");
+        Lookup lookup = MethodHandles.lookup();
+        String name; MethodType mt; MethodHandle mh;
+        Object[] args;
+
+        // Try a static method.
+        name = "userMethod";
+        mt = MethodType.methodType(Example.class, Object.class, String.class, int.class);
+        mh = lookup.findStatic(lookup.lookupClass(), name, mt);
+        assertEquals(mt, mh.type());
+        assertEquals(Example.class, mh.type().returnType());
+        args = randomArgs(mh.type().parameterArray());
+        mh.invokeVarargs(args);
+        assertCalled(name, args);
+
+        // Try a virtual method.
+        name = "v2";
+        mt = MethodType.methodType(Object.class, Object.class, int.class);
+        mh = lookup.findVirtual(Example.class, name, mt);
+        assertEquals(mt, mh.type().dropParameterTypes(0,1));
+        assertTrue(mh.type().parameterList().contains(Example.class));
+        args = randomArgs(mh.type().parameterArray());
+        mh.invokeVarargs(args);
+        assertCalled(name, args);
+    }
 }
 // Local abbreviated copy of sun.dyn.util.ValueConversions
 class ValueConversions {
