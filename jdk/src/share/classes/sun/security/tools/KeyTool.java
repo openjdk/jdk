@@ -25,6 +25,7 @@
 
 package sun.security.tools;
 
+import sun.misc.SharedSecrets;
 import java.io.*;
 import java.security.CodeSigner;
 import java.security.KeyStore;
@@ -42,6 +43,7 @@ import java.security.Principal;
 import java.security.Provider;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.text.Collator;
@@ -50,14 +52,20 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.lang.reflect.Constructor;
+import java.math.BigInteger;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.cert.CertStore;
 
+import java.security.cert.X509CRL;
+import java.security.cert.X509CRLEntry;
+import java.security.cert.X509CRLSelector;
+import javax.security.auth.x500.X500Principal;
 import sun.misc.BASE64Encoder;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs.PKCS10;
 import sun.security.provider.X509Factory;
-import sun.security.util.DerOutputStream;
 import sun.security.util.Password;
 import sun.security.util.PathList;
 import javax.crypto.KeyGenerator;
@@ -72,6 +80,7 @@ import javax.net.ssl.X509TrustManager;
 import sun.misc.BASE64Decoder;
 import sun.security.pkcs.PKCS10Attribute;
 import sun.security.pkcs.PKCS9Attribute;
+import sun.security.provider.certpath.ldap.LDAPCertStoreHelper;
 import sun.security.util.DerValue;
 import sun.security.x509.*;
 
@@ -147,6 +156,7 @@ public final class KeyTool {
     private Set<char[]> passwords = new HashSet<char[]> ();
     private String startDate = null;
 
+    private List <String> ids = new ArrayList <String> ();   // used in GENCRL
     private List <String> v3ext = new ArrayList <String> ();
 
     enum Command {
@@ -180,9 +190,6 @@ public final class KeyTool {
             STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
             STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
             PROVIDERARG, PROVIDERPATH, V, PROTECTED),
-        IDENTITYDB("Imports entries from a JDK 1.1.x-style identity database",
-            FILEIN, STORETYPE, KEYSTORE, STOREPASS, PROVIDERNAME,
-            PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V),
         IMPORTCERT("Imports a certificate or a certificate chain",
             NOPROMPT, TRUSTCACERTS, PROTECTED, ALIAS, FILEIN,
             KEYPASS, KEYSTORE, STOREPASS, STORETYPE,
@@ -195,10 +202,6 @@ public final class KeyTool {
             SRCALIAS, DESTALIAS, SRCKEYPASS, DESTKEYPASS,
             NOPROMPT, PROVIDERCLASS, PROVIDERARG, PROVIDERPATH,
             V),
-        KEYCLONE("Clones a key entry",
-            ALIAS, DESTALIAS, KEYPASS, NEW, STORETYPE,
-            KEYSTORE, STOREPASS, PROVIDERNAME, PROVIDERCLASS,
-            PROVIDERARG, PROVIDERPATH, V),
         KEYPASSWD("Changes the key password of an entry",
             ALIAS, KEYPASS, NEW, KEYSTORE, STOREPASS,
             STORETYPE, PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
@@ -211,12 +214,29 @@ public final class KeyTool {
             RFC, FILEIN, SSLSERVER, JARFILE, V),
         PRINTCERTREQ("Prints the content of a certificate request",
             FILEIN, V),
+        PRINTCRL("Prints the content of a CRL file",
+            FILEIN, V),
+        STOREPASSWD("Changes the store password of a keystore",
+            NEW, KEYSTORE, STOREPASS, STORETYPE, PROVIDERNAME,
+            PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V),
+
+        // Undocumented start here, KEYCLONE is used a marker in -help;
+
+        KEYCLONE("Clones a key entry",
+            ALIAS, DESTALIAS, KEYPASS, NEW, STORETYPE,
+            KEYSTORE, STOREPASS, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V),
         SELFCERT("Generates a self-signed certificate",
             ALIAS, SIGALG, DNAME, STARTDATE, VALIDITY, KEYPASS,
             STORETYPE, KEYSTORE, STOREPASS, PROVIDERNAME,
             PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V),
-        STOREPASSWD("Changes the store password of a keystore",
-            NEW, KEYSTORE, STOREPASS, STORETYPE, PROVIDERNAME,
+        GENCRL("Generates CRL",
+            RFC, FILEOUT, ID,
+            ALIAS, SIGALG, EXT, KEYPASS, KEYSTORE,
+            STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V, PROTECTED),
+        IDENTITYDB("Imports entries from a JDK 1.1.x-style identity database",
+            FILEIN, STORETYPE, KEYSTORE, STOREPASS, PROVIDERNAME,
             PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V);
 
         final String description;
@@ -244,6 +264,7 @@ public final class KeyTool {
         EXT("ext", "<value>", "X.509 extension"),
         FILEOUT("file", "<filename>", "output file name"),
         FILEIN("file", "<filename>", "input file name"),
+        ID("id", "<id:reason>", "Serial ID of cert to revoke"),
         INFILE("infile", "<filename>", "input file name"),
         KEYALG("keyalg", "<keyalg>", "key algorithm name"),
         KEYPASS("keypass", "<arg>", "key password"),
@@ -458,6 +479,8 @@ public final class KeyTool {
                 validity = Long.parseLong(args[++i]);
             } else if (collator.compare(flags, "-ext") == 0) {
                 v3ext.add(args[++i]);
+            } else if (collator.compare(flags, "-id") == 0) {
+                ids.add(args[++i]);
             } else if (collator.compare(flags, "-file") == 0) {
                 filename = args[++i];
             } else if (collator.compare(flags, "-infile") == 0) {
@@ -720,7 +743,8 @@ public final class KeyTool {
                         command != GENSECKEY &&
                         command != IDENTITYDB &&
                         command != IMPORTCERT &&
-                        command != IMPORTKEYSTORE) {
+                        command != IMPORTKEYSTORE &&
+                        command != PRINTCRL) {
                         throw new Exception(rb.getString
                                 ("Keystore file does not exist: ") + ksfname);
                     }
@@ -855,10 +879,12 @@ public final class KeyTool {
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)
                     && isKeyStoreRelated(command)) {
                 // here we have EXPORTCERT and LIST (info valid until STOREPASSWD)
-                System.err.print(rb.getString("Enter keystore password:  "));
-                System.err.flush();
-                storePass = Password.readPassword(System.in);
-                passwords.add(storePass);
+                if (command != PRINTCRL) {
+                    System.err.print(rb.getString("Enter keystore password:  "));
+                    System.err.flush();
+                    storePass = Password.readPassword(System.in);
+                    passwords.add(storePass);
+                }
             }
 
             // Now load a nullStream-based keystore,
@@ -895,7 +921,7 @@ public final class KeyTool {
 
         // Create a certificate factory
         if (command == PRINTCERT || command == IMPORTCERT
-                || command == IDENTITYDB) {
+                || command == IDENTITYDB || command == PRINTCRL) {
             cf = CertificateFactory.getInstance("X509");
         }
 
@@ -1086,6 +1112,22 @@ public final class KeyTool {
                     ps.close();
                 }
             }
+        } else if (command == GENCRL) {
+            if (alias == null) {
+                alias = keyAlias;
+            }
+            PrintStream ps = null;
+            if (filename != null) {
+                ps = new PrintStream(new FileOutputStream(filename));
+                out = ps;
+            }
+            try {
+                doGenCRL(out);
+            } finally {
+                if (ps != null) {
+                    ps.close();
+                }
+            }
         } else if (command == PRINTCERTREQ) {
             InputStream inStream = System.in;
             if (filename != null) {
@@ -1098,6 +1140,8 @@ public final class KeyTool {
                     inStream.close();
                 }
             }
+        } else if (command == PRINTCRL) {
+            doPrintCRL(filename, out);
         }
 
         // If we need to save the keystore, do so.
@@ -1152,7 +1196,8 @@ public final class KeyTool {
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
 
-        PrivateKey privateKey = (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
+        PrivateKey privateKey =
+                (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
         if (sigAlgName == null) {
             sigAlgName = getCompatibleSigAlgName(privateKey.getAlgorithm());
         }
@@ -1218,6 +1263,56 @@ public final class KeyTool {
                     dumpCert(xca, out);
                 }
             }
+        }
+    }
+
+    private void doGenCRL(PrintStream out)
+            throws Exception {
+        if (ids == null) {
+            throw new Exception("Must provide -id when -gencrl");
+        }
+        Certificate signerCert = keyStore.getCertificate(alias);
+        byte[] encoded = signerCert.getEncoded();
+        X509CertImpl signerCertImpl = new X509CertImpl(encoded);
+        X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
+                X509CertImpl.NAME + "." + X509CertImpl.INFO);
+        X500Name owner = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
+                                           CertificateSubjectName.DN_NAME);
+
+        Date firstDate = getStartDate(startDate);
+        Date lastDate = (Date) firstDate.clone();
+        lastDate.setTime(lastDate.getTime() + (long)validity*1000*24*60*60);
+        CertificateValidity interval = new CertificateValidity(firstDate,
+                                                               lastDate);
+
+
+        PrivateKey privateKey =
+                (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
+        if (sigAlgName == null) {
+            sigAlgName = getCompatibleSigAlgName(privateKey.getAlgorithm());
+        }
+
+        X509CRLEntry[] badCerts = new X509CRLEntry[ids.size()];
+        for (int i=0; i<ids.size(); i++) {
+            String id = ids.get(i);
+            int d = id.indexOf(':');
+            if (d >= 0) {
+                CRLExtensions ext = new CRLExtensions();
+                ext.set("Reason", new CRLReasonCodeExtension(Integer.parseInt(id.substring(d+1))));
+                badCerts[i] = new X509CRLEntryImpl(new BigInteger(id.substring(0, d)),
+                        firstDate, ext);
+            } else {
+                badCerts[i] = new X509CRLEntryImpl(new BigInteger(ids.get(i)), firstDate);
+            }
+        }
+        X509CRLImpl crl = new X509CRLImpl(owner, firstDate, lastDate, badCerts);
+        crl.sign(privateKey, sigAlgName);
+        if (rfc) {
+            out.println("-----BEGIN X509 CRL-----");
+            new BASE64Encoder().encodeBuffer(crl.getEncodedInternal(), out);
+            out.println("-----END X509 CRL-----");
+        } else {
+            out.write(crl.getEncodedInternal());
         }
     }
 
@@ -1925,6 +2020,177 @@ public final class KeyTool {
         }
     }
 
+    private static <T> Iterable<T> e2i(final Enumeration<T> e) {
+        return new Iterable<T>() {
+            @Override
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
+                    @Override
+                    public boolean hasNext() {
+                        return e.hasMoreElements();
+                    }
+                    @Override
+                    public T next() {
+                        return e.nextElement();
+                    }
+                    public void remove() {
+                        throw new UnsupportedOperationException("Not supported yet.");
+                    }
+                };
+            }
+        };
+    }
+
+    /**
+     * Loads CRLs from a source. This method is also called in JarSigner.
+     * @param src the source, which means System.in if null, or a URI,
+     *        or a bare file path name
+     */
+    public static Collection<? extends CRL> loadCRLs(String src) throws Exception {
+        InputStream in = null;
+        URI uri = null;
+        if (src == null) {
+            in = System.in;
+        } else {
+            try {
+                uri = new URI(src);
+                if (uri.getScheme().equals("ldap")) {
+                    // No input stream for LDAP
+                } else {
+                    in = uri.toURL().openStream();
+                }
+            } catch (Exception e) {
+                try {
+                    in = new FileInputStream(src);
+                } catch (Exception e2) {
+                    if (uri == null || uri.getScheme() == null) {
+                        throw e2;   // More likely a bare file path
+                    } else {
+                        throw e;    // More likely a protocol or network problem
+                    }
+                }
+            }
+        }
+        if (in != null) {
+            try {
+                // Read the full stream before feeding to X509Factory,
+                // otherwise, keytool -gencrl | keytool -printcrl
+                // might not work properly, since -gencrl is slow
+                // and there's no data in the pipe at the beginning.
+                ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                byte[] b = new byte[4096];
+                while (true) {
+                    int len = in.read(b);
+                    if (len < 0) break;
+                    bout.write(b, 0, len);
+                }
+                return CertificateFactory.getInstance("X509").generateCRLs(
+                        new ByteArrayInputStream(bout.toByteArray()));
+            } finally {
+                if (in != System.in) {
+                    in.close();
+                }
+            }
+        } else {    // must be LDAP, and uri is not null
+            String path = uri.getPath();
+            if (path.charAt(0) == '/') path = path.substring(1);
+            LDAPCertStoreHelper h = new LDAPCertStoreHelper();
+            CertStore s = h.getCertStore(uri);
+            X509CRLSelector sel =
+                    h.wrap(new X509CRLSelector(), null, path);
+            return s.getCRLs(sel);
+        }
+    }
+
+    /**
+     * Returns CRLs described in a X509Certificate's CRLDistributionPoints
+     * Extension. Only those containing a general name of type URI are read.
+     */
+    public static List<CRL> readCRLsFromCert(X509Certificate cert)
+            throws Exception {
+        List<CRL> crls = new ArrayList<CRL>();
+        CRLDistributionPointsExtension ext =
+                X509CertImpl.toImpl(cert).getCRLDistributionPointsExtension();
+        if (ext == null) return crls;
+        for (DistributionPoint o: (List<DistributionPoint>)
+                ext.get(CRLDistributionPointsExtension.POINTS)) {
+            GeneralNames names = o.getFullName();
+            if (names != null) {
+                for (GeneralName name: names.names()) {
+                    if (name.getType() == GeneralNameInterface.NAME_URI) {
+                        URIName uriName = (URIName)name.getName();
+                        for (CRL crl: KeyTool.loadCRLs(uriName.getName())) {
+                            if (crl instanceof X509CRL) {
+                                crls.add((X509CRL)crl);
+                            }
+                        }
+                        break;  // Different name should point to same CRL
+                    }
+                }
+            }
+        }
+        return crls;
+    }
+
+    private static String verifyCRL(KeyStore ks, CRL crl)
+            throws Exception {
+        X509CRLImpl xcrl = (X509CRLImpl)crl;
+        X500Principal issuer = xcrl.getIssuerX500Principal();
+        for (String s: e2i(ks.aliases())) {
+            Certificate cert = ks.getCertificate(s);
+            if (cert instanceof X509Certificate) {
+                X509Certificate xcert = (X509Certificate)cert;
+                if (xcert.getSubjectX500Principal().equals(issuer)) {
+                    try {
+                        ((X509CRLImpl)crl).verify(cert.getPublicKey());
+                        return s;
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private void doPrintCRL(String src, PrintStream out)
+            throws Exception {
+        for (CRL crl: loadCRLs(src)) {
+            printCRL(crl, out);
+            String issuer = null;
+            if (caks != null) {
+                issuer = verifyCRL(caks, crl);
+                if (issuer != null) {
+                    System.out.println("Verified by " + issuer + " in cacerts");
+                }
+            }
+            if (issuer == null && keyStore != null) {
+                issuer = verifyCRL(keyStore, crl);
+                if (issuer != null) {
+                    System.out.println("Verified by " + issuer + " in keystore");
+                }
+            }
+            if (issuer == null) {
+                out.println(rb.getString
+                        ("*******************************************"));
+                out.println("WARNING: not verified. Make sure -keystore and -alias are correct.");
+                out.println(rb.getString
+                        ("*******************************************\n\n"));
+            }
+        }
+    }
+
+    private void printCRL(CRL crl, PrintStream out)
+            throws Exception {
+        if (rfc) {
+            X509CRL xcrl = (X509CRL)crl;
+            out.println("-----BEGIN X509 CRL-----");
+            new BASE64Encoder().encodeBuffer(xcrl.getEncoded(), out);
+            out.println("-----END X509 CRL-----");
+        } else {
+            out.println(crl.toString());
+        }
+    }
+
     private void doPrintCertReq(InputStream in, PrintStream out)
             throws Exception {
 
@@ -2061,6 +2327,16 @@ public final class KeyTool {
                                         printX509Cert(x, out);
                                     }
                                     out.println();
+                                }
+                            }
+                            CRL[] crls = SharedSecrets
+                                    .getJavaSecurityCodeSignerAccess()
+                                    .getCRLs(signer);
+                            if (crls != null) {
+                                out.println(rb.getString("CRLs:"));
+                                out.println();
+                                for (CRL crl: crls) {
+                                    printCRL(crl, out);
                                 }
                             }
                         }
@@ -3330,15 +3606,22 @@ public final class KeyTool {
     /**
      * Match a command (may be abbreviated) with a command set.
      * @param s the command provided
-     * @param list the legal command set
+     * @param list the legal command set. If there is a null, commands after it
+     * are regarded experimental, which means they are supported but their
+     * existence should not be revealed to user.
      * @return the position of a single match, or -1 if none matched
      * @throws Exception if s is ambiguous
      */
     private static int oneOf(String s, String... list) throws Exception {
         int[] match = new int[list.length];
         int nmatch = 0;
+        int experiment = Integer.MAX_VALUE;
         for (int i = 0; i<list.length; i++) {
             String one = list[i];
+            if (one == null) {
+                experiment = i;
+                continue;
+            }
             if (one.toLowerCase(Locale.ENGLISH)
                     .startsWith(s.toLowerCase(Locale.ENGLISH))) {
                 match[nmatch++] = i;
@@ -3360,17 +3643,27 @@ public final class KeyTool {
                 }
             }
         }
-        if (nmatch == 0) return -1;
-        if (nmatch == 1) return match[0];
-        StringBuffer sb = new StringBuffer();
-        MessageFormat form = new MessageFormat(rb.getString
-            ("command {0} is ambiguous:"));
-        Object[] source = {s};
-        sb.append(form.format(source) +"\n    ");
-        for (int i=0; i<nmatch; i++) {
-            sb.append(" " + list[match[i]]);
+        if (nmatch == 0) {
+            return -1;
+        } else if (nmatch == 1) {
+            return match[0];
+        } else {
+            // If multiple matches is in experimental commands, ignore them
+            if (match[1] > experiment) {
+                return match[0];
+            }
+            StringBuffer sb = new StringBuffer();
+            MessageFormat form = new MessageFormat(rb.getString
+                ("command {0} is ambiguous:"));
+            Object[] source = {s};
+            sb.append(form.format(source));
+            sb.append("\n    ");
+            for (int i=0; i<nmatch && match[i]<experiment; i++) {
+                sb.append(' ');
+                sb.append(list[match[i]]);
+            }
+            throw new Exception(sb.toString());
         }
-        throw new Exception(sb.toString());
     }
 
     /**
@@ -3405,6 +3698,8 @@ public final class KeyTool {
                         "IssuerAlternativeName",
                         "SubjectInfoAccess",
                         "AuthorityInfoAccess",
+                        null,
+                        "CRLDistributionPoints",
     };
 
     private ObjectIdentifier findOidForExtName(String type)
@@ -3417,6 +3712,7 @@ public final class KeyTool {
             case 4: return PKIXExtensions.IssuerAlternativeName_Id;
             case 5: return PKIXExtensions.SubjectInfoAccess_Id;
             case 6: return PKIXExtensions.AuthInfoAccess_Id;
+            case 8: return PKIXExtensions.CRLDistributionPoints_Id;
             default: return new ObjectIdentifier(type);
         }
     }
@@ -3712,6 +4008,28 @@ public final class KeyTool {
                                     ("Illegal value: ") + extstr);
                         }
                         break;
+                    case 8: // CRL, experimental, only support 1 distributionpoint
+                        if(value != null) {
+                            String[] ps = value.split(",");
+                            GeneralNames gnames = new GeneralNames();
+                            for(String item: ps) {
+                                colonpos = item.indexOf(':');
+                                if (colonpos < 0) {
+                                    throw new Exception("Illegal item " + item + " in " + extstr);
+                                }
+                                String t = item.substring(0, colonpos);
+                                String v = item.substring(colonpos+1);
+                                gnames.add(createGeneralName(t, v));
+                            }
+                            ext.set(CRLDistributionPointsExtension.NAME,
+                                    new CRLDistributionPointsExtension(
+                                        isCritical, Collections.singletonList(
+                                        new DistributionPoint(gnames, null, null))));
+                        } else {
+                            throw new Exception(rb.getString
+                                    ("Illegal value: ") + extstr);
+                        }
+                        break;
                     case -1:
                         ObjectIdentifier oid = new ObjectIdentifier(name);
                         byte[] data = null;
@@ -3748,6 +4066,9 @@ public final class KeyTool {
                                 new DerValue(DerValue.tag_OctetString, data)
                                         .toByteArray()));
                         break;
+                    default:
+                        throw new Exception(rb.getString(
+                                "Unknown extension type: ") + extstr);
                 }
             }
             // always non-critical
@@ -3810,11 +4131,8 @@ public final class KeyTool {
             System.err.println(rb.getString("Commands:"));
             System.err.println();
             for (Command c: Command.values()) {
-                if (c != IDENTITYDB
-                        && c != KEYCLONE
-                        && c != SELFCERT) {     // Deprecated commands
-                    System.err.printf(" %-20s%s\n", c, rb.getString(c.description));
-                }
+                if (c == KEYCLONE) break;
+                System.err.printf(" %-20s%s\n", c, rb.getString(c.description));
             }
             System.err.println();
             System.err.println(rb.getString(
