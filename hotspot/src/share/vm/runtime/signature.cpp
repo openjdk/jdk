@@ -57,7 +57,7 @@ SignatureIterator::SignatureIterator(Thread *thread, symbolOop signature) {
 }
 
 void SignatureIterator::expect(char c) {
-  if (_signature->byte_at(_index) != c) fatal1("expecting %c", c);
+  if (_signature->byte_at(_index) != c) fatal(err_msg("expecting %c", c));
   _index++;
 }
 
