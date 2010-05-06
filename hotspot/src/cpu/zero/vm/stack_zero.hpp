@@ -42,6 +42,8 @@ class ZeroStack {
     return _base == NULL;
   }
 
+  int suggest_size(Thread *thread) const;
+
   void setup(void *mem, size_t size) {
     assert(needs_setup(), "already set up");
     assert(!(size & WordAlignmentMask), "unaligned");
@@ -67,6 +69,9 @@ class ZeroStack {
     _sp = new_sp;
   }
 
+  int total_words() const {
+    return _top - _base;
+  }
   int available_words() const {
     return _sp - _base;
   }
@@ -89,6 +94,7 @@ class ZeroStack {
   int shadow_pages_size() const {
     return _shadow_pages_size;
   }
+  int abi_stack_available(Thread *thread) const;
 
  public:
   void overflow_check(int required_words, TRAPS);

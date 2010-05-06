@@ -26,6 +26,11 @@
 #include "incls/_precompiled.incl"
 #include "incls/_stack_zero.cpp.incl"
 
+int ZeroStack::suggest_size(Thread *thread) const {
+  assert(needs_setup(), "already set up");
+  return align_size_down(abi_stack_available(thread) / 2, wordSize);
+}
+
 void ZeroStack::handle_overflow(TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
 
