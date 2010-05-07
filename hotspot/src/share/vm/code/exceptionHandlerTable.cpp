@@ -221,6 +221,6 @@ void ImplicitExceptionTable::verify(nmethod *nm) const {
   for (uint i = 0; i < len(); i++) {
      if ((*adr(i) > (unsigned int)nm->code_size()) ||
          (*(adr(i)+1) > (unsigned int)nm->code_size()))
-       fatal1("Invalid offset in ImplicitExceptionTable at %lx", _data);
+       fatal(err_msg("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, _data));
   }
 }

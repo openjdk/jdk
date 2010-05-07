@@ -844,7 +844,7 @@ class EntryFrameOopFinder: public SignatureInfo {
   }
 
   void oop_at_offset_do(int offset) {
-    assert (offset >= 0, "illegal offset")
+    assert (offset >= 0, "illegal offset");
     oop* addr = (oop*) _fr->entry_frame_argument_at(offset);
     _f->do_oop(addr);
   }

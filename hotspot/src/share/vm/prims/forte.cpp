@@ -647,7 +647,7 @@ void    collector_func_load(char* name,
 void Forte::register_stub(const char* name, address start, address end) {
 #if !defined(_WINDOWS) && !defined(IA64)
   assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
-    "Code size exceeds maximum range")
+         "Code size exceeds maximum range");
 
   collector_func_load((char*)name, NULL, NULL, start,
     pointer_delta(end, start, sizeof(jbyte)), 0, NULL);

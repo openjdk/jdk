@@ -2339,8 +2339,8 @@ run:
               goto opcode_switch;
           }
 #endif
-          fatal2("\t*** Unimplemented opcode: %d = %s\n",
-                 opcode, Bytecodes::name((Bytecodes::Code)opcode));
+          fatal(err_msg("Unimplemented opcode %d = %s", opcode,
+                        Bytecodes::name((Bytecodes::Code)opcode)));
           goto finish;
 
       } /* switch(opc) */
