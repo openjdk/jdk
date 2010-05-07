@@ -36,6 +36,10 @@ bool frame::is_interpreted_frame() const {
   return zeroframe()->is_interpreter_frame();
 }
 
+bool frame::is_fake_stub_frame() const {
+  return zeroframe()->is_fake_stub_frame();
+}
+
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_entry_frame(), "wrong type of frame");
   assert(map != NULL, "map must be set");

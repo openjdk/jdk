@@ -62,6 +62,9 @@
   }
 
  public:
+  bool is_fake_stub_frame() const;
+
+ public:
   frame sender_for_nonentry_frame(RegisterMap* map) const;
 
  public:

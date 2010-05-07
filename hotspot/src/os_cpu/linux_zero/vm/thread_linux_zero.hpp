@@ -89,6 +89,12 @@
   }
 
  public:
+  static ByteSize last_Java_fp_offset() {
+    return byte_offset_of(JavaThread, _anchor) +
+      JavaFrameAnchor::last_Java_fp_offset();
+  }
+
+ public:
   // Check for pending suspend requests and pending asynchronous
   // exceptions.  There are separate accessors for these, but
   // _suspend_flags is volatile so using them would be unsafe.
