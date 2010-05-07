@@ -65,7 +65,8 @@ VMError::VMError(Thread* thread, int sig, address pc, void* siginfo, void* conte
     _current_step = 0;
     _current_step_info = NULL;
 
-    _message = "";
+    _message = NULL;
+    _detail_msg = NULL;
     _filename = NULL;
     _lineno = 0;
 
@@ -73,31 +74,36 @@ VMError::VMError(Thread* thread, int sig, address pc, void* siginfo, void* conte
 }
 
 // Constructor for internal errors
-VMError::VMError(Thread* thread, const char* message, const char* filename, int lineno) {
-    _thread = thread;
-    _id = internal_error;     // set it to a value that's not an OS exception/signal
-    _filename = filename;
-    _lineno = lineno;
-    _message = message;
+VMError::VMError(Thread* thread, const char* filename, int lineno,
+                 const char* message, const char * detail_msg)
+{
+  _thread = thread;
+  _id = internal_error;     // Value that's not an OS exception/signal
+  _filename = filename;
+  _lineno = lineno;
+  _message = message;
+  _detail_msg = detail_msg;
 
-    _verbose = false;
-    _current_step = 0;
-    _current_step_info = NULL;
+  _verbose = false;
+  _current_step = 0;
+  _current_step_info = NULL;
 
-    _pc = NULL;
-    _siginfo = NULL;
-    _context = NULL;
+  _pc = NULL;
+  _siginfo = NULL;
+  _context = NULL;
 
-    _size = 0;
+  _size = 0;
 }
 
 // Constructor for OOM errors
-VMError::VMError(Thread* thread, size_t size, const char* message, const char* filename, int lineno) {
+VMError::VMError(Thread* thread, const char* filename, int lineno, size_t size,
+                 const char* message) {
     _thread = thread;
-    _id = oom_error;     // set it to a value that's not an OS exception/signal
+    _id = oom_error;     // Value that's not an OS exception/signal
     _filename = filename;
     _lineno = lineno;
     _message = message;
+    _detail_msg = NULL;
 
     _verbose = false;
     _current_step = 0;
@@ -114,10 +120,11 @@ VMError::VMError(Thread* thread, size_t size, const char* message, const char* f
 // Constructor for non-fatal errors
 VMError::VMError(const char* message) {
     _thread = NULL;
-    _id = internal_error;     // set it to a value that's not an OS exception/signal
+    _id = internal_error;     // Value that's not an OS exception/signal
     _filename = NULL;
     _lineno = 0;
     _message = message;
+    _detail_msg = NULL;
 
     _verbose = false;
     _current_step = 0;
@@ -191,22 +198,27 @@ char* VMError::error_string(char* buf, int buflen) {
                  "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" UINTX_FORMAT,
                  signame, _id, _pc,
                  os::current_process_id(), os::current_thread_id());
-  } else {
-    if (_filename != NULL && _lineno > 0) {
-      // skip directory names
-      char separator = os::file_separator()[0];
-      const char *p = strrchr(_filename, separator);
-
-      jio_snprintf(buf, buflen,
-        "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT " \nError: %s",
-        p ? p + 1 : _filename, _lineno,
-        os::current_process_id(), os::current_thread_id(),
-        _message ? _message : "");
-    } else {
-      jio_snprintf(buf, buflen,
-        "Internal Error (0x%x), pid=%d, tid=" UINTX_FORMAT,
-        _id, os::current_process_id(), os::current_thread_id());
+  } else if (_filename != NULL && _lineno > 0) {
+    // skip directory names
+    char separator = os::file_separator()[0];
+    const char *p = strrchr(_filename, separator);
+    int n = jio_snprintf(buf, buflen,
+                         "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT,
+                         p ? p + 1 : _filename, _lineno,
+                         os::current_process_id(), os::current_thread_id());
+    if (n >= 0 && n < buflen && _message) {
+      if (_detail_msg) {
+        jio_snprintf(buf + n, buflen - n, "%s%s: %s",
+                     os::line_separator(), _message, _detail_msg);
+      } else {
+        jio_snprintf(buf + n, buflen - n, "%sError: %s",
+                     os::line_separator(), _message);
+      }
     }
+  } else {
+    jio_snprintf(buf, buflen,
+                 "Internal Error (0x%x), pid=%d, tid=" UINTX_FORMAT,
+                 _id, os::current_process_id(), os::current_thread_id());
   }
 
   return buf;
@@ -369,7 +381,9 @@ void VMError::report(outputStream* st) {
   STEP(40, "(printing error message)")
 
      // error message
-     if (_message && _message[0] != '\0') {
+     if (_detail_msg) {
+       st->print_cr("#  %s: %s", _message ? _message : "Error", _detail_msg);
+     } else if (_message) {
        st->print_cr("#  Error: %s", _message);
      }
 

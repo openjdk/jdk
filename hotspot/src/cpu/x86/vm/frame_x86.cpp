@@ -291,8 +291,8 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   BasicObjectLock* result = (BasicObjectLock*) *addr_at(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
-  assert((intptr_t) fp() >  (intptr_t) result, "result must <  than frame pointer");
-  assert((intptr_t) sp() <= (intptr_t) result, "result must >= than stack pointer");
+  assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
+  assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer");
   return result;
 }
 
