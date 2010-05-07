@@ -274,10 +274,64 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   // </NEW PREDICTION>
 
-  double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
+  // Below, we might need to calculate the pause time target based on
+  // the pause interval. When we do so we are going to give G1 maximum
+  // flexibility and allow it to do pauses when it needs to. So, we'll
+  // arrange that the pause interval to be pause time target + 1 to
+  // ensure that a) the pause time target is maximized with respect to
+  // the pause interval and b) we maintain the invariant that pause
+  // time target < pause interval. If the user does not want this
+  // maximum flexibility, they will have to set the pause interval
+  // explicitly.
+
+  // First make sure that, if either parameter is set, its value is
+  // reasonable.
+  if (!FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    if (MaxGCPauseMillis < 1) {
+      vm_exit_during_initialization("MaxGCPauseMillis should be "
+                                    "greater than 0");
+    }
+  }
+  if (!FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    if (GCPauseIntervalMillis < 1) {
+      vm_exit_during_initialization("GCPauseIntervalMillis should be "
+                                    "greater than 0");
+    }
+  }
+
+  // Then, if the pause time target parameter was not set, set it to
+  // the default value.
+  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+      // The default pause time target in G1 is 200ms
+      FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+    } else {
+      // We do not allow the pause interval to be set without the
+      // pause time target
+      vm_exit_during_initialization("GCPauseIntervalMillis cannot be set "
+                                    "without setting MaxGCPauseMillis");
+    }
+  }
+
+  // Then, if the interval parameter was not set, set it according to
+  // the pause time target (this will also deal with the case when the
+  // pause time target is the default value).
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
+  }
+
+  // Finally, make sure that the two parameters are consistent.
+  if (MaxGCPauseMillis >= GCPauseIntervalMillis) {
+    char buffer[256];
+    jio_snprintf(buffer, 256,
+                 "MaxGCPauseMillis (%u) should be less than "
+                 "GCPauseIntervalMillis (%u)",
+                 MaxGCPauseMillis, GCPauseIntervalMillis);
+    vm_exit_during_initialization(buffer);
+  }
+
   double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
-  guarantee(max_gc_time < time_slice,
-            "Max GC time should not be greater than the time slice");
+  double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
   _sigma = (double) G1ConfidencePercent / 100.0;
 
