@@ -401,29 +401,40 @@ class DatagramSocket implements java.io.Closeable {
      * send or receive may throw a PortUnreachableException. Note, there is no
      * guarantee that the exception will be thrown.
      *
-     * <p>A caller's permission to send and receive datagrams to a
-     * given host and port are checked at connect time. When a socket
-     * is connected, receive and send <b>will not
-     * perform any security checks</b> on incoming and outgoing
-     * packets, other than matching the packet's and the socket's
-     * address and port. On a send operation, if the packet's address
-     * is set and the packet's address and the socket's address do not
-     * match, an IllegalArgumentException will be thrown. A socket
-     * connected to a multicast address may only be used to send packets.
+     * <p> If a security manager has been installed then it is invoked to check
+     * access to the remote address. Specifically, if the given {@code address}
+     * is a {@link InetAddress#isMulticastAddress multicast address},
+     * the security manager's {@link
+     * java.lang.SecurityManager#checkMulticast(InetAddress)
+     * checkMulticast} method is invoked with the given {@code address}.
+     * Otherwise, the security manager's {@link
+     * java.lang.SecurityManager#checkConnect(String,int) checkConnect}
+     * and {@link java.lang.SecurityManager#checkAccept checkAccept} methods
+     * are invoked, with the given {@code address} and {@code port}, to
+     * verify that datagrams are permitted to be sent and received
+     * respectively.
+     *
+     * <p> When a socket is connected, {@link #receive receive} and
+     * {@link #send send} <b>will not perform any security checks</b>
+     * on incoming and outgoing packets, other than matching the packet's
+     * and the socket's address and port. On a send operation, if the
+     * packet's address is set and the packet's address and the socket's
+     * address do not match, an {@code IllegalArgumentException} will be
+     * thrown. A socket connected to a multicast address may only be used
+     * to send packets.
      *
      * @param address the remote address for the socket
      *
      * @param port the remote port for the socket.
      *
-     * @exception IllegalArgumentException if the address is null,
-     * or the port is out of range.
+     * @throws IllegalArgumentException
+     *         if the address is null, or the port is out of range.
      *
-     * @exception SecurityException if the caller is not allowed to
-     * send datagrams to and receive datagrams from the address and port.
+     * @throws SecurityException
+     *         if a security manager has been installed and it does
+     *         not permit access to the given remote address
      *
      * @see #disconnect
-     * @see #send
-     * @see #receive
      */
     public void connect(InetAddress address, int port) {
         try {
@@ -435,13 +446,25 @@ class DatagramSocket implements java.io.Closeable {
 
     /**
      * Connects this socket to a remote socket address (IP address + port number).
-     * <p>
+     *
+     * <p> If given an {@link InetSocketAddress InetSocketAddress}, this method
+     * behaves as if invoking {@link #connect(InetAddress,int) connect(InetAddress,int)}
+     * with the the given socket addresses IP address and port number.
+     *
      * @param   addr    The remote address.
-     * @throws  SocketException if the connect fails
-     * @throws  IllegalArgumentException if addr is null or addr is a SocketAddress
-     *          subclass not supported by this socket
+     *
+     * @throws  SocketException
+     *          if the connect fails
+     *
+     * @throws IllegalArgumentException
+     *         if {@code addr} is {@code null}, or {@code addr} is a SocketAddress
+     *         subclass not supported by this socket
+     *
+     * @throws SecurityException
+     *         if a security manager has been installed and it does
+     *         not permit access to the given remote address
+     *
      * @since 1.4
-     * @see #connect
      */
     public void connect(SocketAddress addr) throws SocketException {
         if (addr == null)
