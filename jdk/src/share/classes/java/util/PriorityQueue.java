@@ -236,23 +236,36 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * The maximum size of array to allocate.
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
+     */
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    /**
      * Increases the capacity of the array.
      *
      * @param minCapacity the desired minimum capacity
      */
     private void grow(int minCapacity) {
-        if (minCapacity < 0) // overflow
-            throw new OutOfMemoryError();
         int oldCapacity = queue.length;
         // Double size if small; else grow by 50%
-        int newCapacity = ((oldCapacity < 64)?
-                           ((oldCapacity + 1) * 2):
-                           ((oldCapacity / 2) * 3));
-        if (newCapacity < 0) // overflow
-            newCapacity = Integer.MAX_VALUE;
-        if (newCapacity < minCapacity)
-            newCapacity = minCapacity;
+        int newCapacity = oldCapacity + ((oldCapacity < 64) ?
+                                         (oldCapacity + 2) :
+                                         (oldCapacity >> 1));
+        // overflow-conscious code
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
         queue = Arrays.copyOf(queue, newCapacity);
+    }
+
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+            throw new OutOfMemoryError();
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+            Integer.MAX_VALUE :
+            MAX_ARRAY_SIZE;
     }
 
     /**
