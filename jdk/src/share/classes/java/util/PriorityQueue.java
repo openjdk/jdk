@@ -170,17 +170,21 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified collection or any
      *         of its elements are null
      */
+    @SuppressWarnings("unchecked")
     public PriorityQueue(Collection<? extends E> c) {
-        initFromCollection(c);
-        if (c instanceof SortedSet)
-            comparator = (Comparator<? super E>)
-                ((SortedSet<? extends E>)c).comparator();
-        else if (c instanceof PriorityQueue)
-            comparator = (Comparator<? super E>)
-                ((PriorityQueue<? extends E>)c).comparator();
+        if (c instanceof SortedSet<?>) {
+            SortedSet<? extends E> ss = (SortedSet<? extends E>) c;
+            this.comparator = (Comparator<? super E>) ss.comparator();
+            initElementsFromCollection(ss);
+        }
+        else if (c instanceof PriorityQueue<?>) {
+            PriorityQueue<? extends E> pq = (PriorityQueue<? extends E>) c;
+            this.comparator = (Comparator<? super E>) pq.comparator();
+            initFromPriorityQueue(pq);
+        }
         else {
-            comparator = null;
-            heapify();
+            this.comparator = null;
+            initFromCollection(c);
         }
     }
 
@@ -198,9 +202,10 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified priority queue or any
      *         of its elements are null
      */
+    @SuppressWarnings("unchecked")
     public PriorityQueue(PriorityQueue<? extends E> c) {
-        comparator = (Comparator<? super E>)c.comparator();
-        initFromCollection(c);
+        this.comparator = (Comparator<? super E>) c.comparator();
+        initFromPriorityQueue(c);
     }
 
     /**
@@ -216,9 +221,33 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified sorted set or any
      *         of its elements are null
      */
+    @SuppressWarnings("unchecked")
     public PriorityQueue(SortedSet<? extends E> c) {
-        comparator = (Comparator<? super E>)c.comparator();
-        initFromCollection(c);
+        this.comparator = (Comparator<? super E>) c.comparator();
+        initElementsFromCollection(c);
+    }
+
+    private void initFromPriorityQueue(PriorityQueue<? extends E> c) {
+        if (c.getClass() == PriorityQueue.class) {
+            this.queue = c.toArray();
+            this.size = c.size();
+        } else {
+            initFromCollection(c);
+        }
+    }
+
+    private void initElementsFromCollection(Collection<? extends E> c) {
+        Object[] a = c.toArray();
+        // If c.toArray incorrectly doesn't return Object[], copy it.
+        if (a.getClass() != Object[].class)
+            a = Arrays.copyOf(a, a.length, Object[].class);
+        int len = a.length;
+        if (len == 1 || this.comparator != null)
+            for (int i = 0; i < len; i++)
+                if (a[i] == null)
+                    throw new NullPointerException();
+        this.queue = a;
+        this.size = a.length;
     }
 
     /**
@@ -227,12 +256,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @param c the collection
      */
     private void initFromCollection(Collection<? extends E> c) {
-        Object[] a = c.toArray();
-        // If c.toArray incorrectly doesn't return Object[], copy it.
-        if (a.getClass() != Object[].class)
-            a = Arrays.copyOf(a, a.length, Object[].class);
-        queue = a;
-        size = a.length;
+        initElementsFromCollection(c);
+        heapify();
     }
 
     /**
