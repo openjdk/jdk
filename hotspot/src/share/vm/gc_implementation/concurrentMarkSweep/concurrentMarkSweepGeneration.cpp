@@ -1364,7 +1364,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   obj->set_mark(m);
 
   // Now we can track the promoted object, if necessary.  We take care
-  // To delay the transition from uninitialized to full object
+  // to delay the transition from uninitialized to full object
   // (i.e., insertion of klass pointer) until after, so that it
   // atomically becomes a promoted object.
   if (promoInfo->tracking()) {
