@@ -172,6 +172,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_UNIXToolkit_load_1stock_1icon;
         Java_sun_awt_UNIXToolkit_load_1gtk_1icon;
         Java_sun_awt_UNIXToolkit_nativeSync;
+        Java_sun_awt_UNIXToolkit_gtkCheckVersionImpl;
         Java_java_awt_AWTEvent_initIDs;
         Java_java_awt_event_InputEvent_initIDs;
         Java_java_awt_event_KeyEvent_initIDs;
@@ -395,6 +396,9 @@ SUNWprivate_1.1 {
         Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetColorForState;
         Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetClassValue;
         Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetPangoFontName;
+
+	Java_sun_awt_X11_GtkFileDialogPeer_run;
+	Java_sun_awt_X11_GtkFileDialogPeer_quit;
 
 	Java_sun_print_CUPSPrinter_initIDs;
 	Java_sun_print_CUPSPrinter_getCupsServer;
