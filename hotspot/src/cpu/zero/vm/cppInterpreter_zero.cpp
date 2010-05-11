@@ -833,7 +833,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
   int callee_extra_locals = callee_locals - callee_param_count;
 
   if (interpreter_frame) {
-    intptr_t *locals        = interpreter_frame->sp() + method->max_locals();
+    intptr_t *locals        = interpreter_frame->fp() + method->max_locals();
     interpreterState istate = interpreter_frame->get_interpreterState();
     intptr_t *monitor_base  = (intptr_t*) istate;
     intptr_t *stack_base    = monitor_base - monitor_words;

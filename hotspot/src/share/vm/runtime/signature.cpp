@@ -327,6 +327,26 @@ symbolOop SignatureStream::as_symbol(TRAPS) {
   return result;
 }
 
+klassOop SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
+                                   FailureMode failure_mode, TRAPS) {
+  if (!is_object())  return NULL;
+  symbolOop name = as_symbol(CHECK_NULL);
+  if (failure_mode == ReturnNull) {
+    return SystemDictionary::resolve_or_null(name, class_loader, protection_domain, THREAD);
+  } else {
+    bool throw_error = (failure_mode == NCDFError);
+    return SystemDictionary::resolve_or_fail(name, class_loader, protection_domain, throw_error, THREAD);
+  }
+}
+
+oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domain,
+                                    FailureMode failure_mode, TRAPS) {
+  if (!is_object())
+    return Universe::java_mirror(type());
+  klassOop klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
+  if (klass == NULL)  return NULL;
+  return Klass::cast(klass)->java_mirror();
+}
 
 symbolOop SignatureStream::as_symbol_or_null() {
   // Create a symbol from for string _begin _end
