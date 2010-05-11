@@ -230,6 +230,11 @@ public class Flags {
      */
     public static final long PROPRIETARY = 1L<<38;
 
+    /**
+     * Flag that marks a disjoint var in a multi-catch clause
+     */
+    public static final long DISJOINT = 1L<<39;
+
     /** Modifier masks.
      */
     public static final int
