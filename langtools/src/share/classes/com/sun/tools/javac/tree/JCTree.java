@@ -236,9 +236,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int TYPEAPPLY = TYPEARRAY + 1;
 
+    /** Disjunctive types, of type TypeDisjoint.
+     */
+    public static final int TYPEDISJOINT = TYPEAPPLY + 1;
+
     /** Formal type parameters, of type TypeParameter.
      */
-    public static final int TYPEPARAMETER = TYPEAPPLY + 1;
+    public static final int TYPEPARAMETER = TYPEDISJOINT + 1;
 
     /** Type argument.
      */
@@ -1863,6 +1867,34 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * A disjoint type, T1 | T2 | ... Tn (used in multicatch statements)
+     */
+    public static class JCTypeDisjoint extends JCExpression implements DisjointTypeTree {
+
+        public List<JCExpression> components;
+
+        protected JCTypeDisjoint(List<JCExpression> components) {
+            this.components = components;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitTypeDisjoint(this); }
+
+        public Kind getKind() { return Kind.DISJOINT_TYPE; }
+
+        public List<JCExpression> getTypeComponents() {
+            return components;
+        }
+        @Override
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitDisjointType(this, d);
+        }
+        @Override
+        public int getTag() {
+            return TYPEDISJOINT;
+        }
+    }
+
+    /**
      * A formal class parameter.
      * @param name name
      * @param bounds bounds
@@ -2220,6 +2252,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
+        public void visitTypeDisjoint(JCTypeDisjoint that)   { visitTree(that); }
         public void visitTypeParameter(JCTypeParameter that) { visitTree(that); }
         public void visitWildcard(JCWildcard that)           { visitTree(that); }
         public void visitTypeBoundKind(TypeBoundKind that)   { visitTree(that); }
