@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
 package java.security;
 
 import java.io.Serializable;
+import java.security.cert.CRL;
 import java.security.cert.CertPath;
+import sun.misc.JavaSecurityCodeSignerAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * This class encapsulates information about a code signer.
@@ -163,4 +166,43 @@ public final class CodeSigner implements Serializable {
         sb.append(")");
         return sb.toString();
     }
+
+    // A private attribute attached to this CodeSigner object. Can be accessed
+    // through SharedSecrets.getJavaSecurityCodeSignerAccess().[g|s]etCRLs
+    //
+    // Currently called in SignatureFileVerifier.getSigners
+    private transient CRL[] crls;
+
+    /**
+     * Sets the CRLs attached
+     * @param crls, null to clear
+     */
+    void setCRLs(CRL[] crls) {
+        this.crls = crls;
+    }
+
+    /**
+     * Returns the CRLs attached
+     * @return the crls, initially null
+     */
+    CRL[] getCRLs() {
+        return crls;
+    }
+
+    // Set up JavaSecurityCodeSignerAccess in SharedSecrets
+    static {
+        SharedSecrets.setJavaSecurityCodeSignerAccess(
+                new JavaSecurityCodeSignerAccess() {
+            @Override
+            public void setCRLs(CodeSigner signer, CRL[] crls) {
+                signer.setCRLs(crls);
+            }
+
+            @Override
+            public CRL[] getCRLs(CodeSigner signer) {
+                return signer.getCRLs();
+            }
+        });
+    }
+
 }

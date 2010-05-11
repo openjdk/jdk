@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,47 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+package sun.misc;
 
-package com.sun.security.jgss;
+import java.security.CodeSigner;
+import java.security.cert.CRL;
 
-/**
- * Kerberos 5 AuthorizationData entry.
- */
-final public class AuthorizationDataEntry {
-
-    private final int type;
-    private final byte[] data;
-
-    /**
-     * Create an AuthorizationDataEntry object.
-     * @param type the ad-type
-     * @param data the ad-data, a copy of the data will be saved
-     * inside the object.
-     */
-    public AuthorizationDataEntry(int type, byte[] data) {
-        this.type = type;
-        this.data = data.clone();
-    }
-
-    /**
-     * Get the ad-type field.
-     * @return ad-type
-     */
-    public int getType() {
-        return type;
-    }
-
-    /**
-     * Get a copy of the ad-data field.
-     * @return ad-data
-     */
-    public byte[] getData() {
-        return data.clone();
-    }
-
-    public String toString() {
-        return "AuthorizationDataEntry: type="+type+", data=" +
-                data.length + " bytes:\n" +
-                new sun.misc.HexDumpEncoder().encodeBuffer(data);
-    }
+public interface JavaSecurityCodeSignerAccess {
+    void setCRLs(CodeSigner signer, CRL[] crls);
+    CRL[] getCRLs(CodeSigner signer);
 }
