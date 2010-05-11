@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.tools;
 
 import java.io.*;
+import java.security.cert.X509CRL;
 import java.util.*;
 import java.util.zip.*;
 import java.util.jar.*;
@@ -35,6 +36,7 @@ import java.net.URISyntaxException;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.security.cert.Certificate;
+import java.security.cert.CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.*;
@@ -56,6 +58,7 @@ import java.util.Map.Entry;
 import sun.security.x509.*;
 import sun.security.util.*;
 import sun.misc.BASE64Encoder;
+import sun.misc.SharedSecrets;
 
 
 /**
@@ -114,14 +117,16 @@ public class JarSigner {
     static final int SIGNED_BY_ALIAS = 0x08;    // signer is in alias list
 
     X509Certificate[] certChain;    // signer's cert chain (when composing)
+    Set<X509CRL> crls;                 // signer provided CRLs
     PrivateKey privateKey;          // private key
     KeyStore store;                 // the keystore specified by -keystore
                                     // or the default keystore, never null
 
     String keystore; // key store file
+    List<String> crlfiles = new ArrayList<String>();  // CRL files to add
     boolean nullStream = false; // null keystore input stream (NONE)
     boolean token = false; // token-based keystore
-    String jarfile;  // jar file to sign or verify
+    String jarfile;  // jar files to sign or verify
     String alias;    // alias to sign jar with
     List<String> ckaliases = new ArrayList<String>(); // aliases in -verify
     char[] storepass; // keystore password
@@ -146,6 +151,7 @@ public class JarSigner {
     boolean signManifest = true; // "sign" the whole manifest
     boolean externalSF = true; // leave the .SF out of the PKCS7 block
     boolean strict = false;  // treat warnings as error
+    boolean autoCRL = false;    // Automatcially add CRL defined in cert
 
     // read zip entry raw bytes
     private ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
@@ -226,6 +232,29 @@ public class JarSigner {
             } else {
                 loadKeyStore(keystore, true);
                 getAliasInfo(alias);
+                crls = new HashSet<X509CRL>();
+                if (crlfiles.size() > 0 || autoCRL) {
+                    CertificateFactory fac =
+                            CertificateFactory.getInstance("X509");
+                    List<CRL> list = new ArrayList<CRL>();
+                    for (String file: crlfiles) {
+                        Collection<? extends CRL> tmp = KeyTool.loadCRLs(file);
+                        for (CRL crl: tmp) {
+                            if (crl instanceof X509CRL) {
+                                crls.add((X509CRL)crl);
+                            }
+                        }
+                    }
+                    if (autoCRL) {
+                        List<CRL> crlsFromCert =
+                                KeyTool.readCRLsFromCert(certChain[0]);
+                        for (CRL crl: crlsFromCert) {
+                            if (crl instanceof X509CRL) {
+                                crls.add((X509CRL)crl);
+                            }
+                        }
+                    }
+                }
 
                 // load the alternative signing mechanism
                 if (altSignerClass != null) {
@@ -367,6 +396,13 @@ public class JarSigner {
             } else if (collator.compare(flags, "-digestalg") ==0) {
                 if (++n == args.length) usageNoArg();
                 digestalg = args[n];
+            } else if (collator.compare(flags, "-crl") ==0) {
+                if ("auto".equals(modifier)) {
+                    autoCRL = true;
+                } else {
+                    if (++n == args.length) usageNoArg();
+                    crlfiles.add(args[n]);
+                }
             } else if (collator.compare(flags, "-certs") ==0) {
                 showcerts = true;
             } else if (collator.compare(flags, "-strict") ==0) {
@@ -516,6 +552,9 @@ public class JarSigner {
                 ("[-sigalg <algorithm>]       name of signature algorithm"));
         System.out.println();
         System.out.println(rb.getString
+                ("[-crl[:auto| <file>]        include CRL in signed jar"));
+        System.out.println();
+        System.out.println(rb.getString
                 ("[-verify]                   verify a signed JAR file"));
         System.out.println();
         System.out.println(rb.getString
@@ -654,6 +693,20 @@ public class JarSigner {
                             if (showcerts) {
                                 sb.append(si);
                                 sb.append('\n');
+                                CRL[] crls = SharedSecrets
+                                        .getJavaSecurityCodeSignerAccess()
+                                        .getCRLs(signer);
+                                if (crls != null) {
+                                    for (CRL crl: crls) {
+                                        if (crl instanceof X509CRLImpl) {
+                                            sb.append(tab).append("[");
+                                            sb.append(String.format(
+                                                    rb.getString("with a CRL including %d entries"),
+                                                    ((X509CRLImpl)crl).getRevokedCertificates().size()))
+                                                .append("]\n");
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else if (showcerts && !verbose.equals("all")) {
@@ -1123,6 +1176,8 @@ public class JarSigner {
             BASE64Encoder encoder = new JarBASE64Encoder();
             Vector<ZipEntry> mfFiles = new Vector<ZipEntry>();
 
+            boolean wasSigned = false;
+
             for (Enumeration<? extends ZipEntry> enum_=zipFile.entries();
                         enum_.hasMoreElements();) {
                 ZipEntry ze = enum_.nextElement();
@@ -1131,6 +1186,11 @@ public class JarSigner {
                     // Store META-INF files in vector, so they can be written
                     // out first
                     mfFiles.addElement(ze);
+
+                    if (SignatureFileVerifier.isBlockOrSF(
+                            ze.getName().toUpperCase(Locale.ENGLISH))) {
+                        wasSigned = true;
+                    }
 
                     if (signatureRelated(ze.getName())) {
                         // ignore signature-related and manifest files
@@ -1159,37 +1219,41 @@ public class JarSigner {
             if (mfModified) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 manifest.write(baos);
-                byte[] newBytes = baos.toByteArray();
-                if (mfRawBytes != null
-                        && oldAttr.equals(manifest.getMainAttributes())) {
+                if (wasSigned) {
+                    byte[] newBytes = baos.toByteArray();
+                    if (mfRawBytes != null
+                            && oldAttr.equals(manifest.getMainAttributes())) {
 
-                    /*
-                     * Note:
-                     *
-                     * The Attributes object is based on HashMap and can handle
-                     * continuation columns. Therefore, even if the contents are
-                     * not changed (in a Map view), the bytes that it write()
-                     * may be different from the original bytes that it read()
-                     * from. Since the signature on the main attributes is based
-                     * on raw bytes, we must retain the exact bytes.
-                     */
+                        /*
+                         * Note:
+                         *
+                         * The Attributes object is based on HashMap and can handle
+                         * continuation columns. Therefore, even if the contents are
+                         * not changed (in a Map view), the bytes that it write()
+                         * may be different from the original bytes that it read()
+                         * from. Since the signature on the main attributes is based
+                         * on raw bytes, we must retain the exact bytes.
+                         */
 
-                    int newPos = findHeaderEnd(newBytes);
-                    int oldPos = findHeaderEnd(mfRawBytes);
+                        int newPos = findHeaderEnd(newBytes);
+                        int oldPos = findHeaderEnd(mfRawBytes);
 
-                    if (newPos == oldPos) {
-                        System.arraycopy(mfRawBytes, 0, newBytes, 0, oldPos);
-                    } else {
-                        // cat oldHead newTail > newBytes
-                        byte[] lastBytes = new byte[oldPos +
-                                newBytes.length - newPos];
-                        System.arraycopy(mfRawBytes, 0, lastBytes, 0, oldPos);
-                        System.arraycopy(newBytes, newPos, lastBytes, oldPos,
-                                newBytes.length - newPos);
-                        newBytes = lastBytes;
+                        if (newPos == oldPos) {
+                            System.arraycopy(mfRawBytes, 0, newBytes, 0, oldPos);
+                        } else {
+                            // cat oldHead newTail > newBytes
+                            byte[] lastBytes = new byte[oldPos +
+                                    newBytes.length - newPos];
+                            System.arraycopy(mfRawBytes, 0, lastBytes, 0, oldPos);
+                            System.arraycopy(newBytes, newPos, lastBytes, oldPos,
+                                    newBytes.length - newPos);
+                            newBytes = lastBytes;
+                        }
                     }
+                    mfRawBytes = newBytes;
+                } else {
+                    mfRawBytes = baos.toByteArray();
                 }
-                mfRawBytes = newBytes;
             }
 
             // Write out the manifest
@@ -1222,7 +1286,7 @@ public class JarSigner {
 
             try {
                 block =
-                    sf.generateBlock(privateKey, sigalg, certChain,
+                    sf.generateBlock(privateKey, sigalg, certChain, crls,
                         externalSF, tsaUrl, tsaCert, signingMechanism, args,
                         zipFile);
             } catch (SocketTimeoutException e) {
@@ -1411,23 +1475,31 @@ public class JarSigner {
     }
 
     /**
-     * Find the position of an empty line inside bs
+     * Find the length of header inside bs. The header is a multiple (>=0)
+     * lines of attributes plus an empty line. The empty line is included
+     * in the header.
      */
     private int findHeaderEnd(byte[] bs) {
-        // An empty line can be at the beginning...
-        if (bs.length > 1 && bs[0] == '\r' && bs[1] == '\n') {
-            return 0;
-        }
-        // ... or after another line
-        for (int i=0; i<bs.length-3; i++) {
-            if (bs[i] == '\r' && bs[i+1] == '\n' &&
-                    bs[i+2] == '\r' && bs[i+3] == '\n') {
-               return i;
+        // Initial state true to deal with empty header
+        boolean newline = true;     // just met a newline
+        int len = bs.length;
+        for (int i=0; i<len; i++) {
+            switch (bs[i]) {
+                case '\r':
+                    if (i < len && bs[i+1] == '\n') i++;
+                    // fallthrough
+                case '\n':
+                    if (newline) return i+1;    //+1 to get length
+                    newline = true;
+                    break;
+                default:
+                    newline = false;
             }
         }
-        // If header end is not found, return 0,
-        // which means no behavior change.
-        return 0;
+        // If header end is not found, it means the MANIFEST.MF has only
+        // the main attributes section and it does not end with 2 newlines.
+        // Returns the whole length so that it can be completely replaced.
+        return len;
     }
 
     /**
@@ -2178,6 +2250,7 @@ class SignatureFile {
     public Block generateBlock(PrivateKey privateKey,
                                String sigalg,
                                X509Certificate[] certChain,
+                               Set<X509CRL> crls,
                                boolean externalSF, String tsaUrl,
                                X509Certificate tsaCert,
                                ContentSigner signingMechanism,
@@ -2185,7 +2258,7 @@ class SignatureFile {
         throws NoSuchAlgorithmException, InvalidKeyException, IOException,
             SignatureException, CertificateException
     {
-        return new Block(this, privateKey, sigalg, certChain, externalSF,
+        return new Block(this, privateKey, sigalg, certChain, crls, externalSF,
                 tsaUrl, tsaCert, signingMechanism, args, zipFile);
     }
 
@@ -2199,7 +2272,8 @@ class SignatureFile {
          * Construct a new signature block.
          */
         Block(SignatureFile sfg, PrivateKey privateKey, String sigalg,
-            X509Certificate[] certChain, boolean externalSF, String tsaUrl,
+            X509Certificate[] certChain, Set<X509CRL> crls,
+            boolean externalSF, String tsaUrl,
             X509Certificate tsaCert, ContentSigner signingMechanism,
             String[] args, ZipFile zipFile)
             throws NoSuchAlgorithmException, InvalidKeyException, IOException,
@@ -2286,7 +2360,7 @@ class SignatureFile {
             // Assemble parameters for the signing mechanism
             ContentSignerParameters params =
                 new JarSignerParameters(args, tsaUri, tsaCert, signature,
-                    signatureAlgorithm, certChain, content, zipFile);
+                    signatureAlgorithm, certChain, crls, content, zipFile);
 
             // Generate the signature block
             block = signingMechanism.generateSignedData(
@@ -2327,6 +2401,7 @@ class JarSignerParameters implements ContentSignerParameters {
     private byte[] signature;
     private String signatureAlgorithm;
     private X509Certificate[] signerCertificateChain;
+    private Set<X509CRL> crls;
     private byte[] content;
     private ZipFile source;
 
@@ -2335,7 +2410,8 @@ class JarSignerParameters implements ContentSignerParameters {
      */
     JarSignerParameters(String[] args, URI tsa, X509Certificate tsaCertificate,
         byte[] signature, String signatureAlgorithm,
-        X509Certificate[] signerCertificateChain, byte[] content,
+        X509Certificate[] signerCertificateChain, Set<X509CRL> crls,
+        byte[] content,
         ZipFile source) {
 
         if (signature == null || signatureAlgorithm == null ||
@@ -2348,6 +2424,7 @@ class JarSignerParameters implements ContentSignerParameters {
         this.signature = signature;
         this.signatureAlgorithm = signatureAlgorithm;
         this.signerCertificateChain = signerCertificateChain;
+        this.crls = crls;
         this.content = content;
         this.source = source;
     }
@@ -2422,5 +2499,14 @@ class JarSignerParameters implements ContentSignerParameters {
      */
     public ZipFile getSource() {
         return source;
+    }
+
+    @Override
+    public Set<X509CRL> getCRLs() {
+        if (crls == null) {
+            return Collections.emptySet();
+        } else {
+            return Collections.unmodifiableSet(crls);
+        }
     }
 }
