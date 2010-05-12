@@ -809,8 +809,7 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1
   Node* no_ctrl = NULL;
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type =
-        TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
   const TypeAryPtr* value_type =
         TypeAryPtr::make(TypePtr::NotNull,
@@ -883,8 +882,7 @@ bool LibraryCallKit::inline_string_compareTo() {
   }
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type =
-    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
   Node* no_ctrl = NULL;
 
   // Get counts for string and argument
@@ -958,14 +956,16 @@ bool LibraryCallKit::inline_string_equals() {
     }
   }
 
-  const TypeInstPtr* string_type =
-    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
   Node* no_ctrl = NULL;
   Node* receiver_cnt;
   Node* argument_cnt;
 
   if (!stopped()) {
+    // Properly cast the argument to String
+    argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
+
     // Get counts for string and argument
     Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
     receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
@@ -1090,7 +1090,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
   const TypeAryPtr*  source_type = TypeAryPtr::make(TypePtr::NotNull, TypeAry::make(TypeInt::CHAR,TypeInt::POS), ciTypeArrayKlass::make(T_CHAR), true, 0);
 
   Node* sourceOffseta = basic_plus_adr(string_object, string_object, offset_offset);
@@ -1199,8 +1199,7 @@ bool LibraryCallKit::inline_string_indexOf() {
     Node* no_ctrl  = NULL;
 
     ciInstanceKlass* klass = env()->String_klass();
-    const TypeInstPtr* string_type =
-      TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
     // Get counts for string and substr
     Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
