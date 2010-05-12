@@ -25,9 +25,6 @@
 
 package sun.jvmstat.monitor;
 
-import sun.management.counter.Units;
-import sun.management.counter.Variability;
-
 /**
  * The base class for Instrumentation Monitoring Objects. This base class
  * provides implementations of the {@link Monitor} methods that are common
