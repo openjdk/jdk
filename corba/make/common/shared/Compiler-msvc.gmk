@@ -97,6 +97,19 @@ ifeq ($(PLATFORM), windows)
 	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
       endif
     endif
+    ifeq ($(CC_MAJORVER), 16)
+      # This should be: CC_VER=16.00.30319.01 LINK_VER=10.00.30319.01
+      REQUIRED_CC_VER = 16.00.30319.01
+      REQUIRED_LINK_VER = 10.00.30319.01
+      COMPILER_NAME=Visual Studio 10
+      COMPILER_VERSION=VS2010
+      #rebase and midl moved out of Visual Studio into the SDK:
+      REBASE     = $(MSDEVTOOLS_PATH)/rebase
+      MTL        = $(MSDEVTOOLS_PATH)/midl.exe
+      ifndef COMPILER_PATH
+	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
+      endif
+    endif
   else
     # else ARCH_DATA_MODEL is 64
     ifndef LINK_VER
@@ -144,11 +157,21 @@ ifeq ($(PLATFORM), windows)
       COMPILER_NAME=Windows SDK 6.1 Visual Studio 9
       COMPILER_VERSION=VS2008
       RC = $(MSSDK61)/bin/x64/rc
-      REBASE = $(MSSDK61/bin/x64/rebase
+      REBASE = $(MSSDK61)/bin/x64/rebase
     else
-      # This will cause problems if ALT_COMPILER_PATH is defined to ""
-      # which is a directive to use the PATH.
-      REBASE         = $(COMPILER_PATH)../REBASE
+      ifeq ($(CC_MAJORVER), 16)
+        # This should be: CC_VER=16.00.30319.01 LINK_VER=9.00.30319.01
+        REQUIRED_CC_VER = 16.00.30319.01
+        REQUIRED_LINK_VER = 10.00.30319.01
+        COMPILER_NAME=Microsoft Visual Studio 10
+        COMPILER_VERSION=VS2010
+        RC = $(MSSDK7)/bin/x64/rc
+        REBASE = $(MSSDK7)/bin/x64/rebase
+      else
+        # This will cause problems if ALT_COMPILER_PATH is defined to ""
+        # which is a directive to use the PATH.
+        REBASE         = $(COMPILER_PATH)../REBASE
+      endif
     endif
     ifndef COMPILER_PATH
       COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
