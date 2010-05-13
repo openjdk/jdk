@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ public class AuthResources_ja extends java.util.ListResourceBundle {
         {"Unable to properly expand config", "{0} \u3092\u6b63\u3057\u304f\u5c55\u958b\u3067\u304d\u307e\u305b\u3093\u3002"},
         {"extra_config (No such file or directory)",
                 "{0} (\u6307\u5b9a\u3055\u308c\u305f\u30d5\u30a1\u30a4\u30eb\u307e\u305f\u306f\u30c7\u30a3\u30ec\u30af\u30c8\u30ea\u306f\u5b58\u5728\u3057\u307e\u305b\u3093)"},
-        {"Unable to locate a login configuration",
-                "\u30ed\u30b0\u30a4\u30f3\u69cb\u6210\u3092\u691c\u51fa\u3067\u304d\u307e\u305b\u3093\u3002"},
+        {"Configuration Error:\n\tNo such file or directory",
+                "\u69cb\u6210\u30a8\u30e9\u30fc:\n\t\u6307\u5b9a\u3055\u308c\u305f\u30d5\u30a1\u30a4\u30eb\u307e\u305f\u306f\u30c7\u30a3\u30ec\u30af\u30c8\u30ea\u306f\u5b58\u5728\u3057\u307e\u305b\u3093\u3002"},
         {"Configuration Error:\n\tInvalid control flag, flag",
                 "\u69cb\u6210\u30a8\u30e9\u30fc:\n\t\u7121\u52b9\u306a\u5236\u5fa1\u30d5\u30e9\u30b0: {0}"},
         {"Configuration Error:\n\tCan not specify multiple entries for appName",
@@ -76,7 +76,7 @@ public class AuthResources_ja extends java.util.ListResourceBundle {
         {"Configuration Error:\n\tLine line: expected [expect]",
             "\u69cb\u6210\u30a8\u30e9\u30fc:\n\t\u884c {0}: [{1}] \u304c\u8981\u6c42\u3055\u308c\u307e\u3057\u305f\u3002"},
         {"Configuration Error:\n\tLine line: system property [value] expanded to empty value",
-            "\u69cb\u6210\u30a8\u30e9\u30fc:\n\t\u884c {0}: \u30b7\u30b9\u30c6\u30e0\u30d7\u30ed\u30d1\u30c6\u30a3 [{1}] \u304c\u7a7a\u306e\u5024\u306b\u5c55\u958b\u3055\u308c\u307e\u3057\u305f\u3002"},
+            "\u69cb\u6210\u30a8\u30e9\u30fc:\n\t\u884c {0}: \u30b7\u30b9\u30c6\u30e0\u30d7\u30ed\u30d1\u30c6\u30a3\u30fc [{1}] \u304c\u7a7a\u306e\u5024\u306b\u5c55\u958b\u3055\u308c\u307e\u3057\u305f\u3002"},
 
         // com.sun.security.auth.module.JndiLoginModule
         {"username: ","\u30e6\u30fc\u30b6\u540d: "},

@@ -31,16 +31,6 @@
  *
  * (C) Copyright IBM Corp. 1999 - All Rights Reserved
  *
- * Portions Copyright 2007 by Sun Microsystems, Inc.,
- * 901 San Antonio Road, Palo Alto, California, 94303, U.S.A.
- * All rights reserved.
- *
- * This software is the confidential and proprietary information
- * of Sun Microsystems, Inc. ("Confidential Information").  You
- * shall not disclose such Confidential Information and shall use
- * it only in accordance with the terms of the license agreement
- * you entered into with Sun.
- *
  * The original version of this source code and documentation is
  * copyrighted and owned by IBM. These materials are provided
  * under terms of a License Agreement between IBM and Sun.

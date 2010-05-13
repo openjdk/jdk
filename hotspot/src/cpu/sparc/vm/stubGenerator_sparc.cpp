@@ -139,7 +139,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld_ptr(parameter_size.as_address(), t);                // get parameter size (in words)
       __ add(t, frame::memory_parameter_word_sp_offset, t);     // add space for save area (in words)
       __ round_to(t, WordsPerLong);                             // make sure it is multiple of 2 (in words)
-      __ sll(t, Interpreter::logStackElementSize(), t);                    // compute number of bytes
+      __ sll(t, Interpreter::logStackElementSize, t);           // compute number of bytes
       __ neg(t);                                                // negate so it can be used with save
       __ save(SP, t, SP);                                       // setup new frame
     }
@@ -191,19 +191,13 @@ class StubGenerator: public StubCodeGenerator {
       // copy parameters if any
       Label loop;
       __ BIND(loop);
-      // Store tag first.
-      if (TaggedStackInterpreter) {
-        __ ld_ptr(src, 0, tmp);
-        __ add(src, BytesPerWord, src);  // get next
-        __ st_ptr(tmp, dst, Interpreter::tag_offset_in_bytes());
-      }
       // Store parameter value
       __ ld_ptr(src, 0, tmp);
       __ add(src, BytesPerWord, src);
-      __ st_ptr(tmp, dst, Interpreter::value_offset_in_bytes());
+      __ st_ptr(tmp, dst, 0);
       __ deccc(cnt);
       __ br(Assembler::greater, false, Assembler::pt, loop);
-      __ delayed()->sub(dst, Interpreter::stackElementSize(), dst);
+      __ delayed()->sub(dst, Interpreter::stackElementSize, dst);
 
       // done
       __ BIND(exit);
@@ -220,7 +214,7 @@ class StubGenerator: public StubCodeGenerator {
     // setup parameters
     const Register t = G3_scratch;
     __ ld_ptr(parameter_size.as_in().as_address(), t); // get parameter size (in words)
-    __ sll(t, Interpreter::logStackElementSize(), t);            // compute number of bytes
+    __ sll(t, Interpreter::logStackElementSize, t);    // compute number of bytes
     __ sub(FP, t, Gargs);                              // setup parameter pointer
 #ifdef _LP64
     __ add( Gargs, STACK_BIAS, Gargs );                // Account for LP64 stack bias
@@ -2916,6 +2910,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // generic method handle stubs
+    if (EnableMethodHandles && SystemDictionary::MethodHandle_klass() != NULL) {
+      for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
+           ek < MethodHandles::_EK_LIMIT;
+           ek = MethodHandles::EntryKind(1 + (int)ek)) {
+        StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+        MethodHandles::generate_method_handle_stub(_masm, ek);
+      }
+    }
 
     // Don't initialize the platform math functions since sparc
     // doesn't have intrinsics for these operations.
