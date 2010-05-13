@@ -150,6 +150,16 @@ ifdef JCK_GROUP_SIZE
 ###    -jtoptions:-Ejck.env.runtime.testCompile.groupMode.groupSize=$(JCK_GROUP_SIZE)
 endif
 
+# Timeouts -- by default, increase test timeouts when running on JPRT
+ifdef JPRT_JOB_ID
+  ifndef JTREG_TIMEOUT_FACTOR
+    JTREG_TIMEOUT_FACTOR = 3
+  endif
+endif
+ifdef JTREG_TIMEOUT_FACTOR
+  JTREG_OPTIONS += -timeoutFactor:$(JTREG_TIMEOUT_FACTOR)
+endif
+
 # Assertions: some tests show failures when assertions are enabled.
 # Since javac is typically loaded via the bootclassloader (either via TESTJAVA
 # or TESTBOOTCLASSPATH), you may need -esa to enable assertions in javac.
