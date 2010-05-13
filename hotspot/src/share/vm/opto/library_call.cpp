@@ -1175,7 +1175,9 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node *receiver = pop();
 
   Node* result;
-  if (Matcher::has_match_rule(Op_StrIndexOf) &&
+  // Disable the use of pcmpestri until it can be guaranteed that
+  // the load doesn't cross into the uncommited space.
+  if (false && Matcher::has_match_rule(Op_StrIndexOf) &&
       UseSSE42Intrinsics) {
     // Generate SSE4.2 version of indexOf
     // We currently only have match rules that use SSE4.2

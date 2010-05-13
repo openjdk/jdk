@@ -244,51 +244,30 @@ StackValueCollection* interpretedVFrame::locals() const {
   StackValueCollection* result = new StackValueCollection(length);
 
   // Get oopmap describing oops and int for current bci
-  if (TaggedStackInterpreter) {
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = locals_addr_at(i);
-
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      frame::Tag tag = fr().interpreter_frame_local_tag(i);
-      if (tag == frame::TagReference) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // integer
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
-    }
+  InterpreterOopMap oop_mask;
+  if (TraceDeoptimization && Verbose) {
+    methodHandle m_h(thread(), method());
+    OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
   } else {
-    InterpreterOopMap oop_mask;
-    if (TraceDeoptimization && Verbose) {
-      methodHandle m_h(thread(), method());
-      OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
-    } else {
-      method()->mask_for(bci(), &oop_mask);
-    }
-    // handle locals
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = locals_addr_at(i);
+    method()->mask_for(bci(), &oop_mask);
+  }
+  // handle locals
+  for(int i=0; i < length; i++) {
+    // Find stack location
+    intptr_t *addr = locals_addr_at(i);
 
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      if (oop_mask.is_oop(i)) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // integer
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
+    // Depending on oop/int put it in the right package
+    StackValue *sv;
+    if (oop_mask.is_oop(i)) {
+      // oop value
+      Handle h(*(oop *)addr);
+      sv = new StackValue(h);
+    } else {
+      // integer
+      sv = new StackValue(*addr);
     }
+    assert(sv != NULL, "sanity check");
+    result->add(sv);
   }
   return result;
 }
@@ -331,53 +310,31 @@ StackValueCollection*  interpretedVFrame::expressions() const {
   int nof_locals = method()->max_locals();
   StackValueCollection* result = new StackValueCollection(length);
 
-  if (TaggedStackInterpreter) {
-    // handle expressions
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = fr().interpreter_frame_expression_stack_at(i);
-      frame::Tag tag = fr().interpreter_frame_expression_stack_tag(i);
-
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      if (tag == frame::TagReference) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // otherwise
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
-    }
+  InterpreterOopMap oop_mask;
+  // Get oopmap describing oops and int for current bci
+  if (TraceDeoptimization && Verbose) {
+    methodHandle m_h(method());
+    OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
   } else {
-    InterpreterOopMap oop_mask;
-    // Get oopmap describing oops and int for current bci
-    if (TraceDeoptimization && Verbose) {
-      methodHandle m_h(method());
-      OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
-    } else {
-      method()->mask_for(bci(), &oop_mask);
-    }
-    // handle expressions
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = fr().interpreter_frame_expression_stack_at(i);
+    method()->mask_for(bci(), &oop_mask);
+  }
+  // handle expressions
+  for(int i=0; i < length; i++) {
+    // Find stack location
+    intptr_t *addr = fr().interpreter_frame_expression_stack_at(i);
 
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      if (oop_mask.is_oop(i + nof_locals)) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // integer
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
+    // Depending on oop/int put it in the right package
+    StackValue *sv;
+    if (oop_mask.is_oop(i + nof_locals)) {
+      // oop value
+      Handle h(*(oop *)addr);
+      sv = new StackValue(h);
+    } else {
+      // integer
+      sv = new StackValue(*addr);
     }
+    assert(sv != NULL, "sanity check");
+    result->add(sv);
   }
   return result;
 }

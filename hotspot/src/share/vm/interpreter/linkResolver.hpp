@@ -103,7 +103,8 @@ class LinkResolver: AllStatic {
   static void lookup_method_in_klasses          (methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS);
   static void lookup_instance_method_in_klasses (methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS);
   static void lookup_method_in_interfaces       (methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS);
-  static void lookup_implicit_method            (methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS);
+  static void lookup_implicit_method            (methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature,
+                                                 KlassHandle current_klass, TRAPS);
 
   static int vtable_index_of_miranda_method(KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS);
 

@@ -561,10 +561,11 @@ SymbolPropertyTable::SymbolPropertyTable(int table_size, HashtableBucket* t,
 
 
 SymbolPropertyEntry* SymbolPropertyTable::find_entry(int index, unsigned int hash,
-                                                     symbolHandle sym) {
-  assert(index == index_for(sym), "incorrect index?");
+                                                     symbolHandle sym,
+                                                     intptr_t sym_mode) {
+  assert(index == index_for(sym, sym_mode), "incorrect index?");
   for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
-    if (p->hash() == hash && p->symbol() == sym()) {
+    if (p->hash() == hash && p->symbol() == sym() && p->symbol_mode() == sym_mode) {
       return p;
     }
   }
@@ -573,12 +574,12 @@ SymbolPropertyEntry* SymbolPropertyTable::find_entry(int index, unsigned int has
 
 
 SymbolPropertyEntry* SymbolPropertyTable::add_entry(int index, unsigned int hash,
-                                                    symbolHandle sym) {
+                                                    symbolHandle sym, intptr_t sym_mode) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(index == index_for(sym), "incorrect index?");
-  assert(find_entry(index, hash, sym) == NULL, "no double entry");
+  assert(index == index_for(sym, sym_mode), "incorrect index?");
+  assert(find_entry(index, hash, sym, sym_mode) == NULL, "no double entry");
 
-  SymbolPropertyEntry* p = new_entry(hash, sym());
+  SymbolPropertyEntry* p = new_entry(hash, sym(), sym_mode);
   Hashtable::add_entry(index, p);
   return p;
 }
