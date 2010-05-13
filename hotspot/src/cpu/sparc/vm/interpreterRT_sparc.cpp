@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,19 +42,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_word(int size_of_arg, i
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
   Argument  jni_arg(jni_offset(), false);
   Register  Rtmp = O0;
-
-#ifdef ASSERT
-  if (TaggedStackInterpreter) {
-    // check at least one tag is okay
-    Label ok;
-    __ ld_ptr(Llocals, Interpreter::local_tag_offset_in_bytes(offset() + 1), Rtmp);
-    __ cmp(Rtmp, G0);
-    __ brx(Assembler::equal, false, Assembler::pt, ok);
-    __ delayed()->nop();
-    __ stop("Native object has bad tag value");
-    __ bind(ok);
-  }
-#endif // ASSERT
 
 #ifdef _LP64
   __ ldx(Llocals, Interpreter::local_offset_in_bytes(offset() + 1), Rtmp);
@@ -107,18 +94,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
 
   Address     h_arg = Address(Llocals, Interpreter::local_offset_in_bytes(offset()));
   __ ld_ptr(h_arg, Rtmp1);
-#ifdef ASSERT
-  if (TaggedStackInterpreter) {
-    // check we have the obj and not the tag
-    Label ok;
-    __ mov(frame::TagReference, Rtmp3);
-    __ cmp(Rtmp1, Rtmp3);
-    __ brx(Assembler::notEqual, true, Assembler::pt, ok);
-    __ delayed()->nop();
-    __ stop("Native object passed tag by mistake");
-    __ bind(ok);
-  }
-#endif // ASSERT
   if (!do_NULL_check) {
     __ add(h_arg.base(), h_arg.disp(), Rtmp2);
   } else {
@@ -168,17 +143,9 @@ class SlowSignatureHandler: public NativeSignatureIterator {
     long_sig   = 3
   };
 
-#ifdef ASSERT
-  void verify_tag(frame::Tag t) {
-    assert(!TaggedStackInterpreter ||
-           *(intptr_t*)(_from+Interpreter::local_tag_offset_in_bytes(0)) == t, "wrong tag");
-  }
-#endif // ASSERT
-
   virtual void pass_int() {
     *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
     add_signature( non_float );
   }
 
@@ -186,31 +153,27 @@ class SlowSignatureHandler: public NativeSignatureIterator {
     // pass address of from
     intptr_t *from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
     *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
-    debug_only(verify_tag(frame::TagReference));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
     add_signature( non_float );
    }
 
 #ifdef _LP64
   virtual void pass_float()  {
     *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
     add_signature( float_sig );
    }
 
   virtual void pass_double() {
     *_to++ = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
    add_signature( double_sig );
    }
 
   virtual void pass_long() {
     _to[0] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    debug_only(verify_tag(frame::TagValue));
     _to += 1;
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
     add_signature( long_sig );
   }
 #else
@@ -218,9 +181,8 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   virtual void pass_long() {
     _to[0] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
     _to[1] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
     _to += 2;
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
     add_signature( non_float );
   }
 #endif // _LP64

@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2008, 2009 Red Hat, Inc.
+ * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,20 +41,30 @@ class ZeroEntry {
   }
 
  private:
-  typedef void (*NormalEntryFunc)(methodOop method,
-                                  intptr_t  base_pc,
-                                  TRAPS);
-  typedef void (*OSREntryFunc)(methodOop method,
-                               address   osr_buf,
-                               intptr_t  base_pc,
-                               TRAPS);
+  typedef int (*NormalEntryFunc)(methodOop method,
+                                 intptr_t  base_pc,
+                                 TRAPS);
+  typedef int (*OSREntryFunc)(methodOop method,
+                              address   osr_buf,
+                              intptr_t  base_pc,
+                              TRAPS);
 
  public:
   void invoke(methodOop method, TRAPS) const {
-    ((NormalEntryFunc) entry_point())(method, (intptr_t) this, THREAD);
+    maybe_deoptimize(
+      ((NormalEntryFunc) entry_point())(method, (intptr_t) this, THREAD),
+      THREAD);
   }
   void invoke_osr(methodOop method, address osr_buf, TRAPS) const {
-    ((OSREntryFunc) entry_point())(method, osr_buf, (intptr_t) this, THREAD);
+    maybe_deoptimize(
+      ((OSREntryFunc) entry_point())(method, osr_buf, (intptr_t) this, THREAD),
+      THREAD);
+  }
+
+ private:
+  static void maybe_deoptimize(int deoptimized_frames, TRAPS) {
+    if (deoptimized_frames)
+      CppInterpreter::main_loop(deoptimized_frames - 1, THREAD);
   }
 
  public:

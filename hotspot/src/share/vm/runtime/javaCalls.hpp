@@ -66,11 +66,9 @@ class JavaCallArguments : public StackObj {
   };
 
   intptr_t    _value_buffer [_default_size + 1];
-  intptr_t    _parameter_buffer [_default_size*2 + 1];
   bool        _is_oop_buffer[_default_size + 1];
 
   intptr_t*   _value;
-  intptr_t*   _parameters;
   bool*       _is_oop;
   int         _size;
   int         _max_size;
@@ -81,7 +79,6 @@ class JavaCallArguments : public StackObj {
     _value    = &_value_buffer[1];
     _is_oop   = &_is_oop_buffer[1];
 
-    _parameters = &_parameter_buffer[0];
     _max_size = _default_size;
     _size = 0;
     _start_at_zero = false;
@@ -99,11 +96,10 @@ class JavaCallArguments : public StackObj {
     if (max_size > _default_size) {
       _value  = NEW_RESOURCE_ARRAY(intptr_t, max_size + 1);
       _is_oop = NEW_RESOURCE_ARRAY(bool, max_size + 1);
-      if (TaggedStackInterpreter) {
-        _parameters  = NEW_RESOURCE_ARRAY(intptr_t, max_size*2 + 1);
-      }
+
       // Reserve room for potential receiver in value and is_oop
       _value++; _is_oop++;
+
       _max_size = max_size;
       _size = 0;
       _start_at_zero = false;

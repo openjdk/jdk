@@ -2310,6 +2310,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                                    tgn != null;
                                    tg = tgn, tgn = tg.getParent());
                               fileCloser = new Thread(tg, fileCloserRunnable);
+                              fileCloser.setContextClassLoader(null);
                               Runtime.getRuntime().addShutdownHook(fileCloser);
                               return null;
                           }

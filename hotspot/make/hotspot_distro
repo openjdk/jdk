@@ -28,5 +28,5 @@
 
 # Don't put quotes (fail windows build).
 HOTSPOT_VM_DISTRO=Java HotSpot(TM)
-COMPANY_NAME=Sun Microsystems, Inc.
+COMPANY_NAME=Oracle Corporation
 PRODUCT_NAME=Java(TM) Platform SE

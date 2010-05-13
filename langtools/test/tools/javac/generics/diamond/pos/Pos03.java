@@ -1,10 +1,33 @@
 /*
- * @test /nodynamiccopyright/
- * @bug 6840638
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * @summary  Project Coin: Improved Type Inference for Generic Instance Creation (aka 'diamond')
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ * @test
+ * @bug 6939620
+ *
+ * @summary  Switch to 'complex' diamond inference scheme
  * @author mcimadamore
- * @compile Pos03.java -source 1.7
+ * @compile Pos03.java
  * @run main Pos03
  *
  */
@@ -17,69 +40,69 @@ public class Pos03<U> {
     }
 
     void testSimple() {
-        Foo<Integer> f1 = new Foo<>(1); //new Foo<Integer> created
-        Foo<? extends Integer> f2 = new Foo<>(1); //new Foo<Integer> created
-        Foo<?> f3 = new Foo<>(1); //new Foo<Object> created
-        Foo<? super Integer> f4 = new Foo<>(1); //new Foo<Object> created
+        Foo<Integer> f1 = new Foo<>(1);
+        Foo<? extends Integer> f2 = new Foo<>(1);
+        Foo<?> f3 = new Foo<>(1);
+        Foo<? super Integer> f4 = new Foo<>(1);
 
-        Foo<Integer> f5 = new Foo<>(1){}; //new Foo<Integer> created
-        Foo<? extends Integer> f6 = new Foo<>(1){}; //new Foo<Integer> created
-        Foo<?> f7 = new Foo<>(1){}; //new Foo<Object> created
-        Foo<? super Integer> f8 = new Foo<>(1){}; //new Foo<Object> created
+        Foo<Integer> f5 = new Foo<>(1){};
+        Foo<? extends Integer> f6 = new Foo<>(1){};
+        Foo<?> f7 = new Foo<>(1){};
+        Foo<? super Integer> f8 = new Foo<>(1){};
 
-        Foo<Integer> f9 = new Foo<>(1, ""); //new Foo<Integer> created
-        Foo<? extends Integer> f10 = new Foo<>(1, ""); //new Foo<Integer> created
-        Foo<?> f11 = new Foo<>(1, ""); //new Foo<Object> created
-        Foo<? super Integer> f12 = new Foo<>(1, ""); //new Foo<Object> created
+        Foo<Integer> f9 = new Foo<>(1, "");
+        Foo<? extends Integer> f10 = new Foo<>(1, "");
+        Foo<?> f11 = new Foo<>(1, "");
+        Foo<? super Integer> f12 = new Foo<>(1, "");
 
-        Foo<Integer> f13 = new Foo<>(1, ""){}; //new Foo<Integer> created
-        Foo<? extends Integer> f14 = new Foo<>(1, ""){}; //new Foo<Integer> created
-        Foo<?> f15 = new Foo<>(1, ""){}; //new Foo<Object> created
-        Foo<? super Integer> f16 = new Foo<>(1, ""){}; //new Foo<Object> created
+        Foo<Integer> f13 = new Foo<>(1, ""){};
+        Foo<? extends Integer> f14 = new Foo<>(1, ""){};
+        Foo<?> f15 = new Foo<>(1, ""){};
+        Foo<? super Integer> f16 = new Foo<>(1, ""){};
     }
 
     void testQualified_1() {
-        Foo<Integer> f1 = new Pos03<U>.Foo<>(1); //new Foo<Integer> created
-        Foo<? extends Integer> f2 = new Pos03<U>.Foo<>(1); //new Foo<Integer> created
-        Foo<?> f3 = new Pos03<U>.Foo<>(1); //new Foo<Object> created
-        Foo<? super Integer> f4 = new Pos03<U>.Foo<>(1); //new Foo<Object> created
+        Foo<Integer> f1 = new Pos03<U>.Foo<>(1);
+        Foo<? extends Integer> f2 = new Pos03<U>.Foo<>(1);
+        Foo<?> f3 = new Pos03<U>.Foo<>(1);
+        Foo<? super Integer> f4 = new Pos03<U>.Foo<>(1);
 
-        Foo<Integer> f5 = new Pos03<U>.Foo<>(1){}; //new Foo<Integer> created
-        Foo<? extends Integer> f6 = new Pos03<U>.Foo<>(1){}; //new Foo<Integer> created
-        Foo<?> f7 = new Pos03<U>.Foo<>(1){}; //new Foo<Object> created
-        Foo<? super Integer> f8 = new Pos03<U>.Foo<>(1){}; //new Foo<Object> created
+        Foo<Integer> f5 = new Pos03<U>.Foo<>(1){};
+        Foo<? extends Integer> f6 = new Pos03<U>.Foo<>(1){};
+        Foo<?> f7 = new Pos03<U>.Foo<>(1){};
+        Foo<? super Integer> f8 = new Pos03<U>.Foo<>(1){};
 
-        Foo<Integer> f9 = new Pos03<U>.Foo<>(1, ""); //new Foo<Integer> created
-        Foo<? extends Integer> f10 = new Pos03<U>.Foo<>(1, ""); //new Foo<Integer> created
-        Foo<?> f11 = new Pos03<U>.Foo<>(1, ""); //new Foo<Object> created
-        Foo<? super Integer> f12 = new Pos03<U>.Foo<>(1, ""); //new Foo<Object> created
+        Foo<Integer> f9 = new Pos03<U>.Foo<>(1, "");
+        Foo<? extends Integer> f10 = new Pos03<U>.Foo<>(1, "");
+        Foo<?> f11 = new Pos03<U>.Foo<>(1, "");
+        Foo<? super Integer> f12 = new Pos03<U>.Foo<>(1, "");
 
-        Foo<Integer> f13 = new Pos03<U>.Foo<>(1, ""){}; //new Foo<Integer> created
-        Foo<? extends Integer> f14 = new Pos03<U>.Foo<>(1, ""){}; //new Foo<Integer> created
-        Foo<?> f15 = new Pos03<U>.Foo<>(1, ""){}; //new Foo<Object> created
-        Foo<? super Integer> f16 = new Pos03<U>.Foo<>(1, ""){}; //new Foo<Object> created
+        Foo<Integer> f13 = new Pos03<U>.Foo<>(1, ""){};
+        Foo<? extends Integer> f14 = new Pos03<U>.Foo<>(1, ""){};
+        Foo<?> f15 = new Pos03<U>.Foo<>(1, ""){};
+        Foo<? super Integer> f16 = new Pos03<U>.Foo<>(1, ""){};
     }
 
     void testQualified_2(Pos03<U> p) {
-        Foo<Integer> f1 = p.new Foo<>(1); //new Foo<Integer> created
-        Foo<? extends Integer> f2 = p.new Foo<>(1); //new Foo<Integer> created
-        Foo<?> f3 = p.new Foo<>(1); //new Foo<Object> created
-        Foo<? super Integer> f4 = p.new Foo<>(1); //new Foo<Object> created
+        Foo<Integer> f1 = p.new Foo<>(1);
+        Foo<? extends Integer> f2 = p.new Foo<>(1);
+        Foo<?> f3 = p.new Foo<>(1);
+        Foo<? super Integer> f4 = p.new Foo<>(1);
 
-        Foo<Integer> f5 = p.new Foo<>(1){}; //new Foo<Integer> created
-        Foo<? extends Integer> f6 = p.new Foo<>(1){}; //new Foo<Integer> created
-        Foo<?> f7 = p.new Foo<>(1){}; //new Foo<Object> created
-        Foo<? super Integer> f8 = p.new Foo<>(1){}; //new Foo<Object> created
+        Foo<Integer> f5 = p.new Foo<>(1){};
+        Foo<? extends Integer> f6 = p.new Foo<>(1){};
+        Foo<?> f7 = p.new Foo<>(1){};
+        Foo<? super Integer> f8 = p.new Foo<>(1){};
 
-        Foo<Integer> f9 = p.new Foo<>(1, ""); //new Foo<Integer> created
-        Foo<? extends Integer> f10 = p.new Foo<>(1, ""); //new Foo<Integer> created
-        Foo<?> f11 = p.new Foo<>(1, ""); //new Foo<Object> created
-        Foo<? super Integer> f12 = p.new Foo<>(1, ""); //new Foo<Object> created
+        Foo<Integer> f9 = p.new Foo<>(1, "");
+        Foo<? extends Integer> f10 = p.new Foo<>(1, "");
+        Foo<?> f11 = p.new Foo<>(1, "");
+        Foo<? super Integer> f12 = p.new Foo<>(1, "");
 
-        Foo<Integer> f13 = p.new Foo<>(1, ""){}; //new Foo<Integer> created
-        Foo<? extends Integer> f14 = p.new Foo<>(1, ""){}; //new Foo<Integer> created
-        Foo<?> f15 = p.new Foo<>(1, ""){}; //new Foo<Object> created
-        Foo<? super Integer> f16 = p.new Foo<>(1, ""){}; //new Foo<Object> created
+        Foo<Integer> f13 = p.new Foo<>(1, ""){};
+        Foo<? extends Integer> f14 = p.new Foo<>(1, ""){};
+        Foo<?> f15 = p.new Foo<>(1, ""){};
+        Foo<? super Integer> f16 = p.new Foo<>(1, ""){};
     }
 
     public static void main(String[] args) {

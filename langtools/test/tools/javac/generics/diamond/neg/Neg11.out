@@ -1,0 +1,3 @@
+Neg11.java:15:25: compiler.err.cant.resolve.location: kindname.class, UndeclaredName, , , kindname.class, Neg11
+Neg11.java:16:25: compiler.err.cant.resolve.location: kindname.class, UndeclaredName, , , kindname.class, Neg11
+2 errors

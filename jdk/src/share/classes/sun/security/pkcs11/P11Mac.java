@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,16 +263,4 @@ final class P11Mac extends MacSpi {
             throw new ProviderException("update() failed", e);
         }
     }
-
-    protected void finalize() throws Throwable {
-        try {
-            if ((session != null) && token.isValid()) {
-                cancelOperation();
-                session = token.releaseSession(session);
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
 }

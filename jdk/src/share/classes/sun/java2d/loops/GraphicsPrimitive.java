@@ -417,7 +417,9 @@ public abstract class GraphicsPrimitive {
         public static void setShutdownHook() {
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
-                    Runtime.getRuntime().addShutdownHook(new TraceReporter());
+                    TraceReporter t = new TraceReporter();
+                    t.setContextClassLoader(null);
+                    Runtime.getRuntime().addShutdownHook(t);
                     return null;
                 }
             });
