@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ define_pd_global(bool, DontYieldALot,            false);
 define_pd_global(intx, ThreadStackSize,          1024); // 0 => use system default
 define_pd_global(intx, VMThreadStackSize,        1024);
 #else
-// ThreadStackSize 320 allows TaggedStackInterpreter and a couple of test cases
-// to run while keeping the number of threads that can be created high.
-// System default ThreadStackSize appears to be 512 which is too big.
+// ThreadStackSize 320 allows a couple of test cases to run while
+// keeping the number of threads that can be created high.  System
+// default ThreadStackSize appears to be 512 which is too big.
 define_pd_global(intx, ThreadStackSize,          320);
 define_pd_global(intx, VMThreadStackSize,        512);
 #endif // AMD64
