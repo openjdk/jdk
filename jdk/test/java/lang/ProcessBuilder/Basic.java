@@ -28,7 +28,7 @@
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220
  * @summary Basic tests for Process and Environment Variable code
- * @run main/othervm Basic
+ * @run main/othervm/timeout=300 Basic
  * @author Martin Buchholz
  */
 

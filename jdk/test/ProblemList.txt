@@ -356,10 +356,6 @@ java/lang/management/ThreadMXBean/ThreadStateTest.java 		generic-all
 # RuntimeException: Uptime of the JVM is more than 30 minutes (32 minutes).
 java/lang/management/RuntimeMXBean/UpTime.java			generic-all
 
-# Times out on solaris sparc occasionally, in samevm mode
-java/lang/Runtime/exec/ExecWithDir.java				generic-all
-java/lang/ProcessBuilder/Basic.java				generic-all
-
 # Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
 java/lang/Runtime/exec/SleepyCat.java				generic-all
 
@@ -430,6 +426,15 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 ############################################################################
 
 # jdk_management
+
+# Filed 6951284, fails on linux 64bit Fedora 9, peak thread count differences
+java/lang/management/ThreadMXBean/ResetPeakThreadCount.java	generic-all
+
+# Started failing on linux and solaris (filed 6950927)
+#   com.sun.tools.attach.AttachNotSupportedException:
+#     Unable to open socket file:
+#     target process not responding or HotSpot VM not loaded
+sun/management/jmxremote/bootstrap/JvmstatCountersTest.java	generic-all
 
 # Fails on linux: KO: StringMonitor notification missed or not emitted
 javax/management/monitor/NonComparableAttributeValueTest.java	generic-all
@@ -935,6 +940,19 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
 # jdk_security
 
+# Filed 6951285, not sure how often this fails, last was Linux 64bit Fedora 9
+sun/security/krb5/auto/MaxRetries.java				generic-all
+
+# Filed 6950930, fails on windows 32bit c1 and windows 64bit
+sun/security/krb5/auto/IgnoreChannelBinding.java		windows-all
+
+# Filed 6950931, failing on all windows systems
+sun/security/tools/jarsigner/crl.sh				windows-all
+
+# Filed 6950929, only seemed to fail on solaris sparcv9 (-d64)
+#   Failed on Linux -server 32bit too, making generic
+sun/security/krb5/auto/BadKdc4.java				generic-all
+
 # Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
 sun/security/pkcs11/Secmod/AddPrivateKey.java			solaris-i586
 sun/security/pkcs11/ec/ReadCertificates.java			solaris-i586
@@ -986,12 +1004,6 @@ sun/security/krb5/auto/ok-as-delegate-xrealm.sh			generic-all
 # Fails on Windows 2000, ExceptionInInitializerError
 sun/security/mscapi/AccessKeyStore.sh				generic-all
 
-# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
-sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
-
-# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
-sun/security/pkcs11/fips/ClientJSSEServerJSSE.java		generic-all
-
 # Fails on Solaris 10, KrbException: Additional pre-authentication required (25)
 sun/security/krb5/auto/basic.sh					generic-all
 
@@ -1022,10 +1034,6 @@ com/sun/crypto/provider/Cipher/DES/PaddingTest.java		generic-all
 # Othervm, sparc, NoRouteToHostException: Cannot assign requested address
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
 
-# ProviderException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_DEVICE_ERROR
-#    Does not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java		generic-all
-
 # Times out on windows X64, othervm mode
 #    Solaris sparc and sparcv9 -server, timeout
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionTimeOutTests.java	generic-all
@@ -1041,7 +1049,6 @@ sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java	generic-all
 sun/security/tools/jarsigner/oldsig.sh				generic-all
 
 # Various failures on Linux Fedora 9 X64, othervm mode
-#   Does not seem to run on windows machines? dll missing? 
 sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
 
 # Linux i586 -server, buffer too short to hold shared secret?
@@ -1078,9 +1085,6 @@ java/security/Signature/TestInitSignWithMyOwnRandom.java	generic-all
 java/security/UnresolvedPermission/AccessorMethods.java		generic-all
 java/security/UnresolvedPermission/Equals.java			generic-all
 
-# Do not seem to run on windows machines? dll missing? 
-sun/security/krb5/auto/IgnoreChannelBinding.java	 	windows-all
-
 # Fails on OpenSolaris, missing classes, slow on Solaris sparc
 sun/security/ec/TestEC.java					generic-all
 
@@ -1088,64 +1092,11 @@ sun/security/ec/TestEC.java					generic-all
 sun/security/mscapi/IsSunMSCAPIAvailable.sh		 	windows-x64
 sun/security/mscapi/RSAEncryptDecrypt.sh		 	windows-x64
 
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/Cipher/ReinitCipher.java		 	windows-all
-sun/security/pkcs11/Cipher/TestRSACipher.java		 	windows-all
-sun/security/pkcs11/Cipher/TestRSACipherWrap.java	 	windows-all
-sun/security/pkcs11/Cipher/TestSymmCiphers.java 	 	windows-all
-sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java	 	windows-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/ec/ReadCertificates.java		 	windows-all
-sun/security/pkcs11/ec/ReadPKCS12.java			 	windows-all
-sun/security/pkcs11/ec/TestCurves.java			 	windows-all
-sun/security/pkcs11/ec/TestECDH.java			 	windows-all
-sun/security/pkcs11/ec/TestECDSA.java			 	windows-all
-sun/security/pkcs11/ec/TestECGenSpec.java		 	windows-all
-sun/security/pkcs11/ec/TestKeyFactory.java		 	windows-all
-sun/security/pkcs11/fips/TrustManagerTest.java		 	windows-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/KeyAgreement/TestShort.java 	 	windows-all
-sun/security/pkcs11/KeyGenerator/DESParity.java 	 	windows-all
-
 # Exception in test solaris-sparc -client -server, no windows
-sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java	windows-all solaris-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/KeyStore/Basic.sh			 	windows-all
-sun/security/pkcs11/KeyStore/ClientAuth.sh		 	windows-all
+sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java	        solaris-all
 
 # Solaris sparc client, fails to compile?
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh 	 	solaris-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/Mac/ReinitMac.java			 	windows-all
-sun/security/pkcs11/MessageDigest/ByteBuffers.java	 	windows-all
-sun/security/pkcs11/MessageDigest/DigestKAT.java	 	windows-all
-sun/security/pkcs11/MessageDigest/ReinitDigest.java	 	windows-all
-sun/security/pkcs11/Provider/ConfigQuotedString.sh	 	windows-all
-sun/security/pkcs11/Provider/Login.sh			 	windows-all
-sun/security/pkcs11/rsa/KeyWrap.java			 	windows-all
-sun/security/pkcs11/rsa/TestCACerts.java		 	windows-all
-sun/security/pkcs11/rsa/TestKeyFactory.java		 	windows-all
-sun/security/pkcs11/rsa/TestSignatures.java		 	windows-all
-sun/security/pkcs11/SampleTest.java			 	windows-all
-sun/security/pkcs11/Secmod/AddPrivateKey.java		 	windows-all
-sun/security/pkcs11/Secmod/AddTrustedCert.java		 	windows-all
-sun/security/pkcs11/Secmod/Crypto.java			 	windows-all
-sun/security/pkcs11/Secmod/GetPrivateKey.java		 	windows-all
-sun/security/pkcs11/Secmod/JksSetPrivateKey.java	 	windows-all
-sun/security/pkcs11/Secmod/TrustAnchors.java		 	windows-all
-sun/security/pkcs11/SecureRandom/Basic.java		 	windows-all
-sun/security/pkcs11/Serialize/SerializeProvider.java	 	windows-all
-sun/security/pkcs11/Signature/ByteBuffers.java		 	windows-all
-sun/security/pkcs11/Signature/ReinitSignature.java	 	windows-all
-sun/security/pkcs11/Signature/TestDSA.java		 	windows-all
-sun/security/pkcs11/tls/TestKeyMaterial.java		 	windows-all
-sun/security/pkcs11/tls/TestMasterSecret.java		 	windows-all
-sun/security/pkcs11/tls/TestPremaster.java		 	windows-all
-sun/security/pkcs11/tls/TestPRF.java			 	windows-all
 
 # Fails on OpenSolaris java.net.BindException: Address already in use
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		generic-all
@@ -1163,6 +1114,58 @@ sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
 # Files does not exist or no encoding? solaris-sparcv9
 sun/security/tools/keytool/importreadall.sh		 	solaris-all
 sun/security/tools/keytool/selfissued.sh		 	solaris-all
+
+# This is a problem with JPRT not being able to run these tests due to a dll
+#  permission problem that has not been figured out:
+sun/security/pkcs11/SampleTest.java				windows-i586
+sun/security/pkcs11/Secmod/AddPrivateKey.java			windows-i586
+sun/security/pkcs11/Cipher/ReinitCipher.java			windows-i586
+sun/security/pkcs11/Cipher/TestRSACipher.java			windows-i586
+sun/security/pkcs11/Cipher/TestRSACipherWrap.java		windows-i586
+sun/security/pkcs11/Cipher/TestSymmCiphers.java			windows-i586
+sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java		windows-i586
+sun/security/pkcs11/KeyAgreement/TestShort.java			windows-i586
+sun/security/pkcs11/KeyGenerator/DESParity.java			windows-i586
+sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java		windows-i586
+sun/security/pkcs11/KeyStore/Basic.sh				windows-i586
+sun/security/pkcs11/KeyStore/ClientAuth.sh			windows-i586
+sun/security/pkcs11/Mac/ReinitMac.java				windows-i586
+sun/security/pkcs11/MessageDigest/ByteBuffers.java		windows-i586
+sun/security/pkcs11/MessageDigest/DigestKAT.java		windows-i586
+sun/security/pkcs11/MessageDigest/ReinitDigest.java		windows-i586
+sun/security/pkcs11/Provider/ConfigQuotedString.sh		windows-i586
+sun/security/pkcs11/Provider/Login.sh				windows-i586
+sun/security/pkcs11/Sampl/pkcs11/Secmod/AddPrivateKey.java	windows-i586
+sun/security/pkcs11/Secmod/AddTrustedCert.java			windows-i586
+sun/security/pkcs11/Secmod/Crypto.java				windows-i586
+sun/security/pkcs11/Secmod/GetPrivateKey.java			windows-i586
+sun/security/pkcs11/Secmod/JksSetPrivateKey.java		windows-i586
+sun/security/pkcs11/Secmod/TrustAnchors.java			windows-i586
+sun/security/pkcs11/SecureRandom/Basic.java			windows-i586
+sun/security/pkcs11/SecureRandom/TestDeserialization.java	windows-i586
+sun/security/pkcs11/Serialize/SerializeProvider.java		windows-i586
+sun/security/pkcs11/Signature/ByteBuffers.java			windows-i586
+sun/security/pkcs11/Signature/ReinitSignature.java		windows-i586
+sun/security/pkcs11/Signature/TestDSA.java			windows-i586
+sun/security/pkcs11/Signature/TestRSAKeyLength.java		windows-i586
+sun/security/pkcs11/ec/ReadCertificates.java			windows-i586
+sun/security/pkcs11/ec/ReadPKCS12.java				windows-i586
+sun/security/pkcs11/ec/TestCurves.java				windows-i586
+sun/security/pkcs11/ec/TestECDH.java				windows-i586
+sun/security/pkcs11/ec/TestECDSA.java				windows-i586
+sun/security/pkcs11/ec/TestECGenSpec.java			windows-i586
+sun/security/pkcs11/ec/TestKeyFactory.java			windows-i586
+sun/security/pkcs11/fips/ClientJSSEServerJSSE.java		windows-i586
+sun/security/pkcs11/fips/TrustManagerTest.java			windows-i586
+sun/security/pkcs11/rsa/KeyWrap.java				windows-i586
+sun/security/pkcs11/rsa/TestCACerts.java			windows-i586
+sun/security/pkcs11/rsa/TestKeyFactory.java			windows-i586
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java		windows-i586
+sun/security/pkcs11/rsa/TestSignatures.java			windows-i586
+sun/security/pkcs11/tls/TestKeyMaterial.java			windows-i586
+sun/security/pkcs11/tls/TestMasterSecret.java			windows-i586
+sun/security/pkcs11/tls/TestPRF.java				windows-i586
+sun/security/pkcs11/tls/TestPremaster.java			windows-i586
 
 ############################################################################
 
@@ -1187,6 +1190,9 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 ############################################################################
 
 # jdk_tools
+
+# Filed bug 6951287, failed on Linux 64bit, sometimes?
+com/sun/jdi/PopAndInvokeTest.java				generic-all
 
 # Some of the tools tests kind of require "othervm" or if they don't will
 #  always be firing up another VM anyway due to the nature of tools testing.

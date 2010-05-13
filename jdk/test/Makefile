@@ -37,11 +37,14 @@ GET=
 AWK       = awk
 CAT       = cat
 CD        = cd
+CHMOD     = chmod
 CP        = cp
 CUT       = cut
+DIRNAME   = dirname
 ECHO      = echo
 EGREP     = egrep
 EXPAND    = expand
+FIND      = find
 MKDIR     = mkdir
 PWD       = pwd
 SED       = sed
@@ -234,6 +237,35 @@ ifeq ($(OS_NAME),solaris)
   endif
 endif
 
+# Temp file to hold list of shared library files possibly needing execute 
+#   permissions at runtime. 
+SHARED_LIBRARY_LIST=$(ABS_TEST_OUTPUT_DIR)/shared_libraries.txt
+
+# Macro that may change execute permissions on library files and check for them.
+#  Files in repositories should not really have execute permissions, however
+#  windows dll files require execute permission. Adding execute permission
+#  may happen automatically on windows when using certain versions of mercurial
+#  but it cannot be guaranteed. And blindly adding execute permission might
+#  be seen as a mercurial 'change', so we avoid adding execute permission to
+#  repository files. Testing from a plain source tree may need the chmod a+x.
+#  Used on select directories.
+define CheckLibraryExecutePermissions # dir
+$(MKDIR) -p `$(DIRNAME) $(SHARED_LIBRARY_LIST)`
+$(RM) $(SHARED_LIBRARY_LIST)
+$(FIND) $1 -name \*.dll -o -name \*.DLL -o -name \*.so > $(SHARED_LIBRARY_LIST)
+if [ -s $(SHARED_LIBRARY_LIST) -a ! -d $(TEST_ROOT)/../.hg ] ; then    \
+  $(ECHO) "$(CHMOD) a+x `$(CAT) $(SHARED_LIBRARY_LIST)`";              \
+  $(CHMOD) a+x `$(CAT) $(SHARED_LIBRARY_LIST)`;                        \
+fi
+if [ -s $(SHARED_LIBRARY_LIST) ] ; then                                \
+  for i in `$(CAT) $(SHARED_LIBRARY_LIST)` ; do                        \
+    if [ ! -x $${i} ] ; then                                           \
+      $(ECHO) "WARNING: File does not have execute permission: $${i}"; \
+    fi;                                                                \
+  done;                                                                \
+fi
+endef
+
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
 ARCHIVE_BUNDLE = $(ABS_TEST_OUTPUT_DIR)/ARCHIVE_BUNDLE.zip
 ifdef JPRT_ARCHIVE_BUNDLE
@@ -242,7 +274,7 @@ endif
 
 # How to create the test bundle (pass or fail, we want to create this)
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
-ZIP_UP_RESULTS = ( $(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`     \
+ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
 	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport/text/summary.txt
@@ -483,6 +515,7 @@ jdk_nio1: java/nio/file
 JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: java/nio/Buffer java/nio/ByteOrder \
           java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer
+	$(call CheckLibraryExecutePermissions,java/nio/channels)
 	$(call RunOthervmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
@@ -516,6 +549,7 @@ jdk_security2: javax/crypto com/sun/crypto
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security3
 jdk_security3: com/sun/security lib/security javax/security sun/security
+	$(call CheckLibraryExecutePermissions,sun/security)
 	$(call RunOthervmBatch)
 
 # All security tests
@@ -542,6 +576,7 @@ jdk_tools1: com/sun/jdi
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
+	$(call CheckLibraryExecutePermissions,tools/launcher)
 	$(call RunOthervmBatch)
 
 # All tools tests
