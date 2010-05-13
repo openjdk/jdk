@@ -275,7 +275,12 @@ ifeq ($(PLATFORM), windows)
   endif
   ARCH_FAMILY = $(ARCH)
   # Where is unwanted output to be delivered?
-  DEV_NULL = NUL
+  # MKS uses the special file "NUL", cygwin uses the customary unix file.
+  ifeq ($(USING_CYGWIN),true)
+    DEV_NULL = /dev/null
+  else
+    DEV_NULL = NUL
+  endif
   export DEV_NULL
   # Classpath separator
   CLASSPATH_SEPARATOR = ;
