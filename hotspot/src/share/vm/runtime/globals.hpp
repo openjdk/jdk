@@ -327,6 +327,10 @@ class CommandLineFlags {
   product(bool, UseMembar, false,                                           \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
+  /* Temporary: See 6948537 */                                             \
+  experimental(bool, UseMemSetInBOT, true,                                  \
+          "(Unstable) uses memset in BOT updates in GC code")               \
+                                                                            \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
                                                                             \
@@ -1298,6 +1302,10 @@ class CommandLineFlags {
           "A System.gc() request invokes a concurrent collection and "      \
           "also unloads classes during such a concurrent gc cycle "         \
           "(effective only when UseConcMarkSweepGC)")                       \
+                                                                            \
+  product(bool, GCLockerInvokesConcurrent, false,                           \
+          "The exit of a JNI CS necessitating a scavenge also"              \
+          " kicks off a bkgrd concurrent collection")                       \
                                                                             \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
