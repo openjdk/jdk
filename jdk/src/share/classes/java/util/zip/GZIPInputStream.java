@@ -66,6 +66,9 @@ class GZIPInputStream extends InflaterInputStream {
      * Creates a new input stream with the specified buffer size.
      * @param in the input stream
      * @param size the input buffer size
+     *
+     * @exception ZipException if a GZIP format error has occurred or the
+     *                         compression method used is unsupported
      * @exception IOException if an I/O error has occurred
      * @exception IllegalArgumentException if size is <= 0
      */
@@ -79,6 +82,9 @@ class GZIPInputStream extends InflaterInputStream {
     /**
      * Creates a new input stream with a default buffer size.
      * @param in the input stream
+     *
+     * @exception ZipException if a GZIP format error has occurred or the
+     *                         compression method used is unsupported
      * @exception IOException if an I/O error has occurred
      */
     public GZIPInputStream(InputStream in) throws IOException {
@@ -94,12 +100,14 @@ class GZIPInputStream extends InflaterInputStream {
      * @param len the maximum number of bytes read
      * @return  the actual number of bytes read, or -1 if the end of the
      *          compressed input stream is reached
+     *
      * @exception  NullPointerException If <code>buf</code> is <code>null</code>.
      * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>buf.length - off</code>
-     * @exception IOException if an I/O error has occurred or the compressed
-     *                        input data is corrupt
+     * @exception ZipException if the compressed input data is corrupt.
+     * @exception IOException if an I/O error has occurred.
+     *
      */
     public int read(byte[] buf, int off, int len) throws IOException {
         ensureOpen();
@@ -151,11 +159,11 @@ class GZIPInputStream extends InflaterInputStream {
         crc.reset();
         // Check header magic
         if (readUShort(in) != GZIP_MAGIC) {
-            throw new IOException("Not in GZIP format");
+            throw new ZipException("Not in GZIP format");
         }
         // Check compression method
         if (readUByte(in) != 8) {
-            throw new IOException("Unsupported compression method");
+            throw new ZipException("Unsupported compression method");
         }
         // Read flags
         int flg = readUByte(in);
@@ -177,7 +185,7 @@ class GZIPInputStream extends InflaterInputStream {
         if ((flg & FHCRC) == FHCRC) {
             int v = (int)crc.getValue() & 0xffff;
             if (readUShort(in) != v) {
-                throw new IOException("Corrupt GZIP header");
+                throw new ZipException("Corrupt GZIP header");
             }
         }
     }
@@ -196,7 +204,7 @@ class GZIPInputStream extends InflaterInputStream {
         if ((readUInt(in) != crc.getValue()) ||
             // rfc1952; ISIZE is the input size modulo 2^32
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
-            throw new IOException("Corrupt GZIP trailer");
+            throw new ZipException("Corrupt GZIP trailer");
     }
 
     /*
