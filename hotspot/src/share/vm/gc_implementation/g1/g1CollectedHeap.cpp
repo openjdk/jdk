@@ -471,21 +471,23 @@ HeapRegion* G1CollectedHeap::newAllocRegion_work(size_t word_size,
              res->zero_fill_state() == HeapRegion::Allocated)),
            "Alloc Regions must be zero filled (and non-H)");
   }
-  if (res != NULL && res->is_empty()) _free_regions--;
-  assert(res == NULL ||
-         (!res->isHumongous() &&
-          (!zero_filled ||
-           res->zero_fill_state() == HeapRegion::Allocated)),
-         "Non-young alloc Regions must be zero filled (and non-H)");
-
-  if (G1PrintHeapRegions) {
-    if (res != NULL) {
+  if (res != NULL) {
+    if (res->is_empty()) {
+      _free_regions--;
+    }
+    assert(!res->isHumongous() &&
+           (!zero_filled || res->zero_fill_state() == HeapRegion::Allocated),
+           err_msg("Non-young alloc Regions must be zero filled (and non-H):"
+                   " res->isHumongous()=%d, zero_filled=%d, res->zero_fill_state()=%d",
+                   res->isHumongous(), zero_filled, res->zero_fill_state()));
+    assert(!res->is_on_unclean_list(),
+           "Alloc Regions must not be on the unclean list");
+    if (G1PrintHeapRegions) {
       gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT", "PTR_FORMAT"], "
                              "top "PTR_FORMAT,
                              res->hrs_index(), res->bottom(), res->end(), res->top());
     }
   }
-
   return res;
 }
 
@@ -4600,6 +4602,15 @@ void G1CollectedHeap::wait_for_cleanup_complete_locked() {
 void
 G1CollectedHeap::put_region_on_unclean_list_locked(HeapRegion* r) {
   assert(ZF_mon->owned_by_self(), "precondition.");
+#ifdef ASSERT
+  if (r->is_gc_alloc_region()) {
+    ResourceMark rm;
+    stringStream region_str;
+    print_on(&region_str);
+    assert(!r->is_gc_alloc_region(), err_msg("Unexpected GC allocation region: %s",
+                                             region_str.as_string()));
+  }
+#endif
   _unclean_region_list.insert_before_head(r);
 }
 
