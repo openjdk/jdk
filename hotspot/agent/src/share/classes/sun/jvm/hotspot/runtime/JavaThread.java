@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,13 @@ public class JavaThread extends Thread {
 
   /** Gets the Java-side thread object for this JavaThread */
   public Oop getThreadObj() {
-    return VM.getVM().getObjectHeap().newOop(threadObjField.getValue(addr));
+    Oop obj = null;
+    try {
+      obj = VM.getVM().getObjectHeap().newOop(threadObjField.getValue(addr));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return obj;
   }
 
   /** Get the Java-side name of this thread */
