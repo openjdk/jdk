@@ -788,7 +788,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             // for example /foo/bar/ becomes /foo/bar
             File canonical;
             try {
-                canonical = directory.getCanonicalFile();
+                canonical = ShellFolder.getNormalizedFile(directory);
             } catch (IOException e) {
                 // Maybe drive is not ready. Can't abort here.
                 canonical = directory;
