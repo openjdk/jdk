@@ -472,7 +472,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
-  NMethodSweeper::sweep();
+  NMethodSweeper::scan_stacks();
 }
 
 

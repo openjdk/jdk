@@ -461,12 +461,25 @@ void CompileQueue::add(CompileTask* task) {
 //
 // Get the next CompileTask from a CompileQueue
 CompileTask* CompileQueue::get() {
+  NMethodSweeper::possibly_sweep();
+
   MutexLocker locker(lock());
 
   // Wait for an available CompileTask.
   while (_first == NULL) {
     // There is no work to be done right now.  Wait.
-    lock()->wait();
+    if (UseCodeCacheFlushing && (!CompileBroker::should_compile_new_jobs() || CodeCache::needs_flushing())) {
+      // During the emergency sweeping periods, wake up and sweep occasionally
+      bool timedout = lock()->wait(!Mutex::_no_safepoint_check_flag, NmethodSweepCheckInterval*1000);
+      if (timedout) {
+        MutexUnlocker ul(lock());
+        // When otherwise not busy, run nmethod sweeping
+        NMethodSweeper::possibly_sweep();
+      }
+    } else {
+      // During normal operation no need to wake up on timer
+      lock()->wait();
+    }
   }
 
   CompileTask* task = _first;
