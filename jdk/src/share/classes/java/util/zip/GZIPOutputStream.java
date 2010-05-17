@@ -179,22 +179,19 @@ class GZIPOutputStream extends DeflaterOutputStream {
     /*
      * Writes GZIP member header.
      */
-
-    private final static byte[] header = {
-        (byte) GZIP_MAGIC,                // Magic number (short)
-        (byte)(GZIP_MAGIC >> 8),          // Magic number (short)
-        Deflater.DEFLATED,                // Compression method (CM)
-        0,                                // Flags (FLG)
-        0,                                // Modification time MTIME (int)
-        0,                                // Modification time MTIME (int)
-        0,                                // Modification time MTIME (int)
-        0,                                // Modification time MTIME (int)
-        0,                                // Extra flags (XFLG)
-        0                                 // Operating system (OS)
-    };
-
     private void writeHeader() throws IOException {
-        out.write(header);
+        out.write(new byte[] {
+                      (byte) GZIP_MAGIC,        // Magic number (short)
+                      (byte)(GZIP_MAGIC >> 8),  // Magic number (short)
+                      Deflater.DEFLATED,        // Compression method (CM)
+                      0,                        // Flags (FLG)
+                      0,                        // Modification time MTIME (int)
+                      0,                        // Modification time MTIME (int)
+                      0,                        // Modification time MTIME (int)
+                      0,                        // Modification time MTIME (int)
+                      0,                        // Extra flags (XFLG)
+                      0                         // Operating system (OS)
+                  });
     }
 
     /*
