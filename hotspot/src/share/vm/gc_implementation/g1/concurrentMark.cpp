@@ -766,10 +766,12 @@ void ConcurrentMark::checkpointRootsInitialPre() {
 
   _has_aborted = false;
 
+#ifndef PRODUCT
   if (G1PrintReachableAtInitialMark) {
     print_reachable("at-cycle-start",
                     true /* use_prev_marking */, true /* all */);
   }
+#endif
 
   // Initialise marking structures. This has to be done in a STW phase.
   reset();

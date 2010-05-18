@@ -29,6 +29,10 @@
 #define DTRACE_ONLY(x) x
 #define NOT_DTRACE(x)
 
+// Work around dtrace tail call bug 6672627 until it is fixed in solaris 10.
+#define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG() \
+  do { volatile size_t dtrace_workaround_tail_call_bug = 1; } while (0)
+
 #else // ndef SOLARIS || ndef DTRACE_ENABLED
 
 #define DTRACE_ONLY(x)
@@ -40,6 +44,8 @@
 #define DTRACE_PROBE3(a,b,c,d,e) {;}
 #define DTRACE_PROBE4(a,b,c,d,e,f) {;}
 #define DTRACE_PROBE5(a,b,c,d,e,f,g) {;}
+
+#define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
 
 #endif
 
