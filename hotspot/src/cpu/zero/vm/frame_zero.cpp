@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,10 @@ bool frame::is_interpreted_frame() const {
   return zeroframe()->is_interpreter_frame();
 }
 
+bool frame::is_fake_stub_frame() const {
+  return zeroframe()->is_fake_stub_frame();
+}
+
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_entry_frame(), "wrong type of frame");
   assert(map != NULL, "map must be set");
@@ -44,14 +48,14 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
          "sender should be next Java frame");
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-  return frame(sender_sp(), sp() + 1);
+  return frame(zeroframe()->next(), sender_sp());
 }
 
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
          zeroframe()->is_shark_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");
-  return frame(sender_sp(), sp() + 1);
+  return frame(zeroframe()->next(), sender_sp());
 }
 
 frame frame::sender(RegisterMap* map) const {
@@ -172,8 +176,8 @@ void frame::zero_print_on_error(int           frame_index,
   char *valuebuf = buf + buflen;
 
   // Print each word of the frame
-  for (intptr_t *addr = fp(); addr <= sp(); addr++) {
-    int offset = sp() - addr;
+  for (intptr_t *addr = sp(); addr <= fp(); addr++) {
+    int offset = fp() - addr;
 
     // Fill in default values, then try and improve them
     snprintf(fieldbuf, buflen, "word[%d]", offset);

@@ -68,19 +68,30 @@
 
  public:
   void set_last_Java_frame() {
-    set_last_Java_frame(top_zero_frame());
+    set_last_Java_frame(top_zero_frame(), zero_stack()->sp());
   }
   void reset_last_Java_frame() {
-    set_last_Java_frame(NULL);
+    frame_anchor()->zap();
   }
-  void set_last_Java_frame(ZeroFrame* frame) {
-    frame_anchor()->set_last_Java_sp((intptr_t *) frame);
+  void set_last_Java_frame(ZeroFrame* fp, intptr_t* sp) {
+    frame_anchor()->set(sp, NULL, fp);
+  }
+
+ public:
+  ZeroFrame* last_Java_fp() {
+    return frame_anchor()->last_Java_fp();
   }
 
  private:
   frame pd_last_frame() {
     assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-    return frame(last_Java_sp(), zero_stack()->sp());
+    return frame(last_Java_fp(), last_Java_sp());
+  }
+
+ public:
+  static ByteSize last_Java_fp_offset() {
+    return byte_offset_of(JavaThread, _anchor) +
+      JavaFrameAnchor::last_Java_fp_offset();
   }
 
  public:
