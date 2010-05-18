@@ -2340,10 +2340,12 @@ void G1CollectedHeap::verify(bool allow_dirty,
       gclog_or_tty->print_cr("Heap:");
       print_on(gclog_or_tty, true /* extended */);
       gclog_or_tty->print_cr("");
+#ifndef PRODUCT
       if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
         concurrent_mark()->print_reachable("at-verification-failure",
                                            use_prev_marking, false /* all */);
       }
+#endif
       gclog_or_tty->flush();
     }
     guarantee(!failures, "there should not have been any failures");

@@ -32,10 +32,12 @@ HS_DTRACE_PROBE_DECL(hotspot, gc__end);
 // for the other file anymore.   The dtrace probes have to remain stable.
 void VM_GC_Operation::notify_gc_begin(bool full) {
   HS_DTRACE_PROBE1(hotspot, gc__begin, full);
+  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 }
 
 void VM_GC_Operation::notify_gc_end() {
   HS_DTRACE_PROBE(hotspot, gc__end);
+  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 }
 
 void VM_GC_Operation::acquire_pending_list_lock() {
