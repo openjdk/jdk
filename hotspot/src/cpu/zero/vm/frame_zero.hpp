@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,18 @@
 
   // Constructor
  public:
-  frame(intptr_t* sp, intptr_t* fp);
+  frame(ZeroFrame* zeroframe, intptr_t* sp);
 
-  // The sp of a Zero frame is the address of the highest word in
-  // that frame.  We keep track of the lowest address too, so the
-  // boundaries of the frame are available for debug printing.
  private:
-  intptr_t* _fp;
+  ZeroFrame* _zeroframe;
 
  public:
+  const ZeroFrame *zeroframe() const {
+    return _zeroframe;
+  }
+
   intptr_t* fp() const {
-    return _fp;
+    return (intptr_t *) zeroframe();
   }
 
 #ifdef CC_INTERP
@@ -50,10 +51,6 @@
 #endif // CC_INTERP
 
  public:
-  const ZeroFrame *zeroframe() const {
-    return (ZeroFrame *) sp();
-  }
-
   const EntryFrame *zero_entryframe() const {
     return zeroframe()->as_entry_frame();
   }
@@ -63,6 +60,9 @@
   const SharkFrame *zero_sharkframe() const {
     return zeroframe()->as_shark_frame();
   }
+
+ public:
+  bool is_fake_stub_frame() const;
 
  public:
   frame sender_for_nonentry_frame(RegisterMap* map) const;

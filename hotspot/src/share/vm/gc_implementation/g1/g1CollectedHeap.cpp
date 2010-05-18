@@ -4965,7 +4965,7 @@ void G1CollectedHeap::tear_down_region_lists() {
   MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
   while (pop_unclean_region_list_locked() != NULL) ;
   assert(_unclean_region_list.hd() == NULL && _unclean_region_list.sz() == 0,
-         "Postconditions of loop.")
+         "Postconditions of loop.");
   while (pop_free_region_list_locked() != NULL) ;
   assert(_free_region_list == NULL, "Postcondition of loop.");
   if (_free_region_list_size != 0) {

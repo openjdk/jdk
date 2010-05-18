@@ -378,7 +378,7 @@ ExceptionMark::~ExceptionMark() {
 void Exceptions::debug_check_abort(const char *value_string) {
   if (AbortVMOnException != NULL && value_string != NULL &&
       strstr(value_string, AbortVMOnException)) {
-    fatal1("Saw %s, aborting", value_string);
+    fatal(err_msg("Saw %s, aborting", value_string));
   }
 }
 

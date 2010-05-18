@@ -288,7 +288,7 @@ static void current_stack_region(address *bottom, size_t *size) {
       vm_exit_out_of_memory(0, "pthread_getattr_np");
     }
     else {
-      fatal1("pthread_getattr_np failed with errno = %d", res);
+      fatal(err_msg("pthread_getattr_np failed with errno = %d", res));
     }
   }
 
@@ -296,7 +296,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   size_t stack_bytes;
   res = pthread_attr_getstack(&attr, (void **) &stack_bottom, &stack_bytes);
   if (res != 0) {
-    fatal1("pthread_attr_getstack failed with errno = %d", res);
+    fatal(err_msg("pthread_attr_getstack failed with errno = %d", res));
   }
   address stack_top = stack_bottom + stack_bytes;
 
@@ -308,7 +308,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   size_t guard_bytes;
   res = pthread_attr_getguardsize(&attr, &guard_bytes);
   if (res != 0) {
-    fatal1("pthread_attr_getguardsize failed with errno = %d", res);
+    fatal(err_msg("pthread_attr_getguardsize failed with errno = %d", res));
   }
   int guard_pages = align_size_up(guard_bytes, page_bytes) / page_bytes;
   assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");

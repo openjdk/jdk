@@ -29,7 +29,17 @@
 // ciSymbol::ciSymbol
 //
 // Preallocated handle variant.  Used with handles from vmSymboHandles.
-ciSymbol::ciSymbol(symbolHandle h_s) : ciObject(h_s) {
+ciSymbol::ciSymbol(symbolHandle h_s, vmSymbols::SID sid)
+  : ciObject(h_s), _sid(sid)
+{
+  assert(sid_ok(), "must be in vmSymbols");
+}
+
+// Normal case for non-famous symbols.
+ciSymbol::ciSymbol(symbolOop s)
+  : ciObject(s), _sid(vmSymbols::NO_SID)
+{
+  assert(sid_ok(), "must not be in vmSymbols");
 }
 
 // ciSymbol
