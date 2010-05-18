@@ -786,7 +786,6 @@ void (*fp_gtk_main)(void);
 guint (*fp_gtk_main_level)(void);
 
 
-gboolean (*fp_g_thread_get_initialized)(void);
 void (*fp_g_thread_init)(GThreadFunctions *vtable);
 void (*fp_gdk_threads_init)(void);
 void (*fp_gdk_threads_enter)(void);
