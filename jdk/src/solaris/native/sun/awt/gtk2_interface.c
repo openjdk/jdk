@@ -77,6 +77,7 @@ const gint DEFAULT    = 1 << 10;
 
 static void *gtk2_libhandle = NULL;
 static void *gthread_libhandle = NULL;
+static gboolean flag_g_thread_get_initialized = FALSE;
 static jmp_buf j;
 
 /* Widgets */
@@ -436,8 +437,10 @@ void gtk2_file_chooser_load()
     fp_gtk_file_chooser_set_filter = dl_symbol("gtk_file_chooser_set_filter");
     fp_gtk_file_chooser_get_type = dl_symbol("gtk_file_chooser_get_type");
     fp_gtk_file_filter_new = dl_symbol("gtk_file_filter_new");
-    fp_gtk_file_chooser_set_do_overwrite_confirmation = dl_symbol(
-            "gtk_file_chooser_set_do_overwrite_confirmation");
+    if (fp_gtk_check_version(2, 8, 0) == NULL) {
+        fp_gtk_file_chooser_set_do_overwrite_confirmation = dl_symbol(
+                "gtk_file_chooser_set_do_overwrite_confirmation");
+    }
     fp_gtk_file_chooser_set_select_multiple = dl_symbol(
             "gtk_file_chooser_set_select_multiple");
     fp_gtk_file_chooser_get_current_folder = dl_symbol(
@@ -641,8 +644,6 @@ gboolean gtk2_load()
         /**
          * GLib thread system
          */
-        fp_g_thread_get_initialized = dl_symbol_gthread(
-                "g_thread_get_initialized");
         fp_g_thread_init = dl_symbol_gthread("g_thread_init");
         fp_gdk_threads_init = dl_symbol("gdk_threads_init");
         fp_gdk_threads_enter = dl_symbol("gdk_threads_enter");
@@ -744,7 +745,9 @@ gboolean gtk2_load()
 
     if (fp_gtk_check_version(2, 2, 0) == NULL) {
         // Init the thread system to use GLib in a thread-safe mode
-        if (!fp_g_thread_get_initialized()) {
+        if (!flag_g_thread_get_initialized) {
+            flag_g_thread_get_initialized = TRUE;
+
             fp_g_thread_init(NULL);
 
             //According the GTK documentation, gdk_threads_init() should be
