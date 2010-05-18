@@ -1989,20 +1989,15 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
     case Op_Allocate:
     {
       Node *k = call->in(AllocateNode::KlassNode);
-      const TypeKlassPtr *kt;
-      if (k->Opcode() == Op_LoadKlass) {
-        kt = k->as_Load()->type()->isa_klassptr();
-      } else {
-        // Also works for DecodeN(LoadNKlass).
-        kt = k->as_Type()->type()->isa_klassptr();
-      }
+      const TypeKlassPtr *kt = k->bottom_type()->isa_klassptr();
       assert(kt != NULL, "TypeKlassPtr  required.");
       ciKlass* cik = kt->klass();
-      ciInstanceKlass* ciik = cik->as_instance_klass();
 
       PointsToNode::EscapeState es;
       uint edge_to;
-      if (cik->is_subclass_of(_compile->env()->Thread_klass()) || ciik->has_finalizer()) {
+      if (cik->is_subclass_of(_compile->env()->Thread_klass()) ||
+         !cik->is_instance_klass() || // StressReflectiveCode
+          cik->as_instance_klass()->has_finalizer()) {
         es = PointsToNode::GlobalEscape;
         edge_to = _phantom_object; // Could not be worse
       } else {
@@ -2017,13 +2012,28 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
 
     case Op_AllocateArray:
     {
-      int length = call->in(AllocateNode::ALength)->find_int_con(-1);
-      if (length < 0 || length > EliminateAllocationArraySizeLimit) {
-        // Not scalar replaceable if the length is not constant or too big.
-        ptnode_adr(call_idx)->_scalar_replaceable = false;
+
+      Node *k = call->in(AllocateNode::KlassNode);
+      const TypeKlassPtr *kt = k->bottom_type()->isa_klassptr();
+      assert(kt != NULL, "TypeKlassPtr  required.");
+      ciKlass* cik = kt->klass();
+
+      PointsToNode::EscapeState es;
+      uint edge_to;
+      if (!cik->is_array_klass()) { // StressReflectiveCode
+        es = PointsToNode::GlobalEscape;
+        edge_to = _phantom_object;
+      } else {
+        es = PointsToNode::NoEscape;
+        edge_to = call_idx;
+        int length = call->in(AllocateNode::ALength)->find_int_con(-1);
+        if (length < 0 || length > EliminateAllocationArraySizeLimit) {
+          // Not scalar replaceable if the length is not constant or too big.
+          ptnode_adr(call_idx)->_scalar_replaceable = false;
+        }
       }
-      set_escape_state(call_idx, PointsToNode::NoEscape);
-      add_pointsto_edge(resproj_idx, call_idx);
+      set_escape_state(call_idx, es);
+      add_pointsto_edge(resproj_idx, edge_to);
       _processed.set(resproj_idx);
       break;
     }
