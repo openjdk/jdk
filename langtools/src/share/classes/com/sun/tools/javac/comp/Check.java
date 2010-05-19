@@ -677,6 +677,19 @@ public class Check {
         }
     }
 
+    /**
+     * Check that vararg method call is sound
+     * @param pos Position to be used for error reporting.
+     * @param argtypes Actual arguments supplied to vararg method.
+     */
+    void checkVararg(DiagnosticPosition pos, List<Type> argtypes) {
+        Type argtype = argtypes.last();
+        if (!types.isReifiable(argtype))
+            warnUnchecked(pos,
+                              "unchecked.generic.array.creation",
+                              argtype);
+    }
+
     /** Check that given modifiers are legal for given symbol and
      *  return modifiers together with any implicit modififiers for that symbol.
      *  Warning: we can't use flags() here since this method

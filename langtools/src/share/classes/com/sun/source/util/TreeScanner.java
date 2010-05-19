@@ -354,6 +354,10 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    public R visitDisjointType(DisjointTypeTree node, P p) {
+        return scan(node.getTypeComponents(), p);
+    }
+
     public R visitTypeParameter(TypeParameterTree node, P p) {
         R r = scan(node.getAnnotations(), p);
         r = scanAndReduce(node.getBounds(), p, r);
