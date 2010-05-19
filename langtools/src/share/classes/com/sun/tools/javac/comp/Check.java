@@ -886,6 +886,7 @@ public class Check {
     void checkRaw(JCTree tree, Env<AttrContext> env) {
         if (lint.isEnabled(Lint.LintCategory.RAW) &&
             tree.type.tag == CLASS &&
+            !TreeInfo.isDiamond(tree) &&
             !env.enclClass.name.isEmpty() &&  //anonymous or intersection
             tree.type.isRaw()) {
             log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
