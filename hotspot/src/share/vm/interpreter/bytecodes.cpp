@@ -26,10 +26,12 @@
 #include "incls/_bytecodes.cpp.incl"
 
 
+#if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))
 // Windows AMD64 Compiler Hangs compiling this file
 // unless optimization is off
 #ifdef _M_AMD64
 #pragma optimize ("", off)
+#endif
 #endif
 
 
