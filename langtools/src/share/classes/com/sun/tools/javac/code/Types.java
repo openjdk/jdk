@@ -588,10 +588,21 @@ public class Types {
                 case BYTE: case CHAR: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case VOID: case BOT: case NONE:
                     return t.tag == s.tag;
-                case TYPEVAR:
-                    return s.isSuperBound()
-                        && !s.isExtendsBound()
-                        && visit(t, upperBound(s));
+                case TYPEVAR: {
+                    if (s.tag == TYPEVAR) {
+                        //type-substitution does not preserve type-var types
+                        //check that type var symbols and bounds are indeed the same
+                        return t.tsym == s.tsym &&
+                                visit(t.getUpperBound(), s.getUpperBound());
+                    }
+                    else {
+                        //special case for s == ? super X, where upper(s) = u
+                        //check that u == t, where u has been set by Type.withTypeVar
+                        return s.isSuperBound() &&
+                                !s.isExtendsBound() &&
+                                visit(t, upperBound(s));
+                    }
+                }
                 default:
                     throw new AssertionError("isSameType " + t.tag);
                 }
