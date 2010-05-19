@@ -367,6 +367,11 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitTypeDisjoint(JCTypeDisjoint tree) {
+        tree.components = translate(tree.components);
+        result = tree;
+    }
+
     public void visitTypeParameter(JCTypeParameter tree) {
         tree.annotations = translate(tree.annotations);
         tree.bounds = translate(tree.bounds);
