@@ -66,4 +66,5 @@ for i in "$@" ; do
 done
 unset DUALCASE
 
-eval "#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} -jar "${mydir}"/../lib/#PROGRAM#.jar ${toolOpts}
+IFS=$nl
+"#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} -jar "${mydir}"/../lib/#PROGRAM#.jar ${toolOpts}

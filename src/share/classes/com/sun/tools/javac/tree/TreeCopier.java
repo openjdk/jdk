@@ -345,6 +345,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeApply(clazz, arguments);
     }
 
+    public JCTree visitDisjointType(DisjointTypeTree node, P p) {
+        JCTypeDisjoint t = (JCTypeDisjoint) node;
+        List<JCExpression> components = copy(t.components, p);
+        return M.at(t.pos).TypeDisjoint(components);
+    }
+
     public JCTree visitArrayType(ArrayTypeTree node, P p) {
         JCArrayTypeTree t = (JCArrayTypeTree) node;
         JCExpression elemtype = copy(t.elemtype, p);
