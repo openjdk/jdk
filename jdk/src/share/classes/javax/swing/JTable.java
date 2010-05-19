@@ -719,8 +719,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #addNotify
      */
     protected void configureEnclosingScrollPane() {
-        JViewport port = SwingUtilities.getParentViewport(this);
-        if (port != null) {
+        Container parent = SwingUtilities.getUnwrappedParent(this);
+        if (parent instanceof JViewport) {
+            JViewport port = (JViewport) parent;
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
                 JScrollPane scrollPane = (JScrollPane)gp;
@@ -752,8 +753,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * from configureEnclosingScrollPane() and updateUI() in a safe manor.
      */
     private void configureEnclosingScrollPaneUI() {
-        JViewport port = SwingUtilities.getParentViewport(this);
-        if (port != null) {
+        Container parent = SwingUtilities.getUnwrappedParent(this);
+        if (parent instanceof JViewport) {
+            JViewport port = (JViewport) parent;
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
                 JScrollPane scrollPane = (JScrollPane)gp;
@@ -822,8 +824,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.3
      */
     protected void unconfigureEnclosingScrollPane() {
-        JViewport port = SwingUtilities.getParentViewport(this);
-        if (port != null) {
+        Container parent = SwingUtilities.getUnwrappedParent(this);
+        if (parent instanceof JViewport) {
+            JViewport port = (JViewport) parent;
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
                 JScrollPane scrollPane = (JScrollPane)gp;
@@ -5217,10 +5220,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getFillsViewportHeight
      */
     public boolean getScrollableTracksViewportHeight() {
-        JViewport port = SwingUtilities.getParentViewport(this);
+        Container parent = SwingUtilities.getUnwrappedParent(this);
         return getFillsViewportHeight()
-               && port != null
-               && port.getHeight() > getPreferredSize().height;
+               && parent instanceof JViewport
+               && parent.getHeight() > getPreferredSize().height;
     }
 
     /**
