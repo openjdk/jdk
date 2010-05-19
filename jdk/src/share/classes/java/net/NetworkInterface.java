@@ -221,11 +221,12 @@ public final class NetworkInterface {
      * A display name is a human readable String describing the network
      * device.
      *
-     * @return the display name of this network interface,
-     *         or null if no display name is available.
+     * @return a non-empty string representing the display name of this network
+     *         interface, or null if no display name is available.
      */
     public String getDisplayName() {
-        return displayName;
+        /* strict TCK conformance */
+        return "".equals(displayName) ? null : displayName;
     }
 
     /**
@@ -290,8 +291,12 @@ public final class NetworkInterface {
      *          If the specified address is <tt>null</tt>.
      */
     public static NetworkInterface getByInetAddress(InetAddress addr) throws SocketException {
-        if (addr == null)
+        if (addr == null) {
             throw new NullPointerException();
+        }
+        if (!(addr instanceof Inet4Address || addr instanceof Inet6Address)) {
+            throw new IllegalArgumentException ("invalid address type");
+        }
         return getByInetAddress0(addr);
     }
 

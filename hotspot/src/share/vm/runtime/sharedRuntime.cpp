@@ -259,13 +259,16 @@ JRT_END
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
   assert(frame::verify_return_pc(return_address), "must be a return pc");
 
+  // Reset MethodHandle flag.
+  thread->set_is_method_handle_return(false);
+
   // the fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   if (blob != NULL && blob->is_nmethod()) {
     nmethod* code = (nmethod*)blob;
     assert(code != NULL, "nmethod must be present");
     // Check if the return address is a MethodHandle call site.
-    thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
+    thread->set_is_method_handle_return(code->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
     assert(!code->is_native_method(), "no exception handler");
     assert(code->header_begin() != code->exception_begin(), "no exception handler");
@@ -292,7 +295,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       nmethod* code = (nmethod*)blob;
       assert(code != NULL, "nmethod must be present");
       // Check if the return address is a MethodHandle call site.
-      thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
+      thread->set_is_method_handle_return(code->is_method_handle_return(return_address));
       assert(code->header_begin() != code->exception_begin(), "no exception handler");
       return code->exception_begin();
     }
@@ -469,6 +472,13 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     // the bytecodes.
     t = table.entry_for(catch_pco, -1, 0);
   }
+
+#ifdef COMPILER1
+  if (t == NULL && nm->is_compiled_by_c1()) {
+    assert(nm->unwind_handler_begin() != NULL, "");
+    return nm->unwind_handler_begin();
+  }
+#endif
 
   if (t == NULL) {
     tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", ret_pc, handler_bci);
@@ -1547,7 +1557,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     methodOop actual_method = MethodHandles::decode_method(actual,
                                                           kignore, fignore);
     if (actual_method != NULL) {
-      if (actual_method->name() == vmSymbols::invoke_name())
+      if (methodOopDesc::is_method_handle_invoke_name(actual_method->name()))
         mhName = "$";
       else
         mhName = actual_method->signature()->as_C_string();
@@ -1832,14 +1842,11 @@ class AdapterFingerPrint : public CHeapObj {
 
       case T_OBJECT:
       case T_ARRAY:
-        if (!TaggedStackInterpreter) {
 #ifdef _LP64
-          return T_LONG;
+        return T_LONG;
 #else
-          return T_INT;
+        return T_INT;
 #endif
-        }
-        return T_OBJECT;
 
       case T_INT:
       case T_LONG:
@@ -2585,17 +2592,9 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   // Copy the locals.  Order is preserved so that loading of longs works.
   // Since there's no GC I can copy the oops blindly.
   assert( sizeof(HeapWord)==sizeof(intptr_t), "fix this code");
-  if (TaggedStackInterpreter) {
-    for (int i = 0; i < max_locals; i++) {
-      // copy only each local separately to the buffer avoiding the tag
-      buf[i] = *fr.interpreter_frame_local_at(max_locals-i-1);
-    }
-  } else {
-    Copy::disjoint_words(
-                       (HeapWord*)fr.interpreter_frame_local_at(max_locals-1),
+  Copy::disjoint_words((HeapWord*)fr.interpreter_frame_local_at(max_locals-1),
                        (HeapWord*)&buf[0],
                        max_locals);
-  }
 
   // Inflate locks.  Copy the displaced headers.  Be careful, there can be holes.
   int i = max_locals;

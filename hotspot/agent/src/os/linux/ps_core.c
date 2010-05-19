@@ -884,9 +884,12 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       }
 
       // read name of the shared object
-      if (read_string(ph, (uintptr_t) lib_name_addr, lib_name, sizeof(lib_name)) != true) {
+      lib_name[0] = '\0';
+      if (lib_name_addr != 0 &&
+          read_string(ph, (uintptr_t) lib_name_addr, lib_name, sizeof(lib_name)) != true) {
          print_debug("can't read shared object name\n");
-         return false;
+         // don't let failure to read the name stop opening the file.  If something is really wrong
+         // it will fail later.
       }
 
       if (lib_name[0] != '\0') {

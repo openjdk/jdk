@@ -45,6 +45,7 @@ define_pd_global(intx, CodeEntryAlignment,       32);
 #else
 define_pd_global(intx, CodeEntryAlignment,       16);
 #endif // COMPILER2
+define_pd_global(intx, OptoLoopAlignment,        16);
 define_pd_global(intx, InlineFrequencyCount,     100);
 define_pd_global(intx, InlineSmallCode,          1000);
 

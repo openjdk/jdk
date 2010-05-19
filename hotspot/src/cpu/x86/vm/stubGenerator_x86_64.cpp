@@ -278,11 +278,6 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(c_rarg2, parameters);       // parameter pointer
     __ movl(c_rarg1, c_rarg3);            // parameter counter is in c_rarg1
     __ BIND(loop);
-    if (TaggedStackInterpreter) {
-      __ movl(rax, Address(c_rarg2, 0)); // get tag
-      __ addptr(c_rarg2, wordSize);      // advance to next tag
-      __ push(rax);                      // pass tag
-    }
     __ movptr(rax, Address(c_rarg2, 0));// get parameter
     __ addptr(c_rarg2, wordSize);       // advance to next parameter
     __ decrementl(c_rarg1);             // decrement counter
@@ -871,9 +866,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_fp_mask(const char *stub_name, int64_t mask) {
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
-
-    __ align(16);
     address start = __ pc();
 
     __ emit_data64( mask, relocInfo::none );
@@ -1268,7 +1262,7 @@ class StubGenerator: public StubCodeGenerator {
                              Label& L_copy_32_bytes, Label& L_copy_8_bytes) {
     DEBUG_ONLY(__ stop("enter at entry label, not here"));
     Label L_loop;
-    __ align(16);
+    __ align(OptoLoopAlignment);
   __ BIND(L_loop);
     if(UseUnalignedLoadStores) {
       __ movdqu(xmm0, Address(end_from, qword_count, Address::times_8, -24));
@@ -1309,7 +1303,7 @@ class StubGenerator: public StubCodeGenerator {
                               Label& L_copy_32_bytes, Label& L_copy_8_bytes) {
     DEBUG_ONLY(__ stop("enter at entry label, not here"));
     Label L_loop;
-    __ align(16);
+    __ align(OptoLoopAlignment);
   __ BIND(L_loop);
     if(UseUnalignedLoadStores) {
       __ movdqu(xmm0, Address(from, qword_count, Address::times_8, 16));
@@ -2229,7 +2223,7 @@ class StubGenerator: public StubCodeGenerator {
     // Loop control:
     //   for (count = -count; count != 0; count++)
     // Base pointers src, dst are biased by 8*(count-1),to last element.
-    __ align(16);
+    __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
     __ store_heap_oop(to_element_addr, rax_oop);  // store the oop

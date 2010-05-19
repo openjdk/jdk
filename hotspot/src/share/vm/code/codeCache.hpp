@@ -102,6 +102,8 @@ class CodeCache : AllStatic {
   static CodeBlob* next (CodeBlob* cb);
   static CodeBlob* alive(CodeBlob *cb);
   static nmethod* alive_nmethod(CodeBlob *cb);
+  static nmethod* first_nmethod();
+  static nmethod* next_nmethod (CodeBlob* cb);
   static int       nof_blobs()                 { return _number_of_blobs; }
 
   // GC support

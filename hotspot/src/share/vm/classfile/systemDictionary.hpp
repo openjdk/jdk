@@ -136,6 +136,7 @@ class SymbolPropertyTable;
   template(MethodHandle_klass,           java_dyn_MethodHandle,          Opt) \
   template(MemberName_klass,             sun_dyn_MemberName,             Opt) \
   template(MethodHandleImpl_klass,       sun_dyn_MethodHandleImpl,       Opt) \
+  template(MethodHandleNatives_klass,    sun_dyn_MethodHandleNatives,    Opt) \
   template(AdapterMethodHandle_klass,    sun_dyn_AdapterMethodHandle,    Opt) \
   template(BoundMethodHandle_klass,      sun_dyn_BoundMethodHandle,      Opt) \
   template(DirectMethodHandle_klass,     sun_dyn_DirectMethodHandle,     Opt) \
@@ -463,29 +464,28 @@ public:
 
   // JSR 292
   // find the java.dyn.MethodHandles::invoke method for a given signature
-  static methodOop find_method_handle_invoke(symbolHandle signature,
-                                             Handle class_loader,
-                                             Handle protection_domain,
+  static methodOop find_method_handle_invoke(symbolHandle name,
+                                             symbolHandle signature,
+                                             KlassHandle accessing_klass,
                                              TRAPS);
-  // ask Java to compute the java.dyn.MethodType object for a given signature
-  static Handle    compute_method_handle_type(symbolHandle signature,
-                                              Handle class_loader,
-                                              Handle protection_domain,
-                                              TRAPS);
+  // ask Java to compute a java.dyn.MethodType object for a given signature
+  static Handle    find_method_handle_type(symbolHandle signature,
+                                           KlassHandle accessing_klass,
+                                           bool& return_bcp_flag,
+                                           TRAPS);
   // ask Java to create a dynamic call site, while linking an invokedynamic op
-  static Handle    make_dynamic_call_site(KlassHandle caller,
-                                          int caller_method_idnum,
-                                          int caller_bci,
+  static Handle    make_dynamic_call_site(Handle bootstrap_method,
+                                          // Callee information:
                                           symbolHandle name,
-                                          methodHandle mh_invoke,
+                                          methodHandle signature_invoker,
+                                          Handle info,
+                                          // Caller information:
+                                          methodHandle caller_method,
+                                          int caller_bci,
                                           TRAPS);
 
   // coordinate with Java about bootstrap methods
-  static Handle    find_bootstrap_method(KlassHandle caller,
-                                         // This argument is non-null only when a
-                                         // classfile attribute has been found:
-                                         KlassHandle search_bootstrap_klass,
-                                         TRAPS);
+  static Handle    find_bootstrap_method(KlassHandle caller, TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints
   static const char* loader_name(oop loader) {

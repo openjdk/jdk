@@ -70,6 +70,7 @@ Monitor* FullGCCount_lock             = NULL;
 Monitor* CMark_lock                   = NULL;
 Monitor* ZF_mon                       = NULL;
 Monitor* Cleanup_mon                  = NULL;
+Mutex*   CMRegionStack_lock           = NULL;
 Mutex*   SATB_Q_FL_lock               = NULL;
 Monitor* SATB_Q_CBL_mon               = NULL;
 Mutex*   Shared_SATB_Q_lock           = NULL;
@@ -135,7 +136,7 @@ void assert_locked_or_safepoint(const Monitor * lock) {
   // see if invoker of VM operation owns it
   VM_Operation* op = VMThread::vm_operation();
   if (op != NULL && op->calling_thread() == lock->owner()) return;
-  fatal1("must own lock %s", lock->name());
+  fatal(err_msg("must own lock %s", lock->name()));
 }
 
 // a stronger assertion than the above
@@ -143,7 +144,7 @@ void assert_lock_strong(const Monitor * lock) {
   if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->owned_by_self()) return;
-  fatal1("must own lock %s", lock->name());
+  fatal(err_msg("must own lock %s", lock->name()));
 }
 #endif
 
@@ -167,6 +168,7 @@ void mutex_init() {
     def(CMark_lock                 , Monitor, nonleaf,     true ); // coordinate concurrent mark thread
     def(ZF_mon                     , Monitor, leaf,        true );
     def(Cleanup_mon                , Monitor, nonleaf,     true );
+    def(CMRegionStack_lock         , Mutex,   leaf,        true );
     def(SATB_Q_FL_lock             , Mutex  , special,     true );
     def(SATB_Q_CBL_mon             , Monitor, nonleaf,     true );
     def(Shared_SATB_Q_lock         , Mutex,   nonleaf,     true );

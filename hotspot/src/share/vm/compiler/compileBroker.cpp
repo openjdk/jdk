@@ -461,12 +461,25 @@ void CompileQueue::add(CompileTask* task) {
 //
 // Get the next CompileTask from a CompileQueue
 CompileTask* CompileQueue::get() {
+  NMethodSweeper::possibly_sweep();
+
   MutexLocker locker(lock());
 
   // Wait for an available CompileTask.
   while (_first == NULL) {
     // There is no work to be done right now.  Wait.
-    lock()->wait();
+    if (UseCodeCacheFlushing && (!CompileBroker::should_compile_new_jobs() || CodeCache::needs_flushing())) {
+      // During the emergency sweeping periods, wake up and sweep occasionally
+      bool timedout = lock()->wait(!Mutex::_no_safepoint_check_flag, NmethodSweepCheckInterval*1000);
+      if (timedout) {
+        MutexUnlocker ul(lock());
+        // When otherwise not busy, run nmethod sweeping
+        NMethodSweeper::possibly_sweep();
+      }
+    } else {
+      // During normal operation no need to wake up on timer
+      lock()->wait();
+    }
   }
 
   CompileTask* task = _first;
@@ -1414,9 +1427,14 @@ void CompileBroker::init_compiler_thread_log() {
     intx thread_id = os::current_thread_id();
     for (int try_temp_dir = 1; try_temp_dir >= 0; try_temp_dir--) {
       const char* dir = (try_temp_dir ? os::get_temp_directory() : NULL);
-      if (dir == NULL)  dir = "";
-      sprintf(fileBuf, "%shs_c" UINTX_FORMAT "_pid%u.log",
-              dir, thread_id, os::current_process_id());
+      if (dir == NULL) {
+        jio_snprintf(fileBuf, sizeof(fileBuf), "hs_c" UINTX_FORMAT "_pid%u.log",
+                     thread_id, os::current_process_id());
+      } else {
+        jio_snprintf(fileBuf, sizeof(fileBuf),
+                     "%s%shs_c" UINTX_FORMAT "_pid%u.log", dir,
+                     os::file_separator(), thread_id, os::current_process_id());
+      }
       fp = fopen(fileBuf, "at");
       if (fp != NULL) {
         file = NEW_C_HEAP_ARRAY(char, strlen(fileBuf)+1);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,14 +131,7 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
   //       java methods.  Interpreter::method_kind(...) will select
   //       this entry point for the corresponding methods in JDK 1.3.
   // get argument
-  if (TaggedStackInterpreter) {
-    __ pushl(Address(rsp, 3*wordSize));  // push hi (and note rsp -= wordSize)
-    __ pushl(Address(rsp, 2*wordSize));  // push lo
-    __ fld_d(Address(rsp, 0));           // get double in ST0
-    __ addptr(rsp, 2*wordSize);
-  } else {
-    __ fld_d(Address(rsp, 1*wordSize));
-  }
+  __ fld_d(Address(rsp, 1*wordSize));
   switch (kind) {
     case Interpreter::java_lang_math_sin :
         __ trigfunc('s');

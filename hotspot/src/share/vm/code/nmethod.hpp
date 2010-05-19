@@ -82,7 +82,6 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
 struct nmFlags {
   friend class VMStructs;
   unsigned int version:8;                    // version number (0 = first version)
-  unsigned int level:4;                      // optimization level
   unsigned int age:4;                        // age (in # of sweep steps)
 
   unsigned int state:2;                      // {alive, zombie, unloaded)
@@ -154,6 +153,9 @@ class nmethod : public CodeBlob {
   // All deoptee's at a MethodHandle call site will resume execution
   // at this location described by this offset.
   int _deoptimize_mh_offset;
+  // Offset of the unwind handler if it exists
+  int _unwind_handler_offset;
+
 #ifdef HAVE_DTRACE_H
   int _trap_offset;
 #endif // def HAVE_DTRACE_H
@@ -341,6 +343,7 @@ class nmethod : public CodeBlob {
   address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
   address deopt_handler_begin   () const          { return           header_begin() + _deoptimize_offset    ; }
   address deopt_mh_handler_begin() const          { return           header_begin() + _deoptimize_mh_offset ; }
+  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
   address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
   address stub_end              () const          { return           header_begin() + _consts_offset        ; }
   address consts_begin          () const          { return           header_begin() + _consts_offset        ; }
@@ -406,14 +409,13 @@ class nmethod : public CodeBlob {
   void flush_dependencies(BoolObjectClosure* is_alive);
   bool  has_flushed_dependencies()                { return flags.hasFlushedDependencies; }
   void  set_has_flushed_dependencies()            {
-    check_safepoint();
     assert(!has_flushed_dependencies(), "should only happen once");
     flags.hasFlushedDependencies = 1;
   }
 
   bool  is_marked_for_reclamation() const         { return flags.markedForReclamation; }
-  void  mark_for_reclamation()                    { check_safepoint(); flags.markedForReclamation = 1; }
-  void  unmark_for_reclamation()                  { check_safepoint(); flags.markedForReclamation = 0; }
+  void  mark_for_reclamation()                    { flags.markedForReclamation = 1; }
+  void  unmark_for_reclamation()                  { flags.markedForReclamation = 0; }
 
   bool  has_unsafe_access() const                 { return flags.has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { flags.has_unsafe_access = z; }
@@ -423,9 +425,6 @@ class nmethod : public CodeBlob {
 
   bool  is_speculatively_disconnected() const     { return flags.speculatively_disconnected; }
   void  set_speculatively_disconnected(bool z)     { flags.speculatively_disconnected = z; }
-
-  int   level() const                             { return flags.level; }
-  void  set_level(int newLevel)                   { check_safepoint(); flags.level = newLevel; }
 
   int   comp_level() const                        { return _comp_level; }
 

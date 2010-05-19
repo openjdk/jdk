@@ -151,7 +151,6 @@ public:
 
   // Do not match base-ptr edge
   virtual uint match_edge(uint idx) const;
-  static const Type *mach_bottom_type(const MachNode* n);  // used by ad_<arch>.hpp
 };
 
 //------------------------------OrINode----------------------------------------

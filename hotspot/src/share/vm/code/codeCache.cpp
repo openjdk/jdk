@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,23 @@ nmethod* CodeCache::alive_nmethod(CodeBlob* cb) {
   return (nmethod*)cb;
 }
 
+nmethod* CodeCache::first_nmethod() {
+  assert_locked_or_safepoint(CodeCache_lock);
+  CodeBlob* cb = first();
+  while (cb != NULL && !cb->is_nmethod()) {
+    cb = next(cb);
+  }
+  return (nmethod*)cb;
+}
+
+nmethod* CodeCache::next_nmethod (CodeBlob* cb) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  cb = next(cb);
+  while (cb != NULL && !cb->is_nmethod()) {
+    cb = next(cb);
+  }
+  return (nmethod*)cb;
+}
 
 CodeBlob* CodeCache::allocate(int size) {
   // Do not seize the CodeCache lock here--if the caller has not
@@ -284,9 +301,11 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
       cur->print_on(tty, is_live ? "scavenge root" : "dead scavenge root"); tty->cr();
     }
 #endif //PRODUCT
-    if (is_live)
+    if (is_live) {
       // Perform cur->oops_do(f), maybe just once per nmethod.
       f->do_code_blob(cur);
+      cur->fix_oop_relocations();
+    }
   }
 
   // Check for stray marks.
@@ -412,7 +431,7 @@ nmethod* CodeCache::find_and_remove_saved_code(methodOop m) {
       saved->set_speculatively_disconnected(false);
       saved->set_saved_nmethod_link(NULL);
       if (PrintMethodFlushing) {
-        saved->print_on(tty, " ### nmethod is reconnected");
+        saved->print_on(tty, " ### nmethod is reconnected\n");
       }
       if (LogCompilation && (xtty != NULL)) {
         ttyLocker ttyl;
@@ -430,7 +449,8 @@ nmethod* CodeCache::find_and_remove_saved_code(methodOop m) {
 }
 
 void CodeCache::remove_saved_code(nmethod* nm) {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  // For conc swpr this will be called with CodeCache_lock taken by caller
+  assert_locked_or_safepoint(CodeCache_lock);
   assert(nm->is_speculatively_disconnected(), "shouldn't call for other nmethods");
   nmethod* saved = _saved_nmethods;
   nmethod* prev = NULL;
@@ -461,7 +481,7 @@ void CodeCache::speculatively_disconnect(nmethod* nm) {
   nm->set_saved_nmethod_link(_saved_nmethods);
   _saved_nmethods = nm;
   if (PrintMethodFlushing) {
-    nm->print_on(tty, " ### nmethod is speculatively disconnected");
+    nm->print_on(tty, " ### nmethod is speculatively disconnected\n");
   }
   if (LogCompilation && (xtty != NULL)) {
     ttyLocker ttyl;

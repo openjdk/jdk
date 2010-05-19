@@ -30,8 +30,7 @@
 import java.net.*;
 import java.util.*;
 import java.io.*;
-import java.nio.*;
-import sun.net.www.ParseUtil;
+
 
 /**
  * Request should get serviced by the cache handler. Response get
@@ -52,9 +51,13 @@ public class getResponseCode {
         }
     }
     public static void main(String args[]) throws Exception {
-        ResponseCache.setDefault(new MyResponseCache());
-        FNPrefix = System.getProperty("test.src", ".")+"/";
-        new getResponseCode();
+        try {
+            ResponseCache.setDefault(new MyResponseCache());
+            FNPrefix = System.getProperty("test.src", ".")+"/";
+            new getResponseCode();
+        } finally{
+            ResponseCache.setDefault(null);
+        }
     }
 
     static class MyResponseCache extends ResponseCache {

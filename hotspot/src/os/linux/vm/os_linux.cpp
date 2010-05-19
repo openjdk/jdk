@@ -1522,7 +1522,10 @@ int os::current_process_id() {
 
 const char* os::dll_file_extension() { return ".so"; }
 
-const char* os::get_temp_directory() { return "/tmp/"; }
+const char* os::get_temp_directory() {
+  const char *prop = Arguments::get_property("java.io.tmpdir");
+  return prop == NULL ? "/tmp" : prop;
+}
 
 static bool file_exists(const char* filename) {
   struct stat statbuf;
@@ -2302,10 +2305,11 @@ void linux_wrap_code(char* base, size_t size) {
     return;
   }
 
-  char buf[40];
+  char buf[PATH_MAX+1];
   int num = Atomic::add(1, &cnt);
 
-  sprintf(buf, "/tmp/hs-vm-%d-%d", os::current_process_id(), num);
+  snprintf(buf, sizeof(buf), "%s/hs-vm-%d-%d",
+           os::get_temp_directory(), os::current_process_id(), num);
   unlink(buf);
 
   int fd = open(buf, O_CREAT | O_RDWR, S_IRWXU);
@@ -2784,7 +2788,7 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   }
 
   // attach to the region
-  addr = (char*)shmat(shmid, NULL, 0);
+  addr = (char*)shmat(shmid, req_addr, 0);
   int err = errno;
 
   // Remove shmid. If shmat() is successful, the actual shared memory segment
@@ -3491,7 +3495,8 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal2("Encountered unexpected pre-existing sigaction handler %#lx for signal %d.", (long)oldhand, sig);
+      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
+                    "%#lx for signal %d.", (long)oldhand, sig));
     }
   }
 
@@ -3813,7 +3818,8 @@ void os::init(void) {
 
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
-    fatal1("os_linux.cpp: os::init: sysconf failed (%s)", strerror(errno));
+    fatal(err_msg("os_linux.cpp: os::init: sysconf failed (%s)",
+                  strerror(errno)));
   }
   init_page_sizes((size_t) Linux::page_size());
 

@@ -334,7 +334,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         }
         break;
       default:
-        fatal1("bad constant pool tag value %u", cp->tag_at(index).value());
+        fatal(err_msg("bad constant pool tag value %u",
+                      cp->tag_at(index).value()));
         ShouldNotReachHere();
         break;
     } // end of switch
@@ -1837,7 +1838,8 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
     _has_vanilla_constructor = true;
   }
 
-  if (EnableMethodHandles && m->is_method_handle_invoke()) {
+  if (EnableMethodHandles && (m->is_method_handle_invoke() ||
+                              m->is_method_handle_adapter())) {
     THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
                "Method handle invokers must be defined internally to the VM", nullHandle);
   }
@@ -2956,8 +2958,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 #endif
     bool compact_fields   = CompactFields;
     int  allocation_style = FieldsAllocationStyle;
-    if( allocation_style < 0 || allocation_style > 1 ) { // Out of range?
-      assert(false, "0 <= FieldsAllocationStyle <= 1");
+    if( allocation_style < 0 || allocation_style > 2 ) { // Out of range?
+      assert(false, "0 <= FieldsAllocationStyle <= 2");
       allocation_style = 1; // Optimistic
     }
 
@@ -2993,6 +2995,25 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     } else if( allocation_style == 1 ) {
       // Fields order: longs/doubles, ints, shorts/chars, bytes, oops
       next_nonstatic_double_offset = next_nonstatic_field_offset;
+    } else if( allocation_style == 2 ) {
+      // Fields allocation: oops fields in super and sub classes are together.
+      if( nonstatic_field_size > 0 && super_klass() != NULL &&
+          super_klass->nonstatic_oop_map_size() > 0 ) {
+        int map_size = super_klass->nonstatic_oop_map_size();
+        OopMapBlock* first_map = super_klass->start_of_nonstatic_oop_maps();
+        OopMapBlock* last_map = first_map + map_size - 1;
+        int next_offset = last_map->offset() + (last_map->count() * heapOopSize);
+        if (next_offset == next_nonstatic_field_offset) {
+          allocation_style = 0;   // allocate oops first
+          next_nonstatic_oop_offset    = next_nonstatic_field_offset;
+          next_nonstatic_double_offset = next_nonstatic_oop_offset +
+                                         (nonstatic_oop_count * heapOopSize);
+        }
+      }
+      if( allocation_style == 2 ) {
+        allocation_style = 1;     // allocate oops last
+        next_nonstatic_double_offset = next_nonstatic_field_offset;
+      }
     } else {
       ShouldNotReachHere();
     }

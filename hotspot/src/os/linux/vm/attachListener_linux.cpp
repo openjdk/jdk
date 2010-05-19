@@ -192,7 +192,8 @@ int LinuxAttachListener::init() {
     res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
   }
   if (res == -1) {
-    sprintf(path, "%s/.java_pid%d", os::get_temp_directory(), os::current_process_id());
+    snprintf(path, PATH_MAX+1, "%s/.java_pid%d",
+             os::get_temp_directory(), os::current_process_id());
     strcpy(addr.sun_path, path);
     ::unlink(path);
     res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
@@ -460,13 +461,14 @@ bool AttachListener::is_init_trigger() {
   if (init_at_startup() || is_initialized()) {
     return false;               // initialized at startup or already initialized
   }
-  char fn[32];
+  char fn[PATH_MAX+1];
   sprintf(fn, ".attach_pid%d", os::current_process_id());
   int ret;
   struct stat64 st;
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
-    sprintf(fn, "/tmp/.attach_pid%d", os::current_process_id());
+    snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
+             os::get_temp_directory(), os::current_process_id());
     RESTARTABLE(::stat64(fn, &st), ret);
   }
   if (ret == 0) {
