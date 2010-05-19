@@ -191,6 +191,14 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * The maximum size of array to allocate.
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
+     */
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    /**
      * Reallocates the array being used within toArray when the iterator
      * returned more elements than expected, and finishes filling it from
      * the iterator.
@@ -205,19 +213,25 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         while (it.hasNext()) {
             int cap = r.length;
             if (i == cap) {
-                int newCap = ((cap / 2) + 1) * 3;
-                if (newCap <= cap) { // integer overflow
-                    if (cap == Integer.MAX_VALUE)
-                        throw new OutOfMemoryError
-                            ("Required array size too large");
-                    newCap = Integer.MAX_VALUE;
-                }
+                int newCap = cap + (cap >> 1) + 1;
+                // overflow-conscious code
+                if (newCap - MAX_ARRAY_SIZE > 0)
+                    newCap = hugeCapacity(cap + 1);
                 r = Arrays.copyOf(r, newCap);
             }
             r[i++] = (T)it.next();
         }
         // trim if overallocated
         return (i == r.length) ? r : Arrays.copyOf(r, i);
+    }
+
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+            throw new OutOfMemoryError
+                ("Required array size too large");
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+            Integer.MAX_VALUE :
+            MAX_ARRAY_SIZE;
     }
 
     // Modification Operations
