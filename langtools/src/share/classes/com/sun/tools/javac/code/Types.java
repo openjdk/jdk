@@ -1861,13 +1861,16 @@ public class Types {
 
     /**
      * Same as {@link #setBounds(Type.TypeVar,List,Type)}, except that
-     * third parameter is computed directly.  Note that this test
-     * might cause a symbol completion.  Hence, this version of
+     * third parameter is computed directly, as follows: if all
+     * all bounds are interface types, the computed supertype is Object,
+     * otherwise the supertype is simply left null (in this case, the supertype
+     * is assumed to be the head of the bound list passed as second argument).
+     * Note that this check might cause a symbol completion. Hence, this version of
      * setBounds may not be called during a classfile read.
      */
     public void setBounds(TypeVar t, List<Type> bounds) {
         Type supertype = (bounds.head.tsym.flags() & INTERFACE) != 0 ?
-            supertype(bounds.head) : null;
+            syms.objectType : null;
         setBounds(t, bounds, supertype);
         t.rank_field = -1;
     }
