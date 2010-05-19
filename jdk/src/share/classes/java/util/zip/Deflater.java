@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,8 @@ package java.util.zip;
  */
 public
 class Deflater {
-    private long strm;
+
+    private final ZStreamRef zsRef;
     private byte[] buf = new byte[0];
     private int off, len;
     private int level, strategy;
@@ -165,7 +166,7 @@ class Deflater {
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;
-        strm = init(level, DEFAULT_STRATEGY, nowrap);
+        this.zsRef = new ZStreamRef(init(level, DEFAULT_STRATEGY, nowrap));
     }
 
     /**
@@ -193,16 +194,18 @@ class Deflater {
      * @param len the length of the data
      * @see Deflater#needsInput
      */
-    public synchronized void setInput(byte[] b, int off, int len) {
+    public void setInput(byte[] b, int off, int len) {
         if (b== null) {
             throw new NullPointerException();
         }
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        this.buf = b;
-        this.off = off;
-        this.len = len;
+        synchronized (zsRef) {
+            this.buf = b;
+            this.off = off;
+            this.len = len;
+        }
     }
 
     /**
@@ -227,14 +230,17 @@ class Deflater {
      * @see Inflater#inflate
      * @see Inflater#getAdler
      */
-    public synchronized void setDictionary(byte[] b, int off, int len) {
-        if (strm == 0 || b == null) {
+    public void setDictionary(byte[] b, int off, int len) {
+        if (b == null) {
             throw new NullPointerException();
         }
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        setDictionary(strm, b, off, len);
+        synchronized (zsRef) {
+            ensureOpen();
+            setDictionary(zsRef.address(), b, off, len);
+        }
     }
 
     /**
@@ -257,7 +263,7 @@ class Deflater {
      * @exception IllegalArgumentException if the compression strategy is
      *                                     invalid
      */
-    public synchronized void setStrategy(int strategy) {
+    public void setStrategy(int strategy) {
         switch (strategy) {
           case DEFAULT_STRATEGY:
           case FILTERED:
@@ -266,9 +272,11 @@ class Deflater {
           default:
             throw new IllegalArgumentException();
         }
-        if (this.strategy != strategy) {
-            this.strategy = strategy;
-            setParams = true;
+        synchronized (zsRef) {
+            if (this.strategy != strategy) {
+                this.strategy = strategy;
+                setParams = true;
+            }
         }
     }
 
@@ -277,13 +285,15 @@ class Deflater {
      * @param level the new compression level (0-9)
      * @exception IllegalArgumentException if the compression level is invalid
      */
-    public synchronized void setLevel(int level) {
+    public void setLevel(int level) {
         if ((level < 0 || level > 9) && level != DEFAULT_COMPRESSION) {
             throw new IllegalArgumentException("invalid compression level");
         }
-        if (this.level != level) {
-            this.level = level;
-            setParams = true;
+        synchronized (zsRef) {
+            if (this.level != level) {
+                this.level = level;
+                setParams = true;
+            }
         }
     }
 
@@ -301,8 +311,10 @@ class Deflater {
      * When called, indicates that compression should end with the current
      * contents of the input buffer.
      */
-    public synchronized void finish() {
-        finish = true;
+    public void finish() {
+        synchronized (zsRef) {
+            finish = true;
+        }
     }
 
     /**
@@ -311,8 +323,10 @@ class Deflater {
      * @return true if the end of the compressed data output stream has
      * been reached
      */
-    public synchronized boolean finished() {
-        return finished;
+    public boolean finished() {
+        synchronized (zsRef) {
+            return finished;
+        }
     }
 
     /**
@@ -399,26 +413,31 @@ class Deflater {
      * @throws IllegalArgumentException if the flush mode is invalid
      * @since 1.7
      */
-    public synchronized int deflate(byte[] b, int off, int len, int flush) {
+    public int deflate(byte[] b, int off, int len, int flush) {
         if (b == null) {
             throw new NullPointerException();
         }
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        if (flush == NO_FLUSH || flush == SYNC_FLUSH ||
-            flush == FULL_FLUSH)
-            return deflateBytes(b, off, len, flush);
-        throw new IllegalArgumentException();
+        synchronized (zsRef) {
+            ensureOpen();
+            if (flush == NO_FLUSH || flush == SYNC_FLUSH ||
+                flush == FULL_FLUSH)
+                return deflateBytes(zsRef.address(), b, off, len, flush);
+            throw new IllegalArgumentException();
+        }
     }
 
     /**
      * Returns the ADLER-32 value of the uncompressed data.
      * @return the ADLER-32 value of the uncompressed data
      */
-    public synchronized int getAdler() {
-        ensureOpen();
-        return getAdler(strm);
+    public int getAdler() {
+        synchronized (zsRef) {
+            ensureOpen();
+            return getAdler(zsRef.address());
+        }
     }
 
     /**
@@ -440,9 +459,11 @@ class Deflater {
      * @return the total (non-negative) number of uncompressed bytes input so far
      * @since 1.5
      */
-    public synchronized long getBytesRead() {
-        ensureOpen();
-        return getBytesRead(strm);
+    public long getBytesRead() {
+        synchronized (zsRef) {
+            ensureOpen();
+            return getBytesRead(zsRef.address());
+        }
     }
 
     /**
@@ -464,21 +485,25 @@ class Deflater {
      * @return the total (non-negative) number of compressed bytes output so far
      * @since 1.5
      */
-    public synchronized long getBytesWritten() {
-        ensureOpen();
-        return getBytesWritten(strm);
+    public long getBytesWritten() {
+        synchronized (zsRef) {
+            ensureOpen();
+            return getBytesWritten(zsRef.address());
+        }
     }
 
     /**
      * Resets deflater so that a new set of input data can be processed.
      * Keeps current compression level and strategy settings.
      */
-    public synchronized void reset() {
-        ensureOpen();
-        reset(strm);
-        finish = false;
-        finished = false;
-        off = len = 0;
+    public void reset() {
+        synchronized (zsRef) {
+            ensureOpen();
+            reset(zsRef.address());
+            finish = false;
+            finished = false;
+            off = len = 0;
+        }
     }
 
     /**
@@ -488,11 +513,14 @@ class Deflater {
      * finalize() method. Once this method is called, the behavior
      * of the Deflater object is undefined.
      */
-    public synchronized void end() {
-        if (strm != 0) {
-            end(strm);
-            strm = 0;
-            buf = null;
+    public void end() {
+        synchronized (zsRef) {
+            long addr = zsRef.address();
+            zsRef.clear();
+            if (addr != 0) {
+                end(addr);
+                buf = null;
+            }
         }
     }
 
@@ -504,18 +532,19 @@ class Deflater {
     }
 
     private void ensureOpen() {
-        if (strm == 0)
-            throw new NullPointerException();
+        assert Thread.holdsLock(zsRef);
+        if (zsRef.address() == 0)
+            throw new NullPointerException("Deflater has been closed");
     }
 
     private static native void initIDs();
     private native static long init(int level, int strategy, boolean nowrap);
-    private native static void setDictionary(long strm, byte[] b, int off,
-                                             int len);
-    private native int deflateBytes(byte[] b, int off, int len, int flush);
-    private native static int getAdler(long strm);
-    private native static long getBytesRead(long strm);
-    private native static long getBytesWritten(long strm);
-    private native static void reset(long strm);
-    private native static void end(long strm);
+    private native static void setDictionary(long addr, byte[] b, int off, int len);
+    private native int deflateBytes(long addr, byte[] b, int off, int len,
+                                    int flush);
+    private native static int getAdler(long addr);
+    private native static long getBytesRead(long addr);
+    private native static long getBytesWritten(long addr);
+    private native static void reset(long addr);
+    private native static void end(long addr);
 }

@@ -29,9 +29,7 @@
 import java.util.*;
 import java.net.*;
 
-
 public class NoLoopbackPackets {
-    private static int PORT = 9001;
     private static String osname;
 
     static boolean isWindows() {
@@ -68,40 +66,47 @@ public class NoLoopbackPackets {
             return;
         }
 
-        // we will send packets to three multicast groups :-
-        // 224.1.1.1, ::ffff:224.1.1.2, and ff02::1:1
-        //
-        List<SocketAddress> groups = new ArrayList<SocketAddress>();
-        groups.add(new InetSocketAddress(InetAddress.getByName("224.1.1.1"), PORT));
-        groups.add(new InetSocketAddress(InetAddress.getByName("::ffff:224.1.1.2"), PORT));
-        groups.add(new InetSocketAddress(InetAddress.getByName("ff02::1:1"), PORT));
-
-        Thread sender = new Thread(new Sender(groups));
-        sender.setDaemon(true); // we want sender to stop when main thread exits
-        sender.start();
-
-        // Now try to receive multicast packets. we should not see any of them
-        // since we disable loopback mode.
-        //
-        MulticastSocket msock = new MulticastSocket(PORT);
-        msock.setSoTimeout(5000);       // 5 seconds
-
-        byte[] buf = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buf, 0, buf.length);
+        MulticastSocket msock = null;
         List<SocketAddress> failedGroups = new ArrayList<SocketAddress>();
-        for (SocketAddress group : groups) {
-            msock.joinGroup(group, null);
+        try {
+            msock = new MulticastSocket();
+            int port = msock.getLocalPort();
 
-            try {
-                msock.receive(packet);
+            // we will send packets to three multicast groups :-
+            // 224.1.1.1, ::ffff:224.1.1.2, and ff02::1:1
+            //
+            List<SocketAddress> groups = new ArrayList<SocketAddress>();
+            groups.add(new InetSocketAddress(InetAddress.getByName("224.1.1.1"), port));
+            groups.add(new InetSocketAddress(InetAddress.getByName("::ffff:224.1.1.2"), port));
+            groups.add(new InetSocketAddress(InetAddress.getByName("ff02::1:1"), port));
 
-                // it is an error if we receive something
-                failedGroups.add(group);
-            } catch (SocketTimeoutException e) {
-                // we expect this
+            Thread sender = new Thread(new Sender(groups));
+            sender.setDaemon(true); // we want sender to stop when main thread exits
+            sender.start();
+
+            // Now try to receive multicast packets. we should not see any of them
+            // since we disable loopback mode.
+            //
+            msock.setSoTimeout(5000);       // 5 seconds
+
+            byte[] buf = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(buf, 0, buf.length);
+            for (SocketAddress group : groups) {
+                msock.joinGroup(group, null);
+
+                try {
+                    msock.receive(packet);
+
+                    // it is an error if we receive something
+                    failedGroups.add(group);
+                } catch (SocketTimeoutException e) {
+                    // we expect this
+                }
+
+                msock.leaveGroup(group, null);
             }
-
-            msock.leaveGroup(group, null);
+        } finally {
+            if (msock != null) try { msock.close(); } catch (Exception e) {}
         }
 
         if (failedGroups.size() > 0) {
@@ -111,36 +116,36 @@ public class NoLoopbackPackets {
             throw new RuntimeException("test failed.");
         }
     }
-}
 
-class Sender implements Runnable {
-    private List<SocketAddress> sendToGroups;
+    static class Sender implements Runnable {
+        private List<SocketAddress> sendToGroups;
 
-    public Sender(List<SocketAddress> groups) {
-        sendToGroups = groups;
-    }
+        public Sender(List<SocketAddress> groups) {
+            sendToGroups = groups;
+        }
 
-    public void run() {
-        byte[] buf = "hello world".getBytes();
-        List<DatagramPacket> packets = new ArrayList<DatagramPacket>();
+        public void run() {
+            byte[] buf = "hello world".getBytes();
+            List<DatagramPacket> packets = new ArrayList<DatagramPacket>();
 
-        try {
-            for (SocketAddress group : sendToGroups) {
-                DatagramPacket packet = new DatagramPacket(buf, buf.length, group);
-                packets.add(packet);
-            }
-
-            MulticastSocket msock = new MulticastSocket();
-            msock.setLoopbackMode(true);    // disable loopback mode
-            for (;;) {
-                for (DatagramPacket packet : packets) {
-                    msock.send(packet);
+            try {
+                for (SocketAddress group : sendToGroups) {
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length, group);
+                    packets.add(packet);
                 }
 
-                Thread.currentThread().sleep(1000);     // 1 second
+                MulticastSocket msock = new MulticastSocket();
+                msock.setLoopbackMode(true);    // disable loopback mode
+                for (;;) {
+                    for (DatagramPacket packet : packets) {
+                        msock.send(packet);
+                    }
+
+                    Thread.sleep(1000);     // 1 second
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 }

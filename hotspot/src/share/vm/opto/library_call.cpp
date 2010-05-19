@@ -636,6 +636,8 @@ bool LibraryCallKit::try_to_inline() {
 
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
+  case vmIntrinsics::_reverseBytes_s:
+  case vmIntrinsics::_reverseBytes_c:
     return inline_reverseBytes((vmIntrinsics::ID) intrinsic_id());
 
   case vmIntrinsics::_get_AtomicLong:
@@ -807,8 +809,7 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1
   Node* no_ctrl = NULL;
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type =
-        TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
   const TypeAryPtr* value_type =
         TypeAryPtr::make(TypePtr::NotNull,
@@ -881,8 +882,7 @@ bool LibraryCallKit::inline_string_compareTo() {
   }
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type =
-    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
   Node* no_ctrl = NULL;
 
   // Get counts for string and argument
@@ -956,14 +956,16 @@ bool LibraryCallKit::inline_string_equals() {
     }
   }
 
-  const TypeInstPtr* string_type =
-    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
   Node* no_ctrl = NULL;
   Node* receiver_cnt;
   Node* argument_cnt;
 
   if (!stopped()) {
+    // Properly cast the argument to String
+    argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
+
     // Get counts for string and argument
     Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
     receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
@@ -1088,7 +1090,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
   const TypeAryPtr*  source_type = TypeAryPtr::make(TypePtr::NotNull, TypeAry::make(TypeInt::CHAR,TypeInt::POS), ciTypeArrayKlass::make(T_CHAR), true, 0);
 
   Node* sourceOffseta = basic_plus_adr(string_object, string_object, offset_offset);
@@ -1173,7 +1175,9 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node *receiver = pop();
 
   Node* result;
-  if (Matcher::has_match_rule(Op_StrIndexOf) &&
+  // Disable the use of pcmpestri until it can be guaranteed that
+  // the load doesn't cross into the uncommited space.
+  if (false && Matcher::has_match_rule(Op_StrIndexOf) &&
       UseSSE42Intrinsics) {
     // Generate SSE4.2 version of indexOf
     // We currently only have match rules that use SSE4.2
@@ -1197,8 +1201,7 @@ bool LibraryCallKit::inline_string_indexOf() {
     Node* no_ctrl  = NULL;
 
     ciInstanceKlass* klass = env()->String_klass();
-    const TypeInstPtr* string_type =
-      TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
     // Get counts for string and substr
     Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
@@ -2010,13 +2013,19 @@ bool LibraryCallKit::inline_bitCount(vmIntrinsics::ID id) {
   return true;
 }
 
-//----------------------------inline_reverseBytes_int/long-------------------
+//----------------------------inline_reverseBytes_int/long/char/short-------------------
 // inline Integer.reverseBytes(int)
 // inline Long.reverseBytes(long)
+// inline Character.reverseBytes(char)
+// inline Short.reverseBytes(short)
 bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
-  assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l, "not reverse Bytes");
-  if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI)) return false;
-  if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL)) return false;
+  assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l ||
+         id == vmIntrinsics::_reverseBytes_c || id == vmIntrinsics::_reverseBytes_s,
+         "not reverse Bytes");
+  if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI))  return false;
+  if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL))  return false;
+  if (id == vmIntrinsics::_reverseBytes_c && !Matcher::has_match_rule(Op_ReverseBytesUS)) return false;
+  if (id == vmIntrinsics::_reverseBytes_s && !Matcher::has_match_rule(Op_ReverseBytesS))  return false;
   _sp += arg_size();        // restore stack pointer
   switch (id) {
   case vmIntrinsics::_reverseBytes_i:
@@ -2024,6 +2033,12 @@ bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_reverseBytes_l:
     push_pair(_gvn.transform(new (C, 2) ReverseBytesLNode(0, pop_pair())));
+    break;
+  case vmIntrinsics::_reverseBytes_c:
+    push(_gvn.transform(new (C, 2) ReverseBytesUSNode(0, pop())));
+    break;
+  case vmIntrinsics::_reverseBytes_s:
+    push(_gvn.transform(new (C, 2) ReverseBytesSNode(0, pop())));
     break;
   default:
     ;

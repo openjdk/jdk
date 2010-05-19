@@ -37,27 +37,18 @@
   thread->reset_last_Java_frame();              \
   fixup_after_potential_safepoint()
 
-void CppInterpreter::normal_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::normal_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
-  ZeroStack *stack = thread->zero_stack();
-
-  // Adjust the caller's stack frame to accomodate any additional
-  // local variables we have contiguously with our parameters.
-  int extra_locals = method->max_locals() - method->size_of_parameters();
-  if (extra_locals > 0) {
-    if (extra_locals > stack->available_words()) {
-      Unimplemented();
-    }
-    for (int i = 0; i < extra_locals; i++)
-      stack->push(0);
-  }
 
   // Allocate and initialize our frame.
-  InterpreterFrame *frame = InterpreterFrame::build(stack, method, thread);
+  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
   thread->push_zero_frame(frame);
 
   // Execute those bytecodes!
   main_loop(0, THREAD);
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
 void CppInterpreter::main_loop(int recurse, TRAPS) {
@@ -75,12 +66,6 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
 
   intptr_t *result = NULL;
   int result_slots = 0;
-
-  // Check we're not about to run out of stack
-  if (stack_overflow_imminent(thread)) {
-    CALL_VM_NOCHECK(InterpreterRuntime::throw_StackOverflowError(thread));
-    goto unwind_and_return;
-  }
 
   while (true) {
     // We can set up the frame anchor with everything we want at
@@ -123,9 +108,9 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
       int monitor_words = frame::interpreter_frame_monitor_size();
 
       // Allocate the space
-      if (monitor_words > stack->available_words()) {
-        Unimplemented();
-      }
+      stack->overflow_check(monitor_words, THREAD);
+      if (HAS_PENDING_EXCEPTION)
+        break;
       stack->alloc(monitor_words * wordSize);
 
       // Move the expression stack contents
@@ -172,8 +157,6 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
     }
   }
 
- unwind_and_return:
-
   // Unwind the current frame
   thread->pop_zero_frame();
 
@@ -185,7 +168,7 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
     stack->push(result[-i]);
 }
 
-void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
@@ -193,16 +176,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
-  InterpreterFrame *frame = InterpreterFrame::build(stack, method, thread);
+  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
   thread->push_zero_frame(frame);
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
-
-  // Check we're not about to run out of stack
-  if (stack_overflow_imminent(thread)) {
-    CALL_VM_NOCHECK(InterpreterRuntime::throw_StackOverflowError(thread));
-    goto unwind_and_return;
-  }
 
   // Update the invocation counter
   if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
@@ -264,9 +241,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   assert(function != NULL, "should be set if signature handler is");
 
   // Build the argument list
-  if (handler->argument_count() * 2 > stack->available_words()) {
-    Unimplemented();
-  }
+  stack->overflow_check(handler->argument_count() * 2, THREAD);
+  if (HAS_PENDING_EXCEPTION)
+    goto unlock_unwind_and_return;
+
   void **arguments;
   void *mirror; {
     arguments =
@@ -455,25 +433,26 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       ShouldNotReachHere();
     }
   }
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
-void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
   intptr_t *locals = stack->sp();
 
   // Drop into the slow path if we need a safepoint check
   if (SafepointSynchronize::do_call_back()) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Load the object pointer and drop into the slow path
   // if we have a NullPointerException
   oop object = LOCALS_OBJECT(0);
   if (object == NULL) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Read the field index from the bytecode, which looks like this:
@@ -495,17 +474,14 @@ void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   constantPoolCacheOop cache = method->constants()->cache();
   ConstantPoolCacheEntry* entry = cache->entry_at(index);
   if (!entry->is_resolved(Bytecodes::_getfield)) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Get the result and push it onto the stack
   switch (entry->flag_state()) {
   case ltos:
   case dtos:
-    if (stack->available_words() < 1) {
-      Unimplemented();
-    }
+    stack->overflow_check(1, CHECK_0);
     stack->alloc(wordSize);
     break;
   }
@@ -585,55 +561,51 @@ void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       ShouldNotReachHere();
     }
   }
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
-void CppInterpreter::empty_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::empty_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
   if (SafepointSynchronize::do_call_back()) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Pop our parameters
   stack->set_sp(stack->sp() + method->size_of_parameters());
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
-bool CppInterpreter::stack_overflow_imminent(JavaThread *thread) {
-  // How is the ABI stack?
-  address stack_top = thread->stack_base() - thread->stack_size();
-  int free_stack = os::current_stack_pointer() - stack_top;
-  if (free_stack < StackShadowPages * os::vm_page_size()) {
-    return true;
+InterpreterFrame *InterpreterFrame::build(const methodOop method, TRAPS) {
+  JavaThread *thread = (JavaThread *) THREAD;
+  ZeroStack *stack = thread->zero_stack();
+
+  // Calculate the size of the frame we'll build, including
+  // any adjustments to the caller's frame that we'll make.
+  int extra_locals  = 0;
+  int monitor_words = 0;
+  int stack_words   = 0;
+
+  if (!method->is_native()) {
+    extra_locals = method->max_locals() - method->size_of_parameters();
+    stack_words  = method->max_stack();
   }
-
-  // How is the Zero stack?
-  // Throwing a StackOverflowError involves a VM call, which means
-  // we need a frame on the stack.  We should be checking here to
-  // ensure that methods we call have enough room to install the
-  // largest possible frame, but that's more than twice the size
-  // of the entire Zero stack we get by default, so we just check
-  // we have *some* space instead...
-  free_stack = thread->zero_stack()->available_words() * wordSize;
-  if (free_stack < StackShadowPages * os::vm_page_size()) {
-    return true;
+  if (method->is_synchronized()) {
+    monitor_words = frame::interpreter_frame_monitor_size();
   }
+  stack->overflow_check(
+    extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  return false;
-}
-
-InterpreterFrame *InterpreterFrame::build(ZeroStack*       stack,
-                                          const methodOop  method,
-                                          JavaThread*      thread) {
-  int monitor_words =
-    method->is_synchronized() ? frame::interpreter_frame_monitor_size() : 0;
-  int stack_words = method->is_native() ? 0 : method->max_stack();
-
-  if (header_words + monitor_words + stack_words > stack->available_words()) {
-    Unimplemented();
-  }
+  // Adjust the caller's stack frame to accomodate any additional
+  // local variables we have contiguously with our parameters.
+  for (int i = 0; i < extra_locals; i++)
+    stack->push(0);
 
   intptr_t *locals;
   if (method->is_native())
@@ -812,14 +784,13 @@ InterpreterGenerator::InterpreterGenerator(StubQueue* code)
 
 // Deoptimization helpers
 
-InterpreterFrame *InterpreterFrame::build(ZeroStack* stack, int size) {
+InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
+  ZeroStack *stack = ((JavaThread *) THREAD)->zero_stack();
+
   int size_in_words = size >> LogBytesPerWord;
   assert(size_in_words * wordSize == size, "unaligned");
   assert(size_in_words >= header_words, "too small");
-
-  if (size_in_words > stack->available_words()) {
-    Unimplemented();
-  }
+  stack->overflow_check(size_in_words, CHECK_NULL);
 
   stack->push(0); // next_frame, filled in later
   intptr_t *fp = stack->sp();
@@ -870,7 +841,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
   int callee_extra_locals = callee_locals - callee_param_count;
 
   if (interpreter_frame) {
-    intptr_t *locals        = interpreter_frame->sp() + method->max_locals();
+    intptr_t *locals        = interpreter_frame->fp() + method->max_locals();
     interpreterState istate = interpreter_frame->get_interpreterState();
     intptr_t *monitor_base  = (intptr_t*) istate;
     intptr_t *stack_base    = monitor_base - monitor_words;

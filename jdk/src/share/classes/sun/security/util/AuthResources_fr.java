@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,30 +53,30 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
 
         // UnixPrincipals
         {"UnixNumericGroupPrincipal [Primary Group]: name",
-        "UnixNumericGroupPrincipal [groupe principal] : {0}"},
+                "UnixNumericGroupPrincipal [groupe principal] : {0}"},
         {"UnixNumericGroupPrincipal [Supplementary Group]: name",
-        "UnixNumericGroupPrincipal [groupe suppl\u00e9mentaire] : {0}"},
+                "UnixNumericGroupPrincipal [groupe suppl\u00e9mentaire] : {0}"},
         {"UnixNumericUserPrincipal: name", "UnixNumericUserPrincipal : {0}"},
         {"UnixPrincipal: name", "UnixPrincipal : {0}"},
 
         // com.sun.security.auth.login.ConfigFile
         {"Unable to properly expand config", "Impossible de d\u00e9velopper {0} correctement"},
         {"extra_config (No such file or directory)",
-        "{0} (fichier ou r\u00e9pertoire introuvable)"},
-        {"Unable to locate a login configuration",
-        "Impossible de trouver une configuration de connexion"},
+                "{0} (fichier ou r\u00e9pertoire introuvable)"},
+        {"Configuration Error:\n\tNo such file or directory",
+                "Erreur de configuration\u00a0:\n\tAucun fichier ou r\u00e9pertoire de ce type"},
         {"Configuration Error:\n\tInvalid control flag, flag",
-        "Erreur de configuration :\n\tIndicateur de contr\u00f4le non valide, {0}"},
+                "Erreur de configuration :\n\tIndicateur de contr\u00f4le non valide, {0}"},
         {"Configuration Error:\n\tCan not specify multiple entries for appName",
-        "Erreur de configuration :\n\tImpossible de sp\u00e9cifier des entr\u00e9es multiples pour {0}"},
+            "Erreur de configuration :\n\tImpossible de sp\u00e9cifier des entr\u00e9es multiples pour {0}"},
         {"Configuration Error:\n\texpected [expect], read [end of file]",
-        "Erreur de configuration :\n\tattendu [{0}], lecture [fin de fichier]"},
+                "Erreur de configuration :\n\tattendu [{0}], lecture [fin de fichier]"},
         {"Configuration Error:\n\tLine line: expected [expect], found [value]",
-        "Erreur de configuration :\n\tLigne {0} : attendu [{1}], trouv\u00e9 [{2}]"},
+            "Erreur de configuration :\n\tLigne {0} : attendu [{1}], trouv\u00e9 [{2}]"},
         {"Configuration Error:\n\tLine line: expected [expect]",
-        "Erreur de configuration :\n\tLigne {0} : attendu [{1}]"},
+            "Erreur de configuration :\n\tLigne {0} : attendu [{1}]"},
         {"Configuration Error:\n\tLine line: system property [value] expanded to empty value",
-        "Erreur de configuration :\n\tLigne {0} : propri\u00e9t\u00e9 syst\u00e8me [{1}] d\u00e9velopp\u00e9e en valeur vide"},
+            "Erreur de configuration :\n\tLigne {0} : propri\u00e9t\u00e9 syst\u00e8me [{1}] d\u00e9velopp\u00e9e en valeur vide"},
 
         // com.sun.security.auth.module.JndiLoginModule
         {"username: ","Nom d'utilisateur : "},
@@ -88,13 +88,13 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
         {"Keystore alias: ","Alias pour Keystore : "},
         {"Keystore password: ","Mot de passe pour Keystore : "},
         {"Private key password (optional): ",
-        "Mot de passe de cl\u00e9 priv\u00e9e (facultatif) : "},
+            "Mot de passe de cl\u00e9 priv\u00e9e (facultatif) : "},
 
         // com.sun.security.auth.module.Krb5LoginModule
         {"Kerberos username [[defUsername]]: ",
-        "Nom d''utilisateur Kerberos [{0}] : "},
+                "Nom d''utilisateur Kerberos [{0}] : "},
         {"Kerberos password for [username]: ",
-            "Mot de pass\u00e9 Kerberos pour {0} : "},
+                "Mot de pass\u00e9 Kerberos pour {0} : "},
 
         /***    EVERYTHING BELOW IS DEPRECATED  ***/
 
@@ -107,17 +107,17 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
         {"(", "("},
         {")", ")"},
         {"attempt to add a Permission to a readonly PermissionCollection",
-        "tentative d'ajout de permission \u00e0 un ensemble de permissions en lecture seule"},
+            "tentative d'ajout de permission \u00e0 un ensemble de permissions en lecture seule"},
 
         // com.sun.security.auth.PolicyParser
         {"expected keystore type", "type de Keystore attendu"},
         {"can not specify Principal with a ",
-        "impossible de sp\u00e9cifier Principal avec une"},
+                "impossible de sp\u00e9cifier Principal avec une "},
         {"wildcard class without a wildcard name",
-        "classe g\u00e9n\u00e9rique sans nom g\u00e9n\u00e9rique"},
+                "classe g\u00e9n\u00e9rique sans nom g\u00e9n\u00e9rique"},
         {"expected codeBase or SignedBy", "codeBase ou SignedBy attendu"},
         {"only Principal-based grant entries permitted",
-        "seules les entr\u00e9es bas\u00e9es sur Principal sont autoris\u00e9es"},
+                "seules les entr\u00e9es bas\u00e9es sur Principal sont autoris\u00e9es"},
         {"expected permission entry", "entr\u00e9e de permission attendue"},
         {"number ", "nombre "},
         {"expected ", "attendu "},
@@ -130,11 +130,11 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
 
         // SolarisPrincipals
         {"SolarisNumericGroupPrincipal [Primary Group]: ",
-        "SolarisNumericGroupPrincipal [groupe principal] : "},
+                "SolarisNumericGroupPrincipal [groupe principal] : "},
         {"SolarisNumericGroupPrincipal [Supplementary Group]: ",
-        "SolarisNumericGroupPrincipal [groupe suppl\u00e9mentaire] : "},
+                "SolarisNumericGroupPrincipal [groupe suppl\u00e9mentaire] : "},
         {"SolarisNumericUserPrincipal: ",
-        "SolarisNumericUserPrincipal : "},
+                "SolarisNumericUserPrincipal : "},
         {"SolarisPrincipal: ", "SolarisPrincipal : "},
         {"provided null name", "nom Null sp\u00e9cifi\u00e9"}
 

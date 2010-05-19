@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,4 +508,24 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//-------------------------------ReverseBytesUSNode--------------------------------
+// reverse bytes of an unsigned short / char
+class ReverseBytesUSNode : public Node {
+public:
+  ReverseBytesUSNode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::CHAR; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseBytesSNode--------------------------------
+// reverse bytes of a short
+class ReverseBytesSNode : public Node {
+public:
+  ReverseBytesSNode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::SHORT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
 };

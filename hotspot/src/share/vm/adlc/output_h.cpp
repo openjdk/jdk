@@ -1493,7 +1493,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Build class definition for this instruction
     fprintf(fp,"\n");
     fprintf(fp,"class %sNode : public %s { \n",
-            instr->_ident, instr->mach_base_class() );
+            instr->_ident, instr->mach_base_class(_globalNames) );
     fprintf(fp,"private:\n");
     fprintf(fp,"  MachOper *_opnd_array[%d];\n", instr->num_opnds() );
     if ( instr->is_ideal_jump() ) {
@@ -1566,7 +1566,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Use MachNode::ideal_Opcode() for nodes based on MachNode class
     // if the ideal_Opcode == Op_Node.
     if ( strcmp("Node", instr->ideal_Opcode(_globalNames)) != 0 ||
-         strcmp("MachNode", instr->mach_base_class()) != 0 ) {
+         strcmp("MachNode", instr->mach_base_class(_globalNames)) != 0 ) {
       fprintf(fp,"  virtual int            ideal_Opcode() const { return Op_%s; }\n",
             instr->ideal_Opcode(_globalNames) );
     }
@@ -1631,7 +1631,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Use MachNode::oper_input_base() for nodes based on MachNode class
     // if the base == 1.
     if ( instr->oper_input_base(_globalNames) != 1 ||
-         strcmp("MachNode", instr->mach_base_class()) != 0 ) {
+         strcmp("MachNode", instr->mach_base_class(_globalNames)) != 0 ) {
       fprintf(fp,"  virtual uint           oper_input_base() const { return %d; }\n",
             instr->oper_input_base(_globalNames));
     }
@@ -1905,11 +1905,6 @@ void ArchDesc::declareClasses(FILE *fp) {
       // Special hack for ideal CMoveN; ideal type depends on inputs
       fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // CMoveN\n",
         offset, offset+1, offset+1);
-    }
-    else if( instr->needs_base_oop_edge(_globalNames) ) {
-      // Special hack for ideal AddP.  Bottom type is an oop IFF it has a
-      // legal base-pointer input.  Otherwise it is NOT an oop.
-      fprintf(fp,"  const Type *bottom_type() const { return AddPNode::mach_bottom_type(this); } // AddP\n");
     }
     else if (instr->is_tls_instruction()) {
       // Special hack for tlsLoadP

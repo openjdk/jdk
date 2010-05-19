@@ -32,6 +32,8 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
 import java.awt.Rectangle;
 import java.awt.Window;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -402,17 +404,30 @@ public class X11GraphicsDevice
             // is already in the original DisplayMode at that time, this
             // hook will have no effect)
             shutdownHookRegistered = true;
-            Runnable r = new Runnable() {
-                public void run() {
-                    Window old = getFullScreenWindow();
-                    if (old != null) {
-                        exitFullScreenExclusive(old);
-                        setDisplayMode(origDisplayMode);
+            PrivilegedAction<Void> a = new PrivilegedAction<Void>() {
+                public Void run() {
+                    ThreadGroup mainTG = Thread.currentThread().getThreadGroup();
+                    ThreadGroup parentTG = mainTG.getParent();
+                    while (parentTG != null) {
+                        mainTG = parentTG;
+                        parentTG = mainTG.getParent();
                     }
+                    Runnable r = new Runnable() {
+                            public void run() {
+                                Window old = getFullScreenWindow();
+                                if (old != null) {
+                                    exitFullScreenExclusive(old);
+                                    setDisplayMode(origDisplayMode);
+                                }
+                            }
+                        };
+                    Thread t = new Thread(mainTG, r,"Display-Change-Shutdown-Thread-"+screen);
+                    t.setContextClassLoader(null);
+                    Runtime.getRuntime().addShutdownHook(t);
+                    return null;
                 }
             };
-            Thread t = new Thread(r,"Display-Change-Shutdown-Thread-"+screen);
-            Runtime.getRuntime().addShutdownHook(t);
+            AccessController.doPrivileged(a);
         }
 
         // switch to the new DisplayMode

@@ -139,7 +139,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld_ptr(parameter_size.as_address(), t);                // get parameter size (in words)
       __ add(t, frame::memory_parameter_word_sp_offset, t);     // add space for save area (in words)
       __ round_to(t, WordsPerLong);                             // make sure it is multiple of 2 (in words)
-      __ sll(t, Interpreter::logStackElementSize(), t);                    // compute number of bytes
+      __ sll(t, Interpreter::logStackElementSize, t);           // compute number of bytes
       __ neg(t);                                                // negate so it can be used with save
       __ save(SP, t, SP);                                       // setup new frame
     }
@@ -191,19 +191,13 @@ class StubGenerator: public StubCodeGenerator {
       // copy parameters if any
       Label loop;
       __ BIND(loop);
-      // Store tag first.
-      if (TaggedStackInterpreter) {
-        __ ld_ptr(src, 0, tmp);
-        __ add(src, BytesPerWord, src);  // get next
-        __ st_ptr(tmp, dst, Interpreter::tag_offset_in_bytes());
-      }
       // Store parameter value
       __ ld_ptr(src, 0, tmp);
       __ add(src, BytesPerWord, src);
-      __ st_ptr(tmp, dst, Interpreter::value_offset_in_bytes());
+      __ st_ptr(tmp, dst, 0);
       __ deccc(cnt);
       __ br(Assembler::greater, false, Assembler::pt, loop);
-      __ delayed()->sub(dst, Interpreter::stackElementSize(), dst);
+      __ delayed()->sub(dst, Interpreter::stackElementSize, dst);
 
       // done
       __ BIND(exit);
@@ -220,7 +214,7 @@ class StubGenerator: public StubCodeGenerator {
     // setup parameters
     const Register t = G3_scratch;
     __ ld_ptr(parameter_size.as_in().as_address(), t); // get parameter size (in words)
-    __ sll(t, Interpreter::logStackElementSize(), t);            // compute number of bytes
+    __ sll(t, Interpreter::logStackElementSize, t);    // compute number of bytes
     __ sub(FP, t, Gargs);                              // setup parameter pointer
 #ifdef _LP64
     __ add( Gargs, STACK_BIAS, Gargs );                // Account for LP64 stack bias
@@ -1148,7 +1142,7 @@ class StubGenerator: public StubCodeGenerator {
       __ andn(from, 7, from);     // Align address
       __ ldx(from, 0, O3);
       __ inc(from, 8);
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_loop);
       __ ldx(from, 0, O4);
       __ deccc(count, count_dec); // Can we do next iteration after this one?
@@ -1220,7 +1214,7 @@ class StubGenerator: public StubCodeGenerator {
     //
       __ andn(end_from, 7, end_from);     // Align address
       __ ldx(end_from, 0, O3);
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_loop);
       __ ldx(end_from, -8, O4);
       __ deccc(count, count_dec); // Can we do next iteration after this one?
@@ -1349,7 +1343,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_copy_byte);
       __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
       __ delayed()->nop();
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_byte_loop);
       __ ldub(from, offset, O3);
       __ deccc(count);
@@ -1445,7 +1439,7 @@ class StubGenerator: public StubCodeGenerator {
                                         L_aligned_copy, L_copy_byte);
     }
     // copy 4 elements (16 bytes) at a time
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_aligned_copy);
       __ dec(end_from, 16);
       __ ldx(end_from, 8, O3);
@@ -1461,7 +1455,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_copy_byte);
       __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
       __ delayed()->nop();
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_byte_loop);
       __ dec(end_from);
       __ dec(end_to);
@@ -1577,7 +1571,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_copy_2_bytes);
       __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
       __ delayed()->nop();
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_2_bytes_loop);
       __ lduh(from, offset, O3);
       __ deccc(count);
@@ -1684,7 +1678,7 @@ class StubGenerator: public StubCodeGenerator {
                                         L_aligned_copy, L_copy_2_bytes);
     }
     // copy 4 elements (16 bytes) at a time
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_aligned_copy);
       __ dec(end_from, 16);
       __ ldx(end_from, 8, O3);
@@ -1781,7 +1775,7 @@ class StubGenerator: public StubCodeGenerator {
     // copy with shift 4 elements (16 bytes) at a time
       __ dec(count, 4);   // The cmp at the beginning guaranty count >= 4
 
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_16_bytes);
       __ ldx(from, 4, O4);
       __ deccc(count, 4); // Can we do next iteration after this one?
@@ -1907,7 +1901,7 @@ class StubGenerator: public StubCodeGenerator {
     // to form 2 aligned 8-bytes chunks to store.
     //
       __ ldx(end_from, -4, O3);
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_16_bytes);
       __ ldx(end_from, -12, O4);
       __ deccc(count, 4);
@@ -1929,7 +1923,7 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->inc(count, 4);
 
     // copy 4 elements (16 bytes) at a time
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_aligned_copy);
       __ dec(end_from, 16);
       __ ldx(end_from, 8, O3);
@@ -2000,6 +1994,27 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    O1
   //      count: O2 treated as signed
   //
+  // count -= 2;
+  // if ( count >= 0 ) { // >= 2 elements
+  //   if ( count > 6) { // >= 8 elements
+  //     count -= 6; // original count - 8
+  //     do {
+  //       copy_8_elements;
+  //       count -= 8;
+  //     } while ( count >= 0 );
+  //     count += 6;
+  //   }
+  //   if ( count >= 0 ) { // >= 2 elements
+  //     do {
+  //       copy_2_elements;
+  //     } while ( (count=count-2) >= 0 );
+  //   }
+  // }
+  // count += 2;
+  // if ( count != 0 ) { // 1 element left
+  //   copy_1_element;
+  // }
+  //
   void generate_disjoint_long_copy_core(bool aligned) {
     Label L_copy_8_bytes, L_copy_16_bytes, L_exit;
     const Register from    = O0;  // source array address
@@ -2012,7 +2027,39 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(G0, offset0);   // offset from start of arrays (0)
       __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
       __ delayed()->add(offset0, 8, offset8);
-      __ align(16);
+
+    // Copy by 64 bytes chunks
+    Label L_copy_64_bytes;
+    const Register from64 = O3;  // source address
+    const Register to64   = G3;  // destination address
+      __ subcc(count, 6, O3);
+      __ brx(Assembler::negative, false, Assembler::pt, L_copy_16_bytes );
+      __ delayed()->mov(to,   to64);
+      // Now we can use O4(offset0), O5(offset8) as temps
+      __ mov(O3, count);
+      __ mov(from, from64);
+
+      __ align(OptoLoopAlignment);
+    __ BIND(L_copy_64_bytes);
+      for( int off = 0; off < 64; off += 16 ) {
+        __ ldx(from64,  off+0, O4);
+        __ ldx(from64,  off+8, O5);
+        __ stx(O4, to64,  off+0);
+        __ stx(O5, to64,  off+8);
+      }
+      __ deccc(count, 8);
+      __ inc(from64, 64);
+      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_copy_64_bytes);
+      __ delayed()->inc(to64, 64);
+
+      // Restore O4(offset0), O5(offset8)
+      __ sub(from64, from, offset0);
+      __ inccc(count, 6);
+      __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
+      __ delayed()->add(offset0, 8, offset8);
+
+      // Copy by 16 bytes chunks
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_16_bytes);
       __ ldx(from, offset0, O3);
       __ ldx(from, offset8, G3);
@@ -2023,6 +2070,7 @@ class StubGenerator: public StubCodeGenerator {
       __ brx(Assembler::greaterEqual, false, Assembler::pt, L_copy_16_bytes);
       __ delayed()->inc(offset8, 16);
 
+      // Copy last 8 bytes
     __ BIND(L_copy_8_bytes);
       __ inccc(count, 2);
       __ brx(Assembler::zero, true, Assembler::pn, L_exit );
@@ -2085,7 +2133,7 @@ class StubGenerator: public StubCodeGenerator {
       __ brx(Assembler::lessEqual, false, Assembler::pn, L_copy_8_bytes );
       __ delayed()->sllx(count, LogBytesPerLong, offset8);
       __ sub(offset8, 8, offset0);
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_16_bytes);
       __ ldx(from, offset8, O2);
       __ ldx(from, offset0, O3);
@@ -2351,7 +2399,7 @@ class StubGenerator: public StubCodeGenerator {
     //   (O5 = 0; ; O5 += wordSize) --- offset from src, dest arrays
     //   (O2 = len; O2 != 0; O2--) --- number of oops *remaining*
     //   G3, G4, G5 --- current oop, oop.klass, oop.klass.super
-    __ align(16);
+    __ align(OptoLoopAlignment);
 
     __ BIND(store_element);
     __ deccc(G1_remain);                // decrement the count
@@ -2862,6 +2910,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // generic method handle stubs
+    if (EnableMethodHandles && SystemDictionary::MethodHandle_klass() != NULL) {
+      for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
+           ek < MethodHandles::_EK_LIMIT;
+           ek = MethodHandles::EntryKind(1 + (int)ek)) {
+        StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+        MethodHandles::generate_method_handle_stub(_masm, ek);
+      }
+    }
 
     // Don't initialize the platform math functions since sparc
     // doesn't have intrinsics for these operations.

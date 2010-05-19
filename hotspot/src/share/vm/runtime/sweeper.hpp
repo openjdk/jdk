@@ -35,6 +35,8 @@ class NMethodSweeper : public AllStatic {
 
   static bool      _rescan;          // Indicates that we should do a full rescan of the
                                      // of the code cache looking for work to do.
+  static bool      _do_sweep;        // Flag to skip the conc sweep if no stack scan happened
+  static jint      _sweep_started;   // Flag to control conc sweeper
   static int       _locked_seen;     // Number of locked nmethods encountered during the scan
   static int       _not_entrant_seen_on_stack; // Number of not entrant nmethod were are still on stack
 
@@ -48,7 +50,9 @@ class NMethodSweeper : public AllStatic {
  public:
   static long traversal_count() { return _traversals; }
 
-  static void sweep();  // Invoked at the end of each safepoint
+  static void scan_stacks();      // Invoked at the end of each safepoint
+  static void sweep_code_cache(); // Concurrent part of sweep job
+  static void possibly_sweep();   // Compiler threads call this to sweep
 
   static void notify(nmethod* nm) {
     // Perform a full scan of the code cache from the beginning.  No

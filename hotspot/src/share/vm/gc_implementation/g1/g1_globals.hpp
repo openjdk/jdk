@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw) \
                                                                             \
-  product(intx, G1ParallelGCAllocBufferSize, 8*K,                           \
-          "Size of parallel G1 allocation buffers in to-space.")            \
-                                                                            \
   product(intx, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
                                                                             \
@@ -39,9 +36,6 @@
                                                                             \
   develop(bool, G1Gen, true,                                                \
           "If true, it will enable the generational G1")                    \
-                                                                            \
-  develop(intx, G1GCPercent, 10,                                            \
-          "The desired percent time spent on GC")                           \
                                                                             \
   develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \
@@ -232,10 +226,6 @@
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
                                                                             \
-  develop(bool, G1UseScanOnlyPrefix, false,                                 \
-          "It determines whether the system will calculate an optimum "     \
-          "scan-only set.")                                                 \
-                                                                            \
   product(intx, G1ReservePercent, 10,                                       \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
@@ -270,11 +260,11 @@
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
                                                                             \
-  experimental(bool, G1UseParallelRSetUpdating, false,                      \
+  experimental(bool, G1UseParallelRSetUpdating, true,                       \
           "Enables the parallelization of remembered set updating "         \
           "during evacuation pauses")                                       \
                                                                             \
-  experimental(bool, G1UseParallelRSetScanning, false,                      \
+  experimental(bool, G1UseParallelRSetScanning, true,                       \
           "Enables the parallelization of remembered set scanning "         \
           "during evacuation pauses")                                       \
                                                                             \

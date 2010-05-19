@@ -689,7 +689,7 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
   assert(blk_end > _next_offset_threshold,
          "should be past threshold");
   assert(blk_start <= _next_offset_threshold,
-         "blk_start should be at or before threshold")
+         "blk_start should be at or before threshold");
   assert(pointer_delta(_next_offset_threshold, blk_start) <= N_words,
          "offset should be <= BlockOffsetSharedArray::N");
   assert(Universe::heap()->is_in_reserved(blk_start),

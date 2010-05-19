@@ -42,8 +42,8 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
  private:
   ConcurrentMark*                  _cm;
-  bool                             _started;
-  bool                             _in_progress;
+  volatile bool                    _started;
+  volatile bool                    _in_progress;
 
   void sleepBeforeNextCycle();
 
@@ -67,15 +67,25 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // Counting virtual time so far.
   double vtime_count_accum() { return _vtime_count_accum; }
 
-  ConcurrentMark* cm()                           { return _cm;     }
+  ConcurrentMark* cm()     { return _cm; }
 
-  void            set_started()                  { _started = true;   }
-  void            clear_started()                { _started = false;  }
-  bool            started()                      { return _started;   }
+  void set_started()       { _started = true;  }
+  void clear_started()     { _started = false; }
+  bool started()           { return _started;  }
 
-  void            set_in_progress()              { _in_progress = true;   }
-  void            clear_in_progress()            { _in_progress = false;  }
-  bool            in_progress()                  { return _in_progress;   }
+  void set_in_progress()   { _in_progress = true;  }
+  void clear_in_progress() { _in_progress = false; }
+  bool in_progress()       { return _in_progress;  }
+
+  // This flag returns true from the moment a marking cycle is
+  // initiated (during the initial-mark pause when started() is set)
+  // to the moment when the cycle completes (just after the next
+  // marking bitmap has been cleared and in_progress() is
+  // cleared). While this flag is true we will not start another cycle
+  // so that cycles do not overlap. We cannot use just in_progress()
+  // as the CM thread might take some time to wake up before noticing
+  // that started() is set and set in_progress().
+  bool during_cycle()      { return started() || in_progress(); }
 
   // Yield for GC
   void            yield();

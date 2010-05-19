@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2008, 2009 Red Hat, Inc.
+ * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,20 @@ class ZeroStack {
   intptr_t *_top;  // the word past the end of the stack
   intptr_t *_sp;   // the top word on the stack
 
+ private:
+  int _shadow_pages_size; // how much ABI stack must we keep free?
+
  public:
   ZeroStack()
-    : _base(NULL), _top(NULL), _sp(NULL) {}
+    : _base(NULL), _top(NULL), _sp(NULL) {
+    _shadow_pages_size = StackShadowPages * os::vm_page_size();
+  }
 
   bool needs_setup() const {
     return _base == NULL;
   }
+
+  int suggest_size(Thread *thread) const;
 
   void setup(void *mem, size_t size) {
     assert(needs_setup(), "already set up");
@@ -62,6 +69,9 @@ class ZeroStack {
     _sp = new_sp;
   }
 
+  int total_words() const {
+    return _top - _base;
+  }
   int available_words() const {
     return _sp - _base;
   }
@@ -80,6 +90,18 @@ class ZeroStack {
     assert(count <= available_words(), "stack overflow");
     return _sp -= count;
   }
+
+  int shadow_pages_size() const {
+    return _shadow_pages_size;
+  }
+  int abi_stack_available(Thread *thread) const;
+
+ public:
+  void overflow_check(int required_words, TRAPS);
+  static void handle_overflow(TRAPS);
+
+ public:
+  void zap(int c) PRODUCT_RETURN;
 
  public:
   static ByteSize base_offset() {

@@ -332,16 +332,6 @@ void JvmtiManageCapabilities::update() {
   }
 
   JvmtiExport::set_can_get_source_debug_extension(avail.can_get_source_debug_extension);
-  JvmtiExport::set_can_examine_or_deopt_anywhere(
-    avail.can_generate_breakpoint_events ||
-    interp_events ||
-    avail.can_redefine_classes ||
-    avail.can_retransform_classes ||
-    avail.can_access_local_variables ||
-    avail.can_get_owned_monitor_info ||
-    avail.can_get_current_contended_monitor ||
-    avail.can_get_monitor_info ||
-    avail.can_get_owned_monitor_stack_depth_info);
   JvmtiExport::set_can_maintain_original_method_order(avail.can_maintain_original_method_order);
   JvmtiExport::set_can_post_interpreter_events(interp_events);
   JvmtiExport::set_can_hotswap_or_post_breakpoint(
@@ -353,10 +343,13 @@ void JvmtiManageCapabilities::update() {
     avail.can_generate_all_class_hook_events);
   JvmtiExport::set_can_walk_any_space(
     avail.can_tag_objects);   // disable sharing in onload phase
+  // This controls whether the compilers keep extra locals live to
+  // improve the debugging experience so only set them if the selected
+  // capabilities look like a debugger.
   JvmtiExport::set_can_access_local_variables(
-    avail.can_access_local_variables  ||
-    avail.can_redefine_classes ||
-    avail.can_retransform_classes);
+    avail.can_access_local_variables ||
+    avail.can_generate_breakpoint_events ||
+    avail.can_generate_frame_pop_events);
   JvmtiExport::set_can_post_on_exceptions(
     avail.can_generate_exception_events ||
     avail.can_generate_frame_pop_events ||

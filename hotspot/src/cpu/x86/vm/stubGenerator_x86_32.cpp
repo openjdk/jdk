@@ -139,7 +139,7 @@ class StubGenerator: public StubCodeGenerator {
     // stub code
     __ enter();
     __ movptr(rcx, parameter_size);              // parameter counter
-    __ shlptr(rcx, Interpreter::logStackElementSize()); // convert parameter count to bytes
+    __ shlptr(rcx, Interpreter::logStackElementSize); // convert parameter count to bytes
     __ addptr(rcx, locals_count_in_bytes);       // reserve space for register saves
     __ subptr(rsp, rcx);
     __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
@@ -194,12 +194,6 @@ class StubGenerator: public StubCodeGenerator {
     __ xorptr(rbx, rbx);
 
     __ BIND(loop);
-    if (TaggedStackInterpreter) {
-      __ movptr(rax, Address(rdx, rcx, Interpreter::stackElementScale(),
-                      -2*wordSize));                          // get tag
-      __ movptr(Address(rsp, rbx, Interpreter::stackElementScale(),
-                      Interpreter::expr_tag_offset_in_bytes(0)), rax);     // store tag
-    }
 
     // get parameter
     __ movptr(rax, Address(rdx, rcx, Interpreter::stackElementScale(), -wordSize));
@@ -430,7 +424,7 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(exception_oop);
 
     // Restore SP from BP if the exception PC is a MethodHandle call site.
-    __ cmpl(Address(thread, JavaThread::is_method_handle_exception_offset()), 0);
+    __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
     __ cmovptr(Assembler::notEqual, rsp, rbp);
 
     // continue at exception handler (return address removed)
@@ -812,7 +806,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L_copy_64_bytes_loop, L_copy_64_bytes, L_copy_8_bytes, L_exit;
     // Copy 64-byte chunks
     __ jmpb(L_copy_64_bytes);
-    __ align(16);
+    __ align(OptoLoopAlignment);
   __ BIND(L_copy_64_bytes_loop);
 
     if(UseUnalignedLoadStores) {
@@ -874,7 +868,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L_copy_64_bytes_loop, L_copy_64_bytes, L_copy_8_bytes, L_exit;
     // Copy 64-byte chunks
     __ jmpb(L_copy_64_bytes);
-    __ align(16);
+    __ align(OptoLoopAlignment);
   __ BIND(L_copy_64_bytes_loop);
     __ movq(mmx0, Address(from, 0));
     __ movq(mmx1, Address(from, 8));
@@ -1144,7 +1138,7 @@ class StubGenerator: public StubCodeGenerator {
       __ movl(Address(to, count, sf, 0), rdx);
       __ jmpb(L_copy_8_bytes);
 
-      __ align(16);
+      __ align(OptoLoopAlignment);
       // Move 8 bytes
     __ BIND(L_copy_8_bytes_loop);
       if (UseXMMForArrayCopy) {
@@ -1235,7 +1229,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     } else {
       __ jmpb(L_copy_8_bytes);
-      __ align(16);
+      __ align(OptoLoopAlignment);
     __ BIND(L_copy_8_bytes_loop);
       __ fild_d(Address(from, 0));
       __ fistp_d(Address(from, to_from, Address::times_1));
@@ -1282,7 +1276,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ jmpb(L_copy_8_bytes);
 
-    __ align(16);
+    __ align(OptoLoopAlignment);
   __ BIND(L_copy_8_bytes_loop);
     if (VM_Version::supports_mmx()) {
       if (UseXMMForArrayCopy) {
@@ -1454,7 +1448,7 @@ class StubGenerator: public StubCodeGenerator {
     // Loop control:
     //   for (count = -count; count != 0; count++)
     // Base pointers src, dst are biased by 8*count,to last element.
-    __ align(16);
+    __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
     __ movptr(to_element_addr, elem);     // store the oop

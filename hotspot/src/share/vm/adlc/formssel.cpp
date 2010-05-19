@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,7 +735,7 @@ int InstructForm::memory_operand(FormDict &globals) const {
 
 // This instruction captures the machine-independent bottom_type
 // Expected use is for pointer vs oop determination for LoadP
-bool InstructForm::captures_bottom_type() const {
+bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if( _matrule && _matrule->_rChild &&
        (!strcmp(_matrule->_rChild->_opType,"CastPP")     ||  // new result type
         !strcmp(_matrule->_rChild->_opType,"CastX2P")    ||  // new result type
@@ -747,6 +747,8 @@ bool InstructForm::captures_bottom_type() const {
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
+
+  if (needs_base_oop_edge(globals)) return true;
 
   return  false;
 }
@@ -1061,7 +1063,7 @@ const char *InstructForm::reduce_left(FormDict &globals)   const {
 
 
 // Base class for this instruction, MachNode except for calls
-const char *InstructForm::mach_base_class()  const {
+const char *InstructForm::mach_base_class(FormDict &globals)  const {
   if( is_ideal_call() == Form::JAVA_STATIC ) {
     return "MachCallStaticJavaNode";
   }
@@ -1092,7 +1094,7 @@ const char *InstructForm::mach_base_class()  const {
   else if (is_ideal_nop()) {
     return "MachNopNode";
   }
-  else if (captures_bottom_type()) {
+  else if (captures_bottom_type(globals)) {
     return "MachTypeNode";
   } else {
     return "MachNode";
@@ -3861,6 +3863,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||
         strcmp(opType,"ReverseBytesL")==0 ||
+        strcmp(opType,"ReverseBytesUS")==0 ||
+        strcmp(opType,"ReverseBytesS")==0 ||
         strcmp(opType,"Replicate16B")==0 ||
         strcmp(opType,"Replicate8B")==0 ||
         strcmp(opType,"Replicate4B")==0 ||

@@ -977,44 +977,33 @@ public final class KeyTool {
             if (filename != null) {
                 inStream = new FileInputStream(filename);
             }
-            // Read the full stream before feeding to X509Factory,
-            // otherwise, keytool -gencert | keytool -importcert
-            // might not work properly, since -gencert is slow
-            // and there's no data in the pipe at the beginning.
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            String importAlias = (alias!=null)?alias:keyAlias;
             try {
-                byte[] b = new byte[4096];
-                while (true) {
-                    int len = inStream.read(b);
-                    if (len < 0) break;
-                    bout.write(b, 0, len);
+                if (keyStore.entryInstanceOf(
+                        importAlias, KeyStore.PrivateKeyEntry.class)) {
+                    kssave = installReply(importAlias, inStream);
+                    if (kssave) {
+                        System.err.println(rb.getString
+                            ("Certificate reply was installed in keystore"));
+                    } else {
+                        System.err.println(rb.getString
+                            ("Certificate reply was not installed in keystore"));
+                    }
+                } else if (!keyStore.containsAlias(importAlias) ||
+                        keyStore.entryInstanceOf(importAlias,
+                            KeyStore.TrustedCertificateEntry.class)) {
+                    kssave = addTrustedCert(importAlias, inStream);
+                    if (kssave) {
+                        System.err.println(rb.getString
+                            ("Certificate was added to keystore"));
+                    } else {
+                        System.err.println(rb.getString
+                            ("Certificate was not added to keystore"));
+                    }
                 }
             } finally {
                 if (inStream != System.in) {
                     inStream.close();
-                }
-            }
-            inStream = new ByteArrayInputStream(bout.toByteArray());
-            String importAlias = (alias!=null)?alias:keyAlias;
-            if (keyStore.entryInstanceOf(importAlias, KeyStore.PrivateKeyEntry.class)) {
-                kssave = installReply(importAlias, inStream);
-                if (kssave) {
-                    System.err.println(rb.getString
-                        ("Certificate reply was installed in keystore"));
-                } else {
-                    System.err.println(rb.getString
-                        ("Certificate reply was not installed in keystore"));
-                }
-            } else if (!keyStore.containsAlias(importAlias) ||
-                    keyStore.entryInstanceOf(importAlias,
-                        KeyStore.TrustedCertificateEntry.class)) {
-                kssave = addTrustedCert(importAlias, inStream);
-                if (kssave) {
-                    System.err.println(rb.getString
-                        ("Certificate was added to keystore"));
-                } else {
-                    System.err.println(rb.getString
-                        ("Certificate was not added to keystore"));
                 }
             }
         } else if (command == IMPORTKEYSTORE) {
@@ -1222,6 +1211,14 @@ public final class KeyTool {
         X509CertImpl cert = new X509CertImpl(info);
         cert.sign(privateKey, sigAlgName);
         dumpCert(cert, out);
+        for (Certificate ca: keyStore.getCertificateChain(alias)) {
+            if (ca instanceof X509Certificate) {
+                X509Certificate xca = (X509Certificate)ca;
+                if (!isSelfSigned(xca)) {
+                    dumpCert(xca, out);
+                }
+            }
+        }
     }
 
     /**
@@ -2149,18 +2146,7 @@ public final class KeyTool {
                 inStream = new FileInputStream(filename);
             }
             try {
-                // Read the full stream before feeding to X509Factory,
-                // otherwise, keytool -gencert | keytool -printcert
-                // might not work properly, since -gencert is slow
-                // and there's no data in the pipe at the beginning.
-                ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                byte[] b = new byte[4096];
-                while (true) {
-                    int len = inStream.read(b);
-                    if (len < 0) break;
-                    bout.write(b, 0, len);
-                }
-                printCertFromStream(new ByteArrayInputStream(bout.toByteArray()), out);
+                printCertFromStream(inStream, out);
             } finally {
                 if (inStream != System.in) {
                     inStream.close();
@@ -2662,19 +2648,33 @@ public final class KeyTool {
     }
 
     /**
-     * Returns true if the given certificate is trusted, false otherwise.
+     * Locates a signer for a given certificate from a given keystore and
+     * returns the signer's certificate.
+     * @param cert the certificate whose signer is searched, not null
+     * @param ks the keystore to search with, not null
+     * @return <code>cert</code> itself if it's already inside <code>ks</code>,
+     * or a certificate inside <code>ks</code> who signs <code>cert</code>,
+     * or null otherwise.
      */
-    private boolean isTrusted(Certificate cert)
-        throws Exception
-    {
-        if (keyStore.getCertificateAlias(cert) != null) {
-            return true; // found in own keystore
+    private static Certificate getTrustedSigner(Certificate cert, KeyStore ks)
+            throws Exception {
+        if (ks.getCertificateAlias(cert) != null) {
+            return cert;
         }
-        if (trustcacerts && (caks != null) &&
-                (caks.getCertificateAlias(cert) != null)) {
-            return true; // found in CA keystore
+        for (Enumeration<String> aliases = ks.aliases();
+                aliases.hasMoreElements(); ) {
+            String name = aliases.nextElement();
+            Certificate trustedCert = ks.getCertificate(name);
+            if (trustedCert != null) {
+                try {
+                    cert.verify(trustedCert.getPublicKey());
+                    return trustedCert;
+                } catch (Exception e) {
+                    // Not verified, skip to the next one
+                }
+            }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -3007,48 +3007,33 @@ public final class KeyTool {
             return replyCerts;
         }
 
-        // do we trust the (root) cert at the top?
+        // do we trust the cert at the top?
         Certificate topCert = replyCerts[replyCerts.length-1];
-        if (!isTrusted(topCert)) {
-            boolean verified = false;
-            Certificate rootCert = null;
-            if (trustcacerts && (caks!= null)) {
-                for (Enumeration<String> aliases = caks.aliases();
-                     aliases.hasMoreElements(); ) {
-                    String name = aliases.nextElement();
-                    rootCert = caks.getCertificate(name);
-                    if (rootCert != null) {
-                        try {
-                            topCert.verify(rootCert.getPublicKey());
-                            verified = true;
-                            break;
-                        } catch (Exception e) {
-                        }
-                    }
-                }
+        Certificate root = getTrustedSigner(topCert, keyStore);
+        if (root == null && trustcacerts && caks != null) {
+            root = getTrustedSigner(topCert, caks);
+        }
+        if (root == null) {
+            System.err.println();
+            System.err.println
+                    (rb.getString("Top-level certificate in reply:\n"));
+            printX509Cert((X509Certificate)topCert, System.out);
+            System.err.println();
+            System.err.print(rb.getString("... is not trusted. "));
+            String reply = getYesNoReply
+                    (rb.getString("Install reply anyway? [no]:  "));
+            if ("NO".equals(reply)) {
+                return null;
             }
-            if (!verified) {
-                System.err.println();
-                System.err.println
-                        (rb.getString("Top-level certificate in reply:\n"));
-                printX509Cert((X509Certificate)topCert, System.out);
-                System.err.println();
-                System.err.print(rb.getString("... is not trusted. "));
-                String reply = getYesNoReply
-                        (rb.getString("Install reply anyway? [no]:  "));
-                if ("NO".equals(reply)) {
-                    return null;
-                }
-            } else {
-                if (!isSelfSigned((X509Certificate)topCert)) {
-                    // append the (self-signed) root CA cert to the chain
-                    Certificate[] tmpCerts =
-                        new Certificate[replyCerts.length+1];
-                    System.arraycopy(replyCerts, 0, tmpCerts, 0,
-                                     replyCerts.length);
-                    tmpCerts[tmpCerts.length-1] = rootCert;
-                    replyCerts = tmpCerts;
-                }
+        } else {
+            if (root != topCert) {
+                // append the root CA cert to the chain
+                Certificate[] tmpCerts =
+                    new Certificate[replyCerts.length+1];
+                System.arraycopy(replyCerts, 0, tmpCerts, 0,
+                                 replyCerts.length);
+                tmpCerts[tmpCerts.length-1] = root;
+                replyCerts = tmpCerts;
             }
         }
 
