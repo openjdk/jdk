@@ -55,7 +55,22 @@ ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) ia64),)
   MAKE_ARGS += Platform_arch_model=ia64
 endif
 
+# http://support.microsoft.com/kb/888731 : this can be either
+# AMD64 for AMD, or EM64T for Intel chips.
 ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) AMD64),)
+  ARCH_DATA_MODEL=64
+  PLATFORM=windows-amd64
+  VM_PLATFORM=windows_amd64
+  HS_ARCH=x86
+  MAKE_ARGS += LP64=1
+  MAKE_ARGS += ARCH=x86
+  MAKE_ARGS += BUILDARCH=amd64
+  MAKE_ARGS += Platform_arch=x86
+  MAKE_ARGS += Platform_arch_model=x86_64
+endif
+
+# NB later OS versions than 2003 may report "Intel64"
+ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) "EM64T\|Intel64"),)
   ARCH_DATA_MODEL=64
   PLATFORM=windows-amd64
   VM_PLATFORM=windows_amd64
