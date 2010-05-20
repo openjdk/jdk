@@ -101,8 +101,8 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
   bool found_first_monitor = false;
   ObjectMonitor *pending_monitor = thread()->current_pending_monitor();
   ObjectMonitor *waiting_monitor = thread()->current_waiting_monitor();
-  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : NULL);
-  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : NULL);
+  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : (oop) NULL);
+  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : (oop) NULL);
 
   for (int index = (mons->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = mons->at(index);
