@@ -735,7 +735,7 @@ int InstructForm::memory_operand(FormDict &globals) const {
 
 // This instruction captures the machine-independent bottom_type
 // Expected use is for pointer vs oop determination for LoadP
-bool InstructForm::captures_bottom_type() const {
+bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if( _matrule && _matrule->_rChild &&
        (!strcmp(_matrule->_rChild->_opType,"CastPP")     ||  // new result type
         !strcmp(_matrule->_rChild->_opType,"CastX2P")    ||  // new result type
@@ -747,6 +747,8 @@ bool InstructForm::captures_bottom_type() const {
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
+
+  if (needs_base_oop_edge(globals)) return true;
 
   return  false;
 }
@@ -1061,7 +1063,7 @@ const char *InstructForm::reduce_left(FormDict &globals)   const {
 
 
 // Base class for this instruction, MachNode except for calls
-const char *InstructForm::mach_base_class()  const {
+const char *InstructForm::mach_base_class(FormDict &globals)  const {
   if( is_ideal_call() == Form::JAVA_STATIC ) {
     return "MachCallStaticJavaNode";
   }
@@ -1092,7 +1094,7 @@ const char *InstructForm::mach_base_class()  const {
   else if (is_ideal_nop()) {
     return "MachNopNode";
   }
-  else if (captures_bottom_type()) {
+  else if (captures_bottom_type(globals)) {
     return "MachTypeNode";
   } else {
     return "MachNode";

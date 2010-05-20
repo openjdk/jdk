@@ -2978,7 +2978,11 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known) {
 
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   if (!InlineNatives           ) INLINE_BAILOUT("intrinsic method inlining disabled");
-  if (callee->is_synchronized()) INLINE_BAILOUT("intrinsic method is synchronized");
+  if (callee->is_synchronized()) {
+    // We don't currently support any synchronized intrinsics
+    return false;
+  }
+
   // callee seems like a good candidate
   // determine id
   bool preserves_state = false;
