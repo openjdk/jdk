@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -231,15 +231,35 @@ ifeq ($(PLATFORM), windows)
   # Temporary disk area
   TEMP_DISK=C:/temp
   # GNU Make or MKS overrides $(PROCESSOR_ARCHITECTURE) to always
-  # return "x86". Use the first word of $(PROCESSOR_IDENTIFIER) instead.
-  PROC_ARCH:=$(word 1, $(PROCESSOR_IDENTIFIER))
-  PROC_ARCH:=$(subst x86,X86,$(PROC_ARCH))
-  PROC_ARCH:=$(subst Intel64,X64,$(PROC_ARCH))
-  PROC_ARCH:=$(subst em64t,X64,$(PROC_ARCH))
-  PROC_ARCH:=$(subst EM64T,X64,$(PROC_ARCH))
-  PROC_ARCH:=$(subst amd64,X64,$(PROC_ARCH))
-  PROC_ARCH:=$(subst AMD64,X64,$(PROC_ARCH))
-  PROC_ARCH:=$(subst ia64,IA64,$(PROC_ARCH))
+  #  return "x86". Use the first word of $(PROCESSOR_IDENTIFIER) instead.
+  #  And sometimes PROCESSOR_IDENTIFIER is not defined at all
+  #  (in some restricted shells), so we use uname if we have to.
+  ifeq ($(PROCESSOR_IDENTIFIER),)
+    PROC_ARCH:=$(shell uname -m)
+  else
+    PROC_ARCH:=$(word 1, $(PROCESSOR_IDENTIFIER))
+  endif
+  # Cover all the possibilities, MKS uname, CYGWIN uname, PROCESSOR_IDENTIFIER
+  #    Get: X86, X64, or IA64
+  PROC_ARCH:=$(patsubst 386,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst 486,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst 586,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst 686,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst i386,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst i486,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst i586,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst i686,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst x86,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst intel64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst Intel64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst INTEL64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst em64t,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst EM64T,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst amd64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst AMD64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst 8664,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst x86_64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(patsubst ia64,IA64,$(PROC_ARCH))
   ifndef ARCH_DATA_MODEL
     ifeq ($(PROC_ARCH),IA64)
       ARCH_DATA_MODEL=64
