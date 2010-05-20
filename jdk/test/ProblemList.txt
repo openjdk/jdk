@@ -427,6 +427,9 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 # jdk_management
 
+# Access denied messages on windows/mks, filed 6954450
+sun/management/jmxremote/bootstrap/RmiSslNoKeyStoreTest.sh	windows-all
+
 # Filed 6951284, fails on linux 64bit Fedora 9, peak thread count differences
 java/lang/management/ThreadMXBean/ResetPeakThreadCount.java	generic-all
 
@@ -1114,58 +1117,6 @@ sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
 # Files does not exist or no encoding? solaris-sparcv9
 sun/security/tools/keytool/importreadall.sh		 	solaris-all
 sun/security/tools/keytool/selfissued.sh		 	solaris-all
-
-# This is a problem with JPRT not being able to run these tests due to a dll
-#  permission problem that has not been figured out:
-sun/security/pkcs11/SampleTest.java				windows-i586
-sun/security/pkcs11/Secmod/AddPrivateKey.java			windows-i586
-sun/security/pkcs11/Cipher/ReinitCipher.java			windows-i586
-sun/security/pkcs11/Cipher/TestRSACipher.java			windows-i586
-sun/security/pkcs11/Cipher/TestRSACipherWrap.java		windows-i586
-sun/security/pkcs11/Cipher/TestSymmCiphers.java			windows-i586
-sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java		windows-i586
-sun/security/pkcs11/KeyAgreement/TestShort.java			windows-i586
-sun/security/pkcs11/KeyGenerator/DESParity.java			windows-i586
-sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java		windows-i586
-sun/security/pkcs11/KeyStore/Basic.sh				windows-i586
-sun/security/pkcs11/KeyStore/ClientAuth.sh			windows-i586
-sun/security/pkcs11/Mac/ReinitMac.java				windows-i586
-sun/security/pkcs11/MessageDigest/ByteBuffers.java		windows-i586
-sun/security/pkcs11/MessageDigest/DigestKAT.java		windows-i586
-sun/security/pkcs11/MessageDigest/ReinitDigest.java		windows-i586
-sun/security/pkcs11/Provider/ConfigQuotedString.sh		windows-i586
-sun/security/pkcs11/Provider/Login.sh				windows-i586
-sun/security/pkcs11/Sampl/pkcs11/Secmod/AddPrivateKey.java	windows-i586
-sun/security/pkcs11/Secmod/AddTrustedCert.java			windows-i586
-sun/security/pkcs11/Secmod/Crypto.java				windows-i586
-sun/security/pkcs11/Secmod/GetPrivateKey.java			windows-i586
-sun/security/pkcs11/Secmod/JksSetPrivateKey.java		windows-i586
-sun/security/pkcs11/Secmod/TrustAnchors.java			windows-i586
-sun/security/pkcs11/SecureRandom/Basic.java			windows-i586
-sun/security/pkcs11/SecureRandom/TestDeserialization.java	windows-i586
-sun/security/pkcs11/Serialize/SerializeProvider.java		windows-i586
-sun/security/pkcs11/Signature/ByteBuffers.java			windows-i586
-sun/security/pkcs11/Signature/ReinitSignature.java		windows-i586
-sun/security/pkcs11/Signature/TestDSA.java			windows-i586
-sun/security/pkcs11/Signature/TestRSAKeyLength.java		windows-i586
-sun/security/pkcs11/ec/ReadCertificates.java			windows-i586
-sun/security/pkcs11/ec/ReadPKCS12.java				windows-i586
-sun/security/pkcs11/ec/TestCurves.java				windows-i586
-sun/security/pkcs11/ec/TestECDH.java				windows-i586
-sun/security/pkcs11/ec/TestECDSA.java				windows-i586
-sun/security/pkcs11/ec/TestECGenSpec.java			windows-i586
-sun/security/pkcs11/ec/TestKeyFactory.java			windows-i586
-sun/security/pkcs11/fips/ClientJSSEServerJSSE.java		windows-i586
-sun/security/pkcs11/fips/TrustManagerTest.java			windows-i586
-sun/security/pkcs11/rsa/KeyWrap.java				windows-i586
-sun/security/pkcs11/rsa/TestCACerts.java			windows-i586
-sun/security/pkcs11/rsa/TestKeyFactory.java			windows-i586
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java		windows-i586
-sun/security/pkcs11/rsa/TestSignatures.java			windows-i586
-sun/security/pkcs11/tls/TestKeyMaterial.java			windows-i586
-sun/security/pkcs11/tls/TestMasterSecret.java			windows-i586
-sun/security/pkcs11/tls/TestPRF.java				windows-i586
-sun/security/pkcs11/tls/TestPremaster.java			windows-i586
 
 ############################################################################
 
