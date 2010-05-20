@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,10 @@ int OopRecorder::oop_size() {
   return _handles->length() * sizeof(oop);
 }
 
-void OopRecorder::copy_to(CodeBlob* code) {
+void OopRecorder::copy_to(nmethod* nm) {
   assert(_complete, "must be frozen");
   maybe_initialize();  // get non-null handles, even if we have no oops
-  code->copy_oops(_handles);
+  nm->copy_oops(_handles);
 }
 
 void OopRecorder::maybe_initialize() {
