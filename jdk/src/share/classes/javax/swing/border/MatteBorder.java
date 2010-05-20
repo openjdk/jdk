@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package javax.swing.border;
 
 import java.awt.Graphics;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.Component;
 import java.awt.Color;
 
@@ -133,61 +132,27 @@ public class MatteBorder extends EmptyBorder
             g.fillRect(width - insets.right, 0, insets.right, height - insets.bottom);
 
         } else if (tileIcon != null) {
-
             int tileW = tileIcon.getIconWidth();
             int tileH = tileIcon.getIconHeight();
-            int xpos, ypos, startx, starty;
-            Graphics cg;
-
-            // Paint top matte edge
-            cg = g.create();
-            cg.setClip(0, 0, width, insets.top);
-            for (ypos = 0; insets.top - ypos > 0; ypos += tileH) {
-                for (xpos = 0; width - xpos > 0; xpos += tileW) {
-                    tileIcon.paintIcon(c, cg, xpos, ypos);
-                }
-            }
-            cg.dispose();
-
-            // Paint left matte edge
-            cg = g.create();
-            cg.setClip(0, insets.top, insets.left, height - insets.top);
-            starty = insets.top - (insets.top%tileH);
-            startx = 0;
-            for (ypos = starty; height - ypos > 0; ypos += tileH) {
-                for (xpos = startx; insets.left - xpos > 0; xpos += tileW) {
-                    tileIcon.paintIcon(c, cg, xpos, ypos);
-                }
-            }
-            cg.dispose();
-
-            // Paint bottom matte edge
-            cg = g.create();
-            cg.setClip(insets.left, height - insets.bottom, width - insets.left, insets.bottom);
-            starty = (height - insets.bottom) - ((height - insets.bottom)%tileH);
-            startx = insets.left - (insets.left%tileW);
-            for (ypos = starty; height - ypos > 0; ypos += tileH) {
-                for (xpos = startx; width - xpos > 0; xpos += tileW) {
-                    tileIcon.paintIcon(c, cg, xpos, ypos);
-                }
-            }
-            cg.dispose();
-
-            // Paint right matte edge
-            cg = g.create();
-            cg.setClip(width - insets.right, insets.top, insets.right, height - insets.top - insets.bottom);
-            starty = insets.top - (insets.top%tileH);
-            startx = width - insets.right - ((width - insets.right)%tileW);
-            for (ypos = starty; height - ypos > 0; ypos += tileH) {
-                for (xpos = startx; width - xpos > 0; xpos += tileW) {
-                    tileIcon.paintIcon(c, cg, xpos, ypos);
-                }
-            }
-            cg.dispose();
+            paintEdge(c, g, 0, 0, width - insets.right, insets.top, tileW, tileH);
+            paintEdge(c, g, 0, insets.top, insets.left, height - insets.top, tileW, tileH);
+            paintEdge(c, g, insets.left, height - insets.bottom, width - insets.left, insets.bottom, tileW, tileH);
+            paintEdge(c, g, width - insets.right, 0, insets.right, height - insets.bottom, tileW, tileH);
         }
         g.translate(-x, -y);
         g.setColor(oldColor);
 
+    }
+
+    private void paintEdge(Component c, Graphics g, int x, int y, int width, int height, int tileW, int tileH) {
+        g = g.create(x, y, width, height);
+        int sY = -(y % tileH);
+        for (x = -(x % tileW); x < width; x += tileW) {
+            for (y = sY; y < height; y += tileH) {
+                this.tileIcon.paintIcon(c, g, x, y);
+            }
+        }
+        g.dispose();
     }
 
     /**
