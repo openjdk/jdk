@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ class OopRecorder : public ResourceObj {
     return _handles->length() + first_index;
   }
 
-  // copy the generated oop table to CodeBlob
-  void copy_to(CodeBlob* code);  // => code->copy_oops(_handles)
+  // copy the generated oop table to nmethod
+  void copy_to(nmethod* nm);  // => nm->copy_oops(_handles)
 
   bool is_unused() { return _handles == NULL && !_complete; }
 #ifdef ASSERT

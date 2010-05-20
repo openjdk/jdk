@@ -1435,7 +1435,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
       // for the rest of its life! Just another racing bug in the life of
       // fixup_callers_callsite ...
       //
-      RelocIterator iter(cb, call->instruction_address(), call->next_instruction_address());
+      RelocIterator iter(nm, call->instruction_address(), call->next_instruction_address());
       iter.next();
       assert(iter.has_current(), "must have a reloc at java call site");
       relocInfo::relocType typ = iter.reloc()->type();

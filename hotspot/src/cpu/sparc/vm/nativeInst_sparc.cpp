@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,8 @@ void NativeMovConstReg::set_data(intptr_t x) {
   set_long_at(add_offset,   set_data32_simm13( long_at(add_offset),   x));
 
   // also store the value into an oop_Relocation cell, if any
-  CodeBlob* nm = CodeCache::find_blob(instruction_address());
+  CodeBlob* cb = CodeCache::find_blob(instruction_address());
+  nmethod*  nm = cb ? cb->as_nmethod_or_null() : NULL;
   if (nm != NULL) {
     RelocIterator iter(nm, instruction_address(), next_instruction_address());
     oop* oop_addr = NULL;
@@ -430,7 +431,8 @@ void NativeMovConstRegPatching::set_data(int x) {
   set_long_at(add_offset, set_data32_simm13(long_at(add_offset), x));
 
   // also store the value into an oop_Relocation cell, if any
-  CodeBlob* nm = CodeCache::find_blob(instruction_address());
+  CodeBlob* cb = CodeCache::find_blob(instruction_address());
+  nmethod*  nm = cb ? cb->as_nmethod_or_null() : NULL;
   if (nm != NULL) {
     RelocIterator iter(nm, instruction_address(), next_instruction_address());
     oop* oop_addr = NULL;

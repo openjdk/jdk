@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,12 +232,11 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_OFFS(CodeBlob, _header_size);
   GEN_OFFS(CodeBlob, _instructions_offset);
   GEN_OFFS(CodeBlob, _data_offset);
-  GEN_OFFS(CodeBlob, _oops_offset);
-  GEN_OFFS(CodeBlob, _oops_length);
   GEN_OFFS(CodeBlob, _frame_size);
   printf("\n");
 
   GEN_OFFS(nmethod, _method);
+  GEN_OFFS(nmethod, _oops_offset);
   GEN_OFFS(nmethod, _scopes_data_offset);
   GEN_OFFS(nmethod, _scopes_pcs_offset);
   GEN_OFFS(nmethod, _handler_table_offset);
