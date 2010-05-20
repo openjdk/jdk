@@ -36,15 +36,15 @@ OPT_CFLAGS/BYFILE = $(OPT_CFLAGS/$@)$(OPT_CFLAGS/DEFAULT$(OPT_CFLAGS/$@))
 ifeq ("${Platform_compiler}", "sparcWorks")
 OPT_CFLAGS/SLOWER = -xO2
 
-# Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
 ifeq ($(COMPILER_REV_NUMERIC), 509)
-  # To avoid jvm98 crash
-  OPT_CFLAGS/instanceKlass.o = $(OPT_CFLAGS/SLOWER)
-  # Not clear this workaround could be skipped in some cases.
-  OPT_CFLAGS/vmGCOperations.o = $(OPT_CFLAGS/SLOWER)
-  OPT_CFLAGS/java.o = $(OPT_CFLAGS/SLOWER)
-  OPT_CFLAGS/jni.o = $(OPT_CFLAGS/SLOWER)
-endif
+# To avoid jvm98 crash
+OPT_CFLAGS/instanceKlass.o = $(OPT_CFLAGS/SLOWER)
+endif # COMPILER_NUMERIC_REV == 509
+
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+# dtrace cannot handle tail call optimization (6672627, 6693876)
+OPT_CFLAGS/jni.o = $(OPT_CFLAGS/DEFAULT) $(OPT_CCFLAGS/NO_TAIL_CALL_OPT)
+endif # COMPILER_NUMERIC_REV >= 509
 
 ifeq ($(COMPILER_REV_NUMERIC), 505)
 # CC 5.5 has bug 4908364 with -xO4  (Fixed in 5.6)

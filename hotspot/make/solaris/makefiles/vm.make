@@ -174,19 +174,16 @@ LINK_VM = $(LINK_LIB.CC)
 endif
 # making the library:
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) 
-	$(QUIETLY) \
-	case "$(CFLAGS_BROWSE)" in \
-	-sbfast|-xsbfast) \
-	    ;; \
-	*) \
-	    echo Linking vm...; \
-	    $(LINK_LIB.CC/PRE_HOOK) \
-	    $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM); \
-	    $(LINK_LIB.CC/POST_HOOK) \
-	    rm -f $@.1; ln -s $@ $@.1; \
-	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
-	    ;; \
-	esac
+ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
+	@echo Linking vm...
+	$(QUIETLY) $(LINK_LIB.CC/PRE_HOOK)
+	$(QUIETLY) $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM)
+	$(QUIETLY) $(LINK_LIB.CC/POST_HOOK)
+	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
+	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
+	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
+endif # filter -sbfast -xsbfast
+
 
 DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)
 
