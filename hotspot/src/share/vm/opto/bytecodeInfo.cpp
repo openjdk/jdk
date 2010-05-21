@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,8 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
     return NULL;
   }
 
-  // Always inline MethodHandle methods.
-  if (callee_method->is_method_handle_invoke())
+  // Always inline MethodHandle methods and generated MethodHandle adapters.
+  if (callee_method->is_method_handle_invoke() || callee_method->is_method_handle_adapter())
     return NULL;
 
   // First check all inlining restrictions which are required for correctness

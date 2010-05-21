@@ -2055,11 +2055,11 @@ class AdapterHandlerTableIterator : public StackObj {
   void scan() {
     while (_index < _table->table_size()) {
       AdapterHandlerEntry* a = _table->bucket(_index);
+      _index++;
       if (a != NULL) {
         _current = a;
         return;
       }
-      _index++;
     }
   }
 
