@@ -25,17 +25,7 @@
 
 package javax.swing;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
-import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.event.*;
 
 import java.util.Vector;
@@ -2779,9 +2769,9 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                                       getVisibleRowCount() <= 0) {
             return true;
         }
-        JViewport port = SwingUtilities.getParentViewport(this);
-        if (port != null) {
-            return port.getWidth() > getPreferredSize().width;
+        Container parent = SwingUtilities.getUnwrappedParent(this);
+        if (parent instanceof JViewport) {
+            return parent.getWidth() > getPreferredSize().width;
         }
         return false;
     }
@@ -2805,9 +2795,9 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                      getVisibleRowCount() <= 0) {
             return true;
         }
-        JViewport port = SwingUtilities.getParentViewport(this);
-        if (port != null) {
-            return port.getHeight() > getPreferredSize().height;
+        Container parent = SwingUtilities.getUnwrappedParent(this);
+        if (parent instanceof JViewport) {
+            return parent.getHeight() > getPreferredSize().height;
         }
         return false;
     }

@@ -1969,58 +1969,53 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Looks for the first ancestor of the {@code component}
+     * Returns the first ancestor of the {@code component}
      * which is not an instance of {@link JLayer}.
-     * If this ancestor is an instance of {@code JViewport},
-     * this {@code JViewport} is returned, otherwise returns {@code null}.
-     * The following way of obtaining the parent {@code JViewport}
-     * is not recommended any more:
-     * <pre>
-     * JViewport port = null;
-     * Container parent = component.getParent();
-     * // not recommended any more
-     * if(parent instanceof JViewport) {
-     *     port = (JViewport) parent;
-     * }
-     * </pre>
-     * Here is the way to go:
-     * <pre>
-     * // the correct way:
-     * JViewport port = SwingUtilities.getParentViewport(component);
-     * </pre>
-     * @param component {@code Component} to get the parent {@code JViewport} of.
-     * @return the {@code JViewport} instance for the {@code component}
-     * or {@code null}
+     *
+     * @param component {@code Component} to get
+     * the first ancestor of, which is not a {@link JLayer} instance.
+     *
+     * @return the first ancestor of the {@code component}
+     * which is not an instance of {@link JLayer}.
+     * If such an ancestor can not be found, {@code null} is returned.
+     *
      * @throws NullPointerException if {@code component} is {@code null}
+     * @see JLayer
      *
      * @since 1.7
      */
-    public static JViewport getParentViewport(Component component) {
-        do {
-            component = component.getParent();
-            if (component instanceof JViewport) {
-                return (JViewport) component;
-            }
-        } while(component instanceof JLayer);
-        return null;
+    public static Container getUnwrappedParent(Component component) {
+        Container parent = component.getParent();
+        while(parent instanceof JLayer) {
+            parent = parent.getParent();
+        }
+        return parent;
     }
 
     /**
      * Returns the first {@code JViewport}'s descendant
-     * which is not an instance of {@code JLayer} or {@code null}.
+     * which is not an instance of {@code JLayer}.
+     * If such a descendant can not be found, {@code null} is returned.
      *
      * If the {@code viewport}'s view component is not a {@code JLayer},
-     * this method is equal to {@link JViewport#getView()}
-     * otherwise {@link JLayer#getView()} will be recursively tested
+     * this method is equivalent to {@link JViewport#getView()}
+     * otherwise {@link JLayer#getView()} will be recursively
+     * called on all descending {@code JLayer}s.
+     *
+     * @param viewport {@code JViewport} to get the first descendant of,
+     * which in not a {@code JLayer} instance.
      *
      * @return the first {@code JViewport}'s descendant
-     * which is not an instance of {@code JLayer} or {@code null}.
+     * which is not an instance of {@code JLayer}.
+     * If such a descendant can not be found, {@code null} is returned.
      *
      * @throws NullPointerException if {@code viewport} is {@code null}
      * @see JViewport#getView()
      * @see JLayer
+     *
+     * @since 1.7
      */
-    static Component getUnwrappedView(JViewport viewport) {
+    public static Component getUnwrappedView(JViewport viewport) {
         Component view = viewport.getView();
         while (view instanceof JLayer) {
             view = ((JLayer)view).getView();
