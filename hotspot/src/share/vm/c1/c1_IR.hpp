@@ -269,6 +269,7 @@ class CodeEmitInfo: public CompilationResourceObj {
   int               _bci;
   CodeEmitInfo*     _next;
   int               _id;
+  bool              _is_method_handle_invoke;    // true if the associated call site is a MethodHandle call site.
 
   FrameMap*     frame_map() const                { return scope()->compilation()->frame_map(); }
   Compilation*  compilation() const              { return scope()->compilation(); }
@@ -287,7 +288,8 @@ class CodeEmitInfo: public CompilationResourceObj {
     , _stack(NULL)
     , _exception_handlers(NULL)
     , _next(NULL)
-    , _id(-1) {
+    , _id(-1)
+    , _is_method_handle_invoke(false) {
   }
 
   // make a copy
@@ -302,13 +304,16 @@ class CodeEmitInfo: public CompilationResourceObj {
   int bci() const                                { return _bci; }
 
   void add_register_oop(LIR_Opr opr);
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool is_method_handle_invoke = false);
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset);
 
   CodeEmitInfo* next() const        { return _next; }
   void set_next(CodeEmitInfo* next) { _next = next; }
 
   int id() const      { return _id; }
   void set_id(int id) { _id = id; }
+
+  bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
+  void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }
 };
 
 

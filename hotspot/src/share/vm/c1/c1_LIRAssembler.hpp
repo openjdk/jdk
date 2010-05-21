@@ -84,7 +84,7 @@ class LIR_Assembler: public CompilationResourceObj {
   Address as_Address_hi(LIR_Address* addr);
 
   // debug information
-  void add_call_info(int pc_offset, CodeEmitInfo* cinfo, bool is_method_handle_invoke = false);
+  void add_call_info(int pc_offset, CodeEmitInfo* cinfo);
   void add_debug_info_for_branch(CodeEmitInfo* info);
   void add_debug_info_for_div0(int pc_offset, CodeEmitInfo* cinfo);
   void add_debug_info_for_div0_here(CodeEmitInfo* info);
@@ -211,10 +211,6 @@ class LIR_Assembler: public CompilationResourceObj {
   void call(        LIR_OpJavaCall* op, relocInfo::relocType rtype);
   void ic_call(     LIR_OpJavaCall* op);
   void vtable_call( LIR_OpJavaCall* op);
-
-  // JSR 292
-  void preserve_SP(LIR_OpJavaCall* op);
-  void restore_SP( LIR_OpJavaCall* op);
 
   void osr_entry();
 
