@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.util;
 
-import java.security.CodeSigner;
 import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -34,11 +33,11 @@ import java.security.*;
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
-import java.io.ByteArrayOutputStream;
 
 import sun.security.pkcs.*;
 import sun.security.timestamp.TimestampToken;
 import sun.misc.BASE64Decoder;
+import sun.misc.SharedSecrets;
 
 import sun.security.jca.Providers;
 
@@ -479,7 +478,12 @@ public class SignatureFileVerifier {
                 signers = new ArrayList<CodeSigner>();
             }
             // Append the new code signer
-            signers.add(new CodeSigner(certChain, getTimestamp(info)));
+            CodeSigner signer = new CodeSigner(certChain, getTimestamp(info));
+            if (block.getCRLs() != null) {
+                SharedSecrets.getJavaSecurityCodeSignerAccess().setCRLs(
+                        signer, block.getCRLs());
+            }
+            signers.add(signer);
 
             if (debug != null) {
                 debug.println("Signature Block Certificate: " +

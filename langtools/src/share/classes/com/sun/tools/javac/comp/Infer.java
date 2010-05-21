@@ -287,7 +287,8 @@ public class Infer {
     /** Instantiate method type `mt' by finding instantiations of
      *  `tvars' so that method can be applied to `argtypes'.
      */
-    public Type instantiateMethod(List<Type> tvars,
+    public Type instantiateMethod(final Env<AttrContext> env,
+                                  List<Type> tvars,
                                   MethodType mt,
                                   final List<Type> argtypes,
                                   final boolean allowBoxing,
@@ -416,6 +417,9 @@ public class Infer {
                     // check that inferred bounds conform to their bounds
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
+                    if (useVarargs) {
+                        chk.checkVararg(env.tree.pos(), formals);
+                    }
                     return super.inst(inferred, types);
             }};
             return mt2;
