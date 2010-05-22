@@ -65,7 +65,7 @@ class PSOldGen : public CHeapObj {
   // and releasing the heap lock, which is held during gc's anyway. This method is not
   // safe for use at the same time as allocate_noexpand()!
   HeapWord* cas_allocate_noexpand(size_t word_size) {
-    assert(SafepointSynchronize::is_at_safepoint(), "Must only be called at safepoint")
+    assert(SafepointSynchronize::is_at_safepoint(), "Must only be called at safepoint");
     HeapWord* res = object_space()->cas_allocate(word_size);
     if (res != NULL) {
       _start_array.allocate_block(res);

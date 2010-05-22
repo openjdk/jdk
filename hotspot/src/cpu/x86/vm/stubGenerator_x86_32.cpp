@@ -139,7 +139,7 @@ class StubGenerator: public StubCodeGenerator {
     // stub code
     __ enter();
     __ movptr(rcx, parameter_size);              // parameter counter
-    __ shlptr(rcx, Interpreter::logStackElementSize()); // convert parameter count to bytes
+    __ shlptr(rcx, Interpreter::logStackElementSize); // convert parameter count to bytes
     __ addptr(rcx, locals_count_in_bytes);       // reserve space for register saves
     __ subptr(rsp, rcx);
     __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
@@ -194,12 +194,6 @@ class StubGenerator: public StubCodeGenerator {
     __ xorptr(rbx, rbx);
 
     __ BIND(loop);
-    if (TaggedStackInterpreter) {
-      __ movptr(rax, Address(rdx, rcx, Interpreter::stackElementScale(),
-                      -2*wordSize));                          // get tag
-      __ movptr(Address(rsp, rbx, Interpreter::stackElementScale(),
-                      Interpreter::expr_tag_offset_in_bytes(0)), rax);     // store tag
-    }
 
     // get parameter
     __ movptr(rax, Address(rdx, rcx, Interpreter::stackElementScale(), -wordSize));

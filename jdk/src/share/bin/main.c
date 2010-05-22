@@ -33,13 +33,15 @@
 #include "defines.h"
 
 #ifdef _MSC_VER
-#if _MSC_VER > 1400
+#if _MSC_VER > 1400 && _MSC_VER < 1600
 
 /*
  * When building for Microsoft Windows, main has a dependency on msvcr??.dll.
  *
- * When using Visual Studio 2005 or later, that must be recorded in
+ * When using Visual Studio 2005 or 2008, that must be recorded in
  * the [java,javaw].exe.manifest file.
+ *
+ * As of VS2010 (ver=1600), the runtimes again no longer need manifests.
  *
  * Reference:
  *     C:/Program Files/Microsoft SDKs/Windows/v6.1/include/crtdefs.h
@@ -67,7 +69,7 @@
         "publicKeyToken='" _VC_ASSEMBLY_PUBLICKEYTOKEN "'\"")
 
 #endif  /* _M_AMD64 */
-#endif  /* _MSC_VER > 1400 */
+#endif  /* _MSC_VER > 1400 && _MSC_VER < 1600 */
 #endif  /* _MSC_VER */
 
 /*

@@ -451,6 +451,7 @@ class ServerImpl implements TimeSource {
                 if (requestLine == null) {
                     /* connection closed */
                     connection.close();
+                    allConnections.remove(connection);
                     return;
                 }
                 int space = requestLine.indexOf (' ');
@@ -592,6 +593,8 @@ class ServerImpl implements TimeSource {
             sendReply (
                 code, true, "<h1>"+code+Code.msg(code)+"</h1>"+message
             );
+            /* connection is already closed by sendReply, now remove it */
+            allConnections.remove(connection);
         }
 
         void sendReply (

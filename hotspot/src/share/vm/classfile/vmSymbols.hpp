@@ -137,6 +137,7 @@
   template(java_lang_CloneNotSupportedException,      "java/lang/CloneNotSupportedException")     \
   template(java_lang_IllegalAccessException,          "java/lang/IllegalAccessException")         \
   template(java_lang_IllegalArgumentException,        "java/lang/IllegalArgumentException")       \
+  template(java_lang_IllegalStateException,           "java/lang/IllegalStateException")          \
   template(java_lang_IllegalMonitorStateException,    "java/lang/IllegalMonitorStateException")   \
   template(java_lang_IllegalThreadStateException,     "java/lang/IllegalThreadStateException")    \
   template(java_lang_IndexOutOfBoundsException,       "java/lang/IndexOutOfBoundsException")      \
@@ -201,6 +202,11 @@
   template(newField_signature,                        "(Lsun/reflect/FieldInfo;)Ljava/lang/reflect/Field;") \
   template(newMethod_name,                            "newMethod")                                \
   template(newMethod_signature,                       "(Lsun/reflect/MethodInfo;)Ljava/lang/reflect/Method;") \
+  /* the following two names must be in order: */                                                 \
+  template(invokeExact_name,                          "invokeExact")                              \
+  template(invokeGeneric_name,                        "invokeGeneric")                            \
+  template(invokeVarargs_name,                        "invokeVarargs")                            \
+  template(star_name,                                 "*") /*not really a name*/                  \
   template(invoke_name,                               "invoke")                                   \
   template(override_name,                             "override")                                 \
   template(parameterTypes_name,                       "parameterTypes")                           \
@@ -231,16 +237,17 @@
   template(java_dyn_MethodTypeForm,                   "java/dyn/MethodTypeForm")                  \
   template(java_dyn_MethodTypeForm_signature,         "Ljava/dyn/MethodTypeForm;")                \
   template(sun_dyn_MemberName,                        "sun/dyn/MemberName")                       \
+  template(sun_dyn_MemberName_signature,              "Lsun/dyn/MemberName;")                     \
   template(sun_dyn_MethodHandleImpl,                  "sun/dyn/MethodHandleImpl")                 \
+  template(sun_dyn_MethodHandleNatives,               "sun/dyn/MethodHandleNatives")              \
   template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")              \
   template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")                \
   template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")               \
-  template(makeImpl_name,                             "makeImpl") /*MethodType::makeImpl*/        \
-  template(makeImpl_signature,    "(Ljava/lang/Class;[Ljava/lang/Class;ZZ)Ljava/dyn/MethodType;") \
-  template(makeSite_name,                             "makeSite") /*CallSite::makeSite*/          \
-  template(makeSite_signature,    "(Ljava/lang/Class;Ljava/lang/String;Ljava/dyn/MethodType;II)Ljava/dyn/CallSite;") \
-  template(findBootstrapMethod_name,                  "findBootstrapMethod")                      \
-  template(findBootstrapMethod_signature, "(Ljava/lang/Class;Ljava/lang/Class;)Ljava/dyn/MethodHandle;") \
+  /* internal up-calls made only by the JVM, via class sun.dyn.MethodHandleNatives: */            \
+  template(findMethodHandleType_name,                 "findMethodHandleType")                     \
+  template(findMethodHandleType_signature, "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/dyn/MethodType;") \
+  template(makeDynamicCallSite_name,                  "makeDynamicCallSite")                      \
+  template(makeDynamicCallSite_signature, "(Ljava/dyn/MethodHandle;Ljava/lang/String;Ljava/dyn/MethodType;Ljava/lang/Object;Lsun/dyn/MemberName;I)Ljava/dyn/CallSite;") \
   NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
   LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
                                                                                                   \
@@ -408,8 +415,9 @@
   template(void_classloader_signature,                "()Ljava/lang/ClassLoader;")                                \
   template(void_object_signature,                     "()Ljava/lang/Object;")                                     \
   template(void_class_signature,                      "()Ljava/lang/Class;")                                      \
-  template(void_string_signature,                     "()Ljava/lang/String;")                                      \
-  template(object_array_object_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
+  template(void_string_signature,                     "()Ljava/lang/String;")                                     \
+  template(object_array_object_signature,             "([Ljava/lang/Object;)Ljava/lang/Object;")                  \
+  template(object_object_array_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
   template(exception_void_signature,                  "(Ljava/lang/Exception;)V")                                 \
   template(protectiondomain_signature,                "[Ljava/security/ProtectionDomain;")                        \
   template(accesscontrolcontext_signature,            "Ljava/security/AccessControlContext;")                     \
@@ -863,11 +871,15 @@
   do_intrinsic(_Object_init,              java_lang_Object, object_initializer_name, void_method_signature,        F_R)   \
   /*    (symbol object_initializer_name defined above) */                                                                 \
                                                                                                                           \
-  do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
+  do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_object_array_object_signature, F_R) \
   /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
   do_intrinsic(_checkSpreadArgument,      sun_dyn_MethodHandleImpl, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) \
    do_name(    checkSpreadArgument_name,       "checkSpreadArgument")                                                   \
    do_name(    checkSpreadArgument_signature,  "(Ljava/lang/Object;I)V")                                                \
+  do_intrinsic(_invokeExact,              java_dyn_MethodHandle, invokeExact_name,   object_array_object_signature, F_RN) \
+  do_intrinsic(_invokeGeneric,            java_dyn_MethodHandle, invokeGeneric_name, object_array_object_signature, F_RN) \
+  do_intrinsic(_invokeVarargs,            java_dyn_MethodHandle, invokeVarargs_name, object_array_object_signature, F_R)  \
+  do_intrinsic(_invokeDynamic,            java_dyn_InvokeDynamic, star_name,         object_array_object_signature, F_SN) \
                                                                                                                         \
   /* unboxing methods: */                                                                                               \
   do_intrinsic(_booleanValue,             java_lang_Boolean,      booleanValue_name, void_boolean_signature, F_R)       \
