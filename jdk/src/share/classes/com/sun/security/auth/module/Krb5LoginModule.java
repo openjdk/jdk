@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,7 +717,7 @@ public class Krb5LoginModule implements LoginModule {
                     for (int i = 0; i < encKeys.length; i++) {
                         System.out.println("EncryptionKey: keyType=" +
                             encKeys[i].getEType() + " keyBytes (hex dump)=" +
-                            hd.encode(encKeys[i].getBytes()));
+                            hd.encodeBuffer(encKeys[i].getBytes()));
                     }
                 }
 

@@ -86,12 +86,22 @@ ifeq ($(ARCH_DATA_MODEL), 32)
     MSVCPNN_DLL = msvcp90.dll
     MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
   endif
+  ifeq ($(COMPILER_VERSION), VS2010)
+    MSVCRNN_DLL = msvcr100.dll
+    MSVCPNN_DLL = msvcp100.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+  endif
 endif
 
 ifeq ($(ARCH_DATA_MODEL), 64)
   ifeq ($(COMPILER_VERSION), VS2008)
     MSVCRNN_DLL = msvcr90.dll
     MSVCPNN_DLL = msvcp90.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+  endif
+  ifeq ($(COMPILER_VERSION), VS2010)
+    MSVCRNN_DLL = msvcr100.dll
+    MSVCPNN_DLL = msvcp100.dll
     MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
   endif
 endif
@@ -155,6 +165,7 @@ ifeq ($(CC_VERSION),msvc)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION =
     GX_OPTION = -GX
+    GZ_OPTION = -GZ
     ifeq ($(ARCH_DATA_MODEL), 32)
       CC_OPT/HIGHEST = -Ox -Gy -Os -GB
       CC_OPT/HIGHER  = -Ox -Gy -Os -GB
@@ -171,6 +182,7 @@ ifeq ($(CC_VERSION),msvc)
     AUTOMATIC_PCH_OPTION = -YX
     # Also known as VC7 compiler
     GX_OPTION = -GX
+    GZ_OPTION = -GZ
     ifeq ($(ARCH_DATA_MODEL), 32)
       # Lowered opt level to try and reduce footprint, dll size especially.
       #     Was: CC_OPT/HIGHEST = -O2 -G6
@@ -190,6 +202,7 @@ ifeq ($(CC_VERSION),msvc)
     AUTOMATIC_PCH_OPTION =
     # VS2005 compiler, only with Platform SDK right now?
     GX_OPTION = -EHsc
+    GZ_OPTION = -RTC1
     ifeq ($(ARCH_DATA_MODEL), 32)
       CC_OPT/HIGHEST = -O2
       CC_OPT/HIGHER  = -O1
@@ -204,6 +217,23 @@ ifeq ($(CC_VERSION),msvc)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION =
     GX_OPTION = -EHsc
+    GZ_OPTION = -RTC1
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
+    else
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
+    endif
+  endif
+
+  ifeq ($(COMPILER_VERSION), VS2010)
+    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
+    AUTOMATIC_PCH_OPTION =
+    GX_OPTION = -EHsc
+    GZ_OPTION = -RTC1
     ifeq ($(ARCH_DATA_MODEL), 32)
       CC_OPT/HIGHEST = -O2
       CC_OPT/HIGHER  = -O1
@@ -282,6 +312,13 @@ ifeq ($(CC_VERSION),msvc)
   CFLAGS_OPT      = $(CC_OPT)
   CFLAGS_DBG      = -Od $(MS_RUNTIME_DEBUG_OPTION)
 
+  # REMIND: I don't see where CFLAGS_VS2005 is used. I suspect its
+  # pulled in as a combined "CFLAGS_$(COMPILER_VERSION)" string
+  # but the lack of this isn't causing any apparent build problems
+  # with VS 2010 but it could be causing compiler warnings.
+  # For now, I  will add it for all cases :
+  CFLAGS_VS2010 += -Zc:wchar_t-
+  #
   # Starting from VS2005 the wchar_t is handled as a built-in C/C++ data type
   # by default. However, we expect the wchar_t to be a typedef to the
   # unsigned short data type. The -Zc:wchar_t- option restores the old
@@ -317,6 +354,7 @@ ifeq ($(CC_VERSION),msvc)
 
   # VS2008 has bufferoverflow baked in:
   LFLAGS_VS2008 = 
+  LFLAGS_VS2010 = 
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
   BASELFLAGS = -nologo /opt:REF /incremental:no

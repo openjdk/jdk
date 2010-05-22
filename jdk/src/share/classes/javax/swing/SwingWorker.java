@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,10 @@ import sun.awt.AppContext;
 import sun.swing.AccumulativeRunnable;
 
 /**
- * An abstract class to perform lengthy GUI-interacting tasks in a
- * dedicated thread.
- *
+ * An abstract class to perform lengthy GUI-interaction tasks in a
+ * background thread. Several background threads can be used to execute such
+ * tasks. However, the exact strategy of choosing a thread for any particular
+ * {@code SwingWorker} is unspecified and should not be relied on.
  * <p>
  * When writing a multi-threaded application using Swing, there are
  * two constraints to keep in mind:
@@ -772,7 +773,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 };
 
             executorService =
-                new ThreadPoolExecutor(1, MAX_WORKER_THREADS,
+                new ThreadPoolExecutor(MAX_WORKER_THREADS, MAX_WORKER_THREADS,
                                        10L, TimeUnit.MINUTES,
                                        new LinkedBlockingQueue<Runnable>(),
                                        threadFactory);

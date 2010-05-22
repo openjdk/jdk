@@ -712,10 +712,10 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
     int sib_count = 0;
     while (sib != NULL) {
       if (sib == ik) {
-        fatal1("subclass cycle of length %d", sib_count);
+        fatal(err_msg("subclass cycle of length %d", sib_count));
       }
       if (sib_count >= 100000) {
-        fatal1("suspiciously long subclass list %d", sib_count);
+        fatal(err_msg("suspiciously long subclass list %d", sib_count));
       }
       guarantee(sib->as_klassOop()->is_klass(), "should be klass");
       guarantee(sib->as_klassOop()->is_perm(),  "should be in permspace");

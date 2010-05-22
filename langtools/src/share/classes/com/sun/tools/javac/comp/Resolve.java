@@ -345,7 +345,8 @@ public class Resolve {
 
         if (instNeeded)
             return
-            infer.instantiateMethod(tvars,
+            infer.instantiateMethod(env,
+                                    tvars,
                                     (MethodType)mt,
                                     argtypes,
                                     allowBoxing,
