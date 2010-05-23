@@ -340,7 +340,7 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
     Bytecodes::Code call_bc = iter.cur_bc();
     // An invokedynamic instruction does not have a klass.
     if (call_bc != Bytecodes::_invokedynamic) {
-      int index = iter.get_index_int();
+      int index = iter.get_index_u2_cpcache();
       if (!caller_method->is_klass_loaded(index, true)) {
         return false;
       }

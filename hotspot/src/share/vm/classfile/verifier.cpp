@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,13 +410,13 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_ldc :
           verify_ldc(
-            opcode, bcs.get_index(), &current_frame,
+            opcode, bcs.get_index_u1(), &current_frame,
             cp, bci, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_ldc_w :
         case Bytecodes::_ldc2_w :
           verify_ldc(
-            opcode, bcs.get_index_big(), &current_frame,
+            opcode, bcs.get_index_u2(), &current_frame,
             cp, bci, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_iload :
@@ -1182,7 +1182,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_new :
         {
-          index = bcs.get_index_big();
+          index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
           VerificationType new_class_type =
             cp_index_to_type(index, cp, CHECK_VERIFY(this));
@@ -1202,7 +1202,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_anewarray :
           verify_anewarray(
-            bcs.get_index_big(), cp, &current_frame, CHECK_VERIFY(this));
+            bcs.get_index_u2(), cp, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_arraylength :
           type = current_frame.pop_stack(
@@ -1215,7 +1215,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_checkcast :
         {
-          index = bcs.get_index_big();
+          index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
           current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
@@ -1225,7 +1225,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         }
         case Bytecodes::_instanceof : {
-          index = bcs.get_index_big();
+          index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
           current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
@@ -1240,7 +1240,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_multianewarray :
         {
-          index = bcs.get_index_big();
+          index = bcs.get_index_u2();
           u2 dim = *(bcs.bcp()+3);
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
           VerificationType new_array_type =
@@ -1299,7 +1299,7 @@ char* ClassVerifier::generate_code_data(methodHandle m, u4 code_length, TRAPS) {
   while (!bcs.is_last_bytecode()) {
     if (bcs.raw_next() != Bytecodes::_illegal) {
       int bci = bcs.bci();
-      if (bcs.code() == Bytecodes::_new) {
+      if (bcs.raw_code() == Bytecodes::_new) {
         code_data[bci] = NEW_OFFSET;
       } else {
         code_data[bci] = BYTECODE_OFFSET;
@@ -1654,7 +1654,7 @@ void ClassVerifier::verify_switch(
   int keys, delta;
   current_frame->pop_stack(
     VerificationType::integer_type(), CHECK_VERIFY(this));
-  if (bcs->code() == Bytecodes::_tableswitch) {
+  if (bcs->raw_code() == Bytecodes::_tableswitch) {
     jint low = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
     jint high = (jint)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
     if (low > high) {
@@ -1710,7 +1710,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
                                               StackMapFrame* current_frame,
                                               constantPoolHandle cp,
                                               TRAPS) {
-  u2 index = bcs->get_index_big();
+  u2 index = bcs->get_index_u2();
   verify_cp_type(index, cp, 1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
@@ -1750,7 +1750,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
     &sig_stream, field_type, CHECK_VERIFY(this));
   u2 bci = bcs->bci();
   bool is_assignable;
-  switch (bcs->code()) {
+  switch (bcs->raw_code()) {
     case Bytecodes::_getstatic: {
       for (int i = 0; i < n; i++) {
         current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
@@ -1870,7 +1870,7 @@ void ClassVerifier::verify_invoke_init(
         ref_class_type.name(), CHECK_VERIFY(this));
       methodOop m = instanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
-        cp->signature_ref_at(bcs->get_index_big()));
+        cp->signature_ref_at(bcs->get_index_u2()));
       instanceKlassHandle mh(THREAD, m->method_holder());
       if (m->is_protected() && !mh->is_same_class_package(_klass())) {
         bool assignable = current_type().is_assignable_from(
@@ -1893,8 +1893,8 @@ void ClassVerifier::verify_invoke_instructions(
     bool *this_uninit, VerificationType return_type,
     constantPoolHandle cp, TRAPS) {
   // Make sure the constant pool item is the right type
-  u2 index = bcs->get_index_big();
-  Bytecodes::Code opcode = bcs->code();
+  u2 index = bcs->get_index_u2();
+  Bytecodes::Code opcode = bcs->raw_code();
   unsigned int types = (opcode == Bytecodes::_invokeinterface
                                 ? 1 << JVM_CONSTANT_InterfaceMethodref
                       : opcode == Bytecodes::_invokedynamic

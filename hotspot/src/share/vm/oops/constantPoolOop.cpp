@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,11 +297,9 @@ int constantPoolOopDesc::impl_klass_ref_index_at(int which, bool uncached) {
 
 
 int constantPoolOopDesc::remap_instruction_operand_from_cache(int operand) {
-  // Operand was fetched by a stream using get_Java_u2, yet was stored
-  // by Rewriter::rewrite_member_reference in native order.
-  // So now we have to fix the damage by swapping back to native order.
-  assert((int)(u2)operand == operand, "clean u2");
-  int cpc_index = Bytes::swap_u2(operand);
+  int cpc_index = operand;
+  DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
+  assert((int)(u2)cpc_index == cpc_index, "clean u2");
   int member_index = cache()->entry_at(cpc_index)->constant_pool_index();
   return member_index;
 }

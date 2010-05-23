@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_multianewarray : // fall through
   case Bytecodes::_checkcast      : // fall through
   case Bytecodes::_instanceof     : {
-    u2 cpi_old = _s_old->get_index_big();
-    u2 cpi_new = _s_new->get_index_big();
+    u2 cpi_old = _s_old->get_index_u2();
+    u2 cpi_new = _s_new->get_index_u2();
     if ((_old_cp->klass_at_noresolve(cpi_old) != _new_cp->klass_at_noresolve(cpi_new)))
         return false;
     if (c_old == Bytecodes::_multianewarray &&
@@ -147,9 +147,10 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_invokevirtual   : // fall through
   case Bytecodes::_invokespecial   : // fall through
   case Bytecodes::_invokestatic    : // fall through
+  case Bytecodes::_invokedynamic   : // fall through
   case Bytecodes::_invokeinterface : {
-    u2 cpci_old = _s_old->get_index_int();
-    u2 cpci_new = _s_new->get_index_int();
+    u2 cpci_old = _s_old->has_index_u4() ? _s_old->get_index_u4() : _s_old->get_index_u2();
+    u2 cpci_new = _s_new->has_index_u4() ? _s_new->get_index_u4() : _s_new->get_index_u2();
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
@@ -167,8 +168,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
       cpi_old = _s_old->bcp()[1];
       cpi_new = _s_new->bcp()[1];
     } else {
-      cpi_old = _s_old->get_index_big();
-      cpi_new = _s_new->get_index_big();
+      cpi_old = _s_old->get_index_u2();
+      cpi_new = _s_new->get_index_u2();
     }
     constantTag tag_old = _old_cp->tag_at(cpi_old);
     constantTag tag_new = _new_cp->tag_at(cpi_new);
@@ -199,8 +200,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   }
 
   case Bytecodes::_ldc2_w : {
-    u2 cpi_old = _s_old->get_index_big();
-    u2 cpi_new = _s_new->get_index_big();
+    u2 cpi_old = _s_old->get_index_u2();
+    u2 cpi_new = _s_new->get_index_u2();
     constantTag tag_old = _old_cp->tag_at(cpi_old);
     constantTag tag_new = _new_cp->tag_at(cpi_new);
     if (tag_old.value() != tag_new.value())
@@ -221,7 +222,7 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
     break;
 
   case Bytecodes::_sipush    :
-    if (_s_old->get_index_big() != _s_new->get_index_big())
+    if (_s_old->get_index_u2() != _s_new->get_index_u2())
       return false;
     break;
 
@@ -260,8 +261,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_ifnonnull : // fall through
   case Bytecodes::_ifnull    : // fall through
   case Bytecodes::_jsr       : {
-    short old_ofs = (short) _s_old->get_index_big();
-    short new_ofs = (short) _s_new->get_index_big();
+    short old_ofs = (short) _s_old->get_index_u2();
+    short new_ofs = (short) _s_new->get_index_u2();
     if (_switchable_test) {
       int old_dest = _s_old->bci() + old_ofs;
       int new_dest = _s_new->bci() + new_ofs;
@@ -285,9 +286,11 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
     if (_s_old->is_wide() != _s_new->is_wide())
       return false;
     if (! _s_old->is_wide()) {
-      if (_s_old->get_index_big() != _s_new->get_index_big())
+      // We could use get_index_u1 and get_constant_u1, but it's simpler to grab both bytes at once:
+      if (Bytes::get_Java_u2(_s_old->bcp() + 1) != Bytes::get_Java_u2(_s_new->bcp() + 1))
         return false;
     } else {
+      // We could use get_index_u2 and get_constant_u2, but it's simpler to grab all four bytes at once:
       if (Bytes::get_Java_u4(_s_old->bcp() + 1) != Bytes::get_Java_u4(_s_new->bcp() + 1))
         return false;
     }
@@ -357,8 +360,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
         }
       }
     } else { // !_switchable_test, can use fast rough compare
-      int len_old = _s_old->next_bcp() - _s_old->bcp();
-      int len_new = _s_new->next_bcp() - _s_new->bcp();
+      int len_old = _s_old->instruction_size();
+      int len_new = _s_new->instruction_size();
       if (len_old != len_new)
         return false;
       if (memcmp(_s_old->bcp(), _s_new->bcp(), len_old) != 0)
