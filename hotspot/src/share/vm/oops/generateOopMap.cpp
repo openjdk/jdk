@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1254,7 +1254,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        int idx = currentBC->get_index_int();
+        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1286,7 +1286,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        int idx = currentBC->get_index_int();
+        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1356,8 +1356,8 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
 
     case Bytecodes::_ldc2_w:            ppush(vvCTS);               break;
 
-    case Bytecodes::_ldc:               do_ldc(itr->get_index(), itr->bci());    break;
-    case Bytecodes::_ldc_w:             do_ldc(itr->get_index_big(), itr->bci());break;
+    case Bytecodes::_ldc:               do_ldc(itr->get_index(),    itr->bci()); break;
+    case Bytecodes::_ldc_w:             do_ldc(itr->get_index_u2(), itr->bci()); break;
 
     case Bytecodes::_iload:
     case Bytecodes::_fload:             ppload(vCTS, itr->get_index()); break;
@@ -1550,17 +1550,17 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
     case Bytecodes::_getstatic:         do_field(true,  true,
-                                                 itr->get_index_big(),
+                                                 itr->get_index_u2_cpcache(),
                                                  itr->bci()); break;
-    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_big(), itr->bci()); break;
-    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_big(), itr->bci()); break;
-    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_big(), itr->bci()); break;
+    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
 
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_big(), itr->bci()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_big(), itr->bci()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_int(), itr->bci()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_big(), itr->bci()); break;
+    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci()); break;
+    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
