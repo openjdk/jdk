@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -740,6 +740,9 @@ public class KDC {
             Field f = KDCReqBody.class.getDeclaredField("eType");
             f.setAccessible(true);
             eTypes = (int[])f.get(body);
+            if (eTypes.length < 2) {
+                throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
+            }
             int eType = eTypes[0];
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);

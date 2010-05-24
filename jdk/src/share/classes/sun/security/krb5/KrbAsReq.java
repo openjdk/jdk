@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,16 +344,13 @@ public class KrbAsReq extends KrbKdcReq {
         princName = cname;
 
         EncryptionKey key = null;
-        int[] tktETypes = null;
+        int[] tktETypes = EType.getDefaults("default_tkt_enctypes");
         if (pa_exists && pa_etype != EncryptedData.ETYPE_NULL) {
             if (DEBUG) {
                 System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
             }
             key = EncryptionKey.findKey(pa_etype, keys);
-            tktETypes = new int[1];
-            tktETypes[0] = pa_etype;
         } else {
-            tktETypes = EType.getDefaults("default_tkt_enctypes", keys);
             key = EncryptionKey.findKey(tktETypes[0], keys);
         }
 
