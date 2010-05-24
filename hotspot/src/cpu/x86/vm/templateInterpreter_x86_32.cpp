@@ -214,7 +214,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ cmpb(Address(rsi, 0), Bytecodes::_invokedynamic);
     __ jcc(Assembler::equal, L_giant_index);
   }
-  __ get_cache_and_index_at_bcp(rbx, rcx, 1, false);
+  __ get_cache_and_index_at_bcp(rbx, rcx, 1, sizeof(u2));
   __ bind(L_got_cache);
   __ movl(rbx, Address(rbx, rcx,
                     Address::times_ptr, constantPoolCacheOopDesc::base_offset() +
@@ -226,7 +226,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // out of the main line of code...
   if (EnableInvokeDynamic) {
     __ bind(L_giant_index);
-    __ get_cache_and_index_at_bcp(rbx, rcx, 1, true);
+    __ get_cache_and_index_at_bcp(rbx, rcx, 1, sizeof(u4));
     __ jmp(L_got_cache);
   }
 

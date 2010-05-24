@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,11 +441,11 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
 }
 
 
-inline static RelocIterator parse_ic(CodeBlob* code, address ic_call, oop* &_oop_addr, bool *is_optimized) {
+inline static RelocIterator parse_ic(nmethod* nm, address ic_call, oop* &_oop_addr, bool *is_optimized) {
    address  first_oop = NULL;
    // Mergers please note: Sun SC5.x CC insists on an lvalue for a reference parameter.
-   CodeBlob *code1 = code;
-   return virtual_call_Relocation::parse_ic(code1, ic_call, first_oop, _oop_addr, is_optimized);
+   nmethod* tmp_nm = nm;
+   return virtual_call_Relocation::parse_ic(tmp_nm, ic_call, first_oop, _oop_addr, is_optimized);
 }
 
 CompiledIC::CompiledIC(NativeCall* ic_call)

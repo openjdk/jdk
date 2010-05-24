@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,3 +115,6 @@ REGISTER_DEFINITION(MMXRegister, mmx4 );
 REGISTER_DEFINITION(MMXRegister, mmx5 );
 REGISTER_DEFINITION(MMXRegister, mmx6 );
 REGISTER_DEFINITION(MMXRegister, mmx7 );
+
+// JSR 292
+REGISTER_DEFINITION(Register, rbp_mh_SP_save);

@@ -66,8 +66,6 @@ CodeBlob::CodeBlob(const char* name, int header_size, int size, int frame_comple
   _relocation_size       = locs_size;
   _instructions_offset   = align_code_offset(header_size + locs_size);
   _data_offset           = size;
-  _oops_offset           = size;
-  _oops_length           =  0;
   _frame_size            =  0;
   set_oop_maps(NULL);
 }
@@ -94,9 +92,6 @@ CodeBlob::CodeBlob(
   _relocation_size       = round_to(cb->total_relocation_size(), oopSize);
   _instructions_offset   = align_code_offset(header_size + _relocation_size);
   _data_offset           = _instructions_offset + round_to(cb->total_code_size(), oopSize);
-  _oops_offset           = _size - round_to(cb->total_oop_size(), oopSize);
-  _oops_length           = 0;  // temporary, until the copy_oops handshake
-  assert(_oops_offset >=   _data_offset, "codeBlob is too small");
   assert(_data_offset <= size, "codeBlob is too small");
 
   cb->copy_code_and_locs_to(this);
@@ -130,99 +125,6 @@ void CodeBlob::flush() {
   _comments.free();
 }
 
-
-// Promote one word from an assembly-time handle to a live embedded oop.
-inline void CodeBlob::initialize_immediate_oop(oop* dest, jobject handle) {
-  if (handle == NULL ||
-      // As a special case, IC oops are initialized to 1 or -1.
-      handle == (jobject) Universe::non_oop_word()) {
-    (*dest) = (oop)handle;
-  } else {
-    (*dest) = JNIHandles::resolve_non_null(handle);
-  }
-}
-
-
-void CodeBlob::copy_oops(GrowableArray<jobject>* array) {
-  assert(_oops_length == 0, "do this handshake just once, please");
-  int length = array->length();
-  assert((address)(oops_begin() + length) <= data_end(), "oops big enough");
-  oop* dest = oops_begin();
-  for (int index = 0 ; index < length; index++) {
-    initialize_immediate_oop(&dest[index], array->at(index));
-  }
-  _oops_length = length;
-
-  // Now we can fix up all the oops in the code.
-  // We need to do this in the code because
-  // the assembler uses jobjects as placeholders.
-  // The code and relocations have already been
-  // initialized by the CodeBlob constructor,
-  // so it is valid even at this early point to
-  // iterate over relocations and patch the code.
-  fix_oop_relocations(NULL, NULL, /*initialize_immediates=*/ true);
-}
-
-
-relocInfo::relocType CodeBlob::reloc_type_for_address(address pc) {
-  RelocIterator iter(this, pc, pc+1);
-  while (iter.next()) {
-    return (relocInfo::relocType) iter.type();
-  }
-  // No relocation info found for pc
-  ShouldNotReachHere();
-  return relocInfo::none; // dummy return value
-}
-
-
-bool CodeBlob::is_at_poll_return(address pc) {
-  RelocIterator iter(this, pc, pc+1);
-  while (iter.next()) {
-    if (iter.type() == relocInfo::poll_return_type)
-      return true;
-  }
-  return false;
-}
-
-
-bool CodeBlob::is_at_poll_or_poll_return(address pc) {
-  RelocIterator iter(this, pc, pc+1);
-  while (iter.next()) {
-    relocInfo::relocType t = iter.type();
-    if (t == relocInfo::poll_return_type || t == relocInfo::poll_type)
-      return true;
-  }
-  return false;
-}
-
-
-void CodeBlob::fix_oop_relocations(address begin, address end,
-                                   bool initialize_immediates) {
-  // re-patch all oop-bearing instructions, just in case some oops moved
-  RelocIterator iter(this, begin, end);
-  while (iter.next()) {
-    if (iter.type() == relocInfo::oop_type) {
-      oop_Relocation* reloc = iter.oop_reloc();
-      if (initialize_immediates && reloc->oop_is_immediate()) {
-        oop* dest = reloc->oop_addr();
-        initialize_immediate_oop(dest, (jobject) *dest);
-      }
-      // Refresh the oop-related bits of this instruction.
-      reloc->fix_oop_relocation();
-    }
-
-    // There must not be any interfering patches or breakpoints.
-    assert(!(iter.type() == relocInfo::breakpoint_type
-             && iter.breakpoint_reloc()->active()),
-           "no active breakpoint");
-  }
-}
-
-void CodeBlob::do_unloading(BoolObjectClosure* is_alive,
-                            OopClosure* keep_alive,
-                            bool unloading_occurred) {
-  ShouldNotReachHere();
-}
 
 OopMap* CodeBlob::oop_map_for_return_address(address return_address) {
   address pc = return_address ;
