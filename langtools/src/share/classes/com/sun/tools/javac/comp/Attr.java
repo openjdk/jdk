@@ -988,6 +988,13 @@ public class Attr extends JCTree.Visitor {
             Env<AttrContext> catchEnv =
                 env.dup(c, env.info.dup(env.info.scope.dup()));
             Type ctype = attribStat(c.param, catchEnv);
+            if (TreeInfo.isMultiCatch(c)) {
+                //check that multi-catch parameter is marked as final
+                if ((c.param.sym.flags() & FINAL) == 0) {
+                    log.error(c.param.pos(), "multicatch.param.must.be.final", c.param.sym);
+                }
+                c.param.sym.flags_field = c.param.sym.flags() | DISJOINT;
+            }
             if (c.param.type.tsym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
             }
@@ -2621,12 +2628,10 @@ public class Attr extends JCTree.Visitor {
             }
             if (useVarargs) {
                 JCTree tree = env.tree;
-                Type argtype = owntype.getParameterTypes().last();
-                if (!types.isReifiable(argtype))
-                    chk.warnUnchecked(env.tree.pos(),
-                                      "unchecked.generic.array.creation",
-                                      argtype);
-                Type elemtype = types.elemtype(argtype);
+                if (owntype.getReturnType().tag != FORALL || warned) {
+                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes());
+                }
+                Type elemtype = types.elemtype(owntype.getParameterTypes().last());
                 switch (tree.getTag()) {
                 case JCTree.APPLY:
                     ((JCMethodInvocation) tree).varargsElement = elemtype;
@@ -2735,6 +2740,11 @@ public class Attr extends JCTree.Visitor {
             }
         }
         result = check(tree, owntype, TYP, pkind, pt);
+    }
+
+    public void visitTypeDisjoint(JCTypeDisjoint tree) {
+        List<Type> componentTypes = attribTypes(tree.components, env);
+        tree.type = result = check(tree, types.lub(componentTypes), TYP, pkind, pt);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {

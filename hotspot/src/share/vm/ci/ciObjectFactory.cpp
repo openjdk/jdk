@@ -103,7 +103,7 @@ void ciObjectFactory::init_shared_objects() {
     for (i = vmSymbols::FIRST_SID; i < vmSymbols::SID_LIMIT; i++) {
       symbolHandle sym_handle = vmSymbolHandles::symbol_handle_at((vmSymbols::SID) i);
       assert(vmSymbols::find_sid(sym_handle()) == i, "1-1 mapping");
-      ciSymbol* sym = new (_arena) ciSymbol(sym_handle);
+      ciSymbol* sym = new (_arena) ciSymbol(sym_handle, (vmSymbols::SID) i);
       init_ident_of(sym);
       _shared_ci_symbols[i] = sym;
     }
@@ -273,7 +273,8 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
 
   if (o->is_symbol()) {
     symbolHandle h_o(THREAD, (symbolOop)o);
-    return new (arena()) ciSymbol(h_o);
+    assert(vmSymbols::find_sid(h_o()) == vmSymbols::NO_SID, "");
+    return new (arena()) ciSymbol(h_o, vmSymbols::NO_SID);
   } else if (o->is_klass()) {
     KlassHandle h_k(THREAD, (klassOop)o);
     Klass* k = ((klassOop)o)->klass_part();

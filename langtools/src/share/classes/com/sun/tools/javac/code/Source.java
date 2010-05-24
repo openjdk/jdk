@@ -125,6 +125,9 @@ public enum Source {
     public boolean allowDiamond() {
         return compareTo(JDK1_7) >= 0;
     }
+    public boolean allowMulticatch() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public boolean allowEnums() {
         return compareTo(JDK1_5) >= 0;
     }

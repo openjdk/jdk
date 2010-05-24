@@ -30,8 +30,7 @@
 BUILDDIR = ../..
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = org core
+SUBDIRS = org
 all build clean clobber::
 	$(SUBDIRS-loop)
-	$(RM) -r $(CLASSBINDIR)/com/sun/corba/se/internal/io
 

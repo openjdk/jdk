@@ -334,7 +334,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         }
         break;
       default:
-        fatal1("bad constant pool tag value %u", cp->tag_at(index).value());
+        fatal(err_msg("bad constant pool tag value %u",
+                      cp->tag_at(index).value()));
         ShouldNotReachHere();
         break;
     } // end of switch
@@ -1837,7 +1838,8 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
     _has_vanilla_constructor = true;
   }
 
-  if (EnableMethodHandles && m->is_method_handle_invoke()) {
+  if (EnableMethodHandles && (m->is_method_handle_invoke() ||
+                              m->is_method_handle_adapter())) {
     THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
                "Method handle invokers must be defined internally to the VM", nullHandle);
   }
