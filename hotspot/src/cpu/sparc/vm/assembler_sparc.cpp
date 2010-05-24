@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2333,6 +2333,18 @@ void MacroAssembler::lcmp( Register Ra, Register Rb, Register Rresult) {
 #endif
 
 
+void MacroAssembler::load_sized_value(Address src, Register dst,
+                                      size_t size_in_bytes, bool is_signed) {
+  switch (size_in_bytes) {
+  case  8: ldx(src, dst); break;
+  case  4: ld( src, dst); break;
+  case  2: is_signed ? ldsh(src, dst) : lduh(src, dst); break;
+  case  1: is_signed ? ldsb(src, dst) : ldub(src, dst); break;
+  default: ShouldNotReachHere();
+  }
+}
+
+
 void MacroAssembler::float_cmp( bool is_float, int unordered_result,
                                 FloatRegister Fa, FloatRegister Fb,
                                 Register Rresult) {
@@ -2625,40 +2637,103 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 }
 
 
-void MacroAssembler::regcon_inc_ptr( RegisterOrConstant& dest, RegisterOrConstant src, Register temp ) {
-  assert(dest.register_or_noreg() != G0, "lost side effect");
-  if ((src.is_constant() && src.as_constant() == 0) ||
-      (src.is_register() && src.as_register() == G0)) {
-    // do nothing
-  } else if (dest.is_register()) {
-    add(dest.as_register(), ensure_simm13_or_reg(src, temp), dest.as_register());
-  } else if (src.is_constant()) {
-    intptr_t res = dest.as_constant() + src.as_constant();
-    dest = RegisterOrConstant(res); // side effect seen by caller
+RegisterOrConstant MacroAssembler::regcon_andn_ptr(RegisterOrConstant s1, RegisterOrConstant s2, RegisterOrConstant d, Register temp) {
+  assert(d.register_or_noreg() != G0, "lost side effect");
+  if ((s2.is_constant() && s2.as_constant() == 0) ||
+      (s2.is_register() && s2.as_register() == G0)) {
+    // Do nothing, just move value.
+    if (s1.is_register()) {
+      if (d.is_constant())  d = temp;
+      mov(s1.as_register(), d.as_register());
+      return d;
+    } else {
+      return s1;
+    }
+  }
+
+  if (s1.is_register()) {
+    assert_different_registers(s1.as_register(), temp);
+    if (d.is_constant())  d = temp;
+    andn(s1.as_register(), ensure_simm13_or_reg(s2, temp), d.as_register());
+    return d;
   } else {
-    assert(temp != noreg, "cannot handle constant += register");
-    add(src.as_register(), ensure_simm13_or_reg(dest, temp), temp);
-    dest = RegisterOrConstant(temp); // side effect seen by caller
+    if (s2.is_register()) {
+      assert_different_registers(s2.as_register(), temp);
+      if (d.is_constant())  d = temp;
+      set(s1.as_constant(), temp);
+      andn(temp, s2.as_register(), d.as_register());
+      return d;
+    } else {
+      intptr_t res = s1.as_constant() & ~s2.as_constant();
+      return res;
+    }
   }
 }
 
-void MacroAssembler::regcon_sll_ptr( RegisterOrConstant& dest, RegisterOrConstant src, Register temp ) {
-  assert(dest.register_or_noreg() != G0, "lost side effect");
-  if (!is_simm13(src.constant_or_zero()))
-    src = (src.as_constant() & 0xFF);
-  if ((src.is_constant() && src.as_constant() == 0) ||
-      (src.is_register() && src.as_register() == G0)) {
-    // do nothing
-  } else if (dest.is_register()) {
-    sll_ptr(dest.as_register(), src, dest.as_register());
-  } else if (src.is_constant()) {
-    intptr_t res = dest.as_constant() << src.as_constant();
-    dest = RegisterOrConstant(res); // side effect seen by caller
+RegisterOrConstant MacroAssembler::regcon_inc_ptr(RegisterOrConstant s1, RegisterOrConstant s2, RegisterOrConstant d, Register temp) {
+  assert(d.register_or_noreg() != G0, "lost side effect");
+  if ((s2.is_constant() && s2.as_constant() == 0) ||
+      (s2.is_register() && s2.as_register() == G0)) {
+    // Do nothing, just move value.
+    if (s1.is_register()) {
+      if (d.is_constant())  d = temp;
+      mov(s1.as_register(), d.as_register());
+      return d;
+    } else {
+      return s1;
+    }
+  }
+
+  if (s1.is_register()) {
+    assert_different_registers(s1.as_register(), temp);
+    if (d.is_constant())  d = temp;
+    add(s1.as_register(), ensure_simm13_or_reg(s2, temp), d.as_register());
+    return d;
   } else {
-    assert(temp != noreg, "cannot handle constant <<= register");
-    set(dest.as_constant(), temp);
-    sll_ptr(temp, src, temp);
-    dest = RegisterOrConstant(temp); // side effect seen by caller
+    if (s2.is_register()) {
+      assert_different_registers(s2.as_register(), temp);
+      if (d.is_constant())  d = temp;
+      add(s2.as_register(), ensure_simm13_or_reg(s1, temp), d.as_register());
+      return d;
+    } else {
+      intptr_t res = s1.as_constant() + s2.as_constant();
+      return res;
+    }
+  }
+}
+
+RegisterOrConstant MacroAssembler::regcon_sll_ptr(RegisterOrConstant s1, RegisterOrConstant s2, RegisterOrConstant d, Register temp) {
+  assert(d.register_or_noreg() != G0, "lost side effect");
+  if (!is_simm13(s2.constant_or_zero()))
+    s2 = (s2.as_constant() & 0xFF);
+  if ((s2.is_constant() && s2.as_constant() == 0) ||
+      (s2.is_register() && s2.as_register() == G0)) {
+    // Do nothing, just move value.
+    if (s1.is_register()) {
+      if (d.is_constant())  d = temp;
+      mov(s1.as_register(), d.as_register());
+      return d;
+    } else {
+      return s1;
+    }
+  }
+
+  if (s1.is_register()) {
+    assert_different_registers(s1.as_register(), temp);
+    if (d.is_constant())  d = temp;
+    sll_ptr(s1.as_register(), ensure_simm13_or_reg(s2, temp), d.as_register());
+    return d;
+  } else {
+    if (s2.is_register()) {
+      assert_different_registers(s2.as_register(), temp);
+      if (d.is_constant())  d = temp;
+      set(s1.as_constant(), temp);
+      sll_ptr(temp, s2.as_register(), d.as_register());
+      return d;
+    } else {
+      intptr_t res = s1.as_constant() << s2.as_constant();
+      return res;
+    }
   }
 }
 
@@ -2708,8 +2783,8 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
   RegisterOrConstant itable_offset = itable_index;
-  regcon_sll_ptr(itable_offset, exact_log2(itableMethodEntry::size() * wordSize));
-  regcon_inc_ptr(itable_offset, itableMethodEntry::method_offset_in_bytes());
+  itable_offset = regcon_sll_ptr(itable_index, exact_log2(itableMethodEntry::size() * wordSize), itable_offset);
+  itable_offset = regcon_inc_ptr(itable_offset, itableMethodEntry::method_offset_in_bytes(), itable_offset);
   add(recv_klass, ensure_simm13_or_reg(itable_offset, sethi_temp), recv_klass);
 
   // for (scan = klass->itable(); scan->interface() != NULL; scan += scan_step) {
@@ -2805,7 +2880,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
   assert_different_registers(sub_klass, super_klass, temp_reg);
   if (super_check_offset.is_register()) {
-    assert_different_registers(sub_klass, super_klass,
+    assert_different_registers(sub_klass, super_klass, temp_reg,
                                super_check_offset.as_register());
   } else if (must_load_sco) {
     assert(temp2_reg != noreg, "supply either a temp or a register offset");
@@ -2855,6 +2930,8 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
     // The super check offset is always positive...
     lduw(super_klass, sco_offset, temp2_reg);
     super_check_offset = RegisterOrConstant(temp2_reg);
+    // super_check_offset is register.
+    assert_different_registers(sub_klass, super_klass, temp_reg, super_check_offset.as_register());
   }
   ld_ptr(sub_klass, super_check_offset, temp_reg);
   cmp(super_klass, temp_reg);
@@ -3014,11 +3091,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 }
 
 
-
-
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
+  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
   assert_different_registers(mtype_reg, mh_reg, temp_reg);
   // compare method type against that of the receiver
   RegisterOrConstant mhtype_offset = delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg);
@@ -3029,9 +3105,32 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
 }
 
 
-void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_reg) {
+// A method handle has a "vmslots" field which gives the size of its
+// argument list in JVM stack slots.  This field is either located directly
+// in every method handle, or else is indirectly accessed through the
+// method handle's MethodType.  This macro hides the distinction.
+void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
+                                                Register temp_reg) {
+  assert_different_registers(vmslots_reg, mh_reg, temp_reg);
+  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
+  // load mh.type.form.vmslots
+  if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
+    // hoist vmslots into every mh to avoid dependent load chain
+    ld(    Address(mh_reg,    delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)),   vmslots_reg);
+  } else {
+    Register temp2_reg = vmslots_reg;
+    ld_ptr(Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
+    ld_ptr(Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
+    ld(    Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
+  }
+}
+
+
+void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_reg, bool emit_delayed_nop) {
   assert(mh_reg == G3_method_handle, "caller must put MH object in G3");
   assert_different_registers(mh_reg, temp_reg);
+
+  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
 
   // pick out the interpreted side of the handler
   ld_ptr(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg), temp_reg);
@@ -3043,17 +3142,18 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
   // for the various stubs which take control at this point,
   // see MethodHandles::generate_method_handle_stub
 
-  // (Can any caller use this delay slot?  If so, add an option for supression.)
-  delayed()->nop();
+  // Some callers can fill the delay slot.
+  if (emit_delayed_nop) {
+    delayed()->nop();
+  }
 }
+
 
 RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
                                                    int extra_slot_offset) {
   // cf. TemplateTable::prepare_invoke(), if (load_receiver).
-  int stackElementSize = Interpreter::stackElementWords() * wordSize;
-  int offset = Interpreter::expr_offset_in_bytes(extra_slot_offset+0);
-  int offset1 = Interpreter::expr_offset_in_bytes(extra_slot_offset+1);
-  assert(offset1 - offset == stackElementSize, "correct arithmetic");
+  int stackElementSize = Interpreter::stackElementSize;
+  int offset = extra_slot_offset * stackElementSize;
   if (arg_slot.is_constant()) {
     offset += arg_slot.as_constant() * stackElementSize;
     return offset;
@@ -3066,6 +3166,11 @@ RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
   }
 }
 
+
+Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
+                                         int extra_slot_offset) {
+  return Address(Gargs, argument_offset(arg_slot, extra_slot_offset));
+}
 
 
 void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
@@ -4082,7 +4187,7 @@ static int EnqueueCodeSize = 128 DEBUG_ONLY( + 256); // Instructions?
 // make it work.
 static void check_index(int ind) {
   assert(0 <= ind && ind <= 64*K && ((ind % oopSize) == 0),
-         "Invariants.")
+         "Invariants.");
 }
 
 static void generate_satb_log_enqueue(bool with_frame) {

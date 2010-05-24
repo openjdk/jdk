@@ -1173,9 +1173,9 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   // has no receiver, normal MH calls do.
   int flags_bits;
   if (for_invokedynamic())
-    flags_bits = (/*JVM_MH_INVOKE_BITS |*/ JVM_ACC_PUBLIC | JVM_ACC_FINAL | JVM_ACC_STATIC);
+    flags_bits = (/*JVM_MH_INVOKE_BITS |*/ JVM_ACC_PUBLIC | JVM_ACC_FINAL | JVM_ACC_SYNTHETIC | JVM_ACC_STATIC);
   else
-    flags_bits = (/*JVM_MH_INVOKE_BITS |*/ JVM_ACC_PUBLIC | JVM_ACC_FINAL);
+    flags_bits = (/*JVM_MH_INVOKE_BITS |*/ JVM_ACC_PUBLIC | JVM_ACC_FINAL | JVM_ACC_SYNTHETIC);
 
   bool is_conc_safe = true;
   methodOop m_oop = oopFactory::new_method(bytecode_length(),
@@ -1217,6 +1217,7 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   }
 #endif //PRODUCT
 
+  assert(m->is_method_handle_adapter(), "must be recognized as an adapter");
   return m;
 }
 

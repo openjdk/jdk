@@ -966,7 +966,7 @@ methodOop instanceKlass::find_method(objArrayOop methods, symbolOop name, symbol
       // not found
 #ifdef ASSERT
       int index = linear_search(methods, name, signature);
-      if (index != -1) fatal1("binary search bug: should have found entry %d", index);
+      assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
       return NULL;
     } else if (res < 0) {
@@ -977,7 +977,7 @@ methodOop instanceKlass::find_method(objArrayOop methods, symbolOop name, symbol
   }
 #ifdef ASSERT
   int index = linear_search(methods, name, signature);
-  if (index != -1) fatal1("binary search bug: should have found entry %d", index);
+  assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
   return NULL;
 }

@@ -477,12 +477,7 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
   }
   int new_depth_adjust = 0;
   if (caller_jvms->method() != NULL) {
-    if ((caller_jvms->method()->name() == ciSymbol::invoke_name() &&
-         caller_jvms->method()->holder()->name() == ciSymbol::java_dyn_MethodHandle())
-        || caller_jvms->method()->holder()->name() == ciSymbol::java_dyn_InvokeDynamic())
-      /* @@@ FIXME:
     if (caller_jvms->method()->is_method_handle_adapter())
-      */
       new_depth_adjust -= 1;  // don't count actions in MH or indy adapter frames
     else if (callee_method->is_method_handle_invoke()) {
       new_depth_adjust -= 1;  // don't count method handle calls from java.dyn implem

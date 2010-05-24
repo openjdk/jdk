@@ -325,7 +325,7 @@ void ASParNewGeneration::resize_spaces(size_t requested_eden_size,
 
     eden_size = align_size_down(eden_size, alignment);
     eden_end = eden_start + eden_size;
-    assert(eden_end >= eden_start, "addition overflowed")
+    assert(eden_end >= eden_start, "addition overflowed");
 
     // To may resize into from space as long as it is clear of live data.
     // From space must remain page aligned, though, so we need to do some

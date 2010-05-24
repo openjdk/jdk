@@ -410,9 +410,9 @@ bool GenCollectedHeap::must_clear_all_soft_refs() {
 }
 
 bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
-  return (cause == GCCause::_java_lang_system_gc ||
-          cause == GCCause::_gc_locker) &&
-         UseConcMarkSweepGC && ExplicitGCInvokesConcurrent;
+  return UseConcMarkSweepGC &&
+         ((cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
+          (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
 
 void GenCollectedHeap::do_collection(bool  full,
