@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,8 +226,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
 // not yet been executed (in Java semantics, not in actual operation).
 bool AbstractInterpreter::is_not_reached(methodHandle method, int bci) {
   address bcp = method->bcp_from(bci);
+  Bytecodes::Code code = Bytecodes::code_at(bcp, method());
 
-  if (!Bytecode_at(bcp)->must_rewrite()) {
+  if (!Bytecode_at(bcp)->must_rewrite(code)) {
     // might have been reached
     return false;
   }

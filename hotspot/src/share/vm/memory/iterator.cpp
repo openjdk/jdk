@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ MarkingCodeBlobClosure::MarkScope::~MarkScope() {
 }
 
 void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  if (!cb->is_nmethod())  return;
-  nmethod* nm = (nmethod*) cb;
+  nmethod* nm = cb->as_nmethod_or_null();
+  if (nm == NULL)  return;
   if (!nm->test_set_oops_do_mark()) {
     NOT_PRODUCT(if (TraceScavenge)  nm->print_on(tty, "oops_do, 1st visit\n"));
     do_newly_marked_nmethod(nm);
@@ -74,11 +74,14 @@ void CodeBlobToOopClosure::do_newly_marked_nmethod(nmethod* nm) {
 
 void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {
   if (!_do_marking) {
-    NOT_PRODUCT(if (TraceScavenge && Verbose && cb->is_nmethod())  ((nmethod*)cb)->print_on(tty, "oops_do, unmarked visit\n"));
+    nmethod* nm = cb->as_nmethod_or_null();
+    NOT_PRODUCT(if (TraceScavenge && Verbose && nm != NULL)  nm->print_on(tty, "oops_do, unmarked visit\n"));
     // This assert won't work, since there are lots of mini-passes
     // (mostly in debug mode) that co-exist with marking phases.
     //assert(!(cb->is_nmethod() && ((nmethod*)cb)->test_oops_do_mark()), "found marked nmethod during mark-free phase");
-    cb->oops_do(_cl);
+    if (nm != NULL) {
+      nm->oops_do(_cl);
+    }
   } else {
     MarkingCodeBlobClosure::do_code_blob(cb);
   }

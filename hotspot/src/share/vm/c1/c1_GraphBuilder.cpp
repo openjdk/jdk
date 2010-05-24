@@ -2438,13 +2438,13 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_invokestatic   : // fall through
       case Bytecodes::_invokedynamic  : // fall through
       case Bytecodes::_invokeinterface: invoke(code); break;
-      case Bytecodes::_new            : new_instance(s.get_index_big()); break;
+      case Bytecodes::_new            : new_instance(s.get_index_u2()); break;
       case Bytecodes::_newarray       : new_type_array(); break;
       case Bytecodes::_anewarray      : new_object_array(); break;
       case Bytecodes::_arraylength    : ipush(append(new ArrayLength(apop(), lock_stack()))); break;
       case Bytecodes::_athrow         : throw_op(s.cur_bci()); break;
-      case Bytecodes::_checkcast      : check_cast(s.get_index_big()); break;
-      case Bytecodes::_instanceof     : instance_of(s.get_index_big()); break;
+      case Bytecodes::_checkcast      : check_cast(s.get_index_u2()); break;
+      case Bytecodes::_instanceof     : instance_of(s.get_index_u2()); break;
       // Note: we do not have special handling for the monitorenter bytecode if DeoptC1 && DeoptOnAsyncException
       case Bytecodes::_monitorenter   : monitorenter(apop(), s.cur_bci()); break;
       case Bytecodes::_monitorexit    : monitorexit (apop(), s.cur_bci()); break;

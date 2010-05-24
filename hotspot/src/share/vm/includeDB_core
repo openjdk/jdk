@@ -827,6 +827,7 @@ ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
 ciStreams.cpp                           ciUtilities.hpp
 
+ciStreams.hpp                           bytecode.hpp
 ciStreams.hpp                           ciClassList.hpp
 ciStreams.hpp                           ciExceptionHandler.hpp
 ciStreams.hpp                           ciInstanceKlass.hpp

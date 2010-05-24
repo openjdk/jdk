@@ -1033,8 +1033,9 @@ class LIR_OpJavaCall: public LIR_OpCall {
  friend class LIR_OpVisitState;
 
  private:
-  ciMethod*       _method;
-  LIR_Opr         _receiver;
+  ciMethod* _method;
+  LIR_Opr   _receiver;
+  LIR_Opr   _method_handle_invoke_SP_save_opr;  // Used in LIR_OpVisitState::visit to store the reference to FrameMap::method_handle_invoke_SP_save_opr.
 
  public:
   LIR_OpJavaCall(LIR_Code code, ciMethod* method,
@@ -1043,14 +1044,18 @@ class LIR_OpJavaCall: public LIR_OpCall {
                  CodeEmitInfo* info)
   : LIR_OpCall(code, addr, result, arguments, info)
   , _receiver(receiver)
-  , _method(method)          { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
+  , _method(method)
+  , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
+  { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
   LIR_OpJavaCall(LIR_Code code, ciMethod* method,
                  LIR_Opr receiver, LIR_Opr result, intptr_t vtable_offset,
                  LIR_OprList* arguments, CodeEmitInfo* info)
   : LIR_OpCall(code, (address)vtable_offset, result, arguments, info)
   , _receiver(receiver)
-  , _method(method)          { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
+  , _method(method)
+  , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
+  { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
   LIR_Opr receiver() const                       { return _receiver; }
   ciMethod* method() const                       { return _method;   }

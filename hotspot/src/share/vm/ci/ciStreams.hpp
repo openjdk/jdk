@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,16 @@
 // their original form during iteration.
 class ciBytecodeStream : StackObj {
 private:
- // Handling for the weird bytecodes
-  Bytecodes::Code wide();       // Handle wide bytecode
-  Bytecodes::Code table(Bytecodes::Code); // Handle complicated inline table
+  // Handling for the weird bytecodes
+  Bytecodes::Code next_wide_or_table(Bytecodes::Code); // Handle _wide & complicated inline table
 
   static Bytecodes::Code check_java(Bytecodes::Code c) {
     assert(Bytecodes::is_java_code(c), "should not return _fast bytecodes");
+    return c;
+  }
+
+  static Bytecodes::Code check_defined(Bytecodes::Code c) {
+    assert(Bytecodes::is_defined(c), "");
     return c;
   }
 
@@ -50,10 +54,20 @@ private:
   address _end;                    // Past end of bytecodes
   address _pc;                     // Current PC
   Bytecodes::Code _bc;             // Current bytecode
+  Bytecodes::Code _raw_bc;         // Current bytecode, raw form
 
   void reset( address base, unsigned int size ) {
     _bc_start =_was_wide = 0;
     _start = _pc = base; _end = base + size; }
+
+  void assert_wide(bool require_wide) const {
+    if (require_wide)
+         { assert(is_wide(),  "must be a wide instruction"); }
+    else { assert(!is_wide(), "must not be a wide instruction"); }
+  }
+
+  Bytecode* bytecode() const { return Bytecode_at(_bc_start); }
+  Bytecode* next_bytecode() const { return Bytecode_at(_pc); }
 
 public:
   // End-Of-Bytecodes
@@ -92,11 +106,12 @@ public:
   }
 
   address cur_bcp() const       { return _bc_start; }  // Returns bcp to current instruction
-  int next_bci() const          { return _pc -_start; }
+  int next_bci() const          { return _pc - _start; }
   int cur_bci() const           { return _bc_start - _start; }
   int instruction_size() const  { return _pc - _bc_start; }
 
   Bytecodes::Code cur_bc() const{ return check_java(_bc); }
+  Bytecodes::Code cur_bc_raw() const { return check_defined(_raw_bc); }
   Bytecodes::Code next_bc()     { return Bytecodes::java_code((Bytecodes::Code)* _pc); }
 
   // Return current ByteCode and increment PC to next bytecode, skipping all
@@ -109,85 +124,76 @@ public:
 
     // Fetch Java bytecode
     // All rewritten bytecodes maintain the size of original bytecode.
-    _bc = Bytecodes::java_code((Bytecodes::Code)*_pc);
+    _bc = Bytecodes::java_code(_raw_bc = (Bytecodes::Code)*_pc);
     int csize = Bytecodes::length_for(_bc); // Expected size
-
-    if( _bc == Bytecodes::_wide ) {
-      _bc=wide();                           // Handle wide bytecode
-    } else if( csize == 0 ) {
-      _bc=table(_bc);                       // Handle inline tables
-    } else {
-      _pc += csize;                         // Bump PC past bytecode
+    _pc += csize;                           // Bump PC past bytecode
+    if (csize == 0) {
+      _bc = next_wide_or_table(_bc);
     }
     return check_java(_bc);
   }
 
   bool is_wide() const { return ( _pc == _was_wide ); }
 
+  // Does this instruction contain an index which refes into the CP cache?
+  bool uses_cp_cache() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
+
+  int get_index_u1() const {
+    return bytecode()->get_index_u1(cur_bc_raw());
+  }
+
   // Get a byte index following this bytecode.
   // If prefixed with a wide bytecode, get a wide index.
   int get_index() const {
-    assert_index_size(is_wide() ? 2 : 1);
     return (_pc == _was_wide)   // was widened?
-      ? Bytes::get_Java_u2(_bc_start+2) // yes, return wide index
-      : _bc_start[1];           // no, return narrow index
+      ? get_index_u2(true)      // yes, return wide index
+      : get_index_u1();         // no, return narrow index
   }
 
-  // Get 2-byte index (getfield/putstatic/etc)
-  int get_index_big() const {
-    assert_index_size(2);
-    return Bytes::get_Java_u2(_bc_start+1);
+  // Get 2-byte index (byte swapping depending on which bytecode)
+  int get_index_u2(bool is_wide = false) const {
+    return bytecode()->get_index_u2(cur_bc_raw(), is_wide);
   }
 
-  // Get 2-byte index (or 4-byte, for invokedynamic)
-  int get_index_int() const {
-    return has_giant_index() ? get_index_giant() : get_index_big();
+  // Get 2-byte index in native byte order.  (Rewriter::rewrite makes these.)
+  int get_index_u2_cpcache() const {
+    return bytecode()->get_index_u2_cpcache(cur_bc_raw());
   }
 
   // Get 4-byte index, for invokedynamic.
-  int get_index_giant() const {
-    assert_index_size(4);
-    return Bytes::get_native_u4(_bc_start+1);
+  int get_index_u4() const {
+    return bytecode()->get_index_u4(cur_bc_raw());
   }
 
-  bool has_giant_index() const { return (cur_bc() == Bytecodes::_invokedynamic); }
+  bool has_index_u4() const {
+    return bytecode()->has_index_u4(cur_bc_raw());
+  }
 
   // Get dimensions byte (multinewarray)
   int get_dimensions() const { return *(unsigned char*)(_pc-1); }
 
   // Sign-extended index byte/short, no widening
-  int get_byte() const { return (int8_t)(_pc[-1]); }
-  int get_short() const { return (int16_t)Bytes::get_Java_u2(_pc-2); }
-  int get_long() const  { return (int32_t)Bytes::get_Java_u4(_pc-4); }
+  int get_constant_u1()                     const { return bytecode()->get_constant_u1(instruction_size()-1, cur_bc_raw()); }
+  int get_constant_u2(bool is_wide = false) const { return bytecode()->get_constant_u2(instruction_size()-2, cur_bc_raw(), is_wide); }
 
   // Get a byte signed constant for "iinc".  Invalid for other bytecodes.
   // If prefixed with a wide bytecode, get a wide constant
-  int get_iinc_con() const {return (_pc==_was_wide) ? get_short() :get_byte();}
+  int get_iinc_con() const {return (_pc==_was_wide) ? (jshort) get_constant_u2(true) : (jbyte) get_constant_u1();}
 
   // 2-byte branch offset from current pc
-  int get_dest( ) const {
-    assert( Bytecodes::length_at(_bc_start) == sizeof(jshort)+1,  "get_dest called with bad bytecode" );
-    return _bc_start-_start + (short)Bytes::get_Java_u2(_pc-2);
+  int get_dest() const {
+    return cur_bci() + bytecode()->get_offset_s2(cur_bc_raw());
   }
 
   // 2-byte branch offset from next pc
-  int next_get_dest( ) const {
-    address next_bc_start = _pc;
-    assert( _pc < _end, "" );
-    Bytecodes::Code next_bc = (Bytecodes::Code)*_pc;
-    assert( next_bc != Bytecodes::_wide, "");
-    int next_csize = Bytecodes::length_for(next_bc);
-    assert( next_csize != 0, "" );
-    assert( next_bc <= Bytecodes::_jsr_w, "");
-    address next_pc = _pc + next_csize;
-    assert( Bytecodes::length_at(next_bc_start) == sizeof(jshort)+1,  "next_get_dest called with bad bytecode" );
-    return next_bc_start-_start + (short)Bytes::get_Java_u2(next_pc-2);
+  int next_get_dest() const {
+    assert(_pc < _end, "");
+    return next_bci() + next_bytecode()->get_offset_s2(Bytecodes::_ifeq);
   }
 
   // 4-byte branch offset from current pc
-  int get_far_dest( ) const {
-    assert( Bytecodes::length_at(_bc_start) == sizeof(jint)+1, "dest4 called with bad bytecode" );
-    return _bc_start-_start + (int)Bytes::get_Java_u4(_pc-4);
+  int get_far_dest() const {
+    return cur_bci() + bytecode()->get_offset_s4(cur_bc_raw());
   }
 
   // For a lookup or switch table, return target destination
@@ -234,22 +240,6 @@ public:
 
   ciCPCache*  get_cpcache();
   ciCallSite* get_call_site();
-
- private:
-  void assert_index_size(int required_size) const {
-#ifdef ASSERT
-    int isize = instruction_size() - (is_wide() ? 1 : 0) - 1;
-    if (isize == 2 &&  cur_bc() == Bytecodes::_iinc)
-      isize = 1;
-    else if (isize <= 2)
-      ;                         // no change
-    else if (has_giant_index())
-      isize = 4;
-    else
-      isize = 2;
-    assert(isize = required_size, "wrong index size");
-#endif
-  }
 };
 
 
