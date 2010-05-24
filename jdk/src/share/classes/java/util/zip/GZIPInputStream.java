@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ class GZIPInputStream extends InflaterInputStream {
     public GZIPInputStream(InputStream in, int size) throws IOException {
         super(in, new Inflater(true), size);
         usesDefaultInflater = true;
-        readHeader();
-        crc.reset();
+        readHeader(in);
     }
 
     /**
@@ -114,14 +113,16 @@ class GZIPInputStream extends InflaterInputStream {
         if (eos) {
             return -1;
         }
-        len = super.read(buf, off, len);
-        if (len == -1) {
-            readTrailer();
-            eos = true;
+        int n = super.read(buf, off, len);
+        if (n == -1) {
+            if (readTrailer())
+                eos = true;
+            else
+                return this.read(buf, off, len);
         } else {
-            crc.update(buf, off, len);
+            crc.update(buf, off, n);
         }
-        return len;
+        return n;
     }
 
     /**
@@ -152,10 +153,11 @@ class GZIPInputStream extends InflaterInputStream {
     private final static int FCOMMENT   = 16;   // File comment
 
     /*
-     * Reads GZIP member header.
+     * Reads GZIP member header and returns the total byte number
+     * of this member header.
      */
-    private void readHeader() throws IOException {
-        CheckedInputStream in = new CheckedInputStream(this.in, crc);
+    private int readHeader(InputStream this_in) throws IOException {
+        CheckedInputStream in = new CheckedInputStream(this_in, crc);
         crc.reset();
         // Check header magic
         if (readUShort(in) != GZIP_MAGIC) {
@@ -169,17 +171,24 @@ class GZIPInputStream extends InflaterInputStream {
         int flg = readUByte(in);
         // Skip MTIME, XFL, and OS fields
         skipBytes(in, 6);
+        int n = 2 + 2 + 6;
         // Skip optional extra field
         if ((flg & FEXTRA) == FEXTRA) {
-            skipBytes(in, readUShort(in));
+            int m = readUShort(in);
+            skipBytes(in, m);
+            n += m + 2;
         }
         // Skip optional file name
         if ((flg & FNAME) == FNAME) {
-            while (readUByte(in) != 0) ;
+            do {
+                n++;
+            } while (readUByte(in) != 0);
         }
         // Skip optional file comment
         if ((flg & FCOMMENT) == FCOMMENT) {
-            while (readUByte(in) != 0) ;
+            do {
+                n++;
+            } while (readUByte(in) != 0);
         }
         // Check optional header CRC
         if ((flg & FHCRC) == FHCRC) {
@@ -187,13 +196,18 @@ class GZIPInputStream extends InflaterInputStream {
             if (readUShort(in) != v) {
                 throw new ZipException("Corrupt GZIP header");
             }
+            n += 2;
         }
+        crc.reset();
+        return n;
     }
 
     /*
-     * Reads GZIP member trailer.
+     * Reads GZIP member trailer and returns true if the eos
+     * reached, false if there are more (concatenated gzip
+     * data set)
      */
-    private void readTrailer() throws IOException {
+    private boolean readTrailer() throws IOException {
         InputStream in = this.in;
         int n = inf.getRemaining();
         if (n > 0) {
@@ -205,6 +219,24 @@ class GZIPInputStream extends InflaterInputStream {
             // rfc1952; ISIZE is the input size modulo 2^32
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
             throw new ZipException("Corrupt GZIP trailer");
+
+        // If there are more bytes available in "in" or
+        // the leftover in the "inf" is > 26 bytes:
+        // this.trailer(8) + next.header.min(10) + next.trailer(8)
+        // try concatenated case
+        if (this.in.available() > 0 || n > 26) {
+            int m = 8;                  // this.trailer
+            try {
+                m += readHeader(in);    // next.header
+            } catch (IOException ze) {
+                return true;  // ignore any malformed, do nothing
+            }
+            inf.reset();
+            if (n > m)
+                inf.setInput(buf, len - n + m, n - m);
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -238,7 +270,6 @@ class GZIPInputStream extends InflaterInputStream {
         }
         return b;
     }
-
 
     private byte[] tmpbuf = new byte[128];
 
