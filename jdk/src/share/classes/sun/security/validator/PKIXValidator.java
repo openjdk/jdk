@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,12 +155,15 @@ public final class PKIXValidator extends Validator {
             X500Principal prevIssuer = null;
             for (int i = 0; i < chain.length; i++) {
                 X509Certificate cert = chain[i];
+                X500Principal dn = cert.getSubjectX500Principal();
                 if (i != 0 &&
-                    !cert.getSubjectX500Principal().equals(prevIssuer)) {
+                    !dn.equals(prevIssuer)) {
                     // chain is not ordered correctly, call builder instead
                     return doBuild(chain, otherCerts);
                 }
-                if (trustedCerts.contains(cert)) {
+                if (trustedSubjects.containsKey(dn)
+                        && trustedSubjects.get(dn).getPublicKey()
+                            .equals(cert.getPublicKey())) {
                     if (i == 0) {
                         return new X509Certificate[] {chain[0]};
                     }
