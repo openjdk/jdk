@@ -310,7 +310,7 @@ class CompileBroker: AllStatic {
 
   static AbstractCompiler* compiler(int level ) {
     if (level == CompLevel_fast_compile) return _compilers[0];
-    assert(level == CompLevel_highest_tier, "what level?")
+    assert(level == CompLevel_highest_tier, "what level?");
     return _compilers[1];
   }
 

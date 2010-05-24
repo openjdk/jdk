@@ -222,6 +222,17 @@ ifeq ($(ARCH_DATA_MODEL), 32)
     ifneq ($(subst MSDev98,OLDOLDOLD,$(SHORTMSVCDIR)),$(SHORTMSVCDIR))
       SHORTMSVCDIR     :=
     endif
+    # If we still don't have it, look for VS100COMNTOOLS, setup by installer?
+    ifeq ($(SHORTMSVCDIR),)
+      ifdef VS100COMNTOOLS  # /Common/Tools directory, use ../../Vc
+        xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
+        _vs100tools     :=$(call FullPath,$(xVS100COMNTOOLS))
+      endif
+      ifneq ($(_vs100tools),)
+        SHORTMSVCDIR   :=$(_vs100tools)/../../Vc
+      endif
+    endif
+    export SHORTMSVCDIR
     # If we still don't have it, look for VS71COMNTOOLS, setup by installer?
     ifeq ($(SHORTMSVCDIR),)
       ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
@@ -272,24 +283,35 @@ endif
 # Compilers for 64bit are from SDK
 ifeq ($(ARCH_DATA_MODEL), 64)
   ifndef SHORTCOMPILERBIN
-    xMSSDK61 :="C:/Program Files/Microsoft SDKs/Windows/v6.1/"
-    MSSDK61 :=$(call FullPath,$(xMSSDK61))
-    xVS2008 :="C:/Program Files (x86)/Microsoft Visual Studio 9.0/"
-    _vs2008 :=$(call FullPath,$(xVS2008))
-    ifneq ($(_vs2008),)
-      ifeq ($(ARCH), ia64)
-        SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/x86_ia64
-      endif
-      ifeq ($(ARCH), amd64)
-        SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/$(ARCH)
-      endif
+    ifdef VS100COMNTOOLS  # /Common7/Tools directory, use ../../Vc
+      xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
+      _vs100tools     :=$(call FullPath,$(xVS100COMNTOOLS))
+    endif
+    ifneq ($(_vs100tools),)
+      SHORTCOMPILERBIN :=$(_vs100tools)/../../Vc/bin/amd64
+      xMSSDK70      :="C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A/"
+      MSSDK7        :=$(call FullPath,$(xMSSDK70))
+      export MSSDK7
     else
-      ifneq ($(SHORTPSDK),)
+      xMSSDK61 :="C:/Program Files/Microsoft SDKs/Windows/v6.1/"
+      MSSDK61 :=$(call FullPath,$(xMSSDK61))
+      xVS2008 :="C:/Program Files (x86)/Microsoft Visual Studio 9.0/"
+      _vs2008 :=$(call FullPath,$(xVS2008))
+      ifneq ($(_vs2008),)
         ifeq ($(ARCH), ia64)
-          SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64
+          SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/x86_ia64
         endif
         ifeq ($(ARCH), amd64)
-          SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64/x86/$(ARCH)
+          SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/$(ARCH)
+        endif
+      else
+        ifneq ($(SHORTPSDK),)
+          ifeq ($(ARCH), ia64)
+            SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64
+          endif
+          ifeq ($(ARCH), amd64)
+            SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64/x86/$(ARCH)
+          endif
         endif
       endif
     endif

@@ -132,6 +132,7 @@ public class JavacParser implements Parser {
         this.allowStaticImport = source.allowStaticImport();
         this.allowAnnotations = source.allowAnnotations();
         this.allowDiamond = source.allowDiamond();
+        this.allowMulticatch = source.allowMulticatch();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.keepDocComments = keepDocComments;
         if (keepDocComments)
@@ -152,6 +153,10 @@ public class JavacParser implements Parser {
     /** Switch: Should diamond operator be recognized?
      */
     boolean allowDiamond;
+
+    /** Switch: Should multicatch clause be accepted?
+     */
+    boolean allowMulticatch;
 
     /** Switch: Should varargs be recognized?
      */
@@ -2011,12 +2016,26 @@ public class JavacParser implements Parser {
         int pos = S.pos();
         accept(CATCH);
         accept(LPAREN);
-        JCVariableDecl formal =
-            variableDeclaratorId(optFinal(Flags.PARAMETER),
-                                 qualident());
+        JCModifiers mods = optFinal(Flags.PARAMETER);
+        List<JCExpression> catchTypes = catchTypes();
+        JCExpression paramType = catchTypes.size() > 1 ?
+                toP(F.at(catchTypes.head.getStartPosition()).TypeDisjoint(catchTypes)) :
+                catchTypes.head;
+        JCVariableDecl formal = variableDeclaratorId(mods, paramType);
         accept(RPAREN);
         JCBlock body = block();
         return F.at(pos).Catch(formal, body);
+    }
+
+    List<JCExpression> catchTypes() {
+        ListBuffer<JCExpression> catchTypes = ListBuffer.lb();
+        catchTypes.add(parseType());
+        while (S.token() == BAR) {
+            checkMulticatch();
+            S.nextToken();
+            catchTypes.add(qualident());
+        }
+        return catchTypes.toList();
     }
 
     /** SwitchBlockStatementGroups = { SwitchBlockStatementGroup }
@@ -3192,5 +3211,11 @@ public class JavacParser implements Parser {
             log.error(S.pos(), "diamond.not.supported.in.source", source.name);
             allowDiamond = true;
         }
+    }
+    void checkMulticatch() {
+        if (!allowMulticatch) {
+            log.error(S.pos(), "multicatch.not.supported.in.source", source.name);
+            allowMulticatch = true;
+            }
     }
 }

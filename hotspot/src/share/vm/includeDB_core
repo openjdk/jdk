@@ -2867,6 +2867,7 @@ methodHandles.hpp                       frame.inline.hpp
 methodHandles.hpp                       globals.hpp
 methodHandles.hpp                       interfaceSupport.hpp
 methodHandles.hpp                       javaClasses.hpp
+methodHandles.hpp                       no_precompiled_headers
 methodHandles.hpp                       vmSymbols.hpp
 
 methodHandles.cpp                       allocation.inline.hpp
@@ -2930,6 +2931,7 @@ methodOop.cpp                           interpreter.hpp
 methodOop.cpp                           jvmtiExport.hpp
 methodOop.cpp                           klassOop.hpp
 methodOop.cpp                           methodDataOop.hpp
+methodOop.cpp                           methodHandleWalk.hpp
 methodOop.cpp                           methodOop.hpp
 methodOop.cpp                           nativeLookup.hpp
 methodOop.cpp                           oop.inline.hpp
@@ -4075,6 +4077,7 @@ systemDictionary.cpp                    jvmtiEnvBase.hpp
 systemDictionary.cpp                    klass.inline.hpp
 systemDictionary.cpp                    loaderConstraints.hpp
 systemDictionary.cpp                    methodDataOop.hpp
+systemDictionary.cpp                    methodHandles.hpp
 systemDictionary.cpp                    mutexLocker.hpp
 systemDictionary.cpp                    objArrayKlass.hpp
 systemDictionary.cpp                    oop.inline.hpp

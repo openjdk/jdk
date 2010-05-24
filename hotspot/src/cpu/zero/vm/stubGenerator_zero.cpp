@@ -51,10 +51,7 @@ class StubGenerator: public StubCodeGenerator {
     // Set up the stack if necessary
     bool stack_needs_teardown = false;
     if (stack->needs_setup()) {
-      size_t stack_used = thread->stack_base() - (address) &stack_used;
-      size_t stack_free = thread->stack_size() - stack_used;
-      size_t zero_stack_size = align_size_down(stack_free / 2, wordSize);
-
+      size_t zero_stack_size = stack->suggest_size(thread);
       stack->setup(alloca(zero_stack_size), zero_stack_size);
       stack_needs_teardown = true;
     }
