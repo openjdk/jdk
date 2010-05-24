@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * Licensed Materials - Property of IBM
- * RMI-IIOP v1.0
- * Copyright IBM Corp. 1998 1999  All Rights Reserved
+
+package com.sun.source.tree;
+
+import java.util.List;
+
+/**
+ * A tree node for a disjoint type expression in a multicatch var declaration.
  *
+ *
+ * @author Maurizio Cimadamore
+ *
+ * @since 1.7
  */
-
-package com.sun.corba.se.internal.io;
-
-public class LibraryManager
-{
-    native private static int getMajorVersion();
-
-    native private static int getMinorVersion();
-
-    private static native boolean setEnableOverride(Class targetClass, Object instance);
+public interface DisjointTypeTree extends Tree {
+    List<? extends Tree> getTypeComponents();
 }

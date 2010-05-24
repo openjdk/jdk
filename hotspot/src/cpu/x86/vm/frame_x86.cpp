@@ -291,8 +291,8 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   BasicObjectLock* result = (BasicObjectLock*) *addr_at(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
-  assert((intptr_t) fp() >  (intptr_t) result, "result must <  than frame pointer");
-  assert((intptr_t) sp() <= (intptr_t) result, "result must >= than stack pointer");
+  assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
+  assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer");
   return result;
 }
 
@@ -502,7 +502,7 @@ bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
   // When unpacking an optimized frame the frame pointer is
   // adjusted with:
   int diff = (method->max_locals() - method->size_of_parameters()) *
-             Interpreter::stackElementWords();
+             Interpreter::stackElementWords;
   return _fp == (fp - diff);
 }
 
@@ -542,7 +542,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // stack frames shouldn't be much larger than max_stack elements
 
-  if (fp() - sp() > 1024 + m->max_stack()*Interpreter::stackElementSize()) {
+  if (fp() - sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
     return false;
   }
 
@@ -594,7 +594,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
 #ifdef AMD64
       // This is times two because we do a push(ltos) after pushing XMM0
       // and that takes two interpreter stack slots.
-      tos_addr += 2 * Interpreter::stackElementWords();
+      tos_addr += 2 * Interpreter::stackElementWords;
 #else
       tos_addr += 2;
 #endif // AMD64

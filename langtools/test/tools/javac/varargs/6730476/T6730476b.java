@@ -1,12 +1,10 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,11 +21,16 @@
  * have any questions.
  */
 
-package com.sun.corba.se.internal.io;
+/*
+ * @test
+ * @bug 6730476
+ *
+ * @summary invalid "unchecked generic array" warning
+ * @author mcimadamore
+ * @compile T6730476b.java -Xlint -Werror
+ *
+ */
 
-public class ObjectStreamClass {
-
-    /* Find out if the class has a static class initializer <clinit> */
-    private static native boolean hasStaticInitializer(Class cl);
-
+class T6730476b {
+    java.util.List<Integer> ints = java.util.Arrays.asList();
 }

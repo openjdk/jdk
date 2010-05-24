@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@
 
 // JavaStack Implementation
 #define MORE_STACK(count)  \
-    (topOfStack -= ((count) * Interpreter::stackElementWords()))
+    (topOfStack -= ((count) * Interpreter::stackElementWords))
 
 
 #define UPDATE_PC(opsize) {pc += opsize; }
@@ -1950,8 +1950,8 @@ run:
         jint size = STACK_INT(-1);
         // stack grows down, dimensions are up!
         jint *dimarray =
-                   (jint*)&topOfStack[dims * Interpreter::stackElementWords()+
-                                      Interpreter::stackElementWords()-1];
+                   (jint*)&topOfStack[dims * Interpreter::stackElementWords+
+                                      Interpreter::stackElementWords-1];
         //adjust pointer to start of stack element
         CALL_VM(InterpreterRuntime::multianewarray(THREAD, dimarray),
                 handle_exception);
@@ -2339,8 +2339,8 @@ run:
               goto opcode_switch;
           }
 #endif
-          fatal2("\t*** Unimplemented opcode: %d = %s\n",
-                 opcode, Bytecodes::name((Bytecodes::Code)opcode));
+          fatal(err_msg("Unimplemented opcode %d = %s", opcode,
+                        Bytecodes::name((Bytecodes::Code)opcode)));
           goto finish;
 
       } /* switch(opc) */
@@ -2375,7 +2375,7 @@ run:
     assert(except_oop(), "No exception to process");
     intptr_t continuation_bci;
     // expression stack is emptied
-    topOfStack = istate->stack_base() - Interpreter::stackElementWords();
+    topOfStack = istate->stack_base() - Interpreter::stackElementWords;
     CALL_VM(continuation_bci = (intptr_t)InterpreterRuntime::exception_handler_for_exception(THREAD, except_oop()),
             handle_exception);
 
@@ -2692,219 +2692,141 @@ BytecodeInterpreter::BytecodeInterpreter(messages msg) {
 // The implementations are platform dependent. We have to worry about alignment
 // issues on some machines which can change on the same platform depending on
 // whether it is an LP64 machine also.
-#ifdef ASSERT
-void BytecodeInterpreter::verify_stack_tag(intptr_t *tos, frame::Tag tag, int offset) {
-  if (TaggedStackInterpreter) {
-    frame::Tag t = (frame::Tag)tos[Interpreter::expr_tag_index_at(-offset)];
-    assert(t == tag, "stack tag mismatch");
-  }
-}
-#endif // ASSERT
-
 address BytecodeInterpreter::stack_slot(intptr_t *tos, int offset) {
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset));
   return (address) tos[Interpreter::expr_index_at(-offset)];
 }
 
 jint BytecodeInterpreter::stack_int(intptr_t *tos, int offset) {
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset));
   return *((jint*) &tos[Interpreter::expr_index_at(-offset)]);
 }
 
 jfloat BytecodeInterpreter::stack_float(intptr_t *tos, int offset) {
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset));
   return *((jfloat *) &tos[Interpreter::expr_index_at(-offset)]);
 }
 
 oop BytecodeInterpreter::stack_object(intptr_t *tos, int offset) {
-  debug_only(verify_stack_tag(tos, frame::TagReference, offset));
   return (oop)tos [Interpreter::expr_index_at(-offset)];
 }
 
 jdouble BytecodeInterpreter::stack_double(intptr_t *tos, int offset) {
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset));
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset-1));
   return ((VMJavaVal64*) &tos[Interpreter::expr_index_at(-offset)])->d;
 }
 
 jlong BytecodeInterpreter::stack_long(intptr_t *tos, int offset) {
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset));
-  debug_only(verify_stack_tag(tos, frame::TagValue, offset-1));
   return ((VMJavaVal64 *) &tos[Interpreter::expr_index_at(-offset)])->l;
-}
-
-void BytecodeInterpreter::tag_stack(intptr_t *tos, frame::Tag tag, int offset) {
-  if (TaggedStackInterpreter)
-    tos[Interpreter::expr_tag_index_at(-offset)] = (intptr_t)tag;
 }
 
 // only used for value types
 void BytecodeInterpreter::set_stack_slot(intptr_t *tos, address value,
                                                         int offset) {
-  tag_stack(tos, frame::TagValue, offset);
   *((address *)&tos[Interpreter::expr_index_at(-offset)]) = value;
 }
 
 void BytecodeInterpreter::set_stack_int(intptr_t *tos, int value,
                                                        int offset) {
-  tag_stack(tos, frame::TagValue, offset);
   *((jint *)&tos[Interpreter::expr_index_at(-offset)]) = value;
 }
 
 void BytecodeInterpreter::set_stack_float(intptr_t *tos, jfloat value,
                                                          int offset) {
-  tag_stack(tos, frame::TagValue, offset);
   *((jfloat *)&tos[Interpreter::expr_index_at(-offset)]) = value;
 }
 
 void BytecodeInterpreter::set_stack_object(intptr_t *tos, oop value,
                                                           int offset) {
-  tag_stack(tos, frame::TagReference, offset);
   *((oop *)&tos[Interpreter::expr_index_at(-offset)]) = value;
 }
 
 // needs to be platform dep for the 32 bit platforms.
 void BytecodeInterpreter::set_stack_double(intptr_t *tos, jdouble value,
                                                           int offset) {
-  tag_stack(tos, frame::TagValue, offset);
-  tag_stack(tos, frame::TagValue, offset-1);
   ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d = value;
 }
 
 void BytecodeInterpreter::set_stack_double_from_addr(intptr_t *tos,
                                               address addr, int offset) {
-  tag_stack(tos, frame::TagValue, offset);
-  tag_stack(tos, frame::TagValue, offset-1);
   (((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d =
                         ((VMJavaVal64*)addr)->d);
 }
 
 void BytecodeInterpreter::set_stack_long(intptr_t *tos, jlong value,
                                                         int offset) {
-  tag_stack(tos, frame::TagValue, offset);
   ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  tag_stack(tos, frame::TagValue, offset-1);
   ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l = value;
 }
 
 void BytecodeInterpreter::set_stack_long_from_addr(intptr_t *tos,
                                             address addr, int offset) {
-  tag_stack(tos, frame::TagValue, offset);
   ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  tag_stack(tos, frame::TagValue, offset-1);
   ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l =
                         ((VMJavaVal64*)addr)->l;
 }
 
 // Locals
 
-#ifdef ASSERT
-void BytecodeInterpreter::verify_locals_tag(intptr_t *locals, frame::Tag tag,
-                                     int offset) {
-  if (TaggedStackInterpreter) {
-    frame::Tag t = (frame::Tag)locals[Interpreter::local_tag_index_at(-offset)];
-    assert(t == tag, "locals tag mismatch");
-  }
-}
-#endif // ASSERT
 address BytecodeInterpreter::locals_slot(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
   return (address)locals[Interpreter::local_index_at(-offset)];
 }
 jint BytecodeInterpreter::locals_int(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
   return (jint)locals[Interpreter::local_index_at(-offset)];
 }
 jfloat BytecodeInterpreter::locals_float(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
   return (jfloat)locals[Interpreter::local_index_at(-offset)];
 }
 oop BytecodeInterpreter::locals_object(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagReference, offset));
   return (oop)locals[Interpreter::local_index_at(-offset)];
 }
 jdouble BytecodeInterpreter::locals_double(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
   return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d;
 }
 jlong BytecodeInterpreter::locals_long(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset+1));
   return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l;
 }
 
 // Returns the address of locals value.
 address BytecodeInterpreter::locals_long_at(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset+1));
   return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
 }
 address BytecodeInterpreter::locals_double_at(intptr_t* locals, int offset) {
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset));
-  debug_only(verify_locals_tag(locals, frame::TagValue, offset+1));
   return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-
-void BytecodeInterpreter::tag_locals(intptr_t *locals, frame::Tag tag, int offset) {
-  if (TaggedStackInterpreter)
-    locals[Interpreter::local_tag_index_at(-offset)] = (intptr_t)tag;
 }
 
 // Used for local value or returnAddress
 void BytecodeInterpreter::set_locals_slot(intptr_t *locals,
                                    address value, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
   *((address*)&locals[Interpreter::local_index_at(-offset)]) = value;
 }
 void BytecodeInterpreter::set_locals_int(intptr_t *locals,
                                    jint value, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
   *((jint *)&locals[Interpreter::local_index_at(-offset)]) = value;
 }
 void BytecodeInterpreter::set_locals_float(intptr_t *locals,
                                    jfloat value, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
   *((jfloat *)&locals[Interpreter::local_index_at(-offset)]) = value;
 }
 void BytecodeInterpreter::set_locals_object(intptr_t *locals,
                                    oop value, int offset) {
-  tag_locals(locals, frame::TagReference, offset);
   *((oop *)&locals[Interpreter::local_index_at(-offset)]) = value;
 }
 void BytecodeInterpreter::set_locals_double(intptr_t *locals,
                                    jdouble value, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
-  tag_locals(locals, frame::TagValue, offset+1);
   ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = value;
 }
 void BytecodeInterpreter::set_locals_long(intptr_t *locals,
                                    jlong value, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
-  tag_locals(locals, frame::TagValue, offset+1);
   ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = value;
 }
 void BytecodeInterpreter::set_locals_double_from_addr(intptr_t *locals,
                                    address addr, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
-  tag_locals(locals, frame::TagValue, offset+1);
   ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = ((VMJavaVal64*)addr)->d;
 }
 void BytecodeInterpreter::set_locals_long_from_addr(intptr_t *locals,
                                    address addr, int offset) {
-  tag_locals(locals, frame::TagValue, offset);
-  tag_locals(locals, frame::TagValue, offset+1);
   ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = ((VMJavaVal64*)addr)->l;
 }
 
 void BytecodeInterpreter::astore(intptr_t* tos,    int stack_offset,
                           intptr_t* locals, int locals_offset) {
-  // Copy tag from stack to locals.  astore's operand can be returnAddress
-  // and may not be TagReference
-  if (TaggedStackInterpreter) {
-    frame::Tag t = (frame::Tag) tos[Interpreter::expr_tag_index_at(-stack_offset)];
-    locals[Interpreter::local_tag_index_at(-locals_offset)] = (intptr_t)t;
-  }
   intptr_t value = tos[Interpreter::expr_index_at(-stack_offset)];
   locals[Interpreter::local_index_at(-locals_offset)] = value;
 }
@@ -2912,10 +2834,6 @@ void BytecodeInterpreter::astore(intptr_t* tos,    int stack_offset,
 
 void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
                                    int to_offset) {
-  if (TaggedStackInterpreter) {
-    tos[Interpreter::expr_tag_index_at(-to_offset)] =
-                      (intptr_t)tos[Interpreter::expr_tag_index_at(-from_offset)];
-  }
   tos[Interpreter::expr_index_at(-to_offset)] =
                       (intptr_t)tos[Interpreter::expr_index_at(-from_offset)];
 }
@@ -2964,16 +2882,9 @@ void BytecodeInterpreter::dup2_x2(intptr_t *tos) {
 void BytecodeInterpreter::swap(intptr_t *tos) {
   // swap top two elements
   intptr_t val = tos[Interpreter::expr_index_at(1)];
-  frame::Tag t;
-  if (TaggedStackInterpreter) {
-    t = (frame::Tag) tos[Interpreter::expr_tag_index_at(1)];
-  }
   // Copy -2 entry to -1
   copy_stack_slot(tos, -2, -1);
   // Store saved -1 entry into -2
-  if (TaggedStackInterpreter) {
-    tos[Interpreter::expr_tag_index_at(2)] = (intptr_t)t;
-  }
   tos[Interpreter::expr_index_at(2)] = val;
 }
 // --------------------------------------------------------------------------------

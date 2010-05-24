@@ -67,7 +67,7 @@ ifeq ($(PLATFORM), windows)
       COMPILER_VERSION=VS2005
       REBASE     = $(COMPILER_PATH)../../Common8/Tools/Bin/rebase
       MTL        = $(COMPILER_PATH)../../Common8/Tools/Bin/midl
-      MT         = $(MSDEVTOOLS_PATH)mt
+      MT         = $(MSDEVTOOLS_PATH)/mt
       ifndef COMPILER_PATH
 	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
       endif
@@ -75,6 +75,17 @@ ifeq ($(PLATFORM), windows)
     ifeq ($(CC_MAJORVER), 15)
       COMPILER_NAME=Visual Studio 9
       COMPILER_VERSION=VS2008
+      #rebase and midl moved out of Visual Studio into the SDK:
+      REBASE     = $(MSDEVTOOLS_PATH)/rebase
+      MTL        = $(MSDEVTOOLS_PATH)/midl.exe
+      MT         = $(MSDEVTOOLS_PATH)mt
+      ifndef COMPILER_PATH
+	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
+      endif
+    endif
+    ifeq ($(CC_MAJORVER), 16)
+      COMPILER_NAME=Visual Studio 10
+      COMPILER_VERSION=VS2010
       #rebase and midl moved out of Visual Studio into the SDK:
       REBASE     = $(MSDEVTOOLS_PATH)/rebase
       MTL        = $(MSDEVTOOLS_PATH)/midl.exe
@@ -122,6 +133,15 @@ ifeq ($(PLATFORM), windows)
       COMPILER_VERSION=VS2008
       RC = $(MSSDK61)/Bin/X64/rc.exe
       MT = $(MSSDK61)/Bin/X64/mt.exe
+      MTL = $(MSSDK61)/Bin/X64/midl.exe
+    endif
+    ifeq ($(CC_MAJORVER), 16)
+      COMPILER_NAME=Microsoft Visual Studio 10 (16.00.30319.01)
+      COMPILER_VERSION=VS2010
+      RC = $(MSDEVTOOLS_PATH)/Bin/x64/rc.exe
+      RSC = $(MSDEVTOOLS_PATH)/Bin/x64/rc.exe
+      MT = $(MSDEVTOOLS_PATH)/Bin/x64/mt.exe
+      MTL = $(MSDEVTOOLS_PATH)/Bin/X64/midl.exe
     endif
     # This will cause problems if ALT_COMPILER_PATH is defined to ""
     # which is a directive to use the PATH.
