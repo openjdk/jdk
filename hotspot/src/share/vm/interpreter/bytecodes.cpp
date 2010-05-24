@@ -26,10 +26,12 @@
 #include "incls/_bytecodes.cpp.incl"
 
 
+#if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))
 // Windows AMD64 Compiler Hangs compiling this file
 // unless optimization is off
 #ifdef _M_AMD64
 #pragma optimize ("", off)
+#endif
 #endif
 
 
@@ -426,7 +428,9 @@ void Bytecodes::initialize() {
         if (is_defined(i)) {
           Code code = cast(i);
           Code java = java_code(code);
-          if (can_trap(code) && !can_trap(java)) fatal2("%s can trap => %s can trap, too", name(code), name(java));
+          if (can_trap(code) && !can_trap(java))
+            fatal(err_msg("%s can trap => %s can trap, too", name(code),
+                          name(java)));
         }
       }
     }

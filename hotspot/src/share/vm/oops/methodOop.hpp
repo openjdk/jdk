@@ -525,11 +525,16 @@ class methodOopDesc : public oopDesc {
 
   // JSR 292 support
   bool is_method_handle_invoke() const              { return access_flags().is_method_handle_invoke(); }
+  static bool is_method_handle_invoke_name(vmSymbols::SID name_sid);
+  static bool is_method_handle_invoke_name(symbolOop name) {
+    return is_method_handle_invoke_name(vmSymbols::find_sid(name));
+  }
   // Tests if this method is an internal adapter frame from the
   // MethodHandleCompiler.
   bool is_method_handle_adapter() const;
   static methodHandle make_invoke_method(KlassHandle holder,
-                                         symbolHandle signature,
+                                         symbolHandle name, //invokeExact or invokeGeneric
+                                         symbolHandle signature, //anything at all
                                          Handle method_type,
                                          TRAPS);
   // these operate only on invoke methods:

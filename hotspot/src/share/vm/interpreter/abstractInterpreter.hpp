@@ -167,60 +167,15 @@ class AbstractInterpreter: AllStatic {
   // Debugging/printing
   static void       print();                                    // prints the interpreter code
 
-  // Support for Tagged Stacks
-  //
-  // Tags are stored on the Java Expression stack above the value:
-  //
-  //  tag
-  //  value
-  //
-  // For double values:
-  //
-  //  tag2
-  //  high word
-  //  tag1
-  //  low word
-
  public:
-  static int stackElementWords()   { return TaggedStackInterpreter ? 2 : 1; }
-  static int stackElementSize()    { return stackElementWords()*wordSize; }
-  static int logStackElementSize() { return
-                 TaggedStackInterpreter? LogBytesPerWord+1 : LogBytesPerWord; }
-
-  // Tag is at pointer, value is one below for a stack growing down
-  // (or above for stack growing up)
-  static int  value_offset_in_bytes()  {
-    return TaggedStackInterpreter ?
-      frame::interpreter_frame_expression_stack_direction() * wordSize : 0;
-  }
-  static int  tag_offset_in_bytes()    {
-    assert(TaggedStackInterpreter, "should not call this");
-    return 0;
-  }
-
-  // Tagged Locals
-  // Locals are stored relative to Llocals:
-  //
-  // tag    <- Llocals[n]
-  // value
-  //
-  // Category 2 types are indexed as:
-  //
-  // tag    <- Llocals[-n]
-  // high word
-  // tag    <- Llocals[-n+1]
-  // low word
-  //
+  // Interpreter helpers
+  const static int stackElementWords   = 1;
+  const static int stackElementSize    = stackElementWords * wordSize;
+  const static int logStackElementSize = LogBytesPerWord;
 
   // Local values relative to locals[n]
   static int  local_offset_in_bytes(int n) {
-    return ((frame::interpreter_frame_expression_stack_direction() * n) *
-            stackElementSize()) + value_offset_in_bytes();
-  }
-  static int  local_tag_offset_in_bytes(int n) {
-    assert(TaggedStackInterpreter, "should not call this");
-    return ((frame::interpreter_frame_expression_stack_direction() * n) *
-            stackElementSize()) + tag_offset_in_bytes();
+    return ((frame::interpreter_frame_expression_stack_direction() * n) * stackElementSize);
   }
 
   // access to stacked values according to type:
@@ -237,29 +192,15 @@ class AbstractInterpreter: AllStatic {
   static jlong long_in_slot(intptr_t* slot_addr) {
     if (sizeof(intptr_t) >= sizeof(jlong)) {
       return *(jlong*) slot_addr;
-    } else if (!TaggedStackInterpreter) {
-      return Bytes::get_native_u8((address)slot_addr);
     } else {
-      assert(sizeof(intptr_t) * 2 == sizeof(jlong), "ILP32");
-      // assemble the long in memory order (not arithmetic order)
-      union { jlong j; jint i[2]; } u;
-      u.i[0] = (jint) slot_addr[0*stackElementSize()];
-      u.i[1] = (jint) slot_addr[1*stackElementSize()];
-      return u.j;
+      return Bytes::get_native_u8((address)slot_addr);
     }
   }
   static void set_long_in_slot(intptr_t* slot_addr, jlong value) {
     if (sizeof(intptr_t) >= sizeof(jlong)) {
       *(jlong*) slot_addr = value;
-    } else if (!TaggedStackInterpreter) {
-      Bytes::put_native_u8((address)slot_addr, value);
     } else {
-      assert(sizeof(intptr_t) * 2 == sizeof(jlong), "ILP32");
-      // assemble the long in memory order (not arithmetic order)
-      union { jlong j; jint i[2]; } u;
-      u.j = value;
-      slot_addr[0*stackElementSize()] = (intptr_t) u.i[0];
-      slot_addr[1*stackElementSize()] = (intptr_t) u.i[1];
+      Bytes::put_native_u8((address)slot_addr, value);
     }
   }
   static void get_jvalue_in_slot(intptr_t* slot_addr, BasicType type, jvalue* value) {

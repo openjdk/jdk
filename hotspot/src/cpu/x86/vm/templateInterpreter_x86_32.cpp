@@ -305,7 +305,6 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
     case T_FLOAT  :
       { const Register t = InterpreterRuntime::SignatureHandlerGenerator::temp();
         __ pop(t);                            // remove return address first
-        __ pop_dtos_to_rsp();
         // Must return a result for interpreter or compiler. In SSE
         // mode, results are returned in xmm0 and the FPU stack must
         // be empty.
@@ -468,7 +467,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   // see if the frame is greater than one page in size. If so,
   // then we need to verify there is enough stack space remaining
   // for the additional locals.
-  __ cmpl(rdx, (page_size - overhead_size)/Interpreter::stackElementSize());
+  __ cmpl(rdx, (page_size - overhead_size)/Interpreter::stackElementSize);
   __ jcc(Assembler::belowEqual, after_frame_check);
 
   // compute rsp as if this were going to be the last frame on
@@ -882,7 +881,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ get_method(method);
   __ verify_oop(method);
   __ load_unsigned_short(t, Address(method, methodOopDesc::size_of_parameters_offset()));
-  __ shlptr(t, Interpreter::logStackElementSize());
+  __ shlptr(t, Interpreter::logStackElementSize);
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);
   __ andptr(rsp, -(StackAlignmentInBytes)); // gcc needs 16 byte aligned stacks to do XMM intrinsics
@@ -1225,9 +1224,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ testl(rdx, rdx);
     __ jcc(Assembler::lessEqual, exit);               // do nothing if rdx <= 0
     __ bind(loop);
-    if (TaggedStackInterpreter) {
-      __ push((int32_t)NULL_WORD);                    // push tag
-    }
     __ push((int32_t)NULL_WORD);                      // initialize local variables
     __ decrement(rdx);                                // until everything initialized
     __ jcc(Assembler::greater, loop);
@@ -1463,7 +1459,7 @@ int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
 
   const int extra_stack = methodOopDesc::extra_stack_entries();
   const int method_stack = (method->max_locals() + method->max_stack() + extra_stack) *
-                           Interpreter::stackElementWords();
+                           Interpreter::stackElementWords;
   return overhead_size + method_stack + stub_code;
 }
 
@@ -1487,9 +1483,9 @@ int AbstractInterpreter::layout_activation(methodOop method,
   // NOTE: return size is in words not bytes
 
   // fixed size of an interpreter frame:
-  int max_locals = method->max_locals() * Interpreter::stackElementWords();
+  int max_locals = method->max_locals() * Interpreter::stackElementWords;
   int extra_locals = (method->max_locals() - method->size_of_parameters()) *
-                     Interpreter::stackElementWords();
+                     Interpreter::stackElementWords;
 
   int overhead = frame::sender_sp_offset - frame::interpreter_frame_initial_sp_offset;
 
@@ -1499,9 +1495,9 @@ int AbstractInterpreter::layout_activation(methodOop method,
 
 
   int size = overhead +
-         ((callee_locals - callee_param_count)*Interpreter::stackElementWords()) +
+         ((callee_locals - callee_param_count)*Interpreter::stackElementWords) +
          (moncount*frame::interpreter_frame_monitor_size()) +
-         tempcount*Interpreter::stackElementWords() + popframe_extra_args;
+         tempcount*Interpreter::stackElementWords + popframe_extra_args;
 
   if (interpreter_frame != NULL) {
 #ifdef ASSERT
@@ -1525,7 +1521,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
 
     // Set last_sp
     intptr_t*  rsp = (intptr_t*) monbot  -
-                     tempcount*Interpreter::stackElementWords() -
+                     tempcount*Interpreter::stackElementWords -
                      popframe_extra_args;
     interpreter_frame->interpreter_frame_set_last_sp(rsp);
 
@@ -1625,7 +1621,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ get_method(rax);
     __ verify_oop(rax);
     __ load_unsigned_short(rax, Address(rax, in_bytes(methodOopDesc::size_of_parameters_offset())));
-    __ shlptr(rax, Interpreter::logStackElementSize());
+    __ shlptr(rax, Interpreter::logStackElementSize);
     __ restore_locals();
     __ subptr(rdi, rax);
     __ addptr(rdi, wordSize);
