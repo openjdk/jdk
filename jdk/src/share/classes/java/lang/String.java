@@ -2551,8 +2551,8 @@ public final class String
      * Examples are programming language identifiers, protocol keys, and HTML
      * tags.
      * For instance, <code>"TITLE".toLowerCase()</code> in a Turkish locale
-     * returns <code>"t\u0131tle"</code>, where '\u0131' is the LATIN SMALL
-     * LETTER DOTLESS I character.
+     * returns <code>"t\u005Cu0131tle"</code>, where '\u005Cu0131' is the
+     * LATIN SMALL LETTER DOTLESS I character.
      * To obtain correct results for locale insensitive strings, use
      * <code>toLowerCase(Locale.ENGLISH)</code>.
      * <p>
@@ -2714,8 +2714,8 @@ public final class String
      * Examples are programming language identifiers, protocol keys, and HTML
      * tags.
      * For instance, <code>"title".toUpperCase()</code> in a Turkish locale
-     * returns <code>"T\u0130TLE"</code>, where '\u0130' is the LATIN CAPITAL
-     * LETTER I WITH DOT ABOVE character.
+     * returns <code>"T\u005Cu0130TLE"</code>, where '\u005Cu0130' is the
+     * LATIN CAPITAL LETTER I WITH DOT ABOVE character.
      * To obtain correct results for locale insensitive strings, use
      * <code>toUpperCase(Locale.ENGLISH)</code>.
      * <p>

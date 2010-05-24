@@ -403,9 +403,14 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 }
             }
             String path = dir.getPath();
-            return (path.length() == 3
-                    && path.charAt(1) == ':'
-                    && Arrays.asList(drives.listFiles()).contains(dir));
+
+            if (path.length() != 3 || path.charAt(1) != ':') {
+                return false;
+            }
+
+            File[] files = drives.listFiles();
+
+            return files != null && Arrays.asList(files).contains(dir);
         }
         return false;
     }

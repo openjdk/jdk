@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ import sun.misc.HexDumpEncoder;
  * @author Hemma Prafullchandra
  * @see X509CRL
  */
-public class X509CRLImpl extends X509CRL {
+public class X509CRLImpl extends X509CRL implements DerEncoder {
 
     // CRL data, and its envelope
     private byte[]      signedCRL = null; // DER encoded crl
@@ -1187,6 +1187,13 @@ public class X509CRLImpl extends X509CRL {
         } else {
             return prevCertIssuer;
         }
+    }
+
+    @Override
+    public void derEncode(OutputStream out) throws IOException {
+        if (signedCRL == null)
+            throw new IOException("Null CRL to encode");
+        out.write(signedCRL.clone());
     }
 
     /**
