@@ -534,7 +534,10 @@ bool can_branch_register( Node *bol, Node *cmp ) {
 //       The "return address" is the address of the call instruction, plus 8.
 
 int MachCallStaticJavaNode::ret_addr_offset() {
-  return NativeCall::instruction_size;  // call; delay slot
+  int offset = NativeCall::instruction_size;  // call; delay slot
+  if (_method_handle_invoke)
+    offset += 4;  // restore SP
+  return offset;
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
@@ -1858,7 +1861,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
+  return L7_REGP_mask;
 }
 
 %}
@@ -2439,6 +2442,16 @@ encode %{
     // The user of this is responsible for ensuring that R_L7 is empty (killed).
     emit_call_reloc(cbuf, $meth$$method, relocInfo::runtime_call_type,
                     /*preserve_g2=*/true, /*force far call*/true);
+  %}
+
+  enc_class preserve_SP %{
+    MacroAssembler _masm(&cbuf);
+    __ mov(SP, L7_mh_SP_save);
+  %}
+
+  enc_class restore_SP %{
+    MacroAssembler _masm(&cbuf);
+    __ mov(L7_mh_SP_save, SP);
   %}
 
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
@@ -9213,12 +9226,27 @@ instruct safePoint_poll(iRegP poll) %{
 // Call Java Static Instruction
 instruct CallStaticJavaDirect( method meth ) %{
   match(CallStaticJava);
+  predicate(! ((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth);
 
   size(8);
   ins_cost(CALL_COST);
   format %{ "CALL,static  ; NOP ==> " %}
   ins_encode( Java_Static_Call( meth ), call_epilog );
+  ins_pc_relative(1);
+  ins_pipe(simple_call);
+%}
+
+// Call Java Static Instruction (method handle version)
+instruct CallStaticJavaHandle(method meth, l7RegP l7_mh_SP_save) %{
+  match(CallStaticJava);
+  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
+  effect(USE meth, KILL l7_mh_SP_save);
+
+  size(8);
+  ins_cost(CALL_COST);
+  format %{ "CALL,static/MethodHandle" %}
+  ins_encode(preserve_SP, Java_Static_Call(meth), restore_SP, call_epilog);
   ins_pc_relative(1);
   ins_pipe(simple_call);
 %}

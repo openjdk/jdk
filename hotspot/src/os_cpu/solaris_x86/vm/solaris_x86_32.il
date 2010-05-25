@@ -50,10 +50,12 @@
       movl     4(%esp), %edx   // dest
       movl     %eax, %ecx
       cmpl     $0, 8(%esp)     // MP test
-      je       1f
-      lock
-1:    xaddl    %eax, (%edx)
-      addl     %ecx, %eax
+      jne      1f
+      xaddl    %eax, (%edx)
+      jmp      2f
+1:    lock
+      xaddl    %eax, (%edx)
+2:    addl     %ecx, %eax
       .end
 
   // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest).
@@ -72,9 +74,12 @@
       movl     0(%esp), %ecx   // exchange_value
       movl     4(%esp), %edx   // dest
       cmp      $0, 12(%esp)    // MP test
-      je       1f
-      lock
-1:    cmpxchgl %ecx, (%edx)
+      jne      1f
+      cmpxchgl %ecx, (%edx)
+      jmp      2f
+1:    lock
+      cmpxchgl %ecx, (%edx)
+2:
       .end
 
   // Support for jlong Atomic::cmpxchg(jlong exchange_value,
@@ -90,10 +95,12 @@
       movl     8(%esp), %ebx   // exchange_value (low)
       movl     12(%esp), %ecx  // exchange_high (high)
       cmp      $0, 28(%esp)    // MP test
-      je       1f
-      lock
-1:    cmpxchg8b (%edi)
-      popl     %edi
+      jne      1f
+      cmpxchg8b (%edi)
+      jmp      2f
+1:    lock
+      cmpxchg8b (%edi)
+2:    popl     %edi
       popl     %ebx
       .end
 

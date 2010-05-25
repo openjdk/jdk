@@ -80,15 +80,12 @@ launcher.c:
 	} > $@
 
 $(LAUNCHER): $(LAUNCHER.o) $(LIBJVM) $(LAUNCHER_MAPFILE)
+ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
+	@echo Linking launcher...
+	$(QUIETLY) $(LINK_LAUNCHER/PRE_HOOK)
 	$(QUIETLY) \
-	case "$(CFLAGS_BROWSE)" in \
-	-sbfast|-xsbfast) \
-	    ;; \
-	*) \
-	    echo Linking launcher...; \
-	    $(LINK_LAUNCHER/PRE_HOOK) \
-	    $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(LAUNCHER.o) $(LIBS_LAUNCHER); \
-	    $(LINK_LAUNCHER/POST_HOOK) \
-	    [ -f $(LAUNCHER_G) ] || { ln -s $@ $(LAUNCHER_G); }; \
-	    ;; \
-	esac
+	$(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(LAUNCHER.o) $(LIBS_LAUNCHER)
+	$(QUIETLY) $(LINK_LAUNCHER/POST_HOOK)
+	[ -f $(LAUNCHER_G) ] || ln -s $@ $(LAUNCHER_G)
+endif # filter -sbfast -xsbfast
+
