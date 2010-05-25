@@ -190,6 +190,8 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "Workshop 5.8"
       #elif __SUNPRO_CC == 0x590
         #define HOTSPOT_BUILD_COMPILER "Workshop 5.9"
+      #elif __SUNPRO_CC == 0x5100
+        #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u1"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown Workshop:" XSTR(__SUNPRO_CC)
       #endif

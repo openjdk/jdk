@@ -65,7 +65,7 @@ CollectedHeap::CollectedHeap()
 void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);
   // otherwise remains unused.
-#ifdef COMPLER2
+#ifdef COMPILER2
   _defer_initial_card_mark =    ReduceInitialCardMarks && can_elide_tlab_store_barriers()
                              && (DeferInitialCardMark || card_mark_must_follow_store());
 #else
@@ -309,7 +309,7 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
   DEBUG_ONLY(fill_args_check(start, words);)
   HandleMark hm;  // Free handles before leaving.
 
-#ifdef LP64
+#ifdef _LP64
   // A single array can fill ~8G, so multiple objects are needed only in 64-bit.
   // First fill with arrays, ensuring that any remaining space is big enough to
   // fill.  The remainder is filled with a single object.

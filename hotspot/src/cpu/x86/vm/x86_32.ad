@@ -1841,14 +1841,14 @@ encode %{
     MacroAssembler _masm(&cbuf);
     // RBP is preserved across all calls, even compiled calls.
     // Use it to preserve RSP in places where the callee might change the SP.
-    __ movptr(rbp, rsp);
+    __ movptr(rbp_mh_SP_save, rsp);
     debug_only(int off1 = cbuf.code_size());
     assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
   %}
 
   enc_class restore_SP %{
     MacroAssembler _masm(&cbuf);
-    __ movptr(rsp, rbp);
+    __ movptr(rsp, rbp_mh_SP_save);
   %}
 
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
@@ -13570,7 +13570,7 @@ instruct CallStaticJavaDirect(method meth) %{
 // Call Java Static Instruction (method handle version)
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
-instruct CallStaticJavaHandle(method meth, eBPRegP ebp) %{
+instruct CallStaticJavaHandle(method meth, eBPRegP ebp_mh_SP_save) %{
   match(CallStaticJava);
   predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth);
