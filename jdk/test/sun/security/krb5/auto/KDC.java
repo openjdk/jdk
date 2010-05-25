@@ -403,8 +403,11 @@ public class KDC {
      */
     private static char[] randomPassword() {
         char[] pass = new char[32];
-        for (int i=0; i<32; i++)
+        for (int i=0; i<31; i++)
             pass[i] = (char)secureRandom.nextInt();
+        // The last char cannot be a number, otherwise, keyForUser()
+        // believes it's a sign of kvno
+        pass[31] = 'Z';
         return pass;
     }
 
