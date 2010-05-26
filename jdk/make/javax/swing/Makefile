@@ -59,9 +59,6 @@ $(CLASSBINDIR)/%.gif: $(SHARE_SRC)/classes/%.gif
 $(CLASSBINDIR)/%.css: $(SHARE_SRC)/classes/%.css
 	$(install-file)
 
-$(CLASSBINDIR)/%.bdtd: $(SHARE_SRC)/classes/%.bdtd
-	$(install-file)
-
 $(CLASSBINDIR)/%.txt: $(SHARE_SRC)/classes/%.txt
 	$(install-file)
 
