@@ -353,8 +353,10 @@ class Bytecodes: AllStatic {
   static const char* name           (Code code)    { check(code);      return _name          [code]; }
   static BasicType   result_type    (Code code)    { check(code);      return _result_type   [code]; }
   static int         depth          (Code code)    { check(code);      return _depth         [code]; }
-  static int         length_for     (Code code)    { check(code);      return _lengths       [code] & 0xF; }
-  static int         wide_length_for(Code code)    { check(code);      return _lengths       [code] >> 4; }
+  // Note: Length functions must return <=0 for invalid bytecodes.
+  // Calling check(code) in length functions would throw an unwanted assert.
+  static int         length_for     (Code code)    { /*no check*/      return _lengths       [code] & 0xF; }
+  static int         wide_length_for(Code code)    { /*no check*/      return _lengths       [code] >> 4; }
   static bool        can_trap       (Code code)    { check(code);      return has_all_flags(code, _bc_can_trap, false); }
   static Code        java_code      (Code code)    { check(code);      return _java_code     [code]; }
   static bool        can_rewrite    (Code code)    { check(code);      return has_all_flags(code, _bc_can_rewrite, false); }

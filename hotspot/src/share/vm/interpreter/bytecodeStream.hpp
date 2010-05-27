@@ -212,5 +212,5 @@ class BytecodeStream: public BaseBytecodeStream {
                                                    return bytecode()->get_index_u2_cpcache(raw_code()); }
   int             get_index_u4() const           { assert_raw_stream(false);
                                                    return bytecode()->get_index_u4(raw_code()); }
-  int             has_index_u4() const           { return bytecode()->get_index_u4(raw_code()); }
+  bool            has_index_u4() const           { return bytecode()->has_index_u4(raw_code()); }
 };

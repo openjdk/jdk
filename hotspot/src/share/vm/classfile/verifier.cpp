@@ -254,6 +254,9 @@ void ClassVerifier::verify_class(TRAPS) {
   int num_methods = methods->length();
 
   for (int index = 0; index < num_methods; index++) {
+    // Check for recursive re-verification before each method.
+    if (was_recursively_verified())  return;
+
     methodOop m = (methodOop)methods->obj_at(index);
     if (m->is_native() || m->is_abstract()) {
       // If m is native or abstract, skip it.  It is checked in class file
@@ -261,6 +264,12 @@ void ClassVerifier::verify_class(TRAPS) {
       continue;
     }
     verify_method(methodHandle(THREAD, m), CHECK_VERIFY(this));
+  }
+
+  if (_verify_verbose || TraceClassInitialization) {
+    if (was_recursively_verified())
+      tty->print_cr("Recursive verification detected for: %s",
+          _klass->external_name());
   }
 }
 
@@ -326,6 +335,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
                                 // instruction in sequence
   Bytecodes::Code opcode;
   while (!bcs.is_last_bytecode()) {
+    // Check for recursive re-verification before each bytecode.
+    if (was_recursively_verified())  return;
+
     opcode = bcs.raw_next();
     u2 bci = bcs.bci();
 
@@ -1470,20 +1482,9 @@ void ClassVerifier::verify_cp_type(
 
   // In some situations, bytecode rewriting may occur while we're verifying.
   // In this case, a constant pool cache exists and some indices refer to that
-  // instead.  Get the original index for the tag check
-  constantPoolCacheOop cache = cp->cache();
-  if (cache != NULL &&
-       ((types == (1 <<  JVM_CONSTANT_InterfaceMethodref)) ||
-        (types == (1 <<  JVM_CONSTANT_Methodref)) ||
-        (types == (1 <<  JVM_CONSTANT_Fieldref)))) {
-    int native_index = index;
-    if (Bytes::is_Java_byte_ordering_different()) {
-      native_index = Bytes::swap_u2(index);
-    }
-    assert((native_index >= 0) && (native_index < cache->length()),
-      "Must be a legal index into the cp cache");
-    index = cache->entry_at(native_index)->constant_pool_index();
-  }
+  // instead.  Be sure we don't pick up such indices by accident.
+  // We must check was_recursively_verified() before we get here.
+  guarantee(cp->cache() == NULL, "not rewritten yet");
 
   verify_cp_index(cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
