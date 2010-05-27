@@ -86,6 +86,7 @@ int Bytecodes::special_length_at(address bcp, address end) {
       return (len > 0 && len == (int)len) ? len : -1;
     }
   }
+  // Note: Length functions must return <=0 for invalid bytecodes.
   return 0;
 }
 
