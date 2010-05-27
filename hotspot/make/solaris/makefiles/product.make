@@ -40,13 +40,10 @@ endif
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
 ifeq ("${Platform_compiler}", "sparcWorks")
 
-# Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
-ifeq ($(COMPILER_REV_NUMERIC),509)
-  # Not clear this workaround could be skipped in some cases.
-  OPT_CFLAGS/vmGCOperations.o = $(OPT_CFLAGS/SLOWER) -g
-  OPT_CFLAGS/java.o = $(OPT_CFLAGS/SLOWER) -g
-  OPT_CFLAGS/jni.o = $(OPT_CFLAGS/SLOWER) -g
-endif
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+# dtrace cannot handle tail call optimization (6672627, 6693876)
+OPT_CFLAGS/jni.o = $(OPT_CFLAGS/DEFAULT) $(OPT_CCFLAGS/NO_TAIL_CALL_OPT)
+endif # COMPILER_NUMERIC_REV >= 509
 
 # Workaround SS11 bug 6345274 (all platforms) (Fixed in SS11 patch and SS12)
 ifeq ($(COMPILER_REV_NUMERIC),508)

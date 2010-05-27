@@ -109,7 +109,7 @@ class SpaceMangler: public CHeapObj {
   // is fully constructed.  Also is used when a generation is expanded
   // and possibly before the spaces have been reshaped to to the new
   // size of the generation.
-  static void mangle_region(MemRegion mr);
+  static void mangle_region(MemRegion mr) PRODUCT_RETURN;
 };
 
 class ContiguousSpace;

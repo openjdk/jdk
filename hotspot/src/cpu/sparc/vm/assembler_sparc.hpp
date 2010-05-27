@@ -2233,7 +2233,7 @@ public:
   AddressLiteral constant_oop_address(jobject obj);                          // find_index
   inline void    set_oop             (jobject obj, Register d);              // uses allocate_oop_address
   inline void    set_oop_constant    (jobject obj, Register d);              // uses constant_oop_address
-  inline void    set_oop             (AddressLiteral& obj_addr, Register d); // same as load_address
+  inline void    set_oop             (const AddressLiteral& obj_addr, Register d); // same as load_address
 
   void set_narrow_oop( jobject obj, Register d );
 

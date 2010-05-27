@@ -712,7 +712,7 @@ inline void MacroAssembler::set_oop_constant(jobject obj, Register d) {
 }
 
 
-inline void MacroAssembler::set_oop(AddressLiteral& obj_addr, Register d) {
+inline void MacroAssembler::set_oop(const AddressLiteral& obj_addr, Register d) {
   assert(obj_addr.rspec().type() == relocInfo::oop_type, "must be an oop reloc");
   set(obj_addr, d);
 }

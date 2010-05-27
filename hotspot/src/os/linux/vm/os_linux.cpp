@@ -2788,7 +2788,7 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   }
 
   // attach to the region
-  addr = (char*)shmat(shmid, NULL, 0);
+  addr = (char*)shmat(shmid, req_addr, 0);
   int err = errno;
 
   // Remove shmid. If shmat() is successful, the actual shared memory segment
