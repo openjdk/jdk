@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,8 @@ public class CMSBitMap extends VMObject {
   }
 
   public BitMap bm() {
-    BitMap bitMap = new BitMap((int) (bmWordSize() >> (shifter() + 3) ));
+    BitMap bitMap = new BitMap((int) (bmWordSize() >> shifter() ));
     VirtualSpace vs = virtualSpace();
-    //bitMap.set_size((int)vs.committedSize());
     bitMap.set_map(vs.low());
     return bitMap;
   }

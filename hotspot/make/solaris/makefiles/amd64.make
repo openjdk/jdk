@@ -33,14 +33,8 @@ Obj_Files += solaris_x86_64.o
 #
 ifeq ("${Platform_compiler}", "sparcWorks")
 
-# Temporary until C++ compiler is fixed
-
-# _lwp_create_interpose must have a frame
-OPT_CFLAGS/os_solaris_x86_64.o = -xO1
-
 # Temporary until SS10 C++ compiler is fixed
 OPT_CFLAGS/generateOptoStub.o = -xO2
-OPT_CFLAGS/thread.o = -xO2
 
 else
 

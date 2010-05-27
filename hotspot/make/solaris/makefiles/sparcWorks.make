@@ -48,27 +48,33 @@ $(shell $(CC) -V 2>&1 | sed -n 's/^.*[ ,\t]C[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p'
 # Pick which compiler is validated
 ifeq ($(JRE_RELEASE_VER),1.6.0)
   # Validated compiler for JDK6 is SS11 (5.8)
-  VALIDATED_COMPILER_REV   := 5.8
-  VALIDATED_C_COMPILER_REV := 5.8
+  VALIDATED_COMPILER_REVS   := 5.8
+  VALIDATED_C_COMPILER_REVS := 5.8
 else
-  # Validated compiler for JDK7 is SS12 (5.9)
-  VALIDATED_COMPILER_REV   := 5.9
-  VALIDATED_C_COMPILER_REV := 5.9
+  # Validated compilers for JDK7 are SS12 (5.9) or SS12 update 1 (5.10)
+  VALIDATED_COMPILER_REVS   := 5.9 5.10
+  VALIDATED_C_COMPILER_REVS := 5.9 5.10
 endif
 
-# Warning messages about not using the above validated version
-ENFORCE_COMPILER_REV${ENFORCE_COMPILER_REV} := ${VALIDATED_COMPILER_REV}
-ifneq (${COMPILER_REV},${ENFORCE_COMPILER_REV})
-dummy_target_to_enforce_compiler_rev:=\
-$(shell echo >&2 WARNING: You are using CC version ${COMPILER_REV} \
-and should be using version ${ENFORCE_COMPILER_REV}. Set ENFORCE_COMPILER_REV=${COMPILER_REV} to avoid this warning.)
+# Warning messages about not using the above validated versions
+ENFORCE_COMPILER_REV${ENFORCE_COMPILER_REV} := $(strip ${VALIDATED_COMPILER_REVS})
+ifeq ($(filter ${ENFORCE_COMPILER_REV},${COMPILER_REV}),)
+PRINTABLE_CC_REVS := $(subst $(shell echo ' '), or ,${ENFORCE_COMPILER_REV})
+dummy_var_to_enforce_compiler_rev := $(shell \
+	echo >&2 WARNING: You are using CC version ${COMPILER_REV} and \
+	should be using version ${PRINTABLE_CC_REVS}.; \
+	echo >&2 Set ENFORCE_COMPILER_REV=${COMPILER_REV} to avoid this \
+	warning.)
 endif
 
-ENFORCE_C_COMPILER_REV${ENFORCE_C_COMPILER_REV} := ${VALIDATED_C_COMPILER_REV}
-ifneq (${C_COMPILER_REV},${ENFORCE_C_COMPILER_REV})
-dummy_target_to_enforce_c_compiler_rev:=\
-$(shell echo >&2 WARNING: You are using cc version ${C_COMPILER_REV} \
-and should be using version ${ENFORCE_C_COMPILER_REV}. Set ENFORCE_C_COMPILER_REV=${C_COMPILER_REV} to avoid this warning.)
+ENFORCE_C_COMPILER_REV${ENFORCE_C_COMPILER_REV} := $(strip ${VALIDATED_C_COMPILER_REVS})
+ifeq ($(filter ${ENFORCE_C_COMPILER_REV},${C_COMPILER_REV}),)
+PRINTABLE_C_REVS := $(subst $(shell echo ' '), or ,${ENFORCE_C_COMPILER_REV})
+dummy_var_to_enforce_c_compiler_rev := $(shell \
+	echo >&2 WARNING: You are using cc version ${C_COMPILER_REV} and \
+	should be using version ${PRINTABLE_C_REVS}.; \
+	echo >&2 Set ENFORCE_C_COMPILER_REV=${C_COMPILER_REV} to avoid this \
+	warning.)
 endif
 
 COMPILER_REV_NUMERIC := $(shell echo $(COMPILER_REV) | awk -F. '{ print $$1 * 100 + $$2 }')
@@ -139,6 +145,13 @@ OPT_CFLAGS/SLOWER=-xO3
 OPT_CFLAGS/O2=-xO2
 OPT_CFLAGS/NOOPT=-xO1
 
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+ifeq ($(Platform_arch), x86)
+OPT_CFLAGS/NO_TAIL_CALL_OPT  = -Wu,-O~yz
+OPT_CCFLAGS/NO_TAIL_CALL_OPT = -Qoption ube -O~yz
+endif # Platform_arch == x86
+endif # COMPILER_REV_NUMERIC >= 509
+
 #################################################
 # Begin current (>=5.6) Forte compiler options #
 #################################################
@@ -181,10 +194,7 @@ endif # sparc
 
 ifeq ("${Platform_arch_model}", "x86_32")
 
-OPT_CFLAGS=-xtarget=pentium $(EXTRA_OPT_CFLAGS)
-
-# UBE (CC 5.5) has bug 4923569 with -xO4
-OPT_CFLAGS+=-xO3
+OPT_CFLAGS=-xtarget=pentium -xO4 $(EXTRA_OPT_CFLAGS)
 
 endif # 32bit x86
 
@@ -461,7 +471,7 @@ FASTDEBUG_CFLAGS = -g0
 # The -g0 setting allows the C++ frontend to inline, which is a big win.
 
 # Special global options for SS12
-ifeq ($(COMPILER_REV_NUMERIC),509)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
   # There appears to be multiple issues with the new Dwarf2 debug format, so
   #   we tell the compiler to use the older 'stabs' debug format all the time.
   #   Note that this needs to be used in optimized compiles too to be 100%.
