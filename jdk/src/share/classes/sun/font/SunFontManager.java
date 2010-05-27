@@ -73,7 +73,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 return(name.startsWith(".ttf", offset) ||
                        name.startsWith(".TTF", offset) ||
                        name.startsWith(".ttc", offset) ||
-                       name.startsWith(".TTC", offset));
+                       name.startsWith(".TTC", offset) ||
+                       name.startsWith(".otf", offset) ||
+                       name.startsWith(".OTF", offset));
             }
         }
     }
@@ -108,7 +110,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     name.startsWith(".ttf", offset) ||
                     name.startsWith(".TTF", offset) ||
                     name.startsWith(".ttc", offset) ||
-                    name.startsWith(".TTC", offset);
+                    name.startsWith(".TTC", offset) ||
+                    name.startsWith(".otf", offset) ||
+                    name.startsWith(".OTF", offset);
                 if (isTT) {
                     return true;
                 } else if (noType1Font) {
