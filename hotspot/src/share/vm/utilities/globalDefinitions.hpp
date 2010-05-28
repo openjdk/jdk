@@ -73,6 +73,9 @@ extern int LogBitsPerHeapOop;
 extern int BytesPerHeapOop;
 extern int BitsPerHeapOop;
 
+// Oop encoding heap max
+extern uint64_t OopEncodingHeapMax;
+
 const int BitsPerJavaInteger = 32;
 const int BitsPerJavaLong    = 64;
 const int BitsPerSize_t      = size_tSize * BitsPerByte;
@@ -292,12 +295,12 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 // Minimum is max(BytesPerLong, BytesPerDouble, BytesPerOop) / HeapWordSize, so jlong, jdouble and
 // reference fields can be naturally aligned.
 
-const int MinObjAlignment            = HeapWordsPerLong;
-const int MinObjAlignmentInBytes     = MinObjAlignment * HeapWordSize;
-const int MinObjAlignmentInBytesMask = MinObjAlignmentInBytes - 1;
+extern int MinObjAlignment;
+extern int MinObjAlignmentInBytes;
+extern int MinObjAlignmentInBytesMask;
 
-const int LogMinObjAlignment         = LogHeapWordsPerLong;
-const int LogMinObjAlignmentInBytes  = LogMinObjAlignment + LogHeapWordSize;
+extern int LogMinObjAlignment;
+extern int LogMinObjAlignmentInBytes;
 
 // Machine dependent stuff
 
@@ -332,16 +335,14 @@ inline intptr_t align_object_size(intptr_t size) {
   return align_size_up(size, MinObjAlignment);
 }
 
-// Pad out certain offsets to jlong alignment, in HeapWord units.
+inline bool is_object_aligned(intptr_t addr) {
+  return addr == align_object_size(addr);
+}
 
-#define align_object_offset_(offset) align_size_up_(offset, HeapWordsPerLong)
+// Pad out certain offsets to jlong alignment, in HeapWord units.
 
 inline intptr_t align_object_offset(intptr_t offset) {
   return align_size_up(offset, HeapWordsPerLong);
-}
-
-inline bool is_object_aligned(intptr_t offset) {
-  return offset == align_object_offset(offset);
 }
 
 

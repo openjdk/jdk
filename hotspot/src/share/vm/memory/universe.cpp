@@ -748,7 +748,7 @@ jint universe_init() {
 // 4Gb
 static const uint64_t NarrowOopHeapMax = (uint64_t(max_juint) + 1);
 // 32Gb
-static const uint64_t OopEncodingHeapMax = NarrowOopHeapMax << LogMinObjAlignmentInBytes;
+// OopEncodingHeapMax == NarrowOopHeapMax << LogMinObjAlignmentInBytes;
 
 char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
   size_t base = 0;
@@ -1261,7 +1261,7 @@ static void calculate_verify_data(uintptr_t verify_data[2],
 
   // decide which low-order bits we require to be clear:
   size_t alignSize = MinObjAlignmentInBytes;
-  size_t min_object_size = oopDesc::header_size();
+  size_t min_object_size = CollectedHeap::min_fill_size();
 
   // make an inclusive limit:
   uintptr_t max = (uintptr_t)high_boundary - min_object_size*wordSize;

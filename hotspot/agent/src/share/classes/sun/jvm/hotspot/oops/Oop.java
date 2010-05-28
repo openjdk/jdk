@@ -128,7 +128,7 @@ public class Oop {
 
   // Align the object size.
   public static long alignObjectSize(long size) {
-    return VM.getVM().alignUp(size, VM.getVM().getMinObjAlignment());
+    return VM.getVM().alignUp(size, VM.getVM().getMinObjAlignmentInBytes());
   }
 
   // All vm's align longs, so pad out certain offsets.

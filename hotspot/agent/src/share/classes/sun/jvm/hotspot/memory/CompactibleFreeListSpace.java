@@ -73,18 +73,11 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
 
    public CompactibleFreeListSpace(Address addr) {
       super(addr);
-      if ( VM.getVM().isLP64() ) {
-         heapWordSize = 8;
-         IndexSetStart = 1;
-         IndexSetStride = 1;
-      }
-      else {
-         heapWordSize = 4;
-         IndexSetStart = 2;
-         IndexSetStride = 2;
-      }
-
-      IndexSetSize = 257;
+      VM vm = VM.getVM();
+      heapWordSize   = vm.getHeapWordSize();
+      IndexSetStart  = vm.getMinObjAlignmentInBytes() / heapWordSize;
+      IndexSetStride = IndexSetStart;
+      IndexSetSize   = 257;
    }
 
    // Accessing block offset table
