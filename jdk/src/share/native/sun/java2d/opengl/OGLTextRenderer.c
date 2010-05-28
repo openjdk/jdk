@@ -244,6 +244,7 @@ static void
 OGLTR_AddToGlyphCache(GlyphInfo *glyph, jboolean rgbOrder)
 {
     GLenum pixelFormat;
+    CacheCellInfo *ccinfo;
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLTR_AddToGlyphCache");
 
@@ -258,11 +259,12 @@ OGLTR_AddToGlyphCache(GlyphInfo *glyph, jboolean rgbOrder)
     }
 
     AccelGlyphCache_AddGlyph(glyphCache, glyph);
+    ccinfo = (CacheCellInfo *) glyph->cellInfo;
 
-    if (glyph->cellInfo != NULL) {
+    if (ccinfo != NULL) {
         // store glyph image in texture cell
         j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
-                            glyph->cellInfo->x, glyph->cellInfo->y,
+                            ccinfo->x, ccinfo->y,
                             glyph->width, glyph->height,
                             pixelFormat, GL_UNSIGNED_BYTE, glyph->image);
     }
@@ -668,7 +670,7 @@ OGLTR_DrawGrayscaleGlyphViaCache(OGLContext *oglc,
         }
     }
 
-    cell = ginfo->cellInfo;
+    cell = (CacheCellInfo *) (ginfo->cellInfo);
     cell->timesRendered++;
 
     x1 = (jfloat)x;
@@ -871,7 +873,7 @@ OGLTR_DrawLCDGlyphViaCache(OGLContext *oglc, OGLSDOps *dstOps,
         }
     }
 
-    cell = ginfo->cellInfo;
+    cell = (CacheCellInfo *) (ginfo->cellInfo);
     cell->timesRendered++;
 
     // location of the glyph in the destination's coordinate space

@@ -49,6 +49,11 @@ AUTO_JAVA_PRUNE = WrapperGenerator.java
 
 LDFLAGS += -L$(OPENWIN_LIB)
 
+# For Xrender extension.
+ifeq ($(PLATFORM), solaris)
+LDFLAGS += -L/usr/openwin/sfw/lib$(ISA_DIR) -R/usr/openwin/sfw/lib$(ISA_DIR)
+endif
+
 ifeq ($(PLATFORM), linux)
 LDFLAGS += -lpthread
 dummy := $(shell $(MKDIR) -p $(LIB_LOCATION))
@@ -88,7 +93,7 @@ vpath %.c   $(SHARE_SRC)/native/sun/java2d/opengl
 vpath %.c   $(PLATFORM_SRC)/native/sun/java2d/opengl
 vpath %.c   $(PLATFORM_SRC)/native/sun/java2d/x11
 
-OTHER_LDLIBS = $(LIBM) -lawt -lXext -lX11 -ldl \
+OTHER_LDLIBS = $(LIBM) -lawt -lXext -lX11 -lXrender -ldl \
                    $(LDFLAGS_COMMON) $(AWT_RUNPATH) $(OTHER_LDFLAGS) -lXtst -lXi
 
 ifeq  ($(PLATFORM), solaris)
@@ -122,7 +127,7 @@ CPPFLAGS += -DXAWT -DXAWT_HACK \
 	-I$(PLATFORM_SRC)/native/sun/awt/medialib \
         -I$(PLATFORM_SRC)/native/sun/font \
         -I$(SHARE_SRC)/native/sun/awt \
-        -I$(PLATFORM_SRC)/native/sun/awt 
+        -I$(PLATFORM_SRC)/native/sun/awt
 
 ifeq ($(PLATFORM), linux)
 # Allows for builds on Debian GNU Linux, X11 is in a different place 

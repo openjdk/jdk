@@ -307,7 +307,7 @@ public class BufferedPaints {
      * linear RGB space.  Copied directly from the
      * MultipleGradientPaintContext class.
      */
-    private static int convertSRGBtoLinearRGB(int color) {
+    public static int convertSRGBtoLinearRGB(int color) {
         float input, output;
 
         input = color / 255.0f;

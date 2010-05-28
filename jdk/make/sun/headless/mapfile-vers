@@ -46,16 +46,19 @@ SUNWprivate_1.1 {
 		Java_sun_java2d_x11_X11Renderer_XFillRoundRect;
 		Java_sun_java2d_x11_X11Renderer_devCopyArea;
 		Java_sun_java2d_x11_X11SurfaceData_initIDs;
-		Java_sun_java2d_x11_X11SurfaceData_initOps;
-		Java_sun_java2d_x11_X11SurfaceData_isDrawableValid;
 		Java_sun_java2d_x11_X11SurfaceData_initSurface;
-		Java_sun_java2d_x11_X11SurfaceData_setInvalid;
-                Java_sun_java2d_x11_X11SurfaceData_XCreateGC;
-                Java_sun_java2d_x11_X11SurfaceData_XResetClip;
-                Java_sun_java2d_x11_X11SurfaceData_XSetClip;
                 Java_sun_java2d_x11_X11SurfaceData_XSetCopyMode;
                 Java_sun_java2d_x11_X11SurfaceData_XSetXorMode;
                 Java_sun_java2d_x11_X11SurfaceData_XSetForeground;
+
+		Java_sun_java2d_x11_XSurfaceData_initOps;
+                Java_sun_java2d_x11_XSurfaceData_XCreateGC;
+                Java_sun_java2d_x11_XSurfaceData_XResetClip;
+                Java_sun_java2d_x11_XSurfaceData_XSetClip;
+                Java_sun_java2d_x11_XSurfaceData_flushNativeSurface;
+		Java_sun_java2d_x11_XSurfaceData_isDrawableValid;
+		Java_sun_java2d_x11_XSurfaceData_setInvalid;
+		Java_sun_java2d_x11_XSurfaceData_XSetGraphicsExposures;
 
 		X11SurfaceData_GetOps;
 		Java_java_awt_Font_initIDs;

@@ -117,6 +117,11 @@ public class RenderBuffer {
         curAddress = baseAddress;
     }
 
+    public final RenderBuffer skip(long numBytes) {
+        curAddress += numBytes;
+        return this;
+    }
+
     /**
      * putByte() methods...
      */
