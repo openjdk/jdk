@@ -175,7 +175,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
     // store and again for the card mark.
     LIR_Opr tmp = new_pointer_register();
     __ leal(LIR_OprFact::address(addr), tmp);
-    return new LIR_Address(tmp, 0, type);
+    return new LIR_Address(tmp, type);
   } else {
     return addr;
   }
@@ -185,7 +185,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 void LIRGenerator::increment_counter(address counter, int step) {
   LIR_Opr pointer = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, 0, T_INT);
+  LIR_Address* addr = new LIR_Address(pointer, T_INT);
   increment_counter(addr, step);
 }
 

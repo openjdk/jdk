@@ -2462,9 +2462,18 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
 #endif // _LP64
     } else {
+#ifdef _LP64
+      Register r_lo;
+      if (right->type() == T_OBJECT || right->type() == T_ARRAY) {
+        r_lo = right->as_register();
+      } else {
+        r_lo = right->as_register_lo();
+      }
+#else
       Register r_lo = right->as_register_lo();
       Register r_hi = right->as_register_hi();
       assert(l_lo != r_hi, "overwriting registers");
+#endif
       switch (code) {
         case lir_logic_and:
           __ andptr(l_lo, r_lo);
