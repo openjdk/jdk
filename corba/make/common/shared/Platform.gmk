@@ -53,7 +53,6 @@ PLATFORM_SHARED=done
 #     VARIANT                     OPT or DBG, OPT is the default
 #     OS_NAME                     solaris, linux, or nt
 #     OS_VERSION                  specific version of os, 5.10, 2.4.9-e.3, etc.
-#     OS_VENDOR                   company name
 #     TEMP_DISK                   /tmp or C:/temp
 #     ARCH_DATA_MODEL             32 or 64
 #     ARCH                        sparc, sparcv9, i586, amd64, or ia64
@@ -153,7 +152,6 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   endif
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
-  OS_VENDOR = Sun Microsystems
   # Required Solaris version
   REQUIRED_OS_VERSION = 5.10
   # Minimum disk space needed as determined by running 'du -sk' on 
@@ -236,7 +234,6 @@ ifeq ($(SYSTEM_UNAME), Linux)
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=1460000
   LINUX_VERSION_INFO = /etc/redhat-release
-  OS_VENDOR = Red Hat
   ifeq ($(ARCH_DATA_MODEL), 32)
     REQUIRED_LINUX_VER = Advanced Server
     REQUIRED_LINUX_FULLVER = Advanced Server release 2.1AS
@@ -244,7 +241,6 @@ ifeq ($(SYSTEM_UNAME), Linux)
   else
     ifeq ($(ARCH), amd64)
       LINUX_VERSION_INFO = /etc/SuSE-release
-      OS_VENDOR = SuSE Enterprise
       REQUIRED_LINUX_VER = 8.1
       REQUIRED_LINUX_FULLVER = $(REQUIRED_LINUX_VER) SLSE AMD64
       REQUIRED_OS_VERSION = 2.4.19-SMP
@@ -370,7 +366,6 @@ ifeq ($(PLATFORM), windows)
   # Minimum disk space needed as determined by running 'du -sk' on 
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=500000
-  OS_VENDOR = Microsoft
   # How much RAM does this machine have:
   ifndef MB_OF_MEMORY
     MB_OF_MEMORY := $(shell \
