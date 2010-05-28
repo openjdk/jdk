@@ -149,8 +149,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_invokestatic    : // fall through
   case Bytecodes::_invokedynamic   : // fall through
   case Bytecodes::_invokeinterface : {
-    u2 cpci_old = _s_old->has_index_u4() ? _s_old->get_index_u4() : _s_old->get_index_u2();
-    u2 cpci_new = _s_new->has_index_u4() ? _s_new->get_index_u4() : _s_new->get_index_u2();
+    int cpci_old = _s_old->has_index_u4() ? _s_old->get_index_u4() : _s_old->get_index_u2_cpcache();
+    int cpci_new = _s_new->has_index_u4() ? _s_new->get_index_u4() : _s_new->get_index_u2_cpcache();
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.

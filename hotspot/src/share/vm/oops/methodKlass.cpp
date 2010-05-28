@@ -237,7 +237,7 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
   methodOop m = methodOop(obj);
   // get the effect of PrintOopAddress, always, for methods:
-  st->print   (" - this oop:          "INTPTR_FORMAT, (intptr_t)m);
+  st->print_cr(" - this oop:          "INTPTR_FORMAT, (intptr_t)m);
   st->print   (" - method holder:     ");    m->method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         "INTPTR_FORMAT" ", (address)m->constants());
   m->constants()->print_value_on(st); st->cr();
