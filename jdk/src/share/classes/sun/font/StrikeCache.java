@@ -31,6 +31,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.*;
 
 import sun.java2d.Disposer;
 import sun.java2d.pipe.BufferedContext;
@@ -65,6 +66,9 @@ public final class StrikeCache {
     static final Unsafe unsafe = Unsafe.getUnsafe();
 
     static ReferenceQueue refQueue = Disposer.getQueue();
+
+    static ArrayList<GlyphDisposedListener> disposeListeners = new ArrayList<GlyphDisposedListener>(1);
+
 
     /* Reference objects may have their referents cleared when GC chooses.
      * During application client start-up there is typically at least one
@@ -108,6 +112,8 @@ public final class StrikeCache {
     static int topLeftXOffset;
     static int topLeftYOffset;
     static int pixelDataOffset;
+    static int cacheCellOffset;
+    static int managedOffset;
     static long invisibleGlyphPtr;
 
     /* Native method used to return information used for unsafe
@@ -129,7 +135,7 @@ public final class StrikeCache {
 
     static {
 
-        long[] nativeInfo = new long[11];
+        long[] nativeInfo = new long[13];
         getGlyphCacheDescription(nativeInfo);
         //Can also get address size from Unsafe class :-
         //nativeAddressSize = unsafe.addressSize();
@@ -144,6 +150,9 @@ public final class StrikeCache {
         topLeftYOffset    = (int)nativeInfo[8];
         pixelDataOffset   = (int)nativeInfo[9];
         invisibleGlyphPtr = nativeInfo[10];
+        cacheCellOffset = (int) nativeInfo[11];
+        managedOffset = (int) nativeInfo[12];
+
         if (nativeAddressSize < 4) {
             throw new InternalError("Unexpected address size for font data: " +
                                     nativeAddressSize);
@@ -195,10 +204,10 @@ public final class StrikeCache {
 
     private static final void doDispose(FontStrikeDisposer disposer) {
         if (disposer.intGlyphImages != null) {
-            freeIntMemory(disposer.intGlyphImages,
+            freeCachedIntMemory(disposer.intGlyphImages,
                     disposer.pScalerContext);
         } else if (disposer.longGlyphImages != null) {
-            freeLongMemory(disposer.longGlyphImages,
+            freeCachedLongMemory(disposer.longGlyphImages,
                     disposer.pScalerContext);
         } else if (disposer.segIntGlyphImages != null) {
             /* NB Now making multiple JNI calls in this case.
@@ -207,7 +216,7 @@ public final class StrikeCache {
              */
             for (int i=0; i<disposer.segIntGlyphImages.length; i++) {
                 if (disposer.segIntGlyphImages[i] != null) {
-                    freeIntMemory(disposer.segIntGlyphImages[i],
+                    freeCachedIntMemory(disposer.segIntGlyphImages[i],
                             disposer.pScalerContext);
                     /* native will only free the scaler context once */
                     disposer.pScalerContext = 0L;
@@ -218,19 +227,19 @@ public final class StrikeCache {
              * for a strike that never was asked to rasterise a glyph.
              */
             if (disposer.pScalerContext != 0L) {
-                freeIntMemory(new int[0], disposer.pScalerContext);
+                freeCachedIntMemory(new int[0], disposer.pScalerContext);
             }
         } else if (disposer.segLongGlyphImages != null) {
             for (int i=0; i<disposer.segLongGlyphImages.length; i++) {
                 if (disposer.segLongGlyphImages[i] != null) {
-                    freeLongMemory(disposer.segLongGlyphImages[i],
+                    freeCachedLongMemory(disposer.segLongGlyphImages[i],
                             disposer.pScalerContext);
                     disposer.pScalerContext = 0L;
                     disposer.segLongGlyphImages[i] = null;
                 }
             }
             if (disposer.pScalerContext != 0L) {
-                freeLongMemory(new long[0], disposer.pScalerContext);
+                freeCachedLongMemory(new long[0], disposer.pScalerContext);
             }
         } else if (disposer.pScalerContext != 0L) {
             /* Rarely a strike may have been created that never cached
@@ -238,9 +247,9 @@ public final class StrikeCache {
              * context.
              */
             if (longAddresses()) {
-                freeLongMemory(new long[0], disposer.pScalerContext);
+                freeCachedLongMemory(new long[0], disposer.pScalerContext);
             } else {
-                freeIntMemory(new int[0], disposer.pScalerContext);
+                freeCachedIntMemory(new int[0], disposer.pScalerContext);
             }
         }
     }
@@ -304,6 +313,68 @@ public final class StrikeCache {
     private static native void freeIntMemory(int[] glyphPtrs, long pContext);
     private static native void freeLongMemory(long[] glyphPtrs, long pContext);
 
+    private static void freeCachedIntMemory(int[] glyphPtrs, long pContext) {
+        synchronized(disposeListeners) {
+            if (disposeListeners.size() > 0) {
+                ArrayList<Long> gids = null;
+
+                for (int i = 0; i < glyphPtrs.length; i++) {
+                    if (glyphPtrs[i] != 0 && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0
+                            && unsafe.getInt(glyphPtrs[i] + cacheCellOffset) != 0) {
+
+                        if (gids == null) {
+                            gids = new ArrayList<Long>();
+                        }
+                        gids.add((long) glyphPtrs[i]);
+                    }
+                }
+
+                if (gids != null) {
+                    notifyDisposeListeners(gids);
+                }
+            }
+        }
+
+        freeIntMemory(glyphPtrs, pContext);
+    }
+
+    private static void  freeCachedLongMemory(long[] glyphPtrs, long pContext) {
+        synchronized(disposeListeners) {
+        if (disposeListeners.size() > 0)  {
+                ArrayList<Long> gids = null;
+
+                for (int i=0; i < glyphPtrs.length; i++) {
+                    if (glyphPtrs[i] != 0
+                            && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0
+                            && unsafe.getInt(glyphPtrs[i] + cacheCellOffset) != 0) {
+
+                        if (gids == null) {
+                            gids = new ArrayList<Long>();
+                        }
+                        gids.add((long) glyphPtrs[i]);
+                    }
+                }
+
+                if (gids != null) {
+                    notifyDisposeListeners(gids);
+                }
+        }
+        }
+
+        freeLongMemory(glyphPtrs, pContext);
+    }
+
+    public static void addGlyphDisposedListener(GlyphDisposedListener listener) {
+        synchronized(disposeListeners) {
+            disposeListeners.add(listener);
+        }
+    }
+
+    private static void notifyDisposeListeners(ArrayList<Long> glyphs) {
+        for (GlyphDisposedListener listener : disposeListeners) {
+            listener.glyphDisposed(glyphs);
+        }
+    }
 
     public static Reference getStrikeRef(FontStrike strike) {
         return getStrikeRef(strike, cacheRefTypeWeak);

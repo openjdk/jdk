@@ -113,7 +113,7 @@ CPPFLAGS += -I$(OPENWIN_HOME)/include \
 # Libraries to link in.
 #
 ifeq ($(PLATFORM), solaris)
-OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt
+OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
 endif # PLATFORM
 
 ifeq ($(PLATFORM), linux)

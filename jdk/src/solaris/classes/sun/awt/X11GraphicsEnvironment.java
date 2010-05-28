@@ -26,6 +26,7 @@
 package sun.awt;
 
 import java.awt.GraphicsDevice;
+
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.BufferedReader;
@@ -51,6 +52,7 @@ import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.UnixSurfaceManagerFactory;
 import sun.util.logging.PlatformLogger;
+import sun.java2d.xr.XRSurfaceData;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -92,6 +94,18 @@ public class X11GraphicsEnvironment
                         }
                     }
 
+                    // Now check for XRender system property
+                    boolean xRenderRequested = false;
+                    String xProp = System.getProperty("sun.java2d.xrender");
+                        if (xProp != null) {
+                        if (xProp.equals("true") || xProp.equals("t")) {
+                            xRenderRequested = true;
+                        } else if (xProp.equals("True") || xProp.equals("T")) {
+                            xRenderRequested = true;
+                            xRenderVerbose = true;
+                        }
+                    }
+
                     // initialize the X11 display connection
                     initDisplay(glxRequested);
 
@@ -104,6 +118,19 @@ public class X11GraphicsEnvironment
                                 "pipeline (GLX 1.3 not available)");
                         }
                     }
+
+                    // only attempt to initialize Xrender if it was requested
+                    if (xRenderRequested) {
+                        xRenderAvailable = initXRender();
+                        if (xRenderVerbose && !xRenderAvailable) {
+                            System.out.println(
+                                         "Could not enable XRender pipeline");
+                        }
+                    }
+
+                    if (xRenderAvailable) {
+                        XRSurfaceData.initXRSurfaceData();
+                    }
                 }
 
                 return null;
@@ -114,6 +141,7 @@ public class X11GraphicsEnvironment
         SurfaceManagerFactory.setInstance(new UnixSurfaceManagerFactory());
 
     }
+
 
     private static boolean glxAvailable;
     private static boolean glxVerbose;
@@ -126,6 +154,18 @@ public class X11GraphicsEnvironment
 
     public static boolean isGLXVerbose() {
         return glxVerbose;
+    }
+
+    private static boolean xRenderVerbose;
+    private static boolean xRenderAvailable;
+
+    private static native boolean initXRender();
+    public static boolean isXRenderAvailable() {
+        return xRenderAvailable;
+    }
+
+    public static boolean isXRenderVerbose() {
+        return xRenderVerbose;
     }
 
     /**
