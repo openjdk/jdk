@@ -44,20 +44,17 @@ final class CompletedFuture<V> implements Future<V> {
         this.exc = exc;
     }
 
-    @SuppressWarnings("unchecked")
     static <V> CompletedFuture<V> withResult(V result) {
         return new CompletedFuture<V>(result, null);
     }
 
-    @SuppressWarnings("unchecked")
     static <V> CompletedFuture<V> withFailure(Throwable exc) {
         // exception must be IOException or SecurityException
         if (!(exc instanceof IOException) && !(exc instanceof SecurityException))
             exc = new IOException(exc);
-        return new CompletedFuture(null, exc);
+        return new CompletedFuture<V>(null, exc);
     }
 
-    @SuppressWarnings("unchecked")
     static <V> CompletedFuture<V> withResult(V result, Throwable exc) {
         if (exc == null) {
             return withResult(result);
