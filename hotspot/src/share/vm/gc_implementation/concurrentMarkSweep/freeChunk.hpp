@@ -133,9 +133,5 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
   void print_on(outputStream* st);
 };
 
-// Alignment helpers etc.
-#define numQuanta(x,y) ((x+y-1)/y)
-enum AlignmentConstants {
-  MinChunkSize = numQuanta(sizeof(FreeChunk), MinObjAlignmentInBytes) * MinObjAlignment
-};
+extern size_t MinChunkSize;
 

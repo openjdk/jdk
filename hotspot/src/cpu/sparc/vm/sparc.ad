@@ -821,6 +821,10 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_ConvI2D   && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
+          !(n->ideal_Opcode()==Op_Load2I    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_Load4C    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_Load4S    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_Load8B    && ld_op==Op_LoadD) &&
           !(n->rule() == loadUB_rule)) {
         verify_oops_warning(n, n->ideal_Opcode(), ld_op);
       }
@@ -832,6 +836,9 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_StoreI && st_op==Op_StoreF) &&
           !(n->ideal_Opcode()==Op_StoreF && st_op==Op_StoreI) &&
           !(n->ideal_Opcode()==Op_StoreL && st_op==Op_StoreI) &&
+          !(n->ideal_Opcode()==Op_Store2I && st_op==Op_StoreD) &&
+          !(n->ideal_Opcode()==Op_Store4C && st_op==Op_StoreD) &&
+          !(n->ideal_Opcode()==Op_Store8B && st_op==Op_StoreD) &&
           !(n->ideal_Opcode()==Op_StoreD && st_op==Op_StoreI && n->rule() == storeD0_rule)) {
         verify_oops_warning(n, n->ideal_Opcode(), st_op);
       }

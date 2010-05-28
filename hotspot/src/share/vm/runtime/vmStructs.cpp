@@ -1328,14 +1328,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(LogBytesPerWord)                                       \
   declare_constant(BytesPerLong)                                          \
                                                                           \
-  /********************/                                                  \
-  /* Object alignment */                                                  \
-  /********************/                                                  \
-                                                                          \
-  declare_constant(MinObjAlignment)                                       \
-  declare_constant(MinObjAlignmentInBytes)                                \
-  declare_constant(LogMinObjAlignmentInBytes)                             \
-                                                                          \
   /********************************************/                          \
   /* Generation and Space Hierarchy Constants */                          \
   /********************************************/                          \

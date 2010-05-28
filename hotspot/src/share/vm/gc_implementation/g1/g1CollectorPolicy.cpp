@@ -2523,14 +2523,14 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
   }
   if (ParallelGCThreads > 0) {
     const size_t OverpartitionFactor = 4;
-    const size_t MinChunkSize = 8;
-    const size_t ChunkSize =
+    const size_t MinWorkUnit = 8;
+    const size_t WorkUnit =
       MAX2(_g1->n_regions() / (ParallelGCThreads * OverpartitionFactor),
-           MinChunkSize);
+           MinWorkUnit);
     _collectionSetChooser->prepareForAddMarkedHeapRegionsPar(_g1->n_regions(),
-                                                             ChunkSize);
+                                                             WorkUnit);
     ParKnownGarbageTask parKnownGarbageTask(_collectionSetChooser,
-                                            (int) ChunkSize);
+                                            (int) WorkUnit);
     _g1->workers()->run_task(&parKnownGarbageTask);
 
     assert(_g1->check_heap_region_claim_values(HeapRegion::InitialClaimValue),

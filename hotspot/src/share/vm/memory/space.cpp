@@ -861,9 +861,9 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
   }
   size = align_object_size(size);
 
-  const size_t min_int_array_size = typeArrayOopDesc::header_size(T_INT);
-  if (size >= min_int_array_size) {
-    size_t length = (size - min_int_array_size) * (HeapWordSize / sizeof(jint));
+  const size_t array_header_size = typeArrayOopDesc::header_size(T_INT);
+  if (size >= (size_t)align_object_size(array_header_size)) {
+    size_t length = (size - array_header_size) * (HeapWordSize / sizeof(jint));
     // allocate uninitialized int array
     typeArrayOop t = (typeArrayOop) allocate(size);
     assert(t != NULL, "allocation should succeed");
@@ -871,7 +871,7 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     t->set_klass(Universe::intArrayKlassObj());
     t->set_length((int)length);
   } else {
-    assert((int) size == instanceOopDesc::header_size(),
+    assert(size == CollectedHeap::min_fill_size(),
            "size for smallest fake object doesn't match");
     instanceOop obj = (instanceOop) allocate(size);
     obj->set_mark(markOopDesc::prototype());

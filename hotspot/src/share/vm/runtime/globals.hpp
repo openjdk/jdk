@@ -321,6 +321,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintCompressedOopsMode, false,                          \
             "Print compressed oops base address and encoding mode")         \
                                                                             \
+  lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
+          "Default object alignment in bytes, 8 is minimum")                \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
