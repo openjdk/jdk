@@ -98,7 +98,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         private Cursor otherCursor = resizeCursor;
 
         public void mouseClicked(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             if (e.getClickCount() % 2 == 1 &&
@@ -143,7 +143,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         }
 
         public void mousePressed(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             header.setDraggedColumn(null);
@@ -188,7 +188,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         }
 
         public void mouseMoved(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             if (canResize(getResizingColumn(e.getPoint()), header) !=
@@ -199,7 +199,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
        }
 
         public void mouseDragged(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             int mouseX = e.getX();
@@ -258,7 +258,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         }
 
         public void mouseReleased(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             setDraggedDistance(0, viewIndexForColumn(header.getDraggedColumn()));
@@ -270,14 +270,14 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         }
 
         public void mouseEntered(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             updateRolloverColumn(e);
         }
 
         public void mouseExited(MouseEvent e) {
-            if (SwingUtilities2.shouldIgnore(e, header)) {
+            if (!header.isEnabled()) {
                 return;
             }
             int oldRolloverColumn = rolloverColumn;
