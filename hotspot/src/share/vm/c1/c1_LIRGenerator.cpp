@@ -1309,7 +1309,7 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patc
   __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
   if (!addr_opr->is_address()) {
     assert(addr_opr->is_register(), "must be");
-    addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, 0, T_OBJECT));
+    addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
   }
   CodeStub* slow = new G1PreBarrierStub(addr_opr, pre_val, pre_val_patch_code,
                                         info);
@@ -1325,7 +1325,7 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
       new_val->as_constant_ptr()->as_jobject() == NULL) return;
 
   if (!new_val->is_register()) {
-    LIR_Opr new_val_reg = new_pointer_register();
+    LIR_Opr new_val_reg = new_register(T_OBJECT);
     if (new_val->is_constant()) {
       __ move(new_val, new_val_reg);
     } else {
@@ -1337,7 +1337,7 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
 
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
-    LIR_Opr ptr = new_pointer_register();
+    LIR_Opr ptr = new_register(T_OBJECT);
     if (!address->index()->is_valid() && address->disp() == 0) {
       __ move(address->base(), ptr);
     } else {
@@ -1350,7 +1350,6 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
 
   LIR_Opr xor_res = new_pointer_register();
   LIR_Opr xor_shift_res = new_pointer_register();
-
   if (TwoOperandLIRForm ) {
     __ move(addr, xor_res);
     __ logical_xor(xor_res, new_val, xor_res);
@@ -1368,7 +1367,7 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
   }
 
   if (!new_val->is_register()) {
-    LIR_Opr new_val_reg = new_pointer_register();
+    LIR_Opr new_val_reg = new_register(T_OBJECT);
     __ leal(new_val, new_val_reg);
     new_val = new_val_reg;
   }
@@ -1377,7 +1376,7 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
   __ cmp(lir_cond_notEqual, xor_shift_res, LIR_OprFact::intptrConst(NULL_WORD));
 
   CodeStub* slow = new G1PostBarrierStub(addr, new_val);
-  __ branch(lir_cond_notEqual, T_INT, slow);
+  __ branch(lir_cond_notEqual, LP64_ONLY(T_LONG) NOT_LP64(T_INT), slow);
   __ branch_destination(slow->continuation());
 }
 

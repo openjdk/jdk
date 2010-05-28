@@ -505,15 +505,22 @@ class LIR_Address: public LIR_OprPtr {
      , _type(type)
      , _disp(0) { verify(); }
 
-  LIR_Address(LIR_Opr base, int disp, BasicType type):
+  LIR_Address(LIR_Opr base, intx disp, BasicType type):
        _base(base)
      , _index(LIR_OprDesc::illegalOpr())
      , _scale(times_1)
      , _type(type)
      , _disp(disp) { verify(); }
 
+  LIR_Address(LIR_Opr base, BasicType type):
+       _base(base)
+     , _index(LIR_OprDesc::illegalOpr())
+     , _scale(times_1)
+     , _type(type)
+     , _disp(0) { verify(); }
+
 #ifdef X86
-  LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, int disp, BasicType type):
+  LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, intx disp, BasicType type):
        _base(base)
      , _index(index)
      , _scale(scale)
