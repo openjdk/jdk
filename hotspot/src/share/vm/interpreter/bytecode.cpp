@@ -215,7 +215,14 @@ int Bytecode_field::index() const {
 
 int Bytecode_loadconstant::index() const {
   Bytecodes::Code stdc = Bytecodes::java_code(code());
-  return stdc == Bytecodes::_ldc ? get_index_u1(stdc) : get_index_u2(stdc);
+  if (stdc != Bytecodes::_wide) {
+    if (Bytecodes::java_code(stdc) == Bytecodes::_ldc)
+      return get_index_u1(stdc);
+    else
+      return get_index_u2(stdc, false);
+  }
+  stdc = Bytecodes::code_at(addr_at(1));
+  return get_index_u2(stdc, true);
 }
 
 //------------------------------------------------------------------------------
