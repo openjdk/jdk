@@ -1120,6 +1120,9 @@ class CommandLineFlags {
   product(intx, TraceRedefineClasses, 0,                                    \
           "Trace level for JVMTI RedefineClasses")                          \
                                                                             \
+  develop(bool, StressMethodComparator, false,                              \
+          "run the MethodComparator on all loaded methods")                 \
+                                                                            \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \
           "Verify bytecodes after RedefineClasses constant pool merging")   \

@@ -163,14 +163,10 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
 
   case Bytecodes::_ldc   : // fall through
   case Bytecodes::_ldc_w : {
-    u2 cpi_old, cpi_new;
-    if (c_old == Bytecodes::_ldc) {
-      cpi_old = _s_old->bcp()[1];
-      cpi_new = _s_new->bcp()[1];
-    } else {
-      cpi_old = _s_old->get_index_u2();
-      cpi_new = _s_new->get_index_u2();
-    }
+    Bytecode_loadconstant* ldc_old = Bytecode_loadconstant_at(_s_old->method()(), _s_old->bcp());
+    Bytecode_loadconstant* ldc_new = Bytecode_loadconstant_at(_s_new->method()(), _s_new->bcp());
+    int cpi_old = ldc_old->index();
+    int cpi_new = ldc_new->index();
     constantTag tag_old = _old_cp->tag_at(cpi_old);
     constantTag tag_new = _new_cp->tag_at(cpi_new);
     if (tag_old.is_int() || tag_old.is_float()) {
@@ -180,7 +176,9 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
         if (_old_cp->int_at(cpi_old) != _new_cp->int_at(cpi_new))
           return false;
       } else {
-        if (_old_cp->float_at(cpi_old) != _new_cp->float_at(cpi_new))
+        // Use jint_cast to compare the bits rather than numerical values.
+        // This makes a difference for NaN constants.
+        if (jint_cast(_old_cp->float_at(cpi_old)) != jint_cast(_new_cp->float_at(cpi_new)))
           return false;
       }
     } else if (tag_old.is_string() || tag_old.is_unresolved_string()) {
@@ -210,7 +208,9 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
       if (_old_cp->long_at(cpi_old) != _new_cp->long_at(cpi_new))
         return false;
     } else {
-      if (_old_cp->double_at(cpi_old) != _new_cp->double_at(cpi_new))
+      // Use jlong_cast to compare the bits rather than numerical values.
+      // This makes a difference for NaN constants.
+      if (jlong_cast(_old_cp->double_at(cpi_old)) != jlong_cast(_new_cp->double_at(cpi_new)))
         return false;
     }
     break;
@@ -261,8 +261,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_ifnonnull : // fall through
   case Bytecodes::_ifnull    : // fall through
   case Bytecodes::_jsr       : {
-    short old_ofs = (short) _s_old->get_index_u2();
-    short new_ofs = (short) _s_new->get_index_u2();
+    int old_ofs = _s_old->bytecode()->get_offset_s2(c_old);
+    int new_ofs = _s_new->bytecode()->get_offset_s2(c_new);
     if (_switchable_test) {
       int old_dest = _s_old->bci() + old_ofs;
       int new_dest = _s_new->bci() + new_ofs;
@@ -298,8 +298,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
 
   case Bytecodes::_goto_w : // fall through
   case Bytecodes::_jsr_w  : {
-    int old_ofs = (int) Bytes::get_Java_u4(_s_old->bcp() + 1);
-    int new_ofs = (int) Bytes::get_Java_u4(_s_new->bcp() + 1);
+    int old_ofs = _s_old->bytecode()->get_offset_s4(c_old);
+    int new_ofs = _s_new->bytecode()->get_offset_s4(c_new);
     if (_switchable_test) {
       int old_dest = _s_old->bci() + old_ofs;
       int new_dest = _s_new->bci() + new_ofs;
