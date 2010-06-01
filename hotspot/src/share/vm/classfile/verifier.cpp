@@ -25,6 +25,8 @@
 # include "incls/_precompiled.incl"
 # include "incls/_verifier.cpp.incl"
 
+#define NOFAILOVER_MAJOR_VERSION 51
+
 // Access to external entry for VerifyClassCodes - old byte code verifier
 
 extern "C" {
@@ -91,7 +93,8 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
           klass, message_buffer, message_buffer_len, THREAD);
         split_verifier.verify_class(THREAD);
         exception_name = split_verifier.result();
-      if (FailOverToOldVerifier && !HAS_PENDING_EXCEPTION &&
+      if (klass->major_version() < NOFAILOVER_MAJOR_VERSION &&
+          FailOverToOldVerifier && !HAS_PENDING_EXCEPTION &&
           (exception_name == vmSymbols::java_lang_VerifyError() ||
            exception_name == vmSymbols::java_lang_ClassFormatError())) {
         if (TraceClassInitialization) {
