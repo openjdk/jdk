@@ -1342,19 +1342,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   // and it hasn't already been reported for this nmethod then report it now.
   // (the event may have been reported earilier if the GC marked it for unloading).
   if (state == zombie) {
-
-    DTRACE_METHOD_UNLOAD_PROBE(method());
-
-    if (JvmtiExport::should_post_compiled_method_unload() &&
-        !unload_reported()) {
-      assert(method() != NULL, "checking");
-      {
-        HandleMark hm;
-        JvmtiExport::post_compiled_method_unload_at_safepoint(
-            method()->jmethod_id(), code_begin());
-      }
-      set_unload_reported();
-    }
+    post_compiled_method_unload();
   }
 
 
@@ -1506,6 +1494,12 @@ void nmethod::post_compiled_method_load_event() {
 }
 
 void nmethod::post_compiled_method_unload() {
+  if (unload_reported()) {
+    // During unloading we transition to unloaded and then to zombie
+    // and the unloading is reported during the first transition.
+    return;
+  }
+
   assert(_method != NULL && !is_unloaded(), "just checking");
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
@@ -1515,8 +1509,7 @@ void nmethod::post_compiled_method_unload() {
   if (JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     HandleMark hm;
-    JvmtiExport::post_compiled_method_unload_at_safepoint(
-                      method()->jmethod_id(), code_begin());
+    JvmtiExport::post_compiled_method_unload(method()->jmethod_id(), code_begin());
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at
