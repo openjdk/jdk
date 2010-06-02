@@ -57,11 +57,20 @@ import java.io.IOException;
  * specification available at
  * <a href="http://www.ietf.org/rfc/rfc4120.txt">
  * http://www.ietf.org/rfc/rfc4120.txt</a>.
+ *
+ * The implementation also includes the microseconds info so that the
+ * same class can be used as a precise timestamp in Authenticator etc.
  */
 
 public class KerberosTime implements Cloneable {
 
     private long kerberosTime; // milliseconds since epoch, a Date.getTime() value
+    private int  microSeconds; // the last three digits of the microsecond value
+
+    // The time when this class is loaded. Used in setNow()
+    private static final long initMilli = System.currentTimeMillis();
+    private static final long initMicro = System.nanoTime() / 1000;
+
     private static long syncTime;
     private static boolean DEBUG = Krb5.DEBUG;
 
@@ -77,9 +86,13 @@ public class KerberosTime implements Cloneable {
         kerberosTime = time;
     }
 
+    private KerberosTime(long time, int micro) {
+        kerberosTime = time;
+        microSeconds = micro;
+    }
 
     public Object clone() {
-        return new KerberosTime(kerberosTime);
+        return new KerberosTime(kerberosTime, microSeconds);
     }
 
     // This constructor is used in the native code
@@ -109,8 +122,8 @@ public class KerberosTime implements Cloneable {
         //  |   | | | | | |
         //  0   4 6 8 | | |
         //           10 | |
-        //                         12 |
-        //                           14
+        //             12 |
+        //               14
 
         if (time.length() != 15)
             throw new Asn1Exception(Krb5.ASN1_BAD_TIMEFORMAT);
@@ -148,11 +161,8 @@ public class KerberosTime implements Cloneable {
 
     public KerberosTime(boolean initToNow) {
         if (initToNow) {
-            Date temp = new Date();
-            setTime(temp);
+            setNow();
         }
-        else
-            kerberosTime = 0;
     }
 
     /**
@@ -192,10 +202,12 @@ public class KerberosTime implements Cloneable {
 
     public void setTime(Date time) {
         kerberosTime = time.getTime(); // (time.getTimezoneOffset() * 60000L);
+        microSeconds = 0;
     }
 
     public void setTime(long time) {
         kerberosTime = time;
+        microSeconds = 0;
     }
 
     public Date toDate() {
@@ -205,16 +217,18 @@ public class KerberosTime implements Cloneable {
     }
 
     public void setNow() {
-        Date temp = new Date();
-        setTime(temp);
+        long microElapsed = System.nanoTime() / 1000 - initMicro;
+        setTime(initMilli + microElapsed/1000);
+        microSeconds = (int)(microElapsed % 1000);
     }
 
     public int getMicroSeconds() {
         Long temp_long = new Long((kerberosTime % 1000L) * 1000L);
-        return temp_long.intValue();
+        return temp_long.intValue() + microSeconds;
     }
 
     public void setMicroSeconds(int usec) {
+        microSeconds = usec % 1000;
         Integer temp_int = new Integer(usec);
         long temp_long = temp_int.longValue() / 1000L;
         kerberosTime = kerberosTime - (kerberosTime % 1000L) + temp_long;
@@ -222,6 +236,7 @@ public class KerberosTime implements Cloneable {
 
     public void setMicroSeconds(Integer usec) {
         if (usec != null) {
+            microSeconds = usec.intValue() % 1000;
             long temp_long = usec.longValue() / 1000L;
             kerberosTime = kerberosTime - (kerberosTime % 1000L) + temp_long;
         }
@@ -262,7 +277,9 @@ public class KerberosTime implements Cloneable {
     }
 
     public boolean greaterThan(KerberosTime time) {
-        return kerberosTime > time.kerberosTime;
+        return kerberosTime > time.kerberosTime ||
+            kerberosTime == time.kerberosTime &&
+                    microSeconds > time.microSeconds;
     }
 
     public boolean equals(Object obj) {
@@ -274,15 +291,17 @@ public class KerberosTime implements Cloneable {
             return false;
         }
 
-        return kerberosTime == ((KerberosTime)obj).kerberosTime;
+        return kerberosTime == ((KerberosTime)obj).kerberosTime &&
+                microSeconds == ((KerberosTime)obj).microSeconds;
     }
 
     public int hashCode() {
-        return 37 * 17 + (int)(kerberosTime ^ (kerberosTime >>> 32));
+        int result = 37 * 17 + (int)(kerberosTime ^ (kerberosTime >>> 32));
+        return result * 17 + microSeconds;
     }
 
     public boolean isZero() {
-        return kerberosTime == 0;
+        return kerberosTime == 0 && microSeconds == 0;
     }
 
     public int getSeconds() {

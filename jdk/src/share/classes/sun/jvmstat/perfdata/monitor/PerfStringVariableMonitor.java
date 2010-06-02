@@ -26,7 +26,6 @@
 package sun.jvmstat.perfdata.monitor;
 
 import sun.jvmstat.monitor.*;
-import sun.management.counter.Variability;
 import java.nio.ByteBuffer;
 
 /**
