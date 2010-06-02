@@ -314,6 +314,13 @@ public class VM {
       isLP64 = debugger.getMachineDescription().isLP64();
     }
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
+    heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
+    oopSize  = db.lookupIntConstant("oopSize").intValue();
+
+    intxType = db.lookupType("intx");
+    uintxType = db.lookupType("uintx");
+    boolType = (CIntegerType) db.lookupType("bool");
+
     minObjAlignmentInBytes = getObjectAlignmentInBytes();
     if (minObjAlignmentInBytes == 8) {
       logMinObjAlignmentInBytes = 3;
@@ -322,13 +329,6 @@ public class VM {
     } else {
       throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " not yet supported");
     }
-
-    heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
-    oopSize  = db.lookupIntConstant("oopSize").intValue();
-
-    intxType = db.lookupType("intx");
-    uintxType = db.lookupType("uintx");
-    boolType = (CIntegerType) db.lookupType("bool");
 
     if (isCompressedOopsEnabled()) {
       // Size info for oops within java objects is fixed
