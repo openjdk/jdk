@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,31 +16,34 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
  */
 
 /* @test
-   @bug 6593649
-   @summary Word wrap does not work in JTextArea: long lines are not wrapped
-   @author Lillian Angel
-   @run main Test6593649
-*/
+ * @bug 6940863
+ * @summary Textarea within scrollpane shows vertical scrollbar
+ * @author Pavel Porvatov
+ * @run main bug6940863
+ */
+
+import sun.awt.OSInfo;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class Test6593649 {
+public class bug6940863 {
     private static JFrame frame;
 
-    private static JTextArea textArea;
+    private static JScrollPane scrollPane;
 
     private static final Timer timer = new Timer(1000, new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            boolean failed = !textArea.getParent().getSize().equals(textArea.getSize());
+            boolean failed = scrollPane.getVerticalScrollBar().isShowing() ||
+                    scrollPane.getHorizontalScrollBar().isShowing();
 
             frame.dispose();
 
@@ -51,24 +54,29 @@ public class Test6593649 {
     });
 
     public static void main(String[] args) throws Exception {
+        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+            System.out.println("The test is suitable only for Windows OS. Skipped");
+        }
+
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                frame = new JFrame();
-
-                frame.setSize(200, 100);
-
-                textArea = new JTextArea("This is a long line that should wrap, but doesn't...");
+                JTextArea textArea = new JTextArea();
 
                 textArea.setLineWrap(true);
                 textArea.setWrapStyleWord(true);
 
-                JPanel innerPanel = new JPanel();
+                scrollPane = new JScrollPane(textArea);
 
-                innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.LINE_AXIS));
-                innerPanel.add(textArea);
+                scrollPane.setMinimumSize(new Dimension(200, 100));
+                scrollPane.setPreferredSize(new Dimension(300, 150));
 
-                frame.getContentPane().add(innerPanel, BorderLayout.SOUTH);
+                frame = new JFrame("Vertical scrollbar shown without text");
 
+                frame.setContentPane(scrollPane);
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.pack();
                 frame.setVisible(true);
 
                 timer.setRepeats(false);
