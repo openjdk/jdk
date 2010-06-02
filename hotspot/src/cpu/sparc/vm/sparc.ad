@@ -1760,6 +1760,12 @@ const int Matcher::init_array_short_size = 8 * BytesPerLong;
 // registers?  True for Intel but false for most RISCs
 const bool Matcher::clone_shift_expressions = false;
 
+bool Matcher::narrow_oop_use_complex_address() {
+  NOT_LP64(ShouldNotCallThis());
+  assert(UseCompressedOops, "only for compressed oops code");
+  return false;
+}
+
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
 // extra registers.  Most RISCs will have to materialize an address into a
