@@ -920,6 +920,10 @@ class CommandLineFlags {
                                                                             \
   product(intx, AlwaysInflate, 0, "(Unstable) Force inflation")             \
                                                                             \
+  product(intx, MonitorBound, 0, "Bound Monitor population")                \
+                                                                            \
+  product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
+                                                                            \
   product(intx, Atomics, 0,                                                 \
           "(Unsafe,Unstable) Diagnostic - Controls emission of atomics")    \
                                                                             \
