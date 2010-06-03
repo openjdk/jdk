@@ -1651,14 +1651,15 @@ void CompileBroker::handle_full_code_cache() {
       log->stamp();
       log->end_elem();
     }
-  #ifndef PRODUCT
-    warning("CodeCache is full. Compiler has been disabled");
+    warning("CodeCache is full. Compiler has been disabled.");
+    warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
+#ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
       before_exit(JavaThread::current());
       exit_globals(); // will delete tty
       vm_direct_exit(CompileTheWorld ? 0 : 1);
     }
-  #endif
+#endif
     if (UseCodeCacheFlushing) {
       NMethodSweeper::handle_full_code_cache(true);
     } else {

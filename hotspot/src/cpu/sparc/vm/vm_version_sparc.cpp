@@ -65,13 +65,6 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseInlineCaches, false);
     }
 #ifdef _LP64
-    // Single issue niagara1 is slower for CompressedOops
-    // but niagaras after that it's fine.
-    if (!is_niagara1_plus()) {
-      if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-        FLAG_SET_ERGO(bool, UseCompressedOops, false);
-      }
-    }
     // 32-bit oops don't make sense for the 64-bit VM on sparc
     // since the 32-bit VM has the same registers and smaller objects.
     Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
