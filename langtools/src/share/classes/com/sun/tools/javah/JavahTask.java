@@ -59,7 +59,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.SimpleTypeVisitor7;
 import javax.lang.model.util.Types;
 
 import javax.tools.Diagnostic;
@@ -705,7 +705,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         }
 
         private TypeVisitor<Void,Types> checkMethodParametersVisitor =
-                new SimpleTypeVisitor6<Void,Types>() {
+                new SimpleTypeVisitor7<Void,Types>() {
             @Override
             public Void visitArray(ArrayType t, Types types) {
                 visit(t.getComponentType(), types);

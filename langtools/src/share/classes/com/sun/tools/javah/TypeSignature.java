@@ -38,7 +38,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.SimpleTypeVisitor7;
 
 /**
  * Returns internal type signature.
@@ -239,7 +239,7 @@ public class TypeSignature{
 
 
     String qualifiedTypeName(TypeMirror type) {
-        TypeVisitor<Name, Void> v = new SimpleTypeVisitor6<Name, Void>() {
+        TypeVisitor<Name, Void> v = new SimpleTypeVisitor7<Name, Void>() {
             @Override
             public Name visitArray(ArrayType t, Void p) {
                 return t.getComponentType().accept(this, p);

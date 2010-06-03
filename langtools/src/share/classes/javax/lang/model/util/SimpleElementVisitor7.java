@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,12 @@ import static javax.lang.model.element.ElementKind.*;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
-
 /**
  * A simple visitor of program elements with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_6 RELEASE_6}
+ * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
  * source version.
  *
- * Visit methods corresponding to {@code RELEASE_6} language
+ * Visit methods corresponding to {@code RELEASE_7} language
  * constructs call {@link #defaultAction}, passing their arguments to
  * {@code defaultAction}'s corresponding parameters.
  *
@@ -68,28 +67,17 @@ import static javax.lang.model.SourceVersion.*;
  * @param <P> the type of the additional parameter to this visitor's methods.  Use {@code Void}
  *              for visitors that do not need an additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
- * @see SimpleElementVisitor7
- * @since 1.6
+ * @see SimpleElementVisitor6
+ * @since 1.7
  */
-@SupportedSourceVersion(RELEASE_6)
-public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
-    /**
-     * Default value to be returned; {@link #defaultAction
-     * defaultAction} returns this value unless the method is
-     * overridden.
-     */
-    protected final R DEFAULT_VALUE;
-
+@SupportedSourceVersion(RELEASE_7)
+public class SimpleElementVisitor7<R, P> extends SimpleElementVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
-    protected SimpleElementVisitor6(){
-        DEFAULT_VALUE = null;
+    protected SimpleElementVisitor7(){
+        super(null);
     }
 
     /**
@@ -98,74 +86,7 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    protected SimpleElementVisitor6(R defaultValue){
-        DEFAULT_VALUE = defaultValue;
-    }
-    /**
-     * The default action for visit methods.  The implementation in
-     * this class just returns {@link #DEFAULT_VALUE}; subclasses will
-     * commonly override this method.
-     *
-     * @param e the element to process
-     * @param p a visitor-specified parameter
-     * @return {@code DEFAULT_VALUE} unless overridden
-     */
-    protected R defaultAction(Element e, P p) {
-        return DEFAULT_VALUE;
-    }
-
-    /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
-     *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
-     */
-    public R visitPackage(PackageElement e, P p) {
-        return defaultAction(e, p);
-    }
-
-    /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
-     *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
-     */
-    public R visitType(TypeElement e, P p) {
-        return defaultAction(e, p);
-    }
-
-    /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
-     *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
-     */
-    public R visitVariable(VariableElement e, P p) {
-        return defaultAction(e, p);
-    }
-
-    /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
-     *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
-     */
-    public R visitExecutable(ExecutableElement e, P p) {
-        return defaultAction(e, p);
-    }
-
-    /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
-     *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
-     */
-    public R visitTypeParameter(TypeParameterElement e, P p) {
-        return defaultAction(e, p);
+    protected SimpleElementVisitor7(R defaultValue){
+        super(defaultValue);
     }
 }
