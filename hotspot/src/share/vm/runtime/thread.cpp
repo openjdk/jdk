@@ -139,6 +139,8 @@ Thread::Thread() {
   omFreeList = NULL ;
   omFreeCount = 0 ;
   omFreeProvision = 32 ;
+  omInUseList = NULL ;
+  omInUseCount = 0 ;
 
   _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true);
   _suspend_flags = 0;
