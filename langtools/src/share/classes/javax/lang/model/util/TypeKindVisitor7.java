@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,26 @@
 package javax.lang.model.util;
 
 import javax.lang.model.type.*;
+import javax.annotation.processing.SupportedSourceVersion;
+import static javax.lang.model.element.ElementKind.*;
+import static javax.lang.model.SourceVersion.*;
+import javax.lang.model.SourceVersion;
 
 /**
- * A skeletal visitor of types with default behavior appropriate for
- * the version 6 language level.
+ * A visitor of types based on their {@linkplain TypeKind kind} with
+ * default behavior appropriate for the {@link SourceVersion#RELEASE_7
+ * RELEASE_7} source version.  For {@linkplain
+ * TypeMirror types} <tt><i>XYZ</i></tt> that may have more than one
+ * kind, the <tt>visit<i>XYZ</i></tt> methods in this class delegate
+ * to the <tt>visit<i>XYZKind</i></tt> method corresponding to the
+ * first argument's kind.  The <tt>visit<i>XYZKind</i></tt> methods
+ * call {@link #defaultAction defaultAction}, passing their arguments
+ * to {@code defaultAction}'s corresponding parameters.
+ *
+ * <p> Methods in this class may be overridden subject to their
+ * general contract.  Note that annotating methods in concrete
+ * subclasses with {@link java.lang.Override @Override} will help
+ * ensure that methods are overridden as intended.
  *
  * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
  * by this class may have methods added to it in the future to
@@ -42,11 +58,11 @@ import javax.lang.model.type.*;
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new abstract type visitor
- * class will also be introduced to correspond to the new language
- * level; this visitor will have different default behavior for the
- * visit method in question.  When the new visitor is introduced, all
- * or portions of this visitor may be deprecated.
+ * #visitUnknown visitUnknown} method.  A new type kind visitor class
+ * will also be introduced to correspond to the new language level;
+ * this visitor will have different default behavior for the visit
+ * method in question.  When the new visitor is introduced, all or
+ * portions of this visitor may be deprecated.
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
@@ -54,60 +70,26 @@ import javax.lang.model.type.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
- * @see AbstractTypeVisitor7
- * @since 1.6
+ * @see TypeKindVisitor6
+ * @since 1.7
  */
-public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
+@SupportedSourceVersion(RELEASE_7)
+public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
     /**
-     * Constructor for concrete subclasses to call.
+     * Constructor for concrete subclasses to call; uses {@code null}
+     * for the default value.
      */
-    protected AbstractTypeVisitor6() {}
-
-    /**
-     * Visits any type mirror as if by passing itself to that type
-     * mirror's {@link TypeMirror#accept accept} method.  The
-     * invocation {@code v.visit(t, p)} is equivalent to {@code
-     * t.accept(v, p)}.
-     *
-     * @param t  the type to visit
-     * @param p  a visitor-specified parameter
-     * @return a visitor-specified result
-     */
-    public final R visit(TypeMirror t, P p) {
-        return t.accept(this, p);
+    protected TypeKindVisitor7() {
+        super(null);
     }
 
     /**
-     * Visits any type mirror as if by passing itself to that type
-     * mirror's {@link TypeMirror#accept accept} method and passing
-     * {@code null} for the additional parameter.  The invocation
-     * {@code v.visit(t)} is equivalent to {@code t.accept(v, null)}.
+     * Constructor for concrete subclasses to call; uses the argument
+     * for the default value.
      *
-     * @param t  the type to visit
-     * @return a visitor-specified result
+     * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    public final R visit(TypeMirror t) {
-        return t.accept(this, null);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p> The default implementation of this method in {@code
-     * AbstractTypeVisitor6} will always throw {@code
-     * UnknownTypeException}.  This behavior is not required of a
-     * subclass.
-     *
-     * @param t  the type to visit
-     * @return a visitor-specified result
-     * @throws UnknownTypeException
-     *  a visitor implementation may optionally throw this exception
-     */
-    public R visitUnknown(TypeMirror t, P p) {
-        throw new UnknownTypeException(t, p);
+    protected TypeKindVisitor7(R defaultValue) {
+        super(defaultValue);
     }
 }

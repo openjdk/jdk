@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.lang.model.util;
 
-
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.*;
@@ -36,7 +35,7 @@ import javax.lang.model.SourceVersion;
 
 /**
  * A skeletal visitor of program elements with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_6 RELEASE_6}
+ * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
  * source version.
  *
  * <p> <b>WARNING:</b> The {@code ElementVisitor} interface
@@ -62,63 +61,15 @@ import javax.lang.model.SourceVersion;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
- * @see AbstractElementVisitor7
- * @since 1.6
+ * @see AbstractElementVisitor6
+ * @since 1.7
  */
-@SupportedSourceVersion(RELEASE_6)
-public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R, P> {
+@SupportedSourceVersion(RELEASE_7)
+public abstract class AbstractElementVisitor7<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses to call.
      */
-    protected AbstractElementVisitor6(){}
-
-    /**
-     * Visits any program element as if by passing itself to that
-     * element's {@link Element#accept accept} method.  The invocation
-     * {@code v.visit(elem)} is equivalent to {@code elem.accept(v,
-     * p)}.
-     *
-     * @param e  the element to visit
-     * @param p  a visitor-specified parameter
-     * @return a visitor-specified result
-     */
-    public final R visit(Element e, P p) {
-        return e.accept(this, p);
-    }
-
-    /**
-     * Visits any program element as if by passing itself to that
-     * element's {@link Element#accept accept} method and passing
-     * {@code null} for the additional parameter.  The invocation
-     * {@code v.visit(elem)} is equivalent to {@code elem.accept(v,
-     * null)}.
-     *
-     * @param e  the element to visit
-     * @return a visitor-specified result
-     */
-    public final R visit(Element e) {
-        return e.accept(this, null);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p> The default implementation of this method in
-     * {@code AbstractElementVisitor6} will always throw
-     * {@code UnknownElementException}.
-     * This behavior is not required of a subclass.
-     *
-     * @param e  the element to visit
-     * @param p  a visitor-specified parameter
-     * @return a visitor-specified result
-     * @throws UnknownElementException
-     *          a visitor implementation may optionally throw this exception
-     */
-    public R visitUnknown(Element e, P p) {
-        throw new UnknownElementException(e, p);
+    protected AbstractElementVisitor7(){
+        super();
     }
 }

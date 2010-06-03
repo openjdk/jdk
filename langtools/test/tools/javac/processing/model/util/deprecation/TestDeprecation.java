@@ -67,7 +67,7 @@ public class TestDeprecation extends AbstractProcessor {
         return true;
     }
 
-    private class DeprecationChecker extends ElementScanner6<Boolean,Void> {
+    private class DeprecationChecker extends ElementScanner7<Boolean,Void> {
         private Elements elementUtils;
         private boolean failure;
         DeprecationChecker() {
