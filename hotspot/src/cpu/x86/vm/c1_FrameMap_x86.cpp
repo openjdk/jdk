@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,13 @@ VMReg FrameMap::fpu_regname (int n) {
 
 LIR_Opr FrameMap::stack_pointer() {
   return FrameMap::rsp_opr;
+}
+
+
+// JSR 292
+LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
+  assert(rbp == rbp_mh_SP_save, "must be same register");
+  return rbp_opr;
 }
 
 
