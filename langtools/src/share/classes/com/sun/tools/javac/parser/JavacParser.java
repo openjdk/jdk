@@ -1,12 +1,12 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package com.sun.tools.javac.parser;
@@ -132,6 +132,7 @@ public class JavacParser implements Parser {
         this.allowStaticImport = source.allowStaticImport();
         this.allowAnnotations = source.allowAnnotations();
         this.allowDiamond = source.allowDiamond();
+        this.allowMulticatch = source.allowMulticatch();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.keepDocComments = keepDocComments;
         if (keepDocComments)
@@ -152,6 +153,10 @@ public class JavacParser implements Parser {
     /** Switch: Should diamond operator be recognized?
      */
     boolean allowDiamond;
+
+    /** Switch: Should multicatch clause be accepted?
+     */
+    boolean allowMulticatch;
 
     /** Switch: Should varargs be recognized?
      */
@@ -2011,12 +2016,26 @@ public class JavacParser implements Parser {
         int pos = S.pos();
         accept(CATCH);
         accept(LPAREN);
-        JCVariableDecl formal =
-            variableDeclaratorId(optFinal(Flags.PARAMETER),
-                                 qualident());
+        JCModifiers mods = optFinal(Flags.PARAMETER);
+        List<JCExpression> catchTypes = catchTypes();
+        JCExpression paramType = catchTypes.size() > 1 ?
+                toP(F.at(catchTypes.head.getStartPosition()).TypeDisjoint(catchTypes)) :
+                catchTypes.head;
+        JCVariableDecl formal = variableDeclaratorId(mods, paramType);
         accept(RPAREN);
         JCBlock body = block();
         return F.at(pos).Catch(formal, body);
+    }
+
+    List<JCExpression> catchTypes() {
+        ListBuffer<JCExpression> catchTypes = ListBuffer.lb();
+        catchTypes.add(parseType());
+        while (S.token() == BAR) {
+            checkMulticatch();
+            S.nextToken();
+            catchTypes.add(qualident());
+        }
+        return catchTypes.toList();
     }
 
     /** SwitchBlockStatementGroups = { SwitchBlockStatementGroup }
@@ -3192,5 +3211,11 @@ public class JavacParser implements Parser {
             log.error(S.pos(), "diamond.not.supported.in.source", source.name);
             allowDiamond = true;
         }
+    }
+    void checkMulticatch() {
+        if (!allowMulticatch) {
+            log.error(S.pos(), "multicatch.not.supported.in.source", source.name);
+            allowMulticatch = true;
+            }
     }
 }

@@ -1,5 +1,5 @@
 //
-// Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
 // 2 along with this work; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-// Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-// CA 95054 USA or visit www.sun.com if you need additional information or
-// have any questions.
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
 //
 //
 
@@ -1851,29 +1851,24 @@ uint reloc_java_to_interp()
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedOops) {
-    st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes() #%d]\t", oopDesc::klass_offset_in_bytes());
+    st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
     if (Universe::narrow_oop_shift() != 0) {
-      st->print_cr("leaq    rscratch1, [r12_heapbase, r, Address::times_8, 0]");
+      st->print_cr("\tdecode_heap_oop_not_null rscratch1, rscratch1");
     }
-    st->print_cr("cmpq    rax, rscratch1\t # Inline cache check");
+    st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
   } else {
-    st->print_cr("cmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes() #%d]\t"
-                 "# Inline cache check", oopDesc::klass_offset_in_bytes());
+    st->print_cr("\tcmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t"
+                 "# Inline cache check");
   }
   st->print_cr("\tjne     SharedRuntime::_ic_miss_stub");
-  st->print_cr("\tnop");
-  if (!OptoBreakpoint) {
-    st->print_cr("\tnop");
-  }
+  st->print_cr("\tnop\t# nops to align entry point");
 }
 #endif
 
 void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
-#ifdef ASSERT
   uint code_size = cbuf.code_size();
-#endif
   if (UseCompressedOops) {
     masm.load_klass(rscratch1, j_rarg0);
     masm.cmpptr(rax, rscratch1);
@@ -1884,33 +1879,21 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   masm.jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 
   /* WARNING these NOPs are critical so that verified entry point is properly
-     aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 1;
-  if (!OptoBreakpoint) {
+     4 bytes aligned for patching by NativeJump::patch_verified_entry() */
+  int nops_cnt = 4 - ((cbuf.code_size() - code_size) & 0x3);
+  if (OptoBreakpoint) {
     // Leave space for int3
-     nops_cnt += 1;
+    nops_cnt -= 1;
   }
-  if (UseCompressedOops) {
-    // ??? divisible by 4 is aligned?
-    nops_cnt += 1;
-  }
-  masm.nop(nops_cnt);
-
-  assert(cbuf.code_size() - code_size == size(ra_),
-         "checking code size of inline cache node");
+  nops_cnt &= 0x3; // Do not add nops if code is aligned.
+  if (nops_cnt > 0)
+    masm.nop(nops_cnt);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 {
-  if (UseCompressedOops) {
-    if (Universe::narrow_oop_shift() == 0) {
-      return OptoBreakpoint ? 15 : 16;
-    } else {
-      return OptoBreakpoint ? 19 : 20;
-    }
-  } else {
-    return OptoBreakpoint ? 11 : 12;
-  }
+  return MachNode::size(ra_); // too many variables; just compute it
+                              // the hard way
 }
 
 
@@ -2053,6 +2036,11 @@ const int Matcher::init_array_short_size = 8 * BytesPerLong;
 // to be subsumed into complex addressing expressions or compute them
 // into registers?  True for Intel but false for most RISCs
 const bool Matcher::clone_shift_expressions = true;
+
+bool Matcher::narrow_oop_use_complex_address() {
+  assert(UseCompressedOops, "only for compressed oops code");
+  return (LogMinObjAlignmentInBytes <= 3);
+}
 
 // Is it better to copy float constants, or load them directly from
 // memory?  Intel can load a float constant from a direct address,
@@ -2635,14 +2623,14 @@ encode %{
     MacroAssembler _masm(&cbuf);
     // RBP is preserved across all calls, even compiled calls.
     // Use it to preserve RSP in places where the callee might change the SP.
-    __ movptr(rbp, rsp);
+    __ movptr(rbp_mh_SP_save, rsp);
     debug_only(int off1 = cbuf.code_size());
     assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
   %}
 
   enc_class restore_SP %{
     MacroAssembler _masm(&cbuf);
-    __ movptr(rsp, rbp);
+    __ movptr(rsp, rbp_mh_SP_save);
   %}
 
   enc_class Java_Static_Call(method meth)
@@ -5127,7 +5115,7 @@ operand indPosIndexScaleOffset(any_RegP reg, immL32 off, rRegI idx, immI2 scale)
 // Note: x86 architecture doesn't support "scale * index + offset" without a base
 // we can't free r12 even with Universe::narrow_oop_base() == NULL.
 operand indCompressedOopOffset(rRegN reg, immL32 off) %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_shift() != 0));
+  predicate(UseCompressedOops && (Universe::narrow_oop_shift() == Address::times_8));
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) off);
 
@@ -7742,10 +7730,11 @@ instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_long);
 %}
 
-instruct decodeHeapOop_not_null(rRegP dst, rRegN src) %{
+instruct decodeHeapOop_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
   predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
+  effect(KILL cr);
   format %{ "decode_heap_oop_not_null $dst,$src" %}
   ins_encode %{
     Register s = $src$$Register;
@@ -12604,7 +12593,7 @@ instruct CallStaticJavaDirect(method meth) %{
 // Call Java Static Instruction (method handle version)
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
-instruct CallStaticJavaHandle(method meth, rbp_RegP rbp) %{
+instruct CallStaticJavaHandle(method meth, rbp_RegP rbp_mh_SP_save) %{
   match(CallStaticJava);
   predicate(((CallStaticJavaNode*) n)->is_method_handle_invoke());
   effect(USE meth);

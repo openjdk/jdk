@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -280,17 +280,43 @@ class Bytecodes: AllStatic {
     number_of_codes
   };
 
+  // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
+  enum Flags {
+    // semantic flags:
+    _bc_can_trap      = 1<<0,     // bytecode execution can trap or block
+    _bc_can_rewrite   = 1<<1,     // bytecode execution has an alternate form
+
+    // format bits (determined only by the format string):
+    _fmt_has_c        = 1<<2,     // constant, such as sipush "bcc"
+    _fmt_has_j        = 1<<3,     // constant pool cache index, such as getfield "bjj"
+    _fmt_has_k        = 1<<4,     // constant pool index, such as ldc "bk"
+    _fmt_has_i        = 1<<5,     // local index, such as iload
+    _fmt_has_o        = 1<<6,     // offset, such as ifeq
+    _fmt_has_nbo      = 1<<7,     // contains native-order field(s)
+    _fmt_has_u2       = 1<<8,     // contains double-byte field(s)
+    _fmt_has_u4       = 1<<9,     // contains quad-byte field
+    _fmt_not_variable = 1<<10,    // not of variable length (simple or wide)
+    _fmt_not_simple   = 1<<11,    // either wide or variable length
+    _all_fmt_bits     = (_fmt_not_simple*2 - _fmt_has_c),
+
+    // Example derived format syndromes:
+    _fmt_b      = _fmt_not_variable,
+    _fmt_bc     = _fmt_b | _fmt_has_c,
+    _fmt_bi     = _fmt_b | _fmt_has_i,
+    _fmt_bkk    = _fmt_b | _fmt_has_k | _fmt_has_u2,
+    _fmt_bJJ    = _fmt_b | _fmt_has_j | _fmt_has_u2 | _fmt_has_nbo,
+    _fmt_bo2    = _fmt_b | _fmt_has_o | _fmt_has_u2,
+    _fmt_bo4    = _fmt_b | _fmt_has_o | _fmt_has_u4
+  };
+
  private:
   static bool        _is_initialized;
   static const char* _name          [number_of_codes];
-  static const char* _format        [number_of_codes];
-  static const char* _wide_format   [number_of_codes];
   static BasicType   _result_type   [number_of_codes];
   static s_char      _depth         [number_of_codes];
-  static u_char      _length        [number_of_codes];
-  static bool        _can_trap      [number_of_codes];
+  static u_char      _lengths       [number_of_codes];
   static Code        _java_code     [number_of_codes];
-  static bool        _can_rewrite   [number_of_codes];
+  static jchar       _flags         [(1<<BitsPerByte)*2]; // all second page for wide formats
 
   static void        def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap);
   static void        def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap, Code java_code);
@@ -322,24 +348,20 @@ class Bytecodes: AllStatic {
    static Code       non_breakpoint_code_at(address bcp, methodOop method = NULL);
 
   // Bytecode attributes
-  static bool        is_defined     (int  code)    { return 0 <= code && code < number_of_codes && _format[code] != NULL; }
-  static bool        wide_is_defined(int  code)    { return is_defined(code) && _wide_format[code] != NULL; }
+  static bool        is_defined     (int  code)    { return 0 <= code && code < number_of_codes && flags(code, false) != 0; }
+  static bool        wide_is_defined(int  code)    { return is_defined(code) && flags(code, true) != 0; }
   static const char* name           (Code code)    { check(code);      return _name          [code]; }
-  static const char* format         (Code code)    { check(code);      return _format        [code]; }
-  static const char* wide_format    (Code code)    { return _wide_format[code]; }
   static BasicType   result_type    (Code code)    { check(code);      return _result_type   [code]; }
   static int         depth          (Code code)    { check(code);      return _depth         [code]; }
-  static int         length_for     (Code code)    { return _length[code]; }
-  static bool        can_trap       (Code code)    { check(code);      return _can_trap      [code]; }
+  // Note: Length functions must return <=0 for invalid bytecodes.
+  // Calling check(code) in length functions would throw an unwanted assert.
+  static int         length_for     (Code code)    { /*no check*/      return _lengths       [code] & 0xF; }
+  static int         wide_length_for(Code code)    { /*no check*/      return _lengths       [code] >> 4; }
+  static bool        can_trap       (Code code)    { check(code);      return has_all_flags(code, _bc_can_trap, false); }
   static Code        java_code      (Code code)    { check(code);      return _java_code     [code]; }
-  static bool        can_rewrite    (Code code)    { check(code);      return _can_rewrite   [code]; }
-  static int         wide_length_for(Code code)    {
-    if (!is_defined(code)) {
-      return 0;
-    }
-    const char* wf = wide_format(code);
-    return (wf == NULL) ? 0 : (int)strlen(wf);
-  }
+  static bool        can_rewrite    (Code code)    { check(code);      return has_all_flags(code, _bc_can_rewrite, false); }
+  static bool        native_byte_order(Code code)  { check(code);      return has_all_flags(code, _fmt_has_nbo, false); }
+  static bool        uses_cp_cache  (Code code)    { check(code);      return has_all_flags(code, _fmt_has_j, false); }
   // if 'end' is provided, it indicates the end of the code buffer which
   // should not be read past when parsing.
   static int         special_length_at(address bcp, address end = NULL);
@@ -355,6 +377,16 @@ class Bytecodes: AllStatic {
 
   static bool        is_zero_const  (Code code)    { return (code == _aconst_null || code == _iconst_0
                                                            || code == _fconst_0 || code == _dconst_0); }
+  static int         compute_flags  (const char* format, int more_flags = 0);  // compute the flags
+  static int         flags          (int code, bool is_wide) {
+    assert(code == (u_char)code, "must be a byte");
+    return _flags[code + (is_wide ? (1<<BitsPerByte) : 0)];
+  }
+  static int         format_bits    (Code code, bool is_wide) { return flags(code, is_wide) & _all_fmt_bits; }
+  static bool        has_all_flags  (Code code, int test_flags, bool is_wide) {
+    return (flags(code, is_wide) & test_flags) == test_flags;
+  }
+
   // Initialization
   static void        initialize     ();
 };

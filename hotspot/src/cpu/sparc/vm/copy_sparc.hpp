@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -154,7 +154,7 @@ static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
 }
 
 static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) {
-  assert(MinObjAlignmentInBytes == BytesPerLong, "need alternate implementation");
+  assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
 
    julong* to = (julong*)tohw;
    julong  v  = ((julong)value << 32) | value;
@@ -162,7 +162,7 @@ static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) 
    // and be equal to 0 on 64-bit platform.
    size_t odd = count % (BytesPerLong / HeapWordSize) ;
 
-   size_t aligned_count = align_object_size(count - odd) / HeapWordsPerLong;
+   size_t aligned_count = align_object_offset(count - odd) / HeapWordsPerLong;
    julong* end = ((julong*)tohw) + aligned_count - 1;
    while (to <= end) {
      DEBUG_ONLY(count -= BytesPerLong / HeapWordSize ;)

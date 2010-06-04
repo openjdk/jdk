@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -230,7 +230,8 @@ CodeEmitInfo::CodeEmitInfo(int bci, ValueStack* stack, XHandlers* exception_hand
   , _stack(stack)
   , _exception_handlers(exception_handlers)
   , _next(NULL)
-  , _id(-1) {
+  , _id(-1)
+  , _is_method_handle_invoke(false) {
   assert(_stack != NULL, "must be non null");
   assert(_bci == SynchronizationEntryBCI || Bytecodes::is_defined(scope()->method()->java_code_at_bci(_bci)), "make sure bci points at a real bytecode");
 }
@@ -241,7 +242,8 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, bool lock_stack_only)
   , _exception_handlers(NULL)
   , _bci(info->_bci)
   , _scope_debug_info(NULL)
-  , _oop_map(NULL) {
+  , _oop_map(NULL)
+  , _is_method_handle_invoke(info->_is_method_handle_invoke) {
   if (lock_stack_only) {
     if (info->_stack != NULL) {
       _stack = info->_stack->copy_locks();
@@ -259,10 +261,10 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, bool lock_stack_only)
 }
 
 
-void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool is_method_handle_invoke) {
+void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset) {
   // record the safepoint before recording the debug info for enclosing scopes
   recorder->add_safepoint(pc_offset, _oop_map->deep_copy());
-  _scope_debug_info->record_debug_info(recorder, pc_offset, true/*topmost*/, is_method_handle_invoke);
+  _scope_debug_info->record_debug_info(recorder, pc_offset, true/*topmost*/, _is_method_handle_invoke);
   recorder->end_safepoint(pc_offset);
 }
 

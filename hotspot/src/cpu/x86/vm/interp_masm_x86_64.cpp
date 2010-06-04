@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -187,11 +187,11 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        int bcp_offset,
-                                                       bool giant_index) {
+                                                       size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
-  if (!giant_index) {
+  if (index_size == sizeof(u2)) {
     load_unsigned_short(index, Address(r13, bcp_offset));
-  } else {
+  } else if (index_size == sizeof(u4)) {
     assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
     movl(index, Address(r13, bcp_offset));
     // Check if the secondary index definition is still ~x, otherwise
@@ -199,6 +199,11 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     // plain index.
     assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
     notl(index);  // convert to plain index
+  } else if (index_size == sizeof(u1)) {
+    assert(EnableMethodHandles, "tiny index used only for EnableMethodHandles");
+    load_unsigned_byte(index, Address(r13, bcp_offset));
+  } else {
+    ShouldNotReachHere();
   }
 }
 
@@ -206,9 +211,9 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
 void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            Register index,
                                                            int bcp_offset,
-                                                           bool giant_index) {
+                                                           size_t index_size) {
   assert(cache != index, "must use different registers");
-  get_cache_index_at_bcp(index, bcp_offset, giant_index);
+  get_cache_index_at_bcp(index, bcp_offset, index_size);
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
@@ -219,9 +224,9 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                Register tmp,
                                                                int bcp_offset,
-                                                               bool giant_index) {
+                                                               size_t index_size) {
   assert(cache != tmp, "must use different register");
-  get_cache_index_at_bcp(tmp, bcp_offset, giant_index);
+  get_cache_index_at_bcp(tmp, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
   // and from word offset to byte offset

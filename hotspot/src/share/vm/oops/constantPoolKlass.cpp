@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -310,15 +310,12 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
   constantPoolOop cp = constantPoolOop(obj);
   if (cp->flags() != 0) {
-    st->print(" - flags : 0x%x", cp->flags());
+    st->print(" - flags: 0x%x", cp->flags());
     if (cp->has_pseudo_string()) st->print(" has_pseudo_string");
     if (cp->has_invokedynamic()) st->print(" has_invokedynamic");
     st->cr();
   }
-
-  // Temp. remove cache so we can do lookups with original indicies.
-  constantPoolCacheHandle cache (THREAD, cp->cache());
-  cp->set_cache(NULL);
+  st->print_cr(" - cache: " INTPTR_FORMAT, cp->cache());
 
   for (int index = 1; index < cp->length(); index++) {      // Index 0 is unused
     st->print(" - %3d : ", index);
@@ -334,8 +331,8 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
       case JVM_CONSTANT_Fieldref :
       case JVM_CONSTANT_Methodref :
       case JVM_CONSTANT_InterfaceMethodref :
-        st->print("klass_index=%d", cp->klass_ref_index_at(index));
-        st->print(" name_and_type_index=%d", cp->name_and_type_ref_index_at(index));
+        st->print("klass_index=%d", cp->uncached_klass_ref_index_at(index));
+        st->print(" name_and_type_index=%d", cp->uncached_name_and_type_ref_index_at(index));
         break;
       case JVM_CONSTANT_UnresolvedString :
       case JVM_CONSTANT_String :
@@ -382,9 +379,6 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   }
   st->cr();
-
-  // Restore cache
-  cp->set_cache(cache());
 }
 
 #endif
@@ -398,6 +392,9 @@ void constantPoolKlass::oop_print_value_on(oop obj, outputStream* st) {
   cp->print_address_on(st);
   st->print(" for ");
   cp->pool_holder()->print_value_on(st);
+  if (cp->cache() != NULL) {
+    st->print(" cache=" PTR_FORMAT, cp->cache());
+  }
 }
 
 const char* constantPoolKlass::internal_name() const {

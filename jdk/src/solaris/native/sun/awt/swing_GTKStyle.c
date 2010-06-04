@@ -1,12 +1,12 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 #include <stdlib.h>
@@ -36,7 +36,11 @@ JNIEXPORT jint JNICALL
 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetXThickness(
     JNIEnv *env, jclass klass, jint widget_type)
 {
-    return gtk2_get_xthickness(env, widget_type);
+    jint ret;
+    fp_gdk_threads_enter();
+    ret = gtk2_get_xthickness(env, widget_type);
+    fp_gdk_threads_leave();
+    return ret;
 }
 
 /*
@@ -48,7 +52,11 @@ JNIEXPORT jint JNICALL
 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetYThickness(
     JNIEnv *env, jclass klass, jint widget_type)
 {
-    return gtk2_get_ythickness(env, widget_type);
+    jint ret;
+    fp_gdk_threads_enter();
+    ret = gtk2_get_ythickness(env, widget_type);
+    fp_gdk_threads_leave();
+    return ret;
 }
 
 /*
@@ -61,7 +69,11 @@ Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetColorForState(
     JNIEnv *env, jclass klass, jint widget_type,
     jint state_type, jint type_id)
 {
-    return gtk2_get_color_for_state(env, widget_type, state_type, type_id);
+    jint ret;
+    fp_gdk_threads_enter();
+    ret = gtk2_get_color_for_state(env, widget_type, state_type, type_id);
+    fp_gdk_threads_leave();
+    return ret;
 }
 
 /*
@@ -73,7 +85,11 @@ JNIEXPORT jobject JNICALL
 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetClassValue(
     JNIEnv *env, jclass klass, jint widget_type, jstring key)
 {
-    return gtk2_get_class_value(env, widget_type, key);
+    jobject ret;
+    fp_gdk_threads_enter();
+    ret = gtk2_get_class_value(env, widget_type, key);
+    fp_gdk_threads_leave();
+    return ret;
 }
 
 /*
@@ -85,5 +101,9 @@ JNIEXPORT jstring JNICALL
 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetPangoFontName(
     JNIEnv *env, jclass klass, jint widget_type)
 {
-    return gtk2_get_pango_font_name(env, widget_type);
+    jstring ret;
+    fp_gdk_threads_enter();
+    ret = gtk2_get_pango_font_name(env, widget_type);
+    fp_gdk_threads_leave();
+    return ret;
 }

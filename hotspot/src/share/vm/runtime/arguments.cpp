@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1211,8 +1211,44 @@ void Arguments::set_cms_and_parnew_gc_flags() {
 }
 #endif // KERNEL
 
+void set_object_alignment() {
+  // Object alignment.
+  assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
+  MinObjAlignmentInBytes     = ObjectAlignmentInBytes;
+  assert(MinObjAlignmentInBytes >= HeapWordsPerLong * HeapWordSize, "ObjectAlignmentInBytes value is too small");
+  MinObjAlignment            = MinObjAlignmentInBytes / HeapWordSize;
+  assert(MinObjAlignmentInBytes == MinObjAlignment * HeapWordSize, "ObjectAlignmentInBytes value is incorrect");
+  MinObjAlignmentInBytesMask = MinObjAlignmentInBytes - 1;
+
+  LogMinObjAlignmentInBytes  = exact_log2(ObjectAlignmentInBytes);
+  LogMinObjAlignment         = LogMinObjAlignmentInBytes - LogHeapWordSize;
+
+  // Oop encoding heap max
+  OopEncodingHeapMax = (uint64_t(max_juint) + 1) << LogMinObjAlignmentInBytes;
+
+#ifndef KERNEL
+  // Set CMS global values
+  CompactibleFreeListSpace::set_cms_values();
+#endif // KERNEL
+}
+
+bool verify_object_alignment() {
+  // Object alignment.
+  if (!is_power_of_2(ObjectAlignmentInBytes)) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must be power of 2", (int)ObjectAlignmentInBytes);
+    return false;
+  }
+  if ((int)ObjectAlignmentInBytes < BytesPerLong) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must be greater or equal %d", (int)ObjectAlignmentInBytes, BytesPerLong);
+    return false;
+  }
+  return true;
+}
+
 inline uintx max_heap_for_compressed_oops() {
-  LP64_ONLY(return oopDesc::OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
+  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1775,6 +1811,8 @@ bool Arguments::check_vm_args_consistency() {
   // expression.
   status = status && verify_interval(TLABWasteTargetPercent,
                                      1, 100, "TLABWasteTargetPercent");
+
+  status = status && verify_object_alignment();
 
   return status;
 }
@@ -2847,6 +2885,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #if defined(_LP64) && defined(COMPILER1)
   UseCompressedOops = false;
 #endif
+
+  // Set object alignment values.
+  set_object_alignment();
 
 #ifdef SERIALGC
   force_serial_gc();

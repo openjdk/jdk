@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1949,23 +1949,30 @@ void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits order_constrain
 }
 
 // ----------------------------------------------------------------------------
-void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Register index) {
-  assert(byte_no == 1 || byte_no == 2, "byte_no out of range");
-  bool is_invokedynamic = (bytecode() == Bytecodes::_invokedynamic);
-
+void TemplateTable::resolve_cache_and_index(int byte_no,
+                                            Register result,
+                                            Register Rcache,
+                                            Register index,
+                                            size_t index_size) {
   // Depends on cpCacheOop layout!
-  const int shift_count = (1 + byte_no)*BitsPerByte;
   Label resolved;
 
-  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
-  if (is_invokedynamic) {
-    // We are resolved if the f1 field contains a non-null CallSite object.
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
+  if (byte_no == f1_oop) {
+    // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
+    // This kind of CP cache entry does not need to match the flags byte, because
+    // there is a 1-1 relation between bytecode type and CP entry type.
+    assert_different_registers(result, Rcache);
     __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
-              ConstantPoolCacheEntry::f1_offset(), Lbyte_code);
-    __ tst(Lbyte_code);
+              ConstantPoolCacheEntry::f1_offset(), result);
+    __ tst(result);
     __ br(Assembler::notEqual, false, Assembler::pt, resolved);
     __ delayed()->set((int)bytecode(), O1);
   } else {
+    assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
+    assert(result == noreg, "");  //else change code for setting result
+    const int shift_count = (1 + byte_no)*BitsPerByte;
+
     __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
               ConstantPoolCacheEntry::indices_offset(), Lbyte_code);
 
@@ -1992,7 +1999,10 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
   // first time invocation - must resolve first
   __ call_VM(noreg, entry, O1);
   // Update registers with resolved info
-  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
+  if (result != noreg)
+    __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
+              ConstantPoolCacheEntry::f1_offset(), result);
   __ bind(resolved);
 }
 
@@ -2001,7 +2011,8 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register Ritable_index,
                                                Register Rflags,
                                                bool is_invokevirtual,
-                                               bool is_invokevfinal) {
+                                               bool is_invokevfinal,
+                                               bool is_invokedynamic) {
   // Uses both G3_scratch and G4_scratch
   Register Rcache = G3_scratch;
   Register Rscratch = G4_scratch;
@@ -2025,11 +2036,15 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
 
   if (is_invokevfinal) {
     __ get_cache_and_index_at_bcp(Rcache, Rscratch, 1);
+    __ ld_ptr(Rcache, method_offset, Rmethod);
+  } else if (byte_no == f1_oop) {
+    // Resolved f1_oop goes directly into 'method' register.
+    resolve_cache_and_index(byte_no, Rmethod, Rcache, Rscratch, sizeof(u4));
   } else {
-    resolve_cache_and_index(byte_no, Rcache, Rscratch);
+    resolve_cache_and_index(byte_no, noreg, Rcache, Rscratch, sizeof(u2));
+    __ ld_ptr(Rcache, method_offset, Rmethod);
   }
 
-  __ ld_ptr(Rcache, method_offset, Rmethod);
   if (Ritable_index != noreg) {
     __ ld_ptr(Rcache, index_offset, Ritable_index);
   }
@@ -2110,7 +2125,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   Register Rflags = G1_scratch;
   ByteSize cp_base_offset = constantPoolCacheOopDesc::base_offset();
 
-  resolve_cache_and_index(byte_no, Rcache, index);
+  resolve_cache_and_index(byte_no, noreg, Rcache, index, sizeof(u2));
   jvmti_post_field_access(Rcache, index, is_static, false);
   load_field_cp_cache_entry(Rclass, Rcache, index, Roffset, Rflags, is_static);
 
@@ -2475,7 +2490,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   Register Rflags = G1_scratch;
   ByteSize cp_base_offset = constantPoolCacheOopDesc::base_offset();
 
-  resolve_cache_and_index(byte_no, Rcache, index);
+  resolve_cache_and_index(byte_no, noreg, Rcache, index, sizeof(u2));
   jvmti_post_field_mod(Rcache, index, is_static);
   load_field_cp_cache_entry(Rclass, Rcache, index, Roffset, Rflags, is_static);
 
@@ -2816,6 +2831,7 @@ void TemplateTable::generate_vtable_call(Register Rrecv, Register Rindex, Regist
 
 void TemplateTable::invokevirtual(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f2_byte, "use this argument");
 
   Register Rscratch = G3_scratch;
   Register Rtemp = G4_scratch;
@@ -2823,7 +2839,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   Register Rrecv = G5_method;
   Label notFinal;
 
-  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, true);
+  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, true, false, false);
   __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
 
   // Check for vfinal
@@ -2864,9 +2880,10 @@ void TemplateTable::invokevirtual(int byte_no) {
 
 void TemplateTable::fast_invokevfinal(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f2_byte, "use this argument");
 
   load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Lscratch, true,
-                             /*is_invokevfinal*/true);
+                             /*is_invokevfinal*/true, false);
   __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
   invokevfinal_helper(G3_scratch, Lscratch);
 }
@@ -2901,12 +2918,13 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
 
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_byte, "use this argument");
 
   Register Rscratch = G3_scratch;
   Register Rtemp = G4_scratch;
   Register Rret = Lscratch;
 
-  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, false);
+  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, /*virtual*/ false, false, false);
   __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
 
   __ verify_oop(G5_method);
@@ -2934,12 +2952,13 @@ void TemplateTable::invokespecial(int byte_no) {
 
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_byte, "use this argument");
 
   Register Rscratch = G3_scratch;
   Register Rtemp = G4_scratch;
   Register Rret = Lscratch;
 
-  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, false);
+  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, /*virtual*/ false, false, false);
   __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
 
   __ verify_oop(G5_method);
@@ -2992,6 +3011,7 @@ void TemplateTable::invokeinterface_object_method(Register RklassOop,
 
 void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_byte, "use this argument");
 
   Register Rscratch = G4_scratch;
   Register Rret = G3_scratch;
@@ -3001,7 +3021,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   Register Rflags = O1;
   assert_different_registers(Rscratch, G5_method);
 
-  load_invoke_cp_cache_entry(byte_no, Rinterface, Rindex, Rflags, false);
+  load_invoke_cp_cache_entry(byte_no, Rinterface, Rindex, Rflags, /*virtual*/ false, false, false);
   __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
 
   // get receiver
@@ -3118,6 +3138,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_oop, "use this argument");
 
   if (!EnableInvokeDynamic) {
     // We should not encounter this bytecode if !EnableInvokeDynamic.
@@ -3132,7 +3153,6 @@ void TemplateTable::invokedynamic(int byte_no) {
 
   // G5: CallSite object (f1)
   // XX: unused (f2)
-  // G3: receiver address
   // XX: flags (unused)
 
   Register G5_callsite = G5_method;
@@ -3140,7 +3160,8 @@ void TemplateTable::invokedynamic(int byte_no) {
   Register Rtemp       = G1_scratch;
   Register Rret        = Lscratch;
 
-  load_invoke_cp_cache_entry(byte_no, G5_callsite, noreg, Rret, false);
+  load_invoke_cp_cache_entry(byte_no, G5_callsite, noreg, Rret,
+                             /*virtual*/ false, /*vfinal*/ false, /*indy*/ true);
   __ mov(SP, O5_savedSP);  // record SP that we wanted the callee to restore
 
   __ verify_oop(G5_callsite);

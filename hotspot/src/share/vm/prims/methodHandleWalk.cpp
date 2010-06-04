@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -732,7 +732,7 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_dreturn:
   case Bytecodes::_areturn:
   case Bytecodes::_return:
-    assert(strcmp(Bytecodes::format(op), "b") == 0, "wrong bytecode format");
+    assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_b, "wrong bytecode format");
     _bytecode.push(op);
     break;
 
@@ -748,7 +748,7 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_fstore:
   case Bytecodes::_dstore:
   case Bytecodes::_astore:
-    assert(strcmp(Bytecodes::format(op), "bi") == 0, "wrong bytecode format");
+    assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bi, "wrong bytecode format");
     assert((char) index == index, "index does not fit in 8-bit");
     _bytecode.push(op);
     _bytecode.push(index);
@@ -757,18 +757,18 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   // bii
   case Bytecodes::_ldc2_w:
   case Bytecodes::_checkcast:
-    assert(strcmp(Bytecodes::format(op), "bii") == 0, "wrong bytecode format");
+    assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bkk, "wrong bytecode format");
     assert((short) index == index, "index does not fit in 16-bit");
     _bytecode.push(op);
     _bytecode.push(index >> 8);
     _bytecode.push(index);
     break;
 
-  // bjj
+  // bJJ
   case Bytecodes::_invokestatic:
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokevirtual:
-    assert(strcmp(Bytecodes::format(op), "bjj") == 0, "wrong bytecode format");
+    assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bJJ, "wrong bytecode format");
     assert((short) index == index, "index does not fit in 16-bit");
     _bytecode.push(op);
     _bytecode.push(index >> 8);

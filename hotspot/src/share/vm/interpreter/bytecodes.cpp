@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -26,23 +26,22 @@
 #include "incls/_bytecodes.cpp.incl"
 
 
+#if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))
 // Windows AMD64 Compiler Hangs compiling this file
 // unless optimization is off
 #ifdef _M_AMD64
 #pragma optimize ("", off)
 #endif
+#endif
 
 
 bool            Bytecodes::_is_initialized = false;
 const char*     Bytecodes::_name          [Bytecodes::number_of_codes];
-const char*     Bytecodes::_format        [Bytecodes::number_of_codes];
-const char*     Bytecodes::_wide_format   [Bytecodes::number_of_codes];
 BasicType       Bytecodes::_result_type   [Bytecodes::number_of_codes];
 s_char          Bytecodes::_depth         [Bytecodes::number_of_codes];
-u_char          Bytecodes::_length        [Bytecodes::number_of_codes];
-bool            Bytecodes::_can_trap      [Bytecodes::number_of_codes];
+u_char          Bytecodes::_lengths       [Bytecodes::number_of_codes];
 Bytecodes::Code Bytecodes::_java_code     [Bytecodes::number_of_codes];
-bool            Bytecodes::_can_rewrite   [Bytecodes::number_of_codes];
+u_short         Bytecodes::_flags         [(1<<BitsPerByte)*2];
 
 
 Bytecodes::Code Bytecodes::code_at(methodOop method, int bci) {
@@ -89,6 +88,7 @@ int Bytecodes::special_length_at(address bcp, address end) {
       return (len > 0 && len == (int)len) ? len : -1;
     }
   }
+  // Note: Length functions must return <=0 for invalid bytecodes.
   return 0;
 }
 
@@ -122,15 +122,22 @@ void Bytecodes::def(Code code, const char* name, const char* format, const char*
 
 void Bytecodes::def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap, Code java_code) {
   assert(wide_format == NULL || format != NULL, "short form must exist if there's a wide form");
+  int len  = (format      != NULL ? (int) strlen(format)      : 0);
+  int wlen = (wide_format != NULL ? (int) strlen(wide_format) : 0);
   _name          [code] = name;
-  _format        [code] = format;
-  _wide_format   [code] = wide_format;
   _result_type   [code] = result_type;
   _depth         [code] = depth;
-  _can_trap      [code] = can_trap;
-  _length        [code] = format != NULL ? (u_char)strlen(format) : 0;
+  _lengths       [code] = (wlen << 4) | (len & 0xF);
   _java_code     [code] = java_code;
-  if (java_code != code)  _can_rewrite[java_code] = true;
+  int bc_flags = 0;
+  if (can_trap)           bc_flags |= _bc_can_trap;
+  if (java_code != code)  bc_flags |= _bc_can_rewrite;
+  _flags[(u1)code+0*(1<<BitsPerByte)] = compute_flags(format,      bc_flags);
+  _flags[(u1)code+1*(1<<BitsPerByte)] = compute_flags(wide_format, bc_flags);
+  assert(is_defined(code)      == (format != NULL),      "");
+  assert(wide_is_defined(code) == (wide_format != NULL), "");
+  assert(length_for(code)      == len, "");
+  assert(wide_length_for(code) == wlen, "");
 }
 
 
@@ -138,22 +145,91 @@ void Bytecodes::def(Code code, const char* name, const char* format, const char*
 //
 // b: bytecode
 // c: signed constant, Java byte-ordering
-// i: unsigned index , Java byte-ordering
-// j: unsigned index , native byte-ordering
-// o: branch offset  , Java byte-ordering
+// i: unsigned local index, Java byte-ordering (I = native byte ordering)
+// j: unsigned CP cache index, Java byte-ordering (J = native byte ordering)
+// k: unsigned CP index, Java byte-ordering
+// o: branch offset, Java byte-ordering
 // _: unused/ignored
 // w: wide bytecode
 //
-// Note: Right now the format strings are used for 2 purposes:
+// Note: The format strings are used for 2 purposes:
 //       1. to specify the length of the bytecode
 //          (= number of characters in format string)
-//       2. to specify the bytecode attributes
-//
-//       The bytecode attributes are currently used only for bytecode tracing
-//       (see BytecodeTracer); thus if more specific format information is
-//       used, one would also have to adjust the bytecode tracer.
+//       2. to derive bytecode format flags (_fmt_has_k, etc.)
 //
 // Note: For bytecodes with variable length, the format string is the empty string.
+
+int Bytecodes::compute_flags(const char* format, int more_flags) {
+  if (format == NULL)  return 0;  // not even more_flags
+  int flags = more_flags;
+  const char* fp = format;
+  switch (*fp) {
+  case '\0':
+    flags |= _fmt_not_simple; // but variable
+    break;
+  case 'b':
+    flags |= _fmt_not_variable;  // but simple
+    ++fp;  // skip 'b'
+    break;
+  case 'w':
+    flags |= _fmt_not_variable | _fmt_not_simple;
+    ++fp;  // skip 'w'
+    guarantee(*fp == 'b', "wide format must start with 'wb'");
+    ++fp;  // skip 'b'
+    break;
+  }
+
+  int has_nbo = 0, has_jbo = 0, has_size = 0;
+  for (;;) {
+    int this_flag = 0;
+    char fc = *fp++;
+    switch (fc) {
+    case '\0':  // end of string
+      assert(flags == (jchar)flags, "change _format_flags");
+      return flags;
+
+    case '_': continue;         // ignore these
+
+    case 'j': this_flag = _fmt_has_j; has_jbo = 1; break;
+    case 'k': this_flag = _fmt_has_k; has_jbo = 1; break;
+    case 'i': this_flag = _fmt_has_i; has_jbo = 1; break;
+    case 'c': this_flag = _fmt_has_c; has_jbo = 1; break;
+    case 'o': this_flag = _fmt_has_o; has_jbo = 1; break;
+
+    // uppercase versions mark native byte order (from Rewriter)
+    // actually, only the 'J' case happens currently
+    case 'J': this_flag = _fmt_has_j; has_nbo = 1; break;
+    case 'K': this_flag = _fmt_has_k; has_nbo = 1; break;
+    case 'I': this_flag = _fmt_has_i; has_nbo = 1; break;
+    case 'C': this_flag = _fmt_has_c; has_nbo = 1; break;
+    case 'O': this_flag = _fmt_has_o; has_nbo = 1; break;
+    default:  guarantee(false, "bad char in format");
+    }
+
+    flags |= this_flag;
+
+    guarantee(!(has_jbo && has_nbo), "mixed byte orders in format");
+    if (has_nbo)
+      flags |= _fmt_has_nbo;
+
+    int this_size = 1;
+    if (*fp == fc) {
+      // advance beyond run of the same characters
+      this_size = 2;
+      while (*++fp == fc)  this_size++;
+      switch (this_size) {
+      case 2: flags |= _fmt_has_u2; break;
+      case 4: flags |= _fmt_has_u4; break;
+      default: guarantee(false, "bad rep count in format");
+      }
+    }
+    guarantee(has_size == 0 ||                     // no field yet
+              this_size == has_size ||             // same size
+              this_size < has_size && *fp == '\0', // last field can be short
+              "mixed field sizes in format");
+    has_size = this_size;
+  }
+}
 
 void Bytecodes::initialize() {
   if (_is_initialized) return;
@@ -189,9 +265,9 @@ void Bytecodes::initialize() {
   def(_dconst_1            , "dconst_1"            , "b"    , NULL    , T_DOUBLE ,  2, false);
   def(_bipush              , "bipush"              , "bc"   , NULL    , T_INT    ,  1, false);
   def(_sipush              , "sipush"              , "bcc"  , NULL    , T_INT    ,  1, false);
-  def(_ldc                 , "ldc"                 , "bi"   , NULL    , T_ILLEGAL,  1, true );
-  def(_ldc_w               , "ldc_w"               , "bii"  , NULL    , T_ILLEGAL,  1, true );
-  def(_ldc2_w              , "ldc2_w"              , "bii"  , NULL    , T_ILLEGAL,  2, true );
+  def(_ldc                 , "ldc"                 , "bk"   , NULL    , T_ILLEGAL,  1, true );
+  def(_ldc_w               , "ldc_w"               , "bkk"  , NULL    , T_ILLEGAL,  1, true );
+  def(_ldc2_w              , "ldc2_w"              , "bkk"  , NULL    , T_ILLEGAL,  2, true );
   def(_iload               , "iload"               , "bi"   , "wbii"  , T_INT    ,  1, false);
   def(_lload               , "lload"               , "bi"   , "wbii"  , T_LONG   ,  2, false);
   def(_fload               , "fload"               , "bi"   , "wbii"  , T_FLOAT  ,  1, false);
@@ -349,26 +425,26 @@ void Bytecodes::initialize() {
   def(_dreturn             , "dreturn"             , "b"    , NULL    , T_DOUBLE , -2, true);
   def(_areturn             , "areturn"             , "b"    , NULL    , T_OBJECT , -1, true);
   def(_return              , "return"              , "b"    , NULL    , T_VOID   ,  0, true);
-  def(_getstatic           , "getstatic"           , "bjj"  , NULL    , T_ILLEGAL,  1, true );
-  def(_putstatic           , "putstatic"           , "bjj"  , NULL    , T_ILLEGAL, -1, true );
-  def(_getfield            , "getfield"            , "bjj"  , NULL    , T_ILLEGAL,  0, true );
-  def(_putfield            , "putfield"            , "bjj"  , NULL    , T_ILLEGAL, -2, true );
-  def(_invokevirtual       , "invokevirtual"       , "bjj"  , NULL    , T_ILLEGAL, -1, true);
-  def(_invokespecial       , "invokespecial"       , "bjj"  , NULL    , T_ILLEGAL, -1, true);
-  def(_invokestatic        , "invokestatic"        , "bjj"  , NULL    , T_ILLEGAL,  0, true);
-  def(_invokeinterface     , "invokeinterface"     , "bjj__", NULL    , T_ILLEGAL, -1, true);
-  def(_invokedynamic       , "invokedynamic"       , "bjjjj", NULL    , T_ILLEGAL,  0, true );
-  def(_new                 , "new"                 , "bii"  , NULL    , T_OBJECT ,  1, true );
+  def(_getstatic           , "getstatic"           , "bJJ"  , NULL    , T_ILLEGAL,  1, true );
+  def(_putstatic           , "putstatic"           , "bJJ"  , NULL    , T_ILLEGAL, -1, true );
+  def(_getfield            , "getfield"            , "bJJ"  , NULL    , T_ILLEGAL,  0, true );
+  def(_putfield            , "putfield"            , "bJJ"  , NULL    , T_ILLEGAL, -2, true );
+  def(_invokevirtual       , "invokevirtual"       , "bJJ"  , NULL    , T_ILLEGAL, -1, true);
+  def(_invokespecial       , "invokespecial"       , "bJJ"  , NULL    , T_ILLEGAL, -1, true);
+  def(_invokestatic        , "invokestatic"        , "bJJ"  , NULL    , T_ILLEGAL,  0, true);
+  def(_invokeinterface     , "invokeinterface"     , "bJJ__", NULL    , T_ILLEGAL, -1, true);
+  def(_invokedynamic       , "invokedynamic"       , "bJJJJ", NULL    , T_ILLEGAL,  0, true );
+  def(_new                 , "new"                 , "bkk"  , NULL    , T_OBJECT ,  1, true );
   def(_newarray            , "newarray"            , "bc"   , NULL    , T_OBJECT ,  0, true );
-  def(_anewarray           , "anewarray"           , "bii"  , NULL    , T_OBJECT ,  0, true );
+  def(_anewarray           , "anewarray"           , "bkk"  , NULL    , T_OBJECT ,  0, true );
   def(_arraylength         , "arraylength"         , "b"    , NULL    , T_VOID   ,  0, true );
   def(_athrow              , "athrow"              , "b"    , NULL    , T_VOID   , -1, true );
-  def(_checkcast           , "checkcast"           , "bii"  , NULL    , T_OBJECT ,  0, true );
-  def(_instanceof          , "instanceof"          , "bii"  , NULL    , T_INT    ,  0, true );
+  def(_checkcast           , "checkcast"           , "bkk"  , NULL    , T_OBJECT ,  0, true );
+  def(_instanceof          , "instanceof"          , "bkk"  , NULL    , T_INT    ,  0, true );
   def(_monitorenter        , "monitorenter"        , "b"    , NULL    , T_VOID   , -1, true );
   def(_monitorexit         , "monitorexit"         , "b"    , NULL    , T_VOID   , -1, true );
   def(_wide                , "wide"                , ""     , NULL    , T_VOID   ,  0, false);
-  def(_multianewarray      , "multianewarray"      , "biic" , NULL    , T_OBJECT ,  1, true );
+  def(_multianewarray      , "multianewarray"      , "bkkc" , NULL    , T_OBJECT ,  1, true );
   def(_ifnull              , "ifnull"              , "boo"  , NULL    , T_VOID   , -1, false);
   def(_ifnonnull           , "ifnonnull"           , "boo"  , NULL    , T_VOID   , -1, false);
   def(_goto_w              , "goto_w"              , "boooo", NULL    , T_VOID   ,  0, false);
@@ -378,35 +454,35 @@ void Bytecodes::initialize() {
   //  JVM bytecodes
   //  bytecode               bytecode name           format   wide f.   result tp  stk traps  std code
 
-  def(_fast_agetfield      , "fast_agetfield"      , "bjj"  , NULL    , T_OBJECT ,  0, true , _getfield       );
-  def(_fast_bgetfield      , "fast_bgetfield"      , "bjj"  , NULL    , T_INT    ,  0, true , _getfield       );
-  def(_fast_cgetfield      , "fast_cgetfield"      , "bjj"  , NULL    , T_CHAR   ,  0, true , _getfield       );
-  def(_fast_dgetfield      , "fast_dgetfield"      , "bjj"  , NULL    , T_DOUBLE ,  0, true , _getfield       );
-  def(_fast_fgetfield      , "fast_fgetfield"      , "bjj"  , NULL    , T_FLOAT  ,  0, true , _getfield       );
-  def(_fast_igetfield      , "fast_igetfield"      , "bjj"  , NULL    , T_INT    ,  0, true , _getfield       );
-  def(_fast_lgetfield      , "fast_lgetfield"      , "bjj"  , NULL    , T_LONG   ,  0, true , _getfield       );
-  def(_fast_sgetfield      , "fast_sgetfield"      , "bjj"  , NULL    , T_SHORT  ,  0, true , _getfield       );
+  def(_fast_agetfield      , "fast_agetfield"      , "bJJ"  , NULL    , T_OBJECT ,  0, true , _getfield       );
+  def(_fast_bgetfield      , "fast_bgetfield"      , "bJJ"  , NULL    , T_INT    ,  0, true , _getfield       );
+  def(_fast_cgetfield      , "fast_cgetfield"      , "bJJ"  , NULL    , T_CHAR   ,  0, true , _getfield       );
+  def(_fast_dgetfield      , "fast_dgetfield"      , "bJJ"  , NULL    , T_DOUBLE ,  0, true , _getfield       );
+  def(_fast_fgetfield      , "fast_fgetfield"      , "bJJ"  , NULL    , T_FLOAT  ,  0, true , _getfield       );
+  def(_fast_igetfield      , "fast_igetfield"      , "bJJ"  , NULL    , T_INT    ,  0, true , _getfield       );
+  def(_fast_lgetfield      , "fast_lgetfield"      , "bJJ"  , NULL    , T_LONG   ,  0, true , _getfield       );
+  def(_fast_sgetfield      , "fast_sgetfield"      , "bJJ"  , NULL    , T_SHORT  ,  0, true , _getfield       );
 
-  def(_fast_aputfield      , "fast_aputfield"      , "bjj"  , NULL    , T_OBJECT ,  0, true , _putfield       );
-  def(_fast_bputfield      , "fast_bputfield"      , "bjj"  , NULL    , T_INT    ,  0, true , _putfield       );
-  def(_fast_cputfield      , "fast_cputfield"      , "bjj"  , NULL    , T_CHAR   ,  0, true , _putfield       );
-  def(_fast_dputfield      , "fast_dputfield"      , "bjj"  , NULL    , T_DOUBLE ,  0, true , _putfield       );
-  def(_fast_fputfield      , "fast_fputfield"      , "bjj"  , NULL    , T_FLOAT  ,  0, true , _putfield       );
-  def(_fast_iputfield      , "fast_iputfield"      , "bjj"  , NULL    , T_INT    ,  0, true , _putfield       );
-  def(_fast_lputfield      , "fast_lputfield"      , "bjj"  , NULL    , T_LONG   ,  0, true , _putfield       );
-  def(_fast_sputfield      , "fast_sputfield"      , "bjj"  , NULL    , T_SHORT  ,  0, true , _putfield       );
+  def(_fast_aputfield      , "fast_aputfield"      , "bJJ"  , NULL    , T_OBJECT ,  0, true , _putfield       );
+  def(_fast_bputfield      , "fast_bputfield"      , "bJJ"  , NULL    , T_INT    ,  0, true , _putfield       );
+  def(_fast_cputfield      , "fast_cputfield"      , "bJJ"  , NULL    , T_CHAR   ,  0, true , _putfield       );
+  def(_fast_dputfield      , "fast_dputfield"      , "bJJ"  , NULL    , T_DOUBLE ,  0, true , _putfield       );
+  def(_fast_fputfield      , "fast_fputfield"      , "bJJ"  , NULL    , T_FLOAT  ,  0, true , _putfield       );
+  def(_fast_iputfield      , "fast_iputfield"      , "bJJ"  , NULL    , T_INT    ,  0, true , _putfield       );
+  def(_fast_lputfield      , "fast_lputfield"      , "bJJ"  , NULL    , T_LONG   ,  0, true , _putfield       );
+  def(_fast_sputfield      , "fast_sputfield"      , "bJJ"  , NULL    , T_SHORT  ,  0, true , _putfield       );
 
   def(_fast_aload_0        , "fast_aload_0"        , "b"    , NULL    , T_OBJECT ,  1, true , _aload_0        );
-  def(_fast_iaccess_0      , "fast_iaccess_0"      , "b_jj" , NULL    , T_INT    ,  1, true , _aload_0        );
-  def(_fast_aaccess_0      , "fast_aaccess_0"      , "b_jj" , NULL    , T_OBJECT ,  1, true , _aload_0        );
-  def(_fast_faccess_0      , "fast_faccess_0"      , "b_jj" , NULL    , T_OBJECT ,  1, true , _aload_0        );
+  def(_fast_iaccess_0      , "fast_iaccess_0"      , "b_JJ" , NULL    , T_INT    ,  1, true , _aload_0        );
+  def(_fast_aaccess_0      , "fast_aaccess_0"      , "b_JJ" , NULL    , T_OBJECT ,  1, true , _aload_0        );
+  def(_fast_faccess_0      , "fast_faccess_0"      , "b_JJ" , NULL    , T_OBJECT ,  1, true , _aload_0        );
 
   def(_fast_iload          , "fast_iload"          , "bi"   , NULL    , T_INT    ,  1, false, _iload);
   def(_fast_iload2         , "fast_iload2"         , "bi_i" , NULL    , T_INT    ,  2, false, _iload);
   def(_fast_icaload        , "fast_icaload"        , "bi_"  , NULL    , T_INT    ,  0, false, _iload);
 
   // Faster method invocation.
-  def(_fast_invokevfinal   , "fast_invokevfinal"   , "bjj"  , NULL    , T_ILLEGAL, -1, true, _invokevirtual   );
+  def(_fast_invokevfinal   , "fast_invokevfinal"   , "bJJ"  , NULL    , T_ILLEGAL, -1, true, _invokevirtual   );
 
   def(_fast_linearswitch   , "fast_linearswitch"   , ""     , NULL    , T_VOID   , -1, false, _lookupswitch   );
   def(_fast_binaryswitch   , "fast_binaryswitch"   , ""     , NULL    , T_VOID   , -1, false, _lookupswitch   );

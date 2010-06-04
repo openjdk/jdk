@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -437,7 +437,7 @@ Node *ConstraintCastNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
 // If not converting int->oop, throw away cast after constant propagation
 Node *CastPPNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   const Type *t = ccp->type(in(1));
-  if (!t->isa_oop_ptr() || (in(1)->is_DecodeN() && Universe::narrow_oop_use_implicit_null_checks())) {
+  if (!t->isa_oop_ptr() || (in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks())) {
     return NULL; // do not transform raw pointers or narrow oops
   }
   return ConstraintCastNode::Ideal_DU_postCCP(ccp);

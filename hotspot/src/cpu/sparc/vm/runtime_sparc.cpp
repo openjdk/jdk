@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -115,6 +115,11 @@ void OptoRuntime::generate_exception_blob() {
 
   __ mov(O0, G3_scratch);             // Move handler address to temp
   __ restore();
+
+  // Restore SP from L7 if the exception PC is a MethodHandle call site.
+  __ lduw(Address(G2_thread, JavaThread::is_method_handle_return_offset()), O7);
+  __ tst(O7);
+  __ movcc(Assembler::notZero, false, Assembler::icc, L7_mh_SP_save, SP);
 
   // G3_scratch contains handler address
   // Since this may be the deopt blob we must set O7 to look like we returned

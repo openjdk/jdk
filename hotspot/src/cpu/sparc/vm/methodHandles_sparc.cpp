@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -375,10 +375,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       Register O0_scratch = O0_argslot;
       int stackElementSize = Interpreter::stackElementSize;
 
-      // Make space on the stack for the arguments.
-      __ sub(SP,    4*stackElementSize, SP);
-      __ sub(Gargs, 3*stackElementSize, Gargs);
-      //__ sub(Lesp,  3*stackElementSize, Lesp);
+      // Make space on the stack for the arguments and set Gargs
+      // correctly.
+      __ sub(SP, 4*stackElementSize, SP);  // Keep stack aligned.
+      __ add(SP, (frame::varargs_offset)*wordSize - 1*Interpreter::stackElementSize + STACK_BIAS + BytesPerWord, Gargs);
 
       // void raiseException(int code, Object actual, Object required)
       __ st(    O1_scratch, Address(Gargs, 2*stackElementSize));  // code

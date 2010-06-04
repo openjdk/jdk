@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -103,16 +103,15 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
 
 
 // Rewrite a classfile-order CP index into a native-order CPC index.
-int Rewriter::rewrite_member_reference(address bcp, int offset) {
+void Rewriter::rewrite_member_reference(address bcp, int offset) {
   address p = bcp + offset;
   int  cp_index    = Bytes::get_Java_u2(p);
   int  cache_index = cp_entry_to_cp_cache(cp_index);
   Bytes::put_native_u2(p, cache_index);
-  return cp_index;
 }
 
 
-void Rewriter::rewrite_invokedynamic(address bcp, int offset, int delete_me) {
+void Rewriter::rewrite_invokedynamic(address bcp, int offset) {
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "");
   int cp_index = Bytes::get_Java_u2(p);
@@ -178,7 +177,7 @@ void Rewriter::scan_method(methodOop method) {
         case Bytecodes::_lookupswitch   : {
 #ifndef CC_INTERP
           Bytecode_lookupswitch* bc = Bytecode_lookupswitch_at(bcp);
-          bc->set_code(
+          (*bcp) = (
             bc->number_of_pairs() < BinarySwitchThreshold
             ? Bytecodes::_fast_linearswitch
             : Bytecodes::_fast_binaryswitch
@@ -197,7 +196,7 @@ void Rewriter::scan_method(methodOop method) {
           rewrite_member_reference(bcp, prefix_length+1);
           break;
         case Bytecodes::_invokedynamic:
-          rewrite_invokedynamic(bcp, prefix_length+1, int(sizeof"@@@@DELETE ME"));
+          rewrite_invokedynamic(bcp, prefix_length+1);
           break;
         case Bytecodes::_jsr            : // fall through
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
@@ -308,5 +307,19 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, objArray
 
     // Set up method entry points for compiler and interpreter.
     m->link_method(m, CHECK);
+
+#ifdef ASSERT
+    if (StressMethodComparator) {
+      static int nmc = 0;
+      for (int j = i; j >= 0 && j >= i-4; j--) {
+        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
+        bool z = MethodComparator::methods_EMCP(m(), (methodOop)_methods->obj_at(j));
+        if (j == i && !z) {
+          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
+          assert(z, "method must compare equal to itself");
+        }
+      }
+    }
+#endif //ASSERT
   }
 }

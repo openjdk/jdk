@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -441,11 +441,11 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
 }
 
 
-inline static RelocIterator parse_ic(CodeBlob* code, address ic_call, oop* &_oop_addr, bool *is_optimized) {
+inline static RelocIterator parse_ic(nmethod* nm, address ic_call, oop* &_oop_addr, bool *is_optimized) {
    address  first_oop = NULL;
    // Mergers please note: Sun SC5.x CC insists on an lvalue for a reference parameter.
-   CodeBlob *code1 = code;
-   return virtual_call_Relocation::parse_ic(code1, ic_call, first_oop, _oop_addr, is_optimized);
+   nmethod* tmp_nm = nm;
+   return virtual_call_Relocation::parse_ic(tmp_nm, ic_call, first_oop, _oop_addr, is_optimized);
 }
 
 CompiledIC::CompiledIC(NativeCall* ic_call)

@@ -1,12 +1,12 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package sun.security.tools;
@@ -74,6 +74,8 @@ public class JarSignerResources extends java.util.ListResourceBundle {
                 "[-digestalg <algorithm>]    name of digest algorithm"},
         {"[-sigalg <algorithm>]       name of signature algorithm",
                 "[-sigalg <algorithm>]       name of signature algorithm"},
+        {"[-crl[:auto| <file>]        include CRL in signed jar",
+                "[-crl[:auto| <file>]        include CRL in signed jar"},
         {"[-verify]                   verify a signed JAR file",
                 "[-verify]                   verify a signed JAR file"},
         {"[-verbose[:suboptions]]     verbose output when signing/verifying.",
@@ -191,6 +193,7 @@ public class JarSignerResources extends java.util.ListResourceBundle {
         {"using an alternative signing mechanism",
                 "using an alternative signing mechanism"},
         {"entry was signed on", "entry was signed on {0}"},
+        {"with a CRL including %d entries", "with a CRL including %d entries"},
         {"Warning: ", "Warning: "},
         {"This jar contains unsigned entries which have not been integrity-checked. ",
                 "This jar contains unsigned entries which have not been integrity-checked. "},

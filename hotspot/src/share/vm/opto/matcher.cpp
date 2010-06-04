@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1334,7 +1334,7 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
       if( j == max_scan )       // No post-domination before scan end?
         return true;            // Then break the match tree up
     }
-    if (m->is_DecodeN() && Matcher::clone_shift_expressions) {
+    if (m->is_DecodeN() && Matcher::narrow_oop_use_complex_address()) {
       // These are commonly used in address expressions and can
       // efficiently fold into them on X64 in some cases.
       return false;
@@ -2110,8 +2110,8 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
         _null_check_tests.push(proj);
         Node* val = cmp->in(1);
 #ifdef _LP64
-        if (UseCompressedOops && !Matcher::clone_shift_expressions &&
-            val->bottom_type()->isa_narrowoop()) {
+        if (val->bottom_type()->isa_narrowoop() &&
+            !Matcher::narrow_oop_use_complex_address()) {
           //
           // Look for DecodeN node which should be pinned to orig_proj.
           // On platforms (Sparc) which can not handle 2 adds
@@ -2127,6 +2127,9 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
             if (d->is_DecodeN() && d->in(1) == val) {
               val = d;
               val->set_req(0, NULL); // Unpin now.
+              // Mark this as special case to distinguish from
+              // a regular case: CmpP(DecodeN, NULL).
+              val = (Node*)(((intptr_t)val) | 1);
               break;
             }
           }
@@ -2146,9 +2149,21 @@ void Matcher::validate_null_checks( ) {
   for( uint i=0; i < cnt; i+=2 ) {
     Node *test = _null_check_tests[i];
     Node *val = _null_check_tests[i+1];
+    bool is_decoden = ((intptr_t)val) & 1;
+    val = (Node*)(((intptr_t)val) & ~1);
     if (has_new_node(val)) {
+      Node* new_val = new_node(val);
+      if (is_decoden) {
+        assert(val->is_DecodeN() && val->in(0) == NULL, "sanity");
+        // Note: new_val may have a control edge if
+        // the original ideal node DecodeN was matched before
+        // it was unpinned in Matcher::collect_null_checks().
+        // Unpin the mach node and mark it.
+        new_val->set_req(0, NULL);
+        new_val = (Node*)(((intptr_t)new_val) | 1);
+      }
       // Is a match-tree root, so replace with the matched value
-      _null_check_tests.map(i+1, new_node(val));
+      _null_check_tests.map(i+1, new_val);
     } else {
       // Yank from candidate list
       _null_check_tests.map(i+1,_null_check_tests[--cnt]);

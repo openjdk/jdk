@@ -1,12 +1,12 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package sun.security.pkcs;
@@ -28,7 +28,6 @@ package sun.security.pkcs;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
@@ -173,18 +172,28 @@ public class PKCS7 {
      * @param digestAlgorithmIds the message digest algorithm identifiers.
      * @param contentInfo the content information.
      * @param certificates an array of X.509 certificates.
+     * @param crls an array of CRLs
      * @param signerInfos an array of signer information.
      */
     public PKCS7(AlgorithmId[] digestAlgorithmIds,
                  ContentInfo contentInfo,
                  X509Certificate[] certificates,
+                 X509CRL[] crls,
                  SignerInfo[] signerInfos) {
 
         version = BigInteger.ONE;
         this.digestAlgorithmIds = digestAlgorithmIds;
         this.contentInfo = contentInfo;
         this.certificates = certificates;
+        this.crls = crls;
         this.signerInfos = signerInfos;
+    }
+
+    public PKCS7(AlgorithmId[] digestAlgorithmIds,
+                 ContentInfo contentInfo,
+                 X509Certificate[] certificates,
+                 SignerInfo[] signerInfos) {
+        this(digestAlgorithmIds, contentInfo, certificates, null, signerInfos);
     }
 
     private void parseNetscapeCertChain(DerValue val)
@@ -312,7 +321,7 @@ public class PKCS7 {
                 ByteArrayInputStream bais = null;
                 try {
                     if (certfac == null)
-                        crls[i] = (X509CRL) new X509CRLImpl(crlVals[i]);
+                        crls[i] = new X509CRLImpl(crlVals[i]);
                     else {
                         byte[] encoded = crlVals[i].toByteArray();
                         bais = new ByteArrayInputStream(encoded);
@@ -480,7 +489,30 @@ public class PKCS7 {
             signedData.putOrderedSetOf((byte)0xA0, implCerts);
         }
 
-        // no crls (OPTIONAL field)
+        // CRLs (optional)
+        if (crls != null && crls.length != 0) {
+            // cast to X509CRLImpl[] since X509CRLImpl implements DerEncoder
+            Set<X509CRLImpl> implCRLs = new HashSet<X509CRLImpl>(crls.length);
+            for (X509CRL crl: crls) {
+                if (crl instanceof X509CRLImpl)
+                    implCRLs.add((X509CRLImpl) crl);
+                else {
+                    try {
+                        byte[] encoded = crl.getEncoded();
+                        implCRLs.add(new X509CRLImpl(encoded));
+                    } catch (CRLException ce) {
+                        IOException ie = new IOException(ce.getMessage());
+                        ie.initCause(ce);
+                        throw ie;
+                    }
+                }
+            }
+
+            // Add the CRL set (tagged with [1] IMPLICIT)
+            // to the signed data
+            signedData.putOrderedSetOf((byte)0xA1,
+                    implCRLs.toArray(new X509CRLImpl[implCRLs.size()]));
+        }
 
         // signerInfos
         signedData.putOrderedSetOf(DerValue.tag_Set, signerInfos);

@@ -1,12 +1,12 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.net;
@@ -401,29 +401,40 @@ class DatagramSocket implements java.io.Closeable {
      * send or receive may throw a PortUnreachableException. Note, there is no
      * guarantee that the exception will be thrown.
      *
-     * <p>A caller's permission to send and receive datagrams to a
-     * given host and port are checked at connect time. When a socket
-     * is connected, receive and send <b>will not
-     * perform any security checks</b> on incoming and outgoing
-     * packets, other than matching the packet's and the socket's
-     * address and port. On a send operation, if the packet's address
-     * is set and the packet's address and the socket's address do not
-     * match, an IllegalArgumentException will be thrown. A socket
-     * connected to a multicast address may only be used to send packets.
+     * <p> If a security manager has been installed then it is invoked to check
+     * access to the remote address. Specifically, if the given {@code address}
+     * is a {@link InetAddress#isMulticastAddress multicast address},
+     * the security manager's {@link
+     * java.lang.SecurityManager#checkMulticast(InetAddress)
+     * checkMulticast} method is invoked with the given {@code address}.
+     * Otherwise, the security manager's {@link
+     * java.lang.SecurityManager#checkConnect(String,int) checkConnect}
+     * and {@link java.lang.SecurityManager#checkAccept checkAccept} methods
+     * are invoked, with the given {@code address} and {@code port}, to
+     * verify that datagrams are permitted to be sent and received
+     * respectively.
+     *
+     * <p> When a socket is connected, {@link #receive receive} and
+     * {@link #send send} <b>will not perform any security checks</b>
+     * on incoming and outgoing packets, other than matching the packet's
+     * and the socket's address and port. On a send operation, if the
+     * packet's address is set and the packet's address and the socket's
+     * address do not match, an {@code IllegalArgumentException} will be
+     * thrown. A socket connected to a multicast address may only be used
+     * to send packets.
      *
      * @param address the remote address for the socket
      *
      * @param port the remote port for the socket.
      *
-     * @exception IllegalArgumentException if the address is null,
-     * or the port is out of range.
+     * @throws IllegalArgumentException
+     *         if the address is null, or the port is out of range.
      *
-     * @exception SecurityException if the caller is not allowed to
-     * send datagrams to and receive datagrams from the address and port.
+     * @throws SecurityException
+     *         if a security manager has been installed and it does
+     *         not permit access to the given remote address
      *
      * @see #disconnect
-     * @see #send
-     * @see #receive
      */
     public void connect(InetAddress address, int port) {
         try {
@@ -435,13 +446,25 @@ class DatagramSocket implements java.io.Closeable {
 
     /**
      * Connects this socket to a remote socket address (IP address + port number).
-     * <p>
+     *
+     * <p> If given an {@link InetSocketAddress InetSocketAddress}, this method
+     * behaves as if invoking {@link #connect(InetAddress,int) connect(InetAddress,int)}
+     * with the the given socket addresses IP address and port number.
+     *
      * @param   addr    The remote address.
-     * @throws  SocketException if the connect fails
-     * @throws  IllegalArgumentException if addr is null or addr is a SocketAddress
-     *          subclass not supported by this socket
+     *
+     * @throws  SocketException
+     *          if the connect fails
+     *
+     * @throws IllegalArgumentException
+     *         if {@code addr} is {@code null}, or {@code addr} is a SocketAddress
+     *         subclass not supported by this socket
+     *
+     * @throws SecurityException
+     *         if a security manager has been installed and it does
+     *         not permit access to the given remote address
+     *
      * @since 1.4
-     * @see #connect
      */
     public void connect(SocketAddress addr) throws SocketException {
         if (addr == null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,14 +16,14 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @bug 6843181
+ * @bug 6843181 6943963
  * @summary Confirm that NumericShaper is thread-safe.
  * @run main/timeout=300/othervm MTTest
  */
@@ -37,33 +37,34 @@ public class MTTest {
     static volatile boolean runrun = true;
     static volatile boolean err = false;
 
-    final static String text = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -789 (Thai) \u0e01\u0e33 01.23";
-    static char[] t1, t2;
+    final static String text = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -456 (Thai) \u0e01\u0e33 01.23";
+    final static char[] expected1 = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -\u06f4\u06f5\u06f6 (Thai) \u0e01\u0e33 \u0e50\u0e51.\u0e52\u0e53".toCharArray(); // for EASTERN_ARABIC
+    final static char[] expected2 = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -\u0664\u0665\u0666 (Thai) \u0e01\u0e33 \u0e50\u0e51.\u0e52\u0e53".toCharArray(); // for ARABIC
+
     static NumericShaper ns1, ns2, ns3, ns4;
 
     public static void main(String[] args) {
-        System.out.println("   original: " + text);
-        ns1 = getContextualShaper(EnumSet.of(Range.ARABIC), Range.ARABIC);
-        t1 = text.toCharArray();
-        ns1.shape(t1, 0, t1.length);
-        System.out.println("expected t1: " + String.valueOf(t1));
+        System.out.println("original: " + text);
+        ns1 = getContextualShaper(EnumSet.of(Range.EASTERN_ARABIC, Range.THAI),
+                                  Range.EUROPEAN);
+        ns2 = getContextualShaper(EnumSet.of(Range.ARABIC, Range.THAI),
+                                  Range.EUROPEAN);
+        System.out.println("expected for Eastern-Arabic & Thai: " +
+                           String.valueOf(expected1));
+        System.out.println("expected for Arabic & Thai: " +
+                           String.valueOf(expected2));
 
-        ns2 = getContextualShaper(EnumSet.of(Range.THAI), Range.THAI);
-        t2 = text.toCharArray();
-        ns2.shape(t2, 0, t2.length);
-        System.out.println("expected t2: " + String.valueOf(t2));
+        ns3 = getContextualShaper(EASTERN_ARABIC|THAI, EUROPEAN);
+        ns4 = getContextualShaper(ARABIC|THAI, EUROPEAN);
 
-        ns3 = getContextualShaper(ARABIC, ARABIC);
-        ns4 = getContextualShaper(THAI, THAI);
-
-        Thread th1 = new Thread(new Work(ns1, t1));
-        Thread th2 = new Thread(new Work(ns2, t2));
-        Thread th3 = new Thread(new Work(ns1, t1));
-        Thread th4 = new Thread(new Work(ns2, t2));
-        Thread th5 = new Thread(new Work(ns3, t1));
-        Thread th6 = new Thread(new Work(ns4, t2));
-        Thread th7 = new Thread(new Work(ns3, t1));
-        Thread th8 = new Thread(new Work(ns4, t2));
+        Thread th1 = new Thread(new Work(ns1, expected1));
+        Thread th2 = new Thread(new Work(ns2, expected2));
+        Thread th3 = new Thread(new Work(ns1, expected1));
+        Thread th4 = new Thread(new Work(ns2, expected2));
+        Thread th5 = new Thread(new Work(ns3, expected1));
+        Thread th6 = new Thread(new Work(ns4, expected2));
+        Thread th7 = new Thread(new Work(ns3, expected1));
+        Thread th8 = new Thread(new Work(ns4, expected2));
 
         th1.start();
         th2.start();
@@ -110,8 +111,8 @@ public class MTTest {
             int count = 0;
             while (runrun) {
                 char[] t = text.toCharArray();
+                count++;
                 try {
-                    count++;
                     ns.shape(t, 0, t.length);
                 } catch (Exception e) {
                     System.err.println("Error: Unexpected exception: " + e);

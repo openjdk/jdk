@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -115,24 +115,25 @@ void relocInfo::remove_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
-void RelocIterator::initialize(CodeBlob* cb, address begin, address limit) {
+void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   initialize_misc();
 
-  if (cb == NULL && begin != NULL) {
-    // allow CodeBlob to be deduced from beginning address
-    cb = CodeCache::find_blob(begin);
+  if (nm == NULL && begin != NULL) {
+    // allow nmethod to be deduced from beginning address
+    CodeBlob* cb = CodeCache::find_blob(begin);
+    nm = cb->as_nmethod_or_null();
   }
-  assert(cb != NULL, "must be able to deduce nmethod from other arguments");
+  assert(nm != NULL, "must be able to deduce nmethod from other arguments");
 
-  _code    = cb;
-  _current = cb->relocation_begin()-1;
-  _end     = cb->relocation_end();
-  _addr    = (address) cb->instructions_begin();
+  _code    = nm;
+  _current = nm->relocation_begin() - 1;
+  _end     = nm->relocation_end();
+  _addr    = (address) nm->instructions_begin();
 
   assert(!has_current(), "just checking");
-  address code_end = cb->instructions_end();
+  address code_end = nm->instructions_end();
 
-  assert(begin == NULL || begin >= cb->instructions_begin(), "in bounds");
+  assert(begin == NULL || begin >= nm->instructions_begin(), "in bounds");
  // FIX THIS  assert(limit == NULL || limit <= code_end,     "in bounds");
   set_limits(begin, limit);
 }
@@ -754,7 +755,7 @@ oop* oop_Relocation::oop_addr() {
     // oop is stored in the code stream
     return (oop*) pd_address_in_code();
   } else {
-    // oop is stored in table at CodeBlob::oops_begin
+    // oop is stored in table at nmethod::oops_begin
     return code()->oop_addr_at(n);
   }
 }
@@ -776,26 +777,28 @@ void oop_Relocation::fix_oop_relocation() {
 }
 
 
-RelocIterator virtual_call_Relocation::parse_ic(CodeBlob* &code, address &ic_call, address &first_oop,
+RelocIterator virtual_call_Relocation::parse_ic(nmethod* &nm, address &ic_call, address &first_oop,
                                                 oop* &oop_addr, bool *is_optimized) {
   assert(ic_call != NULL, "ic_call address must be set");
   assert(ic_call != NULL || first_oop != NULL, "must supply a non-null input");
-  if (code == NULL) {
+  if (nm == NULL) {
+    CodeBlob* code;
     if (ic_call != NULL) {
       code = CodeCache::find_blob(ic_call);
     } else if (first_oop != NULL) {
       code = CodeCache::find_blob(first_oop);
     }
-    assert(code != NULL, "address to parse must be in CodeBlob");
+    nm = code->as_nmethod_or_null();
+    assert(nm != NULL, "address to parse must be in nmethod");
   }
-  assert(ic_call   == NULL || code->contains(ic_call),   "must be in CodeBlob");
-  assert(first_oop == NULL || code->contains(first_oop), "must be in CodeBlob");
+  assert(ic_call   == NULL || nm->contains(ic_call),   "must be in nmethod");
+  assert(first_oop == NULL || nm->contains(first_oop), "must be in nmethod");
 
   address oop_limit = NULL;
 
   if (ic_call != NULL) {
     // search for the ic_call at the given address
-    RelocIterator iter(code, ic_call, ic_call+1);
+    RelocIterator iter(nm, ic_call, ic_call+1);
     bool ret = iter.next();
     assert(ret == true, "relocInfo must exist at this address");
     assert(iter.addr() == ic_call, "must find ic_call");
@@ -814,7 +817,7 @@ RelocIterator virtual_call_Relocation::parse_ic(CodeBlob* &code, address &ic_cal
   }
 
   // search for the first_oop, to get its oop_addr
-  RelocIterator all_oops(code, first_oop);
+  RelocIterator all_oops(nm, first_oop);
   RelocIterator iter = all_oops;
   iter.set_limit(first_oop+1);
   bool found_oop = false;
@@ -842,7 +845,7 @@ RelocIterator virtual_call_Relocation::parse_ic(CodeBlob* &code, address &ic_cal
       }
     }
     guarantee(!did_reset, "cannot find ic_call");
-    iter = RelocIterator(code); // search the whole CodeBlob
+    iter = RelocIterator(nm); // search the whole nmethod
     did_reset = true;
   }
 
@@ -1175,9 +1178,9 @@ void RelocIterator::print() {
 
 // For the debugger:
 extern "C"
-void print_blob_locs(CodeBlob* cb) {
-  cb->print();
-  RelocIterator iter(cb);
+void print_blob_locs(nmethod* nm) {
+  nm->print();
+  RelocIterator iter(nm);
   iter.print();
 }
 extern "C"

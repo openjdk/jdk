@@ -1,12 +1,12 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.lang;
@@ -36,6 +36,8 @@ import java.util.Arrays;
  * sequence can be changed through certain method calls.
  *
  * @author      Michael McCloskey
+ * @author      Martin Buchholz
+ * @author      Ulf Zibis
  * @since       1.5
  */
 abstract class AbstractStringBuilder implements Appendable, CharSequence {
@@ -98,9 +100,16 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param   minimumCapacity   the minimum desired capacity.
      */
     public void ensureCapacity(int minimumCapacity) {
-        if (minimumCapacity > value.length) {
+        ensureCapacityInternal(minimumCapacity);
+    }
+
+    /**
+     * This method has the same contract as ensureCapacity, but is
+     * never synchronized.
+     */
+    private void ensureCapacityInternal(int minimumCapacity) {
+        if (minimumCapacity - value.length > 0)
             expandCapacity(minimumCapacity);
-        }
     }
 
     /**
@@ -108,11 +117,13 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * size check or synchronization.
      */
     void expandCapacity(int minimumCapacity) {
-        int newCapacity = (value.length + 1) * 2;
-        if (newCapacity < 0) {
-            newCapacity = Integer.MAX_VALUE;
-        } else if (minimumCapacity > newCapacity) {
+        int newCapacity = value.length * 2;
+        if (newCapacity - minimumCapacity < 0)
             newCapacity = minimumCapacity;
+        if (newCapacity < 0) {
+            if (minimumCapacity < 0) // overflow
+                throw new OutOfMemoryError();
+            newCapacity = Integer.MAX_VALUE;
         }
         value = Arrays.copyOf(value, newCapacity);
     }
@@ -158,8 +169,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     public void setLength(int newLength) {
         if (newLength < 0)
             throw new StringIndexOutOfBoundsException(newLength);
-        if (newLength > value.length)
-            expandCapacity(newLength);
+        ensureCapacityInternal(newLength);
 
         if (count < newLength) {
             for (; count < newLength; count++)
@@ -400,12 +410,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     public AbstractStringBuilder append(String str) {
         if (str == null) str = "null";
         int len = str.length();
-        if (len == 0) return this;
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         str.getChars(0, len, value, count);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -414,11 +421,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (sb == null)
             return append("null");
         int len = sb.length();
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         sb.getChars(0, len, value, count);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -470,14 +475,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 "start " + start + ", end " + end + ", s.length() "
                 + s.length());
         int len = end - start;
-        if (len == 0)
-            return this;
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
-        for (int i=start; i<end; i++)
-            value[count++] = s.charAt(i);
-        count = newCount;
+        ensureCapacityInternal(count + len);
+        for (int i = start, j = count; i < end; i++, j++)
+            value[j] = s.charAt(i);
+        count += len;
         return this;
     }
 
@@ -498,11 +499,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(char[] str) {
-        int newCount = count + str.length;
-        if (newCount > value.length)
-            expandCapacity(newCount);
-        System.arraycopy(str, 0, value, count, str.length);
-        count = newCount;
+        int len = str.length;
+        ensureCapacityInternal(count + len);
+        System.arraycopy(str, 0, value, count, len);
+        count += len;
         return this;
     }
 
@@ -529,11 +529,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *         or {@code offset+len > str.length}
      */
     public AbstractStringBuilder append(char str[], int offset, int len) {
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         System.arraycopy(str, offset, value, count, len);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -551,17 +549,13 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     public AbstractStringBuilder append(boolean b) {
         if (b) {
-            int newCount = count + 4;
-            if (newCount > value.length)
-                expandCapacity(newCount);
+            ensureCapacityInternal(count + 4);
             value[count++] = 't';
             value[count++] = 'r';
             value[count++] = 'u';
             value[count++] = 'e';
         } else {
-            int newCount = count + 5;
-            if (newCount > value.length)
-                expandCapacity(newCount);
+            ensureCapacityInternal(count + 5);
             value[count++] = 'f';
             value[count++] = 'a';
             value[count++] = 'l';
@@ -587,9 +581,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(char c) {
-        int newCount = count + 1;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + 1);
         value[count++] = c;
         return this;
     }
@@ -614,8 +606,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         int appendedLength = (i < 0) ? Integer.stringSize(-i) + 1
                                      : Integer.stringSize(i);
         int spaceNeeded = count + appendedLength;
-        if (spaceNeeded > value.length)
-            expandCapacity(spaceNeeded);
+        ensureCapacityInternal(spaceNeeded);
         Integer.getChars(i, spaceNeeded, value);
         count = spaceNeeded;
         return this;
@@ -641,8 +632,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         int appendedLength = (l < 0) ? Long.stringSize(-l) + 1
                                      : Long.stringSize(l);
         int spaceNeeded = count + appendedLength;
-        if (spaceNeeded > value.length)
-            expandCapacity(spaceNeeded);
+        ensureCapacityInternal(spaceNeeded);
         Long.getChars(l, spaceNeeded, value);
         count = spaceNeeded;
         return this;
@@ -738,10 +728,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (codePoint >= Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             n++;
         }
-        int newCount = count + n;
-        if (newCount > value.length) {
-            expandCapacity(newCount);
-        }
+        ensureCapacityInternal(count + n);
         if (n == 1) {
             value[count++] = (char) codePoint;
         } else {
@@ -807,8 +794,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             end = count;
         int len = str.length();
         int newCount = count + len - (end - start);
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(newCount);
 
         System.arraycopy(value, end, value, start + len, count - end);
         str.getChars(value, start);
@@ -915,12 +901,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             throw new StringIndexOutOfBoundsException(
                 "offset " + offset + ", len " + len + ", str.length "
                 + str.length);
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         System.arraycopy(value, index, value, index + len, count - index);
         System.arraycopy(str, offset, value, index, len);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -984,12 +968,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (str == null)
             str = "null";
         int len = str.length();
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         System.arraycopy(value, offset, value, offset + len, count - offset);
         str.getChars(value, offset);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -1021,12 +1003,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if ((offset < 0) || (offset > length()))
             throw new StringIndexOutOfBoundsException(offset);
         int len = str.length;
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         System.arraycopy(value, offset, value, offset + len, count - offset);
         System.arraycopy(str, 0, value, offset, len);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -1114,16 +1094,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 "start " + start + ", end " + end + ", s.length() "
                 + s.length());
         int len = end - start;
-        if (len == 0)
-            return this;
-        int newCount = count + len;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + len);
         System.arraycopy(value, dstOffset, value, dstOffset + len,
                          count - dstOffset);
         for (int i=start; i<end; i++)
             value[dstOffset++] = s.charAt(i);
-        count = newCount;
+        count += len;
         return this;
     }
 
@@ -1170,12 +1146,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @throws     IndexOutOfBoundsException  if the offset is invalid.
      */
     public AbstractStringBuilder insert(int offset, char c) {
-        int newCount = count + 1;
-        if (newCount > value.length)
-            expandCapacity(newCount);
+        ensureCapacityInternal(count + 1);
         System.arraycopy(value, offset, value, offset + 1, count - offset);
         value[offset] = c;
-        count = newCount;
+        count += 1;
         return this;
     }
 

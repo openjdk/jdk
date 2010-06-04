@@ -1,12 +1,12 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package com.sun.tools.javac.comp;
@@ -988,6 +988,13 @@ public class Attr extends JCTree.Visitor {
             Env<AttrContext> catchEnv =
                 env.dup(c, env.info.dup(env.info.scope.dup()));
             Type ctype = attribStat(c.param, catchEnv);
+            if (TreeInfo.isMultiCatch(c)) {
+                //check that multi-catch parameter is marked as final
+                if ((c.param.sym.flags() & FINAL) == 0) {
+                    log.error(c.param.pos(), "multicatch.param.must.be.final", c.param.sym);
+                }
+                c.param.sym.flags_field = c.param.sym.flags() | DISJOINT;
+            }
             if (c.param.type.tsym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
             }
@@ -2621,12 +2628,10 @@ public class Attr extends JCTree.Visitor {
             }
             if (useVarargs) {
                 JCTree tree = env.tree;
-                Type argtype = owntype.getParameterTypes().last();
-                if (!types.isReifiable(argtype))
-                    chk.warnUnchecked(env.tree.pos(),
-                                      "unchecked.generic.array.creation",
-                                      argtype);
-                Type elemtype = types.elemtype(argtype);
+                if (owntype.getReturnType().tag != FORALL || warned) {
+                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes());
+                }
+                Type elemtype = types.elemtype(owntype.getParameterTypes().last());
                 switch (tree.getTag()) {
                 case JCTree.APPLY:
                     ((JCMethodInvocation) tree).varargsElement = elemtype;
@@ -2735,6 +2740,11 @@ public class Attr extends JCTree.Visitor {
             }
         }
         result = check(tree, owntype, TYP, pkind, pt);
+    }
+
+    public void visitTypeDisjoint(JCTypeDisjoint tree) {
+        List<Type> componentTypes = attribTypes(tree.components, env);
+        tree.type = result = check(tree, types.lub(componentTypes), TYP, pkind, pt);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {

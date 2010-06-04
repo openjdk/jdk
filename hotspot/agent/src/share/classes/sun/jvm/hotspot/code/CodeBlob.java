@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -42,8 +42,6 @@ public class CodeBlob extends VMObject {
   private static CIntegerField instructionsOffsetField;
   private static CIntegerField frameCompleteOffsetField;
   private static CIntegerField dataOffsetField;
-  private static CIntegerField oopsOffsetField;
-  private static CIntegerField oopsLengthField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
 
@@ -72,8 +70,6 @@ public class CodeBlob extends VMObject {
     frameCompleteOffsetField = type.getCIntegerField("_frame_complete_offset");
     instructionsOffsetField  = type.getCIntegerField("_instructions_offset");
     dataOffsetField          = type.getCIntegerField("_data_offset");
-    oopsOffsetField          = type.getCIntegerField("_oops_offset");
-    oopsLengthField          = type.getCIntegerField("_oops_length");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
 
@@ -131,19 +127,10 @@ public class CodeBlob extends VMObject {
     return headerBegin().addOffsetTo(sizeField.getValue(addr));
   }
 
-  public Address oopsBegin() {
-    return headerBegin().addOffsetTo(oopsOffsetField.getValue(addr));
-  }
-
-  public Address oopsEnd() {
-    return oopsBegin().addOffsetTo(getOopsLength());
-  }
-
   // Offsets
   public int getRelocationOffset()   { return (int) headerSizeField.getValue(addr);         }
   public int getInstructionsOffset() { return (int) instructionsOffsetField.getValue(addr); }
   public int getDataOffset()         { return (int) dataOffsetField.getValue(addr);         }
-  public int getOopsOffset()         { return (int) oopsOffsetField.getValue(addr);         }
 
   // Sizes
   public int getSize()             { return (int) sizeField.getValue(addr);                     }
@@ -157,18 +144,8 @@ public class CodeBlob extends VMObject {
   // FIXME: add relocationContains
   public boolean instructionsContains(Address addr) { return instructionsBegin().lessThanOrEqual(addr) && instructionsEnd().greaterThan(addr); }
   public boolean dataContains(Address addr)         { return dataBegin().lessThanOrEqual(addr) && dataEnd().greaterThan(addr);                 }
-  public boolean oopsContains(Address addr)         { return oopsBegin().lessThanOrEqual(addr) && oopsEnd().greaterThan(addr);                 }
   public boolean contains(Address addr)             { return instructionsContains(addr);                                                       }
   public boolean isFrameCompleteAt(Address a)       { return instructionsContains(a) && a.minus(instructionsBegin()) >= frameCompleteOffsetField.getValue(addr); }
-
-  /** Support for oops in scopes and relocs. Note: index 0 is reserved for null. */
-  public OopHandle getOopAt(int index) {
-    if (index == 0) return null;
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(index > 0 && index <= getOopsLength(), "must be a valid non-zero index");
-    }
-    return oopsBegin().getOopHandleAt((index - 1) * VM.getVM().getOopSize());
-  }
 
   // Reclamation support (really only used by the nmethods, but in order to get asserts to work
   // in the CodeCache they are defined virtual here)
@@ -223,18 +200,8 @@ public class CodeBlob extends VMObject {
   }
 
   protected void printComponentsOn(PrintStream tty) {
-    // FIXME: add relocation information
     tty.println(" instructions: [" + instructionsBegin() + ", " + instructionsEnd() + "), " +
                 " data: [" + dataBegin() + ", " + dataEnd() + "), " +
-                " oops: [" + oopsBegin() + ", " + oopsEnd() + "), " +
                 " frame size: " + getFrameSize());
-  }
-
-  //--------------------------------------------------------------------------------
-  // Internals only below this point
-  //
-
-  private int getOopsLength() {
-    return (int) oopsLengthField.getValue(addr);
   }
 }
