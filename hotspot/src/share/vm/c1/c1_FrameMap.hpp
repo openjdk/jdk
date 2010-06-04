@@ -235,7 +235,7 @@ class FrameMap : public CompilationResourceObj {
     return _caller_save_fpu_regs[i];
   }
 
-  static void init();
+  static void initialize();
 };
 
 //               CallingConvention
