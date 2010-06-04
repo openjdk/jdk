@@ -136,6 +136,19 @@
         <echo message="import.jdk.jar: ${import.jdk.jar}"/>
         <echo message="import.jdk.src.dir: ${import.jdk.src.dir}"/>
     </target>
+    
+    <target name="vizant" depends="-def-vizant">
+	<mkdir dir="${build.dir}"/>
+	<echo message="Generating ${build.dir}/build.dot"/>
+        <vizant antfile="${make.dir}/build.xml" outfile="${build.dir}/build.dot"/>
+	<echo message="Generating ${build.dir}/build.png"/>
+        <exec executable="${dot}" >
+            <arg value="-Tpng"/>
+            <arg value="-o"/>
+            <arg file="${build.dir}/build.png"/>
+            <arg file="${build.dir}/build.dot"/>
+        </exec> 
+    </target>
 
     <!-- Standard target to build deliverables for JDK build. -->
 
@@ -459,6 +472,11 @@
         <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
     </target>
 
+    <target name="-check-vizant" depends="-def-check">
+        <check name="vizant" property="vizant.jar"/>
+        <check name="dot" property="dot"/>
+    </target>
+
     <!-- Ant macro and preset defs -->
 
     <target name="-def-build-tool">
@@ -765,12 +783,17 @@
         </macrodef>
         <property name="findbugs.defined" value="true"/>
     </target>
+    
+    <target name="-def-vizant" unless="vizant.defined" depends="-check-vizant">
+	<taskdef name="vizant" classname="net.sourceforge.vizant.Vizant" classpath="${vizant.jar}"/>
+        <property name="vizant.defined" value="true"/>
+    </target>
 
     <target name="-def-check">
         <macrodef name="check">
             <attribute name="name"/>
             <attribute name="property"/>
-            <attribute name="marker"/>
+            <attribute name="marker" default=""/>
             <sequential>
                 <fail message="Cannot locate @{name}: please set @{property} to its location">
                     <condition>
@@ -781,9 +804,14 @@
                 </fail>
                 <fail message="@{name} is not installed in ${@{property}}">
                     <condition>
-                        <not>
-                            <available file="${@{property}}/@{marker}"/>
-                        </not>
+			<and>
+			    <not>
+				<equals arg1="@{marker}" arg2=""/>
+			    </not>
+                            <not>
+                                <available file="${@{property}}/@{marker}"/>
+                            </not>
+			</and>
                     </condition>
                 </fail>
             </sequential>
