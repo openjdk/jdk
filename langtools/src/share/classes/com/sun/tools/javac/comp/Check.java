@@ -64,6 +64,7 @@ public class Check {
     private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
     private boolean warnOnSyntheticConflicts;
+    private boolean suppressAbortOnBadClassFile;
     private final TreeInfo treeinfo;
 
     // The set of lint options currently in effect. It is initialized
@@ -98,6 +99,7 @@ public class Check {
         complexInference = options.get("-complexinference") != null;
         skipAnnotations = options.get("skipAnnotations") != null;
         warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
+        suppressAbortOnBadClassFile = options.get("suppressAbortOnBadClassFile") != null;
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
@@ -210,7 +212,8 @@ public class Check {
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
         log.error(pos, "cant.access", ex.sym, ex.getDetailValue());
-        if (ex instanceof ClassReader.BadClassFile) throw new Abort();
+        if (ex instanceof ClassReader.BadClassFile
+                && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
     }
 
