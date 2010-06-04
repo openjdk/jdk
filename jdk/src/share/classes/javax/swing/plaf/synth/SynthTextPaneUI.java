@@ -72,7 +72,28 @@ public class SynthTextPaneUI extends SynthEditorPaneUI {
     }
 
     /**
-     * @inheritDoc
+     * Installs the UI for a component.  This does the following
+     * things.
+     * <ol>
+     * <li>
+     * Sets opaqueness of the associated component according to its style,
+     * if the opaque property has not already been set by the client program.
+     * <li>
+     * Installs the default caret and highlighter into the
+     * associated component. These properties are only set if their
+     * current value is either {@code null} or an instance of
+     * {@link UIResource}.
+     * <li>
+     * Attaches to the editor and model.  If there is no
+     * model, a default one is created.
+     * <li>
+     * Creates the view factory and the view hierarchy used
+     * to represent the model.
+     * </ol>
+     *
+     * @param c the editor component
+     * @see BasicTextUI#installUI
+     * @see ComponentUI#installUI
      */
     @Override
     public void installUI(JComponent c) {

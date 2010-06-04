@@ -117,7 +117,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * size check or synchronization.
      */
     void expandCapacity(int minimumCapacity) {
-        int newCapacity = value.length * 2;
+        int newCapacity = value.length * 2 + 2;
         if (newCapacity - minimumCapacity < 0)
             newCapacity = minimumCapacity;
         if (newCapacity < 0) {

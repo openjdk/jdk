@@ -25,7 +25,6 @@
 
 MISC_FILES = \
         $(CLASSBINDIR)/javax/swing/text/html/default.css 			\
-        $(CLASSBINDIR)/javax/swing/text/html/parser/html32.bdtd 		\
         $(CLASSBINDIR)/javax/swing/text/rtf/charsets/NeXT.txt 			\
         $(CLASSBINDIR)/javax/swing/text/rtf/charsets/ansi.txt 			\
         $(CLASSBINDIR)/javax/swing/text/rtf/charsets/cpg437.txt 		\
