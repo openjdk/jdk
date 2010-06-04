@@ -1,12 +1,12 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,15 +18,18 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.security;
 
 import java.io.Serializable;
+import java.security.cert.CRL;
 import java.security.cert.CertPath;
+import sun.misc.JavaSecurityCodeSignerAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * This class encapsulates information about a code signer.
@@ -163,4 +166,43 @@ public final class CodeSigner implements Serializable {
         sb.append(")");
         return sb.toString();
     }
+
+    // A private attribute attached to this CodeSigner object. Can be accessed
+    // through SharedSecrets.getJavaSecurityCodeSignerAccess().[g|s]etCRLs
+    //
+    // Currently called in SignatureFileVerifier.getSigners
+    private transient CRL[] crls;
+
+    /**
+     * Sets the CRLs attached
+     * @param crls, null to clear
+     */
+    void setCRLs(CRL[] crls) {
+        this.crls = crls;
+    }
+
+    /**
+     * Returns the CRLs attached
+     * @return the crls, initially null
+     */
+    CRL[] getCRLs() {
+        return crls;
+    }
+
+    // Set up JavaSecurityCodeSignerAccess in SharedSecrets
+    static {
+        SharedSecrets.setJavaSecurityCodeSignerAccess(
+                new JavaSecurityCodeSignerAccess() {
+            @Override
+            public void setCRLs(CodeSigner signer, CRL[] crls) {
+                signer.setCRLs(crls);
+            }
+
+            @Override
+            public CRL[] getCRLs(CodeSigner signer) {
+                return signer.getCRLs();
+            }
+        });
+    }
+
 }

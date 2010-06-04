@@ -1,12 +1,12 @@
 /*
- * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
@@ -51,28 +51,31 @@ import java.util.HashSet;
 
 public abstract class KrbKdcReq {
 
-    // Currently there is no option to specify retries
-    // in the kerberos configuration file
-
-    private static final int DEFAULT_KDC_RETRY_LIMIT = Krb5.KDC_RETRY_LIMIT;
+    // The following settings can be configured in [libdefaults]
+    // section of krb5.conf, which are global for all realms. Each of
+    // them can also be defined in a realm, which overrides value here.
 
     /**
-     * Default timeout period when requesting a ticket from a KDC.
-     * If not specified in the configuration file,
-     * a value of 30 seconds is used.
+     * max retry time for a single KDC, default Krb5.KDC_RETRY_LIMIT (3)
      */
-    public static final int DEFAULT_KDC_TIMEOUT; // milliseconds
+    private static int defaultKdcRetryLimit;
+    /**
+     * timeout requesting a ticket from KDC, in millisec, default 30 sec
+     */
+    private static int defaultKdcTimeout;
+    /**
+     * max UDP packet size, default unlimited (-1)
+     */
+    private static int defaultUdpPrefLimit;
 
     private static final boolean DEBUG = Krb5.DEBUG;
-
-    private static int udpPrefLimit = -1;
 
     private static final String BAD_POLICY_KEY = "krb5.kdc.bad.policy";
 
     /**
      * What to do when a KDC is unavailable, specified in the
      * java.security file with key krb5.kdc.bad.policy.
-     * Possible values can be TRY_LAST or TRY_LESS
+     * Possible values can be TRY_LAST or TRY_LESS. Reloaded when refreshed.
      */
     private enum BpType {
         NONE, TRY_LAST, TRY_LESS
@@ -80,9 +83,16 @@ public abstract class KrbKdcReq {
     private static int tryLessMaxRetries = 1;
     private static int tryLessTimeout = 5000;
 
-    private static final BpType badPolicy;
+    private static BpType badPolicy;
 
     static {
+        initStatic();
+    }
+
+    /**
+     * Read global settings
+     */
+    public static void initStatic() {
         String value = AccessController.doPrivileged(
         new PrivilegedAction<String>() {
             public String run() {
@@ -95,9 +105,21 @@ public abstract class KrbKdcReq {
             if ("tryless".equals(ss[0])) {
                 if (ss.length > 1) {
                     String[] params = ss[1].split(",");
-                    tryLessMaxRetries = Integer.parseInt(params[0]);
-                    if (params.length > 1) {
-                        tryLessTimeout = Integer.parseInt(params[1]);
+                    try {
+                        int tmp0 = Integer.parseInt(params[0]);
+                        if (params.length > 1) {
+                            tryLessTimeout = Integer.parseInt(params[1]);
+                        }
+                        // Assign here in case of exception at params[1]
+                        tryLessMaxRetries = tmp0;
+                    } catch (NumberFormatException nfe) {
+                        // Ignored. Please note that tryLess is recognized and
+                        // used, parameters using default values
+                        if (DEBUG) {
+                            System.out.println("Invalid " + BAD_POLICY_KEY +
+                                    " parameter for tryLess: " +
+                                    value + ", use default");
+                        }
                     }
                 }
                 badPolicy = BpType.TRY_LESS;
@@ -110,30 +132,33 @@ public abstract class KrbKdcReq {
             badPolicy = BpType.NONE;
         }
 
-        /*
-         * Get default timeout.
-         */
 
         int timeout = -1;
+        int max_retries = -1;
+        int udf_pref_limit = -1;
+
         try {
             Config cfg = Config.getInstance();
             String temp = cfg.getDefault("kdc_timeout", "libdefaults");
             timeout = parsePositiveIntString(temp);
+            temp = cfg.getDefault("max_retries", "libdefaults");
+            max_retries = parsePositiveIntString(temp);
             temp = cfg.getDefault("udp_preference_limit", "libdefaults");
-            udpPrefLimit = parsePositiveIntString(temp);
+            udf_pref_limit = parsePositiveIntString(temp);
         } catch (Exception exc) {
-           // ignore any exceptions; use the default time out values
+           // ignore any exceptions; use default values
            if (DEBUG) {
-                System.out.println ("Exception in getting kdc_timeout value, " +
-                                    "using default value " +
+                System.out.println ("Exception in getting KDC communication " +
+                                    "settings, using default value " +
                                     exc.getMessage());
            }
         }
+        defaultKdcTimeout = timeout > 0 ? timeout : 30*1000; // 30 seconds
+        defaultKdcRetryLimit =
+                max_retries > 0 ? max_retries : Krb5.KDC_RETRY_LIMIT;
+        defaultUdpPrefLimit = udf_pref_limit;
 
-        if (timeout > 0)
-            DEFAULT_KDC_TIMEOUT = timeout;
-        else
-            DEFAULT_KDC_TIMEOUT = 30*1000; // 30 seconds
+        KdcAccessibility.reset();
     }
 
     protected byte[] obuf;
@@ -151,6 +176,9 @@ public abstract class KrbKdcReq {
 
     public String send(String realm)
         throws IOException, KrbException {
+        int udpPrefLimit = getRealmSpecificValue(
+                realm, "udp_preference_limit", defaultUdpPrefLimit);
+
         boolean useTCP = (udpPrefLimit > 0 &&
              (obuf != null && obuf.length > udpPrefLimit));
 
@@ -213,9 +241,10 @@ public abstract class KrbKdcReq {
             return;
 
         int port = Krb5.KDC_INET_DEFAULT_PORT;
-        int retries = DEFAULT_KDC_RETRY_LIMIT;
-        int timeout = getKdcTimeout(realm);
-
+        int retries = getRealmSpecificValue(
+                realm, "max_retries", defaultKdcRetryLimit);
+        int timeout = getRealmSpecificValue(
+                realm, "kdc_timeout", defaultKdcTimeout);
         if (badPolicy == BpType.TRY_LESS &&
                 KdcAccessibility.isBad(tempKdc)) {
             if (retries > tryLessMaxRetries) {
@@ -322,6 +351,12 @@ public abstract class KrbKdcReq {
 
             if (useTCP) {
                 TCPClient kdcClient = new TCPClient(kdc, port);
+                if (DEBUG) {
+                    System.out.println(">>> KDCCommunication: kdc=" + kdc
+                           + " TCP:"
+                           +  port
+                           + ", #bytes=" + obuf.length);
+                }
                 try {
                     /*
                      * Send the data to the kdc.
@@ -336,7 +371,7 @@ public abstract class KrbKdcReq {
                 }
 
             } else {
-                // For each KDC we try DEFAULT_KDC_RETRY_LIMIT (3) times to
+                // For each KDC we try defaultKdcRetryLimit times to
                 // get the response
                 for (int i=1; i <= retries; i++) {
                     UDPClient kdcClient = new UDPClient(kdc, port, timeout);
@@ -382,37 +417,37 @@ public abstract class KrbKdcReq {
     }
 
     /**
-     * Returns a timeout value for the KDC of the given realm.
-     * A KDC-specific timeout, if specified in the config file,
-     * overrides the default timeout (which may also be specified
-     * in the config file). Default timeout is returned if null
-     * is specified for realm.
-     * @param realm the realm which kdc's timeout is requested
-     * @return KDC timeout
+     * Returns krb5.conf setting of {@code key} for a specfic realm,
+     * which can be:
+     * 1. defined in the sub-stanza for the given realm inside [realms], or
+     * 2. defined in [libdefaults], or
+     * 3. defValue
+     * @param realm the given realm in which the setting is requested. Returns
+     * the global setting if null
+     * @param key the key for the setting
+     * @param defValue default value
+     * @return a value for the key
      */
-    private int getKdcTimeout(String realm)
-    {
-        int timeout = DEFAULT_KDC_TIMEOUT;
+    private int getRealmSpecificValue(String realm, String key, int defValue) {
+        int v = defValue;
 
-        if (realm == null)
-            return timeout;
+        if (realm == null) return v;
 
-        int tempTimeout = -1;
+        int temp = -1;
         try {
-            String temp =
-               Config.getInstance().getDefault("kdc_timeout", realm);
-            tempTimeout = parsePositiveIntString(temp);
+            String value =
+               Config.getInstance().getDefault(key, realm);
+            temp = parsePositiveIntString(value);
         } catch (Exception exc) {
+            // Ignored, defValue will be picked up
         }
 
-        if (tempTimeout > 0)
-            timeout = tempTimeout;
+        if (temp > 0) v = temp;
 
-        return timeout;
+        return v;
     }
 
-    private static int parsePositiveIntString(String intString)
-    {
+    private static int parsePositiveIntString(String intString) {
         if (intString == null)
             return -1;
 
@@ -461,7 +496,7 @@ public abstract class KrbKdcReq {
             return bads.contains(kdc);
         }
 
-        public static synchronized void reset() {
+        private static synchronized void reset() {
             if (DEBUG) {
                 System.out.println(">>> KdcAccessibility: reset");
             }

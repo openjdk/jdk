@@ -1,5 +1,5 @@
 //
-// Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
 // 2 along with this work; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-// Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-// CA 95054 USA or visit www.sun.com if you need additional information or
-// have any questions.
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
 //
 //
 
@@ -534,7 +534,10 @@ bool can_branch_register( Node *bol, Node *cmp ) {
 //       The "return address" is the address of the call instruction, plus 8.
 
 int MachCallStaticJavaNode::ret_addr_offset() {
-  return NativeCall::instruction_size;  // call; delay slot
+  int offset = NativeCall::instruction_size;  // call; delay slot
+  if (_method_handle_invoke)
+    offset += 4;  // restore SP
+  return offset;
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
@@ -818,6 +821,10 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_ConvI2D   && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
+          !(n->ideal_Opcode()==Op_Load2I    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_Load4C    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_Load4S    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_Load8B    && ld_op==Op_LoadD) &&
           !(n->rule() == loadUB_rule)) {
         verify_oops_warning(n, n->ideal_Opcode(), ld_op);
       }
@@ -829,6 +836,9 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_StoreI && st_op==Op_StoreF) &&
           !(n->ideal_Opcode()==Op_StoreF && st_op==Op_StoreI) &&
           !(n->ideal_Opcode()==Op_StoreL && st_op==Op_StoreI) &&
+          !(n->ideal_Opcode()==Op_Store2I && st_op==Op_StoreD) &&
+          !(n->ideal_Opcode()==Op_Store4C && st_op==Op_StoreD) &&
+          !(n->ideal_Opcode()==Op_Store8B && st_op==Op_StoreD) &&
           !(n->ideal_Opcode()==Op_StoreD && st_op==Op_StoreI && n->rule() == storeD0_rule)) {
         verify_oops_warning(n, n->ideal_Opcode(), st_op);
       }
@@ -1750,6 +1760,12 @@ const int Matcher::init_array_short_size = 8 * BytesPerLong;
 // registers?  True for Intel but false for most RISCs
 const bool Matcher::clone_shift_expressions = false;
 
+bool Matcher::narrow_oop_use_complex_address() {
+  NOT_LP64(ShouldNotCallThis());
+  assert(UseCompressedOops, "only for compressed oops code");
+  return false;
+}
+
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
 // extra registers.  Most RISCs will have to materialize an address into a
@@ -1858,7 +1874,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
+  return L7_REGP_mask;
 }
 
 %}
@@ -2439,6 +2455,16 @@ encode %{
     // The user of this is responsible for ensuring that R_L7 is empty (killed).
     emit_call_reloc(cbuf, $meth$$method, relocInfo::runtime_call_type,
                     /*preserve_g2=*/true, /*force far call*/true);
+  %}
+
+  enc_class preserve_SP %{
+    MacroAssembler _masm(&cbuf);
+    __ mov(SP, L7_mh_SP_save);
+  %}
+
+  enc_class restore_SP %{
+    MacroAssembler _masm(&cbuf);
+    __ mov(L7_mh_SP_save, SP);
   %}
 
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
@@ -9213,12 +9239,27 @@ instruct safePoint_poll(iRegP poll) %{
 // Call Java Static Instruction
 instruct CallStaticJavaDirect( method meth ) %{
   match(CallStaticJava);
+  predicate(! ((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth);
 
   size(8);
   ins_cost(CALL_COST);
   format %{ "CALL,static  ; NOP ==> " %}
   ins_encode( Java_Static_Call( meth ), call_epilog );
+  ins_pc_relative(1);
+  ins_pipe(simple_call);
+%}
+
+// Call Java Static Instruction (method handle version)
+instruct CallStaticJavaHandle(method meth, l7RegP l7_mh_SP_save) %{
+  match(CallStaticJava);
+  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
+  effect(USE meth, KILL l7_mh_SP_save);
+
+  size(8);
+  ins_cost(CALL_COST);
+  format %{ "CALL,static/MethodHandle" %}
+  ins_encode(preserve_SP, Java_Static_Call(meth), restore_SP, call_epilog);
   ins_pc_relative(1);
   ins_pipe(simple_call);
 %}

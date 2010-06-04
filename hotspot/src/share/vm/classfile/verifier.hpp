@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -157,6 +157,16 @@ class ClassVerifier : public StackObj {
   instanceKlassHandle _klass;  // the class being verified
   methodHandle        _method; // current method being verified
   VerificationType    _this_type; // the verification type of the current class
+
+  // Some recursive calls from the verifier to the name resolver
+  // can cause the current class to be re-verified and rewritten.
+  // If this happens, the original verification should not continue,
+  // because constant pool indexes will have changed.
+  // The rewriter is preceded by the verifier.  If the verifier throws
+  // an error, rewriting is prevented.  Also, rewriting always precedes
+  // bytecode execution or compilation.  Thus, is_rewritten implies
+  // that a class has been verified and prepared for execution.
+  bool was_recursively_verified() { return _klass->is_rewritten(); }
 
  public:
   enum {

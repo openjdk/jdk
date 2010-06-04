@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -81,27 +81,21 @@ int ciExceptionHandlerStream::count_remaining() {
 // providing accessors for constant pool items.
 
 // ------------------------------------------------------------------
-// ciBytecodeStream::wide
-//
-// Special handling for the wide bytcode
-Bytecodes::Code ciBytecodeStream::wide()
-{
-  // Get following bytecode; do not return wide
-  Bytecodes::Code bc = (Bytecodes::Code)_pc[1];
-  _pc += 2;                     // Skip both bytecodes
-  _pc += 2;                     // Skip index always
-  if( bc == Bytecodes::_iinc )
-    _pc += 2;                   // Skip optional constant
-  _was_wide = _pc;              // Flag last wide bytecode found
-  return bc;
-}
-
-// ------------------------------------------------------------------
-// ciBytecodeStream::table
+// ciBytecodeStream::next_wide_or_table
 //
 // Special handling for switch ops
-Bytecodes::Code ciBytecodeStream::table( Bytecodes::Code bc ) {
-  switch( bc ) {                // Check for special bytecode handling
+Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
+  switch (bc) {                // Check for special bytecode handling
+  case Bytecodes::_wide:
+    // Special handling for the wide bytcode
+    // Get following bytecode; do not return wide
+    assert(Bytecodes::Code(_pc[0]) == Bytecodes::_wide, "");
+    bc = Bytecodes::java_code(_raw_bc = (Bytecodes::Code)_pc[1]);
+    assert(Bytecodes::wide_length_for(bc) > 2, "must make progress");
+    _pc += Bytecodes::wide_length_for(bc);
+    _was_wide = _pc;              // Flag last wide bytecode found
+    assert(is_wide(), "accessor works right");
+    break;
 
   case Bytecodes::_lookupswitch:
     _pc++;                      // Skip wide bytecode
@@ -164,7 +158,7 @@ void ciBytecodeStream::force_bci(int bci) {
 int ciBytecodeStream::get_klass_index() const {
   switch(cur_bc()) {
   case Bytecodes::_ldc:
-    return get_index();
+    return get_index_u1();
   case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w:
   case Bytecodes::_checkcast:
@@ -173,7 +167,7 @@ int ciBytecodeStream::get_klass_index() const {
   case Bytecodes::_multianewarray:
   case Bytecodes::_new:
   case Bytecodes::_newarray:
-    return get_index_big();
+    return get_index_u2();
   default:
     ShouldNotReachHere();
     return 0;
@@ -199,10 +193,10 @@ ciKlass* ciBytecodeStream::get_klass(bool& will_link) {
 int ciBytecodeStream::get_constant_index() const {
   switch(cur_bc()) {
   case Bytecodes::_ldc:
-    return get_index();
+    return get_index_u1();
   case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w:
-    return get_index_big();
+    return get_index_u2();
   default:
     ShouldNotReachHere();
     return 0;
@@ -239,7 +233,7 @@ int ciBytecodeStream::get_field_index() {
          cur_bc() == Bytecodes::_putfield ||
          cur_bc() == Bytecodes::_getstatic ||
          cur_bc() == Bytecodes::_putstatic, "wrong bc");
-  return get_index_big();
+  return get_index_u2_cpcache();
 }
 
 
@@ -319,7 +313,9 @@ int ciBytecodeStream::get_method_index() {
     ShouldNotReachHere();
   }
 #endif
-  return get_index_int();
+  if (has_index_u4())
+    return get_index_u4();  // invokedynamic
+  return get_index_u2_cpcache();
 }
 
 // ------------------------------------------------------------------

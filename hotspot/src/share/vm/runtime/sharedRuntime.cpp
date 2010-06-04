@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1435,7 +1435,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
       // for the rest of its life! Just another racing bug in the life of
       // fixup_callers_callsite ...
       //
-      RelocIterator iter(cb, call->instruction_address(), call->next_instruction_address());
+      RelocIterator iter(nm, call->instruction_address(), call->next_instruction_address());
       iter.next();
       assert(iter.has_current(), "must have a reloc at java call site");
       relocInfo::relocType typ = iter.reloc()->type();
@@ -2055,11 +2055,11 @@ class AdapterHandlerTableIterator : public StackObj {
   void scan() {
     while (_index < _table->table_size()) {
       AdapterHandlerEntry* a = _table->bucket(_index);
+      _index++;
       if (a != NULL) {
         _current = a;
         return;
       }
-      _index++;
     }
   }
 

@@ -1,12 +1,12 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 package javax.swing.plaf.nimbus;
 
@@ -38,6 +38,7 @@ import javax.swing.plaf.synth.SynthStyle;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Insets;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -193,7 +194,7 @@ public final class NimbusStyle extends SynthStyle {
      * UIDefaults which overrides (or supplements) those defaults found in
      * UIManager.
      */
-    private JComponent component;
+    private WeakReference<JComponent> component;
 
     /**
      * Create a new NimbusStyle. Only the prefix must be supplied. At the
@@ -209,7 +210,9 @@ public final class NimbusStyle extends SynthStyle {
      *        should be null otherwise.
      */
     NimbusStyle(String prefix, JComponent c) {
-        this.component = c;
+        if (c != null) {
+            this.component = new WeakReference<JComponent>(c);
+        }
         this.prefix = prefix;
         this.painter = new SynthPainterImpl(this);
     }
@@ -251,9 +254,11 @@ public final class NimbusStyle extends SynthStyle {
         // value is an instance of UIDefaults, then these defaults are used
         // in place of, or in addition to, the defaults in UIManager.
         if (component != null) {
-            Object o = component.getClientProperty("Nimbus.Overrides");
+            // We know component.get() is non-null here, as if the component
+            // were GC'ed, we wouldn't be processing its style.
+            Object o = component.get().getClientProperty("Nimbus.Overrides");
             if (o instanceof UIDefaults) {
-                Object i = component.getClientProperty(
+                Object i = component.get().getClientProperty(
                         "Nimbus.Overrides.InheritDefaults");
                 boolean inherit = i instanceof Boolean ? (Boolean)i : true;
                 UIDefaults d = (UIDefaults)o;

@@ -1,12 +1,12 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package sun.security.util;
@@ -71,6 +71,7 @@ public class Resources extends java.util.ListResourceBundle {
                 "Generates a secret key"}, //-genseckey
         {"Generates certificate from a certificate request",
                 "Generates certificate from a certificate request"}, //-gencert
+        {"Generates CRL", "Generates CRL"}, //-gencrl
         {"Imports entries from a JDK 1.1.x-style identity database",
                 "Imports entries from a JDK 1.1.x-style identity database"}, //-identitydb
         {"Imports a certificate or a certificate chain",
@@ -87,6 +88,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Prints the content of a certificate"}, //-printcert
         {"Prints the content of a certificate request",
                 "Prints the content of a certificate request"}, //-printcertreq
+        {"Prints the content of a CRL file",
+                "Prints the content of a CRL file"}, //-printcrl
         {"Generates a self-signed certificate",
                 "Generates a self-signed certificate"}, //-selfcert
         {"Changes the store password of a keystore",
@@ -176,6 +179,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "verbose output"}, //-v
         {"validity number of days",
                 "validity number of days"}, //-validity
+        {"Serial ID of cert to revoke",
+                 "Serial ID of cert to revoke"}, //-id
         // keytool: Running part
         {"keytool error: ", "keytool error: "},
         {"Illegal option:  ", "Illegal option:  "},
@@ -375,6 +380,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Signer #%d:", "Signer #%d:"},
         {"Timestamp:", "Timestamp:"},
         {"Signature:", "Signature:"},
+        {"CRLs:", "CRLs:"},
         {"Certificate owner: ", "Certificate owner: "},
         {"Not a signed jar file", "Not a signed jar file"},
         {"No certificate from the SSL server",
@@ -433,6 +439,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"This extension cannot be marked as critical. ",
                  "This extension cannot be marked as critical. "},
         {"Odd number of hex digits found: ", "Odd number of hex digits found: "},
+        {"Unknown extension type: ", "Unknown extension type: "},
         {"command {0} is ambiguous:", "command {0} is ambiguous:"},
 
         // policytool

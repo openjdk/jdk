@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -188,8 +188,8 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
     return NULL;
   }
 
-  // Always inline MethodHandle methods.
-  if (callee_method->is_method_handle_invoke())
+  // Always inline MethodHandle methods and generated MethodHandle adapters.
+  if (callee_method->is_method_handle_invoke() || callee_method->is_method_handle_adapter())
     return NULL;
 
   // First check all inlining restrictions which are required for correctness
@@ -340,7 +340,7 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
     Bytecodes::Code call_bc = iter.cur_bc();
     // An invokedynamic instruction does not have a klass.
     if (call_bc != Bytecodes::_invokedynamic) {
-      int index = iter.get_index_int();
+      int index = iter.get_index_u2_cpcache();
       if (!caller_method->is_klass_loaded(index, true)) {
         return false;
       }

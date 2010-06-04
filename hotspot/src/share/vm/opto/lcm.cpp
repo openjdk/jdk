@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -32,7 +32,8 @@
 // with suitable memory ops nearby.  Use the memory op to do the NULL check.
 // I can generate a memory op if there is not one nearby.
 // The proj is the control projection for the not-null case.
-// The val is the pointer being checked for nullness.
+// The val is the pointer being checked for nullness or
+// decodeHeapOop_not_null node if it did not fold into address.
 void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowed_reasons) {
   // Assume if null check need for 0 offset then always needed
   // Intel solaris doesn't support any null checks yet and no
@@ -96,6 +97,13 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     }
   }
 
+  // Check for decodeHeapOop_not_null node which did not fold into address
+  bool is_decoden = ((intptr_t)val) & 1;
+  val = (Node*)(((intptr_t)val) & ~1);
+
+  assert(!is_decoden || (val->in(0) == NULL) && val->is_Mach() &&
+         (val->as_Mach()->ideal_Opcode() == Op_DecodeN), "sanity");
+
   // Search the successor block for a load or store who's base value is also
   // the tested value.  There may be several.
   Node_List *out = new Node_List(Thread::current()->resource_area());
@@ -148,7 +156,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       if( !mach->needs_anti_dependence_check() )
         continue;               // Not an memory op; skip it
       {
-        // Check that value is used in memory address.
+        // Check that value is used in memory address in
+        // instructions with embedded load (CmpP val1,(val2+off)).
         Node* base;
         Node* index;
         const MachOper* oper = mach->memory_inputs(base, index);
@@ -213,7 +222,11 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     uint vidx = 0;              // Capture index of value into memop
     uint j;
     for( j = mach->req()-1; j > 0; j-- ) {
-      if( mach->in(j) == val ) vidx = j;
+      if( mach->in(j) == val ) {
+        vidx = j;
+        // Ignore DecodeN val which could be hoisted to where needed.
+        if( is_decoden ) continue;
+      }
       // Block of memory-op input
       Block *inb = cfg->_bbs[mach->in(j)->_idx];
       Block *b = this;          // Start from nul check
@@ -270,6 +283,26 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   extern int implicit_null_checks;
   implicit_null_checks++;
 
+  if( is_decoden ) {
+    // Check if we need to hoist decodeHeapOop_not_null first.
+    Block *valb = cfg->_bbs[val->_idx];
+    if( this != valb && this->_dom_depth < valb->_dom_depth ) {
+      // Hoist it up to the end of the test block.
+      valb->find_remove(val);
+      this->add_inst(val);
+      cfg->_bbs.map(val->_idx,this);
+      // DecodeN on x86 may kill flags. Check for flag-killing projections
+      // that also need to be hoisted.
+      for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
+        Node* n = val->fast_out(j);
+        if( n->Opcode() == Op_MachProj ) {
+          cfg->_bbs[n->_idx]->find_remove(n);
+          this->add_inst(n);
+          cfg->_bbs.map(n->_idx,this);
+        }
+      }
+    }
+  }
   // Hoist the memory candidate up to the end of the test block.
   Block *old_block = cfg->_bbs[best->_idx];
   old_block->find_remove(best);

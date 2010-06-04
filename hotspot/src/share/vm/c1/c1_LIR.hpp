@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -505,15 +505,22 @@ class LIR_Address: public LIR_OprPtr {
      , _type(type)
      , _disp(0) { verify(); }
 
-  LIR_Address(LIR_Opr base, int disp, BasicType type):
+  LIR_Address(LIR_Opr base, intx disp, BasicType type):
        _base(base)
      , _index(LIR_OprDesc::illegalOpr())
      , _scale(times_1)
      , _type(type)
      , _disp(disp) { verify(); }
 
+  LIR_Address(LIR_Opr base, BasicType type):
+       _base(base)
+     , _index(LIR_OprDesc::illegalOpr())
+     , _scale(times_1)
+     , _type(type)
+     , _disp(0) { verify(); }
+
 #ifdef X86
-  LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, int disp, BasicType type):
+  LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, intx disp, BasicType type):
        _base(base)
      , _index(index)
      , _scale(scale)
@@ -1033,8 +1040,9 @@ class LIR_OpJavaCall: public LIR_OpCall {
  friend class LIR_OpVisitState;
 
  private:
-  ciMethod*       _method;
-  LIR_Opr         _receiver;
+  ciMethod* _method;
+  LIR_Opr   _receiver;
+  LIR_Opr   _method_handle_invoke_SP_save_opr;  // Used in LIR_OpVisitState::visit to store the reference to FrameMap::method_handle_invoke_SP_save_opr.
 
  public:
   LIR_OpJavaCall(LIR_Code code, ciMethod* method,
@@ -1043,14 +1051,18 @@ class LIR_OpJavaCall: public LIR_OpCall {
                  CodeEmitInfo* info)
   : LIR_OpCall(code, addr, result, arguments, info)
   , _receiver(receiver)
-  , _method(method)          { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
+  , _method(method)
+  , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
+  { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
   LIR_OpJavaCall(LIR_Code code, ciMethod* method,
                  LIR_Opr receiver, LIR_Opr result, intptr_t vtable_offset,
                  LIR_OprList* arguments, CodeEmitInfo* info)
   : LIR_OpCall(code, (address)vtable_offset, result, arguments, info)
   , _receiver(receiver)
-  , _method(method)          { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
+  , _method(method)
+  , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
+  { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
   LIR_Opr receiver() const                       { return _receiver; }
   ciMethod* method() const                       { return _method;   }

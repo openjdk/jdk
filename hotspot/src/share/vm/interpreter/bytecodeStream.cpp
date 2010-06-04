@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -48,6 +48,25 @@ Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
       }
     }
   }
-  _code = code;
+  _raw_code = code;
   return code;
 }
+
+#ifdef ASSERT
+void BaseBytecodeStream::assert_raw_index_size(int size) const {
+  if (raw_code() == Bytecodes::_invokedynamic && is_raw()) {
+    // in raw mode, pretend indy is "bJJ__"
+    assert(size == 2, "raw invokedynamic instruction has 2-byte index only");
+  } else {
+    bytecode()->assert_index_size(size, raw_code(), is_wide());
+  }
+}
+
+void BaseBytecodeStream::assert_raw_stream(bool want_raw) const {
+  if (want_raw) {
+    assert( is_raw(), "this function only works on raw streams");
+  } else {
+    assert(!is_raw(), "this function only works on non-raw streams");
+  }
+}
+#endif //ASSERT

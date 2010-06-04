@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -26,19 +26,12 @@
 #include "incls/_bytecode.cpp.incl"
 
 // Implementation of Bytecode
-// Should eventually get rid of these functions and use ThisRelativeObj methods instead
 
-void Bytecode::set_code(Bytecodes::Code code) {
-  Bytecodes::check(code);
-  *addr_at(0) = u_char(code);
-}
-
-
-bool Bytecode::check_must_rewrite() const {
-  assert(Bytecodes::can_rewrite(code()), "post-check only");
+bool Bytecode::check_must_rewrite(Bytecodes::Code code) const {
+  assert(Bytecodes::can_rewrite(code), "post-check only");
 
   // Some codes are conditionally rewriting.  Look closely at them.
-  switch (code()) {
+  switch (code) {
   case Bytecodes::_aload_0:
     // Even if RewriteFrequentPairs is turned on,
     // the _aload_0 code might delay its rewrite until
@@ -58,14 +51,85 @@ bool Bytecode::check_must_rewrite() const {
 }
 
 
+#ifdef ASSERT
+
+void Bytecode::assert_same_format_as(Bytecodes::Code testbc, bool is_wide) const {
+  Bytecodes::Code thisbc = Bytecodes::cast(byte_at(0));
+  if (thisbc == Bytecodes::_breakpoint)  return;  // let the assertion fail silently
+  if (is_wide) {
+    assert(thisbc == Bytecodes::_wide, "expected a wide instruction");
+    thisbc = Bytecodes::cast(byte_at(1));
+    if (thisbc == Bytecodes::_breakpoint)  return;
+  }
+  int thisflags = Bytecodes::flags(testbc, is_wide) & Bytecodes::_all_fmt_bits;
+  int testflags = Bytecodes::flags(thisbc, is_wide) & Bytecodes::_all_fmt_bits;
+  if (thisflags != testflags)
+    tty->print_cr("assert_same_format_as(%d) failed on bc=%d%s; %d != %d",
+                  (int)testbc, (int)thisbc, (is_wide?"/wide":""), testflags, thisflags);
+  assert(thisflags == testflags, "expected format");
+}
+
+void Bytecode::assert_index_size(int size, Bytecodes::Code bc, bool is_wide) {
+  int have_fmt = (Bytecodes::flags(bc, is_wide)
+                  & (Bytecodes::_fmt_has_u2 | Bytecodes::_fmt_has_u4 |
+                     Bytecodes::_fmt_not_simple |
+                     // Not an offset field:
+                     Bytecodes::_fmt_has_o));
+  int need_fmt = -1;
+  switch (size) {
+  case 1: need_fmt = 0;                      break;
+  case 2: need_fmt = Bytecodes::_fmt_has_u2; break;
+  case 4: need_fmt = Bytecodes::_fmt_has_u4; break;
+  }
+  if (is_wide)  need_fmt |= Bytecodes::_fmt_not_simple;
+  if (have_fmt != need_fmt) {
+    tty->print_cr("assert_index_size %d: bc=%d%s %d != %d", size, bc, (is_wide?"/wide":""), have_fmt, need_fmt);
+    assert(have_fmt == need_fmt, "assert_index_size");
+  }
+}
+
+void Bytecode::assert_offset_size(int size, Bytecodes::Code bc, bool is_wide) {
+  int have_fmt = Bytecodes::flags(bc, is_wide) & Bytecodes::_all_fmt_bits;
+  int need_fmt = -1;
+  switch (size) {
+  case 2: need_fmt = Bytecodes::_fmt_bo2; break;
+  case 4: need_fmt = Bytecodes::_fmt_bo4; break;
+  }
+  if (is_wide)  need_fmt |= Bytecodes::_fmt_not_simple;
+  if (have_fmt != need_fmt) {
+    tty->print_cr("assert_offset_size %d: bc=%d%s %d != %d", size, bc, (is_wide?"/wide":""), have_fmt, need_fmt);
+    assert(have_fmt == need_fmt, "assert_offset_size");
+  }
+}
+
+void Bytecode::assert_constant_size(int size, int where, Bytecodes::Code bc, bool is_wide) {
+  int have_fmt = Bytecodes::flags(bc, is_wide) & (Bytecodes::_all_fmt_bits
+                                                  // Ignore any 'i' field (for iinc):
+                                                  & ~Bytecodes::_fmt_has_i);
+  int need_fmt = -1;
+  switch (size) {
+  case 1: need_fmt = Bytecodes::_fmt_bc;                          break;
+  case 2: need_fmt = Bytecodes::_fmt_bc | Bytecodes::_fmt_has_u2; break;
+  }
+  if (is_wide)  need_fmt |= Bytecodes::_fmt_not_simple;
+  int length = is_wide ? Bytecodes::wide_length_for(bc) : Bytecodes::length_for(bc);
+  if (have_fmt != need_fmt || where + size != length) {
+    tty->print_cr("assert_constant_size %d @%d: bc=%d%s %d != %d", size, where, bc, (is_wide?"/wide":""), have_fmt, need_fmt);
+  }
+  assert(have_fmt == need_fmt, "assert_constant_size");
+  assert(where + size == length, "assert_constant_size oob");
+}
+
+void Bytecode::assert_native_index(Bytecodes::Code bc, bool is_wide) {
+  assert((Bytecodes::flags(bc, is_wide) & Bytecodes::_fmt_has_nbo) != 0, "native index");
+}
+
+#endif //ASSERT
 
 // Implementation of Bytecode_tableupswitch
 
 int Bytecode_tableswitch::dest_offset_at(int i) const {
-  address x = aligned_addr_at(1);
-  int x2 = aligned_offset(1 + (3 + i)*jintSize);
-  int val = java_signed_word_at(x2);
-  return java_signed_word_at(aligned_offset(1 + (3 + i)*jintSize));
+  return get_Java_u4_at(aligned_offset(1 + (3 + i)*jintSize));
 }
 
 
@@ -74,6 +138,7 @@ int Bytecode_tableswitch::dest_offset_at(int i) const {
 void Bytecode_invoke::verify() const {
   Bytecodes::Code bc = adjusted_invoke_code();
   assert(is_valid(), "check invoke");
+  assert(method()->constants()->cache() != NULL, "do not call this from verifier or rewriter");
 }
 
 
@@ -116,27 +181,12 @@ methodHandle Bytecode_invoke::static_target(TRAPS) {
 int Bytecode_invoke::index() const {
   // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
   // at the same time it allocates per-call-site CP cache entries.
-  if (has_giant_index())
-    return Bytes::get_native_u4(bcp() + 1);
+  Bytecodes::Code stdc = Bytecodes::java_code(code());
+  Bytecode* invoke = Bytecode_at(bcp());
+  if (invoke->has_index_u4(stdc))
+    return invoke->get_index_u4(stdc);
   else
-    return Bytes::get_Java_u2(bcp() + 1);
-}
-
-
-// Implementation of Bytecode_static
-
-void Bytecode_static::verify() const {
-  assert(Bytecodes::java_code(code()) == Bytecodes::_putstatic
-      || Bytecodes::java_code(code()) == Bytecodes::_getstatic, "check static");
-}
-
-
-BasicType Bytecode_static::result_type(methodOop method) const {
-  int index = java_hwrd_at(1);
-  constantPoolOop constants = method->constants();
-  symbolOop field_type = constants->signature_ref_at(index);
-  BasicType basic_type = FieldType::basic_type(field_type);
-  return basic_type;
+    return invoke->get_index_u2_cpcache(stdc);
 }
 
 
@@ -156,7 +206,8 @@ bool Bytecode_field::is_static() const {
 
 
 int Bytecode_field::index() const {
-  return java_hwrd_at(1);
+  Bytecode* invoke = Bytecode_at(bcp());
+  return invoke->get_index_u2_cpcache(Bytecodes::_getfield);
 }
 
 
@@ -164,7 +215,14 @@ int Bytecode_field::index() const {
 
 int Bytecode_loadconstant::index() const {
   Bytecodes::Code stdc = Bytecodes::java_code(code());
-  return stdc == Bytecodes::_ldc ? java_byte_at(1) : java_hwrd_at(1);
+  if (stdc != Bytecodes::_wide) {
+    if (Bytecodes::java_code(stdc) == Bytecodes::_ldc)
+      return get_index_u1(stdc);
+    else
+      return get_index_u2(stdc, false);
+  }
+  stdc = Bytecodes::code_at(addr_at(1));
+  return get_index_u2(stdc, true);
 }
 
 //------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -74,12 +74,12 @@ class CodeBlob_sizes {
     total_size       += cb->size();
     header_size      += cb->header_size();
     relocation_size  += cb->relocation_size();
-    scopes_oop_size  += cb->oops_size();
     if (cb->is_nmethod()) {
-      nmethod *nm = (nmethod*)cb;
+      nmethod* nm = cb->as_nmethod_or_null();
       code_size        += nm->code_size();
       stub_size        += nm->stub_size();
 
+      scopes_oop_size  += nm->oops_size();
       scopes_data_size += nm->scopes_data_size();
       scopes_pcs_size  += nm->scopes_pcs_size();
     } else {
@@ -262,14 +262,14 @@ int CodeCache::alignment_offset() {
 }
 
 
-// Mark code blobs for unloading if they contain otherwise
-// unreachable oops.
+// Mark nmethods for unloading if they contain otherwise unreachable
+// oops.
 void CodeCache::do_unloading(BoolObjectClosure* is_alive,
                              OopClosure* keep_alive,
                              bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
-  FOR_ALL_ALIVE_BLOBS(cb) {
-    cb->do_unloading(is_alive, keep_alive, unloading_occurred);
+  FOR_ALL_ALIVE_NMETHODS(nm) {
+    nm->do_unloading(is_alive, keep_alive, unloading_occurred);
   }
 }
 
@@ -509,9 +509,9 @@ void CodeCache::gc_epilogue() {
       if (needs_cache_clean()) {
         nm->cleanup_inline_caches();
       }
-      debug_only(nm->verify();)
+      DEBUG_ONLY(nm->verify());
+      nm->fix_oop_relocations();
     }
-    cb->fix_oop_relocations();
   }
   set_needs_cache_clean(false);
   prune_scavenge_root_nmethods();

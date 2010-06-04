@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -908,25 +908,12 @@ void AdapterGenerator::gen_i2c_adapter(
   // O0-O5          - Outgoing args in compiled layout
   // O6             - Adjusted or restored SP
   // O7             - Valid return address
-  // L0-L7, I0-I7    - Caller's temps (no frame pushed yet)
+  // L0-L7, I0-I7   - Caller's temps (no frame pushed yet)
   // F0-F7          - more outgoing args
 
 
   // Gargs is the incoming argument base, and also an outgoing argument.
   __ sub(Gargs, BytesPerWord, Gargs);
-
-#ifdef ASSERT
-  {
-    // on entry OsavedSP and SP should be equal
-    Label ok;
-    __ cmp(O5_savedSP, SP);
-    __ br(Assembler::equal, false, Assembler::pt, ok);
-    __ delayed()->nop();
-    __ stop("I5_savedSP not set");
-    __ should_not_reach_here();
-    __ bind(ok);
-  }
-#endif
 
   // ON ENTRY TO THE CODE WE ARE MAKING, WE HAVE AN INTERPRETED FRAME
   // WITH O7 HOLDING A VALID RETURN PC

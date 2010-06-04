@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -40,9 +40,13 @@ class InterpreterRuntime: AllStatic {
     return Bytecodes::code_at(bcp(thread), method(thread));
   }
   static bool      already_resolved(JavaThread *thread) { return cache_entry(thread)->is_resolved(code(thread)); }
-  static int       one_byte_index(JavaThread *thread)   { return bcp(thread)[1]; }
-  static int       two_byte_index(JavaThread *thread)   { return Bytes::get_Java_u2(bcp(thread) + 1); }
-  static int       four_byte_index(JavaThread *thread)  { return Bytes::get_native_u4(bcp(thread) + 1); }
+  static Bytecode* bytecode(JavaThread *thread)      { return Bytecode_at(bcp(thread)); }
+  static int       get_index_u1(JavaThread *thread, Bytecodes::Code bc)
+                                                        { return bytecode(thread)->get_index_u1(bc); }
+  static int       get_index_u2(JavaThread *thread, Bytecodes::Code bc)
+                                                        { return bytecode(thread)->get_index_u2(bc); }
+  static int       get_index_u2_cpcache(JavaThread *thread, Bytecodes::Code bc)
+                                                        { return bytecode(thread)->get_index_u2_cpcache(bc); }
   static int       number_of_dimensions(JavaThread *thread)  { return bcp(thread)[3]; }
 
   static ConstantPoolCacheEntry* cache_entry_at(JavaThread *thread, int i)  { return method(thread)->constants()->cache()->entry_at(i); }

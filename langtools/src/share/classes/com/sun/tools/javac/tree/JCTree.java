@@ -1,12 +1,12 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package com.sun.tools.javac.tree;
@@ -236,9 +236,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int TYPEAPPLY = TYPEARRAY + 1;
 
+    /** Disjunctive types, of type TypeDisjoint.
+     */
+    public static final int TYPEDISJOINT = TYPEAPPLY + 1;
+
     /** Formal type parameters, of type TypeParameter.
      */
-    public static final int TYPEPARAMETER = TYPEAPPLY + 1;
+    public static final int TYPEPARAMETER = TYPEDISJOINT + 1;
 
     /** Type argument.
      */
@@ -1863,6 +1867,34 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * A disjoint type, T1 | T2 | ... Tn (used in multicatch statements)
+     */
+    public static class JCTypeDisjoint extends JCExpression implements DisjointTypeTree {
+
+        public List<JCExpression> components;
+
+        protected JCTypeDisjoint(List<JCExpression> components) {
+            this.components = components;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitTypeDisjoint(this); }
+
+        public Kind getKind() { return Kind.DISJOINT_TYPE; }
+
+        public List<JCExpression> getTypeComponents() {
+            return components;
+        }
+        @Override
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitDisjointType(this, d);
+        }
+        @Override
+        public int getTag() {
+            return TYPEDISJOINT;
+        }
+    }
+
+    /**
      * A formal class parameter.
      * @param name name
      * @param bounds bounds
@@ -2220,6 +2252,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
+        public void visitTypeDisjoint(JCTypeDisjoint that)   { visitTree(that); }
         public void visitTypeParameter(JCTypeParameter that) { visitTree(that); }
         public void visitWildcard(JCWildcard that)           { visitTree(that); }
         public void visitTypeBoundKind(TypeBoundKind that)   { visitTree(that); }

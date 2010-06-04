@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -159,7 +159,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
      CardTableRS* ct, bool use_adaptive_freelists,
      FreeBlockDictionary::DictionaryChoice dictionaryChoice) :
   CardGeneration(rs, initial_byte_size, level, ct),
-  _dilatation_factor(((double)MinChunkSize)/((double)(oopDesc::header_size()))),
+  _dilatation_factor(((double)MinChunkSize)/((double)(CollectedHeap::min_fill_size()))),
   _debug_collection_type(Concurrent_collection_type)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
@@ -222,7 +222,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
   // promoting generation, we'll instead just use the mimimum
   // object size (which today is a header's worth of space);
   // note that all arithmetic is in units of HeapWords.
-  assert(MinChunkSize >= oopDesc::header_size(), "just checking");
+  assert(MinChunkSize >= CollectedHeap::min_fill_size(), "just checking");
   assert(_dilatation_factor >= 1.0, "from previous assert");
 }
 

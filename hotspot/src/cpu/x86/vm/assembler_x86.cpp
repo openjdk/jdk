@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -8185,9 +8185,14 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
     assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     if (Universe::narrow_oop_shift() != 0) {
-      assert(Address::times_8 == LogMinObjAlignmentInBytes &&
-             Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
-      movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      if (LogMinObjAlignmentInBytes == Address::times_8) {
+        movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      } else {
+        // OK to use shift since we don't need to preserve flags.
+        shlq(dst, LogMinObjAlignmentInBytes);
+        movq(dst, Address(r12_heapbase, dst, Address::times_1, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      }
     } else {
       movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
     }
@@ -8361,31 +8366,43 @@ void  MacroAssembler::decode_heap_oop(Register r) {
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register r) {
+  // Note: it will change flags
   assert (UseCompressedOops, "should only be used for compressed headers");
   assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   if (Universe::narrow_oop_shift() != 0) {
-    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
-            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
-    // Don't use Shift since it modifies flags.
-    leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+    assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    shlq(r, LogMinObjAlignmentInBytes);
+    if (Universe::narrow_oop_base() != NULL) {
+      addq(r, r12_heapbase);
+    }
   } else {
     assert (Universe::narrow_oop_base() == NULL, "sanity");
   }
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
+  // Note: it will change flags
   assert (UseCompressedOops, "should only be used for compressed headers");
   assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   if (Universe::narrow_oop_shift() != 0) {
-    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
-            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
-    leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+    assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    if (LogMinObjAlignmentInBytes == Address::times_8) {
+      leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+    } else {
+      if (dst != src) {
+        movq(dst, src);
+      }
+      shlq(dst, LogMinObjAlignmentInBytes);
+      if (Universe::narrow_oop_base() != NULL) {
+        addq(dst, r12_heapbase);
+      }
+    }
   } else if (dst != src) {
     assert (Universe::narrow_oop_base() == NULL, "sanity");
     movq(dst, src);

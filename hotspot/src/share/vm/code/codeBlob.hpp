@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -54,16 +54,11 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
                                                  // that range. There is a similar range(s) on returns
                                                  // which we don't detect.
   int        _data_offset;                       // offset to where data region begins
-  int        _oops_offset;                       // offset to where embedded oop table begins (inside data)
-  int        _oops_length;                       // number of embedded oops
   int        _frame_size;                        // size of stack frame
   OopMapSet* _oop_maps;                          // OopMap for this CodeBlob
   CodeComments _comments;
 
   friend class OopRecorder;
-
-  void fix_oop_relocations(address begin, address end, bool initialize_immediates);
-  inline void initialize_immediate_oop(oop* dest, jobject handle);
 
  public:
   // Returns the space needed for CodeBlob
@@ -115,14 +110,11 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   address    instructions_end() const            { return (address)    header_begin() + _data_offset; }
   address    data_begin() const                  { return (address)    header_begin() + _data_offset; }
   address    data_end() const                    { return (address)    header_begin() + _size; }
-  oop*       oops_begin() const                  { return (oop*)      (header_begin() + _oops_offset); }
-  oop*       oops_end() const                    { return                oops_begin() + _oops_length; }
 
   // Offsets
   int relocation_offset() const                  { return _header_size; }
   int instructions_offset() const                { return _instructions_offset; }
   int data_offset() const                        { return _data_offset; }
-  int oops_offset() const                        { return _oops_offset; }
 
   // Sizes
   int size() const                               { return _size; }
@@ -130,39 +122,15 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   int relocation_size() const                    { return (address) relocation_end() - (address) relocation_begin(); }
   int instructions_size() const                  { return instructions_end() - instructions_begin();  }
   int data_size() const                          { return data_end() - data_begin(); }
-  int oops_size() const                          { return (address) oops_end() - (address) oops_begin(); }
 
   // Containment
   bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end(); }
   bool relocation_contains(relocInfo* addr) const{ return relocation_begin()   <= addr && addr < relocation_end(); }
   bool instructions_contains(address addr) const { return instructions_begin() <= addr && addr < instructions_end(); }
   bool data_contains(address addr) const         { return data_begin()         <= addr && addr < data_end(); }
-  bool oops_contains(oop* addr) const            { return oops_begin()         <= addr && addr < oops_end(); }
   bool contains(address addr) const              { return instructions_contains(addr); }
   bool is_frame_complete_at(address addr) const  { return instructions_contains(addr) &&
                                                           addr >= instructions_begin() + _frame_complete_offset; }
-
-  // Relocation support
-  void fix_oop_relocations(address begin, address end) {
-    fix_oop_relocations(begin, end, false);
-  }
-  void fix_oop_relocations() {
-    fix_oop_relocations(NULL, NULL, false);
-  }
-  relocInfo::relocType reloc_type_for_address(address pc);
-  bool is_at_poll_return(address pc);
-  bool is_at_poll_or_poll_return(address pc);
-
-  // Support for oops in scopes and relocs:
-  // Note: index 0 is reserved for null.
-  oop  oop_at(int index) const                   { return index == 0? (oop)NULL: *oop_addr_at(index); }
-  oop* oop_addr_at(int index) const{             // for GC
-    // relocation indexes are biased by 1 (because 0 is reserved)
-    assert(index > 0 && index <= _oops_length, "must be a valid non-zero index");
-    return &oops_begin()[index-1];
-  }
-
-  void copy_oops(GrowableArray<jobject>* oops);
 
   // CodeCache support: really only used by the nmethods, but in order to get
   // asserts and certain bookkeeping to work in the CodeCache they are defined
@@ -175,12 +143,6 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   // GC support
   virtual bool is_alive() const                  = 0;
-  virtual void do_unloading(BoolObjectClosure* is_alive,
-                            OopClosure* keep_alive,
-                            bool unloading_occurred);
-  virtual void oops_do(OopClosure* f) = 0;
-  // (All CodeBlob subtypes other than NMethod currently have
-  // an empty oops_do() method.
 
   // OopMap for frame
   OopMapSet* oop_maps() const                    { return _oop_maps; }
@@ -245,11 +207,6 @@ class BufferBlob: public CodeBlob {
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { /* nothing to do */ }
   bool is_alive() const                          { return true; }
-  void do_unloading(BoolObjectClosure* is_alive,
-                    OopClosure* keep_alive,
-                    bool unloading_occurred)     { /* do nothing */ }
-
-  void oops_do(OopClosure* f)                    { /* do nothing*/ }
 
   void verify();
   void print() const                             PRODUCT_RETURN;
@@ -334,10 +291,6 @@ class RuntimeStub: public CodeBlob {
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)  { /* nothing to do */ }
   bool is_alive() const                          { return true; }
-  void do_unloading(BoolObjectClosure* is_alive,
-                    OopClosure* keep_alive,
-                    bool unloading_occurred)     { /* do nothing */ }
-  void oops_do(OopClosure* f) { /* do-nothing*/ }
 
   void verify();
   void print() const                             PRODUCT_RETURN;
@@ -363,9 +316,6 @@ class SingletonBlob: public CodeBlob {
    {};
 
    bool is_alive() const                         { return true; }
-   void do_unloading(BoolObjectClosure* is_alive,
-                     OopClosure* keep_alive,
-                     bool unloading_occurred)    { /* do-nothing*/ }
 
    void verify(); // does nothing
    void print() const                            PRODUCT_RETURN;
@@ -423,9 +373,6 @@ class DeoptimizationBlob: public SingletonBlob {
   // GC for args
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) { /* Nothing to do */ }
 
-  // Iteration
-  void oops_do(OopClosure* f) {}
-
   // Printing
   void print_value_on(outputStream* st) const PRODUCT_RETURN;
 
@@ -477,9 +424,6 @@ class UncommonTrapBlob: public SingletonBlob {
 
   // Typing
   bool is_uncommon_trap_stub() const             { return true; }
-
-  // Iteration
-  void oops_do(OopClosure* f) {}
 };
 
 
@@ -512,9 +456,6 @@ class ExceptionBlob: public SingletonBlob {
 
   // Typing
   bool is_exception_stub() const                 { return true; }
-
-  // Iteration
-  void oops_do(OopClosure* f) {}
 };
 #endif // COMPILER2
 
@@ -548,7 +489,4 @@ class SafepointBlob: public SingletonBlob {
 
   // Typing
   bool is_safepoint_stub() const                 { return true; }
-
-  // Iteration
-  void oops_do(OopClosure* f) {}
 };

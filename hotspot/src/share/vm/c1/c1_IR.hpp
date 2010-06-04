@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -269,6 +269,7 @@ class CodeEmitInfo: public CompilationResourceObj {
   int               _bci;
   CodeEmitInfo*     _next;
   int               _id;
+  bool              _is_method_handle_invoke;    // true if the associated call site is a MethodHandle call site.
 
   FrameMap*     frame_map() const                { return scope()->compilation()->frame_map(); }
   Compilation*  compilation() const              { return scope()->compilation(); }
@@ -287,7 +288,8 @@ class CodeEmitInfo: public CompilationResourceObj {
     , _stack(NULL)
     , _exception_handlers(NULL)
     , _next(NULL)
-    , _id(-1) {
+    , _id(-1)
+    , _is_method_handle_invoke(false) {
   }
 
   // make a copy
@@ -302,13 +304,16 @@ class CodeEmitInfo: public CompilationResourceObj {
   int bci() const                                { return _bci; }
 
   void add_register_oop(LIR_Opr opr);
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool is_method_handle_invoke = false);
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset);
 
   CodeEmitInfo* next() const        { return _next; }
   void set_next(CodeEmitInfo* next) { _next = next; }
 
   int id() const      { return _id; }
   void set_id(int id) { _id = id; }
+
+  bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
+  void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }
 };
 
 

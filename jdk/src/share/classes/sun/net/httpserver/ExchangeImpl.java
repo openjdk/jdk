@@ -1,12 +1,12 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,24 +18,20 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package sun.net.httpserver;
 
 import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.text.*;
-import sun.net.www.MessageHeader;
 import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 class ExchangeImpl {
 
@@ -64,6 +60,8 @@ class ExchangeImpl {
         df = new SimpleDateFormat (pattern, Locale.US);
         df.setTimeZone (tz);
     }
+
+    private static final String HEAD = "HEAD";
 
     /* streams which take care of the HTTP protocol framing
      * and are passed up to higher layers
@@ -114,6 +112,10 @@ class ExchangeImpl {
 
     public HttpContextImpl getHttpContext (){
         return connection.getHttpContext();
+    }
+
+    private boolean isHeadRequest() {
+        return HEAD.equals(getRequestMethod());
     }
 
     public void close () {
@@ -220,24 +222,36 @@ class ExchangeImpl {
             }
             contentLen = -1;
         }
-        if (contentLen == 0) {
-            if (http10) {
-                o.setWrappedStream (new UndefLengthOutputStream (this, ros));
-                close = true;
+
+        if (isHeadRequest()) {
+            /* HEAD requests should not set a content length by passing it
+             * through this API, but should instead manually set the required
+             * headers.*/
+            if (contentLen >= 0) {
+                final Logger logger = server.getLogger();
+                String msg =
+                    "sendResponseHeaders: being invoked with a content length for a HEAD request";
+                logger.warning (msg);
+            }
+            noContentToSend = true;
+            contentLen = 0;
+        } else { /* not a HEAD request */
+            if (contentLen == 0) {
+                if (http10) {
+                    o.setWrappedStream (new UndefLengthOutputStream (this, ros));
+                    close = true;
+                } else {
+                    rspHdrs.set ("Transfer-encoding", "chunked");
+                    o.setWrappedStream (new ChunkedOutputStream (this, ros));
+                }
             } else {
-                rspHdrs.set ("Transfer-encoding", "chunked");
-                o.setWrappedStream (new ChunkedOutputStream (this, ros));
+                if (contentLen == -1) {
+                    noContentToSend = true;
+                    contentLen = 0;
+                }
+                rspHdrs.set("Content-length", Long.toString(contentLen));
+                o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
             }
-        } else {
-            if (contentLen == -1) {
-                noContentToSend = true;
-                contentLen = 0;
-            }
-            /* content len might already be set, eg to implement HEAD resp */
-            if (rspHdrs.getFirst ("Content-length") == null) {
-                rspHdrs.set ("Content-length", Long.toString(contentLen));
-            }
-            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         }
         write (rspHdrs, tmpout);
         this.rspContentLen = contentLen;

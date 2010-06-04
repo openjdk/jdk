@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -720,25 +720,30 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(
 
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register cache, Register tmp,
-                                                       int bcp_offset, bool giant_index) {
+                                                       int bcp_offset, size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
-  if (!giant_index) {
+  if (index_size == sizeof(u2)) {
     get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
-  } else {
+  } else if (index_size == sizeof(u4)) {
     assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
     get_4_byte_integer_at_bcp(bcp_offset, cache, tmp);
     assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
     xor3(tmp, -1, tmp);  // convert to plain index
+  } else if (index_size == sizeof(u1)) {
+    assert(EnableMethodHandles, "tiny index used only for EnableMethodHandles");
+    ldub(Lbcp, bcp_offset, tmp);
+  } else {
+    ShouldNotReachHere();
   }
 }
 
 
 void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register tmp,
-                                                           int bcp_offset, bool giant_index) {
+                                                           int bcp_offset, size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert_different_registers(cache, tmp);
   assert_not_delayed();
-  get_cache_index_at_bcp(cache, tmp, bcp_offset, giant_index);
+  get_cache_index_at_bcp(cache, tmp, bcp_offset, index_size);
   // convert from field index to ConstantPoolCacheEntry index and from
   // word index to byte offset
   sll(tmp, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord), tmp);
@@ -747,12 +752,15 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Regis
 
 
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp,
-                                                               int bcp_offset, bool giant_index) {
+                                                               int bcp_offset, size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert_different_registers(cache, tmp);
   assert_not_delayed();
-  assert(!giant_index,"NYI");
-  get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
+  if (index_size == sizeof(u2)) {
+    get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
+  } else {
+    ShouldNotReachHere();  // other sizes not supported here
+  }
               // convert from field index to ConstantPoolCacheEntry index
               // and from word index to byte offset
   sll(tmp, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord), tmp);
