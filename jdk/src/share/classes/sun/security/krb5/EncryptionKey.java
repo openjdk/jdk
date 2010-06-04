@@ -76,6 +76,26 @@ public class EncryptionKey
 
     private static final boolean DEBUG = Krb5.DEBUG;
 
+    public static int[] getETypes(EncryptionKey[] keys) {
+        int len = keys.length;
+        int[] result = new int[len];
+        int count = 0;  // Number of elements in result. Might be less than
+                        // len if there are keys having the same etype
+        loopi: for (int i=0; i<len; i++) {
+            int eType = keys[i].getEType();
+            for (int j=0; j<count; j++) {
+                if (result[j] == eType) {
+                    continue loopi;
+                }
+            }
+            result[count++] = eType;
+        }
+        if (count != len) {
+            result = Arrays.copyOf(result, count);
+        }
+        return result;
+    }
+
     public synchronized int getEType() {
         return keyType;
     }

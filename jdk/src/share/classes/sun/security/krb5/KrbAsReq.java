@@ -35,11 +35,9 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.crypto.Nonce;
 import sun.security.krb5.internal.crypto.KeyUsage;
-import sun.security.util.*;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
 import java.net.UnknownHostException;
-import java.util.StringTokenizer;
+import java.util.Arrays;
 
 /**
  * This class encapsulates the KRB-AS-REQ message that the client
@@ -64,11 +62,13 @@ public class KrbAsReq extends KrbKdcReq {
 
     /**
      * Creates a KRB-AS-REQ to send to the default KDC
+     * @param eTypes not null when using a keytab, this can make sure the etypes
+     * in AS-REQ contains only those available on client
      * @throws KrbException
      * @throws IOException
      */
      // Called by Credentials
-    KrbAsReq(PrincipalName principal, EncryptionKey[] keys)
+    KrbAsReq(PrincipalName principal, EncryptionKey[] keys, int[] eTypes)
         throws KrbException, IOException {
         this(keys, // for pre-authentication
              false, 0, null, null, // pre-auth values
@@ -78,7 +78,7 @@ public class KrbAsReq extends KrbKdcReq {
              null, // KerberosTime from
              null, // KerberosTime till
              null, // KerberosTime rtime
-             null, // int[] eTypes
+             eTypes, // int[] eTypes
              null, // HostAddresses addresses
              null); // Ticket[] additionalTickets
     }
@@ -86,8 +86,10 @@ public class KrbAsReq extends KrbKdcReq {
     /**
      * Creates a KRB-AS-REQ to send to the default KDC
      * with pre-authentication values
+     * @param eTypes not null when using a keytab, this can make sure the etypes
+     * in AS-REQ contains only those available on client
      */
-    KrbAsReq(PrincipalName principal, EncryptionKey[] keys,
+    KrbAsReq(PrincipalName principal, EncryptionKey[] keys, int[] eTypes,
         boolean pa_exists, int etype, String salt, byte[] s2kparams)
         throws KrbException, IOException {
         this(keys, // for pre-authentication
@@ -98,7 +100,7 @@ public class KrbAsReq extends KrbKdcReq {
              null, // KerberosTime from
              null, // KerberosTime till
              null, // KerberosTime rtime
-             null, // int[] eTypes
+             eTypes, // int[] eTypes
              null, // HostAddresses addresses
              null); // Ticket[] additionalTickets
     }
@@ -343,19 +345,25 @@ public class KrbAsReq extends KrbKdcReq {
 
         princName = cname;
 
-        EncryptionKey key = null;
-        int[] tktETypes = EType.getDefaults("default_tkt_enctypes");
-        if (pa_exists && pa_etype != EncryptedData.ETYPE_NULL) {
-            if (DEBUG) {
-                System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
-            }
-            key = EncryptionKey.findKey(pa_etype, keys);
-        } else {
-            key = EncryptionKey.findKey(tktETypes[0], keys);
-        }
+        // keys might contain many etypes, or only one if in preauth mode,
+        // coz EncryptionKey.acquireSecretKeys() with pa returns only one key.
 
         PAData[] paData = null;
         if (PA_ENC_TIMESTAMP_REQUIRED) {
+            EncryptionKey key = null;
+            if (pa_etype != EncryptedData.ETYPE_NULL) {
+                if (DEBUG) {
+                    System.out.println("Pre-Authenticaton: " +
+                            "find key for etype = " + pa_etype);
+                }
+                key = EncryptionKey.findKey(pa_etype, keys);
+            } else {
+                int[] availableETypes =
+                        EType.getDefaults("default_tkt_enctypes", keys);
+                if (availableETypes.length > 0) {
+                    key = EncryptionKey.findKey(availableETypes[0], keys);
+                }
+            }
             if (DEBUG) {
                 System.out.println("AS-REQ: Add PA_ENC_TIMESTAMP now");
             }
@@ -376,7 +384,7 @@ public class KrbAsReq extends KrbKdcReq {
         }
 
         if (eTypes == null) {
-            eTypes = tktETypes;
+            eTypes = EType.getDefaults("default_tkt_enctypes");
         }
 
         // check to use addresses in tickets

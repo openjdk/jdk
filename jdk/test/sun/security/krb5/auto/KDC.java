@@ -35,6 +35,7 @@ import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
+import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.util.DerInputStream;
@@ -153,6 +154,10 @@ public class KDC {
          * Whether pre-authentication is required. Default Boolean.TRUE
          */
         PREAUTH_REQUIRED,
+        /**
+         * Onlyy issue TGT in RC4
+         */
+        ONLY_RC4_TGT,
     };
 
     static {
@@ -743,13 +748,25 @@ public class KDC {
             Field f = KDCReqBody.class.getDeclaredField("eType");
             f.setAccessible(true);
             eTypes = (int[])f.get(body);
-            if (eTypes.length < 2) {
-                throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
-            }
             int eType = eTypes[0];
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
             EncryptionKey skey = keyForUser(body.sname, eType, true);
+
+            if (options.containsKey(KDC.Option.ONLY_RC4_TGT)) {
+                int tgtEType = EncryptedData.ETYPE_ARCFOUR_HMAC;
+                boolean found = false;
+                for (int i=0; i<eTypes.length; i++) {
+                    if (eTypes[i] == tgtEType) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
+                }
+                skey = keyForUser(body.sname, tgtEType, true);
+            }
             if (ckey == null) {
                 throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
             }
@@ -799,7 +816,8 @@ public class KDC {
                     Constructor<EncryptedData> ctor = EncryptedData.class.getDeclaredConstructor(DerValue.class);
                     ctor.setAccessible(true);
                     EncryptedData data = ctor.newInstance(new DerValue(pas[0].getValue()));
-                    data.decrypt(ckey, KeyUsage.KU_PA_ENC_TS);
+                    EncryptionKey pakey = keyForUser(body.cname, data.getEType(), false);
+                    data.decrypt(pakey, KeyUsage.KU_PA_ENC_TS);
                 } catch (Exception e) {
                     throw new KrbException(Krb5.KDC_ERR_PREAUTH_FAILED);
                 }
