@@ -174,7 +174,7 @@ else
    
   # Check CYGWIN (should have already been done)
   #   Assumption here is that you are in a shell window via cygwin.
-  proc_arch=`echo "$(PROCESSOR_IDENTIFIER)" | expand | cut -d' ' -f1 | sed -e 's@x86@X86@g' -e 's@Intel64@X64@g' -e 's@em64t@X64@g' -e 's@EM64T@X64@g' -e 's@amd64@X64@g' -e 's@AMD64@X64@g' -e 's@ia64@IA64@g'`
+  proc_arch=`echo "${PROCESSOR_IDENTIFIER}" | expand | cut -d' ' -f1 | sed -e 's@x86@X86@g' -e 's@Intel64@X64@g' -e 's@em64t@X64@g' -e 's@EM64T@X64@g' -e 's@amd64@X64@g' -e 's@AMD64@X64@g' -e 's@ia64@IA64@g'`
   if [ "${proc_arch}" = "X64" ] ; then
     windows_arch=amd64
   else

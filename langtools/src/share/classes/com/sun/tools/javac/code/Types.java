@@ -588,10 +588,21 @@ public class Types {
                 case BYTE: case CHAR: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case VOID: case BOT: case NONE:
                     return t.tag == s.tag;
-                case TYPEVAR:
-                    return s.isSuperBound()
-                        && !s.isExtendsBound()
-                        && visit(t, upperBound(s));
+                case TYPEVAR: {
+                    if (s.tag == TYPEVAR) {
+                        //type-substitution does not preserve type-var types
+                        //check that type var symbols and bounds are indeed the same
+                        return t.tsym == s.tsym &&
+                                visit(t.getUpperBound(), s.getUpperBound());
+                    }
+                    else {
+                        //special case for s == ? super X, where upper(s) = u
+                        //check that u == t, where u has been set by Type.withTypeVar
+                        return s.isSuperBound() &&
+                                !s.isExtendsBound() &&
+                                visit(t, upperBound(s));
+                    }
+                }
                 default:
                     throw new AssertionError("isSameType " + t.tag);
                 }
@@ -1850,13 +1861,16 @@ public class Types {
 
     /**
      * Same as {@link #setBounds(Type.TypeVar,List,Type)}, except that
-     * third parameter is computed directly.  Note that this test
-     * might cause a symbol completion.  Hence, this version of
+     * third parameter is computed directly, as follows: if all
+     * all bounds are interface types, the computed supertype is Object,
+     * otherwise the supertype is simply left null (in this case, the supertype
+     * is assumed to be the head of the bound list passed as second argument).
+     * Note that this check might cause a symbol completion. Hence, this version of
      * setBounds may not be called during a classfile read.
      */
     public void setBounds(TypeVar t, List<Type> bounds) {
         Type supertype = (bounds.head.tsym.flags() & INTERFACE) != 0 ?
-            supertype(bounds.head) : null;
+            syms.objectType : null;
         setBounds(t, bounds, supertype);
         t.rank_field = -1;
     }
