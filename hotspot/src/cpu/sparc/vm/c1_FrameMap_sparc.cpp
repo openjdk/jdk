@@ -181,8 +181,8 @@ bool FrameMap::is_caller_save_register (Register r) {
 }
 
 
-void FrameMap::init () {
-  if (_init_done) return;
+void FrameMap::initialize() {
+  assert(!_init_done, "once");
 
   int i=0;
   // Register usage:

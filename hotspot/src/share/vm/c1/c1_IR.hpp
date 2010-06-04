@@ -371,8 +371,8 @@ class IR: public CompilationResourceObj {
 // instructions from the instruction list.
 //
 
-class SubstitutionResolver: public BlockClosure {
-  static void substitute(Value* v);
+class SubstitutionResolver: public BlockClosure, ValueVisitor {
+  virtual void visit(Value* v);
 
  public:
   SubstitutionResolver(IR* hir) {

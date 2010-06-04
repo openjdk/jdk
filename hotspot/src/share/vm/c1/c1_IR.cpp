@@ -287,11 +287,6 @@ void CodeEmitInfo::add_register_oop(LIR_Opr opr) {
 IR::IR(Compilation* compilation, ciMethod* method, int osr_bci) :
     _locals_size(in_WordSize(-1))
   , _num_loops(0) {
-  // initialize data structures
-  ValueType::initialize();
-  Instruction::initialize();
-  BlockBegin::initialize();
-  GraphBuilder::initialize();
   // setup IR fields
   _compilation = compilation;
   _top_scope   = new IRScope(compilation, NULL, -1, method, osr_bci, true);
@@ -381,15 +376,15 @@ void IR::split_critical_edges() {
 }
 
 
-class UseCountComputer: public AllStatic {
+class UseCountComputer: public ValueVisitor, BlockClosure {
  private:
-  static void update_use_count(Value* n) {
+  void visit(Value* n) {
     // Local instructions and Phis for expression stack values at the
     // start of basic blocks are not added to the instruction list
     if ((*n)->bci() == -99 && (*n)->as_Local() == NULL &&
         (*n)->as_Phi() == NULL) {
       assert(false, "a node was not appended to the graph");
-      Compilation::current_compilation()->bailout("a node was not appended to the graph");
+      Compilation::current()->bailout("a node was not appended to the graph");
     }
     // use n's input if not visited before
     if (!(*n)->is_pinned() && !(*n)->has_uses()) {
@@ -402,31 +397,31 @@ class UseCountComputer: public AllStatic {
     (*n)->_use_count++;
   }
 
-  static Values* worklist;
-  static int depth;
+  Values* worklist;
+  int depth;
   enum {
     max_recurse_depth = 20
   };
 
-  static void uses_do(Value* n) {
+  void uses_do(Value* n) {
     depth++;
     if (depth > max_recurse_depth) {
       // don't allow the traversal to recurse too deeply
       worklist->push(*n);
     } else {
-      (*n)->input_values_do(update_use_count);
+      (*n)->input_values_do(this);
       // special handling for some instructions
       if ((*n)->as_BlockEnd() != NULL) {
         // note on BlockEnd:
         //   must 'use' the stack only if the method doesn't
         //   terminate, however, in those cases stack is empty
-        (*n)->state_values_do(update_use_count);
+        (*n)->state_values_do(this);
       }
     }
     depth--;
   }
 
-  static void basic_compute_use_count(BlockBegin* b) {
+  void block_do(BlockBegin* b) {
     depth = 0;
     // process all pinned nodes as the roots of expression trees
     for (Instruction* n = b; n != NULL; n = n->next()) {
@@ -449,17 +444,18 @@ class UseCountComputer: public AllStatic {
     assert(depth == 0, "should have counted back down");
   }
 
+  UseCountComputer() {
+    worklist = new Values();
+    depth = 0;
+  }
+
  public:
   static void compute(BlockList* blocks) {
-    worklist = new Values();
-    blocks->blocks_do(basic_compute_use_count);
-    worklist = NULL;
+    UseCountComputer ucc;
+    blocks->iterate_backward(&ucc);
   }
 };
 
-
-Values* UseCountComputer::worklist = NULL;
-int UseCountComputer::depth = 0;
 
 // helper macro for short definition of trace-output inside code
 #ifndef PRODUCT
@@ -1302,7 +1298,7 @@ void IR::verify() {
 
 #endif // PRODUCT
 
-void SubstitutionResolver::substitute(Value* v) {
+void SubstitutionResolver::visit(Value* v) {
   Value v0 = *v;
   if (v0) {
     Value vs = v0->subst();
@@ -1313,20 +1309,22 @@ void SubstitutionResolver::substitute(Value* v) {
 }
 
 #ifdef ASSERT
-void check_substitute(Value* v) {
-  Value v0 = *v;
-  if (v0) {
-    Value vs = v0->subst();
-    assert(vs == v0, "missed substitution");
+class SubstitutionChecker: public ValueVisitor {
+  void visit(Value* v) {
+    Value v0 = *v;
+    if (v0) {
+      Value vs = v0->subst();
+      assert(vs == v0, "missed substitution");
+    }
   }
-}
+};
 #endif
 
 
 void SubstitutionResolver::block_do(BlockBegin* block) {
   Instruction* last = NULL;
   for (Instruction* n = block; n != NULL;) {
-    n->values_do(substitute);
+    n->values_do(this);
     // need to remove this instruction from the instruction stream
     if (n->subst() != n) {
       assert(last != NULL, "must have last");
@@ -1338,8 +1336,9 @@ void SubstitutionResolver::block_do(BlockBegin* block) {
   }
 
 #ifdef ASSERT
-  if (block->state()) block->state()->values_do(check_substitute);
-  block->block_values_do(check_substitute);
-  if (block->end() && block->end()->state()) block->end()->state()->values_do(check_substitute);
+  SubstitutionChecker check_substitute;
+  if (block->state()) block->state()->values_do(&check_substitute);
+  block->block_values_do(&check_substitute);
+  if (block->end() && block->end()->state()) block->end()->state()->values_do(&check_substitute);
 #endif
 }
