@@ -3527,7 +3527,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 Integer index = (Integer) e.getNewValue();
                 // remove the current index
                 // to let updateHtmlViews() insert the correct one
-                htmlViews.removeElementAt(index);
+                if (htmlViews != null) {
+                    htmlViews.removeElementAt(index);
+                }
                 updateHtmlViews(index);
             } else if (name == "tabLayoutPolicy") {
                 BasicTabbedPaneUI.this.uninstallUI(pane);
