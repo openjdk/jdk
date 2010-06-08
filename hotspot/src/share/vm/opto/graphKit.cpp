@@ -3487,7 +3487,6 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
 
   Node* tls = __ thread(); // ThreadLocalStorage
 
-  Node* no_ctrl = NULL;
   Node* no_base = __ top();
   float likely  = PROB_LIKELY(0.999);
   float unlikely  = PROB_UNLIKELY(0.999);
@@ -3511,10 +3510,10 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
   Node* index_adr =  __ AddP(no_base, tls, __ ConX(index_offset));
 
   // Now some values
-
-  Node* index  = __ load(no_ctrl, index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
-  Node* buffer = __ load(no_ctrl, buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
-
+  // Use ctrl to avoid hoisting these values past a safepoint, which could
+  // potentially reset these fields in the JavaThread.
+  Node* index  = __ load(__ ctrl(), index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
+  Node* buffer = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
   // Convert the store obj pointer to an int prior to doing math on it
   // Must use ctrl to prevent "integerized oop" existing across safepoint
