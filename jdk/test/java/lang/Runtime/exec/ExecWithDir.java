@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4750978
+ * @run main/othervm/timeout=300 ExecWithDir
  * @summary Ensure that we can fork-and-exec repeatedly when a new working
  *          directory is specified
  */
