@@ -37,7 +37,7 @@ import com.sun.naming.internal.ResourceManager;
 /**
   * This abstract class represents a factory for creating LDAPv3 controls.
   * LDAPv3 controls are defined in
-  * <A HREF="ftp://ftp.isi.edu/in-notes/rfc2251.txt">RFC 2251</A>.
+  * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
   *<p>
   * When a service provider receives a response control, it uses control
   * factories to return the specific/appropriate control class implementation.
