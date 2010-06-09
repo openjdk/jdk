@@ -136,8 +136,8 @@ XMMRegister FrameMap::nr2xmmreg(int rnr) {
 //               FrameMap
 //--------------------------------------------------------
 
-void FrameMap::init() {
-  if (_init_done) return;
+void FrameMap::initialize() {
+  assert(!_init_done, "once");
 
   assert(nof_cpu_regs == LP64_ONLY(16) NOT_LP64(8), "wrong number of CPU registers");
   map_register(0, rsi);  rsi_opr = LIR_OprFact::single_cpu(0);
