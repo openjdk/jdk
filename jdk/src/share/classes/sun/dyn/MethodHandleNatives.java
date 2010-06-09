@@ -258,6 +258,20 @@ class MethodHandleNatives {
             //T_ARRAY    = 13
             T_VOID     = 14;
             //T_ADDRESS  = 15
+
+        /**
+         * Constant pool reference-kind codes, as used by CONSTANT_MethodHandle CP entries.
+         */
+        static final int
+            REF_getField                = 1,
+            REF_getStatic               = 2,
+            REF_putField                = 3,
+            REF_putStatic               = 4,
+            REF_invokeVirtual           = 5,
+            REF_invokeStatic            = 6,
+            REF_invokeSpecial           = 7,
+            REF_newInvokeSpecial        = 8,
+            REF_invokeInterface         = 9;
     }
 
     private static native int getNamedCon(int which, Object[] name);
@@ -304,4 +318,24 @@ class MethodHandleNatives {
         return MethodTypeImpl.makeImpl(Access.TOKEN, rtype, ptypes, true);
     }
 
+    /**
+     * The JVM is resolving a CONSTANT_MethodHandle CP entry.  And it wants our help.
+     * It will make an up-call to this method.  (Do not change the name or signature.)
+     */
+    static MethodHandle linkMethodHandleConstant(Class<?> callerClass, int refKind,
+                                                 Class<?> defc, String name, Object type) {
+        Lookup lookup = IMPL_LOOKUP.in(callerClass);
+        switch (refKind) {
+        case REF_getField:          return lookup.findGetter(       defc, name, (Class<?>)   type );
+        case REF_getStatic:         return lookup.findStaticGetter( defc, name, (Class<?>)   type );
+        case REF_putField:          return lookup.findSetter(       defc, name, (Class<?>)   type );
+        case REF_putStatic:         return lookup.findStaticSetter( defc, name, (Class<?>)   type );
+        case REF_invokeVirtual:     return lookup.findVirtual(      defc, name, (MethodType) type );
+        case REF_invokeStatic:      return lookup.findStatic(       defc, name, (MethodType) type );
+        case REF_invokeSpecial:     return lookup.findSpecial(      defc, name, (MethodType) type, callerClass );
+        case REF_newInvokeSpecial:  return lookup.findConstructor(  defc,       (MethodType) type );
+        case REF_invokeInterface:   return lookup.findVirtual(      defc, name, (MethodType) type );
+        }
+        throw new IllegalArgumentException("bad MethodHandle constant "+name+" : "+type);
+    }
 }

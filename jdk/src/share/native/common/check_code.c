@@ -204,6 +204,8 @@ enum {
 
 #define LDC_CLASS_MAJOR_VERSION 49
 
+#define LDC_METHOD_HANDLE_MAJOR_VERSION 51
+
 #define ALLOC_STACK_SIZE 16 /* big enough */
 
 typedef struct alloc_stack_type {
@@ -1181,6 +1183,10 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         if (context->major_version >= LDC_CLASS_MAJOR_VERSION) {
             types |= 1 << JVM_CONSTANT_Class;
         }
+        if (context->major_version >= LDC_METHOD_HANDLE_MAJOR_VERSION) {
+            types |= (1 << JVM_CONSTANT_MethodHandle) |
+                     (1 << JVM_CONSTANT_MethodType);
+        }
         this_idata->operand.i = key;
         verify_constant_pool_type(context, key, types);
         break;
@@ -1193,6 +1199,10 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                     (1 << JVM_CONSTANT_String);
         if (context->major_version >= LDC_CLASS_MAJOR_VERSION) {
             types |= 1 << JVM_CONSTANT_Class;
+        }
+        if (context->major_version >= LDC_METHOD_HANDLE_MAJOR_VERSION) {
+            types |= (1 << JVM_CONSTANT_MethodHandle) |
+                     (1 << JVM_CONSTANT_MethodType);
         }
         this_idata->operand.i = key;
         verify_constant_pool_type(context, key, types);
@@ -2666,6 +2676,22 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                     stack_results = "A";
                     full_info = make_class_info_from_name(context,
                                                           "java/lang/Class");
+                    break;
+                case JVM_CONSTANT_MethodHandle:
+                case JVM_CONSTANT_MethodType:
+                    if (context->major_version < LDC_METHOD_HANDLE_MAJOR_VERSION)
+                        CCerror(context, "Internal error #3");
+                    stack_results = "A";
+                    switch (type_table[operand]) {
+                    case JVM_CONSTANT_MethodType:
+                      full_info = make_class_info_from_name(context,
+                                                            "java/dyn/MethodType");
+                      break;
+                    default: //JVM_CONSTANT_MethodHandle
+                      full_info = make_class_info_from_name(context,
+                                                            "java/dyn/MethodHandle");
+                      break;
+                    }
                     break;
                 default:
                     CCerror(context, "Internal error #3");
