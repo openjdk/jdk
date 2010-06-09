@@ -1577,6 +1577,7 @@ class CompilerThread : public JavaThread {
   CompileLog*   _log;
   CompileTask*  _task;
   CompileQueue* _queue;
+  BufferBlob*   _buffer_blob;
 
  public:
 
@@ -1594,6 +1595,9 @@ class CompilerThread : public JavaThread {
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }
   void          set_env(ciEnv* env)              { _env = env; }
+
+  BufferBlob*   get_buffer_blob()                { return _buffer_blob; }
+  void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; };
 
   // Get/set the thread's logging information
   CompileLog*   log()                            { return _log; }

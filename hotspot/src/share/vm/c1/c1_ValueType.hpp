@@ -94,7 +94,7 @@ class ValueType: public CompilationResourceObj {
 
  public:
   // initialization
-  static void initialize();
+  static void initialize(Arena* arena);
 
   // accessors
   virtual ValueType* base() const                = 0; // the 'canonical' type (e.g., intType for an IntConstant)
