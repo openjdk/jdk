@@ -348,6 +348,7 @@ public class Resolve {
             infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
+                                    m,
                                     argtypes,
                                     allowBoxing,
                                     useVarargs,

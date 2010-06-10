@@ -106,6 +106,7 @@ public class Check {
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean verboseVarargs = lint.isEnabled(LintCategory.VARARGS);
         boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
@@ -113,6 +114,8 @@ public class Check {
                 enforceMandatoryWarnings, "deprecated");
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked");
+        unsafeVarargsHandler = new MandatoryWarningHandler(log, verboseVarargs,
+                enforceMandatoryWarnings, "varargs");
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
                 enforceMandatoryWarnings, "sunapi");
     }
@@ -150,6 +153,10 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
+    /** A handler for messages about unchecked or unsafe vararg method decl.
+     */
+    private MandatoryWarningHandler unsafeVarargsHandler;
+
     /** A handler for messages about using Sun proprietary API.
      */
     private MandatoryWarningHandler sunApiHandler;
@@ -182,6 +189,15 @@ public class Check {
             uncheckedHandler.report(pos, msg, args);
     }
 
+    /** Warn about unsafe vararg method decl.
+     *  @param pos        Position to be used for error reporting.
+     *  @param sym        The deprecated symbol.
+     */
+    void warnUnsafeVararg(DiagnosticPosition pos, Type elemType) {
+        if (!lint.isSuppressed(LintCategory.VARARGS))
+            unsafeVarargsHandler.report(pos, "varargs.non.reifiable.type", elemType);
+    }
+
     /** Warn about using Sun proprietary API.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
@@ -202,6 +218,7 @@ public class Check {
     public void reportDeferredDiagnostics() {
         deprecationHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
+        unsafeVarargsHandler.reportDeferredDiagnostic();
         sunApiHandler.reportDeferredDiagnostic();
     }
 
@@ -680,17 +697,33 @@ public class Check {
         }
     }
 
+    void checkVarargMethodDecl(JCMethodDecl tree) {
+        MethodSymbol m = tree.sym;
+        //check the element type of the vararg
+        if (m.isVarArgs()) {
+            Type varargElemType = types.elemtype(tree.params.last().type);
+            if (!types.isReifiable(varargElemType)) {
+                warnUnsafeVararg(tree.params.head.pos(), varargElemType);
+            }
+        }
+    }
+
     /**
      * Check that vararg method call is sound
      * @param pos Position to be used for error reporting.
      * @param argtypes Actual arguments supplied to vararg method.
      */
-    void checkVararg(DiagnosticPosition pos, List<Type> argtypes) {
+    void checkVararg(DiagnosticPosition pos, List<Type> argtypes, Symbol msym, Env<AttrContext> env) {
+        Env<AttrContext> calleeLintEnv = env;
+        while (calleeLintEnv.info.lint == null)
+            calleeLintEnv = calleeLintEnv.next;
+        Lint calleeLint = calleeLintEnv.info.lint.augment(msym.attributes_field, msym.flags());
         Type argtype = argtypes.last();
-        if (!types.isReifiable(argtype))
+        if (!types.isReifiable(argtype) && !calleeLint.isSuppressed(Lint.LintCategory.VARARGS)) {
             warnUnchecked(pos,
                               "unchecked.generic.array.creation",
                               argtype);
+        }
     }
 
     /** Check that given modifiers are legal for given symbol and

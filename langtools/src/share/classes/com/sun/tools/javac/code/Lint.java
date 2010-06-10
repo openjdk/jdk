@@ -203,7 +203,12 @@ public class Lint
         /**
          * Warn about issues relating to use of statics
          */
-        STATIC("static");
+        STATIC("static"),
+
+        /**
+         * Warn about potentially unsafe vararg methods
+         */
+        VARARGS("varargs");
 
         LintCategory(String option) {
             this(option, false);
