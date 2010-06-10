@@ -48,7 +48,7 @@ void Copy::conjoint_memory_atomic(void* from, void* to, size_t size) {
     Copy::conjoint_jshorts_atomic((jshort*) src, (jshort*) dst, size / sizeof(jshort));
   } else {
     // Not aligned, so no need to be atomic.
-    Copy::conjoint_bytes((void*) src, (void*) dst, size);
+    Copy::conjoint_jbytes((void*) src, (void*) dst, size);
   }
 }
 

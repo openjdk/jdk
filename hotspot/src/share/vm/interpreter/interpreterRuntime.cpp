@@ -1268,7 +1268,7 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   Bytecode_invoke* invoke = Bytecode_invoke_at(mh, bci);
   ArgumentSizeComputer asc(invoke->signature());
   int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
-  Copy::conjoint_bytes(src_address, dest_address,
+  Copy::conjoint_jbytes(src_address, dest_address,
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
 #endif

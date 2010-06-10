@@ -2698,7 +2698,7 @@ void JavaThread::popframe_preserve_args(ByteSize size_in_bytes, void* start) {
   if (in_bytes(size_in_bytes) != 0) {
     _popframe_preserved_args = NEW_C_HEAP_ARRAY(char, in_bytes(size_in_bytes));
     _popframe_preserved_args_size = in_bytes(size_in_bytes);
-    Copy::conjoint_bytes(start, _popframe_preserved_args, _popframe_preserved_args_size);
+    Copy::conjoint_jbytes(start, _popframe_preserved_args, _popframe_preserved_args_size);
   }
 }
 
