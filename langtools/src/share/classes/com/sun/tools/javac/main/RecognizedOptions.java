@@ -49,7 +49,7 @@ import static com.sun.tools.javac.main.OptionName.*;
 /**
  * TODO: describe com.sun.tools.javac.main.RecognizedOptions
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>

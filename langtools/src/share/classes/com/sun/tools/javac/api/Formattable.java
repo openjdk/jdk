@@ -31,7 +31,7 @@ import java.util.Locale;
  * This interface must be implemented by any javac class that has non-trivial
  * formatting needs (e.g. where toString() does not apply because of localization).
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
