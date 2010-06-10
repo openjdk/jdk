@@ -658,6 +658,9 @@ LIBM = /usr/lib$(ISA_DIR)/libm.so.1
 # Socket library
 LIBSOCKET = -lsocket
 
+# Network Services library
+LIBNSL = -lnsl
+
 # GLOBAL_KPIC: If set means all libraries are PIC, position independent code
 #    EXCEPT for select compiles
 #    If a .o file is compiled non-PIC then it should be forced
