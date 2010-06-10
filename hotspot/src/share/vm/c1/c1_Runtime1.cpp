@@ -1122,7 +1122,7 @@ JRT_LEAF(void, Runtime1::primitive_arraycopy(HeapWord* src, HeapWord* dst, int l
   if (length == 0) return;
   // Not guaranteed to be word atomic, but that doesn't matter
   // for anything but an oop array, which is covered by oop_arraycopy.
-  Copy::conjoint_bytes(src, dst, length);
+  Copy::conjoint_jbytes(src, dst, length);
 JRT_END
 
 JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
