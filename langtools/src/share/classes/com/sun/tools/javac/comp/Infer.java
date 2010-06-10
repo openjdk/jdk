@@ -290,6 +290,7 @@ public class Infer {
     public Type instantiateMethod(final Env<AttrContext> env,
                                   List<Type> tvars,
                                   MethodType mt,
+                                  final Symbol msym,
                                   final List<Type> argtypes,
                                   final boolean allowBoxing,
                                   final boolean useVarargs,
@@ -418,7 +419,7 @@ public class Infer {
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), formals);
+                        chk.checkVararg(env.tree.pos(), formals, msym, env);
                     }
                     return super.inst(inferred, types);
             }};
