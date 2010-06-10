@@ -886,6 +886,7 @@ public class Check {
     void checkRaw(JCTree tree, Env<AttrContext> env) {
         if (lint.isEnabled(Lint.LintCategory.RAW) &&
             tree.type.tag == CLASS &&
+            !TreeInfo.isDiamond(tree) &&
             !env.enclClass.name.isEmpty() &&  //anonymous or intersection
             tree.type.isRaw()) {
             log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
@@ -915,7 +916,7 @@ public class Check {
                 List<Type> actuals = tree.type.allparams();
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = tree.type.tsym.type.getTypeArguments();
-                ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
+                ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
 
                 // For matching pairs of actual argument types `a' and
                 // formal type parameters with declared bound `b' ...
@@ -946,12 +947,15 @@ public class Check {
                 }
 
                 args = tree.arguments;
-                List<TypeVar> tvars = tvars_buf.toList();
+                List<Type> tvars = tvars_buf.toList();
 
                 while (args.nonEmpty() && tvars.nonEmpty()) {
+                    Type actual = types.subst(args.head.type,
+                        tree.type.tsym.type.getTypeArguments(),
+                        tvars_buf.toList());
                     checkExtends(args.head.pos(),
-                                 args.head.type,
-                                 tvars.head);
+                                 actual,
+                                 (TypeVar)tvars.head);
                     args = args.tail;
                     tvars = tvars.tail;
                 }

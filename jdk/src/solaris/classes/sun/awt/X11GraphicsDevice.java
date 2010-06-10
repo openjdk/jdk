@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 
 import sun.java2d.opengl.GLXGraphicsConfig;
+import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
 /**
@@ -152,6 +153,8 @@ public class X11GraphicsDevice
             }
 
             boolean glxSupported = X11GraphicsEnvironment.isGLXAvailable();
+            boolean xrenderSupported = X11GraphicsEnvironment.isXRenderAvailable();
+
             boolean dbeSupported = isDBESupported();
             if (dbeSupported && doubleBufferVisuals == null) {
                 doubleBufferVisuals = new HashSet();
@@ -167,9 +170,15 @@ public class X11GraphicsDevice
                     boolean doubleBuffer =
                         (dbeSupported &&
                          doubleBufferVisuals.contains(Integer.valueOf(visNum)));
-                    ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
-                            getConfigColormap(i, screen),
-                            doubleBuffer);
+
+                    if (xrenderSupported) {
+                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,                                getConfigColormap(i, screen),
+                                doubleBuffer);
+                    } else {
+                       ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
+                              getConfigColormap(i, screen),
+                              doubleBuffer);
+                    }
                 }
             }
             configs = ret;
@@ -243,9 +252,19 @@ public class X11GraphicsDevice
                     doubleBuffer =
                         doubleBufferVisuals.contains(Integer.valueOf(visNum));
                 }
-                defaultConfig = X11GraphicsConfig.getConfig(this, visNum,
-                                                            depth, getConfigColormap(0, screen),
-                                                            doubleBuffer);
+
+                if (X11GraphicsEnvironment.isXRenderAvailable()) {
+                    if (X11GraphicsEnvironment.isXRenderVerbose()) {
+                        System.out.println("XRender pipeline enabled");
+                    }
+                    defaultConfig = XRGraphicsConfig.getConfig(this, visNum,
+                            depth, getConfigColormap(0, screen),
+                            doubleBuffer);
+                } else {
+                    defaultConfig = X11GraphicsConfig.getConfig(this, visNum,
+                                        depth, getConfigColormap(0, screen),
+                                        doubleBuffer);
+                }
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -63,8 +63,14 @@ class JNIHandles : AllStatic {
   // refers to NULL (as is the case for any weak reference).
   static jmethodID make_jmethod_id(methodHandle mh);
   static void destroy_jmethod_id(jmethodID mid);
+  // Use resolve_jmethod_id() in situations where the caller is expected
+  // to provide a valid jmethodID; the only sanity checks are in asserts;
+  // result guaranteed not to be NULL.
   inline static methodOop resolve_jmethod_id(jmethodID mid);
-  inline static methodOop checked_resolve_jmethod_id(jmethodID mid); // NULL on invalid jmethodID
+  // Use checked_resolve_jmethod_id() in situations where the caller
+  // should provide a valid jmethodID, but might not. NULL is returned
+  // when the jmethodID does not refer to a valid method.
+  inline static methodOop checked_resolve_jmethod_id(jmethodID mid);
   static void change_method_associated_with_jmethod_id(jmethodID jmid, methodHandle mh);
 
   // Sentinel marking deleted handles in block. Note that we cannot store NULL as
@@ -200,12 +206,8 @@ inline methodOop JNIHandles::resolve_jmethod_id(jmethodID mid) {
 };
 
 inline methodOop JNIHandles::checked_resolve_jmethod_id(jmethodID mid) {
-  if (mid == NULL) {
-    return (methodOop) NULL;
-  }
-
-  oop o = resolve_non_null((jobject) mid);
-  if (!o->is_method()) {
+  oop o = resolve_external_guard((jobject) mid);
+  if (o == NULL || !o->is_method()) {
     return (methodOop) NULL;
   }
 
