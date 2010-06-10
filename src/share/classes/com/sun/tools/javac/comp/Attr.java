@@ -657,6 +657,8 @@ public class Attr extends JCTree.Visitor {
                 attribStat(l.head, localEnv);
             }
 
+            chk.checkVarargMethodDecl(tree);
+
             // Check that type parameters are well-formed.
             chk.validate(tree.typarams, localEnv);
             if ((owner.flags() & ANNOTATION) != 0 &&
@@ -2634,10 +2636,11 @@ public class Attr extends JCTree.Visitor {
             }
             if (useVarargs) {
                 JCTree tree = env.tree;
+                Type argtype = owntype.getParameterTypes().last();
                 if (owntype.getReturnType().tag != FORALL || warned) {
-                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes());
+                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes(), sym, env);
                 }
-                Type elemtype = types.elemtype(owntype.getParameterTypes().last());
+                Type elemtype = types.elemtype(argtype);
                 switch (tree.getTag()) {
                 case JCTree.APPLY:
                     ((JCMethodInvocation) tree).varargsElement = elemtype;
