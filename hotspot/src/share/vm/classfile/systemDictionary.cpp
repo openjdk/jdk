@@ -2454,6 +2454,48 @@ Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
   return Handle(THREAD, (oop) result.get_jobject());
 }
 
+// Ask Java code to find or construct a method handle constant.
+Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
+                                                     int ref_kind, //e.g., JVM_REF_invokeVirtual
+                                                     KlassHandle callee,
+                                                     symbolHandle name_sym,
+                                                     symbolHandle signature,
+                                                     TRAPS) {
+  Handle empty;
+  Handle name = java_lang_String::create_from_symbol(name_sym(), CHECK_(empty));
+  Handle type;
+  if (signature->utf8_length() > 0 && signature->byte_at(0) == '(') {
+    bool ignore_is_on_bcp = false;
+    type = find_method_handle_type(signature, caller, ignore_is_on_bcp, CHECK_(empty));
+  } else {
+    SignatureStream ss(signature(), false);
+    if (!ss.is_done()) {
+      oop mirror = ss.as_java_mirror(caller->class_loader(), caller->protection_domain(),
+                                     SignatureStream::NCDFError, CHECK_(empty));
+      type = Handle(THREAD, mirror);
+      ss.next();
+      if (!ss.is_done())  type = Handle();  // error!
+    }
+  }
+  if (type.is_null()) {
+    THROW_MSG_(vmSymbols::java_lang_LinkageError(), "bad signature", empty);
+  }
+
+  // call sun.dyn.MethodHandleNatives::linkMethodHandleConstant(Class caller, int refKind, Class callee, String name, Object type) -> MethodHandle
+  JavaCallArguments args;
+  args.push_oop(caller->java_mirror());  // the referring class
+  args.push_int(ref_kind);
+  args.push_oop(callee->java_mirror());  // the target class
+  args.push_oop(name());
+  args.push_oop(type());
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmSymbols::linkMethodHandleConstant_name(),
+                         vmSymbols::linkMethodHandleConstant_signature(),
+                         &args, CHECK_(empty));
+  return Handle(THREAD, (oop) result.get_jobject());
+}
 
 // Ask Java code to find or construct a java.dyn.CallSite for the given
 // name and signature, as interpreted relative to the given class loader.

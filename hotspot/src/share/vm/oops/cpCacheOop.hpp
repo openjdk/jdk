@@ -110,6 +110,7 @@
 class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
   friend class constantPoolCacheKlass;
+  friend class constantPoolOopDesc;  //resolve_constant_at_impl => set_f1
 
  private:
   volatile intx     _indices;  // constant pool index & rewrite bytecodes
