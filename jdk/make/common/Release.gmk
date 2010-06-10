@@ -647,7 +647,9 @@ $(RT_JAR_FILELIST) + $(RES_JAR_FILELIST): \
 JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/manifest.tmp
 $(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(prep-target)
-	$(SED) -e "s/@@RELEASE@@/$(RELEASE)/" $(MAINMANIFEST) >> $@
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
+	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+	       $(MAINMANIFEST) >> $@
 	$(ECHO) >> $@
 	$(CAT) $(BEANMANIFEST) >> $@
 
