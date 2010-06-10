@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,15 @@
 #
 
 # @test
-# @bug 4990825
-# @run shell jstatOptions1.sh
-# @summary Test that output of 'jstat -options matches the usage.out file
+# @bug 6959965 
+# @run shell jstatClassloadOutput1.sh
+# @summary Test that output of 'jstat -classload 0' has expected line counts
 
 . ${TESTSRC-.}/../../jvmstat/testlibrary/utils.sh
 
 setup
+verify_os
 
 JSTAT="${TESTJAVA}/bin/jstat"
 
-rm -f jstat.out1 jstat.out2 2>/dev/null
-${JSTAT} -options > jstat.out1 2>&1
-${JSTAT} -options -J-Djstat.showUnsupported=true > jstat.out2 2>&1
-
-diff -w jstat.out1 ${TESTSRC}/options1.out
-diff -w jstat.out2 ${TESTSRC}/options2.out
+${JSTAT} -classload -J-Djstat.showUnsupported=true 0 2>&1 | awk -f ${TESTSRC}/classloadOutput1.awk
