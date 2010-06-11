@@ -22,9 +22,9 @@
 #
 
 # @test
-# @bug 6948803
-# @summary CertPath validation regression caused by SHA1 replacement root
-#  and MD2 disable feature
+# @bug 6958869
+# @summary regression: PKIXValidator fails when multiple trust anchors
+# have same dn
 #
 
 if [ "${TESTSRC}" = "" ] ; then
@@ -47,39 +47,36 @@ case "$OS" in
 esac
 
 KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit \
-    -keypass changeit -keystore certreplace.jks"
+    -keypass changeit -keystore samedn.jks"
 JAVAC=$TESTJAVA${FS}bin${FS}javac
 JAVA=$TESTJAVA${FS}bin${FS}java
 
-rm -rf certreplace.jks 2> /dev/null
+rm -rf samedn.jks 2> /dev/null
 
-# 1. Generate 3 aliases in a keystore: ca, int, user
+# 1. Generate 3 aliases in a keystore: ca1, ca2, user. The CAs' startdate
+# is set to one year ago so that they are expired now
 
-$KT -genkeypair -alias ca -dname CN=CA -keyalg rsa -sigalg md2withrsa -ext bc
-$KT -genkeypair -alias int -dname CN=Int -keyalg rsa
+$KT -genkeypair -alias ca1 -dname CN=CA -keyalg rsa -sigalg md5withrsa -ext bc -startdate -1y
+$KT -genkeypair -alias ca2 -dname CN=CA -keyalg rsa -sigalg sha1withrsa -ext bc -startdate -1y
 $KT -genkeypair -alias user -dname CN=User -keyalg rsa
 
-# 2. Signing: ca -> int -> user
+# 2. Signing: ca -> user
 
-$KT -certreq -alias int | $KT -gencert -rfc -alias ca -ext bc \
-    | $KT -import -alias int
-$KT -certreq -alias user | $KT -gencert -rfc -alias int \
-    | $KT -import -alias user
+$KT -certreq -alias user | $KT -gencert -rfc -alias ca1 > samedn1.certs
+$KT -certreq -alias user | $KT -gencert -rfc -alias ca2 > samedn2.certs
 
-# 3. Create the certchain file
+# 3. Append the ca file
 
-$KT -export -alias user -rfc > certreplace.certs
-$KT -export -rfc -alias int >> certreplace.certs
-$KT -export -rfc -alias ca >> certreplace.certs
+$KT -export -rfc -alias ca1 >> samedn1.certs
+$KT -export -rfc -alias ca2 >> samedn2.certs
 
-# 4. Upgrade ca from MD2withRSA to SHA256withRSA, remove other aliases and
-# make this keystore the cacerts file
+# 4. Remove user for cacerts
 
-$KT -selfcert -alias ca
-$KT -delete -alias int
 $KT -delete -alias user
 
-# 5. Build and run test
+# 5. Build and run test. Make sure the CA certs are ignored for validity check.
+# Check both, one of them might be dropped out of map in old codes.
 
 $JAVAC -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA CertReplace certreplace.jks certreplace.certs
+$JAVA CertReplace samedn.jks samedn1.certs || exit 1
+$JAVA CertReplace samedn.jks samedn2.certs || exit 2
