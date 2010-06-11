@@ -779,19 +779,15 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         if (c instanceof JTextComponent) {
             editor = (JTextComponent) c;
 
+            // common case is background painted... this can
+            // easily be changed by subclasses or from outside
+            // of the component.
+            LookAndFeel.installProperty(editor, "opaque", Boolean.TRUE);
+            LookAndFeel.installProperty(editor, "autoscrolls", Boolean.TRUE);
+
             // install defaults
             installDefaults();
             installDefaults2();
-
-            // This is a workaround as these should not override what synth has
-            // set them to
-            if (! (this instanceof SynthUI)) {
-                // common case is background painted... this can
-                // easily be changed by subclasses or from outside
-                // of the component.
-                LookAndFeel.installProperty(editor, "opaque", Boolean.TRUE);
-                LookAndFeel.installProperty(editor, "autoscrolls", Boolean.TRUE);
-            }
 
             // attach to the model and editor
             editor.addPropertyChangeListener(updateHandler);
