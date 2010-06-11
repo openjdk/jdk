@@ -27,7 +27,7 @@ package com.sun.source.util;
 
 
 /**
- * Provides a listener to monitor the activity of the Sun Java Compiler, javac.
+ * Provides a listener to monitor the activity of the JDK Java Compiler, javac.
  *
  * @author Jonathan Gibbons
  * @since 1.6

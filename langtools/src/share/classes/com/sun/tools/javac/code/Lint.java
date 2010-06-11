@@ -196,7 +196,7 @@ public class Lint
         RAW("rawtypes"),
 
         /**
-         * Warn about Sun proprietary API that may be removed in a future release.
+         * Warn about proprietary API that may be removed in a future release.
          */
         SUNAPI("sunapi", true),
 
