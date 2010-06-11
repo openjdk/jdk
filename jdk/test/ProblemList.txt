@@ -737,9 +737,6 @@ sun/net/www/protocol/http/DigestTest.java			generic-all
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
 
-# Failing on Solaris x86 and Linux x86, filed 6934585
-java/nio/channels/AsynchronousSocketChannel/Basic.java		generic-all
-
 # Occasionally Failing with java.lang.AssertionError on Windows X64
 #  at sun.nio.ch.PendingIoCache.clearPendingIoMap(PendingIoCache.java:144)
 #java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java	windows-all
@@ -766,10 +763,6 @@ java/nio/channels/Selector/SelectWrite.java			generic-all
 
 # Fails on Fedora 9 32bit times out
 java/nio/channels/DatagramChannel/EmptyBuffer.java		generic-all
-
-# Fails on Windows 2000, ExceptionInInitializerError
-#   in WindowsAsynchronousServerSocketChannelImpl.java:316
-java/nio/channels/AsynchronousChannelGroup/Unbounded.java	generic-all
 
 # Fails on Windows 2000,  times out
 java/nio/channels/FileChannel/Transfer.java			generic-all
@@ -812,11 +805,12 @@ java/nio/channels/Selector/HelperSlowToDie.java			generic-all
 # Timeouts etc. on Window
 java/nio/channels/AsyncCloseAndInterrupt.java		 	windows-all
 
-# Gets java.lang.ExceptionInInitializerError on windows: (Windows 2000 only?)
+# Gets java.lang.ExceptionInInitializerError on Windows 2000 (need XP or newer)
 java/nio/channels/AsynchronousChannelGroup/Basic.java	 	windows-5.0
 java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java 	windows-5.0
 java/nio/channels/AsynchronousChannelGroup/Identity.java 	windows-5.0
 java/nio/channels/AsynchronousChannelGroup/Restart.java 	windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java	windows-5.0
 java/nio/channels/AsynchronousDatagramChannel/Basic.java 	windows-5.0
 java/nio/channels/AsynchronousFileChannel/Lock.java	 	windows-5.0
 java/nio/channels/AsynchronousServerSocketChannel/Basic.java 	windows-5.0
