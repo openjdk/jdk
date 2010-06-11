@@ -226,7 +226,7 @@ public class Flags {
     public static final long HYPOTHETICAL   = 1L<<37;
 
     /**
-     * Flag that marks a Sun proprietary class.
+     * Flag that marks an internal proprietary class.
      */
     public static final long PROPRIETARY = 1L<<38;
 

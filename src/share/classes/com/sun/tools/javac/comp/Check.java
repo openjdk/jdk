@@ -157,7 +157,7 @@ public class Check {
      */
     private MandatoryWarningHandler unsafeVarargsHandler;
 
-    /** A handler for messages about using Sun proprietary API.
+    /** A handler for messages about using proprietary API.
      */
     private MandatoryWarningHandler sunApiHandler;
 
@@ -198,7 +198,7 @@ public class Check {
             unsafeVarargsHandler.report(pos, "varargs.non.reifiable.type", elemType);
     }
 
-    /** Warn about using Sun proprietary API.
+    /** Warn about using proprietary API.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
      */

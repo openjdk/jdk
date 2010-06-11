@@ -469,7 +469,7 @@ public class Symtab {
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
 
-        // Enter a synthetic class that is used to mark Sun
+        // Enter a synthetic class that is used to mark internal
         // proprietary classes in ct.sym.  This class does not have a
         // class file.
         ClassType proprietaryType = (ClassType)enterClass("sun.Proprietary+Annotation");

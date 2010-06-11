@@ -166,7 +166,7 @@ public class Attr extends JCTree.Visitor {
     boolean useBeforeDeclarationWarning;
 
     /**
-     * Switch: allow lint infrastructure to control Sun proprietary
+     * Switch: allow lint infrastructure to control proprietary
      * API warnings.
      */
     boolean enableSunApiLintControl;
