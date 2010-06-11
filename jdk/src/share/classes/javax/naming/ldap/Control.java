@@ -27,7 +27,7 @@ package javax.naming.ldap;
 
 /**
   * This interface represents an LDAPv3 control as defined in
-  * <A HREF="ftp://ftp.isi.edu/in-notes/rfc2251.txt">RFC 2251</A>.
+  * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
   *<p>
   * The LDAPv3 protocol uses controls to send and receive additional data
   * to affect the behavior of predefined operations.

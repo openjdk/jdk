@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -188,7 +188,7 @@ public:
 
   // This instruction captures the machine-independent bottom_type
   // Expected use is for pointer vs oop determination for LoadP
-  virtual bool        captures_bottom_type() const;
+  virtual bool        captures_bottom_type(FormDict& globals) const;
 
   virtual const char *cost();      // Access ins_cost attribute
   virtual uint        num_opnds(); // Count of num_opnds for MachNode class
@@ -229,7 +229,7 @@ public:
   const char         *reduce_left(FormDict &globals)   const;
 
   // Base class for this instruction, MachNode except for calls
-  virtual const char *mach_base_class()  const;
+  virtual const char *mach_base_class(FormDict &globals)  const;
 
   // Check if this instruction can cisc-spill to 'alternate'
   bool                cisc_spills_to(ArchDesc &AD, InstructForm *alternate);
@@ -252,7 +252,7 @@ public:
   bool                has_short_branch_form() { return _short_branch_form != NULL; }
   // Output short branch prototypes and method bodies
   void                declare_short_branch_methods(FILE *fp_cpp);
-  bool                define_short_branch_methods(FILE *fp_cpp);
+  bool                define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp);
 
   uint                alignment() { return _alignment; }
   void                set_alignment(uint val) { _alignment = val; }

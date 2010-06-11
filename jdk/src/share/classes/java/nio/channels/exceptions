@@ -28,7 +28,7 @@
 SINCE=1.4
 PACKAGE=java.nio.channels
 # This year should only change if the generated source is modified.
-COPYRIGHT_YEARS=2000-2007
+COPYRIGHT_YEARS="2000, 2007,"
 
 
 SUPER=java.io.IOException

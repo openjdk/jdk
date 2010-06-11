@@ -361,11 +361,13 @@ public class SynthTableUI extends BasicTableUI
             cMax = table.getColumnCount()-1;
         }
 
-        // Paint the grid.
-        paintGrid(context, g, rMin, rMax, cMin, cMax);
-
         // Paint the cells.
         paintCells(context, g, rMin, rMax, cMin, cMax);
+
+        // Paint the grid.
+        // it is important to paint the grid after the cells, otherwise the grid will be overpainted
+        // because in Synth cell renderers are likely to be opaque
+        paintGrid(context, g, rMin, rMax, cMin, cMax);
 
         paintDropLines(context, g);
     }

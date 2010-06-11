@@ -28,7 +28,7 @@
 # a java comment block.  If this script is invoked with a copyright 
 # year/year range, the java comment block will contain a Sun copyright.
 
-COPYRIGHT_YEARS=$1
+COPYRIGHT_YEARS="$1"
 
 cat <<__END__
 /*
@@ -36,10 +36,10 @@ __END__
 
 if [ "x$COPYRIGHT_YEARS" != x ]; then
   cat <<__END__
- * Copyright $COPYRIGHT_YEARS Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) $COPYRIGHT_YEARS Oracle and/or its affiliates. All rights reserved.
 __END__
 fi
 
-$NAWK ' /^#.*Copyright.*Sun/ { next }
+$NAWK ' /^#.*Copyright.*Oracle/ { next }
         /^#([^!]|$)/ { sub(/^#/, " *"); print }
         /^$/ { print " */"; exit } ' $0
