@@ -863,13 +863,15 @@
             <attribute name="tests"/>
             <attribute name="jdk" default="${target.java.home}"/>
             <attribute name="samevm" default="true"/>
-            <attribute name="verbose" default="summary"/>
-            <attribute name="options" default=""/>
+            <attribute name="verbose" default="${default.jtreg.verbose}"/>
+            <attribute name="options" default="${other.jtreg.options}"/>
             <attribute name="keywords" default="-keywords:!ignore"/>
             <attribute name="jpda.jvmargs" default=""/>
             <sequential>
-                <property name="coverage.options" value=""/>    <!-- default -->
-                <property name="coverage.classpath" value=""/>    <!-- default -->
+                <property name="coverage.options" value=""/>              <!-- default -->
+                <property name="coverage.classpath" value=""/>            <!-- default -->
+                <property name="default.jtreg.verbose" value="summary"/>  <!-- default -->
+                <property name="other.jtreg.options" value=""/>           <!-- default -->
                 <jtreg
                     dir="${test.dir}"
                     workDir="${build.jtreg.dir}/@{name}/work"
