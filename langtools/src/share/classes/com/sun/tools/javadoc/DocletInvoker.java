@@ -155,10 +155,8 @@ public class DocletInvoker {
     public boolean start(RootDoc root) {
         Object retVal;
         String methodName = "start";
-        Class<?>[] paramTypes = new Class<?>[1];
-        Object[] params = new Object[1];
-        paramTypes[0] = RootDoc.class;
-        params[0] = root;
+        Class<?>[] paramTypes = { RootDoc.class };
+        Object[] params = { root };
         try {
             retVal = invoke(methodName, null, paramTypes, params);
         } catch (DocletInvokeException exc) {
@@ -181,10 +179,8 @@ public class DocletInvoker {
     public int optionLength(String option) {
         Object retVal;
         String methodName = "optionLength";
-        Class<?>[] paramTypes = new Class<?>[1];
-        Object[] params = new Object[1];
-        paramTypes[0] = option.getClass();
-        params[0] = option;
+        Class<?>[] paramTypes = { String.class };
+        Object[] params = { option };
         try {
             retVal = invoke(methodName, new Integer(0), paramTypes, params);
         } catch (DocletInvokeException exc) {
@@ -208,12 +204,8 @@ public class DocletInvoker {
         String options[][] = optlist.toArray(new String[optlist.length()][]);
         String methodName = "validOptions";
         DocErrorReporter reporter = messager;
-        Class<?>[] paramTypes = new Class<?>[2];
-        Object[] params = new Object[2];
-        paramTypes[0] = options.getClass();
-        paramTypes[1] = DocErrorReporter.class;
-        params[0] = options;
-        params[1] = reporter;
+        Class<?>[] paramTypes = { String[][].class, DocErrorReporter.class };
+        Object[] params = { options, reporter };
         try {
             retVal = invoke(methodName, Boolean.TRUE, paramTypes, params);
         } catch (DocletInvokeException exc) {
