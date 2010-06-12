@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,9 @@ final class CipherSuiteList {
     // null if not yet checked.
     private volatile Boolean containsEC;
 
-    // for use by buildAvailableCache() only
-    private CipherSuiteList(Collection<CipherSuite> cipherSuites) {
+    // for use by buildAvailableCache() and
+    // Handshaker.getKickstartMessage() only
+    CipherSuiteList(Collection<CipherSuite> cipherSuites) {
         this.cipherSuites = cipherSuites;
     }
 
@@ -221,15 +222,18 @@ final class CipherSuiteList {
         // SortedSet automatically arranges ciphersuites in default
         // preference order
         Set<CipherSuite> cipherSuites = new TreeSet<CipherSuite>();
-        Collection<CipherSuite> allowedCipherSuites = CipherSuite.allowedCipherSuites();
+        Collection<CipherSuite> allowedCipherSuites =
+                                    CipherSuite.allowedCipherSuites();
         for (CipherSuite c : allowedCipherSuites) {
             if ((c.allowed == false) || (c.priority < minPriority)) {
                 continue;
             }
+
             if (c.isAvailable()) {
                 cipherSuites.add(c);
             }
         }
+
         return new CipherSuiteList(cipherSuites);
     }
 
