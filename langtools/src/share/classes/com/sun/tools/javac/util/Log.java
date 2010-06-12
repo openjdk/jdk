@@ -125,8 +125,8 @@ public class Log extends AbstractLog {
         this.promptOnError = options.get("-prompt") != null;
         this.emitWarnings = options.get("-Xlint:none") == null;
         this.suppressNotes = options.get("suppressNotes") != null;
-        this.MaxErrors = getIntOption(options, "-Xmaxerrs", 100);
-        this.MaxWarnings = getIntOption(options, "-Xmaxwarns", 100);
+        this.MaxErrors = getIntOption(options, "-Xmaxerrs", getDefaultMaxErrors());
+        this.MaxWarnings = getIntOption(options, "-Xmaxwarns", getDefaultMaxWarnings());
 
         boolean rawDiagnostics = options.get("rawDiagnostics") != null;
         messages = JavacMessages.instance(context);
@@ -153,6 +153,18 @@ public class Log extends AbstractLog {
                 // silently ignore ill-formed numbers
             }
             return defaultValue;
+        }
+
+        /** Default value for -Xmaxerrs.
+         */
+        protected int getDefaultMaxErrors() {
+            return 100;
+        }
+
+        /** Default value for -Xmaxwarns.
+         */
+        protected int getDefaultMaxWarnings() {
+            return 100;
         }
 
     /** The default writer for diagnostics
