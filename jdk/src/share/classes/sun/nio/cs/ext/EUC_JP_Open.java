@@ -75,8 +75,12 @@ public class EUC_JP_Open
         JIS_X_0212_Solaris_Decoder decodeMappingJ0212;
         JIS_X_0208_Solaris_Decoder decodeMappingJ0208;
 
-        short[] j0208Index1;
-        String[] j0208Index2;
+        private static final short[] j0208Index1 =
+          JIS_X_0208_Solaris_Decoder.getIndex1();
+        private static final String[] j0208Index2 =
+          JIS_X_0208_Solaris_Decoder.getIndex2();
+        private static final int start = 0xa1;
+        private static final int end = 0xfe;
 
         protected final char REPLACE_CHAR='\uFFFD';
 
@@ -84,11 +88,6 @@ public class EUC_JP_Open
             super(cs);
             decoderJ0201 = new JIS_X_0201.Decoder(cs);
             decodeMappingJ0212 = new JIS_X_0212_Solaris_Decoder(cs);
-            decodeMappingJ0208 = new JIS_X_0208_Solaris_Decoder(cs);
-            decodeMappingJ0208.start = 0xa1;
-            decodeMappingJ0208.end = 0xfe;
-            j0208Index1 = decodeMappingJ0208.getIndex1();
-            j0208Index2 = decodeMappingJ0208.getIndex2();
         }
 
 
@@ -103,9 +102,9 @@ public class EUC_JP_Open
             }
 
             if (((byte1 < 0)
-                || (byte1 > decodeMappingJ0208.getIndex1().length))
-                || ((byte2 < decodeMappingJ0208.start)
-                || (byte2 > decodeMappingJ0208.end)))
+                || (byte1 > j0208Index1.length))
+                || ((byte2 < start)
+                || (byte2 > end)))
                 return REPLACE_CHAR;
 
             char result = super.decodeDouble(byte1, byte2);
@@ -113,8 +112,8 @@ public class EUC_JP_Open
                 return result;
             } else {
                 int n = (j0208Index1[byte1 - 0x80] & 0xf) *
-                        (decodeMappingJ0208.end - decodeMappingJ0208.start + 1)
-                        + (byte2 - decodeMappingJ0208.start);
+                        (end - start + 1)
+                        + (byte2 - start);
                 return j0208Index2[j0208Index1[byte1 - 0x80] >> 4].charAt(n);
             }
         }
@@ -125,10 +124,11 @@ public class EUC_JP_Open
 
         JIS_X_0201.Encoder encoderJ0201;
         JIS_X_0212_Solaris_Encoder encoderJ0212;
-        JIS_X_0208_Solaris_Encoder encoderJ0208;
 
-        short[] j0208Index1;
-        String[] j0208Index2;
+        private static final short[] j0208Index1 =
+            JIS_X_0208_Solaris_Encoder.getIndex1();
+        private static final String[] j0208Index2 =
+            JIS_X_0208_Solaris_Encoder.getIndex2();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
@@ -136,9 +136,6 @@ public class EUC_JP_Open
             super(cs);
             encoderJ0201 = new JIS_X_0201.Encoder(cs);
             encoderJ0212 = new JIS_X_0212_Solaris_Encoder(cs);
-            encoderJ0208 = new JIS_X_0208_Solaris_Encoder(cs);
-            j0208Index1 = encoderJ0208.getIndex1();
-            j0208Index2 = encoderJ0208.getIndex2();
         }
 
         protected int encodeSingle(char inputChar, byte[] outputByte) {
