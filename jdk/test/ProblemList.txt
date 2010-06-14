@@ -1181,21 +1181,6 @@ sun/tools/jps/jps-m.sh						generic-all
 # Server name error, port 2098 problem?
 sun/tools/jstatd/jstatdServerName.sh				generic-all
 
-# These tests fail on solaris sparc, all the time
-com/sun/servicetag/DeleteServiceTag.java			generic-all
-com/sun/servicetag/DuplicateNotFound.java			generic-all
-com/sun/servicetag/FindServiceTags.java				generic-all
-com/sun/servicetag/InstanceUrnCheck.java			generic-all
-com/sun/servicetag/InvalidRegistrationData.java			generic-all
-com/sun/servicetag/InvalidServiceTag.java			generic-all
-com/sun/servicetag/JavaServiceTagTest.java			generic-all
-com/sun/servicetag/JavaServiceTagTest1.java			generic-all
-com/sun/servicetag/NewRegistrationData.java			generic-all
-com/sun/servicetag/SystemRegistryTest.java			generic-all
-com/sun/servicetag/TestLoadFromXML.java				generic-all
-com/sun/servicetag/UpdateServiceTagTest.java			generic-all
-com/sun/servicetag/ValidRegistrationData.java			generic-all
-
 # Problems on windows, jmap.exe hangs?
 com/sun/tools/attach/BasicTests.sh				windows-all
 
