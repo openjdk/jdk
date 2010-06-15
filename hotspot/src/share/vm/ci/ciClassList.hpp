@@ -85,6 +85,7 @@ friend class ciCallSite;               \
 friend class ciConstantPoolCache;      \
 friend class ciField;                  \
 friend class ciConstant;               \
+friend class ciCPCache;                \
 friend class ciFlags;                  \
 friend class ciExceptionHandler;       \
 friend class ciCallProfile;            \

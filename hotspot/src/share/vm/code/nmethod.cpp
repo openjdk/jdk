@@ -2659,13 +2659,10 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
         case Bytecodes::_getstatic:
         case Bytecodes::_putstatic:
           {
-            methodHandle sdm = sd->method();
-            Bytecode_field* field = Bytecode_field_at(sdm(), sdm->bcp_from(sd->bci()));
-            constantPoolOop sdmc = sdm->constants();
-            symbolOop name = sdmc->name_ref_at(field->index());
+            Bytecode_field* field = Bytecode_field_at(sd->method(), sd->bci());
             st->print(" ");
-            if (name != NULL)
-              name->print_symbol_on(st);
+            if (field->name() != NULL)
+              field->name()->print_symbol_on(st);
             else
               st->print("<UNKNOWN>");
           }

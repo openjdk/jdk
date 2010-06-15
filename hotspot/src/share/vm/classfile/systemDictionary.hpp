@@ -473,6 +473,13 @@ public:
                                            KlassHandle accessing_klass,
                                            bool& return_bcp_flag,
                                            TRAPS);
+  // ask Java to compute a java.dyn.MethodHandle object for a given CP entry
+  static Handle    link_method_handle_constant(KlassHandle caller,
+                                               int ref_kind, //e.g., JVM_REF_invokeVirtual
+                                               KlassHandle callee,
+                                               symbolHandle name,
+                                               symbolHandle signature,
+                                               TRAPS);
   // ask Java to create a dynamic call site, while linking an invokedynamic op
   static Handle    make_dynamic_call_site(Handle bootstrap_method,
                                           // Callee information:
