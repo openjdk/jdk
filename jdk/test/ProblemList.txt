@@ -1239,7 +1239,6 @@ java/util/Formatter/Constructors.java				generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
 java/util/Locale/Bug4175998Test.java				generic-all
-java/util/Locale/Bug4184873Test.java				generic-all
 java/util/Locale/LocaleTest.java				generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
