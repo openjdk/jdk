@@ -816,9 +816,6 @@ java/nio/channels/Channels/Basic2.java			 	windows-5.0
 #   Considered a stress test, can consume all resources.
 java/nio/channels/Selector/LotsOfChannels.java		 	generic-all
 
-# Solaris sparcv9, just fails with exception
-java/nio/channels/Selector/OpRead.java			 	solaris-sparc
-
 # Windows i586 client, crashed hotspot? Unpredictable
 #   Considered a stress test, can consume all resources.
 java/nio/channels/Selector/RegAfterPreClose.java	 	generic-all
