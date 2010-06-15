@@ -830,9 +830,6 @@ java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
 java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
 java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
 
-# Need to be marked othervm, or changed to be samevm safe
-java/nio/channels/SocketChannel/OpenLeak.java			generic-all
-
 # Gets java.net.BindException alot (static port number?)
 java/nio/channels/SocketChannel/VectorIO.java		 	generic-all
 
