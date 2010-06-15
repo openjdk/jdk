@@ -752,17 +752,8 @@ com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
 #    at SetLastModified.main(SetLastModified.java:107)
 java/io/File/SetLastModified.java                               generic-all
 
-# Fails on Solaris 10 x64, address already in use
-java/nio/channels/DatagramChannel/SRTest.java			generic-all
-
-# Fails on Solaris 10 x86, times out
-java/nio/channels/DatagramChannel/Sender.java			generic-all
-
 # Fails on Fedora 9 x86, address in use
 java/nio/channels/Selector/SelectWrite.java			generic-all
-
-# Fails on Fedora 9 32bit times out
-java/nio/channels/DatagramChannel/EmptyBuffer.java		generic-all
 
 # Fails on Windows 2000,  times out
 java/nio/channels/FileChannel/Transfer.java			generic-all
@@ -820,12 +811,6 @@ java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
 java/nio/channels/AsynchronousSocketChannel/Leaky.java	 	windows-5.0
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
 java/nio/channels/Channels/Basic2.java			 	windows-5.0
-
-# Solaris sparc timeout
-java/nio/channels/DatagramChannel/Connect.java		 	generic-all
-
-# Solaris i586 timeouts
-java/nio/channels/DatagramChannel/EmptyBuffer.java	 	solaris-all
 
 # Failed loopback connection? On windows 32bit? 
 #   Considered a stress test, can consume all resources.
