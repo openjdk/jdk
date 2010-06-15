@@ -545,6 +545,7 @@ ciCPCache.cpp                           ciUtilities.hpp
 
 ciCPCache.hpp                           ciClassList.hpp
 ciCPCache.hpp                           ciObject.hpp
+ciCPCache.hpp                           cpCacheOop.hpp
 
 ciEnv.cpp                               allocation.inline.hpp
 ciEnv.cpp                               ciConstant.hpp
@@ -823,6 +824,7 @@ ciSignature.hpp                         growableArray.hpp
 
 ciStreams.cpp                           ciCallSite.hpp
 ciStreams.cpp                           ciConstant.hpp
+ciStreams.cpp                           ciCPCache.hpp
 ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
 ciStreams.cpp                           ciUtilities.hpp

@@ -779,7 +779,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
   // Find bytecode
   Bytecode_invoke* bytecode = Bytecode_invoke_at(caller, bci);
-  bc = bytecode->adjusted_invoke_code();
+  bc = bytecode->java_code();
   int bytecode_index = bytecode->index();
 
   // Find receiver for non-static call
