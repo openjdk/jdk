@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -32,30 +32,75 @@ class PromotedObject VALUE_OBJ_CLASS_SPEC {
     displaced_mark = nth_bit(2),        // i.e. 0x4
     next_mask      = ~(right_n_bits(3)) // i.e. ~(0x7)
   };
-  intptr_t _next;
+
+  // Below, we want _narrow_next in the "higher" 32 bit slot,
+  // whose position will depend on endian-ness of the platform.
+  // This is so that there is no interference with the
+  // cms_free_bit occupying bit position 7 (lsb == 0)
+  // when we are using compressed oops; see FreeChunk::isFree().
+  // We cannot move the cms_free_bit down because currently
+  // biased locking code assumes that age bits are contiguous
+  // with the lock bits. Even if that assumption were relaxed,
+  // the least position we could move this bit to would be
+  // to bit position 3, which would require 16 byte alignment.
+  typedef struct {
+#ifdef VM_LITTLE_ENDIAN
+    LP64_ONLY(narrowOop _pad;)
+              narrowOop _narrow_next;
+#else
+              narrowOop _narrow_next;
+    LP64_ONLY(narrowOop _pad;)
+#endif
+  } Data;
+
+  union {
+    intptr_t _next;
+    Data     _data;
+  };
  public:
   inline PromotedObject* next() const {
-    return (PromotedObject*)(_next & next_mask);
+    assert(!((FreeChunk*)this)->isFree(), "Error");
+    PromotedObject* res;
+    if (UseCompressedOops) {
+      // The next pointer is a compressed oop stored in the top 32 bits
+      res = (PromotedObject*)oopDesc::decode_heap_oop(_data._narrow_next);
+    } else {
+      res = (PromotedObject*)(_next & next_mask);
+    }
+    assert(oop(res)->is_oop_or_null(true /* ignore mark word */), "Not an oop?");
+    return res;
   }
   inline void setNext(PromotedObject* x) {
-    assert(((intptr_t)x & ~next_mask) == 0,
-           "Conflict in bit usage, "
-           " or insufficient alignment of objects");
-    _next |= (intptr_t)x;
+    assert(((intptr_t)x & ~next_mask) == 0, "Conflict in bit usage, "
+           "or insufficient alignment of objects");
+    if (UseCompressedOops) {
+      assert(_data._narrow_next == 0, "Overwrite?");
+      _data._narrow_next = oopDesc::encode_heap_oop(oop(x));
+    } else {
+      _next |= (intptr_t)x;
+    }
+    assert(!((FreeChunk*)this)->isFree(), "Error");
   }
   inline void setPromotedMark() {
     _next |= promoted_mask;
+    assert(!((FreeChunk*)this)->isFree(), "Error");
   }
   inline bool hasPromotedMark() const {
+    assert(!((FreeChunk*)this)->isFree(), "Error");
     return (_next & promoted_mask) == promoted_mask;
   }
   inline void setDisplacedMark() {
     _next |= displaced_mark;
+    assert(!((FreeChunk*)this)->isFree(), "Error");
   }
   inline bool hasDisplacedMark() const {
+    assert(!((FreeChunk*)this)->isFree(), "Error");
     return (_next & displaced_mark) != 0;
   }
-  inline void clearNext()        { _next = 0; }
+  inline void clearNext()        {
+    _next = 0;
+    assert(!((FreeChunk*)this)->isFree(), "Error");
+  }
   debug_only(void *next_addr() { return (void *) &_next; })
 };
 
