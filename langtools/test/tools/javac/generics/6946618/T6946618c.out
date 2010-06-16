@@ -1,0 +1,4 @@
+T6946618c.java:13:24: compiler.err.type.found.req: ? extends java.lang.String, class or interface without bounds
+T6946618c.java:14:24: compiler.err.type.found.req: ? super java.lang.String, class or interface without bounds
+T6946618c.java:15:24: compiler.err.type.found.req: ?, class or interface without bounds
+3 errors
