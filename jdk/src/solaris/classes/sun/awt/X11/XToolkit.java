@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1961,7 +1961,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     static long reset_time_utc;
-    static final long WRAP_TIME_MILLIS = Integer.MAX_VALUE;
+    static final long WRAP_TIME_MILLIS = 0x00000000FFFFFFFFL;
 
     /*
      * This function converts between the X server time (number of milliseconds
