@@ -352,9 +352,6 @@ java/lang/management/RuntimeMXBean/UpTime.java			generic-all
 # Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
 java/lang/Runtime/exec/SleepyCat.java				generic-all
 
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/ClassLoader/defineClass/DefineClassByteBuffer.java	generic-all
-
 # Fedora 9 32bit, -client, samevm, Error while cleaning up threads after test
 java/lang/management/ThreadMXBean/Locks.java			generic-all
 
