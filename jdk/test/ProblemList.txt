@@ -740,9 +740,6 @@ com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
 #    at SetLastModified.main(SetLastModified.java:107)
 java/io/File/SetLastModified.java                               generic-all
 
-# Fails on Fedora 9 x86, address in use
-java/nio/channels/Selector/SelectWrite.java			generic-all
-
 # Fails on Windows 2000,  times out
 java/nio/channels/FileChannel/Transfer.java			generic-all
 
@@ -755,9 +752,6 @@ com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
 
 # Triggers a hotspot crash on Fedora 9 32bit -server and Windows X64  samevm
 sun/nio/cs/TestUTF8.java					generic-all
-
-# Solaris sparc, socket timeout
-java/nio/channels/spi/SelectorProvider/inheritedChannel/run_tests.sh generic-all
 
 # Runtime exception on windows X64, samevm mode
 java/nio/channels/Selector/WakeupNow.java			generic-all
@@ -817,15 +811,6 @@ java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
 # Timeouts etc. on Window
 java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
 java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
-
-# Gets java.net.BindException alot (static port number?)
-java/nio/channels/SocketChannel/VectorIO.java		 	generic-all
-
-# Solaris i586 java.net.BindExceptions
-java/nio/channels/SocketChannel/VectorParams.java	 	solaris-all
-
-# Linux i586 address already in use, samevm issues
-java/nio/channels/SocketChannel/Write.java		 	generic-all
 
 # Fails on all platforms due to overlap of JDK jar file contents:
 sun/nio/cs/Test4200310.sh				 	generic-all
