@@ -174,10 +174,6 @@ java/beans/Statement/Test4653179.java				generic-all
 java/beans/XMLEncoder/Test4625418.java				solaris-sparc
 
 # Problems with samevm and setting security manager (speculation partially)
-java/beans/Beans/Test4080522.java				generic-all
-java/beans/EventHandler/Test6277246.java			generic-all
-java/beans/EventHandler/Test6277266.java			generic-all
-java/beans/Introspector/Test6277246.java			generic-all
 java/beans/Introspector/4168475/Test4168475.java		generic-all
 java/beans/Introspector/4520754/Test4520754.java		generic-all
 java/beans/Introspector/6380849/TestBeanInfo.java		generic-all
@@ -344,9 +340,6 @@ java/io/StreamTokenizer/Comment.java			 	generic-all
 # Some of these tests (like java/lang/management) may just need to be marked
 #   othervm, but that is partially speculation.
 
-# Samevm failure on OpenSolaris, security manager?
-java/lang/ClassLoader/UninitializedParent.java			generic-all
-
 # Times out on solaris 10 sparc
 java/lang/ClassLoader/Assert.java				generic-all
 
@@ -360,11 +353,7 @@ java/lang/management/RuntimeMXBean/UpTime.java			generic-all
 java/lang/Runtime/exec/SleepyCat.java				generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
-java/lang/annotation/ParameterAnnotations.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
 java/lang/ClassLoader/defineClass/DefineClassByteBuffer.java	generic-all
-java/lang/ClassLoader/findSystemClass/Loader.java		generic-all
 
 # Fedora 9 32bit, -client, samevm, Error while cleaning up threads after test
 java/lang/management/ThreadMXBean/Locks.java			generic-all
@@ -408,7 +397,6 @@ java/lang/reflect/Proxy/returnTypes/Test.java			generic-all
 java/lang/Runtime/exec/LotsOfOutput.java			generic-all
 java/lang/System/ExitFinalizersAndJIT.java			generic-all
 java/lang/System/finalization/FinThreads.java			generic-all
-java/lang/System/IgnoreNullSecurityManager.java			generic-all
 java/lang/Thread/GenerifyStackTraces.java			generic-all
 java/lang/Thread/StackTraces.java				generic-all
 java/lang/ThreadGroup/Daemon.java				generic-all
@@ -1247,7 +1235,6 @@ java/util/logging/ParentLoggersTest.java			generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
 java/util/ResourceBundle/Bug4168625Test.java			generic-all
-java/util/ResourceBundle/Bug6359330.java			generic-all
 java/util/ResourceBundle/TestBug4179766.java			generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
