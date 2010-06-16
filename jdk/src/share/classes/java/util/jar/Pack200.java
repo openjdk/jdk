@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003,2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,9 +236,10 @@ public abstract class Pack200 {
          * input file to be transmitted in the segment, along with the size
          * of its name and other transmitted properties.
          * <p>
-         * The default is 1000000 (a million bytes).  This allows input JAR files
-         * of moderate size to be transmitted in one segment.  It also puts
-         * a limit on memory requirements for packers and unpackers.
+         * The default is -1, which means the packer will always create a single
+         * segment output file. In cases where extremely large output files are
+         * generated, users are strongly encouraged to use segmenting or break
+         * up the input file into smaller JARs.
          * <p>
          * A 10Mb JAR packed without this limit will
          * typically pack about 10% smaller, but the packer may require
