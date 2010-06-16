@@ -1,0 +1,116 @@
+/*
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+#include "GraphicsPrimitiveMgr.h"
+#include "Region.h"
+#include "Trace.h"
+#include "X11SurfaceData.h"
+
+/*#include <xcb/xcb.h>*/
+#include <Xrender.h>
+
+#ifndef RepeatNone  /* added in 0.10 */
+#define RepeatNone    0
+#define RepeatNormal  1
+#define RepeatPad     2
+#define RepeatReflect 3
+#endif
+
+
+#include <sys/uio.h>
+#include <dlfcn.h>
+#include <setjmp.h>
+
+#ifndef HEADLESS
+jfieldID pictID;
+jfieldID xidID;
+jfieldID blitMaskPMID;
+jfieldID blitMaskPictID;
+#endif /* !HEADLESS */
+
+JNIEXPORT void JNICALL
+   Java_sun_java2d_xr_XRSurfaceData_initXRPicture(JNIEnv *env, jobject xsd,
+                                                  jlong pXSData,
+                                                  jint pictFormat)
+{
+#ifndef HEADLESS
+
+  X11SDOps *xsdo;
+  XRenderPictFormat *fmt;
+
+  J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_initXRender");
+
+  xsdo = (X11SDOps *) jlong_to_ptr(pXSData);
+  if (xsdo == NULL) {
+      return;
+  }
+
+  if (xsdo->xrPic == None) {
+      XRenderPictureAttributes pict_attr;
+      pict_attr.repeat = RepeatNone;
+      fmt = XRenderFindStandardFormat(awt_display, pictFormat);
+      xsdo->xrPic =
+         XRenderCreatePicture(awt_display, xsdo->drawable, fmt,
+                              CPRepeat, &pict_attr);
+  }
+
+  (*env)->SetIntField (env, xsd, pictID, xsdo->xrPic);
+  (*env)->SetIntField (env, xsd, xidID, xsdo->drawable);
+#endif /* !HEADLESS */
+}
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_xr_XRSurfaceData_initIDs(JNIEnv *env, jclass xsd)
+{
+#ifndef HEADLESS
+  J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_initIDs");
+
+  pictID = (*env)->GetFieldID(env, xsd, "picture", "I");
+  xidID = (*env)->GetFieldID(env, xsd, "xid", "I");
+
+  XShared_initIDs(env, JNI_FALSE);
+#endif /* !HEADLESS */
+}
+
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_xr_XRSurfaceData_XRInitSurface(JNIEnv *env, jclass xsd,
+                                               jint depth,
+                                               jint width, jint height,
+                                               jlong drawable, jint pictFormat)
+{
+#ifndef HEADLESS
+    X11SDOps *xsdo;
+
+    J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_initSurface");
+
+    xsdo = X11SurfaceData_GetOps(env, xsd);
+    if (xsdo == NULL) {
+        return;
+    }
+
+    XShared_initSurface(env, xsdo, depth, width, height, drawable);
+#endif /* !HEADLESS */
+}
