@@ -1234,10 +1234,6 @@ java/util/logging/LoggingNIOChange.java 			generic-all
 java/util/logging/ParentLoggersTest.java			generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
-java/util/ResourceBundle/Bug4168625Test.java			generic-all
-java/util/ResourceBundle/TestBug4179766.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
 java/util/WeakHashMap/GCDuringIteration.java			generic-all
 
 # Possible missing input stream close()? Causes samevm issues on windows
