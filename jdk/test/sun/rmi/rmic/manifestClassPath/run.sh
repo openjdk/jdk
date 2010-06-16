@@ -23,7 +23,7 @@
 
 #!/bin/sh
 # @test
-# @bug 6473331
+# @bug 6473331 6485027 6934615
 # @summary Test handling of the Class-Path attribute in jar file manifests
 #          for the rmic tool
 # @author Andrey Ozerov
@@ -65,26 +65,23 @@ EOF
 
 Sys "$javac" pkg/A.java pkg/B.java
 
-# NOTE: Certain lines below are commented out in order to work around
-# bug 6485027, with alternative lines added as part of the workaround
-# as indicated.  In particular, the mutally referential JAR files are
-# placed in the same directory instead of different directories, and
-# javac is not expected to handle the extensions directories cases.
+# NOTE: Previously, some lines were commented out and alternative lines
+# provided, to work around javac bug 6485027. That bug, and related rmic
+# bug 6934615 have now been fixed, so most of the workarounds have been
+# removed. However, javac still does not evaluate jar class paths on
+# the bootclasspath, including -extdirs.
 
-#MkManifestWithClassPath "sub/B.zip"
-MkManifestWithClassPath "B.zip"				# 6485027 workaround
+MkManifestWithClassPath "sub/B.zip"
 Sys "$jar" cmf MANIFEST.MF A.jar pkg/A.class
 
-#MkManifestWithClassPath "../A.jar"
-MkManifestWithClassPath "A.jar"				# 6485027 workaround
+MkManifestWithClassPath "../A.jar"
 Sys "$jar" cmf MANIFEST.MF B.zip pkg/B.class
 
 Sys rm -rf pkg
 Sys mkdir jars
 Sys mv A.jar jars/.
-#Sys mkdir jars/sub
-#Sys mv B.zip jars/sub/.
-Sys mv B.zip jars/.					# 6485027 workaround
+Sys mkdir jars/sub
+Sys mv B.zip jars/sub/.
 
 cat >MainI.java <<EOF
 import pkg.*;
@@ -121,26 +118,22 @@ Success "$java"  -classpath "jars/A.jar${PS}." Main
 
 Sys rm -f Main.class MainI.class Main_Stub.class
 
-#Success "$javac" -classpath "jars/sub/B.zip"       Main.java MainI.java
-#Success "$rmic"  -classpath "jars/sub/B.zip${PS}." Main
-#Success "$java"  -classpath "jars/sub/B.zip${PS}." Main
-Success "$javac" -classpath "jars/B.zip"       \
-				Main.java MainI.java	# 6485027 workaround
-Success "$rmic"  -classpath "jars/B.zip${PS}." Main	# 6485027 workaround
-Success "$java"  -classpath "jars/B.zip${PS}." Main	# 6485027 workaround
+Success "$javac" -classpath "jars/sub/B.zip"       Main.java MainI.java
+Success "$rmic"  -classpath "jars/sub/B.zip${PS}." Main
+Success "$java"  -classpath "jars/sub/B.zip${PS}." Main
 
 #Sys rm -f Main.class MainI.class Main_Stub.class
-Sys rm -f Main_Stub.class				# 6485027 workaround
+Sys rm -f Main_Stub.class				# javac -extdirs workaround
 
 #Success "$javac" -extdirs "jars" -classpath None Main.java MainI.java
 Success "$rmic"  -extdirs "jars" -classpath .    Main
 Success "$java"  -Djava.ext.dirs="jars" -cp .    Main
 
-#Sys rm -f Main_Stub.class
-#
+Sys rm -f Main_Stub.class
+
 #Success "$javac" -extdirs "jars/sub" -classpath None Main.java MainI.java
-#Success "$rmic"  -extdirs "jars/sub" -classpath . Main
-#Success "$java"  -Djava.ext.dirs="jars/sub" -cp . Main
+Success "$rmic"  -extdirs "jars/sub" -classpath . Main
+Success "$java"  -Djava.ext.dirs="jars/sub" -cp . Main
 
 Cleanup
 

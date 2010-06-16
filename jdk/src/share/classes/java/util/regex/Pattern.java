@@ -29,6 +29,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.CharacterIterator;
 import java.text.Normalizer;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -200,8 +201,9 @@ import java.util.Arrays;
  *     <td>Equivalent to java.lang.Character.isMirrored()</td></tr>
  *
  * <tr><th>&nbsp;</th></tr>
- * <tr align="left"><th colspan="2" id="unicode">Classes for Unicode blocks and categories</th></tr>
- *
+ * <tr align="left"><th colspan="2" id="unicode">Classes for Unicode scripts, blocks and categories</th></tr>
+ * * <tr><td valign="top" headers="construct unicode"><tt>\p{IsLatin}</tt></td>
+ *     <td headers="matches">A Latin&nbsp;script character (simple <a href="#ubc">script</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{InGreek}</tt></td>
  *     <td headers="matches">A character in the Greek&nbsp;block (simple <a href="#ubc">block</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{Lu}</tt></td>
@@ -527,25 +529,40 @@ import java.util.Arrays;
  * while not equal, compile into the same pattern, which matches the character
  * with hexadecimal value <tt>0x2014</tt>.
  *
- * <a name="ubc"> <p>Unicode blocks and categories are written with the
- * <tt>\p</tt> and <tt>\P</tt> constructs as in
- * Perl. <tt>\p{</tt><i>prop</i><tt>}</tt> matches if the input has the
- * property <i>prop</i>, while <tt>\P{</tt><i>prop</i><tt>}</tt> does not match if
- * the input has that property.  Blocks are specified with the prefix
- * <tt>In</tt>, as in <tt>InMongolian</tt>.  Categories may be specified with
- * the optional prefix <tt>Is</tt>: Both <tt>\p{L}</tt> and <tt>\p{IsL}</tt>
- * denote the category of Unicode letters.  Blocks and categories can be used
- * both inside and outside of a character class.
- *
+ * <a name="ubc">
+ * <p>Unicode scripts, blocks and categories are written with the <tt>\p</tt> and
+ * <tt>\P</tt> constructs as in Perl. <tt>\p{</tt><i>prop</i><tt>}</tt> matches if
+ * the input has the property <i>prop</i>, while <tt>\P{</tt><i>prop</i><tt>}</tt>
+ * does not match if the input has that property.
+ * <p>
+ * Scripts are specified either with the prefix {@code Is}, as in
+ * {@code IsHiragana}, or by using  the {@code script} keyword (or its short
+ * form {@code sc})as in {@code script=Hiragana} or {@code sc=Hiragana}.
+ * <p>
+ * Blocks are specified with the prefix {@code In}, as in
+ * {@code InMongolian}, or by using the keyword {@code block} (or its short
+ * form {@code blk}) as in {@code block=Mongolian} or {@code blk=Mongolian}.
+ * <p>
+ * Categories may be specified with the optional prefix {@code Is}:
+ * Both {@code \p{L}} and {@code \p{IsL}} denote the category of Unicode
+ * letters. Same as scripts and blocks, categories can also be specified
+ * by using the keyword {@code general_category} (or its short form
+ * {@code gc}) as in {@code general_category=Lu} or {@code gc=Lu}.
+ * <p>
+ * Scripts, blocks and categories can be used both inside and outside of a
+ * character class.
  * <p> The supported categories are those of
  * <a href="http://www.unicode.org/unicode/standard/standard.html">
  * <i>The Unicode Standard</i></a> in the version specified by the
  * {@link java.lang.Character Character} class. The category names are those
  * defined in the Standard, both normative and informative.
+ * The script names supported by <code>Pattern</code> are the valid script names
+ * accepted and defined by
+ * {@link java.lang.Character.UnicodeScript#forName(String) UnicodeScript.forName}.
  * The block names supported by <code>Pattern</code> are the valid block names
  * accepted and defined by
  * {@link java.lang.Character.UnicodeBlock#forName(String) UnicodeBlock.forName}.
- *
+ * <p>
  * <a name="jcc"> <p>Categories that behave like the java.lang.Character
  * boolean is<i>methodname</i> methods (except for the deprecated ones) are
  * available through the same <tt>\p{</tt><i>prop</i><tt>}</tt> syntax where
@@ -2488,12 +2505,34 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             name = new String(temp, i, j-i-1);
         }
 
-        if (name.startsWith("In")) {
-            node = unicodeBlockPropertyFor(name.substring(2));
+        int i = name.indexOf('=');
+        if (i != -1) {
+            // property construct \p{name=value}
+            String value = name.substring(i + 1);
+            name = name.substring(0, i).toLowerCase(Locale.ENGLISH);
+            if ("sc".equals(name) || "script".equals(name)) {
+                node = unicodeScriptPropertyFor(value);
+            } else if ("blk".equals(name) || "block".equals(name)) {
+                node = unicodeBlockPropertyFor(value);
+            } else if ("gc".equals(name) || "general_category".equals(name)) {
+                node = charPropertyNodeFor(value);
+            } else {
+                throw error("Unknown Unicode property {name=<" + name + ">, "
+                             + "value=<" + value + ">}");
+            }
         } else {
-            if (name.startsWith("Is"))
+            if (name.startsWith("In")) {
+                // \p{inBlockName}
+                node = unicodeBlockPropertyFor(name.substring(2));
+            } else if (name.startsWith("Is")) {
+                // \p{isGeneralCategory} and \p{isScriptName}
                 name = name.substring(2);
-            node = charPropertyNodeFor(name);
+                node = CharPropertyNames.charPropertyFor(name);
+                if (node == null)
+                    node = unicodeScriptPropertyFor(name);
+            } else {
+                node = charPropertyNodeFor(name);
+            }
         }
         if (maybeComplement) {
             if (node instanceof Category || node instanceof Block)
@@ -2501,6 +2540,21 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             node = node.complement();
         }
         return node;
+    }
+
+
+    /**
+     * Returns a CharProperty matching all characters belong to
+     * a UnicodeScript.
+     */
+    private CharProperty unicodeScriptPropertyFor(String name) {
+        final Character.UnicodeScript script;
+        try {
+            script = Character.UnicodeScript.forName(name);
+        } catch (IllegalArgumentException iae) {
+            throw error("Unknown character script name {" + name + "}");
+        }
+        return new Script(script);
     }
 
     /**
@@ -3563,6 +3617,19 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
         boolean isSatisfiedBy(int ch) {
             return block == Character.UnicodeBlock.of(ch);
+        }
+    }
+
+    /**
+     * Node class that matches a Unicode script
+     */
+    static final class Script extends CharProperty {
+        final Character.UnicodeScript script;
+        Script(Character.UnicodeScript script) {
+            this.script = script;
+        }
+        boolean isSatisfiedBy(int ch) {
+            return script == Character.UnicodeScript.of(ch);
         }
     }
 

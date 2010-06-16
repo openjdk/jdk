@@ -71,7 +71,7 @@ extern int J2DXErrHandler(Display *display, XErrorEvent *xerr);
 extern AwtGraphicsConfigDataPtr
     getGraphicsConfigFromComponentPeer(JNIEnv *env, jobject this);
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
-static jint X11SD_InitWindow(JNIEnv *env, X11SDOps *xsdo);
+
 static int X11SD_FindClip(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
                           X11SDOps *xsdo);
 static int X11SD_ClipToRoot(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
@@ -97,6 +97,54 @@ static XImage * cachedXImage;
 
 #endif /* !HEADLESS */
 
+jboolean XShared_initIDs(JNIEnv *env, jboolean allowShmPixmaps)
+{
+#ifndef HEADLESS
+   union {
+        char c[4];
+        int i;
+    } endian;
+
+    endian.i = 0xff000000;
+    nativeByteOrder = (endian.c[0]) ? MSBFirst : LSBFirst;
+
+    dgaAvailable = JNI_FALSE;
+
+    cachedXImage = NULL;
+
+    if (sizeof(X11RIPrivate) > SD_RASINFO_PRIVATE_SIZE) {
+        JNU_ThrowInternalError(env, "Private RasInfo structure too large!");
+        return JNI_FALSE;
+    }
+
+#ifdef MITSHM
+    if (getenv("NO_AWT_MITSHM") == NULL &&
+        getenv("NO_J2D_MITSHM") == NULL) {
+        char * force;
+        TryInitMITShm(env, &useMitShmExt, &useMitShmPixmaps);
+
+        if(allowShmPixmaps) {
+          useMitShmPixmaps = (useMitShmPixmaps == CAN_USE_MITSHM);
+          force = getenv("J2D_PIXMAPS");
+          if (force != NULL) {
+              if (useMitShmPixmaps && (strcmp(force, "shared") == 0)) {
+                  forceSharedPixmaps = JNI_TRUE;
+              } else if (strcmp(force, "server") == 0) {
+                  useMitShmPixmaps = JNI_FALSE;
+              }
+          }
+        }else {
+          useMitShmPixmaps = JNI_FALSE;
+        }
+    }
+
+    return JNI_TRUE;
+#endif /* MITSHM */
+
+#endif /* !HEADLESS */
+}
+
+
 /*
  * Class:     sun_java2d_x11_X11SurfaceData
  * Method:    initIDs
@@ -107,22 +155,9 @@ Java_sun_java2d_x11_X11SurfaceData_initIDs(JNIEnv *env, jclass xsd,
                                            jclass XORComp, jboolean tryDGA)
 {
 #ifndef HEADLESS
+  if(XShared_initIDs(env, JNI_TRUE))
+  {
     void *lib = 0;
-
-    union {
-        char c[4];
-        int i;
-    } endian;
-
-    endian.i = 0xff000000;
-    nativeByteOrder = (endian.c[0]) ? MSBFirst : LSBFirst;
-
-    cachedXImage = NULL;
-
-    if (sizeof(X11RIPrivate) > SD_RASINFO_PRIVATE_SIZE) {
-        JNU_ThrowInternalError(env, "Private RasInfo structure too large!");
-        return;
-    }
 
     xorCompClass = (*env)->NewGlobalRef(env, XORComp);
 
@@ -130,7 +165,7 @@ Java_sun_java2d_x11_X11SurfaceData_initIDs(JNIEnv *env, jclass xsd,
     /* we use RTLD_NOW because of bug 4032715 */
         lib = dlopen("libsunwjdga.so", RTLD_NOW);
     }
-    dgaAvailable = JNI_FALSE;
+
     if (lib != NULL) {
         JDgaStatus ret = JDGA_FAILED;
         void *sym = dlsym(lib, "JDgaLibInit");
@@ -149,24 +184,7 @@ Java_sun_java2d_x11_X11SurfaceData_initIDs(JNIEnv *env, jclass xsd,
             lib = NULL;
         }
     }
-
-#ifdef MITSHM
-    if (getenv("NO_AWT_MITSHM") == NULL &&
-        getenv("NO_J2D_MITSHM") == NULL) {
-        char * force;
-        TryInitMITShm(env, &useMitShmExt, &useMitShmPixmaps);
-        useMitShmPixmaps = (useMitShmPixmaps == CAN_USE_MITSHM);
-        force = getenv("J2D_PIXMAPS");
-        if (force != NULL) {
-            if (useMitShmPixmaps && (strcmp(force, "shared") == 0)) {
-                forceSharedPixmaps = JNI_TRUE;
-            } else if (strcmp(force, "server") == 0) {
-                useMitShmPixmaps = JNI_FALSE;
-            }
-        }
-    }
-#endif /* MITSHM */
-
+  }
 #endif /* !HEADLESS */
 }
 
@@ -176,7 +194,7 @@ Java_sun_java2d_x11_X11SurfaceData_initIDs(JNIEnv *env, jclass xsd,
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_java2d_x11_X11SurfaceData_isDrawableValid(JNIEnv *env, jobject this)
+Java_sun_java2d_x11_XSurfaceData_isDrawableValid(JNIEnv *env, jobject this)
 {
     jboolean ret = JNI_FALSE;
 
@@ -194,6 +212,21 @@ Java_sun_java2d_x11_X11SurfaceData_isDrawableValid(JNIEnv *env, jobject this)
 }
 
 /*
+ * Class: sun_java2d_x11_X11SurfaceData
+ * Method: isShmPMAvailable
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable(JNIEnv *env, jobject this)
+{
+#if defined(HEADLESS) || !defined(MITSHM)
+    return JNI_FALSE;
+#else
+    return useMitShmPixmaps;
+#endif /* HEADLESS, MITSHM */
+}
+
+/*
  * Class:     sun_java2d_x11_X11SurfaceData
  * Method:    isDgaAvailable
  * Signature: ()Z
@@ -208,30 +241,13 @@ Java_sun_java2d_x11_X11SurfaceData_isDgaAvailable(JNIEnv *env, jobject this)
 #endif /* HEADLESS */
 }
 
-
-/*
- * Class:     sun_java2d_x11_X11SurfaceData
- * Method:    isShmPMAvailable
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable(JNIEnv *env, jobject this)
-{
-#if defined(HEADLESS) || !defined(MITSHM)
-    return JNI_FALSE;
-#else
-    return useMitShmPixmaps;
-#endif /* HEADLESS, MITSHM */
-}
-
-
 /*
  * Class:     sun_java2d_x11_X11SurfaceData
  * Method:    initOps
  * Signature: (Ljava/lang/Object;I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_initOps(JNIEnv *env, jobject xsd,
+Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
                                            jobject peer,
                                            jobject graphicsConfig, jint depth)
 {
@@ -304,6 +320,8 @@ Java_sun_java2d_x11_X11SurfaceData_initOps(JNIEnv *env, jobject xsd,
     } else {
         xsdo->pixelmask = 0xff;
     }
+
+    xsdo->xrPic = None;
 #endif /* !HEADLESS */
 }
 
@@ -313,7 +331,7 @@ Java_sun_java2d_x11_X11SurfaceData_initOps(JNIEnv *env, jobject xsd,
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_flushNativeSurface(JNIEnv *env, jobject xsd)
+Java_sun_java2d_x11_XSurfaceData_flushNativeSurface(JNIEnv *env, jobject xsd)
 {
 #ifndef HEADLESS
     SurfaceDataOps *ops = SurfaceData_GetOps(env, xsd);
@@ -384,6 +402,11 @@ X11SD_Dispose(JNIEnv *env, SurfaceDataOps *ops)
         XFreeGC(awt_display, xsdo->cachedGC);
         xsdo->cachedGC = NULL;
     }
+
+    if(xsdo->xrPic != None) {
+      XRenderFreePicture(awt_display, xsdo->xrPic);
+    }
+
     AWT_UNLOCK();
 #endif /* !HEADLESS */
 }
@@ -393,7 +416,7 @@ X11SD_Dispose(JNIEnv *env, SurfaceDataOps *ops)
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_setInvalid(JNIEnv *env, jobject xsd)
+Java_sun_java2d_x11_XSurfaceData_setInvalid(JNIEnv *env, jobject xsd)
 {
 #ifndef HEADLESS
     X11SDOps *xsdo = (X11SDOps *) SurfaceData_GetOps(env, xsd);
@@ -404,29 +427,10 @@ Java_sun_java2d_x11_X11SurfaceData_setInvalid(JNIEnv *env, jobject xsd)
 #endif /* !HEADLESS */
 }
 
-/*
- * Class:     sun_java2d_x11_X11SurfaceData
- * Method:    initSurface
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_initSurface(JNIEnv *env, jclass xsd,
-                                               jint depth,
-                                               jint width, jint height,
-                                               jlong drawable)
+
+jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width, jint height, jlong drawable)
 {
 #ifndef HEADLESS
-    X11SDOps *xsdo = X11SurfaceData_GetOps(env, xsd);
-    if (xsdo == NULL) {
-        return;
-    }
-
-    if (xsdo->configData->awt_cmap == (Colormap)NULL) {
-        awtJNI_CreateColorData(env, xsdo->configData, 1);
-    }
-    /* color_data will be initialized in awtJNI_CreateColorData for
-       8-bit visuals */
-    xsdo->cData = xsdo->configData->color_data;
 
     if (drawable != (jlong)0) {
         /* Double-buffering */
@@ -452,7 +456,7 @@ Java_sun_java2d_x11_X11SurfaceData_initSurface(JNIEnv *env, jclass xsd,
             if (xsdo->drawable) {
                 xsdo->shmPMData.usingShmPixmap = JNI_TRUE;
                 xsdo->shmPMData.shmPixmap = xsdo->drawable;
-                return;
+                return JNI_TRUE;
             }
         }
 #endif /* MITSHM */
@@ -472,7 +476,40 @@ Java_sun_java2d_x11_X11SurfaceData_initSurface(JNIEnv *env, jclass xsd,
     if (xsdo->drawable == 0) {
         JNU_ThrowOutOfMemoryError(env,
                                   "Can't create offscreen surface");
+        return JNI_FALSE;
     }
+
+    return JNI_TRUE;
+#endif /* !HEADLESS */
+}
+
+
+/*
+ * Class:     sun_java2d_x11_X11SurfaceData
+ * Method:    initSurface
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_java2d_x11_X11SurfaceData_initSurface(JNIEnv *env, jclass xsd,
+                                               jint depth,
+                                               jint width, jint height,
+                                               jlong drawable)
+{
+#ifndef HEADLESS
+    X11SDOps *xsdo = X11SurfaceData_GetOps(env, xsd);
+    if (xsdo == NULL) {
+        return;
+    }
+
+    if (xsdo->configData->awt_cmap == (Colormap)NULL) {
+        awtJNI_CreateColorData(env, xsdo->configData, 1);
+    }
+    /* color_data will be initialized in awtJNI_CreateColorData for
+       8-bit visuals */
+    xsdo->cData = xsdo->configData->color_data;
+
+    XShared_initSurface(env, xsdo, depth, width, height, drawable);
+    xsdo->xrPic = NULL;
 #endif /* !HEADLESS */
 }
 
@@ -718,7 +755,7 @@ jboolean X11SD_CachedXImageFits(jint width, jint height, jint depth,
 }
 #endif /* MITSHM */
 
-static jint X11SD_InitWindow(JNIEnv *env, X11SDOps *xsdo)
+jint X11SD_InitWindow(JNIEnv *env, X11SDOps *xsdo)
 {
     if (xsdo->isPixmap == JNI_TRUE) {
         return SD_FAILURE;
@@ -1568,7 +1605,7 @@ X11SD_ReleasePixmapWithBg(JNIEnv *env, X11SDOps *xsdo)
  * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL
-Java_sun_java2d_x11_X11SurfaceData_XCreateGC
+Java_sun_java2d_x11_XSurfaceData_XCreateGC
     (JNIEnv *env, jclass xsd, jlong pXSData)
 {
     jlong ret;
@@ -1598,7 +1635,7 @@ Java_sun_java2d_x11_X11SurfaceData_XCreateGC
  * Signature: (JIIIILsun/java2d/pipe/Region;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_XResetClip
+Java_sun_java2d_x11_XSurfaceData_XResetClip
     (JNIEnv *env, jclass xsd, jlong xgc)
 {
 #ifndef HEADLESS
@@ -1613,7 +1650,7 @@ Java_sun_java2d_x11_X11SurfaceData_XResetClip
  * Signature: (JIIIILsun/java2d/pipe/Region;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_XSetClip
+Java_sun_java2d_x11_XSurfaceData_XSetClip
     (JNIEnv *env, jclass xsd, jlong xgc,
      jint x1, jint y1, jint x2, jint y2,
      jobject complexclip)
@@ -1688,7 +1725,7 @@ Java_sun_java2d_x11_X11SurfaceData_XSetForeground
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
-Java_sun_java2d_x11_X11SurfaceData_XSetGraphicsExposures
+Java_sun_java2d_x11_XSurfaceData_XSetGraphicsExposures
     (JNIEnv *env, jclass xsd, jlong xgc, jboolean needExposures)
 {
 #ifndef HEADLESS
