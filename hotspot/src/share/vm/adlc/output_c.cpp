@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1382,7 +1382,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
                                           inst_num, unmatched_edge);
         }
         // If new instruction captures bottom type
-        if( root_form->captures_bottom_type() ) {
+        if( root_form->captures_bottom_type(globals) ) {
           // Get bottom type from instruction whose result we are replacing
           fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
         }
@@ -2963,7 +2963,7 @@ void ArchDesc::defineClasses(FILE *fp) {
     used |= instr->define_cisc_version(*this, fp);
 
     // Output code to convert to the short branch version, if applicable
-    used |= instr->define_short_branch_methods(fp);
+    used |= instr->define_short_branch_methods(*this, fp);
   }
 
   // Construct the method called by cisc_version() to copy inputs and operands.
@@ -3708,7 +3708,7 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
 
   // Fill in the bottom_type where requested
-  if ( inst->captures_bottom_type() ) {
+  if ( inst->captures_bottom_type(_globalNames) ) {
     fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
   }
   if( inst->is_ideal_if() ) {
@@ -3762,7 +3762,7 @@ bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
     // Create the MachNode object
     fprintf(fp_cpp, "  %sNode *node = new (C) %sNode();\n", name, name);
     // Fill in the bottom_type where requested
-    if ( this->captures_bottom_type() ) {
+    if ( this->captures_bottom_type(AD.globalNames()) ) {
       fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
     }
 
@@ -3798,7 +3798,7 @@ void InstructForm::declare_short_branch_methods(FILE *fp_hpp) {
 
 //---------------------------define_short_branch_methods-----------------------
 // Build definitions for short branch methods
-bool InstructForm::define_short_branch_methods(FILE *fp_cpp) {
+bool InstructForm::define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp) {
   if (has_short_branch_form()) {
     InstructForm *short_branch = short_branch_form();
     const char   *name         = short_branch->_ident;
@@ -3813,7 +3813,7 @@ bool InstructForm::define_short_branch_methods(FILE *fp_cpp) {
       fprintf(fp_cpp, "  node->_fcnt = _fcnt;\n");
     }
     // Fill in the bottom_type where requested
-    if ( this->captures_bottom_type() ) {
+    if ( this->captures_bottom_type(AD.globalNames()) ) {
       fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
     }
 
