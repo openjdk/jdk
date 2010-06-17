@@ -1205,17 +1205,5 @@ java/util/Locale/LocaleTest.java				generic-all
 # Need to be marked othervm, or changed to be samevm safe
 java/util/WeakHashMap/GCDuringIteration.java			generic-all
 
-# Possible missing input stream close()? Causes samevm issues on windows
-java/util/zip/InfoZip.java				 	generic-all
-
-# Missing a close() on file Test0.zip? windows samevm cascade problem
-java/util/zip/ZipFile/Comment.java                              generic-all
-
-# Suspect missing close() on bad*.zip files, windows cascade errors with samevm
-java/util/zip/ZipFile/CorruptedZipFiles.java			generic-all
-
-# Should be samevm but causes problems with samevm, no details:
-java/util/zip/ZipFile/ManyEntries.java			 	generic-all
-
 ############################################################################
 
