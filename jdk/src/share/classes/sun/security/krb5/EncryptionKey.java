@@ -76,26 +76,6 @@ public class EncryptionKey
 
     private static final boolean DEBUG = Krb5.DEBUG;
 
-    public static int[] getETypes(EncryptionKey[] keys) {
-        int len = keys.length;
-        int[] result = new int[len];
-        int count = 0;  // Number of elements in result. Might be less than
-                        // len if there are keys having the same etype
-        loopi: for (int i=0; i<len; i++) {
-            int eType = keys[i].getEType();
-            for (int j=0; j<count; j++) {
-                if (result[j] == eType) {
-                    continue loopi;
-                }
-            }
-            result[count++] = eType;
-        }
-        if (count != len) {
-            result = Arrays.copyOf(result, count);
-        }
-        return result;
-    }
-
     public synchronized int getEType() {
         return keyType;
     }
@@ -208,24 +188,13 @@ public class EncryptionKey
             etypes = EType.getBuiltInDefaults();
         }
 
-        // set the preferred etype for preauth
-        if ((pa_exists) && (pa_etype != EncryptedData.ETYPE_NULL)) {
-            if (DEBUG) {
-                System.out.println("Pre-Authentication: " +
-                        "Set preferred etype = " + pa_etype);
-            }
-            if (EType.isSupported(pa_etype)) {
-                // reset etypes to preferred value
-                etypes = new int[1];
-                etypes[0] = pa_etype;
-            }
-        }
-
         EncryptionKey[] encKeys = new EncryptionKey[etypes.length];
         for (int i = 0; i < etypes.length; i++) {
             if (EType.isSupported(etypes[i])) {
+                byte[] s2kparams = (pa_exists && etypes[i] == pa_etype)
+                        ? pa_s2kparams : null;
                 encKeys[i] = new EncryptionKey(
-                        stringToKey(password, salt, pa_s2kparams, etypes[i]),
+                        stringToKey(password, salt, s2kparams, etypes[i]),
                         etypes[i], null);
             } else {
                 if (DEBUG) {

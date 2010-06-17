@@ -155,9 +155,13 @@ public class KDC {
          */
         PREAUTH_REQUIRED,
         /**
-         * Onlyy issue TGT in RC4
+         * Only issue TGT in RC4
          */
         ONLY_RC4_TGT,
+        /**
+         * Only use RC4 in preauth, enc-type still using eTypes[0]
+         */
+        ONLY_RC4_PREAUTH,
     };
 
     static {
@@ -905,7 +909,11 @@ public class KDC {
                         ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) {
                     PAData pa;
 
-                    ETypeInfo2 ei2 = new ETypeInfo2(eTypes[0], null, null);
+                    int epa = eTypes[0];
+                    if (options.containsKey(KDC.Option.ONLY_RC4_PREAUTH)) {
+                        epa = EncryptedData.ETYPE_ARCFOUR_HMAC;
+                    }
+                    ETypeInfo2 ei2 = new ETypeInfo2(epa, null, null);
                     DerOutputStream eid = new DerOutputStream();
                     eid.write(DerValue.tag_Sequence, ei2.asn1Encode());
 
@@ -924,7 +932,7 @@ public class KDC {
                         }
                     }
                     if (allOld) {
-                        ETypeInfo ei = new ETypeInfo(eTypes[0], null);
+                        ETypeInfo ei = new ETypeInfo(epa, null);
                         eid = new DerOutputStream();
                         eid.write(DerValue.tag_Sequence, ei.asn1Encode());
                         pa = new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray());
