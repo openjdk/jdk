@@ -1206,16 +1206,6 @@ java/util/Locale/Bug4175998Test.java				generic-all
 java/util/Locale/LocaleTest.java				generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
-java/util/logging/GetGlobalTest.java				generic-all
-java/util/logging/LoggerSubclass.java				generic-all
-java/util/logging/LoggingDeadlock.java				generic-all
-java/util/logging/LoggingDeadlock2.java 			generic-all
-java/util/logging/LoggingMXBeanTest.java			generic-all
-java/util/logging/LoggingMXBeanTest2.java			generic-all
-java/util/logging/LoggingNIOChange.java 			generic-all
-java/util/logging/ParentLoggersTest.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
 java/util/WeakHashMap/GCDuringIteration.java			generic-all
 
 # Possible missing input stream close()? Causes samevm issues on windows
