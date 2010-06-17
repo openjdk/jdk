@@ -356,7 +356,6 @@ public class Credentials {
      * @param princ the client principal. This value cannot be null.
      * @param secretKey the secret key of the client principal.This value
      * cannot be null.
-     * @param password if null, caller is using a keytab
      * @returns the TGT credentials
      */
     public static Credentials acquireTGT(PrincipalName princ,
@@ -373,18 +372,8 @@ public class Credentials {
                         "Cannot have null secretKey to do AS-Exchange");
 
         KrbAsRep asRep = null;
-
-        // The etype field to be placed in AS-REQ. If caller is using keytab,
-        // it must be limited to etypes in keytab. Otherwise, leave it null,
-        // and KrbAsReq will populate it with all supported etypes.
-
-        int[] eTypes = null;
-        if (password == null) {
-            eTypes = EncryptionKey.getETypes(secretKeys);
-        }
-
         try {
-            asRep = sendASRequest(princ, secretKeys, eTypes, null);
+            asRep = sendASRequest(princ, secretKeys, null);
         } catch (KrbException ke) {
             if ((ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) ||
                 (ke.returnCode() == Krb5.KDC_ERR_PREAUTH_REQUIRED)) {
@@ -407,7 +396,7 @@ public class Credentials {
                                 princ.getSalt(), true,
                                 error.getEType(), error.getParams());
                 }
-                asRep = sendASRequest(princ, secretKeys, eTypes, ke.getError());
+                asRep = sendASRequest(princ, secretKeys, ke.getError());
             } else {
                 throw ke;
             }
@@ -417,18 +406,17 @@ public class Credentials {
 
     /**
      * Sends the AS-REQ
-     * @param eTypes not null if caller using keytab
      */
     private static KrbAsRep sendASRequest(PrincipalName princ,
-        EncryptionKey[] secretKeys, int[] eTypes, KRBError error)
+        EncryptionKey[] secretKeys, KRBError error)
         throws KrbException, IOException {
 
         // %%%
         KrbAsReq asReq = null;
         if (error == null) {
-            asReq = new KrbAsReq(princ, secretKeys, eTypes);
+            asReq = new KrbAsReq(princ, secretKeys);
         } else {
-            asReq = new KrbAsReq(princ, secretKeys, eTypes, true,
+            asReq = new KrbAsReq(princ, secretKeys, true,
                         error.getEType(), error.getSalt(), error.getParams());
         }
 

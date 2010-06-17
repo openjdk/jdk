@@ -229,9 +229,7 @@ public class Kinit {
             if (useKeytab) {
                 as_req = new KrbAsReq(skeys, opt,
                                       principal, sname,
-                                      null, null, null,
-                                      EncryptionKey.getETypes(skeys),
-                                      addresses, null);
+                                      null, null, null, null, addresses, null);
             } else {
                 as_req = new KrbAsReq(psswd, opt,
                                       principal, sname,
@@ -259,9 +257,7 @@ public class Kinit {
                 if (useKeytab) {
                     as_req = new KrbAsReq(skeys, true, etype, salt,
                                         s2kparams, opt, principal, sname,
-                                        null, null, null,
-                                        EncryptionKey.getETypes(skeys),
-                                        addresses, null);
+                                        null, null, null, null, addresses, null);
                 } else {
                     as_req = new KrbAsReq(psswd, true, etype, salt,
                                         s2kparams, opt, principal, sname,
