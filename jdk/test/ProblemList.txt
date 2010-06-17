@@ -772,9 +772,6 @@ com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java	generic-all
 # Linux 64bit failures. too many files open
 java/nio/channels/Selector/HelperSlowToDie.java			generic-all
 
-# Timeouts etc. on Window
-java/nio/channels/AsyncCloseAndInterrupt.java		 	windows-all
-
 # Gets java.lang.ExceptionInInitializerError on Windows 2000 (need XP or newer)
 java/nio/channels/AsynchronousChannelGroup/Basic.java	 	windows-5.0
 java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java 	windows-5.0
