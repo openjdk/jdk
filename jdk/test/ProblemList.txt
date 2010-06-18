@@ -337,67 +337,11 @@ java/io/StreamTokenizer/Comment.java			 	generic-all
 
 # jdk_lang
 
-# Some of these tests (like java/lang/management) may just need to be marked
-#   othervm, but that is partially speculation.
-
 # Times out on solaris 10 sparc
 java/lang/ClassLoader/Assert.java				generic-all
 
-# Fedora 9 X64, RuntimeException: MyThread expected to be blocked on lock, but got null
-java/lang/management/ThreadMXBean/ThreadStateTest.java 		generic-all
-
-# RuntimeException: Uptime of the JVM is more than 30 minutes (32 minutes).
-java/lang/management/RuntimeMXBean/UpTime.java			generic-all
-
 # Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
 java/lang/Runtime/exec/SleepyCat.java				generic-all
-
-# Fedora 9 32bit, -client, samevm, Error while cleaning up threads after test
-java/lang/management/ThreadMXBean/Locks.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/management/ClassLoadingMXBean/LoadCounts.java		generic-all
-java/lang/management/ManagementFactory/MBeanServerMXBeanUnsupportedTest.java generic-all
-java/lang/management/ManagementFactory/MXBeanProxyTest.java	generic-all
-java/lang/management/ManagementFactory/ThreadMXBeanProxy.java	generic-all
-java/lang/management/MemoryMXBean/CollectionUsageThreshold.java	generic-all
-java/lang/management/MemoryMXBean/GetMBeanInfo.java		generic-all
-java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
-java/lang/management/MemoryMXBean/MemoryManagement.java		generic-all
-java/lang/management/MemoryMXBean/MemoryTest.java		generic-all
-java/lang/management/MemoryMXBean/Pending.java			generic-all
-
-# Problematic on all platforms (even as othervm)
-java/lang/management/MemoryMXBean/ResetPeakMemoryUsage.java 	generic-all
-
-# Causes jtreg exit samevm issues due to non-String object in system properties
-java/lang/management/RuntimeMXBean/GetSystemProperties.java 	generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/management/RuntimeMXBean/PropertiesTest.java		generic-all
-java/lang/management/ThreadMXBean/AllThreadIds.java		generic-all
-java/lang/management/ThreadMXBean/EnableTest.java		generic-all
-java/lang/management/ThreadMXBean/FindMonitorDeadlock.java	generic-all
-java/lang/management/ThreadMXBean/LockingThread.java		generic-all
-java/lang/management/ThreadMXBean/MonitorDeadlock.java		generic-all
-java/lang/management/ThreadMXBean/MyOwnSynchronizer.java	generic-all
-java/lang/management/ThreadMXBean/SharedSynchronizer.java	generic-all
-java/lang/management/ThreadMXBean/SynchronizerLockingThread.java generic-all
-java/lang/management/ThreadMXBean/ThreadCounts.java		generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/reflect/Proxy/Boxing.java				generic-all
-java/lang/reflect/Proxy/ClassRestrictions.java			generic-all
-java/lang/reflect/Proxy/returnTypes/Test.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/Runtime/exec/LotsOfOutput.java			generic-all
-java/lang/System/ExitFinalizersAndJIT.java			generic-all
-java/lang/System/finalization/FinThreads.java			generic-all
-java/lang/Thread/GenerifyStackTraces.java			generic-all
-java/lang/Thread/StackTraces.java				generic-all
-java/lang/ThreadGroup/Daemon.java				generic-all
-java/lang/ThreadGroup/NullThreadName.java			generic-all
 
 # Times out on solaris sparc -server
 java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
@@ -414,9 +358,6 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 # Access denied messages on windows/mks, filed 6954450
 sun/management/jmxremote/bootstrap/RmiSslNoKeyStoreTest.sh	windows-all
-
-# Filed 6951284, fails on linux 64bit Fedora 9, peak thread count differences
-java/lang/management/ThreadMXBean/ResetPeakThreadCount.java	generic-all
 
 # Started failing on linux and solaris (filed 6950927)
 #   com.sun.tools.attach.AttachNotSupportedException:
@@ -1166,12 +1107,6 @@ tools/jar/index/MetaInf.java				 	windows-all
 #   11 separate stacktraces created... file reuse problem?
 java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
 
-# Recent failure on all platforms
-sun/util/resources/TimeZone/Bug6317929.java			generic-all
-
-# Fails with -ea -esa on all platforms with Assertion error
-java/util/ResourceBundle/Test4300693.java			generic-all
-
 # Failing on all -client 32bit platforms starting with b77? See 6908348.
 java/util/concurrent/BlockingQueue/CancelledProducerConsumerLoops.java generic-all
 
@@ -1197,10 +1132,6 @@ java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
 
 # Failing to close an input stream? "foo", triggers samevm windows failures
 java/util/Formatter/Constructors.java				generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/util/Locale/Bug4175998Test.java				generic-all
-java/util/Locale/LocaleTest.java				generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
 java/util/WeakHashMap/GCDuringIteration.java			generic-all
