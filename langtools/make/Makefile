@@ -40,15 +40,16 @@ SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
 
 SYSTEM_UNAME := $(shell uname)
 
+# Where is unwanted output to be delivered?
+# On Windows, MKS uses the special file "NUL", cygwin uses the customary unix file.
 ifeq ($(SYSTEM_UNAME), Windows_NT)
 DEV_NULL = NUL
 else
+DEV_NULL = /dev/null 
+endif
+
 ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
-DEV_NULL = NUL
 USING_CYGWIN = true
-else
-DEV_NULL = /dev/null
-endif 
 endif
 
 ifdef USING_CYGWIN
