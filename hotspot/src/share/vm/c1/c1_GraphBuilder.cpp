@@ -2530,16 +2530,10 @@ void GraphBuilder::iterate_all_blocks(bool start_in_current_block_for_inlining) 
 }
 
 
-bool GraphBuilder::_is_initialized = false;
 bool GraphBuilder::_can_trap      [Bytecodes::number_of_java_codes];
 bool GraphBuilder::_is_async[Bytecodes::number_of_java_codes];
 
 void GraphBuilder::initialize() {
-  // make sure initialization happens only once (need a
-  // lock here, if we allow the compiler to be re-entrant)
-  if (is_initialized()) return;
-  _is_initialized = true;
-
   // the following bytecodes are assumed to potentially
   // throw exceptions in compiled code - note that e.g.
   // monitorexit & the return bytecodes do not throw
@@ -2855,7 +2849,6 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   BlockList* bci2block = blm.bci2block();
   BlockBegin* start_block = bci2block->at(0);
 
-  assert(is_initialized(), "GraphBuilder must have been initialized");
   push_root_scope(scope, bci2block, start_block);
 
   // setup state for std entry

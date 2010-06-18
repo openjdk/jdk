@@ -304,7 +304,7 @@ void LIRGenerator::block_do_prolog(BlockBegin* block) {
   __ branch_destination(block->label());
 
   if (LIRTraceExecution &&
-      Compilation::current_compilation()->hir()->start()->block_id() != block->block_id() &&
+      Compilation::current()->hir()->start()->block_id() != block->block_id() &&
       !block->is_set(BlockBegin::exception_entry_flag)) {
     assert(block->lir()->instructions_list()->length() == 1, "should come right after br_dst");
     trace_block_entry(block);

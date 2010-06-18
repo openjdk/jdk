@@ -7643,6 +7643,9 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // Pass register number to verify_oop_subroutine
   char* b = new char[strlen(s) + 50];
   sprintf(b, "verify_oop: %s: %s", reg->name(), s);
+#ifdef _LP64
+  push(rscratch1);                    // save r10, trashed by movptr()
+#endif
   push(rax);                          // save rax,
   push(reg);                          // pass register argument
   ExternalAddress buffer((address) b);
@@ -7653,6 +7656,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
+  // Caller pops the arguments (oop, message) and restores rax, r10
 }
 
 
@@ -7767,6 +7771,9 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   char* b = new char[strlen(s) + 50];
   sprintf(b, "verify_oop_addr: %s", s);
 
+#ifdef _LP64
+  push(rscratch1);                    // save r10, trashed by movptr()
+#endif
   push(rax);                          // save rax,
   // addr may contain rsp so we will have to adjust it based on the push
   // we just did
@@ -7789,7 +7796,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
-  // Caller pops the arguments and restores rax, from the stack
+  // Caller pops the arguments (addr, message) and restores rax, r10.
 }
 
 void MacroAssembler::verify_tlab() {
