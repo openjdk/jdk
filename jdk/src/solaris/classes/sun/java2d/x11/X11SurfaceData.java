@@ -46,6 +46,7 @@ import sun.awt.SunHints;
 import sun.awt.SunToolkit;
 import sun.awt.X11ComponentPeer;
 import sun.awt.X11GraphicsConfig;
+import sun.awt.X11GraphicsEnvironment;
 import sun.awt.image.PixelConverter;
 import sun.font.X11TextRenderer;
 import sun.java2d.InvalidPipeException;
@@ -64,7 +65,7 @@ import sun.java2d.pipe.PixelToShapeConverter;
 import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.Region;
 
-public abstract class X11SurfaceData extends SurfaceData {
+public abstract class X11SurfaceData extends XSurfaceData {
     X11ComponentPeer peer;
     X11GraphicsConfig graphicsConfig;
     private RenderLoops solidloops;
@@ -74,8 +75,6 @@ public abstract class X11SurfaceData extends SurfaceData {
     private static native void initIDs(Class xorComp, boolean tryDGA);
     protected native void initSurface(int depth, int width, int height,
                                       long drawable);
-    native boolean isDrawableValid();
-    protected native void flushNativeSurface();
 
     public static final String
         DESC_INT_BGR_X11        = "Integer BGR Pixmap";
@@ -212,7 +211,8 @@ public abstract class X11SurfaceData extends SurfaceData {
     protected static boolean dgaAvailable;
 
     static {
-        if (!GraphicsEnvironment.isHeadless()) {
+       if (!isX11SurfaceDataInitialized() &&
+           !GraphicsEnvironment.isHeadless()) {
             // If a screen magnifier is present, don't attempt to use DGA
             String magPresent = (String) java.security.AccessController.doPrivileged
                 (new sun.security.action.GetPropertyAction("javax.accessibility.screen_magnifier_present"));
@@ -245,7 +245,7 @@ public abstract class X11SurfaceData extends SurfaceData {
                 X11PMBlitLoops.register();
                 X11PMBlitBgLoops.register();
             }
-        }
+       }
     }
 
     /**
@@ -432,11 +432,11 @@ public abstract class X11SurfaceData extends SurfaceData {
                                         cm, drawable, transparency);
     }
 
-    /**
-     * Initializes the native Ops pointer.
-     */
-    private native void initOps(X11ComponentPeer peer,
-                                X11GraphicsConfig gc, int depth);
+//    /**
+//     * Initializes the native Ops pointer.
+//     */
+//    private native void initOps(X11ComponentPeer peer,
+//                                X11GraphicsConfig gc, int depth);
 
     protected X11SurfaceData(X11ComponentPeer peer,
                              X11GraphicsConfig gc,
@@ -613,8 +613,6 @@ public abstract class X11SurfaceData extends SurfaceData {
         return sType;
     }
 
-    public native void setInvalid();
-
     public void invalidate() {
         if (isValid()) {
             setInvalid();
@@ -628,16 +626,9 @@ public abstract class X11SurfaceData extends SurfaceData {
      * X11SurfaceData object.
      */
 
-    private static native long XCreateGC(long pXSData);
-    private static native void XResetClip(long xgc);
-    private static native void XSetClip(long xgc,
-                                        int lox, int loy, int hix, int hiy,
-                                        Region complexclip);
     private static native void XSetCopyMode(long xgc);
     private static native void XSetXorMode(long xgc);
     private static native void XSetForeground(long xgc, int pixel);
-    private static native void XSetGraphicsExposures(long xgc,
-                                                     boolean needExposures);
 
     private long xgc;
     private Region validatedClip;

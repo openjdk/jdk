@@ -1472,7 +1472,7 @@ public class Attr extends JCTree.Visitor {
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
         Type clazztype = attribType(clazz, env);
-        Pair<Scope,Scope> mapping = getSyntheticScopeMapping((ClassType)clazztype);
+        Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype);
         if (!TreeInfo.isDiamond(tree)) {
             clazztype = chk.checkClassType(
                 tree.clazz.pos(), clazztype, true);
@@ -1640,9 +1640,10 @@ public class Attr extends JCTree.Visitor {
                         List<Type> argtypes,
                         List<Type> typeargtypes,
                         boolean reportErrors) {
-        if (clazztype.isErroneous()) {
-            //if the type of the instance creation expression is erroneous
-            //return the erroneous type itself
+        if (clazztype.isErroneous() || mapping == erroneousMapping) {
+            //if the type of the instance creation expression is erroneous,
+            //or something prevented us to form a valid mapping, return the
+            //(possibly erroneous) type unchanged
             return clazztype;
         }
         else if (clazztype.isInterface()) {
@@ -1740,7 +1741,10 @@ public class Attr extends JCTree.Visitor {
      *  inference. The inferred return type of the synthetic constructor IS
      *  the inferred type for the diamond operator.
      */
-    private Pair<Scope, Scope> getSyntheticScopeMapping(ClassType ctype) {
+    private Pair<Scope, Scope> getSyntheticScopeMapping(Type ctype) {
+        if (ctype.tag != CLASS) {
+            return erroneousMapping;
+        }
         Pair<Scope, Scope> mapping =
                 new Pair<Scope, Scope>(ctype.tsym.members(), new Scope(ctype.tsym));
         List<Type> typevars = ctype.tsym.type.getTypeArguments();
@@ -1762,6 +1766,8 @@ public class Attr extends JCTree.Visitor {
         }
         return mapping;
     }
+
+    private final Pair<Scope,Scope> erroneousMapping = new Pair<Scope,Scope>(null, null);
 
     /** Make an attributed null check tree.
      */

@@ -50,6 +50,7 @@ ifeq ($(OSNAME), Windows_NT)
       endif
     endif
   endif
+  EXE_SUFFIX=.exe
 endif
 
 # Root of this test area (important to use full paths in some places)
@@ -105,12 +106,13 @@ endif
 # PRODUCT_HOME is a JPRT variable pointing to a directory containing the output from 
 # make/Makefile
 # For langtools, this is a directory containing build and dist
-# For a control build, this is build/$(PRODUCT)-$(ARCH)/j2sdk-image
+# For a control build, this is build/$(PRODUCT)-$(ARCH)/XYZ-image 
+#	(i.e, j2sdk-image or jdk-module-image)
 ifdef PRODUCT_HOME
   ifeq ($(shell [ -r $(PRODUCT_HOME)/dist/lib/classes.jar ]; echo $$?),0)
     TESTBOOTCLASSPATH = $(PRODUCT_HOME)/dist/lib/classes.jar
   endif
-  ifeq ($(shell [ -r $(PRODUCT_HOME)/lib/tools.jar ]; echo $$?),0)
+  ifeq ($(shell [ -r $(PRODUCT_HOME)/bin/javac$(EXE_SUFFIX) ]; echo $$?),0)
     TESTJAVA = $(PRODUCT_HOME)
   endif
 endif
@@ -148,6 +150,16 @@ ifdef JCK_GROUP_SIZE
 ### 6924287: Jck4Jdk: Allow to configure test group size for group mode via simple command line option
 ###  JCK_RUNTIME_OPTIONS += \
 ###    -jtoptions:-Ejck.env.runtime.testCompile.groupMode.groupSize=$(JCK_GROUP_SIZE)
+endif
+
+# Timeouts -- by default, increase test timeouts when running on JPRT
+ifdef JPRT_JOB_ID
+  ifndef JTREG_TIMEOUT_FACTOR
+    JTREG_TIMEOUT_FACTOR = 3
+  endif
+endif
+ifdef JTREG_TIMEOUT_FACTOR
+  JTREG_OPTIONS += -timeoutFactor:$(JTREG_TIMEOUT_FACTOR)
 endif
 
 # Assertions: some tests show failures when assertions are enabled.

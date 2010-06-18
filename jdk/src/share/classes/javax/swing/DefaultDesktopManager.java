@@ -26,16 +26,12 @@
 
 package javax.swing;
 
-import java.awt.*;
-import java.beans.PropertyVetoException;
-import java.beans.PropertyChangeEvent;
-import javax.swing.border.Border;
-import java.awt.event.ComponentListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-
+import com.sun.awt.AWTUtilities;
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
+
+import java.awt.*;
+import java.beans.PropertyVetoException;
 
 /** This is an implementation of the <code>DesktopManager</code>.
   * It currently implements the basic behaviors for managing
@@ -318,7 +314,10 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
         dragMode = DEFAULT_DRAG_MODE;
         if (p != null) {
             String mode = (String)p.getClientProperty("JDesktopPane.dragMode");
-            if (mode != null && mode.equals("outline")) {
+            Window window = SwingUtilities.getWindowAncestor(f);
+            if (window != null && !AWTUtilities.isWindowOpaque(window)) {
+                dragMode = DEFAULT_DRAG_MODE;
+            } else if (mode != null && mode.equals("outline")) {
                 dragMode = OUTLINE_DRAG_MODE;
             } else if (mode != null && mode.equals("faster")
                     && f instanceof JInternalFrame

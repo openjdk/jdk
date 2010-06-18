@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class ZipException extends IOException {
     private static final long serialVersionUID = 8000196834066748623L;
 
     /**
-     * Constructs an <code>ZipException</code> with <code>null</code>
+     * Constructs a <code>ZipException</code> with <code>null</code>
      * as its error detail message.
      */
     public ZipException() {
@@ -48,7 +48,7 @@ class ZipException extends IOException {
     }
 
     /**
-     * Constructs an <code>ZipException</code> with the specified detail
+     * Constructs a <code>ZipException</code> with the specified detail
      * message.
      *
      * @param   s   the detail message.
