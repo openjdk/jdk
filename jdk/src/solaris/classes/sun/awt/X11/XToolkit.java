@@ -849,7 +849,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     // if _NET_WM_STRUT_PARTIAL is present, we should use its values to detect
                     // if the struts area intersects with screenBounds, however some window
                     // managers don't set this hint correctly, so we just get intersection with windowBounds
-                    if (windowBounds.intersects(screenBounds))
+                    if (windowBounds != null && windowBounds.intersects(screenBounds))
                     {
                         insets.left = Math.max((int)Native.getLong(native_ptr, 0), insets.left);
                         insets.right = Math.max((int)Native.getLong(native_ptr, 1), insets.right);
