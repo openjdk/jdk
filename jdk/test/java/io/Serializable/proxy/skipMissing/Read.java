@@ -49,20 +49,24 @@ class B implements Serializable {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin = new ObjectInputStream(
-            new FileInputStream("tmp.ser"));
-        A a = (A) oin.readObject();
-        if (! (a.a.equals("a") && a.z.equals("z"))) {
-            throw new Error("A fields corrupted");
-        }
-        B b = (B) oin.readObject();
-        if (! b.s.equals("s")) {
-            throw new Error("B fields corrupted");
-        }
+        FileInputStream in = new FileInputStream("tmp.ser");
         try {
-            oin.readObject();
-            throw new Error("proxy read should not succeed");
-        } catch (ClassNotFoundException ex) {
+            ObjectInputStream oin = new ObjectInputStream(in);
+            A a = (A) oin.readObject();
+            if (! (a.a.equals("a") && a.z.equals("z"))) {
+                throw new Error("A fields corrupted");
+            }
+            B b = (B) oin.readObject();
+            if (! b.s.equals("s")) {
+                throw new Error("B fields corrupted");
+            }
+            try {
+                oin.readObject();
+                throw new Error("proxy read should not succeed");
+            } catch (ClassNotFoundException ex) {
+            }
+        } finally {
+            in.close();
         }
     }
 }

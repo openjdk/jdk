@@ -196,80 +196,6 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 java/io/BufferedReader/BigMark.java			 	generic-all
 java/io/BufferedReader/ReadLineSync.java		 	generic-all
 
-# One of these is leaving "a.ser" file open, windows samevm
-java/io/Serializable/duplicateSerialFields/Setup.java		generic-all
-java/io/Serializable/duplicateSerialFields/Test.java		generic-all
-
-# One of these leaving foo.ser open, windows samevm problem
-java/io/Serializable/enum/constantSubclasses/Read.java		generic-all
-java/io/Serializable/enum/constantSubclasses/Write.java		generic-all
-java/io/Serializable/enum/missingConstant/Read.java		generic-all
-java/io/Serializable/enum/missingConstant/Write.java		generic-all
-
-# This is leaving subtest1.tmp open, windows samevm problem
-java/io/Serializable/oldTests/AnnotateClass.java		generic-all
-
-# One or more of these leave a piotest* file open, windows samevm
-java/io/Serializable/oldTests/ArrayFields.java			generic-all
-java/io/Serializable/oldTests/ArraysOfArrays.java		generic-all
-java/io/Serializable/oldTests/BinaryTree.java			generic-all
-java/io/Serializable/oldTests/CircularList.java			generic-all
-java/io/Serializable/oldTests/SerializeWithException.java	generic-all
-java/io/Serializable/oldTests/SimpleArrays.java			generic-all
-java/io/Serializable/oldTests/WritePrimitive.java		generic-all
-
-# Missing close on file 0.ser, windows samevm
-java/io/Serializable/enum/badResolve/Read.java			generic-all
-java/io/Serializable/enum/badResolve/Write.java			generic-all
-
-# One of these tests is leaving parents.ser open, windows samevm
-java/io/Serializable/parents/EvolvedClass.java			generic-all
-java/io/Serializable/parents/OriginalClass.java			generic-all
-
-# One of these tests is leaving file foo.ser and/or bar.ser open, windows samevm
-java/io/Serializable/fieldTypeString/Read.java			generic-all
-java/io/Serializable/fieldTypeString/Write.java			generic-all
-
-# One of these tests is leaving tmp.ser file open, windows samevm
-java/io/Serializable/ClassCastExceptionDetail/Read.java		generic-all
-java/io/Serializable/ClassCastExceptionDetail/Write.java	generic-all
-java/io/Serializable/GetField/Read.java				generic-all
-java/io/Serializable/GetField/Read2.java			generic-all
-java/io/Serializable/GetField/Write.java			generic-all
-java/io/Serializable/PutField/Read.java				generic-all
-java/io/Serializable/PutField/Read2.java			generic-all
-java/io/Serializable/PutField/Write.java			generic-all
-java/io/Serializable/PutField/Write2.java			generic-all
-java/io/Serializable/arraySuidConflict/Read.java		generic-all
-java/io/Serializable/arraySuidConflict/Write.java		generic-all
-java/io/Serializable/backRefCNFException/Read.java		generic-all
-java/io/Serializable/backRefCNFException/Write.java		generic-all
-java/io/Serializable/class/Test.java				generic-all
-java/io/Serializable/evolution/AddedExternField/ReadAddedField.java generic-all
-java/io/Serializable/evolution/AddedExternField/WriteAddedField.java generic-all
-java/io/Serializable/evolution/AddedExternField/run.sh		generic-all
-java/io/Serializable/evolution/AddedField/ReadAddedField.java	generic-all
-java/io/Serializable/evolution/AddedField/WriteAddedField.java	generic-all
-java/io/Serializable/evolution/AddedSuperClass/ReadAddedSuperClass.java	generic-all
-java/io/Serializable/evolution/AddedSuperClass/ReadAddedSuperClass2.java generic-all
-java/io/Serializable/evolution/AddedSuperClass/WriteAddedSuperClass.java generic-all
-java/io/Serializable/proxy/skipMissing/Read.java		generic-all
-java/io/Serializable/proxy/skipMissing/Write.java		generic-all
-java/io/Serializable/readObjectNoData/Read.java			generic-all
-java/io/Serializable/readObjectNoData/Write.java		generic-all
-java/io/Serializable/skipWriteObject/Read.java			generic-all
-java/io/Serializable/skipWriteObject/Write.java			generic-all
-java/io/Serializable/skippedObjCNFException/Read.java		generic-all
-java/io/Serializable/skippedObjCNFException/Write.java		generic-all
-java/io/Serializable/stopCustomDeserialization/Read.java	generic-all
-java/io/Serializable/stopCustomDeserialization/Write.java	generic-all
-java/io/Serializable/unresolvedClassDesc/Read.java		generic-all
-java/io/Serializable/unresolvedClassDesc/Write.java		generic-all
-java/io/Serializable/unshared/Read.java				generic-all
-java/io/Serializable/unshared/Write.java			generic-all
-java/io/Serializable/wrongReturnTypes/Read.java			generic-all
-java/io/Serializable/wrongReturnTypes/Write.java		generic-all
-
 # Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
 java/io/DataInputStream/OpsAfterClose.java		 	generic-all
 
@@ -322,13 +248,6 @@ java/io/RandomAccessFile/WriteUTF.java                          generic-all
 java/io/RandomAccessFile/skipBytes/SkipBytes.java	 	generic-all
 java/io/readBytes/MemoryLeak.java			 	generic-all
 java/io/readBytes/ReadBytesBounds.java			 	generic-all 
-
-# Missing close on fields.ser, windows samevm
-java/io/Serializable/checkModifiers/CheckModifiers.java		generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/Serializable/auditStreamSubclass/AuditStreamSubclass.java generic-all
-java/io/Serializable/proxy/Basic.java			 	generic-all
 
 # Possibly not doing a close() on input.txt, windows samevm issues.
 java/io/StreamTokenizer/Comment.java			 	generic-all
