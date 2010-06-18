@@ -150,6 +150,8 @@ class ObjectSynchronizer : AllStatic {
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
   static void deflate_idle_monitors();
+  static bool deflate_monitor(ObjectMonitor* mid, oop obj, ObjectMonitor** FreeHeadp,
+                              ObjectMonitor** FreeTailp);
   static void oops_do(OopClosure* f);
 
   // debugging
