@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,16 @@ package sun.dyn;
 import java.dyn.CallSite;
 import java.dyn.MethodHandle;
 import java.dyn.MethodType;
+import java.dyn.MethodHandles.Lookup;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import static sun.dyn.MethodHandleNatives.Constants.*;
+import static sun.dyn.MethodHandleImpl.IMPL_LOOKUP;
 
 /**
  * The JVM interface for the method handles package is all here.
+ * This is an interface internal and private to an implemetantion of JSR 292.
+ * <em>This class is not part of the JSR 292 standard.</em>
  * @author jrose
  */
 class MethodHandleNatives {
@@ -60,8 +64,14 @@ class MethodHandleNatives {
     /** Initialize a method type, once per form. */
     static native void init(MethodType self);
 
+    /** Tell the JVM about a class's bootstrap method. */
+    static native void registerBootstrap(Class<?> caller, MethodHandle bootstrapMethod);
+
+    /** Ask the JVM about a class's bootstrap method. */
+    static native MethodHandle getBootstrap(Class<?> caller);
+
     /** Tell the JVM that we need to change the target of an invokedynamic. */
-    static native void linkCallSite(CallSite site, MethodHandle target);
+    static native void setCallSiteTarget(CallSite site, MethodHandle target);
 
     /** Fetch the vmtarget field.
      *  It will be sanitized as necessary to avoid exposing non-Java references.
@@ -114,22 +124,28 @@ class MethodHandleNatives {
      */
     static final int JVM_STACK_MOVE_UNIT;
 
+    /** Which conv-ops are implemented by the JVM? */
+    static final int CONV_OP_IMPLEMENTED_MASK;
+
     private static native void registerNatives();
     static {
         boolean JVM_SUPPORT_;
         int     JVM_PUSH_LIMIT_;
         int     JVM_STACK_MOVE_UNIT_;
+        int     CONV_OP_IMPLEMENTED_MASK_;
         try {
             registerNatives();
             JVM_SUPPORT_ = true;
             JVM_PUSH_LIMIT_ = getConstant(Constants.GC_JVM_PUSH_LIMIT);
             JVM_STACK_MOVE_UNIT_ = getConstant(Constants.GC_JVM_STACK_MOVE_UNIT);
+            CONV_OP_IMPLEMENTED_MASK_ = getConstant(Constants.GC_CONV_OP_IMPLEMENTED_MASK);
             //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
         } catch (UnsatisfiedLinkError ee) {
             // ignore; if we use init() methods later we'll see linkage errors
             JVM_SUPPORT_ = false;
             JVM_PUSH_LIMIT_ = 3;  // arbitrary
             JVM_STACK_MOVE_UNIT_ = -1;  // arbitrary
+            CONV_OP_IMPLEMENTED_MASK_ = 0;
             //System.out.println("Warning: Running with JVM_SUPPORT=false");
             //System.out.println(ee);
             JVM_SUPPORT = JVM_SUPPORT_;
@@ -140,6 +156,9 @@ class MethodHandleNatives {
         JVM_SUPPORT = JVM_SUPPORT_;
         JVM_PUSH_LIMIT = JVM_PUSH_LIMIT_;
         JVM_STACK_MOVE_UNIT = JVM_STACK_MOVE_UNIT_;
+        if (CONV_OP_IMPLEMENTED_MASK_ == 0)
+            CONV_OP_IMPLEMENTED_MASK_ = DEFAULT_CONV_OP_IMPLEMENTED_MASK;
+        CONV_OP_IMPLEMENTED_MASK = CONV_OP_IMPLEMENTED_MASK_;
     }
 
     // All compile-time constants go here.
@@ -149,7 +168,8 @@ class MethodHandleNatives {
         // MethodHandleImpl
         static final int // for getConstant
                 GC_JVM_PUSH_LIMIT = 0,
-                GC_JVM_STACK_MOVE_UNIT = 1;
+                GC_JVM_STACK_MOVE_UNIT = 1,
+                GC_CONV_OP_IMPLEMENTED_MASK = 2;
         static final int
                 ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
                 ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
@@ -206,9 +226,8 @@ class MethodHandleNatives {
             CONV_STACK_MOVE_MASK  = (1 << (32 - CONV_STACK_MOVE_SHIFT)) - 1;
 
         /** Which conv-ops are implemented by the JVM? */
-        static final int CONV_OP_IMPLEMENTED_MASK =
-                // TODO: The following expression should be replaced by
-                // a JVM query.
+        static final int DEFAULT_CONV_OP_IMPLEMENTED_MASK =
+                // Value to use if the corresponding JVM query fails.
                 ((1<<OP_RETYPE_ONLY)
                 |(1<<OP_RETYPE_RAW)
                 |(1<<OP_CHECK_CAST)
@@ -218,7 +237,7 @@ class MethodHandleNatives {
                 |(1<<OP_ROT_ARGS)
                 |(1<<OP_DUP_ARGS)
                 |(1<<OP_DROP_ARGS)
-                //|(1<<OP_SPREAD_ARGS) // FIXME: Check JVM assembly code.
+                //|(1<<OP_SPREAD_ARGS)
                 );
 
         /**
@@ -263,4 +282,26 @@ class MethodHandleNatives {
     static {
         if (JVM_SUPPORT)  verifyConstants();
     }
+
+    // Up-calls from the JVM.
+    // These must NOT be public.
+
+    /**
+     * The JVM is linking an invokedynamic instruction.  Create a reified call site for it.
+     */
+    static CallSite makeDynamicCallSite(MethodHandle bootstrapMethod,
+                                        String name, MethodType type,
+                                        Object info,
+                                        MemberName callerMethod, int callerBCI) {
+        return CallSiteImpl.makeSite(bootstrapMethod, name, type, info, callerMethod, callerBCI);
+    }
+
+    /**
+     * The JVM wants a pointer to a MethodType.  Oblige it by finding or creating one.
+     */
+    static MethodType findMethodHandleType(Class<?> rtype, Class<?>[] ptypes) {
+        MethodType.genericMethodType(0);  // trigger initialization
+        return MethodTypeImpl.makeImpl(Access.TOKEN, rtype, ptypes, true);
+    }
+
 }
