@@ -79,7 +79,7 @@ public class ResolveProxyClass {
              * code, and it should be the first loader on the stack when
              * ObjectInputStream.resolveProxyClass gets executed.
              */
-            ClassLoader expectedLoader = ClassLoader.getSystemClassLoader();
+            ClassLoader expectedLoader = ResolveProxyClass.class.getClassLoader();
 
             TestObjectInputStream in = new TestObjectInputStream();
             Class proxyClass = in.resolveProxyClass(

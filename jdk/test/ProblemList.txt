@@ -187,73 +187,6 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 
 ############################################################################
 
-# jdk_io
-
-# Many of these tests have a tendency to leave input streams open, which
-#  will cause following tests to be failures when used in samevm mode.
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/BufferedReader/BigMark.java			 	generic-all
-java/io/BufferedReader/ReadLineSync.java		 	generic-all
-
-# Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
-java/io/DataInputStream/OpsAfterClose.java		 	generic-all
-
-# Windows 32bit samevm failure: RuntimeException: File.getFreeSpace() failed
-java/io/File/MaxPathLength.java					generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/File/DeleteOnExit.java				 	generic-all
-java/io/File/DeleteOnExitLong.java			 	generic-all
-java/io/File/DeleteOnExitNPE.java			 	generic-all
-java/io/File/IsHidden.java				 	generic-all
-java/io/FileDescriptor/FileChannelFDTest.java		 	generic-all
-java/io/FileDescriptor/Finalize.java			 	generic-all
-java/io/FileInputStream/FinalizeShdCallClose.java	 	generic-all
-
-# Known to cause samevm issues on windows, other tests fail, missing close()?
-java/io/FileInputStream/OpsAfterClose.java		 	generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/FileOutputStream/FinalizeShdCallClose.java	 	generic-all
-
-# Known to cause samevm issues on windows, other tests fail, missing close()?
-java/io/FileOutputStream/OpsAfterClose.java		 	generic-all
-
-# Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
-java/io/InputStream/OpsAfterClose.java			 	generic-all
-
-# Missing close() on x.ReadBounds file? Windows samevm issues
-java/io/InputStream/ReadParams.java			 	generic-all
-
-# Known to cause samevm issues on windows, other tests fail, missing close()?
-java/io/InputStreamReader/GrowAfterEOF.java		 	generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/ObjectInputStream/ResolveProxyClass.java	 	generic-all
-
-# Not doing a close() on x.ParameterCheck file? windows samevm cascade error
-java/io/RandomAccessFile/ParameterCheck.java                    generic-all
-
-# Not doing a close on x.ReadLine file? windows cascade samevm problems
-java/io/RandomAccessFile/ReadLine.java				generic-all
-
-# Not doing close on file input x.WriteByteChars, windows samevm problems
-java/io/RandomAccessFile/WriteBytesChars.java			generic-all
-
-# Not doing close on file input x.WriteUTF, windows samevm problems
-java/io/RandomAccessFile/WriteUTF.java                          generic-all
-
-# Possibly, not doing a close() on input.txt, windows samevm issues.
-java/io/RandomAccessFile/skipBytes/SkipBytes.java	 	generic-all
-java/io/readBytes/MemoryLeak.java			 	generic-all
-java/io/readBytes/ReadBytesBounds.java			 	generic-all 
-
-# Possibly not doing a close() on input.txt, windows samevm issues.
-java/io/StreamTokenizer/Comment.java			 	generic-all
-
-############################################################################
-
 # jdk_lang
 
 # Times out on solaris 10 sparc
@@ -592,10 +525,6 @@ java/nio/channels/Selector/Wakeup.java				windows-all
 # Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
 com/sun/nio/sctp/SctpChannel/Send.java				generic-all
 com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
-
-# Fails on Windows 2000, Can't delete test directory .\x.SetLastModified.dir
-#    at SetLastModified.main(SetLastModified.java:107)
-java/io/File/SetLastModified.java                               generic-all
 
 # Fails on Windows 2000,  times out
 java/nio/channels/FileChannel/Transfer.java			generic-all
