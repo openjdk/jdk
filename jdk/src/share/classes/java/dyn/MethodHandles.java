@@ -411,41 +411,68 @@ public class MethodHandles {
 
         /**
          * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-         * Produce a method handle giving read access to a field.
+         * Produce a method handle giving read access to a non-static field.
          * The type of the method handle will have a return type of the field's
          * value type.
-         * If the field is static, the method handle will take no arguments.
-         * Otherwise, its single argument will be the instance containing
+         * The method handle's single argument will be the instance containing
          * the field.
          * Access checking is performed immediately on behalf of the lookup class.
          * @param name the field's name
          * @param type the field's type
-         * @param isStatic true if and only if the field is static
          * @return a method handle which can load values from the field
          * @exception NoAccessException if access checking fails
          */
-        public MethodHandle findGetter(Class<?> refc, String name, Class<?> type, boolean isStatic) throws NoAccessException {
-            return makeAccessor(refc, name, type, isStatic, false);
+        public MethodHandle findGetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, false, false);
         }
 
         /**
          * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-         * Produce a method handle giving write access to a reflected field.
+         * Produce a method handle giving write access to a non-static field.
          * The type of the method handle will have a void return type.
-         * If the field is static, the method handle will take a single
-         * argument, of the field's value type, the value to be stored.
-         * Otherwise, the two arguments will be the instance containing
+         * The method handle will take two arguments, the instance containing
          * the field, and the value to be stored.
+         * The second argument will be of the field's value type.
          * Access checking is performed immediately on behalf of the lookup class.
          * @param name the field's name
          * @param type the field's type
-         * @param isStatic true if and only if the field is static
-         * @return a method handle which can store values into the reflected field
+         * @return a method handle which can store values into the field
          * @exception NoAccessException if access checking fails
          */
-        public MethodHandle findSetter(Class<?> refc, String name, Class<?> type,
-                                       boolean isStatic) throws NoAccessException {
-            return makeAccessor(refc, name, type, isStatic, true);
+        public MethodHandle findSetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, false, true);
+        }
+
+        /**
+         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+         * Produce a method handle giving read access to a static field.
+         * The type of the method handle will have a return type of the field's
+         * value type.
+         * The method handle will take no arguments.
+         * Access checking is performed immediately on behalf of the lookup class.
+         * @param name the field's name
+         * @param type the field's type
+         * @return a method handle which can load values from the field
+         * @exception NoAccessException if access checking fails
+         */
+        public MethodHandle findStaticGetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, true, false);
+        }
+
+        /**
+         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+         * Produce a method handle giving write access to a static field.
+         * The type of the method handle will have a void return type.
+         * The method handle will take a single
+         * argument, of the field's value type, the value to be stored.
+         * Access checking is performed immediately on behalf of the lookup class.
+         * @param name the field's name
+         * @param type the field's type
+         * @return a method handle which can store values into the field
+         * @exception NoAccessException if access checking fails
+         */
+        public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, true, true);
         }
 
         /**

@@ -47,6 +47,10 @@ import static org.junit.Assume.*;
 public class MethodHandlesTest {
     // How much output?
     static int verbosity = 0;
+    static {
+        String vstr = System.getProperty("test.java.dyn.MethodHandlesTest.verbosity");
+        if (vstr != null)  verbosity = Integer.parseInt(vstr);
+    }
 
     // Set this true during development if you want to fast-forward to
     // a particular new, non-working test.  Tests which are known to
@@ -109,7 +113,7 @@ public class MethodHandlesTest {
         String vers = properties.getProperty("java.vm.version");
         String name = properties.getProperty("java.vm.name");
         String arch = properties.getProperty("os.arch");
-        if ((arch.equals("i386")  || arch.equals("amd64") ||
+        if ((arch.equals("amd64") || arch.equals("i386") || arch.equals("x86") ||
              arch.equals("sparc") || arch.equals("sparcv9")) &&
             (name.contains("Client") || name.contains("Server"))
             ) {
@@ -121,6 +125,7 @@ public class MethodHandlesTest {
     }
 
     String testName;
+    static int allPosTests, allNegTests;
     int posTests, negTests;
     @After
     public void printCounts() {
@@ -128,6 +133,8 @@ public class MethodHandlesTest {
             System.out.println();
             if (posTests != 0)  System.out.println("=== "+testName+": "+posTests+" positive test cases run");
             if (negTests != 0)  System.out.println("=== "+testName+": "+negTests+" negative test cases run");
+            allPosTests += posTests;
+            allNegTests += negTests;
             posTests = negTests = 0;
         }
     }
@@ -153,6 +160,12 @@ public class MethodHandlesTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        int posTests = allPosTests, negTests = allNegTests;
+        if (verbosity >= 2 && (posTests | negTests) != 0) {
+            System.out.println();
+            if (posTests != 0)  System.out.println("=== "+posTests+" total positive test cases");
+            if (negTests != 0)  System.out.println("=== "+negTests+" total negative test cases");
+        }
     }
 
     static List<Object> calledLog = new ArrayList<Object>();
@@ -811,28 +824,52 @@ public class MethodHandlesTest {
         }
     }
 
+    static final int TEST_UNREFLECT = 1, TEST_FIND_FIELD = 2, TEST_FIND_STATIC_FIELD = 3;
+    static boolean testModeMatches(int testMode, boolean isStatic) {
+        switch (testMode) {
+        case TEST_FIND_STATIC_FIELD:    return isStatic;
+        case TEST_FIND_FIELD:           return !isStatic;
+        default:                        return true;  // unreflect matches both
+        }
+    }
+
     @Test
     public void testUnreflectGetter() throws Throwable {
-        Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         startTest("unreflectGetter");
+        testGetter(TEST_UNREFLECT);
+    }
+    @Test
+    public void testFindGetter() throws Throwable {
+        startTest("findGetter");
+        testGetter(TEST_FIND_FIELD);
+    }
+    @Test
+    public void testFindStaticGetter() throws Throwable {
+        startTest("findStaticGetter");
+        testGetter(TEST_FIND_STATIC_FIELD);
+    }
+    public void testGetter(int testMode) throws Throwable {
+        Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         for (Object[] c : HasFields.CASES) {
             Field f = (Field)c[0];
             Object value = c[1];
             Class<?> type = f.getType();
-            if (type.isPrimitive() && type != int.class)
-                continue;  //FIXME
-            testUnreflectGetter(lookup, f, type, value);
+            testGetter(lookup, f, type, value, testMode);
         }
     }
-    public void testUnreflectGetter(MethodHandles.Lookup lookup,
-            Field f, Class<?> type, Object value) throws Throwable {
-        countTest(true);
+    public void testGetter(MethodHandles.Lookup lookup,
+            Field f, Class<?> type, Object value, int testMode) throws Throwable {
         boolean isStatic = Modifier.isStatic(f.getModifiers());
+        Class<?> fclass = f.getDeclaringClass();
+        String   fname  = f.getName();
+        Class<?> ftype  = f.getType();
+        if (!testModeMatches(testMode, isStatic))  return;
+        countTest(true);
         MethodType expType = MethodType.methodType(type, HasFields.class);
         if (isStatic)  expType = expType.dropParameterTypes(0, 1);
         MethodHandle mh = lookup.unreflectGetter(f);
         assertSame(mh.type(), expType);
-        assertEquals(mh.toString(), f.getName());
+        assertEquals(mh.toString(), fname);
         HasFields fields = new HasFields();
         Object sawValue;
         Class<?> rtype = type;
@@ -862,26 +899,49 @@ public class MethodHandlesTest {
 
     @Test
     public void testUnreflectSetter() throws Throwable {
+        startTest("unreflectSetter");
+        testSetter(TEST_UNREFLECT);
+    }
+    @Test
+    public void testFindSetter() throws Throwable {
+        startTest("findSetter");
+        testSetter(TEST_FIND_FIELD);
+    }
+    @Test
+    public void testFindStaticSetter() throws Throwable {
+        startTest("findStaticSetter");
+        testSetter(TEST_FIND_STATIC_FIELD);
+    }
+    public void testSetter(int testMode) throws Throwable {
         Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         startTest("unreflectSetter");
         for (Object[] c : HasFields.CASES) {
             Field f = (Field)c[0];
             Object value = c[1];
             Class<?> type = f.getType();
-            if (type.isPrimitive() && type != int.class)
-                continue;  //FIXME
-            testUnreflectSetter(lookup, f, type, value);
+            testSetter(lookup, f, type, value, testMode);
         }
     }
-    public void testUnreflectSetter(MethodHandles.Lookup lookup,
-            Field f, Class<?> type, Object value) throws Throwable {
-        countTest(true);
+    public void testSetter(MethodHandles.Lookup lookup,
+            Field f, Class<?> type, Object value, int testMode) throws Throwable {
         boolean isStatic = Modifier.isStatic(f.getModifiers());
+        Class<?> fclass = f.getDeclaringClass();
+        String   fname  = f.getName();
+        Class<?> ftype  = f.getType();
+        if (!testModeMatches(testMode, isStatic))  return;
+        countTest(true);
         MethodType expType = MethodType.methodType(void.class, HasFields.class, type);
         if (isStatic)  expType = expType.dropParameterTypes(0, 1);
-        MethodHandle mh = lookup.unreflectSetter(f);
+        MethodHandle mh;
+        if (testMode == TEST_UNREFLECT)
+            mh = lookup.unreflectSetter(f);
+        else if (testMode == TEST_FIND_FIELD)
+            mh = lookup.findSetter(fclass, fname, ftype);
+        else if (testMode == TEST_FIND_STATIC_FIELD)
+            mh = lookup.findStaticSetter(fclass, fname, ftype);
+        else  throw new InternalError();
         assertSame(mh.type(), expType);
-        assertEquals(mh.toString(), f.getName());
+        assertEquals(mh.toString(), fname);
         HasFields fields = new HasFields();
         Object sawValue;
         Class<?> vtype = type;
