@@ -244,13 +244,19 @@ public enum OpsAfterClose {
         f.deleteOnExit();
 
         FileInputStream fis = new FileInputStream(f);
-
-        DataInputStream dis = new DataInputStream(
-                                new FileInputStream(f));
-        if (testDataInputStream(dis)) {
-            failed = true;
+        try {
+            DataInputStream dis = new DataInputStream(
+                                    new FileInputStream(f));
+            try {
+                if (testDataInputStream(dis)) {
+                    failed = true;
+                }
+            } finally {
+                dis.close();
+            }
+        } finally {
+            fis.close();
         }
-
     }
 
     private static boolean testDataInputStream(DataInputStream is)
