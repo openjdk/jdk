@@ -92,41 +92,39 @@ public abstract class AbstractBuilder {
     public abstract void build() throws IOException;
 
     /**
-     * Build the documentation, as specified by the given XML elements.
+     * Build the documentation, as specified by the given XML element.
      *
-     * @param elements the XML elements that specify which components to
-     *                 document.
+     * @param node the XML element that specifies which component to document.
      */
-    protected void build(List<?> elements) {
-        for (int i = 0; i < elements.size(); i++ ) {
-            Object element = elements.get(i);
-            String component = (String)
-                ((element instanceof String) ?
-                     element :
-                    ((List<?>) element).get(0));
-            try {
-                invokeMethod("build" + component,
-                    element instanceof String ?
-                        new Class<?>[] {} :
-                        new Class<?>[] {List.class},
-                    element instanceof String ?
-                        new Object[] {} :
-                        new Object[] {((List<?>) element).subList(1,
-                            ((List<?>) element).size())});
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-                configuration.root.printError("Unknown element: " + component);
-                throw new DocletAbortException();
-            } catch (InvocationTargetException e) {
-                e.getCause().printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-                configuration.root.printError("Exception " +
-                    e.getClass().getName() +
-                    " thrown while processing element: " + component);
-                throw new DocletAbortException();
-            }
+    protected void build(XMLNode node) {
+        String component = node.name;
+        try {
+            invokeMethod("build" + component,
+                    new Class<?>[] { XMLNode.class },
+                    new Object[] { node });
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            configuration.root.printError("Unknown element: " + component);
+            throw new DocletAbortException();
+        } catch (InvocationTargetException e) {
+            e.getCause().printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+            configuration.root.printError("Exception " +
+                e.getClass().getName() +
+                " thrown while processing element: " + component);
+            throw new DocletAbortException();
         }
+    }
+
+    /**
+     * Build the documentation, as specified by the children of the given XML element.
+     *
+     * @param node the XML element that specifies which components to document.
+     */
+    protected void buildChildren(XMLNode node) {
+        for (XMLNode child: node.children)
+            build(child);
     }
 
     /**
@@ -138,7 +136,14 @@ public abstract class AbstractBuilder {
      * @param paramClasses the types for each parameter.
      * @param params       the parameters of the method.
      */
-    protected abstract void invokeMethod(String methodName, Class<?>[] paramClasses,
+    protected void invokeMethod(String methodName, Class<?>[] paramClasses,
             Object[] params)
-    throws Exception;
+    throws Exception {
+        if (DEBUG) {
+            configuration.root.printError("DEBUG: " + this.getClass().getName()
+                + "." + methodName);
+        }
+        Method method = this.getClass().getMethod(methodName, paramClasses);
+        method.invoke(this, params);
+    }
 }
