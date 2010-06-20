@@ -32,7 +32,7 @@
  * @author  Mandy Chung
  *
  * @run build JavaServiceTagTest1
- * @run main JavaServiceTagTest1
+ * @run main/othervm JavaServiceTagTest1
  */
 
 import com.sun.servicetag.*;

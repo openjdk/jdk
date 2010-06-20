@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @run build SvcTagClient SystemRegistryTest Util
- * @run main SystemRegistryTest
+ * @run main/othervm SystemRegistryTest
  */
 
 import com.sun.servicetag.*;
