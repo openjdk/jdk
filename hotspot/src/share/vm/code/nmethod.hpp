@@ -135,6 +135,7 @@ class nmethod : public CodeBlob {
 
   methodOop _method;
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
+  jmethodID _jmethod_id;       // Cache of method()->jmethod_id()
 
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from instanceKlass::osr_nmethods_head
@@ -599,6 +600,7 @@ public:
 
   // jvmti support:
   void post_compiled_method_load_event();
+  jmethodID get_and_cache_jmethod_id();
 
   // verify operations
   void verify();
