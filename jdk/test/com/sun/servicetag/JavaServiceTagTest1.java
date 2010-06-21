@@ -31,8 +31,8 @@
  *          are both created correctly.
  * @author  Mandy Chung
  *
- * @run build JavaServiceTagTest1
- * @run main/othervm JavaServiceTagTest1
+ * @run build JavaServiceTagTest1 SvcTagClient Util
+ * @run main JavaServiceTagTest1
  */
 
 import com.sun.servicetag.*;
@@ -46,6 +46,16 @@ public class JavaServiceTagTest1 {
     private static File svcTagFile;
     private static Registry registry;
     public static void main(String[] argv) throws Exception {
+        try {
+            registry = Util.getSvcTagClientRegistry();
+            runTest();
+        } finally {
+            // restore empty registry file
+            Util.emptyRegistryFile();
+        }
+    }
+
+    private static void runTest() throws Exception {
         // cleanup the registration.xml and servicetag file in the test directory
         System.setProperty("servicetag.dir.path", registrationDir);
         regFile = new File(registrationDir, "registration.xml");
@@ -53,8 +63,6 @@ public class JavaServiceTagTest1 {
 
         svcTagFile = new File(registrationDir, "servicetag");
         svcTagFile.delete();
-
-        registry = Util.getSvcTagClientRegistry();
 
         // verify that only one service tag is created
         ServiceTag st1 = testJavaServiceTag("Test1");
