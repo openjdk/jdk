@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @run build SvcTagClient SystemRegistryTest Util
- * @run main/othervm SystemRegistryTest
+ * @run main SystemRegistryTest
  */
 
 import com.sun.servicetag.*;
@@ -50,8 +50,16 @@ public class SystemRegistryTest {
 
     private static Registry registry;
     public static void main(String[] argv) throws Exception {
-        registry = Util.getSvcTagClientRegistry();
+        try {
+            registry = Util.getSvcTagClientRegistry();
+            runTest();
+        } finally {
+            // restore empty registry file
+            Util.emptyRegistryFile();
+        }
+    }
 
+    private static void runTest() throws Exception {
         for (String filename : files) {
             File f = new File(servicetagDir, filename);
             ServiceTag svcTag = Util.newServiceTag(f);

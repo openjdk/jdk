@@ -219,25 +219,25 @@ public class Util {
     }
 
     private static Registry registry = null;
+    private static File registryFile = null;
     /**
      * Returns the Registry processed by SvcTagClient that simulates
      * stclient.
      */
     static synchronized Registry getSvcTagClientRegistry() throws IOException {
+        String regDir = System.getProperty("test.classes");
+        File f = new File(regDir, "registry.xml");
         if (registry != null) {
+            if (!f.equals(registryFile) && f.length() != 0) {
+                throw new AssertionError("Has to be empty registry.xml to run in samevm");
+            }
             return registry;
         }
 
         // System.setProperty("servicetag.verbose", "true");
         // enable the helper class
         System.setProperty("servicetag.sthelper.supported", "true");
-
-        // clean up registry.xml
-        String regDir = System.getProperty("test.classes");
-        File registryFile = new File(regDir, "registry.xml");
-        if (registryFile.exists()) {
-            registryFile.delete();
-        }
+        registryFile = f;
 
         String stclientCmd = Util.getSvcClientCommand(registryFile.getCanonicalPath());
         System.out.println("stclient cmd: " + stclientCmd);
@@ -246,5 +246,18 @@ public class Util {
         // get the Registry object after the system properties are set
         registry = Registry.getSystemRegistry();
         return registry;
+    }
+
+    static void emptyRegistryFile() throws IOException {
+        if (registryFile.exists()) {
+            BufferedOutputStream out = new BufferedOutputStream(
+                new FileOutputStream(registryFile));
+            try {
+                RegistrationData data = new RegistrationData();
+                data.storeToXML(out);
+            } finally {
+                out.close();
+            }
+        }
     }
 }
