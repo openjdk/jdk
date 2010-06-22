@@ -404,6 +404,24 @@ public class Utilities {
     }
 
     /**
+     * Adjust text offset so that the length of a resulting string as a whole
+     * fits into the specified width.
+     */
+    static int adjustOffsetForFractionalMetrics(
+            Segment s, FontMetrics fm, int offset, int width) {
+        // Sometimes the offset returned by getTabbedTextOffset is beyond the
+        // available area, when fractional metrics are enabled. We should
+        // guard against this.
+        if (offset < s.count) {
+            while (offset > 0 &&
+                    fm.charsWidth(s.array, s.offset, offset + 1) > width) {
+                offset--;
+            }
+        }
+        return offset;
+    }
+
+    /**
      * Determine where to break the given text to fit
      * within the given span. This tries to find a word boundary.
      * @param s  the source of the text
@@ -425,7 +443,7 @@ public class Utilities {
         int txtCount = s.count;
         int index = Utilities.getTabbedTextOffset(s, metrics, x0, x,
                                                   e, startOffset, false);
-
+        index = adjustOffsetForFractionalMetrics(s, metrics, index, x - x0);
 
         if (index >= txtCount - 1) {
             return txtCount;
