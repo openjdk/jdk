@@ -533,17 +533,11 @@ com/sun/nio/sctp/SctpChannel/Bind.java				generic-all
 # Failed on OpenSolaris, java.lang.AssertionError: Unknown event type
 com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
 
-# Triggers a hotspot crash on Fedora 9 32bit -server and Windows X64  samevm
-sun/nio/cs/TestUTF8.java					generic-all
-
 # Runtime exception on windows X64, samevm mode
 java/nio/channels/Selector/WakeupNow.java			generic-all
 
 # Occasional errors, solarix x86, address already in use, othervm mode
 java/nio/channels/Selector/SelectorTest.java			generic-all
-
-# Fails on Linux Fedora 9 X64
-sun/nio/cs/FindDecoderBugs.java					generic-all
 
 # Solaris 11 gave assert error and "connection refused", samevm issues?
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java 	generic-all
@@ -594,9 +588,6 @@ java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
 
 # Fails on all platforms due to overlap of JDK jar file contents:
 sun/nio/cs/Test4200310.sh				 	generic-all
-
-# Depends on motif packages that do not exist all the time:
-sun/nio/cs/TestX11CNS.java				 	generic-all
 
 ############################################################################
 
