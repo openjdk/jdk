@@ -1,0 +1,93 @@
+#
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Copyright year for beginning of Java and some of the apis
+#   (Needed when creating the javadocs)
+FIRST_COPYRIGHT_YEAR                = 1993
+DOMAPI_FIRST_COPYRIGHT_YEAR         = 2005
+MIRROR_FIRST_COPYRIGHT_YEAR         = 2004
+DOCLETAPI_FIRST_COPYRIGHT_YEAR      = 1993
+TAGLETAPI_FIRST_COPYRIGHT_YEAR      = 1993
+JDI_FIRST_COPYRIGHT_YEAR            = 1999
+JAAS_FIRST_COPYRIGHT_YEAR           = 1998
+JGSS_FIRST_COPYRIGHT_YEAR           = 2000
+SMARTCARDIO_FIRST_COPYRIGHT_YEAR    = 2005
+HTTPSERVER_FIRST_COPYRIGHT_YEAR     = 2005
+MGMT_FIRST_COPYRIGHT_YEAR           = 2003
+ATTACH_FIRST_COPYRIGHT_YEAR         = 2005
+JCONSOLE_FIRST_COPYRIGHT_YEAR       = 2006
+SCTPAPI_FIRST_COPYRIGHT_YEAR        = 2009
+TRACING_FIRST_COPYRIGHT_YEAR        = 2008
+TREEAPI_FIRST_COPYRIGHT_YEAR        = 2005
+JNLP_FIRST_COPYRIGHT_YEAR           = 1998
+PLUGIN2_FIRST_COPYRIGHT_YEAR        = 2007
+
+# Oracle name
+COMPANY_NAME = Oracle and/or its affiliates
+
+# Copyright address
+COMPANY_ADDRESS = 500 Oracle Parkway<br>Redwood Shores, CA 94065 USA.
+
+# The trademark symbol
+TRADEMARK = &trade;
+
+# Common copyright lines used
+#   The word "Copyright" might optionally be a link to the file cpyr.html.
+#   The first year of copyright may vary or not be available.
+#   The address to the company might be optional.
+COMMA:= ,
+EMPTY:=
+SPACE:=$(EMPTY) $(EMPTY)
+COPYRIGHT_SYMBOL = &\#x00a9;
+# Macros to handle the optional empty args.
+#   (The GNU make 3.78.1 "if" conditional is broken, fixed in GNU make 3.81)
+define OptionalCopyrightUrl # url
+$(shell \
+  if [ "$1" != "" ] ; then \
+    printf "<a href=\"%s\">Copyright</a>" "$1"; \
+  else \
+    printf "Copyright"; \
+  fi)
+endef
+define OptionalCopyrightFirstYear # year
+$(shell \
+  if [ "$1" != "" ] ; then \
+    printf "%s," "$1";\
+  fi)
+endef
+define OptionalCompanyAddress # address
+$(shell \
+  if [ "$1" != "" ] ; then \
+    printf "%s" "$1";\
+  fi)
+endef
+define CopyrightLine # optionalurl optionalfirstyear optionaladdress
+$(call OptionalCopyrightUrl,$1) $(COPYRIGHT_SYMBOL)\
+$(call OptionalCopyrightFirstYear,$2) $(COPYRIGHT_YEAR),\
+$(COMPANY_NAME).\
+$(call OptionalCompanyAddress,$3)\
+All rights reserved.
+endef
+
