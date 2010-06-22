@@ -37,13 +37,18 @@ public class UpTime {
         = ManagementFactory.getRuntimeMXBean();
 
     public static void main(String argv[]) throws Exception {
+        long jvmStartTime = metrics.getStartTime();
         long systemStartOuter = System.currentTimeMillis();
         long metricsStart = metrics.getUptime();
         long systemStartInner = System.currentTimeMillis();
 
+        // This JVM might have been running for some time if this test runs
+        // in samevm mode.  The sanity check should apply to the test uptime.
+        long testUptime = metricsStart - (systemStartOuter - jvmStartTime);
+
         // If uptime is more than 30 minutes then it looks like a bug in
         // the method
-        if (metricsStart > TIMEOUT * 60 * 1000)
+        if (testUptime > TIMEOUT * 60 * 1000)
             throw new RuntimeException("Uptime of the JVM is more than 30 "
                                      + "minutes ("
                                      + (metricsStart / 60 / 1000)

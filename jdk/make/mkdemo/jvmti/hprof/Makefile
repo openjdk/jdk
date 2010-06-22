@@ -39,10 +39,10 @@ ifeq ($(PLATFORM), windows)
   EXTRA_LIBS += wsock32.lib winmm.lib
 endif
 ifeq ($(PLATFORM), solaris)
-  OTHER_LDLIBS += $(LIBSOCKET) -lnsl -ldl
+  OTHER_LDLIBS += $(LIBSOCKET) $(LIBNSL) -ldl
 endif
 ifeq ($(PLATFORM), linux)
-  OTHER_LDLIBS += $(LIBSOCKET) -lnsl -ldl -lpthread
+  OTHER_LDLIBS += $(LIBSOCKET) $(LIBNSL) -ldl -lpthread
 endif
 
 #

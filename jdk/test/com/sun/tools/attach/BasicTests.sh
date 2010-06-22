@@ -37,6 +37,21 @@ then
   exit 1
 fi
 
+# Windows 2000 is a problem here, so we skip it, see 6962615
+osrev=`uname -a`
+if [ "`echo ${osrev} | grep 'CYGWIN'`" != "" ] ; then
+  if [ "`echo ${osrev} | grep '5.0'`" != "" ] ; then
+     echo "Treating as a pass, not testing Windows 2000"
+     exit 0
+  fi
+fi
+if [ "`echo ${osrev} | grep 'Windows'`" != "" ] ; then
+  if [ "`echo ${osrev} | grep '5 00'`" != "" ] ; then
+     echo "Treating as a pass, not testing Windows 2000"
+     exit 0
+  fi
+fi
+
 . ${TESTSRC}/CommonSetup.sh
 . ${TESTSRC}/ApplicationSetup.sh
 . ${TESTSRC}/AgentSetup.sh

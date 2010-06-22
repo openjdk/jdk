@@ -143,6 +143,7 @@ public class UpdateManifest {
         } else {
             fail("did not match specVersion nor specTitle");
         }
+        zf.close();
     }
 
     // --------------------- Convenience ---------------------------
