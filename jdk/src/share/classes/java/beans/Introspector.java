@@ -28,6 +28,7 @@ package java.beans;
 import com.sun.beans.WeakCache;
 import com.sun.beans.finder.BeanInfoFinder;
 import com.sun.beans.finder.ClassFinder;
+import com.sun.beans.finder.MethodFinder;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -849,8 +850,8 @@ public class Introspector {
                 Method read = result.getReadMethod();
 
                 if (read == null && write != null) {
-                    read = findMethod(result.getClass0(),
-                                      GET_PREFIX + NameGenerator.capitalize(result.getName()), 0);
+                    read = findInstanceMethod(result.getClass0(),
+                                              GET_PREFIX + NameGenerator.capitalize(result.getName()));
                     if (read != null) {
                         try {
                             result.setReadMethod(read);
@@ -860,9 +861,9 @@ public class Introspector {
                     }
                 }
                 if (write == null && read != null) {
-                    write = findMethod(result.getClass0(),
-                                       SET_PREFIX + NameGenerator.capitalize(result.getName()), 1,
-                                       new Class[] { FeatureDescriptor.getReturnType(result.getClass0(), read) });
+                    write = findInstanceMethod(result.getClass0(),
+                                               SET_PREFIX + NameGenerator.capitalize(result.getName()),
+                                               FeatureDescriptor.getReturnType(result.getClass0(), read));
                     if (write != null) {
                         try {
                             result.setWriteMethod(write);
@@ -1286,90 +1287,27 @@ public class Introspector {
     // Package private support methods.
     //======================================================================
 
-    /**
-     * Internal support for finding a target methodName with a given
-     * parameter list on a given class.
-     */
-    private static Method internalFindMethod(Class start, String methodName,
-                                                 int argCount, Class args[]) {
-        // For overriden methods we need to find the most derived version.
-        // So we start with the given class and walk up the superclass chain.
-
-        Method method = null;
-
-        for (Class cl = start; cl != null; cl = cl.getSuperclass()) {
-            Method methods[] = getPublicDeclaredMethods(cl);
-            for (int i = 0; i < methods.length; i++) {
-                method = methods[i];
-                if (method == null) {
-                    continue;
+    static Method findMethod(Class<?> type, String name, int args) {
+        for (Method method : type.getMethods()) {
+            if (method.getName().equals(name) && (args == method.getParameterTypes().length)) {
+                try {
+                    return MethodFinder.findAccessibleMethod(method);
                 }
-
-                // make sure method signature matches.
-                Class params[] = FeatureDescriptor.getParameterTypes(start, method);
-                if (method.getName().equals(methodName) &&
-                    params.length == argCount) {
-                    if (args != null) {
-                        boolean different = false;
-                        if (argCount > 0) {
-                            for (int j = 0; j < argCount; j++) {
-                                if (params[j] != args[j]) {
-                                    different = true;
-                                    continue;
-                                }
-                            }
-                            if (different) {
-                                continue;
-                            }
-                        }
-                    }
-                    return method;
+                catch (NoSuchMethodException exception) {
+                    // continue search for a method with the specified count of parameters
                 }
             }
         }
-        method = null;
+        return null;
+    }
 
-        // Now check any inherited interfaces.  This is necessary both when
-        // the argument class is itself an interface, and when the argument
-        // class is an abstract class.
-        Class ifcs[] = start.getInterfaces();
-        for (int i = 0 ; i < ifcs.length; i++) {
-            // Note: The original implementation had both methods calling
-            // the 3 arg method. This is preserved but perhaps it should
-            // pass the args array instead of null.
-            method = internalFindMethod(ifcs[i], methodName, argCount, null);
-            if (method != null) {
-                break;
-            }
+    static Method findInstanceMethod(Class<?> type, String name, Class<?>... args) {
+        try {
+            return MethodFinder.findInstanceMethod(type, name, args);
         }
-        return method;
-    }
-
-    /**
-     * Find a target methodName on a given class.
-     */
-    static Method findMethod(Class cls, String methodName, int argCount) {
-        return findMethod(cls, methodName, argCount, null);
-    }
-
-    /**
-     * Find a target methodName with specific parameter list on a given class.
-     * <p>
-     * Used in the contructors of the EventSetDescriptor,
-     * PropertyDescriptor and the IndexedPropertyDescriptor.
-     * <p>
-     * @param cls The Class object on which to retrieve the method.
-     * @param methodName Name of the method.
-     * @param argCount Number of arguments for the desired method.
-     * @param args Array of argument types for the method.
-     * @return the method or null if not found
-     */
-    static Method findMethod(Class cls, String methodName, int argCount,
-                             Class args[]) {
-        if (methodName == null) {
+        catch (NoSuchMethodException exception) {
             return null;
         }
-        return internalFindMethod(cls, methodName, argCount, args);
     }
 
     /**
