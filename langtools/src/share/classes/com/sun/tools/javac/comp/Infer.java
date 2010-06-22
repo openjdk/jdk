@@ -37,8 +37,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -290,6 +290,7 @@ public class Infer {
     public Type instantiateMethod(final Env<AttrContext> env,
                                   List<Type> tvars,
                                   MethodType mt,
+                                  final Symbol msym,
                                   final List<Type> argtypes,
                                   final boolean allowBoxing,
                                   final boolean useVarargs,
@@ -418,7 +419,7 @@ public class Infer {
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), formals);
+                        chk.checkVararg(env.tree.pos(), formals, msym, env);
                     }
                     return super.inst(inferred, types);
             }};

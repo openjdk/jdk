@@ -89,7 +89,7 @@ public class NoTypes extends AbstractProcessor {
         verifyKind(NONE, types.getNoType(NONE));
 
         // The return type of a constructor or void method is VOID.
-        class Scanner extends ElementScanner6<Void, Void> {
+        class Scanner extends ElementScanner7<Void, Void> {
             @Override
             public Void visitExecutable(ExecutableElement e, Void p) {
                 verifyKind(VOID, e.getReturnType());
@@ -104,10 +104,10 @@ public class NoTypes extends AbstractProcessor {
 
     /**
      * Verify that a NoType instance is of a particular kind,
-     * and that TypeKindVisitor6 properly dispatches on it.
+     * and that TypeKindVisitor7 properly dispatches on it.
      */
     private void verifyKind(TypeKind kind, TypeMirror type) {
-        class Vis extends TypeKindVisitor6<TypeKind, Void> {
+        class Vis extends TypeKindVisitor7<TypeKind, Void> {
             @Override
             public TypeKind visitNoTypeAsVoid(NoType t, Void p) {
                 return VOID;
