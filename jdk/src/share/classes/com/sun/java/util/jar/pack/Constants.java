@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,12 @@ interface Constants {
 
     public final static short JAVA5_MAX_CLASS_MAJOR_VERSION = 49;
     public final static short JAVA5_MAX_CLASS_MINOR_VERSION = 0;
-    // NOTE: ASSUMED for now
+
     public final static short JAVA6_MAX_CLASS_MAJOR_VERSION = 50;
     public final static short JAVA6_MAX_CLASS_MINOR_VERSION = 0;
+
+    public final static short JAVA7_MAX_CLASS_MAJOR_VERSION = 51;
+    public final static short JAVA7_MAX_CLASS_MINOR_VERSION = 0;
 
     public final static int JAVA_PACKAGE_MAGIC = 0xCAFED00D;
     public final static int JAVA5_PACKAGE_MAJOR_VERSION = 150;

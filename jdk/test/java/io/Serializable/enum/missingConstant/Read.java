@@ -33,19 +33,23 @@ enum Foo { foo, bar }
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("foo.ser"));
-        for (Foo f : Foo.values()) {
-            Object obj = oin.readObject();
-            if (obj != f) {
-                throw new Error("expected " + f + ", got " + obj);
-            }
-        }
+        FileInputStream in = new FileInputStream("foo.ser");
         try {
-            Object obj = oin.readObject();
-            throw new Error("read of " + obj + " should not succeed");
-        } catch (InvalidObjectException e) {
-            System.out.println("caught expected exception: " + e);
+            ObjectInputStream oin = new ObjectInputStream(in);
+            for (Foo f : Foo.values()) {
+                Object obj = oin.readObject();
+                if (obj != f) {
+                    throw new Error("expected " + f + ", got " + obj);
+                }
+            }
+            try {
+                Object obj = oin.readObject();
+                throw new Error("read of " + obj + " should not succeed");
+            } catch (InvalidObjectException e) {
+                System.out.println("caught expected exception: " + e);
+            }
+        } finally {
+            in.close();
         }
     }
 }
