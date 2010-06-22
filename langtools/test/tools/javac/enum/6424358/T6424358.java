@@ -48,7 +48,7 @@ public class T6424358 extends AbstractProcessor {
         final Messager log = processingEnv.getMessager();
         final Elements elements = processingEnv.getElementUtils();
         final TypeElement testMe = elements.getTypeElement("TestMe");
-        class Scan extends ElementScanner6<Void,Void> {
+        class Scan extends ElementScanner7<Void,Void> {
             @Override
             public Void visitExecutable(ExecutableElement e, Void p) {
                 System.err.println("Looking at " + e);

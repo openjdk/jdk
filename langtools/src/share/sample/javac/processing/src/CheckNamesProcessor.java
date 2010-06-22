@@ -138,7 +138,7 @@ public class CheckNamesProcessor extends AbstractProcessor {
     public SourceVersion getSupportedSourceVersion() {
         /*
          * Return latest source version instead of a fixed version
-         * like RELEASE_6.  To return a fixed version, this class
+         * like RELEASE_7.  To return a fixed version, this class
          * could be annotated with a SupportedSourceVersion
          * annotation.
          *
@@ -190,7 +190,7 @@ public class CheckNamesProcessor extends AbstractProcessor {
         /**
          * Visitor to implement name checks.
          */
-        private class NameCheckScanner extends ElementScanner6<Void, Void> {
+        private class NameCheckScanner extends ElementScanner7<Void, Void> {
             // The visitor could be enhanced to return true/false if
             // there were warnings reported or a count of the number
             // of warnings.  This could be facilitated by using
@@ -312,7 +312,7 @@ public class CheckNamesProcessor extends AbstractProcessor {
             @Override
             public Void visitUnknown(Element e, Void p) {
                 // This method will be called if a kind of element
-                // added after JDK 6 is visited.  Since as of this
+                // added after JDK 7 is visited.  Since as of this
                 // writing the conventions for such constructs aren't
                 // known, issue a warning.
                 messager.printMessage(WARNING,
