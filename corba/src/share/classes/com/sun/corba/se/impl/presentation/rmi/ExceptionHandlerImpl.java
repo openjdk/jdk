@@ -108,8 +108,8 @@ public class ExceptionHandlerImpl implements ExceptionHandler
 
             try {
                 helperClass = Class.forName( helperName, true, loader ) ;
-                Method idMethod = helperClass.getDeclaredMethod( "id", null ) ;
-                setId( (String)idMethod.invoke( null, null ) ) ;
+                Method idMethod = helperClass.getDeclaredMethod( "id", (Class[])null ) ;
+                setId( (String)idMethod.invoke( null, (Object[])null ) ) ;
             } catch (Exception ex) {
                 throw wrapper.badHelperIdMethod( ex, helperName ) ;
             }
