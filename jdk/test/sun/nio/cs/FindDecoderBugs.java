@@ -298,7 +298,7 @@ public class FindDecoderBugs {
         void testRandomly(byte[] prefix, int n) {
             int len = prefix.length;
             byte[] ia = Arrays.copyOf(prefix, len + n);
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 5000; i++) {
                 for (int j = 0; j < n; j++)
                     ia[len + j] = randomByte();
                 test(ia);
@@ -434,6 +434,9 @@ public class FindDecoderBugs {
     static void check(boolean cond) {if (cond) pass(); else fail();}
     static void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
+        else fail(x + " not equal to " + y);}
+    static void equal(int x, int y) {
+        if (x == y) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
