@@ -65,6 +65,11 @@ else
   endif
 endif 
 
+# If downloads are allowed
+ifeq ($(ALLOW_DOWNLOADS),true)
+  ANT_OPTIONS += -Dallow.downloads=true
+endif
+
 # Figure out the platform we are using
 _SYSTEM_UNAME := $(shell uname)
 _PLATFORM_KIND = unix
@@ -159,6 +164,8 @@ help:
 	@echo "    $(ANT_TARGETS)"
 	@echo " "
 	@echo "  Environment or command line variables (all optional):"
+	$(call helpenvline, ALT_DROPS_DIR,\
+	       "Directory that contains the drop source bundles i.e. drops.dir")
 	$(call helpenvline, ALT_BOOTDIR,\
 	       "JAVA_HOME to use when running ant")
 	$(call helpenvline, ALT_LANGTOOLS_DIST,\
