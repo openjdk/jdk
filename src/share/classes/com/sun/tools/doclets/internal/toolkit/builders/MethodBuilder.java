@@ -29,7 +29,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.util.*;
-import java.lang.reflect.*;
+
 /**
  * Builds documentation for a method.
  *
@@ -112,22 +112,6 @@ public class MethodBuilder extends AbstractMemberBuilder {
         }
 
         /**
-         * {@inheritDoc}
-         */
-        public void invokeMethod(
-                String methodName,
-                Class<?>[] paramClasses,
-                Object[] params)
-                throws Exception {
-                if (DEBUG) {
-                        configuration.root.printError(
-                                "DEBUG: " + this.getClass().getName() + "." + methodName);
-                }
-                Method method = this.getClass().getMethod(methodName, paramClasses);
-                method.invoke(this, params);
-        }
-
-        /**
          * Returns a list of methods that will be documented for the given class.
          * This information can be used for doclet specific documentation
          * generation.
@@ -158,21 +142,21 @@ public class MethodBuilder extends AbstractMemberBuilder {
         /**
          * Build the method documentation.
          */
-        public void buildMethodDoc(List<?> elements) {
+        public void buildMethodDoc(XMLNode node) {
                 if (writer == null) {
                         return;
                 }
                 for (currentMethodIndex = 0;
                         currentMethodIndex < methods.size();
                         currentMethodIndex++) {
-                        build(elements);
+                        buildChildren(node);
                 }
         }
 
         /**
          * Build the overall header.
          */
-        public void buildHeader() {
+        public void buildHeader(XMLNode node) {
                 writer.writeHeader(
                         classDoc,
                         configuration.getText("doclet.Method_Detail"));
@@ -181,7 +165,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
         /**
          * Build the header for the individual method.
          */
-        public void buildMethodHeader() {
+        public void buildMethodHeader(XMLNode node) {
                 writer.writeMethodHeader(
                         (MethodDoc) methods.get(currentMethodIndex),
                         currentMethodIndex == 0);
@@ -190,14 +174,14 @@ public class MethodBuilder extends AbstractMemberBuilder {
         /**
          * Build the signature.
          */
-        public void buildSignature() {
+        public void buildSignature(XMLNode node) {
                 writer.writeSignature((MethodDoc) methods.get(currentMethodIndex));
         }
 
         /**
          * Build the deprecation information.
          */
-        public void buildDeprecationInfo() {
+        public void buildDeprecationInfo(XMLNode node) {
                 writer.writeDeprecated((MethodDoc) methods.get(currentMethodIndex));
         }
 
@@ -205,7 +189,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
          * Build the comments for the method.  Do nothing if
          * {@link Configuration#nocomment} is set to true.  If this method
          */
-        public void buildMethodComments() {
+        public void buildMethodComments(XMLNode node) {
                 if (!configuration.nocomment) {
             MethodDoc method = (MethodDoc) methods.get(currentMethodIndex);
 
@@ -228,21 +212,21 @@ public class MethodBuilder extends AbstractMemberBuilder {
         /**
          * Build the tag information.
          */
-        public void buildTagInfo() {
+        public void buildTagInfo(XMLNode node) {
                 writer.writeTags((MethodDoc) methods.get(currentMethodIndex));
         }
 
         /**
          * Build the footer of the method.
          */
-        public void buildMethodFooter() {
+        public void buildMethodFooter(XMLNode node) {
                 writer.writeMethodFooter();
         }
 
         /**
          * Build the overall footer.
          */
-        public void buildFooter() {
+        public void buildFooter(XMLNode node) {
                 writer.writeFooter(classDoc);
         }
 

@@ -29,7 +29,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds documentation for a enum constants.
@@ -116,22 +115,6 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         }
 
         /**
-         * {@inheritDoc}
-         */
-        public void invokeMethod(
-                String methodName,
-                Class<?>[] paramClasses,
-                Object[] params)
-                throws Exception {
-                if (DEBUG) {
-                        configuration.root.printError(
-                                "DEBUG: " + this.getClass().getName() + "." + methodName);
-                }
-                Method method = this.getClass().getMethod(methodName, paramClasses);
-                method.invoke(this, params);
-        }
-
-        /**
          * Returns a list of enum constants that will be documented for the given class.
          * This information can be used for doclet specific documentation
          * generation.
@@ -165,21 +148,21 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
          * @param elements the XML elements that specify how to construct this
          *                documentation.
          */
-        public void buildEnumConstant(List<?> elements) {
+        public void buildEnumConstant(XMLNode node) {
                 if (writer == null) {
                         return;
                 }
                 for (currentEnumConstantsIndex = 0;
                         currentEnumConstantsIndex < enumConstants.size();
                         currentEnumConstantsIndex++) {
-                        build(elements);
+                        buildChildren(node);
                 }
         }
 
         /**
          * Build the overall header.
          */
-        public void buildHeader() {
+        public void buildHeader(XMLNode node) {
                 writer.writeHeader(
                         classDoc,
                         configuration.getText("doclet.Enum_Constant_Detail"));
@@ -188,7 +171,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         /**
          * Build the header for the individual enum constants.
          */
-        public void buildEnumConstantHeader() {
+        public void buildEnumConstantHeader(XMLNode node) {
                 writer.writeEnumConstantHeader(
                         (FieldDoc) enumConstants.get(currentEnumConstantsIndex),
                         currentEnumConstantsIndex == 0);
@@ -197,7 +180,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         /**
          * Build the signature.
          */
-        public void buildSignature() {
+        public void buildSignature(XMLNode node) {
                 writer.writeSignature(
                         (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
         }
@@ -205,7 +188,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         /**
          * Build the deprecation information.
          */
-        public void buildDeprecationInfo() {
+        public void buildDeprecationInfo(XMLNode node) {
                 writer.writeDeprecated(
                         (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
         }
@@ -214,7 +197,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
          * Build the comments for the enum constant.  Do nothing if
          * {@link Configuration#nocomment} is set to true.
          */
-        public void buildEnumConstantComments() {
+        public void buildEnumConstantComments(XMLNode node) {
                 if (!configuration.nocomment) {
                         writer.writeComments(
                                 (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
@@ -224,7 +207,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         /**
          * Build the tag information.
          */
-        public void buildTagInfo() {
+        public void buildTagInfo(XMLNode node) {
                 writer.writeTags(
                         (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
         }
@@ -232,14 +215,14 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         /**
          * Build the footer for the individual enum constants.
          */
-        public void buildEnumConstantFooter() {
+        public void buildEnumConstantFooter(XMLNode node) {
                 writer.writeEnumConstantFooter();
         }
 
         /**
          * Build the overall footer.
          */
-        public void buildFooter() {
+        public void buildFooter(XMLNode node) {
                 writer.writeFooter(classDoc);
         }
 
