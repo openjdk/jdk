@@ -88,7 +88,13 @@ public enum ElementKind {
      * An implementation-reserved element.  This is not the element
      * you are looking for.
      */
-    OTHER;
+    OTHER,
+
+    /**
+     * A resource variable.
+     * @since 1.7
+     */
+    RESOURCE_VARIABLE;
 
 
     /**
