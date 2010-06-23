@@ -549,6 +549,7 @@ DIRDIFF_JARFILE = $(BUILDTOOLJARDIR)/dirdiff.jar
 
 ######################################################
 # List of directories in classes directory that should NOT be in rt.jar
+#   sun/nio/cs/ext/ will go into charsets.jar
 ######################################################
 
 NOT_RT_JAR_LIST = $(ABS_TEMPDIR)/not_rt_jar.list
@@ -571,6 +572,7 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "META-INF/services/com.sun.tools.xjc.Plugin" >> $@
 	$(ECHO) "com/sun/tools/" >> $@
 	$(ECHO) "sun/jvmstat/" >> $@
+	$(ECHO) "sun/nio/cs/ext/" >> $@
 	$(ECHO) "sun/rmi/rmic/" >> $@
 	$(ECHO) "sun/tools/asm/" >> $@
 	$(ECHO) "sun/tools/java/" >> $@
