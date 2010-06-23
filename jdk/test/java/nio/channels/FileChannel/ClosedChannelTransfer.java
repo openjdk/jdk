@@ -38,6 +38,7 @@ public class ClosedChannelTransfer {
         test1(channel);
         test2(channel);
         channel.close();
+        file.delete();
     }
 
     static void test1(FileChannel channel) throws Exception {

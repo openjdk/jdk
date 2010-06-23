@@ -39,8 +39,12 @@ public class ReleaseOnCloseDeadlock {
     public static void main(String[] args) throws IOException {
         File blah = File.createTempFile("blah", null);
         blah.deleteOnExit();
-        for (int i=0; i<100; i++) {
-            test(blah.toPath());
+        try {
+            for (int i=0; i<100; i++) {
+                test(blah.toPath());
+            }
+        } finally {
+            blah.delete();
         }
     }
 
