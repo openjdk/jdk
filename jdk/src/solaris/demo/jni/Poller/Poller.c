@@ -160,10 +160,10 @@ static jint throwIllegalStateException(JNIEnv *env, const char * cause)
   return -1;
 }
 
-#define MEMORY_EXCEPTION(str) throwOutOfMemoryError(env, "Poller:" ## str)
-#define STATE_EXCEPTION(str)  throwIllegalStateException(env, "Poller:" ## str)
+#define MEMORY_EXCEPTION(str) throwOutOfMemoryError(env, "Poller:" str)
+#define STATE_EXCEPTION(str)  throwIllegalStateException(env, "Poller:" str)
 #define INTERRUPT_EXCEPTION(str) throwInterruptedIOException(env, \
-                                                             "Poller:" ## str)
+                                                             "Poller:" str)
 jint addfd(JNIEnv *, ioevent_t *, jint, jshort);
 jint removefd(JNIEnv *, ioevent_t *, jint);
 
