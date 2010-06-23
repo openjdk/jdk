@@ -36,49 +36,60 @@ import java.util.*;
 
 public class BasicAccept {
 
-    public static int TEST_PORT = 40170;
-
-    static void server() throws Exception {
+    static void server(ServerSocketChannel ssc) throws Exception {
         Selector acceptSelector = Selector.open();
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.configureBlocking(false);
-        InetAddress lh = InetAddress.getLocalHost();
-        InetSocketAddress isa
-            = new InetSocketAddress(lh, SelectorTest.TEST_PORT);
-        ssc.socket().bind(isa);
-        SelectionKey acceptKey
-            = ssc.register(acceptSelector, SelectionKey.OP_ACCEPT);
-        for (;;) {
-            if (acceptSelector.select() == 0)
-                continue;
-            Set readyKeys = acceptSelector.selectedKeys();
-            Iterator i = readyKeys.iterator();
-            while (i.hasNext()) {
-                SelectionKey sk = (SelectionKey)i.next();
-                i.remove();
-                ServerSocketChannel nextReady
-                    = (ServerSocketChannel)sk.channel();
-                SocketChannel sc = nextReady.accept();
-                ByteBuffer bb = ByteBuffer.wrap(new byte[] { 42 });
-                sc.write(bb);
+        try {
+            ssc.configureBlocking(false);
+            SelectionKey acceptKey
+                = ssc.register(acceptSelector, SelectionKey.OP_ACCEPT);
+            for (;;) {
+                int n = acceptSelector.select();
+                if (Thread.interrupted())
+                    break;
+                if (n == 0)
+                    continue;
+                Set<SelectionKey> readyKeys = acceptSelector.selectedKeys();
+                Iterator<SelectionKey> i = readyKeys.iterator();
+                while (i.hasNext()) {
+                    SelectionKey sk = i.next();
+                    i.remove();
+                    ServerSocketChannel nextReady
+                        = (ServerSocketChannel)sk.channel();
+                    SocketChannel sc = nextReady.accept();
+                    ByteBuffer bb = ByteBuffer.wrap(new byte[] { 42 });
+                    sc.write(bb);
+                    sc.close();
+                }
             }
+        } finally {
+            acceptSelector.close();
         }
     }
 
     private static class Server extends TestThread {
-        Server() {
+        final ServerSocketChannel ssc;
+        Server() throws IOException {
             super("Server", System.err);
+            this.ssc = ServerSocketChannel.open()
+                .bind(new InetSocketAddress(0));
+        }
+        int port() {
+            return ssc.socket().getLocalPort();
         }
         void go() throws Exception {
-            server();
+            try {
+                server(ssc);
+            } finally {
+                ssc.close();
+            }
         }
     }
 
-    static void client() throws Exception {
+    static void client(int port) throws Exception {
         // Get a connection from the server
         InetAddress lh = InetAddress.getLocalHost();
         InetSocketAddress isa
-            = new InetSocketAddress(lh, SelectorTest.TEST_PORT);
+            = new InetSocketAddress(lh, port);
         int connectFailures = 0;
         boolean result = false;
         SocketChannel sc = SocketChannel.open();
@@ -122,17 +133,17 @@ public class BasicAccept {
         if (bb.get(0) != 42)
             throw new RuntimeException("Read wrong byte from server");
         System.err.println("Read from server");
+        sc.close();
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            Server server = new Server();
-            server.start();
-            client();
-        } else if (args[0].equals("client")) {
-            client();
-        } else if (args[0].equals("server")) {
-            server();
+        Server server = new Server();
+        server.start();
+        try {
+            client(server.port());
+        } finally {
+            server.interrupt();
+            server.finish(2000);
         }
     }
 

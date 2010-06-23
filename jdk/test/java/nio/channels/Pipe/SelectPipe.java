@@ -78,10 +78,12 @@ public class SelectPipe {
                 totalRead += bytesRead;
         } while(totalRead < 10);
 
+        sink.close();
+        source.close();
+        selector.close();
+
         for(int i=0; i<10; i++)
             if (outgoingdata.get(i) != incomingdata.get(i))
                 throw new Exception("Pipe failed");
-        sink.close();
-        source.close();
     }
 }

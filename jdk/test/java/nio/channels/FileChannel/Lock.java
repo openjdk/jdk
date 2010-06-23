@@ -55,6 +55,7 @@ public class Lock {
         test2(blah, true);
         test2(blah, false);
         test3(blah);
+        blah.delete();
     }
 
     private static void test2(File blah, boolean b) throws Exception {
@@ -90,7 +91,11 @@ public class Lock {
 
         // Exec the tamperer
         String command = System.getProperty("java.home") +
-            File.separator + "bin" + File.separator + "java Lock " + str + " " + blah;
+            File.separator + "bin" + File.separator + "java";
+        String testClasses = System.getProperty("test.classes");
+        if (testClasses != null)
+            command += " -cp " + testClasses;
+        command += " Lock " + str + " " + blah;
         Process p = Runtime.getRuntime().exec(command);
 
         BufferedReader in = new BufferedReader
