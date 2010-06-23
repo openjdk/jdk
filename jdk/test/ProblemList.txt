@@ -586,9 +586,6 @@ java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
 java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
 java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
 
-# Fails on all platforms due to overlap of JDK jar file contents:
-sun/nio/cs/Test4200310.sh				 	generic-all
-
 ############################################################################
 
 # jdk_rmi
