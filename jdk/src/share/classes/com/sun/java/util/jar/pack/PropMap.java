@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003,2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,8 @@ class PropMap extends TreeMap {
         props.put(Utils.PACK_DEFAULT_TIMEZONE,
                   String.valueOf(Boolean.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)));
 
-        // Limit segment size to less than a megabyte.
-        props.put(Pack200.Packer.SEGMENT_LIMIT, ""+(1*1000*1000));
+        // The segment size is unlimited
+        props.put(Pack200.Packer.SEGMENT_LIMIT, "");
 
         // Preserve file ordering by default.
         props.put(Pack200.Packer.KEEP_FILE_ORDER, Pack200.Packer.TRUE);

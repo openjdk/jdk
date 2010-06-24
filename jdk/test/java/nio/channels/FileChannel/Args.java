@@ -97,6 +97,8 @@ public class Args {
                            (long)Integer.MAX_VALUE << 3);
                 }});
 
+        fc.close();
+        f.delete();
     }
 
 }

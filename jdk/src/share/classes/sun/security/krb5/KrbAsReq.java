@@ -35,9 +35,11 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.crypto.Nonce;
 import sun.security.krb5.internal.crypto.KeyUsage;
+import sun.security.util.*;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.net.UnknownHostException;
-import java.util.Arrays;
+import java.util.StringTokenizer;
 
 /**
  * This class encapsulates the KRB-AS-REQ message that the client
@@ -62,13 +64,11 @@ public class KrbAsReq extends KrbKdcReq {
 
     /**
      * Creates a KRB-AS-REQ to send to the default KDC
-     * @param eTypes not null when using a keytab, this can make sure the etypes
-     * in AS-REQ contains only those available on client
      * @throws KrbException
      * @throws IOException
      */
      // Called by Credentials
-    KrbAsReq(PrincipalName principal, EncryptionKey[] keys, int[] eTypes)
+    KrbAsReq(PrincipalName principal, EncryptionKey[] keys)
         throws KrbException, IOException {
         this(keys, // for pre-authentication
              false, 0, null, null, // pre-auth values
@@ -78,7 +78,7 @@ public class KrbAsReq extends KrbKdcReq {
              null, // KerberosTime from
              null, // KerberosTime till
              null, // KerberosTime rtime
-             eTypes, // int[] eTypes
+             null, // int[] eTypes
              null, // HostAddresses addresses
              null); // Ticket[] additionalTickets
     }
@@ -86,10 +86,8 @@ public class KrbAsReq extends KrbKdcReq {
     /**
      * Creates a KRB-AS-REQ to send to the default KDC
      * with pre-authentication values
-     * @param eTypes not null when using a keytab, this can make sure the etypes
-     * in AS-REQ contains only those available on client
      */
-    KrbAsReq(PrincipalName principal, EncryptionKey[] keys, int[] eTypes,
+    KrbAsReq(PrincipalName principal, EncryptionKey[] keys,
         boolean pa_exists, int etype, String salt, byte[] s2kparams)
         throws KrbException, IOException {
         this(keys, // for pre-authentication
@@ -100,7 +98,7 @@ public class KrbAsReq extends KrbKdcReq {
              null, // KerberosTime from
              null, // KerberosTime till
              null, // KerberosTime rtime
-             eTypes, // int[] eTypes
+             null, // int[] eTypes
              null, // HostAddresses addresses
              null); // Ticket[] additionalTickets
     }
@@ -344,24 +342,18 @@ public class KrbAsReq extends KrbKdcReq {
         }
 
         princName = cname;
-
-        // keys might contain many etypes, or only one if in preauth mode,
-        // coz EncryptionKey.acquireSecretKeys() with pa returns only one key.
-
+        int[] tktETypes = EType.getDefaults("default_tkt_enctypes", keys);
         PAData[] paData = null;
         if (PA_ENC_TIMESTAMP_REQUIRED) {
             EncryptionKey key = null;
             if (pa_etype != EncryptedData.ETYPE_NULL) {
                 if (DEBUG) {
-                    System.out.println("Pre-Authenticaton: " +
-                            "find key for etype = " + pa_etype);
+                    System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
                 }
                 key = EncryptionKey.findKey(pa_etype, keys);
             } else {
-                int[] availableETypes =
-                        EType.getDefaults("default_tkt_enctypes", keys);
-                if (availableETypes.length > 0) {
-                    key = EncryptionKey.findKey(availableETypes[0], keys);
+                if (tktETypes.length > 0) {
+                    key = EncryptionKey.findKey(tktETypes[0], keys);
                 }
             }
             if (DEBUG) {
@@ -384,7 +376,7 @@ public class KrbAsReq extends KrbKdcReq {
         }
 
         if (eTypes == null) {
-            eTypes = EType.getDefaults("default_tkt_enctypes");
+            eTypes = tktETypes;
         }
 
         // check to use addresses in tickets

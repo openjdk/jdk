@@ -25,7 +25,7 @@
  * @bug 4434723 4482726 4559072 4638365 4795550 5081340 5103988 6253145
  * @summary Test FileChannel.transferFrom and transferTo
  * @library ..
- * @run main/timeout=180 Transfer
+ * @run main/timeout=240 Transfer
  */
 
 import java.io.*;
@@ -96,6 +96,9 @@ public class Transfer {
 
         sourceChannel.close();
         sinkChannel.close();
+
+        source.delete();
+        sink.delete();
     }
 
     private static void testReadableByteChannel(int size) throws Exception {
@@ -139,6 +142,8 @@ public class Transfer {
         fc.close();
         sink.close();
         source.close();
+
+        f.delete();
     }
 
     public static void xferTest02() throws Exception {
@@ -173,6 +178,9 @@ public class Transfer {
         fc2.close();
         raf1.close();
         raf2.close();
+
+        source.delete();
+        dest.delete();
     }
 
     public static void xferTest03() throws Exception {
@@ -207,6 +215,9 @@ public class Transfer {
         fc2.close();
         raf1.close();
         raf2.close();
+
+        source.delete();
+        dest.delete();
     }
 
     // Test transferTo with large file
@@ -245,6 +256,8 @@ public class Transfer {
         sourceChannel.close();
         sinkChannel.close();
 
+        source.delete();
+        sink.delete();
     }
 
     // Test transferFrom with large file
@@ -293,6 +306,8 @@ public class Transfer {
         }
         sourceChannel.close();
         sinkChannel.close();
+        source.delete();
+        sink.delete();
     }
 
     static void checkFileData(File file, String expected) throws Exception {
@@ -338,6 +353,8 @@ public class Transfer {
 
         checkFileData(source, data);
         checkFileData(sink, data.substring(7,data.length()));
+
+        source.delete();
     }
 
     // Test transferTo to non-blocking socket channel
@@ -371,6 +388,7 @@ public class Transfer {
         sink.close();
         other.close();
         ssc.close();
+        source.delete();
     }
 
 
@@ -473,6 +491,7 @@ public class Transfer {
             source.close();
             ssc.close();
             fc.close();
+            file.delete();
         }
     }
 

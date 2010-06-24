@@ -42,8 +42,8 @@ public class WriteUTF {
             s += s;
         System.err.println("String length " + s.length());
 
+        f = new RandomAccessFile(fn, "rw");
         try {
-            f = new RandomAccessFile(fn, "rw");
             try {
                 f.writeUTF(s);
             }
@@ -53,6 +53,7 @@ public class WriteUTF {
             throw new RuntimeException("UTFDataFormatException not thrown");
         }
         finally {
+            f.close();
             fn.delete();
         }
 

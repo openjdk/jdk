@@ -35,20 +35,22 @@ import java.io.*;
 
 public class ArrayFields {
 
-   public static void main (String argv[]) {
+   public static void main (String argv[]) throws IOException {
        System.err.println("\nRegression test for testing of " +
            "serialization/deserialization of objects with " +
            "fields of array type\n");
 
+       FileOutputStream ostream = null;
+       FileInputStream istream = null;
        try {
-           FileOutputStream ostream = new FileOutputStream("piotest4.tmp");
+           ostream = new FileOutputStream("piotest4.tmp");
            ObjectOutputStream p = new ObjectOutputStream(ostream);
 
            ArrayTest array = new ArrayTest();
            p.writeObject(array);
            p.flush();
 
-           FileInputStream istream = new FileInputStream("piotest4.tmp");
+           istream = new FileInputStream("piotest4.tmp");
            ObjectInputStream q = new ObjectInputStream(istream);
 
            Object obj = null;
@@ -73,6 +75,9 @@ public class ArrayFields {
            System.err.print("TEST FAILED: ");
            e.printStackTrace();
            throw new Error();
+       } finally {
+           if (istream != null) istream.close();
+           if (ostream != null) ostream.close();
        }
    }
 }

@@ -26,6 +26,7 @@
  * @summary Make sure that getBundle doesn't cause a security error
  * with a security manager when instantialing RBClassLoader (internal
  * classloader).
+ * @run main/othervm Bug6359330
  */
 
 import javax.xml.parsers.SAXParser;

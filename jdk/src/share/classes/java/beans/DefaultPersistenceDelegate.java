@@ -222,6 +222,25 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
 
     // Write out the properties of this instance.
     private void initBean(Class type, Object oldInstance, Object newInstance, Encoder out) {
+        for (Field field : type.getFields()) {
+            int mod = field.getModifiers();
+            if (Modifier.isFinal(mod) || Modifier.isStatic(mod) || Modifier.isTransient(mod)) {
+                continue;
+            }
+            try {
+                Expression oldGetExp = new Expression(field, "get", new Object[] { oldInstance });
+                Expression newGetExp = new Expression(field, "get", new Object[] { newInstance });
+                Object oldValue = oldGetExp.getValue();
+                Object newValue = newGetExp.getValue();
+                out.writeExpression(oldGetExp);
+                if (!equals(newValue, out.get(oldValue))) {
+                    out.writeStatement(new Statement(field, "set", new Object[] { oldInstance, oldValue }));
+                }
+            }
+            catch (Exception exception) {
+                out.getExceptionListener().exceptionThrown(exception);
+            }
+        }
         BeanInfo info;
         try {
             info = Introspector.getBeanInfo(type);

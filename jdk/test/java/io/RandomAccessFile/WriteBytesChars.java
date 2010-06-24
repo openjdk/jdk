@@ -37,8 +37,8 @@ public class WriteBytesChars {
         byte[] b = new byte[80];
         File fn = new File("x.WriteBytesChars");
 
-        try{
-            RandomAccessFile raf = new RandomAccessFile(fn , "rw");;
+        RandomAccessFile raf = new RandomAccessFile(fn , "rw");;
+        try {
             for (int i = 0; i < 80; i++) {
                 buf[i] = 'a';
             }
@@ -71,6 +71,7 @@ public class WriteBytesChars {
                     RuntimeException("RandomAccessFile.writeChars, wrong result");
             }
         } finally {
+            raf.close();
             fn.delete();
         }
     }

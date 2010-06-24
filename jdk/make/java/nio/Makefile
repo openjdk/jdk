@@ -818,7 +818,7 @@ GENSOR_SRC = $(SHARE_SRC)/native/sun/nio/ch/genSocketOptionRegistry.c
 GENSOR_EXE = $(TEMPDIR)/genSocketOptionRegistry$(EXE_SUFFIX)
 
 SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSOR_SRC) | \
-	$(NAWK) '/^.*Copyright.*Sun/ { print $$3 }') 
+	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }') 
 
 $(TEMPDIR)/$(GENSOR_SRC) : $(GENSOR_SRC)
 	$(install-non-module-file)
@@ -830,7 +830,7 @@ $(GENSOR_EXE) : $(TEMPDIR)/$(GENSOR_SRC)
 
 $(SCH_GEN)/SocketOptionRegistry.java: $(GENSOR_EXE)
 	$(prep-target)
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh $(SOR_COPYRIGHT_YEARS) > $@
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@
 	$(GENSOR_EXE) >> $@
 
 #
@@ -852,7 +852,7 @@ GENUC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genUnixConstants.c
 GENUC_EXE = $(TEMPDIR)/genUnixConstants
 
 GENUC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENUC_SRC) | \
-	$(NAWK) '/^.*Copyright.*Sun/ { print $$3 }')
+	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
 
 $(GENUC_EXE) : $(GENUC_SRC)
 	$(prep-target)
@@ -860,7 +860,7 @@ $(GENUC_EXE) : $(GENUC_SRC)
 
 $(SFS_GEN)/UnixConstants.java: $(GENUC_EXE)
 	$(prep-target)
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh $(GENUC_COPYRIGHT_YEARS) > $@
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(GENUC_COPYRIGHT_YEARS)" > $@
 	$(GENUC_EXE) >> $@
 
 GENSC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genSolarisConstants.c
@@ -868,7 +868,7 @@ GENSC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genSolarisConstants.c
 GENSC_EXE = $(TEMPDIR)/genSolarisConstants
 
 GENSC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSC_SRC) | \
-	$(NAWK) '/^.*Copyright.*Sun/ { print $$3 }')
+	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
 
 $(GENSC_EXE) : $(GENSC_SRC)
 	$(prep-target)
@@ -876,7 +876,7 @@ $(GENSC_EXE) : $(GENSC_SRC)
 
 $(SFS_GEN)/SolarisConstants.java: $(GENSC_EXE)
 	$(prep-target)
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh $(GENSC_COPYRIGHT_YEARS) > $@
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(GENSC_COPYRIGHT_YEARS)" > $@
 	$(GENSC_EXE) >> $@
 
 .PHONY: sources 

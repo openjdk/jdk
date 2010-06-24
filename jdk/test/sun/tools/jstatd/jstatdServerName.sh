@@ -43,8 +43,12 @@ JPS="${TESTJAVA}/bin/jps"
 JSTAT="${TESTJAVA}/bin/jstat"
 
 HOSTNAME=`uname -n`
-PORT_1=2098
-PORT_2=2099
+PORT_1=`freePort`
+if [ "${PORT_1}" = "0" ] ; then
+  echo "ERROR: No free port"
+  exit 1
+fi
+PORT_2=`expr ${PORT_1} '+' 1`
 SERVERNAME="SecondJstatdServer"
 
 JSTATD_1_OUT="jstatd_$$_1.out"
@@ -68,6 +72,7 @@ ${JPS} ${HOSTNAME}:${PORT_1} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
 if [ $? -ne 0 ]
 then
     echo "Output of jps differs from expected output. Failed."
+    cleanup
     exit 1
 fi
 
@@ -77,13 +82,12 @@ ${JPS} ${HOSTNAME}:${PORT_2}/${SERVERNAME} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.a
 if [ $? -ne 0 ]
 then
     echo "Output of jps differs from expected output. Failed."
+    cleanup
     exit 1
 fi
 
-TARGET_PID=`${JPS} | grep "Jstatd" | cut -d" " -f1 | head -1`
-
-echo "running: ${JSTAT} -gcutil ${TARGET_PID}@${HOSTNAME}:${PORT_1} 250 5"
-${JSTAT} -gcutil ${TARGET_PID}@${HOSTNAME}:${PORT_1} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+echo "running: ${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5"
+${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
@@ -91,8 +95,8 @@ then
     echo "jstat output differs from expected output"
 fi
 
-echo "running: ${JSTAT} -gcutil ${TARGET_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5"
-${JSTAT} -gcutil ${TARGET_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+echo "running: ${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5"
+${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
@@ -111,5 +115,7 @@ then
     echo "second jstatd generated the following, unexpected output:"
     RC=1
 fi
+
+cleanup
 
 exit ${RC}
