@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,25 @@
  * questions.
  */
 
-package java.io;
-
-import java.io.IOException;
+package java.lang;
 
 /**
- * A {@code Closeable} is a source or destination of data that can be closed.
- * The close method is invoked to release resources that the object is
- * holding (such as open files).
+ * A resource that must be closed when it is no longer needed.
  *
- * @since 1.5
+ * @author Josh Bloch
+ * @since 1.7
  */
-
-public interface Closeable extends AutoCloseable {
-
+public interface AutoCloseable {
     /**
-     * Closes this stream and releases any system resources associated
-     * with it. If the stream is already closed then invoking this
-     * method has no effect.
+     * Close this resource, relinquishing any underlying resources.
+     * This method is invoked automatically by the automatic resource
+     * management block construct.
      *
-     * @throws IOException if an I/O error occurs
+     * <p>Classes implementing this method are strongly encouraged to
+     * be declared to throw more specific exceptions (or no exception
+     * at all, if the close cannot fail).
+     *
+     * @throws Exception if this resource cannot be closed
      */
-    public void close() throws IOException;
+    void close() throws Exception;
 }
