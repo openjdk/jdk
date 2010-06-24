@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,37 +228,6 @@ public class KeyTab implements KeyTabConstants {
     }
 
     /**
-     * Reads the service key from the keytab file.
-     * @param service the PrincipalName of the requested service.
-     * @return the last service key in the keytab with the highest kvno
-     */
-    public EncryptionKey readServiceKey(PrincipalName service) {
-        KeyTabEntry entry = null;
-        EncryptionKey key = null;
-        if (entries != null) {
-            // Find latest entry for this service that has an etype
-            // that has been configured for use
-            for (int i = entries.size()-1; i >= 0; i--) {
-                entry = entries.elementAt(i);
-                if (entry.service.match(service)) {
-                    if (EType.isSupported(entry.keyType)) {
-                        if (key == null ||
-                                entry.keyVersion > key.getKeyVersionNumber()) {
-                            key = new EncryptionKey(entry.keyblock,
-                                             entry.keyType,
-                                             new Integer(entry.keyVersion));
-                        }
-                    } else if (DEBUG) {
-                        System.out.println("Found unsupported keytype (" +
-                            entry.keyType + ") for " + service);
-                    }
-                }
-            }
-        }
-        return key;
-    }
-
-    /**
      * Reads all keys for a service from the keytab file that have
      * etypes that have been configured for use. If there are multiple
      * keys with same etype, the one with the highest kvno is returned.
@@ -309,7 +278,7 @@ public class KeyTab implements KeyTabConstants {
         Arrays.sort(retVal, new Comparator<EncryptionKey>() {
             @Override
             public int compare(EncryptionKey o1, EncryptionKey o2) {
-                if (etypes != null && etypes != EType.getBuiltInDefaults()) {
+                if (etypes != null) {
                     int o1EType = o1.getEType();
                     int o2EType = o2.getEType();
                     if (o1EType != o2EType) {
@@ -320,6 +289,9 @@ public class KeyTab implements KeyTabConstants {
                                 return 1;
                             }
                         }
+                        // Neither o1EType nor o2EType in default_tkt_enctypes,
+                        // therefore won't be used in AS-REQ. We do not care
+                        // about their order, use kvno is OK.
                     }
                 }
                 return o2.getKeyVersionNumber().intValue()
