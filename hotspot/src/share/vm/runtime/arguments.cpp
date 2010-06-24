@@ -1697,20 +1697,21 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
 
-  // Check user specified sharing option conflict with Parallel GC
-  bool cannot_share = ((UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC || UseParNewGC ||
-                       UseParallelGC || UseParallelOldGC ||
-                       SOLARIS_ONLY(UseISM) NOT_SOLARIS(UseLargePages));
-
+  // Check whether user-specified sharing option conflicts with GC or page size.
+  // Both sharing and large pages are enabled by default on some platforms;
+  // large pages override sharing only if explicitly set on the command line.
+  const bool cannot_share = UseConcMarkSweepGC || CMSIncrementalMode ||
+          UseG1GC || UseParNewGC || UseParallelGC || UseParallelOldGC ||
+          UseLargePages && FLAG_IS_CMDLINE(UseLargePages);
   if (cannot_share) {
     // Either force sharing on by forcing the other options off, or
     // force sharing off.
     if (DumpSharedSpaces || ForceSharedSpaces) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Reverting to Serial GC because of %s\n",
-                  ForceSharedSpaces ? " -Xshare:on" : "-Xshare:dump");
+                  "Using Serial GC and default page size because of %s\n",
+                  ForceSharedSpaces ? "-Xshare:on" : "-Xshare:dump");
       force_serial_gc();
-      FLAG_SET_DEFAULT(SOLARIS_ONLY(UseISM) NOT_SOLARIS(UseLargePages), false);
+      FLAG_SET_DEFAULT(UseLargePages, false);
     } else {
       if (UseSharedSpaces && Verbose) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1719,6 +1720,8 @@ bool Arguments::check_vm_args_consistency() {
       }
       no_shared_spaces();
     }
+  } else if (UseLargePages && (UseSharedSpaces || DumpSharedSpaces)) {
+    FLAG_SET_DEFAULT(UseLargePages, false);
   }
 
   status = status && check_gc_consistency();
