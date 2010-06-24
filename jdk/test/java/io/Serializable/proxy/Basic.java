@@ -81,7 +81,7 @@ class ProxyBlindInputStream extends ObjectInputStream {
 
 public class Basic {
     public static void main(String[] args) throws Exception {
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
+        ClassLoader loader = Basic.class.getClassLoader();
         Class[] interfaces = new Class[] { Foo.class, Bar.class };
         Random rand = new Random();
         int foo = rand.nextInt();

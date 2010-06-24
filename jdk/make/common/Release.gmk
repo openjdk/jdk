@@ -47,13 +47,19 @@ IMAGE_BINDIR = bin
 # Swing has taken this approach only as a temporary measure to avoid
 # the compiler warnings until we can properly document these packages.
 # This is covered under 6491853.
-EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf          \
-                        com.sun.java.swing.plaf.windows  \
+EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
                         com.sun.java.swing.plaf.motif    \
                         com.sun.java.swing.plaf.gtk
 
 # This is a stopgap until 6839872 is fixed.
 EXCLUDE_PROPWARN_PKGS += sun.dyn
+
+#
+# Include the exported private packages in ct.sym.
+# This is an interim solution until the ct.sym is replaced
+# with a new module system (being discussed for JDK 7).
+#
+EXPORTED_PRIVATE_PKGS = com.sun.servicetag
 
 # 64-bit solaris has a few special cases. We define the variable
 # SOLARIS64 for use in this Makefile to easily test those cases
@@ -543,6 +549,7 @@ DIRDIFF_JARFILE = $(BUILDTOOLJARDIR)/dirdiff.jar
 
 ######################################################
 # List of directories in classes directory that should NOT be in rt.jar
+#   sun/nio/cs/ext/ will go into charsets.jar
 ######################################################
 
 NOT_RT_JAR_LIST = $(ABS_TEMPDIR)/not_rt_jar.list
@@ -565,6 +572,7 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "META-INF/services/com.sun.tools.xjc.Plugin" >> $@
 	$(ECHO) "com/sun/tools/" >> $@
 	$(ECHO) "sun/jvmstat/" >> $@
+	$(ECHO) "sun/nio/cs/ext/" >> $@
 	$(ECHO) "sun/rmi/rmic/" >> $@
 	$(ECHO) "sun/tools/asm/" >> $@
 	$(ECHO) "sun/tools/java/" >> $@
@@ -648,7 +656,9 @@ $(RT_JAR_FILELIST) + $(RES_JAR_FILELIST): \
 JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/manifest.tmp
 $(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(prep-target)
-	$(SED) -e "s/@@RELEASE@@/$(RELEASE)/" $(MAINMANIFEST) >> $@
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
+	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+	       $(MAINMANIFEST) >> $@
 	$(ECHO) >> $@
 	$(CAT) $(BEANMANIFEST) >> $@
 
@@ -981,7 +991,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	    -processor com.sun.tools.javac.sym.CreateSymbols \
 	    -Acom.sun.tools.javac.sym.Jar=$(RT_JAR) \
 	    -Acom.sun.tools.javac.sym.Dest=$(OUTPUTDIR)/symbols/META-INF/sym/rt.jar \
-	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS)
+	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS) $(EXPORTED_PRIVATE_PKGS)
 	$(BOOT_JAR_CMD) c0f $(LIBDIR)/ct.sym \
 	    -C $(OUTPUTDIR)/symbols META-INF $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,7 @@ package sun.security.krb5;
 
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
-import sun.security.krb5.internal.ktab.*;
 import sun.security.krb5.internal.crypto.EType;
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.net.InetAddress;
@@ -356,7 +354,6 @@ public class Credentials {
      * @param princ the client principal. This value cannot be null.
      * @param secretKey the secret key of the client principal.This value
      * cannot be null.
-     * @param password if null, caller is using a keytab
      * @returns the TGT credentials
      */
     public static Credentials acquireTGT(PrincipalName princ,
@@ -373,18 +370,8 @@ public class Credentials {
                         "Cannot have null secretKey to do AS-Exchange");
 
         KrbAsRep asRep = null;
-
-        // The etype field to be placed in AS-REQ. If caller is using keytab,
-        // it must be limited to etypes in keytab. Otherwise, leave it null,
-        // and KrbAsReq will populate it with all supported etypes.
-
-        int[] eTypes = null;
-        if (password == null) {
-            eTypes = EncryptionKey.getETypes(secretKeys);
-        }
-
         try {
-            asRep = sendASRequest(princ, secretKeys, eTypes, null);
+            asRep = sendASRequest(princ, secretKeys, null);
         } catch (KrbException ke) {
             if ((ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) ||
                 (ke.returnCode() == Krb5.KDC_ERR_PREAUTH_REQUIRED)) {
@@ -407,7 +394,7 @@ public class Credentials {
                                 princ.getSalt(), true,
                                 error.getEType(), error.getParams());
                 }
-                asRep = sendASRequest(princ, secretKeys, eTypes, ke.getError());
+                asRep = sendASRequest(princ, secretKeys, ke.getError());
             } else {
                 throw ke;
             }
@@ -417,18 +404,17 @@ public class Credentials {
 
     /**
      * Sends the AS-REQ
-     * @param eTypes not null if caller using keytab
      */
     private static KrbAsRep sendASRequest(PrincipalName princ,
-        EncryptionKey[] secretKeys, int[] eTypes, KRBError error)
+        EncryptionKey[] secretKeys, KRBError error)
         throws KrbException, IOException {
 
         // %%%
         KrbAsReq asReq = null;
         if (error == null) {
-            asReq = new KrbAsReq(princ, secretKeys, eTypes);
+            asReq = new KrbAsReq(princ, secretKeys);
         } else {
-            asReq = new KrbAsReq(princ, secretKeys, eTypes, true,
+            asReq = new KrbAsReq(princ, secretKeys, true,
                         error.getEType(), error.getSalt(), error.getParams());
         }
 
@@ -517,59 +503,6 @@ public class Credentials {
         }
         return result;
     }
-
-
-    /**
-     * Gets service credential from key table. The credential is used to
-     * decrypt the received client message
-     * and authenticate the client by verifying the client's credential.
-     *
-     * @param serviceName the name of service, using format component@realm
-     * @param keyTabFile the file of key table.
-     * @return a <code>KrbCreds</code> object.
-     */
-    public static Credentials getServiceCreds(String serviceName,
-                                              File keyTabFile) {
-        EncryptionKey k = null;
-        PrincipalName service = null;
-        Credentials result = null;
-        try {
-            service = new PrincipalName(serviceName);
-            if (service.getRealm() == null) {
-                String realm = Config.getInstance().getDefaultRealm();
-                if (realm == null) {
-                    return null;
-                } else {
-                    service.setRealm(realm);
-                }
-            }
-        } catch (RealmException e) {
-            if (DEBUG) {
-                e.printStackTrace();
-            }
-            return null;
-        } catch (KrbException e) {
-            if (DEBUG) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-        KeyTab kt;
-        if (keyTabFile == null) {
-            kt = KeyTab.getInstance();
-        } else {
-            kt = KeyTab.getInstance(keyTabFile);
-        }
-        if ((kt != null) && (kt.findServiceEntry(service))) {
-            k = kt.readServiceKey(service);
-            result = new Credentials(null, service, null, null, null,
-                                     null, null, null, null, null);
-            result.serviceKey = k;
-        }
-        return result;
-    }
-
-
 
     /**
      * Acquires credentials for a specified service using initial credential.

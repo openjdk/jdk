@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 6951366
+ * @bug 6932525 6951366 6959292
  * @summary kerberos login failure on win2008 with AD set to win2000 compat mode
+ * and cannot login if session key and preauth does not use the same etype
  */
 import com.sun.security.auth.module.Krb5LoginModule;
 import java.io.File;
@@ -52,8 +53,6 @@ public class W83 {
         new File(OneKDC.KRB5_CONF).deleteOnExit();
         new File(OneKDC.KTAB).deleteOnExit();
 
-        kdc.setOption(KDC.Option.ONLY_RC4_TGT, true);
-
         KeyTab ktab = KeyTab.getInstance(OneKDC.KTAB);
         for (int etype: EType.getBuiltInDefaults()) {
             if (etype != EncryptedData.ETYPE_ARCFOUR_HMAC) {
@@ -61,6 +60,15 @@ public class W83 {
             }
         }
         ktab.save();
+
+        // For 6932525 and 6951366, make sure the etypes sent in 2nd AS-REQ
+        // is not restricted to that of preauth
+        kdc.setOption(KDC.Option.ONLY_RC4_TGT, true);
+        x.go();
+
+        // For 6959292, make sure that when etype for enc-part in 2nd AS-REQ
+        // is different from that of preauth, client can still decrypt it
+        kdc.setOption(KDC.Option.ONLY_RC4_PREAUTH, true);
         x.go();
     }
 

@@ -38,7 +38,8 @@ public class Test {
 
     public static void main(String[] args) throws Exception {
         ClassLoader ldr =
-            new URLClassLoader(new URL[]{ new URL("file:foo.jar") });
+            new URLClassLoader(new URL[]{ new URL("file:foo.jar") },
+                               Test.class.getClassLoader());
         bcl = Class.forName("B", true, ldr);
         dcl = Class.forName("D", true, ldr);
 

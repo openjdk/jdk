@@ -25,6 +25,7 @@
 
 package java.lang;
 import  java.io.*;
+import  java.util.*;
 
 /**
  * The <code>Throwable</code> class is the superclass of all errors and
@@ -102,7 +103,7 @@ import  java.io.*;
  *         lowLevelOp();
  *     } catch (LowLevelException le) {
  *         throw (HighLevelException)
-                 new HighLevelException().initCause(le);  // Legacy constructor
+ *               new HighLevelException().initCause(le);  // Legacy constructor
  *     }
  * </pre>
  *
@@ -191,6 +192,24 @@ public class Throwable implements Serializable {
      * This field is lazily initialized on first use or serialization and
      * nulled out when fillInStackTrace is called.
      */
+
+    /**
+     * The list of suppressed exceptions, as returned by
+     * {@link #getSuppressedExceptions()}.
+     *
+     * @serial
+     * @since 1.7
+     */
+    private List<Throwable> suppressedExceptions = Collections.emptyList();
+
+    /** Message for trying to suppress a null exception. */
+    private static final String NULL_CAUSE_MESSAGE = "Cannot suppress a null exception.";
+
+    /** Caption  for labeling causative exception stack traces */
+    private static final String CAUSE_CAPTION = "Caused by: ";
+
+    /** Caption for labeling suppressed exception stack traces */
+    private static final String SUPPRESSED_CAPTION = "Suppressed: ";
 
     /**
      * Constructs a new throwable with <code>null</code> as its detail message.
@@ -469,6 +488,52 @@ public class Throwable implements Serializable {
      * class LowLevelException extends Exception {
      * }
      * </pre>
+     * As of release 7, the platform supports the notion of
+     * <i>suppressed exceptions</i> (in conjunction with automatic
+     * resource management blocks). Any exceptions that were
+     * suppressed in order to deliver an exception are printed out
+     * beneath the stack trace.  The format of this information
+     * depends on the implementation, but the following example may be
+     * regarded as typical:
+     *
+     * <pre>
+     * Exception in thread "main" java.lang.Exception: Something happened
+     *  at Foo.bar(Foo.java:10)
+     *  at Foo.main(Foo.java:5)
+     *  Suppressed: Resource$CloseFailException: Resource ID = 0
+     *          at Resource.close(Resource.java:26)
+     *          at Foo.bar(Foo.java:9)
+     *          ... 1 more
+     * </pre>
+     * Note that the "... n more" notation is used on suppressed exceptions
+     * just at it is used on causes. Unlike causes, suppressed exceptions are
+     * indented beyond their "containing exceptions."
+     *
+     * <p>An exception can have both a cause and one or more suppressed
+     * exceptions:
+     * <pre>
+     * Exception in thread "main" java.lang.Exception: Main block
+     *  at Foo3.main(Foo3.java:7)
+     *  Suppressed: Resource$CloseFailException: Resource ID = 2
+     *          at Resource.close(Resource.java:26)
+     *          at Foo3.main(Foo3.java:5)
+     *  Suppressed: Resource$CloseFailException: Resource ID = 1
+     *          at Resource.close(Resource.java:26)
+     *          at Foo3.main(Foo3.java:5)
+     * Caused by: java.lang.Exception: I did it
+     *  at Foo3.main(Foo3.java:8)
+     * </pre>
+     * Likewise, a suppressed exception can have a cause:
+     * <pre>
+     * Exception in thread "main" java.lang.Exception: Main block
+     *  at Foo4.main(Foo4.java:6)
+     *  Suppressed: Resource2$CloseFailException: Resource ID = 1
+     *          at Resource2.close(Resource2.java:20)
+     *          at Foo4.main(Foo4.java:5)
+     *  Caused by: java.lang.Exception: Rats, you caught me
+     *          at Resource2$CloseFailException.<init>(Resource2.java:45)
+     *          ... 2 more
+     * </pre>
      */
     public void printStackTrace() {
         printStackTrace(System.err);
@@ -480,44 +545,71 @@ public class Throwable implements Serializable {
      * @param s <code>PrintStream</code> to use for output
      */
     public void printStackTrace(PrintStream s) {
-        synchronized (s) {
+        printStackTrace(new WrappedPrintStream(s));
+    }
+
+    private void printStackTrace(PrintStreamOrWriter s) {
+        Set<Throwable> dejaVu = new HashSet<Throwable>();
+        dejaVu.add(this);
+
+        synchronized (s.lock()) {
+            // Print our stack trace
             s.println(this);
             StackTraceElement[] trace = getOurStackTrace();
-            for (int i=0; i < trace.length; i++)
-                s.println("\tat " + trace[i]);
+            for (StackTraceElement traceElement : trace)
+                s.println("\tat " + traceElement);
 
+            // Print suppressed exceptions, if any
+            for (Throwable se : suppressedExceptions)
+                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
+
+            // Print cause, if any
             Throwable ourCause = getCause();
             if (ourCause != null)
-                ourCause.printStackTraceAsCause(s, trace);
+                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
         }
     }
 
     /**
-     * Print our stack trace as a cause for the specified stack trace.
+     * Print our stack trace as an enclosed exception for the specified
+     * stack trace.
      */
-    private void printStackTraceAsCause(PrintStream s,
-                                        StackTraceElement[] causedTrace)
-    {
-        // assert Thread.holdsLock(s);
+    private void printEnclosedStackTrace(PrintStreamOrWriter s,
+                                         StackTraceElement[] enclosingTrace,
+                                         String caption,
+                                         String prefix,
+                                         Set<Throwable> dejaVu) {
+        assert Thread.holdsLock(s.lock());
+        if (dejaVu.contains(this)) {
+            s.println("\t[CIRCULAR REFERENCE:" + this + "]");
+        } else {
+            dejaVu.add(this);
+            // Compute number of frames in common between this and enclosing trace
+            StackTraceElement[] trace = getOurStackTrace();
+            int m = trace.length - 1;
+            int n = enclosingTrace.length - 1;
+            while (m >= 0 && n >=0 && trace[m].equals(enclosingTrace[n])) {
+                m--; n--;
+            }
+            int framesInCommon = trace.length - 1 - m;
 
-        // Compute number of frames in common between this and caused
-        StackTraceElement[] trace = getOurStackTrace();
-        int m = trace.length-1, n = causedTrace.length-1;
-        while (m >= 0 && n >=0 && trace[m].equals(causedTrace[n])) {
-            m--; n--;
+            // Print our stack trace
+            s.println(prefix + caption + this);
+            for (int i = 0; i <= m; i++)
+                s.println(prefix + "\tat " + trace[i]);
+            if (framesInCommon != 0)
+                s.println(prefix + "\t... " + framesInCommon + " more");
+
+            // Print suppressed exceptions, if any
+            for (Throwable se : suppressedExceptions)
+                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION,
+                                           prefix +"\t", dejaVu);
+
+            // Print cause, if any
+            Throwable ourCause = getCause();
+            if (ourCause != null)
+                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, prefix, dejaVu);
         }
-        int framesInCommon = trace.length - 1 - m;
-
-        s.println("Caused by: " + this);
-        for (int i=0; i <= m; i++)
-            s.println("\tat " + trace[i]);
-        if (framesInCommon != 0)
-            s.println("\t... " + framesInCommon + " more");
-
-        // Recurse if we have a cause
-        Throwable ourCause = getCause();
-        if (ourCause != null)
-            ourCause.printStackTraceAsCause(s, trace);
     }
 
     /**
@@ -528,44 +620,51 @@ public class Throwable implements Serializable {
      * @since   JDK1.1
      */
     public void printStackTrace(PrintWriter s) {
-        synchronized (s) {
-            s.println(this);
-            StackTraceElement[] trace = getOurStackTrace();
-            for (int i=0; i < trace.length; i++)
-                s.println("\tat " + trace[i]);
-
-            Throwable ourCause = getCause();
-            if (ourCause != null)
-                ourCause.printStackTraceAsCause(s, trace);
-        }
+        printStackTrace(new WrappedPrintWriter(s));
     }
 
     /**
-     * Print our stack trace as a cause for the specified stack trace.
+     * Wrapper class for PrintStream and PrintWriter to enable a single
+     * implementation of printStackTrace.
      */
-    private void printStackTraceAsCause(PrintWriter s,
-                                        StackTraceElement[] causedTrace)
-    {
-        // assert Thread.holdsLock(s);
+    private abstract static class PrintStreamOrWriter {
+        /** Returns the object to be locked when using this StreamOrWriter */
+        abstract Object lock();
 
-        // Compute number of frames in common between this and caused
-        StackTraceElement[] trace = getOurStackTrace();
-        int m = trace.length-1, n = causedTrace.length-1;
-        while (m >= 0 && n >=0 && trace[m].equals(causedTrace[n])) {
-            m--; n--;
+        /** Prints the specified string as a line on this StreamOrWriter */
+        abstract void println(Object o);
+    }
+
+    private static class WrappedPrintStream extends PrintStreamOrWriter {
+        private final PrintStream printStream;
+
+        WrappedPrintStream(PrintStream printStream) {
+            this.printStream = printStream;
         }
-        int framesInCommon = trace.length - 1 - m;
 
-        s.println("Caused by: " + this);
-        for (int i=0; i <= m; i++)
-            s.println("\tat " + trace[i]);
-        if (framesInCommon != 0)
-            s.println("\t... " + framesInCommon + " more");
+        Object lock() {
+            return printStream;
+        }
 
-        // Recurse if we have a cause
-        Throwable ourCause = getCause();
-        if (ourCause != null)
-            ourCause.printStackTraceAsCause(s, trace);
+        void println(Object o) {
+            printStream.println(o);
+        }
+    }
+
+    private static class WrappedPrintWriter extends PrintStreamOrWriter {
+        private final PrintWriter printWriter;
+
+        WrappedPrintWriter(PrintWriter printWriter) {
+            this.printWriter = printWriter;
+        }
+
+        Object lock() {
+            return printWriter;
+        }
+
+        void println(Object o) {
+            printWriter.println(o);
+        }
     }
 
     /**
@@ -667,10 +766,60 @@ public class Throwable implements Serializable {
      */
     native StackTraceElement getStackTraceElement(int index);
 
-    private synchronized void writeObject(java.io.ObjectOutputStream s)
+    private void readObject(ObjectInputStream s)
+        throws IOException, ClassNotFoundException {
+        s.defaultReadObject();     // read in all fields
+        List<Throwable> suppressed = Collections.emptyList();
+        if (suppressedExceptions != null &&
+            !suppressedExceptions.isEmpty()) { // Copy Throwables to new list
+            suppressed = new ArrayList<Throwable>();
+            for(Throwable t : suppressedExceptions) {
+                if (t == null)
+                    throw new NullPointerException(NULL_CAUSE_MESSAGE);
+                suppressed.add(t);
+            }
+        }
+        suppressedExceptions = suppressed;
+    }
+
+    private synchronized void writeObject(ObjectOutputStream s)
         throws IOException
     {
         getOurStackTrace();  // Ensure that stackTrace field is initialized.
         s.defaultWriteObject();
+    }
+
+    /**
+     * Adds the specified exception to the list of exceptions that
+     * were suppressed, typically by the automatic resource management
+     * statement, in order to deliver this exception.
+     *
+     * @param exception the exception to be added to the list of
+     *        suppressed exceptions
+     * @throws NullPointerException if {@code exception} is null
+     * @since 1.7
+     */
+    public synchronized void addSuppressedException(Throwable exception) {
+        if (exception == null)
+            throw new NullPointerException(NULL_CAUSE_MESSAGE);
+
+        if (suppressedExceptions.size() == 0)
+            suppressedExceptions = new ArrayList<Throwable>();
+        suppressedExceptions.add(exception);
+    }
+
+    private static final Throwable[] EMPTY_THROWABLE_ARRAY = new Throwable[0];
+
+    /**
+     * Returns an array containing all of the exceptions that were
+     * suppressed, typically by the automatic resource management
+     * statement, in order to deliver this exception.
+     *
+     * @return an array containing all of the exceptions that were
+     *         suppressed to deliver this exception.
+     * @since 1.7
+     */
+    public Throwable[] getSuppressedExceptions() {
+        return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
     }
 }

@@ -44,23 +44,30 @@ class Bar implements Serializable {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("foo.ser"));
-        Foo foo = (Foo) oin.readObject();
-        if (! foo.obj.equals("foo")) {
-            throw new Error();
-        }
+        FileInputStream in = new FileInputStream("foo.ser");
         try {
-            oin.readObject();
-            throw new Error();
-        } catch (ClassCastException ex) {
+            ObjectInputStream oin = new ObjectInputStream(in);
+            Foo foo = (Foo) oin.readObject();
+            if (! foo.obj.equals("foo")) {
+                throw new Error();
+            }
+            try {
+                oin.readObject();
+                throw new Error();
+            } catch (ClassCastException ex) {
+            }
+        } finally {
+            in.close();
         }
 
-        oin = new ObjectInputStream(new FileInputStream("bar.ser"));
+        in = new FileInputStream("bar.ser");
         try {
+            ObjectInputStream oin = new ObjectInputStream(in);
             oin.readObject();
             throw new Error();
         } catch (InvalidClassException ex) {
+        } finally {
+            in.close();
         }
     }
 }

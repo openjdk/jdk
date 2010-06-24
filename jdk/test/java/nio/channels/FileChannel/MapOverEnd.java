@@ -24,6 +24,7 @@
 /* @test
  * @bug 4463036
  * @summary Check if file mapping extends beyond end of file
+ * @run main/othervm MapOverEnd
  */
 
 import java.nio.*;
