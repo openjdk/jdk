@@ -26,7 +26,7 @@
 # include "incls/_sweeper.cpp.incl"
 
 long      NMethodSweeper::_traversals = 0;   // No. of stack traversals performed
-CodeBlob* NMethodSweeper::_current = NULL;   // Current nmethod
+nmethod*  NMethodSweeper::_current = NULL;   // Current nmethod
 int       NMethodSweeper::_seen = 0 ;        // No. of blobs we have currently processed in current pass of CodeCache
 int       NMethodSweeper::_invocations = 0;  // No. of invocations left until we are completed with this pass
 
@@ -171,20 +171,16 @@ void NMethodSweeper::sweep_code_cache() {
       // Since we will give up the CodeCache_lock, always skip ahead to an nmethod.
       // Other blobs can be deleted by other threads
       // Read next before we potentially delete current
-      CodeBlob* next = CodeCache::next_nmethod(_current);
+      nmethod* next = CodeCache::next_nmethod(_current);
 
       // Now ready to process nmethod and give up CodeCache_lock
       {
         MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-        process_nmethod((nmethod *)_current);
+        process_nmethod(_current);
       }
       _seen++;
       _current = next;
     }
-
-    // Skip forward to the next nmethod (if any). Code blobs other than nmethods
-    // can be freed async to us and make _current invalid while we sleep.
-    _current = CodeCache::next_nmethod(_current);
   }
 
   if (_current == NULL && !_rescan && (_locked_seen || _not_entrant_seen_on_stack)) {
