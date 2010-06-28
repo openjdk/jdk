@@ -135,8 +135,7 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
   copy_call_debug_info(oldcall, call);
   call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
-  _igvn.hash_delete(oldcall);
-  _igvn.subsume_node(oldcall, call);
+  _igvn.replace_node(oldcall, call);
   transform_later(call);
 
   return call;
@@ -523,8 +522,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
         // Kill all new Phis
         while(value_phis.is_nonempty()) {
           Node* n = value_phis.node();
-          _igvn.hash_delete(n);
-          _igvn.subsume_node(n, C->top());
+          _igvn.replace_node(n, C->top());
           value_phis.pop();
         }
       }
@@ -1311,8 +1309,7 @@ void PhaseMacroExpand::expand_allocate_common(
   if (!always_slow) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   }
-  _igvn.hash_delete(alloc);
-  _igvn.subsume_node(alloc, call);
+  _igvn.replace_node(alloc, call);
   transform_later(call);
 
   // Identify the output projections from the allocate node and
