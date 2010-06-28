@@ -25,7 +25,6 @@
  * @bug 4434723 4482726 4559072 4638365 4795550 5081340 5103988 6253145
  * @summary Test FileChannel.transferFrom and transferTo
  * @library ..
- * @run main/timeout=240 Transfer
  */
 
 import java.io.*;
@@ -33,6 +32,8 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.Random;
 
 
@@ -262,23 +263,30 @@ public class Transfer {
 
     // Test transferFrom with large file
     public static void xferTest05() throws Exception {
-        // Linux can't handle the really large file sizes for a
-        // truncate or a positional write
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Linux"))
-            return;
-
         // Create a source file & large sink file for the test
         File source = File.createTempFile("blech", null);
         source.deleteOnExit();
         initTestFile(source, 100);
 
-        File sink = File.createTempFile("sink", null);
+        // Create the sink file as a sparse file if possible
+        File sink = null;
+        FileChannel fc = null;
+        while (fc == null) {
+            sink = File.createTempFile("sink", null);
+            // re-create as a sparse file
+            sink.toPath().delete();
+            try {
+                fc = FileChannel.open(sink.toPath(),
+                                      StandardOpenOption.CREATE_NEW,
+                                      StandardOpenOption.WRITE,
+                                      StandardOpenOption.SPARSE);
+            } catch (FileAlreadyExistsException ignore) {
+                // someone else got it
+            }
+        }
         sink.deleteOnExit();
 
         long testSize = ((long)Integer.MAX_VALUE) * 2;
-        RandomAccessFile raf = new RandomAccessFile(sink, "rw");
-        FileChannel fc = raf.getChannel();
         try {
             fc.write(ByteBuffer.wrap("Use the source!".getBytes()),
                      testSize - 40);
@@ -288,24 +296,26 @@ public class Transfer {
             return;
         } finally {
             fc.close();
-            raf.close();
         }
 
         // Get new channels for the source and sink and attempt transfer
-        FileInputStream fis = new FileInputStream(source);
-        FileChannel sourceChannel = fis.getChannel();
-
-        raf = new RandomAccessFile(sink, "rw");
-        FileChannel sinkChannel = raf.getChannel();
-
-        long bytesWritten = sinkChannel.transferFrom(sourceChannel,
-                                                     testSize - 40, 10);
-        if (bytesWritten != 10) {
-            throw new RuntimeException("Transfer test 5 failed " +
-                                       bytesWritten);
+        FileChannel sourceChannel = new FileInputStream(source).getChannel();
+        try {
+            FileChannel sinkChannel = new RandomAccessFile(sink, "rw").getChannel();
+            try {
+                long bytesWritten = sinkChannel.transferFrom(sourceChannel,
+                                                             testSize - 40, 10);
+                if (bytesWritten != 10) {
+                    throw new RuntimeException("Transfer test 5 failed " +
+                                               bytesWritten);
+                }
+            } finally {
+                sinkChannel.close();
+            }
+        } finally {
+            sourceChannel.close();
         }
-        sourceChannel.close();
-        sinkChannel.close();
+
         source.delete();
         sink.delete();
     }

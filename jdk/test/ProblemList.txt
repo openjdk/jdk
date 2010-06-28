@@ -379,9 +379,6 @@ sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java
 #   Interrupted or IO exception, maybe writing to non-unique named file?
 com/sun/net/httpserver/bugs/B6373555.java			generic-all
 
-# Fails on OpenSolaris, BindException unexpected 
-java/net/BindException/Test.java				generic-all
-
 # Fails on OpenSolaris, times out
 java/net/MulticastSocket/SetOutgoingIf.java			generic-all
 
