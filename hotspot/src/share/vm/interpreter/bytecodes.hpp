@@ -270,6 +270,10 @@ class Bytecodes: AllStatic {
     _fast_linearswitch    ,
     _fast_binaryswitch    ,
 
+    // special handling of oop constants:
+    _fast_aldc            ,
+    _fast_aldc_w          ,
+
     _return_register_finalizer    ,
 
     _shouldnotreachhere,      // For debugging

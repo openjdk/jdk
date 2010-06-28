@@ -66,6 +66,7 @@ class Rewriter: public StackObj {
   void rewrite_Object_init(methodHandle m, TRAPS);
   void rewrite_member_reference(address bcp, int offset);
   void rewrite_invokedynamic(address bcp, int offset);
+  void maybe_rewrite_ldc(address bcp, int offset, bool is_wide);
 
  public:
   // Driver routine:

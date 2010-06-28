@@ -323,8 +323,8 @@ ciInstanceKlass* ciInstanceKlass::super() {
 // ciInstanceKlass::java_mirror
 //
 // Get the instance of java.lang.Class corresponding to this klass.
+// Cache it on this->_java_mirror.
 ciInstance* ciInstanceKlass::java_mirror() {
-  assert(is_loaded(), "must be loaded");
   if (_java_mirror == NULL) {
     _java_mirror = ciKlass::java_mirror();
   }

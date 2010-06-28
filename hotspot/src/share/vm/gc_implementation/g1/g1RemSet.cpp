@@ -303,7 +303,6 @@ void HRInto_G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   assert( _cards_scanned != NULL, "invariant" );
   _cards_scanned[worker_i] = scanRScl.cards_done();
 
-  _g1p->record_scan_rs_start_time(worker_i, rs_time_start * 1000.0);
   _g1p->record_scan_rs_time(worker_i, scan_rs_time_sec * 1000.0);
 }
 
@@ -311,8 +310,6 @@ void HRInto_G1RemSet::updateRS(int worker_i) {
   ConcurrentG1Refine* cg1r = _g1->concurrent_g1_refine();
 
   double start = os::elapsedTime();
-  _g1p->record_update_rs_start_time(worker_i, start * 1000.0);
-
   // Apply the appropriate closure to all remaining log entries.
   _g1->iterate_dirty_card_closure(false, worker_i);
   // Now there should be no dirty cards.
@@ -471,7 +468,6 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
     } else {
-      _g1p->record_update_rs_start_time(worker_i, os::elapsedTime() * 1000.0);
       _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
       _g1p->record_update_rs_time(worker_i, 0.0);
       _g1p->record_scan_new_refs_time(worker_i, 0.0);
@@ -479,7 +475,6 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
     if (G1UseParallelRSetScanning || (worker_i == 0)) {
       scanRS(oc, worker_i);
     } else {
-      _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime() * 1000.0);
       _g1p->record_scan_rs_time(worker_i, 0.0);
     }
   } else {

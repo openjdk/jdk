@@ -217,21 +217,21 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 
 class nmethodDesc: public CHeapObj {
  private:
-  methodHandle _method;
+  jmethodID _jmethod_id;
   address _code_begin;
   address _code_end;
   jvmtiAddrLocationMap* _map;
   jint _map_length;
  public:
-  nmethodDesc(methodHandle method, address code_begin, address code_end,
+  nmethodDesc(jmethodID jmethod_id, address code_begin, address code_end,
               jvmtiAddrLocationMap* map, jint map_length) {
-    _method = method;
+    _jmethod_id = jmethod_id;
     _code_begin = code_begin;
     _code_end = code_end;
     _map = map;
     _map_length = map_length;
   }
-  methodHandle method() const           { return _method; }
+  jmethodID jmethod_id() const          { return _jmethod_id; }
   address code_begin() const            { return _code_begin; }
   address code_end() const              { return _code_end; }
   jvmtiAddrLocationMap* map() const     { return _map; }
@@ -323,8 +323,7 @@ void nmethodCollector::do_nmethod(nmethod* nm) {
   JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &map, &map_length);
 
   // record the nmethod details
-  methodHandle mh(nm->method());
-  nmethodDesc* snm = new nmethodDesc(mh,
+  nmethodDesc* snm = new nmethodDesc(nm->get_and_cache_jmethod_id(),
                                      nm->code_begin(),
                                      nm->code_end(),
                                      map,
@@ -367,8 +366,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   // iterate over the  list and post an event for each nmethod
   nmethodDesc* nm_desc = collector.first();
   while (nm_desc != NULL) {
-    methodOop method = nm_desc->method()();
-    jmethodID mid = method->jmethod_id();
+    jmethodID mid = nm_desc->jmethod_id();
     assert(mid != NULL, "checking");
     JvmtiExport::post_compiled_method_load(env, mid,
                                            (jint)(nm_desc->code_end() - nm_desc->code_begin()),

@@ -566,6 +566,7 @@ public class GenerateOopMap {
       case Bytecodes._invokespecial:
       case Bytecodes._invokestatic:
       case Bytecodes._invokeinterface:
+      case Bytecodes._invokedynamic:
         // FIXME: print signature of referenced method (need more
         // accessors in ConstantPool and ConstantPoolCache)
         int idx = currentBC.getIndexBig();
@@ -605,6 +606,7 @@ public class GenerateOopMap {
       case Bytecodes._invokespecial:
       case Bytecodes._invokestatic:
       case Bytecodes._invokeinterface:
+      case Bytecodes._invokedynamic:
         // FIXME: print signature of referenced method (need more
         // accessors in ConstantPool and ConstantPoolCache)
         int idx = currentBC.getIndexBig();
@@ -1134,6 +1136,7 @@ public class GenerateOopMap {
       case Bytecodes._invokespecial:
       case Bytecodes._invokestatic:
       case Bytecodes._invokeinterface:
+      case Bytecodes._invokedynamic:
         _itr_send = itr;
         _report_result_for_send = true;
         break;
@@ -1379,6 +1382,7 @@ public class GenerateOopMap {
     case Bytecodes._invokevirtual:
     case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexBig(), itr.bci()); break;
     case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexBig(), itr.bci()); break;
+    case Bytecodes._invokedynamic:     doMethod(false, true,  itr.getIndexBig(), itr.bci()); break;
     case Bytecodes._invokeinterface:   doMethod(false, true,  itr.getIndexBig(), itr.bci()); break;
     case Bytecodes._newarray:
     case Bytecodes._anewarray:         ppNewRef(vCTS, itr.bci()); break;
@@ -1725,7 +1729,7 @@ public class GenerateOopMap {
   void  doMethod                            (boolean is_static, boolean is_interface, int idx, int bci) {
     // Dig up signature for field in constant pool
     ConstantPool cp       = _method.getConstants();
-    int nameAndTypeIdx    = cp.getNameAndTypeRefIndexAt(idx);
+    int nameAndTypeIdx    = cp.getTagAt(idx).isNameAndType() ? idx : cp.getNameAndTypeRefIndexAt(idx);
     int signatureIdx      = cp.getSignatureRefIndexAt(nameAndTypeIdx);
     Symbol signature      = cp.getSymbolAt(signatureIdx);
 

@@ -29,7 +29,7 @@
 
 class NMethodSweeper : public AllStatic {
   static long      _traversals;   // Stack traversal count
-  static CodeBlob* _current;      // Current nmethod
+  static nmethod*  _current;      // Current nmethod
   static int       _seen;         // Nof. nmethod we have currently processed in current pass of CodeCache
   static int       _invocations;  // No. of invocations left until we are completed with this pass
 

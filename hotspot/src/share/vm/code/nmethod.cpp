@@ -584,6 +584,7 @@ nmethod::nmethod(
     _oops_do_mark_link       = NULL;
     _method                  = method;
     _entry_bci               = InvocationEntryBci;
+    _jmethod_id              = NULL;
     _osr_link                = NULL;
     _scavenge_root_link      = NULL;
     _scavenge_root_state     = 0;
@@ -677,6 +678,7 @@ nmethod::nmethod(
     _oops_do_mark_link       = NULL;
     _method                  = method;
     _entry_bci               = InvocationEntryBci;
+    _jmethod_id              = NULL;
     _osr_link                = NULL;
     _scavenge_root_link      = NULL;
     _scavenge_root_state     = 0;
@@ -784,6 +786,7 @@ nmethod::nmethod(
     NOT_PRODUCT(_has_debug_info = false);
     _oops_do_mark_link       = NULL;
     _method                  = method;
+    _jmethod_id              = NULL;
     _compile_id              = compile_id;
     _comp_level              = comp_level;
     _entry_bci               = entry_bci;
@@ -1488,9 +1491,23 @@ void nmethod::post_compiled_method_load_event() {
       moop->signature()->utf8_length(),
       code_begin(), code_size());
 
+  if (JvmtiExport::should_post_compiled_method_load() ||
+      JvmtiExport::should_post_compiled_method_unload()) {
+    get_and_cache_jmethod_id();
+  }
+
   if (JvmtiExport::should_post_compiled_method_load()) {
     JvmtiExport::post_compiled_method_load(this);
   }
+}
+
+jmethodID nmethod::get_and_cache_jmethod_id() {
+  if (_jmethod_id == NULL) {
+    // Cache the jmethod_id since it can no longer be looked up once the
+    // method itself has been marked for unloading.
+    _jmethod_id = method()->jmethod_id();
+  }
+  return _jmethod_id;
 }
 
 void nmethod::post_compiled_method_unload() {
@@ -1504,12 +1521,17 @@ void nmethod::post_compiled_method_unload() {
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
   // If a JVMTI agent has enabled the CompiledMethodUnload event then
-  // post the event. Sometime later this nmethod will be made a zombie by
-  // the sweeper but the methodOop will not be valid at that point.
-  if (JvmtiExport::should_post_compiled_method_unload()) {
+  // post the event. Sometime later this nmethod will be made a zombie
+  // by the sweeper but the methodOop will not be valid at that point.
+  // If the _jmethod_id is null then no load event was ever requested
+  // so don't bother posting the unload.  The main reason for this is
+  // that the jmethodID is a weak reference to the methodOop so if
+  // it's being unloaded there's no way to look it up since the weak
+  // ref will have been cleared.
+  if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     HandleMark hm;
-    JvmtiExport::post_compiled_method_unload(method()->jmethod_id(), code_begin());
+    JvmtiExport::post_compiled_method_unload(_jmethod_id, code_begin());
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at
@@ -2659,13 +2681,10 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
         case Bytecodes::_getstatic:
         case Bytecodes::_putstatic:
           {
-            methodHandle sdm = sd->method();
-            Bytecode_field* field = Bytecode_field_at(sdm(), sdm->bcp_from(sd->bci()));
-            constantPoolOop sdmc = sdm->constants();
-            symbolOop name = sdmc->name_ref_at(field->index());
+            Bytecode_field* field = Bytecode_field_at(sd->method(), sd->bci());
             st->print(" ");
-            if (name != NULL)
-              name->print_symbol_on(st);
+            if (field->name() != NULL)
+              field->name()->print_symbol_on(st);
             else
               st->print("<UNKNOWN>");
           }
