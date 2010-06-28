@@ -2000,6 +2000,17 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     }
   }
 
+#ifdef ASSERT
+  if( n->is_Mem() ) {
+    Compile* C = Compile::current();
+    int alias_idx = C->get_alias_index(n->as_Mem()->adr_type());
+    assert( n->in(0) != NULL || alias_idx != Compile::AliasIdxRaw ||
+            // oop will be recorded in oop map if load crosses safepoint
+            n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+                             LoadNode::is_immutable_value(n->in(MemNode::Address))),
+            "raw memory operations should have control edge");
+  }
+#endif
   // Count FPU ops and common calls, implements item (3)
   switch( nop ) {
   // Count all float operations that may use FPU

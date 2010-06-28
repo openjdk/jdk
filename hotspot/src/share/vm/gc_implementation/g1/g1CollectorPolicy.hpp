@@ -171,16 +171,17 @@ protected:
   double*    _cur_aux_times_ms;
   bool*      _cur_aux_times_set;
 
+  double* _par_last_gc_worker_start_times_ms;
   double* _par_last_ext_root_scan_times_ms;
   double* _par_last_mark_stack_scan_times_ms;
-  double* _par_last_update_rs_start_times_ms;
   double* _par_last_update_rs_times_ms;
   double* _par_last_update_rs_processed_buffers;
-  double* _par_last_scan_rs_start_times_ms;
   double* _par_last_scan_rs_times_ms;
   double* _par_last_scan_new_refs_times_ms;
   double* _par_last_obj_copy_times_ms;
   double* _par_last_termination_times_ms;
+  double* _par_last_termination_attempts;
+  double* _par_last_gc_worker_end_times_ms;
 
   // indicates that we are in young GC mode
   bool _in_young_gc_mode;
@@ -559,13 +560,14 @@ public:
   }
 
 protected:
-  void print_stats (int level, const char* str, double value);
-  void print_stats (int level, const char* str, int value);
-  void print_par_stats (int level, const char* str, double* data) {
+  void print_stats(int level, const char* str, double value);
+  void print_stats(int level, const char* str, int value);
+
+  void print_par_stats(int level, const char* str, double* data) {
     print_par_stats(level, str, data, true);
   }
-  void print_par_stats (int level, const char* str, double* data, bool summary);
-  void print_par_buffers (int level, const char* str, double* data, bool summary);
+  void print_par_stats(int level, const char* str, double* data, bool summary);
+  void print_par_sizes(int level, const char* str, double* data, bool summary);
 
   void check_other_times(int level,
                          NumberSeq* other_times_ms,
@@ -891,6 +893,10 @@ public:
   virtual void record_full_collection_start();
   virtual void record_full_collection_end();
 
+  void record_gc_worker_start_time(int worker_i, double ms) {
+    _par_last_gc_worker_start_times_ms[worker_i] = ms;
+  }
+
   void record_ext_root_scan_time(int worker_i, double ms) {
     _par_last_ext_root_scan_times_ms[worker_i] = ms;
   }
@@ -912,10 +918,6 @@ public:
     _all_mod_union_times_ms->add(ms);
   }
 
-  void record_update_rs_start_time(int thread, double ms) {
-    _par_last_update_rs_start_times_ms[thread] = ms;
-  }
-
   void record_update_rs_time(int thread, double ms) {
     _par_last_update_rs_times_ms[thread] = ms;
   }
@@ -923,10 +925,6 @@ public:
   void record_update_rs_processed_buffers (int thread,
                                            double processed_buffers) {
     _par_last_update_rs_processed_buffers[thread] = processed_buffers;
-  }
-
-  void record_scan_rs_start_time(int thread, double ms) {
-    _par_last_scan_rs_start_times_ms[thread] = ms;
   }
 
   void record_scan_rs_time(int thread, double ms) {
@@ -953,16 +951,13 @@ public:
     _par_last_obj_copy_times_ms[thread] += ms;
   }
 
-  void record_obj_copy_time(double ms) {
-    record_obj_copy_time(0, ms);
-  }
-
-  void record_termination_time(int thread, double ms) {
+  void record_termination(int thread, double ms, size_t attempts) {
     _par_last_termination_times_ms[thread] = ms;
+    _par_last_termination_attempts[thread] = (double) attempts;
   }
 
-  void record_termination_time(double ms) {
-    record_termination_time(0, ms);
+  void record_gc_worker_end_time(int worker_i, double ms) {
+    _par_last_gc_worker_end_times_ms[worker_i] = ms;
   }
 
   void record_pause_time_ms(double ms) {

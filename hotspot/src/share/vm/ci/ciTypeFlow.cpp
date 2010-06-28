@@ -712,10 +712,8 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
     ciObject* obj = con.as_object();
     if (obj->is_null_object()) {
       push_null();
-    } else if (obj->is_klass()) {
-      // The type of ldc <class> is java.lang.Class
-      push_object(outer()->env()->Class_klass());
     } else {
+      assert(!obj->is_klass(), "must be java_mirror of klass");
       push_object(obj->klass());
     }
   } else {

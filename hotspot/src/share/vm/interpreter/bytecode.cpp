@@ -136,25 +136,24 @@ int Bytecode_tableswitch::dest_offset_at(int i) const {
 // Implementation of Bytecode_invoke
 
 void Bytecode_invoke::verify() const {
-  Bytecodes::Code bc = adjusted_invoke_code();
   assert(is_valid(), "check invoke");
   assert(method()->constants()->cache() != NULL, "do not call this from verifier or rewriter");
 }
 
 
-symbolOop Bytecode_invoke::signature() const {
+symbolOop Bytecode_member_ref::signature() const {
   constantPoolOop constants = method()->constants();
   return constants->signature_ref_at(index());
 }
 
 
-symbolOop Bytecode_invoke::name() const {
+symbolOop Bytecode_member_ref::name() const {
   constantPoolOop constants = method()->constants();
   return constants->name_ref_at(index());
 }
 
 
-BasicType Bytecode_invoke::result_type(Thread *thread) const {
+BasicType Bytecode_member_ref::result_type(Thread *thread) const {
   symbolHandle sh(thread, signature());
   ResultTypeFinder rts(sh);
   rts.iterate();
@@ -167,9 +166,9 @@ methodHandle Bytecode_invoke::static_target(TRAPS) {
   KlassHandle resolved_klass;
   constantPoolHandle constants(THREAD, _method->constants());
 
-  if (adjusted_invoke_code() == Bytecodes::_invokedynamic) {
+  if (java_code() == Bytecodes::_invokedynamic) {
     LinkResolver::resolve_dynamic_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
-  } else if (adjusted_invoke_code() != Bytecodes::_invokeinterface) {
+  } else if (java_code() != Bytecodes::_invokeinterface) {
     LinkResolver::resolve_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
   } else {
     LinkResolver::resolve_interface_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
@@ -178,51 +177,68 @@ methodHandle Bytecode_invoke::static_target(TRAPS) {
 }
 
 
-int Bytecode_invoke::index() const {
+int Bytecode_member_ref::index() const {
   // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
   // at the same time it allocates per-call-site CP cache entries.
-  Bytecodes::Code stdc = Bytecodes::java_code(code());
-  Bytecode* invoke = Bytecode_at(bcp());
-  if (invoke->has_index_u4(stdc))
-    return invoke->get_index_u4(stdc);
+  Bytecodes::Code rawc = code();
+  Bytecode* invoke = bytecode();
+  if (invoke->has_index_u4(rawc))
+    return invoke->get_index_u4(rawc);
   else
-    return invoke->get_index_u2_cpcache(stdc);
+    return invoke->get_index_u2_cpcache(rawc);
 }
 
+int Bytecode_member_ref::pool_index() const {
+  int index = this->index();
+  DEBUG_ONLY({
+      if (!bytecode()->has_index_u4(code()))
+        index -= constantPoolOopDesc::CPCACHE_INDEX_TAG;
+    });
+  return _method->constants()->cache()->entry_at(index)->constant_pool_index();
+}
 
 // Implementation of Bytecode_field
 
 void Bytecode_field::verify() const {
-  Bytecodes::Code stdc = Bytecodes::java_code(code());
-  assert(stdc == Bytecodes::_putstatic || stdc == Bytecodes::_getstatic ||
-         stdc == Bytecodes::_putfield  || stdc == Bytecodes::_getfield, "check field");
+  assert(is_valid(), "check field");
 }
 
 
-bool Bytecode_field::is_static() const {
-  Bytecodes::Code stdc = Bytecodes::java_code(code());
-  return stdc == Bytecodes::_putstatic || stdc == Bytecodes::_getstatic;
+// Implementation of Bytecode_loadconstant
+
+int Bytecode_loadconstant::raw_index() const {
+  Bytecode* bcp = bytecode();
+  Bytecodes::Code rawc = bcp->code();
+  assert(rawc != Bytecodes::_wide, "verifier prevents this");
+  if (Bytecodes::java_code(rawc) == Bytecodes::_ldc)
+    return bcp->get_index_u1(rawc);
+  else
+    return bcp->get_index_u2(rawc, false);
 }
 
-
-int Bytecode_field::index() const {
-  Bytecode* invoke = Bytecode_at(bcp());
-  return invoke->get_index_u2_cpcache(Bytecodes::_getfield);
-}
-
-
-// Implementation of Bytecodes loac constant
-
-int Bytecode_loadconstant::index() const {
-  Bytecodes::Code stdc = Bytecodes::java_code(code());
-  if (stdc != Bytecodes::_wide) {
-    if (Bytecodes::java_code(stdc) == Bytecodes::_ldc)
-      return get_index_u1(stdc);
-    else
-      return get_index_u2(stdc, false);
+int Bytecode_loadconstant::pool_index() const {
+  int index = raw_index();
+  if (has_cache_index()) {
+    return _method->constants()->cache()->entry_at(index)->constant_pool_index();
   }
-  stdc = Bytecodes::code_at(addr_at(1));
-  return get_index_u2(stdc, true);
+  return index;
+}
+
+BasicType Bytecode_loadconstant::result_type() const {
+  int index = pool_index();
+  constantTag tag = _method->constants()->tag_at(index);
+  return tag.basic_type();
+}
+
+oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
+  assert(_method.not_null(), "must supply method to resolve constant");
+  int index = raw_index();
+  constantPoolOop constants = _method->constants();
+  if (has_cache_index()) {
+    return constants->resolve_cached_constant_at(index, THREAD);
+  } else {
+    return constants->resolve_constant_at(index, THREAD);
+  }
 }
 
 //------------------------------------------------------------------------------

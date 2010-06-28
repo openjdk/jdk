@@ -1376,11 +1376,6 @@ void Arguments::set_g1_gc_flags() {
   }
   no_shared_spaces();
 
-  // Set the maximum pause time goal to be a reasonable default.
-  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
-    FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
-  }
-
   if (FLAG_IS_DEFAULT(MarkStackSize)) {
     FLAG_SET_DEFAULT(MarkStackSize, 128 * TASKQUEUE_SIZE);
   }
