@@ -121,7 +121,7 @@ public class Gen extends JCTree.Visitor {
             : options.get("-g:vars") != null;
         genCrt = options.get("-Xjcov") != null;
         debugCode = options.get("debugcode") != null;
-        allowInvokedynamic = options.get("invokedynamic") != null;
+        allowInvokedynamic = target.hasInvokedynamic() || options.get("invokedynamic") != null;
 
         generateIproxies =
             target.requiresIproxy() ||
