@@ -2462,9 +2462,18 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
 #endif // _LP64
     } else {
+#ifdef _LP64
+      Register r_lo;
+      if (right->type() == T_OBJECT || right->type() == T_ARRAY) {
+        r_lo = right->as_register();
+      } else {
+        r_lo = right->as_register_lo();
+      }
+#else
       Register r_lo = right->as_register_lo();
       Register r_hi = right->as_register_hi();
       assert(l_lo != r_hi, "overwriting registers");
+#endif
       switch (code) {
         case lir_logic_and:
           __ andptr(l_lo, r_lo);
@@ -2784,7 +2793,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   assert(!os::is_MP() || (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rtype));
-  add_call_info(code_offset(), op->info(), op->is_method_handle_invoke());
+  add_call_info(code_offset(), op->info());
 }
 
 
@@ -2795,23 +2804,13 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
          (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rh));
-  add_call_info(code_offset(), op->info(), op->is_method_handle_invoke());
+  add_call_info(code_offset(), op->info());
 }
 
 
 /* Currently, vtable-dispatch is only enabled for sparc platforms */
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere();
-}
-
-
-void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
-  __ movptr(FrameMap::method_handle_invoke_SP_save_opr()->as_register(), rsp);
-}
-
-
-void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
-  __ movptr(rsp, FrameMap::method_handle_invoke_SP_save_opr()->as_register());
 }
 
 

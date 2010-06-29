@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,33 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 6754038
- * @summary Generate call sites for method handle
- * @author jrose
+ * @bug 6958485
+ * @summary fix for 6879921 was insufficient
  *
- * @library ..
- * @compile -source 7 -target 7 InvokeDyn.java
- */
-//No: @run main/othervm -XX:+EnableInvokeDynamic meth.InvokeDyn
-
-/*
- * Standalone testing:
- * <code>
- * $ cd $MY_REPO_DIR/langtools
- * $ (cd make; make)
- * $ ./dist/bootstrap/bin/javac -d dist test/tools/javac/meth/InvokeDyn.java
- * $ javap -c -classpath dist meth.InvokeDyn
- * </code>
+ * @run main/othervm -Xbatch -XX:CompileOnly=Test.init Test
  */
 
-package meth;
+public class Test {
 
-import java.dyn.InvokeDynamic;
+    public static void init(Object src[], boolean[] dst) {
+        // initialize the arrays
+        for (int i =0; i<src.length; i++) {
+            dst[i] = src[i] != null ? false : true;
+        }
+    }
 
-public class InvokeDyn {
-    void test() throws Throwable {
-        Object x = "hello";
-        InvokeDynamic.greet(x, "world", 123);
-        InvokeDynamic.greet(x, "mundus", 456);
-        InvokeDynamic.greet(x, "kosmos", 789);
-        InvokeDynamic.<String>cogitate(10.11121, 3.14);
-        InvokeDynamic.<void>#"yow: what I mean to say is, please treat this one specially"(null);
-        InvokeDynamic.<int>invoke("goodbye");
+    public static void test() {
+        Object[] src = new Object[34];
+        boolean[] dst = new boolean[34];
+
+        init(src, dst);
+    }
+
+    public static void main(String[] args) {
+        for (int i=0; i< 2000; i++) {
+            test();
+        }
     }
 }
