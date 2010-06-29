@@ -225,6 +225,8 @@ class Thread: public ThreadShadow {
   ObjectMonitor * omFreeList ;
   int omFreeCount ;                             // length of omFreeList
   int omFreeProvision ;                         // reload chunk size
+  ObjectMonitor * omInUseList;                  // SLL to track monitors in circulation
+  int omInUseCount;                             // length of omInUseList
 
  public:
   enum {
@@ -493,7 +495,6 @@ public:
 
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base ); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size ); }
-  static ByteSize omFreeList_offset()            { return byte_offset_of(Thread, omFreeList); }
 
 #define TLAB_FIELD_OFFSET(name) \
   static ByteSize tlab_##name##_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
@@ -1576,6 +1577,7 @@ class CompilerThread : public JavaThread {
   CompileLog*   _log;
   CompileTask*  _task;
   CompileQueue* _queue;
+  BufferBlob*   _buffer_blob;
 
  public:
 
@@ -1593,6 +1595,9 @@ class CompilerThread : public JavaThread {
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }
   void          set_env(ciEnv* env)              { _env = env; }
+
+  BufferBlob*   get_buffer_blob()                { return _buffer_blob; }
+  void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; };
 
   // Get/set the thread's logging information
   CompileLog*   log()                            { return _log; }

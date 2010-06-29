@@ -146,6 +146,8 @@ public class BoundMethodHandle extends MethodHandle {
         MethodType foundType = null;
         MemberName foundMethod = null;
         for (MemberName method : methods) {
+            if (method.getDeclaringClass() == MethodHandle.class)
+                continue;  // ignore methods inherited from MH class itself
             MethodType mtype = method.getMethodType();
             if (type != null && type.parameterCount() != mtype.parameterCount())
                 continue;
