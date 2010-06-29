@@ -3305,7 +3305,7 @@ void OptoRuntime::generate_exception_blob() {
 
   // Restore SP from BP if the exception PC is a MethodHandle call site.
   __ cmpl(Address(r15_thread, JavaThread::is_method_handle_return_offset()), 0);
-  __ cmovptr(Assembler::notEqual, rsp, rbp);
+  __ cmovptr(Assembler::notEqual, rsp, rbp_mh_SP_save);
 
   // We have a handler in rax (could be deopt blob).
   __ mov(r8, rax);
