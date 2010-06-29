@@ -122,7 +122,6 @@ public class Attr extends JCTree.Visitor {
         relax = (options.get("-retrofit") != null ||
                  options.get("-relax") != null);
         useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
-        allowInvokedynamic = options.get("invokedynamic") != null;
         enableSunApiLintControl = options.get("enableSunApiLintControl") != null;
     }
 
@@ -154,10 +153,6 @@ public class Attr extends JCTree.Visitor {
      * objects during constructor call?
      */
     boolean allowAnonOuterThis;
-
-    /** Switch: allow invokedynamic syntax
-     */
-    boolean allowInvokedynamic;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1386,9 +1381,15 @@ public class Attr extends JCTree.Visitor {
             // as a special case, MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
             // has type <T>, and T can be a primitive type.
             if (tree.meth.getTag() == JCTree.SELECT && !typeargtypes.isEmpty()) {
-              Type selt = ((JCFieldAccess) tree.meth).selected.type;
-              if ((selt == syms.methodHandleType && methName == names.invoke) || selt == syms.invokeDynamicType) {
+              JCFieldAccess mfield = (JCFieldAccess) tree.meth;
+              if ((mfield.selected.type.tsym != null &&
+                   (mfield.selected.type.tsym.flags() & POLYMORPHIC_SIGNATURE) != 0)
+                  ||
+                  (mfield.sym != null &&
+                   (mfield.sym.flags() & POLYMORPHIC_SIGNATURE) != 0)) {
                   assert types.isSameType(restype, typeargtypes.head) : mtype;
+                  assert mfield.selected.type == syms.methodHandleType
+                      || mfield.selected.type == syms.invokeDynamicType;
                   typeargtypesNonRefOK = true;
               }
             }

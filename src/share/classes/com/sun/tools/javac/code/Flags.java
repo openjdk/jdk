@@ -235,6 +235,12 @@ public class Flags {
      */
     public static final long DISJOINT = 1L<<39;
 
+    /**
+     * Flag that marks a signature-polymorphic invoke method.
+     * (These occur inside java.dyn.MethodHandle.)
+     */
+    public static final long POLYMORPHIC_SIGNATURE = 1L<<40;
+
     /** Modifier masks.
      */
     public static final int
