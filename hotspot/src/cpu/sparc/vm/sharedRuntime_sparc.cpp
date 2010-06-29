@@ -908,25 +908,12 @@ void AdapterGenerator::gen_i2c_adapter(
   // O0-O5          - Outgoing args in compiled layout
   // O6             - Adjusted or restored SP
   // O7             - Valid return address
-  // L0-L7, I0-I7    - Caller's temps (no frame pushed yet)
+  // L0-L7, I0-I7   - Caller's temps (no frame pushed yet)
   // F0-F7          - more outgoing args
 
 
   // Gargs is the incoming argument base, and also an outgoing argument.
   __ sub(Gargs, BytesPerWord, Gargs);
-
-#ifdef ASSERT
-  {
-    // on entry OsavedSP and SP should be equal
-    Label ok;
-    __ cmp(O5_savedSP, SP);
-    __ br(Assembler::equal, false, Assembler::pt, ok);
-    __ delayed()->nop();
-    __ stop("I5_savedSP not set");
-    __ should_not_reach_here();
-    __ bind(ok);
-  }
-#endif
 
   // ON ENTRY TO THE CODE WE ARE MAKING, WE HAVE AN INTERPRETED FRAME
   // WITH O7 HOLDING A VALID RETURN PC

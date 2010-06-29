@@ -126,6 +126,3 @@
     assert(i >= 0 && i < nof_caller_save_xmm_regs, "out of bounds");
     return _caller_save_xmm_regs[i];
   }
-
-  // JSR 292
-  static LIR_Opr& method_handle_invoke_SP_save_opr() { return rbp_opr; }

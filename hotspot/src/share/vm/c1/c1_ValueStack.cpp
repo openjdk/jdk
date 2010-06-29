@@ -119,14 +119,14 @@ void ValueStack::pin_stack_for_linear_scan() {
 
 
 // apply function to all values of a list; factored out from values_do(f)
-void ValueStack::apply(Values list, void f(Value*)) {
+void ValueStack::apply(Values list, ValueVisitor* f) {
   for (int i = 0; i < list.length(); i++) {
     Value* va = list.adr_at(i);
     Value v0 = *va;
     if (v0 != NULL) {
       if (!v0->type()->is_illegal()) {
         assert(v0->as_HiWord() == NULL, "should never see HiWord during traversal");
-        f(va);
+        f->visit(va);
 #ifdef ASSERT
         Value v1 = *va;
         if (v0 != v1) {
@@ -143,7 +143,7 @@ void ValueStack::apply(Values list, void f(Value*)) {
 }
 
 
-void ValueStack::values_do(void f(Value*)) {
+void ValueStack::values_do(ValueVisitor* f) {
   apply(_stack, f);
   apply(_locks, f);
 
