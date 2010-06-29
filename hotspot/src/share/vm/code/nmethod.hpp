@@ -105,6 +105,7 @@ struct nmFlags {
 //  [Relocation]
 //  - relocation information
 //  - constant part          (doubles, longs and floats used in nmethod)
+//  - oop table
 //  [Code]
 //  - code body
 //  - exception handler
@@ -161,6 +162,7 @@ class nmethod : public CodeBlob {
 #endif // def HAVE_DTRACE_H
   int _stub_offset;
   int _consts_offset;
+  int _oops_offset;                       // offset to where embedded oop table begins (inside data)
   int _scopes_data_offset;
   int _scopes_pcs_offset;
   int _dependencies_offset;
@@ -347,7 +349,10 @@ class nmethod : public CodeBlob {
   address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
   address stub_end              () const          { return           header_begin() + _consts_offset        ; }
   address consts_begin          () const          { return           header_begin() + _consts_offset        ; }
-  address consts_end            () const          { return           header_begin() + _scopes_data_offset   ; }
+  address consts_end            () const          { return           header_begin() + _oops_offset          ; }
+  oop*    oops_begin            () const          { return (oop*)   (header_begin() + _oops_offset)         ; }
+  oop*    oops_end              () const          { return (oop*)   (header_begin() + _scopes_data_offset)  ; }
+
   address scopes_data_begin     () const          { return           header_begin() + _scopes_data_offset   ; }
   address scopes_data_end       () const          { return           header_begin() + _scopes_pcs_offset    ; }
   PcDesc* scopes_pcs_begin      () const          { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
@@ -359,20 +364,24 @@ class nmethod : public CodeBlob {
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_end     () const          { return           header_begin() + _nmethod_end_offset   ; }
 
-  int code_size         () const                  { return      code_end         () -      code_begin         (); }
-  int stub_size         () const                  { return      stub_end         () -      stub_begin         (); }
-  int consts_size       () const                  { return      consts_end       () -      consts_begin       (); }
-  int scopes_data_size  () const                  { return      scopes_data_end  () -      scopes_data_begin  (); }
-  int scopes_pcs_size   () const                  { return (intptr_t)scopes_pcs_end   () - (intptr_t)scopes_pcs_begin   (); }
-  int dependencies_size () const                  { return      dependencies_end () -      dependencies_begin (); }
-  int handler_table_size() const                  { return      handler_table_end() -      handler_table_begin(); }
-  int nul_chk_table_size() const                  { return      nul_chk_table_end() -      nul_chk_table_begin(); }
+  // Sizes
+  int code_size         () const                  { return            code_end         () -            code_begin         (); }
+  int stub_size         () const                  { return            stub_end         () -            stub_begin         (); }
+  int consts_size       () const                  { return            consts_end       () -            consts_begin       (); }
+  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
+  int scopes_data_size  () const                  { return            scopes_data_end  () -            scopes_data_begin  (); }
+  int scopes_pcs_size   () const                  { return (intptr_t) scopes_pcs_end   () - (intptr_t) scopes_pcs_begin   (); }
+  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
+  int handler_table_size() const                  { return            handler_table_end() -            handler_table_begin(); }
+  int nul_chk_table_size() const                  { return            nul_chk_table_end() -            nul_chk_table_begin(); }
 
   int total_size        () const;
 
+  // Containment
   bool code_contains         (address addr) const { return code_begin         () <= addr && addr < code_end         (); }
   bool stub_contains         (address addr) const { return stub_begin         () <= addr && addr < stub_end         (); }
   bool consts_contains       (address addr) const { return consts_begin       () <= addr && addr < consts_end       (); }
+  bool oops_contains         (oop*    addr) const { return oops_begin         () <= addr && addr < oops_end         (); }
   bool scopes_data_contains  (address addr) const { return scopes_data_begin  () <= addr && addr < scopes_data_end  (); }
   bool scopes_pcs_contains   (PcDesc* addr) const { return scopes_pcs_begin   () <= addr && addr < scopes_pcs_end   (); }
   bool handler_table_contains(address addr) const { return handler_table_begin() <= addr && addr < handler_table_end(); }
@@ -430,6 +439,29 @@ class nmethod : public CodeBlob {
 
   int   version() const                           { return flags.version; }
   void  set_version(int v);
+
+  // Support for oops in scopes and relocs:
+  // Note: index 0 is reserved for null.
+  oop   oop_at(int index) const                   { return index == 0 ? (oop) NULL: *oop_addr_at(index); }
+  oop*  oop_addr_at(int index) const {  // for GC
+    // relocation indexes are biased by 1 (because 0 is reserved)
+    assert(index > 0 && index <= oops_size(), "must be a valid non-zero index");
+    return &oops_begin()[index - 1];
+  }
+
+  void copy_oops(GrowableArray<jobject>* oops);
+
+  // Relocation support
+private:
+  void fix_oop_relocations(address begin, address end, bool initialize_immediates);
+  inline void initialize_immediate_oop(oop* dest, jobject handle);
+
+public:
+  void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
+  void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
+
+  bool is_at_poll_return(address pc);
+  bool is_at_poll_or_poll_return(address pc);
 
   // Non-perm oop support
   bool  on_scavenge_root_list() const                  { return (_scavenge_root_state & 1) != 0; }
@@ -511,8 +543,8 @@ class nmethod : public CodeBlob {
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map,
                                      OopClosure* f);
-  virtual void oops_do(OopClosure* f) { oops_do(f, false); }
-  void         oops_do(OopClosure* f, bool do_strong_roots_only);
+  void oops_do(OopClosure* f) { oops_do(f, false); }
+  void oops_do(OopClosure* f, bool do_strong_roots_only);
   bool detect_scavenge_root_oops();
   void verify_scavenge_root_oops() PRODUCT_RETURN;
 
