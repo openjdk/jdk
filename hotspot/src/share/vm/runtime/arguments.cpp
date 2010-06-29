@@ -1513,6 +1513,9 @@ void Arguments::set_aggressive_opts_flags() {
   if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
     FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeStringConcat)) {
+    FLAG_SET_DEFAULT(OptimizeStringConcat, true);
+  }
 #endif
 
   if (AggressiveOpts) {
