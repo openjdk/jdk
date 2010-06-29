@@ -54,14 +54,10 @@ define_stack(ExceptionInfoList,  ExceptionInfoArray)
 class Compilation: public StackObj {
   friend class CompilationResourceObj;
  private:
-
-  static Arena* _arena;
-  static Arena* arena() { return _arena; }
-
-  static Compilation* _compilation;
-
- private:
   // compilation specifics
+  Arena* _arena;
+  int _next_id;
+  int _next_block_id;
   AbstractCompiler*  _compiler;
   ciEnv*             _env;
   ciMethod*          _method;
@@ -108,10 +104,14 @@ class Compilation: public StackObj {
 
  public:
   // creation
-  Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method, int osr_bci);
+  Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method,
+              int osr_bci, BufferBlob* buffer_blob);
   ~Compilation();
 
-  static Compilation* current_compilation()      { return _compilation; }
+
+  static Compilation* current() {
+    return (Compilation*) ciEnv::current()->compiler_data();
+  }
 
   // accessors
   ciEnv* env() const                             { return _env; }
@@ -128,6 +128,15 @@ class Compilation: public StackObj {
   CodeBuffer* code()                             { return &_code; }
   C1_MacroAssembler* masm() const                { return _masm; }
   CodeOffsets* offsets()                         { return &_offsets; }
+  Arena* arena()                                 { return _arena; }
+
+  // Instruction ids
+  int get_next_id()                              { return _next_id++; }
+  int number_of_instructions() const             { return _next_id; }
+
+  // BlockBegin ids
+  int get_next_block_id()                        { return _next_block_id++; }
+  int number_of_blocks() const                   { return _next_block_id; }
 
   // setters
   void set_has_exception_handlers(bool f)        { _has_exception_handlers = f; }
@@ -157,6 +166,15 @@ class Compilation: public StackObj {
   void bailout(const char* msg);
   bool bailed_out() const                        { return _bailout_msg != NULL; }
   const char* bailout_msg() const                { return _bailout_msg; }
+
+  static int desired_max_code_buffer_size() {
+    return (int) NMethodSizeLimit;  // default 256K or 512K
+  }
+  static int desired_max_constant_size() {
+    return (int) NMethodSizeLimit / 10;  // about 25K
+  }
+
+  static void setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 
   // timers
   static void print_timers();
@@ -203,7 +221,10 @@ class InstructionMark: public StackObj {
 // Base class for objects allocated by the compiler in the compilation arena
 class CompilationResourceObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  void* operator new(size_t size) { return Compilation::arena()->Amalloc(size); }
+  void* operator new(size_t size) { return Compilation::current()->arena()->Amalloc(size); }
+  void* operator new(size_t size, Arena* arena) {
+    return arena->Amalloc(size);
+  }
   void  operator delete(void* p) {} // nothing to do
 };
 
