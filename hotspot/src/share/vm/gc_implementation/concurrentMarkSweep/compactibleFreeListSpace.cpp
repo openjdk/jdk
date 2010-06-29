@@ -32,6 +32,23 @@
 // highest ranked  free list lock rank
 int CompactibleFreeListSpace::_lockRank = Mutex::leaf + 3;
 
+// Defaults are 0 so things will break badly if incorrectly initialized.
+int CompactibleFreeListSpace::IndexSetStart  = 0;
+int CompactibleFreeListSpace::IndexSetStride = 0;
+
+size_t MinChunkSize = 0;
+
+void CompactibleFreeListSpace::set_cms_values() {
+  // Set CMS global values
+  assert(MinChunkSize == 0, "already set");
+  #define numQuanta(x,y) ((x+y-1)/y)
+  MinChunkSize = numQuanta(sizeof(FreeChunk), MinObjAlignmentInBytes) * MinObjAlignment;
+
+  assert(IndexSetStart == 0 && IndexSetStride == 0, "already set");
+  IndexSetStart  = MinObjAlignment;
+  IndexSetStride = MinObjAlignment;
+}
+
 // Constructor
 CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   MemRegion mr, bool use_adaptive_freelists,
@@ -302,7 +319,7 @@ size_t CompactibleFreeListSpace::sumIndexedFreeListArrayReturnedBytes() {
 
 size_t CompactibleFreeListSpace::totalCountInIndexedFreeLists() const {
   size_t count = 0;
-  for (int i = MinChunkSize; i < IndexSetSize; i++) {
+  for (int i = (int)MinChunkSize; i < IndexSetSize; i++) {
     debug_only(
       ssize_t total_list_count = 0;
       for (FreeChunk* fc = _indexedFreeList[i].head(); fc != NULL;

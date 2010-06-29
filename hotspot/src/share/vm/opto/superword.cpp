@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,6 +514,13 @@ bool SuperWord::exists_at(Node* s, uint pos) {
 bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
   if (!s1->is_Mem() || !s2->is_Mem()) return false;
   if (!in_bb(s1)    || !in_bb(s2))    return false;
+
+  // Do not use superword for non-primitives
+  if (!is_java_primitive(s1->as_Mem()->memory_type()) ||
+      !is_java_primitive(s2->as_Mem()->memory_type())) {
+    return false;
+  }
+
   // FIXME - co_locate_pack fails on Stores in different mem-slices, so
   // only pack memops that are in the same alias set until that's fixed.
   if (_phase->C->get_alias_index(s1->as_Mem()->adr_type()) !=

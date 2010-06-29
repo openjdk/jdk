@@ -321,6 +321,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintCompressedOopsMode, false,                          \
             "Print compressed oops base address and encoding mode")         \
                                                                             \
+  lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
+          "Default object alignment in bytes, 8 is minimum")                \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
@@ -920,6 +923,10 @@ class CommandLineFlags {
                                                                             \
   product(intx, AlwaysInflate, 0, "(Unstable) Force inflation")             \
                                                                             \
+  product(intx, MonitorBound, 0, "Bound Monitor population")                \
+                                                                            \
+  product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
+                                                                            \
   product(intx, Atomics, 0,                                                 \
           "(Unsafe,Unstable) Diagnostic - Controls emission of atomics")    \
                                                                             \
@@ -1116,6 +1123,9 @@ class CommandLineFlags {
                                                                             \
   product(intx, TraceRedefineClasses, 0,                                    \
           "Trace level for JVMTI RedefineClasses")                          \
+                                                                            \
+  develop(bool, StressMethodComparator, false,                              \
+          "run the MethodComparator on all loaded methods")                 \
                                                                             \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,8 +607,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(CodeBlob,                    _instructions_offset,                          int)                                   \
   nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _oops_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _oops_length,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     OopMapSet*)                            \
                                                                                                                                      \
@@ -626,6 +624,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(nmethod,             _deoptimize_offset,                            int)                                   \
   nonstatic_field(nmethod,             _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,             _stub_offset,                                  int)                                   \
+  nonstatic_field(nmethod,             _consts_offset,                                int)                                   \
+  nonstatic_field(nmethod,             _oops_offset,                                  int)                                   \
   nonstatic_field(nmethod,             _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,             _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,             _dependencies_offset,                          int)                                   \
@@ -1327,14 +1327,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(oopSize)                                               \
   declare_constant(LogBytesPerWord)                                       \
   declare_constant(BytesPerLong)                                          \
-                                                                          \
-  /********************/                                                  \
-  /* Object alignment */                                                  \
-  /********************/                                                  \
-                                                                          \
-  declare_constant(MinObjAlignment)                                       \
-  declare_constant(MinObjAlignmentInBytes)                                \
-  declare_constant(LogMinObjAlignmentInBytes)                             \
                                                                           \
   /********************************************/                          \
   /* Generation and Space Hierarchy Constants */                          \
