@@ -87,6 +87,7 @@ REGISTER_DECLARATION(Register, Gtemp  , G5);
 // JSR 292 fixed register usages:
 REGISTER_DECLARATION(Register, G5_method_type        , G5);
 REGISTER_DECLARATION(Register, G3_method_handle      , G3);
+REGISTER_DECLARATION(Register, L7_mh_SP_save         , L7);
 
 // The compiler requires that G5_megamorphic_method is G5_inline_cache_klass,
 // because a single patchable "set" instruction (NativeMovConstReg,
