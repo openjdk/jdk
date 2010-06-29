@@ -221,7 +221,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   if (needs_card_mark) {
     LIR_Opr ptr = new_pointer_register();
     __ add(base_opr, LIR_OprFact::intptrConst(offset), ptr);
-    return new LIR_Address(ptr, 0, type);
+    return new LIR_Address(ptr, type);
   } else {
     return new LIR_Address(base_opr, offset, type);
   }
@@ -231,7 +231,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 void LIRGenerator::increment_counter(address counter, int step) {
   LIR_Opr pointer = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, 0, T_INT);
+  LIR_Address* addr = new LIR_Address(pointer, T_INT);
   increment_counter(addr, step);
 }
 
@@ -1159,7 +1159,7 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
       if (type == T_ARRAY || type == T_OBJECT) {
         LIR_Opr tmp = new_pointer_register();
         __ add(base_op, index_op, tmp);
-        addr = new LIR_Address(tmp, 0, type);
+        addr = new LIR_Address(tmp, type);
       } else {
         addr = new LIR_Address(base_op, index_op, type);
       }

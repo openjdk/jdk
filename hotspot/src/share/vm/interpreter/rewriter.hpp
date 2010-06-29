@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,8 @@ class Rewriter: public StackObj {
   void scan_method(methodOop m);
   methodHandle rewrite_jsrs(methodHandle m, TRAPS);
   void rewrite_Object_init(methodHandle m, TRAPS);
-  int  rewrite_member_reference(address bcp, int offset);
-  void rewrite_invokedynamic(address bcp, int offset, int cp_index);
+  void rewrite_member_reference(address bcp, int offset);
+  void rewrite_invokedynamic(address bcp, int offset);
 
  public:
   // Driver routine:
