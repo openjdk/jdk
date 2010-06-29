@@ -153,7 +153,7 @@ int       FrameMap::_cpu_reg2rnr [FrameMap::nof_cpu_regs];
 
 
 FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_size) {
-  if (!_init_done) init();
+  assert(_init_done, "should already be completed");
 
   _framesize = -1;
   _num_spills = -1;

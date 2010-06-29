@@ -281,9 +281,6 @@ public class Main {
                 }
             }
         }
-        if (target.hasInvokedynamic()) {
-            options.put("invokedynamic",  "invokedynamic");
-        }
 
         // handle this here so it works even if no other options given
         String showClass = options.get("showClass");
