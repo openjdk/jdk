@@ -83,6 +83,12 @@ public class FilenameFilterTest extends Applet
         if (fd == null) {
             throw new RuntimeException("fd is null (very unexpected thing :(");
         }
+        //Wait a little; some native dialog implementations may take a while
+        //to initialize and call the filter. See 6959787 for an example.
+        try {
+            Thread.sleep(5000);
+        } catch (Exception ex) {
+        }
         fd.dispose();
         if (!filter_was_called) {
             throw new RuntimeException("Filter was not called");

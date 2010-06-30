@@ -67,7 +67,6 @@ public class Registry {
     // The stclient output has to be an exported interface
     private static final String INSTANCE_URN_DESC = "Product instance URN=";
     private static boolean initialized = false;
-    private static boolean supportsHelperClass = true; // default
     private static File stclient = null;
     private static String stclientPath = null;
     private static Registry registry = new Registry();
@@ -81,17 +80,6 @@ public class Registry {
 
     private synchronized static String getSTclient() {
         if (!initialized) {
-            // the system property always overrides the default setting
-            if (System.getProperty(SVCTAG_STHELPER_SUPPORTED) != null) {
-                supportsHelperClass = Boolean.getBoolean(SVCTAG_STHELPER_SUPPORTED);
-            }
-
-            // This is only used for testing
-            stclientPath = System.getProperty(SVCTAG_STCLIENT_CMD);
-            if (stclientPath != null) {
-                return stclientPath;
-            }
-
             // Initialization to determine the platform's stclient pathname
             String os = System.getProperty("os.name");
             if (os.equals("SunOS")) {
@@ -108,10 +96,26 @@ public class Registry {
             initialized = true;
         }
 
+        boolean supportsHelperClass = true; // default
+        if (System.getProperty(SVCTAG_STHELPER_SUPPORTED) != null) {
+            // the system property always overrides the default setting
+            supportsHelperClass = Boolean.getBoolean(SVCTAG_STHELPER_SUPPORTED);
+        }
+
+        if (!supportsHelperClass) {
+            // disable system registry
+            return null;
+        }
+
+        // This is only used for testing
+        String path = System.getProperty(SVCTAG_STCLIENT_CMD);
+        if (path != null) {
+            return path;
+        }
+
         // com.sun.servicetag package has to be compiled with JDK 5 as well
         // JDK 5 doesn't support the File.canExecute() method.
         // Risk not checking isExecute() for the stclient command is very low.
-
         if (stclientPath == null && stclient != null && stclient.exists()) {
             stclientPath = stclient.getAbsolutePath();
         }
@@ -142,8 +146,8 @@ public class Registry {
      * @return {@code true} if the {@code Registry} class is supported;
      * otherwise, return {@code false}.
      */
-    public static boolean isSupported() {
-        return (getSTclient() != null && supportsHelperClass);
+    public static synchronized boolean isSupported() {
+        return getSTclient() != null;
     }
 
     private static List<String> getCommandList() {

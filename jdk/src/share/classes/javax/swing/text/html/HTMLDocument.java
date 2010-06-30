@@ -24,20 +24,17 @@
  */
 package javax.swing.text.html;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.font.TextAttribute;
 import java.util.*;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.net.MalformedURLException;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
 import javax.swing.undo.*;
-import java.text.Bidi;
 import sun.swing.SwingUtilities2;
+import static sun.swing.SwingUtilities2.IMPLIED_CR;
 
 /**
  * A document that models HTML.  The purpose of this model is to
@@ -1819,7 +1816,6 @@ public class HTMLDocument extends DefaultStyledDocument {
     static String MAP_PROPERTY = "__MAP__";
 
     private static char[] NEWLINE;
-    private static final String IMPLIED_CR = "CR";
 
     /**
      * I18N property key.

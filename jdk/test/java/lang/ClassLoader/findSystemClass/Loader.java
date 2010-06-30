@@ -21,10 +21,16 @@
  * questions.
  */
 
+/*
+ * This test runs in othervm mode as it tests ClassLoader.findSystemClass
+ * and getSystemResource methods.
+ */
+
 /* @test
    @bug 4147599 4478150
    @summary In 1.2beta4-I ClassLoader loaded classes can not link
             against application classes.
+   @run main/othervm Loader
 */
 
 /*

@@ -196,18 +196,16 @@ public class Basic {
 
         System.out.println("-- connect to non-existent host --");
 
-        // test failure
-        InetAddress badHost = InetAddress.getByName("1.2.3.4");
-        if (!badHost.isReachable(10*1000)) {
-
-            ch = AsynchronousSocketChannel.open();
-            try {
-                ch.connect(new InetSocketAddress(badHost, 9876)).get();
-                throw new RuntimeException("Connection should not be established");
-            } catch (ExecutionException x) {
-            }
+        // test that failure to connect closes the channel
+        ch = AsynchronousSocketChannel.open();
+        try {
+            ch.connect(genSocketAddress()).get();
+        } catch (ExecutionException x) {
+            // failed to establish connection
             if (ch.isOpen())
                 throw new RuntimeException("Channel should be closed");
+        } finally {
+            ch.close();
         }
 
         server.close();
@@ -219,27 +217,22 @@ public class Basic {
         AsynchronousSocketChannel ch;
 
         // asynchronous close while connecting
-        InetAddress rh = InetAddress.getByName("1.2.3.4");
-        if (!rh.isReachable(3000)) {
-            InetSocketAddress isa = new InetSocketAddress(rh, 1234);
+        ch = AsynchronousSocketChannel.open();
+        Future<Void> connectResult = ch.connect(genSocketAddress());
 
-            ch = AsynchronousSocketChannel.open();
-            Future<Void> result = ch.connect(isa);
+        // give time to initiate the connect (SYN)
+        Thread.sleep(50);
 
-            // give time to initiate the connect (SYN)
-            Thread.sleep(50);
+        // close
+        ch.close();
 
-            // close
-            ch.close();
-
-            // check that AsynchronousCloseException is thrown
-            try {
-                result.get();
-                throw new RuntimeException("Should not connect");
-            } catch (ExecutionException x) {
-                if (!(x.getCause() instanceof AsynchronousCloseException))
-                    throw new RuntimeException(x);
-            }
+        // check that exception is thrown in timely manner
+        try {
+            connectResult.get(5, TimeUnit.SECONDS);
+        } catch (TimeoutException x) {
+            throw new RuntimeException("AsynchronousCloseException not thrown");
+        } catch (ExecutionException x) {
+            // expected
         }
 
         System.out.println("-- asynchronous close when reading --");
@@ -785,30 +778,47 @@ public class Basic {
         ch.close();
     }
 
-   // returns ByteBuffer with random bytes
-   static ByteBuffer genBuffer() {
-       int size = 1024 + rand.nextInt(16000);
-       byte[] buf = new byte[size];
-       rand.nextBytes(buf);
-       boolean useDirect = rand.nextBoolean();
-       if (useDirect) {
-           ByteBuffer bb = ByteBuffer.allocateDirect(buf.length);
-           bb.put(buf);
-           bb.flip();
-           return bb;
-       } else {
-           return ByteBuffer.wrap(buf);
-       }
-   }
+    // returns ByteBuffer with random bytes
+    static ByteBuffer genBuffer() {
+        int size = 1024 + rand.nextInt(16000);
+        byte[] buf = new byte[size];
+        rand.nextBytes(buf);
+        boolean useDirect = rand.nextBoolean();
+        if (useDirect) {
+            ByteBuffer bb = ByteBuffer.allocateDirect(buf.length);
+            bb.put(buf);
+            bb.flip();
+            return bb;
+        } else {
+            return ByteBuffer.wrap(buf);
+        }
+    }
 
-   // return ByteBuffer[] with random bytes
-   static ByteBuffer[] genBuffers(int max) {
-       int len = 1;
-       if (max > 1)
-           len += rand.nextInt(max);
-       ByteBuffer[] bufs = new ByteBuffer[len];
-       for (int i=0; i<len; i++)
-           bufs[i] = genBuffer();
-       return bufs;
-   }
+    // return ByteBuffer[] with random bytes
+    static ByteBuffer[] genBuffers(int max) {
+        int len = 1;
+        if (max > 1)
+            len += rand.nextInt(max);
+        ByteBuffer[] bufs = new ByteBuffer[len];
+        for (int i=0; i<len; i++)
+            bufs[i] = genBuffer();
+        return bufs;
+    }
+
+    // return random SocketAddress
+    static SocketAddress genSocketAddress() {
+        StringBuilder sb = new StringBuilder("10.");
+        sb.append(rand.nextInt(256));
+        sb.append('.');
+        sb.append(rand.nextInt(256));
+        sb.append('.');
+        sb.append(rand.nextInt(256));
+        InetAddress rh;
+        try {
+            rh = InetAddress.getByName(sb.toString());
+        } catch (UnknownHostException x) {
+            throw new InternalError("Should not happen");
+        }
+        return new InetSocketAddress(rh, rand.nextInt(65535)+1);
+    }
 }
