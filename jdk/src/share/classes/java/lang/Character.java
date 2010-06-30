@@ -663,6 +663,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         }
     }
 
+    // See http://www.unicode.org/Public/UNIDATA/Blocks.txt
+    // for the latest specification of Unicode Blocks.
+
     /**
      * A family of character subsets representing the character blocks in the
      * Unicode specification. Character blocks generally define characters
@@ -676,34 +679,31 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         private static Map map = new HashMap();
 
         /**
-         * Create a UnicodeBlock with the given identifier name.
+         * Creates a UnicodeBlock with the given identifier name.
          * This name must be the same as the block identifier.
          */
         private UnicodeBlock(String idName) {
             super(idName);
-            map.put(idName.toUpperCase(Locale.US), this);
+            map.put(idName, this);
         }
 
         /**
-         * Create a UnicodeBlock with the given identifier name and
+         * Creates a UnicodeBlock with the given identifier name and
          * alias name.
          */
         private UnicodeBlock(String idName, String alias) {
             this(idName);
-            map.put(alias.toUpperCase(Locale.US), this);
+            map.put(alias, this);
         }
 
         /**
-         * Create a UnicodeBlock with the given identifier name and
+         * Creates a UnicodeBlock with the given identifier name and
          * alias names.
          */
-        private UnicodeBlock(String idName, String[] aliasName) {
+        private UnicodeBlock(String idName, String... aliases) {
             this(idName);
-            if (aliasName != null) {
-                for(int x=0; x<aliasName.length; ++x) {
-                    map.put(aliasName[x].toUpperCase(Locale.US), this);
-                }
-            }
+            for (String alias : aliases)
+                map.put(alias, this);
         }
 
         /**
@@ -711,51 +711,63 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock  BASIC_LATIN =
-            new UnicodeBlock("BASIC_LATIN", new String[] {"Basic Latin", "BasicLatin" });
+            new UnicodeBlock("BASIC_LATIN",
+                             "BASIC LATIN",
+                             "BASICLATIN");
 
         /**
          * Constant for the "Latin-1 Supplement" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock LATIN_1_SUPPLEMENT =
-            new UnicodeBlock("LATIN_1_SUPPLEMENT", new String[]{ "Latin-1 Supplement", "Latin-1Supplement"});
+            new UnicodeBlock("LATIN_1_SUPPLEMENT",
+                             "LATIN-1 SUPPLEMENT",
+                             "LATIN-1SUPPLEMENT");
 
         /**
          * Constant for the "Latin Extended-A" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock LATIN_EXTENDED_A =
-            new UnicodeBlock("LATIN_EXTENDED_A", new String[]{ "Latin Extended-A", "LatinExtended-A"});
+            new UnicodeBlock("LATIN_EXTENDED_A",
+                             "LATIN EXTENDED-A",
+                             "LATINEXTENDED-A");
 
         /**
          * Constant for the "Latin Extended-B" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock LATIN_EXTENDED_B =
-            new UnicodeBlock("LATIN_EXTENDED_B", new String[] {"Latin Extended-B", "LatinExtended-B"});
+            new UnicodeBlock("LATIN_EXTENDED_B",
+                             "LATIN EXTENDED-B",
+                             "LATINEXTENDED-B");
 
         /**
          * Constant for the "IPA Extensions" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock IPA_EXTENSIONS =
-            new UnicodeBlock("IPA_EXTENSIONS", new String[] {"IPA Extensions", "IPAExtensions"});
+            new UnicodeBlock("IPA_EXTENSIONS",
+                             "IPA EXTENSIONS",
+                             "IPAEXTENSIONS");
 
         /**
          * Constant for the "Spacing Modifier Letters" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock SPACING_MODIFIER_LETTERS =
-            new UnicodeBlock("SPACING_MODIFIER_LETTERS", new String[] { "Spacing Modifier Letters",
-                                                                        "SpacingModifierLetters"});
+            new UnicodeBlock("SPACING_MODIFIER_LETTERS",
+                             "SPACING MODIFIER LETTERS",
+                             "SPACINGMODIFIERLETTERS");
 
         /**
          * Constant for the "Combining Diacritical Marks" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock COMBINING_DIACRITICAL_MARKS =
-            new UnicodeBlock("COMBINING_DIACRITICAL_MARKS", new String[] {"Combining Diacritical Marks",
-                                                                          "CombiningDiacriticalMarks" });
+            new UnicodeBlock("COMBINING_DIACRITICAL_MARKS",
+                             "COMBINING DIACRITICAL MARKS",
+                             "COMBININGDIACRITICALMARKS");
 
         /**
          * Constant for the "Greek and Coptic" Unicode character block.
@@ -764,8 +776,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          *
          * @since 1.2
          */
-        public static final UnicodeBlock GREEK
-            = new UnicodeBlock("GREEK", new String[] {"Greek and Coptic", "GreekandCoptic"});
+        public static final UnicodeBlock GREEK =
+            new UnicodeBlock("GREEK",
+                             "GREEK AND COPTIC",
+                             "GREEKANDCOPTIC");
 
         /**
          * Constant for the "Cyrillic" Unicode character block.
@@ -891,44 +905,54 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock HANGUL_JAMO =
-            new UnicodeBlock("HANGUL_JAMO", new String[] {"Hangul Jamo", "HangulJamo"});
+            new UnicodeBlock("HANGUL_JAMO",
+                             "HANGUL JAMO",
+                             "HANGULJAMO");
 
         /**
          * Constant for the "Latin Extended Additional" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock LATIN_EXTENDED_ADDITIONAL =
-            new UnicodeBlock("LATIN_EXTENDED_ADDITIONAL", new String[] {"Latin Extended Additional",
-                                                                        "LatinExtendedAdditional"});
+            new UnicodeBlock("LATIN_EXTENDED_ADDITIONAL",
+                             "LATIN EXTENDED ADDITIONAL",
+                             "LATINEXTENDEDADDITIONAL");
 
         /**
          * Constant for the "Greek Extended" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock GREEK_EXTENDED =
-            new UnicodeBlock("GREEK_EXTENDED", new String[] {"Greek Extended", "GreekExtended"});
+            new UnicodeBlock("GREEK_EXTENDED",
+                             "GREEK EXTENDED",
+                             "GREEKEXTENDED");
 
         /**
          * Constant for the "General Punctuation" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock GENERAL_PUNCTUATION =
-            new UnicodeBlock("GENERAL_PUNCTUATION", new String[] {"General Punctuation", "GeneralPunctuation"});
+            new UnicodeBlock("GENERAL_PUNCTUATION",
+                             "GENERAL PUNCTUATION",
+                             "GENERALPUNCTUATION");
 
         /**
          * Constant for the "Superscripts and Subscripts" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock SUPERSCRIPTS_AND_SUBSCRIPTS =
-            new UnicodeBlock("SUPERSCRIPTS_AND_SUBSCRIPTS", new String[] {"Superscripts and Subscripts",
-                                                                          "SuperscriptsandSubscripts" });
+            new UnicodeBlock("SUPERSCRIPTS_AND_SUBSCRIPTS",
+                             "SUPERSCRIPTS AND SUBSCRIPTS",
+                             "SUPERSCRIPTSANDSUBSCRIPTS");
 
         /**
          * Constant for the "Currency Symbols" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock CURRENCY_SYMBOLS =
-            new UnicodeBlock("CURRENCY_SYMBOLS", new String[] { "Currency Symbols", "CurrencySymbols"});
+            new UnicodeBlock("CURRENCY_SYMBOLS",
+                             "CURRENCY SYMBOLS",
+                             "CURRENCYSYMBOLS");
 
         /**
          * Constant for the "Combining Diacritical Marks for Symbols" Unicode character block.
@@ -937,24 +961,29 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock COMBINING_MARKS_FOR_SYMBOLS =
-            new UnicodeBlock("COMBINING_MARKS_FOR_SYMBOLS", new String[] {"Combining Diacritical Marks for Symbols",
-                                                                                                                                                   "CombiningDiacriticalMarksforSymbols",
-                                                                           "Combining Marks for Symbols",
-                                                                           "CombiningMarksforSymbols" });
+            new UnicodeBlock("COMBINING_MARKS_FOR_SYMBOLS",
+                             "COMBINING DIACRITICAL MARKS FOR SYMBOLS",
+                             "COMBININGDIACRITICALMARKSFORSYMBOLS",
+                             "COMBINING MARKS FOR SYMBOLS",
+                             "COMBININGMARKSFORSYMBOLS");
 
         /**
          * Constant for the "Letterlike Symbols" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock LETTERLIKE_SYMBOLS =
-            new UnicodeBlock("LETTERLIKE_SYMBOLS", new String[] { "Letterlike Symbols", "LetterlikeSymbols"});
+            new UnicodeBlock("LETTERLIKE_SYMBOLS",
+                             "LETTERLIKE SYMBOLS",
+                             "LETTERLIKESYMBOLS");
 
         /**
          * Constant for the "Number Forms" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock NUMBER_FORMS =
-            new UnicodeBlock("NUMBER_FORMS", new String[] {"Number Forms", "NumberForms"});
+            new UnicodeBlock("NUMBER_FORMS",
+                             "NUMBER FORMS",
+                             "NUMBERFORMS");
 
         /**
          * Constant for the "Arrows" Unicode character block.
@@ -968,68 +997,81 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock MATHEMATICAL_OPERATORS =
-            new UnicodeBlock("MATHEMATICAL_OPERATORS", new String[] {"Mathematical Operators",
-                                                                     "MathematicalOperators"});
+            new UnicodeBlock("MATHEMATICAL_OPERATORS",
+                             "MATHEMATICAL OPERATORS",
+                             "MATHEMATICALOPERATORS");
 
         /**
          * Constant for the "Miscellaneous Technical" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock MISCELLANEOUS_TECHNICAL =
-            new UnicodeBlock("MISCELLANEOUS_TECHNICAL", new String[] {"Miscellaneous Technical",
-                                                                      "MiscellaneousTechnical"});
+            new UnicodeBlock("MISCELLANEOUS_TECHNICAL",
+                             "MISCELLANEOUS TECHNICAL",
+                             "MISCELLANEOUSTECHNICAL");
 
         /**
          * Constant for the "Control Pictures" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock CONTROL_PICTURES =
-            new UnicodeBlock("CONTROL_PICTURES", new String[] {"Control Pictures", "ControlPictures"});
+            new UnicodeBlock("CONTROL_PICTURES",
+                             "CONTROL PICTURES",
+                             "CONTROLPICTURES");
 
         /**
          * Constant for the "Optical Character Recognition" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock OPTICAL_CHARACTER_RECOGNITION =
-            new UnicodeBlock("OPTICAL_CHARACTER_RECOGNITION", new String[] {"Optical Character Recognition",
-                                                                            "OpticalCharacterRecognition"});
+            new UnicodeBlock("OPTICAL_CHARACTER_RECOGNITION",
+                             "OPTICAL CHARACTER RECOGNITION",
+                             "OPTICALCHARACTERRECOGNITION");
 
         /**
          * Constant for the "Enclosed Alphanumerics" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock ENCLOSED_ALPHANUMERICS =
-            new UnicodeBlock("ENCLOSED_ALPHANUMERICS", new String[] {"Enclosed Alphanumerics",
-                                                                     "EnclosedAlphanumerics"});
+            new UnicodeBlock("ENCLOSED_ALPHANUMERICS",
+                             "ENCLOSED ALPHANUMERICS",
+                             "ENCLOSEDALPHANUMERICS");
 
         /**
          * Constant for the "Box Drawing" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock BOX_DRAWING =
-            new UnicodeBlock("BOX_DRAWING", new String[] {"Box Drawing", "BoxDrawing"});
+            new UnicodeBlock("BOX_DRAWING",
+                             "BOX DRAWING",
+                             "BOXDRAWING");
 
         /**
          * Constant for the "Block Elements" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock BLOCK_ELEMENTS =
-            new UnicodeBlock("BLOCK_ELEMENTS", new String[] {"Block Elements", "BlockElements"});
+            new UnicodeBlock("BLOCK_ELEMENTS",
+                             "BLOCK ELEMENTS",
+                             "BLOCKELEMENTS");
 
         /**
          * Constant for the "Geometric Shapes" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock GEOMETRIC_SHAPES =
-            new UnicodeBlock("GEOMETRIC_SHAPES", new String[] {"Geometric Shapes", "GeometricShapes"});
+            new UnicodeBlock("GEOMETRIC_SHAPES",
+                             "GEOMETRIC SHAPES",
+                             "GEOMETRICSHAPES");
 
         /**
          * Constant for the "Miscellaneous Symbols" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock MISCELLANEOUS_SYMBOLS =
-            new UnicodeBlock("MISCELLANEOUS_SYMBOLS", new String[] {"Miscellaneous Symbols",
-                                                                    "MiscellaneousSymbols"});
+            new UnicodeBlock("MISCELLANEOUS_SYMBOLS",
+                             "MISCELLANEOUS SYMBOLS",
+                             "MISCELLANEOUSSYMBOLS");
 
         /**
          * Constant for the "Dingbats" Unicode character block.
@@ -1043,8 +1085,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock CJK_SYMBOLS_AND_PUNCTUATION =
-            new UnicodeBlock("CJK_SYMBOLS_AND_PUNCTUATION", new String[] {"CJK Symbols and Punctuation",
-                                                                          "CJKSymbolsandPunctuation"});
+            new UnicodeBlock("CJK_SYMBOLS_AND_PUNCTUATION",
+                             "CJK SYMBOLS AND PUNCTUATION",
+                             "CJKSYMBOLSANDPUNCTUATION");
 
         /**
          * Constant for the "Hiragana" Unicode character block.
@@ -1072,8 +1115,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock HANGUL_COMPATIBILITY_JAMO =
-            new UnicodeBlock("HANGUL_COMPATIBILITY_JAMO", new String[] {"Hangul Compatibility Jamo",
-                                                                        "HangulCompatibilityJamo"});
+            new UnicodeBlock("HANGUL_COMPATIBILITY_JAMO",
+                             "HANGUL COMPATIBILITY JAMO",
+                             "HANGULCOMPATIBILITYJAMO");
 
         /**
          * Constant for the "Kanbun" Unicode character block.
@@ -1087,37 +1131,45 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.2
          */
         public static final UnicodeBlock ENCLOSED_CJK_LETTERS_AND_MONTHS =
-            new UnicodeBlock("ENCLOSED_CJK_LETTERS_AND_MONTHS", new String[] {"Enclosed CJK Letters and Months",
-                                                                              "EnclosedCJKLettersandMonths"});
+            new UnicodeBlock("ENCLOSED_CJK_LETTERS_AND_MONTHS",
+                             "ENCLOSED CJK LETTERS AND MONTHS",
+                             "ENCLOSEDCJKLETTERSANDMONTHS");
 
         /**
          * Constant for the "CJK Compatibility" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock CJK_COMPATIBILITY =
-            new UnicodeBlock("CJK_COMPATIBILITY", new String[] {"CJK Compatibility", "CJKCompatibility"});
+            new UnicodeBlock("CJK_COMPATIBILITY",
+                             "CJK COMPATIBILITY",
+                             "CJKCOMPATIBILITY");
 
         /**
          * Constant for the "CJK Unified Ideographs" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS =
-            new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS", new String[] {"CJK Unified Ideographs",
-                                                                     "CJKUnifiedIdeographs"});
+            new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS",
+                             "CJK UNIFIED IDEOGRAPHS",
+                             "CJKUNIFIEDIDEOGRAPHS");
 
         /**
          * Constant for the "Hangul Syllables" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock HANGUL_SYLLABLES =
-            new UnicodeBlock("HANGUL_SYLLABLES", new String[] {"Hangul Syllables", "HangulSyllables"});
+            new UnicodeBlock("HANGUL_SYLLABLES",
+                             "HANGUL SYLLABLES",
+                             "HANGULSYLLABLES");
 
         /**
          * Constant for the "Private Use Area" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock PRIVATE_USE_AREA =
-            new UnicodeBlock("PRIVATE_USE_AREA", new String[] {"Private Use Area", "PrivateUseArea"});
+            new UnicodeBlock("PRIVATE_USE_AREA",
+                             "PRIVATE USE AREA",
+                             "PRIVATEUSEAREA");
 
         /**
          * Constant for the "CJK Compatibility Ideographs" Unicode character block.
@@ -1125,56 +1177,62 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CJK_COMPATIBILITY_IDEOGRAPHS =
             new UnicodeBlock("CJK_COMPATIBILITY_IDEOGRAPHS",
-                             new String[] {"CJK Compatibility Ideographs",
-                                           "CJKCompatibilityIdeographs"});
+                             "CJK COMPATIBILITY IDEOGRAPHS",
+                             "CJKCOMPATIBILITYIDEOGRAPHS");
 
         /**
          * Constant for the "Alphabetic Presentation Forms" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock ALPHABETIC_PRESENTATION_FORMS =
-            new UnicodeBlock("ALPHABETIC_PRESENTATION_FORMS", new String[] {"Alphabetic Presentation Forms",
-                                                                            "AlphabeticPresentationForms"});
+            new UnicodeBlock("ALPHABETIC_PRESENTATION_FORMS",
+                             "ALPHABETIC PRESENTATION FORMS",
+                             "ALPHABETICPRESENTATIONFORMS");
 
         /**
          * Constant for the "Arabic Presentation Forms-A" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock ARABIC_PRESENTATION_FORMS_A =
-            new UnicodeBlock("ARABIC_PRESENTATION_FORMS_A", new String[] {"Arabic Presentation Forms-A",
-                                                                          "ArabicPresentationForms-A"});
+            new UnicodeBlock("ARABIC_PRESENTATION_FORMS_A",
+                             "ARABIC PRESENTATION FORMS-A",
+                             "ARABICPRESENTATIONFORMS-A");
 
         /**
          * Constant for the "Combining Half Marks" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock COMBINING_HALF_MARKS =
-            new UnicodeBlock("COMBINING_HALF_MARKS", new String[] {"Combining Half Marks",
-                                                                   "CombiningHalfMarks"});
+            new UnicodeBlock("COMBINING_HALF_MARKS",
+                             "COMBINING HALF MARKS",
+                             "COMBININGHALFMARKS");
 
         /**
          * Constant for the "CJK Compatibility Forms" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock CJK_COMPATIBILITY_FORMS =
-            new UnicodeBlock("CJK_COMPATIBILITY_FORMS", new String[] {"CJK Compatibility Forms",
-                                                                      "CJKCompatibilityForms"});
+            new UnicodeBlock("CJK_COMPATIBILITY_FORMS",
+                             "CJK COMPATIBILITY FORMS",
+                             "CJKCOMPATIBILITYFORMS");
 
         /**
          * Constant for the "Small Form Variants" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock SMALL_FORM_VARIANTS =
-            new UnicodeBlock("SMALL_FORM_VARIANTS", new String[] {"Small Form Variants",
-                                                                  "SmallFormVariants"});
+            new UnicodeBlock("SMALL_FORM_VARIANTS",
+                             "SMALL FORM VARIANTS",
+                             "SMALLFORMVARIANTS");
 
         /**
          * Constant for the "Arabic Presentation Forms-B" Unicode character block.
          * @since 1.2
          */
         public static final UnicodeBlock ARABIC_PRESENTATION_FORMS_B =
-            new UnicodeBlock("ARABIC_PRESENTATION_FORMS_B", new String[] {"Arabic Presentation Forms-B",
-                                                                          "ArabicPresentationForms-B"});
+            new UnicodeBlock("ARABIC_PRESENTATION_FORMS_B",
+                             "ARABIC PRESENTATION FORMS-B",
+                             "ARABICPRESENTATIONFORMS-B");
 
         /**
          * Constant for the "Halfwidth and Fullwidth Forms" Unicode character block.
@@ -1182,8 +1240,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock HALFWIDTH_AND_FULLWIDTH_FORMS =
             new UnicodeBlock("HALFWIDTH_AND_FULLWIDTH_FORMS",
-                             new String[] {"Halfwidth and Fullwidth Forms",
-                                           "HalfwidthandFullwidthForms"});
+                             "HALFWIDTH AND FULLWIDTH FORMS",
+                             "HALFWIDTHANDFULLWIDTHFORMS");
 
         /**
          * Constant for the "Specials" Unicode character block.
@@ -1252,97 +1310,108 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS =
             new UnicodeBlock("UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS",
-                             new String[] {"Unified Canadian Aboriginal Syllabics",
-                                           "UnifiedCanadianAboriginalSyllabics"});
+                             "UNIFIED CANADIAN ABORIGINAL SYLLABICS",
+                             "UNIFIEDCANADIANABORIGINALSYLLABICS");
 
         /**
          * Constant for the "Ogham" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock OGHAM =
-                             new UnicodeBlock("OGHAM");
+            new UnicodeBlock("OGHAM");
 
         /**
          * Constant for the "Runic" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock RUNIC =
-                             new UnicodeBlock("RUNIC");
+            new UnicodeBlock("RUNIC");
 
         /**
          * Constant for the "Khmer" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock KHMER =
-                             new UnicodeBlock("KHMER");
+            new UnicodeBlock("KHMER");
 
         /**
          * Constant for the "Mongolian" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock MONGOLIAN =
-                             new UnicodeBlock("MONGOLIAN");
+            new UnicodeBlock("MONGOLIAN");
 
         /**
          * Constant for the "Braille Patterns" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock BRAILLE_PATTERNS =
-            new UnicodeBlock("BRAILLE_PATTERNS", new String[] {"Braille Patterns",
-                                                               "BraillePatterns"});
+            new UnicodeBlock("BRAILLE_PATTERNS",
+                             "BRAILLE PATTERNS",
+                             "BRAILLEPATTERNS");
 
         /**
          * Constant for the "CJK Radicals Supplement" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock CJK_RADICALS_SUPPLEMENT =
-             new UnicodeBlock("CJK_RADICALS_SUPPLEMENT", new String[] {"CJK Radicals Supplement",
-                                                                       "CJKRadicalsSupplement"});
+            new UnicodeBlock("CJK_RADICALS_SUPPLEMENT",
+                             "CJK RADICALS SUPPLEMENT",
+                             "CJKRADICALSSUPPLEMENT");
 
         /**
          * Constant for the "Kangxi Radicals" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock KANGXI_RADICALS =
-            new UnicodeBlock("KANGXI_RADICALS", new String[] {"Kangxi Radicals", "KangxiRadicals"});
+            new UnicodeBlock("KANGXI_RADICALS",
+                             "KANGXI RADICALS",
+                             "KANGXIRADICALS");
 
         /**
          * Constant for the "Ideographic Description Characters" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock IDEOGRAPHIC_DESCRIPTION_CHARACTERS =
-            new UnicodeBlock("IDEOGRAPHIC_DESCRIPTION_CHARACTERS", new String[] {"Ideographic Description Characters",
-                                                                                 "IdeographicDescriptionCharacters"});
+            new UnicodeBlock("IDEOGRAPHIC_DESCRIPTION_CHARACTERS",
+                             "IDEOGRAPHIC DESCRIPTION CHARACTERS",
+                             "IDEOGRAPHICDESCRIPTIONCHARACTERS");
 
         /**
          * Constant for the "Bopomofo Extended" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock BOPOMOFO_EXTENDED =
-            new UnicodeBlock("BOPOMOFO_EXTENDED", new String[] {"Bopomofo Extended",
-                                                                "BopomofoExtended"});
+            new UnicodeBlock("BOPOMOFO_EXTENDED",
+                             "BOPOMOFO EXTENDED",
+                             "BOPOMOFOEXTENDED");
 
         /**
          * Constant for the "CJK Unified Ideographs Extension A" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A =
-            new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A", new String[] {"CJK Unified Ideographs Extension A",
-                                                                                 "CJKUnifiedIdeographsExtensionA"});
+            new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A",
+                             "CJK UNIFIED IDEOGRAPHS EXTENSION A",
+                             "CJKUNIFIEDIDEOGRAPHSEXTENSIONA");
 
         /**
          * Constant for the "Yi Syllables" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock YI_SYLLABLES =
-            new UnicodeBlock("YI_SYLLABLES", new String[] {"Yi Syllables", "YiSyllables"});
+            new UnicodeBlock("YI_SYLLABLES",
+                             "YI SYLLABLES",
+                             "YISYLLABLES");
 
         /**
          * Constant for the "Yi Radicals" Unicode character block.
          * @since 1.4
          */
         public static final UnicodeBlock YI_RADICALS =
-            new UnicodeBlock("YI_RADICALS", new String[] {"Yi Radicals", "YiRadicals"});
+            new UnicodeBlock("YI_RADICALS",
+                             "YI RADICALS",
+                             "YIRADICALS");
 
 
         /**
@@ -1351,10 +1420,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CYRILLIC_SUPPLEMENTARY =
             new UnicodeBlock("CYRILLIC_SUPPLEMENTARY",
-                             new String[] {"Cyrillic Supplementary",
-                                           "CyrillicSupplementary",
-                                           "Cyrillic Supplement",
-                                           "CyrillicSupplement"});
+                             "CYRILLIC SUPPLEMENTARY",
+                             "CYRILLICSUPPLEMENTARY",
+                             "CYRILLIC SUPPLEMENT",
+                             "CYRILLICSUPPLEMENT");
 
         /**
          * Constant for the "Tagalog" Unicode character block.
@@ -1396,21 +1465,27 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.5
          */
         public static final UnicodeBlock TAI_LE =
-            new UnicodeBlock("TAI_LE", new String[] {"Tai Le", "TaiLe"});
+            new UnicodeBlock("TAI_LE",
+                             "TAI LE",
+                             "TAILE");
 
         /**
          * Constant for the "Khmer Symbols" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock KHMER_SYMBOLS =
-            new UnicodeBlock("KHMER_SYMBOLS", new String[] {"Khmer Symbols", "KhmerSymbols"});
+            new UnicodeBlock("KHMER_SYMBOLS",
+                             "KHMER SYMBOLS",
+                             "KHMERSYMBOLS");
 
         /**
          * Constant for the "Phonetic Extensions" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock PHONETIC_EXTENSIONS =
-            new UnicodeBlock("PHONETIC_EXTENSIONS", new String[] {"Phonetic Extensions", "PhoneticExtensions"});
+            new UnicodeBlock("PHONETIC_EXTENSIONS",
+                             "PHONETIC EXTENSIONS",
+                             "PHONETICEXTENSIONS");
 
         /**
          * Constant for the "Miscellaneous Mathematical Symbols-A" Unicode character block.
@@ -1418,33 +1493,35 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock MISCELLANEOUS_MATHEMATICAL_SYMBOLS_A =
             new UnicodeBlock("MISCELLANEOUS_MATHEMATICAL_SYMBOLS_A",
-                             new String[]{"Miscellaneous Mathematical Symbols-A",
-                                          "MiscellaneousMathematicalSymbols-A"});
+                             "MISCELLANEOUS MATHEMATICAL SYMBOLS-A",
+                             "MISCELLANEOUSMATHEMATICALSYMBOLS-A");
 
         /**
          * Constant for the "Supplemental Arrows-A" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock SUPPLEMENTAL_ARROWS_A =
-            new UnicodeBlock("SUPPLEMENTAL_ARROWS_A", new String[] {"Supplemental Arrows-A",
-                                                                    "SupplementalArrows-A"});
+            new UnicodeBlock("SUPPLEMENTAL_ARROWS_A",
+                             "SUPPLEMENTAL ARROWS-A",
+                             "SUPPLEMENTALARROWS-A");
 
         /**
          * Constant for the "Supplemental Arrows-B" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock SUPPLEMENTAL_ARROWS_B =
-            new UnicodeBlock("SUPPLEMENTAL_ARROWS_B", new String[] {"Supplemental Arrows-B",
-                                                                    "SupplementalArrows-B"});
+            new UnicodeBlock("SUPPLEMENTAL_ARROWS_B",
+                             "SUPPLEMENTAL ARROWS-B",
+                             "SUPPLEMENTALARROWS-B");
 
         /**
          * Constant for the "Miscellaneous Mathematical Symbols-B" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock MISCELLANEOUS_MATHEMATICAL_SYMBOLS_B
-                = new UnicodeBlock("MISCELLANEOUS_MATHEMATICAL_SYMBOLS_B",
-                                   new String[] {"Miscellaneous Mathematical Symbols-B",
-                                                 "MiscellaneousMathematicalSymbols-B"});
+        public static final UnicodeBlock MISCELLANEOUS_MATHEMATICAL_SYMBOLS_B =
+            new UnicodeBlock("MISCELLANEOUS_MATHEMATICAL_SYMBOLS_B",
+                             "MISCELLANEOUS MATHEMATICAL SYMBOLS-B",
+                             "MISCELLANEOUSMATHEMATICALSYMBOLS-B");
 
         /**
          * Constant for the "Supplemental Mathematical Operators" Unicode character block.
@@ -1452,127 +1529,151 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock SUPPLEMENTAL_MATHEMATICAL_OPERATORS =
             new UnicodeBlock("SUPPLEMENTAL_MATHEMATICAL_OPERATORS",
-                             new String[]{"Supplemental Mathematical Operators",
-                                          "SupplementalMathematicalOperators"} );
+                             "SUPPLEMENTAL MATHEMATICAL OPERATORS",
+                             "SUPPLEMENTALMATHEMATICALOPERATORS");
 
         /**
          * Constant for the "Miscellaneous Symbols and Arrows" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock MISCELLANEOUS_SYMBOLS_AND_ARROWS =
-            new UnicodeBlock("MISCELLANEOUS_SYMBOLS_AND_ARROWS", new String[] {"Miscellaneous Symbols and Arrows",
-                                                                               "MiscellaneousSymbolsandArrows"});
+            new UnicodeBlock("MISCELLANEOUS_SYMBOLS_AND_ARROWS",
+                             "MISCELLANEOUS SYMBOLS AND ARROWS",
+                             "MISCELLANEOUSSYMBOLSANDARROWS");
 
         /**
          * Constant for the "Katakana Phonetic Extensions" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock KATAKANA_PHONETIC_EXTENSIONS =
-            new UnicodeBlock("KATAKANA_PHONETIC_EXTENSIONS", new String[] {"Katakana Phonetic Extensions",
-                                                                           "KatakanaPhoneticExtensions"});
+            new UnicodeBlock("KATAKANA_PHONETIC_EXTENSIONS",
+                             "KATAKANA PHONETIC EXTENSIONS",
+                             "KATAKANAPHONETICEXTENSIONS");
 
         /**
          * Constant for the "Yijing Hexagram Symbols" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock YIJING_HEXAGRAM_SYMBOLS =
-            new UnicodeBlock("YIJING_HEXAGRAM_SYMBOLS", new String[] {"Yijing Hexagram Symbols",
-                                                                      "YijingHexagramSymbols"});
+            new UnicodeBlock("YIJING_HEXAGRAM_SYMBOLS",
+                             "YIJING HEXAGRAM SYMBOLS",
+                             "YIJINGHEXAGRAMSYMBOLS");
 
         /**
          * Constant for the "Variation Selectors" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock VARIATION_SELECTORS =
-            new UnicodeBlock("VARIATION_SELECTORS", new String[] {"Variation Selectors", "VariationSelectors"});
+            new UnicodeBlock("VARIATION_SELECTORS",
+                             "VARIATION SELECTORS",
+                             "VARIATIONSELECTORS");
 
         /**
          * Constant for the "Linear B Syllabary" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock LINEAR_B_SYLLABARY =
-            new UnicodeBlock("LINEAR_B_SYLLABARY", new String[] {"Linear B Syllabary", "LinearBSyllabary"});
+            new UnicodeBlock("LINEAR_B_SYLLABARY",
+                             "LINEAR B SYLLABARY",
+                             "LINEARBSYLLABARY");
 
         /**
          * Constant for the "Linear B Ideograms" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock LINEAR_B_IDEOGRAMS =
-            new UnicodeBlock("LINEAR_B_IDEOGRAMS", new String[] {"Linear B Ideograms", "LinearBIdeograms"});
+            new UnicodeBlock("LINEAR_B_IDEOGRAMS",
+                             "LINEAR B IDEOGRAMS",
+                             "LINEARBIDEOGRAMS");
 
         /**
          * Constant for the "Aegean Numbers" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock AEGEAN_NUMBERS =
-            new UnicodeBlock("AEGEAN_NUMBERS", new String[] {"Aegean Numbers", "AegeanNumbers"});
+            new UnicodeBlock("AEGEAN_NUMBERS",
+                             "AEGEAN NUMBERS",
+                             "AEGEANNUMBERS");
 
         /**
          * Constant for the "Old Italic" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock OLD_ITALIC =
-            new UnicodeBlock("OLD_ITALIC", new String[] {"Old Italic", "OldItalic"});
+            new UnicodeBlock("OLD_ITALIC",
+                             "OLD ITALIC",
+                             "OLDITALIC");
 
         /**
          * Constant for the "Gothic" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock GOTHIC = new UnicodeBlock("GOTHIC");
+        public static final UnicodeBlock GOTHIC =
+            new UnicodeBlock("GOTHIC");
 
         /**
          * Constant for the "Ugaritic" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock UGARITIC = new UnicodeBlock("UGARITIC");
+        public static final UnicodeBlock UGARITIC =
+            new UnicodeBlock("UGARITIC");
 
         /**
          * Constant for the "Deseret" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock DESERET = new UnicodeBlock("DESERET");
+        public static final UnicodeBlock DESERET =
+            new UnicodeBlock("DESERET");
 
         /**
          * Constant for the "Shavian" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock SHAVIAN = new UnicodeBlock("SHAVIAN");
+        public static final UnicodeBlock SHAVIAN =
+            new UnicodeBlock("SHAVIAN");
 
         /**
          * Constant for the "Osmanya" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock OSMANYA = new UnicodeBlock("OSMANYA");
+        public static final UnicodeBlock OSMANYA =
+            new UnicodeBlock("OSMANYA");
 
         /**
          * Constant for the "Cypriot Syllabary" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock CYPRIOT_SYLLABARY =
-            new UnicodeBlock("CYPRIOT_SYLLABARY", new String[] {"Cypriot Syllabary", "CypriotSyllabary"});
+            new UnicodeBlock("CYPRIOT_SYLLABARY",
+                             "CYPRIOT SYLLABARY",
+                             "CYPRIOTSYLLABARY");
 
         /**
          * Constant for the "Byzantine Musical Symbols" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock BYZANTINE_MUSICAL_SYMBOLS =
-            new UnicodeBlock("BYZANTINE_MUSICAL_SYMBOLS", new String[] {"Byzantine Musical Symbols",
-                                                                        "ByzantineMusicalSymbols"});
+            new UnicodeBlock("BYZANTINE_MUSICAL_SYMBOLS",
+                             "BYZANTINE MUSICAL SYMBOLS",
+                             "BYZANTINEMUSICALSYMBOLS");
 
         /**
          * Constant for the "Musical Symbols" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock MUSICAL_SYMBOLS =
-            new UnicodeBlock("MUSICAL_SYMBOLS", new String[] {"Musical Symbols", "MusicalSymbols"});
+            new UnicodeBlock("MUSICAL_SYMBOLS",
+                             "MUSICAL SYMBOLS",
+                             "MUSICALSYMBOLS");
 
         /**
          * Constant for the "Tai Xuan Jing Symbols" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock TAI_XUAN_JING_SYMBOLS =
-            new UnicodeBlock("TAI_XUAN_JING_SYMBOLS", new String[] {"Tai Xuan Jing Symbols",
-                                                                     "TaiXuanJingSymbols"});
+            new UnicodeBlock("TAI_XUAN_JING_SYMBOLS",
+                             "TAI XUAN JING SYMBOLS",
+                             "TAIXUANJINGSYMBOLS");
 
         /**
          * Constant for the "Mathematical Alphanumeric Symbols" Unicode character block.
@@ -1580,7 +1681,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock MATHEMATICAL_ALPHANUMERIC_SYMBOLS =
             new UnicodeBlock("MATHEMATICAL_ALPHANUMERIC_SYMBOLS",
-                             new String[] {"Mathematical Alphanumeric Symbols", "MathematicalAlphanumericSymbols"});
+                             "MATHEMATICAL ALPHANUMERIC SYMBOLS",
+                             "MATHEMATICALALPHANUMERICSYMBOLS");
 
         /**
          * Constant for the "CJK Unified Ideographs Extension B" Unicode character block.
@@ -1588,7 +1690,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B =
             new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B",
-                             new String[] {"CJK Unified Ideographs Extension B", "CJKUnifiedIdeographsExtensionB"});
+                             "CJK UNIFIED IDEOGRAPHS EXTENSION B",
+                             "CJKUNIFIEDIDEOGRAPHSEXTENSIONB");
 
         /**
          * Constant for the "CJK Compatibility Ideographs Supplement" Unicode character block.
@@ -1596,22 +1699,24 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT =
             new UnicodeBlock("CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT",
-                             new String[]{"CJK Compatibility Ideographs Supplement",
-                                          "CJKCompatibilityIdeographsSupplement"});
+                             "CJK COMPATIBILITY IDEOGRAPHS SUPPLEMENT",
+                             "CJKCOMPATIBILITYIDEOGRAPHSSUPPLEMENT");
 
         /**
          * Constant for the "Tags" Unicode character block.
          * @since 1.5
          */
-        public static final UnicodeBlock TAGS = new UnicodeBlock("TAGS");
+        public static final UnicodeBlock TAGS =
+            new UnicodeBlock("TAGS");
 
         /**
          * Constant for the "Variation Selectors Supplement" Unicode character block.
          * @since 1.5
          */
         public static final UnicodeBlock VARIATION_SELECTORS_SUPPLEMENT =
-            new UnicodeBlock("VARIATION_SELECTORS_SUPPLEMENT", new String[] {"Variation Selectors Supplement",
-                                                                             "VariationSelectorsSupplement"});
+            new UnicodeBlock("VARIATION_SELECTORS_SUPPLEMENT",
+                             "VARIATION SELECTORS SUPPLEMENT",
+                             "VARIATIONSELECTORSSUPPLEMENT");
 
         /**
          * Constant for the "Supplementary Private Use Area-A" Unicode character block.
@@ -1619,8 +1724,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock SUPPLEMENTARY_PRIVATE_USE_AREA_A =
             new UnicodeBlock("SUPPLEMENTARY_PRIVATE_USE_AREA_A",
-                             new String[] {"Supplementary Private Use Area-A",
-                                           "SupplementaryPrivateUseArea-A"});
+                             "SUPPLEMENTARY PRIVATE USE AREA-A",
+                             "SUPPLEMENTARYPRIVATEUSEAREA-A");
 
         /**
          * Constant for the "Supplementary Private Use Area-B" Unicode character block.
@@ -1628,39 +1733,44 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock SUPPLEMENTARY_PRIVATE_USE_AREA_B =
             new UnicodeBlock("SUPPLEMENTARY_PRIVATE_USE_AREA_B",
-                             new String[] {"Supplementary Private Use Area-B",
-                                           "SupplementaryPrivateUseArea-B"});
+                             "SUPPLEMENTARY PRIVATE USE AREA-B",
+                             "SUPPLEMENTARYPRIVATEUSEAREA-B");
 
         /**
          * Constant for the "High Surrogates" Unicode character block.
          * This block represents codepoint values in the high surrogate
-         * range: 0xD800 through 0xDB7F
+         * range: U+D800 through U+DB7F
          *
          * @since 1.5
          */
         public static final UnicodeBlock HIGH_SURROGATES =
-            new UnicodeBlock("HIGH_SURROGATES", new String[] {"High Surrogates", "HighSurrogates"});
+            new UnicodeBlock("HIGH_SURROGATES",
+                             "HIGH SURROGATES",
+                             "HIGHSURROGATES");
 
         /**
          * Constant for the "High Private Use Surrogates" Unicode character block.
-         * This block represents codepoint values in the high surrogate
-         * range: 0xDB80 through 0xDBFF
+         * This block represents codepoint values in the private use high surrogate
+         * range: U+DB80 through U+DBFF
          *
          * @since 1.5
          */
         public static final UnicodeBlock HIGH_PRIVATE_USE_SURROGATES =
-            new UnicodeBlock("HIGH_PRIVATE_USE_SURROGATES", new String[] { "High Private Use Surrogates",
-                                                                           "HighPrivateUseSurrogates"});
+            new UnicodeBlock("HIGH_PRIVATE_USE_SURROGATES",
+                             "HIGH PRIVATE USE SURROGATES",
+                             "HIGHPRIVATEUSESURROGATES");
 
         /**
          * Constant for the "Low Surrogates" Unicode character block.
-         * This block represents codepoint values in the high surrogate
-         * range: 0xDC00 through 0xDFFF
+         * This block represents codepoint values in the low surrogate
+         * range: U+DC00 through U+DFFF
          *
          * @since 1.5
          */
         public static final UnicodeBlock LOW_SURROGATES =
-            new UnicodeBlock("LOW_SURROGATES", new String[] {"Low Surrogates", "LowSurrogates"});
+            new UnicodeBlock("LOW_SURROGATES",
+                             "LOW SURROGATES",
+                             "LOWSURROGATES");
 
         /**
          * Constant for the "Arabic Supplement" Unicode character block.
@@ -1668,14 +1778,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock ARABIC_SUPPLEMENT =
             new UnicodeBlock("ARABIC_SUPPLEMENT",
-                             new String[] { "Arabic Supplement",
-                                            "ArabicSupplement"});
+                             "ARABIC SUPPLEMENT",
+                             "ARABICSUPPLEMENT");
 
         /**
          * Constant for the "NKo" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock NKO = new UnicodeBlock("NKO");
+        public static final UnicodeBlock NKO =
+            new UnicodeBlock("NKO");
 
         /**
          * Constant for the "Ethiopic Supplement" Unicode character block.
@@ -1683,8 +1794,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock ETHIOPIC_SUPPLEMENT =
             new UnicodeBlock("ETHIOPIC_SUPPLEMENT",
-                             new String[] { "Ethiopic Supplement",
-                                            "EthiopicSupplement"});
+                             "ETHIOPIC SUPPLEMENT",
+                             "ETHIOPICSUPPLEMENT");
 
         /**
          * Constant for the "New Tai Lue" Unicode character block.
@@ -1692,8 +1803,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock NEW_TAI_LUE =
             new UnicodeBlock("NEW_TAI_LUE",
-                             new String[] { "New Tai Lue",
-                                            "NewTaiLue"});
+                             "NEW TAI LUE",
+                             "NEWTAILUE");
 
         /**
          * Constant for the "Buginese" Unicode character block.
@@ -1720,7 +1831,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * Constant for the "Lepcha" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock LEPCHA = new UnicodeBlock("LEPCHA");
+        public static final UnicodeBlock LEPCHA =
+            new UnicodeBlock("LEPCHA");
 
         /**
          * Constant for the "Ol Chiki" Unicode character block.
@@ -1728,8 +1840,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock OL_CHIKI =
             new UnicodeBlock("OL_CHIKI",
-                             new String[] { "Ol Chiki",
-                                            "OlChiki"});
+                             "OL CHIKI",
+                             "OLCHIKI");
 
         /**
          * Constant for the "Phonetic Extensions Supplement" Unicode character
@@ -1738,8 +1850,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock PHONETIC_EXTENSIONS_SUPPLEMENT =
             new UnicodeBlock("PHONETIC_EXTENSIONS_SUPPLEMENT",
-                             new String[] { "Phonetic Extensions Supplement",
-                                            "PhoneticExtensionsSupplement"});
+                             "PHONETIC EXTENSIONS SUPPLEMENT",
+                             "PHONETICEXTENSIONSSUPPLEMENT");
 
         /**
          * Constant for the "Combining Diacritical Marks Supplement" Unicode
@@ -1748,8 +1860,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock COMBINING_DIACRITICAL_MARKS_SUPPLEMENT =
             new UnicodeBlock("COMBINING_DIACRITICAL_MARKS_SUPPLEMENT",
-                             new String[] { "Combining Diacritical Marks Supplement",
-                                            "CombiningDiacriticalMarksSupplement"});
+                             "COMBINING DIACRITICAL MARKS SUPPLEMENT",
+                             "COMBININGDIACRITICALMARKSSUPPLEMENT");
 
         /**
          * Constant for the "Glagolitic" Unicode character block.
@@ -1764,14 +1876,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock LATIN_EXTENDED_C =
             new UnicodeBlock("LATIN_EXTENDED_C",
-                             new String[] { "Latin Extended-C",
-                                            "LatinExtended-C"});
+                             "LATIN EXTENDED-C",
+                             "LATINEXTENDED-C");
 
         /**
          * Constant for the "Coptic" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock COPTIC = new UnicodeBlock("COPTIC");
+        public static final UnicodeBlock COPTIC =
+            new UnicodeBlock("COPTIC");
 
         /**
          * Constant for the "Georgian Supplement" Unicode character block.
@@ -1779,8 +1892,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock GEORGIAN_SUPPLEMENT =
             new UnicodeBlock("GEORGIAN_SUPPLEMENT",
-                             new String[] { "Georgian Supplement",
-                                            "GeorgianSupplement"});
+                             "GEORGIAN SUPPLEMENT",
+                             "GEORGIANSUPPLEMENT");
 
         /**
          * Constant for the "Tifinagh" Unicode character block.
@@ -1795,8 +1908,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock ETHIOPIC_EXTENDED =
             new UnicodeBlock("ETHIOPIC_EXTENDED",
-                             new String[] { "Ethiopic Extended",
-                                            "EthiopicExtended"});
+                             "ETHIOPIC EXTENDED",
+                             "ETHIOPICEXTENDED");
 
         /**
          * Constant for the "Cyrillic Extended-A" Unicode character block.
@@ -1804,8 +1917,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CYRILLIC_EXTENDED_A =
             new UnicodeBlock("CYRILLIC_EXTENDED_A",
-                             new String[] { "Cyrillic Extended-A",
-                                            "CyrillicExtended-A"});
+                             "CYRILLIC EXTENDED-A",
+                             "CYRILLICEXTENDED-A");
 
         /**
          * Constant for the "Supplemental Punctuation" Unicode character block.
@@ -1813,8 +1926,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock SUPPLEMENTAL_PUNCTUATION =
             new UnicodeBlock("SUPPLEMENTAL_PUNCTUATION",
-                             new String[] { "Supplemental Punctuation",
-                                            "SupplementalPunctuation"});
+                             "SUPPLEMENTAL PUNCTUATION",
+                             "SUPPLEMENTALPUNCTUATION");
 
         /**
          * Constant for the "CJK Strokes" Unicode character block.
@@ -1822,14 +1935,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CJK_STROKES =
             new UnicodeBlock("CJK_STROKES",
-                             new String[] { "CJK Strokes",
-                                            "CJKStrokes"});
+                             "CJK STROKES",
+                             "CJKSTROKES");
 
         /**
          * Constant for the "Vai" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock VAI = new UnicodeBlock("VAI");
+        public static final UnicodeBlock VAI =
+            new UnicodeBlock("VAI");
 
         /**
          * Constant for the "Cyrillic Extended-B" Unicode character block.
@@ -1837,8 +1951,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CYRILLIC_EXTENDED_B =
             new UnicodeBlock("CYRILLIC_EXTENDED_B",
-                             new String[] { "Cyrillic Extended-B",
-                                            "CyrillicExtended-B"});
+                             "CYRILLIC EXTENDED-B",
+                             "CYRILLICEXTENDED-B");
 
         /**
          * Constant for the "Modifier Tone Letters" Unicode character block.
@@ -1846,8 +1960,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock MODIFIER_TONE_LETTERS =
             new UnicodeBlock("MODIFIER_TONE_LETTERS",
-                             new String[] { "Modifier Tone Letters",
-                                            "ModifierToneLetters"});
+                             "MODIFIER TONE LETTERS",
+                             "MODIFIERTONELETTERS");
 
         /**
          * Constant for the "Latin Extended-D" Unicode character block.
@@ -1855,8 +1969,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock LATIN_EXTENDED_D =
             new UnicodeBlock("LATIN_EXTENDED_D",
-                             new String[] { "Latin Extended-D",
-                                            "LatinExtended-D"});
+                             "LATIN EXTENDED-D",
+                             "LATINEXTENDED-D");
 
         /**
          * Constant for the "Syloti Nagri" Unicode character block.
@@ -1864,15 +1978,16 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock SYLOTI_NAGRI =
             new UnicodeBlock("SYLOTI_NAGRI",
-                             new String[] { "Syloti Nagri",
-                                            "SylotiNagri"});
+                             "SYLOTI NAGRI",
+                             "SYLOTINAGRI");
 
         /**
          * Constant for the "Phags-pa" Unicode character block.
          * @since 1.7
          */
         public static final UnicodeBlock PHAGS_PA =
-            new UnicodeBlock("PHAGS_PA", new String[] { "Phags-pa"});
+            new UnicodeBlock("PHAGS_PA",
+                             "PHAGS-PA");
 
         /**
          * Constant for the "Saurashtra" Unicode character block.
@@ -1887,20 +2002,22 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock KAYAH_LI =
             new UnicodeBlock("KAYAH_LI",
-                             new String[] { "Kayah Li",
-                                            "KayahLi"});
+                             "KAYAH LI",
+                             "KAYAHLI");
 
         /**
          * Constant for the "Rejang" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock REJANG = new UnicodeBlock("REJANG");
+        public static final UnicodeBlock REJANG =
+            new UnicodeBlock("REJANG");
 
         /**
          * Constant for the "Cham" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock CHAM = new UnicodeBlock("CHAM");
+        public static final UnicodeBlock CHAM =
+            new UnicodeBlock("CHAM");
 
         /**
          * Constant for the "Vertical Forms" Unicode character block.
@@ -1908,8 +2025,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock VERTICAL_FORMS =
             new UnicodeBlock("VERTICAL_FORMS",
-                             new String[] { "Vertical Forms",
-                                            "VerticalForms"});
+                             "VERTICAL FORMS",
+                             "VERTICALFORMS");
 
         /**
          * Constant for the "Ancient Greek Numbers" Unicode character block.
@@ -1917,8 +2034,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock ANCIENT_GREEK_NUMBERS =
             new UnicodeBlock("ANCIENT_GREEK_NUMBERS",
-                             new String[] { "Ancient Greek Numbers",
-                                            "AncientGreekNumbers"});
+                             "ANCIENT GREEK NUMBERS",
+                             "ANCIENTGREEKNUMBERS");
 
         /**
          * Constant for the "Ancient Symbols" Unicode character block.
@@ -1926,8 +2043,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock ANCIENT_SYMBOLS =
             new UnicodeBlock("ANCIENT_SYMBOLS",
-                             new String[] { "Ancient Symbols",
-                                            "AncientSymbols"});
+                             "ANCIENT SYMBOLS",
+                             "ANCIENTSYMBOLS");
 
         /**
          * Constant for the "Phaistos Disc" Unicode character block.
@@ -1935,20 +2052,22 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock PHAISTOS_DISC =
             new UnicodeBlock("PHAISTOS_DISC",
-                             new String[] { "Phaistos Disc",
-                                            "PhaistosDisc"});
+                             "PHAISTOS DISC",
+                             "PHAISTOSDISC");
 
         /**
          * Constant for the "Lycian" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock LYCIAN = new UnicodeBlock("LYCIAN");
+        public static final UnicodeBlock LYCIAN =
+            new UnicodeBlock("LYCIAN");
 
         /**
          * Constant for the "Carian" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock CARIAN = new UnicodeBlock("CARIAN");
+        public static final UnicodeBlock CARIAN =
+            new UnicodeBlock("CARIAN");
 
         /**
          * Constant for the "Old Persian" Unicode character block.
@@ -1956,8 +2075,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock OLD_PERSIAN =
             new UnicodeBlock("OLD_PERSIAN",
-                             new String[] { "Old Persian",
-                                            "OldPersian"});
+                             "OLD PERSIAN",
+                             "OLDPERSIAN");
 
         /**
          * Constant for the "Phoenician" Unicode character block.
@@ -1970,7 +2089,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * Constant for the "Lydian" Unicode character block.
          * @since 1.7
          */
-        public static final UnicodeBlock LYDIAN = new UnicodeBlock("LYDIAN");
+        public static final UnicodeBlock LYDIAN =
+            new UnicodeBlock("LYDIAN");
 
         /**
          * Constant for the "Kharoshthi" Unicode character block.
@@ -1993,8 +2113,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock CUNEIFORM_NUMBERS_AND_PUNCTUATION =
             new UnicodeBlock("CUNEIFORM_NUMBERS_AND_PUNCTUATION",
-                             new String[] { "Cuneiform Numbers and Punctuation",
-                                            "CuneiformNumbersandPunctuation"});
+                             "CUNEIFORM NUMBERS AND PUNCTUATION",
+                             "CUNEIFORMNUMBERSANDPUNCTUATION");
 
         /**
          * Constant for the "Ancient Greek Musical Notation" Unicode character
@@ -2003,8 +2123,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock ANCIENT_GREEK_MUSICAL_NOTATION =
             new UnicodeBlock("ANCIENT_GREEK_MUSICAL_NOTATION",
-                             new String[] { "Ancient Greek Musical Notation",
-                                            "AncientGreekMusicalNotation"});
+                             "ANCIENT GREEK MUSICAL NOTATION",
+                             "ANCIENTGREEKMUSICALNOTATION");
 
         /**
          * Constant for the "Counting Rod Numerals" Unicode character block.
@@ -2012,8 +2132,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock COUNTING_ROD_NUMERALS =
             new UnicodeBlock("COUNTING_ROD_NUMERALS",
-                             new String[] { "Counting Rod Numerals",
-                                            "CountingRodNumerals"});
+                             "COUNTING ROD NUMERALS",
+                             "COUNTINGRODNUMERALS");
 
         /**
          * Constant for the "Mahjong Tiles" Unicode character block.
@@ -2021,8 +2141,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock MAHJONG_TILES =
             new UnicodeBlock("MAHJONG_TILES",
-                             new String[] { "Mahjong Tiles",
-                                            "MahjongTiles"});
+                             "MAHJONG TILES",
+                             "MAHJONGTILES");
 
         /**
          * Constant for the "Domino Tiles" Unicode character block.
@@ -2030,8 +2150,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          */
         public static final UnicodeBlock DOMINO_TILES =
             new UnicodeBlock("DOMINO_TILES",
-                             new String[] { "Domino Tiles",
-                                            "DominoTiles"});
+                             "DOMINO TILES",
+                             "DOMINOTILES");
 
         private static final int blockStarts[] = {
             0x0000,   // 0000..007F; Basic Latin
@@ -2047,7 +2167,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
             0x0530,   // 0530..058F; Armenian
             0x0590,   // 0590..05FF; Hebrew
             0x0600,   // 0600..06FF; Arabic
-            0x0700,   // 0700..074F; Syria
+            0x0700,   // 0700..074F; Syriac
             0x0750,   // 0750..077F; Arabic Supplement
             0x0780,   // 0780..07BF; Thaana
             0x07C0,   // 07C0..07FF; NKo
@@ -2447,11 +2567,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * given character, or <code>null</code> if the character is not a
          * member of a defined block.
          *
-                 * <p><b>Note:</b> This method cannot handle <a
-                 * href="Character.html#supplementary"> supplementary
-                 * characters</a>. To support all Unicode characters,
-                 * including supplementary characters, use the {@link
-                 * #of(int)} method.
+         * <p><b>Note:</b> This method cannot handle
+         * <a href="Character.html#supplementary"> supplementary
+         * characters</a>.  To support all Unicode characters, including
+         * supplementary characters, use the {@link #of(int)} method.
          *
          * @param   c  The character in question
          * @return  The <code>UnicodeBlock</code> instance representing the
@@ -2463,22 +2582,21 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
             return of((int)c);
         }
 
-
         /**
          * Returns the object representing the Unicode block
          * containing the given character (Unicode code point), or
          * <code>null</code> if the character is not a member of a
          * defined block.
          *
-                 * @param   codePoint the character (Unicode code point) in question.
+         * @param   codePoint the character (Unicode code point) in question.
          * @return  The <code>UnicodeBlock</code> instance representing the
          *          Unicode block of which this character is a member, or
          *          <code>null</code> if the character is not a member of any
          *          Unicode block
-                 * @exception IllegalArgumentException if the specified
-                 * <code>codePoint</code> is an invalid Unicode code point.
-                 * @see Character#isValidCodePoint(int)
-                 * @since   1.5
+         * @exception IllegalArgumentException if the specified
+         * <code>codePoint</code> is an invalid Unicode code point.
+         * @see Character#isValidCodePoint(int)
+         * @since   1.5
          */
         public static UnicodeBlock of(int codePoint) {
             if (!isValidCodePoint(codePoint)) {
@@ -2520,7 +2638,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * <li>The text representation of each constant UnicodeBlock identifier.
          * For example, this method will return the {@link #BASIC_LATIN} block if
          * provided with the "BASIC_LATIN" name. This form replaces all spaces and
-         *  hyphens in the canonical name with underscores.
+         * hyphens in the canonical name with underscores.
          * </ol>
          * Finally, character case is ignored for all of the valid block name forms.
          * For example, "BASIC_LATIN" and "basic_latin" are both valid block names.
