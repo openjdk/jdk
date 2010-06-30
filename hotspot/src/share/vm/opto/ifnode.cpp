@@ -1081,11 +1081,9 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
 
   igvn->register_new_node_with_optimizer(new_if_f);
   igvn->register_new_node_with_optimizer(new_if_t);
-  igvn->hash_delete(old_if_f);
-  igvn->hash_delete(old_if_t);
   // Flip test, so flip trailing control
-  igvn->subsume_node(old_if_f, new_if_t);
-  igvn->subsume_node(old_if_t, new_if_f);
+  igvn->replace_node(old_if_f, new_if_t);
+  igvn->replace_node(old_if_t, new_if_f);
 
   // Progress
   return iff;
