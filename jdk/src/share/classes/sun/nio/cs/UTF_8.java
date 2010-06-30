@@ -207,15 +207,15 @@ class UTF_8 extends Unicode
 
             // ASCII only loop
             while (dp < dlASCII && sa[sp] >= 0)
-                da[dp++] = (char)sa[sp++];
+                da[dp++] = (char) sa[sp++];
 
             while (sp < sl) {
                 int b1 = sa[sp];
-                if (b1  >= 0) {
+                if (b1 >= 0) {
                     // 1 byte, 7 bits: 0xxxxxxx
                     if (dp >= dl)
                         return xflow(src, sp, sl, dst, dp, 1);
-                    da[dp++] = (char)b1;
+                    da[dp++] = (char) b1;
                     sp++;
                 } else if ((b1 >> 5) == -2) {
                     // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
@@ -224,7 +224,10 @@ class UTF_8 extends Unicode
                     int b2 = sa[sp + 1];
                     if (isMalformed2(b1, b2))
                         return malformed(src, sp, dst, dp, 2);
-                    da[dp++] = (char) (((b1 << 6) ^ b2) ^ 0x0f80);
+                    da[dp++] = (char) (((b1 << 6) ^ b2)
+                                       ^
+                                       (((byte) 0xC0 << 6) ^
+                                        ((byte) 0x80 << 0)));
                     sp += 2;
                 } else if ((b1 >> 4) == -2) {
                     // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
@@ -234,7 +237,13 @@ class UTF_8 extends Unicode
                     int b3 = sa[sp + 2];
                     if (isMalformed3(b1, b2, b3))
                         return malformed(src, sp, dst, dp, 3);
-                    da[dp++] = (char) (((b1 << 12) ^ (b2 << 6) ^ b3) ^ 0x1f80);
+                    da[dp++] = (char)
+                        ((b1 << 12) ^
+                         (b2 <<  6) ^
+                         (b3 ^
+                          (((byte) 0xE0 << 12) ^
+                           ((byte) 0x80 <<  6) ^
+                           ((byte) 0x80 <<  0))));
                     sp += 3;
                 } else if ((b1 >> 3) == -2) {
                     // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
@@ -243,10 +252,14 @@ class UTF_8 extends Unicode
                     int b2 = sa[sp + 1];
                     int b3 = sa[sp + 2];
                     int b4 = sa[sp + 3];
-                    int uc = ((b1 & 0x07) << 18) |
-                             ((b2 & 0x3f) << 12) |
-                             ((b3 & 0x3f) << 06) |
-                             (b4 & 0x3f);
+                    int uc = ((b1 << 18) ^
+                              (b2 << 12) ^
+                              (b3 <<  6) ^
+                              (b4 ^
+                               (((byte) 0xF0 << 18) ^
+                                ((byte) 0x80 << 12) ^
+                                ((byte) 0x80 <<  6) ^
+                                ((byte) 0x80 <<  0))));
                     if (isMalformed4(b2, b3, b4) ||
                         // shortest form check
                         !Character.isSupplementaryCodePoint(uc)) {
@@ -271,8 +284,8 @@ class UTF_8 extends Unicode
                 if (b1 >= 0) {
                     // 1 byte, 7 bits: 0xxxxxxx
                     if (dst.remaining() < 1)
-                        return xflow(src, mark, 1);  //overflow
-                    dst.put((char)b1);
+                        return xflow(src, mark, 1); // overflow
+                    dst.put((char) b1);
                     mark++;
                 } else if ((b1 >> 5) == -2) {
                     // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
@@ -281,7 +294,10 @@ class UTF_8 extends Unicode
                     int b2 = src.get();
                     if (isMalformed2(b1, b2))
                         return malformed(src, mark, 2);
-                    dst.put((char) (((b1 << 6) ^ b2) ^ 0x0f80));
+                    dst.put((char) (((b1 << 6) ^ b2)
+                                    ^
+                                    (((byte) 0xC0 << 6) ^
+                                     ((byte) 0x80 << 0))));
                     mark += 2;
                 } else if ((b1 >> 4) == -2) {
                     // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
@@ -291,7 +307,13 @@ class UTF_8 extends Unicode
                     int b3 = src.get();
                     if (isMalformed3(b1, b2, b3))
                         return malformed(src, mark, 3);
-                    dst.put((char) (((b1 << 12) ^ (b2 << 6) ^ b3) ^ 0x1f80));
+                    dst.put((char)
+                            ((b1 << 12) ^
+                             (b2 <<  6) ^
+                             (b3 ^
+                              (((byte) 0xE0 << 12) ^
+                               ((byte) 0x80 <<  6) ^
+                               ((byte) 0x80 <<  0)))));
                     mark += 3;
                 } else if ((b1 >> 3) == -2) {
                     // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
@@ -300,10 +322,14 @@ class UTF_8 extends Unicode
                     int b2 = src.get();
                     int b3 = src.get();
                     int b4 = src.get();
-                    int uc = ((b1 & 0x07) << 18) |
-                             ((b2 & 0x3f) << 12) |
-                             ((b3 & 0x3f) << 06) |
-                             (b4 & 0x3f);
+                    int uc = ((b1 << 18) ^
+                              (b2 << 12) ^
+                              (b3 <<  6) ^
+                              (b4 ^
+                               (((byte) 0xF0 << 18) ^
+                                ((byte) 0x80 << 12) ^
+                                ((byte) 0x80 <<  6) ^
+                                ((byte) 0x80 <<  0))));
                     if (isMalformed4(b2, b3, b4) ||
                         // shortest form check
                         !Character.isSupplementaryCodePoint(uc)) {
@@ -368,7 +394,7 @@ class UTF_8 extends Unicode
             int dl = dst.arrayOffset() + dst.limit();
             int dlASCII = dp + Math.min(sl - sp, dl - dp);
 
-            //ASCII only loop
+            // ASCII only loop
             while (dp < dlASCII && sa[sp] < '\u0080')
                 da[dp++] = (byte) sa[sp++];
             while (sp < sl) {
@@ -382,7 +408,7 @@ class UTF_8 extends Unicode
                     // 2 bytes, 11 bits
                     if (dl - dp < 2)
                         return overflow(src, sp, dst, dp);
-                    da[dp++] = (byte)(0xc0 | ((c >> 06)));
+                    da[dp++] = (byte)(0xc0 | (c >> 6));
                     da[dp++] = (byte)(0x80 | (c & 0x3f));
                 } else if (Character.isSurrogate(c)) {
                     // Have a surrogate pair
@@ -397,7 +423,7 @@ class UTF_8 extends Unicode
                         return overflow(src, sp, dst, dp);
                     da[dp++] = (byte)(0xf0 | ((uc >> 18)));
                     da[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
-                    da[dp++] = (byte)(0x80 | ((uc >> 06) & 0x3f));
+                    da[dp++] = (byte)(0x80 | ((uc >>  6) & 0x3f));
                     da[dp++] = (byte)(0x80 | (uc & 0x3f));
                     sp++;  // 2 chars
                 } else {
@@ -405,7 +431,7 @@ class UTF_8 extends Unicode
                     if (dl - dp < 3)
                         return overflow(src, sp, dst, dp);
                     da[dp++] = (byte)(0xe0 | ((c >> 12)));
-                    da[dp++] = (byte)(0x80 | ((c >> 06) & 0x3f));
+                    da[dp++] = (byte)(0x80 | ((c >>  6) & 0x3f));
                     da[dp++] = (byte)(0x80 | (c & 0x3f));
                 }
                 sp++;
@@ -429,7 +455,7 @@ class UTF_8 extends Unicode
                     // 2 bytes, 11 bits
                     if (dst.remaining() < 2)
                         return overflow(src, mark);
-                    dst.put((byte)(0xc0 | ((c >> 06))));
+                    dst.put((byte)(0xc0 | (c >> 6)));
                     dst.put((byte)(0x80 | (c & 0x3f)));
                 } else if (Character.isSurrogate(c)) {
                     // Have a surrogate pair
@@ -444,15 +470,15 @@ class UTF_8 extends Unicode
                         return overflow(src, mark);
                     dst.put((byte)(0xf0 | ((uc >> 18))));
                     dst.put((byte)(0x80 | ((uc >> 12) & 0x3f)));
-                    dst.put((byte)(0x80 | ((uc >> 06) & 0x3f)));
+                    dst.put((byte)(0x80 | ((uc >>  6) & 0x3f)));
                     dst.put((byte)(0x80 | (uc & 0x3f)));
-                    mark++;  //2 chars
+                    mark++;  // 2 chars
                 } else {
                     // 3 bytes, 16 bits
                     if (dst.remaining() < 3)
                         return overflow(src, mark);
                     dst.put((byte)(0xe0 | ((c >> 12))));
-                    dst.put((byte)(0x80 | ((c >> 06) & 0x3f)));
+                    dst.put((byte)(0x80 | ((c >>  6) & 0x3f)));
                     dst.put((byte)(0x80 | (c & 0x3f)));
                 }
                 mark++;
