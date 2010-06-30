@@ -99,6 +99,8 @@ import java.util.regex.PatternSyntaxException;
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
+ * @author  Martin Buchholz
+ * @author  Ulf Zibis
  * @see     java.lang.Object#toString()
  * @see     java.lang.StringBuffer
  * @see     java.lang.StringBuilder
@@ -273,32 +275,32 @@ public final class String
             throw new StringIndexOutOfBoundsException(offset + count);
         }
 
+        final int end = offset + count;
+
         // Pass 1: Compute precise size of char[]
-        int n = 0;
-        for (int i = offset; i < offset + count; i++) {
+        int n = count;
+        for (int i = offset; i < end; i++) {
             int c = codePoints[i];
-            if (c >= Character.MIN_CODE_POINT &&
-                c <  Character.MIN_SUPPLEMENTARY_CODE_POINT)
-                n += 1;
-            else if (Character.isSupplementaryCodePoint(c))
-                n += 2;
+            if (Character.isBmpCodePoint(c))
+                continue;
+            else if (Character.isValidCodePoint(c))
+                n++;
             else throw new IllegalArgumentException(Integer.toString(c));
         }
 
         // Pass 2: Allocate and fill in char[]
-        char[] v = new char[n];
-        for (int i = offset, j = 0; i < offset + count; i++) {
+        final char[] v = new char[n];
+
+        for (int i = offset, j = 0; i < end; i++, j++) {
             int c = codePoints[i];
-            if (c < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-                v[j++] = (char) c;
-            } else {
-                Character.toSurrogates(c, v, j);
-                j += 2;
-            }
+            if (Character.isBmpCodePoint(c))
+                v[j] = (char) c;
+            else
+                Character.toSurrogates(c, v, j++);
         }
 
         this.value  = v;
-        this.count  = v.length;
+        this.count  = n;
         this.offset = 0;
     }
 

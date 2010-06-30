@@ -67,17 +67,16 @@ import java.util.Locale;
  * definition</i></a> of the U+<i>n</i> notation in the Unicode
  * standard.)
  *
- * <p>The set of characters from U+0000 to U+FFFF is sometimes
- * referred to as the <em>Basic Multilingual Plane (BMP)</em>. <a
- * name="supplementary">Characters</a> whose code points are greater
+ * <p><a name="BMP">The set of characters from U+0000 to U+FFFF is
+ * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
+ * <a name="supplementary">Characters</a> whose code points are greater
  * than U+FFFF are called <em>supplementary character</em>s.  The Java
- * 2 platform uses the UTF-16 representation in <code>char</code>
- * arrays and in the <code>String</code> and <code>StringBuffer</code>
- * classes. In this representation, supplementary characters are
- * represented as a pair of <code>char</code> values, the first from
- * the <em>high-surrogates</em> range, (&#92;uD800-&#92;uDBFF), the
- * second from the <em>low-surrogates</em> range
- * (&#92;uDC00-&#92;uDFFF).
+ * platform uses the UTF-16 representation in <code>char</code> arrays and
+ * in the <code>String</code> and <code>StringBuffer</code> classes. In
+ * this representation, supplementary characters are represented as a pair
+ * of <code>char</code> values, the first from the <em>high-surrogates</em>
+ * range, (&#92;uD800-&#92;uDBFF), the second from the
+ * <em>low-surrogates</em> range (&#92;uDC00-&#92;uDFFF).
  *
  * <p>A <code>char</code> value, therefore, represents Basic
  * Multilingual Plane (BMP) code points, including the surrogate
@@ -3924,6 +3923,25 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
 
     /**
      * Determines whether the specified character (Unicode code point)
+     * is in the <a href="#BMP">Basic Multilingual Plane (BMP)</a>.
+     * Such code points can be represented using a single {@code char}.
+     *
+     * @param  codePoint the character (Unicode code point) to be tested
+     * @return {@code true} if the specified code point is between
+     *         {@link #MIN_VALUE} and {@link #MAX_VALUE} inclusive;
+     *         {@code false} otherwise.
+     * @since  1.7
+     */
+    public static boolean isBmpCodePoint(int codePoint) {
+        return codePoint >>> 16 == 0;
+        // Optimized form of:
+        //     codePoint >= MIN_VALUE && codePoint <= MAX_VALUE
+        // We consistently use logical shift (>>>) to facilitate
+        // additional runtime optimizations.
+    }
+
+    /**
+     * Determines whether the specified character (Unicode code point)
      * is in the <a href="#supplementary">supplementary character</a> range.
      *
      * @param  codePoint the character (Unicode code point) to be tested
@@ -4319,15 +4337,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
-        if (codePoint < 0 || codePoint > MAX_CODE_POINT) {
-            throw new IllegalArgumentException();
-        }
-        if (codePoint < MIN_SUPPLEMENTARY_CODE_POINT) {
+        if (isBmpCodePoint(codePoint)) {
             dst[dstIndex] = (char) codePoint;
             return 1;
+        } else if (isValidCodePoint(codePoint)) {
+            toSurrogates(codePoint, dst, dstIndex);
+            return 2;
+        } else {
+            throw new IllegalArgumentException();
         }
-        toSurrogates(codePoint, dst, dstIndex);
-        return 2;
     }
 
     /**
@@ -4347,15 +4365,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static char[] toChars(int codePoint) {
-        if (codePoint < 0 || codePoint > MAX_CODE_POINT) {
+        if (isBmpCodePoint(codePoint)) {
+            return new char[] { (char) codePoint };
+        } else if (isValidCodePoint(codePoint)) {
+            char[] result = new char[2];
+            toSurrogates(codePoint, result, 0);
+            return result;
+        } else {
             throw new IllegalArgumentException();
         }
-        if (codePoint < MIN_SUPPLEMENTARY_CODE_POINT) {
-                return new char[] { (char) codePoint };
-        }
-        char[] result = new char[2];
-        toSurrogates(codePoint, result, 0);
-        return result;
     }
 
     static void toSurrogates(int codePoint, char[] dst, int index) {
@@ -6259,8 +6277,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      */
     static char[] toUpperCaseCharArray(int codePoint) {
         // As of Unicode 4.0, 1:M uppercasings only happen in the BMP.
-        assert isValidCodePoint(codePoint) &&
-               !isSupplementaryCodePoint(codePoint);
+        assert isBmpCodePoint(codePoint);
         return CharacterData.of(codePoint).toUpperCaseCharArray(codePoint);
     }
 

@@ -46,7 +46,7 @@ public class BashStreams {
 
         CharacterGenerator(long seed, String csn, int limit) {
             rand = new Random(seed);
-            this.max = Surrogate.UCS4_MAX + 1;
+            this.max = Character.MAX_CODE_POINT + 1;
             this.limit = limit;
         }
 
@@ -77,17 +77,20 @@ public class BashStreams {
             int c;
             for (;;) {
                 c = rand.nextInt(max);
-                if (Surrogate.is(c) || (c == 0xfffe) || (c == 0xffff))
+                if ((Character.isBmpCodePoint(c)
+                     && (Character.isSurrogate((char) c)
+                         || (c == 0xfffe) || (c == 0xffff))))
                     continue;
-                if (Surrogate.neededFor(c) && (count == limit - 1))
+                if (Character.isSupplementaryCodePoint(c)
+                        && (count == limit - 1))
                     continue;
                 break;
             }
             count++;
-            if (Surrogate.neededFor(c)) {
+            if (Character.isSupplementaryCodePoint(c)) {
                 count++;
-                push(Surrogate.low(c));
-                return Surrogate.high(c);
+                push(sun.nio.cs.Surrogate.low(c));
+                return sun.nio.cs.Surrogate.high(c);
             }
             return (char)c;
         }
@@ -137,7 +140,7 @@ public class BashStreams {
                 char d = cg.next();
                 if (c != d) {
                     if (c == '?') {
-                        if (Surrogate.isHigh(d))
+                        if (Character.isHighSurrogate(d))
                             cg.next();
                         continue;
                     }
@@ -187,7 +190,7 @@ public class BashStreams {
             w.write(ca, 0, n);
             count += n;
         }
-        if (Surrogate.isHigh(ca[n - 1]))
+        if (Character.isHighSurrogate(ca[n - 1]))
             w.write(cg.next());
         w.close();
     }
@@ -253,7 +256,8 @@ public class BashStreams {
                         if (!cg.hasNext())
                             break;
                         char c = cg.next();
-                        if (Surrogate.isHigh(c) && (cb.remaining() == 1)) {
+                        if (Character.isHighSurrogate(c)
+                                && cb.remaining() == 1) {
                             cg.push(c);
                             break;
                         }
@@ -311,7 +315,7 @@ public class BashStreams {
                     mismatchedEOF(csn, count + i, cg.count());
                 char d = cg.next();
                 if (c == '?') {
-                    if (Surrogate.isHigh(d)) {
+                    if (Character.isHighSurrogate(d)) {
                         cg.next();
                         continue;
                     }
