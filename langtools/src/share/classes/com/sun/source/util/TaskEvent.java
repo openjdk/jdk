@@ -30,7 +30,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 
 /**
- * Provides details about work that has been done by the Sun Java Compiler, javac.
+ * Provides details about work that has been done by the JDK Java Compiler, javac.
  *
  * @author Jonathan Gibbons
  * @since 1.6

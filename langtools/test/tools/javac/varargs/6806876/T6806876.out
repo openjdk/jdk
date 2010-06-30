@@ -1,4 +1,6 @@
 T6806876.java:11:32: compiler.warn.unchecked.generic.array.creation: java.lang.Number&java.lang.Comparable<? extends java.lang.Number&java.lang.Comparable<?>>[]
 - compiler.err.warnings.and.werror
+- compiler.note.varargs.filename: T6806876.java
+- compiler.note.varargs.recompile
 1 error
 1 warning

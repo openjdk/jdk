@@ -30,7 +30,6 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds the Constants Summary Page.
@@ -109,20 +108,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class<?>[] paramClasses,
-            Object[] params)
-    throws Exception {
-        if (DEBUG) {
-            configuration.root.printError("DEBUG: " + this.getClass().getName()
-                + "." + methodName);
-        }
-        Method method = this.getClass().getMethod(methodName, paramClasses);
-        method.invoke(this, params);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void build() throws IOException {
         if (writer == null) {
             //Doclet does not support this output.
@@ -144,29 +129,29 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the list of elements describing constant summary
      *                 documentation.
      */
-    public void buildConstantSummary(List<?> elements) throws Exception {
-        build(elements);
+    public void buildConstantSummary(XMLNode node) throws Exception {
+        buildChildren(node);
         writer.close();
     }
 
     /**
      * Build the header.
      */
-    public void buildHeader() {
+    public void buildHeader(XMLNode node) {
         writer.writeHeader();
     }
 
     /**
      * Build the footer.
      */
-    public void buildFooter() {
+    public void buildFooter(XMLNode node) {
         writer.writeFooter();
     }
 
     /**
      * Build the table of contents.
      */
-    public void buildContents() {
+    public void buildContents(XMLNode node) {
         writer.writeContentsHeader();
         PackageDoc[] packages = configuration.packages;
         printedPackageHeaders = new HashSet<String>();
@@ -186,14 +171,14 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the XML elements that represent the components
      *                 of documentation for each package.
      */
-    public void buildConstantSummaries(List<?> elements) {
+    public void buildConstantSummaries(XMLNode node) {
         PackageDoc[] packages = configuration.packages;
         printedPackageHeaders = new HashSet<String>();
         for (int i = 0; i < packages.length; i++) {
             if (hasConstantField(packages[i])) {
                 currentPackage = packages[i];
                 //Build the documentation for the current package.
-                build(elements);
+                buildChildren(node);
             }
         }
     }
@@ -204,8 +189,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the list of XML elements that make up package
      *                 documentation.
      */
-    public void buildPackageConstantSummary(List<?> elements) {
-        build(elements);
+    public void buildPackageConstantSummary(XMLNode node) {
+        buildChildren(node);
     }
 
     /**
@@ -214,7 +199,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the list of XML elements that make up the class
      *                 constant summary.
      */
-    public void buildClassConstantSummary(List<?> elements) {
+    public void buildClassConstantSummary(XMLNode node) {
         ClassDoc[] classes = currentPackage.name().length() > 0 ?
             currentPackage.allClasses() :
             configuration.classDocCatalog.allClasses(
@@ -227,14 +212,14 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             }
             currentClass = classes[i];
             //Build the documentation for the current class.
-            build(elements);
+            buildChildren(node);
         }
     }
 
     /**
      * Build the header for the given class.
      */
-    public void buildPackageHeader() {
+    public void buildPackageHeader(XMLNode node) {
         String parsedPackageName = parsePackageName(currentPackage.name());
         if (! printedPackageHeaders.contains(parsedPackageName)) {
             writer.writePackageName(currentPackage,
@@ -246,7 +231,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the header for the given class.
      */
-    public void buildClassHeader() {
+    public void buildClassHeader(XMLNode node) {
         writer.writeConstantMembersHeader(currentClass);
     }
 
@@ -254,14 +239,14 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * Print summary of constant members in the
      * class.
      */
-    public void buildConstantMembers() {
-        new ConstantFieldBuilder(currentClass).buildMembersSummary();
+    public void buildConstantMembers(XMLNode node) {
+        new ConstantFieldBuilder(currentClass).buildMembersSummary(node);
     }
 
     /**
      * Build the footer for the given class.
      */
-    public void buildClassFooter() {
+    public void buildClassFooter(XMLNode node) {
         writer.writeConstantMembersFooter(currentClass);
     }
 
@@ -362,7 +347,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         /**
          * Builds the table of constants for a given class.
          */
-        protected void buildMembersSummary() {
+        protected void buildMembersSummary(XMLNode node) {
             List<FieldDoc> members = new ArrayList<FieldDoc>(members());
             if (members.size() > 0) {
                 Collections.sort(members);

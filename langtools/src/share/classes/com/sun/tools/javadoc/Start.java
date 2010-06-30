@@ -51,8 +51,6 @@ import static com.sun.tools.javac.code.Flags.*;
  * @author Neal Gafter (rewrite)
  */
 class Start {
-    /** Context for this invocation. */
-    private final Context context;
 
     private final String defaultDocletClassName;
     private final ClassLoader docletParentClassLoader;
@@ -98,8 +96,8 @@ class Start {
           PrintWriter noticeWriter,
           String defaultDocletClassName,
           ClassLoader docletParentClassLoader) {
-        context = new Context();
-        messager = new Messager(context, programName, errWriter, warnWriter, noticeWriter);
+        Context tempContext = new Context(); // interim context until option decoding completed
+        messager = new Messager(tempContext, programName, errWriter, warnWriter, noticeWriter);
         this.defaultDocletClassName = defaultDocletClassName;
         this.docletParentClassLoader = docletParentClassLoader;
     }
@@ -110,8 +108,8 @@ class Start {
 
     Start(String programName, String defaultDocletClassName,
           ClassLoader docletParentClassLoader) {
-        context = new Context();
-        messager = new Messager(context, programName);
+        Context tempContext = new Context(); // interim context until option decoding completed
+        messager = new Messager(tempContext, programName);
         this.defaultDocletClassName = defaultDocletClassName;
         this.docletParentClassLoader = docletParentClassLoader;
     }
@@ -142,6 +140,13 @@ class Start {
         if (docletInvoker != null) {
             docletInvoker.optionLength("-help");
         }
+    }
+
+    /**
+     * Usage
+     */
+    private void Xusage() {
+        messager.notice("main.Xusage");
     }
 
     /**
@@ -213,6 +218,15 @@ class Start {
         setDocletInvoker(argv);
         ListBuffer<String> subPackages = new ListBuffer<String>();
         ListBuffer<String> excludedPackages = new ListBuffer<String>();
+
+        Context context = new Context();
+        // Setup a new Messager, using the same initial parameters as the
+        // existing Messager, except that this one will be able to use any
+        // options that may be set up below.
+        Messager.preRegister(context,
+                messager.programName,
+                messager.errWriter, messager.warnWriter, messager.noticeWriter);
+
         Options compOpts = Options.instance(context);
         boolean docClasses = false;
 
@@ -310,6 +324,15 @@ class Start {
                     usageError("main.locale_first");
                 oneArg(argv, i++);
                 docLocale = argv[i];
+            } else if (arg.equals("-Xmaxerrs") || arg.equals("-Xmaxwarns")) {
+                oneArg(argv, i++);
+                if (compOpts.get(arg) != null) {
+                    usageError("main.option.already.seen", arg);
+                }
+                compOpts.put(arg, argv[i]);
+            } else if (arg.equals("-X")) {
+                Xusage();
+                exit();
             } else if (arg.startsWith("-XD")) {
                 String s = arg.substring("-XD".length());
                 int eq = s.indexOf('=');

@@ -30,7 +30,6 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds the summary for a given annotation type.
@@ -92,20 +91,6 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class<?>[] paramClasses,
-            Object[] params)
-    throws Exception {
-        if (DEBUG) {
-            configuration.root.printError("DEBUG: " + this.getClass().getName()
-                + "." + methodName);
-        }
-        Method method = this.getClass().getMethod(methodName, paramClasses);
-        method.invoke(this, params);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void build() throws IOException {
         build(LayoutParser.getInstance(configuration).parseXML(ROOT));
     }
@@ -122,8 +107,8 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
       *
       * @param elements the XML elements that specify how to document a class.
       */
-     public void buildAnnotationTypeDoc(List<?> elements) throws Exception {
-        build(elements);
+     public void buildAnnotationTypeDoc(XMLNode node) throws Exception {
+        buildChildren(node);
         writer.close();
         copyDocFiles();
      }
@@ -154,7 +139,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * Build the header of the page.
      */
-    public void buildAnnotationTypeHeader() {
+    public void buildAnnotationTypeHeader(XMLNode node) {
         writer.writeHeader(configuration.getText("doclet.AnnotationType") +
             " " + annotationTypeDoc.name());
     }
@@ -162,14 +147,14 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * If this class is deprecated, print the appropriate information.
      */
-    public void buildDeprecationInfo () {
+    public void buildDeprecationInfo (XMLNode node) {
         writer.writeAnnotationTypeDeprecationInfo();
     }
 
     /**
      * Build the signature of the current annotation type.
      */
-    public void buildAnnotationTypeSignature() {
+    public void buildAnnotationTypeSignature(XMLNode node) {
         StringBuffer modifiers = new StringBuffer(
             annotationTypeDoc.modifiers() + " ");
         writer.writeAnnotationTypeSignature(
@@ -180,14 +165,14 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * Build the class description.
      */
-    public void buildAnnotationTypeDescription() {
+    public void buildAnnotationTypeDescription(XMLNode node) {
        writer.writeAnnotationTypeDescription();
     }
 
     /**
      * Build the tag information for the current class.
      */
-    public void buildAnnotationTypeTagInfo() {
+    public void buildAnnotationTypeTagInfo(XMLNode node) {
        writer.writeAnnotationTypeTagInfo();
     }
 
@@ -197,9 +182,9 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a member summary is
      *                 documented.
      */
-    public void buildMemberSummary(List<?> elements) throws Exception {
+    public void buildMemberSummary(XMLNode node) throws Exception {
         configuration.getBuilderFactory().
-            getMemberSummaryBuilder(writer).build(elements);
+            getMemberSummaryBuilder(writer).buildChildren(node);
         writer.completeMemberSummaryBuild();
     }
 
@@ -209,10 +194,10 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a annotation type
      *                 members are documented.
      */
-    public void buildAnnotationTypeOptionalMemberDetails(List<?> elements)
+    public void buildAnnotationTypeOptionalMemberDetails(XMLNode node)
     throws Exception {
         configuration.getBuilderFactory().
-            getAnnotationTypeOptionalMemberBuilder(writer).build(elements);
+            getAnnotationTypeOptionalMemberBuilder(writer).buildChildren(node);
     }
 
     /**
@@ -221,17 +206,17 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a annotation type
      *                 members are documented.
      */
-    public void buildAnnotationTypeRequiredMemberDetails(List<?> elements)
+    public void buildAnnotationTypeRequiredMemberDetails(XMLNode node)
     throws Exception {
         configuration.getBuilderFactory().
-            getAnnotationTypeRequiredMemberBuilder(writer).build(elements);
+            getAnnotationTypeRequiredMemberBuilder(writer).buildChildren(node);
     }
 
 
     /**
      * Build the footer of the page.
      */
-    public void buildAnnotationTypeFooter() {
+    public void buildAnnotationTypeFooter(XMLNode node) {
         writer.writeFooter();
     }
 }

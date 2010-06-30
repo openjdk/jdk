@@ -57,6 +57,8 @@ import javax.lang.model.type.*;
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
+ *
+ * @see AbstractTypeVisitor7
  * @since 1.6
  */
 public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
