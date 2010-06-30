@@ -89,8 +89,8 @@ public class BashStreams {
             count++;
             if (Character.isSupplementaryCodePoint(c)) {
                 count++;
-                push(sun.nio.cs.Surrogate.low(c));
-                return sun.nio.cs.Surrogate.high(c);
+                push(Character.lowSurrogate(c));
+                return Character.highSurrogate(c);
             }
             return (char)c;
         }

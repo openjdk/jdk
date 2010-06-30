@@ -252,8 +252,8 @@ class UTF_8 extends Unicode
                         !Character.isSupplementaryCodePoint(uc)) {
                         return malformed(src, sp, dst, dp, 4);
                     }
-                    da[dp++] = Surrogate.high(uc);
-                    da[dp++] = Surrogate.low(uc);
+                    da[dp++] = Character.highSurrogate(uc);
+                    da[dp++] = Character.lowSurrogate(uc);
                     sp += 4;
                 } else
                     return malformed(src, sp, dst, dp, 1);
@@ -309,8 +309,8 @@ class UTF_8 extends Unicode
                         !Character.isSupplementaryCodePoint(uc)) {
                         return malformed(src, mark, 4);
                     }
-                    dst.put(Surrogate.high(uc));
-                    dst.put(Surrogate.low(uc));
+                    dst.put(Character.highSurrogate(uc));
+                    dst.put(Character.lowSurrogate(uc));
                     mark += 4;
                 } else {
                     return malformed(src, mark, 1);
