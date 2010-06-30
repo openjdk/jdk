@@ -209,6 +209,7 @@ public class TestBug4179766 extends RBTestFmwk {
          * Create a new loader
          */
         public Loader(boolean sameHash) {
+            super(Loader.class.getClassLoader());
             if (sameHash) {
                 thisHashCode = SAME_HASH_CODE;
             } else {
@@ -287,7 +288,7 @@ public class TestBug4179766 extends RBTestFmwk {
          */
         private Class loadFromSystem(String className) throws ClassNotFoundException {
             try {
-                Class result = super.findSystemClass(className);
+                Class result = getParent().loadClass(className);
                 printInfo("        ***Returning system class: "+className, result);
                 return result;
             } catch (ClassNotFoundException e) {

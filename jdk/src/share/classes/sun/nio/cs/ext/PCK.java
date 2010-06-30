@@ -101,17 +101,15 @@ public class PCK
     private static class Encoder extends SJIS.Encoder {
 
         private JIS_X_0201.Encoder jis0201;
-        private JIS_X_0208_Solaris_Encoder jis0208;
 
-        short[] j0208Index1;
-        String[] j0208Index2;
+        private static final short[] j0208Index1 =
+            JIS_X_0208_Solaris_Encoder.getIndex1();
+        private static final String[] j0208Index2 =
+            JIS_X_0208_Solaris_Encoder.getIndex2();
 
         private Encoder(Charset cs) {
             super(cs);
             jis0201 = new JIS_X_0201.Encoder(cs);
-            jis0208 = new JIS_X_0208_Solaris_Encoder(cs);
-            j0208Index1 = jis0208.getIndex1();
-            j0208Index2 = jis0208.getIndex2();
         }
 
         protected int encodeDouble(char ch) {
@@ -121,7 +119,7 @@ public class PCK
 
             switch (ch) {
                 case '\u2015':
-                    return (int)0x815C;
+                    return 0x815C;
                 case '\u2014':
                     return 0;
                 default:

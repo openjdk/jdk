@@ -64,7 +64,7 @@ class B implements Serializable {
 public class Write {
     public static void main(String[] args) throws Exception {
         Object proxy = Proxy.newProxyInstance(
-            ClassLoader.getSystemClassLoader(),
+            Write.class.getClassLoader(),
             new Class[] { I.class }, new Handler());
         ObjectOutputStream oout = new ObjectOutputStream(
             new FileOutputStream("tmp.ser"));

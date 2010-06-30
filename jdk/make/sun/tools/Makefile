@@ -49,7 +49,8 @@ AUTO_FILES_JAVA_DIRS = \
 
 # Extra jstat files
 FILES_copy += \
-  $(CLASSDESTDIR)/sun/tools/jstat/resources/jstat_options
+  $(CLASSDESTDIR)/sun/tools/jstat/resources/jstat_options \
+  $(CLASSDESTDIR)/sun/tools/jstat/resources/jstat_unsupported_options
 
 # Extra jhat files
 JHAT_RESOURCEDIR = $(CLASSDESTDIR)/com/sun/tools/hat/resources

@@ -71,8 +71,8 @@ public class Boxing {
         Random random = new Random(42); // ensure consistent test domain
 
         Test proxy = (Test) Proxy.newProxyInstance(
-            ClassLoader.getSystemClassLoader(),
-            new Class[] { Test.class },
+            Test.class.getClassLoader(),
+            new Class<?>[] { Test.class },
             new TestHandler());
 
         for (int rep = 0; rep < REPS; rep++) {
