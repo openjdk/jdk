@@ -115,6 +115,8 @@ import java.util.Locale;
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka
+ * @author  Martin Buchholz
+ * @author  Ulf Zibis
  * @since   1.0
  */
 public final
@@ -3914,7 +3916,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static boolean isValidCodePoint(int codePoint) {
-        return codePoint >= MIN_CODE_POINT && codePoint <= MAX_CODE_POINT;
+        // Optimized form of:
+        //     codePoint >= MIN_CODE_POINT && codePoint <= MAX_CODE_POINT
+        int plane = codePoint >>> 16;
+        return plane < ((MAX_CODE_POINT + 1) >>> 16);
     }
 
     /**
@@ -3930,7 +3935,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      */
     public static boolean isSupplementaryCodePoint(int codePoint) {
         return codePoint >= MIN_SUPPLEMENTARY_CODE_POINT
-            && codePoint <= MAX_CODE_POINT;
+            && codePoint <  MAX_CODE_POINT + 1;
     }
 
     /**
@@ -3954,7 +3959,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static boolean isHighSurrogate(char ch) {
-        return ch >= MIN_HIGH_SURROGATE && ch <= MAX_HIGH_SURROGATE;
+        // Help VM constant-fold; MAX_HIGH_SURROGATE + 1 == MIN_LOW_SURROGATE
+        return ch >= MIN_HIGH_SURROGATE && ch < (MAX_HIGH_SURROGATE + 1);
     }
 
     /**
@@ -3977,7 +3983,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static boolean isLowSurrogate(char ch) {
-        return ch >= MIN_LOW_SURROGATE && ch <= MAX_LOW_SURROGATE;
+        return ch >= MIN_LOW_SURROGATE && ch < (MAX_LOW_SURROGATE + 1);
     }
 
     /**
@@ -4001,7 +4007,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.7
      */
     public static boolean isSurrogate(char ch) {
-        return ch >= MIN_SURROGATE && ch <= MAX_SURROGATE;
+        return ch >= MIN_SURROGATE && ch < (MAX_SURROGATE + 1);
     }
 
     /**
@@ -4160,6 +4166,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         return codePointAtImpl(a, index, limit);
     }
 
+    // throws ArrayIndexOutofBoundsException if index out of bounds
     static int codePointAtImpl(char[] a, int index, int limit) {
         char c1 = a[index++];
         if (isHighSurrogate(c1)) {
@@ -4266,6 +4273,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         return codePointBeforeImpl(a, index, start);
     }
 
+    // throws ArrayIndexOutofBoundsException if index-1 out of bounds
     static int codePointBeforeImpl(char[] a, int index, int start) {
         char c2 = a[--index];
         if (isLowSurrogate(c2)) {
@@ -4385,13 +4393,12 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         if (beginIndex < 0 || endIndex > length || beginIndex > endIndex) {
             throw new IndexOutOfBoundsException();
         }
-        int n = 0;
+        int n = endIndex - beginIndex;
         for (int i = beginIndex; i < endIndex; ) {
-            n++;
-            if (isHighSurrogate(seq.charAt(i++))) {
-                if (i < endIndex && isLowSurrogate(seq.charAt(i))) {
-                    i++;
-                }
+            if (isHighSurrogate(seq.charAt(i++)) && i < endIndex &&
+                isLowSurrogate(seq.charAt(i))) {
+                n--;
+                i++;
             }
         }
         return n;
@@ -4425,13 +4432,12 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
 
     static int codePointCountImpl(char[] a, int offset, int count) {
         int endIndex = offset + count;
-        int n = 0;
+        int n = count;
         for (int i = offset; i < endIndex; ) {
-            n++;
-            if (isHighSurrogate(a[i++])) {
-                if (i < endIndex && isLowSurrogate(a[i])) {
-                    i++;
-                }
+            if (isHighSurrogate(a[i++]) && i < endIndex &&
+                isLowSurrogate(a[i])) {
+                n--;
+                i++;
             }
         }
         return n;
@@ -4470,10 +4476,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         if (codePointOffset >= 0) {
             int i;
             for (i = 0; x < length && i < codePointOffset; i++) {
-                if (isHighSurrogate(seq.charAt(x++))) {
-                    if (x < length && isLowSurrogate(seq.charAt(x))) {
-                        x++;
-                    }
+                if (isHighSurrogate(seq.charAt(x++)) && x < length &&
+                    isLowSurrogate(seq.charAt(x))) {
+                    x++;
                 }
             }
             if (i < codePointOffset) {
@@ -4482,10 +4487,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         } else {
             int i;
             for (i = codePointOffset; x > 0 && i < 0; i++) {
-                if (isLowSurrogate(seq.charAt(--x))) {
-                    if (x > 0 && isHighSurrogate(seq.charAt(x-1))) {
-                        x--;
-                    }
+                if (isLowSurrogate(seq.charAt(--x)) && x > 0 &&
+                    isHighSurrogate(seq.charAt(x-1))) {
+                    x--;
                 }
             }
             if (i < 0) {
@@ -4544,10 +4548,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
             int limit = start + count;
             int i;
             for (i = 0; x < limit && i < codePointOffset; i++) {
-                if (isHighSurrogate(a[x++])) {
-                    if (x < limit && isLowSurrogate(a[x])) {
-                        x++;
-                    }
+                if (isHighSurrogate(a[x++]) && x < limit &&
+                    isLowSurrogate(a[x])) {
+                    x++;
                 }
             }
             if (i < codePointOffset) {
@@ -4556,10 +4559,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         } else {
             int i;
             for (i = codePointOffset; x > start && i < 0; i++) {
-                if (isLowSurrogate(a[--x])) {
-                    if (x > start && isHighSurrogate(a[x-1])) {
-                        x--;
-                    }
+                if (isLowSurrogate(a[--x]) && x > start &&
+                    isHighSurrogate(a[x-1])) {
+                    x--;
                 }
             }
             if (i < 0) {
@@ -5934,8 +5936,11 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since   1.5
      */
     public static boolean isISOControl(int codePoint) {
-        return (codePoint >= 0x0000 && codePoint <= 0x001F) ||
-            (codePoint >= 0x007F && codePoint <= 0x009F);
+        // Optimized form of:
+        //     (codePoint >= 0x00 && codePoint <= 0x1F) ||
+        //     (codePoint >= 0x7F && codePoint <= 0x9F);
+        return codePoint <= 0x9F &&
+            (codePoint >= 0x7F || (codePoint >>> 5 == 0));
     }
 
     /**
