@@ -1719,18 +1719,17 @@ public final class String
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring. The integer returned is the smallest value
-     * <i>k</i> such that:
+     * specified substring.
+     *
+     * <p>The returned index is the smallest value <i>k</i> for which:
      * <blockquote><pre>
      * this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * is <code>true</code>.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
-     * @param   str   any string.
-     * @return  if the string argument occurs as a substring within this
-     *          object, then the index of the first character of the first
-     *          such substring is returned; if it does not occur as a
-     *          substring, <code>-1</code> is returned.
+     * @param   str   the substring to search for.
+     * @return  the index of the first occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str) {
         return indexOf(str, 0);
@@ -1738,17 +1737,19 @@ public final class String
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring, starting at the specified index.  The integer
-     * returned is the smallest value <tt>k</tt> for which:
-     * <blockquote><pre>
-     *     k &gt;= Math.min(fromIndex, this.length()) && this.startsWith(str, k)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * specified substring, starting at the specified index.
      *
-     * @param   str         the substring for which to search.
+     * <p>The returned index is the smallest value <i>k</i> for which:
+     * <blockquote><pre>
+     * <i>k</i> &gt;= fromIndex && this.startsWith(str, <i>k</i>)
+     * </pre></blockquote>
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     *
+     * @param   str         the substring to search for.
      * @param   fromIndex   the index from which to start the search.
-     * @return  the index within this string of the first occurrence of the
-     *          specified substring, starting at the specified index.
+     * @return  the index of the first occurrence of the specified substring,
+     *          starting at the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str, int fromIndex) {
         return indexOf(value, offset, count,
@@ -1807,20 +1808,19 @@ public final class String
     }
 
     /**
-     * Returns the index within this string of the rightmost occurrence
-     * of the specified substring.  The rightmost empty string "" is
-     * considered to occur at the index value <code>this.length()</code>.
-     * The returned index is the largest value <i>k</i> such that
+     * Returns the index within this string of the last occurrence of the
+     * specified substring.  The last occurrence of the empty string ""
+     * is considered to occur at the index value {@code this.length()}.
+     *
+     * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     * this.startsWith(str, k)
+     * this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * is true.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
      * @param   str   the substring to search for.
-     * @return  if the string argument occurs one or more times as a substring
-     *          within this object, then the index of the first character of
-     *          the last such substring is returned. If it does not occur as
-     *          a substring, <code>-1</code> is returned.
+     * @return  the index of the last occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str) {
         return lastIndexOf(str, count);
@@ -1829,16 +1829,18 @@ public final class String
     /**
      * Returns the index within this string of the last occurrence of the
      * specified substring, searching backward starting at the specified index.
-     * The integer returned is the largest value <i>k</i> such that:
+     *
+     * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     *     k &lt;= Math.min(fromIndex, this.length()) && this.startsWith(str, k)
+     * <i>k</i> &lt;= fromIndex && this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index to start the search from.
-     * @return  the index within this string of the last occurrence of the
-     *          specified substring.
+     * @return  the index of the last occurrence of the specified substring,
+     *          searching backward from the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str, int fromIndex) {
         return lastIndexOf(value, offset, count,
