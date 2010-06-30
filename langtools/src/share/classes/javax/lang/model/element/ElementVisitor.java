@@ -62,6 +62,7 @@ import javax.lang.model.util.*;
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
  * @see AbstractElementVisitor6
+ * @see AbstractElementVisitor7
  * @since 1.6
  */
 public interface ElementVisitor<R, P> {

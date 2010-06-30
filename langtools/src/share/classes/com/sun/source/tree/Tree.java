@@ -30,7 +30,7 @@ package com.sun.source.tree;
  *
  * <p><b>WARNING:</b> This interface and its sub-interfaces are
  * subject to change as the Java&trade; programming language evolves.
- * These interfaces are implemented by Sun's Java compiler (javac)
+ * These interfaces are implemented by the JDK Java compiler (javac)
  * and should not be implemented either directly or indirectly by
  * other applications.
  *
