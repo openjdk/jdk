@@ -441,7 +441,7 @@ public class EUC_TW extends Charset implements HistoricallyNamedCharset
         }
 
         static int encode(char hi, char low, byte[] bb) {
-            int c = Surrogate.toUCS4(hi, low);
+            int c = Character.toCodePoint(hi, low);
             if ((c & 0xf0000) != 0x20000)
                 return -1;
             c -= 0x20000;

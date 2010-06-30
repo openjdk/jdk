@@ -102,7 +102,7 @@ class UTF_8 extends Unicode
         //  [F1..F3] [80..BF] [80..BF] [80..BF]
         //  [F4]     [80..8F] [80..BF] [80..BF]
         //  only check 80-be range here, the [0xf0,0x80...] and [0xf4,0x90-...]
-        //  will be checked by Surrogate.neededFor(uc)
+        //  will be checked by Character.isSupplementaryCodePoint(uc)
         private static boolean isMalformed4(int b2, int b3, int b4) {
             return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                    (b4 & 0xc0) != 0x80;
@@ -248,7 +248,8 @@ class UTF_8 extends Unicode
                              ((b3 & 0x3f) << 06) |
                              (b4 & 0x3f);
                     if (isMalformed4(b2, b3, b4) ||
-                        !Surrogate.neededFor(uc)) {
+                        // shortest form check
+                        !Character.isSupplementaryCodePoint(uc)) {
                         return malformed(src, sp, dst, dp, 4);
                     }
                     da[dp++] = Surrogate.high(uc);
@@ -304,7 +305,8 @@ class UTF_8 extends Unicode
                              ((b3 & 0x3f) << 06) |
                              (b4 & 0x3f);
                     if (isMalformed4(b2, b3, b4) ||
-                        !Surrogate.neededFor(uc)) { // shortest form check
+                        // shortest form check
+                        !Character.isSupplementaryCodePoint(uc)) {
                         return malformed(src, mark, 4);
                     }
                     dst.put(Surrogate.high(uc));
