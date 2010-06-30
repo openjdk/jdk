@@ -24,6 +24,7 @@
  */
 
 package java.lang;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
@@ -119,7 +120,7 @@ import java.util.Locale;
  * @since   1.0
  */
 public final
-class Character extends Object implements java.io.Serializable, Comparable<Character> {
+class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * The minimum radix available for conversion to and from strings.
      * The constant value of this field is the smallest value permitted
@@ -128,10 +129,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * method, and the <code>toString</code> method of class
      * <code>Integer</code>.
      *
-     * @see     java.lang.Character#digit(char, int)
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Integer#toString(int, int)
-     * @see     java.lang.Integer#valueOf(java.lang.String)
+     * @see     Character#digit(char, int)
+     * @see     Character#forDigit(int, int)
+     * @see     Integer#toString(int, int)
+     * @see     Integer#valueOf(String)
      */
     public static final int MIN_RADIX = 2;
 
@@ -143,10 +144,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * method, and the <code>toString</code> method of class
      * <code>Integer</code>.
      *
-     * @see     java.lang.Character#digit(char, int)
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Integer#toString(int, int)
-     * @see     java.lang.Integer#valueOf(java.lang.String)
+     * @see     Character#digit(char, int)
+     * @see     Character#forDigit(int, int)
+     * @see     Integer#toString(int, int)
+     * @see     Integer#valueOf(String)
      */
     public static final int MAX_RADIX = 36;
 
@@ -156,7 +157,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *
      * @since   1.0.2
      */
-    public static final char   MIN_VALUE = '\u0000';
+    public static final char MIN_VALUE = '\u0000';
 
     /**
      * The constant value of this field is the largest value of type
@@ -164,7 +165,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *
      * @since   1.0.2
      */
-    public static final char   MAX_VALUE = '\uFFFF';
+    public static final char MAX_VALUE = '\uFFFF';
 
     /**
      * The <code>Class</code> instance representing the primitive type
@@ -172,230 +173,201 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *
      * @since   1.1
      */
+    @SuppressWarnings("unchecked")
     public static final Class<Character> TYPE = Class.getPrimitiveClass("char");
 
-   /*
-    * Normative general types
-    */
+    /*
+     * Normative general types
+     */
 
-   /*
-    * General character types
-    */
+    /*
+     * General character types
+     */
 
-   /**
-    * General category "Cn" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        UNASSIGNED                  = 0;
+    /**
+     * General category "Cn" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte UNASSIGNED = 0;
 
-   /**
-    * General category "Lu" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        UPPERCASE_LETTER            = 1;
+    /**
+     * General category "Lu" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte UPPERCASE_LETTER = 1;
 
-   /**
-    * General category "Ll" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        LOWERCASE_LETTER            = 2;
+    /**
+     * General category "Ll" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte LOWERCASE_LETTER = 2;
 
-   /**
-    * General category "Lt" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        TITLECASE_LETTER            = 3;
+    /**
+     * General category "Lt" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte TITLECASE_LETTER = 3;
 
-   /**
-    * General category "Lm" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        MODIFIER_LETTER             = 4;
+    /**
+     * General category "Lm" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte MODIFIER_LETTER = 4;
 
-   /**
-    * General category "Lo" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        OTHER_LETTER                = 5;
+    /**
+     * General category "Lo" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte OTHER_LETTER = 5;
 
-   /**
-    * General category "Mn" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        NON_SPACING_MARK            = 6;
+    /**
+     * General category "Mn" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte NON_SPACING_MARK = 6;
 
-   /**
-    * General category "Me" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        ENCLOSING_MARK              = 7;
+    /**
+     * General category "Me" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte ENCLOSING_MARK = 7;
 
-   /**
-    * General category "Mc" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        COMBINING_SPACING_MARK      = 8;
+    /**
+     * General category "Mc" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte COMBINING_SPACING_MARK = 8;
 
-   /**
-    * General category "Nd" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        DECIMAL_DIGIT_NUMBER        = 9;
+    /**
+     * General category "Nd" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte DECIMAL_DIGIT_NUMBER        = 9;
 
-   /**
-    * General category "Nl" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        LETTER_NUMBER               = 10;
+    /**
+     * General category "Nl" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte LETTER_NUMBER = 10;
 
-   /**
-    * General category "No" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        OTHER_NUMBER                = 11;
+    /**
+     * General category "No" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte OTHER_NUMBER = 11;
 
-   /**
-    * General category "Zs" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        SPACE_SEPARATOR             = 12;
+    /**
+     * General category "Zs" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte SPACE_SEPARATOR = 12;
 
-   /**
-    * General category "Zl" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        LINE_SEPARATOR              = 13;
+    /**
+     * General category "Zl" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte LINE_SEPARATOR = 13;
 
-   /**
-    * General category "Zp" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        PARAGRAPH_SEPARATOR         = 14;
+    /**
+     * General category "Zp" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte PARAGRAPH_SEPARATOR = 14;
 
-   /**
-    * General category "Cc" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        CONTROL                     = 15;
+    /**
+     * General category "Cc" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte CONTROL = 15;
 
-   /**
-    * General category "Cf" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        FORMAT                      = 16;
+    /**
+     * General category "Cf" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte FORMAT = 16;
 
-   /**
-    * General category "Co" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        PRIVATE_USE                 = 18;
+    /**
+     * General category "Co" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte PRIVATE_USE = 18;
 
-   /**
-    * General category "Cs" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        SURROGATE                   = 19;
+    /**
+     * General category "Cs" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte SURROGATE = 19;
 
-   /**
-    * General category "Pd" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        DASH_PUNCTUATION            = 20;
+    /**
+     * General category "Pd" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte DASH_PUNCTUATION = 20;
 
-   /**
-    * General category "Ps" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        START_PUNCTUATION           = 21;
+    /**
+     * General category "Ps" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte START_PUNCTUATION = 21;
 
-   /**
-    * General category "Pe" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        END_PUNCTUATION             = 22;
+    /**
+     * General category "Pe" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte END_PUNCTUATION = 22;
 
-   /**
-    * General category "Pc" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        CONNECTOR_PUNCTUATION       = 23;
+    /**
+     * General category "Pc" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte CONNECTOR_PUNCTUATION = 23;
 
-   /**
-    * General category "Po" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        OTHER_PUNCTUATION           = 24;
+    /**
+     * General category "Po" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte OTHER_PUNCTUATION = 24;
 
-   /**
-    * General category "Sm" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        MATH_SYMBOL                 = 25;
+    /**
+     * General category "Sm" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte MATH_SYMBOL = 25;
 
-   /**
-    * General category "Sc" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        CURRENCY_SYMBOL             = 26;
+    /**
+     * General category "Sc" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte CURRENCY_SYMBOL = 26;
 
-   /**
-    * General category "Sk" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        MODIFIER_SYMBOL             = 27;
+    /**
+     * General category "Sk" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte MODIFIER_SYMBOL = 27;
 
-   /**
-    * General category "So" in the Unicode specification.
-    * @since   1.1
-    */
-    public static final byte
-        OTHER_SYMBOL                = 28;
+    /**
+     * General category "So" in the Unicode specification.
+     * @since   1.1
+     */
+    public static final byte OTHER_SYMBOL = 28;
 
-   /**
-    * General category "Pi" in the Unicode specification.
-    * @since   1.4
-    */
-    public static final byte
-        INITIAL_QUOTE_PUNCTUATION   = 29;
+    /**
+     * General category "Pi" in the Unicode specification.
+     * @since   1.4
+     */
+    public static final byte INITIAL_QUOTE_PUNCTUATION = 29;
 
-   /**
-    * General category "Pf" in the Unicode specification.
-    * @since   1.4
-    */
-    public static final byte
-        FINAL_QUOTE_PUNCTUATION     = 30;
+    /**
+     * General category "Pf" in the Unicode specification.
+     * @since   1.4
+     */
+    public static final byte FINAL_QUOTE_PUNCTUATION = 30;
 
     /**
      * Error flag. Use int (code point) to avoid confusion with U+FFFF.
      */
-     static final int ERROR = 0xFFFFFFFF;
+    static final int ERROR = 0xFFFFFFFF;
 
 
     /**
@@ -403,7 +375,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * values have undefined directionality in the Unicode specification.
      * @since 1.4
      */
-     public static final byte DIRECTIONALITY_UNDEFINED = -1;
+    public static final byte DIRECTIONALITY_UNDEFINED = -1;
 
     /**
      * Strong bidirectional character type "L" in the Unicode specification.
@@ -610,9 +582,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     /**
      * Instances of this class represent particular subsets of the Unicode
      * character set.  The only family of subsets defined in the
-     * <code>Character</code> class is <code>{@link Character.UnicodeBlock
-     * UnicodeBlock}</code>.  Other portions of the Java API may define other
-     * subsets for their own purposes.
+     * <code>Character</code> class is {@link Character.UnicodeBlock}.
+     * Other portions of the Java API may define other subsets for their
+     * own purposes.
      *
      * @since 1.2
      */
@@ -625,6 +597,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          *
          * @exception NullPointerException if name is <code>null</code>
          * @param  name  The name of this subset
+         * @exception NullPointerException if name is <code>null</code>
          */
         protected Subset(String name) {
             if (name == null) {
@@ -676,7 +649,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      */
     public static final class UnicodeBlock extends Subset {
 
-        private static Map map = new HashMap();
+        private static Map<String, UnicodeBlock> map
+            = new HashMap<String, UnicodeBlock>(256);
 
         /**
          * Creates a UnicodeBlock with the given identifier name.
@@ -2657,7 +2631,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
          * @since 1.5
          */
         public static final UnicodeBlock forName(String blockName) {
-            UnicodeBlock block = (UnicodeBlock)map.get(blockName.toUpperCase(Locale.US));
+            UnicodeBlock block = map.get(blockName.toUpperCase(Locale.US));
             if (block == null) {
                 throw new IllegalArgumentException();
             }
@@ -3746,7 +3720,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
 
         private static HashMap<String, Character.UnicodeScript> aliases;
         static {
-            aliases = new HashMap<String, UnicodeScript>();
+            aliases = new HashMap<String, UnicodeScript>(128);
             aliases.put("ARAB", ARABIC);
             aliases.put("ARMI", IMPERIAL_ARAMAIC);
             aliases.put("ARMN", ARMENIAN);
@@ -3928,7 +3902,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         static final Character cache[] = new Character[127 + 1];
 
         static {
-            for(int i = 0; i < cache.length; i++)
+            for (int i = 0; i < cache.length; i++)
                 cache[i] = new Character((char)i);
         }
     }
@@ -3951,7 +3925,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static Character valueOf(char c) {
-        if(c <= 127) { // must cache
+        if (c <= 127) { // must cache
             return CharacterCache.cache[(int)c];
         }
         return new Character(c);
@@ -4090,7 +4064,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *         {@link #MIN_HIGH_SURROGATE} and
      *         {@link #MAX_HIGH_SURROGATE} inclusive;
      *         {@code false} otherwise.
-     * @see    #isLowSurrogate(char)
+     * @see    Character#isLowSurrogate(char)
      * @see    Character.UnicodeBlock#of(int)
      * @since  1.5
      */
@@ -4115,7 +4089,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *         {@link #MIN_LOW_SURROGATE} and
      *         {@link #MAX_LOW_SURROGATE} inclusive;
      *         {@code false} otherwise.
-     * @see    #isHighSurrogate(char)
+     * @see    Character#isHighSurrogate(char)
      * @since  1.5
      */
     public static boolean isLowSurrogate(char ch) {
@@ -4181,11 +4155,11 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  2 if the character is a valid supplementary character; 1 otherwise.
-     * @see     #isSupplementaryCodePoint(int)
+     * @see     Character#isSupplementaryCodePoint(int)
      * @since   1.5
      */
     public static int charCount(int codePoint) {
-        return codePoint >= MIN_SUPPLEMENTARY_CODE_POINT? 2 : 1;
+        return codePoint >= MIN_SUPPLEMENTARY_CODE_POINT ? 2 : 1;
     }
 
     /**
@@ -4707,7 +4681,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
         return x;
     }
 
-   /**
+    /**
      * Determines if the specified character is a lowercase character.
      * <p>
      * A character is lowercase if its general category type, provided
@@ -4732,10 +4706,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested.
      * @return  <code>true</code> if the character is lowercase;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.Character#isTitleCase(char)
-     * @see     java.lang.Character#toLowerCase(char)
-     * @see     java.lang.Character#getType(char)
+     * @see     Character#isLowerCase(char)
+     * @see     Character#isTitleCase(char)
+     * @see     Character#toLowerCase(char)
+     * @see     Character#getType(char)
      */
     public static boolean isLowerCase(char ch) {
         return isLowerCase((int)ch);
@@ -4762,17 +4736,17 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is lowercase;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowerCase(int)
-     * @see     java.lang.Character#isTitleCase(int)
-     * @see     java.lang.Character#toLowerCase(int)
-     * @see     java.lang.Character#getType(int)
+     * @see     Character#isLowerCase(int)
+     * @see     Character#isTitleCase(int)
+     * @see     Character#toLowerCase(int)
+     * @see     Character#getType(int)
      * @since   1.5
      */
     public static boolean isLowerCase(int codePoint) {
         return getType(codePoint) == Character.LOWERCASE_LETTER;
     }
 
-   /**
+    /**
      * Determines if the specified character is an uppercase character.
      * <p>
      * A character is uppercase if its general category type, provided by
@@ -4796,10 +4770,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested.
      * @return  <code>true</code> if the character is uppercase;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.Character#isTitleCase(char)
-     * @see     java.lang.Character#toUpperCase(char)
-     * @see     java.lang.Character#getType(char)
+     * @see     Character#isLowerCase(char)
+     * @see     Character#isTitleCase(char)
+     * @see     Character#toUpperCase(char)
+     * @see     Character#getType(char)
      * @since   1.0
      */
     public static boolean isUpperCase(char ch) {
@@ -4825,10 +4799,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is uppercase;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowerCase(int)
-     * @see     java.lang.Character#isTitleCase(int)
-     * @see     java.lang.Character#toUpperCase(int)
-     * @see     java.lang.Character#getType(int)
+     * @see     Character#isLowerCase(int)
+     * @see     Character#isTitleCase(int)
+     * @see     Character#toUpperCase(int)
+     * @see     Character#getType(int)
      * @since   1.5
      */
     public static boolean isUpperCase(int codePoint) {
@@ -4866,10 +4840,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested.
      * @return  <code>true</code> if the character is titlecase;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.Character#isUpperCase(char)
-     * @see     java.lang.Character#toTitleCase(char)
-     * @see     java.lang.Character#getType(char)
+     * @see     Character#isLowerCase(char)
+     * @see     Character#isUpperCase(char)
+     * @see     Character#toTitleCase(char)
+     * @see     Character#getType(char)
      * @since   1.0.2
      */
     public static boolean isTitleCase(char ch) {
@@ -4902,10 +4876,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is titlecase;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowerCase(int)
-     * @see     java.lang.Character#isUpperCase(int)
-     * @see     java.lang.Character#toTitleCase(int)
-     * @see     java.lang.Character#getType(int)
+     * @see     Character#isLowerCase(int)
+     * @see     Character#isUpperCase(int)
+     * @see     Character#toTitleCase(int)
+     * @see     Character#getType(int)
      * @since   1.5
      */
     public static boolean isTitleCase(int codePoint) {
@@ -4943,9 +4917,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested.
      * @return  <code>true</code> if the character is a digit;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#digit(char, int)
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Character#getType(char)
+     * @see     Character#digit(char, int)
+     * @see     Character#forDigit(int, int)
+     * @see     Character#getType(char)
      */
     public static boolean isDigit(char ch) {
         return isDigit((int)ch);
@@ -4977,8 +4951,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is a digit;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Character#getType(int)
+     * @see     Character#forDigit(int, int)
+     * @see     Character#getType(int)
      * @since   1.5
      */
     public static boolean isDigit(int codePoint) {
@@ -5002,12 +4976,12 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested
      * @return  <code>true</code> if the character has a defined meaning
      *          in Unicode; <code>false</code> otherwise.
-     * @see     java.lang.Character#isDigit(char)
-     * @see     java.lang.Character#isLetter(char)
-     * @see     java.lang.Character#isLetterOrDigit(char)
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.Character#isTitleCase(char)
-     * @see     java.lang.Character#isUpperCase(char)
+     * @see     Character#isDigit(char)
+     * @see     Character#isLetter(char)
+     * @see     Character#isLetterOrDigit(char)
+     * @see     Character#isLowerCase(char)
+     * @see     Character#isTitleCase(char)
+     * @see     Character#isUpperCase(char)
      * @since   1.0.2
      */
     public static boolean isDefined(char ch) {
@@ -5026,12 +5000,12 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character has a defined meaning
      *          in Unicode; <code>false</code> otherwise.
-     * @see     java.lang.Character#isDigit(int)
-     * @see     java.lang.Character#isLetter(int)
-     * @see     java.lang.Character#isLetterOrDigit(int)
-     * @see     java.lang.Character#isLowerCase(int)
-     * @see     java.lang.Character#isTitleCase(int)
-     * @see     java.lang.Character#isUpperCase(int)
+     * @see     Character#isDigit(int)
+     * @see     Character#isLetter(int)
+     * @see     Character#isLetterOrDigit(int)
+     * @see     Character#isLowerCase(int)
+     * @see     Character#isTitleCase(int)
+     * @see     Character#isUpperCase(int)
      * @since   1.5
      */
     public static boolean isDefined(int codePoint) {
@@ -5063,15 +5037,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested.
      * @return  <code>true</code> if the character is a letter;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isDigit(char)
-     * @see     java.lang.Character#isJavaIdentifierStart(char)
-     * @see     java.lang.Character#isJavaLetter(char)
-     * @see     java.lang.Character#isJavaLetterOrDigit(char)
-     * @see     java.lang.Character#isLetterOrDigit(char)
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.Character#isTitleCase(char)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(char)
-     * @see     java.lang.Character#isUpperCase(char)
+     * @see     Character#isDigit(char)
+     * @see     Character#isJavaIdentifierStart(char)
+     * @see     Character#isJavaLetter(char)
+     * @see     Character#isJavaLetterOrDigit(char)
+     * @see     Character#isLetterOrDigit(char)
+     * @see     Character#isLowerCase(char)
+     * @see     Character#isTitleCase(char)
+     * @see     Character#isUnicodeIdentifierStart(char)
+     * @see     Character#isUpperCase(char)
      */
     public static boolean isLetter(char ch) {
         return isLetter((int)ch);
@@ -5097,13 +5071,13 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is a letter;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isDigit(int)
-     * @see     java.lang.Character#isJavaIdentifierStart(int)
-     * @see     java.lang.Character#isLetterOrDigit(int)
-     * @see     java.lang.Character#isLowerCase(int)
-     * @see     java.lang.Character#isTitleCase(int)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(int)
-     * @see     java.lang.Character#isUpperCase(int)
+     * @see     Character#isDigit(int)
+     * @see     Character#isJavaIdentifierStart(int)
+     * @see     Character#isLetterOrDigit(int)
+     * @see     Character#isLowerCase(int)
+     * @see     Character#isTitleCase(int)
+     * @see     Character#isUnicodeIdentifierStart(int)
+     * @see     Character#isUpperCase(int)
      * @since   1.5
      */
     public static boolean isLetter(int codePoint) {
@@ -5131,12 +5105,12 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be tested.
      * @return  <code>true</code> if the character is a letter or digit;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isDigit(char)
-     * @see     java.lang.Character#isJavaIdentifierPart(char)
-     * @see     java.lang.Character#isJavaLetter(char)
-     * @see     java.lang.Character#isJavaLetterOrDigit(char)
-     * @see     java.lang.Character#isLetter(char)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(char)
+     * @see     Character#isDigit(char)
+     * @see     Character#isJavaIdentifierPart(char)
+     * @see     Character#isJavaLetter(char)
+     * @see     Character#isJavaLetterOrDigit(char)
+     * @see     Character#isLetter(char)
+     * @see     Character#isUnicodeIdentifierPart(char)
      * @since   1.0.2
      */
     public static boolean isLetterOrDigit(char ch) {
@@ -5154,10 +5128,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is a letter or digit;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isDigit(int)
-     * @see     java.lang.Character#isJavaIdentifierPart(int)
-     * @see     java.lang.Character#isLetter(int)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(int)
+     * @see     Character#isDigit(int)
+     * @see     Character#isJavaIdentifierPart(int)
+     * @see     Character#isLetter(int)
+     * @see     Character#isUnicodeIdentifierPart(int)
      * @since   1.5
      */
     public static boolean isLetterOrDigit(int codePoint) {
@@ -5186,12 +5160,12 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch the character to be tested.
      * @return  <code>true</code> if the character may start a Java
      *          identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaLetterOrDigit(char)
-     * @see     java.lang.Character#isJavaIdentifierStart(char)
-     * @see     java.lang.Character#isJavaIdentifierPart(char)
-     * @see     java.lang.Character#isLetter(char)
-     * @see     java.lang.Character#isLetterOrDigit(char)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(char)
+     * @see     Character#isJavaLetterOrDigit(char)
+     * @see     Character#isJavaIdentifierStart(char)
+     * @see     Character#isJavaIdentifierPart(char)
+     * @see     Character#isLetter(char)
+     * @see     Character#isLetterOrDigit(char)
+     * @see     Character#isUnicodeIdentifierStart(char)
      * @since   1.02
      * @deprecated Replaced by isJavaIdentifierStart(char).
      */
@@ -5221,13 +5195,13 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch the character to be tested.
      * @return  <code>true</code> if the character may be part of a
      *          Java identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaLetter(char)
-     * @see     java.lang.Character#isJavaIdentifierStart(char)
-     * @see     java.lang.Character#isJavaIdentifierPart(char)
-     * @see     java.lang.Character#isLetter(char)
-     * @see     java.lang.Character#isLetterOrDigit(char)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(char)
-     * @see     java.lang.Character#isIdentifierIgnorable(char)
+     * @see     Character#isJavaLetter(char)
+     * @see     Character#isJavaIdentifierStart(char)
+     * @see     Character#isJavaIdentifierPart(char)
+     * @see     Character#isLetter(char)
+     * @see     Character#isLetterOrDigit(char)
+     * @see     Character#isUnicodeIdentifierPart(char)
+     * @see     Character#isIdentifierIgnorable(char)
      * @since   1.02
      * @deprecated Replaced by isJavaIdentifierPart(char).
      */
@@ -5257,9 +5231,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch the character to be tested.
      * @return  <code>true</code> if the character may start a Java identifier;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaIdentifierPart(char)
-     * @see     java.lang.Character#isLetter(char)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(char)
+     * @see     Character#isJavaIdentifierPart(char)
+     * @see     Character#isLetter(char)
+     * @see     Character#isUnicodeIdentifierStart(char)
      * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
@@ -5286,9 +5260,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character may start a Java identifier;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaIdentifierPart(int)
-     * @see     java.lang.Character#isLetter(int)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(int)
+     * @see     Character#isJavaIdentifierPart(int)
+     * @see     Character#isLetter(int)
+     * @see     Character#isUnicodeIdentifierStart(int)
      * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
@@ -5322,10 +5296,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch      the character to be tested.
      * @return <code>true</code> if the character may be part of a
      *          Java identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isIdentifierIgnorable(char)
-     * @see     java.lang.Character#isJavaIdentifierStart(char)
-     * @see     java.lang.Character#isLetterOrDigit(char)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(char)
+     * @see     Character#isIdentifierIgnorable(char)
+     * @see     Character#isJavaIdentifierStart(char)
+     * @see     Character#isLetterOrDigit(char)
+     * @see     Character#isUnicodeIdentifierPart(char)
      * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
@@ -5355,10 +5329,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return <code>true</code> if the character may be part of a
      *          Java identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isIdentifierIgnorable(int)
-     * @see     java.lang.Character#isJavaIdentifierStart(int)
-     * @see     java.lang.Character#isLetterOrDigit(int)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(int)
+     * @see     Character#isIdentifierIgnorable(int)
+     * @see     Character#isJavaIdentifierStart(int)
+     * @see     Character#isLetterOrDigit(int)
+     * @see     Character#isUnicodeIdentifierPart(int)
      * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
@@ -5386,9 +5360,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch      the character to be tested.
      * @return  <code>true</code> if the character may start a Unicode
      *          identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaIdentifierStart(char)
-     * @see     java.lang.Character#isLetter(char)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(char)
+     * @see     Character#isJavaIdentifierStart(char)
+     * @see     Character#isLetter(char)
+     * @see     Character#isUnicodeIdentifierPart(char)
      * @since   1.1
      */
     public static boolean isUnicodeIdentifierStart(char ch) {
@@ -5410,9 +5384,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character may start a Unicode
      *          identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaIdentifierStart(int)
-     * @see     java.lang.Character#isLetter(int)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(int)
+     * @see     Character#isJavaIdentifierStart(int)
+     * @see     Character#isLetter(int)
+     * @see     Character#isUnicodeIdentifierPart(int)
      * @since   1.5
      */
     public static boolean isUnicodeIdentifierStart(int codePoint) {
@@ -5444,10 +5418,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch      the character to be tested.
      * @return  <code>true</code> if the character may be part of a
      *          Unicode identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isIdentifierIgnorable(char)
-     * @see     java.lang.Character#isJavaIdentifierPart(char)
-     * @see     java.lang.Character#isLetterOrDigit(char)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(char)
+     * @see     Character#isIdentifierIgnorable(char)
+     * @see     Character#isJavaIdentifierPart(char)
+     * @see     Character#isLetterOrDigit(char)
+     * @see     Character#isUnicodeIdentifierStart(char)
      * @since   1.1
      */
     public static boolean isUnicodeIdentifierPart(char ch) {
@@ -5473,10 +5447,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character may be part of a
      *          Unicode identifier; <code>false</code> otherwise.
-     * @see     java.lang.Character#isIdentifierIgnorable(int)
-     * @see     java.lang.Character#isJavaIdentifierPart(int)
-     * @see     java.lang.Character#isLetterOrDigit(int)
-     * @see     java.lang.Character#isUnicodeIdentifierStart(int)
+     * @see     Character#isIdentifierIgnorable(int)
+     * @see     Character#isJavaIdentifierPart(int)
+     * @see     Character#isLetterOrDigit(int)
+     * @see     Character#isUnicodeIdentifierStart(int)
      * @since   1.5
      */
     public static boolean isUnicodeIdentifierPart(int codePoint) {
@@ -5510,8 +5484,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @return  <code>true</code> if the character is an ignorable control
      *          character that may be part of a Java or Unicode identifier;
      *           <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaIdentifierPart(char)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(char)
+     * @see     Character#isJavaIdentifierPart(char)
+     * @see     Character#isUnicodeIdentifierPart(char)
      * @since   1.1
      */
     public static boolean isIdentifierIgnorable(char ch) {
@@ -5540,8 +5514,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @return  <code>true</code> if the character is an ignorable control
      *          character that may be part of a Java or Unicode identifier;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isJavaIdentifierPart(int)
-     * @see     java.lang.Character#isUnicodeIdentifierPart(int)
+     * @see     Character#isJavaIdentifierPart(int)
+     * @see     Character#isUnicodeIdentifierPart(int)
      * @since   1.5
      */
     public static boolean isIdentifierIgnorable(int codePoint) {
@@ -5557,7 +5531,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * does not always return <code>true</code> for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
-     * <p>In general, {@link java.lang.String#toLowerCase()} should be used to map
+     * <p>In general, {@link String#toLowerCase()} should be used to map
      * characters to lowercase. <code>String</code> case mapping methods
      * have several benefits over <code>Character</code> case mapping methods.
      * <code>String</code> case mapping methods can perform locale-sensitive
@@ -5572,8 +5546,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be converted.
      * @return  the lowercase equivalent of the character, if any;
      *          otherwise, the character itself.
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.String#toLowerCase()
+     * @see     Character#isLowerCase(char)
+     * @see     String#toLowerCase()
      */
     public static char toLowerCase(char ch) {
         return (char)toLowerCase((int)ch);
@@ -5589,7 +5563,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * does not always return <code>true</code> for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
-     * <p>In general, {@link java.lang.String#toLowerCase()} should be used to map
+     * <p>In general, {@link String#toLowerCase()} should be used to map
      * characters to lowercase. <code>String</code> case mapping methods
      * have several benefits over <code>Character</code> case mapping methods.
      * <code>String</code> case mapping methods can perform locale-sensitive
@@ -5599,8 +5573,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  the lowercase equivalent of the character (Unicode code
      *          point), if any; otherwise, the character itself.
-     * @see     java.lang.Character#isLowerCase(int)
-     * @see     java.lang.String#toLowerCase()
+     * @see     Character#isLowerCase(int)
+     * @see     String#toLowerCase()
      *
      * @since   1.5
      */
@@ -5617,7 +5591,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * does not always return <code>true</code> for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
-     * <p>In general, {@link java.lang.String#toUpperCase()} should be used to map
+     * <p>In general, {@link String#toUpperCase()} should be used to map
      * characters to uppercase. <code>String</code> case mapping methods
      * have several benefits over <code>Character</code> case mapping methods.
      * <code>String</code> case mapping methods can perform locale-sensitive
@@ -5632,8 +5606,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be converted.
      * @return  the uppercase equivalent of the character, if any;
      *          otherwise, the character itself.
-     * @see     java.lang.Character#isUpperCase(char)
-     * @see     java.lang.String#toUpperCase()
+     * @see     Character#isUpperCase(char)
+     * @see     String#toUpperCase()
      */
     public static char toUpperCase(char ch) {
         return (char)toUpperCase((int)ch);
@@ -5649,7 +5623,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * does not always return <code>true</code> for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
-     * <p>In general, {@link java.lang.String#toUpperCase()} should be used to map
+     * <p>In general, {@link String#toUpperCase()} should be used to map
      * characters to uppercase. <code>String</code> case mapping methods
      * have several benefits over <code>Character</code> case mapping methods.
      * <code>String</code> case mapping methods can perform locale-sensitive
@@ -5659,8 +5633,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  the uppercase equivalent of the character, if any;
      *          otherwise, the character itself.
-     * @see     java.lang.Character#isUpperCase(int)
-     * @see     java.lang.String#toUpperCase()
+     * @see     Character#isUpperCase(int)
+     * @see     String#toUpperCase()
      *
      * @since   1.5
      */
@@ -5691,9 +5665,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch   the character to be converted.
      * @return  the titlecase equivalent of the character, if any;
      *          otherwise, the character itself.
-     * @see     java.lang.Character#isTitleCase(char)
-     * @see     java.lang.Character#toLowerCase(char)
-     * @see     java.lang.Character#toUpperCase(char)
+     * @see     Character#isTitleCase(char)
+     * @see     Character#toLowerCase(char)
+     * @see     Character#toUpperCase(char)
      * @since   1.0.2
      */
     public static char toTitleCase(char ch) {
@@ -5718,9 +5692,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  the titlecase equivalent of the character, if any;
      *          otherwise, the character itself.
-     * @see     java.lang.Character#isTitleCase(int)
-     * @see     java.lang.Character#toLowerCase(int)
-     * @see     java.lang.Character#toUpperCase(int)
+     * @see     Character#isTitleCase(int)
+     * @see     Character#toLowerCase(int)
+     * @see     Character#toUpperCase(int)
      * @since   1.5
      */
     public static int toTitleCase(int codePoint) {
@@ -5762,8 +5736,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   radix   the radix.
      * @return  the numeric value represented by the character in the
      *          specified radix.
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Character#isDigit(char)
+     * @see     Character#forDigit(int, int)
+     * @see     Character#isDigit(char)
      */
     public static int digit(char ch, int radix) {
         return digit((int)ch, radix);
@@ -5799,8 +5773,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   radix   the radix.
      * @return  the numeric value represented by the character in the
      *          specified radix.
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Character#isDigit(int)
+     * @see     Character#forDigit(int, int)
+     * @see     Character#isDigit(int)
      * @since   1.5
      */
     public static int digit(int codePoint, int radix) {
@@ -5837,8 +5811,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @return  the numeric value of the character, as a nonnegative <code>int</code>
      *           value; -2 if the character has a numeric value that is not a
      *          nonnegative integer; -1 if the character has no numeric value.
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Character#isDigit(char)
+     * @see     Character#forDigit(int, int)
+     * @see     Character#isDigit(char)
      * @since   1.1
      */
     public static int getNumericValue(char ch) {
@@ -5870,8 +5844,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @return  the numeric value of the character, as a nonnegative <code>int</code>
      *          value; -2 if the character has a numeric value that is not a
      *          nonnegative integer; -1 if the character has no numeric value.
-     * @see     java.lang.Character#forDigit(int, int)
-     * @see     java.lang.Character#isDigit(int)
+     * @see     Character#forDigit(int, int)
+     * @see     Character#isDigit(int)
      * @since   1.5
      */
     public static int getNumericValue(int codePoint) {
@@ -5898,8 +5872,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param      ch   the character to be tested.
      * @return     <code>true</code> if the character is ISO-LATIN-1 white
      *             space; <code>false</code> otherwise.
-     * @see        java.lang.Character#isSpaceChar(char)
-     * @see        java.lang.Character#isWhitespace(char)
+     * @see        Character#isSpaceChar(char)
+     * @see        Character#isWhitespace(char)
      * @deprecated Replaced by isWhitespace(char).
      */
     @Deprecated
@@ -5933,7 +5907,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch      the character to be tested.
      * @return  <code>true</code> if the character is a space character;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isWhitespace(char)
+     * @see     Character#isWhitespace(char)
      * @since   1.1
      */
     public static boolean isSpaceChar(char ch) {
@@ -5956,7 +5930,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is a space character;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isWhitespace(int)
+     * @see     Character#isWhitespace(int)
      * @since   1.5
      */
     public static boolean isSpaceChar(int codePoint) {
@@ -5994,7 +5968,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch the character to be tested.
      * @return  <code>true</code> if the character is a Java whitespace
      *          character; <code>false</code> otherwise.
-     * @see     java.lang.Character#isSpaceChar(char)
+     * @see     Character#isSpaceChar(char)
      * @since   1.1
      */
     public static boolean isWhitespace(char ch) {
@@ -6026,7 +6000,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is a Java whitespace
      *          character; <code>false</code> otherwise.
-     * @see     java.lang.Character#isSpaceChar(int)
+     * @see     Character#isSpaceChar(int)
      * @since   1.5
      */
     public static boolean isWhitespace(int codePoint) {
@@ -6049,8 +6023,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @return  <code>true</code> if the character is an ISO control character;
      *          <code>false</code> otherwise.
      *
-     * @see     java.lang.Character#isSpaceChar(char)
-     * @see     java.lang.Character#isWhitespace(char)
+     * @see     Character#isSpaceChar(char)
+     * @see     Character#isWhitespace(char)
      * @since   1.1
      */
     public static boolean isISOControl(char ch) {
@@ -6067,8 +6041,8 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  <code>true</code> if the character is an ISO control character;
      *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isSpaceChar(int)
-     * @see     java.lang.Character#isWhitespace(int)
+     * @see     Character#isSpaceChar(int)
+     * @see     Character#isWhitespace(int)
      * @since   1.5
      */
     public static boolean isISOControl(int codePoint) {
@@ -6090,36 +6064,36 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   ch      the character to be tested.
      * @return  a value of type <code>int</code> representing the
      *          character's general category.
-     * @see     java.lang.Character#COMBINING_SPACING_MARK
-     * @see     java.lang.Character#CONNECTOR_PUNCTUATION
-     * @see     java.lang.Character#CONTROL
-     * @see     java.lang.Character#CURRENCY_SYMBOL
-     * @see     java.lang.Character#DASH_PUNCTUATION
-     * @see     java.lang.Character#DECIMAL_DIGIT_NUMBER
-     * @see     java.lang.Character#ENCLOSING_MARK
-     * @see     java.lang.Character#END_PUNCTUATION
-     * @see     java.lang.Character#FINAL_QUOTE_PUNCTUATION
-     * @see     java.lang.Character#FORMAT
-     * @see     java.lang.Character#INITIAL_QUOTE_PUNCTUATION
-     * @see     java.lang.Character#LETTER_NUMBER
-     * @see     java.lang.Character#LINE_SEPARATOR
-     * @see     java.lang.Character#LOWERCASE_LETTER
-     * @see     java.lang.Character#MATH_SYMBOL
-     * @see     java.lang.Character#MODIFIER_LETTER
-     * @see     java.lang.Character#MODIFIER_SYMBOL
-     * @see     java.lang.Character#NON_SPACING_MARK
-     * @see     java.lang.Character#OTHER_LETTER
-     * @see     java.lang.Character#OTHER_NUMBER
-     * @see     java.lang.Character#OTHER_PUNCTUATION
-     * @see     java.lang.Character#OTHER_SYMBOL
-     * @see     java.lang.Character#PARAGRAPH_SEPARATOR
-     * @see     java.lang.Character#PRIVATE_USE
-     * @see     java.lang.Character#SPACE_SEPARATOR
-     * @see     java.lang.Character#START_PUNCTUATION
-     * @see     java.lang.Character#SURROGATE
-     * @see     java.lang.Character#TITLECASE_LETTER
-     * @see     java.lang.Character#UNASSIGNED
-     * @see     java.lang.Character#UPPERCASE_LETTER
+     * @see     Character#COMBINING_SPACING_MARK
+     * @see     Character#CONNECTOR_PUNCTUATION
+     * @see     Character#CONTROL
+     * @see     Character#CURRENCY_SYMBOL
+     * @see     Character#DASH_PUNCTUATION
+     * @see     Character#DECIMAL_DIGIT_NUMBER
+     * @see     Character#ENCLOSING_MARK
+     * @see     Character#END_PUNCTUATION
+     * @see     Character#FINAL_QUOTE_PUNCTUATION
+     * @see     Character#FORMAT
+     * @see     Character#INITIAL_QUOTE_PUNCTUATION
+     * @see     Character#LETTER_NUMBER
+     * @see     Character#LINE_SEPARATOR
+     * @see     Character#LOWERCASE_LETTER
+     * @see     Character#MATH_SYMBOL
+     * @see     Character#MODIFIER_LETTER
+     * @see     Character#MODIFIER_SYMBOL
+     * @see     Character#NON_SPACING_MARK
+     * @see     Character#OTHER_LETTER
+     * @see     Character#OTHER_NUMBER
+     * @see     Character#OTHER_PUNCTUATION
+     * @see     Character#OTHER_SYMBOL
+     * @see     Character#PARAGRAPH_SEPARATOR
+     * @see     Character#PRIVATE_USE
+     * @see     Character#SPACE_SEPARATOR
+     * @see     Character#START_PUNCTUATION
+     * @see     Character#SURROGATE
+     * @see     Character#TITLECASE_LETTER
+     * @see     Character#UNASSIGNED
+     * @see     Character#UPPERCASE_LETTER
      * @since   1.1
      */
     public static int getType(char ch) {
@@ -6188,9 +6162,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @param   radix   the radix.
      * @return  the <code>char</code> representation of the specified digit
      *          in the specified radix.
-     * @see     java.lang.Character#MIN_RADIX
-     * @see     java.lang.Character#MAX_RADIX
-     * @see     java.lang.Character#digit(char, int)
+     * @see     Character#MIN_RADIX
+     * @see     Character#MAX_RADIX
+     * @see     Character#digit(char, int)
      */
     public static char forDigit(int digit, int radix) {
         if ((digit >= radix) || (digit < 0)) {
@@ -6371,10 +6345,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @return  either the uppercase equivalent of the character, if
      *          any, or an error flag (<code>Character.ERROR</code>)
      *          that indicates that a 1:M <code>char</code> mapping exists.
-     * @see     java.lang.Character#isLowerCase(char)
-     * @see     java.lang.Character#isUpperCase(char)
-     * @see     java.lang.Character#toLowerCase(char)
-     * @see     java.lang.Character#toTitleCase(char)
+     * @see     Character#isLowerCase(char)
+     * @see     Character#isUpperCase(char)
+     * @see     Character#toLowerCase(char)
+     * @see     Character#toTitleCase(char)
      * @since 1.4
      */
     static int toUpperCaseEx(int codePoint) {
