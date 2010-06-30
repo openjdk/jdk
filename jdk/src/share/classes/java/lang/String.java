@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import sun.nio.cs.Surrogate;
 
 
 /**
@@ -1575,9 +1576,6 @@ public final class String
      *          if the character does not occur.
      */
     public int indexOf(int ch, int fromIndex) {
-        int max = offset + count;
-        char v[] = value;
-
         if (fromIndex < 0) {
             fromIndex = 0;
         } else if (fromIndex >= count) {
@@ -1585,29 +1583,36 @@ public final class String
             return -1;
         }
 
-        int i = offset + fromIndex;
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            for (; i < max ; i++) {
-                if (v[i] == ch) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            final int max = offset + count;
+            for (int i = offset + fromIndex; i < max ; i++) {
+                if (value[i] == ch) {
                     return i - offset;
                 }
             }
             return -1;
+        } else {
+            return indexOfSupplementary(ch, fromIndex);
         }
+    }
 
-        if (ch <= Character.MAX_CODE_POINT) {
-            // handle supplementary characters here
-            char[] surrogates = Character.toChars(ch);
-            for (; i < max; i++) {
-                if (v[i] == surrogates[0]) {
-                    if (i + 1 == max) {
-                        break;
-                    }
-                    if (v[i+1] == surrogates[1]) {
-                        return i - offset;
-                    }
+    /**
+     * Handles (rare) calls of indexOf with a supplementary character.
+     */
+    private int indexOfSupplementary(int ch, int fromIndex) {
+        if (Character.isValidCodePoint(ch)) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            final char hi = Surrogate.high(ch);
+            final char lo = Surrogate.low(ch);
+            final int max = offset + count - 1;
+            for (int i = offset + fromIndex; i < max; i++) {
+                if (value[i] == hi && value[i+1] == lo) {
+                    return i - offset;
                 }
             }
         }
@@ -1676,34 +1681,36 @@ public final class String
      *          if the character does not occur before that point.
      */
     public int lastIndexOf(int ch, int fromIndex) {
-        int min = offset;
-        char v[] = value;
-
-        int i = offset + ((fromIndex >= count) ? count - 1 : fromIndex);
-
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            for (; i >= min ; i--) {
-                if (v[i] == ch) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            int i = offset + Math.min(fromIndex, count - 1);
+            for (; i >= offset ; i--) {
+                if (value[i] == ch) {
                     return i - offset;
                 }
             }
             return -1;
+        } else {
+            return lastIndexOfSupplementary(ch, fromIndex);
         }
+    }
 
-        int max = offset + count;
-        if (ch <= Character.MAX_CODE_POINT) {
-            // handle supplementary characters here
-            char[] surrogates = Character.toChars(ch);
-            for (; i >= min; i--) {
-                if (v[i] == surrogates[0]) {
-                    if (i + 1 == max) {
-                        break;
-                    }
-                    if (v[i+1] == surrogates[1]) {
-                        return i - offset;
-                    }
+    /**
+     * Handles (rare) calls of lastIndexOf with a supplementary character.
+     */
+    private int lastIndexOfSupplementary(int ch, int fromIndex) {
+        if (Character.isValidCodePoint(ch)) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            char hi = Surrogate.high(ch);
+            char lo = Surrogate.low(ch);
+            int i = offset + Math.min(fromIndex, count - 2);
+            for (; i >= offset; i--) {
+                if (value[i] == hi && value[i+1] == lo) {
+                    return i - offset;
                 }
             }
         }
