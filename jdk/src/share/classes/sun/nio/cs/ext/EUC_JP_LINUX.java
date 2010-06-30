@@ -65,20 +65,18 @@ public class EUC_JP_LINUX
 
     private static class Decoder extends CharsetDecoder {
         JIS_X_0201.Decoder decoderJ0201;
-        JIS_X_0208_Decoder decodeMappingJ0208;
         protected final char REPLACE_CHAR='\uFFFD';
 
-        short[] jis0208Index1;
-        String[] jis0208Index2;
+        private static final int start = 0xa1;
+        private static final int end = 0xfe;
+        private static final short[] jis0208Index1 =
+            JIS_X_0208_Decoder.getIndex1();
+        private static final String[] jis0208Index2 =
+            JIS_X_0208_Decoder.getIndex2();
 
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
             decoderJ0201 = new JIS_X_0201.Decoder(cs);
-            decodeMappingJ0208 = new JIS_X_0208_Decoder(cs);
-            decodeMappingJ0208.start = 0xa1;
-            decodeMappingJ0208.end = 0xfe;
-            jis0208Index1 = decodeMappingJ0208.getIndex1();
-            jis0208Index2 = decodeMappingJ0208.getIndex2();
         }
 
         protected char convSingleByte(int b) {
@@ -93,11 +91,11 @@ public class EUC_JP_LINUX
             }
 
             if (((byte1 < 0) || (byte1 > jis0208Index1.length))
-                || ((byte2 < decodeMappingJ0208.start) || (byte2 > decodeMappingJ0208.end)))
+                || ((byte2 < start) || (byte2 > end)))
                 return REPLACE_CHAR;
 
-            int n = (jis0208Index1[byte1 - 0x80] & 0xf) * (decodeMappingJ0208.end - decodeMappingJ0208.start + 1)
-                    + (byte2 - decodeMappingJ0208.start);
+            int n = (jis0208Index1[byte1 - 0x80] & 0xf) * (end - start + 1)
+                    + (byte2 - start);
             return jis0208Index2[jis0208Index1[byte1 - 0x80] >> 4].charAt(n);
         }
 
@@ -213,18 +211,16 @@ public class EUC_JP_LINUX
     private static class Encoder extends CharsetEncoder {
 
         JIS_X_0201.Encoder encoderJ0201;
-        JIS_X_0208_Encoder encoderJ0208;
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
-        short[] jis0208Index1;
-        String[] jis0208Index2;
+        private static final short[] jis0208Index1 =
+            JIS_X_0208_Encoder.getIndex1();
+        private static final String[] jis0208Index2 =
+            JIS_X_0208_Encoder.getIndex2();
 
         private Encoder(Charset cs) {
             super(cs, 2.0f, 2.0f);
             encoderJ0201 = new JIS_X_0201.Encoder(cs);
-            encoderJ0208 = new JIS_X_0208_Encoder(cs);
-            jis0208Index1 = encoderJ0208.getIndex1();
-            jis0208Index2 = encoderJ0208.getIndex2();
         }
 
         public boolean canEncode(char c) {

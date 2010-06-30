@@ -37,6 +37,7 @@ import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.security.*;
 import java.util.regex.Pattern;
 import static java.lang.System.getenv;
@@ -252,9 +253,9 @@ public class Basic {
         return sb.toString();
     }
 
-    static void print4095(OutputStream s) throws Throwable {
+    static void print4095(OutputStream s, byte b) throws Throwable {
         byte[] bytes = new byte[4095];
-        Arrays.fill(bytes, (byte) '!');
+        Arrays.fill(bytes, b);
         s.write(bytes);         // Might hang!
     }
 
@@ -273,7 +274,9 @@ public class Basic {
     public static class JavaChild {
         public static void main(String args[]) throws Throwable {
             String action = args[0];
-            if (action.equals("testIO")) {
+            if (action.equals("sleep")) {
+                Thread.sleep(10 * 60 * 1000L);
+            } else if (action.equals("testIO")) {
                 String expected = "standard input";
                 char[] buf = new char[expected.length()+1];
                 int n = new InputStreamReader(System.in).read(buf,0,buf.length);
@@ -315,7 +318,8 @@ public class Basic {
                 printUTF8(new File(System.getProperty("user.dir"))
                           .getCanonicalPath());
             } else if (action.equals("print4095")) {
-                print4095(System.out);
+                print4095(System.out, (byte) '!');
+                print4095(System.err, (byte) 'E');
                 System.exit(5);
             } else if (action.equals("OutErr")) {
                 // You might think the system streams would be
@@ -1717,16 +1721,107 @@ public class Basic {
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
-        // This would deadlock, if not for the fact that
+        // Attempt to write 4095 bytes to the pipe buffer without a
+        // reader to drain it would deadlock, if not for the fact that
         // interprocess pipe buffers are at least 4096 bytes.
+        //
+        // Also, check that available reports all the bytes expected
+        // in the pipe buffer, and that I/O operations do the expected
+        // things.
         //----------------------------------------------------------------
         try {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("print4095");
-            Process p = new ProcessBuilder(childArgs).start();
-            print4095(p.getOutputStream()); // Might hang!
-            p.waitFor();                    // Might hang!
+            final int SIZE = 4095;
+            final Process p = new ProcessBuilder(childArgs).start();
+            print4095(p.getOutputStream(), (byte) '!'); // Might hang!
+            p.waitFor();                                // Might hang!
+            equal(SIZE, p.getInputStream().available());
+            equal(SIZE, p.getErrorStream().available());
+            THROWS(IOException.class,
+                   new Fun(){void f() throws IOException {
+                       p.getOutputStream().write((byte) '!');
+                       p.getOutputStream().flush();
+                       }});
+
+            final byte[] bytes = new byte[SIZE + 1];
+            equal(SIZE, p.getInputStream().read(bytes));
+            for (int i = 0; i < SIZE; i++)
+                equal((byte) '!', bytes[i]);
+            equal((byte) 0, bytes[SIZE]);
+
+            equal(SIZE, p.getErrorStream().read(bytes));
+            for (int i = 0; i < SIZE; i++)
+                equal((byte) 'E', bytes[i]);
+            equal((byte) 0, bytes[SIZE]);
+
+            equal(0, p.getInputStream().available());
+            equal(0, p.getErrorStream().available());
+            equal(-1, p.getErrorStream().read());
+            equal(-1, p.getInputStream().read());
+
             equal(p.exitValue(), 5);
+
+            p.getInputStream().close();
+            p.getErrorStream().close();
+            p.getOutputStream().close();
+
+            InputStream[] streams = { p.getInputStream(), p.getErrorStream() };
+            for (final InputStream in : streams) {
+                Fun[] ops = {
+                    new Fun(){void f() throws IOException {
+                        in.read(); }},
+                    new Fun(){void f() throws IOException {
+                        in.read(bytes); }},
+                    new Fun(){void f() throws IOException {
+                        in.available(); }}
+                };
+                for (Fun op : ops) {
+                    try {
+                        op.f();
+                        fail();
+                    } catch (IOException expected) {
+                        check(expected.getMessage()
+                              .matches("[Ss]tream [Cc]losed"));
+                    }
+                }
+            }
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that reads which are pending when Process.destroy is
+        // called, get EOF, not IOException("Stream closed").
+        //----------------------------------------------------------------
+        try {
+            final int cases = 4;
+            for (int i = 0; i < cases; i++) {
+                final int action = i;
+                List<String> childArgs = new ArrayList<String>(javaChildArgs);
+                childArgs.add("sleep");
+                final byte[] bytes = new byte[10];
+                final Process p = new ProcessBuilder(childArgs).start();
+                final CountDownLatch latch = new CountDownLatch(1);
+                final Thread thread = new Thread() {
+                    public void run() {
+                        try {
+                            latch.countDown();
+                            int r;
+                            switch (action) {
+                            case 0: r = p.getInputStream().read(); break;
+                            case 1: r = p.getErrorStream().read(); break;
+                            case 2: r = p.getInputStream().read(bytes); break;
+                            case 3: r = p.getErrorStream().read(bytes); break;
+                            default: throw new Error();
+                            }
+                            equal(-1, r);
+                        } catch (Throwable t) { unexpected(t); }}};
+
+                thread.start();
+                latch.await();
+                Thread.sleep(10);
+                p.destroy();
+                thread.join();
+            }
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -1741,7 +1836,6 @@ public class Basic {
         } catch (IOException e) {
             new File("./emptyCommand").delete();
             String m = e.getMessage();
-            //e.printStackTrace();
             if (EnglishUnix.is() &&
                 ! matches(m, "Permission denied"))
                 unexpected(e);

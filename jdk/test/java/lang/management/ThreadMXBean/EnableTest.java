@@ -119,8 +119,19 @@ public class EnableTest {
     }
 
     public static void main(String args[]) throws Exception {
-        testThreadContentionMonitoring();
-        testThreadCpuTime();
+        try {
+            testThreadContentionMonitoring();
+            testThreadCpuTime();
+        } finally {
+            // restore the default
+            if (tm.isThreadContentionMonitoringSupported()) {
+                tm.setThreadContentionMonitoringEnabled(false);
+            }
+            if (tm.isThreadCpuTimeSupported()) {
+                tm.setThreadCpuTimeEnabled(false);
+            }
+        }
+
 
         System.out.println("Test passed.");
     }

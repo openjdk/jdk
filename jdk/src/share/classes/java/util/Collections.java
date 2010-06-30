@@ -463,10 +463,10 @@ public class Collections {
      *         its list-iterator does not support the <tt>set</tt> operation.
      */
     public static void shuffle(List<?> list) {
-        if (r == null) {
-            r = new Random();
-        }
-        shuffle(list, r);
+        Random rnd = r;
+        if (rnd == null)
+            r = rnd = new Random();
+        shuffle(list, rnd);
     }
     private static Random r;
 

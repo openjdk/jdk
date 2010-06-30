@@ -104,15 +104,15 @@ abstract class ISO2022
             switch(shiftFlag) {
             case SOFlag:
                 tmpIndex = curSODes;
-                tmpDecoder = (CharsetDecoder [])SODecoder;
+                tmpDecoder = SODecoder;
                 break;
             case SS2Flag:
                 tmpIndex = curSS2Des;
-                tmpDecoder = (CharsetDecoder [])SS2Decoder;
+                tmpDecoder = SS2Decoder;
                 break;
             case SS3Flag:
                 tmpIndex = curSS3Des;
-                tmpDecoder = (CharsetDecoder [])SS3Decoder;
+                tmpDecoder = SS3Decoder;
                 break;
             }
 

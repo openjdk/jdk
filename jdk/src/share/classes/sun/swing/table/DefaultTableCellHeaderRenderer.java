@@ -127,7 +127,7 @@ public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
 
     public static SortOrder getColumnSortOrder(JTable table, int column) {
         SortOrder rv = null;
-        if (table.getRowSorter() == null) {
+        if (table == null || table.getRowSorter() == null) {
             return rv;
         }
         java.util.List<? extends RowSorter.SortKey> sortKeys =

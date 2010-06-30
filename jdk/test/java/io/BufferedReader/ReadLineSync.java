@@ -46,16 +46,20 @@ public class ReadLineSync {
 
         BufferedReader reader = new BufferedReader(
                                 new FileReader(f));
-        int threadCount = 2;
+        try {
+            int threadCount = 2;
 
-        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+            ExecutorService es = Executors.newFixedThreadPool(threadCount);
 
-        for (int i=0; i < threadCount; i++)
-            es.execute(new BufferedReaderConsumer(reader));
+            for (int i=0; i < threadCount; i++)
+                es.execute(new BufferedReaderConsumer(reader));
 
-        // Wait for the tasks to complete
-        es.shutdown();
-        while (!es.awaitTermination(60, TimeUnit.SECONDS));
+            // Wait for the tasks to complete
+            es.shutdown();
+            while (!es.awaitTermination(60, TimeUnit.SECONDS));
+        } finally {
+            reader.close();
+        }
     }
 
     static class BufferedReaderConsumer extends Thread {
