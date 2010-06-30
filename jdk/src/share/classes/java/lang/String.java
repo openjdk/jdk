@@ -37,8 +37,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import sun.nio.cs.Surrogate;
-
 
 /**
  * The <code>String</code> class represents character strings. All
@@ -1607,8 +1605,8 @@ public final class String
         if (Character.isValidCodePoint(ch)) {
             final char[] value = this.value;
             final int offset = this.offset;
-            final char hi = Surrogate.high(ch);
-            final char lo = Surrogate.low(ch);
+            final char hi = Character.highSurrogate(ch);
+            final char lo = Character.lowSurrogate(ch);
             final int max = offset + count - 1;
             for (int i = offset + fromIndex; i < max; i++) {
                 if (value[i] == hi && value[i+1] == lo) {
@@ -1705,8 +1703,8 @@ public final class String
         if (Character.isValidCodePoint(ch)) {
             final char[] value = this.value;
             final int offset = this.offset;
-            char hi = Surrogate.high(ch);
-            char lo = Surrogate.low(ch);
+            char hi = Character.highSurrogate(ch);
+            char lo = Character.lowSurrogate(ch);
             int i = offset + Math.min(fromIndex, count - 2);
             for (; i >= offset; i--) {
                 if (value[i] == hi && value[i+1] == lo) {

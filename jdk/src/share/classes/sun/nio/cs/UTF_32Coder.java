@@ -97,8 +97,8 @@ class UTF_32Coder {
                         if (dst.remaining() < 2)
                             return CoderResult.OVERFLOW;
                         mark += 4;
-                        dst.put(Surrogate.high(cp));
-                        dst.put(Surrogate.low(cp));
+                        dst.put(Character.highSurrogate(cp));
+                        dst.put(Character.lowSurrogate(cp));
                     } else {
                         return CoderResult.malformedForLength(4);
                     }

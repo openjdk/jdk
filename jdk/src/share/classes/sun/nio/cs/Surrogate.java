@@ -86,20 +86,20 @@ public class Surrogate {
 
     /**
      * Returns the high UTF-16 surrogate for the given supplementary UCS-4 character.
+     * Use of {@link Character#highSurrogate} is generally preferred.
      */
     public static char high(int uc) {
         assert Character.isSupplementaryCodePoint(uc);
-        return (char)((uc >> 10)
-                      + (Character.MIN_HIGH_SURROGATE
-                         - (Character.MIN_SUPPLEMENTARY_CODE_POINT >> 10)));
+        return Character.highSurrogate(uc);
     }
 
     /**
      * Returns the low UTF-16 surrogate for the given supplementary UCS-4 character.
+     * Use of {@link Character#lowSurrogate} is generally preferred.
      */
     public static char low(int uc) {
         assert Character.isSupplementaryCodePoint(uc);
-        return (char)((uc & 0x3ff) + Character.MIN_LOW_SURROGATE);
+        return Character.lowSurrogate(uc);
     }
 
     /**
@@ -303,8 +303,8 @@ public class Surrogate {
                     error = CoderResult.OVERFLOW;
                     return -1;
                 }
-                dst.put(Surrogate.high(uc));
-                dst.put(Surrogate.low(uc));
+                dst.put(Character.highSurrogate(uc));
+                dst.put(Character.lowSurrogate(uc));
                 error = null;
                 return 2;
             } else {
@@ -348,8 +348,8 @@ public class Surrogate {
                     error = CoderResult.OVERFLOW;
                     return -1;
                 }
-                da[dp] = Surrogate.high(uc);
-                da[dp + 1] = Surrogate.low(uc);
+                da[dp] = Character.highSurrogate(uc);
+                da[dp + 1] = Character.lowSurrogate(uc);
                 error = null;
                 return 2;
             } else {

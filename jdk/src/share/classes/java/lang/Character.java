@@ -4398,6 +4398,63 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
+     * Returns the leading surrogate (a
+     * <a href="http://www.unicode.org/glossary/#high_surrogate_code_unit">
+     * high surrogate code unit</a>) of the
+     * <a href="http://www.unicode.org/glossary/#surrogate_pair">
+     * surrogate pair</a>
+     * representing the specified supplementary character (Unicode
+     * code point) in the UTF-16 encoding.  If the specified character
+     * is not a
+     * <a href="Character.html#supplementary">supplementary character</a>,
+     * an unspecified {@code char} is returned.
+     *
+     * <p>If
+     * {@link #isSupplementaryCodePoint isSupplementaryCodePoint(x)}
+     * is {@code true}, then
+     * {@link #isHighSurrogate isHighSurrogate}{@code (highSurrogate(x))} and
+     * {@link #toCodePoint toCodePoint}{@code (highSurrogate(x), }{@link #lowSurrogate lowSurrogate}{@code (x)) == x}
+     * are also always {@code true}.
+     *
+     * @param   codePoint a supplementary character (Unicode code point)
+     * @return  the leading surrogate code unit used to represent the
+     *          character in the UTF-16 encoding
+     * @since   1.7
+     */
+    public static char highSurrogate(int codePoint) {
+        return (char) ((codePoint >>> 10)
+            + (MIN_HIGH_SURROGATE - (MIN_SUPPLEMENTARY_CODE_POINT >>> 10)));
+    }
+
+    /**
+     * Returns the trailing surrogate (a
+     * <a href="http://www.unicode.org/glossary/#low_surrogate_code_unit">
+     * low surrogate code unit</a>) of the
+     * <a href="http://www.unicode.org/glossary/#surrogate_pair">
+     * surrogate pair</a>
+     * representing the specified supplementary character (Unicode
+     * code point) in the UTF-16 encoding.  If the specified character
+     * is not a
+     * <a href="Character.html#supplementary">supplementary character</a>,
+     * an unspecified {@code char} is returned.
+     *
+     * <p>If
+     * {@link #isSupplementaryCodePoint isSupplementaryCodePoint(x)}
+     * is {@code true}, then
+     * {@link #isLowSurrogate isLowSurrogate}{@code (lowSurrogate(x))} and
+     * {@link #toCodePoint toCodePoint}{@code (}{@link #highSurrogate highSurrogate}{@code (x), lowSurrogate(x)) == x}
+     * are also always {@code true}.
+     *
+     * @param   codePoint a supplementary character (Unicode code point)
+     * @return  the trailing surrogate code unit used to represent the
+     *          character in the UTF-16 encoding
+     * @since   1.7
+     */
+    public static char lowSurrogate(int codePoint) {
+        return (char) ((codePoint & 0x3ff) + MIN_LOW_SURROGATE);
+    }
+
+    /**
      * Converts the specified character (Unicode code point) to its
      * UTF-16 representation. If the specified code point is a BMP
      * (Basic Multilingual Plane or Plane 0) value, the same value is
@@ -4470,9 +4527,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     static void toSurrogates(int codePoint, char[] dst, int index) {
         // We write elements "backwards" to guarantee all-or-nothing
-        dst[index+1] = (char)((codePoint & 0x3ff) + MIN_LOW_SURROGATE);
-        dst[index] = (char)((codePoint >>> 10)
-            + (MIN_HIGH_SURROGATE - (MIN_SUPPLEMENTARY_CODE_POINT >>> 10)));
+        dst[index+1] = lowSurrogate(codePoint);
+        dst[index] = highSurrogate(codePoint);
     }
 
     /**

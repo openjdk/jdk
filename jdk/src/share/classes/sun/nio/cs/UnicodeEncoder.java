@@ -93,8 +93,8 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
                 if (dst.remaining() < 4)
                     return CoderResult.OVERFLOW;
                 mark += 2;
-                put(Surrogate.high(d), dst);
-                put(Surrogate.low(d), dst);
+                put(Character.highSurrogate(d), dst);
+                put(Character.lowSurrogate(d), dst);
             }
             return CoderResult.UNDERFLOW;
         } finally {
