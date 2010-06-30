@@ -82,11 +82,11 @@ public class JISAutoDetect
      * with the sun.io JISAutoDetect implementation
      */
 
-    public byte[] getByteMask1() {
+    public static byte[] getByteMask1() {
         return Decoder.maskTable1;
     }
 
-    public byte[] getByteMask2() {
+    public static byte[] getByteMask2() {
         return Decoder.maskTable2;
     }
 

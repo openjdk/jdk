@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135
+ * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
  */
@@ -88,6 +88,9 @@ public class AsyncCloseAndInterrupt {
     }
 
     private static void pumpRefuser(String msg) throws IOException {
+        // Can't reliably saturate connection backlog on Windows Server editions
+        assert !TestUtil.onWindows();
+
         log.print(msg);
         int n = refuserClients.size();
 
@@ -203,9 +206,9 @@ public class AsyncCloseAndInterrupt {
         = new ChannelFactory("DatagramChannel") {
                 InterruptibleChannel create() throws IOException {
                     DatagramChannel dc = DatagramChannel.open();
-                    dc.socket().bind(wildcardAddress);
-                    InetAddress ia = InetAddress.getByName("127.0.0.1");
-                    dc.connect(new InetSocketAddress(ia, 80));
+                    InetAddress lb = InetAddress.getByName("127.0.0.1");
+                    dc.bind(new InetSocketAddress(lb, 0));
+                    dc.connect(new InetSocketAddress(lb, 80));
                     return dc;
                 }
             };
@@ -636,7 +639,8 @@ public class AsyncCloseAndInterrupt {
 
         wildcardAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
         initAcceptor();
-        initRefuser();
+        if (!TestUtil.onWindows())
+            initRefuser();
         initPipes();
         initFile();
 
@@ -658,8 +662,15 @@ public class AsyncCloseAndInterrupt {
         // unclear under what conditions mmap(2) will actually block.
 
         test(connectedSocketChannelFactory);
-        test(socketChannelFactory, CONNECT);
-        test(socketChannelFactory, FINISH_CONNECT);
+
+        if (TestUtil.onWindows()) {
+            log.println("WARNING Cannot reliably test connect/finishConnect"
+                + " operations on Windows");
+        } else {
+            test(socketChannelFactory, CONNECT);
+            test(socketChannelFactory, FINISH_CONNECT);
+        }
+
         test(serverSocketChannelFactory, ACCEPT);
         test(datagramChannelFactory);
         test(pipeSourceChannelFactory);

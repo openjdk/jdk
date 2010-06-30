@@ -827,6 +827,7 @@ ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
 ciStreams.cpp                           ciUtilities.hpp
 
+ciStreams.hpp                           bytecode.hpp
 ciStreams.hpp                           ciClassList.hpp
 ciStreams.hpp                           ciExceptionHandler.hpp
 ciStreams.hpp                           ciInstanceKlass.hpp
@@ -3635,6 +3636,7 @@ rewriter.cpp                            bytecodes.hpp
 rewriter.cpp                            gcLocker.hpp
 rewriter.cpp                            generateOopMap.hpp
 rewriter.cpp                            interpreter.hpp
+rewriter.cpp                            methodComparator.hpp
 rewriter.cpp                            objArrayOop.hpp
 rewriter.cpp                            oop.inline.hpp
 rewriter.cpp                            oopFactory.hpp

@@ -124,15 +124,15 @@ public abstract class ByteToCharISO2022 extends ByteToCharConverter
         switch(shiftFlag) {
         case SOFlag:
             tmpIndex = curSODes;
-            tmpConverter = (ByteToCharConverter [])SOConverter;
+            tmpConverter = SOConverter;
             break;
         case SS2Flag:
             tmpIndex = curSS2Des;
-            tmpConverter = (ByteToCharConverter [])SS2Converter;
+            tmpConverter = SS2Converter;
             break;
         case SS3Flag:
             tmpIndex = curSS3Des;
-            tmpConverter = (ByteToCharConverter [])SS3Converter;
+            tmpConverter = SS3Converter;
             break;
         }
 

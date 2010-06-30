@@ -768,6 +768,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 && s.owner.kind != MTH
                 && types.isSameType(c.type, syms.deprecatedType))
                 s.flags_field |= Flags.DEPRECATED;
+            // Internally to java.dyn, a @PolymorphicSignature annotation
+            // translates to a classfile attribute.
+            if (!c.type.isErroneous()
+                && types.isSameType(c.type, syms.polymorphicSignatureType)) {
+                s.flags_field |= Flags.POLYMORPHIC_SIGNATURE;
+            }
             if (!annotated.add(a.type.tsym))
                 log.error(a.pos, "duplicate.annotation");
         }

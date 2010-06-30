@@ -171,10 +171,9 @@ public class DatagramSocketAdaptor
 
     // Must hold dc.blockingLock()
     //
-    private void receive(ByteBuffer bb) throws IOException {
+    private SocketAddress receive(ByteBuffer bb) throws IOException {
         if (timeout == 0) {
-            dc.receive(bb);
-            return;
+            return dc.receive(bb);
         }
 
         // Implement timeout with a selector
@@ -183,8 +182,9 @@ public class DatagramSocketAdaptor
         dc.configureBlocking(false);
         try {
             int n;
-            if (dc.receive(bb) != null)
-                return;
+            SocketAddress sender;
+            if ((sender = dc.receive(bb)) != null)
+                return sender;
             sel = Util.getTemporarySelector(dc);
             sk = dc.register(sel, SelectionKey.OP_READ);
             long to = timeout;
@@ -194,8 +194,8 @@ public class DatagramSocketAdaptor
                 long st = System.currentTimeMillis();
                 int ns = sel.select(to);
                 if (ns > 0 && sk.isReadable()) {
-                    if (dc.receive(bb) != null)
-                        return;
+                    if ((sender = dc.receive(bb)) != null)
+                        return sender;
                 }
                 sel.selectedKeys().remove(sk);
                 to -= System.currentTimeMillis() - st;
@@ -222,7 +222,8 @@ public class DatagramSocketAdaptor
                     ByteBuffer bb = ByteBuffer.wrap(p.getData(),
                                                     p.getOffset(),
                                                     p.getLength());
-                    receive(bb);
+                    SocketAddress sender = receive(bb);
+                    p.setSocketAddress(sender);
                     p.setLength(bb.position() - p.getOffset());
                 }
             } catch (IOException x) {

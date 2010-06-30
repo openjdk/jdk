@@ -1414,6 +1414,8 @@ PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* new_addr)
 {
   assert(old_addr >= new_addr || space_id(old_addr) != space_id(new_addr),
          "must move left or to a different space");
+  assert(is_object_aligned((intptr_t)old_addr) && is_object_aligned((intptr_t)new_addr),
+         "checking alignment");
 }
 #endif // ASSERT
 

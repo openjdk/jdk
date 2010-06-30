@@ -307,7 +307,7 @@ BUNDLE_UP_AND_EXIT = \
     passc="`$(CAT) $(PASSLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
     failc="`$(CAT) $(FAILLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
     exclc="`$(CAT) $(EXCLUDELIST) | $(WC) -l | $(AWK) '{print $$1;}'`"; \
-    $(ECHO) "TEST STATS: run=$${runc}  pass=$${passc}  fail=$${failc}  excluded=$${exclc}" \
+    $(ECHO) "TEST STATS: name=$(UNIQUE_DIR)  run=$${runc}  pass=$${passc}  fail=$${failc}  excluded=$${exclc}" \
       >> $(STATS_TXT); \
   else \
     $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
@@ -326,7 +326,7 @@ all: jtreg_tests
 # Prep for output
 prep: clean
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)
-	@$(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`
+	@$(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`
 
 # Cleanup
 clean:
@@ -376,7 +376,7 @@ else
 $(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
 	@$(RM) $@ $@.temp1 $@.temp2
 	@(($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-all'          ) ;\
-	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_ARCH)'   ) ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(PLATFORM_OS)'          ) ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_ARCH2)'  ) ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_VERSION)') ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- 'generic-$(OS_ARCH)'      ) ;\
@@ -562,7 +562,7 @@ jdk_tools1: com/sun/jdi
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
 	$(call SharedLibraryPermissions,tools/launcher)
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 
 # All tools tests
 jdk_tools: jdk_tools1 jdk_tools2
