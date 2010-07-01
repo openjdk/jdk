@@ -24,7 +24,6 @@
  */
 package sun.io;
 
-import sun.nio.cs.Surrogate;
 import sun.nio.cs.ext.DoubleByte;
 import static sun.nio.cs.CharsetMapping.*;
 

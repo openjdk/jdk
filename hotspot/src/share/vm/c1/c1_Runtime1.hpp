@@ -70,18 +70,6 @@ class StubAssembler;
 class Runtime1: public AllStatic {
   friend class VMStructs;
   friend class ArrayCopyStub;
- private:
-  static int desired_max_code_buffer_size() {
-    return (int) NMethodSizeLimit;  // default 256K or 512K
-  }
-  static int desired_max_constant_size() {
-    return (int) NMethodSizeLimit / 10;  // about 25K
-  }
-
-  // Note: This buffers is allocated once at startup since allocation
-  // for each compilation seems to be too expensive (at least on Intel
-  // win32).
-  static BufferBlob* _buffer_blob;
 
  public:
   enum StubID {
@@ -115,12 +103,11 @@ class Runtime1: public AllStatic {
 #endif
 
  private:
-  static bool      _is_initialized;
   static CodeBlob* _blobs[number_of_ids];
   static const char* _blob_names[];
 
   // stub generation
-  static void generate_blob_for(StubID id);
+  static void generate_blob_for(BufferBlob* blob, StubID id);
   static OopMapSet* generate_code_for(StubID id, StubAssembler* masm);
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
   static void generate_handle_exception(StubAssembler *sasm, OopMapSet* oop_maps, OopMap* oop_map, bool ignore_fpu_registers = false);
@@ -162,12 +149,8 @@ class Runtime1: public AllStatic {
   static void patch_code(JavaThread* thread, StubID stub_id);
 
  public:
-  static BufferBlob* get_buffer_blob();
-  static void setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
-
   // initialization
-  static bool is_initialized()                   { return _is_initialized; }
-  static void initialize();
+  static void initialize(BufferBlob* blob);
   static void initialize_pd();
 
   // stubs
