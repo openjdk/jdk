@@ -84,10 +84,6 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _fpu_stack_allocator(NULL)
 #endif
 {
-  // note: to use more than on instance of LinearScan at a time this function call has to
-  //       be moved somewhere outside of this constructor:
-  Interval::initialize();
-
   assert(this->ir() != NULL,          "check if valid");
   assert(this->compilation() != NULL, "check if valid");
   assert(this->gen() != NULL,         "check if valid");
@@ -3929,8 +3925,8 @@ Range::Range(int from, int to, Range* next) :
 
 // initialize sentinel
 Range* Range::_end = NULL;
-void Range::initialize() {
-  _end = new Range(max_jint, max_jint, NULL);
+void Range::initialize(Arena* arena) {
+  _end = new (arena) Range(max_jint, max_jint, NULL);
 }
 
 int Range::intersects_at(Range* r2) const {
@@ -3976,9 +3972,9 @@ void Range::print(outputStream* out) const {
 
 // initialize sentinel
 Interval* Interval::_end = NULL;
-void Interval::initialize() {
-  Range::initialize();
-  _end = new Interval(-1);
+void Interval::initialize(Arena* arena) {
+  Range::initialize(arena);
+  _end = new (arena) Interval(-1);
 }
 
 Interval::Interval(int reg_num) :

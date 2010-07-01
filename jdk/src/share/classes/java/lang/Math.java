@@ -681,9 +681,9 @@ public final class Math {
 
     private static Random randomNumberGenerator;
 
-    private static synchronized void initRNG() {
-        if (randomNumberGenerator == null)
-            randomNumberGenerator = new Random();
+    private static synchronized Random initRNG() {
+        Random rnd = randomNumberGenerator;
+        return (rnd == null) ? (randomNumberGenerator = new Random()) : rnd;
     }
 
     /**
@@ -694,9 +694,11 @@ public final class Math {
      *
      * <p>When this method is first called, it creates a single new
      * pseudorandom-number generator, exactly as if by the expression
-     * <blockquote>{@code new java.util.Random}</blockquote> This
-     * new pseudorandom-number generator is used thereafter for all
-     * calls to this method and is used nowhere else.
+     *
+     * <blockquote>{@code new java.util.Random()}</blockquote>
+     *
+     * This new pseudorandom-number generator is used thereafter for
+     * all calls to this method and is used nowhere else.
      *
      * <p>This method is properly synchronized to allow correct use by
      * more than one thread. However, if many threads need to generate
@@ -705,11 +707,12 @@ public final class Math {
      *
      * @return  a pseudorandom {@code double} greater than or equal
      * to {@code 0.0} and less than {@code 1.0}.
-     * @see     java.util.Random#nextDouble()
+     * @see Random#nextDouble()
      */
     public static double random() {
-        if (randomNumberGenerator == null) initRNG();
-        return randomNumberGenerator.nextDouble();
+        Random rnd = randomNumberGenerator;
+        if (rnd == null) rnd = initRNG();
+        return rnd.nextDouble();
     }
 
     /**

@@ -96,14 +96,18 @@ public class SkipBytes{
     public static void main(String[] args) throws Exception {
 
         RandomAccessFile raf = new RandomAccessFile("input.txt" , "rw");
-        int length = (int)raf.length();
+        try {
+            int length = (int)raf.length();
 
-        doTest(raf , 0 , 2*length);
-        doTest(raf , 0 , length);
-        doTest(raf , 0 , length/2);
-        doTest(raf , length/2 , -2);
-        doTest(raf , length , 0);
-        doTest(raf , 0 , -1);
+            doTest(raf , 0 , 2*length);
+            doTest(raf , 0 , length);
+            doTest(raf , 0 , length/2);
+            doTest(raf , length/2 , -2);
+            doTest(raf , length , 0);
+            doTest(raf , 0 , -1);
+        } finally{
+            raf.close();
+        }
 
     }
 
