@@ -33,7 +33,7 @@
 #include FT_FREETYPE_H
 
 #ifdef _MSC_VER
-#if _MSC_VER > 1400
+#if _MSC_VER > 1400 && _MSC_VER < 1600
 
 /*
  * When building for Microsoft Windows, your program has a dependency
@@ -68,7 +68,7 @@
         "publicKeyToken='" _VC_ASSEMBLY_PUBLICKEYTOKEN "'\"")
 
 #endif  /* _M_AMD64 */
-#endif  /* _MSC_VER > 1400 */
+#endif  /* _MSC_VER > 1400 && _MSC_VER < 1600 */
 #endif  /* _MSC_VER */
 
 #define QUOTEMACRO(x) QUOTEME(x)

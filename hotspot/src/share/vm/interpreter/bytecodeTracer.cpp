@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ class BytecodePrinter: public BytecodeClosure {
   // (Also, ensure that occasional false positives are benign.)
   methodOop _current_method;
   bool      _is_wide;
+  Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
 
   void      align()                  { _next_pc = (address)round_to((intptr_t)_next_pc, sizeof(jint)); }
@@ -46,23 +47,26 @@ class BytecodePrinter: public BytecodeClosure {
   short     get_short()              { short i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
   int       get_int()                { int i=Bytes::get_Java_u4(_next_pc); _next_pc+=4; return i; }
 
-  int       get_index()              { return *(address)_next_pc++; }
-  int       get_big_index()          { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_giant_index()        { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
-  int       get_index_special()      { return (is_wide()) ? get_big_index() : get_index(); }
+  int       get_index_u1()           { return *(address)_next_pc++; }
+  int       get_index_u2()           { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
+  int       get_index_u2_cpcache()   { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i + constantPoolOopDesc::CPCACHE_INDEX_TAG; }
+  int       get_index_u4()           { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
+  int       get_index_special()      { return (is_wide()) ? get_index_u2() : get_index_u1(); }
   methodOop method()                 { return _current_method; }
   bool      is_wide()                { return _is_wide; }
+  Bytecodes::Code raw_code()         { return Bytecodes::Code(_code); }
 
 
-  bool      check_index(int i, bool in_cp_cache, int& cp_index, outputStream* st = tty);
+  bool      check_index(int i, int& cp_index, outputStream* st = tty);
   void      print_constant(int i, outputStream* st = tty);
   void      print_field_or_method(int i, outputStream* st = tty);
-  void      print_attributes(Bytecodes::Code code, int bci, outputStream* st = tty);
+  void      print_attributes(int bci, outputStream* st = tty);
   void      bytecode_epilog(int bci, outputStream* st = tty);
 
  public:
   BytecodePrinter() {
     _is_wide = false;
+    _code = Bytecodes::_illegal;
   }
 
   // This method is called while executing the raw bytecodes, so none of
@@ -89,7 +93,8 @@ class BytecodePrinter: public BytecodeClosure {
     } else {
       code = Bytecodes::code_at(bcp);
     }
-    int bci = bcp - method->code_base();
+    _code = code;
+     int bci = bcp - method->code_base();
     st->print("[%d] ", (int) Thread::current()->osthread()->thread_id());
     if (Verbose) {
       st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
@@ -99,10 +104,11 @@ class BytecodePrinter: public BytecodeClosure {
            BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
-    print_attributes(code, bci);
+    print_attributes(bci);
     // Set is_wide for the next one, since the caller of this doesn't skip
     // the next bytecode.
     _is_wide = (code == Bytecodes::_wide);
+    _code = Bytecodes::_illegal;
   }
 
   // Used for methodOop::print_codes().  The input bcp comes from
@@ -116,6 +122,7 @@ class BytecodePrinter: public BytecodeClosure {
     if (is_wide()) {
       code = Bytecodes::code_at(bcp+1);
     }
+    _code = code;
     int bci = bcp - method->code_base();
     // Print bytecode index and name
     if (is_wide()) {
@@ -124,7 +131,7 @@ class BytecodePrinter: public BytecodeClosure {
       st->print("%d %s", bci, Bytecodes::name(code));
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
-    print_attributes(code, bci, st);
+    print_attributes(bci, st);
     bytecode_epilog(bci, st);
   }
 };
@@ -185,12 +192,13 @@ void print_oop(oop value, outputStream* st) {
   }
 }
 
-bool BytecodePrinter::check_index(int i, bool in_cp_cache, int& cp_index, outputStream* st) {
+bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
   constantPoolOop constants = method()->constants();
   int ilimit = constants->length(), climit = 0;
+  Bytecodes::Code code = raw_code();
 
   constantPoolCacheOop cache = NULL;
-  if (in_cp_cache) {
+  if (Bytecodes::uses_cp_cache(code)) {
     cache = constants->cache();
     if (cache != NULL) {
       //climit = cache->length();  // %%% private!
@@ -201,7 +209,7 @@ bool BytecodePrinter::check_index(int i, bool in_cp_cache, int& cp_index, output
     }
   }
 
-  if (in_cp_cache && constantPoolCacheOopDesc::is_secondary_index(i)) {
+  if (cache != NULL && constantPoolCacheOopDesc::is_secondary_index(i)) {
     i = constantPoolCacheOopDesc::decode_secondary_index(i);
     st->print(" secondary cache[%d] of", i);
     if (i >= 0 && i < climit) {
@@ -218,8 +226,6 @@ bool BytecodePrinter::check_index(int i, bool in_cp_cache, int& cp_index, output
   }
 
   if (cache != NULL) {
-    i = Bytes::swap_u2(i);
-    if (WizardMode)  st->print(" (swap=%d)", i);
     goto check_cache_index;
   }
 
@@ -234,6 +240,17 @@ bool BytecodePrinter::check_index(int i, bool in_cp_cache, int& cp_index, output
   return false;
 
  check_cache_index:
+#ifdef ASSERT
+  {
+    const int CPCACHE_INDEX_TAG = constantPoolOopDesc::CPCACHE_INDEX_TAG;
+    if (i >= CPCACHE_INDEX_TAG && i < climit + CPCACHE_INDEX_TAG) {
+      i -= CPCACHE_INDEX_TAG;
+    } else {
+      st->print_cr(" CP[%d] missing bias?", i);
+      return false;
+    }
+  }
+#endif //ASSERT
   if (i >= 0 && i < climit) {
     if (cache->entry_at(i)->is_secondary_entry()) {
       st->print_cr(" secondary entry?");
@@ -248,7 +265,7 @@ bool BytecodePrinter::check_index(int i, bool in_cp_cache, int& cp_index, output
 
 void BytecodePrinter::print_constant(int i, outputStream* st) {
   int orig_i = i;
-  if (!check_index(orig_i, false, i, st))  return;
+  if (!check_index(orig_i, i, st))  return;
 
   constantPoolOop constants = method()->constants();
   constantTag tag = constants->tag_at(i);
@@ -279,7 +296,7 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
 
 void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
   int orig_i = i;
-  if (!check_index(orig_i, true, i, st))  return;
+  if (!check_index(orig_i, i, st))  return;
 
   constantPoolOop constants = method()->constants();
   constantTag tag = constants->tag_at(i);
@@ -303,9 +320,9 @@ void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
 }
 
 
-void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStream* st) {
+void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
-  code = Bytecodes::java_code(code);
+  Bytecodes::Code code = Bytecodes::java_code(raw_code());
   // If the code doesn't have any fields there's nothing to print.
   // note this is ==1 because the tableswitch and lookupswitch are
   // zero size (for some reason) and we want to print stuff out for them.
@@ -323,12 +340,12 @@ void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStre
       st->print_cr(" " INT32_FORMAT, get_short());
       break;
     case Bytecodes::_ldc:
-      print_constant(get_index(), st);
+      print_constant(get_index_u1(), st);
       break;
 
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
-      print_constant(get_big_index(), st);
+      print_constant(get_index_u2(), st);
       break;
 
     case Bytecodes::_iload:
@@ -352,7 +369,7 @@ void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStre
       break;
 
     case Bytecodes::_newarray: {
-        BasicType atype = (BasicType)get_index();
+        BasicType atype = (BasicType)get_index_u1();
         const char* str = type2name(atype);
         if (str == NULL || atype == T_OBJECT || atype == T_ARRAY) {
           assert(false, "Unidentified basic type");
@@ -361,15 +378,15 @@ void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStre
       }
       break;
     case Bytecodes::_anewarray: {
-        int klass_index = get_big_index();
+        int klass_index = get_index_u2();
         constantPoolOop constants = method()->constants();
         symbolOop name = constants->klass_name_at(klass_index);
         st->print_cr(" %s ", name->as_C_string());
       }
       break;
     case Bytecodes::_multianewarray: {
-        int klass_index = get_big_index();
-        int nof_dims = get_index();
+        int klass_index = get_index_u2();
+        int nof_dims = get_index_u1();
         constantPoolOop constants = method()->constants();
         symbolOop name = constants->klass_name_at(klass_index);
         st->print_cr(" %s %d", name->as_C_string(), nof_dims);
@@ -451,31 +468,31 @@ void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStre
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
     case Bytecodes::_getfield:
-      print_field_or_method(get_big_index(), st);
+      print_field_or_method(get_index_u2_cpcache(), st);
       break;
 
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
-      print_field_or_method(get_big_index(), st);
+      print_field_or_method(get_index_u2_cpcache(), st);
       break;
 
     case Bytecodes::_invokeinterface:
-      { int i = get_big_index();
-        int n = get_index();
-        get_index();            // ignore zero byte
+      { int i = get_index_u2_cpcache();
+        int n = get_index_u1();
+        get_byte();            // ignore zero byte
         print_field_or_method(i, st);
       }
       break;
 
     case Bytecodes::_invokedynamic:
-      print_field_or_method(get_giant_index(), st);
+      print_field_or_method(get_index_u4(), st);
       break;
 
     case Bytecodes::_new:
     case Bytecodes::_checkcast:
     case Bytecodes::_instanceof:
-      { int i = get_big_index();
+      { int i = get_index_u2();
         constantPoolOop constants = method()->constants();
         symbolOop name = constants->klass_name_at(i);
         st->print_cr(" %d <%s>", i, name->as_C_string());
