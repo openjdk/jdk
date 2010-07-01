@@ -182,9 +182,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                   Register   Rdst,
                                   setCCOrNot should_set_CC = dont_set_CC );
 
-  void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
-  void get_cache_index_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
+  void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_index_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
 
 
   // common code

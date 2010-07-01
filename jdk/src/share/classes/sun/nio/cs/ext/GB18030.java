@@ -12339,7 +12339,7 @@ public class GB18030
             int start = 0x40, end = 0xFE;
             if (((byte1 < 0) || (byte1 > index1.length))
                 || ((byte2 < start) || (byte2 > end)))
-                return (char)'\uFFFD';
+                return '\uFFFD';
 
             int n = (index1[byte1] & 0xf) * (end - start + 1) + (byte2 - start);
             return index2[index1[byte1] >> 4].charAt(n);

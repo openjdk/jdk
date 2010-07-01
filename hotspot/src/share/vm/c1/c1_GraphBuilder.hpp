@@ -162,7 +162,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   };
 
   // for all GraphBuilders
-  static bool       _is_initialized;             // true if trap tables were initialized, false otherwise
   static bool       _can_trap[Bytecodes::number_of_java_codes];
   static bool       _is_async[Bytecodes::number_of_java_codes];
 
@@ -268,7 +267,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   Instruction* append_split(StateSplit* instr);
 
   // other helpers
-  static bool is_initialized()                   { return _is_initialized; }
   static bool is_async(Bytecodes::Code code) {
     assert(0 <= code && code < Bytecodes::number_of_java_codes, "illegal bytecode");
     return _is_async[code];

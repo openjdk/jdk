@@ -44,7 +44,11 @@ JPS="${TESTJAVA}/bin/jps"
 JSTAT="${TESTJAVA}/bin/jstat"
 
 HOSTNAME=`uname -n`
-PORT=2099
+PORT=`freePort`
+if [ "${PORT}" = "0" ] ; then
+  echo "Cannot get free port"
+  exit 1
+fi
 
 RMIREGISTRY_OUT="rmiregistry_$$.out"
 JSTATD_OUT="jstatd_$$.out"
@@ -69,12 +73,7 @@ then
     exit 1
 fi
 
-# get the process id for the target app (jstatd). note, don't rely
-# on JSTATD_PID as mks interposes a shell when starting a process in
-# the background
-TARGET_PID=`${JPS} | grep "Jstatd" | cut -d" " -f1`
-
-${JSTAT} -gcutil ${TARGET_PID}@${HOSTNAME}:${PORT} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+${JSTAT} -gcutil ${JSTATD_PID}@${HOSTNAME}:${PORT} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]

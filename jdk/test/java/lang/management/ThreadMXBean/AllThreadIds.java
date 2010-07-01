@@ -28,7 +28,7 @@
  * @author  Alexei Guibadoulline and Mandy Chung
  *
  * @run build Barrier
- * @run main AllThreadIds
+ * @run main/othervm AllThreadIds
  */
 
 import java.lang.management.*;
@@ -70,6 +70,12 @@ public class AllThreadIds {
         }
     }
 
+    private static void fail(String msg) {
+        trace = true;
+        printThreadList();
+        throw new RuntimeException(msg);
+    }
+
     private static void checkThreadCount(int numNewThreads,
                                          int numTerminatedThreads)
         throws Exception {
@@ -82,27 +88,27 @@ public class AllThreadIds {
 
         if ((curLiveThreadCount - prevLiveThreadCount) !=
             (numNewThreads - numTerminatedThreads)) {
-            throw new RuntimeException("Unexpected number of live threads: " +
-                " Prev Total = " + prevTotalThreadCount +
-                " Current Total = " + curTotalThreadCount +
+            fail("Unexpected number of live threads: " +
+                " Prev live = " + prevLiveThreadCount +
+                " Current live = " + curLiveThreadCount +
                 " Threads added = " + numNewThreads +
                 " Threads terminated = " + numTerminatedThreads);
         }
         if (curPeakThreadCount - prevPeakThreadCount != numNewThreads) {
-            throw new RuntimeException("Unexpected number of peak threads: " +
-                " Prev Total = " + prevTotalThreadCount +
-                " Current Total = " + curTotalThreadCount +
+            fail("Unexpected number of peak threads: " +
+                " Prev peak = " + prevPeakThreadCount +
+                " Current peak = " + curPeakThreadCount +
                 " Threads added = " + numNewThreads);
         }
         if (curTotalThreadCount - prevTotalThreadCount != numNewThreads) {
-            throw new RuntimeException("Unexpected number of total threads: " +
+            fail("Unexpected number of total threads: " +
                 " Prev Total = " + prevTotalThreadCount +
                 " Current Total = " + curTotalThreadCount +
                 " Threads added = " + numNewThreads);
         }
         long[] list = mbean.getAllThreadIds();
         if (list.length != curLiveThreadCount) {
-            throw new RuntimeException("Array length returned by " +
+            fail("Array length returned by " +
                 "getAllThreadIds() = " + list.length +
                 " not matched count = " + curLiveThreadCount);
         }

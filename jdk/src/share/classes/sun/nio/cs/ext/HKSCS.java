@@ -43,7 +43,7 @@ public class HKSCS {
 
         private char[][] b2cBmp;
         private char[][] b2cSupp;
-        private static DoubleByte.Decoder big5Dec;
+        private DoubleByte.Decoder big5Dec;
 
         protected Decoder(Charset cs,
                           DoubleByte.Decoder big5Dec,
@@ -355,7 +355,7 @@ public class HKSCS {
                             c2b[hi] = new char[0x100];
                             Arrays.fill(c2b[hi], (char)UNMAPPABLE_ENCODING);
                         }
-                        c2b[hi][c & 0xff] = (char)bb;
+                        c2b[hi][c & 0xff] = bb;
                     }
                     c++;
                 }

@@ -137,6 +137,7 @@ public class ReadParams {
         oos.writeInt(12345);
         oos.writeObject("Today");
         oos.writeObject(new Integer(32));
+        oos.close();
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fn));
         doTest(ois);
         doTest1(ois);
