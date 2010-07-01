@@ -190,12 +190,13 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
                                        "sTrans.xf == NULL");
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Cannot get color transform");
+    } else {
+        Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, sTrans.j);
     }
 
     if (iccArray != &_iccArray[0]) {
         free(iccArray);
     }
-    Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, sTrans.j);
     return sTrans.j;
 }
 

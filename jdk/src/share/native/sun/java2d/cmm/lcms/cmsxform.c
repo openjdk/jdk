@@ -687,6 +687,9 @@ LPMATSHAPER cmsBuildGrayOutputMatrixShaper(cmsHPROFILE hProfile)
                 LPGAMMATABLE Shapes1[3];
 
                 GrayTRC = cmsReadICCGamma(hProfile, icSigGrayTRCTag);
+                if (!GrayTRC) {
+                    return NULL;
+                }
                 FromLstarToXYZ(GrayTRC, Shapes1);
 
                 // Reversing must be done after curve translation
@@ -703,6 +706,9 @@ LPMATSHAPER cmsBuildGrayOutputMatrixShaper(cmsHPROFILE hProfile)
                 // Normal case
 
                 GrayTRC = cmsReadICCGammaReversed(hProfile, icSigGrayTRCTag);   // Y
+                if (!GrayTRC) {
+                    return NULL;
+                }
 
                 Shapes[0] = cmsDupGamma(GrayTRC);
                 Shapes[1] = cmsDupGamma(GrayTRC);
