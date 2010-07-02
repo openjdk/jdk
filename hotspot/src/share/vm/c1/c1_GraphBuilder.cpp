@@ -878,15 +878,12 @@ void GraphBuilder::load_constant() {
       case T_OBJECT :
        {
         ciObject* obj = con.as_object();
-        if (obj->is_klass()) {
-          ciKlass* klass = obj->as_klass();
-          if (!klass->is_loaded() || PatchALot) {
-            patch_state = state()->copy();
-            t = new ObjectConstant(obj);
-          } else {
-            t = new InstanceConstant(klass->java_mirror());
-          }
+        if (!obj->is_loaded()
+            || (PatchALot && obj->klass() != ciEnv::current()->String_klass())) {
+          patch_state = state()->copy();
+          t = new ObjectConstant(obj);
         } else {
+          assert(!obj->is_klass(), "must be java_mirror of klass");
           t = new InstanceConstant(obj->as_instance());
         }
         break;
