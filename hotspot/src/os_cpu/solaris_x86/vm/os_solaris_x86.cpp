@@ -861,7 +861,7 @@ cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap
 cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
 
-extern "C" _solaris_raw_setup_fpu(address ptr);
+extern "C" void _solaris_raw_setup_fpu(address ptr);
 void os::setup_fpu() {
   address fpu_cntrl = StubRoutines::addr_fpu_cntrl_wrd_std();
   _solaris_raw_setup_fpu(fpu_cntrl);

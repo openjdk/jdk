@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,14 @@ public:
     } bits;
   };
 
+  union TplCpuidBEbx {
+    uint32_t value;
+    struct {
+      uint32_t logical_cpus : 16,
+                            : 16;
+    } bits;
+  };
+
   union ExtCpuid1Ecx {
     uint32_t value;
     struct {
@@ -210,6 +218,25 @@ protected:
     DcpCpuid4Ebx dcp_cpuid4_ebx;
     uint32_t     dcp_cpuid4_ecx; // unused currently
     uint32_t     dcp_cpuid4_edx; // unused currently
+
+    // cpuid function 0xB (processor topology)
+    // ecx = 0
+    uint32_t     tpl_cpuidB0_eax;
+    TplCpuidBEbx tpl_cpuidB0_ebx;
+    uint32_t     tpl_cpuidB0_ecx; // unused currently
+    uint32_t     tpl_cpuidB0_edx; // unused currently
+
+    // ecx = 1
+    uint32_t     tpl_cpuidB1_eax;
+    TplCpuidBEbx tpl_cpuidB1_ebx;
+    uint32_t     tpl_cpuidB1_ecx; // unused currently
+    uint32_t     tpl_cpuidB1_edx; // unused currently
+
+    // ecx = 2
+    uint32_t     tpl_cpuidB2_eax;
+    TplCpuidBEbx tpl_cpuidB2_ebx;
+    uint32_t     tpl_cpuidB2_ecx; // unused currently
+    uint32_t     tpl_cpuidB2_edx; // unused currently
 
     // cpuid function 0x80000000 // example, unused
     uint32_t ext_max_function;
@@ -316,6 +343,9 @@ public:
   static ByteSize ext_cpuid1_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1_eax); }
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
   static ByteSize ext_cpuid8_offset() { return byte_offset_of(CpuidInfo, ext_cpuid8_eax); }
+  static ByteSize tpl_cpuidB0_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB0_eax); }
+  static ByteSize tpl_cpuidB1_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB1_eax); }
+  static ByteSize tpl_cpuidB2_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB2_eax); }
 
   // Initialization
   static void initialize();
@@ -349,7 +379,12 @@ public:
   static uint cores_per_cpu()  {
     uint result = 1;
     if (is_intel()) {
-      result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
+      if (_cpuid_info.std_max_function >= 0xB) {
+        result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
+                 _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+      } else {
+        result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
+      }
     } else if (is_amd()) {
       result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
     }
@@ -358,7 +393,9 @@ public:
 
   static uint threads_per_core()  {
     uint result = 1;
-    if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
+    if (is_intel() && _cpuid_info.std_max_function >= 0xB) {
+      result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+    } else if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
       result = _cpuid_info.std_cpuid1_ebx.bits.threads_per_cpu /
                cores_per_cpu();
     }
