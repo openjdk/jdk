@@ -43,6 +43,7 @@ public class PushPopTest {
         Runnable dummy = new Runnable() {
                 public void run() {
                     System.err.println("Dummy is here.");
+                    System.err.flush();
                 }
             };
         EventQueue seq = Toolkit.getDefaultToolkit().getSystemEventQueue();
@@ -58,10 +59,11 @@ public class PushPopTest {
         Runnable runnable = new Runnable() {
                 public void run() {
                     System.err.println("Dummy from SunToolkit");
+                    System.err.flush();
                 }
             };
         InvocationEvent ie = new InvocationEvent(eq2, runnable, null, false);
-        System.err.println(ie);
+//        System.err.println(ie);
         SunToolkit.postEvent(SunToolkit.targetToAppContext(frame), ie);
         eq1.pop();
         frame.dispose();
@@ -70,14 +72,14 @@ public class PushPopTest {
 
 class MyEventQueue1 extends EventQueue {
 
-    public void pop() throws EmptyStackException {
+    public void pop() {
         super.pop();
     }
 }
 
 class MyEventQueue2 extends EventQueue {
 
-    protected void pop() throws EmptyStackException {
+    protected void pop() {
         System.err.println("pop2()");
         Thread.dumpStack();
         try {
@@ -85,7 +87,8 @@ class MyEventQueue2 extends EventQueue {
                     public void run() {
                         Runnable runnable = new Runnable() {
                                 public void run() {
-                                    System.err.println("Dummy from here");
+                                    System.err.println("Dummy from pop");
+                                    System.err.flush();
                                 }
                              };
                         InvocationEvent ie = new InvocationEvent(MyEventQueue2.this, runnable, null, false);
