@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,34 +118,13 @@ void CodeBlobCollector::do_blob(CodeBlob* cb) {
   for (int i=0; i<_global_code_blobs->length(); i++) {
     JvmtiCodeBlobDesc* scb = _global_code_blobs->at(i);
     if (addr == scb->code_begin()) {
+      ShouldNotReachHere();
       return;
     }
   }
 
-  // we must name the CodeBlob - some CodeBlobs already have names :-
-  // - stubs used by compiled code to call a (static) C++ runtime routine
-  // - non-relocatable machine code such as the interpreter, stubroutines, etc.
-  // - various singleton blobs
-  //
-  // others are unnamed so we create a name :-
-  // - OSR adapter (interpreter frame that has been on-stack replaced)
-  // - I2C and C2I adapters
-  const char* name = NULL;
-  if (cb->is_runtime_stub()) {
-    name = ((RuntimeStub*)cb)->name();
-  }
-  if (cb->is_buffer_blob()) {
-    name = ((BufferBlob*)cb)->name();
-  }
-  if (cb->is_deoptimization_stub() || cb->is_safepoint_stub()) {
-    name = ((SingletonBlob*)cb)->name();
-  }
-  if (cb->is_uncommon_trap_stub() || cb->is_exception_stub()) {
-    name = ((SingletonBlob*)cb)->name();
-  }
-
   // record the CodeBlob details as a JvmtiCodeBlobDesc
-  JvmtiCodeBlobDesc* scb = new JvmtiCodeBlobDesc(name, cb->instructions_begin(),
+  JvmtiCodeBlobDesc* scb = new JvmtiCodeBlobDesc(cb->name(), cb->instructions_begin(),
                                                  cb->instructions_end());
   _global_code_blobs->append(scb);
 }
@@ -197,7 +176,10 @@ void CodeBlobCollector::collect() {
 jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
   CodeBlobCollector collector;
 
-  // first collect all the code blobs
+  // First collect all the code blobs.  This has to be done in a
+  // single pass over the code cache with CodeCache_lock held because
+  // there isn't any safe way to iterate over regular CodeBlobs since
+  // they can be freed at any point.
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     collector.collect();
@@ -213,166 +195,28 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 }
 
 
-// Support class to describe a nmethod in the CodeCache
-
-class nmethodDesc: public CHeapObj {
- private:
-  jmethodID _jmethod_id;
-  address _code_begin;
-  address _code_end;
-  jvmtiAddrLocationMap* _map;
-  jint _map_length;
- public:
-  nmethodDesc(jmethodID jmethod_id, address code_begin, address code_end,
-              jvmtiAddrLocationMap* map, jint map_length) {
-    _jmethod_id = jmethod_id;
-    _code_begin = code_begin;
-    _code_end = code_end;
-    _map = map;
-    _map_length = map_length;
-  }
-  jmethodID jmethod_id() const          { return _jmethod_id; }
-  address code_begin() const            { return _code_begin; }
-  address code_end() const              { return _code_end; }
-  jvmtiAddrLocationMap* map() const     { return _map; }
-  jint map_length() const               { return _map_length; }
-};
-
-
-// Support class to collect a list of the nmethod CodeBlobs in
-// the CodeCache.
-//
-// Usage :-
-//
-// nmethodCollector collector;
-//
-// collector.collect();
-// JvmtiCodeBlobDesc* blob = collector.first();
-// while (blob != NULL) {
-//   :
-//   blob = collector.next();
-// }
-//
-class nmethodCollector : StackObj {
- private:
-  GrowableArray<nmethodDesc*>* _nmethods;           // collect nmethods
-  int _pos;                                         // iteration support
-
-  // used during a collection
-  static GrowableArray<nmethodDesc*>* _global_nmethods;
-  static void do_nmethod(nmethod* nm);
- public:
-  nmethodCollector() {
-    _nmethods = NULL;
-    _pos = -1;
-  }
-  ~nmethodCollector() {
-    if (_nmethods != NULL) {
-      for (int i=0; i<_nmethods->length(); i++) {
-        nmethodDesc* blob = _nmethods->at(i);
-        if (blob->map()!= NULL) {
-          FREE_C_HEAP_ARRAY(jvmtiAddrLocationMap, blob->map());
-        }
-      }
-      delete _nmethods;
-    }
-  }
-
-  // collect list of nmethods in the cache
-  void collect();
-
-  // iteration support - return first code blob
-  nmethodDesc* first() {
-    assert(_nmethods != NULL, "not collected");
-    if (_nmethods->length() == 0) {
-      return NULL;
-    }
-    _pos = 0;
-    return _nmethods->at(0);
-  }
-
-  // iteration support - return next code blob
-  nmethodDesc* next() {
-    assert(_pos >= 0, "iteration not started");
-    if (_pos+1 >= _nmethods->length()) {
-      return NULL;
-    }
-    return _nmethods->at(++_pos);
-  }
-};
-
-// used during collection
-GrowableArray<nmethodDesc*>* nmethodCollector::_global_nmethods;
-
-
-// called for each nmethod in the CodeCache
-//
-// This function simply adds a descriptor for each nmethod to the global list.
-
-void nmethodCollector::do_nmethod(nmethod* nm) {
-  // ignore zombies
-  if (!nm->is_alive()) {
-    return;
-  }
-
-  assert(nm->method() != NULL, "checking");
-
-  // create the location map for the nmethod.
-  jvmtiAddrLocationMap* map;
-  jint map_length;
-  JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &map, &map_length);
-
-  // record the nmethod details
-  nmethodDesc* snm = new nmethodDesc(nm->get_and_cache_jmethod_id(),
-                                     nm->code_begin(),
-                                     nm->code_end(),
-                                     map,
-                                     map_length);
-  _global_nmethods->append(snm);
-}
-
-// collects a list of nmethod in the CodeCache.
-//
-// The created list is growable array of nmethodDesc - each one describes
-// a nmethod and includs its JVMTI address location map.
-
-void nmethodCollector::collect() {
-  assert_locked_or_safepoint(CodeCache_lock);
-  assert(_global_nmethods == NULL, "checking");
-
-  // create the list
-  _global_nmethods = new (ResourceObj::C_HEAP) GrowableArray<nmethodDesc*>(100,true);
-
-  // any a descriptor for each nmethod to the list.
-  CodeCache::nmethods_do(do_nmethod);
-
-  // make the list the instance list
-  _nmethods = _global_nmethods;
-  _global_nmethods = NULL;
-}
-
 // Generate a COMPILED_METHOD_LOAD event for each nnmethod
-
 jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* env) {
   HandleMark hm;
-  nmethodCollector collector;
 
-  // first collect all nmethods
-  {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    collector.collect();
-  }
+  // Walk the CodeCache notifying for live nmethods.  The code cache
+  // may be changing while this is happening which is ok since newly
+  // created nmethod will notify normally and nmethods which are freed
+  // can be safely skipped.
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  nmethod* current = CodeCache::first_nmethod();
+  while (current != NULL) {
+    // Lock the nmethod so it can't be freed
+    nmethodLocker nml(current);
 
-  // iterate over the  list and post an event for each nmethod
-  nmethodDesc* nm_desc = collector.first();
-  while (nm_desc != NULL) {
-    jmethodID mid = nm_desc->jmethod_id();
-    assert(mid != NULL, "checking");
-    JvmtiExport::post_compiled_method_load(env, mid,
-                                           (jint)(nm_desc->code_end() - nm_desc->code_begin()),
-                                           nm_desc->code_begin(), nm_desc->map_length(),
-                                           nm_desc->map());
-    nm_desc = collector.next();
+    // Only notify for live nmethods
+    if (current->is_alive()) {
+      // Don't hold the lock over the notify or jmethodID creation
+      MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      current->get_and_cache_jmethod_id();
+      JvmtiExport::post_compiled_method_load(current);
+    }
+    current = CodeCache::next_nmethod(current);
   }
   return JVMTI_ERROR_NONE;
 }
