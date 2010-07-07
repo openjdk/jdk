@@ -227,6 +227,7 @@ private:
   uint                     _noop_null; // ConN(#NULL)
 
   Compile *                  _compile; // Compile object for current compilation
+  PhaseIterGVN *                _igvn; // Value numbering
 
   // Address of an element in _nodes.  Used when the element is to be modified
   PointsToNode *ptnode_adr(uint idx) const {
@@ -257,7 +258,7 @@ private:
   // walk the connection graph starting at the node corresponding to "n" and
   // add the index of everything it could point to, to "ptset".  This may cause
   // Phi's encountered to get (re)processed  (which requires "phase".)
-  void PointsTo(VectorSet &ptset, Node * n, PhaseTransform *phase);
+  void PointsTo(VectorSet &ptset, Node * n);
 
   //  Edge manipulation.  The "from_i" and "to_i" arguments are the
   //  node indices of the source and destination of the edge
@@ -310,7 +311,7 @@ private:
   // Node:  This assumes that escape analysis is run before
   //        PhaseIterGVN creation
   void record_for_optimizer(Node *n) {
-    _compile->record_for_igvn(n);
+    _igvn->_worklist.push(n);
   }
 
   // Set the escape state of a node
@@ -320,16 +321,20 @@ private:
   void verify_escape_state(int nidx, VectorSet& ptset, PhaseTransform* phase);
 
 public:
-  ConnectionGraph(Compile *C);
+  ConnectionGraph(Compile *C, PhaseIterGVN *igvn);
 
   // Check for non-escaping candidates
   static bool has_candidates(Compile *C);
+
+  // Perform escape analysis
+  static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   // Compute the escape information
   bool compute_escape();
 
   // escape state of a node
-  PointsToNode::EscapeState escape_state(Node *n, PhaseTransform *phase);
+  PointsToNode::EscapeState escape_state(Node *n);
+
   // other information we have collected
   bool is_scalar_replaceable(Node *n) {
     if (_collecting || (n->_idx >= nodes_size()))
