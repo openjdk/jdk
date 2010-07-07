@@ -107,10 +107,10 @@ import java.util.StringTokenizer;
  * significant in the <code><em>url-path</em></code>.</p>
  *
  * @see <a
- * href="ftp://ftp.rfc-editor.org/in-notes/rfc2609.txt">RFC 2609,
+ * href="http://www.ietf.org/rfc/rfc2609.txt">RFC 2609,
  * "Service Templates and <code>Service:</code> Schemes"</a>
  * @see <a
- * href="ftp://ftp.rfc-editor.org/in-notes/rfc3111.txt">RFC 3111,
+ * href="http://www.ietf.org/rfc/rfc3111.txt">RFC 3111,
  * "Service Location Protocol Modifications for IPv6"</a>
  *
  * @since 1.5
