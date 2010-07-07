@@ -1447,16 +1447,12 @@ Node *PhaseCCP::transform_once( Node *n ) {
           Node* m = n->out(i);
           if( m->is_Phi() ) {
             assert(type(m) == Type::TOP, "Unreachable region should not have live phis.");
-            add_users_to_worklist(m);
-            hash_delete(m); // Yank from hash before hacking edges
-            subsume_node(m, nn);
+            replace_node(m, nn);
             --i; // deleted this phi; rescan starting with next position
           }
         }
       }
-      add_users_to_worklist(n); // Users of about-to-be-constant 'n'
-      hash_delete(n);           // Removed 'n' from table before subsuming it
-      subsume_node(n,nn);       // Update DefUse edges for new constant
+      replace_node(n,nn);       // Update DefUse edges for new constant
     }
     return nn;
   }
