@@ -1944,6 +1944,25 @@ public abstract class SunToolkit extends Toolkit
         return (Window)comp;
     }
 
+    /**
+     * Returns the value of the system property indicated by the specified key.
+     */
+    public static String getSystemProperty(final String key) {
+        return (String)AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return System.getProperty(key);
+                }
+            });
+    }
+
+    /**
+     * Returns the boolean value of the system property indicated by the specified key.
+     */
+    protected static Boolean getBooleanSystemProperty(String key) {
+        return Boolean.valueOf(AccessController.
+                   doPrivileged(new GetBooleanAction(key)));
+    }
+
     private static Boolean sunAwtDisableMixing = null;
 
     /**
@@ -1952,9 +1971,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public synchronized static boolean getSunAwtDisableMixing() {
         if (sunAwtDisableMixing == null) {
-            sunAwtDisableMixing = Boolean.valueOf(
-                    AccessController.doPrivileged(
-                        new GetBooleanAction("sun.awt.disableMixing")));
+            sunAwtDisableMixing = getBooleanSystemProperty("sun.awt.disableMixing");
         }
         return sunAwtDisableMixing.booleanValue();
     }
