@@ -25,6 +25,8 @@
    @summary BufferedReader should throw an OutOfMemoryError when the
             read-ahead limit is very large
    @bug 6350733
+   @build BigMark
+   @run main/othervm BigMark
 */
 
 import java.io.*;

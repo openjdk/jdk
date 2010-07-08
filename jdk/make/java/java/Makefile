@@ -204,7 +204,7 @@ ifeq ($(PLATFORM),windows)
 OTHER_LDLIBS += $(JVMLIB) -libpath:$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlibm.lib \
 		       -libpath:$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib
 else
-OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) -lnsl -ldl \
+OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) $(LIBNSL) -ldl \
 		-L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) -lfdlibm.$(ARCH)
 endif
 

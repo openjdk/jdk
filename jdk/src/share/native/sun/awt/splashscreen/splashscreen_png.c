@@ -182,7 +182,7 @@ SplashDecodePngStream(Splash * splash, SplashStream * stream)
     int success = 0;
 
     stream->read(stream, sig, SIG_BYTES);
-    if (!png_check_sig(sig, SIG_BYTES)) {
+    if (png_sig_cmp(sig, 0, SIG_BYTES)) {
         goto done;
     }
     success = SplashDecodePng(splash, my_png_read_stream, stream);

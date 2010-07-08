@@ -36,8 +36,18 @@ public class DisableTest {
     private static ThreadMXBean tm = ManagementFactory.getThreadMXBean();
 
     public static void main(String args[]) throws Exception {
-        testThreadContentionMonitoring();
-        testThreadCpuMonitoring();
+        try {
+            testThreadContentionMonitoring();
+            testThreadCpuMonitoring();
+        } finally {
+            // restore the default
+            if (tm.isThreadContentionMonitoringSupported()) {
+                tm.setThreadContentionMonitoringEnabled(false);
+            }
+            if (tm.isThreadCpuTimeSupported()) {
+                tm.setThreadCpuTimeEnabled(false);
+            }
+        }
 
         System.out.println("Test passed.");
     }

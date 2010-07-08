@@ -54,16 +54,16 @@ public class ClassRestrictions {
             "\nTest of restrictions on parameters to Proxy.getProxyClass\n");
 
         try {
-            ClassLoader loader = ClassLoader.getSystemClassLoader();
-            Class[] interfaces;
-            Class proxyClass;
+            ClassLoader loader = ClassRestrictions.class.getClassLoader();
+            Class<?>[] interfaces;
+            Class<?> proxyClass;
 
             /*
              * All of the Class objects in the interfaces array must represent
              * interfaces, not classes or primitive types.
              */
             try {
-                interfaces = new Class[] { Object.class };
+                interfaces = new Class<?>[] { Object.class };
                 proxyClass = Proxy.getProxyClass(loader, interfaces);
                 throw new RuntimeException(
                     "proxy class created with java.lang.Object as interface");
@@ -73,7 +73,7 @@ public class ClassRestrictions {
                 // assume exception is for intended failure
             }
             try {
-                interfaces = new Class[] { Integer.TYPE };
+                interfaces = new Class<?>[] { Integer.TYPE };
                 proxyClass = Proxy.getProxyClass(loader, interfaces);
                 throw new RuntimeException(
                     "proxy class created with int.class as interface");
@@ -88,7 +88,7 @@ public class ClassRestrictions {
              * Class objects.
              */
             try {
-                interfaces = new Class[] { Bar.class, Bar.class };
+                interfaces = new Class<?>[] { Bar.class, Bar.class };
                 proxyClass = Proxy.getProxyClass(loader, interfaces);
                 throw new RuntimeException(
                     "proxy class created with repeated interfaces");
@@ -107,7 +107,7 @@ public class ClassRestrictions {
             Class altBarClass;
             altBarClass = Class.forName(Bar.class.getName(), false, altLoader);
             try {
-                interfaces = new Class[] { altBarClass };
+                interfaces = new Class<?>[] { altBarClass };
                 proxyClass = Proxy.getProxyClass(loader, interfaces);
                 throw new RuntimeException(
                     "proxy class created with interface " +
@@ -121,8 +121,8 @@ public class ClassRestrictions {
             /*
              * All non-public interfaces must be in the same package.
              */
-            Class nonPublic1 = Bashful.class;
-            Class nonPublic2 = null;
+            Class<?> nonPublic1 = Bashful.class;
+            Class<?> nonPublic2 = null;
             String[] nonPublicInterfaces = new String[] {
                 "java.awt.Conditional",
                 "java.util.zip.ZipConstants",
@@ -147,7 +147,7 @@ public class ClassRestrictions {
                     "no second non-public interface found for test");
             }
             try {
-                interfaces = new Class[] { nonPublic1, nonPublic2 };
+                interfaces = new Class<?>[] { nonPublic1, nonPublic2 };
                 proxyClass = Proxy.getProxyClass(loader, interfaces);
                 throw new RuntimeException(
                     "proxy class created with two non-public interfaces " +
@@ -163,7 +163,7 @@ public class ClassRestrictions {
              * parameter signature but different return type.
              */
             try {
-                interfaces = new Class[] { Bar.class, Baz.class };
+                interfaces = new Class<?>[] { Bar.class, Baz.class };
                 proxyClass = Proxy.getProxyClass(loader, interfaces);
                 throw new RuntimeException(
                     "proxy class created with conflicting methods");

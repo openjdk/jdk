@@ -29,7 +29,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds the member summary.
@@ -175,22 +174,6 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         }
 
         /**
-         * {@inheritDoc}
-         */
-        public void invokeMethod(
-                String methodName,
-                Class<?>[] paramClasses,
-                Object[] params)
-                throws Exception {
-                if (DEBUG) {
-                        configuration.root.printError(
-                                "DEBUG: " + this.getClass().getName() + "." + methodName);
-                }
-                Method method = this.getClass().getMethod(methodName, paramClasses);
-                method.invoke(this, params);
-        }
-
-        /**
          * Return true it there are any members to summarize.
          *
          * @return true if there are any members to summarize.
@@ -211,7 +194,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the summary for the enum constants.
          */
-        public void buildEnumConstantsSummary() {
+        public void buildEnumConstantsSummary(XMLNode node) {
                 buildSummary(
                         memberSummaryWriters[VisibleMemberMap.ENUM_CONSTANTS],
                         visibleMemberMaps[VisibleMemberMap.ENUM_CONSTANTS]);
@@ -220,7 +203,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * Build the summary for the optional members.
      */
-    public void buildAnnotationTypeOptionalMemberSummary() {
+    public void buildAnnotationTypeOptionalMemberSummary(XMLNode node) {
         buildSummary(
             memberSummaryWriters[VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL],
                 visibleMemberMaps[VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL]);
@@ -229,7 +212,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * Build the summary for the optional members.
      */
-    public void buildAnnotationTypeRequiredMemberSummary() {
+    public void buildAnnotationTypeRequiredMemberSummary(XMLNode node) {
         buildSummary(
             memberSummaryWriters[VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED],
                 visibleMemberMaps[VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED]);
@@ -238,7 +221,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the summary for the fields.
          */
-        public void buildFieldsSummary() {
+        public void buildFieldsSummary(XMLNode node) {
                 buildSummary(
                         memberSummaryWriters[VisibleMemberMap.FIELDS],
                         visibleMemberMaps[VisibleMemberMap.FIELDS]);
@@ -247,7 +230,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the inherited summary for the fields.
          */
-        public void buildFieldsInheritedSummary() {
+        public void buildFieldsInheritedSummary(XMLNode node) {
                 buildInheritedSummary(
                         memberSummaryWriters[VisibleMemberMap.FIELDS],
                         visibleMemberMaps[VisibleMemberMap.FIELDS]);
@@ -256,7 +239,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the summary for the nested classes.
          */
-        public void buildNestedClassesSummary() {
+        public void buildNestedClassesSummary(XMLNode node) {
                 buildSummary(
                         memberSummaryWriters[VisibleMemberMap.INNERCLASSES],
                         visibleMemberMaps[VisibleMemberMap.INNERCLASSES]);
@@ -265,7 +248,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the inherited summary for the nested classes.
          */
-        public void buildNestedClassesInheritedSummary() {
+        public void buildNestedClassesInheritedSummary(XMLNode node) {
                 buildInheritedSummary(
                         memberSummaryWriters[VisibleMemberMap.INNERCLASSES],
                         visibleMemberMaps[VisibleMemberMap.INNERCLASSES]);
@@ -274,7 +257,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the method summary.
          */
-        public void buildMethodsSummary() {
+        public void buildMethodsSummary(XMLNode node) {
                 buildSummary(
                         memberSummaryWriters[VisibleMemberMap.METHODS],
                         visibleMemberMaps[VisibleMemberMap.METHODS]);
@@ -283,7 +266,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the inherited method summary.
          */
-        public void buildMethodsInheritedSummary() {
+        public void buildMethodsInheritedSummary(XMLNode node) {
                 buildInheritedSummary(
                         memberSummaryWriters[VisibleMemberMap.METHODS],
                         visibleMemberMaps[VisibleMemberMap.METHODS]);
@@ -292,7 +275,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         /**
          * Build the constructor summary.
          */
-        public void buildConstructorsSummary() {
+        public void buildConstructorsSummary(XMLNode node) {
                 buildSummary(
                         memberSummaryWriters[VisibleMemberMap.CONSTRUCTORS],
                         visibleMemberMaps[VisibleMemberMap.CONSTRUCTORS]);

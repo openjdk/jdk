@@ -75,7 +75,7 @@ public class CorbaResourceUtil {
         args[1] = (arg1 != null ? arg1.toString() : "null");
         args[2] = (arg2 != null ? arg2.toString() : "null");
 
-        return java.text.MessageFormat.format(format, args);
+        return java.text.MessageFormat.format(format, (Object[]) args);
     }
 
     private static boolean resourcesInitialized = false;

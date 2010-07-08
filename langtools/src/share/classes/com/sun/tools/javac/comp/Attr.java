@@ -59,8 +59,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
  *  @see ConstFold
  *  @see Infer
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -122,7 +122,6 @@ public class Attr extends JCTree.Visitor {
         relax = (options.get("-retrofit") != null ||
                  options.get("-relax") != null);
         useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
-        allowInvokedynamic = options.get("invokedynamic") != null;
         enableSunApiLintControl = options.get("enableSunApiLintControl") != null;
     }
 
@@ -155,10 +154,6 @@ public class Attr extends JCTree.Visitor {
      */
     boolean allowAnonOuterThis;
 
-    /** Switch: allow invokedynamic syntax
-     */
-    boolean allowInvokedynamic;
-
     /**
      * Switch: warn about use of variable before declaration?
      * RFE: 6425594
@@ -166,7 +161,7 @@ public class Attr extends JCTree.Visitor {
     boolean useBeforeDeclarationWarning;
 
     /**
-     * Switch: allow lint infrastructure to control Sun proprietary
+     * Switch: allow lint infrastructure to control proprietary
      * API warnings.
      */
     boolean enableSunApiLintControl;
@@ -656,6 +651,8 @@ public class Attr extends JCTree.Visitor {
             for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
                 attribStat(l.head, localEnv);
             }
+
+            chk.checkVarargMethodDecl(tree);
 
             // Check that type parameters are well-formed.
             chk.validate(tree.typarams, localEnv);
@@ -1384,9 +1381,15 @@ public class Attr extends JCTree.Visitor {
             // as a special case, MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
             // has type <T>, and T can be a primitive type.
             if (tree.meth.getTag() == JCTree.SELECT && !typeargtypes.isEmpty()) {
-              Type selt = ((JCFieldAccess) tree.meth).selected.type;
-              if ((selt == syms.methodHandleType && methName == names.invoke) || selt == syms.invokeDynamicType) {
+              JCFieldAccess mfield = (JCFieldAccess) tree.meth;
+              if ((mfield.selected.type.tsym != null &&
+                   (mfield.selected.type.tsym.flags() & POLYMORPHIC_SIGNATURE) != 0)
+                  ||
+                  (mfield.sym != null &&
+                   (mfield.sym.flags() & POLYMORPHIC_SIGNATURE) != 0)) {
                   assert types.isSameType(restype, typeargtypes.head) : mtype;
+                  assert mfield.selected.type == syms.methodHandleType
+                      || mfield.selected.type == syms.invokeDynamicType;
                   typeargtypesNonRefOK = true;
               }
             }
@@ -2634,10 +2637,11 @@ public class Attr extends JCTree.Visitor {
             }
             if (useVarargs) {
                 JCTree tree = env.tree;
+                Type argtype = owntype.getParameterTypes().last();
                 if (owntype.getReturnType().tag != FORALL || warned) {
-                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes());
+                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes(), sym, env);
                 }
-                Type elemtype = types.elemtype(owntype.getParameterTypes().last());
+                Type elemtype = types.elemtype(argtype);
                 switch (tree.getTag()) {
                 case JCTree.APPLY:
                     ((JCMethodInvocation) tree).varargsElement = elemtype;

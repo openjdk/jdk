@@ -35,6 +35,7 @@ import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
+import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.util.DerInputStream;
@@ -153,6 +154,14 @@ public class KDC {
          * Whether pre-authentication is required. Default Boolean.TRUE
          */
         PREAUTH_REQUIRED,
+        /**
+         * Only issue TGT in RC4
+         */
+        ONLY_RC4_TGT,
+        /**
+         * Only use RC4 in preauth, enc-type still using eTypes[0]
+         */
+        ONLY_RC4_PREAUTH,
     };
 
     static {
@@ -743,13 +752,25 @@ public class KDC {
             Field f = KDCReqBody.class.getDeclaredField("eType");
             f.setAccessible(true);
             eTypes = (int[])f.get(body);
-            if (eTypes.length < 2) {
-                throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
-            }
             int eType = eTypes[0];
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
             EncryptionKey skey = keyForUser(body.sname, eType, true);
+
+            if (options.containsKey(KDC.Option.ONLY_RC4_TGT)) {
+                int tgtEType = EncryptedData.ETYPE_ARCFOUR_HMAC;
+                boolean found = false;
+                for (int i=0; i<eTypes.length; i++) {
+                    if (eTypes[i] == tgtEType) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
+                }
+                skey = keyForUser(body.sname, tgtEType, true);
+            }
             if (ckey == null) {
                 throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
             }
@@ -799,7 +820,8 @@ public class KDC {
                     Constructor<EncryptedData> ctor = EncryptedData.class.getDeclaredConstructor(DerValue.class);
                     ctor.setAccessible(true);
                     EncryptedData data = ctor.newInstance(new DerValue(pas[0].getValue()));
-                    data.decrypt(ckey, KeyUsage.KU_PA_ENC_TS);
+                    EncryptionKey pakey = keyForUser(body.cname, data.getEType(), false);
+                    data.decrypt(pakey, KeyUsage.KU_PA_ENC_TS);
                 } catch (Exception e) {
                     throw new KrbException(Krb5.KDC_ERR_PREAUTH_FAILED);
                 }
@@ -887,7 +909,11 @@ public class KDC {
                         ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) {
                     PAData pa;
 
-                    ETypeInfo2 ei2 = new ETypeInfo2(eTypes[0], null, null);
+                    int epa = eTypes[0];
+                    if (options.containsKey(KDC.Option.ONLY_RC4_PREAUTH)) {
+                        epa = EncryptedData.ETYPE_ARCFOUR_HMAC;
+                    }
+                    ETypeInfo2 ei2 = new ETypeInfo2(epa, null, null);
                     DerOutputStream eid = new DerOutputStream();
                     eid.write(DerValue.tag_Sequence, ei2.asn1Encode());
 
@@ -906,7 +932,7 @@ public class KDC {
                         }
                     }
                     if (allOld) {
-                        ETypeInfo ei = new ETypeInfo(eTypes[0], null);
+                        ETypeInfo ei = new ETypeInfo(epa, null);
                         eid = new DerOutputStream();
                         eid.write(DerValue.tag_Sequence, ei.asn1Encode());
                         pa = new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray());

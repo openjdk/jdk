@@ -41,6 +41,8 @@ public class SkipNegative {
         } catch(IllegalArgumentException e){
             // Negative argument caught
             return;
+        } finally {
+            fr.close();
         }
         throw new Exception("Skip should not accept negative values");
     }

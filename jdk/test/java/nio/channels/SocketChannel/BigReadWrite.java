@@ -32,7 +32,6 @@ import java.nio.channels.*;
 
 public class BigReadWrite {
 
-    static int port = 40170;
     static int testSize = 15;
 
     public static void main(String[] args) throws Exception {

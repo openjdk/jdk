@@ -37,7 +37,7 @@ public class ReadAfterConnect {
         ByteServer server = new ByteServer(0); // server: accept connection and do nothing
         server.start();
         InetSocketAddress isa = new InetSocketAddress(
-                InetAddress.getByName(ByteServer.LOCALHOST), ByteServer.PORT);
+                InetAddress.getByName(ByteServer.LOCALHOST), server.port());
         Selector sel = Selector.open();
         SocketChannel sc = SocketChannel.open();
         sc.connect(isa);
