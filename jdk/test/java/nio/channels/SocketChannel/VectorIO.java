@@ -36,8 +36,6 @@ import sun.misc.*;
 
 public class VectorIO {
 
-    static int port = 40170;
-
     static Random generator = new Random();
 
     static int testSize;
@@ -55,20 +53,12 @@ public class VectorIO {
         System.err.println("Length " + testSize);
         Server sv = new Server(testSize);
         sv.start();
-        do {
-            try {
-                Thread.currentThread().sleep(200);
-            } catch (InterruptedException x) {
-                if (sv.finish(8000) == 0)
-                    throw new Exception("Failed: Error in server thread");
-            }
-        } while (!sv.ready);
-        bufferTest();
+        bufferTest(sv.port());
         if (sv.finish(8000) == 0)
             throw new Exception("Failed: Length = " + testSize);
     }
 
-    static void bufferTest() throws Exception {
+    static void bufferTest(int port) throws Exception {
         ByteBuffer[] bufs = new ByteBuffer[testSize];
         for(int i=0; i<testSize; i++) {
             String source = "buffer" + i;
@@ -105,17 +95,19 @@ public class VectorIO {
     static class Server
         extends TestThread
     {
-        static int port = 40170;
-
         static Random generator = new Random();
 
-        int testSize;
+        final int testSize;
+        final ServerSocketChannel ssc;
 
-        volatile boolean ready = false;
-
-        Server(int testSize) {
+        Server(int testSize) throws IOException {
             super("Server " + testSize);
             this.testSize = testSize;
+            this.ssc = ServerSocketChannel.open().bind(new InetSocketAddress(0));
+        }
+
+        int port() {
+            return ssc.socket().getLocalPort();
         }
 
         void go() throws Exception {
@@ -133,16 +125,11 @@ public class VectorIO {
             }
 
             // Get a connection from client
-            ServerSocketChannel ssc = ServerSocketChannel.open();
             SocketChannel sc = null;
 
             try {
 
                 ssc.configureBlocking(false);
-                InetAddress lh = InetAddress.getLocalHost();
-                InetSocketAddress isa = new InetSocketAddress(lh, port);
-                ssc.socket().bind(isa);
-                ready = true;
 
                 for (;;) {
                     sc = ssc.accept();

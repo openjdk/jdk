@@ -43,8 +43,8 @@ public class COMPOUND_TEXT_Encoder extends CharsetEncoder {
      * cannot be used for actual encoding because they are shared across all
      * COMPOUND_TEXT encoders and may be stateful.
      */
-    private static final Map encodingToEncoderMap =
-        Collections.synchronizedMap(new HashMap(21, 1.0f));
+    private static final Map<String,CharsetEncoder> encodingToEncoderMap =
+      Collections.synchronizedMap(new HashMap<String,CharsetEncoder>(21, 1.0f));
     private static final CharsetEncoder latin1Encoder;
     private static final CharsetEncoder defaultEncoder;
     private static final boolean defaultEncodingSupported;
@@ -221,7 +221,7 @@ public class COMPOUND_TEXT_Encoder extends CharsetEncoder {
             out.put((byte)0x1B);
             out.put((byte)0x25);
             out.put((byte)0x2F);
-            out.put((byte)nonStandardBytes[3]);
+            out.put(nonStandardBytes[3]);
 
             int toWrite = Math.min(numBytes - nonStandardBytesOff,
                                    (1 << 14) - 1 - nonStandardEncodingLen);
@@ -313,12 +313,9 @@ public class COMPOUND_TEXT_Encoder extends CharsetEncoder {
         }
 
         // 4. Brute force search of all supported encodings.
-        for (Iterator iter = CompoundTextSupport.getEncodings().iterator();
-             iter.hasNext();)
+        for (String encoding : CompoundTextSupport.getEncodings())
         {
-            String encoding = (String)iter.next();
-            CharsetEncoder enc =
-                (CharsetEncoder)encodingToEncoderMap.get(encoding);
+            CharsetEncoder enc = encodingToEncoderMap.get(encoding);
             if (enc == null) {
                 enc = CompoundTextSupport.getEncoder(encoding);
                 if (enc == null) {

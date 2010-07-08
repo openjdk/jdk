@@ -39,7 +39,7 @@ import org.ietf.jgss.*;
 
 /**
   * Implements the GSSAPI SASL server mechanism for Kerberos V5.
-  * (<A HREF="ftp://ftp.isi.edu/in-notes/rfc2222.txt">RFC 2222</A>,
+  * (<A HREF="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</A>,
   * <a HREF="http://www.ietf.org/internet-drafts/draft-ietf-cat-sasl-gssapi-00.txt">draft-ietf-cat-sasl-gssapi-00.txt</a>).
   *
   * Expects thread's Subject to contain server's Kerberos credentials
