@@ -2251,7 +2251,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
                  B->name(),
                  fingerprint->as_string(),
                  B->instructions_begin());
-    VTune::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
     Forte::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {

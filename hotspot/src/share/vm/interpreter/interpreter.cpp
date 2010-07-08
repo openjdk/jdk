@@ -99,11 +99,6 @@ void interpreter_init() {
 #endif // PRODUCT
   // need to hit every safepoint in order to call zapping routine
   // register the interpreter
-  VTune::register_stub(
-    "Interpreter",
-    AbstractInterpreter::code()->code_start(),
-    AbstractInterpreter::code()->code_end()
-  );
   Forte::register_stub(
     "Interpreter",
     AbstractInterpreter::code()->code_start(),
