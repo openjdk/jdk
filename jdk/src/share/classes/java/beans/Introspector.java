@@ -158,21 +158,23 @@ public class Introspector {
         if (!ReflectUtil.isPackageAccessible(beanClass)) {
             return (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
         }
+        Map<Class<?>, BeanInfo> beanInfoCache;
+        BeanInfo beanInfo;
         synchronized (BEANINFO_CACHE) {
-            Map<Class<?>, BeanInfo> beanInfoCache =
-                    (Map<Class<?>, BeanInfo>) AppContext.getAppContext().get(BEANINFO_CACHE);
-
+            beanInfoCache = (Map<Class<?>, BeanInfo>) AppContext.getAppContext().get(BEANINFO_CACHE);
             if (beanInfoCache == null) {
                 beanInfoCache = new WeakHashMap<Class<?>, BeanInfo>();
                 AppContext.getAppContext().put(BEANINFO_CACHE, beanInfoCache);
             }
-            BeanInfo beanInfo = beanInfoCache.get(beanClass);
-            if (beanInfo == null) {
-                beanInfo = (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
+            beanInfo = beanInfoCache.get(beanClass);
+        }
+        if (beanInfo == null) {
+            beanInfo = new Introspector(beanClass, null, USE_ALL_BEANINFO).getBeanInfo();
+            synchronized (BEANINFO_CACHE) {
                 beanInfoCache.put(beanClass, beanInfo);
             }
-            return beanInfo;
         }
+        return beanInfo;
     }
 
     /**
@@ -302,10 +304,7 @@ public class Introspector {
      */
 
     public static String[] getBeanInfoSearchPath() {
-        BeanInfoFinder finder = getFinder();
-        synchronized (finder) {
-            return finder.getPackages();
-        }
+        return getFinder().getPackages();
     }
 
     /**
@@ -329,10 +328,7 @@ public class Introspector {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        BeanInfoFinder finder = getFinder();
-        synchronized (finder) {
-            finder.setPackages(path);
-        }
+        getFinder().setPackages(path);
     }
 
 
@@ -454,10 +450,7 @@ public class Introspector {
      * @return Instance of an explicit BeanInfo class or null if one isn't found.
      */
     private static BeanInfo findExplicitBeanInfo(Class beanClass) {
-        BeanInfoFinder finder = getFinder();
-        synchronized (finder) {
-            return finder.find(beanClass);
-        }
+        return getFinder().find(beanClass);
     }
 
     /**
