@@ -1524,7 +1524,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     ConnectionGraph *cgr = phase->C->congraph();
     PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
     if (cgr != NULL)
-      es = cgr->escape_state(obj_node(), phase);
+      es = cgr->escape_state(obj_node());
     if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
       // Mark it eliminated to update any counters
       this->set_eliminated();
@@ -1627,7 +1627,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     ConnectionGraph *cgr = phase->C->congraph();
     PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
     if (cgr != NULL)
-      es = cgr->escape_state(obj_node(), phase);
+      es = cgr->escape_state(obj_node());
     if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
       // Mark it eliminated to update any counters
       this->set_eliminated();
