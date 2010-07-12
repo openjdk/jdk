@@ -65,6 +65,11 @@ Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
 
     J2dTraceLn(J2D_TRACE_INFO, "GLXSurfaceData_initOps");
 
+    if (oglsdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+
     if (glxsdo == NULL) {
         JNU_ThrowOutOfMemoryError(env, "creating native GLX ops");
         return;
