@@ -23,6 +23,7 @@
 
 # @test
 # @bug 6942989
+# @ignore until 6964018 is fixed
 # @summary Check for WeakReference leak in Logger objects
 # @author Daniel D. Daugherty
 #
