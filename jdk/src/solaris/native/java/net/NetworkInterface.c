@@ -129,7 +129,7 @@ static int     openSocketWithFallback(JNIEnv *env, const char *ifname);
 
 static struct  sockaddr *getBroadcast(JNIEnv *env, int sock, const char *name, struct sockaddr *brdcast_store);
 static short   getSubnet(JNIEnv *env, int sock, const char *ifname);
-static int     getIndex(JNIEnv *env, int sock, const char *ifname);
+static int     getIndex(int sock, const char *ifname);
 
 static int     getFlags(JNIEnv *env, int sock, const char *ifname);
 static int     getMacAddress(JNIEnv *env, int sock,  const char* ifname, const struct in_addr* addr, unsigned char *buf);
@@ -911,7 +911,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
          CHECKED_MALLOC3(currif, netif *, sizeof(netif)+IFNAMSIZ );
          currif->name = (char *) currif+sizeof(netif);
          strcpy(currif->name, name);
-         currif->index = getIndex(env,sock,name);
+         currif->index = getIndex(sock, name);
          currif->addr = NULL;
          currif->childs = NULL;
          currif->virtual = isVirtual;
@@ -946,7 +946,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
             CHECKED_MALLOC3(currif, netif *, sizeof(netif)+ IFNAMSIZ );
             currif->name = (char *) currif + sizeof(netif);
             strcpy(currif->name, vname);
-            currif->index = getIndex(env,sock,vname);
+            currif->index = getIndex(sock, vname);
             currif->addr = NULL;
            /* Need to duplicate the addr entry? */
             currif->virtual = 1;
@@ -1133,7 +1133,7 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
 #endif
 
 
-static int getIndex(JNIEnv *env, int sock, const char *name){
+static int getIndex(int sock, const char *name){
      /*
       * Try to get the interface index
       * (Not supported on Solaris 2.6 or 7)
@@ -1390,6 +1390,13 @@ static netif *enumIPvXInterfaces(JNIEnv *env, int sock, netif *ifs, int family) 
             continue;
         }
 
+#ifdef AF_INET6
+        if (ifr->lifr_addr.ss_family == AF_INET6) {
+            struct sockaddr_in6 *s6= (struct sockaddr_in6 *)&(ifr->lifr_addr);
+            s6->sin6_scope_id = getIndex(sock, ifr->lifr_name);
+        }
+#endif
+
         /* add to the list */
         ifs = addif(env, sock,ifr->lifr_name, ifs, (struct sockaddr *)&(ifr->lifr_addr),family, (short) ifr->lifr_addrlen);
 
@@ -1407,7 +1414,7 @@ static netif *enumIPvXInterfaces(JNIEnv *env, int sock, netif *ifs, int family) 
     return ifs;
 }
 
-static int getIndex(JNIEnv *env, int sock, const char *name){
+static int getIndex(int sock, const char *name){
    /*
     * Try to get the interface index
     * (Not supported on Solaris 2.6 or 7)
