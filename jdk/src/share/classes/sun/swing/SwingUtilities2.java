@@ -438,8 +438,12 @@ public class SwingUtilities2 {
         // c may be null here.
         String clipString = "...";
         availTextWidth -= SwingUtilities2.stringWidth(c, fm, clipString);
-        boolean needsTextLayout;
+        if (availTextWidth <= 0) {
+            //can not fit any characters
+            return clipString;
+        }
 
+        boolean needsTextLayout;
         synchronized (charsBufferLock) {
             int stringLength = syncCharsBuffer(string);
             needsTextLayout =
