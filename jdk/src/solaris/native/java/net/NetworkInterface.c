@@ -753,19 +753,27 @@ static netif *enumInterfaces(JNIEnv *env) {
      * If IPv6 is available then enumerate IPv6 addresses.
      */
 #ifdef AF_INET6
-        sock =  openSocket(env, AF_INET6);
-        if (sock < 0 && (*env)->ExceptionOccurred(env)) {
-            freeif(ifs);
-            return NULL;
-        }
 
-        ifs = enumIPv6Interfaces(env, sock, ifs);
-        close(sock);
+        /* User can disable ipv6 expicitly by -Djava.net.preferIPv4Stack=true,
+         * so we have to call ipv6_available()
+         */
+        if (ipv6_available()) {
 
-        if ((*env)->ExceptionOccurred(env)) {
-            freeif(ifs);
-            return NULL;
-        }
+           sock =  openSocket(env, AF_INET6);
+           if (sock < 0 && (*env)->ExceptionOccurred(env)) {
+               freeif(ifs);
+               return NULL;
+           }
+
+           ifs = enumIPv6Interfaces(env, sock, ifs);
+           close(sock);
+
+           if ((*env)->ExceptionOccurred(env)) {
+              freeif(ifs);
+              return NULL;
+           }
+
+       }
 #endif
 
     return ifs;
