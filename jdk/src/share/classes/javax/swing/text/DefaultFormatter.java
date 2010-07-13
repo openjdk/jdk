@@ -570,7 +570,9 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
             direction = -1;
         }
 
-        if (getOverwriteMode() && rh.text != null) {
+        if (getOverwriteMode() && rh.text != null &&
+            getFormattedTextField().getSelectedText() == null)
+        {
             rh.length = Math.min(Math.max(rh.length, rh.text.length()),
                                  rh.fb.getDocument().getLength() - rh.offset);
         }
