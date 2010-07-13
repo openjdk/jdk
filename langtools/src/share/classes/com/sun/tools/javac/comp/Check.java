@@ -563,7 +563,7 @@ public class Check {
             while (args.nonEmpty()) {
                 if (args.head.tag == WILDCARD)
                     return typeTagError(pos,
-                                        Log.getLocalizedString("type.req.exact"),
+                                        diags.fragment("type.req.exact"),
                                         args.head);
                 args = args.tail;
             }

@@ -111,14 +111,14 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             try {
                 versionRB = ResourceBundle.getBundle(versionRBName);
             } catch (MissingResourceException e) {
-                return Log.getLocalizedString("version.resource.missing", System.getProperty("java.version"));
+                return Log.getLocalizedString("version.not.available");
             }
         }
         try {
             return versionRB.getString(key);
         }
         catch (MissingResourceException e) {
-            return Log.getLocalizedString("version.unknown", System.getProperty("java.version"));
+            return Log.getLocalizedString("version.not.available");
         }
     }
 
