@@ -60,7 +60,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Philip Milne
  */
-public class XMLDecoder {
+public class XMLDecoder implements AutoCloseable {
     private final DocumentHandler handler = new DocumentHandler();
     private final InputSource input;
     private Object owner;
