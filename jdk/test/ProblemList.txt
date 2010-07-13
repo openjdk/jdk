@@ -295,9 +295,6 @@ java/math/BigInteger/ModPow65537.java			 	generic-all
 
 # jdk_misc
 
-# On Windows com.sun.java.swing.plaf.gtk does not exist, always fails there
-com/sun/java/swing/plaf/gtk/Test6635110.java		 	windows-all
-
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
@@ -847,9 +844,6 @@ sun/security/tools/keytool/selfissued.sh		 	solaris-all
 ############################################################################
 
 # jdk_swing (not using samevm)
-
-# Fails on solaris 10 sparc, throws RuntimeException that just says "failed"
-javax/swing/JLabel/6501991/bug6501991.java			generic-all
 
 # Fails on solaris 11 i586, with othervm
 javax/swing/JFileChooser/6570445/bug6570445.java		generic-all
