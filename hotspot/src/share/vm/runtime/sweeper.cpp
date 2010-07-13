@@ -422,7 +422,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
 
   if (LogCompilation && (xtty != NULL)) {
     ttyLocker ttyl;
-    xtty->begin_elem("sweeper state='%s' traversals=`" INTX_FORMAT "' ", msg, (intx)traversal_count());
+    xtty->begin_elem("sweeper state='%s' traversals='" INTX_FORMAT "' ", msg, (intx)traversal_count());
     if (format != NULL) {
       va_list ap;
       va_start(ap, format);
