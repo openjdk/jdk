@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package java.util.logging;
 import java.io.*;
 import java.util.*;
 import java.security.*;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -154,10 +155,10 @@ public class LogManager {
                          = new PropertyChangeSupport(LogManager.class);
     private final static Level defaultLevel = Level.INFO;
 
-    // Table of known loggers.  Maps names to Loggers.
-    private Hashtable<String,WeakReference<Logger>> loggers =
-        new Hashtable<String,WeakReference<Logger>>();
-    // Tree of known loggers
+    // Table of named Loggers that maps names to Loggers.
+    private Hashtable<String,LoggerWeakRef> namedLoggers =
+        new Hashtable<String,LoggerWeakRef>();
+    // Tree of named Loggers
     private LogNode root = new LogNode(null);
     private Logger rootLogger;
 
@@ -417,6 +418,121 @@ public class LogManager {
             }});
     }
 
+
+    // loggerRefQueue holds LoggerWeakRef objects for Logger objects
+    // that have been GC'ed.
+    private final ReferenceQueue<Logger> loggerRefQueue
+        = new ReferenceQueue<Logger>();
+
+    // Package-level inner class.
+    // Helper class for managing WeakReferences to Logger objects.
+    //
+    // LogManager.namedLoggers
+    //     - has weak references to all named Loggers
+    //     - namedLoggers keeps the LoggerWeakRef objects for the named
+    //       Loggers around until we can deal with the book keeping for
+    //       the named Logger that is being GC'ed.
+    // LogManager.LogNode.loggerRef
+    //     - has a weak reference to a named Logger
+    //     - the LogNode will also keep the LoggerWeakRef objects for
+    //       the named Loggers around; currently LogNodes never go away.
+    // Logger.kids
+    //     - has a weak reference to each direct child Logger; this
+    //       includes anonymous and named Loggers
+    //     - anonymous Loggers are always children of the rootLogger
+    //       which is a strong reference; rootLogger.kids keeps the
+    //       LoggerWeakRef objects for the anonymous Loggers around
+    //       until we can deal with the book keeping.
+    //
+    final class LoggerWeakRef extends WeakReference<Logger> {
+        private String                name;       // for namedLoggers cleanup
+        private LogNode               node;       // for loggerRef cleanup
+        private WeakReference<Logger> parentRef;  // for kids cleanup
+
+        LoggerWeakRef(Logger logger) {
+            super(logger, loggerRefQueue);
+
+            name = logger.getName();  // save for namedLoggers cleanup
+        }
+
+        // dispose of this LoggerWeakRef object
+        void dispose() {
+            if (node != null) {
+                // if we have a LogNode, then we were a named Logger
+                // so clear namedLoggers weak ref to us
+                manager.namedLoggers.remove(name);
+                name = null;  // clear our ref to the Logger's name
+
+                node.loggerRef = null;  // clear LogNode's weak ref to us
+                node = null;            // clear our ref to LogNode
+            }
+
+            if (parentRef != null) {
+                // this LoggerWeakRef has or had a parent Logger
+                Logger parent = parentRef.get();
+                if (parent != null) {
+                    // the parent Logger is still there so clear the
+                    // parent Logger's weak ref to us
+                    parent.removeChildLogger(this);
+                }
+                parentRef = null;  // clear our weak ref to the parent Logger
+            }
+        }
+
+        // set the node field to the specified value
+        void setNode(LogNode node) {
+            this.node = node;
+        }
+
+        // set the parentRef field to the specified value
+        void setParentRef(WeakReference<Logger> parentRef) {
+            this.parentRef = parentRef;
+        }
+    }
+
+    // Package-level method.
+    // Drain some Logger objects that have been GC'ed.
+    //
+    // drainLoggerRefQueueBounded() is called by addLogger() below
+    // and by Logger.getAnonymousLogger(String) so we'll drain up to
+    // MAX_ITERATIONS GC'ed Loggers for every Logger we add.
+    //
+    // On a WinXP VMware client, a MAX_ITERATIONS value of 400 gives
+    // us about a 50/50 mix in increased weak ref counts versus
+    // decreased weak ref counts in the AnonLoggerWeakRefLeak test.
+    // Here are stats for cleaning up sets of 400 anonymous Loggers:
+    //   - test duration 1 minute
+    //   - sample size of 125 sets of 400
+    //   - average: 1.99 ms
+    //   - minimum: 0.57 ms
+    //   - maximum: 25.3 ms
+    //
+    // The same config gives us a better decreased weak ref count
+    // than increased weak ref count in the LoggerWeakRefLeak test.
+    // Here are stats for cleaning up sets of 400 named Loggers:
+    //   - test duration 2 minutes
+    //   - sample size of 506 sets of 400
+    //   - average: 0.57 ms
+    //   - minimum: 0.02 ms
+    //   - maximum: 10.9 ms
+    //
+    private final static int MAX_ITERATIONS = 400;
+    final synchronized void drainLoggerRefQueueBounded() {
+        for (int i = 0; i < MAX_ITERATIONS; i++) {
+            if (loggerRefQueue == null) {
+                // haven't finished loading LogManager yet
+                break;
+            }
+
+            LoggerWeakRef ref = (LoggerWeakRef) loggerRefQueue.poll();
+            if (ref == null) {
+                break;
+            }
+            // a Logger object has been GC'ed so clean it up
+            ref.dispose();
+        }
+    }
+
     /**
      * Add a named logger.  This does nothing and returns false if a logger
      * with the same name is already registered.
@@ -439,13 +555,16 @@ public class LogManager {
             throw new NullPointerException();
         }
 
-        WeakReference<Logger> ref = loggers.get(name);
+        // cleanup some Loggers that have been GC'ed
+        drainLoggerRefQueueBounded();
+
+        LoggerWeakRef ref = namedLoggers.get(name);
         if (ref != null) {
             if (ref.get() == null) {
-                // Hashtable holds stale weak reference
-                // to a logger which has been GC-ed.
-                // Allow to register new one.
-                loggers.remove(name);
+                // It's possible that the Logger was GC'ed after the
+                // drainLoggerRefQueueBounded() call above so allow
+                // a new one to be registered.
+                namedLoggers.remove(name);
             } else {
                 // We already have a registered logger with the given name.
                 return false;
@@ -454,7 +573,8 @@ public class LogManager {
 
         // We're adding a new logger.
         // Note that we are creating a weak reference here.
-        loggers.put(name, new WeakReference<Logger>(logger));
+        ref = new LoggerWeakRef(logger);
+        namedLoggers.put(name, ref);
 
         // Apply any initial level defined for the new logger.
         Level level = getLevelProperty(name+".level", null);
@@ -469,11 +589,11 @@ public class LogManager {
 
         // Find the new node and its parent.
         LogNode node = findNode(name);
-        node.loggerRef = new WeakReference<Logger>(logger);
+        node.loggerRef = ref;
         Logger parent = null;
         LogNode nodep = node.parent;
         while (nodep != null) {
-            WeakReference<Logger> nodeRef = nodep.loggerRef;
+            LoggerWeakRef nodeRef = nodep.loggerRef;
             if (nodeRef != null) {
                 parent = nodeRef.get();
                 if (parent != null) {
@@ -488,6 +608,9 @@ public class LogManager {
         }
         // Walk over the children and tell them we are their new parent.
         node.walkAndSetParent(logger);
+
+        // new LogNode is ready so tell the LoggerWeakRef about it
+        ref.setNode(node);
 
         return true;
     }
@@ -572,7 +695,7 @@ public class LogManager {
      * @return  matching logger or null if none is found
      */
     public synchronized Logger getLogger(String name) {
-        WeakReference<Logger> ref = loggers.get(name);
+        LoggerWeakRef ref = namedLoggers.get(name);
         if (ref == null) {
             return null;
         }
@@ -580,7 +703,7 @@ public class LogManager {
         if (logger == null) {
             // Hashtable holds stale weak reference
             // to a logger which has been GC-ed.
-            loggers.remove(name);
+            namedLoggers.remove(name);
         }
         return logger;
     }
@@ -594,7 +717,7 @@ public class LogManager {
      * @return  enumeration of logger name strings
      */
     public synchronized Enumeration<String> getLoggerNames() {
-        return loggers.keys();
+        return namedLoggers.keys();
     }
 
     /**
@@ -942,7 +1065,7 @@ public class LogManager {
     // Nested class to represent a node in our tree of named loggers.
     private static class LogNode {
         HashMap<String,LogNode> children;
-        WeakReference<Logger> loggerRef;
+        LoggerWeakRef loggerRef;
         LogNode parent;
 
         LogNode(LogNode parent) {
@@ -958,7 +1081,7 @@ public class LogManager {
             Iterator<LogNode> values = children.values().iterator();
             while (values.hasNext()) {
                 LogNode node = values.next();
-                WeakReference<Logger> ref = node.loggerRef;
+                LoggerWeakRef ref = node.loggerRef;
                 Logger logger = (ref == null) ? null : ref.get();
                 if (logger == null) {
                     node.walkAndSetParent(parent);

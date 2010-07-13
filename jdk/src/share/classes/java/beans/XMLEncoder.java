@@ -204,7 +204,7 @@ import java.nio.charset.UnsupportedCharsetException;
  *
  * @author Philip Milne
  */
-public class XMLEncoder extends Encoder {
+public class XMLEncoder extends Encoder implements AutoCloseable {
 
     private final CharsetEncoder encoder;
     private final String charset;

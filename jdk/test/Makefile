@@ -495,19 +495,17 @@ JDK_ALL_TARGETS += jdk_nio1
 jdk_nio1: java/nio/file
 	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: java/nio/Buffer java/nio/ByteOrder \
           java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer
 	$(call SharedLibraryPermissions,java/nio/channels)
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
 jdk_nio3: com/sun/nio sun/nio
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 
 # All nio tests
 jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
