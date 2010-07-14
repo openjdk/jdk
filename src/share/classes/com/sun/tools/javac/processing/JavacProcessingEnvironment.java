@@ -654,9 +654,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      Set<TypeElement> annotationsPresent,
                                      List<ClassSymbol> topLevelClasses,
                                      List<PackageSymbol> packageInfoFiles) {
-        // Writer for -XprintRounds and -XprintProcessorInfo data
-        PrintWriter xout = context.get(Log.outKey);
-
         Map<String, TypeElement> unmatchedAnnotations =
             new HashMap<String, TypeElement>(annotationsPresent.size());
 
@@ -708,10 +705,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ps.removeSupportedOptions(unmatchedProcessorOptions);
 
                 if (printProcessorInfo || verbose) {
-                    xout.println(Log.getLocalizedString("x.print.processor.info",
-                                                        ps.processor.getClass().getName(),
-                                                        matchedNames.toString(),
-                                                        processingResult));
+                    log.printNoteLines("x.print.processor.info",
+                            ps.processor.getClass().getName(),
+                            matchedNames.toString(),
+                            processingResult);
                 }
 
                 if (processingResult) {
@@ -795,8 +792,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         throws IOException {
 
         log = Log.instance(context);
-        // Writer for -XprintRounds and -XprintProcessorInfo data
-        PrintWriter xout = context.get(Log.outKey);
         TaskListener taskListener = context.get(TaskListener.class);
 
         JavaCompiler compiler = JavaCompiler.instance(context);
@@ -839,7 +834,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             this.context = currentContext;
             roundNumber++;
-            printRoundInfo(xout, roundNumber, topLevelClasses, annotationsPresent, false);
+            printRoundInfo(roundNumber, topLevelClasses, annotationsPresent, false);
 
             if (taskListener != null)
                 taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
@@ -908,7 +903,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     break runAround; // No new files
             }
         }
-        roots = runLastRound(xout, roundNumber, errorStatus, compiler, roots, taskListener);
+        roots = runLastRound(roundNumber, errorStatus, compiler, roots, taskListener);
         // Set error status for any files compiled and generated in
         // the last round
         if (log.unrecoverableError)
@@ -982,8 +977,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     // Call the last round of annotation processing
-    private List<JCCompilationUnit> runLastRound(PrintWriter xout,
-                                                 int roundNumber,
+    private List<JCCompilationUnit> runLastRound(int roundNumber,
                                                  boolean errorStatus,
                                                  JavaCompiler compiler,
                                                  List<JCCompilationUnit> roots,
@@ -991,7 +985,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         roundNumber++;
         List<ClassSymbol> noTopLevelClasses = List.nil();
         Set<TypeElement> noAnnotations =  Collections.emptySet();
-        printRoundInfo(xout, roundNumber, noTopLevelClasses, noAnnotations, true);
+        printRoundInfo(roundNumber, noTopLevelClasses, noAnnotations, true);
 
         Set<Element> emptyRootElements = Collections.emptySet(); // immutable
         RoundEnvironment renv = new JavacRoundEnvironment(true,
@@ -1032,17 +1026,16 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
     }
 
-    private void printRoundInfo(PrintWriter xout,
-                                int roundNumber,
+    private void printRoundInfo(int roundNumber,
                                 List<ClassSymbol> topLevelClasses,
                                 Set<TypeElement> annotationsPresent,
                                 boolean lastRound) {
         if (printRounds || verbose) {
-            xout.println(Log.getLocalizedString("x.print.rounds",
-                                                roundNumber,
-                                                "{" + topLevelClasses.toString(", ") + "}",
-                                                annotationsPresent,
-                                                lastRound));
+            log.printNoteLines("x.print.rounds",
+                    roundNumber,
+                    "{" + topLevelClasses.toString(", ") + "}",
+                    annotationsPresent,
+                    lastRound);
         }
     }
 
