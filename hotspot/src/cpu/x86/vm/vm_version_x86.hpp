@@ -376,10 +376,17 @@ public:
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_intel()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x756e6547; } // 'uneG'
 
+  static bool supports_processor_topology() {
+    return (_cpuid_info.std_max_function >= 0xB) &&
+           // eax[4:0] | ebx[0:15] == 0 indicates invalid topology level.
+           // Some cpus have max cpuid >= 0xB but do not support processor topology.
+           ((_cpuid_info.tpl_cpuidB0_eax & 0x1f | _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus) != 0);
+  }
+
   static uint cores_per_cpu()  {
     uint result = 1;
     if (is_intel()) {
-      if (_cpuid_info.std_max_function >= 0xB) {
+      if (supports_processor_topology()) {
         result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
                  _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
       } else {
@@ -393,7 +400,7 @@ public:
 
   static uint threads_per_core()  {
     uint result = 1;
-    if (is_intel() && _cpuid_info.std_max_function >= 0xB) {
+    if (is_intel() && supports_processor_topology()) {
       result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
     } else if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
       result = _cpuid_info.std_cpuid1_ebx.bits.threads_per_cpu /
