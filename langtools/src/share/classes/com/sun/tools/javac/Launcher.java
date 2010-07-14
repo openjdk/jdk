@@ -41,7 +41,7 @@ import javax.tools.ToolProvider;
  * of a <em>project</em>).  Simply ensure that this class is added to
  * the project and make it the main class of the project.</p>
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>

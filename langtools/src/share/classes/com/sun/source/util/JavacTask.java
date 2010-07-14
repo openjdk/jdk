@@ -36,7 +36,7 @@ import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 
 /**
- * Provides access to functionality specific to the Sun Java Compiler, javac.
+ * Provides access to functionality specific to the JDK Java Compiler, javac.
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

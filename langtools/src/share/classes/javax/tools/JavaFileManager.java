@@ -256,7 +256,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      *
      * <p>Optionally, this file manager might consider the sibling as
      * a hint for where to place the output.  The exact semantics of
-     * this hint is unspecified.  Sun's compiler, javac, for
+     * this hint is unspecified.  The JDK compiler, javac, for
      * example, will place class files in the same directories as
      * originating source files unless a class file output directory
      * is provided.  To facilitate this behavior, javac might provide
@@ -338,7 +338,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      *
      * <p>Optionally, this file manager might consider the sibling as
      * a hint for where to place the output.  The exact semantics of
-     * this hint is unspecified.  Sun's compiler, javac, for
+     * this hint is unspecified.  The JDK compiler, javac, for
      * example, will place class files in the same directories as
      * originating source files unless a class file output directory
      * is provided.  To facilitate this behavior, javac might provide
