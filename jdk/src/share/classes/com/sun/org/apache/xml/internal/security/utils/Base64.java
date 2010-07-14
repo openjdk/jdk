@@ -41,7 +41,7 @@ import org.w3c.dom.Text;
  * @author Raul Benito(Of the xerces copy, and little adaptations).
  * @author Anli Shundi
  * @author Christian Geuer-Pollmann
- * @see <A HREF="ftp://ftp.isi.edu/in-notes/rfc2045.txt">RFC 2045</A>
+ * @see <A HREF="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</A>
  * @see com.sun.org.apache.xml.internal.security.transforms.implementations.TransformBase64Decode
  */
 public class Base64 {

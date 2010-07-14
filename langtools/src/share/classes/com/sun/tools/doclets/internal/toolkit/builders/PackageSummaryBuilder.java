@@ -29,8 +29,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds the summary for a given package.
@@ -85,22 +83,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         }
 
         /**
-         * {@inheritDoc}
-         */
-        public void invokeMethod(
-                String methodName,
-                Class<?>[] paramClasses,
-                Object[] params)
-                throws Exception {
-                if (DEBUG) {
-                        configuration.root.printError(
-                                "DEBUG: " + this.getClass().getName() + "." + methodName);
-                }
-                Method method = this.getClass().getMethod(methodName, paramClasses);
-                method.invoke(this, params);
-        }
-
-        /**
          * Build the package summary.
          */
         public void build() throws IOException {
@@ -121,8 +103,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the package documentation.
          */
-        public void buildPackageDoc(List<?> elements) throws Exception {
-                build(elements);
+        public void buildPackageDoc(XMLNode node) throws Exception {
+                buildChildren(node);
                 packageWriter.close();
                 Util.copyDocFiles(
                         configuration,
@@ -136,14 +118,14 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the header of the summary.
          */
-        public void buildPackageHeader() {
+        public void buildPackageHeader(XMLNode node) {
                 packageWriter.writePackageHeader(Util.getPackageName(packageDoc));
         }
 
         /**
          * Build the description of the summary.
          */
-        public void buildPackageDescription() {
+        public void buildPackageDescription(XMLNode node) {
                 if (configuration.nocomment) {
                         return;
                 }
@@ -153,7 +135,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the tags of the summary.
          */
-        public void buildPackageTags() {
+        public void buildPackageTags(XMLNode node) {
                 if (configuration.nocomment) {
                         return;
                 }
@@ -163,28 +145,28 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the package summary.
          */
-        public void buildSummary(List<?> elements) {
-                build(elements);
+        public void buildSummary(XMLNode node) {
+                buildChildren(node);
         }
 
         /**
          * Build the overall header.
          */
-        public void buildSummaryHeader() {
+        public void buildSummaryHeader(XMLNode node) {
                 packageWriter.writeSummaryHeader();
         }
 
         /**
          * Build the overall footer.
          */
-        public void buildSummaryFooter() {
+        public void buildSummaryFooter(XMLNode node) {
                 packageWriter.writeSummaryFooter();
         }
 
         /**
          * Build the summary for the classes in this package.
          */
-        public void buildClassSummary() {
+        public void buildClassSummary(XMLNode node) {
             String classTableSummary =
                     configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Class_Summary"),
@@ -209,7 +191,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the summary for the interfaces in this package.
          */
-        public void buildInterfaceSummary() {
+        public void buildInterfaceSummary(XMLNode node) {
             String interfaceTableSummary =
                     configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Interface_Summary"),
@@ -234,7 +216,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the summary for the enums in this package.
          */
-        public void buildAnnotationTypeSummary() {
+        public void buildAnnotationTypeSummary(XMLNode node) {
             String annotationtypeTableSummary =
                     configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Annotation_Types_Summary"),
@@ -259,7 +241,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the summary for the enums in this package.
          */
-        public void buildEnumSummary() {
+        public void buildEnumSummary(XMLNode node) {
             String enumTableSummary =
                     configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Enum_Summary"),
@@ -284,7 +266,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the summary for the exceptions in this package.
          */
-        public void buildExceptionSummary() {
+        public void buildExceptionSummary(XMLNode node) {
             String exceptionTableSummary =
                     configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Exception_Summary"),
@@ -309,7 +291,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the summary for the errors in this package.
          */
-        public void buildErrorSummary() {
+        public void buildErrorSummary(XMLNode node) {
             String errorTableSummary =
                     configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Error_Summary"),
@@ -334,7 +316,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the footer of the summary.
          */
-        public void buildPackageFooter() {
+        public void buildPackageFooter(XMLNode node) {
                 packageWriter.writePackageFooter();
         }
 }
