@@ -301,20 +301,6 @@ barrierSet.hpp                          oopsHierarchy.hpp
 barrierSet.inline.hpp                   barrierSet.hpp
 barrierSet.inline.hpp                   cardTableModRefBS.hpp
 
-bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
-bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
-bcEscapeAnalyzer.cpp                    bytecode.hpp
-bcEscapeAnalyzer.cpp                    ciConstant.hpp
-bcEscapeAnalyzer.cpp                    ciField.hpp
-bcEscapeAnalyzer.cpp                    ciMethodBlocks.hpp
-bcEscapeAnalyzer.cpp                    ciStreams.hpp
-
-bcEscapeAnalyzer.hpp                    allocation.hpp
-bcEscapeAnalyzer.hpp                    ciMethod.hpp
-bcEscapeAnalyzer.hpp                    ciMethodData.hpp
-bcEscapeAnalyzer.hpp                    dependencies.hpp
-bcEscapeAnalyzer.hpp                    growableArray.hpp
-
 biasedLocking.cpp                       biasedLocking.hpp
 biasedLocking.cpp                       klass.inline.hpp
 biasedLocking.cpp                       markOop.hpp
@@ -665,7 +651,6 @@ ciKlassKlass.hpp                        ciSymbol.hpp
 
 ciMethod.cpp                            abstractCompiler.hpp
 ciMethod.cpp                            allocation.inline.hpp
-ciMethod.cpp                            bcEscapeAnalyzer.hpp
 ciMethod.cpp                            bitMap.inline.hpp
 ciMethod.cpp                            ciCallProfile.hpp
 ciMethod.cpp                            ciExceptionHandler.hpp
