@@ -480,6 +480,7 @@ class Parse : public GraphKit {
   bool push_constant(ciConstant con, bool require_constant = false);
 
   // implementation of object creation bytecodes
+  void emit_guard_for_new(ciInstanceKlass* klass);
   void do_new();
   void do_newarray(BasicType elemtype);
   void do_anewarray();

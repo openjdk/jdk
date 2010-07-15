@@ -2541,9 +2541,6 @@ class CommandLineFlags {
           "Enable String cache capabilities on String.java")                \
                                                                             \
   /* statistics */                                                          \
-  develop(bool, UseVTune, false,                                            \
-          "enable support for Intel's VTune profiler")                      \
-                                                                            \
   develop(bool, CountCompiledCalls, false,                                  \
           "counts method invocations")                                      \
                                                                             \
