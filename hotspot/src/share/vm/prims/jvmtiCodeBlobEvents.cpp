@@ -118,7 +118,6 @@ void CodeBlobCollector::do_blob(CodeBlob* cb) {
   for (int i=0; i<_global_code_blobs->length(); i++) {
     JvmtiCodeBlobDesc* scb = _global_code_blobs->at(i);
     if (addr == scb->code_begin()) {
-      ShouldNotReachHere();
       return;
     }
   }
@@ -206,11 +205,11 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   nmethod* current = CodeCache::first_nmethod();
   while (current != NULL) {
-    // Lock the nmethod so it can't be freed
-    nmethodLocker nml(current);
-
     // Only notify for live nmethods
     if (current->is_alive()) {
+      // Lock the nmethod so it can't be freed
+      nmethodLocker nml(current);
+
       // Don't hold the lock over the notify or jmethodID creation
       MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       current->get_and_cache_jmethod_id();
