@@ -1853,6 +1853,7 @@ public class Check {
                     types.isSameType(types.erasure(sym.type), types.erasure(e.sym.type)) &&
                     sym != e.sym &&
                     (sym.flags() & Flags.SYNTHETIC) != (e.sym.flags() & Flags.SYNTHETIC) &&
+                    (sym.flags() & IPROXY) == 0 && (e.sym.flags() & IPROXY) == 0 &&
                     (sym.flags() & BRIDGE) == 0 && (e.sym.flags() & BRIDGE) == 0) {
                     syntheticError(pos, (e.sym.flags() & SYNTHETIC) == 0 ? e.sym : sym);
                     return;
