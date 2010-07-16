@@ -2507,6 +2507,10 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
                                                 int caller_bci,
                                                 TRAPS) {
   Handle empty;
+  guarantee(bootstrap_method.not_null() &&
+            java_dyn_MethodHandle::is_instance(bootstrap_method()),
+            "caller must supply a valid BSM");
+
   Handle caller_mname = MethodHandles::new_MemberName(CHECK_(empty));
   MethodHandles::init_MemberName(caller_mname(), caller_method());
 
@@ -2537,20 +2541,61 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
   return call_site_oop;
 }
 
-Handle SystemDictionary::find_bootstrap_method(KlassHandle caller, TRAPS) {
+Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int caller_bci,
+                                               int cache_index, TRAPS) {
   Handle empty;
-  if (!caller->oop_is_instance())  return empty;
 
-  instanceKlassHandle ik(THREAD, caller());
+  constantPoolHandle pool;
+  {
+    klassOop caller = caller_method->method_holder();
+    if (!Klass::cast(caller)->oop_is_instance())  return empty;
+    pool = constantPoolHandle(THREAD, instanceKlass::cast(caller)->constants());
+  }
 
-  oop boot_method_oop = ik->bootstrap_method();
-  if (boot_method_oop != NULL) {
-    if (TraceMethodHandles) {
-      tty->print_cr("bootstrap method for "PTR_FORMAT" cached as "PTR_FORMAT":", ik(), boot_method_oop);
+  int constant_pool_index = pool->cache()->entry_at(cache_index)->constant_pool_index();
+  constantTag tag = pool->tag_at(constant_pool_index);
+
+  if (tag.is_invoke_dynamic()) {
+    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type]
+    // The bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
+    int bsm_index = pool->invoke_dynamic_bootstrap_method_ref_index_at(constant_pool_index);
+    if (bsm_index != 0) {
+      int bsm_index_in_cache = pool->cache()->entry_at(cache_index)->bootstrap_method_index_in_cache();
+      DEBUG_ONLY(int bsm_index_2 = pool->cache()->entry_at(bsm_index_in_cache)->constant_pool_index());
+      assert(bsm_index == bsm_index_2, "BSM constant lifted to cache");
+      if (TraceMethodHandles) {
+        tty->print_cr("resolving bootstrap method for "PTR_FORMAT" at %d at cache[%d]CP[%d]...",
+                      (intptr_t) caller_method(), caller_bci, cache_index, constant_pool_index);
+      }
+      oop bsm_oop = pool->resolve_cached_constant_at(bsm_index_in_cache, CHECK_(empty));
+      if (TraceMethodHandles) {
+        tty->print_cr("bootstrap method for "PTR_FORMAT" at %d retrieved as "PTR_FORMAT":",
+                      (intptr_t) caller_method(), caller_bci, (intptr_t) bsm_oop);
+      }
+      assert(bsm_oop->is_oop()
+             && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
+      return Handle(THREAD, bsm_oop);
     }
-    assert(boot_method_oop->is_oop()
-           && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
-    return Handle(THREAD, boot_method_oop);
+    // else null BSM; fall through
+  } else if (tag.is_name_and_type()) {
+    // JSR 292 EDR does not have JVM_CONSTANT_InvokeDynamic
+    // a bare name&type defaults its BSM to null, so fall through...
+  } else {
+    ShouldNotReachHere();  // verifier does not allow this
+  }
+
+  // Fall through to pick up the per-class bootstrap method.
+  // This mechanism may go away in the PFD.
+  assert(AllowTransitionalJSR292, "else the verifier should have stopped us already");
+  oop bsm_oop = instanceKlass::cast(caller_method->method_holder())->bootstrap_method();
+  if (bsm_oop != NULL) {
+    if (TraceMethodHandles) {
+      tty->print_cr("bootstrap method for "PTR_FORMAT" registered as "PTR_FORMAT":",
+                    (intptr_t) caller_method(), (intptr_t) bsm_oop);
+    }
+    assert(bsm_oop->is_oop()
+           && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
+    return Handle(THREAD, bsm_oop);
   }
 
   return empty;
