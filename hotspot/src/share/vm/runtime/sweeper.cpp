@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
 
 long      NMethodSweeper::_traversals = 0;   // No. of stack traversals performed
 nmethod*  NMethodSweeper::_current = NULL;   // Current nmethod
-int       NMethodSweeper::_seen = 0 ;        // No. of blobs we have currently processed in current pass of CodeCache
-int       NMethodSweeper::_invocations = 0;  // No. of invocations left until we are completed with this pass
+int       NMethodSweeper::_seen = 0 ;        // No. of nmethods we have currently processed in current pass of CodeCache
+
+volatile int NMethodSweeper::_invocations = 0;   // No. of invocations left until we are completed with this pass
+volatile int NMethodSweeper::_sweep_started = 0; // Whether a sweep is in progress.
 
 jint      NMethodSweeper::_locked_seen = 0;
 jint      NMethodSweeper::_not_entrant_seen_on_stack = 0;
 bool      NMethodSweeper::_rescan = false;
 bool      NMethodSweeper::_do_sweep = false;
-jint      NMethodSweeper::_sweep_started = 0;
 bool      NMethodSweeper::_was_full = false;
 jint      NMethodSweeper::_advise_to_sweep = 0;
 jlong     NMethodSweeper::_last_was_full = 0;
@@ -108,23 +109,14 @@ void NMethodSweeper::scan_stacks() {
         // code cache is filling up
         _last_was_full = os::javaTimeMillis();
 
-        if (PrintMethodFlushing) {
-          tty->print_cr("### sweeper: Live blobs:" UINT32_FORMAT "/Free code cache:" SIZE_FORMAT " bytes, restarting compiler",
-            CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-        }
-        if (LogCompilation && (xtty != NULL)) {
-          ttyLocker ttyl;
-          xtty->begin_elem("restart_compiler live_blobs='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
-                           CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-          xtty->stamp();
-          xtty->end_elem();
-        }
+        log_sweep("restart_compiler");
       }
     }
   }
 }
 
 void NMethodSweeper::possibly_sweep() {
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "must run in vm mode");
   if ((!MethodFlushing) || (!_do_sweep)) return;
 
   if (_invocations > 0) {
@@ -133,32 +125,31 @@ void NMethodSweeper::possibly_sweep() {
     if (old != 0) {
       return;
     }
-    sweep_code_cache();
+    if (_invocations > 0) {
+      sweep_code_cache();
+      _invocations--;
+    }
+    _sweep_started = 0;
   }
-  _sweep_started = 0;
 }
 
 void NMethodSweeper::sweep_code_cache() {
 #ifdef ASSERT
   jlong sweep_start;
-  if(PrintMethodFlushing) {
+  if (PrintMethodFlushing) {
     sweep_start = os::javaTimeMillis();
   }
 #endif
   if (PrintMethodFlushing && Verbose) {
-    tty->print_cr("### Sweep at %d out of %d. Invocations left: %d", _seen, CodeCache::nof_blobs(), _invocations);
+    tty->print_cr("### Sweep at %d out of %d. Invocations left: %d", _seen, CodeCache::nof_nmethods(), _invocations);
   }
 
-  // We want to visit all nmethods after NmethodSweepFraction invocations.
-  // If invocation is 1 we do the rest
-  int todo = CodeCache::nof_blobs();
-  if (_invocations > 1) {
-    todo = (CodeCache::nof_blobs() - _seen) / _invocations;
-  }
-
-  // Compilers may check to sweep more often than stack scans happen,
-  // don't keep trying once it is all scanned
-  _invocations--;
+  // We want to visit all nmethods after NmethodSweepFraction
+  // invocations so divide the remaining number of nmethods by the
+  // remaining number of invocations.  This is only an estimate since
+  // the number of nmethods changes during the sweep so the final
+  // stage must iterate until it there are no more nmethods.
+  int todo = (CodeCache::nof_nmethods() - _seen) / _invocations;
 
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be in safepoint when we get here");
   assert(!CodeCache_lock->owned_by_self(), "just checking");
@@ -166,11 +157,12 @@ void NMethodSweeper::sweep_code_cache() {
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    for(int i = 0; i < todo && _current != NULL; i++) {
+    // The last invocation iterates until there are no more nmethods
+    for (int i = 0; (i < todo || _invocations == 1) && _current != NULL; i++) {
 
-      // Since we will give up the CodeCache_lock, always skip ahead to an nmethod.
-      // Other blobs can be deleted by other threads
-      // Read next before we potentially delete current
+      // Since we will give up the CodeCache_lock, always skip ahead
+      // to the next nmethod.  Other blobs can be deleted by other
+      // threads but nmethods are only reclaimed by the sweeper.
       nmethod* next = CodeCache::next_nmethod(_current);
 
       // Now ready to process nmethod and give up CodeCache_lock
@@ -182,6 +174,8 @@ void NMethodSweeper::sweep_code_cache() {
       _current = next;
     }
   }
+
+  assert(_invocations > 1 || _current == NULL, "must have scanned the whole cache");
 
   if (_current == NULL && !_rescan && (_locked_seen || _not_entrant_seen_on_stack)) {
     // we've completed a scan without making progress but there were
@@ -201,6 +195,10 @@ void NMethodSweeper::sweep_code_cache() {
     tty->print_cr("### sweeper:      sweep time(%d): " INT64_FORMAT, _invocations, sweep_end - sweep_start);
   }
 #endif
+
+  if (_invocations == 1) {
+    log_sweep("finished");
+  }
 }
 
 
@@ -223,7 +221,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
   if (nm->is_zombie()) {
     // If it is first time, we see nmethod then we mark it. Otherwise,
     // we reclame it. When we have seen a zombie method twice, we know that
-    // there are no inline caches that referes to it.
+    // there are no inline caches that refer to it.
     if (nm->is_marked_for_reclamation()) {
       assert(!nm->is_locked_by_vm(), "must not flush locked nmethods");
       if (PrintMethodFlushing && Verbose) {
@@ -320,16 +318,8 @@ void NMethodSweeper::handle_full_code_cache(bool is_full) {
     jlong curr_interval = now - _last_was_full;
     if (curr_interval < max_interval) {
       _rescan = true;
-      if (PrintMethodFlushing) {
-        tty->print_cr("### handle full too often, turning off compiler");
-      }
-      if (LogCompilation && (xtty != NULL)) {
-        ttyLocker ttyl;
-        xtty->begin_elem("disable_compiler flushing_interval='" UINT64_FORMAT "' live_blobs='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
-                         curr_interval/1000, CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-        xtty->stamp();
-        xtty->end_elem();
-      }
+      log_sweep("disable_compiler", "flushing_interval='" UINT64_FORMAT "'",
+                           curr_interval/1000);
       return;
     }
   }
@@ -349,17 +339,7 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
 
   if ((!was_full()) && (is_full)) {
     if (!CodeCache::needs_flushing()) {
-      if (PrintMethodFlushing) {
-        tty->print_cr("### sweeper: Live blobs:" UINT32_FORMAT "/Free code cache:" SIZE_FORMAT " bytes, restarting compiler",
-          CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-      }
-      if (LogCompilation && (xtty != NULL)) {
-        ttyLocker ttyl;
-        xtty->begin_elem("restart_compiler live_blobs='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
-                         CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-        xtty->stamp();
-        xtty->end_elem();
-      }
+      log_sweep("restart_compiler");
       CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
       return;
     }
@@ -368,17 +348,7 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
   // Traverse the code cache trying to dump the oldest nmethods
   uint curr_max_comp_id = CompileBroker::get_compilation_id();
   uint flush_target = ((curr_max_comp_id - _highest_marked) >> 1) + _highest_marked;
-  if (PrintMethodFlushing && Verbose) {
-    tty->print_cr("### Cleaning code cache: Live blobs:" UINT32_FORMAT "/Free code cache:" SIZE_FORMAT " bytes",
-        CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-  }
-  if (LogCompilation && (xtty != NULL)) {
-    ttyLocker ttyl;
-    xtty->begin_elem("start_cleaning_code_cache live_blobs='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
-                      CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-    xtty->stamp();
-    xtty->end_elem();
-  }
+  log_sweep("start_cleaning");
 
   nmethod* nm = CodeCache::alive_nmethod(CodeCache::first());
   jint disconnected = 0;
@@ -411,13 +381,9 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
     nm = CodeCache::alive_nmethod(CodeCache::next(nm));
   }
 
-  if (LogCompilation && (xtty != NULL)) {
-    ttyLocker ttyl;
-    xtty->begin_elem("stop_cleaning_code_cache disconnected='" UINT32_FORMAT "' made_not_entrant='" UINT32_FORMAT "' live_blobs='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
-                      disconnected, made_not_entrant, CodeCache::nof_blobs(), CodeCache::unallocated_capacity());
-    xtty->stamp();
-    xtty->end_elem();
-  }
+  log_sweep("stop_cleaning",
+                       "disconnected='" UINT32_FORMAT "' made_not_entrant='" UINT32_FORMAT "'",
+                       disconnected, made_not_entrant);
 
   // Shut off compiler. Sweeper will start over with a new stack scan and
   // traversal cycle and turn it back on if it clears enough space.
@@ -434,4 +400,39 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
     tty->print_cr("### sweeper: unload time: " INT64_FORMAT, end-start);
   }
 #endif
+}
+
+
+// Print out some state information about the current sweep and the
+// state of the code cache if it's requested.
+void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
+  if (PrintMethodFlushing) {
+    ttyLocker ttyl;
+    tty->print("### sweeper: %s ", msg);
+    if (format != NULL) {
+      va_list ap;
+      va_start(ap, format);
+      tty->vprint(format, ap);
+      va_end(ap);
+    }
+    tty->print_cr(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
+                  " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
+                  CodeCache::nof_blobs(), CodeCache::nof_nmethods(), CodeCache::nof_adapters(), CodeCache::unallocated_capacity());
+  }
+
+  if (LogCompilation && (xtty != NULL)) {
+    ttyLocker ttyl;
+    xtty->begin_elem("sweeper state='%s' traversals='" INTX_FORMAT "' ", msg, (intx)traversal_count());
+    if (format != NULL) {
+      va_list ap;
+      va_start(ap, format);
+      xtty->vprint(format, ap);
+      va_end(ap);
+    }
+    xtty->print(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
+                " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
+                CodeCache::nof_blobs(), CodeCache::nof_nmethods(), CodeCache::nof_adapters(), CodeCache::unallocated_capacity());
+    xtty->stamp();
+    xtty->end_elem();
+  }
 }

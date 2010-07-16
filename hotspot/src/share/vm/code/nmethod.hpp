@@ -78,29 +78,8 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
 
 
 // nmethods (native methods) are the compiled code versions of Java methods.
-
-struct nmFlags {
-  friend class VMStructs;
-  unsigned int version:8;                    // version number (0 = first version)
-  unsigned int age:4;                        // age (in # of sweep steps)
-
-  unsigned int state:2;                      // {alive, zombie, unloaded)
-
-  unsigned int isUncommonRecompiled:1;       // recompiled because of uncommon trap?
-  unsigned int isToBeRecompiled:1;           // to be recompiled as soon as it matures
-  unsigned int hasFlushedDependencies:1;     // Used for maintenance of dependencies
-  unsigned int markedForReclamation:1;       // Used by NMethodSweeper
-
-  unsigned int has_unsafe_access:1;          // May fault due to unsafe access.
-  unsigned int has_method_handle_invokes:1;  // Has this method MethodHandle invokes?
-
-  unsigned int speculatively_disconnected:1; // Marked for potential unload
-
-  void clear();
-};
-
-
-// A nmethod contains:
+//
+// An nmethod contains:
 //  - header                 (the nmethod structure)
 //  [Relocation]
 //  - relocation information
@@ -131,8 +110,6 @@ class nmethod : public CodeBlob {
   friend class CodeCache;  // non-perm oops
  private:
   // Shared fields for all nmethod's
-  static int _zombie_instruction_size;
-
   methodOop _method;
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
   jmethodID _jmethod_id;       // Cache of method()->jmethod_id()
@@ -146,6 +123,11 @@ class nmethod : public CodeBlob {
   nmethod*        volatile _oops_do_mark_link;
 
   AbstractCompiler* _compiler; // The compiler which compiled this nmethod
+
+  // offsets for entry points
+  address _entry_point;                      // entry point with class check
+  address _verified_entry_point;             // entry point without class check
+  address _osr_entry_point;                  // entry point for on stack replacement
 
   // Offsets for different nmethod parts
   int _exception_offset;
@@ -175,23 +157,31 @@ class nmethod : public CodeBlob {
   // pc during a deopt.
   int _orig_pc_offset;
 
-  int _compile_id;                     // which compilation made this nmethod
-  int _comp_level;                     // compilation level
+  int _compile_id;                           // which compilation made this nmethod
+  int _comp_level;                           // compilation level
 
-  // offsets for entry points
-  address _entry_point;                // entry point with class check
-  address _verified_entry_point;       // entry point without class check
-  address _osr_entry_point;            // entry point for on stack replacement
+  // protected by CodeCache_lock
+  bool _has_flushed_dependencies;            // Used for maintenance of dependencies (CodeCache_lock)
+  bool _speculatively_disconnected;          // Marked for potential unload
 
-  nmFlags flags;           // various flags to keep track of nmethod state
-  bool _markedForDeoptimization;       // Used for stack deoptimization
+  bool _marked_for_reclamation;              // Used by NMethodSweeper (set only by sweeper)
+  bool _marked_for_deoptimization;           // Used for stack deoptimization
+
+  // used by jvmti to track if an unload event has been posted for this nmethod.
+  bool _unload_reported;
+
+  // set during construction
+  unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
+  unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
+
+  // Protected by Patching_lock
+  unsigned char _state;                      // {alive, not_entrant, zombie, unloaded)
+
   enum { alive        = 0,
          not_entrant  = 1, // uncommon trap has happened but activations may still exist
          zombie       = 2,
          unloaded     = 3 };
 
-  // used by jvmti to track if an unload event has been posted for this nmethod.
-  bool _unload_reported;
 
   jbyte _scavenge_root_state;
 
@@ -270,15 +260,15 @@ class nmethod : public CodeBlob {
   bool make_not_entrant_or_zombie(unsigned int state);
   void inc_decompile_count();
 
-  // used to check that writes to nmFlags are done consistently.
-  static void check_safepoint() PRODUCT_RETURN;
-
   // Used to manipulate the exception cache
   void add_exception_cache_entry(ExceptionCache* new_entry);
   ExceptionCache* exception_cache_entry_for_exception(Handle exception);
 
   // Inform external interfaces that a compiled method has been unloaded
-  inline void post_compiled_method_unload();
+  void post_compiled_method_unload();
+
+  // Initailize fields to their default values
+  void init_defaults();
 
  public:
   // create nmethod with entry_bci
@@ -393,11 +383,11 @@ class nmethod : public CodeBlob {
   address verified_entry_point() const            { return _verified_entry_point;    } // if klass is correct
 
   // flag accessing and manipulation
-  bool  is_in_use() const                         { return flags.state == alive; }
-  bool  is_alive() const                          { return flags.state == alive || flags.state == not_entrant; }
-  bool  is_not_entrant() const                    { return flags.state == not_entrant; }
-  bool  is_zombie() const                         { return flags.state == zombie; }
-  bool  is_unloaded() const                       { return flags.state == unloaded;   }
+  bool  is_in_use() const                         { return _state == alive; }
+  bool  is_alive() const                          { return _state == alive || _state == not_entrant; }
+  bool  is_not_entrant() const                    { return _state == not_entrant; }
+  bool  is_zombie() const                         { return _state == zombie; }
+  bool  is_unloaded() const                       { return _state == unloaded;   }
 
   // Make the nmethod non entrant. The nmethod will continue to be
   // alive.  It is used when an uncommon trap happens.  Returns true
@@ -410,36 +400,32 @@ class nmethod : public CodeBlob {
   bool  unload_reported()                         { return _unload_reported; }
   void  set_unload_reported()                     { _unload_reported = true; }
 
-  bool  is_marked_for_deoptimization() const      { return _markedForDeoptimization; }
-  void  mark_for_deoptimization()                 { _markedForDeoptimization = true; }
+  bool  is_marked_for_deoptimization() const      { return _marked_for_deoptimization; }
+  void  mark_for_deoptimization()                 { _marked_for_deoptimization = true; }
 
   void  make_unloaded(BoolObjectClosure* is_alive, oop cause);
 
   bool has_dependencies()                         { return dependencies_size() != 0; }
   void flush_dependencies(BoolObjectClosure* is_alive);
-  bool  has_flushed_dependencies()                { return flags.hasFlushedDependencies; }
-  void  set_has_flushed_dependencies()            {
+  bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
+  void set_has_flushed_dependencies()             {
     assert(!has_flushed_dependencies(), "should only happen once");
-    flags.hasFlushedDependencies = 1;
+    _has_flushed_dependencies = 1;
   }
 
-  bool  is_marked_for_reclamation() const         { return flags.markedForReclamation; }
-  void  mark_for_reclamation()                    { flags.markedForReclamation = 1; }
-  void  unmark_for_reclamation()                  { flags.markedForReclamation = 0; }
+  bool  is_marked_for_reclamation() const         { return _marked_for_reclamation; }
+  void  mark_for_reclamation()                    { _marked_for_reclamation = 1; }
 
-  bool  has_unsafe_access() const                 { return flags.has_unsafe_access; }
-  void  set_has_unsafe_access(bool z)             { flags.has_unsafe_access = z; }
+  bool  has_unsafe_access() const                 { return _has_unsafe_access; }
+  void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
 
-  bool  has_method_handle_invokes() const         { return flags.has_method_handle_invokes; }
-  void  set_has_method_handle_invokes(bool z)     { flags.has_method_handle_invokes = z; }
+  bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
+  void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
 
-  bool  is_speculatively_disconnected() const     { return flags.speculatively_disconnected; }
-  void  set_speculatively_disconnected(bool z)     { flags.speculatively_disconnected = z; }
+  bool  is_speculatively_disconnected() const     { return _speculatively_disconnected; }
+  void  set_speculatively_disconnected(bool z)     { _speculatively_disconnected = z; }
 
   int   comp_level() const                        { return _comp_level; }
-
-  int   version() const                           { return flags.version; }
-  void  set_version(int v);
 
   // Support for oops in scopes and relocs:
   // Note: index 0 is reserved for null.
