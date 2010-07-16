@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6214234
+ * @bug 6214234 6967937
  * @summary IPv6 scope_id for local addresses not set in Solaris 10
  */
 
@@ -51,6 +51,7 @@ public class B6214234 {
             return;
         }
         if (addr.getScopeId() == 0) {
+            System.out.println("addr: "+ addr);
             throw new RuntimeException ("Non zero scope_id expected");
         }
     }
