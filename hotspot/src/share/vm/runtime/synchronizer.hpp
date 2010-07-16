@@ -122,8 +122,9 @@ class ObjectSynchronizer : AllStatic {
   static void reenter            (Handle obj, intptr_t recursion, TRAPS);
 
   // thread-specific and global objectMonitor free list accessors
+//  static void verifyInUse (Thread * Self) ; too slow for general assert/debug
   static ObjectMonitor * omAlloc (Thread * Self) ;
-  static void omRelease (Thread * Self, ObjectMonitor * m) ;
+  static void omRelease (Thread * Self, ObjectMonitor * m, bool FromPerThreadAlloc) ;
   static void omFlush   (Thread * Self) ;
 
   // Inflate light weight monitor to heavy weight monitor
@@ -150,6 +151,9 @@ class ObjectSynchronizer : AllStatic {
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
   static void deflate_idle_monitors();
+  static int walk_monitor_list(ObjectMonitor** listheadp,
+                               ObjectMonitor** FreeHeadp,
+                               ObjectMonitor** FreeTailp);
   static bool deflate_monitor(ObjectMonitor* mid, oop obj, ObjectMonitor** FreeHeadp,
                               ObjectMonitor** FreeTailp);
   static void oops_do(OopClosure* f);
@@ -163,6 +167,8 @@ class ObjectSynchronizer : AllStatic {
   enum { _BLOCKSIZE = 128 };
   static ObjectMonitor* gBlockList;
   static ObjectMonitor * volatile gFreeList;
+  static ObjectMonitor * volatile gOmInUseList; // for moribund thread, so monitors they inflated still get scanned
+  static int gOmInUseCount;
 
  public:
   static void Initialize () ;
