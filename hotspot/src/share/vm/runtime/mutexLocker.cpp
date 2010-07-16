@@ -159,6 +159,8 @@ void mutex_init() {
   def(STS_init_lock              , Mutex,   leaf,        true );
   if (UseConcMarkSweepGC) {
     def(iCMS_lock                  , Monitor, special,     true ); // CMS incremental mode start/stop notification
+  }
+  if (UseConcMarkSweepGC || UseG1GC) {
     def(FullGCCount_lock           , Monitor, leaf,        true ); // in support of ExplicitGCInvokesConcurrent
   }
   if (UseG1GC) {
