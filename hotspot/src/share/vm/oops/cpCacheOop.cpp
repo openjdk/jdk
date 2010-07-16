@@ -134,7 +134,7 @@ int  ConstantPoolCacheEntry::field_index() const {
 void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
                                         methodHandle method,
                                         int vtable_index) {
-
+  assert(!is_secondary_entry(), "");
   assert(method->interpreter_entry() != NULL, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
   bool change_to_virtual = (invoke_code == Bytecodes::_invokeinterface);
@@ -142,7 +142,6 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
   int byte_no = -1;
   bool needs_vfinal_flag = false;
   switch (invoke_code) {
-    case Bytecodes::_invokedynamic:
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokeinterface: {
         if (method->can_be_statically_bound()) {
@@ -155,6 +154,23 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
         byte_no = 2;
         break;
     }
+
+    case Bytecodes::_invokedynamic:  // similar to _invokevirtual
+      if (TraceInvokeDynamic) {
+        tty->print_cr("InvokeDynamic set_method%s method="PTR_FORMAT" index=%d",
+                      (is_secondary_entry() ? " secondary" : ""),
+                      (intptr_t)method(), vtable_index);
+        method->print();
+        this->print(tty, 0);
+      }
+      assert(method->can_be_statically_bound(), "must be a MH invoker method");
+      assert(AllowTransitionalJSR292 || _f2 >= constantPoolOopDesc::CPCACHE_INDEX_TAG, "BSM index initialized");
+      set_f1(method());
+      needs_vfinal_flag = false;  // _f2 is not an oop
+      assert(!is_vfinal(), "f2 not an oop");
+      byte_no = 1;  // just a formality
+      break;
+
     case Bytecodes::_invokespecial:
       // Preserve the value of the vfinal flag on invokevirtual bytecode
       // which may be shared with this constant pool cache entry.
@@ -209,6 +225,7 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
 
 
 void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) {
+  assert(!is_secondary_entry(), "");
   klassOop interf = method->method_holder();
   assert(instanceKlass::cast(interf)->is_interface(), "must be an interface");
   set_f1(interf);
@@ -218,8 +235,23 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
 }
 
 
+void ConstantPoolCacheEntry::initialize_bootstrap_method_index_in_cache(int bsm_cache_index) {
+  assert(!is_secondary_entry(), "only for JVM_CONSTANT_InvokeDynamic main entry");
+  assert(_f2 == 0, "initialize once");
+  assert(bsm_cache_index == (int)(u2)bsm_cache_index, "oob");
+  set_f2(bsm_cache_index + constantPoolOopDesc::CPCACHE_INDEX_TAG);
+}
+
+int ConstantPoolCacheEntry::bootstrap_method_index_in_cache() {
+  assert(!is_secondary_entry(), "only for JVM_CONSTANT_InvokeDynamic main entry");
+  intptr_t bsm_cache_index = (intptr_t) _f2 - constantPoolOopDesc::CPCACHE_INDEX_TAG;
+  assert(bsm_cache_index == (intptr_t)(u2)bsm_cache_index, "oob");
+  return (int) bsm_cache_index;
+}
+
 void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site,
                                               methodHandle signature_invoker) {
+  assert(is_secondary_entry(), "");
   int param_size = signature_invoker->size_of_parameters();
   assert(param_size >= 1, "method argument size must include MH.this");
   param_size -= 1;              // do not count MH.this; it is not stacked for invokedynamic
@@ -227,7 +259,6 @@ void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site,
     // racing threads might be trying to install their own favorites
     set_f1(call_site());
   }
-  //set_f2(0);
   bool is_final = true;
   assert(signature_invoker->is_final_method(), "is_final");
   set_flags(as_flags(as_TosState(signature_invoker->result_type()), is_final, false, false, false, true) | param_size);
@@ -417,14 +448,14 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
   // print separator
   if (index == 0) tty->print_cr("                 -------------");
   // print entry
-  tty->print_cr("%3d  (%08x)  ", index, this);
+  tty->print("%3d  ("PTR_FORMAT")  ", index, (intptr_t)this);
   if (is_secondary_entry())
     tty->print_cr("[%5d|secondary]", main_entry_index());
   else
     tty->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(), constant_pool_index());
-  tty->print_cr("                 [   %08x]", (address)(oop)_f1);
-  tty->print_cr("                 [   %08x]", _f2);
-  tty->print_cr("                 [   %08x]", _flags);
+  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)(oop)_f1);
+  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f2);
+  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_flags);
   tty->print_cr("                 -------------");
 }
 
