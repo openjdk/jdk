@@ -154,7 +154,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _known_garbage_bytes(0),
 
   _young_gc_eff_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _target_pause_time_ms(-1.0),
 
    _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
 
@@ -1635,8 +1634,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
   // </NEW PREDICTION>
-
-  _target_pause_time_ms = -1.0;
 }
 
 // <NEW PREDICTION>
@@ -2366,7 +2363,6 @@ G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
     if (reached_target_length) {
       assert( young_list_length > 0 && _g1->young_list()->length() > 0,
               "invariant" );
-      _target_pause_time_ms = max_pause_time_ms;
       return true;
     }
   } else {
@@ -2397,6 +2393,17 @@ bool G1CollectorPolicy_BestRegionsFirst::assertMarkedBytesDataOK() {
   return true;
 }
 #endif
+
+bool
+G1CollectorPolicy::force_initial_mark_if_outside_cycle() {
+  bool during_cycle = _g1->concurrent_mark()->cmThread()->during_cycle();
+  if (!during_cycle) {
+    set_initiate_conc_mark_if_possible();
+    return true;
+  } else {
+    return false;
+  }
+}
 
 void
 G1CollectorPolicy::decide_on_conc_mark_initiation() {
@@ -2864,7 +2871,8 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
 #endif // !PRODUCT
 
 bool
-G1CollectorPolicy_BestRegionsFirst::choose_collection_set() {
+G1CollectorPolicy_BestRegionsFirst::choose_collection_set(
+                                                  double target_pause_time_ms) {
   // Set this here - in case we're not doing young collections.
   double non_young_start_time_sec = os::elapsedTime();
 
@@ -2877,26 +2885,19 @@ G1CollectorPolicy_BestRegionsFirst::choose_collection_set() {
 
   start_recording_regions();
 
-  guarantee(_target_pause_time_ms > -1.0
-            NOT_PRODUCT(|| Universe::heap()->gc_cause() == GCCause::_scavenge_alot),
-            "_target_pause_time_ms should have been set!");
-#ifndef PRODUCT
-  if (_target_pause_time_ms <= -1.0) {
-    assert(ScavengeALot && Universe::heap()->gc_cause() == GCCause::_scavenge_alot, "Error");
-    _target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-  }
-#endif
-  assert(_collection_set == NULL, "Precondition");
+  guarantee(target_pause_time_ms > 0.0,
+            err_msg("target_pause_time_ms = %1.6lf should be positive",
+                    target_pause_time_ms));
+  guarantee(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
   double predicted_pause_time_ms = base_time_ms;
 
-  double target_time_ms = _target_pause_time_ms;
-  double time_remaining_ms = target_time_ms - base_time_ms;
+  double time_remaining_ms = target_pause_time_ms - base_time_ms;
 
   // the 10% and 50% values are arbitrary...
-  if (time_remaining_ms < 0.10*target_time_ms) {
-    time_remaining_ms = 0.50 * target_time_ms;
+  if (time_remaining_ms < 0.10 * target_pause_time_ms) {
+    time_remaining_ms = 0.50 * target_pause_time_ms;
     _within_target = false;
   } else {
     _within_target = true;
@@ -3059,7 +3060,18 @@ choose_collection_set_end:
   _recorded_non_young_cset_choice_time_ms =
     (non_young_end_time_sec - non_young_start_time_sec) * 1000.0;
 
-  return abandon_collection;
+  // Here we are supposed to return whether the pause should be
+  // abandoned or not (i.e., whether the collection set is empty or
+  // not). However, this introduces a subtle issue when a pause is
+  // initiated explicitly with System.gc() and
+  // +ExplicitGCInvokesConcurrent (see Comment #2 in CR 6944166), it's
+  // supposed to start a marking cycle, and it's abandoned. So, by
+  // returning false here we are telling the caller never to consider
+  // a pause to be abandoned. We'll actually remove all the code
+  // associated with abandoned pauses as part of CR 6963209, but we are
+  // just disabling them this way for the moment to avoid increasing
+  // further the amount of changes for CR 6944166.
+  return false;
 }
 
 void G1CollectorPolicy_BestRegionsFirst::record_full_collection_end() {
