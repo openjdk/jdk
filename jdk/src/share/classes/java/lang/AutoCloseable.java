@@ -41,6 +41,13 @@ public interface AutoCloseable {
      * be declared to throw more specific exceptions (or no exception
      * at all, if the close cannot fail).
      *
+     * <p>Note that unlike the {@link java.io.Closeable#close close}
+     * method of {@link java.io.Closeable}, this {@code close} method
+     * is <em>not</em> required to be idempotent.  In other words,
+     * calling this {@code close} method more than once may have some
+     * visible side effect, unlike {@code Closeable.close} which is
+     * required to have no effect if called more than once.
+     *
      * @throws Exception if this resource cannot be closed
      */
     void close() throws Exception;
