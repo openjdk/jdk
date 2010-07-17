@@ -131,6 +131,7 @@ public class JavacParser implements Parser {
         this.allowForeach = source.allowForeach();
         this.allowStaticImport = source.allowStaticImport();
         this.allowAnnotations = source.allowAnnotations();
+        this.allowTWR = source.allowTryWithResources();
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
@@ -185,6 +186,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize type annotations?
      */
     boolean allowTypeAnnotations;
+
+    /** Switch: should we recognize automatic resource management?
+     */
+    boolean allowTWR;
 
     /** Switch: should we keep docComments?
      */
@@ -1846,6 +1851,7 @@ public class JavacParser implements Parser {
      *     | WHILE ParExpression Statement
      *     | DO Statement WHILE ParExpression ";"
      *     | TRY Block ( Catches | [Catches] FinallyPart )
+     *     | TRY "(" ResourceSpecification ")" Block [Catches] [FinallyPart]
      *     | SWITCH ParExpression "{" SwitchBlockStatementGroups "}"
      *     | SYNCHRONIZED ParExpression Block
      *     | RETURN [Expression] ";"
@@ -1916,6 +1922,13 @@ public class JavacParser implements Parser {
         }
         case TRY: {
             S.nextToken();
+            List<JCTree> resources = List.<JCTree>nil();
+            if (S.token() == LPAREN) {
+                checkAutomaticResourceManagement();
+                S.nextToken();
+                resources = resources();
+                accept(RPAREN);
+            }
             JCBlock body = block();
             ListBuffer<JCCatch> catchers = new ListBuffer<JCCatch>();
             JCBlock finalizer = null;
@@ -1926,9 +1939,13 @@ public class JavacParser implements Parser {
                     finalizer = block();
                 }
             } else {
-                log.error(pos, "try.without.catch.or.finally");
+                if (allowTWR) {
+                    if (resources.isEmpty())
+                        log.error(pos, "try.without.catch.finally.or.resource.decls");
+                } else
+                    log.error(pos, "try.without.catch.or.finally");
             }
-            return F.at(pos).Try(body, catchers.toList(), finalizer);
+            return F.at(pos).Try(resources, body, catchers.toList(), finalizer);
         }
         case SWITCH: {
             S.nextToken();
@@ -2387,6 +2404,39 @@ public class JavacParser implements Parser {
         if ((mods.flags & Flags.VARARGS) == 0)
             type = bracketsOpt(type);
         return toP(F.at(pos).VarDef(mods, name, type, null));
+    }
+
+    /** Resources = Resource { ";" Resources }
+     */
+    List<JCTree> resources() {
+        ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
+        defs.append(resource());
+        while (S.token() == SEMI) {
+            // All but last of multiple declarators subsume a semicolon
+            storeEnd(defs.elems.last(), S.endPos());
+            S.nextToken();
+            defs.append(resource());
+        }
+        return defs.toList();
+    }
+
+    /** Resource =
+     *    VariableModifiers Type VariableDeclaratorId = Expression
+     *  | Expression
+     */
+    JCTree resource() {
+        int pos = S.pos();
+        if (S.token() == FINAL || S.token() == MONKEYS_AT) {
+            return variableDeclaratorRest(pos, optFinal(0), parseType(),
+                                          ident(), true, null);
+        } else {
+            JCExpression t = term(EXPR | TYPE);
+            if ((lastmode & TYPE) != 0 && S.token() == IDENTIFIER)
+                return variableDeclaratorRest(pos, toP(F.at(pos).Modifiers(Flags.FINAL)), t,
+                                              ident(), true, null);
+            else
+                return t;
+        }
     }
 
     /** CompilationUnit = [ { "@" Annotation } PACKAGE Qualident ";"] {ImportDeclaration} {TypeDeclaration}
@@ -3220,6 +3270,12 @@ public class JavacParser implements Parser {
         if (!allowMulticatch) {
             log.error(S.pos(), "multicatch.not.supported.in.source", source.name);
             allowMulticatch = true;
-            }
+        }
+    }
+    void checkAutomaticResourceManagement() {
+        if (!allowTWR) {
+            log.error(S.pos(), "automatic.resource.management.not.supported.in.source", source.name);
+            allowTWR = true;
+        }
     }
 }

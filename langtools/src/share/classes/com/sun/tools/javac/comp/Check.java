@@ -393,6 +393,10 @@ public class Check {
      *  @param req        The type that was required.
      */
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
+        return checkType(pos, found, req, "incompatible.types");
+    }
+
+    Type checkType(DiagnosticPosition pos, Type found, Type req, String errKey) {
         if (req.tag == ERROR)
             return req;
         if (found.tag == FORALL)
@@ -411,7 +415,7 @@ public class Check {
             log.error(pos, "assignment.to.extends-bound", req);
             return types.createErrorType(found);
         }
-        return typeError(pos, diags.fragment("incompatible.types"), found, req);
+        return typeError(pos, diags.fragment(errKey), found, req);
     }
 
     /** Instantiate polymorphic type to some prototype, unless
