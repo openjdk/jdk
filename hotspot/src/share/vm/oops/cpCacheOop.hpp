@@ -211,6 +211,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
       case Bytecodes::_getfield        :    // fall through
       case Bytecodes::_invokespecial   :    // fall through
       case Bytecodes::_invokestatic    :    // fall through
+      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokeinterface : return 1;
       case Bytecodes::_putstatic       :    // fall through
       case Bytecodes::_putfield        :    // fall through
