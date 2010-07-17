@@ -993,12 +993,17 @@ public abstract class Symbol implements Element {
             return data == ElementKind.EXCEPTION_PARAMETER;
         }
 
+        public boolean isResourceVariable() {
+            return data == ElementKind.RESOURCE_VARIABLE;
+        }
+
         public Object getConstValue() {
             // TODO: Consider if getConstValue and getConstantValue can be collapsed
-            if (data == ElementKind.EXCEPTION_PARAMETER) {
+            if (data == ElementKind.EXCEPTION_PARAMETER ||
+                data == ElementKind.RESOURCE_VARIABLE) {
                 return null;
             } else if (data instanceof Callable<?>) {
-                // In this case, this is final a variable, with an as
+                // In this case, this is a final variable, with an as
                 // yet unevaluated initializer.
                 Callable<?> eval = (Callable<?>)data;
                 data = null; // to make sure we don't evaluate this twice.

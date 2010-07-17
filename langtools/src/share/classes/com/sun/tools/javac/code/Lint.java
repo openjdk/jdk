@@ -208,7 +208,12 @@ public class Lint
         /**
          * Warn about potentially unsafe vararg methods
          */
-        VARARGS("varargs");
+        VARARGS("varargs"),
+
+        /**
+         * Warn about arm resources
+         */
+        ARM("arm");
 
         LintCategory(String option) {
             this(option, false);

@@ -28,6 +28,8 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
@@ -264,6 +266,10 @@ public class Flow extends TreeScanner {
      *  thrown.
      */
     List<Type> caught;
+
+    /** The list of unreferenced automatic resources.
+     */
+    Map<VarSymbol, JCVariableDecl> unrefdResources;
 
     /** Set when processing a loop body the second time for DU analysis. */
     boolean loopPassTwo = false;
@@ -963,6 +969,7 @@ public class Flow extends TreeScanner {
     public void visitTry(JCTry tree) {
         List<Type> caughtPrev = caught;
         List<Type> thrownPrev = thrown;
+        Map<VarSymbol, JCVariableDecl> unrefdResourcesPrev = unrefdResources;
         thrown = List.nil();
         for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
             List<JCExpression> subClauses = TreeInfo.isMultiCatch(l.head) ?
@@ -977,6 +984,32 @@ public class Flow extends TreeScanner {
         pendingExits = new ListBuffer<PendingExit>();
         Bits initsTry = inits.dup();
         uninitsTry = uninits.dup();
+        unrefdResources = new LinkedHashMap<VarSymbol, JCVariableDecl>();
+        for (JCTree resource : tree.resources) {
+            if (resource instanceof JCVariableDecl) {
+                JCVariableDecl vdecl = (JCVariableDecl) resource;
+                visitVarDef(vdecl);
+                unrefdResources.put(vdecl.sym, vdecl);
+            } else if (resource instanceof JCExpression) {
+                scanExpr((JCExpression) resource);
+            } else {
+                throw new AssertionError(tree);  // parser error
+            }
+        }
+        for (JCTree resource : tree.resources) {
+            MethodSymbol topCloseMethod = (MethodSymbol)syms.autoCloseableType.tsym.members().lookup(names.close).sym;
+            List<Type> closeableSupertypes = resource.type.isCompound() ?
+                types.interfaces(resource.type).prepend(types.supertype(resource.type)) :
+                List.of(resource.type);
+            for (Type sup : closeableSupertypes) {
+                if (types.asSuper(sup, syms.autoCloseableType.tsym) != null) {
+                    MethodSymbol closeMethod = types.implementation(topCloseMethod, sup.tsym, types, true);
+                    for (Type t : closeMethod.getThrownTypes()) {
+                        markThrown(tree.body, t);
+                    }
+                }
+            }
+        }
         scanStat(tree.body);
         List<Type> thrownInTry = thrown;
         thrown = thrownPrev;
@@ -986,6 +1019,14 @@ public class Flow extends TreeScanner {
         Bits initsEnd = inits;
         Bits uninitsEnd = uninits;
         int nextadrCatch = nextadr;
+
+        if (!unrefdResources.isEmpty() &&
+                lint.isEnabled(Lint.LintCategory.ARM)) {
+            for (Map.Entry<VarSymbol, JCVariableDecl> e : unrefdResources.entrySet()) {
+                log.warning(e.getValue().pos(),
+                            "automatic.resource.not.referenced", e.getKey());
+            }
+        }
 
         List<Type> caughtInTry = List.nil();
         for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
@@ -1070,6 +1111,7 @@ public class Flow extends TreeScanner {
             while (exits.nonEmpty()) pendingExits.append(exits.next());
         }
         uninitsTry.andSet(uninitsTryPrev).andSet(uninits);
+        unrefdResources = unrefdResourcesPrev;
     }
 
     public void visitConditional(JCConditional tree) {
@@ -1293,8 +1335,16 @@ public class Flow extends TreeScanner {
     }
 
     public void visitIdent(JCIdent tree) {
-        if (tree.sym.kind == VAR)
+        if (tree.sym.kind == VAR) {
             checkInit(tree.pos(), (VarSymbol)tree.sym);
+            referenced(tree.sym);
+        }
+    }
+
+    void referenced(Symbol sym) {
+        if (unrefdResources != null && unrefdResources.containsKey(sym)) {
+            unrefdResources.remove(sym);
+        }
     }
 
     public void visitTypeCast(JCTypeCast tree) {
