@@ -168,7 +168,7 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
       set_f1(method());
       needs_vfinal_flag = false;  // _f2 is not an oop
       assert(!is_vfinal(), "f2 not an oop");
-      byte_no = 1;  // just a formality
+      byte_no = 1;  // coordinate this with bytecode_number & is_resolved
       break;
 
     case Bytecodes::_invokespecial:
