@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +21,28 @@
  * questions.
  */
 
-package com.sun.source.tree;
-
-import java.util.List;
-
-/**
- * A tree node for a 'try' statement.
- *
- * For example:
- * <pre>
- *   try
- *       <em>block</em>
- *   <em>catches</em>
- *   finally
- *       <em>finallyBlock</em>
- * </pre>
- *
- * @see "The Java Language Specification, 3rd ed, section 14.20"
- *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
- * @since 1.6
+/*
+ * @test
+ * @bug 6911256 6964740
+ * @author Joseph D. Darcy
+ * @summary Strange TWRs
+ * @compile/fail -source 6 WeirdTwr.java
+ * @compile WeirdTwr.java
+ * @run main WeirdTwr
  */
-public interface TryTree extends StatementTree {
-    BlockTree getBlock();
-    List<? extends CatchTree> getCatches();
-    BlockTree getFinallyBlock();
-    List<? extends Tree> getResources();
+
+public class WeirdTwr implements AutoCloseable {
+    private static int closeCount = 0;
+    public static void main(String... args) {
+        try(WeirdTwr r1 = new WeirdTwr(); WeirdTwr r2 = r1) {
+            if (r1 != r2)
+                throw new RuntimeException("Unexpected inequality.");
+        }
+        if (closeCount != 2)
+            throw new RuntimeException("bad closeCount" + closeCount);
+    }
+
+    public void close() {
+        closeCount++;
+    }
 }

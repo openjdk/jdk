@@ -192,7 +192,7 @@ public class Attr extends JCTree.Visitor {
     Type check(JCTree tree, Type owntype, int ownkind, int pkind, Type pt) {
         if (owntype.tag != ERROR && pt.tag != METHOD && pt.tag != FORALL) {
             if ((ownkind & ~pkind) == 0) {
-                owntype = chk.checkType(tree.pos(), owntype, pt);
+                owntype = chk.checkType(tree.pos(), owntype, pt, errKey);
             } else {
                 log.error(tree.pos(), "unexpected.type",
                           kindNames(pkind),
@@ -239,7 +239,11 @@ public class Attr extends JCTree.Visitor {
              !((base == null ||
                (base.getTag() == JCTree.IDENT && TreeInfo.name(base) == names._this)) &&
                isAssignableAsBlankFinal(v, env)))) {
-            log.error(pos, "cant.assign.val.to.final.var", v);
+            if (v.isResourceVariable()) { //TWR resource
+                log.error(pos, "twr.resource.may.not.be.assigned", v);
+            } else {
+                log.error(pos, "cant.assign.val.to.final.var", v);
+            }
         }
     }
 
@@ -372,6 +376,10 @@ public class Attr extends JCTree.Visitor {
      */
     Type pt;
 
+    /** Visitor argument: the error key to be generated when a type error occurs
+     */
+    String errKey;
+
     /** Visitor result: the computed type.
      */
     Type result;
@@ -385,13 +393,19 @@ public class Attr extends JCTree.Visitor {
      *  @param pt      The prototype visitor argument.
      */
     Type attribTree(JCTree tree, Env<AttrContext> env, int pkind, Type pt) {
+        return attribTree(tree, env, pkind, pt, "incompatible.types");
+    }
+
+    Type attribTree(JCTree tree, Env<AttrContext> env, int pkind, Type pt, String errKey) {
         Env<AttrContext> prevEnv = this.env;
         int prevPkind = this.pkind;
         Type prevPt = this.pt;
+        String prevErrKey = this.errKey;
         try {
             this.env = env;
             this.pkind = pkind;
             this.pt = pt;
+            this.errKey = errKey;
             tree.accept(this);
             if (tree == breakTree)
                 throw new BreakAttr(env);
@@ -403,6 +417,7 @@ public class Attr extends JCTree.Visitor {
             this.env = prevEnv;
             this.pkind = prevPkind;
             this.pt = prevPt;
+            this.errKey = prevErrKey;
         }
     }
 
@@ -410,6 +425,10 @@ public class Attr extends JCTree.Visitor {
      */
     public Type attribExpr(JCTree tree, Env<AttrContext> env, Type pt) {
         return attribTree(tree, env, VAL, pt.tag != ERROR ? pt : Type.noType);
+    }
+
+    public Type attribExpr(JCTree tree, Env<AttrContext> env, Type pt, String key) {
+        return attribTree(tree, env, VAL, pt.tag != ERROR ? pt : Type.noType, key);
     }
 
     /** Derived visitor method: attribute an expression tree with
@@ -976,14 +995,34 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitTry(JCTry tree) {
+        // Create a new local environment with a local
+        Env<AttrContext> localEnv = env.dup(tree, env.info.dup(env.info.scope.dup()));
+        boolean isTryWithResource = tree.resources.nonEmpty();
+        // Create a nested environment for attributing the try block if needed
+        Env<AttrContext> tryEnv = isTryWithResource ?
+            env.dup(tree, localEnv.info.dup(localEnv.info.scope.dup())) :
+            localEnv;
+        // Attribute resource declarations
+        for (JCTree resource : tree.resources) {
+            if (resource.getTag() == JCTree.VARDEF) {
+                attribStat(resource, tryEnv);
+                chk.checkType(resource, resource.type, syms.autoCloseableType, "twr.not.applicable.to.type");
+                VarSymbol var = (VarSymbol)TreeInfo.symbolFor(resource);
+                var.setData(ElementKind.RESOURCE_VARIABLE);
+            } else {
+                attribExpr(resource, tryEnv, syms.autoCloseableType, "twr.not.applicable.to.type");
+            }
+        }
         // Attribute body
-        attribStat(tree.body, env.dup(tree, env.info.dup()));
+        attribStat(tree.body, tryEnv);
+        if (isTryWithResource)
+            tryEnv.info.scope.leave();
 
         // Attribute catch clauses
         for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
             JCCatch c = l.head;
             Env<AttrContext> catchEnv =
-                env.dup(c, env.info.dup(env.info.scope.dup()));
+                localEnv.dup(c, localEnv.info.dup(localEnv.info.scope.dup()));
             Type ctype = attribStat(c.param, catchEnv);
             if (TreeInfo.isMultiCatch(c)) {
                 //check that multi-catch parameter is marked as final
@@ -1003,7 +1042,9 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Attribute finalizer
-        if (tree.finalizer != null) attribStat(tree.finalizer, env);
+        if (tree.finalizer != null) attribStat(tree.finalizer, localEnv);
+
+        localEnv.info.scope.leave();
         result = null;
     }
 
@@ -2137,6 +2178,15 @@ public class Attr extends JCTree.Visitor {
             // that the variable is assignable in the current environment.
             if (pkind == VAR)
                 checkAssignable(tree.pos(), v, tree.selected, env);
+        }
+
+        if (sitesym != null &&
+                sitesym.kind == VAR &&
+                ((VarSymbol)sitesym).isResourceVariable() &&
+                sym.kind == MTH &&
+                sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true) &&
+                env.info.lint.isEnabled(Lint.LintCategory.ARM)) {
+            log.warning(tree, "twr.explicit.close.call");
         }
 
         // Disallow selecting a type from an expression

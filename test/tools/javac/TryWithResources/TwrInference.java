@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +21,23 @@
  * questions.
  */
 
-package com.sun.source.tree;
-
-import java.util.List;
-
-/**
- * A tree node for a 'try' statement.
- *
- * For example:
- * <pre>
- *   try
- *       <em>block</em>
- *   <em>catches</em>
- *   finally
- *       <em>finallyBlock</em>
- * </pre>
- *
- * @see "The Java Language Specification, 3rd ed, section 14.20"
- *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
- * @since 1.6
+/*
+ * @test
+ * @bug 6911256 6964740 6965277
+ * @author Maurizio Cimadamore
+ * @summary Verify that method type-inference works as expected in TWR context
+ * @compile TwrInference.java
  */
-public interface TryTree extends StatementTree {
-    BlockTree getBlock();
-    List<? extends CatchTree> getCatches();
-    BlockTree getFinallyBlock();
-    List<? extends Tree> getResources();
+
+class TwrInference {
+
+    public void test() {
+        try(getX()) {
+            //do something
+        } catch (Exception e) { // Not reachable
+            throw new AssertionError("Shouldn't reach here", e);
+        }
+    }
+
+    <X> X getX() { return null; }
 }

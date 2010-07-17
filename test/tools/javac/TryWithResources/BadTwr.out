@@ -1,0 +1,5 @@
+BadTwr.java:13:39: compiler.err.already.defined: r1, main(java.lang.String...)
+BadTwr.java:18:13: compiler.err.already.defined: args, main(java.lang.String...)
+BadTwr.java:21:13: compiler.err.cant.assign.val.to.final.var: thatsIt
+BadTwr.java:26:17: compiler.err.already.defined: name, main(java.lang.String...)
+4 errors

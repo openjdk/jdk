@@ -269,7 +269,14 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCTry Try(JCBlock body, List<JCCatch> catchers, JCBlock finalizer) {
-        JCTry tree = new JCTry(body, catchers, finalizer);
+        return Try(List.<JCTree>nil(), body, catchers, finalizer);
+    }
+
+    public JCTry Try(List<JCTree> resources,
+                     JCBlock body,
+                     List<JCCatch> catchers,
+                     JCBlock finalizer) {
+        JCTry tree = new JCTry(resources, body, catchers, finalizer);
         tree.pos = pos;
         return tree;
     }
