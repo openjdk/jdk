@@ -638,6 +638,11 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 
     // Now retry the allocation.
     if (_cur_alloc_region != NULL) {
+      if (allocated_young_region != NULL) {
+        // We need to ensure that the store to top does not
+        // float above the setting of the young type.
+        OrderAccess::storestore();
+      }
       res = _cur_alloc_region->allocate(word_size);
     }
   }
