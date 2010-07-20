@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,13 @@ class NMethodSweeper : public AllStatic {
   static long      _traversals;   // Stack traversal count
   static nmethod*  _current;      // Current nmethod
   static int       _seen;         // Nof. nmethod we have currently processed in current pass of CodeCache
-  static int       _invocations;  // No. of invocations left until we are completed with this pass
+
+  static volatile int      _invocations;   // No. of invocations left until we are completed with this pass
+  static volatile int      _sweep_started; // Flag to control conc sweeper
 
   static bool      _rescan;          // Indicates that we should do a full rescan of the
                                      // of the code cache looking for work to do.
   static bool      _do_sweep;        // Flag to skip the conc sweep if no stack scan happened
-  static jint      _sweep_started;   // Flag to control conc sweeper
   static int       _locked_seen;     // Number of locked nmethods encountered during the scan
   static int       _not_entrant_seen_on_stack; // Number of not entrant nmethod were are still on stack
 
@@ -47,6 +48,9 @@ class NMethodSweeper : public AllStatic {
   static long      _was_full_traversal;   // trav number at last emergency unloading
 
   static void process_nmethod(nmethod *nm);
+
+  static void log_sweep(const char* msg, const char* format = NULL, ...);
+
  public:
   static long traversal_count() { return _traversals; }
 

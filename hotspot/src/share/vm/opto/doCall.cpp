@@ -343,7 +343,8 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
   // being initialized.  Uncommon-trap for not-initialized static or
   // v-calls.  Let interface calls happen.
   ciInstanceKlass* holder_klass = dest_method->holder();
-  if (!holder_klass->is_initialized() &&
+  if (!holder_klass->is_being_initialized() &&
+      !holder_klass->is_initialized() &&
       !holder_klass->is_interface()) {
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
