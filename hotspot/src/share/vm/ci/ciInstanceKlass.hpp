@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,8 @@ private:
   jobject                _loader;
   jobject                _protection_domain;
 
+  instanceKlass::ClassState _init_state;           // state of class
   bool                   _is_shared;
-  bool                   _is_initialized;
-  bool                   _is_linked;
   bool                   _has_finalizer;
   bool                   _has_subklass;
   bool                   _has_nonstatic_fields;
@@ -87,27 +86,34 @@ protected:
 
   bool is_shared() { return _is_shared; }
 
-  bool compute_shared_is_initialized();
-  bool compute_shared_is_linked();
+  void compute_shared_init_state();
   bool compute_shared_has_subklass();
   int  compute_shared_nof_implementors();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
 
+  // Update the init_state for shared klasses
+  void update_if_shared(instanceKlass::ClassState expected) {
+    if (_is_shared && _init_state != expected) {
+      if (is_loaded()) compute_shared_init_state();
+    }
+  }
+
 public:
   // Has this klass been initialized?
   bool                   is_initialized() {
-    if (_is_shared && !_is_initialized) {
-      return is_loaded() && compute_shared_is_initialized();
-    }
-    return _is_initialized;
+    update_if_shared(instanceKlass::fully_initialized);
+    return _init_state == instanceKlass::fully_initialized;
+  }
+  // Is this klass being initialized?
+  bool                   is_being_initialized() {
+    update_if_shared(instanceKlass::being_initialized);
+    return _init_state == instanceKlass::being_initialized;
   }
   // Has this klass been linked?
   bool                   is_linked() {
-    if (_is_shared && !_is_linked) {
-      return is_loaded() && compute_shared_is_linked();
-    }
-    return _is_linked;
+    update_if_shared(instanceKlass::linked);
+    return _init_state >= instanceKlass::linked;
   }
 
   // General klass information.
