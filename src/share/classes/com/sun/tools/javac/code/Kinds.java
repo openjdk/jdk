@@ -92,7 +92,7 @@ public class Kinds {
     public static final int ABSENT_TYP   = ERRONEOUS+8; // missing type
 
     public enum KindName implements Formattable {
-        ANNOTATION("kindname.interface"),
+        ANNOTATION("kindname.annotation"),
         CONSTRUCTOR("kindname.constructor"),
         INTERFACE("kindname.interface"),
         ENUM("kindname.enum"),
