@@ -86,7 +86,7 @@ public class Messager extends Log implements DocErrorReporter {
         private static final long serialVersionUID = 0;
     }
 
-    private final String programName;
+    final String programName;
 
     private ResourceBundle messageRB = null;
 
@@ -119,6 +119,16 @@ public class Messager extends Log implements DocErrorReporter {
                        PrintWriter noticeWriter) {
         super(context, errWriter, warnWriter, noticeWriter);
         this.programName = programName;
+    }
+
+    @Override
+    protected int getDefaultMaxErrors() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    protected int getDefaultMaxWarnings() {
+        return Integer.MAX_VALUE;
     }
 
     /**
@@ -231,11 +241,13 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printError(SourcePosition pos, String msg) {
-        String prefix = (pos == null) ? programName : pos.toString();
-        errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
-        errWriter.flush();
-        prompt();
-        nerrors++;
+        if (nerrors < MaxErrors) {
+            String prefix = (pos == null) ? programName : pos.toString();
+            errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
+            errWriter.flush();
+            prompt();
+            nerrors++;
+        }
     }
 
     /**
@@ -256,10 +268,12 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printWarning(SourcePosition pos, String msg) {
-        String prefix = (pos == null) ? programName : pos.toString();
-        warnWriter.println(prefix +  ": " + getText("javadoc.warning") +" - " + msg);
-        warnWriter.flush();
-        nwarnings++;
+        if (nwarnings < MaxWarnings) {
+            String prefix = (pos == null) ? programName : pos.toString();
+            warnWriter.println(prefix +  ": " + getText("javadoc.warning") +" - " + msg);
+            warnWriter.flush();
+            nwarnings++;
+        }
     }
 
     /**

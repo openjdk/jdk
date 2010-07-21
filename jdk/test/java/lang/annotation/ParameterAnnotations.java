@@ -27,6 +27,7 @@
  * @summary Check properties of Annotations returned from
  * getParameterAnnotations, including freedom from security
  * exceptions.
+ * @run main/othervm ParameterAnnotations
  * @author Martin Buchholz
  */
 

@@ -54,9 +54,9 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.main.JavaCompiler;
 
 /**
- * Provides access to functionality specific to the Sun Java Compiler, javac.
+ * Provides access to functionality specific to the JDK Java Compiler, javac.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
@@ -502,7 +502,7 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     /**
-     * For internal use by Sun Microsystems only.  This method will be
+     * For internal use only.  This method will be
      * removed without warning.
      */
     public Context getContext() {
@@ -510,7 +510,7 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     /**
-     * For internal use by Sun Microsystems only.  This method will be
+     * For internal use only.  This method will be
      * removed without warning.
      */
     public void updateContext(Context newContext) {
@@ -518,7 +518,7 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     /**
-     * For internal use by Sun Microsystems only.  This method will be
+     * For internal use only.  This method will be
      * removed without warning.
      */
     public Type parseType(String expr, TypeElement scope) {

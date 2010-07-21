@@ -26,6 +26,8 @@
  * @summary Verify that unauthorized ObjectOutputStream and ObjectInputStream
  *          cannot be constructed if they override security-sensitive non-final
  *          methods.
+ * @build AuditStreamSubclass
+ * @run main/othervm AuditStreamSubclass
  */
 import java.io.*;
 

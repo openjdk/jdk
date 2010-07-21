@@ -63,6 +63,7 @@ public class Position {
 
         c.close();
         fis.close();
+        blah.delete();
     }
 
     /**

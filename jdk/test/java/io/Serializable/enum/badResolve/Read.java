@@ -44,13 +44,15 @@ public class Read {
     }
 
     static void read(String filename) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream(filename));
+        FileInputStream in = new FileInputStream(filename);
         try {
+            ObjectInputStream oin = new ObjectInputStream(in);
             Object obj = oin.readObject();
             throw new Error("read of " + obj + " should not have succeeded");
         } catch (InvalidClassException e) {
             System.out.println("caught expected exception " + e);
+        } finally {
+            in.close();
         }
     }
 }

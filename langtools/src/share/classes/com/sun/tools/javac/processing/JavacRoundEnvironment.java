@@ -40,7 +40,7 @@ import java.util.*;
  * <p>The methods in this class do not take type annotations into account,
  * as target types, not java elements.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
@@ -125,7 +125,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         else
             throw new AssertionError("Bad implementation type for " + tm);
 
-        ElementScanner6<Set<Element>, DeclaredType> scanner =
+        ElementScanner7<Set<Element>, DeclaredType> scanner =
             new AnnotationSetScanner(result, typeUtil);
 
         for (Element element : rootElements)
@@ -136,7 +136,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
 
     // Could be written as a local class inside getElementsAnnotatedWith
     private class AnnotationSetScanner extends
-        ElementScanner6<Set<Element>, DeclaredType> {
+        ElementScanner7<Set<Element>, DeclaredType> {
         // Insertion-order preserving set
         Set<Element> annotatedElements = new LinkedHashSet<Element>();
         Types typeUtil;

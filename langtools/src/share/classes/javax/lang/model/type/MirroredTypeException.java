@@ -42,7 +42,7 @@ import javax.lang.model.element.Element;
  * @see Element#getAnnotation(Class)
  * @since 1.6
  */
-public class MirroredTypeException extends RuntimeException {
+public class MirroredTypeException extends MirroredTypesException {
 
     private static final long serialVersionUID = 269;
 
@@ -54,7 +54,7 @@ public class MirroredTypeException extends RuntimeException {
      * @param type  the type being accessed
      */
     public MirroredTypeException(TypeMirror type) {
-        super("Attempt to access Class object for TypeMirror " + type.toString());
+        super("Attempt to access Class object for TypeMirror " + type.toString(), type);
         this.type = type;
     }
 
@@ -76,5 +76,6 @@ public class MirroredTypeException extends RuntimeException {
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();
         type = null;
+        types = null;
     }
 }

@@ -174,10 +174,6 @@ java/beans/Statement/Test4653179.java				generic-all
 java/beans/XMLEncoder/Test4625418.java				solaris-sparc
 
 # Problems with samevm and setting security manager (speculation partially)
-java/beans/Beans/Test4080522.java				generic-all
-java/beans/EventHandler/Test6277246.java			generic-all
-java/beans/EventHandler/Test6277266.java			generic-all
-java/beans/Introspector/Test6277246.java			generic-all
 java/beans/Introspector/4168475/Test4168475.java		generic-all
 java/beans/Introspector/4520754/Test4520754.java		generic-all
 java/beans/Introspector/6380849/TestBeanInfo.java		generic-all
@@ -191,232 +187,13 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 
 ############################################################################
 
-# jdk_io
-
-# Many of these tests have a tendency to leave input streams open, which
-#  will cause following tests to be failures when used in samevm mode.
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/BufferedReader/BigMark.java			 	generic-all
-java/io/BufferedReader/ReadLineSync.java		 	generic-all
-
-# One of these is leaving "a.ser" file open, windows samevm
-java/io/Serializable/duplicateSerialFields/Setup.java		generic-all
-java/io/Serializable/duplicateSerialFields/Test.java		generic-all
-
-# One of these leaving foo.ser open, windows samevm problem
-java/io/Serializable/enum/constantSubclasses/Read.java		generic-all
-java/io/Serializable/enum/constantSubclasses/Write.java		generic-all
-java/io/Serializable/enum/missingConstant/Read.java		generic-all
-java/io/Serializable/enum/missingConstant/Write.java		generic-all
-
-# This is leaving subtest1.tmp open, windows samevm problem
-java/io/Serializable/oldTests/AnnotateClass.java		generic-all
-
-# One or more of these leave a piotest* file open, windows samevm
-java/io/Serializable/oldTests/ArrayFields.java			generic-all
-java/io/Serializable/oldTests/ArraysOfArrays.java		generic-all
-java/io/Serializable/oldTests/BinaryTree.java			generic-all
-java/io/Serializable/oldTests/CircularList.java			generic-all
-java/io/Serializable/oldTests/SerializeWithException.java	generic-all
-java/io/Serializable/oldTests/SimpleArrays.java			generic-all
-java/io/Serializable/oldTests/WritePrimitive.java		generic-all
-
-# Missing close on file 0.ser, windows samevm
-java/io/Serializable/enum/badResolve/Read.java			generic-all
-java/io/Serializable/enum/badResolve/Write.java			generic-all
-
-# One of these tests is leaving parents.ser open, windows samevm
-java/io/Serializable/parents/EvolvedClass.java			generic-all
-java/io/Serializable/parents/OriginalClass.java			generic-all
-
-# One of these tests is leaving file foo.ser and/or bar.ser open, windows samevm
-java/io/Serializable/fieldTypeString/Read.java			generic-all
-java/io/Serializable/fieldTypeString/Write.java			generic-all
-
-# One of these tests is leaving tmp.ser file open, windows samevm
-java/io/Serializable/ClassCastExceptionDetail/Read.java		generic-all
-java/io/Serializable/ClassCastExceptionDetail/Write.java	generic-all
-java/io/Serializable/GetField/Read.java				generic-all
-java/io/Serializable/GetField/Read2.java			generic-all
-java/io/Serializable/GetField/Write.java			generic-all
-java/io/Serializable/PutField/Read.java				generic-all
-java/io/Serializable/PutField/Read2.java			generic-all
-java/io/Serializable/PutField/Write.java			generic-all
-java/io/Serializable/PutField/Write2.java			generic-all
-java/io/Serializable/arraySuidConflict/Read.java		generic-all
-java/io/Serializable/arraySuidConflict/Write.java		generic-all
-java/io/Serializable/backRefCNFException/Read.java		generic-all
-java/io/Serializable/backRefCNFException/Write.java		generic-all
-java/io/Serializable/class/Test.java				generic-all
-java/io/Serializable/evolution/AddedExternField/ReadAddedField.java generic-all
-java/io/Serializable/evolution/AddedExternField/WriteAddedField.java generic-all
-java/io/Serializable/evolution/AddedExternField/run.sh		generic-all
-java/io/Serializable/evolution/AddedField/ReadAddedField.java	generic-all
-java/io/Serializable/evolution/AddedField/WriteAddedField.java	generic-all
-java/io/Serializable/evolution/AddedSuperClass/ReadAddedSuperClass.java	generic-all
-java/io/Serializable/evolution/AddedSuperClass/ReadAddedSuperClass2.java generic-all
-java/io/Serializable/evolution/AddedSuperClass/WriteAddedSuperClass.java generic-all
-java/io/Serializable/proxy/skipMissing/Read.java		generic-all
-java/io/Serializable/proxy/skipMissing/Write.java		generic-all
-java/io/Serializable/readObjectNoData/Read.java			generic-all
-java/io/Serializable/readObjectNoData/Write.java		generic-all
-java/io/Serializable/skipWriteObject/Read.java			generic-all
-java/io/Serializable/skipWriteObject/Write.java			generic-all
-java/io/Serializable/skippedObjCNFException/Read.java		generic-all
-java/io/Serializable/skippedObjCNFException/Write.java		generic-all
-java/io/Serializable/stopCustomDeserialization/Read.java	generic-all
-java/io/Serializable/stopCustomDeserialization/Write.java	generic-all
-java/io/Serializable/unresolvedClassDesc/Read.java		generic-all
-java/io/Serializable/unresolvedClassDesc/Write.java		generic-all
-java/io/Serializable/unshared/Read.java				generic-all
-java/io/Serializable/unshared/Write.java			generic-all
-java/io/Serializable/wrongReturnTypes/Read.java			generic-all
-java/io/Serializable/wrongReturnTypes/Write.java		generic-all
-
-# Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
-java/io/DataInputStream/OpsAfterClose.java		 	generic-all
-
-# Windows 32bit samevm failure: RuntimeException: File.getFreeSpace() failed
-java/io/File/MaxPathLength.java					generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/File/DeleteOnExit.java				 	generic-all
-java/io/File/DeleteOnExitLong.java			 	generic-all
-java/io/File/DeleteOnExitNPE.java			 	generic-all
-java/io/File/IsHidden.java				 	generic-all
-java/io/FileDescriptor/FileChannelFDTest.java		 	generic-all
-java/io/FileDescriptor/Finalize.java			 	generic-all
-java/io/FileInputStream/FinalizeShdCallClose.java	 	generic-all
-
-# Known to cause samevm issues on windows, other tests fail, missing close()?
-java/io/FileInputStream/OpsAfterClose.java		 	generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/FileOutputStream/FinalizeShdCallClose.java	 	generic-all
-
-# Known to cause samevm issues on windows, other tests fail, missing close()?
-java/io/FileOutputStream/OpsAfterClose.java		 	generic-all
-
-# Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
-java/io/InputStream/OpsAfterClose.java			 	generic-all
-
-# Missing close() on x.ReadBounds file? Windows samevm issues
-java/io/InputStream/ReadParams.java			 	generic-all
-
-# Known to cause samevm issues on windows, other tests fail, missing close()?
-java/io/InputStreamReader/GrowAfterEOF.java		 	generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/ObjectInputStream/ResolveProxyClass.java	 	generic-all
-
-# Not doing a close() on x.ParameterCheck file? windows samevm cascade error
-java/io/RandomAccessFile/ParameterCheck.java                    generic-all
-
-# Not doing a close on x.ReadLine file? windows cascade samevm problems
-java/io/RandomAccessFile/ReadLine.java				generic-all
-
-# Not doing close on file input x.WriteByteChars, windows samevm problems
-java/io/RandomAccessFile/WriteBytesChars.java			generic-all
-
-# Not doing close on file input x.WriteUTF, windows samevm problems
-java/io/RandomAccessFile/WriteUTF.java                          generic-all
-
-# Possibly, not doing a close() on input.txt, windows samevm issues.
-java/io/RandomAccessFile/skipBytes/SkipBytes.java	 	generic-all
-java/io/readBytes/MemoryLeak.java			 	generic-all
-java/io/readBytes/ReadBytesBounds.java			 	generic-all 
-
-# Missing close on fields.ser, windows samevm
-java/io/Serializable/checkModifiers/CheckModifiers.java		generic-all
-
-# Should be othervm, or corrected for samevm, fails with samevm:
-java/io/Serializable/auditStreamSubclass/AuditStreamSubclass.java generic-all
-java/io/Serializable/proxy/Basic.java			 	generic-all
-
-# Possibly not doing a close() on input.txt, windows samevm issues.
-java/io/StreamTokenizer/Comment.java			 	generic-all
-
-############################################################################
-
 # jdk_lang
-
-# Some of these tests (like java/lang/management) may just need to be marked
-#   othervm, but that is partially speculation.
-
-# Samevm failure on OpenSolaris, security manager?
-java/lang/ClassLoader/UninitializedParent.java			generic-all
 
 # Times out on solaris 10 sparc
 java/lang/ClassLoader/Assert.java				generic-all
 
-# Fedora 9 X64, RuntimeException: MyThread expected to be blocked on lock, but got null
-java/lang/management/ThreadMXBean/ThreadStateTest.java 		generic-all
-
-# RuntimeException: Uptime of the JVM is more than 30 minutes (32 minutes).
-java/lang/management/RuntimeMXBean/UpTime.java			generic-all
-
-# Times out on solaris sparc occasionally, in samevm mode
-java/lang/Runtime/exec/ExecWithDir.java				generic-all
-java/lang/ProcessBuilder/Basic.java				generic-all
-
 # Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
 java/lang/Runtime/exec/SleepyCat.java				generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/annotation/ParameterAnnotations.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/ClassLoader/defineClass/DefineClassByteBuffer.java	generic-all
-java/lang/ClassLoader/findSystemClass/Loader.java		generic-all
-
-# Fedora 9 32bit, -client, samevm, Error while cleaning up threads after test
-java/lang/management/ThreadMXBean/Locks.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/management/ClassLoadingMXBean/LoadCounts.java		generic-all
-java/lang/management/ManagementFactory/MBeanServerMXBeanUnsupportedTest.java generic-all
-java/lang/management/ManagementFactory/MXBeanProxyTest.java	generic-all
-java/lang/management/ManagementFactory/ThreadMXBeanProxy.java	generic-all
-java/lang/management/MemoryMXBean/CollectionUsageThreshold.java	generic-all
-java/lang/management/MemoryMXBean/GetMBeanInfo.java		generic-all
-java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
-java/lang/management/MemoryMXBean/MemoryManagement.java		generic-all
-java/lang/management/MemoryMXBean/MemoryTest.java		generic-all
-java/lang/management/MemoryMXBean/Pending.java			generic-all
-
-# Problematic on all platforms (even as othervm)
-java/lang/management/MemoryMXBean/ResetPeakMemoryUsage.java 	generic-all
-
-# Causes jtreg exit samevm issues due to non-String object in system properties
-java/lang/management/RuntimeMXBean/GetSystemProperties.java 	generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/management/RuntimeMXBean/PropertiesTest.java		generic-all
-java/lang/management/ThreadMXBean/AllThreadIds.java		generic-all
-java/lang/management/ThreadMXBean/EnableTest.java		generic-all
-java/lang/management/ThreadMXBean/FindMonitorDeadlock.java	generic-all
-java/lang/management/ThreadMXBean/LockingThread.java		generic-all
-java/lang/management/ThreadMXBean/MonitorDeadlock.java		generic-all
-java/lang/management/ThreadMXBean/MyOwnSynchronizer.java	generic-all
-java/lang/management/ThreadMXBean/SharedSynchronizer.java	generic-all
-java/lang/management/ThreadMXBean/SynchronizerLockingThread.java generic-all
-java/lang/management/ThreadMXBean/ThreadCounts.java		generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/reflect/Proxy/Boxing.java				generic-all
-java/lang/reflect/Proxy/ClassRestrictions.java			generic-all
-java/lang/reflect/Proxy/returnTypes/Test.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/lang/Runtime/exec/LotsOfOutput.java			generic-all
-java/lang/System/ExitFinalizersAndJIT.java			generic-all
-java/lang/System/finalization/FinThreads.java			generic-all
-java/lang/System/IgnoreNullSecurityManager.java			generic-all
-java/lang/Thread/GenerifyStackTraces.java			generic-all
-java/lang/Thread/StackTraces.java				generic-all
-java/lang/ThreadGroup/Daemon.java				generic-all
-java/lang/ThreadGroup/NullThreadName.java			generic-all
 
 # Times out on solaris sparc -server
 java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
@@ -430,6 +207,12 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 ############################################################################
 
 # jdk_management
+
+# Failing, bug was filed: 6959636
+javax/management/loading/LibraryLoader/LibraryLoaderTest.java	generic-all
+
+# Access denied messages on windows/mks, filed 6954450
+sun/management/jmxremote/bootstrap/RmiSslNoKeyStoreTest.sh	windows-all
 
 # Fails on linux: KO: StringMonitor notification missed or not emitted
 javax/management/monitor/NonComparableAttributeValueTest.java	generic-all
@@ -512,9 +295,6 @@ java/math/BigInteger/ModPow65537.java			 	generic-all
 
 # jdk_misc
 
-# On Windows com.sun.java.swing.plaf.gtk does not exist, always fails there
-com/sun/java/swing/plaf/gtk/Test6635110.java		 	windows-all
-
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
@@ -595,9 +375,6 @@ sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java
 # Dies on Solaris 10 sparc and sparcv9, Linux  -ea -esa with 
 #   Interrupted or IO exception, maybe writing to non-unique named file?
 com/sun/net/httpserver/bugs/B6373555.java			generic-all
-
-# Fails on OpenSolaris, BindException unexpected 
-java/net/BindException/Test.java				generic-all
 
 # Fails on OpenSolaris, times out
 java/net/MulticastSocket/SetOutgoingIf.java			generic-all
@@ -724,47 +501,45 @@ sun/net/www/protocol/http/DigestTest.java			generic-all
 
 ############################################################################
 
+# jdk_io
+
+# 6962637
+java/io/File/MaxPathLength.java                                 windows-all
+
+############################################################################
+
 # jdk_nio
 
-# Suspect many of these tests auffer from using fixed ports, no concrete 
-#   evidence.
+# 6944810
+java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java       windows-all
 
-# Failing on Solaris x86 and Linux x86, filed 6934585
-java/nio/channels/AsynchronousSocketChannel/Basic.java		generic-all
+# 6963118
+java/nio/channels/Selector/Wakeup.java                          windows-all
 
-# Occasionally Failing with java.lang.AssertionError on Windows X64
-#  at sun.nio.ch.PendingIoCache.clearPendingIoMap(PendingIoCache.java:144)
-#java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java	windows-all
+# The asynchronous I/O implementation on Windows requires Windows XP or newer.
+# We can remove the following once all Windows 2000 machines have been
+# decommissioned.
+java/nio/channels/AsynchronousChannelGroup/Basic.java           windows-5.0
+java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java      windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Identity.java        windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Restart.java         windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java       windows-5.0
+java/nio/channels/AsynchronousDatagramChannel/Basic.java        windows-5.0
+java/nio/channels/AsynchronousFileChannel/Lock.java             windows-5.0
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java    windows-5.0
+java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java windows-5.0
+java/nio/channels/AsynchronousSocketChannel/Basic.java          windows-5.0
+java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
+java/nio/channels/AsynchronousSocketChannel/Leaky.java          windows-5.0
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
+java/nio/channels/Channels/Basic2.java                          windows-5.0
 
-# Some kind of sleep/wake problem on Windows X64
-java/nio/channels/Selector/Wakeup.java				windows-all
+# 6959891
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java
 
 # Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
 com/sun/nio/sctp/SctpChannel/Send.java				generic-all
 com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
-
-# Fails on Windows 2000, Can't delete test directory .\x.SetLastModified.dir
-#    at SetLastModified.main(SetLastModified.java:107)
-java/io/File/SetLastModified.java                               generic-all
-
-# Fails on Solaris 10 x64, address already in use
-java/nio/channels/DatagramChannel/SRTest.java			generic-all
-
-# Fails on Solaris 10 x86, times out
-java/nio/channels/DatagramChannel/Sender.java			generic-all
-
-# Fails on Fedora 9 x86, address in use
-java/nio/channels/Selector/SelectWrite.java			generic-all
-
-# Fails on Fedora 9 32bit times out
-java/nio/channels/DatagramChannel/EmptyBuffer.java		generic-all
-
-# Fails on Windows 2000, ExceptionInInitializerError
-#   in WindowsAsynchronousServerSocketChannelImpl.java:316
-java/nio/channels/AsynchronousChannelGroup/Unbounded.java	generic-all
-
-# Fails on Windows 2000,  times out
-java/nio/channels/FileChannel/Transfer.java			generic-all
 
 # Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses 
 #    from a channel that is bound to the wildcard address
@@ -772,21 +547,6 @@ com/sun/nio/sctp/SctpChannel/Bind.java				generic-all
 
 # Failed on OpenSolaris, java.lang.AssertionError: Unknown event type
 com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
-
-# Triggers a hotspot crash on Fedora 9 32bit -server and Windows X64  samevm
-sun/nio/cs/TestUTF8.java					generic-all
-
-# Solaris sparc, socket timeout
-java/nio/channels/spi/SelectorProvider/inheritedChannel/run_tests.sh generic-all
-
-# Runtime exception on windows X64, samevm mode
-java/nio/channels/Selector/WakeupNow.java			generic-all
-
-# Occasional errors, solarix x86, address already in use, othervm mode
-java/nio/channels/Selector/SelectorTest.java			generic-all
-
-# Fails on Linux Fedora 9 X64
-sun/nio/cs/FindDecoderBugs.java					generic-all
 
 # Solaris 11 gave assert error and "connection refused", samevm issues?
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java 	generic-all
@@ -797,72 +557,6 @@ com/sun/nio/sctp/SctpChannel/Connect.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/Branch.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/Send.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java	generic-all
-
-# Linux 64bit failures. too many files open
-java/nio/channels/Selector/HelperSlowToDie.java			generic-all
-
-# Timeouts etc. on Window
-java/nio/channels/AsyncCloseAndInterrupt.java		 	windows-all
-
-# Gets java.lang.ExceptionInInitializerError on windows: (Windows 2000 only?)
-java/nio/channels/AsynchronousChannelGroup/Basic.java	 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Identity.java 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Restart.java 	windows-5.0
-java/nio/channels/AsynchronousDatagramChannel/Basic.java 	windows-5.0
-java/nio/channels/AsynchronousFileChannel/Lock.java	 	windows-5.0
-java/nio/channels/AsynchronousServerSocketChannel/Basic.java 	windows-5.0
-java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java windows-5.0
-java/nio/channels/AsynchronousSocketChannel/Basic.java	 	windows-5.0
-java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
-java/nio/channels/AsynchronousSocketChannel/Leaky.java	 	windows-5.0
-java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
-java/nio/channels/Channels/Basic2.java			 	windows-5.0
-
-# Solaris sparc timeout
-java/nio/channels/DatagramChannel/Connect.java		 	generic-all
-
-# Solaris i586 timeouts
-java/nio/channels/DatagramChannel/EmptyBuffer.java	 	solaris-all
-
-# Failed loopback connection? On windows 32bit? 
-#   Considered a stress test, can consume all resources.
-java/nio/channels/Selector/LotsOfChannels.java		 	generic-all
-
-# Solaris sparcv9, just fails with exception
-java/nio/channels/Selector/OpRead.java			 	solaris-sparc
-
-# Windows i586 client, crashed hotspot? Unpredictable
-#   Considered a stress test, can consume all resources.
-java/nio/channels/Selector/RegAfterPreClose.java	 	generic-all
-
-# Solaris i586, cannot assign address, samevm issues
-java/nio/channels/Selector/SelectorLimit.java		 	generic-all
-
-# Socket timeout windows X64
-java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
-
-# Timeouts etc. on Window
-java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
-java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/nio/channels/SocketChannel/OpenLeak.java			generic-all
-
-# Gets java.net.BindException alot (static port number?)
-java/nio/channels/SocketChannel/VectorIO.java		 	generic-all
-
-# Solaris i586 java.net.BindExceptions
-java/nio/channels/SocketChannel/VectorParams.java	 	solaris-all
-
-# Linux i586 address already in use, samevm issues
-java/nio/channels/SocketChannel/Write.java		 	generic-all
-
-# Fails on all platforms due to overlap of JDK jar file contents:
-sun/nio/cs/Test4200310.sh				 	generic-all
-
-# Depends on motif packages that do not exist all the time:
-sun/nio/cs/TestX11CNS.java				 	generic-all
 
 ############################################################################
 
@@ -935,6 +629,19 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
 # jdk_security
 
+# Filed 6951285, not sure how often this fails, last was Linux 64bit Fedora 9
+sun/security/krb5/auto/MaxRetries.java				generic-all
+
+# Filed 6950930, fails on windows 32bit c1 and windows 64bit
+sun/security/krb5/auto/IgnoreChannelBinding.java		windows-all
+
+# Filed 6950931, failing on all windows systems
+sun/security/tools/jarsigner/crl.sh				windows-all
+
+# Filed 6950929, only seemed to fail on solaris sparcv9 (-d64)
+#   Failed on Linux -server 32bit too, making generic
+sun/security/krb5/auto/BadKdc4.java				generic-all
+
 # Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
 sun/security/pkcs11/Secmod/AddPrivateKey.java			solaris-i586
 sun/security/pkcs11/ec/ReadCertificates.java			solaris-i586
@@ -986,12 +693,6 @@ sun/security/krb5/auto/ok-as-delegate-xrealm.sh			generic-all
 # Fails on Windows 2000, ExceptionInInitializerError
 sun/security/mscapi/AccessKeyStore.sh				generic-all
 
-# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
-sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
-
-# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
-sun/security/pkcs11/fips/ClientJSSEServerJSSE.java		generic-all
-
 # Fails on Solaris 10, KrbException: Additional pre-authentication required (25)
 sun/security/krb5/auto/basic.sh					generic-all
 
@@ -1022,10 +723,6 @@ com/sun/crypto/provider/Cipher/DES/PaddingTest.java		generic-all
 # Othervm, sparc, NoRouteToHostException: Cannot assign requested address
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
 
-# ProviderException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_DEVICE_ERROR
-#    Does not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java		generic-all
-
 # Times out on windows X64, othervm mode
 #    Solaris sparc and sparcv9 -server, timeout
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionTimeOutTests.java	generic-all
@@ -1041,7 +738,6 @@ sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java	generic-all
 sun/security/tools/jarsigner/oldsig.sh				generic-all
 
 # Various failures on Linux Fedora 9 X64, othervm mode
-#   Does not seem to run on windows machines? dll missing? 
 sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
 
 # Linux i586 -server, buffer too short to hold shared secret?
@@ -1078,9 +774,6 @@ java/security/Signature/TestInitSignWithMyOwnRandom.java	generic-all
 java/security/UnresolvedPermission/AccessorMethods.java		generic-all
 java/security/UnresolvedPermission/Equals.java			generic-all
 
-# Do not seem to run on windows machines? dll missing? 
-sun/security/krb5/auto/IgnoreChannelBinding.java	 	windows-all
-
 # Fails on OpenSolaris, missing classes, slow on Solaris sparc
 sun/security/ec/TestEC.java					generic-all
 
@@ -1088,64 +781,11 @@ sun/security/ec/TestEC.java					generic-all
 sun/security/mscapi/IsSunMSCAPIAvailable.sh		 	windows-x64
 sun/security/mscapi/RSAEncryptDecrypt.sh		 	windows-x64
 
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/Cipher/ReinitCipher.java		 	windows-all
-sun/security/pkcs11/Cipher/TestRSACipher.java		 	windows-all
-sun/security/pkcs11/Cipher/TestRSACipherWrap.java	 	windows-all
-sun/security/pkcs11/Cipher/TestSymmCiphers.java 	 	windows-all
-sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java	 	windows-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/ec/ReadCertificates.java		 	windows-all
-sun/security/pkcs11/ec/ReadPKCS12.java			 	windows-all
-sun/security/pkcs11/ec/TestCurves.java			 	windows-all
-sun/security/pkcs11/ec/TestECDH.java			 	windows-all
-sun/security/pkcs11/ec/TestECDSA.java			 	windows-all
-sun/security/pkcs11/ec/TestECGenSpec.java		 	windows-all
-sun/security/pkcs11/ec/TestKeyFactory.java		 	windows-all
-sun/security/pkcs11/fips/TrustManagerTest.java		 	windows-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/KeyAgreement/TestShort.java 	 	windows-all
-sun/security/pkcs11/KeyGenerator/DESParity.java 	 	windows-all
-
 # Exception in test solaris-sparc -client -server, no windows
-sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java	windows-all solaris-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/KeyStore/Basic.sh			 	windows-all
-sun/security/pkcs11/KeyStore/ClientAuth.sh		 	windows-all
+sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java	        solaris-all
 
 # Solaris sparc client, fails to compile?
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh 	 	solaris-all
-
-# Do not seem to run on windows machines? dll missing? 
-sun/security/pkcs11/Mac/ReinitMac.java			 	windows-all
-sun/security/pkcs11/MessageDigest/ByteBuffers.java	 	windows-all
-sun/security/pkcs11/MessageDigest/DigestKAT.java	 	windows-all
-sun/security/pkcs11/MessageDigest/ReinitDigest.java	 	windows-all
-sun/security/pkcs11/Provider/ConfigQuotedString.sh	 	windows-all
-sun/security/pkcs11/Provider/Login.sh			 	windows-all
-sun/security/pkcs11/rsa/KeyWrap.java			 	windows-all
-sun/security/pkcs11/rsa/TestCACerts.java		 	windows-all
-sun/security/pkcs11/rsa/TestKeyFactory.java		 	windows-all
-sun/security/pkcs11/rsa/TestSignatures.java		 	windows-all
-sun/security/pkcs11/SampleTest.java			 	windows-all
-sun/security/pkcs11/Secmod/AddPrivateKey.java		 	windows-all
-sun/security/pkcs11/Secmod/AddTrustedCert.java		 	windows-all
-sun/security/pkcs11/Secmod/Crypto.java			 	windows-all
-sun/security/pkcs11/Secmod/GetPrivateKey.java		 	windows-all
-sun/security/pkcs11/Secmod/JksSetPrivateKey.java	 	windows-all
-sun/security/pkcs11/Secmod/TrustAnchors.java		 	windows-all
-sun/security/pkcs11/SecureRandom/Basic.java		 	windows-all
-sun/security/pkcs11/Serialize/SerializeProvider.java	 	windows-all
-sun/security/pkcs11/Signature/ByteBuffers.java		 	windows-all
-sun/security/pkcs11/Signature/ReinitSignature.java	 	windows-all
-sun/security/pkcs11/Signature/TestDSA.java		 	windows-all
-sun/security/pkcs11/tls/TestKeyMaterial.java		 	windows-all
-sun/security/pkcs11/tls/TestMasterSecret.java		 	windows-all
-sun/security/pkcs11/tls/TestPremaster.java		 	windows-all
-sun/security/pkcs11/tls/TestPRF.java			 	windows-all
 
 # Fails on OpenSolaris java.net.BindException: Address already in use
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		generic-all
@@ -1168,9 +808,6 @@ sun/security/tools/keytool/selfissued.sh		 	solaris-all
 
 # jdk_swing (not using samevm)
 
-# Fails on solaris 10 sparc, throws RuntimeException that just says "failed"
-javax/swing/JLabel/6501991/bug6501991.java			generic-all
-
 # Fails on solaris 11 i586, with othervm
 javax/swing/JFileChooser/6570445/bug6570445.java		generic-all
 javax/swing/JFileChooser/6738668/bug6738668.java		generic-all
@@ -1188,94 +825,6 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 
 # jdk_tools
 
-# Some of the tools tests kind of require "othervm" or if they don't will
-#  always be firing up another VM anyway due to the nature of tools testing.
-#  So most if not all tools tests are now being run with "othervm" mode.
-#  Some of these tools tests have a tendency to use fixed ports, bad idea.
-
-# Fails with -ea -esa on Solaris, Assertion error (Solaris specific test)
-com/sun/tracing/BasicFunctionality.java				generic-all
-
-# Fails on Fedora 9 32bit, jps output differs problem
-sun/tools/jstatd/jstatdDefaults.sh				generic-all
-
-# Fails on Linux Fedora 9 32bit, Could not read data for remote JVM 16133
-#       jstat output differs from expected output
-sun/tools/jstatd/jstatdExternalRegistry.sh			generic-all
-
-# Output of jps differs from expected output.
-#   Invalid argument count on solaris-sparc and x64
-sun/tools/jstatd/jstatdPort.sh					generic-all
-
-# othervm mode, Could not synchronize with target
-sun/tools/jps/jps-l_1.sh					generic-all
-sun/tools/jps/jps-l_2.sh					generic-all
-sun/tools/jps/jps-lm.sh						generic-all
-sun/tools/jps/jps-Vvml_2.sh					generic-all
-sun/tools/jps/jps-m_2.sh					generic-all
-
-# Fails on Solaris 10 sparcv9, shell exits with 1
-#  Turning off use of shared archive because of choice of garbage collector or large pages 
-#  Could not synchronize with target
-sun/tools/jps/jps-v_1.sh					generic-all
-
-# Fails on OpenSolaris "Could not synchronize with target"
-sun/tools/jps/jps-Defaults.sh					generic-all
-sun/tools/jps/jps-V_2.sh					generic-all
-sun/tools/jps/jps-Vm_2.sh					generic-all
-sun/tools/jps/jps-Vvm.sh					generic-all
-sun/tools/jps/jps-Vvml.sh					generic-all
-sun/tools/jps/jps-m.sh						generic-all
-
-# Server name error, port 2098 problem?
-sun/tools/jstatd/jstatdServerName.sh				generic-all
-
-# These tests fail on solaris sparc, all the time
-com/sun/servicetag/DeleteServiceTag.java			generic-all
-com/sun/servicetag/DuplicateNotFound.java			generic-all
-com/sun/servicetag/FindServiceTags.java				generic-all
-com/sun/servicetag/InstanceUrnCheck.java			generic-all
-com/sun/servicetag/InvalidRegistrationData.java			generic-all
-com/sun/servicetag/InvalidServiceTag.java			generic-all
-com/sun/servicetag/JavaServiceTagTest.java			generic-all
-com/sun/servicetag/JavaServiceTagTest1.java			generic-all
-com/sun/servicetag/NewRegistrationData.java			generic-all
-com/sun/servicetag/SystemRegistryTest.java			generic-all
-com/sun/servicetag/TestLoadFromXML.java				generic-all
-com/sun/servicetag/UpdateServiceTagTest.java			generic-all
-com/sun/servicetag/ValidRegistrationData.java			generic-all
-
-# Problems on windows, jmap.exe hangs?
-com/sun/tools/attach/BasicTests.sh				windows-all
-
-# Fails on Solaris 10 sparc, in othervm mode, throws unexpected exception
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
-
-# Unexpected Monitor Exception, solaris sparc -client
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh	generic-all
-
-# Problems on windows, jmap.exe hangs? (these run jmap)
-sun/tools/jmap/Basic.sh						windows-all
-
-# Invalid argument count on solaris-sparc and x64
-sun/tools/jstatd/jstatdDefaults.sh			 	solaris-all
-
-# Solaris sparcv9, jps output does not match, x64 different
-sun/tools/jstatd/jstatdExternalRegistry.sh		 	solaris-all
-
-# Solaris 10 sparc 32bit -client, java.lang.AssertionError: Some tests failed
-tools/jar/JarEntryTime.java					generic-all
-
-# Times out on sparc?
-tools/launcher/VersionCheck.java				generic-all
-
-# These tests fail on solaris sparc, all the time
-tools/jar/ChangeDir.java					generic-all
-
-# Cannot write jar
-#  Also, possible problems on windows, jmap.exe hangs? 
-tools/jar/index/MetaInf.java				 	windows-all
-
 ############################################################################
 
 # jdk_util
@@ -1283,12 +832,6 @@ tools/jar/index/MetaInf.java				 	windows-all
 # Fails with assertion error on windows
 #   11 separate stacktraces created... file reuse problem?
 java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
-
-# Recent failure on all platforms
-sun/util/resources/TimeZone/Bug6317929.java			generic-all
-
-# Fails with -ea -esa on all platforms with Assertion error
-java/util/ResourceBundle/Test4300693.java			generic-all
 
 # Failing on all -client 32bit platforms starting with b77? See 6908348.
 java/util/concurrent/BlockingQueue/CancelledProducerConsumerLoops.java generic-all
@@ -1317,39 +860,7 @@ java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
 java/util/Formatter/Constructors.java				generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
-java/util/Locale/Bug4175998Test.java				generic-all
-java/util/Locale/Bug4184873Test.java				generic-all
-java/util/Locale/LocaleTest.java				generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/util/logging/GetGlobalTest.java				generic-all
-java/util/logging/LoggerSubclass.java				generic-all
-java/util/logging/LoggingDeadlock.java				generic-all
-java/util/logging/LoggingDeadlock2.java 			generic-all
-java/util/logging/LoggingMXBeanTest.java			generic-all
-java/util/logging/LoggingMXBeanTest2.java			generic-all
-java/util/logging/LoggingNIOChange.java 			generic-all
-java/util/logging/ParentLoggersTest.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/util/ResourceBundle/Bug4168625Test.java			generic-all
-java/util/ResourceBundle/Bug6359330.java			generic-all
-java/util/ResourceBundle/TestBug4179766.java			generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
 java/util/WeakHashMap/GCDuringIteration.java			generic-all
-
-# Possible missing input stream close()? Causes samevm issues on windows
-java/util/zip/InfoZip.java				 	generic-all
-
-# Missing a close() on file Test0.zip? windows samevm cascade problem
-java/util/zip/ZipFile/Comment.java                              generic-all
-
-# Suspect missing close() on bad*.zip files, windows cascade errors with samevm
-java/util/zip/ZipFile/CorruptedZipFiles.java			generic-all
-
-# Should be samevm but causes problems with samevm, no details:
-java/util/zip/ZipFile/ManyEntries.java			 	generic-all
 
 ############################################################################
 

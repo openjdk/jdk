@@ -639,24 +639,14 @@ AWT_RUNPATH = -R/usr/dt/lib$(ISA_DIR) -R$(OPENWIN_RUNTIME_LIB)
 #    in general this is ok to continue to do.
 LIBCXX = /usr/lib$(ISA_DIR)/libCrun.so.1
 
-# Math Library (libm.so), do not use -lm.
-#    There might be two versions of libm.so on the build system:
-#    libm.so.1 and libm.so.2, and we want libm.so.1.
-#    Depending on the Solaris release being used to build with,
-#    /usr/lib/libm.so could point at a libm.so.2, so we are
-#    explicit here so that the libjvm.so you have built will work on an
-#    older Solaris release that might not have libm.so.2.
-#    This is a critical factor in allowing builds on Solaris 10 or newer
-#    to run on Solaris 8 or 9.
-#
-#    Note: Historically there was also a problem picking up a static version
-#          of libm.a from the compiler area, but that problem has gone away
-#          with the newer compilers. Use of libm.a would cause .so bloat.
-#
-LIBM = /usr/lib$(ISA_DIR)/libm.so.1
+# JDK now requires Solaris 10, so pick up libm.so.2
+LIBM = /usr/lib$(ISA_DIR)/libm.so.2
 
 # Socket library
 LIBSOCKET = -lsocket
+
+# Network Services library
+LIBNSL = -lnsl
 
 # GLOBAL_KPIC: If set means all libraries are PIC, position independent code
 #    EXCEPT for select compiles
