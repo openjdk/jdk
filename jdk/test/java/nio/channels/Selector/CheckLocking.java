@@ -61,5 +61,7 @@ public class CheckLocking implements Runnable {
         doSelect();
         sk.interestOps(SelectionKey.OP_READ);
         selector.wakeup();
+        sc.close();
+        selector.close();
     }
 }

@@ -242,19 +242,19 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Creates a new <code>JSplitPane</code> configured to arrange the child
-     * components side-by-side horizontally with no continuous
-     * layout, using two buttons for the components.
+     * components side-by-side horizontally, using two buttons for the components.
      */
     public JSplitPane() {
-        this(JSplitPane.HORIZONTAL_SPLIT, false,
-            new JButton(UIManager.getString("SplitPane.leftButtonText")),
-            new JButton(UIManager.getString("SplitPane.rightButtonText")));
+        this(JSplitPane.HORIZONTAL_SPLIT,
+                UIManager.getBoolean("SplitPane.continuousLayout"),
+                new JButton(UIManager.getString("SplitPane.leftButtonText")),
+                new JButton(UIManager.getString("SplitPane.rightButtonText")));
     }
 
 
     /**
      * Creates a new <code>JSplitPane</code> configured with the
-     * specified orientation and no continuous layout.
+     * specified orientation.
      *
      * @param newOrientation  <code>JSplitPane.HORIZONTAL_SPLIT</code> or
      *                        <code>JSplitPane.VERTICAL_SPLIT</code>
@@ -263,7 +263,8 @@ public class JSplitPane extends JComponent implements Accessible
      */
     @ConstructorProperties({"orientation"})
     public JSplitPane(int newOrientation) {
-        this(newOrientation, false);
+        this(newOrientation,
+                UIManager.getBoolean("SplitPane.continuousLayout"));
     }
 
 
@@ -287,9 +288,7 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Creates a new <code>JSplitPane</code> with the specified
-     * orientation and
-     * with the specified components that do not do continuous
-     * redrawing.
+     * orientation and the specified components.
      *
      * @param newOrientation  <code>JSplitPane.HORIZONTAL_SPLIT</code> or
      *                        <code>JSplitPane.VERTICAL_SPLIT</code>
@@ -307,7 +306,9 @@ public class JSplitPane extends JComponent implements Accessible
     public JSplitPane(int newOrientation,
                       Component newLeftComponent,
                       Component newRightComponent){
-        this(newOrientation, false, newLeftComponent, newRightComponent);
+        this(newOrientation,
+                UIManager.getBoolean("SplitPane.continuousLayout"),
+                newLeftComponent, newRightComponent);
     }
 
 

@@ -62,6 +62,9 @@ public class Pwrite {
             throw new RuntimeException("Expected exception not thrown");
         } catch(NonWritableChannelException e) {
             // Correct result
+        } finally {
+            fc.close();
+            blah.delete();
         }
     }
 
@@ -123,6 +126,7 @@ public class Pwrite {
         }
         c.close();
         raf.close();
+        blah.delete();
     }
 
     /**
