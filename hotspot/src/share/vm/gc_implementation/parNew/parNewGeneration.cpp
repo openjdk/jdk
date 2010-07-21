@@ -539,10 +539,9 @@ ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level)
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 
   for (uint i1 = 0; i1 < ParallelGCThreads; i1++) {
-    ObjToScanQueuePadded *q_padded = new ObjToScanQueuePadded();
-    guarantee(q_padded != NULL, "work_queue Allocation failure.");
-
-    _task_queues->register_queue(i1, &q_padded->work_queue);
+    ObjToScanQueue *q = new ObjToScanQueue();
+    guarantee(q != NULL, "work_queue Allocation failure.");
+    _task_queues->register_queue(i1, q);
   }
 
   for (uint i2 = 0; i2 < ParallelGCThreads; i2++)
