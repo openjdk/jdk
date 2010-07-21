@@ -419,7 +419,7 @@ public class Scanner implements Lexer {
                 putChar(ch);
             } else {
                 if (!allowUnderscoresInLiterals) {
-                    lexError("unsupported.underscore", source.name);
+                    lexError("unsupported.underscore.lit", source.name);
                     allowUnderscoresInLiterals = true;
                 }
             }
