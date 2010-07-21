@@ -83,7 +83,7 @@ import java.io.Serializable;
  * doc flavor's MIME type is one of the standard media types telling how to
  * interpret the sequence of characters or bytes. For a list of standard media
  * types, see the Internet Assigned Numbers Authority's (IANA's) <A
- * HREF="http://www.isi.edu/in-notes/iana/assignments/media-types/">Media Types
+ * HREF="http://www.iana.org/assignments/media-types/">Media Types
  * Directory</A>. Interface {@link Doc Doc} provides two utility operations,
  * {@link Doc#getReaderForText() getReaderForText} and
  * {@link Doc#getStreamForBytes() getStreamForBytes()}, to help a
@@ -450,7 +450,7 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * A String representing the host operating system encoding.
      * This will follow the conventions documented in
-     * <a href="http://ietf.org/rfc/rfc2278.txt">
+     * <a href="http://www.ietf.org/rfc/rfc2278.txt">
      * <i>RFC&nbsp;2278:&nbsp;IANA Charset Registration Procedures</i></a>
      * except where historical names are returned for compatibility with
      * previous versions of the Java platform.

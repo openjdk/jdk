@@ -25,6 +25,7 @@
  * @test
  * @bug 4475533 4698138 4638365 4796221
  * @summary Test FileChannel write
+ * @run main/othervm Write
  */
 
 import java.nio.channels.*;
@@ -46,23 +47,25 @@ public class Write {
 
     // Test to see that offset > length does not throw exception
     static void test1() throws Exception {
-        File testFile = File.createTempFile("test1", null);
-        testFile.deleteOnExit();
-
         ByteBuffer[] dsts = new ByteBuffer[4];
         for (int i=0; i<4; i++)
             dsts[i] = ByteBuffer.allocateDirect(10);
 
-        FileOutputStream fos = new FileOutputStream(testFile);
-        FileChannel fc = fos.getChannel();
-        fc.write(dsts, 2, 1);
-        fos.close();
+        File testFile = File.createTempFile("test1", null);
+        try {
+            FileOutputStream fos = new FileOutputStream(testFile);
+            FileChannel fc = fos.getChannel();
+            fc.write(dsts, 2, 1);
+            fos.close();
+        } finally {
+            testFile.delete();
+        }
     }
 
     // Test to see that the appropriate buffers are updated
     static void test2() throws Exception {
         File testFile = File.createTempFile("test2", null);
-        testFile.deleteOnExit();
+        testFile.delete();
         ByteBuffer[] srcs = new ByteBuffer[4];
         for (int i=0; i<4; i++)
             srcs[i] = ByteBuffer.allocateDirect(10);
@@ -74,25 +77,34 @@ public class Write {
 
         FileOutputStream fos = new FileOutputStream(testFile);
         FileChannel fc = fos.getChannel();
-        fc.write(srcs, 1, 2);
-        fos.close();
+        try {
+            fc.write(srcs, 1, 2);
+        } finally {
+            fc.close();
+        }
 
         FileInputStream fis = new FileInputStream(testFile);
         fc = fis.getChannel();
-        ByteBuffer bb = ByteBuffer.allocateDirect(10);
-        fc.read(bb);
-        bb.flip();
-        if (bb.get() != 2)
-            throw new RuntimeException("Write failure");
-        if (bb.get() != 3)
-            throw new RuntimeException("Write failure");
         try {
-            bb.get();
-            throw new RuntimeException("Write failure");
-        } catch (BufferUnderflowException bufe) {
-            // correct result
+            ByteBuffer bb = ByteBuffer.allocateDirect(10);
+            fc.read(bb);
+            bb.flip();
+            if (bb.get() != 2)
+                throw new RuntimeException("Write failure");
+            if (bb.get() != 3)
+                throw new RuntimeException("Write failure");
+            try {
+                bb.get();
+                throw new RuntimeException("Write failure");
+            } catch (BufferUnderflowException bufe) {
+                // correct result
+            }
+        } finally {
+            fc.close();
         }
-        fis.close();
+
+        // eagerly clean-up
+        testFile.delete();
     }
 
     // Test write to a negative position (bug 4698138).

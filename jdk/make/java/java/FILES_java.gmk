@@ -30,10 +30,12 @@
 #
 JAVA_JAVA_java = \
     java/lang/Object.java \
+    java/lang/AutoCloseable.java \
     java/lang/Class.java \
     java/lang/Thread.java \
     java/lang/Character.java \
     java/lang/CharacterData.java \
+    java/lang/CharacterName.java \
     sun/misc/ASCIICaseInsensitiveComparator.java \
     sun/misc/VM.java \
     sun/misc/Signal.java \

@@ -43,9 +43,13 @@ public class OriginalClass {
 
         // Serialize the subclass
         FileOutputStream fo = new FileOutputStream("parents.ser");
-        ObjectOutputStream so = new ObjectOutputStream(fo);
-        so.writeObject(corg);
-        so.flush();
+        try {
+            ObjectOutputStream so = new ObjectOutputStream(fo);
+            so.writeObject(corg);
+            so.flush();
+        } finally {
+            fo.close();
+        }
 
         System.out.println("Printing the serialized class: ");
         System.out.println();

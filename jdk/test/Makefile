@@ -37,11 +37,14 @@ GET=
 AWK       = awk
 CAT       = cat
 CD        = cd
+CHMOD     = chmod
 CP        = cp
 CUT       = cut
+DIRNAME   = dirname
 ECHO      = echo
 EGREP     = egrep
 EXPAND    = expand
+FIND      = find
 MKDIR     = mkdir
 PWD       = pwd
 SED       = sed
@@ -76,21 +79,25 @@ ifeq ($(UNAME_S), Linux)
   endif
   OS_VERSION := $(shell $(UNAME) -r)
 endif
-ifndef OS_NAME
-  ifneq ($(PROCESSOR_IDENTIFIER), )
-    OS_NAME = windows
-    SLASH_JAVA = J:
-    # A variety of ways to say X64 arch :^(
-    OS_ARCH:=$(word 1, $(PROCESSOR_IDENTIFIER))
-    EXESUFFIX = .exe
-    # These need to be different depending on MKS or CYGWIN
-    ifeq ($(findstring cygdrive,$(shell ($(CD) C:/ && $(PWD)))), )
-      GETMIXEDPATH  = dosname -s
-      OS_VERSION   := $(shell $(UNAME) -r)
-    else
-      GETMIXEDPATH  = cygpath -m -s
-      OS_VERSION   := $(shell $(UNAME) -s | $(CUT) -d'-' -f2)
-    endif
+ifeq ($(OS_NAME),)
+  OS_NAME = windows
+  # GNU Make or MKS overrides $(PROCESSOR_ARCHITECTURE) to always
+  # return "x86". Use the first word of $(PROCESSOR_IDENTIFIER) instead.
+  ifeq ($(PROCESSOR_IDENTIFIER),)
+    PROC_ARCH:=$(shell $(UNAME) -m)
+  else
+    PROC_ARCH:=$(word 1, $(PROCESSOR_IDENTIFIER))
+  endif
+  OS_ARCH:=$(PROC_ARCH)
+  SLASH_JAVA = J:
+  EXESUFFIX = .exe
+  # These need to be different depending on MKS or CYGWIN
+  ifeq ($(findstring cygdrive,$(shell ($(CD) C:/ && $(PWD)))), )
+    GETMIXEDPATH  = dosname -s
+    OS_VERSION   := $(shell $(UNAME) -r)
+  else
+    GETMIXEDPATH  = cygpath -m -s
+    OS_VERSION   := $(shell $(UNAME) -s | $(CUT) -d'-' -f2)
   endif
 endif
 
@@ -107,22 +114,27 @@ OS_ARCH2-amd64:=x64
 #OS_ARCH2-x64:=amd64
 
 # Try and use the arch names consistently
-OS_ARCH:=$(subst x64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst X64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst AMD64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst amd64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst x86_64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst EM64T,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst em64t,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst intel64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst Intel64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst INTEL64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
-OS_ARCH:=$(subst IA64,ia64,$(OS_ARCH))
-OS_ARCH:=$(subst X86,i586,$(OS_ARCH))
-OS_ARCH:=$(subst x86,i586,$(OS_ARCH))
-OS_ARCH:=$(subst i386,i586,$(OS_ARCH))
-OS_ARCH:=$(subst i486,i586,$(OS_ARCH))
-OS_ARCH:=$(subst i686,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst x64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst X64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst AMD64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst amd64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst x86_64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst 8664,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst EM64T,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst em64t,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst intel64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst Intel64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst INTEL64,$(OS_ARCH_X64_NAME),$(OS_ARCH))
+OS_ARCH:=$(patsubst IA64,ia64,$(OS_ARCH))
+OS_ARCH:=$(patsubst X86,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst x86,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst i386,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst i486,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst i686,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst 386,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst 486,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst 586,i586,$(OS_ARCH))
+OS_ARCH:=$(patsubst 686,i586,$(OS_ARCH))
 
 # Default  ARCH_DATA_MODEL settings
 ARCH_DATA_MODEL-i586 = 32
@@ -234,6 +246,11 @@ ifeq ($(OS_NAME),solaris)
   endif
 endif
 
+# Macro to run make and set the shared library permissions
+define SharedLibraryPermissions
+$(MAKE) SHARED_LIBRARY_DIR=$1 UNIQUE_DIR=$@ shared_library_permissions
+endef
+
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
 ARCHIVE_BUNDLE = $(ABS_TEST_OUTPUT_DIR)/ARCHIVE_BUNDLE.zip
 ifdef JPRT_ARCHIVE_BUNDLE
@@ -242,7 +259,7 @@ endif
 
 # How to create the test bundle (pass or fail, we want to create this)
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
-ZIP_UP_RESULTS = ( $(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`     \
+ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
 	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport/text/summary.txt
@@ -290,7 +307,7 @@ BUNDLE_UP_AND_EXIT = \
     passc="`$(CAT) $(PASSLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
     failc="`$(CAT) $(FAILLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
     exclc="`$(CAT) $(EXCLUDELIST) | $(WC) -l | $(AWK) '{print $$1;}'`"; \
-    $(ECHO) "TEST STATS: run=$${runc}  pass=$${passc}  fail=$${failc}  excluded=$${exclc}" \
+    $(ECHO) "TEST STATS: name=$(UNIQUE_DIR)  run=$${runc}  pass=$${passc}  fail=$${failc}  excluded=$${exclc}" \
       >> $(STATS_TXT); \
   else \
     $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
@@ -309,7 +326,7 @@ all: jtreg_tests
 # Prep for output
 prep: clean
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)
-	@$(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`
+	@$(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`
 
 # Cleanup
 clean:
@@ -359,7 +376,7 @@ else
 $(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
 	@$(RM) $@ $@.temp1 $@.temp2
 	@(($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-all'          ) ;\
-	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_ARCH)'   ) ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(PLATFORM_OS)'          ) ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_ARCH2)'  ) ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_VERSION)') ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- 'generic-$(OS_ARCH)'      ) ;\
@@ -478,18 +495,17 @@ JDK_ALL_TARGETS += jdk_nio1
 jdk_nio1: java/nio/file
 	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: java/nio/Buffer java/nio/ByteOrder \
           java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer
-	$(call RunOthervmBatch)
+	$(call SharedLibraryPermissions,java/nio/channels)
+	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
 jdk_nio3: com/sun/nio sun/nio
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 
 # All nio tests
 jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
@@ -516,6 +532,7 @@ jdk_security2: javax/crypto com/sun/crypto
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security3
 jdk_security3: com/sun/security lib/security javax/security sun/security
+	$(call SharedLibraryPermissions,sun/security)
 	$(call RunOthervmBatch)
 
 # All security tests
@@ -542,7 +559,8 @@ jdk_tools1: com/sun/jdi
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
-	$(call RunOthervmBatch)
+	$(call SharedLibraryPermissions,tools/launcher)
+	$(call RunSamevmBatch)
 
 # All tools tests
 jdk_tools: jdk_tools1 jdk_tools2
@@ -611,7 +629,26 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG) $(EXCLUDELIST)
 	  ) ; $(BUNDLE_UP_AND_EXIT)                                          \
 	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
 
-PHONY_LIST += jtreg_tests
+# Rule that may change execute permissions on shared library files.
+#  Files in repositories should never have execute permissions, but there
+#  are some tests that have pre-built shared libraries, and these windows
+#  dll files must have execute permission. Adding execute permission
+#  may happen automatically on windows when using certain versions of mercurial
+#  but it cannot be guaranteed. And blindly adding execute permission might
+#  be seen as a mercurial 'change', so we avoid adding execute permission to
+#  repository files. But testing from a plain source tree needs the chmod a+rx.
+#  Used on select directories and applying the chmod to all shared libraries
+#  not just dll files. On windows, this may not work with MKS if the files
+#  were installed with CYGWIN unzip or untar (MKS chmod may not do anything).
+#  And with CYGWIN and sshd service, you may need CYGWIN=ntsec for this to work.
+#
+shared_library_permissions: $(SHARED_LIBRARY_DIR)
+	if [ ! -d $(TEST_ROOT)/../.hg ] ; then                          \
+	  $(FIND) $< \( -name \*.dll -o -name \*.DLL -o -name \*.so \)  \
+	        -exec $(CHMOD) a+rx {} \; ;                             \
+        fi
+
+PHONY_LIST += jtreg_tests shared_library_permissions
 
 ################################################################
 
@@ -644,7 +681,7 @@ PHONY_LIST += packtest packtest_stress
 # perftest to collect statistics  
 
 # Expect JPRT to set JPRT_PACKTEST_HOME.
-PERFTEST_HOME = ${TEST_ROOT}/perf
+PERFTEST_HOME = $(TEST_ROOT)/perf
 ifdef JPRT_PERFTEST_HOME
   PERFTEST_HOME = $(JPRT_PERFTEST_HOME)
 endif

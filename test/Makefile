@@ -54,30 +54,33 @@ LANGTOOLS_TEST_LIST = langtools_jtreg
 
 # Test target list for jdk repository
 JDK_TEST_LIST = \
-	jdk_awt \
-	jdk_beans jdk_beans1 jdk_beans2 jdk_beans3  \
+	jdk_beans1 jdk_beans2 jdk_beans3  \
 	jdk_io  \
 	jdk_lang  \
-	jdk_management jdk_management1 jdk_management2  \
+	jdk_management1 jdk_management2  \
 	jdk_math  \
 	jdk_misc  \
 	jdk_net  \
-	jdk_nio jdk_nio1 jdk_nio2 jdk_nio3  \
-	jdk_rmi \
-	jdk_security jdk_security1 jdk_security2 jdk_security3  \
-	jdk_swing \
+	jdk_nio1 jdk_nio2 jdk_nio3  \
+	jdk_security1 jdk_security2 jdk_security3  \
 	jdk_text  \
-	jdk_tools jdk_tools1 jdk_tools2  \
+	jdk_tools1 jdk_tools2  \
 	jdk_util
+
+# These tests need a DISPLAY and can create window interaction complications
+JDK_TEST_LIST2 = \
+	jdk_awt \
+	jdk_rmi \
+	jdk_swing
 
 # Default test target (everything)
 all: $(JDK_TEST_LIST) $(LANGTOOLS_TEST_LIST)
 
 # Test targets
 $(LANGTOOLS_TEST_LIST):
-	@$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
 $(JDK_TEST_LIST):
-	@$(call SUBDIR_TEST, $(JDK_DIR), $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), $@)
 
 clean:
 

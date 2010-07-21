@@ -30,7 +30,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds documentation for required annotation type members.
@@ -114,20 +113,6 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public void invokeMethod(String methodName, Class<?>[] paramClasses,
-            Object[] params)
-    throws Exception {
-        if (DEBUG) {
-            configuration.root.printError("DEBUG: " + this.getClass().getName()
-                + "." + methodName);
-        }
-        Method method = this.getClass().getMethod(methodName, paramClasses);
-        method.invoke(this, params);
-    }
-
-    /**
      * Returns a list of members that will be documented for the given class.
      * This information can be used for doclet specific documentation
      * generation.
@@ -161,20 +146,20 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param elements the XML elements that specify how to construct this
      *                documentation.
      */
-    public void buildAnnotationTypeRequiredMember(List<?> elements) {
+    public void buildAnnotationTypeRequiredMember(XMLNode node) {
         if (writer == null) {
             return;
         }
         for (currentMemberIndex = 0; currentMemberIndex < members.size();
             currentMemberIndex++) {
-            build(elements);
+            buildChildren(node);
         }
     }
 
     /**
      * Build the overall header.
      */
-    public void buildHeader() {
+    public void buildHeader(XMLNode node) {
         writer.writeHeader(classDoc,
             configuration.getText("doclet.Annotation_Type_Member_Detail"));
     }
@@ -182,7 +167,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * Build the header for the individual members.
      */
-    public void buildMemberHeader() {
+    public void buildMemberHeader(XMLNode node) {
         writer.writeMemberHeader((MemberDoc) members.get(
                 currentMemberIndex),
             currentMemberIndex == 0);
@@ -191,14 +176,14 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      */
-    public void buildSignature() {
+    public void buildSignature(XMLNode node) {
         writer.writeSignature((MemberDoc) members.get(currentMemberIndex));
     }
 
     /**
      * Build the deprecation information.
      */
-    public void buildDeprecationInfo() {
+    public void buildDeprecationInfo(XMLNode node) {
         writer.writeDeprecated((MemberDoc) members.get(currentMemberIndex));
     }
 
@@ -206,7 +191,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * Build the comments for the member.  Do nothing if
      * {@link Configuration#nocomment} is set to true.
      */
-    public void buildMemberComments() {
+    public void buildMemberComments(XMLNode node) {
         if(! configuration.nocomment){
             writer.writeComments((MemberDoc) members.get(currentMemberIndex));
         }
@@ -215,21 +200,21 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      */
-    public void buildTagInfo() {
+    public void buildTagInfo(XMLNode node) {
         writer.writeTags((MemberDoc) members.get(currentMemberIndex));
     }
 
     /**
      * Build the footer for the individual member.
      */
-    public void buildMemberFooter() {
+    public void buildMemberFooter(XMLNode node) {
         writer.writeMemberFooter();
     }
 
     /**
      * Build the overall footer.
      */
-    public void buildFooter() {
+    public void buildFooter(XMLNode node) {
         writer.writeFooter(classDoc);
     }
 

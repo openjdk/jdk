@@ -490,22 +490,23 @@ Java_sun_font_FreetypeFontScaler_getFontMetricsNative(
 
     /* ascent */
     ax = 0;
-    ay = -(jfloat) FT26Dot6ToFloat(
-                       scalerInfo->face->size->metrics.ascender +
-                       bmodifier/2);
+    ay = -(jfloat) FT26Dot6ToFloat(FT_MulFix(
+                       ((jlong) scalerInfo->face->ascender + bmodifier/2),
+                       (jlong) scalerInfo->face->size->metrics.y_scale));
     /* descent */
     dx = 0;
-    dy = -(jfloat) FT26Dot6ToFloat(
-                       scalerInfo->face->size->metrics.descender +
-                       bmodifier/2);
+    dy = -(jfloat) FT26Dot6ToFloat(FT_MulFix(
+                       ((jlong) scalerInfo->face->descender + bmodifier/2),
+                       (jlong) scalerInfo->face->size->metrics.y_scale));
     /* baseline */
     bx = by = 0;
 
     /* leading */
     lx = 0;
-    ly = (jfloat) FT26Dot6ToFloat(
-                      scalerInfo->face->size->metrics.height +
-                      bmodifier) + ay - dy;
+    ly = (jfloat) FT26Dot6ToFloat(FT_MulFix(
+                      (jlong) scalerInfo->face->height + bmodifier,
+                      (jlong) scalerInfo->face->size->metrics.y_scale))
+                  + ay - dy;
     /* max advance */
     mx = (jfloat) FT26Dot6ToFloat(
                      scalerInfo->face->size->metrics.max_advance +
@@ -782,6 +783,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
         return ptr_to_jlong(glyphInfo);
     }
     glyphInfo->cellInfo  = NULL;
+    glyphInfo->managed   = UNMANAGED_GLYPH;
     glyphInfo->rowBytes  = width;
     glyphInfo->width     = width;
     glyphInfo->height    = height;
@@ -1130,7 +1132,7 @@ static void addToGP(GPData* gpdata, FT_Outline*outline) {
                     current_type = SEG_LINETO;
                 }
             } else if (FT_CURVE_TAG(outline->tags[i]) == FT_CURVE_TAG_CUBIC) {
-                /* Bit 1 is meaningful for ‘off’ points only.
+                /* Bit 1 is meaningful for 'off' points only.
                    If set, it indicates a third-order Bezier arc control
                    point; and a second-order control point if unset.  */
                 current_type = SEG_CUBICTO;

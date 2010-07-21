@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,17 +47,22 @@ public final class PersistenceDelegateFinder
     }
 
     public void register(Class<?> type, PersistenceDelegate delegate) {
-        if (delegate != null) {
-            this.registry.put(type, delegate);
-        }
-        else {
-            this.registry.remove(type);
+        synchronized (this.registry) {
+            if (delegate != null) {
+                this.registry.put(type, delegate);
+            }
+            else {
+                this.registry.remove(type);
+            }
         }
     }
 
     @Override
     public PersistenceDelegate find(Class<?> type) {
-        PersistenceDelegate delegate = this.registry.get(type);
+        PersistenceDelegate delegate;
+        synchronized (this.registry) {
+            delegate = this.registry.get(type);
+        }
         return (delegate != null) ? delegate : super.find(type);
     }
 }

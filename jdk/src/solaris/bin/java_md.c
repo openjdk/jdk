@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,13 +183,9 @@ GetArchPath(int nbits)
 }
 
 void
-CreateExecutionEnvironment(int *_argcp,
-                           char ***_argvp,
-                           char jrepath[],
-                           jint so_jrepath,
-                           char jvmpath[],
-                           jint so_jvmpath,
-                           char **original_argv) {
+CreateExecutionEnvironment(int *pargc, char ***pargv,
+                           char jrepath[], jint so_jrepath,
+                           char jvmpath[], jint so_jvmpath) {
   /*
    * First, determine if we are running the desired data model.  If we
    * are running the desired data model, all the error messages
@@ -200,18 +196,17 @@ CreateExecutionEnvironment(int *_argcp,
    * os/processor combination has dual mode capabilities.
    */
 
-    int original_argc = *_argcp;
     jboolean jvmpathExists;
 
     /* Compute/set the name of the executable */
-    SetExecname(*_argvp);
+    SetExecname(*pargv);
 
     /* Check data model flags, and exec process, if needed */
     {
       char *arch        = (char *)GetArch(); /* like sparc or sparcv9 */
       char * jvmtype    = NULL;
-      int argc          = *_argcp;
-      char **argv       = original_argv;
+      int  argc         = *pargc;
+      char **argv       = *pargv;
 
       int running       = CURRENT_DATA_MODEL;
 
@@ -233,7 +228,7 @@ CreateExecutionEnvironment(int *_argcp,
       { /* open new scope to declare local variables */
         int i;
 
-        newargv = (char **)JLI_MemAlloc((argc+1) * sizeof(*newargv));
+        newargv = (char **)JLI_MemAlloc((argc+1) * sizeof(char*));
         newargv[newargc++] = argv[0];
 
         /* scan for data model arguments and remove from argument list;
@@ -293,7 +288,11 @@ CreateExecutionEnvironment(int *_argcp,
         }
 
         jvmpath[0] = '\0';
-        jvmtype = CheckJvmType(_argcp, _argvp, JNI_FALSE);
+        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+        }
 
         if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, arch )) {
           JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
@@ -309,7 +308,9 @@ CreateExecutionEnvironment(int *_argcp,
         if (running != wanted) {
           /* Find out where the JRE is that we will be using. */
           if (!GetJREPath(jrepath, so_jrepath, GetArchPath(wanted), JNI_TRUE)) {
-            goto EndDataModelSpeculate;
+            /* give up and let other code report error message */
+            JLI_ReportErrorMessage(JRE_ERROR2, wanted);
+            exit(1);
           }
 
           /*
@@ -317,16 +318,21 @@ CreateExecutionEnvironment(int *_argcp,
            * selection options.
            */
           if (ReadKnownVMs(jrepath, GetArchPath(wanted), JNI_TRUE) < 1) {
-            goto EndDataModelSpeculate;
+            /* give up and let other code report error message */
+            JLI_ReportErrorMessage(JRE_ERROR2, wanted);
+            exit(1);
           }
           jvmpath[0] = '\0';
-          jvmtype = CheckJvmType(_argcp, _argvp, JNI_TRUE);
+          jvmtype = CheckJvmType(pargc, pargv, JNI_TRUE);
+          if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+          }
+
           /* exec child can do error checking on the existence of the path */
           jvmpathExists = GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, GetArchPath(wanted));
 
         }
-      EndDataModelSpeculate: /* give up and let other code report error message */
-        ;
 #else
         JLI_ReportErrorMessage(JRE_ERROR2, wanted);
         exit(1);
@@ -398,9 +404,9 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
     struct stat s;
 
     if (JLI_StrChr(jvmtype, '/')) {
-        sprintf(jvmpath, "%s/" JVM_DLL, jvmtype);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/" JVM_DLL, jvmtype);
     } else {
-        sprintf(jvmpath, "%s/lib/%s/%s/" JVM_DLL, jrepath, arch, jvmtype);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/%s/" JVM_DLL, jrepath, arch, jvmtype);
     }
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
@@ -424,26 +430,24 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
-        sprintf(libjava, "%s/lib/%s/" JAVA_DLL, path, arch);
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/%s/" JAVA_DLL, path, arch);
         if (access(libjava, F_OK) == 0) {
-            goto found;
+            JLI_TraceLauncher("JRE path is %s\n", path);
+            return JNI_TRUE;
         }
 
         /* Does the app ship a private JRE in <apphome>/jre directory? */
-        sprintf(libjava, "%s/jre/lib/%s/" JAVA_DLL, path, arch);
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/%s/" JAVA_DLL, path, arch);
         if (access(libjava, F_OK) == 0) {
             JLI_StrCat(path, "/jre");
-            goto found;
+            JLI_TraceLauncher("JRE path is %s\n", path);
+            return JNI_TRUE;
         }
     }
 
     if (!speculative)
       JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
-
- found:
-    JLI_TraceLauncher("JRE path is %s\n", path);
-    return JNI_TRUE;
 }
 
 jboolean
@@ -463,14 +467,18 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
       int location;
 
       fp = fopen(jvmpath, "r");
-      if(fp == NULL)
-        goto error;
+      if (fp == NULL) {
+        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+        return JNI_FALSE;
+      }
 
       /* read in elf header */
       count = fread((void*)(&elf_head), sizeof(Elf32_Ehdr), 1, fp);
       fclose(fp);
-      if(count < 1)
-        goto error;
+      if (count < 1) {
+        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+        return JNI_FALSE;
+      }
 
       /*
        * Check for running a server vm (compiled with -xarch=v8plus)
@@ -481,41 +489,42 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
        * does not have to be checked for in binaries with an LP64 data
        * model.
        */
-      if(elf_head.e_machine == EM_SPARC32PLUS) {
+      if (elf_head.e_machine == EM_SPARC32PLUS) {
         char buf[257];  /* recommended buffer size from sysinfo man
                            page */
         long length;
         char* location;
 
         length = sysinfo(SI_ISALIST, buf, 257);
-        if(length > 0) {
-          location = JLI_StrStr(buf, "sparcv8plus ");
-          if(location == NULL) {
+        if (length > 0) {
+            location = JLI_StrStr(buf, "sparcv8plus ");
+          if (location == NULL) {
             JLI_ReportErrorMessage(JVM_ERROR3);
             return JNI_FALSE;
           }
         }
       }
 #endif
-      JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
-      goto error;
+        JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
+        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+        return JNI_FALSE;
     }
 
     ifn->CreateJavaVM = (CreateJavaVM_t)
-      dlsym(libjvm, "JNI_CreateJavaVM");
-    if (ifn->CreateJavaVM == NULL)
-        goto error;
+        dlsym(libjvm, "JNI_CreateJavaVM");
+    if (ifn->CreateJavaVM == NULL) {
+        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+        return JNI_FALSE;
+    }
 
     ifn->GetDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs_t)
         dlsym(libjvm, "JNI_GetDefaultJavaVMInitArgs");
-    if (ifn->GetDefaultJavaVMInitArgs == NULL)
-      goto error;
+    if (ifn->GetDefaultJavaVMInitArgs == NULL) {
+        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+        return JNI_FALSE;
+    }
 
     return JNI_TRUE;
-
-error:
-    JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
-    return JNI_FALSE;
 }
 
 /*
@@ -575,7 +584,7 @@ Resolve(char *indir, char *cmd)
     char name[PATH_MAX + 2], *real;
 
     if ((JLI_StrLen(indir) + JLI_StrLen(cmd) + 1)  > PATH_MAX) return 0;
-    sprintf(name, "%s%c%s", indir, FILE_SEPARATOR, cmd);
+    JLI_Snprintf(name, sizeof(name), "%s%c%s", indir, FILE_SEPARATOR, cmd);
     if (!ProgramExists(name)) return 0;
     real = JLI_MemAlloc(PATH_MAX + 2);
     if (!realpath(name, real))
@@ -622,7 +631,7 @@ FindExecName(char *program)
         else {
             /* relative path element */
             char dir[2*PATH_MAX];
-            sprintf(dir, "%s%c%s", getcwd(cwdbuf, sizeof(cwdbuf)),
+            JLI_Snprintf(dir, sizeof(dir), "%s%c%s", getcwd(cwdbuf, sizeof(cwdbuf)),
                     FILE_SEPARATOR, s);
             result = Resolve(dir, program);
         }
@@ -746,7 +755,7 @@ CheckSanity(char *path, char *dir)
     if (JLI_StrLen(path) + JLI_StrLen(dir) + 11 > PATH_MAX)
         return (0);     /* Silently reject "impossibly" long paths */
 
-    sprintf(buffer, "%s/%s/bin/java", path, dir);
+    JLI_Snprintf(buffer, sizeof(buffer), "%s/%s/bin/java", path, dir);
     return ((access(buffer, X_OK) == 0) ? 1 : 0);
 }
 

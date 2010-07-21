@@ -204,7 +204,7 @@ ifeq ($(PLATFORM),windows)
 OTHER_LDLIBS += $(JVMLIB) -libpath:$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlibm.lib \
 		       -libpath:$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib
 else
-OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) -lnsl -ldl \
+OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) $(LIBNSL) -ldl \
 		-L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) -lfdlibm.$(ARCH)
 endif
 
@@ -383,6 +383,27 @@ clean::
 	$(RM) $(GENSRCDIR)/java/lang/CharacterData0E.java
 	$(RM) $(GENSRCDIR)/java/lang/CharacterDataUndefined.java 
 	$(RM) $(GENSRCDIR)/java/lang/CharacterDataPrivateUse.java
+
+#
+# Rules to generate classes/java/lang/uniName.dat
+#
+
+
+
+UNINAME = $(CLASSBINDIR)/java/lang/uniName.dat
+GENERATEUNINAME_JARFILE = $(BUILDTOOLJARDIR)/generatecharacter.jar
+
+build: $(UNINAME)
+
+$(UNINAME): $(UNICODEDATA)/UnicodeData.txt \
+	$(GENERATECHARACTER_JARFILE)
+	@$(prep-target)
+	$(BOOT_JAVA_CMD) -classpath $(GENERATECHARACTER_JARFILE) \
+	build.tools.generatecharacter.CharacterName \
+		$(UNICODEDATA)/UnicodeData.txt $(UNINAME)
+
+clean:: 
+	$(RM) $(UNINAME)
 
 #
 # End of rules to create $(GENSRCDIR)/java/lang/CharacterDataXX.java

@@ -49,8 +49,8 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 /** This class provides operations to map an internal symbol table graph
  *  rooted in a ClassSymbol into a classfile.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -648,6 +648,13 @@ public class ClassWriter extends ClassFile {
         }
         if ((flags & ANNOTATION) != 0 && !target.useAnnotationFlag()) {
             int alenIdx = writeAttr(names.Annotation);
+            endAttr(alenIdx);
+            acount++;
+        }
+        if ((flags & POLYMORPHIC_SIGNATURE) != 0) {
+            if (target.majorVersion < 51)
+                throw new AssertionError("PolymorphicSignature attributes in java/dyn must be written with -target 7 (required major version is 51, current is"+target.majorVersion+")");
+            int alenIdx = writeAttr(names.PolymorphicSignature);
             endAttr(alenIdx);
             acount++;
         }

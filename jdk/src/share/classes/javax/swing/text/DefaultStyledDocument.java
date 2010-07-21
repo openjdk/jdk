@@ -25,15 +25,12 @@
 package javax.swing.text;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.font.TextAttribute;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -41,15 +38,14 @@ import java.util.Vector;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import javax.swing.Icon;
 import javax.swing.event.*;
 import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import javax.swing.SwingUtilities;
+import static sun.swing.SwingUtilities2.IMPLIED_CR;
 
 /**
  * A document that can be marked up with character and paragraph
@@ -782,9 +778,18 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             // Check for the composed text element. If it is, merge the character attributes
             // into this element as well.
             if (Utilities.isComposedTextAttributeDefined(attr)) {
-                ((MutableAttributeSet)attr).addAttributes(cattr);
-                ((MutableAttributeSet)attr).addAttribute(AbstractDocument.ElementNameAttribute,
-                                                         AbstractDocument.ContentElementName);
+                MutableAttributeSet mattr = (MutableAttributeSet) attr;
+                mattr.addAttributes(cattr);
+                mattr.addAttribute(AbstractDocument.ElementNameAttribute,
+                        AbstractDocument.ContentElementName);
+
+                // Assure that the composed text element is named properly
+                // and doesn't have the CR attribute defined.
+                mattr.addAttribute(StyleConstants.NameAttribute,
+                        AbstractDocument.ContentElementName);
+                if (mattr.isDefined(IMPLIED_CR)) {
+                    mattr.removeAttribute(IMPLIED_CR);
+                }
             }
 
             ElementSpec[] spec = new ElementSpec[parseBuffer.size()];

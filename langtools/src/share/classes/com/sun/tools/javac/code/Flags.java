@@ -33,8 +33,8 @@ import javax.lang.model.element.Modifier;
 
 /** Access flags and other modifiers for Java classes and members.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -226,7 +226,7 @@ public class Flags {
     public static final long HYPOTHETICAL   = 1L<<37;
 
     /**
-     * Flag that marks a Sun proprietary class.
+     * Flag that marks an internal proprietary class.
      */
     public static final long PROPRIETARY = 1L<<38;
 
@@ -234,6 +234,12 @@ public class Flags {
      * Flag that marks a disjoint var in a multi-catch clause
      */
     public static final long DISJOINT = 1L<<39;
+
+    /**
+     * Flag that marks a signature-polymorphic invoke method.
+     * (These occur inside java.dyn.MethodHandle.)
+     */
+    public static final long POLYMORPHIC_SIGNATURE = 1L<<40;
 
     /** Modifier masks.
      */

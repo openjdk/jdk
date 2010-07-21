@@ -43,6 +43,7 @@ public class ReadFully {
         } catch (IndexOutOfBoundsException ie) {
             caughtException = true;
         } finally {
+            dis.close();
             if (!caughtException)
                 throw new RuntimeException("Test failed");
         }

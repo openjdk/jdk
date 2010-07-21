@@ -30,7 +30,7 @@
  *
  * @build MonitorDeadlock
  * @build ThreadDump
- * @run main FindMonitorDeadlock
+ * @run main/othervm FindMonitorDeadlock
  */
 
 import java.lang.management.*;

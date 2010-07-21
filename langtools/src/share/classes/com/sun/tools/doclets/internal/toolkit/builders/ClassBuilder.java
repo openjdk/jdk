@@ -30,7 +30,6 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds the summary for a given class.
@@ -108,20 +107,6 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class<?>[] paramClasses,
-            Object[] params)
-    throws Exception {
-        if (DEBUG) {
-            configuration.root.printError("DEBUG: " + this.getClass().getName()
-                + "." + methodName);
-        }
-        Method method = this.getClass().getMethod(methodName, paramClasses);
-        method.invoke(this, params);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void build() throws IOException {
         build(LayoutParser.getInstance(configuration).parseXML(ROOT));
     }
@@ -138,8 +123,8 @@ public class ClassBuilder extends AbstractBuilder {
       *
       * @param elements the XML elements that specify how to document a class.
       */
-     public void buildClassDoc(List<?> elements) throws Exception {
-        build(elements);
+     public void buildClassDoc(XMLNode node) throws Exception {
+        buildChildren(node);
         writer.close();
         copyDocFiles();
      }
@@ -169,7 +154,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the header of the page.
      */
-    public void buildClassHeader() {
+    public void buildClassHeader(XMLNode node) {
         String key;
         if (isInterface) {
             key =  "doclet.Interface";
@@ -185,7 +170,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the class tree documentation.
      */
-    public void buildClassTree() {
+    public void buildClassTree(XMLNode node) {
         writer.writeClassTree();
     }
 
@@ -193,42 +178,42 @@ public class ClassBuilder extends AbstractBuilder {
      * If this is a class, list all interfaces
      * implemented by this class.
      */
-    public void buildImplementedInterfacesInfo() {
+    public void buildImplementedInterfacesInfo(XMLNode node) {
         writer.writeImplementedInterfacesInfo();
     }
 
     /**
      * If this is an interface, list all super interfaces.
      */
-    public void buildSuperInterfacesInfo() {
+    public void buildSuperInterfacesInfo(XMLNode node) {
         writer.writeSuperInterfacesInfo();
     }
 
     /**
      * List the parameters of this class.
      */
-    public void buildTypeParamInfo() {
+    public void buildTypeParamInfo(XMLNode node) {
         writer.writeTypeParamInfo();
     }
 
     /**
      * List all the classes extend this one.
      */
-    public void buildSubClassInfo() {
+    public void buildSubClassInfo(XMLNode node) {
         writer.writeSubClassInfo();
     }
 
     /**
      * List all the interfaces that extend this one.
      */
-    public void buildSubInterfacesInfo() {
+    public void buildSubInterfacesInfo(XMLNode node) {
         writer.writeSubInterfacesInfo();
     }
 
     /**
      * If this is an interface, list all classes that implement this interface.
      */
-    public void buildInterfaceUsageInfo () {
+    public void buildInterfaceUsageInfo (XMLNode node) {
         writer.writeInterfaceUsageInfo();
     }
 
@@ -236,21 +221,21 @@ public class ClassBuilder extends AbstractBuilder {
      * If this is an inner class or interface, list the enclosing class or
      * interface.
      */
-    public void buildNestedClassInfo () {
+    public void buildNestedClassInfo (XMLNode node) {
         writer.writeNestedClassInfo();
     }
 
     /**
      * If this class is deprecated, print the appropriate information.
      */
-    public void buildDeprecationInfo () {
+    public void buildDeprecationInfo (XMLNode node) {
         writer.writeClassDeprecationInfo();
     }
 
     /**
      * Build the signature of the current class.
      */
-    public void buildClassSignature() {
+    public void buildClassSignature(XMLNode node) {
         StringBuffer modifiers = new StringBuffer(classDoc.modifiers() + " ");
         if (isEnum) {
             modifiers.append("enum ");
@@ -276,14 +261,14 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the class description.
      */
-    public void buildClassDescription() {
+    public void buildClassDescription(XMLNode node) {
        writer.writeClassDescription();
     }
 
     /**
      * Build the tag information for the current class.
      */
-    public void buildClassTagInfo() {
+    public void buildClassTagInfo(XMLNode node) {
        writer.writeClassTagInfo();
     }
 
@@ -293,9 +278,9 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a member summary is
      *                 documented.
      */
-    public void buildMemberSummary(List<?> elements) throws Exception {
+    public void buildMemberSummary(XMLNode node) throws Exception {
         configuration.getBuilderFactory().
-            getMemberSummaryBuilder(writer).build(elements);
+            getMemberSummaryBuilder(writer).buildChildren(node);
         writer.completeMemberSummaryBuild();
     }
 
@@ -305,9 +290,9 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a enum constants are
      *                 documented.
      */
-    public void buildEnumConstantsDetails(List<?> elements) throws Exception {
+    public void buildEnumConstantsDetails(XMLNode node) throws Exception {
         configuration.getBuilderFactory().
-            getEnumConstantsBuilder(writer).build(elements);
+            getEnumConstantsBuilder(writer).buildChildren(node);
     }
 
     /**
@@ -315,9 +300,9 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param elements the XML elements that specify how a field is documented.
      */
-    public void buildFieldDetails(List<?> elements) throws Exception {
+    public void buildFieldDetails(XMLNode node) throws Exception {
         configuration.getBuilderFactory().
-            getFieldBuilder(writer).build(elements);
+            getFieldBuilder(writer).buildChildren(node);
     }
 
     /**
@@ -326,9 +311,9 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how to document a
      * constructor.
      */
-    public void buildConstructorDetails(List<?> elements) throws Exception {
+    public void buildConstructorDetails(XMLNode node) throws Exception {
         configuration.getBuilderFactory().
-            getConstructorBuilder(writer).build(elements);
+            getConstructorBuilder(writer).buildChildren(node);
     }
 
     /**
@@ -336,15 +321,15 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param elements the XML elements that specify how a method is documented.
      */
-    public void buildMethodDetails(List<?> elements) throws Exception {
+    public void buildMethodDetails(XMLNode node) throws Exception {
         configuration.getBuilderFactory().
-                getMethodBuilder(writer).build(elements);
+                getMethodBuilder(writer).buildChildren(node);
     }
 
     /**
      * Build the footer of the page.
      */
-    public void buildClassFooter() {
+    public void buildClassFooter(XMLNode node) {
         writer.writeFooter();
     }
 }
