@@ -35,12 +35,9 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
-import java.security.*;
-import java.security.cert.*;
-import javax.net.ssl.*;
 
 /**
- * The test simply opens 10,000 separate connections
+ * The test simply opens 1,000 separate connections
  * and invokes one http request on each. The client does
  * not close any sockets until after they are closed
  * by the server. This verifies the basic ability
@@ -49,6 +46,7 @@ import javax.net.ssl.*;
 public class B6361557 {
 
     public static boolean error = false;
+    static final int NUM = 1000;
 
     static class Handler implements HttpHandler {
         int invocation = 1;
@@ -75,7 +73,6 @@ public class B6361557 {
         server.setExecutor (executor);
         server.start ();
 
-        final int NUM = 10000;
         ByteBuffer buf = ByteBuffer.allocate (4096);
         InetSocketAddress destaddr = new InetSocketAddress (
                 "127.0.0.1", server.getAddress().getPort()
