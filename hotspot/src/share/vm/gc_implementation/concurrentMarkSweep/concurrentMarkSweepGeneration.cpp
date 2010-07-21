@@ -664,19 +664,14 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         return;
       }
 
-      // XXX use a global constant instead of 64!
-      typedef struct OopTaskQueuePadded {
-        OopTaskQueue work_queue;
-        char pad[64 - sizeof(OopTaskQueue)];  // prevent false sharing
-      } OopTaskQueuePadded;
-
+      typedef Padded<OopTaskQueue> PaddedOopTaskQueue;
       for (i = 0; i < num_queues; i++) {
-        OopTaskQueuePadded *q_padded = new OopTaskQueuePadded();
-        if (q_padded == NULL) {
+        PaddedOopTaskQueue *q = new PaddedOopTaskQueue();
+        if (q == NULL) {
           warning("work_queue allocation failure.");
           return;
         }
-        _task_queues->register_queue(i, &q_padded->work_queue);
+        _task_queues->register_queue(i, q);
       }
       for (i = 0; i < num_queues; i++) {
         _task_queues->queue(i)->initialize();
