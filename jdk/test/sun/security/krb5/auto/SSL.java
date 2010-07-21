@@ -25,6 +25,16 @@
  * @test
  * @bug 6894643 6913636
  * @summary Test JSSE Kerberos ciphersuite
+ * @run main SSL TLS_KRB5_WITH_RC4_128_SHA
+ * @run main SSL TLS_KRB5_WITH_RC4_128_MD5
+ * @run main SSL TLS_KRB5_WITH_3DES_EDE_CBC_SHA
+ * @run main SSL TLS_KRB5_WITH_3DES_EDE_CBC_MD5
+ * @run main SSL TLS_KRB5_WITH_DES_CBC_SHA
+ * @run main SSL TLS_KRB5_WITH_DES_CBC_MD5
+ * @run main SSL TLS_KRB5_EXPORT_WITH_RC4_40_SHA
+ * @run main SSL TLS_KRB5_EXPORT_WITH_RC4_40_MD5
+ * @run main SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
+ * @run main SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
  */
 import java.io.*;
 import java.net.InetAddress;
@@ -37,13 +47,15 @@ import sun.security.krb5.internal.ktab.KeyTab;
 
 public class SSL {
 
-    private static final String KRB5_CIPHER = "TLS_KRB5_WITH_3DES_EDE_CBC_SHA";
+    private static String krb5Cipher;
     private static final int LOOP_LIMIT = 1;
     private static int loopCount = 0;
     private static volatile String server;
     private static volatile int port;
 
     public static void main(String[] args) throws Exception {
+
+        krb5Cipher = args[0];
 
         KDC kdc = KDC.create(OneKDC.REALM);
         // Run this after KDC, so our own DNS service can be started
@@ -117,7 +129,7 @@ public class SSL {
             SSLSocket sslSocket = (SSLSocket) sslsf.createSocket(server, port);
 
             // Enable only a KRB5 cipher suite.
-            String enabledSuites[] = {KRB5_CIPHER};
+            String enabledSuites[] = {krb5Cipher};
             sslSocket.setEnabledCipherSuites(enabledSuites);
             // Should check for exception if enabledSuites is not supported
 
@@ -155,7 +167,7 @@ public class SSL {
             port = sslServerSocket.getLocalPort();
 
             // Enable only a KRB5 cipher suite.
-            String enabledSuites[] = {KRB5_CIPHER};
+            String enabledSuites[] = {krb5Cipher};
             sslServerSocket.setEnabledCipherSuites(enabledSuites);
             // Should check for exception if enabledSuites is not supported
 

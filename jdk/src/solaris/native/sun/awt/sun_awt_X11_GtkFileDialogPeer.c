@@ -42,6 +42,29 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
             filename);
 }
 
+static void quit(gboolean isSignalHandler)
+{
+    if (dialog != NULL)
+    {
+        // Callbacks from GTK signals are made within the GTK lock
+        // So, within a signal handler there is no need to call
+        // gdk_threads_enter() / fp_gdk_threads_leave()
+        if (!isSignalHandler) {
+            fp_gdk_threads_enter();
+        }
+
+        fp_gtk_widget_hide (dialog);
+        fp_gtk_widget_destroy (dialog);
+
+        fp_gtk_main_quit ();
+        dialog = NULL;
+
+        if (!isSignalHandler) {
+            fp_gdk_threads_leave();
+        }
+    }
+}
+
 /*
  * Class:     sun_awt_X11_GtkFileDialogPeer
  * Method:    quit
@@ -50,18 +73,7 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
 JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_quit
 (JNIEnv * env, jobject jpeer)
 {
-    if (dialog != NULL)
-    {
-        fp_gdk_threads_enter();
-
-        fp_gtk_widget_hide (dialog);
-        fp_gtk_widget_destroy (dialog);
-
-        fp_gtk_main_quit ();
-        dialog = NULL;
-
-        fp_gdk_threads_leave();
-    }
+    quit(FALSE);
 }
 
 /**
@@ -147,7 +159,7 @@ static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
             jfilenames);
     fp_g_free(current_folder);
 
-    Java_sun_awt_X11_GtkFileDialogPeer_quit(NULL, NULL);
+    quit(TRUE);
 }
 
 /*

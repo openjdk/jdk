@@ -35,19 +35,11 @@ import java.nio.channels.*;
 
 public class LotsOfChannels {
 
-    private final static int PIPES_COUNT = 1900;
+    private final static int PIPES_COUNT = 256;
     private final static int BUF_SIZE = 8192;
     private final static int LOOPS = 10;
 
     public static void main(String[] argv) throws Exception {
-
-
-        String os = System.getProperty("os.name");
-        if (!(os.equals("Windows NT")
-           || os.equals("Windows 2000")
-           || os.equals("Windows XP")))
-            return;
-
         Pipe[] pipes = new Pipe[PIPES_COUNT];
         Pipe pipe = Pipe.open();
         Pipe.SinkChannel sink = pipe.sink();
@@ -72,6 +64,13 @@ public class LotsOfChannels {
             sel.selectedKeys().clear();
             source.read(ByteBuffer.allocate(BUF_SIZE));
         }
+
+        for (int i = 0; i < PIPES_COUNT; i++ ) {
+            pipes[i].sink().close();
+            pipes[i].source().close();
+        }
+        pipe.sink().close();
+        pipe.source().close();
         sel.close();
     }
 }

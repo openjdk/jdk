@@ -253,6 +253,10 @@ Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
 {
 #ifndef HEADLESS
     X11SDOps *xsdo = (X11SDOps*)SurfaceData_InitOps(env, xsd, sizeof(X11SDOps));
+    if (xsdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
     xsdo->sdOps.Lock = X11SD_Lock;
     xsdo->sdOps.GetRasInfo = X11SD_GetRasInfo;
     xsdo->sdOps.Unlock = X11SD_Unlock;

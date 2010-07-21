@@ -29,6 +29,7 @@
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.net.*;
+import java.util.*;
 import java.util.concurrent.*;
 import java.io.IOException;
 
@@ -44,8 +45,12 @@ public class GroupOfOne {
         final AsynchronousServerSocketChannel listener =
             AsynchronousServerSocketChannel.open()
                 .bind(new InetSocketAddress(0));
+        final List<AsynchronousSocketChannel> accepted = new ArrayList<AsynchronousSocketChannel>();
         listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
             public void completed(AsynchronousSocketChannel ch, Void att) {
+                synchronized (accepted) {
+                    accepted.add(ch);
+                }
                 listener.accept((Void)null, this);
             }
             public void failed(Throwable exc, Void att) {
@@ -58,6 +63,14 @@ public class GroupOfOne {
         test(sa, true, false);
         test(sa, false, true);
         test(sa, true, true);
+
+        // clean-up
+        listener.close();
+        synchronized (accepted) {
+            for (AsynchronousSocketChannel ch: accepted) {
+                ch.close();
+            }
+        }
     }
 
     static void test(SocketAddress sa,
