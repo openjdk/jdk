@@ -3088,10 +3088,6 @@ class CommandLineFlags {
                                                                             \
   product(intx, SafepointSpinBeforeYield, 2000,  "(Unstable)")              \
                                                                             \
-  product(bool, UseDepthFirstScavengeOrder, true,                           \
-          "true: the scavenge order will be depth-first, "                  \
-          "false: the scavenge order will be breadth-first")                \
-                                                                            \
   product(bool, PSChunkLargeArrays, true,                                   \
           "true: process large arrays in chunks")                           \
                                                                             \
