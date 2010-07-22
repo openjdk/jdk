@@ -463,9 +463,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         "application/x-www-form-urlencoded");
             }
 
+            boolean chunked = false;
+
             if (streaming()) {
                 if (chunkLength != -1) {
                     requests.set ("Transfer-Encoding", "chunked");
+                    chunked = true;
                 } else { /* fixed content length */
                     if (fixedContentLengthLong != -1) {
                         requests.set ("Content-Length",
@@ -482,6 +485,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     poster.close();
                     requests.set("Content-Length",
                                  String.valueOf(poster.size()));
+                }
+            }
+
+            if (!chunked) {
+                if (requests.findValue("Transfer-Encoding") != null) {
+                    requests.remove("Transfer-Encoding");
+                    if (logger.isLoggable(PlatformLogger.WARNING)) {
+                        logger.warning(
+                            "use streaming mode for chunked encoding");
+                    }
                 }
             }
 
