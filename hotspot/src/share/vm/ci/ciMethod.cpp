@@ -694,30 +694,21 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // ------------------------------------------------------------------
 // ciMethod::is_method_handle_invoke
 //
-// Return true if the method is a MethodHandle target.
+// Return true if the method is an instance of one of the two
+// signature-polymorphic MethodHandle methods, invokeExact or invokeGeneric.
 bool ciMethod::is_method_handle_invoke() const {
-  bool flag = (holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
-               methodOopDesc::is_method_handle_invoke_name(name()->sid()));
-#ifdef ASSERT
-  if (is_loaded()) {
-    bool flag2 = ((flags().as_int() & JVM_MH_INVOKE_BITS) == JVM_MH_INVOKE_BITS);
-    {
-      VM_ENTRY_MARK;
-      bool flag3 = get_methodOop()->is_method_handle_invoke();
-      assert(flag2 == flag3, "consistent");
-      assert(flag  == flag3, "consistent");
-    }
-  }
-#endif //ASSERT
-  return flag;
+  if (!is_loaded())  return false;
+  VM_ENTRY_MARK;
+  return get_methodOop()->is_method_handle_invoke();
 }
 
 // ------------------------------------------------------------------
 // ciMethod::is_method_handle_adapter
 //
 // Return true if the method is a generated MethodHandle adapter.
+// These are built by MethodHandleCompiler.
 bool ciMethod::is_method_handle_adapter() const {
-  check_is_loaded();
+  if (!is_loaded())  return false;
   VM_ENTRY_MARK;
   return get_methodOop()->is_method_handle_adapter();
 }

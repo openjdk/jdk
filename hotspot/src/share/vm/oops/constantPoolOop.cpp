@@ -264,10 +264,15 @@ symbolOop constantPoolOopDesc::impl_signature_ref_at(int which, bool uncached) {
 int constantPoolOopDesc::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
   if (!uncached && cache() != NULL) {
-    if (constantPoolCacheOopDesc::is_secondary_index(which))
+    if (constantPoolCacheOopDesc::is_secondary_index(which)) {
       // Invokedynamic indexes are always processed in native order
       // so there is no question of reading a native u2 in Java order here.
-      return cache()->main_entry_at(which)->constant_pool_index();
+      int pool_index = cache()->main_entry_at(which)->constant_pool_index();
+      if (tag_at(pool_index).is_invoke_dynamic())
+        pool_index = invoke_dynamic_name_and_type_ref_index_at(pool_index);
+      assert(tag_at(pool_index).is_name_and_type(), "");
+      return pool_index;
+    }
     // change byte-ordering and go via cache
     i = remap_instruction_operand_from_cache(which);
   } else {
@@ -830,6 +835,19 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
     }
   } break;
 
+  case JVM_CONSTANT_InvokeDynamic:
+  {
+    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(index1);
+    int k2 = cp2->invoke_dynamic_bootstrap_method_ref_index_at(index2);
+    if (k1 == k2) {
+      int i1 = invoke_dynamic_name_and_type_ref_index_at(index1);
+      int i2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
+      if (i1 == i2) {
+        return true;
+      }
+    }
+  } break;
+
   case JVM_CONSTANT_UnresolvedString:
   {
     symbolOop s1 = unresolved_string_at(index1);
@@ -1014,6 +1032,13 @@ void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
     int k1 = method_handle_ref_kind_at(from_i);
     int k2 = method_handle_index_at(from_i);
     to_cp->method_handle_index_at_put(to_i, k1, k2);
+  } break;
+
+  case JVM_CONSTANT_InvokeDynamic:
+  {
+    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(from_i);
+    int k2 = invoke_dynamic_name_and_type_ref_index_at(from_i);
+    to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
 
   // Invalid is used as the tag for the second constant pool entry
@@ -1231,6 +1256,7 @@ jint constantPoolOopDesc::cpool_entry_size(jint idx) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_NameAndType:
+    case JVM_CONSTANT_InvokeDynamic:
       return 5;
 
     case JVM_CONSTANT_Long:
@@ -1442,6 +1468,15 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
         idx1 = method_type_index_at(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
+        break;
+      }
+      case JVM_CONSTANT_InvokeDynamic: {
+        *bytes = JVM_CONSTANT_InvokeDynamic;
+        idx1 = invoke_dynamic_bootstrap_method_ref_index_at(idx);
+        idx2 = invoke_dynamic_name_and_type_ref_index_at(idx);
+        Bytes::put_Java_u2((address) (bytes+1), idx1);
+        Bytes::put_Java_u2((address) (bytes+3), idx2);
+        DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd", idx1, idx2));
         break;
       }
     }
