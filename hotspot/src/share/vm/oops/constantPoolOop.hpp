@@ -156,6 +156,11 @@ class constantPoolOopDesc : public oopDesc {
     *int_at_addr(which) = ref_index;
   }
 
+  void invoke_dynamic_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
+    tag_at_put(which, JVM_CONSTANT_InvokeDynamic);
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_method_index;
+  }
+
   // Temporary until actual use
   void unresolved_string_at_put(int which, symbolOop s) {
     *obj_at_addr(which) = NULL;
@@ -395,6 +400,16 @@ class constantPoolOopDesc : public oopDesc {
   symbolOop method_type_signature_at(int which) {
     int sym = method_type_index_at(which);
     return symbol_at(sym);
+  }
+  int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    jint ref_index = *int_at_addr(which);
+    return extract_low_short_from_int(ref_index);
+  }
+  int invoke_dynamic_name_and_type_ref_index_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    jint ref_index = *int_at_addr(which);
+    return extract_high_short_from_int(ref_index);
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
