@@ -81,7 +81,7 @@ public class RegistryContext implements Context, Referenceable {
         }
 
         RMIClientSocketFactory socketFactory =
-                (RMIClientSocketFactory) env.get(SOCKET_FACTORY);
+                (RMIClientSocketFactory) environment.get(SOCKET_FACTORY);
         registry = getRegistry(host, port, socketFactory);
         this.host = host;
         this.port = port;
