@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -553,9 +553,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 for (Enumeration<Object> enum_ = provs[i].keys();
                      enum_.hasMoreElements(); ) {
                     String alias = (String)enum_.nextElement();
+                    String upperCaseAlias = alias.toUpperCase(Locale.ENGLISH);
                     int index;
-                    if (alias.toUpperCase().startsWith("ALG.ALIAS") &&
-                        (index=alias.toUpperCase().indexOf("OID.", 0)) != -1) {
+                    if (upperCaseAlias.startsWith("ALG.ALIAS") &&
+                            (index=upperCaseAlias.indexOf("OID.", 0)) != -1) {
                         index += "OID.".length();
                         if (index == alias.length()) {
                             // invalid alias entry
@@ -565,19 +566,26 @@ public class AlgorithmId implements Serializable, DerEncoder {
                             oidTable = new HashMap<String,ObjectIdentifier>();
                         }
                         oidString = alias.substring(index);
-                        String stdAlgName
-                            = provs[i].getProperty(alias).toUpperCase();
-                        if (oidTable.get(stdAlgName) == null) {
+                        String stdAlgName = provs[i].getProperty(alias);
+                        if (stdAlgName != null) {
+                            stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
+                        }
+                        if (stdAlgName != null &&
+                                oidTable.get(stdAlgName) == null) {
                             oidTable.put(stdAlgName,
                                          new ObjectIdentifier(oidString));
                         }
                     }
                 }
             }
+
+            if (oidTable == null) {
+                oidTable = new HashMap<String,ObjectIdentifier>(1);
+            }
             initOidTable = true;
         }
 
-        return oidTable.get(name.toUpperCase());
+        return oidTable.get(name.toUpperCase(Locale.ENGLISH));
     }
 
     private static ObjectIdentifier oid(int ... values) {
