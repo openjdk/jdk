@@ -62,8 +62,8 @@ import static com.sun.tools.javac.jvm.ClassFile.Version.*;
  *  for all other definitions in the classfile. Top-level Classes themselves
  *  appear as members of the scopes of PackageSymbols.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -1095,6 +1095,12 @@ public class ClassReader implements Completer {
             new AttributeReader(names.RuntimeInvisibleTypeAnnotations, V51, CLASS_OR_MEMBER_ATTRIBUTE) {
                 void read(Symbol sym, int attrLen) {
                     attachTypeAnnotations(sym);
+                }
+            },
+
+            new AttributeReader(names.PolymorphicSignature, V45_3/*S.B.V51*/, CLASS_OR_MEMBER_ATTRIBUTE) {
+                void read(Symbol sym, int attrLen) {
+                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
                 }
             },
 

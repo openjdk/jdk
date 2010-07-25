@@ -103,7 +103,7 @@ public class DoubleByte {
     public final static char[] B2C_UNMAPPABLE;
     static {
         B2C_UNMAPPABLE = new char[0x100];
-        Arrays.fill(B2C_UNMAPPABLE, (char)UNMAPPABLE_DECODING);
+        Arrays.fill(B2C_UNMAPPABLE, UNMAPPABLE_DECODING);
     }
 
     public static class Decoder extends CharsetDecoder
@@ -374,7 +374,7 @@ public class DoubleByte {
         static final char[] b2cSB;
         static {
             b2cSB = new char[0x100];
-            Arrays.fill(b2cSB, (char)UNMAPPABLE_DECODING);
+            Arrays.fill(b2cSB, UNMAPPABLE_DECODING);
         }
         Decoder_EBCDIC_DBCSONLY(Charset cs, char[][] b2c, int b2Min, int b2Max) {
             super(cs, 0.5f, 1.0f, b2c, b2cSB, b2Min, b2Max);

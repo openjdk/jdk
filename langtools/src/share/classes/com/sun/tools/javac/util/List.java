@@ -43,8 +43,8 @@ import java.util.NoSuchElementException;
  *  <p>Lists are always trailed by a sentinel element, whose head and tail
  *  are both null.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -103,6 +103,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     /** Construct a list consisting of given elements.
      */
+    @SuppressWarnings("varargs")
     public static <A> List<A> of(A x1, A x2, A x3, A... rest) {
         return new List<A>(x1, new List<A>(x2, new List<A>(x3, from(rest))));
     }

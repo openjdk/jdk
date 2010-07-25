@@ -45,10 +45,10 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.SimpleTypeVisitor7;
 
 /*
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
@@ -620,7 +620,7 @@ public class LLNI extends Gen {
     }
 
     protected final boolean isLongOrDouble(TypeMirror t) {
-        TypeVisitor<Boolean,Void> v = new SimpleTypeVisitor6<Boolean,Void>() {
+        TypeVisitor<Boolean,Void> v = new SimpleTypeVisitor7<Boolean,Void>() {
             public Boolean defaultAction(TypeMirror t, Void p){
                 return false;
             }

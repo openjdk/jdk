@@ -34,11 +34,11 @@
     <import file="../common/shared.xml"/>
 
     <target name="-build-make" depends="-make.init" if="use.make">
-        <make-run target="dev" dir="${root}/../control/make" opts="SKIP_COMPARE_IMAGES=true"/>
+        <make-run target="dev" dir="${root}/.." opts="SKIP_COMPARE_IMAGES=true"/>
     </target>
 
     <target name="-clean-make" depends="-make.init" if="use.make">
-        <make-run target="clean" dir="${root}/../control/make"/>
+        <make-run target="clean" dir="${root}/.."/>
     </target>
 
 </project>
