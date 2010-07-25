@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,23 +82,6 @@ void
 JLI_MemFree(void *ptr)
 {
     free(ptr);
-}
-
-/*
- * Makes a copy of arguments
- */
-char**
-JLI_CopyArgs(int argc, const char **iargv)
-{
-    int i;
-    char** oargv = (char**)JLI_MemAlloc(sizeof(char*)*(argc+1));
-    for (i = 0 ; i < argc+1 ; i++) {
-        oargv[i] = (iargv[i] == NULL) ? NULL : JLI_StringDup(iargv[i]);
-        if (iargv[i] != NULL && JLI_IsTraceLauncher() == JNI_TRUE) {
-            printf("\targv[%d] = '%s'\n",i,iargv[i]);
-        }
-    }
-    return oargv;
 }
 
 /*

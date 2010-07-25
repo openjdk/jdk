@@ -42,8 +42,8 @@ import static com.sun.tools.javac.code.Flags.*;
  *  fields. This makes it possible to work in multiple concurrent
  *  projects, which might use different class files for library classes.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -120,6 +120,7 @@ public class Symtab {
     public final Type cloneableType;
     public final Type serializableType;
     public final Type methodHandleType;
+    public final Type polymorphicSignatureType;
     public final Type invokeDynamicType;
     public final Type throwableType;
     public final Type errorType;
@@ -291,24 +292,6 @@ public class Symtab {
         }
     }
 
-    public void synthesizeMHTypeIfMissing(final Type type) {
-        final Completer completer = type.tsym.completer;
-        if (completer != null) {
-            type.tsym.completer = new Completer() {
-                public void complete(Symbol sym) throws CompletionFailure {
-                    try {
-                        completer.complete(sym);
-                    } catch (CompletionFailure e) {
-                        sym.flags_field |= (PUBLIC | ABSTRACT);
-                        ((ClassType) sym.type).supertype_field = objectType;
-                        // do not bother to create MH.type if not visibly declared
-                        // this sym just accumulates invoke(...) methods
-                    }
-                }
-            };
-        }
-    }
-
     public void synthesizeBoxTypeIfMissing(final Type type) {
         ClassSymbol sym = reader.enterClass(boxedName[type.tag]);
         final Completer completer = sym.completer;
@@ -426,6 +409,7 @@ public class Symtab {
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
         methodHandleType = enterClass("java.dyn.MethodHandle");
+        polymorphicSignatureType = enterClass("java.dyn.MethodHandle$PolymorphicSignature");
         invokeDynamicType = enterClass("java.dyn.InvokeDynamic");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
@@ -463,13 +447,12 @@ public class Symtab {
 
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
-        synthesizeMHTypeIfMissing(methodHandleType);
-        synthesizeMHTypeIfMissing(invokeDynamicType);
+        synthesizeEmptyInterfaceIfMissing(polymorphicSignatureType);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
 
-        // Enter a synthetic class that is used to mark Sun
+        // Enter a synthetic class that is used to mark internal
         // proprietary classes in ct.sym.  This class does not have a
         // class file.
         ClassType proprietaryType = (ClassType)enterClass("sun.Proprietary+Annotation");

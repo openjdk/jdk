@@ -24,8 +24,6 @@
  */
 package javax.swing.text;
 
-import java.util.Vector;
-import java.util.Properties;
 import java.awt.*;
 import java.lang.ref.SoftReference;
 import javax.swing.event.*;
@@ -110,7 +108,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
 
         try {
             if (line.isLeaf()) {
-                drawText(line, p0, p1, g, x, y);
+                 drawText(line, p0, p1, g, x, y);
             } else {
                 // this line contains the composed text.
                 int idx = line.getElementIndex(p0);
@@ -236,17 +234,16 @@ public class WrappedPlainView extends BoxView implements TabExpander {
         Segment segment = SegmentCache.getSharedSegment();
         loadText(segment, p0, p1);
         int currentWidth = getWidth();
-        if (currentWidth == Integer.MAX_VALUE) {
-            currentWidth = (int) getDefaultSpan(View.X_AXIS);
-        }
         if (wordWrap) {
             p = p0 + Utilities.getBreakLocation(segment, metrics,
                                                 tabBase, tabBase + currentWidth,
                                                 this, p0);
         } else {
-            p = p0 + Utilities.getTabbedTextOffset(segment, metrics,
-                                                   tabBase, tabBase + currentWidth,
-                                                   this, p0, false);
+            int offset = Utilities.getTabbedTextOffset(segment, metrics,
+                    tabBase, tabBase + currentWidth, this, p0, false);
+            offset = Utilities.adjustOffsetForFractionalMetrics(
+                    segment, metrics, offset, currentWidth);
+            p = p0 + offset;
         }
         SegmentCache.releaseSharedSegment(segment);
         return p;
@@ -322,53 +319,6 @@ public class WrappedPlainView extends BoxView implements TabExpander {
         Font f = host.getFont();
         metrics = host.getFontMetrics(f);
         tabSize = getTabSize() * metrics.charWidth('m');
-    }
-
-    /**
-     * Return reasonable default values for the view dimensions.  The standard
-     * text terminal size 80x24 is pretty suitable for the wrapped plain view.
-     *
-     * The size should not be larger than the component housing the view's
-     * container.
-     */
-    private float getDefaultSpan(int axis) {
-         Container host = getContainer();
-         Component parent = null;
-
-         if (host != null) {
-            parent = host.getParent();
-         }
-
-         switch (axis) {
-            case View.X_AXIS:
-               int defaultWidth = 80 * metrics.getWidths()['M'];
-               int parentWidth = 0;
-
-               if (parent != null) {
-                  parentWidth = parent.getWidth();
-               }
-
-               if (defaultWidth > parentWidth) {
-                 return parentWidth;
-               }
-               return defaultWidth;
-
-            case View.Y_AXIS:
-               int defaultHeight = 24 * metrics.getHeight();
-               int parentHeight = 0;
-
-               if (parent != null) {
-                  parentHeight = parent.getHeight();
-               }
-
-               if (defaultHeight > parentHeight) {
-                 return parentHeight;
-               }
-               return defaultHeight;
-
-            default:
-                throw new IllegalArgumentException("Invalid axis: " + axis);
-        }
     }
 
     // --- TabExpander methods ------------------------------------------
@@ -605,18 +555,14 @@ public class WrappedPlainView extends BoxView implements TabExpander {
                 if (width == Integer.MAX_VALUE) {
                     // We have been initially set to MAX_VALUE, but we don't
                     // want this as our preferred.
-                    width = getDefaultSpan(axis);
+                    return 100f;
                 }
                 return width;
             case View.Y_AXIS:
-                if (getDocument().getLength() > 0) {
-                    if ((lineCount < 0) || widthChanging) {
-                        breakLines(getStartOffset());
-                    }
-                    return lineCount * metrics.getHeight();
-                } else {
-                    return getDefaultSpan(axis);
+                if (lineCount < 0 || widthChanging) {
+                    breakLines(getStartOffset());
                 }
+                return lineCount * metrics.getHeight();
             default:
                 throw new IllegalArgumentException("Invalid axis: " + axis);
             }

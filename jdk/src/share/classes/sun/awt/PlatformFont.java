@@ -25,10 +25,10 @@
 
 package sun.awt;
 
-import java.awt.GraphicsEnvironment;
 import java.awt.peer.FontPeer;
 import java.util.Locale;
 import java.util.Vector;
+import sun.font.SunFontManager;
 import sun.java2d.FontSupport;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
@@ -57,9 +57,9 @@ public abstract class PlatformFont implements FontPeer {
     protected static String osVersion;
 
     public PlatformFont(String name, int style){
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        if (ge instanceof FontSupport) {
-            fontConfig = ((FontSupport)ge).getFontConfiguration();
+        SunFontManager sfm = SunFontManager.getInstance();
+        if (sfm instanceof FontSupport) {
+            fontConfig = ((FontSupport)sfm).getFontConfiguration();
         }
         if (fontConfig == null) {
             return;

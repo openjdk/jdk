@@ -42,7 +42,11 @@ JPS="${TESTJAVA}/bin/jps"
 JSTAT="${TESTJAVA}/bin/jstat"
 
 HOSTNAME=`uname -n`
-PORT=2099
+PORT=`freePort`
+if [ "${PORT}" = "0" ] ; then
+  echo "Cannot get free port"
+  exit 1
+fi
 
 JSTATD_OUT="jstatd_$$.out"
 
@@ -57,12 +61,11 @@ ${JPS} ${HOSTNAME}:${PORT} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
 if [ $? -ne 0 ]
 then
     echo "Output of jps differs from expected output. Failed."
+    cleanup
     exit 1
 fi
 
-TARGET_PID=`${JPS} | grep "Jstatd" | cut -d" " -f1`
-
-${JSTAT} -gcutil ${TARGET_PID}@${HOSTNAME}:${PORT} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+${JSTAT} -gcutil ${JSTATD_PID}@${HOSTNAME}:${PORT} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
@@ -75,5 +78,7 @@ then
     echo "jstatd generated the following, unexpected output:"
     RC=1
 fi
+
+cleanup
 
 exit ${RC}

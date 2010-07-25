@@ -1048,7 +1048,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns the horizontal and vertical space between cells.
-     * The default spacing is (1, 1), which provides room to draw the grid.
+     * The default spacing is look and feel dependent.
      *
      * @return  the horizontal and vertical spacing between cells
      * @see     #setIntercellSpacing
@@ -1155,7 +1155,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns true if the table draws horizontal lines between cells, false if it
-     * doesn't. The default is true.
+     * doesn't. The default value is look and feel dependent.
      *
      * @return  true if the table draws horizontal lines between cells, false if it
      *          doesn't
@@ -1167,7 +1167,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns true if the table draws vertical lines between cells, false if it
-     * doesn't. The default is true.
+     * doesn't. The default value is look and feel dependent.
      *
      * @return  true if the table draws vertical lines between cells, false if it
      *          doesn't
@@ -2583,10 +2583,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #convertColumnIndexToView
      */
     public int convertColumnIndexToModel(int viewColumnIndex) {
-        if (viewColumnIndex < 0) {
-            return viewColumnIndex;
-        }
-        return getColumnModel().getColumn(viewColumnIndex).getModelIndex();
+        return SwingUtilities2.convertColumnIndexToModel(
+                getColumnModel(), viewColumnIndex);
     }
 
     /**
@@ -2603,16 +2601,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #convertColumnIndexToModel
      */
     public int convertColumnIndexToView(int modelColumnIndex) {
-        if (modelColumnIndex < 0) {
-            return modelColumnIndex;
-        }
-        TableColumnModel cm = getColumnModel();
-        for (int column = 0; column < getColumnCount(); column++) {
-            if (cm.getColumn(column).getModelIndex() == modelColumnIndex) {
-                return column;
-            }
-        }
-        return -1;
+        return SwingUtilities2.convertColumnIndexToView(
+                getColumnModel(), modelColumnIndex);
     }
 
     /**
