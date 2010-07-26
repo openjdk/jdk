@@ -25,7 +25,7 @@
  * @test
  * @bug 6213430
  * @clean Test1 X RefX
- * @compile/ref=Test1.out -XDstdout -XDrawDiagnostics Test1.java RefX.java
+ * @compile/ref=Test1.out -XDrawDiagnostics Test1.java RefX.java
  */
 class Test1
 {

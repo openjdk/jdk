@@ -1,7 +1,7 @@
 /*
  * @test  /nodynamiccopyright/
  * @bug 6230128
- * @compile/fail/ref=T6230128.out -XDstdout -XDrawDiagnostics T6230128.java
+ * @compile/fail/ref=T6230128.out -XDrawDiagnostics T6230128.java
  */
 class A1 {
     public void foo(Object[] args) { }

@@ -6,7 +6,7 @@
  * @author Jing Qian
  *
  * @compile DeprecatedDocComment2.java
- * @compile/fail/ref=DeprecatedDocComment.out -XDrawDiagnostics -XDstdout -Werror -deprecation DeprecatedDocComment.java
+ * @compile/fail/ref=DeprecatedDocComment.out -XDrawDiagnostics -Werror -deprecation DeprecatedDocComment.java
  */
 
 // WARNING: This file needs to be compiled with the -deprecation flag on.

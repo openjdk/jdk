@@ -4,7 +4,7 @@
  * @summary Crash when using class field
  *
  *
- * @compile/fail/ref=T6359951.out -XDstdout -XDrawDiagnostics T6359951.java
+ * @compile/fail/ref=T6359951.out -XDrawDiagnostics T6359951.java
  */
 
 public class T6359951 {
