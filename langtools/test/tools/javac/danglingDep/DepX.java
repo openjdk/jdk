@@ -25,7 +25,7 @@
  * control test (2): verify that compiler handles at-deprecated correctly
  * @test
  * @clean X DepX refX
- * @compile/ref=DepX.out -XDstdout -XDrawDiagnostics DepX.java RefX.java
+ * @compile/ref=DepX.out -XDrawDiagnostics DepX.java RefX.java
  */
 class DepX
 {

@@ -3,7 +3,7 @@
  * @bug 6827009
  * @summary Check for repeated string case labels.
  * @compile/fail -source 6 RepeatedStringCaseLabels1.java
- * @compile/fail/ref=RSCL1.out -XDstdout -XDrawDiagnostics RepeatedStringCaseLabels1.java
+ * @compile/fail/ref=RSCL1.out -XDrawDiagnostics RepeatedStringCaseLabels1.java
  */
 class RepeatedStringCaseLabels1 {
     String m(String s) {
