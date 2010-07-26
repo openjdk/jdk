@@ -23,6 +23,7 @@
 
 // key: compiler.misc.count.warn.plural
 // key: compiler.warn.warning
+// key: compiler.warn.lintOption
 // key: compiler.warn.prob.found.req
 // key: compiler.misc.unchecked.assign
 // options: -Xlint:unchecked
