@@ -942,7 +942,8 @@ public class Flow extends TreeScanner {
                 alive &&
                 lint.isEnabled(Lint.LintCategory.FALLTHROUGH) &&
                 c.stats.nonEmpty() && l.tail.nonEmpty())
-                log.warning(l.tail.head.pos(),
+                log.warning(Lint.LintCategory.FALLTHROUGH,
+                            l.tail.head.pos(),
                             "possible.fall-through.into.case");
         }
         if (!hasDefault) {
@@ -1081,8 +1082,9 @@ public class Flow extends TreeScanner {
                 thrown = chk.union(thrown, thrownPrev);
                 if (!loopPassTwo &&
                     lint.isEnabled(Lint.LintCategory.FINALLY)) {
-                    log.warning(TreeInfo.diagEndPos(tree.finalizer),
-                                "finally.cannot.complete");
+                    log.warning(Lint.LintCategory.FINALLY,
+                            TreeInfo.diagEndPos(tree.finalizer),
+                            "finally.cannot.complete");
                 }
             } else {
                 thrown = chk.union(thrown, chk.diff(thrownInTry, caughtInTry));
@@ -1353,7 +1355,8 @@ public class Flow extends TreeScanner {
             && lint.isEnabled(Lint.LintCategory.CAST)
             && types.isSameType(tree.expr.type, tree.clazz.type)
             && !(ignoreAnnotatedCasts && containsTypeAnnotation(tree.clazz))) {
-            log.warning(tree.pos(), "redundant.cast", tree.expr.type);
+            log.warning(Lint.LintCategory.CAST,
+                    tree.pos(), "redundant.cast", tree.expr.type);
         }
     }
 
