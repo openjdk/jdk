@@ -339,7 +339,7 @@ void ciField::print() {
   if (_type != NULL) _type->print_name();
   else               tty->print("(reference)");
   tty->print(" is_constant=%s", bool_to_str(_is_constant));
-  if (_is_constant) {
+  if (_is_constant && is_static()) {
     tty->print(" constant_value=");
     _constant_value.print();
   }
