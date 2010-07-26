@@ -59,9 +59,34 @@ set +e
 status="$?"
 set -e
 if [ "$status" != 0 ]; then
-    echo "INFO: switching jmap option from '$jmap_option'\c"
-    jmap_option="-histo"
-    echo " to '$jmap_option'."
+    # usage message doesn't show ':live' option
+
+    if $isWindows; then
+        # If SA isn't present, then jmap gives a different usage message
+        # that doesn't show the ':live' option. However, that's a bug that
+        # is covered by 6971851 so we try using the option just to be sure.
+        # For some reason, this problem has only been seen on OpenJDK6 on
+        # Windows. Not sure why.
+        set +e
+        # Note: Don't copy this code to try probing process 0 on Linux; it
+        # will kill the process group in strange ways.
+        "${JMAP}" "$jmap_option" 0 2>&1 | grep 'Usage' > /dev/null 2>&1
+        status="$?"
+        set -e
+        if [ "$status" = 0 ]; then
+            # Usage message generated so flag the problem.
+            status=1
+        else
+            # No usage message so clear the flag.
+            status=0
+        fi
+    fi
+
+    if [ "$status" != 0 ]; then
+        echo "ERROR: 'jmap $jmap_option' is not supported so this test"
+        echo "ERROR: cannot work reliably. Aborting!"
+        exit 2
+    fi
 fi
 
 # Start application and use TEST_NAME.port for coordination
