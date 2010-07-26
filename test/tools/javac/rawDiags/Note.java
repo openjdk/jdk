@@ -25,7 +25,7 @@
  * @test
  * @bug 6177732
  * @summary add hidden option to have compiler generate diagnostics in more machine-readable form
- * @compile/ref=Note.out -XDrawDiagnostics -XDstdout Note.java
+ * @compile/ref=Note.out -XDrawDiagnostics Note.java
  */
 class Note
 {
