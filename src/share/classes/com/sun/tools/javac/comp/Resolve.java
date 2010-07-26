@@ -1797,13 +1797,13 @@ public class Resolve {
                 return null;
 
             if (isOperator(name)) {
-                return diags.create(dkind, false, log.currentSource(), pos,
+                return diags.create(dkind, log.currentSource(), pos,
                         "operator.cant.be.applied", name, argtypes);
             }
             boolean hasLocation = false;
             if (!site.tsym.name.isEmpty()) {
                 if (site.tsym.kind == PCK && !site.tsym.exists()) {
-                    return diags.create(dkind, false, log.currentSource(), pos,
+                    return diags.create(dkind, log.currentSource(), pos,
                         "doesnt.exist", site.tsym);
                 }
                 hasLocation = true;
@@ -1814,13 +1814,13 @@ public class Resolve {
             Name idname = isConstructor ? site.tsym.name : name;
             String errKey = getErrorKey(kindname, typeargtypes.nonEmpty(), hasLocation);
             if (hasLocation) {
-                return diags.create(dkind, false, log.currentSource(), pos,
+                return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
                         typeargtypes, argtypes, //type parameters and arguments (if any)
                         typeKindName(site), site); //location kindname, type
             }
             else {
-                return diags.create(dkind, false, log.currentSource(), pos,
+                return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
                         typeargtypes, argtypes); //type parameters and arguments (if any)
             }
@@ -1886,12 +1886,12 @@ public class Resolve {
                 return null;
 
             if (isOperator(name)) {
-                return diags.create(dkind, false, log.currentSource(),
+                return diags.create(dkind, log.currentSource(),
                         pos, "operator.cant.be.applied", name, argtypes);
             }
             else {
                 Symbol ws = sym.asMemberOf(site, types);
-                return diags.create(dkind, false, log.currentSource(), pos,
+                return diags.create(dkind, log.currentSource(), pos,
                           "cant.apply.symbol" + (explanation != null ? ".1" : ""),
                           kindName(ws),
                           ws.name == names.init ? ws.owner.name : ws.name,
@@ -1974,18 +1974,18 @@ public class Resolve {
             else if ((sym.flags() & PUBLIC) != 0
                 || (env != null && this.site != null
                     && !isAccessible(env, this.site))) {
-                return diags.create(dkind, false, log.currentSource(),
+                return diags.create(dkind, log.currentSource(),
                         pos, "not.def.access.class.intf.cant.access",
                     sym, sym.location());
             }
             else if ((sym.flags() & (PRIVATE | PROTECTED)) != 0) {
-                return diags.create(dkind, false, log.currentSource(),
+                return diags.create(dkind, log.currentSource(),
                         pos, "report.access", sym,
                         asFlagSet(sym.flags() & (PRIVATE | PROTECTED)),
                         sym.location());
             }
             else {
-                return diags.create(dkind, false, log.currentSource(),
+                return diags.create(dkind, log.currentSource(),
                         pos, "not.def.public.cant.access", sym, sym.location());
             }
         }
@@ -2011,7 +2011,7 @@ public class Resolve {
             Symbol errSym = ((sym.kind == TYP && sym.type.tag == CLASS)
                 ? types.erasure(sym.type).tsym
                 : sym);
-            return diags.create(dkind, false, log.currentSource(), pos,
+            return diags.create(dkind, log.currentSource(), pos,
                     "non-static.cant.be.ref", kindName(sym), errSym);
         }
     }
@@ -2048,7 +2048,7 @@ public class Resolve {
             }
             Name sname = pair.sym.name;
             if (sname == names.init) sname = pair.sym.owner.name;
-            return diags.create(dkind, false, log.currentSource(),
+            return diags.create(dkind, log.currentSource(),
                       pos, "ref.ambiguous", sname,
                       kindName(pair.sym),
                       pair.sym,

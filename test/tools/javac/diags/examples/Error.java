@@ -25,6 +25,7 @@
 // key: compiler.err.warnings.and.werror
 // key: compiler.warn.raw.class.use
 // key: compiler.warn.warning
+// key: compiler.warn.lintOption
 // key: compiler.misc.count.error
 // key: compiler.misc.count.warn
 // key: compiler.misc.kindname.interface

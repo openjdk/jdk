@@ -3111,7 +3111,8 @@ public class Attr extends JCTree.Visitor {
             Scope.Entry e = c.members().lookup(names.serialVersionUID);
             while (e.scope != null && e.sym.kind != VAR) e = e.next();
             if (e.scope == null) {
-                log.warning(tree.pos(), "missing.SVUID", c);
+                log.warning(Lint.LintCategory.SERIAL,
+                        tree.pos(), "missing.SVUID", c);
                 return;
             }
 
@@ -3119,15 +3120,18 @@ public class Attr extends JCTree.Visitor {
             VarSymbol svuid = (VarSymbol)e.sym;
             if ((svuid.flags() & (STATIC | FINAL)) !=
                 (STATIC | FINAL))
-                log.warning(TreeInfo.diagnosticPositionFor(svuid, tree), "improper.SVUID", c);
+                log.warning(Lint.LintCategory.SERIAL,
+                        TreeInfo.diagnosticPositionFor(svuid, tree), "improper.SVUID", c);
 
             // check that it is long
             else if (svuid.type.tag != TypeTags.LONG)
-                log.warning(TreeInfo.diagnosticPositionFor(svuid, tree), "long.SVUID", c);
+                log.warning(Lint.LintCategory.SERIAL,
+                        TreeInfo.diagnosticPositionFor(svuid, tree), "long.SVUID", c);
 
             // check constant
             else if (svuid.getConstValue() == null)
-                log.warning(TreeInfo.diagnosticPositionFor(svuid, tree), "constant.SVUID", c);
+                log.warning(Lint.LintCategory.SERIAL,
+                        TreeInfo.diagnosticPositionFor(svuid, tree), "constant.SVUID", c);
         }
 
     private Type capture(Type type) {
