@@ -95,6 +95,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean lint;
     private final boolean procOnly;
     private final boolean fatalErrors;
+    private final boolean werror;
     private boolean foundTypeProcessors;
 
     private final JavacFiler filer;
@@ -157,6 +158,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         procOnly = options.get("-proc:only") != null ||
             options.get("-Xprint") != null;
         fatalErrors = options.get("fatalEnterError") != null;
+        werror = options.get("-Werror") != null;
         platformAnnotations = initPlatformAnnotations();
         foundTypeProcessors = false;
 
@@ -827,7 +829,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         runAround:
         while(true) {
-            if (fatalErrors && compiler.errorCount() != 0) {
+            if ((fatalErrors && compiler.errorCount() != 0)
+                    || (werror && compiler.warningCount() != 0)) {
                 errorStatus = true;
                 break runAround;
             }
@@ -906,7 +909,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         roots = runLastRound(roundNumber, errorStatus, compiler, roots, taskListener);
         // Set error status for any files compiled and generated in
         // the last round
-        if (log.unrecoverableError)
+        if (log.unrecoverableError || (werror && compiler.warningCount() != 0))
             errorStatus = true;
 
         compiler.close(false);
@@ -938,6 +941,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
 
         if (errorStatus) {
+            compiler.log.nwarnings += messager.warningCount();
             compiler.log.nerrors += messager.errorCount();
             if (compiler.errorCount() == 0)
                 compiler.log.nerrors++;
