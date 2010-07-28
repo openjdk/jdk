@@ -2593,6 +2593,12 @@ SOLARIS_ONLY(
       FLAG_IS_DEFAULT(UseVMInterruptibleIO)) {
     FLAG_SET_DEFAULT(UseVMInterruptibleIO, true);
   }
+#ifdef LINUX
+ if (JDK_Version::current().compare_major(6) <= 0 &&
+      FLAG_IS_DEFAULT(UseLinuxPosixThreadCPUClocks)) {
+    FLAG_SET_DEFAULT(UseLinuxPosixThreadCPUClocks, false);
+  }
+#endif // LINUX
   return JNI_OK;
 }
 
