@@ -1174,7 +1174,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             try {
                 make.at(Position.FIRSTPOS);
                 TreeMaker localMake = make.forToplevel(env.toplevel);
-                flow.analyzeTree(env.tree, localMake);
+                flow.analyzeTree(env, localMake);
                 compileStates.put(env, CompileState.FLOW);
 
                 if (shouldStop(CompileState.FLOW))
