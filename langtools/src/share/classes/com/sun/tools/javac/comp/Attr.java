@@ -1694,8 +1694,22 @@ public class Attr extends JCTree.Visitor {
             //if the type of the instance creation expression is an interface
             //skip the method resolution step (JLS 15.12.2.7). The type to be
             //inferred is of the kind <X1,X2, ... Xn>C<X1,X2, ... Xn>
-            clazztype = new ForAll(clazztype.tsym.type.allparams(),
-                    clazztype.tsym.type);
+            clazztype = new ForAll(clazztype.tsym.type.allparams(), clazztype.tsym.type) {
+                @Override
+                public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
+                    switch (ck) {
+                        case EXTENDS: return types.getBounds(tv);
+                        default: return List.nil();
+                    }
+                }
+                @Override
+                public Type inst(List<Type> inferred, Types types) throws Infer.NoInstanceException {
+                    // check that inferred bounds conform to their bounds
+                    infer.checkWithinBounds(tvars,
+                           types.subst(tvars, tvars, inferred), Warner.noWarnings);
+                    return super.inst(inferred, types);
+                }
+            };
         } else {
             //if the type of the instance creation expression is a class type
             //apply method resolution inference (JLS 15.12.2.7). The return type
