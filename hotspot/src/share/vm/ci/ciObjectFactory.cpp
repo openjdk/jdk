@@ -70,6 +70,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
 
   _unloaded_methods = new (arena) GrowableArray<ciMethod*>(arena, 4, 0, NULL);
   _unloaded_klasses = new (arena) GrowableArray<ciKlass*>(arena, 8, 0, NULL);
+  _unloaded_instances = new (arena) GrowableArray<ciInstance*>(arena, 4, 0, NULL);
   _return_addresses =
     new (arena) GrowableArray<ciReturnAddress*>(arena, 8, 0, NULL);
 }
@@ -443,6 +444,74 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   return new_klass;
 }
 
+
+//------------------------------------------------------------------
+// ciObjectFactory::get_unloaded_instance
+//
+// Get a ciInstance representing an as-yet undetermined instance of a given class.
+//
+ciInstance* ciObjectFactory::get_unloaded_instance(ciInstanceKlass* instance_klass) {
+  for (int i=0; i<_unloaded_instances->length(); i++) {
+    ciInstance* entry = _unloaded_instances->at(i);
+    if (entry->klass()->equals(instance_klass)) {
+      // We've found a match.
+      return entry;
+    }
+  }
+
+  // This is a new unloaded instance.  Create it and stick it in
+  // the cache.
+  ciInstance* new_instance = new (arena()) ciInstance(instance_klass);
+
+  init_ident_of(new_instance);
+  _unloaded_instances->append(new_instance);
+
+  // make sure it looks the way we want:
+  assert(!new_instance->is_loaded(), "");
+  assert(new_instance->klass() == instance_klass, "");
+
+  return new_instance;
+}
+
+
+//------------------------------------------------------------------
+// ciObjectFactory::get_unloaded_klass_mirror
+//
+// Get a ciInstance representing an unresolved klass mirror.
+//
+// Currently, this ignores the parameters and returns a unique unloaded instance.
+ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass*  type) {
+  assert(ciEnv::_Class_klass != NULL, "");
+  return get_unloaded_instance(ciEnv::_Class_klass->as_instance_klass());
+}
+
+//------------------------------------------------------------------
+// ciObjectFactory::get_unloaded_method_handle_constant
+//
+// Get a ciInstance representing an unresolved method handle constant.
+//
+// Currently, this ignores the parameters and returns a unique unloaded instance.
+ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holder,
+                                                                 ciSymbol* name,
+                                                                 ciSymbol* signature,
+                                                                 int       ref_kind) {
+  if (ciEnv::_MethodHandle_klass == NULL)  return NULL;
+  return get_unloaded_instance(ciEnv::_MethodHandle_klass->as_instance_klass());
+}
+
+//------------------------------------------------------------------
+// ciObjectFactory::get_unloaded_method_type_constant
+//
+// Get a ciInstance representing an unresolved method type constant.
+//
+// Currently, this ignores the parameters and returns a unique unloaded instance.
+ciInstance* ciObjectFactory::get_unloaded_method_type_constant(ciSymbol* signature) {
+  if (ciEnv::_MethodType_klass == NULL)  return NULL;
+  return get_unloaded_instance(ciEnv::_MethodType_klass->as_instance_klass());
+}
+
+
+
 //------------------------------------------------------------------
 // ciObjectFactory::get_empty_methodData
 //
@@ -637,7 +706,8 @@ void ciObjectFactory::print_contents() {
 //
 // Print debugging information about the object factory
 void ciObjectFactory::print() {
-  tty->print("<ciObjectFactory oops=%d unloaded_methods=%d unloaded_klasses=%d>",
+  tty->print("<ciObjectFactory oops=%d unloaded_methods=%d unloaded_instances=%d unloaded_klasses=%d>",
              _ci_objects->length(), _unloaded_methods->length(),
+             _unloaded_instances->length(),
              _unloaded_klasses->length());
 }

@@ -89,6 +89,21 @@ adlcVMDeps.hpp                          allocation.hpp
 
 allocation.hpp                          c2_globals.hpp
 
+bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
+bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
+bcEscapeAnalyzer.cpp                    bytecode.hpp
+bcEscapeAnalyzer.cpp                    ciConstant.hpp
+bcEscapeAnalyzer.cpp                    ciField.hpp
+bcEscapeAnalyzer.cpp                    ciMethodBlocks.hpp
+bcEscapeAnalyzer.cpp                    ciStreams.hpp
+
+bcEscapeAnalyzer.hpp                    allocation.hpp
+bcEscapeAnalyzer.hpp                    ciMethod.hpp
+bcEscapeAnalyzer.hpp                    ciMethodData.hpp
+bcEscapeAnalyzer.hpp                    dependencies.hpp
+bcEscapeAnalyzer.hpp                    growableArray.hpp
+bcEscapeAnalyzer.hpp                    vectset.hpp
+
 block.cpp                               allocation.inline.hpp
 block.cpp                               block.hpp
 block.cpp                               cfgnode.hpp
@@ -239,6 +254,7 @@ chaitin_<os_family>.cpp                 machnode.hpp
 ciEnv.cpp                               compileLog.hpp
 ciEnv.cpp                               runtime.hpp
 
+ciMethod.cpp                            bcEscapeAnalyzer.hpp
 ciMethod.cpp                            ciTypeFlow.hpp
 ciMethod.cpp                            methodOop.hpp
 

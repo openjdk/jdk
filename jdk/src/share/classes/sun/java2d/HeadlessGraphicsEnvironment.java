@@ -59,17 +59,12 @@ import java.awt.Rectangle;
  * Headless decorator implementation of a SunGraphicsEnvironment
  */
 
-public class HeadlessGraphicsEnvironment extends GraphicsEnvironment
-    implements FontSupport {
+public class HeadlessGraphicsEnvironment extends GraphicsEnvironment {
 
     private GraphicsEnvironment ge;
-    private FontSupport fontSupport;
 
     public HeadlessGraphicsEnvironment(GraphicsEnvironment ge) {
         this.ge = ge;
-        if (ge instanceof FontSupport) {
-            fontSupport = (FontSupport)ge;
-        }
     }
 
     public GraphicsDevice[] getScreenDevices()
@@ -100,13 +95,6 @@ public class HeadlessGraphicsEnvironment extends GraphicsEnvironment
 
     public String[] getAvailableFontFamilyNames(Locale l) {
         return ge.getAvailableFontFamilyNames(l); }
-
-    public FontConfiguration getFontConfiguration() {
-        if (fontSupport != null) {
-            return fontSupport.getFontConfiguration();
-        }
-        return null;
-    }
 
     /* Used by FontManager : internal API */
     public GraphicsEnvironment getSunGraphicsEnvironment() {

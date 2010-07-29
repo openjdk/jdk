@@ -35,7 +35,6 @@ import sun.jvm.hotspot.utilities.*;
 
 public class NMethod extends CodeBlob {
   private static long          pcDescSize;
-  private static CIntegerField zombieInstructionSizeField;
   private static sun.jvm.hotspot.types.OopField methodField;
   /** != InvocationEntryBci if this nmethod is an on-stack replacement method */
   private static CIntegerField entryBCIField;
@@ -88,7 +87,6 @@ public class NMethod extends CodeBlob {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("nmethod");
 
-    zombieInstructionSizeField  = type.getCIntegerField("_zombie_instruction_size");
     methodField                 = type.getOopField("_method");
     entryBCIField               = type.getCIntegerField("_entry_bci");
     osrLinkField                = type.getAddressField("_osr_link");

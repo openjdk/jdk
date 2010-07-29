@@ -28,7 +28,6 @@ package com.sun.tools.doclets.internal.toolkit.builders;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -134,22 +133,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         }
 
         /**
-         * {@inheritDoc}
-         */
-        public void invokeMethod(
-                String methodName,
-                Class<?>[] paramClasses,
-                Object[] params)
-                throws Exception {
-                if (DEBUG) {
-                        configuration.root.printError(
-                                "DEBUG: " + this.getClass().getName() + "." + methodName);
-                }
-                Method method = this.getClass().getMethod(methodName, paramClasses);
-                method.invoke(this, params);
-        }
-
-        /**
          * Returns a list of constructors that will be documented for the given class.
          * This information can be used for doclet specific documentation
          * generation.
@@ -175,21 +158,21 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
          * @param elements the XML elements that specify how to construct this
          *                documentation.
          */
-        public void buildConstructorDoc(List<?> elements) {
+        public void buildConstructorDoc(XMLNode node) {
                 if (writer == null) {
                         return;
                 }
                 for (currentMethodIndex = 0;
                         currentMethodIndex < constructors.size();
                         currentMethodIndex++) {
-                        build(elements);
+                        buildChildren(node);
                 }
         }
 
         /**
          * Build the overall header.
          */
-        public void buildHeader() {
+        public void buildHeader(XMLNode node) {
                 writer.writeHeader(
                         classDoc,
                         configuration.getText("doclet.Constructor_Detail"));
@@ -198,7 +181,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         /**
          * Build the header for the individual constructor.
          */
-        public void buildConstructorHeader() {
+        public void buildConstructorHeader(XMLNode node) {
                 writer.writeConstructorHeader(
                         (ConstructorDoc) constructors.get(currentMethodIndex),
                         currentMethodIndex == 0);
@@ -207,7 +190,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         /**
          * Build the signature.
          */
-        public void buildSignature() {
+        public void buildSignature(XMLNode node) {
                 writer.writeSignature(
                         (ConstructorDoc) constructors.get(currentMethodIndex));
         }
@@ -215,7 +198,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         /**
          * Build the deprecation information.
          */
-        public void buildDeprecationInfo() {
+        public void buildDeprecationInfo(XMLNode node) {
                 writer.writeDeprecated(
                         (ConstructorDoc) constructors.get(currentMethodIndex));
         }
@@ -224,7 +207,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
          * Build the comments for the constructor.  Do nothing if
          * {@link Configuration#nocomment} is set to true.
          */
-        public void buildConstructorComments() {
+        public void buildConstructorComments(XMLNode node) {
                 if (!configuration.nocomment) {
                         writer.writeComments(
                                 (ConstructorDoc) constructors.get(currentMethodIndex));
@@ -234,21 +217,21 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         /**
          * Build the tag information.
          */
-        public void buildTagInfo() {
+        public void buildTagInfo(XMLNode node) {
                 writer.writeTags((ConstructorDoc) constructors.get(currentMethodIndex));
         }
 
         /**
          * Build the footer for the individual constructor.
          */
-        public void buildConstructorFooter() {
+        public void buildConstructorFooter(XMLNode node) {
                 writer.writeConstructorFooter();
         }
 
         /**
          * Build the overall footer.
          */
-        public void buildFooter() {
+        public void buildFooter(XMLNode node) {
                 writer.writeFooter(classDoc);
         }
 }

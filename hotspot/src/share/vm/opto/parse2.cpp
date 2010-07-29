@@ -1324,33 +1324,21 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w:
     // If the constant is unresolved, run this BC once in the interpreter.
-    if (iter().is_unresolved_string()) {
-      uncommon_trap(Deoptimization::make_trap_request
-                    (Deoptimization::Reason_unloaded,
-                     Deoptimization::Action_reinterpret,
-                     iter().get_constant_index()),
-                    NULL, "unresolved_string");
-      break;
-    } else {
+    {
       ciConstant constant = iter().get_constant();
-      if (constant.basic_type() == T_OBJECT) {
-        ciObject* c = constant.as_object();
-        if (c->is_klass()) {
-          // The constant returned for a klass is the ciKlass for the
-          // entry.  We want the java_mirror so get it.
-          ciKlass* klass = c->as_klass();
-          if (klass->is_loaded()) {
-            constant = ciConstant(T_OBJECT, klass->java_mirror());
-          } else {
-            uncommon_trap(Deoptimization::make_trap_request
-                          (Deoptimization::Reason_unloaded,
-                           Deoptimization::Action_reinterpret,
-                           iter().get_constant_index()),
-                          NULL, "unresolved_klass");
-            break;
-          }
-        }
+      if (constant.basic_type() == T_OBJECT &&
+          !constant.as_object()->is_loaded()) {
+        int index = iter().get_constant_pool_index();
+        constantTag tag = iter().get_constant_pool_tag(index);
+        uncommon_trap(Deoptimization::make_trap_request
+                      (Deoptimization::Reason_unloaded,
+                       Deoptimization::Action_reinterpret,
+                       index),
+                      NULL, tag.internal_name());
+        break;
       }
+      assert(constant.basic_type() != T_OBJECT || !constant.as_object()->is_klass(),
+             "must be java_mirror of klass");
       bool pushed = push_constant(constant, true);
       guarantee(pushed, "must be possible to push this constant");
     }

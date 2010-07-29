@@ -69,6 +69,8 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
+ *
+ * @see SimpleAnnotationValueVisitor7
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)

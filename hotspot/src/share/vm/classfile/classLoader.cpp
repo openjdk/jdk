@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -832,7 +832,6 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 
 
 instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
-  VTuneClassLoadMarker clm;
   ResourceMark rm(THREAD);
   EventMark m("loading class " INTPTR_FORMAT, (address)h_name());
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
