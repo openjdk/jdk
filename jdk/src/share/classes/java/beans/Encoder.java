@@ -194,13 +194,8 @@ public class Encoder {
      * @see java.beans.BeanInfo#getBeanDescriptor
      */
     public PersistenceDelegate getPersistenceDelegate(Class<?> type) {
-        synchronized (this.finder) {
-            PersistenceDelegate pd = this.finder.find(type);
-            if (pd != null) {
-                return pd;
-            }
-        }
-        return MetaData.getPersistenceDelegate(type);
+        PersistenceDelegate pd = this.finder.find(type);
+        return (pd != null) ? pd : MetaData.getPersistenceDelegate(type);
     }
 
     /**
@@ -214,9 +209,7 @@ public class Encoder {
      * @see java.beans.BeanInfo#getBeanDescriptor
      */
     public void setPersistenceDelegate(Class<?> type, PersistenceDelegate delegate) {
-        synchronized (this.finder) {
-            this.finder.register(type, delegate);
-        }
+        this.finder.register(type, delegate);
     }
 
     /**

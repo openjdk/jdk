@@ -82,8 +82,6 @@ public class AdaptDatagramSocket {
                 }
                 throw x;
             }
-            if (shouldTimeout)
-                throw new Exception("Receive did not time out");
             break;
         }
 

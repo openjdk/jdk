@@ -301,20 +301,6 @@ barrierSet.hpp                          oopsHierarchy.hpp
 barrierSet.inline.hpp                   barrierSet.hpp
 barrierSet.inline.hpp                   cardTableModRefBS.hpp
 
-bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
-bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
-bcEscapeAnalyzer.cpp                    bytecode.hpp
-bcEscapeAnalyzer.cpp                    ciConstant.hpp
-bcEscapeAnalyzer.cpp                    ciField.hpp
-bcEscapeAnalyzer.cpp                    ciMethodBlocks.hpp
-bcEscapeAnalyzer.cpp                    ciStreams.hpp
-
-bcEscapeAnalyzer.hpp                    allocation.hpp
-bcEscapeAnalyzer.hpp                    ciMethod.hpp
-bcEscapeAnalyzer.hpp                    ciMethodData.hpp
-bcEscapeAnalyzer.hpp                    dependencies.hpp
-bcEscapeAnalyzer.hpp                    growableArray.hpp
-
 biasedLocking.cpp                       biasedLocking.hpp
 biasedLocking.cpp                       klass.inline.hpp
 biasedLocking.cpp                       markOop.hpp
@@ -545,6 +531,7 @@ ciCPCache.cpp                           ciUtilities.hpp
 
 ciCPCache.hpp                           ciClassList.hpp
 ciCPCache.hpp                           ciObject.hpp
+ciCPCache.hpp                           cpCacheOop.hpp
 
 ciEnv.cpp                               allocation.inline.hpp
 ciEnv.cpp                               ciConstant.hpp
@@ -664,7 +651,6 @@ ciKlassKlass.hpp                        ciSymbol.hpp
 
 ciMethod.cpp                            abstractCompiler.hpp
 ciMethod.cpp                            allocation.inline.hpp
-ciMethod.cpp                            bcEscapeAnalyzer.hpp
 ciMethod.cpp                            bitMap.inline.hpp
 ciMethod.cpp                            ciCallProfile.hpp
 ciMethod.cpp                            ciExceptionHandler.hpp
@@ -823,6 +809,7 @@ ciSignature.hpp                         growableArray.hpp
 
 ciStreams.cpp                           ciCallSite.hpp
 ciStreams.cpp                           ciConstant.hpp
+ciStreams.cpp                           ciCPCache.hpp
 ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
 ciStreams.cpp                           ciUtilities.hpp
@@ -962,7 +949,6 @@ classLoader.cpp                         threadService.hpp
 classLoader.cpp                         timer.hpp
 classLoader.cpp                         universe.inline.hpp
 classLoader.cpp                         vmSymbols.hpp
-classLoader.cpp                         vtune.hpp
 
 classLoader.hpp                         classFileParser.hpp
 classLoader.hpp                         perfData.hpp
@@ -1002,7 +988,6 @@ codeBlob.cpp                            relocInfo.hpp
 codeBlob.cpp                            safepoint.hpp
 codeBlob.cpp                            sharedRuntime.hpp
 codeBlob.cpp                            vframe.hpp
-codeBlob.cpp                            vtune.hpp
 
 codeBlob.hpp                            codeBuffer.hpp
 codeBlob.hpp                            frame.hpp
@@ -2165,7 +2150,6 @@ interpreter.cpp                         sharedRuntime.hpp
 interpreter.cpp                         stubRoutines.hpp
 interpreter.cpp                         templateTable.hpp
 interpreter.cpp                         timer.hpp
-interpreter.cpp                         vtune.hpp
 
 interpreter.hpp                         cppInterpreter.hpp
 interpreter.hpp                         stubs.hpp
@@ -2321,7 +2305,6 @@ java.cpp                                universe.hpp
 java.cpp                                vmError.hpp
 java.cpp                                vm_operations.hpp
 java.cpp                                vm_version_<arch>.hpp
-java.cpp                                vtune.hpp
 
 java.hpp                                os.hpp
 
@@ -3048,7 +3031,6 @@ nmethod.cpp                             nmethod.hpp
 nmethod.cpp                             scopeDesc.hpp
 nmethod.cpp                             sharedRuntime.hpp
 nmethod.cpp                             sweeper.hpp
-nmethod.cpp                             vtune.hpp
 nmethod.cpp                             xmlstream.hpp
 
 nmethod.hpp                             codeBlob.hpp
@@ -3771,7 +3753,6 @@ sharedRuntime.cpp                       vframeArray.hpp
 sharedRuntime.cpp                       vmSymbols.hpp
 sharedRuntime.cpp                       vmreg_<arch>.inline.hpp
 sharedRuntime.cpp                       vtableStubs.hpp
-sharedRuntime.cpp                       vtune.hpp
 sharedRuntime.cpp                       xmlstream.hpp
 
 sharedRuntime.hpp                       allocation.hpp
@@ -3935,7 +3916,6 @@ stubCodeGenerator.cpp                   disassembler.hpp
 stubCodeGenerator.cpp                   forte.hpp
 stubCodeGenerator.cpp                   oop.inline.hpp
 stubCodeGenerator.cpp                   stubCodeGenerator.hpp
-stubCodeGenerator.cpp                   vtune.hpp
 
 stubCodeGenerator.hpp                   allocation.hpp
 stubCodeGenerator.hpp                   assembler.hpp
@@ -4456,7 +4436,6 @@ universe.cpp                            universe.hpp
 universe.cpp                            universe.inline.hpp
 universe.cpp                            vmSymbols.hpp
 universe.cpp                            vm_operations.hpp
-universe.cpp                            vtune.hpp
 
 universe.hpp                            growableArray.hpp
 universe.hpp                            handles.hpp
@@ -4719,7 +4698,6 @@ vtableStubs.cpp                         mutexLocker.hpp
 vtableStubs.cpp                         resourceArea.hpp
 vtableStubs.cpp                         sharedRuntime.hpp
 vtableStubs.cpp                         vtableStubs.hpp
-vtableStubs.cpp                         vtune.hpp
 
 vtableStubs.hpp                         allocation.hpp
 
@@ -4732,11 +4710,6 @@ vtableStubs_<arch_model>.cpp            resourceArea.hpp
 vtableStubs_<arch_model>.cpp            sharedRuntime.hpp
 vtableStubs_<arch_model>.cpp            vmreg_<arch>.inline.hpp
 vtableStubs_<arch_model>.cpp            vtableStubs.hpp
-
-vtune.hpp                               allocation.hpp
-
-vtune_<os_family>.cpp                   interpreter.hpp
-vtune_<os_family>.cpp                   vtune.hpp
 
 watermark.hpp                           allocation.hpp
 watermark.hpp                           globalDefinitions.hpp

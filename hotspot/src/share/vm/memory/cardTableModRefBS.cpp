@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,18 +284,38 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
         committed_unique_to_self(ind, MemRegion(new_end_aligned,
                                                 cur_committed.end()));
       if (!uncommit_region.is_empty()) {
-        if (!os::uncommit_memory((char*)uncommit_region.start(),
-                                 uncommit_region.byte_size())) {
-          assert(false, "Card table contraction failed");
-          // The call failed so don't change the end of the
-          // committed region.  This is better than taking the
-          // VM down.
+        // It is not safe to uncommit cards if the boundary between
+        // the generations is moving.  A shrink can uncommit cards
+        // owned by generation A but being used by generation B.
+        if (!UseAdaptiveGCBoundary) {
+          if (!os::uncommit_memory((char*)uncommit_region.start(),
+                                   uncommit_region.byte_size())) {
+            assert(false, "Card table contraction failed");
+            // The call failed so don't change the end of the
+            // committed region.  This is better than taking the
+            // VM down.
+            new_end_aligned = _committed[ind].end();
+          }
+        } else {
           new_end_aligned = _committed[ind].end();
         }
       }
     }
     // In any case, we can reset the end of the current committed entry.
     _committed[ind].set_end(new_end_aligned);
+
+#ifdef ASSERT
+    // Check that the last card in the new region is committed according
+    // to the tables.
+    bool covered = false;
+    for (int cr = 0; cr < _cur_covered_regions; cr++) {
+      if (_committed[cr].contains(new_end - 1)) {
+        covered = true;
+        break;
+      }
+    }
+    assert(covered, "Card for end of new region not committed");
+#endif
 
     // The default of 0 is not necessarily clean cards.
     jbyte* entry;
@@ -354,6 +374,9 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
                   addr_for((jbyte*) _committed[ind].start()),
                   addr_for((jbyte*) _committed[ind].last()));
   }
+  // Touch the last card of the covered region to show that it
+  // is committed (or SEGV).
+  debug_only(*byte_for(_covered[ind].last());)
   debug_only(verify_guard();)
 }
 

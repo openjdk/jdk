@@ -83,6 +83,18 @@ IRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* thread, bool wide))
   }
 IRT_END
 
+IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::Code bytecode)) {
+  assert(bytecode == Bytecodes::_fast_aldc ||
+         bytecode == Bytecodes::_fast_aldc_w, "wrong bc");
+  ResourceMark rm(thread);
+  methodHandle m (thread, method(thread));
+  Bytecode_loadconstant* ldc = Bytecode_loadconstant_at(m, bci(thread));
+  oop result = ldc->resolve_constant(THREAD);
+  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc->cache_index()));
+  assert(result == cpce->f1(), "expected result for assembly code");
+}
+IRT_END
+
 
 //------------------------------------------------------------------------------------------------------------------------
 // Allocation
@@ -328,7 +340,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   typeArrayHandle    h_extable  (thread, h_method->exception_table());
   bool               should_repeat;
   int                handler_bci;
-  int                current_bci = bcp(thread) - h_method->code_base();
+  int                current_bci = bci(thread);
 
   // Need to do this check first since when _do_not_unlock_if_synchronized
   // is set, we don't want to trigger any classloading which may make calls
@@ -615,8 +627,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
-    int bci = m->bci_from(bcp(thread));
-    Bytecode_invoke* call = Bytecode_invoke_at(m, bci);
+    Bytecode_invoke* call = Bytecode_invoke_at(m, bci(thread));
     symbolHandle signature (thread, call->signature());
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
@@ -1257,7 +1268,7 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   Bytecode_invoke* invoke = Bytecode_invoke_at(mh, bci);
   ArgumentSizeComputer asc(invoke->signature());
   int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
-  Copy::conjoint_bytes(src_address, dest_address,
+  Copy::conjoint_jbytes(src_address, dest_address,
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
 #endif

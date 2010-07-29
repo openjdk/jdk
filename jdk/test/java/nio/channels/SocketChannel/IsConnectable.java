@@ -48,27 +48,31 @@ public class IsConnectable {
         sc.connect(isa);
 
         Selector selector = SelectorProvider.provider().openSelector();
-        SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT);
-        int keysAdded = selector.select();
-        if (keysAdded > 0) {
-            boolean result = sc.finishConnect();
-            if (result) {
-                keysAdded = selector.select(5000);
-                // 4750573: keysAdded should not be incremented when op is dropped
-                // from a key already in the selected key set
-                if (keysAdded > 0)
-                    throw new Exception("Test failed: 4750573 detected");
-                Set sel = selector.selectedKeys();
-                Iterator i = sel.iterator();
-                SelectionKey sk = (SelectionKey)i.next();
-                // 4737146: isConnectable should be false while connected
-                if (sk.isConnectable())
-                    throw new Exception("Test failed: 4737146 detected");
+        try {
+            SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT);
+            int keysAdded = selector.select();
+            if (keysAdded > 0) {
+                boolean result = sc.finishConnect();
+                if (result) {
+                    keysAdded = selector.select(5000);
+                    // 4750573: keysAdded should not be incremented when op is dropped
+                    // from a key already in the selected key set
+                    if (keysAdded > 0)
+                        throw new Exception("Test failed: 4750573 detected");
+                    Set<SelectionKey> sel = selector.selectedKeys();
+                    Iterator<SelectionKey> i = sel.iterator();
+                    SelectionKey sk = i.next();
+                    // 4737146: isConnectable should be false while connected
+                    if (sk.isConnectable())
+                        throw new Exception("Test failed: 4737146 detected");
+                }
+            } else {
+                throw new Exception("Select failed");
             }
-        } else {
-            throw new Exception("Select failed");
+        } finally {
+            sc.close();
+            selector.close();
         }
-        sc.close();
     }
 
     public static void main(String[] args) throws Exception {

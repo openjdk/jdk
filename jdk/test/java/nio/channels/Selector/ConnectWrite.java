@@ -45,8 +45,8 @@ public class ConnectWrite {
         Selector selector = SelectorProvider.provider().openSelector();
         InetAddress myAddress=InetAddress.getByName(TestUtil.HOST);
         InetSocketAddress isa = new InetSocketAddress(myAddress, port);
+        SocketChannel sc = SocketChannel.open();
         try {
-            SocketChannel sc = SocketChannel.open();
             sc.configureBlocking(false);
             SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT);
             boolean result = sc.connect(isa);
@@ -80,6 +80,7 @@ public class ConnectWrite {
                 }
             }
         } finally {
+            sc.close();
             selector.close();
         }
     }
