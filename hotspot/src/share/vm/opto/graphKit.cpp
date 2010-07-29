@@ -1789,9 +1789,10 @@ void GraphKit::increment_counter(address counter_addr) {
 
 void GraphKit::increment_counter(Node* counter_addr) {
   int adr_type = Compile::AliasIdxRaw;
-  Node* cnt  = make_load(NULL, counter_addr, TypeInt::INT, T_INT, adr_type);
+  Node* ctrl = control();
+  Node* cnt  = make_load(ctrl, counter_addr, TypeInt::INT, T_INT, adr_type);
   Node* incr = _gvn.transform(new (C, 3) AddINode(cnt, _gvn.intcon(1)));
-  store_to_memory( NULL, counter_addr, incr, T_INT, adr_type );
+  store_to_memory( ctrl, counter_addr, incr, T_INT, adr_type );
 }
 
 
@@ -2771,11 +2772,7 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
     // Update the counter for this lock.  Don't bother using an atomic
     // operation since we don't require absolute accuracy.
     lock->create_lock_counter(map()->jvms());
-    int adr_type = Compile::AliasIdxRaw;
-    Node* counter_addr = makecon(TypeRawPtr::make(lock->counter()->addr()));
-    Node* cnt  = make_load(NULL, counter_addr, TypeInt::INT, T_INT, adr_type);
-    Node* incr = _gvn.transform(new (C, 3) AddINode(cnt, _gvn.intcon(1)));
-    store_to_memory(control(), counter_addr, incr, T_INT, adr_type);
+    increment_counter(lock->counter()->addr());
   }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,7 @@ class PSPromotionManager : public CHeapObj {
   PrefetchQueue                       _prefetch_queue;
 
   OopStarTaskQueue                    _claimed_stack_depth;
-  GrowableArray<StarTask>*            _overflow_stack_depth;
-  OopTaskQueue                        _claimed_stack_breadth;
-  GrowableArray<oop>*                 _overflow_stack_breadth;
+  OverflowTaskQueue<oop>              _claimed_stack_breadth;
 
   bool                                _depth_first;
   bool                                _totally_drain;
@@ -96,9 +94,6 @@ class PSPromotionManager : public CHeapObj {
   inline static PSPromotionManager* manager_array(int index);
   template <class T> inline void claim_or_forward_internal_depth(T* p);
   template <class T> inline void claim_or_forward_internal_breadth(T* p);
-
-  GrowableArray<StarTask>* overflow_stack_depth() { return _overflow_stack_depth; }
-  GrowableArray<oop>*  overflow_stack_breadth()   { return _overflow_stack_breadth; }
 
   // On the task queues we push reference locations as well as
   // partially-scanned arrays (in the latter case, we push an oop to
@@ -151,18 +146,19 @@ class PSPromotionManager : public CHeapObj {
 
 #if PS_PM_STATS
     ++_total_pushes;
+    int stack_length = claimed_stack_depth()->overflow_stack()->length();
 #endif // PS_PM_STATS
 
-    if (!claimed_stack_depth()->push(p)) {
-      overflow_stack_depth()->push(p);
+    claimed_stack_depth()->push(p);
+
 #if PS_PM_STATS
+    if (claimed_stack_depth()->overflow_stack()->length() != stack_length) {
       ++_overflow_pushes;
-      uint stack_length = (uint) overflow_stack_depth()->length();
-      if (stack_length > _max_overflow_length) {
-        _max_overflow_length = stack_length;
+      if ((uint)stack_length + 1 > _max_overflow_length) {
+        _max_overflow_length = (uint)stack_length + 1;
       }
-#endif // PS_PM_STATS
     }
+#endif // PS_PM_STATS
   }
 
   void push_breadth(oop o) {
@@ -170,18 +166,19 @@ class PSPromotionManager : public CHeapObj {
 
 #if PS_PM_STATS
     ++_total_pushes;
+    int stack_length = claimed_stack_breadth()->overflow_stack()->length();
 #endif // PS_PM_STATS
 
-    if(!claimed_stack_breadth()->push(o)) {
-      overflow_stack_breadth()->push(o);
+    claimed_stack_breadth()->push(o);
+
 #if PS_PM_STATS
+    if (claimed_stack_breadth()->overflow_stack()->length() != stack_length) {
       ++_overflow_pushes;
-      uint stack_length = (uint) overflow_stack_breadth()->length();
-      if (stack_length > _max_overflow_length) {
-        _max_overflow_length = stack_length;
+      if ((uint)stack_length + 1 > _max_overflow_length) {
+        _max_overflow_length = (uint)stack_length + 1;
       }
-#endif // PS_PM_STATS
     }
+#endif // PS_PM_STATS
   }
 
  protected:
@@ -199,12 +196,10 @@ class PSPromotionManager : public CHeapObj {
   static PSPromotionManager* vm_thread_promotion_manager();
 
   static bool steal_depth(int queue_num, int* seed, StarTask& t) {
-    assert(stack_array_depth() != NULL, "invariant");
     return stack_array_depth()->steal(queue_num, seed, t);
   }
 
-  static bool steal_breadth(int queue_num, int* seed, Task& t) {
-    assert(stack_array_breadth() != NULL, "invariant");
+  static bool steal_breadth(int queue_num, int* seed, oop& t) {
     return stack_array_breadth()->steal(queue_num, seed, t);
   }
 
@@ -214,7 +209,7 @@ class PSPromotionManager : public CHeapObj {
   OopStarTaskQueue* claimed_stack_depth() {
     return &_claimed_stack_depth;
   }
-  OopTaskQueue* claimed_stack_breadth() {
+  OverflowTaskQueue<oop>* claimed_stack_breadth() {
     return &_claimed_stack_breadth;
   }
 
@@ -246,25 +241,13 @@ class PSPromotionManager : public CHeapObj {
   void drain_stacks_depth(bool totally_drain);
   void drain_stacks_breadth(bool totally_drain);
 
-  bool claimed_stack_empty() {
-    if (depth_first()) {
-      return claimed_stack_depth()->size() <= 0;
-    } else {
-      return claimed_stack_breadth()->size() <= 0;
-    }
-  }
-  bool overflow_stack_empty() {
-    if (depth_first()) {
-      return overflow_stack_depth()->length() <= 0;
-    } else {
-      return overflow_stack_breadth()->length() <= 0;
-    }
+  bool depth_first() const {
+    return _depth_first;
   }
   bool stacks_empty() {
-    return claimed_stack_empty() && overflow_stack_empty();
-  }
-  bool depth_first() {
-    return _depth_first;
+    return depth_first() ?
+      claimed_stack_depth()->is_empty() :
+      claimed_stack_breadth()->is_empty();
   }
 
   inline void process_popped_location_depth(StarTask p);

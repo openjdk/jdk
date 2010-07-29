@@ -1,4 +1,4 @@
-." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,8 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH java 1 "04 May 2009"
-." Generated from HTML by html2man (author: Eric Armstrong)
+.TH java 1 "02 Jun 2010"
 
 .LP
 .SH "Name"
@@ -299,19 +298,19 @@ Operate in interpreted\-only mode. Compilation to native code is disabled, and a
 Disable background compilation. Normally the VM will compile the method as a background task, running the method in interpreter mode until the background compilation is finished. The \f2\-Xbatch\fP flag disables background compilation so that compilation of all methods proceeds as a foreground task until completed. 
 .TP 3
 \-Xbootclasspath:bootclasspath 
-Specify a colon\-separated list of directories, JAR archives, and ZIP archives to search for boot class files. These are used in place of the boot class files included in the Java 2 SDK. \f2Note: Applications that use this option for the purpose of overriding a class in rt.jar should not be deployed as doing so would contravene the Java 2 Runtime Environment binary code license.\fP 
+Specify a colon\-separated list of directories, JAR archives, and ZIP archives to search for boot class files. These are used in place of the boot class files included in the Java platform JDK. \f2Note: Applications that use this option for the purpose of overriding a class in rt.jar should not be deployed as doing so would contravene the Java Runtime Environment binary code license.\fP 
 .TP 3
 \-Xbootclasspath/a:path 
 Specify a colon\-separated path of directires, JAR archives, and ZIP archives to append to the default bootstrap class path. 
 .TP 3
 \-Xbootclasspath/p:path 
-Specify a colon\-separated path of directires, JAR archives, and ZIP archives to prepend in front of the default bootstrap class path. \f2Note: Applications that use this option for the purpose of overriding a class in rt.jar should not be deployed as doing so would contravene the Java 2 Runtime Environment binary code license.\fP 
+Specify a colon\-separated path of directires, JAR archives, and ZIP archives to prepend in front of the default bootstrap class path. \f2Note: Applications that use this option for the purpose of overriding a class in rt.jar should not be deployed as doing so would contravene the Java Runtime Environment binary code license.\fP 
 .TP 3
 \-Xcheck:jni 
 Perform additional checks for Java Native Interface (JNI) functions. Specifically, the Java Virtual Machine validates the parameters passed to the JNI function as well as the runtime environment data before processing the JNI request. Any invalid data encountered indicates a problem in the native code, and the Java Virtual Machine will terminate with a fatal error in such cases. Expect a performance degradation when this option is used. 
 .TP 3
 \-Xfuture 
-Perform strict class\-file format checks. For purposes of backwards compatibility, the default format checks performed by the Java 2 SDK's virtual machine are no stricter than the checks performed by 1.1.x versions of the JDK software. The \f3\-Xfuture\fP flag turns on stricter class\-file format checks that enforce closer conformance to the class\-file format specification. Developers are encouraged to use this flag when developing new code because the stricter checks will become the default in future releases of the Java application launcher. 
+Perform strict class\-file format checks. For purposes of backwards compatibility, the default format checks performed by the JDK's virtual machine are no stricter than the checks performed by 1.1.x versions of the JDK software. The \f3\-Xfuture\fP flag turns on stricter class\-file format checks that enforce closer conformance to the class\-file format specification. Developers are encouraged to use this flag when developing new code because the stricter checks will become the default in future releases of the Java application launcher. 
 .TP 3
 \-Xnoclassgc 
 Disable class garbage collection. Use of this option will prevent memory recovery from loaded classes thus increasing overall memory usage. This could cause OutOfMemoryError to be thrown in some applications. 
@@ -485,8 +484,6 @@ o
 .fi
 http://java.sun.com/docs/hotspot/VMOptions.html. 
 .RE
-
-.LP
 
 .LP
  
