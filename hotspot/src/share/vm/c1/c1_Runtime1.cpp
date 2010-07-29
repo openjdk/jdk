@@ -601,7 +601,7 @@ JRT_END
 
 
 static klassOop resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
-  Bytecode_field* field_access = Bytecode_field_at(caller(), caller->bcp_from(bci));
+  Bytecode_field* field_access = Bytecode_field_at(caller, bci);
   // This can be static or non-static field access
   Bytecodes::Code code       = field_access->code();
 
@@ -721,7 +721,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   Handle load_klass(THREAD, NULL);                // oop needed by load_klass_patching code
   if (stub_id == Runtime1::access_field_patching_id) {
 
-    Bytecode_field* field_access = Bytecode_field_at(caller_method(), caller_method->bcp_from(bci));
+    Bytecode_field* field_access = Bytecode_field_at(caller_method, bci);
     FieldAccessInfo result; // initialize class if needed
     Bytecodes::Code code = field_access->code();
     constantPoolHandle constants(THREAD, caller_method->constants());
@@ -781,11 +781,9 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
         {
-          Bytecode_loadconstant* cc = Bytecode_loadconstant_at(caller_method(),
-                                                               caller_method->bcp_from(bci));
-          klassOop resolved = caller_method->constants()->klass_at(cc->index(), CHECK);
-          // ldc wants the java mirror.
-          k = resolved->klass_part()->java_mirror();
+          Bytecode_loadconstant* cc = Bytecode_loadconstant_at(caller_method, bci);
+          k = cc->resolve_constant(CHECK);
+          assert(k != NULL && !k->is_klass(), "must be class mirror or other Java constant");
         }
         break;
       default: Unimplemented();
@@ -816,6 +814,15 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     // Return to the now deoptimized frame.
   }
 
+  // If we are patching in a non-perm oop, make sure the nmethod
+  // is on the right list.
+  if (ScavengeRootsInCode && load_klass.not_null() && load_klass->is_scavengable()) {
+    MutexLockerEx ml_code (CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
+    guarantee(nm != NULL, "only nmethods can contain non-perm oops");
+    if (!nm->on_scavenge_root_list())
+      CodeCache::add_scavenge_root_nmethod(nm);
+  }
 
   // Now copy code back
 
@@ -1115,7 +1122,7 @@ JRT_LEAF(void, Runtime1::primitive_arraycopy(HeapWord* src, HeapWord* dst, int l
   if (length == 0) return;
   // Not guaranteed to be word atomic, but that doesn't matter
   // for anything but an oop array, which is covered by oop_arraycopy.
-  Copy::conjoint_bytes(src, dst, length);
+  Copy::conjoint_jbytes(src, dst, length);
 JRT_END
 
 JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))

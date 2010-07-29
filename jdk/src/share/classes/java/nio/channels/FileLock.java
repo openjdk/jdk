@@ -116,7 +116,7 @@ import java.io.IOException;
  * @since 1.4
  */
 
-public abstract class FileLock {
+public abstract class FileLock implements AutoCloseable {
 
     private final Channel channel;
     private final long position;
@@ -297,6 +297,17 @@ public abstract class FileLock {
      *          If an I/O error occurs
      */
     public abstract void release() throws IOException;
+
+    /**
+     * This method invokes the {@link #release} method. It was added
+     * to the class so that it could be used in conjunction with the
+     * automatic resource management block construct.
+     *
+     * @since 1.7
+     */
+    public final void close() throws IOException {
+        release();
+    }
 
     /**
      * Returns a string describing the range, type, and validity of this lock.

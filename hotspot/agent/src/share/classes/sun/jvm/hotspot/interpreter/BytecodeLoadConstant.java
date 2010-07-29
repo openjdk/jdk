@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.interpreter;
 
 import sun.jvm.hotspot.oops.*;
+import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.*;
 
 public class BytecodeLoadConstant extends BytecodeWithCPIndex {
@@ -32,10 +33,47 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
     super(method, bci);
   }
 
+  public boolean hasCacheIndex() {
+    // normal ldc uses CP index, but fast_aldc uses swapped CP cache index
+    return javaCode() != code();
+  }
+
   public int index() {
-    return javaCode() == Bytecodes._ldc ?
+    int i = javaCode() == Bytecodes._ldc ?
                  (int) (0xFF & javaByteAt(1))
                : (int) (0xFFFF & javaShortAt(1));
+    if (hasCacheIndex()) {
+      return (0xFFFF & VM.getVM().getBytes().swapShort((short) i));
+    } else {
+      return i;
+    }
+  }
+
+  public int poolIndex() {
+    int i = index();
+    if (hasCacheIndex()) {
+      ConstantPoolCache cpCache = method().getConstants().getCache();
+      return cpCache.getEntryAt(i).getConstantPoolIndex();
+    } else {
+      return i;
+    }
+  }
+
+  public int cacheIndex() {
+    if (hasCacheIndex()) {
+      return index();
+    } else {
+      return -1;  // no cache index
+    }
+  }
+
+  private Oop getCachedConstant() {
+    int i = cacheIndex();
+    if (i >= 0) {
+      ConstantPoolCache cpCache = method().getConstants().getCache();
+      return cpCache.getEntryAt(i).getF1();
+    }
+    return null;
   }
 
   public void verify() {
@@ -58,6 +96,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
        // has to be int or float or String or Klass
        return (ctag.isUnresolvedString() || ctag.isString()
                || ctag.isUnresolvedKlass() || ctag.isKlass()
+               || ctag.isMethodHandle() || ctag.isMethodType()
                || ctag.isInt() || ctag.isFloat())? true: false;
     }
   }
@@ -112,7 +151,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
 
   public String getConstantValue() {
     ConstantPool cpool = method().getConstants();
-    int cpIndex = index();
+    int cpIndex = poolIndex();
     ConstantTag ctag = cpool.getTagAt(cpIndex);
     if (ctag.isInt()) {
        return "<int " + Integer.toString(cpool.getIntAt(cpIndex)) +">";
@@ -149,6 +188,18 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
        } else {
           throw new RuntimeException("should not reach here");
        }
+    } else if (ctag.isMethodHandle() || ctag.isMethodType()) {
+       Oop x = getCachedConstant();
+       int refidx = cpool.getMethodHandleIndexAt(cpIndex);
+       int refkind = cpool.getMethodHandleRefKindAt(cpIndex);
+       return "<MethodHandle kind=" + Integer.toString(refkind) +
+           " ref=" + Integer.toString(refidx)
+           + (x == null ? "" : " @" + x.getHandle()) + ">";
+    } else if (ctag.isMethodType()) {
+       Oop x = getCachedConstant();
+       int refidx = cpool.getMethodTypeIndexAt(cpIndex);
+       return "<MethodType " + cpool.getSymbolAt(refidx).asString()
+           + (x == null ? "" : " @" + x.getHandle()) + ">";
     } else {
        if (Assert.ASSERTS_ENABLED) {
          Assert.that(false, "invalid load constant type");
@@ -162,7 +213,12 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
     buf.append(getJavaBytecodeName());
     buf.append(spaces);
     buf.append('#');
-    buf.append(Integer.toString(index()));
+    buf.append(Integer.toString(poolIndex()));
+    if (hasCacheIndex()) {
+       buf.append('(');
+       buf.append(Integer.toString(cacheIndex()));
+       buf.append(')');
+    }
     buf.append(spaces);
     buf.append(getConstantValue());
     if (code() != javaCode()) {

@@ -1,5 +1,4 @@
-#
-# Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,6 +29,41 @@ BUILDDIR=..
 PRODUCT=docs
 include $(BUILDDIR)/common/Defs.gmk
 
+# Get CopyrightLine macro and other shared variables
+include $(BUILDDIR)/common/shared/Defs-javadoc.gmk
+
+# Url to root of documents
+DOCSDIR_URL = {@docroot}/$(GET2DOCSDIR)
+
+# Url to copyright html file
+COPYRIGHT_URL-7 = $(DOCSDIR_URL)/legal/cpyr.html
+COPYRIGHT_URL = $(COPYRIGHT_URL-$(JDK_MINOR_VERSION))
+
+# Url to bug filing site
+BUG_SUBMIT_URL = http://bugs.sun.com/services/bugreport/index.jsp
+
+# Common line for how to submit a bug or rfe
+BUG_SUBMIT_LINE = <a href=\"$(BUG_SUBMIT_URL)\">Submit a bug or feature</a>
+
+# Url to devdocs page
+#   Was: http://java.sun.com/javase/6/webnotes/devdocs-vs-specs.html
+DEV_DOCS_URL-5 = http://java.sun.com/j2se/1.5.0/docs
+DEV_DOCS_URL-6 = http://download.oracle.com/docs/cd/E17409_01/javase/6/docs
+DEV_DOCS_URL-7 = http://download.oracle.com/docs/cd/E17409_01/javase/7/docs
+DEV_DOCS_URL = $(DEV_DOCS_URL-$(JDK_MINOR_VERSION))
+
+# Url to Java Language Spec
+JLS3_URL = http://java.sun.com/docs/books/jls/
+
+# Common Java trademark line
+JAVA_TRADEMARK_LINE = Java is a trademark or registered trademark of \
+$(COMPANY_NAME) in the US and other countries.
+
+#
+# Definitions for imported components
+#
+include $(BUILDDIR)/common/internal/ImportComponents.gmk
+
 # We override whatever the max VM memory setting is here.
 #    NOTE: javadoc will not complete without these larger settings.
 #    WARNING: This could cause thrashing on low memory machines.
@@ -39,418 +73,155 @@ else
   MAX_VM_MEMORY = 512
 endif
 
-#
-# Variables used by docs target
-#
-DOCSTMPDIR          = $(TEMPDIR)/doctmp
+# List of all possible directories for javadoc to look for sources
+#    NOTE: Quotes are required around sourcepath argument only on Windows.
+#          Otherwise, you get "No packages or classes specified." due 
+#          to $(CLASSPATH_SEPARATOR) being interpreted as an end of 
+#          command (newline or shell ; character)
+ALL_SOURCE_DIRS = $(SHARE_SRC)/classes \
+                  $(IMPORTSRCDIR) \
+                  $(GENSRCDIR) \
+                  $(SHARE_SRC)/../solaris/classes \
+	          $(SHARE_SRC)/../windows/classes \
+		  $(SHARE_SRC)/doc/stub
+EMPTY:=
+SPACE:= $(EMPTY) $(EMPTY)
+RELEASEDOCS_SOURCEPATH = \
+    $(subst $(SPACE),$(CLASSPATH_SEPARATOR),$(strip $(ALL_SOURCE_DIRS)))
 
+# Prep for javadoc creation, assumes $@ is an index.html file
+define prep-javadoc
+@if [ -f "$@" -a "$?" != "" ] ; then \
+  $(ECHO) "# Dependencies have changed: $?"; \
+fi
+$(RM) -r $(@D)
+$(MKDIR) -p $(@D)
+endef
+
+# A cache of the directories in ALL_SOURCE_DIRS
+DIRECTORY_CACHE = $(DOCSTMPDIR)/directory.cache
+
+# Given a list of packages, return a list of files or dirs to be dependent on
+#   (Currently only returning a list of directories)
+define PackageDependencies # packages
+$(shell							\
+  if [ "$1" != "" -a -f $(DIRECTORY_CACHE) ] ; then	\
+    for p in $1 ; do 					\
+      pd=`$(ECHO) $${p} | $(SED) -e 's@[.]@/@g'`;	\
+      $(CAT) $(DIRECTORY_CACHE) | $(GREP) "/$${pd}/" ; 	\
+    done; 						\
+  fi							\
+)
+endef
+
+# Given a list of packages, add packages that exist to $@, print summary
+define PackageFilter # packages
+@if [ "$1" != "" ] ; then 				\
+  for p in $1 ; do 					\
+    pd=`$(ECHO) $${p} | $(SED) -e 's@[.]@/@g'`; 	\
+    found="false"; 					\
+    for cp in $(ALL_SOURCE_DIRS) ; do 			\
+      if [ -d $${cp}/$${pd} ] ; then 			\
+        $(ECHO) "$${p}" >> $@; 				\
+	found="true";					\
+	break; 						\
+      fi; 						\
+    done; 						\
+    if [ "$${found}" = "false" ] ; then 		\
+      $(ECHO) "WARNING: Package not found: $${p}"; 	\
+    fi; 						\
+  done; 						\
+fi
+endef
+
+# Print out a summary of the javadoc command about to be run
+define JavadocSummary # optionsfile packagesfile
+@$(ECHO) "# Summary for $@";\
+ $(ECHO) "# Options (`$(BASENAME) $1`):"; $(SED) -e 's@^@#   @' $1; \
+ $(ECHO) "# Packages (`$(BASENAME) $2`):";$(SED) -e 's@^@#   @' $2
+endef
+
+#
+# Temporary directory for javadoc creation
+#
+DOCSTMPDIR = $(TEMPDIR)/doctmp
+
+#
+# Different api directories created from root directory
+#
+COREAPI_DOCSDIR   = $(DOCSDIR)/api
+JDK_API_DOCSDIR   = $(DOCSDIR)/jdk/api
+JRE_API_DOCSDIR   = $(DOCSDIR)/jre/api
+PLATFORM_DOCSDIR  = $(DOCSDIR)/platform
+
+# The non-core api javadocs need to be able to access the root of the core
+#   api directory, so for jdk/api or jre/api to get to the core api/
+#   directory we would use this:
+JDKJRE2COREAPI    = ../../api
+
+# Common bottom argument
+define CommonBottom # year
+<font size=\"-1\"><p> $(call CopyrightLine,,$1,)</font>
+endef
+
+# Common trademark bottom argument (Not sure why this is used sometimes)
+define CommonTrademarkBottom # year
+<font size=\"-1\">\
+$(BUG_SUBMIT_LINE)<br>$(JAVA_TRADEMARK_LINE)<br>\
+$(call CopyrightLine,,$1,$(COMPANY_ADDRESS))\
+</font>
+endef
+
+# Core api bottom argument (with special sauce)
+COREAPI_BOTTOM = <font size=\"-1\"> $(BUG_SUBMIT_LINE)\
+<br>For further API reference and developer documentation, \
+see <a href=\"$(DEV_DOCS_URL)\" target=\"_blank\">Java SE Documentation</a>. \
+That documentation contains more detailed, developer-targeted descriptions, \
+with conceptual overviews, definitions of terms, workarounds, \
+and working code examples.<p>\
+$(call CopyrightLine,$(COPYRIGHT_URL),$(FIRST_COPYRIGHT_YEAR),)\
+</font>
+
+# Common javadoc options used by all
 COMMON_JAVADOCFLAGS =					\
-		$(NO_PROPRIETARY_API_WARNINGS)		\
+                $(NO_PROPRIETARY_API_WARNINGS)          \
 		-source 1.5				\
 		-quiet					\
                 -use					\
                 -keywords				\
-		$(JAVADOC_VM_MEMORY_FLAGS)		\
 		$(ADDITIONAL_JAVADOCFLAGS)
 ADDITIONAL_JAVADOCFLAGS =
 
-CORE_JAVADOCFLAGS  = $(COMMON_JAVADOCFLAGS)		\
-		$(TAGS)					\
-		-encoding ISO-8859-1			\
-		-splitIndex				\
-		-doctitle $(DOCTITLE_SWITCH)		\
-		-windowtitle $(WINDOWTITLE_SWITCH)	\
-		-header $(HEADER_SWITCH)		\
-		$(TOPOPTION) 				\
-		-bottom $(JAVADOCBOTTOM_SWITCH)		\
-		$(OVERVIEW_OPTION)
-
-DRAFT = '<br><strong>DRAFT&nbsp;'$(MILESTONE)-$(BUILD_NUMBER)'</strong>'
-THIS_YEAR := $(shell $(DATE) | $(SED) -e 's/  / /g' | $(CUT) -d' ' -f6)
-TRADEMARK = &\#x2122;
-
-IGNORED_TAGS =	beaninfo revised since.unbundled spec specdefault Note ToDo
-
-JLS3_URL = http://java.sun.com/docs/books/jls/
-JLS3_CITE = <a href="$(JLS3_URL)"> \
-		The Java Language Specification, Third Edition</a>
-TAG_JLS3 = -tag 'jls3:a:See <cite>$(JLS3_CITE)</cite>:'
-
-TAGS = $(IGNORED_TAGS:%=-tag %:X) $(TAG_JLS3)
-
-ifeq ($(MILESTONE), fcs)
-    DOCTITLE_SWITCH = $(JAVADOCTITLE)
-    WINDOWTITLE_SWITCH = $(JAVADOCWINDOWTITLE)
-    HEADER_SWITCH = $(JAVADOCHEADER)
-    TOPOPTION=
-    JAVADOCBOTTOM_SWITCH= $(JAVADOCBOTTOM)
-    OVERVIEW_OPTION = -overview $(JAVADOCOVERVIEW)
-else
-    DOCTITLE_SWITCH = $(JAVADOCTITLE_EARLYACCESS)$(DRAFT)
-    WINDOWTITLE_SWITCH = $(JAVADOCWINDOWTITLE)" $(BUILD_NUMBER)"
-    HEADER_SWITCH = $(JAVADOCHEADER)$(DRAFT)
-    JAVADOCBOTTOM_SWITCH= $(JAVADOCBOTTOM_EARLYACCESS)
-    TOPOPTION= -top $(JAVADOCTOP_EARLYACCESS)
-    OVERVIEW_OPTION =
+# Draft used for non-fcs documents
+JDK_IS_FCS = false
+DRAFT_HEADER =
+ifeq ($(JDK_MINOR_VERSION),5)
+  JDK_IS_FCS = true
+endif
+ifeq ($(JDK_MINOR_VERSION),6)
+  JDK_IS_FCS = true
+endif
+ifeq ($(JDK_IS_FCS),false)
+  ifneq ($(MILESTONE), fcs)
+    DRAFT_HEADER = <br><strong>DRAFT&nbsp;$(MILESTONE)-$(BUILD_NUMBER)</strong>
+    DRAFT_BOTTOM = <br><strong>DRAFT&nbsp;$(MILESTONE)-$(BUILD_NUMBER)</strong>
+    DRAFT_WINTITLE = $(BUILD_NUMBER)
+    # Early access top text (not used in FCS releases)
+    COREAPI_TOP_EARLYACCESS = \
+<div style=\"background-color: \#EEEEEE\"> \
+<div style=\"padding: 6px; margin-top: 2px; margin-bottom: 6px; \
+margin-left: 6px; margin-right: 6px; text-align: justify; \
+font-size: 80%; font-family: Helvetica, Arial, sans-serif; \
+font-weight: normal;\"> \
+Please note that the specifications and other information \
+contained herein are not final and are subject to change. \
+The information is being made available to you solely for purpose of \
+evaluation. \
+</div> </div>
+  endif
 endif
 
-JAVADOCTITLE  = 'Java$(TRADEMARK) Platform, Standard Edition $(JDK_MINOR_VERSION)<br>API Specification'
-JAVADOCWINDOWTITLE  = 'Java Platform SE $(JDK_MINOR_VERSION)'
-JAVADOCHEADER = '<strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(JDK_MINOR_VERSION)</strong>'
-JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Submit a bug or feature</a><br>For further API reference and developer documentation, see <a href="{@docroot}/../../webnotes/devdocs-vs-specs.html">Java SE Developer Documentation</a>. That documentation contains more detailed, developer-targeted descriptions, with conceptual overviews, definitions of terms, workarounds, and working code examples. <p>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to <a href="{@docroot}/../legal/license.html">license terms</a>. Also see the <a href="http://java.sun.com/docs/redist.html">documentation redistribution policy</a>.</font>'
-JAVADOCOVERVIEW = $(SHARE_SRC)/classes/overview-core.html
-
-#
-# Early access top and bottom text (for snapshots, beta and rc)
-#
-JAVADOCTOP_EARLYACCESS = '<div style="background-color: \#EEEEEE"> <div style="padding: 6px; margin-top: 2px; margin-bottom: 6px; margin-left: 6px; margin-right: 6px; text-align: justify; font-size: 80%; font-family: Helvetica, Arial, sans-serif; font-weight: normal;"> Please note that this documentation is not final and is subject to change. </div> </div>'
-JAVADOCBOTTOM_EARLYACCESS = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Submit a bug or feature</a> <p>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to <a href="{@docroot}/../legal/license.html">license terms</a>.</font>'
-JAVADOCTITLE_EARLYACCESS = $(subst Specification,Documentation,$(JAVADOCTITLE))
-
-#
-# Variables used by domapidocs target
-#
-
-DOMAPI_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)		      \
-		    -encoding ascii			      \
-                    -splitIndex                               \
-                    -doctitle $(DOMAPI_JAVADOCTITLE)          \
-                    -windowtitle $(DOMAPI_JAVADOCWINDOWTITLE) \
-                    -header $(DOMAPI_JAVADOCHEADER)           \
-                    -bottom $(DOMAPI_JAVADOCBOTTOM)           \
-                    -group $(DOMAPI_GROUPNAME) $(DOMAPI_REGEXP)
-DOMAPI_JAVADOCTITLE  = 'Common DOM API'
-DOMAPI_JAVADOCWINDOWTITLE  = 'Common DOM API'
-DOMAPI_JAVADOCHEADER = '<strong>Common DOM API</strong>'
-DOMAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Submit a bug or feature</a><br>Java is a trademark or registered trademark of Sun Microsystems, Inc. in the US and other countries.<br>Copyright $(THIS_YEAR) Sun Microsystems, Inc. 4150 Network Circle<br>Santa Clara, California, 95054, U.S.A.  All Rights Reserved.</font>'
-DOMAPI_GROUPNAME = "Packages"
-DOMAPI_REGEXP = "com.sun.java.browser.dom:org.w3c.dom*"
-# DOMAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by mirrordocs target
-#
-
-MIRROR_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)		        \
-                    -encoding ascii			        \
-                    -doctitle $(MIRROR_JAVADOCTITLE)            \
-                    -windowtitle $(MIRROR_JAVADOCWINDOWTITLE)   \
-                    -header $(MIRROR_JAVADOCHEADER)             \
-                    -bottom $(MIRROR_JAVADOCBOTTOM)             \
-                    -group $(MIRROR_GROUPNAME) $(MIRROR_REGEXP) \
-                    -overview $(MIRROR_OVERVIEW)
-MIRROR_JAVADOCTITLE = 'Mirror API'
-MIRROR_JAVADOCWINDOWTITLE = 'Mirror API'
-MIRROR_JAVADOCHEADER = '<strong>Mirror API</strong>'
-MIRROR_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Report a bug or request a feature.</a><br>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to license terms.</font>'
-MIRROR_GROUPNAME = "Packages"
-MIRROR_OVERVIEW = $(IMPORTSRCDIR)/com/sun/mirror/overview.html
-MIRROR_REGEXP = "com.sun.mirror.*"
-MIRROR_DESTDIR = $(DOCSDIR)/jdk/api/apt/mirror
-MIRROR_LINKOPT = -linkoffline ../../../../api $(DOCSDIR)/api/
-# MIRROR_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by docletapidocs target
-#
-
-DOCLETAPI_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			 \
-		    -breakiterator				 \
-		    -encoding ascii			         \
-                    -doctitle $(DOCLETAPI_JAVADOCTITLE)          \
-                    -windowtitle $(DOCLETAPI_JAVADOCWINDOWTITLE) \
-                    -header $(DOCLETAPI_JAVADOCHEADER)           \
-                    -bottom $(DOCLETAPI_JAVADOCBOTTOM)           \
-                    -group $(DOCLETAPI_GROUPNAME) $(DOCLETAPI_REGEXP)
-DOCLETAPI_JAVADOCTITLE  = 'Doclet API'
-DOCLETAPI_JAVADOCWINDOWTITLE  = 'Doclet API'
-DOCLETAPI_JAVADOCHEADER = '<strong>Doclet API</strong>'
-DOCLETAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Submit a bug or feature</a><br>Java is a trademark or registered trademark of Sun Microsystems, Inc. in the US and other countries.<br>Copyright 1993-$(THIS_YEAR) Sun Microsystems, Inc. 4150 Network Circle<br>Santa Clara, California, 95054, U.S.A.  All Rights Reserved.</font>'
-DOCLETAPI_GROUPNAME = "Packages"
-DOCLETAPI_REGEXP = "com.sun.javadoc"
-DOCLETAPI_LINKOPT = -linkoffline ../../../../api $(DOCSDIR)/api/
-# DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by tagletapidocs target
-#
-
-TAGLETAPI_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			\
-		    -encoding ascii			        \
-                    -nonavbar                                   \
-                    -noindex                                    \
-                    -bottom $(TAGLETAPI_JAVADOCBOTTOM)
-TAGLETAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Submit a bug or feature</a><br>Java is a trademark or registered trademark of Sun Microsystems, Inc. in the US and other countries.<br>Copyright 1993-$(THIS_YEAR) Sun Microsystems, Inc. 4150 Network Circle<br>Santa Clara, California, 95054, U.S.A.  All Rights Reserved.</font>'
-# TAGLETAPI_FILE is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by jdi target
-#
-
-JPDA_SOURCEPATH  = $(TOPDIR)/src/share/classes
-
-JDI_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			 \
-		   -encoding ascii			         \
-                   -nodeprecatedlist                             \
-                   -d $(DOCSDIR)/jdk/api/jpda/jdi                  \
-                   -sourcepath $(JPDA_SOURCEPATH)                \
-                   -windowtitle $(JDI_WINDOWTITLE)               \
-                   -doctitle $(JDI_DOCTITLE)                     \
-                   -header $(JDI_HEADER)                         \
-                   -linkoffline ../../../../api $(DOCSDIR)/api/     \
-                   -overview $(JPDA_SOURCEPATH)/jdi-overview.html
-JDI_WINDOWTITLE = "Java Debug Interface"
-JDI_DOCTITLE    = "Java$(TRADEMARK) Debug Interface"
-JDI_HEADER      = "Java Debug Interface"
-# JDI_PKGS is located in NON_CORE_PKGS.gmk
-
-# Variables used by security components
-SECURITYAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Report a bug or request a feature.</a><br>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to license terms.</font>'
-
-#
-# Variables used by JAAS target
-#
-# NOTE: Quotes are required around sourcepath argument only on Windows.  Otherwise,
-#       you get "No packages or classes specified." due to $(CLASSPATH_SEPARATOR)
-#       being interpreted as an end of command (newline)
-
-JAAS_SOURCEPATH  = "$(TOPDIR)/src/share/classes$(CLASSPATH_SEPARATOR)$(TOPDIR)/src/solaris/classes$(CLASSPATH_SEPARATOR)$(TOPDIR)/src/windows/classes$(CLASSPATH_SEPARATOR)$(TOPDIR)/src/linux/classes"
-JAAS_DOCDIR	 = $(DOCSDIR)/jre/api/security/jaas/spec
-JAAS_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			 \
-		   -encoding ascii			         \
-                   -nodeprecatedlist                             \
-                   -d $(JAAS_DOCDIR)				 \
-                   -sourcepath $(JAAS_SOURCEPATH)                \
-                   -windowtitle $(JAAS_WINDOWTITLE)              \
-                   -doctitle $(JAAS_DOCTITLE)                    \
-                   -header $(JAAS_JAVADOCHEADER)                 \
-                   -bottom $(SECURITYAPI_JAVADOCBOTTOM)                      \
-                   -linkoffline ../../../../../api $(DOCSDIR)/api/	 \
-                   -overview $(TOPDIR)/src/share/classes/com/sun/security/auth/jaas-overview.html
-JAAS_WINDOWTITLE = "Java Authentication and Authorization Service "
-JAAS_DOCTITLE    = "Java$(TRADEMARK) Authentication and Authorization Service"
-JAAS_JAVADOCHEADER      = "JAAS"
-# JAAS_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by JGSS target
-#
-
-JGSS_SOURCEPATH  = $(TOPDIR)/src/share/classes
-JGSS_DOCDIR	 = $(DOCSDIR)/jre/api/security/jgss/spec
-
-JGSS_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			\
-		   -encoding ascii			        \
-                   -nodeprecatedlist                            \
-                   -d $(JGSS_DOCDIR)				\
-                   -sourcepath $(JGSS_SOURCEPATH)               \
-                   -windowtitle $(JGSS_WINDOWTITLE)             \
-                   -doctitle $(JGSS_DOCTITLE)                   \
-                   -header $(JGSS_JAVADOCHEADER)                \
-                   -bottom $(SECURITYAPI_JAVADOCBOTTOM)                      \
-                   -linkoffline ../../../../../api $(DOCSDIR)/api/ \
-                   -overview $(JGSS_SOURCEPATH)/com/sun/security/jgss/jgss-overview.html
-
-JGSS_WINDOWTITLE = "Java GSS-API Utilities "
-JGSS_DOCTITLE    = "Java$(TRADEMARK) GSS-API Utilities"
-JGSS_JAVADOCHEADER      = "Java GSS-API Utilities"
-# JGSS_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by SMARTCARDIO target
-#
-
-SMARTCARDIO_SOURCEPATH  = $(TOPDIR)/src/share/classes
-SMARTCARDIO_DOCDIR	 = $(DOCSDIR)/jre/api/security/smartcardio/spec
-
-SMARTCARDIO_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			\
-		   -encoding ascii			        \
-                   -nodeprecatedlist                            \
-                   -d $(SMARTCARDIO_DOCDIR)				\
-                   -sourcepath $(SMARTCARDIO_SOURCEPATH)               \
-                   -windowtitle $(SMARTCARDIO_WINDOWTITLE)             \
-                   -doctitle $(SMARTCARDIO_DOCTITLE)                   \
-                   -header $(SMARTCARDIO_JAVADOCHEADER)                \
-                   -bottom $(SECURITYAPI_JAVADOCBOTTOM)                      \
-                   -linkoffline ../../../../../api $(DOCSDIR)/api/
-
-SMARTCARDIO_WINDOWTITLE = "Java Smart Card I/O"
-SMARTCARDIO_DOCTITLE    = "Java$(TRADEMARK) Smart Card I/O"
-SMARTCARDIO_JAVADOCHEADER      = "Java Smart Card I/O"
-# SMARTCARDIO_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by TRACING target
-#
-
-TRACING_SOURCEPATH  = $(TOPDIR)/src/share/classes
-TRACING_DOCDIR	 = $(DOCSDIR)/jre/api/tracing
-
-TRACING_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			    \
-		   -encoding ascii			            \
-                   -nodeprecatedlist                                \
-                   -d $(TRACING_DOCDIR)				    \
-                   -sourcepath $(TRACING_SOURCEPATH)                \
-                   -windowtitle $(TRACING_WINDOWTITLE)              \
-                   -doctitle $(TRACING_DOCTITLE)                    \
-                   -header $(TRACING_JAVADOCHEADER)                 \
-                   -linkoffline ../../../../../api $(DOCSDIR)/api/
-
-TRACING_WINDOWTITLE = "Tracing"
-TRACING_DOCTITLE    = "Java$(TRADEMARK) Platform Tracing"
-TRACING_JAVADOCHEADER      = "Platform Tracing"
-# TRACING_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by HTTPSERVER target
-#
-
-HTTPSERVER_SOURCEPATH  = $(TOPDIR)/src/share/classes
-HTTPSERVER_DOCDIR	 = $(DOCSDIR)/jre/api/net/httpserver/spec
-
-HTTPSERVER_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			\
-		   -encoding ascii			        \
-                   -nodeprecatedlist                            \
-                   -d $(HTTPSERVER_DOCDIR)				\
-                   -sourcepath $(HTTPSERVER_SOURCEPATH)               \
-                   -windowtitle $(HTTPSERVER_WINDOWTITLE)             \
-                   -doctitle $(HTTPSERVER_DOCTITLE)                   \
-                   -header $(HTTPSERVER_JAVADOCHEADER)                \
-                   -linkoffline ../../../../../api $(DOCSDIR)/api/
-
-HTTPSERVER_WINDOWTITLE = "Java HTTP Server"
-HTTPSERVER_DOCTITLE    = "Java$(TRADEMARK) HTTP Server"
-HTTPSERVER_JAVADOCHEADER      = "Java HTTP Server"
-# HTTPSERVER_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by sctp target
-#
-
-SCTPAPI_SOURCEPATH  = $(TOPDIR)/src/share/classes
-SCTPAPI_DOCDIR   = $(DOCSDIR)/jre/api/nio/sctp/spec
-
-SCTPAPI_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)                           \
-                   -encoding ascii                                      \
-                   -nodeprecatedlist                                    \
-                   -d $(SCTPAPI_DOCDIR)                                 \
-                   -sourcepath $(SCTPAPI_SOURCEPATH)                    \
-                   -windowtitle $(SCTPAPI_WINDOWTITLE)                  \
-                   -doctitle $(SCTPAPI_DOCTITLE)                        \
-                   -header $(SCTPAPI_JAVADOCHEADER)                     \
-                   -bottom $(SCTPAPI_JAVADOCBOTTOM)			\
-                   -linkoffline ../../../../../api $(DOCSDIR)/api/
-
-SCTPAPI_WINDOWTITLE = "SCTP API"
-SCTPAPI_DOCTITLE    = "SCTP API"
-SCTPAPI_JAVADOCHEADER      = "SCTP API"
-SCTPAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Report a bug or request a feature.</a><br>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to license terms.</font>'
-# SCTPAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by jvmti target
-#
-JVMTI_DOCS_SUBDIR = platform/jvmti
-JVMTI_HTML        = $(HOTSPOT_DOCS_IMPORT_PATH)/$(JVMTI_DOCS_SUBDIR)/jvmti.html
-
-#
-# Variables used by mgmt target
-#
-MGMT_DOCDIR	   = $(DOCSDIR)/jre/api/management/
-MGMT_EXT_DIR	   = $(MGMT_DOCDIR)/extension
-MGMT_SOURCEPATH    = $(TOPDIR)/src/share/classes
-JVM_MIB_NAME       = JVM-MANAGEMENT-MIB.mib
-JVM_MIB_SRC        = $(CLOSED_SRC)/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
-
-ifdef OPENJDK
-   COPY-MIB-TARGET =
-else
-   COPY-MIB-TARGET = copy-mib
-endif
-MGMT_JAVADOCFLAGS  = $(COMMON_JAVADOCFLAGS)			   \
-		     -encoding ascii			           \
-                     -nodeprecatedlist                             \
-                     -d $(MGMT_EXT_DIR) 		  	   \
-                     -sourcepath $(MGMT_SOURCEPATH)                \
-                     -windowtitle $(MGMT_WINDOWTITLE)              \
-                     -doctitle $(MGMT_DOCTITLE)                    \
-                     -header $(MGMT_HEADER)                        \
-		     -linkoffline ../../../../api $(DOCSDIR)/api/  \
-                     -overview $(MGMT_SOURCEPATH)/com/sun/management/mgmt-overview.html
-MGMT_WINDOWTITLE = "Monitoring and Management Interface for the Java Platform"
-MGMT_DOCTITLE    = "Monitoring and Management Interface for the Java$(TRADEMARK) Platform"
-MGMT_HEADER      = "Monitoring and Management Interface for the Java Platform"
-# MGMT_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by attach target
-#
-
-ATTACH_SOURCEPATH  = $(TOPDIR)/src/share/classes
-ATTACH_DOCDIR      = $(DOCSDIR)/jdk/api/attach/spec
-ATTACH_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)                        	\
-		   -encoding ascii                               	\
-                   -nodeprecatedlist                             	\
-		   -d $(ATTACH_DOCDIR)					\
-                   -sourcepath $(ATTACH_SOURCEPATH)                	\
-                   -windowtitle $(ATTACH_WINDOWTITLE)               	\
-                   -doctitle $(ATTACH_DOCTITLE)                     	\
-                   -header $(ATTACH_HEADER)                         	\
-		   -linkoffline ../../../../api $(DOCSDIR)/api/
-ATTACH_WINDOWTITLE = "Attach API"
-ATTACH_DOCTITLE    = "Attach API"
-ATTACH_HEADER      = "Attach API"
-# ATTACH_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by jconsole target
-#
-
-JCONSOLE_SOURCEPATH  = $(TOPDIR)/src/share/classes
-JCONSOLE_DOCDIR      = $(DOCSDIR)/jdk/api/jconsole/spec
-JCONSOLE_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)                        	\
-		   -encoding ascii                               	\
-                   -nodeprecatedlist                             	\
-		   -d $(JCONSOLE_DOCDIR)				\
-                   -sourcepath $(JCONSOLE_SOURCEPATH)                	\
-                   -windowtitle $(JCONSOLE_WINDOWTITLE)               	\
-                   -doctitle $(JCONSOLE_DOCTITLE)                     	\
-                   -header $(JCONSOLE_HEADER)                         	\
-		   -linkoffline ../../../../api $(DOCSDIR)/api/
-JCONSOLE_WINDOWTITLE = "JConsole API"
-JCONSOLE_DOCTITLE    = "JConsole API"
-JCONSOLE_HEADER      = "JConsole API"
-# JCONSOLE_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Variables used by treeapidocs target
-#
-
-TREEAPI_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)		        \
-                    -encoding ascii			        \
-                    -doctitle $(TREEAPI_JAVADOCTITLE)            \
-                    -windowtitle $(TREEAPI_JAVADOCWINDOWTITLE)   \
-                    -header $(TREEAPI_JAVADOCHEADER)             \
-                    -bottom $(TREEAPI_JAVADOCBOTTOM)             \
-                    -group $(TREEAPI_GROUPNAME) $(TREEAPI_REGEXP) 
-#
-#	            -overview $(TREEAPI_OVERVIEW)
-#
-TREEAPI_JAVADOCTITLE = 'Compiler Tree API'
-TREEAPI_JAVADOCWINDOWTITLE = 'Compiler Tree API'
-TREEAPI_JAVADOCHEADER = '<strong>Compiler Tree API</strong>'
-TREEAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Report a bug or request a feature.</a><br>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to license terms.</font>'
-TREEAPI_GROUPNAME = "Packages"
-TREEAPI_OVERVIEW = $(SHARE_SRC)/classes/com/sun/source/overview.html
-TREEAPI_REGEXP = "com.sun.source.*"
-TREEAPI_DESTDIR = $(DOCSDIR)/jdk/api/javac/tree
-TREEAPI_LINKOPT = -linkoffline ../../../../api $(DOCSDIR)/api/
-# TREEAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-#
-# Path where javadoc should find source files for release docs
-#
-RELEASEDOCS_SRCPATH = "$(SHARE_SRC)/classes$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/classes$(CLASSPATH_SEPARATOR)$(GENSRCDIR)$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/doc/stub$(CLASSPATH_SEPARATOR)$(CLOSED_SRC)/share/classes$(CLASSPATH_SEPARATOR)$(IMPORTSRCDIR)"
+#################################################################
 
 #
 # CORE_PKGS environment variable has been moved to the following file
@@ -463,30 +234,13 @@ include CORE_PKGS.gmk
 #
 include NON_CORE_PKGS.gmk
 
-# Targets for all APIs other than the core platform APIs
-ALL_OTHER_TARGETS = \
-    mirrordocs \
-    docletapidocs \
-    tagletapidocs \
-    domapidocs \
-    jpdadocs \
-    jaasdocs \
-    jgssdocs \
-    smartcardiodocs \
-    tracingdocs \
-    httpserverdocs  \
-    sctpdocs \
-    mgmtdocs \
-    attachdocs \
-    jconsoledocs \
-    treeapidocs
+#################################################################
 
-.PHONY: all docs
+#
+# Default target is same as docs target, create core api and all others it can
+#
+
 all docs: coredocs otherdocs
-
-.PHONY: otherdocs
-otherdocs: ${ALL_OTHER_TARGETS}
-
 
 #################################################################
 # Production Targets -- USE THESE TARGETS WHEN:
@@ -496,9 +250,9 @@ otherdocs: ${ALL_OTHER_TARGETS}
 #       the downloaded doc bundle.
 #
 # See:  Notes.html#releaseTargets
-# Note: Spaces preceed ifdef/ifndef indents. Tabs preceed target commands (!)
+# Note: Spaces precede ifdef/ifndef indents. Tabs precede target commands (!)
 #
-.PHONY: sanitycheckcoredocs
+
 sanitycheckcoredocs:
 	@$(ECHO) ""
 	@$(ECHO) "Building core api docs with these values:"
@@ -512,199 +266,942 @@ sanitycheckcoredocs:
 	exit 1
   endif
 
-# Maximize performance and ensure that build number & milestone are set.
-.PHONY: rel-coredocs
-rel-coredocs: sanitycheckcoredocs
-	@# ######## release version of core packages ########
-	$(MAKE) coredocs
-
-.PHONY: rel-docs
-rel-docs: rel-coredocs ${ALL_OTHER_TARGETS}
-#
-# end of production targets
 #############################################################
+#
+# coredocs
+#
+COREAPI_DOCTITLE  = Java$(TRADEMARK) Platform, Standard Edition \
+$(JDK_MINOR_VERSION)<br>API Specification
+COREAPI_WINDOWTITLE  = Java Platform SE $(JDK_MINOR_VERSION)
+COREAPI_HEADER = \
+<strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(JDK_MINOR_VERSION)</strong>
 
-.PHONY: coredocs
-coredocs:
-	@# ######## core packages #######################
-	$(RM) -r $(DOCSDIR)/api
-	$(MKDIR) -p $(DOCSDIR)/api
-	$(JAVADOC_CMD) $(CORE_JAVADOCFLAGS)            \
-                   -d $(DOCSDIR)/api                   \
-                   -sourcepath $(RELEASEDOCS_SRCPATH)  \
-                   $(CORE_PKGS)
+# Ignored tags
+IGNORED_TAGS =	beaninfo revised since.unbundled spec specdefault Note ToDo
 
-.PHONY: mirrordocs
-mirrordocs:
-	@# ######## mirror api for apt ##################
-	$(RM) -r $(MIRROR_DESTDIR)
-	$(MKDIR) -p $(MIRROR_DESTDIR)
-	$(JAVADOC_CMD) $(MIRROR_JAVADOCFLAGS)             \
-		   -d $(MIRROR_DESTDIR)               \
-		   -sourcepath $(RELEASEDOCS_SRCPATH) \
-		   $(MIRROR_LINKOPT)                  \
-		   $(MIRROR_PKGS)
+# Java language specification cite
+JLS3_CITE = <a href=\"$(JLS3_URL)\"> \
+		The Java Language Specification, Third Edition</a>
+TAG_JLS3 = -tag 'jls3:a:See <cite>$(JLS3_CITE)</cite>:'
 
-.PHONY: docletapidocs
-docletapidocs:
-	@# ######## doclet api ############################
-	$(RM) -r $(DOCSDIR)/jdk/api/javadoc/doclet
-	$(MKDIR) -p $(DOCSDIR)/jdk/api/javadoc/doclet
-	$(JAVADOC_CMD) $(DOCLETAPI_JAVADOCFLAGS)                 \
-                   -d $(DOCSDIR)/jdk/api/javadoc/doclet      \
-                   -sourcepath $(RELEASEDOCS_SRCPATH)        \
-                   $(DOCLETAPI_LINKOPT)                      \
-                   $(DOCLETAPI_PKGS)
+TAGS = $(IGNORED_TAGS:%=-tag %:X) $(TAG_JLS3)
 
-.PHONY: tagletapidocs
-tagletapidocs:
-	@# ######## taglet api ############################
-	$(RM) -r $(DOCSDIR)/jdk/api/javadoc/taglet
-	$(MKDIR) -p $(DOCSDIR)/jdk/api/javadoc/taglet
-	$(RM) -r $(DOCSTMPDIR)
-	$(MKDIR) -p $(DOCSTMPDIR)
-	$(JAVADOC_CMD) $(TAGLETAPI_JAVADOCFLAGS)                 \
-                   -d $(DOCSTMPDIR)                          \
-                   -linkoffline ../../../../api $(DOCSDIR)/api/ \
-                   $(IMPORTSRCDIR)/$(TAGLETAPI_FILE)
-	cp -r $(DOCSTMPDIR)/com $(DOCSDIR)/jdk/api/javadoc/taglet
-	cp $(DOCSTMPDIR)/stylesheet.css $(DOCSDIR)/jdk/api/javadoc/taglet
-	$(RM) -r $(DOCSTMPDIR)
+# Overview file for core apis
+COREAPI_OVERVIEW = $(SHARE_SRC)/classes/overview-core.html
 
-.PHONY: domapidocs
-domapidocs:
-	@# ######## dom api ############################
-	$(RM) -r $(DOCSDIR)/jre/api/plugin/dom
-	$(MKDIR) -p $(DOCSDIR)/jre/api/plugin/dom
-	$(JAVADOC_CMD) $(DOMAPI_JAVADOCFLAGS)		     \
-                   -d $(DOCSDIR)/jre/api/plugin/dom            \
-                   -sourcepath $(RELEASEDOCS_SRCPATH)        \
-                   -linkoffline ../../../../api $(DOCSDIR)/api/ \
-                   $(DOMAPI_PKGS)
+# The index.html, options, and packages files
+COREAPI_INDEX_FILE    = $(COREAPI_DOCSDIR)/index.html
+COREAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/coredocs.options
+COREAPI_PACKAGES_FILE = $(DOCSTMPDIR)/coredocs.packages
 
-.PHONY: jpdadocs
+coredocs: $(COREAPI_INDEX_FILE)
+
+# Set relative location to core api document root
+$(COREAPI_INDEX_FILE): GET2DOCSDIR=..
+
+# Run javadoc if the index file is out of date or missing
+$(COREAPI_INDEX_FILE): $(COREAPI_OPTIONS_FILE) $(COREAPI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(COREAPI_OPTIONS_FILE),$(COREAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(COREAPI_OPTIONS_FILE) @$(COREAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "$(TAGS)"						; \
+	  $(ECHO) "-encoding ISO-8859-1"				; \
+	  $(ECHO) "-splitIndex"						; \
+	  $(ECHO) "-overview $(COREAPI_OVERVIEW)" 			; \
+	  $(ECHO) "-doctitle '$(COREAPI_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(COREAPI_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(COREAPI_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(COREAPI_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+        ) >> $@
+ifdef COREAPI_TOP_EARLYACCESS
+	@$(ECHO) "-top '$(COREAPI_TOP_EARLYACCESS)'" >> $@
+endif
+
+# Create a file with the package names in it
+$(COREAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(CORE_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(CORE_PKGS))
+
+#############################################################
+#
+# mirrordocs
+#
+
+# Part of langtools
+ifdef LANGTOOLS_DIST
+  ALL_OTHER_TARGETS += mirrordocs
+endif
+
+MIRROR_DOCDIR      := $(JDK_API_DOCSDIR)/apt/mirror
+MIRROR2COREAPI     := ../../$(JDKJRE2COREAPI)
+MIRROR_DOCTITLE    := Mirror API
+MIRROR_WINDOWTITLE := Mirror API
+MIRROR_HEADER      := <strong>Mirror API</strong>
+MIRROR_BOTTOM      := $(call CommonBottom,$(MIRROR_FIRST_COPYRIGHT_YEAR))
+MIRROR_GROUPNAME   := Packages
+MIRROR_OVERVIEW    := $(IMPORTSRCDIR)/com/sun/mirror/overview.html
+MIRROR_REGEXP      := com.sun.mirror.*
+# MIRROR_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+MIRROR_INDEX_FILE    = $(MIRROR_DOCDIR)/index.html
+MIRROR_OPTIONS_FILE  = $(DOCSTMPDIR)/mirror.options
+MIRROR_PACKAGES_FILE = $(DOCSTMPDIR)/mirror.packages
+
+mirrordocs: $(MIRROR_INDEX_FILE)
+
+# Set relative location to core api document root
+$(MIRROR_INDEX_FILE): GET2DOCSDIR=$(MIRROR2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(MIRROR_INDEX_FILE): $(MIRROR_OPTIONS_FILE) $(MIRROR_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(MIRROR_OPTIONS_FILE),$(MIRROR_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(MIRROR_OPTIONS_FILE) @$(MIRROR_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(MIRROR_OPTIONS_FILE): $(MIRROR_OVERVIEW)
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-overview $(MIRROR_OVERVIEW)" 			; \
+	  $(ECHO) "-doctitle '$(MIRROR_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(MIRROR_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(MIRROR_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(MIRROR_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-group $(MIRROR_GROUPNAME) $(MIRROR_REGEXP)"		; \
+	  $(ECHO) "-linkoffline $(MIRROR2COREAPI) $(COREAPI_DOCSDIR)/"; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(MIRROR_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(MIRROR_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(MIRROR_PKGS))
+
+#############################################################
+#
+# docletapidocs
+#
+
+# Part of langtools
+ifdef LANGTOOLS_DIST
+  ALL_OTHER_TARGETS += docletapidocs
+endif
+
+DOCLETAPI_DOCDIR       := $(JDK_API_DOCSDIR)/javadoc/doclet
+DOCLETAPI2COREAPI      := ../../$(JDKJRE2COREAPI)
+DOCLETAPI_DOCTITLE     := Doclet API
+DOCLETAPI_WINDOWTITLE  := Doclet API
+DOCLETAPI_HEADER       := <strong>Doclet API</strong>
+DOCLETAPI_BOTTOM       := $(call CommonTrademarkBottom,$(DOCLETAPI_FIRST_COPYRIGHT_YEAR))
+DOCLETAPI_GROUPNAME    := Packages
+DOCLETAPI_REGEXP       := com.sun.javadoc
+# DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+DOCLETAPI_INDEX_FILE    = $(DOCLETAPI_DOCDIR)/index.html
+DOCLETAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/docletapi.options
+DOCLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/docletapi.packages
+
+docletapidocs: $(DOCLETAPI_INDEX_FILE)
+
+# Set relative location to core api document root
+$(DOCLETAPI_INDEX_FILE): GET2DOCSDIR=$(DOCLETAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(DOCLETAPI_OPTIONS_FILE),$(DOCLETAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(DOCLETAPI_OPTIONS_FILE) @$(DOCLETAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(DOCLETAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-breakiterator"					; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-doctitle '$(DOCLETAPI_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(DOCLETAPI_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(DOCLETAPI_HEADER)$(DRAFT_HEADER)'"	; \
+	  $(ECHO) "-bottom '$(DOCLETAPI_BOTTOM)$(DRAFT_BOTTOM)'"	; \
+	  $(ECHO) "-group $(DOCLETAPI_GROUPNAME) $(DOCLETAPI_REGEXP)"	; \
+	  $(ECHO) "-linkoffline $(DOCLETAPI2COREAPI) $(COREAPI_DOCSDIR)/"; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(DOCLETAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(DOCLETAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(DOCLETAPI_PKGS))
+
+#############################################################
+#
+# tagletapidocs
+#
+
+# Part of langtools
+ifdef LANGTOOLS_DIST
+  ALL_OTHER_TARGETS += tagletapidocs
+endif
+
+TAGLETAPI_DOCDIR   := $(JDK_API_DOCSDIR)/javadoc/taglet
+TAGLETAPI2COREAPI  := ../../$(JDKJRE2COREAPI)
+TAGLETAPI_BOTTOM   := $(call CommonTrademarkBottom,$(TAGLETAPI_FIRST_COPYRIGHT_YEAR))
+# TAGLETAPI_FILE is located in NON_CORE_PKGS.gmk
+
+# Temporary directory (special generation rules)
+TAGLETAPI_TEMPDIR       = $(DOCSTMPDIR)/taglets_temp
+
+# The index.html, options, and packages files
+TAGLETAPI_INDEX_FILE    = $(TAGLETAPI_DOCDIR)/index.html
+TAGLETAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/tagletapi.options
+TAGLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/tagletapi.packages
+
+tagletapidocs: $(TAGLETAPI_INDEX_FILE)
+
+# Set relative location to core api document root
+$(TAGLETAPI_INDEX_FILE): GET2DOCSDIR=$(TAGLETAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(RM) -r $(TAGLETAPI_TEMPDIR)
+	$(MKDIR) -p $(TAGLETAPI_TEMPDIR)
+	$(call JavadocSummary,$(TAGLETAPI_OPTIONS_FILE),$(TAGLETAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(TAGLETAPI_TEMPDIR) \
+	  @$(TAGLETAPI_OPTIONS_FILE) @$(TAGLETAPI_PACKAGES_FILE)
+	cp -r $(TAGLETAPI_TEMPDIR)/com $(@D)
+	cp $(TAGLETAPI_TEMPDIR)/stylesheet.css $(@D)
+	$(RM) -r $(TAGLETAPI_TEMPDIR)
+
+# Create file with javadoc options in it
+$(TAGLETAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nonavbar"						; \
+	  $(ECHO) "-noindex"						; \
+	  $(ECHO) "-bottom '$(TAGLETAPI_BOTTOM)$(DRAFT_BOTTOM)'"			; \
+	  $(ECHO) "-linkoffline $(TAGLETAPI2COREAPI) $(COREAPI_DOCSDIR)/"; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(TAGLETAPI_PACKAGES_FILE): $(IMPORTSRCDIR)/$(TAGLETAPI_FILE)
+	$(prep-target)
+	@($(ECHO) "$(IMPORTSRCDIR)/$(TAGLETAPI_FILE)" ) > $@
+
+#############################################################
+#
+# domapidocs
+#
+
+ALL_OTHER_TARGETS += domapidocs
+
+DOMAPI_DOCDIR       := $(JRE_API_DOCSDIR)/plugin/dom
+DOMAPI2COREAPI      := ../../$(JDKJRE2COREAPI)
+DOMAPI_DOCTITLE     := Common DOM API
+DOMAPI_WINDOWTITLE  := Common DOM API
+DOMAPI_HEADER       := <strong>Common DOM API</strong>
+DOMAPI_BOTTOM       := $(call CommonTrademarkBottom,$(DOMAPI_FIRST_COPYRIGHT_YEAR))
+DOMAPI_GROUPNAME    := Packages
+DOMAPI_REGEXP       := com.sun.java.browser.dom:org.w3c.dom*
+# DOMAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+DOMAPI_INDEX_FILE    = $(DOMAPI_DOCDIR)/index.html
+DOMAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/domapi.options
+DOMAPI_PACKAGES_FILE = $(DOCSTMPDIR)/domapi.packages
+
+domapidocs: $(DOMAPI_INDEX_FILE)
+
+# Set relative location to core api document root
+$(DOMAPI_INDEX_FILE): GET2DOCSDIR=$(DOMAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(DOMAPI_OPTIONS_FILE),$(DOMAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(DOMAPI_OPTIONS_FILE) @$(DOMAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(DOMAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-splitIndex"						; \
+	  $(ECHO) "-doctitle '$(DOMAPI_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(DOMAPI_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(DOMAPI_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(DOMAPI_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-group $(DOMAPI_GROUPNAME) $(DOMAPI_REGEXP)"		; \
+	  $(ECHO) "-linkoffline $(DOMAPI2COREAPI) $(COREAPI_DOCSDIR)/" 	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(DOMAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(DOMAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(DOMAPI_PKGS))
+
+#############################################################
+#
+# jpdadocs
+#
+
+ALL_OTHER_TARGETS += jpdadocs
+
 jpdadocs: jdidocs jdwpdocs jvmtidocs
 
-.PHONY: jdidocs
-jdidocs:
-	@# ######## jdi #################################
-	$(RM) -r $(DOCSDIR)/jdk/api/jpda/jdi
-	$(MKDIR) -p $(DOCSDIR)/jdk/api/jpda/jdi
-	$(JAVADOC_CMD) $(JDI_JAVADOCFLAGS)                       \
-                   $(JDI_PKGS)
+#############################################################
+#
+# jdidocs
+#
 
+ALL_OTHER_TARGETS += jdidocs
+
+JDI_DOCDIR      := $(JDK_API_DOCSDIR)/jpda/jdi
+JDI2COREAPI     := ../../$(JDKJRE2COREAPI)
+JDI_DOCTITLE    := Java$(TRADEMARK) Debug Interface
+JDI_WINDOWTITLE := Java Debug Interface
+JDI_HEADER      := <strong>Java Debug Interface</strong>
+JDI_BOTTOM      := $(call CommonBottom,$(JDI_FIRST_COPYRIGHT_YEAR))
+JDI_OVERVIEW    := $(SHARE_SRC)/classes/jdi-overview.html
+# JDI_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+JDI_INDEX_FILE    = $(JDI_DOCDIR)/index.html
+JDI_OPTIONS_FILE  = $(DOCSTMPDIR)/jdi.options
+JDI_PACKAGES_FILE = $(DOCSTMPDIR)/jdi.packages
+
+jdidocs: $(JDI_INDEX_FILE)
+
+# Set relative location to core api document root
+$(JDI_INDEX_FILE): GET2DOCSDIR=$(JDI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JDI_OPTIONS_FILE),$(JDI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(JDI_OPTIONS_FILE) @$(JDI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JDI_OPTIONS_FILE): $(JDI_OVERVIEW)
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-overview $(JDI_OVERVIEW)" 				; \
+	  $(ECHO) "-doctitle '$(JDI_DOCTITLE)'"				; \
+	  $(ECHO) "-windowtitle '$(JDI_WINDOWTITLE) $(DRAFT_WINTITLE)'"	; \
+	  $(ECHO) "-header '$(JDI_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(JDI_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(JDI2COREAPI) $(COREAPI_DOCSDIR)/" 	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(JDI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JDI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JDI_PKGS))
+
+#############################################################
+#
+# jdwpdocs
+#
+
+ALL_OTHER_TARGETS += jdwpdocs
+
+JDWP_DOCDIR     = $(PLATFORM_DOCSDIR)/jpda/jdwp
 JDWP_SPEC       = $(BUILDDIR)/jpda/jdwp/jdwp.spec
-JDWP_DOC        = $(DOCSDIR)/platform/jpda/jdwp/jdwp-protocol.html
 JDWPGEN_JARFILE = $(BUILDTOOLJARDIR)/jdwpgen.jar
 
-.PHONY: jdwpdocs
-jdwpdocs: $(JDWP_DOC)
+jdwpdocs: $(JDWP_DOCDIR)/jdwp-protocol.html
+$(JDWP_DOCDIR)/jdwp-protocol.html: $(JDWPGEN_JARFILE) $(JDWP_SPEC)
+	$(prep-javadoc)
+	$(BOOT_JAVA_CMD) -jar $(JDWPGEN_JARFILE) $(JDWP_SPEC) -doc $@
 
-$(JDWP_DOC): $(JDWPGEN_JARFILE) $(JDWP_SPEC)
-	$(prep-target)
-	$(BOOT_JAVA_CMD) -jar $(JDWPGEN_JARFILE) $(JDWP_SPEC) -doc $(JDWP_DOC)
+#############################################################
+#
+# jvmtidocs
+#
 
-.PHONY: jvmtidocs
-jvmtidocs:
-	@# ######## jvmti #################################
-	@if [ -f $(JVMTI_HTML) ] ; then \
-	  $(RM) -r $(DOCSDIR)/$(JVMTI_DOCS_SUBDIR); \
-	  $(MKDIR) -p $(DOCSDIR)/$(JVMTI_DOCS_SUBDIR); \
-	  $(ECHO) $(CP) $(JVMTI_HTML) $(DOCSDIR)/$(JVMTI_DOCS_SUBDIR); \
-	  $(CP) $(JVMTI_HTML) $(DOCSDIR)/$(JVMTI_DOCS_SUBDIR); \
-	else \
-	  $(ECHO) "WARNING: Generated jvmti file does not exist: $(JVMTI_HTML)"; \
+ALL_OTHER_TARGETS += jvmtidocs
+
+JVMTI_DOCDIR      = $(PLATFORM_DOCSDIR)/jvmti
+JVMTI_HTML        = $(HOTSPOT_DOCS_IMPORT_PATH)/platform/jvmti/jvmti.html
+
+jvmtidocs:  $(JVMTI_DOCDIR)/jvmti.html
+$(JVMTI_DOCDIR)/jvmti.html:
+	@$(prep-javadoc)
+	@if [ -f $(JVMTI_HTML) ] ; then		                           \
+	  $(ECHO) "$(CP) $(JVMTI_HTML) $@";                 	           \
+	  $(CP) $(JVMTI_HTML) $@; 	                 	           \
+	else 						                   \
+	  $(ECHO) "WARNING: Generated file does not exist: $(JVMTI_HTML)"; \
 	fi
 
-.PHONY: jaasdocs
-jaasdocs:
-	@# ######## api-jaas ############################
-	$(RM) -r $(JAAS_DOCDIR)
-	$(MKDIR) -p $(JAAS_DOCDIR)
-	$(JAVADOC_CMD) $(JAAS_JAVADOCFLAGS)                     \
-		   $(JAAS_PKGS)
+#############################################################
+#
+# jaasdocs
+#
 
-.PHONY: jgssdocs
-jgssdocs:
-	@# ######## api-jgss ############################
-	$(RM) -r $(JGSS_DOCDIR)
-	$(MKDIR) -p $(JGSS_DOCDIR)
-	$(JAVADOC_CMD) $(JGSS_JAVADOCFLAGS)                     \
-		   $(JGSS_PKGS)
+ALL_OTHER_TARGETS += jaasdocs
 
-.PHONY: smartcardiodocs
-smartcardiodocs:
-	@# ######## api-smartcardio ############################
-	$(RM) -r $(SMARTCARDIO_DOCDIR)
-	$(MKDIR) -p $(SMARTCARDIO_DOCDIR)
-	$(JAVADOC_CMD) $(SMARTCARDIO_JAVADOCFLAGS)                     \
-		   $(SMARTCARDIO_PKGS)
+JAAS_DOCDIR	 := $(JRE_API_DOCSDIR)/security/jaas/spec
+JAAS2COREAPI     := ../../../$(JDKJRE2COREAPI)
+JAAS_DOCTITLE    := Java$(TRADEMARK) Authentication and Authorization Service
+JAAS_WINDOWTITLE := Java Authentication and Authorization Service
+JAAS_HEADER      := <strong>Java Authentication and Authorization Service</strong>
+JAAS_BOTTOM      := $(call CommonBottom,$(JAAS_FIRST_COPYRIGHT_YEAR))
+# JAAS_PKGS is located in NON_CORE_PKGS.gmk
+JAAS_OVERVIEW    := $(SHARE_SRC)/classes/com/sun/security/auth/jaas-overview.html
 
-.PHONY: tracingdocs
-tracingdocs:
-	@# ######## api-tracing ############################
-	$(RM) -r $(TRACING_DOCDIR)
-	$(MKDIR) -p $(TRACING_DOCDIR)
-	$(JAVADOC_CMD) $(TRACING_JAVADOCFLAGS)                     \
-		   $(TRACING_PKGS)
+# The index.html, options, and packages files
+JAAS_INDEX_FILE    = $(JAAS_DOCDIR)/index.html
+JAAS_OPTIONS_FILE  = $(DOCSTMPDIR)/jaas.options
+JAAS_PACKAGES_FILE = $(DOCSTMPDIR)/jaas.packages
 
-.PHONY: httpserverdocs
-httpserverdocs:
-	@# ######## api-httpserver #######################
-	$(RM) -r $(HTTPSERVER_DOCDIR)
-	$(MKDIR) -p $(HTTPSERVER_DOCDIR)
-	$(JAVADOC_CMD) $(HTTPSERVER_JAVADOCFLAGS)                     \
-		   $(HTTPSERVER_PKGS)
+jaasdocs: $(JAAS_INDEX_FILE)
 
-.PHONY: sctpdocs
-sctpdocs:
-	@# ######## api-sctp #######################
-	$(RM) -r $(SCTPAPI_DOCDIR)
-	$(MKDIR) -p $(SCTPAPI_DOCDIR)
-	$(JAVADOC_CMD) $(SCTPAPI_JAVADOCFLAGS)                     \
-		$(SCTPAPI_PKGS)
+# Set relative location to core api document root
+$(JAAS_INDEX_FILE): GET2DOCSDIR=$(JAAS2COREAPI)/..
 
-.PHONY: mgmtdocs
-mgmtdocs: $(COPY-MIB-TARGET)
-	@# ######## api-management ############################
-	$(RM) -r $(MGMT_EXT_DIR)
-	$(MKDIR) -p $(MGMT_EXT_DIR)
-	$(JAVADOC_CMD) $(MGMT_JAVADOCFLAGS)                     \
-		   $(MGMT_PKGS)
+# Run javadoc if the index file is out of date or missing
+$(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JAAS_OPTIONS_FILE),$(JAAS_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(JAAS_OPTIONS_FILE) @$(JAAS_PACKAGES_FILE)
 
-copy-mib:
-	@# ######## copy-snmp-mib ############################
-	$(RM) $(MGMT_DOCDIR)/$(JVM_MIB_NAME)
-	$(MKDIR) -p $(MGMT_DOCDIR)
-	$(CP) $(JVM_MIB_SRC) $(MGMT_DOCDIR)
+# Create file with javadoc options in it
+$(JAAS_OPTIONS_FILE): $(JAAS_OVERVIEW)
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-overview $(JAAS_OVERVIEW)" 				; \
+	  $(ECHO) "-doctitle '$(JAAS_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(JAAS_WINDOWTITLE) $(DRAFT_WINTITLE)'"; \
+	  $(ECHO) "-header '$(JAAS_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(JAAS_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(JAAS2COREAPI) $(COREAPI_DOCSDIR)/" 	; \
+        ) >> $@
 
-.PHONY: attachdocs
-attachdocs:
-	@# ######## api-attach ############################
-	$(RM) -r $(ATTACH_DOCDIR)
-	$(MKDIR) -p $(ATTACH_DOCDIR)
-	$(JAVADOC_CMD) $(ATTACH_JAVADOCFLAGS)                     \
-		   $(ATTACH_PKGS)
+# Create a file with the package names in it
+$(JAAS_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JAAS_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JAAS_PKGS))
 
-.PHONY: jconsoledocs
-jconsoledocs:
-	@# ######## api-jconsole ############################
-	$(RM) -r $(JCONSOLE_DOCDIR)
-	$(MKDIR) -p $(JCONSOLE_DOCDIR)
-	$(JAVADOC_CMD) $(JCONSOLE_JAVADOCFLAGS)                     \
-		   $(JCONSOLE_PKGS)
+#############################################################
+#
+# jgssdocs
+#
 
-.PHONY: treeapidocs
-treeapidocs:
-	@# ######## tree api for javac ##################
-	$(RM) -r $(TREEAPI_DESTDIR)
-	$(MKDIR) -p $(TREEAPI_DESTDIR)
-	$(JAVADOC_CMD) $(TREEAPI_JAVADOCFLAGS)             \
-		   -d $(TREEAPI_DESTDIR)               \
-		   -sourcepath $(RELEASEDOCS_SRCPATH) \
-		   $(TREEAPI_LINKOPT)                  \
-		   $(TREEAPI_PKGS)
+ALL_OTHER_TARGETS += jgssdocs
 
+JGSS_DOCDIR	 := $(JRE_API_DOCSDIR)/security/jgss/spec
+JGSS2COREAPI     := ../../../$(JDKJRE2COREAPI)
+JGSS_DOCTITLE    := Java$(TRADEMARK) GSS-API Utilities
+JGSS_WINDOWTITLE := Java GSS-API Utilities
+JGSS_HEADER      := <strong>Java GSS-API Utilities</strong>
+JGSS_BOTTOM      := $(call CommonBottom,$(JGSS_FIRST_COPYRIGHT_YEAR))
+JGSS_OVERVIEW    := $(SHARE_SRC)/classes/com/sun/security/jgss/jgss-overview.html
+# JGSS_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+JGSS_INDEX_FILE    = $(JGSS_DOCDIR)/index.html
+JGSS_OPTIONS_FILE  = $(DOCSTMPDIR)/jgss.options
+JGSS_PACKAGES_FILE = $(DOCSTMPDIR)/jgss.packages
+
+jgssdocs: $(JGSS_INDEX_FILE)
+
+# Set relative location to core api document root
+$(JGSS_INDEX_FILE): GET2DOCSDIR=$(JGSS2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JGSS_OPTIONS_FILE),$(JGSS_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(JGSS_OPTIONS_FILE) @$(JGSS_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JGSS_OPTIONS_FILE): $(JGSS_OVERVIEW)
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-overview $(JGSS_OVERVIEW)" 				; \
+	  $(ECHO) "-doctitle '$(JGSS_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(JGSS_WINDOWTITLE) $(DRAFT_WINTITLE)'"; \
+	  $(ECHO) "-header '$(JGSS_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(JGSS_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(JGSS2COREAPI) $(COREAPI_DOCSDIR)/" 	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(JGSS_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JGSS_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JGSS_PKGS))
+
+#############################################################
+#
+# smartcardiodocs
+#
+
+ALL_OTHER_TARGETS += smartcardiodocs
+
+SMARTCARDIO_DOCDIR	:= $(JRE_API_DOCSDIR)/security/smartcardio/spec
+SMARTCARDIO2COREAPI     := ../../../$(JDKJRE2COREAPI)
+SMARTCARDIO_DOCTITLE    := Java$(TRADEMARK) Smart Card I/O
+SMARTCARDIO_WINDOWTITLE := Java Smart Card I/O
+SMARTCARDIO_HEADER      := <strong>Java Smart Card I/O</strong>
+SMARTCARDIO_BOTTOM      := $(call CommonBottom,$(SMARTCARDIO_FIRST_COPYRIGHT_YEAR))
+# SMARTCARDIO_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+SMARTCARDIO_INDEX_FILE    = $(SMARTCARDIO_DOCDIR)/index.html
+SMARTCARDIO_OPTIONS_FILE  = $(DOCSTMPDIR)/smartcardio.options
+SMARTCARDIO_PACKAGES_FILE = $(DOCSTMPDIR)/smartcardio.packages
+
+smartcardiodocs: $(SMARTCARDIO_INDEX_FILE)
+
+# Set relative location to core api document root
+$(SMARTCARDIO_INDEX_FILE): GET2DOCSDIR=$(SMARTCARDIO2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(SMARTCARDIO_OPTIONS_FILE),$(SMARTCARDIO_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(SMARTCARDIO_OPTIONS_FILE) @$(SMARTCARDIO_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(SMARTCARDIO_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-doctitle '$(SMARTCARDIO_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(SMARTCARDIO_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(SMARTCARDIO_HEADER)$(DRAFT_HEADER)'"	; \
+	  $(ECHO) "-bottom '$(SMARTCARDIO_BOTTOM)$(DRAFT_BOTTOM)'"	; \
+	  $(ECHO) "-linkoffline $(SMARTCARDIO2COREAPI) $(COREAPI_DOCSDIR)/"; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(SMARTCARDIO_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(SMARTCARDIO_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(SMARTCARDIO_PKGS))
+
+#############################################################
+#
+# httpserverdocs
+#
+
+ALL_OTHER_TARGETS += httpserverdocs
+
+HTTPSERVER_DOCDIR      := $(JRE_API_DOCSDIR)/net/httpserver/spec
+HTTPSERVER2COREAPI     := ../../../$(JDKJRE2COREAPI)
+HTTPSERVER_DOCTITLE    := Java$(TRADEMARK) HTTP Server
+HTTPSERVER_WINDOWTITLE := Java HTTP Server
+HTTPSERVER_HEADER      := <strong>Java HTTP Server</strong>
+HTTPSERVER_BOTTOM      := $(call CommonBottom,$(HTTPSERVER_FIRST_COPYRIGHT_YEAR))
+# HTTPSERVER_PKGS is located in NON_CORE_PKGS.gmk
+
+HTTPSERVER_INDEX_HTML    = $(HTTPSERVER_DOCDIR)/index.html
+HTTPSERVER_OPTIONS_FILE  = $(DOCSTMPDIR)/httpserver.options
+HTTPSERVER_PACKAGES_FILE = $(DOCSTMPDIR)/httpserver.packages
+
+httpserverdocs: $(HTTPSERVER_INDEX_HTML)
+
+# Set relative location to core api document root
+$(HTTPSERVER_INDEX_HTML): GET2DOCSDIR=$(HTTPSERVER2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(HTTPSERVER_OPTIONS_FILE),$(HTTPSERVER_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(HTTPSERVER_OPTIONS_FILE) @$(HTTPSERVER_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(HTTPSERVER_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-doctitle '$(HTTPSERVER_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(HTTPSERVER_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(HTTPSERVER_HEADER)$(DRAFT_HEADER)'"	; \
+	  $(ECHO) "-bottom '$(HTTPSERVER_BOTTOM)$(DRAFT_BOTTOM)'"	; \
+	  $(ECHO) "-linkoffline $(HTTPSERVER2COREAPI) $(COREAPI_DOCSDIR)/"; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(HTTPSERVER_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(HTTPSERVER_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(HTTPSERVER_PKGS))
+
+#############################################################
+#
+# mgmtdocs
+#
+
+ALL_OTHER_TARGETS += mgmtdocs
+
+MGMT_DOCDIR	 := $(JRE_API_DOCSDIR)/management/extension
+MGMT2COREAPI     := ../../$(JDKJRE2COREAPI)
+JVM_MIB_NAME     := JVM-MANAGEMENT-MIB.mib
+JVM_MIB_SRC      := $(CLOSED_SRC)/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
+MGMT_DOCTITLE    := Monitoring and Management Interface for the Java$(TRADEMARK) Platform
+MGMT_WINDOWTITLE := Monitoring and Management Interface for the Java Platform
+MGMT_HEADER      := <strong>Monitoring and Management Interface for the Java Platform</strong>
+MGMT_BOTTOM      := $(call CommonBottom,$(MGMT_FIRST_COPYRIGHT_YEAR))
+MGMT_OVERVIEW    := $(SHARE_SRC)/classes/com/sun/management/mgmt-overview.html
+# MGMT_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+MGMT_INDEX_FILE    = $(MGMT_DOCDIR)/index.html
+MGMT_OPTIONS_FILE  = $(DOCSTMPDIR)/mgmt.options
+MGMT_PACKAGES_FILE = $(DOCSTMPDIR)/mgmt.packages
+
+mgmtdocs: $(MGMT_INDEX_FILE)
+
+# Set relative location to core api document root
+$(MGMT_INDEX_FILE): GET2DOCSDIR=$(MGMT2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE)
+	$(prep-javadoc)
+	@if [ -f $(JVM_MIB_SRC) ] ; then 				\
+	  $(ECHO) "$(CP) $(JVM_MIB_SRC) $(@D)/.."; 			\
+	  $(CP) $(JVM_MIB_SRC) $(@D)/.. ; 				\
+	else 								\
+	  $(ECHO) "WARNING: File $(JVM_MIB_NAME) not available."; 	\
+	fi
+	$(call JavadocSummary,$(MGMT_OPTIONS_FILE),$(MGMT_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(MGMT_OPTIONS_FILE) @$(MGMT_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(MGMT_OPTIONS_FILE): $(MGMT_OVERVIEW)
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-overview $(MGMT_OVERVIEW)" 				; \
+	  $(ECHO) "-doctitle '$(MGMT_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(MGMT_WINDOWTITLE) $(DRAFT_WINTITLE)'"; \
+	  $(ECHO) "-header '$(MGMT_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(MGMT_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(MGMT2COREAPI) $(COREAPI_DOCSDIR)/" 	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(MGMT_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(MGMT_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(MGMT_PKGS))
+
+#############################################################
+#
+# attachdocs
+#
+
+ALL_OTHER_TARGETS += attachdocs
+
+ATTACH_DOCDIR      := $(JDK_API_DOCSDIR)/attach/spec
+ATTACH2COREAPI     := ../../$(JDKJRE2COREAPI)
+ATTACH_DOCTITLE    := Attach API
+ATTACH_WINDOWTITLE := Attach API
+ATTACH_HEADER      := <strong>Attach API</strong>
+ATTACH_BOTTOM      := $(call CommonBottom,$(ATTACH_FIRST_COPYRIGHT_YEAR))
+# ATTACH_PKGS is located in NON_CORE_PKGS.gmk
+
+ATTACH_INDEX_HTML    = $(ATTACH_DOCDIR)/index.html
+ATTACH_OPTIONS_FILE  = $(DOCSTMPDIR)/attach.options
+ATTACH_PACKAGES_FILE = $(DOCSTMPDIR)/attach.packages
+
+attachdocs: $(ATTACH_INDEX_HTML)
+
+# Set relative location to core api document root
+$(ATTACH_INDEX_HTML): GET2DOCSDIR=$(ATTACH2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(ATTACH_OPTIONS_FILE),$(ATTACH_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(ATTACH_OPTIONS_FILE) @$(ATTACH_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(ATTACH_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-doctitle '$(ATTACH_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(ATTACH_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(ATTACH_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(ATTACH_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(ATTACH2COREAPI) $(COREAPI_DOCSDIR)/"	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(ATTACH_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(ATTACH_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(ATTACH_PKGS))
+
+#############################################################
+#
+# jconsoledocs
+#
+
+ALL_OTHER_TARGETS += jconsoledocs
+
+JCONSOLE_DOCDIR      := $(JDK_API_DOCSDIR)/jconsole/spec
+JCONSOLE2COREAPI     := ../../$(JDKJRE2COREAPI)
+JCONSOLE_DOCTITLE    := JConsole API
+JCONSOLE_WINDOWTITLE := JConsole API
+JCONSOLE_HEADER      := <strong>JConsole API</strong>
+JCONSOLE_BOTTOM      := $(call CommonBottom,$(JCONSOLE_FIRST_COPYRIGHT_YEAR))
+# JCONSOLE_PKGS is located in NON_CORE_PKGS.gmk
+
+JCONSOLE_INDEX_HTML    = $(JCONSOLE_DOCDIR)/index.html
+JCONSOLE_OPTIONS_FILE  = $(DOCSTMPDIR)/jconsole.options
+JCONSOLE_PACKAGES_FILE = $(DOCSTMPDIR)/jconsole.packages
+
+jconsoledocs: $(JCONSOLE_INDEX_HTML)
+
+# Set relative location to core api document root
+$(JCONSOLE_INDEX_HTML): GET2DOCSDIR=$(JCONSOLE2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JCONSOLE_OPTIONS_FILE),$(JCONSOLE_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(JCONSOLE_OPTIONS_FILE) @$(JCONSOLE_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JCONSOLE_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-doctitle '$(JCONSOLE_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(JCONSOLE_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(JCONSOLE_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(JCONSOLE_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(JCONSOLE2COREAPI) $(COREAPI_DOCSDIR)/"; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(JCONSOLE_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JCONSOLE_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JCONSOLE_PKGS))
+
+#############################################################
+#
+# treeapidocs
+#
+
+# Part of langtools
+ifdef LANGTOOLS_DIST
+  ALL_OTHER_TARGETS += treeapidocs
+endif
+
+TREEAPI_DOCDIR       := $(JDK_API_DOCSDIR)/javac/tree
+TREEAPI2COREAPI      := ../../$(JDKJRE2COREAPI)
+TREEAPI_DOCTITLE     := Compiler Tree API
+TREEAPI_WINDOWTITLE  := Compiler Tree API
+TREEAPI_HEADER       := <strong>Compiler Tree API</strong>
+TREEAPI_BOTTOM       := $(call CommonBottom,$(TREEAPI_FIRST_COPYRIGHT_YEAR))
+TREEAPI_GROUPNAME    := Packages
+TREEAPI_REGEXP       := com.sun.source.*
+# TREEAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+TREEAPI_INDEX_HTML    = $(TREEAPI_DOCDIR)/index.html
+TREEAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/treeapi.options
+TREEAPI_PACKAGES_FILE = $(DOCSTMPDIR)/treeapi.packages
+
+treeapidocs: $(TREEAPI_INDEX_HTML)
+
+# Set relative location to core api document root
+$(TREEAPI_INDEX_HTML): GET2DOCSDIR=$(TREEAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(TREEAPI_OPTIONS_FILE),$(TREEAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(TREEAPI_OPTIONS_FILE) @$(TREEAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(TREEAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-doctitle '$(TREEAPI_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(TREEAPI_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(TREEAPI_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(TREEAPI_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-group $(TREEAPI_GROUPNAME) $(TREEAPI_REGEXP)"	; \
+	  $(ECHO) "-linkoffline $(TREEAPI2COREAPI) $(COREAPI_DOCSDIR)/"	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(TREEAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TREEAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(TREEAPI_PKGS))
+
+#############################################################
+#
+# sctpdocs
+#
+
+ALL_OTHER_TARGETS += sctpdocs
+
+SCTPAPI_DOCDIR      := $(JRE_API_DOCSDIR)/nio/sctp/spec
+SCTPAPI2COREAPI     := ../../../$(JDKJRE2COREAPI)
+SCTPAPI_DOCTITLE    := SCTP API
+SCTPAPI_WINDOWTITLE := SCTP API
+SCTPAPI_HEADER      := <strong>SCTP API</strong>
+SCTPAPI_BOTTOM      := $(call CommonBottom,$(SCTPAPI_FIRST_COPYRIGHT_YEAR))
+# SCTPAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+SCTPAPI_INDEX_HTML    = $(SCTPAPI_DOCDIR)/index.html
+SCTPAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/sctp.options
+SCTPAPI_PACKAGES_FILE = $(DOCSTMPDIR)/sctp.packages
+
+sctpdocs: $(SCTPAPI_INDEX_HTML)
+
+# Set relative location to core api document root
+$(SCTSCTSCTP: GET2DOCSDIR=$(SCTPAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(SCTPAPI_OPTIONS_FILE),$(SCTPAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(SCTPAPI_OPTIONS_FILE) @$(SCTPAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(SCTPAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-doctitle '$(SCTPAPI_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(SCTPAPI_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(SCTPAPI_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(SCTPAPI_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(SCTPAPI2COREAPI) $(COREAPI_DOCSDIR)/"	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(SCTPAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(SCTPAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(SCTPAPI_PKGS))
+
+#############################################################
+#
+# tracingdocs
+#
+
+ALL_OTHER_TARGETS += tracingdocs
+
+TRACING_DOCDIR      := $(JRE_API_DOCSDIR)/tracing
+TRACING2COREAPI     := ../$(JDKJRE2COREAPI)
+TRACING_DOCTITLE    := Java$(TRADEMARK) Platform Tracing
+TRACING_WINDOWTITLE := Platform Tracing
+TRACING_HEADER      := <strong>Platform Tracing</strong>
+TRACING_BOTTOM      := $(call CommonBottom,$(TRACING_FIRST_COPYRIGHT_YEAR))
+# TRACING_PKGS is located in NON_CORE_PKGS.gmk
+
+TRACING_INDEX_HTML    = $(TRACING_DOCDIR)/index.html
+TRACING_OPTIONS_FILE  = $(DOCSTMPDIR)/tracing.options
+TRACING_PACKAGES_FILE = $(DOCSTMPDIR)/tracing.packages
+
+tracingdocs: $(TRACING_INDEX_HTML)
+
+# Set relative location to core api document root
+$(TRACING_INDEX_HTML): GET2DOCSDIR=$(TRACING2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(TRACING_INDEX_HTML): $(TRACING_OPTIONS_FILE) $(TRACING_PACKAGES_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(TRACING_OPTIONS_FILE),$(TRACING_PACKAGES_FILE))
+	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
+	  @$(TRACING_OPTIONS_FILE) @$(TRACING_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(TRACING_OPTIONS_FILE):
+	$(prep-target)
+	@($(ECHO) "$(COMMON_JAVADOCFLAGS)"				; \
+	  $(ECHO) "-sourcepath \"$(RELEASEDOCS_SOURCEPATH)\""		; \
+	  $(ECHO) "-encoding ascii"					; \
+	  $(ECHO) "-nodeprecatedlist"					; \
+	  $(ECHO) "-doctitle '$(TRACING_DOCTITLE)'"			; \
+	  $(ECHO) "-windowtitle '$(TRACING_WINDOWTITLE) $(DRAFT_WINTITLE)'";\
+	  $(ECHO) "-header '$(TRACING_HEADER)$(DRAFT_HEADER)'"		; \
+	  $(ECHO) "-bottom '$(TRACING_BOTTOM)$(DRAFT_BOTTOM)'"		; \
+	  $(ECHO) "-linkoffline $(TRACING2COREAPI) $(COREAPI_DOCSDIR)/"	; \
+        ) >> $@
+
+# Create a file with the package names in it
+$(TRACING_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TRACING_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(TRACING_PKGS))
+
+#############################################################
+#
+# Get a cache of all the directories
+
+$(DIRECTORY_CACHE): $(ALL_SOURCE_DIRS)
+	$(prep-target)
+	@for cp in $(ALL_SOURCE_DIRS) ; do 		\
+	  $(ECHO) "$(FIND) $${cp} -type f >> $@"; 	\
+	  $(FIND) $${cp} -type f >> $@; 		\
+	done
+
+#############################################################
+#release version of core packages ########
+# Maximize performance and ensure that build number & milestone are set.
+
+rel-coredocs: sanitycheckcoredocs
+	$(MAKE) coredocs
+
+rel-docs: rel-coredocs $(ALL_OTHER_TARGETS)
+#
+# end of production targets
+
+otherdocs: $(ALL_OTHER_TARGETS)
+
+clean:
+	$(RM) -r $(DOCSDIR) $(DOCSTMPDIR)
+
+#############################################################
 # DEBUG TARGET
 # List the values defined in the makefile hierarchy, to make sure everything
 # is set properly, and to help identify values we can use instead of making new ones.
@@ -714,8 +1211,13 @@ treeapidocs:
 #    * BUILD_NUMBER defaults to b00 if not set on command line with BUILD_NUMBER=<value>
 #    * MILESTONE defaults to internal unless set to beta, rc, or fcs on command line
 #
-.PHONY: echovalues
+
 echovalues:
+	@$(ECHO) ""
+	@$(ECHO) --------------Imports---------------------------
+	@$(ECHO) "IMPORT_PACKAGES = $(IMPORT_PACKAGES)"
+	@$(ECHO) "IMPORT_PACKAGE_FILTER = $(IMPORT_PACKAGE_FILTER)"
+	@$(ECHO) --------------Imports---------------------------
 	@$(ECHO) ""
 	@$(ECHO) --------------Shared---------------------------
 	@$(ECHO) BUILD_NUMBER = $(BUILD_NUMBER)
@@ -736,11 +1238,16 @@ echovalues:
 	@$(ECHO) --------------Shared---------------------------
 	@$(ECHO) ""
 	@$(ECHO) --------------common/Defs---------------------------
-	@$(ECHO) "RELEASEDOCS_SRCPATH"
+	@$(ECHO) "RELEASEDOCS_SOURCEPATH"
 	@$(ECHO) "   SHARE_SRC/classes: $(SHARE_SRC)/classes"
 	@$(ECHO) "   PLATFORM_SRC/classes: $(PLATFORM_SRC)/classes"
 	@$(ECHO) "   GENSRCDIR: $(GENSRCDIR)"
-	@$(ECHO) "   IMPORTSRCDIR: $(IMPORTSRCDIR)"
 	@$(ECHO) "   SHARE_SRC/doc/stub: $(SHARE_SRC)/doc/stub"
+	@$(ECHO) "   IMPORTSRCDIR: $(IMPORTSRCDIR)"
 	@$(ECHO) --------------common/Defs---------------------------
 	@$(ECHO) ""
+
+#############################################################
+.PHONY: all docs coredocs rel-docs echovalues otherdocs rel-coredocs \
+        sanitycheckcoredocs $(ALL_OTHER_TARGETS)
+

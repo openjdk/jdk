@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vtune_solaris.cpp.incl"
+package warns;
 
-// empty implementation
+// class with 10 warnings
+public class Warnings {
+    /** @param x */
+    public void m0() { }
 
-void VTune::start_GC() {}
-void VTune::end_GC() {}
-void VTune::start_class_load() {}
-void VTune::end_class_load() {}
-void VTune::exit() {}
-void VTune::register_stub(const char* name, address start, address end) {}
+    /** @param x */
+    public void m1() { }
 
-void VTune::create_nmethod(nmethod* nm) {}
-void VTune::delete_nmethod(nmethod* nm) {}
+    /** @param x */
+    public void m2() { }
 
-void vtune_init() {}
+    /** @param x */
+    public void m3() { }
+
+    /** @param x */
+    public void m4() { }
+
+    /** @param x */
+    public void m5() { }
+
+    /** @param x */
+    public void m6() { }
+
+    /** @param x */
+    public void m7() { }
+
+    /** @param x */
+    public void m8() { }
+
+    /** @param x */
+    public void m9() { }
+}

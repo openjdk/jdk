@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5010310 6319835 6904882
+ * @bug 5010310 6319835 6904882 6968373
  * @summary test fonts can be created in the presence of a security manager
  * @run main/othervm/secure=java.lang.SecurityManager FontPrivilege
  */

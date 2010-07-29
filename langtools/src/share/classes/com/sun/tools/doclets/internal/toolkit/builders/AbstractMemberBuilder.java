@@ -27,7 +27,6 @@ package com.sun.tools.doclets.internal.toolkit.builders;
 
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import java.util.*;
 
 /**
  * The superclass for all member builders.  Member builders are only executed
@@ -69,9 +68,10 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      *
      * @param elements {@inheritDoc}
      */
-    public void build(List<?> elements) {
+    @Override
+    public void build(XMLNode node) {
         if (hasMembersToDocument()) {
-            super.build(elements);
+            super.build(node);
         }
     }
 

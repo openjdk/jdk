@@ -34,7 +34,6 @@ void perfMemory_init();
 
 // Initialization done by Java thread in init_globals()
 void management_init();
-void vtune_init();
 void bytecodes_init();
 void classLoader_init();
 void codeCache_init();
@@ -82,7 +81,6 @@ void vm_init_globals() {
 jint init_globals() {
   HandleMark hm;
   management_init();
-  vtune_init();
   bytecodes_init();
   classLoader_init();
   codeCache_init();

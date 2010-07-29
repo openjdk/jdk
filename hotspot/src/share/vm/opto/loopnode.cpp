@@ -400,7 +400,7 @@ Node *PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     nphi->set_req(LoopNode::LoopBackControl, phi->in(LoopNode::LoopBackControl));
     nphi = _igvn.register_new_node_with_optimizer(nphi);
     set_ctrl(nphi, get_ctrl(phi));
-    _igvn.subsume_node(phi, nphi);
+    _igvn.replace_node(phi, nphi);
     phi = nphi->as_Phi();
   }
   cmp = cmp->clone();
@@ -760,7 +760,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       // which in turn prevents removing an empty loop.
       Node *id_old_phi = old_phi->Identity( &igvn );
       if( id_old_phi != old_phi ) { // Found a simple identity?
-        // Note that I cannot call 'subsume_node' here, because
+        // Note that I cannot call 'replace_node' here, because
         // that will yank the edge from old_phi to the Region and
         // I'm mid-iteration over the Region's uses.
         for (DUIterator_Last imin, i = old_phi->last_outs(imin); i >= imin; ) {
@@ -1065,11 +1065,9 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
     l = igvn.register_new_node_with_optimizer(l, _head);
     phase->set_created_loop_node();
     // Go ahead and replace _head
-    phase->_igvn.subsume_node( _head, l );
+    phase->_igvn.replace_node( _head, l );
     _head = l;
     phase->set_loop(_head, this);
-    for (DUIterator_Fast imax, i = l->fast_outs(imax); i < imax; i++)
-      phase->_igvn.add_users_to_worklist(l->fast_out(i));
   }
 
   // Now recursively beautify nested loops
@@ -1329,8 +1327,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
         Node* add  = new (C, 3) AddINode(ratio_idx, diff);
         phase->_igvn.register_new_node_with_optimizer(add);
         phase->set_ctrl(add, cl);
-        phase->_igvn.hash_delete( phi2 );
-        phase->_igvn.subsume_node( phi2, add );
+        phase->_igvn.replace_node( phi2, add );
         // Sometimes an induction variable is unused
         if (add->outcnt() == 0) {
           phase->_igvn.remove_dead_node(add);
