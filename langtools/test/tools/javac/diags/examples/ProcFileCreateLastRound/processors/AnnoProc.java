@@ -21,14 +21,6 @@
  * questions.
  */
 
-/*
- * @test 6403456
- * @summary -Werror should work with annotation processing
- * @compile WErrorGen.java
- * @compile -proc:only -processor WErrorGen WErrorGen.java
- * @compile/fail/ref=WErrorGen.out -XDrawDiagnostics -Werror -Xlint:rawtypes -processor WErrorGen WErrorGen.java
- */
-
 import java.io.*;
 import java.util.*;
 import javax.annotation.processing.*;
@@ -37,27 +29,24 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 
 @SupportedAnnotationTypes("*")
-public class WErrorGen extends AbstractProcessor {
-    @Override
-    public boolean process(Set<? extends TypeElement> annotations,
-                           RoundEnvironment roundEnv) {
-        Filer filer = processingEnv.getFiler();
-        if (++round == 1) {
+public class AnnoProc extends AbstractProcessor {
+    public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
+        if (renv.processingOver()) {
+            Filer filer = processingEnv.getFiler();
+            Messager messager = processingEnv.getMessager();
             try {
                 JavaFileObject fo = filer.createSourceFile("Gen");
                 Writer out = fo.openWriter();
-                out.write("import java.util.*; class Gen { List l; }");
+                out.write("class Gen { }");
                 out.close();
             } catch (IOException e) {
+                messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
             }
         }
-        return true;
+        return false;
     }
 
-    @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
     }
-
-    int round = 0;
 }
