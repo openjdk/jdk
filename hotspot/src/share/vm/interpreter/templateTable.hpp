@@ -123,6 +123,7 @@ class TemplateTable: AllStatic {
   static void sipush();
   static void ldc(bool wide);
   static void ldc2_w();
+  static void fast_aldc(bool wide);
 
   static void locals_index(Register reg, int offset = 1);
   static void iload();

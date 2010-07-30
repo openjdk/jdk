@@ -42,16 +42,23 @@ public class SRTest {
     }
 
     static void test() throws Exception {
-        invoke(new ClassicReader(), new ClassicWriter());
+        ClassicReader classicReader;
+        NioReader nioReader;
+
+        classicReader = new ClassicReader();
+        invoke(classicReader, new ClassicWriter(classicReader.port()));
         log.println("Classic RW: OK");
 
-        invoke(new ClassicReader(), new NioWriter());
+        classicReader = new ClassicReader();
+        invoke(classicReader, new NioWriter(classicReader.port()));
         log.println("Classic R, Nio W: OK");
 
-        invoke(new NioReader(), new ClassicWriter());
+        nioReader = new NioReader();
+        invoke(nioReader, new ClassicWriter(nioReader.port()));
         log.println("Classic W, Nio R: OK");
 
-        invoke(new NioReader(), new NioWriter());
+        nioReader = new NioReader();
+        invoke(nioReader, new NioWriter(nioReader.port()));
         log.println("Nio RW: OK");
     }
 
@@ -75,7 +82,12 @@ public class SRTest {
     }
 
     public static class ClassicWriter implements Sprintable {
+        final int port;
         Exception e = null;
+
+        ClassicWriter(int port) {
+            this.port = port;
+        }
 
         public void throwException() throws Exception {
             if (e != null)
@@ -89,7 +101,7 @@ public class SRTest {
                 byte[] data = dataString.getBytes();
                 InetAddress address = InetAddress.getLocalHost();
                 DatagramPacket dp = new DatagramPacket(data, data.length,
-                                                       address, 8888);
+                                                       address, port);
                 ds.send(dp);
                 Thread.sleep(50);
                 ds.send(dp);
@@ -100,7 +112,12 @@ public class SRTest {
     }
 
     public static class NioWriter implements Sprintable {
+        final int port;
         Exception e = null;
+
+        NioWriter(int port) {
+            this.port = port;
+        }
 
         public void throwException() throws Exception {
             if (e != null)
@@ -114,7 +131,7 @@ public class SRTest {
                 bb.put("hello".getBytes());
                 bb.flip();
                 InetAddress address = InetAddress.getLocalHost();
-                InetSocketAddress isa = new InetSocketAddress(address, 8888);
+                InetSocketAddress isa = new InetSocketAddress(address, port);
                 dc.send(bb, isa);
                 Thread.sleep(50);
                 dc.send(bb, isa);
@@ -125,7 +142,16 @@ public class SRTest {
     }
 
     public static class ClassicReader implements Sprintable {
+        final DatagramSocket ds;
         Exception e = null;
+
+        ClassicReader() throws IOException {
+            this.ds = new DatagramSocket();
+        }
+
+        int port() {
+            return ds.getLocalPort();
+        }
 
         public void throwException() throws Exception {
             if (e != null)
@@ -136,7 +162,6 @@ public class SRTest {
             try {
                 byte[] buf = new byte[256];
                 DatagramPacket dp = new DatagramPacket(buf, buf.length);
-                DatagramSocket ds = new DatagramSocket(8888);
                 ds.receive(dp);
                 String received = new String(dp.getData());
                 log.println(received);
@@ -148,7 +173,16 @@ public class SRTest {
     }
 
     public static class NioReader implements Sprintable {
+        final DatagramChannel dc;
         Exception e = null;
+
+        NioReader() throws IOException {
+            this.dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+        }
+
+        int port() {
+            return dc.socket().getLocalPort();
+        }
 
         public void throwException() throws Exception {
             if (e != null)
@@ -157,8 +191,6 @@ public class SRTest {
 
         public void run() {
             try {
-                DatagramChannel dc = DatagramChannel.open();
-                dc.socket().bind(new InetSocketAddress(8888));
                 ByteBuffer bb = ByteBuffer.allocateDirect(100);
                 SocketAddress sa = dc.receive(bb);
                 bb.flip();

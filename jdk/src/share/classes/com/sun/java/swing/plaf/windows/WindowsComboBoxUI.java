@@ -424,7 +424,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             State rv;
             rv = super.getState();
             if (rv != State.DISABLED
-                && ! comboBox.isEditable()
+                && comboBox != null && ! comboBox.isEditable()
                 && XPStyle.getXP().isSkinDefined(comboBox,
                                                  Part.CP_DROPDOWNBUTTONRIGHT)) {
                 /*

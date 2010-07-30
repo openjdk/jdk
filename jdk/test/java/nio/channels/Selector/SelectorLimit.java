@@ -26,6 +26,8 @@
  * @summary Ensure that a Selector can return at least 100 selected keys
  * @author Mark Reinhold
  * @library ..
+ * @build SelectorLimit
+ * @run main/othervm SelectorLimit
  */
 
 import java.io.*;

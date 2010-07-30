@@ -54,5 +54,6 @@ public class ReadFull {
 
         fc.close();
         fis.close();
+        blah.delete();
     }
 }

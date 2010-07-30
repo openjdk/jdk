@@ -43,6 +43,9 @@ public class TransferToNonWritable  {
             throw new RuntimeException("Test failed");
         } catch (NonWritableChannelException nwce) {
             // Correct result
+        } finally {
+            channel.close();
+            blah.delete();
         }
     }
 }

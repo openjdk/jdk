@@ -109,6 +109,12 @@ public class SwingUtilities2 {
                           new StringBuffer("AATextInfoPropertyKey");
 
     /**
+     * Attribute key for the content elements.  If it is set on an element, the
+     * element is considered to be a line break.
+     */
+    public static final String IMPLIED_CR = "CR";
+
+    /**
      * Used to tell a text component, being used as an editor for table
      * or tree, how many clicks it took to start editing.
      */
@@ -432,8 +438,12 @@ public class SwingUtilities2 {
         // c may be null here.
         String clipString = "...";
         availTextWidth -= SwingUtilities2.stringWidth(c, fm, clipString);
-        boolean needsTextLayout;
+        if (availTextWidth <= 0) {
+            //can not fit any characters
+            return clipString;
+        }
 
+        boolean needsTextLayout;
         synchronized (charsBufferLock) {
             int stringLength = syncCharsBuffer(string);
             needsTextLayout =

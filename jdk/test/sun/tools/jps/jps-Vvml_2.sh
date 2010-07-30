@@ -51,3 +51,9 @@ ${JAVA} -cp ${TESTCLASSES} Sleeper &
 SLEEPER_PID=$!
 
 ${JPS} -J-XX:Flags=${TESTSRC}/vmflags -Vvml | awk -f ${TESTSRC}/jps-Vvml_Output2.awk
+RC=$?
+
+cleanup
+
+exit ${RC}
+

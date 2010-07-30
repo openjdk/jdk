@@ -637,34 +637,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // Perform escape analysis
-  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
-    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
-    // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction.
-    PhaseGVN* igvn = initial_gvn();
-    Node* oop_null = igvn->zerocon(T_OBJECT);
-    Node* noop_null = igvn->zerocon(T_NARROWOOP);
-
-    _congraph = new(comp_arena()) ConnectionGraph(this);
-    bool has_non_escaping_obj = _congraph->compute_escape();
-
-#ifndef PRODUCT
-    if (PrintEscapeAnalysis) {
-      _congraph->dump();
-    }
-#endif
-    // Cleanup.
-    if (oop_null->outcnt() == 0)
-      igvn->hash_delete(oop_null);
-    if (noop_null->outcnt() == 0)
-      igvn->hash_delete(noop_null);
-
-    if (!has_non_escaping_obj) {
-      _congraph = NULL;
-    }
-
-    if (failing())  return;
-  }
   // Now optimize
   Optimize();
   if (failing())  return;
@@ -1601,6 +1573,20 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
+  // Perform escape analysis
+  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
+    ConnectionGraph::do_analysis(this, &igvn);
+
+    if (failing())  return;
+
+    igvn.optimize();
+    print_method("Iter GVN 3", 2);
+
+    if (failing())  return;
+
+  }
+
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
 
@@ -2000,6 +1986,17 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     }
   }
 
+#ifdef ASSERT
+  if( n->is_Mem() ) {
+    Compile* C = Compile::current();
+    int alias_idx = C->get_alias_index(n->as_Mem()->adr_type());
+    assert( n->in(0) != NULL || alias_idx != Compile::AliasIdxRaw ||
+            // oop will be recorded in oop map if load crosses safepoint
+            n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+                             LoadNode::is_immutable_value(n->in(MemNode::Address))),
+            "raw memory operations should have control edge");
+  }
+#endif
   // Count FPU ops and common calls, implements item (3)
   switch( nop ) {
   // Count all float operations that may use FPU

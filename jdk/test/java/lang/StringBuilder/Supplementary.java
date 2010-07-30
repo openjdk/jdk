@@ -57,7 +57,7 @@ public class Supplementary {
          0     1     2345     678     9     012     345678     9 01     2     */
         "\uD800\uDC00!#$\uD800%&\uD800\uDC00;+\uDC00<>;=^\uDC00\\@\uD800\uDC00",
 
-        // includes an undefined supprementary characters in Unicode 4.0.0
+        // includes an undefined supplementary character in Unicode 4.0.0
       /*                                    1     11     1     1111     1
          0     1     2345     6     789     0     12     3     4567     8     */
         "\uDB40\uDE00abc\uDE01\uDB40de\uDB40\uDE02f\uDB40\uDE03ghi\uDB40\uDE02",
@@ -151,7 +151,7 @@ public class Supplementary {
         "\uD800on\uDC00ml\uDC00\uDC00ki9\uD800\uDC00hgfe\uDBFF\uDFFFdcba\uDC00",
         "\uD800\uDC00@\\\uDC00^=;><\uDC00+;\uD800\uDC00&%\uD800$#!\uD800\uDC00",
 
-        // includes an undefined supprementary characters in Unicode 4.0.0
+        // includes an undefined supplementary character in Unicode 4.0.0
         "\uDB40\uDE02ihg\uDB40\uDE03f\uDB40\uDE02ed\uDB40\uDE01cba\uDB40\uDE00",
     };
 

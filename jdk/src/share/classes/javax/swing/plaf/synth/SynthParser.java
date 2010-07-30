@@ -658,8 +658,7 @@ class SynthParser extends DefaultHandler {
                     }
                     try {
                         _colorTypes.add((ColorType)checkCast(typeClass.
-                              getField(typeName.substring(classIndex,
-                              typeName.length() - classIndex)).
+                              getField(typeName.substring(classIndex)).
                               get(typeClass), ColorType.class));
                     } catch (NoSuchFieldException nsfe) {
                         throw new SAXException("Unable to find color type: " +

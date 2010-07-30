@@ -40,7 +40,19 @@ public class ParentLoggersTest {
     static final String LOGGER_NAME_1   = PARENT_NAME_1 + ".myLogger";
     static final String LOGGER_NAME_2   = PARENT_NAME_2 + ".myBar.myLogger";
 
+    static final List<String> initialLoggerNames = new ArrayList<String>();
     public static void main(String args[]) throws Exception {
+        // cache the initial set of loggers before this test begins
+        // to add any loggers
+        Enumeration<String> e = logMgr.getLoggerNames();
+        List<String> defaultLoggers = getDefaultLoggerNames();
+        while (e.hasMoreElements()) {
+            String logger = e.nextElement();
+            if (!defaultLoggers.contains(logger)) {
+                initialLoggerNames.add(logger);
+            }
+        };
+
         String tstSrc = System.getProperty(TST_SRC_PROP);
         File   fname  = new File(tstSrc, LM_PROP_FNAME);
         String prop   = fname.getCanonicalPath();
@@ -56,12 +68,12 @@ public class ParentLoggersTest {
         }
     }
 
-    public static Vector getDefaultLoggerNames() {
-        Vector expectedLoggerNames = new Vector(0);
+    public static List<String> getDefaultLoggerNames() {
+        List<String> expectedLoggerNames = new ArrayList<String>();
 
         // LogManager always creates two loggers:
-        expectedLoggerNames.addElement("");       // root   logger: ""
-        expectedLoggerNames.addElement("global"); // global logger: "global"
+        expectedLoggerNames.add("");       // root   logger: ""
+        expectedLoggerNames.add("global"); // global logger: "global"
         return expectedLoggerNames;
     }
 
@@ -71,7 +83,7 @@ public class ParentLoggersTest {
      */
     public static boolean checkLoggers() {
         String failMsg = "# checkLoggers: getLoggerNames() returned unexpected loggers";
-        Vector expectedLoggerNames = getDefaultLoggerNames();
+        Vector<String> expectedLoggerNames = new Vector<String>(getDefaultLoggerNames());
 
         // Create the logger LOGGER_NAME_1
         Logger logger1 = Logger.getLogger(LOGGER_NAME_1);
@@ -83,18 +95,23 @@ public class ParentLoggersTest {
         expectedLoggerNames.addElement(PARENT_NAME_2);
         expectedLoggerNames.addElement(LOGGER_NAME_2);
 
-        Enumeration returnedLoggersEnum = logMgr.getLoggerNames();
-        Vector      returnedLoggerNames = new Vector(0);
+        Enumeration<String> returnedLoggersEnum = logMgr.getLoggerNames();
+        Vector<String>      returnedLoggerNames = new Vector<String>(0);
         while (returnedLoggersEnum.hasMoreElements()) {
-            returnedLoggerNames.addElement(returnedLoggersEnum.nextElement());
+           String logger = returnedLoggersEnum.nextElement();
+            if (!initialLoggerNames.contains(logger)) {
+                // filter out the loggers that have been added before this test runs
+                returnedLoggerNames.addElement(logger);
+            }
+
         };
 
         return checkNames(expectedLoggerNames, returnedLoggerNames, failMsg);
     }
 
     // Returns boolean values: PASSED or FAILED
-    private static boolean checkNames(Vector expNames,
-                                      Vector retNames,
+    private static boolean checkNames(Vector<String> expNames,
+                                      Vector<String> retNames,
                                       String failMsg) {
         boolean status = PASSED;
 
@@ -123,8 +140,8 @@ public class ParentLoggersTest {
         return status;
     }
 
-    private static void printFailMsg(Vector expNames,
-                                     Vector retNames,
+    private static void printFailMsg(Vector<String> expNames,
+                                     Vector<String> retNames,
                                      String failMsg) {
         out.println();
         out.println(failMsg);

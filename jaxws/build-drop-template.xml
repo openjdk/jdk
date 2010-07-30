@@ -75,6 +75,7 @@
     <target name="-@DROP@-url-should-be-used" unless="@DROP@.url.should.be.used">
         <condition property="@DROP@.url.should.be.used">
             <and>
+                <istrue value="${allow.downloads}"/>
                 <not>
                     <isset property="@DROP@.master.bundle.copy.exists"/>
                 </not>

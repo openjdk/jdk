@@ -25,6 +25,8 @@
  * @bug 6548464
  * @summary SocketChannel.open(SocketAddress) leaks file descriptor if
  *     connection cannot be established
+ * @build OpenLeak
+ * @run main/othervm OpenLeak
  */
 
 import java.net.InetAddress;

@@ -33,7 +33,6 @@ import java.net.ServerSocket;
 
 public class ByteServer {
 
-    public static final int PORT = 31415;
     public static final String LOCALHOST = "localhost";
     private int bytecount;
     private Socket  socket;
@@ -43,7 +42,11 @@ public class ByteServer {
 
     public ByteServer(int bytecount) throws Exception{
         this.bytecount = bytecount;
-        serversocket = new ServerSocket(PORT);
+        serversocket = new ServerSocket(0);
+    }
+
+    public int port() {
+        return serversocket.getLocalPort();
     }
 
     public void start() {
