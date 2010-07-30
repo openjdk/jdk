@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,13 +114,19 @@ GetApplicationHome(char *buf, jint bufsize);
 
 #define GetArch() GetArchPath(CURRENT_DATA_MODEL)
 
-void CreateExecutionEnvironment(int *_argc,
-                                       char ***_argv,
-                                       char jrepath[],
-                                       jint so_jrepath,
-                                       char jvmpath[],
-                                       jint so_jvmpath,
-                                       char **original_argv);
+/*
+ * Different platforms will implement this, here
+ * pargc is a pointer to the original argc,
+ * pargv is a pointer to the original argv,
+ * jrepath is an accessible path to the jre as determined by the call
+ * so_jrepath is the length of the buffer jrepath
+ * jvmpath is an accessible path to the jvm as determined by the call
+ * so_jvmpath is the length of the buffer jvmpath
+ */
+void CreateExecutionEnvironment(int *argc, char ***argv,
+                                char *jrepath, jint so_jrepath,
+                                char *jvmpath, jint so_jvmpath);
+
 /* Reports an error message to stderr or a window as appropriate. */
 void JLI_ReportErrorMessage(const char * message, ...);
 

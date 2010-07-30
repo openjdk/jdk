@@ -228,7 +228,7 @@ endif
 ######################################################
 alt_bootdir:
 ifdef ALT_BOOTDIR
-	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -ci '^([a-z]:)?/'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: ALT_BOOTDIR must be an Absolute Path Name, \n" \
 	    "      not a Relative Path Name. \n" \
 	    "      The current value of ALT_BOOTDIR is \n" \
@@ -281,7 +281,6 @@ endif
 	@$(ECHO) "Build Directory Structure:" >> $(MESSAGE_FILE)
 	@$(ECHO) "   CWD = `$(PWD)`" >> $(MESSAGE_FILE)
 	@$(ECHO) "   TOPDIR = $(TOPDIR)"  >> $(MESSAGE_FILE)
-	@$(ECHO) "   CONTROL_TOPDIR = $(CONTROL_TOPDIR)"  >> $(MESSAGE_FILE)
 ifeq ($(LANGTOOLS_SRC_AVAILABLE), true)
 	@$(ECHO) "   LANGTOOLS_TOPDIR = $(LANGTOOLS_TOPDIR)"  >> $(MESSAGE_FILE)
 endif

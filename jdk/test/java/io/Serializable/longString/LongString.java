@@ -68,17 +68,25 @@ public class LongString {
         mesgf = new File(System.getProperty("test.src", "."), "mesg.ser");
         fin = new FileInputStream(mesgf);
         bout = new ByteArrayOutputStream();
-        while (fin.available() > 0)
-            bout.write(fin.read());
+        try {
+            while (fin.available() > 0)
+                bout.write(fin.read());
+        } finally {
+            fin.close();
+        }
         byte[] buf2 = bout.toByteArray();
 
         if (! Arrays.equals(buf1, buf2))
             throw new Error("incompatible string format (write)");
 
         fin = new FileInputStream(mesgf);
-        oin = new ObjectInputStream(fin);
-        String mesgcopy = (String) oin.readObject();
-        if (! mesg.equals(mesgcopy))
-            throw new Error("incompatible string format (read)");
+        try {
+            oin = new ObjectInputStream(fin);
+            String mesgcopy = (String) oin.readObject();
+            if (! mesg.equals(mesgcopy))
+                throw new Error("incompatible string format (read)");
+        } finally {
+            fin.close();
+        }
     }
 }

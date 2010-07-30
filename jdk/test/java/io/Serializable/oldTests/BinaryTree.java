@@ -37,28 +37,34 @@ public class BinaryTree {
             "with BinaryTree types \n");
 
         try {
-            FileOutputStream ostream = new FileOutputStream("piotest3.tmp");
-            ObjectOutputStream p = new ObjectOutputStream(ostream);
-
             BinaryTreeTest base = new BinaryTreeTest(2);
-            p.writeObject(null);
-            p.writeObject(base);
-            p.flush();
-            ostream.close();
+            FileOutputStream ostream = new FileOutputStream("piotest3.tmp");
+            try {
+                ObjectOutputStream p = new ObjectOutputStream(ostream);
+                p.writeObject(null);
+                p.writeObject(base);
+                p.flush();
+            } finally {
+                ostream.close();
+            }
 
             FileInputStream istream = new FileInputStream("piotest3.tmp");
-            ObjectInputStream q = new ObjectInputStream(istream);
+            try {
+                ObjectInputStream q = new ObjectInputStream(istream);
+                Object n = q.readObject();
+                if (n != null) {
+                    System.err.println("\nnull read as " + n);
+                }
+                BinaryTreeTest nbase = (BinaryTreeTest)q.readObject();
+                if (!base.equals(nbase)) {
+                    System.err.println("\nTEST FAILED: BinaryTree read " +
+                        "incorrectly.");
+                    throw new Error();
+                }
+            } finally {
+                istream.close();
+            }
 
-            Object n = q.readObject();
-            if (n != null) {
-                System.err.println("\nnull read as " + n);
-            }
-            BinaryTreeTest nbase = (BinaryTreeTest)q.readObject();
-            if (!base.equals(nbase)) {
-                System.err.println("\nTEST FAILED: BinaryTree read " +
-                    "incorrectly.");
-                throw new Error();
-            }
             System.err.println("\nTEST PASSED");
         } catch (Exception e) {
             System.err.print("TEST FAILED: ");

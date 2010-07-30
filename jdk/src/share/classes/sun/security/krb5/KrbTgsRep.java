@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class KrbTgsRep extends KrbKdcRep {
             tgsReq.usedSubkey() ? KeyUsage.KU_ENC_TGS_REP_PART_SUBKEY :
             KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
 
-        byte[] enc_tgs_rep_part = rep.encPart.reset(enc_tgs_rep_bytes, true);
+        byte[] enc_tgs_rep_part = rep.encPart.reset(enc_tgs_rep_bytes);
         ref = new DerValue(enc_tgs_rep_part);
         EncTGSRepPart enc_part = new EncTGSRepPart(ref);
         rep.ticket.sname.setRealm(rep.ticket.realm);

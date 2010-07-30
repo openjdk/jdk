@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ void* VtableStub::operator new(size_t size, int code_size) {
     }
     _chunk = blob->instructions_begin();
     _chunk_end = _chunk + bytes;
-    VTune::register_stub("vtable stub", _chunk, _chunk_end);
     Forte::register_stub("vtable stub", _chunk, _chunk_end);
     // Notify JVMTI about this stub. The event will be recorded by the enclosing
     // JvmtiDynamicCodeEventCollector and posted when this thread has released
