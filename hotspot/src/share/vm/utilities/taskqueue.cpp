@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,73 +182,3 @@ bool ObjArrayTask::is_valid() const {
     _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT
-
-bool RegionTaskQueueWithOverflow::is_empty() {
-  return (_region_queue.size() == 0) &&
-         (_overflow_stack->length() == 0);
-}
-
-bool RegionTaskQueueWithOverflow::stealable_is_empty() {
-  return _region_queue.size() == 0;
-}
-
-bool RegionTaskQueueWithOverflow::overflow_is_empty() {
-  return _overflow_stack->length() == 0;
-}
-
-void RegionTaskQueueWithOverflow::initialize() {
-  _region_queue.initialize();
-  assert(_overflow_stack == 0, "Creating memory leak");
-  _overflow_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<RegionTask>(10, true);
-}
-
-void RegionTaskQueueWithOverflow::save(RegionTask t) {
-  if (TraceRegionTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: save " PTR_FORMAT, t);
-  }
-  if(!_region_queue.push(t)) {
-    _overflow_stack->push(t);
-  }
-}
-
-// Note that using this method will retrieve all regions
-// that have been saved but that it will always check
-// the overflow stack.  It may be more efficient to
-// check the stealable queue and the overflow stack
-// separately.
-bool RegionTaskQueueWithOverflow::retrieve(RegionTask& region_task) {
-  bool result = retrieve_from_overflow(region_task);
-  if (!result) {
-    result = retrieve_from_stealable_queue(region_task);
-  }
-  if (TraceRegionTasksQueuing && Verbose && result) {
-    gclog_or_tty->print_cr("  CTQ: retrieve " PTR_FORMAT, result);
-  }
-  return result;
-}
-
-bool RegionTaskQueueWithOverflow::retrieve_from_stealable_queue(
-                                   RegionTask& region_task) {
-  bool result = _region_queue.pop_local(region_task);
-  if (TraceRegionTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
-  }
-  return result;
-}
-
-bool
-RegionTaskQueueWithOverflow::retrieve_from_overflow(RegionTask& region_task) {
-  bool result;
-  if (!_overflow_stack->is_empty()) {
-    region_task = _overflow_stack->pop();
-    result = true;
-  } else {
-    region_task = (RegionTask) NULL;
-    result = false;
-  }
-  if (TraceRegionTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
-  }
-  return result;
-}

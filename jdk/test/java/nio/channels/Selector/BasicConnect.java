@@ -83,10 +83,13 @@ public class BasicConnect {
         ByteBuffer bb2 = ByteBuffer.allocateDirect(100);
         int n = sc.read(bb2);
         bb2.flip();
+
+        sc.close();
+        connectSelector.close();
+
         if (!bb.equals(bb2))
             throw new Exception("Echoed bytes incorrect: Sent "
                                 + bb + ", got " + bb2);
-        sc.close();
     }
 
 }

@@ -105,7 +105,11 @@ public class SocketInheritance {
 
         // launch the child
         String cmd = System.getProperty("java.home") + File.separator + "bin" +
-            File.separator + "java SocketInheritance -child " + port;
+            File.separator + "java";
+        String testClasses = System.getProperty("test.classes");
+        if (testClasses != null)
+            cmd += " -cp " + testClasses;
+        cmd += " SocketInheritance -child " + port;
 
         Process p = Runtime.getRuntime().exec(cmd);
 

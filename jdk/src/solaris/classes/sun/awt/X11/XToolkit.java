@@ -1053,10 +1053,28 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    private static Boolean sunAwtDisableGtkFileDialogs = null;
+
+    /**
+     * Returns the value of "sun.awt.disableGtkFileDialogs" property. Default
+     * value is {@code false}.
+     */
+    public synchronized static boolean getSunAwtDisableGtkFileDialogs() {
+        if (sunAwtDisableGtkFileDialogs == null) {
+            sunAwtDisableGtkFileDialogs =
+                getBooleanSystemProperty("sun.awt.disableGtkFileDialogs");
+        }
+        return sunAwtDisableGtkFileDialogs.booleanValue();
+    }
+
     public FileDialogPeer createFileDialog(FileDialog target) {
+        FileDialogPeer peer = null;
         // The current GtkFileChooser is available from GTK+ 2.4
-        FileDialogPeer peer = checkGtkVersion(2, 4, 0) ? new GtkFileDialogPeer(
-                target) : new XFileDialogPeer(target);
+        if (!getSunAwtDisableGtkFileDialogs() && checkGtkVersion(2, 4, 0)) {
+            peer = new GtkFileDialogPeer(target);
+        } else {
+            peer = new XFileDialogPeer(target);
+        }
         targetCreatedPeer(target, peer);
         return peer;
     }
@@ -1199,14 +1217,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         } finally {
             awtUnlock();
         }
-    }
-
-    static String getSystemProperty(final String name) {
-        return (String)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return System.getProperty(name);
-                }
-            });
     }
 
     public PrintJob getPrintJob(final Frame frame, final String doctitle,

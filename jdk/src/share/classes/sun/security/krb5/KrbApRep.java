@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class KrbApRep {
 
         byte[] temp = rep.encPart.decrypt(tgs_creds.key,
             KeyUsage.KU_ENC_AP_REP_PART);
-        byte[] enc_ap_rep_part = rep.encPart.reset(temp, true);
+        byte[] enc_ap_rep_part = rep.encPart.reset(temp);
 
         encoding = new DerValue(enc_ap_rep_part);
         encPart = new EncAPRepPart(encoding);

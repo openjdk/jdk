@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class KrbCred {
 
         byte[] temp = credMessg.encPart.decrypt(key,
             KeyUsage.KU_ENC_KRB_CRED_PART);
-        byte[] plainText = credMessg.encPart.reset(temp, true);
+        byte[] plainText = credMessg.encPart.reset(temp);
         DerValue encoding = new DerValue(plainText);
         EncKrbCredPart encPart = new EncKrbCredPart(encoding);
 

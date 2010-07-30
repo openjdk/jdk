@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,8 +431,6 @@ void before_exit(JavaThread * thread) {
 
   print_statistics();
   Universe::heap()->print_tracing_info();
-
-  VTune::exit();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;

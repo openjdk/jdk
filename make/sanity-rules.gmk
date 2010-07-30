@@ -228,7 +228,7 @@ endif
 ######################################################
 alt_bootdir:
 ifdef ALT_BOOTDIR
-	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -ci '^([a-z]:)?/'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: ALT_BOOTDIR must be an Absolute Path Name, \n" \
 	    "      not a Relative Path Name. \n" \
 	    "      The current value of ALT_BOOTDIR is \n" \
