@@ -1172,8 +1172,7 @@ void SuperWord::output() {
       _phase->set_ctrl(vn, _phase->get_ctrl(p->at(0)));
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
-        _igvn.hash_delete(pm);
-        _igvn.subsume_node(pm, vn);
+        _igvn.replace_node(pm, vn);
       }
       _igvn._worklist.push(vn);
     }

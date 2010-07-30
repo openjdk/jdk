@@ -48,8 +48,8 @@ import static com.sun.tools.javac.jvm.ByteCodes.*;
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -674,6 +674,40 @@ public class Lower extends TreeTranslator {
         return rs.resolveInternalField(pos, attrEnv, qual, name);
     }
 
+    /** Anon inner classes are used as access constructor tags.
+     * accessConstructorTag will use an existing anon class if one is available,
+     * and synthethise a class (with makeEmptyClass) if one is not available.
+     * However, there is a small possibility that an existing class will not
+     * be generated as expected if it is inside a conditional with a constant
+     * expression. If that is found to be the case, create an empty class here.
+     */
+    private void checkAccessConstructorTags() {
+        for (List<ClassSymbol> l = accessConstrTags; l.nonEmpty(); l = l.tail) {
+            ClassSymbol c = l.head;
+            if (isTranslatedClassAvailable(c))
+                continue;
+            // Create class definition tree.
+            JCClassDecl cdef = make.ClassDef(
+                make.Modifiers(STATIC | SYNTHETIC), names.empty,
+                List.<JCTypeParameter>nil(),
+                null, List.<JCExpression>nil(), List.<JCTree>nil());
+            cdef.sym = c;
+            cdef.type = c.type;
+            // add it to the list of classes to be generated
+            translated.append(cdef);
+        }
+    }
+    // where
+    private boolean isTranslatedClassAvailable(ClassSymbol c) {
+        for (JCTree tree: translated) {
+            if (tree.getTag() == JCTree.CLASSDEF
+                    && ((JCClassDecl) tree).sym == c) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 /**************************************************************************
  * Access methods
  *************************************************************************/
@@ -717,6 +751,10 @@ public class Lower extends TreeTranslator {
     /** A mapping from (constructor) symbols to access constructor symbols.
      */
     private Map<Symbol,MethodSymbol> accessConstrs;
+
+    /** A list of all class symbols used for access constructor tags.
+     */
+    private List<ClassSymbol> accessConstrTags;
 
     /** A queue for all accessed symbols.
      */
@@ -1138,6 +1176,8 @@ public class Lower extends TreeTranslator {
         ClassSymbol ctag = chk.compiled.get(flatname);
         if (ctag == null)
             ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass);
+        // keep a record of all tags, to verify that all are generated as required
+        accessConstrTags = accessConstrTags.prepend(ctag);
         return ctag;
     }
 
@@ -3394,6 +3434,7 @@ public class Lower extends TreeTranslator {
             accessNums = new HashMap<Symbol,Integer>();
             accessSyms = new HashMap<Symbol,MethodSymbol[]>();
             accessConstrs = new HashMap<Symbol,MethodSymbol>();
+            accessConstrTags = List.nil();
             accessed = new ListBuffer<Symbol>();
             translate(cdef, (JCExpression)null);
             for (List<Symbol> l = accessed.toList(); l.nonEmpty(); l = l.tail)
@@ -3401,6 +3442,7 @@ public class Lower extends TreeTranslator {
             for (EnumMapping map : enumSwitchMap.values())
                 map.translate();
             checkConflicts(this.translated.toList());
+            checkAccessConstructorTags();
             translated = this.translated;
         } finally {
             // note that recursive invocations of this method fail hard
@@ -3420,6 +3462,7 @@ public class Lower extends TreeTranslator {
             accessNums = null;
             accessSyms = null;
             accessConstrs = null;
+            accessConstrTags = null;
             accessed = null;
             enumSwitchMap.clear();
         }

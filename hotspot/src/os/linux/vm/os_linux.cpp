@@ -2079,9 +2079,9 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
 // Find the full path to the current module, libjvm.so or libjvm_g.so
-void os::jvm_path(char *buf, jint len) {
+void os::jvm_path(char *buf, jint buflen) {
   // Error checking.
-  if (len < MAXPATHLEN) {
+  if (buflen < MAXPATHLEN) {
     assert(false, "must use a large-enough buffer");
     buf[0] = '\0';
     return;
@@ -2117,6 +2117,9 @@ void os::jvm_path(char *buf, jint len) {
       // Look for JAVA_HOME in the environment.
       char* java_home_var = ::getenv("JAVA_HOME");
       if (java_home_var != NULL && java_home_var[0] != 0) {
+        char* jrelib_p;
+        int len;
+
         // Check the current module name "libjvm.so" or "libjvm_g.so".
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
@@ -2124,14 +2127,24 @@ void os::jvm_path(char *buf, jint len) {
 
         if (realpath(java_home_var, buf) == NULL)
           return;
-        sprintf(buf + strlen(buf), "/jre/lib/%s", cpu_arch);
+
+        // determine if this is a legacy image or modules image
+        // modules image doesn't have "jre" subdirectory
+        len = strlen(buf);
+        jrelib_p = buf + len;
+        snprintf(jrelib_p, buflen-len, "/jre/lib/%s", cpu_arch);
+        if (0 != access(buf, F_OK)) {
+          snprintf(jrelib_p, buflen-len, "/lib/%s", cpu_arch);
+        }
+
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm[_g].so" instead of
           // "libjvm"debug_only("_g")".so" since for fastdebug version
           // we should have "libjvm.so" but debug_only("_g") adds "_g"!
           // It is used when we are choosing the HPI library's name
           // "libhpi[_g].so" in hpi::initialize_get_interface().
-          sprintf(buf + strlen(buf), "/hotspot/libjvm%s.so", p);
+          len = strlen(buf);
+          snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
         } else {
           // Go back to path of .so
           if (realpath(dli_fname, buf) == NULL)

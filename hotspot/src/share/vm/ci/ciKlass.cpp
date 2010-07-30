@@ -192,8 +192,14 @@ ciKlass* ciKlass::find_klass(ciSymbol* klass_name) {
 
 // ------------------------------------------------------------------
 // ciKlass::java_mirror
+//
+// Get the instance of java.lang.Class corresponding to this klass.
+// If it is an unloaded instance or array klass, return an unloaded
+// mirror object of type Class.
 ciInstance* ciKlass::java_mirror() {
   GUARDED_VM_ENTRY(
+    if (!is_loaded())
+      return ciEnv::current()->get_unloaded_klass_mirror(this);
     oop java_mirror = get_Klass()->java_mirror();
     return CURRENT_ENV->get_object(java_mirror)->as_instance();
   )

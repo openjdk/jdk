@@ -93,6 +93,8 @@ class CodeBlob_sizes {
 
 CodeHeap * CodeCache::_heap = new CodeHeap();
 int CodeCache::_number_of_blobs = 0;
+int CodeCache::_number_of_adapters = 0;
+int CodeCache::_number_of_nmethods = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
 bool CodeCache::_needs_cache_clean = false;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
@@ -176,8 +178,14 @@ void CodeCache::free(CodeBlob* cb) {
   verify_if_often();
 
   print_trace("free", cb);
-  if (cb->is_nmethod() && ((nmethod *)cb)->has_dependencies()) {
-    _number_of_nmethods_with_dependencies--;
+  if (cb->is_nmethod()) {
+    _number_of_nmethods--;
+    if (((nmethod *)cb)->has_dependencies()) {
+      _number_of_nmethods_with_dependencies--;
+    }
+  }
+  if (cb->is_adapter_blob()) {
+    _number_of_adapters--;
   }
   _number_of_blobs--;
 
@@ -191,9 +199,16 @@ void CodeCache::free(CodeBlob* cb) {
 void CodeCache::commit(CodeBlob* cb) {
   // this is called by nmethod::nmethod, which must already own CodeCache_lock
   assert_locked_or_safepoint(CodeCache_lock);
-  if (cb->is_nmethod() && ((nmethod *)cb)->has_dependencies()) {
-    _number_of_nmethods_with_dependencies++;
+  if (cb->is_nmethod()) {
+    _number_of_nmethods++;
+    if (((nmethod *)cb)->has_dependencies()) {
+      _number_of_nmethods_with_dependencies++;
+    }
   }
+  if (cb->is_adapter_blob()) {
+    _number_of_adapters++;
+  }
+
   // flush the hardware I-cache
   ICache::invalidate_range(cb->instructions_begin(), cb->instructions_size());
 }

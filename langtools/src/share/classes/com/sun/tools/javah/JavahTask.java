@@ -59,7 +59,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.SimpleTypeVisitor7;
 import javax.lang.model.util.Types;
 
 import javax.tools.Diagnostic;
@@ -76,7 +76,7 @@ import javax.tools.ToolProvider;
  * Javah generates support files for native methods.
  * Parse commandline options & Invokes javadoc to execute those commands.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
@@ -705,7 +705,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         }
 
         private TypeVisitor<Void,Types> checkMethodParametersVisitor =
-                new SimpleTypeVisitor6<Void,Types>() {
+                new SimpleTypeVisitor7<Void,Types>() {
             @Override
             public Void visitArray(ArrayType t, Types types) {
                 visit(t.getComponentType(), types);

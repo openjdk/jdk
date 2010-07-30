@@ -3512,8 +3512,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   // Get the header out of the object, use LoadMarkNode when available
   Node* header_addr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
-  Node* header = make_load(NULL, header_addr, TypeRawPtr::BOTTOM, T_ADDRESS);
-  header = _gvn.transform( new (C, 2) CastP2XNode(NULL, header) );
+  Node* header = make_load(control(), header_addr, TypeX_X, TypeX_X->basic_type());
 
   // Test the header to see if it is unlocked.
   Node *lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
@@ -5202,7 +5201,7 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
   // super_check_offset, for the desired klass.
   int sco_offset = Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc);
   Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
-  Node* n3 = new(C, 3) LoadINode(NULL, immutable_memory(), p3, TypeRawPtr::BOTTOM);
+  Node* n3 = new(C, 3) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr());
   Node* check_offset = _gvn.transform(n3);
   Node* check_value  = dest_elem_klass;
 
