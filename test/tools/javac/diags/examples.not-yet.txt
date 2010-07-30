@@ -108,7 +108,6 @@ compiler.warn.illegal.char.for.encoding
 compiler.warn.invalid.archive.file
 compiler.warn.override.bridge
 compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars
-compiler.warn.proc.file.create.last.round               # See CR 6966604
 compiler.warn.proc.type.already.exists                  # JavacFiler: just mentioned in TODO
 compiler.warn.unchecked.assign                          # DEAD, replaced by compiler.misc.unchecked.assign
 compiler.warn.unchecked.cast.to.type                    # DEAD, replaced by compiler.misc.unchecked.cast.to.type

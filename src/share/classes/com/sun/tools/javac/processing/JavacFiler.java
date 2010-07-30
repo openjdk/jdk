@@ -539,11 +539,14 @@ public class JavacFiler implements Filer, Closeable {
     /**
      * Update internal state for a new round.
      */
-    public void newRound(Context context, boolean lastRound) {
+    public void newRound(Context context) {
         this.context = context;
         this.log = Log.instance(context);
-        this.lastRound = lastRound;
         clearRoundState();
+    }
+
+    void setLastRound(boolean lastRound) {
+        this.lastRound = lastRound;
     }
 
     public void close() {
