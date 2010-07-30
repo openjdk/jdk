@@ -2442,6 +2442,10 @@ class CommandLineFlags {
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
                                                                             \
+  notproduct(ccstr, AbortVMOnExceptionMessage, NULL,                        \
+          "Call fatal if the exception pointed by AbortVMOnException "      \
+          "has this message.")                                              \
+                                                                            \
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
                                                                             \
