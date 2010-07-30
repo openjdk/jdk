@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,31 +23,25 @@
  * questions.
  */
 
-/* @test
- * @summary test the address returned in socket from accept
+package java.lang;
+
+/**
+ * A resource that must be closed when it is no longer needed.
+ *
+ * @author Josh Bloch
+ * @since 1.7
  */
-
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
-
-
-public class AcceptAddress {
-
-    public static void main(String[] args) throws Exception {
-        InetAddress local = InetAddress.getLocalHost();
-        InetSocketAddress isa = new InetSocketAddress(local, 5555);
-
-        ServerSocketChannel ssc;
-        ssc = ServerSocketChannel.open();
-        ssc.socket().bind(isa);
-
-        SocketChannel sc;
-        sc = SocketChannel.open();
-        sc.connect(isa);
-
-        SocketChannel sc2 = ssc.accept();
-        System.err.println("Socket connected to " + sc2);
-    }
+public interface AutoCloseable {
+    /**
+     * Close this resource, relinquishing any underlying resources.
+     * This method is invoked automatically by the automatic resource
+     * management block construct.
+     *
+     * <p>Classes implementing this method are strongly encouraged to
+     * be declared to throw more specific exceptions (or no exception
+     * at all, if the close cannot fail).
+     *
+     * @throws Exception if this resource cannot be closed
+     */
+    void close() throws Exception;
 }

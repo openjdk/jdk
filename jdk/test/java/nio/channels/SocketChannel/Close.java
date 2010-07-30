@@ -56,8 +56,12 @@ public class Close {
 
     static void testChannelClose() throws IOException {
         SelectionKey sk = open();
-        sk.channel().close();
-        check(sk);
+        try {
+            sk.channel().close();
+            check(sk);
+        } finally {
+            sk.selector().close();
+        }
     }
 
     public static void main(String[] args) throws Exception {

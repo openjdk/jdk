@@ -55,5 +55,8 @@ public class CloseRegisteredChannel {
         System.out.println ("Will hang here...");
         int nb = slave.read (ByteBuffer.allocate (1024));
         //System.out.println("read nb=" + nb);
+
+        selector.close();
+        server.close();
     }
 }

@@ -186,12 +186,13 @@ ciKlass* ciBytecodeStream::get_klass(bool& will_link) {
 }
 
 // ------------------------------------------------------------------
-// ciBytecodeStream::get_constant_index
+// ciBytecodeStream::get_constant_raw_index
 //
 // If this bytecode is one of the ldc variants, get the index of the
 // referenced constant.
-int ciBytecodeStream::get_constant_index() const {
-  switch(cur_bc()) {
+int ciBytecodeStream::get_constant_raw_index() const {
+  // work-alike for Bytecode_loadconstant::raw_index()
+  switch (cur_bc()) {
   case Bytecodes::_ldc:
     return get_index_u1();
   case Bytecodes::_ldc_w:
@@ -202,25 +203,52 @@ int ciBytecodeStream::get_constant_index() const {
     return 0;
   }
 }
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::get_constant_pool_index
+// Decode any CP cache index into a regular pool index.
+int ciBytecodeStream::get_constant_pool_index() const {
+  // work-alike for Bytecode_loadconstant::pool_index()
+  int index = get_constant_raw_index();
+  if (has_cache_index()) {
+    return get_cpcache()->get_pool_index(index);
+  }
+  return index;
+}
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::get_constant_cache_index
+// Return the CP cache index, or -1 if there isn't any.
+int ciBytecodeStream::get_constant_cache_index() const {
+  // work-alike for Bytecode_loadconstant::cache_index()
+  return has_cache_index() ? get_constant_raw_index() : -1;
+}
+
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_constant
 //
 // If this bytecode is one of the ldc variants, get the referenced
 // constant.
 ciConstant ciBytecodeStream::get_constant() {
+  int pool_index = get_constant_raw_index();
+  int cache_index = -1;
+  if (has_cache_index()) {
+    cache_index = pool_index;
+    pool_index = -1;
+  }
   VM_ENTRY_MARK;
   constantPoolHandle cpool(_method->get_methodOop()->constants());
-  return CURRENT_ENV->get_constant_by_index(cpool, get_constant_index(), _holder);
+  return CURRENT_ENV->get_constant_by_index(cpool, pool_index, cache_index, _holder);
 }
 
 // ------------------------------------------------------------------
-bool ciBytecodeStream::is_unresolved_string() const {
-  return CURRENT_ENV->is_unresolved_string(_holder, get_constant_index());
-}
-
-// ------------------------------------------------------------------
-bool ciBytecodeStream::is_unresolved_klass() const {
-  return CURRENT_ENV->is_unresolved_klass(_holder, get_klass_index());
+// ciBytecodeStream::get_constant_pool_tag
+//
+// If this bytecode is one of the ldc variants, get the referenced
+// constant.
+constantTag ciBytecodeStream::get_constant_pool_tag(int index) const {
+  VM_ENTRY_MARK;
+  return _method->get_methodOop()->constants()->tag_at(index);
 }
 
 // ------------------------------------------------------------------
@@ -378,13 +406,16 @@ int ciBytecodeStream::get_method_signature_index() {
 
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_cpcache
-ciCPCache* ciBytecodeStream::get_cpcache() {
-  VM_ENTRY_MARK;
-  // Get the constant pool.
-  constantPoolOop      cpool   = _holder->get_instanceKlass()->constants();
-  constantPoolCacheOop cpcache = cpool->cache();
+ciCPCache* ciBytecodeStream::get_cpcache() const {
+  if (_cpcache == NULL) {
+    VM_ENTRY_MARK;
+    // Get the constant pool.
+    constantPoolOop      cpool   = _holder->get_instanceKlass()->constants();
+    constantPoolCacheOop cpcache = cpool->cache();
 
-  return CURRENT_ENV->get_object(cpcache)->as_cpcache();
+    *(ciCPCache**)&_cpcache = CURRENT_ENV->get_object(cpcache)->as_cpcache();
+  }
+  return _cpcache;
 }
 
 // ------------------------------------------------------------------

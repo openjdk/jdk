@@ -779,7 +779,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
   // Find bytecode
   Bytecode_invoke* bytecode = Bytecode_invoke_at(caller, bci);
-  bc = bytecode->adjusted_invoke_code();
+  bc = bytecode->java_code();
   int bytecode_index = bytecode->index();
 
   // Find receiver for non-static call
@@ -2251,7 +2251,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
                  B->name(),
                  fingerprint->as_string(),
                  B->instructions_begin());
-    VTune::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
     Forte::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {

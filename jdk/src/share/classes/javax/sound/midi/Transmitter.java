@@ -35,7 +35,7 @@ package javax.sound.midi;
  *
  * @author Kara Kytle
  */
-public interface Transmitter {
+public interface Transmitter extends AutoCloseable {
 
 
     /**
