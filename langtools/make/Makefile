@@ -26,9 +26,9 @@
 # Makefile for langtools: wrapper around Ant build.xml file
 
 #
-# On Solaris, the 'make' utility from Sun will not work with these makefiles.
-#    This little rule is only understood by Sun's make, and is harmless
-#    when seen by the GNU make tool. If using Sun's make, this causes the
+# On Solaris, the standard 'make' utility will not work with these makefiles.
+#    This little rule is only understood by Solaris make, and is harmless
+#    when seen by the GNU make tool. If using Solaris make, this causes the
 #    make command to fail.
 #
 SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
@@ -40,15 +40,16 @@ SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
 
 SYSTEM_UNAME := $(shell uname)
 
+# Where is unwanted output to be delivered?
+# On Windows, MKS uses the special file "NUL", cygwin uses the customary unix file.
 ifeq ($(SYSTEM_UNAME), Windows_NT)
 DEV_NULL = NUL
 else
+DEV_NULL = /dev/null 
+endif
+
 ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
-DEV_NULL = NUL
 USING_CYGWIN = true
-else
-DEV_NULL = /dev/null
-endif 
 endif
 
 ifdef USING_CYGWIN
@@ -202,7 +203,7 @@ $(ANT_TARGETS): $(OUTPUTDIR)/build/ant-diagnostics.log
 
 #-------------------------------------------------------------------
 #
-# Targets for Sun's internal JPRT build system
+# Targets for Oracle's internal JPRT build system
 
 CD = cd
 ZIP = zip

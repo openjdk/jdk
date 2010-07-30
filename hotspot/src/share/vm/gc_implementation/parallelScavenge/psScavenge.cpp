@@ -414,7 +414,6 @@ bool PSScavenge::invoke_no_policy() {
     }
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
-    assert(promotion_manager->claimed_stack_empty(), "Sanity");
     PSPromotionManager::post_scavenge();
 
     promotion_failure_occurred = promotion_failed();

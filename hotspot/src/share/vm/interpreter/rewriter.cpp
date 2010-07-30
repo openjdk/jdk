@@ -38,6 +38,8 @@ void Rewriter::compute_index_maps() {
       case JVM_CONSTANT_InterfaceMethodref:
       case JVM_CONSTANT_Fieldref          : // fall through
       case JVM_CONSTANT_Methodref         : // fall through
+      case JVM_CONSTANT_MethodHandle      : // fall through
+      case JVM_CONSTANT_MethodType        : // fall through
         add_cp_cache_entry(i);
         break;
     }
@@ -131,6 +133,27 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset) {
 }
 
 
+// Rewrite some ldc bytecodes to _fast_aldc
+void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide) {
+  assert((*bcp) == (is_wide ? Bytecodes::_ldc_w : Bytecodes::_ldc), "");
+  address p = bcp + offset;
+  int cp_index = is_wide ? Bytes::get_Java_u2(p) : (u1)(*p);
+  constantTag tag = _pool->tag_at(cp_index).value();
+  if (tag.is_method_handle() || tag.is_method_type()) {
+    int cache_index = cp_entry_to_cp_cache(cp_index);
+    if (is_wide) {
+      (*bcp) = Bytecodes::_fast_aldc_w;
+      assert(cache_index == (u2)cache_index, "");
+      Bytes::put_native_u2(p, cache_index);
+    } else {
+      (*bcp) = Bytecodes::_fast_aldc;
+      assert(cache_index == (u1)cache_index, "");
+      (*p) = (u1)cache_index;
+    }
+  }
+}
+
+
 // Rewrites a method given the index_map information
 void Rewriter::scan_method(methodOop method) {
 
@@ -197,6 +220,12 @@ void Rewriter::scan_method(methodOop method) {
           break;
         case Bytecodes::_invokedynamic:
           rewrite_invokedynamic(bcp, prefix_length+1);
+          break;
+        case Bytecodes::_ldc:
+          maybe_rewrite_ldc(bcp, prefix_length+1, false);
+          break;
+        case Bytecodes::_ldc_w:
+          maybe_rewrite_ldc(bcp, prefix_length+1, true);
           break;
         case Bytecodes::_jsr            : // fall through
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;

@@ -820,7 +820,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
                                            bool      is_top_frame) {
   assert(popframe_extra_args == 0, "what to do?");
   assert(!is_top_frame || (!callee_locals && !callee_param_count),
-         "top frame should have no caller")
+         "top frame should have no caller");
 
   // This code must exactly match what InterpreterFrame::build
   // does (the full InterpreterFrame::build, that is, not the

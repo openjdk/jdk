@@ -3972,6 +3972,10 @@ public:
 
   void work(int i) {
     if (i >= _n_workers) return;  // no work needed this round
+
+    double start_time_ms = os::elapsedTime() * 1000.0;
+    _g1h->g1_policy()->record_gc_worker_start_time(i, start_time_ms);
+
     ResourceMark rm;
     HandleMark   hm;
 
@@ -4019,7 +4023,7 @@ public:
       double elapsed_ms = (os::elapsedTime()-start)*1000.0;
       double term_ms = pss.term_time()*1000.0;
       _g1h->g1_policy()->record_obj_copy_time(i, elapsed_ms-term_ms);
-      _g1h->g1_policy()->record_termination_time(i, term_ms);
+      _g1h->g1_policy()->record_termination(i, term_ms, pss.term_attempts());
     }
     _g1h->g1_policy()->record_thread_age_table(pss.age_table());
     _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
@@ -4043,7 +4047,8 @@ public:
       double term         = pss.term_time();
       gclog_or_tty->print("  Elapsed: %7.2f ms.\n"
                           "    Strong roots: %7.2f ms (%6.2f%%)\n"
-                          "    Termination:  %7.2f ms (%6.2f%%) (in %d entries)\n",
+                          "    Termination:  %7.2f ms (%6.2f%%) "
+                                                 "(in "SIZE_FORMAT" entries)\n",
                           elapsed * 1000.0,
                           strong_roots * 1000.0, (strong_roots*100.0/elapsed),
                           term * 1000.0, (term*100.0/elapsed),
@@ -4059,6 +4064,8 @@ public:
 
     assert(pss.refs_to_scan() == 0, "Task queue should be empty");
     assert(pss.overflowed_refs_to_scan() == 0, "Overflow queue should be empty");
+    double end_time_ms = os::elapsedTime() * 1000.0;
+    _g1h->g1_policy()->record_gc_worker_end_time(i, end_time_ms);
   }
 };
 
