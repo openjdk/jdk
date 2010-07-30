@@ -22,11 +22,10 @@
  */
 
 /*
- * @test 6403456
- * @summary -Werror should work with annotation processing
- * @compile WErrorGen.java
- * @compile -proc:only -processor WErrorGen WErrorGen.java
- * @compile/fail/ref=WErrorGen.out -XDrawDiagnostics -Werror -Xlint:rawtypes -processor WErrorGen WErrorGen.java
+ * @test 6966604
+ * @summary JavacFiler not correctly notified of lastRound
+ * @compile TestLastRound.java
+ * @compile/fail/ref=TestLastRound.out -XDrawDiagnostics -Werror -proc:only -processor TestLastRound TestLastRound.java
  */
 
 import java.io.*;
@@ -37,16 +36,16 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 
 @SupportedAnnotationTypes("*")
-public class WErrorGen extends AbstractProcessor {
+public class TestLastRound extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         Filer filer = processingEnv.getFiler();
-        if (++round == 1) {
+        if (roundEnv.processingOver()) {
             try {
-                JavaFileObject fo = filer.createSourceFile("Gen");
+                JavaFileObject fo = filer.createSourceFile("LastRound.java");
                 Writer out = fo.openWriter();
-                out.write("import java.util.*; class Gen { List l; }");
+                out.write("class LastRound { }");
                 out.close();
             } catch (IOException e) {
             }
@@ -58,6 +57,4 @@ public class WErrorGen extends AbstractProcessor {
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
     }
-
-    int round = 0;
 }
