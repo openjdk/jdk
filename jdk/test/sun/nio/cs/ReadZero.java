@@ -43,15 +43,18 @@ public class ReadZero {
                 return 0;
             }
         };
-
-        is.read(new byte[1], 0, 1); // ok
-        InputStreamReader isr = new InputStreamReader(is);
-
         try {
-            int res = isr.read(new char[1], 0, 1);
-        } catch (IOException x) {
-            System.out.println("IOException caught");
-            return;
+            is.read(new byte[1], 0, 1); // ok
+            InputStreamReader isr = new InputStreamReader(is);
+
+            try {
+                int res = isr.read(new char[1], 0, 1);
+            } catch (IOException x) {
+                System.out.println("IOException caught");
+                return;
+            }
+        } finally {
+            is.close();
         }
         throw new RuntimeException("IOException not thrown");
     }

@@ -48,8 +48,8 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
  *  by entering their members into the class scope using
  *  MemberEnter.complete().  See Enter for an overview.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -768,6 +768,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 && s.owner.kind != MTH
                 && types.isSameType(c.type, syms.deprecatedType))
                 s.flags_field |= Flags.DEPRECATED;
+            // Internally to java.dyn, a @PolymorphicSignature annotation
+            // translates to a classfile attribute.
+            if (!c.type.isErroneous()
+                && types.isSameType(c.type, syms.polymorphicSignatureType)) {
+                s.flags_field |= Flags.POLYMORPHIC_SIGNATURE;
+            }
             if (!annotated.add(a.type.tsym))
                 log.error(a.pos, "duplicate.annotation");
         }

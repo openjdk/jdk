@@ -154,7 +154,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _known_garbage_bytes(0),
 
   _young_gc_eff_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _target_pause_time_ms(-1.0),
 
    _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
 
@@ -231,20 +230,21 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
+  _par_last_gc_worker_start_times_ms = new double[_parallel_gc_threads];
   _par_last_ext_root_scan_times_ms = new double[_parallel_gc_threads];
   _par_last_mark_stack_scan_times_ms = new double[_parallel_gc_threads];
 
-  _par_last_update_rs_start_times_ms = new double[_parallel_gc_threads];
   _par_last_update_rs_times_ms = new double[_parallel_gc_threads];
   _par_last_update_rs_processed_buffers = new double[_parallel_gc_threads];
 
-  _par_last_scan_rs_start_times_ms = new double[_parallel_gc_threads];
   _par_last_scan_rs_times_ms = new double[_parallel_gc_threads];
   _par_last_scan_new_refs_times_ms = new double[_parallel_gc_threads];
 
   _par_last_obj_copy_times_ms = new double[_parallel_gc_threads];
 
   _par_last_termination_times_ms = new double[_parallel_gc_threads];
+  _par_last_termination_attempts = new double[_parallel_gc_threads];
+  _par_last_gc_worker_end_times_ms = new double[_parallel_gc_threads];
 
   // start conservatively
   _expensive_region_limit_ms = 0.5 * (double) MaxGCPauseMillis;
@@ -274,10 +274,64 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   // </NEW PREDICTION>
 
-  double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
+  // Below, we might need to calculate the pause time target based on
+  // the pause interval. When we do so we are going to give G1 maximum
+  // flexibility and allow it to do pauses when it needs to. So, we'll
+  // arrange that the pause interval to be pause time target + 1 to
+  // ensure that a) the pause time target is maximized with respect to
+  // the pause interval and b) we maintain the invariant that pause
+  // time target < pause interval. If the user does not want this
+  // maximum flexibility, they will have to set the pause interval
+  // explicitly.
+
+  // First make sure that, if either parameter is set, its value is
+  // reasonable.
+  if (!FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    if (MaxGCPauseMillis < 1) {
+      vm_exit_during_initialization("MaxGCPauseMillis should be "
+                                    "greater than 0");
+    }
+  }
+  if (!FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    if (GCPauseIntervalMillis < 1) {
+      vm_exit_during_initialization("GCPauseIntervalMillis should be "
+                                    "greater than 0");
+    }
+  }
+
+  // Then, if the pause time target parameter was not set, set it to
+  // the default value.
+  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+      // The default pause time target in G1 is 200ms
+      FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+    } else {
+      // We do not allow the pause interval to be set without the
+      // pause time target
+      vm_exit_during_initialization("GCPauseIntervalMillis cannot be set "
+                                    "without setting MaxGCPauseMillis");
+    }
+  }
+
+  // Then, if the interval parameter was not set, set it according to
+  // the pause time target (this will also deal with the case when the
+  // pause time target is the default value).
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
+  }
+
+  // Finally, make sure that the two parameters are consistent.
+  if (MaxGCPauseMillis >= GCPauseIntervalMillis) {
+    char buffer[256];
+    jio_snprintf(buffer, 256,
+                 "MaxGCPauseMillis (%u) should be less than "
+                 "GCPauseIntervalMillis (%u)",
+                 MaxGCPauseMillis, GCPauseIntervalMillis);
+    vm_exit_during_initialization(buffer);
+  }
+
   double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
-  guarantee(max_gc_time < time_slice,
-            "Max GC time should not be greater than the time slice");
+  double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
   _sigma = (double) G1ConfidencePercent / 100.0;
 
@@ -782,16 +836,17 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   // if they are not set properly
 
   for (int i = 0; i < _parallel_gc_threads; ++i) {
-    _par_last_ext_root_scan_times_ms[i] = -666.0;
-    _par_last_mark_stack_scan_times_ms[i] = -666.0;
-    _par_last_update_rs_start_times_ms[i] = -666.0;
-    _par_last_update_rs_times_ms[i] = -666.0;
-    _par_last_update_rs_processed_buffers[i] = -666.0;
-    _par_last_scan_rs_start_times_ms[i] = -666.0;
-    _par_last_scan_rs_times_ms[i] = -666.0;
-    _par_last_scan_new_refs_times_ms[i] = -666.0;
-    _par_last_obj_copy_times_ms[i] = -666.0;
-    _par_last_termination_times_ms[i] = -666.0;
+    _par_last_gc_worker_start_times_ms[i] = -1234.0;
+    _par_last_ext_root_scan_times_ms[i] = -1234.0;
+    _par_last_mark_stack_scan_times_ms[i] = -1234.0;
+    _par_last_update_rs_times_ms[i] = -1234.0;
+    _par_last_update_rs_processed_buffers[i] = -1234.0;
+    _par_last_scan_rs_times_ms[i] = -1234.0;
+    _par_last_scan_new_refs_times_ms[i] = -1234.0;
+    _par_last_obj_copy_times_ms[i] = -1234.0;
+    _par_last_termination_times_ms[i] = -1234.0;
+    _par_last_termination_attempts[i] = -1234.0;
+    _par_last_gc_worker_end_times_ms[i] = -1234.0;
   }
 #endif
 
@@ -942,9 +997,9 @@ T sum_of(T* sum_arr, int start, int n, int N) {
   return sum;
 }
 
-void G1CollectorPolicy::print_par_stats (int level,
-                                         const char* str,
-                                         double* data,
+void G1CollectorPolicy::print_par_stats(int level,
+                                        const char* str,
+                                        double* data,
                                          bool summary) {
   double min = data[0], max = data[0];
   double total = 0.0;
@@ -973,10 +1028,10 @@ void G1CollectorPolicy::print_par_stats (int level,
   gclog_or_tty->print_cr("]");
 }
 
-void G1CollectorPolicy::print_par_buffers (int level,
-                                         const char* str,
-                                         double* data,
-                                         bool summary) {
+void G1CollectorPolicy::print_par_sizes(int level,
+                                        const char* str,
+                                        double* data,
+                                        bool summary) {
   double min = data[0], max = data[0];
   double total = 0.0;
   int j;
@@ -1321,15 +1376,22 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       }
       if (parallel) {
         print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
-        print_par_stats(2, "Update RS (Start)", _par_last_update_rs_start_times_ms, false);
+        print_par_stats(2, "GC Worker Start Time",
+                        _par_last_gc_worker_start_times_ms, false);
         print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-        print_par_buffers(3, "Processed Buffers",
-                          _par_last_update_rs_processed_buffers, true);
-        print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
-        print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
+        print_par_sizes(3, "Processed Buffers",
+                        _par_last_update_rs_processed_buffers, true);
+        print_par_stats(2, "Ext Root Scanning",
+                        _par_last_ext_root_scan_times_ms);
+        print_par_stats(2, "Mark Stack Scanning",
+                        _par_last_mark_stack_scan_times_ms);
         print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
         print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
         print_par_stats(2, "Termination", _par_last_termination_times_ms);
+        print_par_sizes(3, "Termination Attempts",
+                        _par_last_termination_attempts, true);
+        print_par_stats(2, "GC Worker End Time",
+                        _par_last_gc_worker_end_times_ms, false);
         print_stats(2, "Other", parallel_other_time);
         print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
       } else {
@@ -1572,8 +1634,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
   // </NEW PREDICTION>
-
-  _target_pause_time_ms = -1.0;
 }
 
 // <NEW PREDICTION>
@@ -2303,7 +2363,6 @@ G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
     if (reached_target_length) {
       assert( young_list_length > 0 && _g1->young_list()->length() > 0,
               "invariant" );
-      _target_pause_time_ms = max_pause_time_ms;
       return true;
     }
   } else {
@@ -2334,6 +2393,17 @@ bool G1CollectorPolicy_BestRegionsFirst::assertMarkedBytesDataOK() {
   return true;
 }
 #endif
+
+bool
+G1CollectorPolicy::force_initial_mark_if_outside_cycle() {
+  bool during_cycle = _g1->concurrent_mark()->cmThread()->during_cycle();
+  if (!during_cycle) {
+    set_initiate_conc_mark_if_possible();
+    return true;
+  } else {
+    return false;
+  }
+}
 
 void
 G1CollectorPolicy::decide_on_conc_mark_initiation() {
@@ -2801,7 +2871,8 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
 #endif // !PRODUCT
 
 bool
-G1CollectorPolicy_BestRegionsFirst::choose_collection_set() {
+G1CollectorPolicy_BestRegionsFirst::choose_collection_set(
+                                                  double target_pause_time_ms) {
   // Set this here - in case we're not doing young collections.
   double non_young_start_time_sec = os::elapsedTime();
 
@@ -2814,26 +2885,19 @@ G1CollectorPolicy_BestRegionsFirst::choose_collection_set() {
 
   start_recording_regions();
 
-  guarantee(_target_pause_time_ms > -1.0
-            NOT_PRODUCT(|| Universe::heap()->gc_cause() == GCCause::_scavenge_alot),
-            "_target_pause_time_ms should have been set!");
-#ifndef PRODUCT
-  if (_target_pause_time_ms <= -1.0) {
-    assert(ScavengeALot && Universe::heap()->gc_cause() == GCCause::_scavenge_alot, "Error");
-    _target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-  }
-#endif
-  assert(_collection_set == NULL, "Precondition");
+  guarantee(target_pause_time_ms > 0.0,
+            err_msg("target_pause_time_ms = %1.6lf should be positive",
+                    target_pause_time_ms));
+  guarantee(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
   double predicted_pause_time_ms = base_time_ms;
 
-  double target_time_ms = _target_pause_time_ms;
-  double time_remaining_ms = target_time_ms - base_time_ms;
+  double time_remaining_ms = target_pause_time_ms - base_time_ms;
 
   // the 10% and 50% values are arbitrary...
-  if (time_remaining_ms < 0.10*target_time_ms) {
-    time_remaining_ms = 0.50 * target_time_ms;
+  if (time_remaining_ms < 0.10 * target_pause_time_ms) {
+    time_remaining_ms = 0.50 * target_pause_time_ms;
     _within_target = false;
   } else {
     _within_target = true;
@@ -2996,7 +3060,18 @@ choose_collection_set_end:
   _recorded_non_young_cset_choice_time_ms =
     (non_young_end_time_sec - non_young_start_time_sec) * 1000.0;
 
-  return abandon_collection;
+  // Here we are supposed to return whether the pause should be
+  // abandoned or not (i.e., whether the collection set is empty or
+  // not). However, this introduces a subtle issue when a pause is
+  // initiated explicitly with System.gc() and
+  // +ExplicitGCInvokesConcurrent (see Comment #2 in CR 6944166), it's
+  // supposed to start a marking cycle, and it's abandoned. So, by
+  // returning false here we are telling the caller never to consider
+  // a pause to be abandoned. We'll actually remove all the code
+  // associated with abandoned pauses as part of CR 6963209, but we are
+  // just disabling them this way for the moment to avoid increasing
+  // further the amount of changes for CR 6944166.
+  return false;
 }
 
 void G1CollectorPolicy_BestRegionsFirst::record_full_collection_end() {

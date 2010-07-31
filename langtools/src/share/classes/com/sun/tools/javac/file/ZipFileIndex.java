@@ -69,7 +69,7 @@ import com.sun.tools.javac.file.RelativePath.RelativeFile;
  * checking to reindex the zip files if it is needed. In batch mode the timestamps are not checked
  * and the compiler uses the cached indexes.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>

@@ -32,17 +32,19 @@ import java.nio.channels.*;
 public class CloseThenRegister {
 
     public static void main (String [] args) throws Exception {
+        Selector sel = Selector.open();
+        sel.close();
+        ServerSocketChannel ssc = ServerSocketChannel.open();
         try {
-            Selector s = Selector.open();
-            s.close();
-            ServerSocketChannel c = ServerSocketChannel.open();
-            c.socket().bind(new InetSocketAddress(40000));
-            c.configureBlocking(false);
-            c.register(s, SelectionKey.OP_ACCEPT);
+            ssc.bind(new InetSocketAddress(0));
+            ssc.configureBlocking(false);
+            ssc.register(sel, SelectionKey.OP_ACCEPT);
+            throw new RuntimeException("register after close does not cause CSE!");
         } catch (ClosedSelectorException cse) {
-            return;
+            // expected
+        } finally {
+            ssc.close();
         }
-        throw new RuntimeException("register after close does not cause CSE!");
     }
 
 }

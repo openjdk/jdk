@@ -27,6 +27,7 @@ package java.beans;
 
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * An EventSetDescriptor describes a group of events that a given Java
@@ -175,10 +176,8 @@ public class EventSetDescriptor extends FeatureDescriptor {
         setRemoveListenerMethod(getMethod(sourceClass, removeListenerMethodName, 1));
 
         // Be more forgiving of not finding the getListener method.
-        Method method = Introspector.findMethod(sourceClass,
-                                                getListenerMethodName, 0);
-        if (method != null) {
-            setGetListenerMethod(method);
+        if (getListenerMethodName != null) {
+            setGetListenerMethod(Introspector.findInstanceMethod(sourceClass, getListenerMethodName));
         }
     }
 
@@ -188,7 +187,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
             return null;
         }
         Method method = Introspector.findMethod(cls, name, args);
-        if (method == null) {
+        if ((method == null) || Modifier.isStatic(method.getModifiers())) {
             throw new IntrospectionException("Method not found: " + name +
                                              " on class " + cls.getName());
         }

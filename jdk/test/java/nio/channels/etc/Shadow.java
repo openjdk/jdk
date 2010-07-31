@@ -35,7 +35,6 @@ import java.nio.channels.*;
 
 public class Shadow {
 
-    private static final int PORT = 2019;
     static PrintStream log = System.err;
 
     private static void dump(ServerSocket s) {
@@ -69,7 +68,7 @@ public class Shadow {
     public static void main(String[] args) throws Exception {
         boolean useChannels
             = ((args.length == 0) || Boolean.valueOf(args[0]).booleanValue());
-        int port = (args.length > 1 ? Integer.parseInt(args[1]) : PORT);
+        int port = (args.length > 1 ? Integer.parseInt(args[1]) : -1);
 
         // open server socket
         ServerSocket serverSocket;
@@ -86,7 +85,8 @@ public class Shadow {
         }
 
         // bind server socket to port
-        SocketAddress bindAddr = new InetSocketAddress(port);
+        SocketAddress bindAddr =
+            new InetSocketAddress((port == -1) ? 0 : port);
         serverSocket.bind(bindAddr);
         log.println("bound ServerSocket: " + serverSocket);
 

@@ -264,10 +264,15 @@ symbolOop constantPoolOopDesc::impl_signature_ref_at(int which, bool uncached) {
 int constantPoolOopDesc::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
   if (!uncached && cache() != NULL) {
-    if (constantPoolCacheOopDesc::is_secondary_index(which))
+    if (constantPoolCacheOopDesc::is_secondary_index(which)) {
       // Invokedynamic indexes are always processed in native order
       // so there is no question of reading a native u2 in Java order here.
-      return cache()->main_entry_at(which)->constant_pool_index();
+      int pool_index = cache()->main_entry_at(which)->constant_pool_index();
+      if (tag_at(pool_index).is_invoke_dynamic())
+        pool_index = invoke_dynamic_name_and_type_ref_index_at(pool_index);
+      assert(tag_at(pool_index).is_name_and_type(), "");
+      return pool_index;
+    }
     // change byte-ordering and go via cache
     i = remap_instruction_operand_from_cache(which);
   } else {
@@ -358,6 +363,11 @@ symbolOop constantPoolOopDesc::klass_ref_at_noresolve(int which) {
   return klass_at_noresolve(ref_index);
 }
 
+symbolOop constantPoolOopDesc::uncached_klass_ref_at_noresolve(int which) {
+  jint ref_index = uncached_klass_ref_index_at(which);
+  return klass_at_noresolve(ref_index);
+}
+
 char* constantPoolOopDesc::string_at_noresolve(int which) {
   // Test entry type in case string is resolved while in here.
   oop entry = *(obj_at_addr(which));
@@ -381,6 +391,119 @@ void constantPoolOopDesc::resolve_string_constants_impl(constantPoolHandle this_
     if (this_oop->tag_at(index).is_unresolved_string()) {
       this_oop->string_at(index, CHECK);
     }
+  }
+}
+
+oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, int index, int cache_index, TRAPS) {
+  oop result_oop = NULL;
+  if (cache_index >= 0) {
+    assert(index < 0, "only one kind of index at a time");
+    ConstantPoolCacheEntry* cpc_entry = this_oop->cache()->entry_at(cache_index);
+    result_oop = cpc_entry->f1();
+    if (result_oop != NULL) {
+      return result_oop;  // that was easy...
+    }
+    index = cpc_entry->constant_pool_index();
+  }
+
+  int tag_value = this_oop->tag_at(index).value();
+  switch (tag_value) {
+
+  case JVM_CONSTANT_UnresolvedClass:
+  case JVM_CONSTANT_UnresolvedClassInError:
+  case JVM_CONSTANT_Class:
+    {
+      klassOop resolved = klass_at_impl(this_oop, index, CHECK_NULL);
+      // ldc wants the java mirror.
+      result_oop = resolved->klass_part()->java_mirror();
+      break;
+    }
+
+  case JVM_CONSTANT_String:
+  case JVM_CONSTANT_UnresolvedString:
+    if (this_oop->is_pseudo_string_at(index)) {
+      result_oop = this_oop->pseudo_string_at(index);
+      break;
+    }
+    result_oop = string_at_impl(this_oop, index, CHECK_NULL);
+    break;
+
+  case JVM_CONSTANT_Object:
+    result_oop = this_oop->object_at(index);
+    break;
+
+  case JVM_CONSTANT_MethodHandle:
+    {
+      int ref_kind                 = this_oop->method_handle_ref_kind_at(index);
+      int callee_index             = this_oop->method_handle_klass_index_at(index);
+      symbolHandle name(THREAD,      this_oop->method_handle_name_ref_at(index));
+      symbolHandle signature(THREAD, this_oop->method_handle_signature_ref_at(index));
+      if (PrintMiscellaneous)
+        tty->print_cr("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
+                      ref_kind, index, this_oop->method_handle_index_at(index),
+                      callee_index, name->as_C_string(), signature->as_C_string());
+      KlassHandle callee;
+      { klassOop k = klass_at_impl(this_oop, callee_index, CHECK_NULL);
+        callee = KlassHandle(THREAD, k);
+      }
+      KlassHandle klass(THREAD, this_oop->pool_holder());
+      Handle value = SystemDictionary::link_method_handle_constant(klass, ref_kind,
+                                                                   callee, name, signature,
+                                                                   CHECK_NULL);
+      result_oop = value();
+      // FIXME: Uniquify errors, using SystemDictionary::find_resolution_error.
+      break;
+    }
+
+  case JVM_CONSTANT_MethodType:
+    {
+      symbolHandle signature(THREAD, this_oop->method_type_signature_at(index));
+      if (PrintMiscellaneous)
+        tty->print_cr("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
+                      index, this_oop->method_type_index_at(index),
+                      signature->as_C_string());
+      KlassHandle klass(THREAD, this_oop->pool_holder());
+      bool ignore_is_on_bcp = false;
+      Handle value = SystemDictionary::find_method_handle_type(signature,
+                                                               klass,
+                                                               ignore_is_on_bcp,
+                                                               CHECK_NULL);
+      result_oop = value();
+      // FIXME: Uniquify errors, using SystemDictionary::find_resolution_error.
+      break;
+    }
+
+    /* maybe some day
+  case JVM_CONSTANT_Integer:
+  case JVM_CONSTANT_Float:
+  case JVM_CONSTANT_Long:
+  case JVM_CONSTANT_Double:
+    result_oop = java_lang_boxing_object::create(...);
+    break;
+    */
+
+  default:
+    DEBUG_ONLY( tty->print_cr("*** %p: tag at CP[%d/%d] = %d",
+                              this_oop(), index, cache_index, tag_value) );
+    assert(false, "unexpected constant tag");
+    break;
+  }
+
+  if (cache_index >= 0) {
+    // Cache the oop here also.
+    Handle result(THREAD, result_oop);
+    result_oop = NULL;  // safety
+    ObjectLocker ol(this_oop, THREAD);
+    ConstantPoolCacheEntry* cpc_entry = this_oop->cache()->entry_at(cache_index);
+    oop result_oop2 = cpc_entry->f1();
+    if (result_oop2 != NULL) {
+      // Race condition:  May already be filled in while we were trying to lock.
+      return result_oop2;
+    }
+    cpc_entry->set_f1(result());
+    return result();
+  } else {
+    return result_oop;
   }
 }
 
@@ -690,6 +813,41 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
     }
   } break;
 
+  case JVM_CONSTANT_MethodType:
+  {
+    int k1 = method_type_index_at(index1);
+    int k2 = cp2->method_type_index_at(index2);
+    if (k1 == k2) {
+      return true;
+    }
+  } break;
+
+  case JVM_CONSTANT_MethodHandle:
+  {
+    int k1 = method_handle_ref_kind_at(index1);
+    int k2 = cp2->method_handle_ref_kind_at(index2);
+    if (k1 == k2) {
+      int i1 = method_handle_index_at(index1);
+      int i2 = cp2->method_handle_index_at(index2);
+      if (i1 == i2) {
+        return true;
+      }
+    }
+  } break;
+
+  case JVM_CONSTANT_InvokeDynamic:
+  {
+    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(index1);
+    int k2 = cp2->invoke_dynamic_bootstrap_method_ref_index_at(index2);
+    if (k1 == k2) {
+      int i1 = invoke_dynamic_name_and_type_ref_index_at(index1);
+      int i2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
+      if (i1 == i2) {
+        return true;
+      }
+    }
+  } break;
+
   case JVM_CONSTANT_UnresolvedString:
   {
     symbolOop s1 = unresolved_string_at(index1);
@@ -861,6 +1019,26 @@ void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
   {
     symbolOop s = symbol_at(from_i);
     to_cp->symbol_at_put(to_i, s);
+  } break;
+
+  case JVM_CONSTANT_MethodType:
+  {
+    jint k = method_type_index_at(from_i);
+    to_cp->method_type_index_at_put(to_i, k);
+  } break;
+
+  case JVM_CONSTANT_MethodHandle:
+  {
+    int k1 = method_handle_ref_kind_at(from_i);
+    int k2 = method_handle_index_at(from_i);
+    to_cp->method_handle_index_at_put(to_i, k1, k2);
+  } break;
+
+  case JVM_CONSTANT_InvokeDynamic:
+  {
+    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(from_i);
+    int k2 = invoke_dynamic_name_and_type_ref_index_at(from_i);
+    to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
 
   // Invalid is used as the tag for the second constant pool entry
@@ -1066,7 +1244,11 @@ jint constantPoolOopDesc::cpool_entry_size(jint idx) {
     case JVM_CONSTANT_UnresolvedClassInError:
     case JVM_CONSTANT_StringIndex:
     case JVM_CONSTANT_UnresolvedString:
+    case JVM_CONSTANT_MethodType:
       return 3;
+
+    case JVM_CONSTANT_MethodHandle:
+      return 4; //tag, ref_kind, ref_index
 
     case JVM_CONSTANT_Integer:
     case JVM_CONSTANT_Float:
@@ -1074,6 +1256,7 @@ jint constantPoolOopDesc::cpool_entry_size(jint idx) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_NameAndType:
+    case JVM_CONSTANT_InvokeDynamic:
       return 5;
 
     case JVM_CONSTANT_Long:
@@ -1269,6 +1452,31 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
         idx1 = string_index_at(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_StringIndex: %hd", idx1));
+        break;
+      }
+      case JVM_CONSTANT_MethodHandle: {
+        *bytes = JVM_CONSTANT_MethodHandle;
+        int kind = method_handle_ref_kind_at(idx);
+        idx1 = method_handle_index_at(idx);
+        *(bytes+1) = (unsigned char) kind;
+        Bytes::put_Java_u2((address) (bytes+2), idx1);
+        DBG(printf("JVM_CONSTANT_MethodHandle: %d %hd", kind, idx1));
+        break;
+      }
+      case JVM_CONSTANT_MethodType: {
+        *bytes = JVM_CONSTANT_MethodType;
+        idx1 = method_type_index_at(idx);
+        Bytes::put_Java_u2((address) (bytes+1), idx1);
+        DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
+        break;
+      }
+      case JVM_CONSTANT_InvokeDynamic: {
+        *bytes = JVM_CONSTANT_InvokeDynamic;
+        idx1 = invoke_dynamic_bootstrap_method_ref_index_at(idx);
+        idx2 = invoke_dynamic_name_and_type_ref_index_at(idx);
+        Bytes::put_Java_u2((address) (bytes+1), idx1);
+        Bytes::put_Java_u2((address) (bytes+3), idx2);
+        DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd", idx1, idx2));
         break;
       }
     }

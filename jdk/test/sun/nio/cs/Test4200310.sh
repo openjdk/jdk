@@ -27,9 +27,9 @@
 # @author Norbert Lindenberg
 # @run shell Test4200310.sh
 
-2>1 $TESTJAVA/bin/jar -tf "$TESTJAVA/jre/lib/rt.jar" > class-list
-2>1 $TESTJAVA/bin/jar -tf "$TESTJAVA/jre/lib/charsets.jar" >> class-list
-2>1 $TESTJAVA/bin/jar -tf "$TESTJAVA/jre/lib/ext/localedata.jar" >> class-list
+2>&1 $TESTJAVA/bin/jar -tf "$TESTJAVA/jre/lib/rt.jar" > class-list
+2>&1 $TESTJAVA/bin/jar -tf "$TESTJAVA/jre/lib/charsets.jar" >> class-list
+2>&1 $TESTJAVA/bin/jar -tf "$TESTJAVA/jre/lib/ext/localedata.jar" >> class-list
 duplicates=`grep '\.class$' class-list | sort | uniq -d`
 
 rm -f class-list

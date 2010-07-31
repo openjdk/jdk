@@ -1975,7 +1975,7 @@ class CommandLineFlags {
           "Adaptive size policy maximum GC pause time goal in msec, "       \
           "or (G1 Only) the max. GC time per MMU time slice")               \
                                                                             \
-  product(intx, GCPauseIntervalMillis, 500,                                 \
+  product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
                                                                             \
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
@@ -2541,9 +2541,6 @@ class CommandLineFlags {
           "Enable String cache capabilities on String.java")                \
                                                                             \
   /* statistics */                                                          \
-  develop(bool, UseVTune, false,                                            \
-          "enable support for Intel's VTune profiler")                      \
-                                                                            \
   develop(bool, CountCompiledCalls, false,                                  \
           "counts method invocations")                                      \
                                                                             \
@@ -3519,6 +3516,9 @@ class CommandLineFlags {
                                                                             \
   experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \
+                                                                            \
+  experimental(bool, AllowTransitionalJSR292, true,                         \
+          "recognize pre-PFD formats of invokedynamic")                     \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \

@@ -202,6 +202,11 @@ void BufferBlob::free( BufferBlob *blob ) {
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
+  BufferBlob("I2C/C2I adapters", size, cb) {
+  CodeCache::commit(this);
+}
+
 AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
@@ -281,7 +286,6 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
       tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, stub);
       Disassembler::decode(stub->instructions_begin(), stub->instructions_end());
     }
-    VTune::register_stub(stub_id, stub->instructions_begin(), stub->instructions_end());
     Forte::register_stub(stub_id, stub->instructions_begin(), stub->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
@@ -356,7 +360,6 @@ DeoptimizationBlob* DeoptimizationBlob::create(
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
       Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
     Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
@@ -414,7 +417,6 @@ UncommonTrapBlob* UncommonTrapBlob::create(
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
       Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
     Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
@@ -474,7 +476,6 @@ ExceptionBlob* ExceptionBlob::create(
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
       Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
     Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
@@ -533,7 +534,6 @@ SafepointBlob* SafepointBlob::create(
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
       Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
     Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {

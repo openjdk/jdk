@@ -38,12 +38,27 @@ public class ConstantTag {
   private static int JVM_CONSTANT_Methodref               = 10;
   private static int JVM_CONSTANT_InterfaceMethodref      = 11;
   private static int JVM_CONSTANT_NameAndType             = 12;
+  private static int JVM_CONSTANT_MethodHandle            = 15;  // JSR 292
+  private static int JVM_CONSTANT_MethodType              = 16;  // JSR 292
+  private static int JVM_CONSTANT_InvokeDynamic           = 17;  // JSR 292
   private static int JVM_CONSTANT_Invalid                 = 0;   // For bad value initialization
   private static int JVM_CONSTANT_UnresolvedClass         = 100; // Temporary tag until actual use
   private static int JVM_CONSTANT_ClassIndex              = 101; // Temporary tag while constructing constant pool
   private static int JVM_CONSTANT_UnresolvedString        = 102; // Temporary tag until actual use
   private static int JVM_CONSTANT_StringIndex             = 103; // Temporary tag while constructing constant pool
   private static int JVM_CONSTANT_UnresolvedClassInError  = 104; // Resolution failed
+  private static int JVM_CONSTANT_Object                  = 105; // Required for BoundMethodHandle arguments.
+
+  // JVM_CONSTANT_MethodHandle subtypes //FIXME: connect these to data structure
+  private static int JVM_REF_getField                = 1;
+  private static int JVM_REF_getStatic               = 2;
+  private static int JVM_REF_putField                = 3;
+  private static int JVM_REF_putStatic               = 4;
+  private static int JVM_REF_invokeVirtual           = 5;
+  private static int JVM_REF_invokeStatic            = 6;
+  private static int JVM_REF_invokeSpecial           = 7;
+  private static int JVM_REF_newInvokeSpecial        = 8;
+  private static int JVM_REF_invokeInterface         = 9;
 
   private byte tag;
 
@@ -62,6 +77,9 @@ public class ConstantTag {
   public boolean isDouble()           { return tag == JVM_CONSTANT_Double; }
   public boolean isNameAndType()      { return tag == JVM_CONSTANT_NameAndType; }
   public boolean isUtf8()             { return tag == JVM_CONSTANT_Utf8; }
+  public boolean isMethodHandle()     { return tag == JVM_CONSTANT_MethodHandle; }
+  public boolean isMethodType()       { return tag == JVM_CONSTANT_MethodType; }
+  public boolean isInvokeDynamic()    { return tag == JVM_CONSTANT_InvokeDynamic; }
 
   public boolean isInvalid()          { return tag == JVM_CONSTANT_Invalid; }
 
@@ -72,6 +90,8 @@ public class ConstantTag {
   public boolean isKlassIndex()             { return tag == JVM_CONSTANT_ClassIndex; }
   public boolean isUnresolvedString()       { return tag == JVM_CONSTANT_UnresolvedString; }
   public boolean isStringIndex()            { return tag == JVM_CONSTANT_StringIndex; }
+
+  public boolean isObject()                 { return tag == JVM_CONSTANT_Object; }
 
   public boolean isKlassReference()   { return isKlassIndex() || isUnresolvedKlass(); }
   public boolean isFieldOrMethod()    { return isField() || isMethod() || isInterfaceMethod(); }

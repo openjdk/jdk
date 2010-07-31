@@ -54,10 +54,10 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _code               = NULL;
   _exception_handlers = NULL;
   _liveness           = NULL;
-  _bcea = NULL;
   _method_blocks = NULL;
 #ifdef COMPILER2
   _flow               = NULL;
+  _bcea               = NULL;
 #endif // COMPILER2
 
   ciEnv *env = CURRENT_ENV;
@@ -121,11 +121,11 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _intrinsic_id = vmIntrinsics::_none;
   _liveness = NULL;
   _can_be_statically_bound = false;
-  _bcea = NULL;
   _method_blocks = NULL;
   _method_data = NULL;
 #ifdef COMPILER2
   _flow = NULL;
+  _bcea = NULL;
 #endif // COMPILER2
 }
 
@@ -694,30 +694,21 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // ------------------------------------------------------------------
 // ciMethod::is_method_handle_invoke
 //
-// Return true if the method is a MethodHandle target.
+// Return true if the method is an instance of one of the two
+// signature-polymorphic MethodHandle methods, invokeExact or invokeGeneric.
 bool ciMethod::is_method_handle_invoke() const {
-  bool flag = (holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
-               methodOopDesc::is_method_handle_invoke_name(name()->sid()));
-#ifdef ASSERT
-  if (is_loaded()) {
-    bool flag2 = ((flags().as_int() & JVM_MH_INVOKE_BITS) == JVM_MH_INVOKE_BITS);
-    {
-      VM_ENTRY_MARK;
-      bool flag3 = get_methodOop()->is_method_handle_invoke();
-      assert(flag2 == flag3, "consistent");
-      assert(flag  == flag3, "consistent");
-    }
-  }
-#endif //ASSERT
-  return flag;
+  if (!is_loaded())  return false;
+  VM_ENTRY_MARK;
+  return get_methodOop()->is_method_handle_invoke();
 }
 
 // ------------------------------------------------------------------
 // ciMethod::is_method_handle_adapter
 //
 // Return true if the method is a generated MethodHandle adapter.
+// These are built by MethodHandleCompiler.
 bool ciMethod::is_method_handle_adapter() const {
-  check_is_loaded();
+  if (!is_loaded())  return false;
   VM_ENTRY_MARK;
   return get_methodOop()->is_method_handle_adapter();
 }
@@ -1033,10 +1024,15 @@ bool ciMethod::is_accessor    () const {         FETCH_FLAG_FROM_VM(is_accessor)
 bool ciMethod::is_initializer () const {         FETCH_FLAG_FROM_VM(is_initializer); }
 
 BCEscapeAnalyzer  *ciMethod::get_bcea() {
+#ifdef COMPILER2
   if (_bcea == NULL) {
     _bcea = new (CURRENT_ENV->arena()) BCEscapeAnalyzer(this, NULL);
   }
   return _bcea;
+#else // COMPILER2
+  ShouldNotReachHere();
+  return NULL;
+#endif // COMPILER2
 }
 
 ciMethodBlocks  *ciMethod::get_method_blocks() {

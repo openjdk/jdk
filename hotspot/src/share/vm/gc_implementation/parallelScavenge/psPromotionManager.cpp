@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,84 +90,70 @@ void PSPromotionManager::pre_scavenge() {
 }
 
 void PSPromotionManager::post_scavenge() {
-#if PS_PM_STATS
-  print_stats();
-#endif // PS_PM_STATS
-
-  for(uint i=0; i<ParallelGCThreads+1; i++) {
+  TASKQUEUE_STATS_ONLY(if (PrintGCDetails && ParallelGCVerbose) print_stats());
+  for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     PSPromotionManager* manager = manager_array(i);
-
-    // the guarantees are a bit gratuitous but, if one fires, we'll
-    // have a better idea of what went wrong
-    if (i < ParallelGCThreads) {
-      guarantee((!UseDepthFirstScavengeOrder ||
-                 manager->overflow_stack_depth()->length() <= 0),
-                "promotion manager overflow stack must be empty");
-      guarantee((UseDepthFirstScavengeOrder ||
-                 manager->overflow_stack_breadth()->length() <= 0),
-                "promotion manager overflow stack must be empty");
-
-      guarantee((!UseDepthFirstScavengeOrder ||
-                 manager->claimed_stack_depth()->size() <= 0),
-                "promotion manager claimed stack must be empty");
-      guarantee((UseDepthFirstScavengeOrder ||
-                 manager->claimed_stack_breadth()->size() <= 0),
-                "promotion manager claimed stack must be empty");
+    if (UseDepthFirstScavengeOrder) {
+      assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
     } else {
-      guarantee((!UseDepthFirstScavengeOrder ||
-                 manager->overflow_stack_depth()->length() <= 0),
-                "VM Thread promotion manager overflow stack "
-                "must be empty");
-      guarantee((UseDepthFirstScavengeOrder ||
-                 manager->overflow_stack_breadth()->length() <= 0),
-                "VM Thread promotion manager overflow stack "
-                "must be empty");
-
-      guarantee((!UseDepthFirstScavengeOrder ||
-                 manager->claimed_stack_depth()->size() <= 0),
-                "VM Thread promotion manager claimed stack "
-                "must be empty");
-      guarantee((UseDepthFirstScavengeOrder ||
-                 manager->claimed_stack_breadth()->size() <= 0),
-                "VM Thread promotion manager claimed stack "
-                "must be empty");
+      assert(manager->claimed_stack_breadth()->is_empty(), "should be empty");
     }
-
     manager->flush_labs();
   }
 }
 
-#if PS_PM_STATS
+#if TASKQUEUE_STATS
+void
+PSPromotionManager::print_taskqueue_stats(uint i) const {
+  const TaskQueueStats& stats = depth_first() ?
+    _claimed_stack_depth.stats : _claimed_stack_breadth.stats;
+  tty->print("%3u ", i);
+  stats.print();
+  tty->cr();
+}
 
 void
-PSPromotionManager::print_stats(uint i) {
-  tty->print_cr("---- GC Worker %2d Stats", i);
-  tty->print_cr("    total pushes            %8d", _total_pushes);
-  tty->print_cr("    masked pushes           %8d", _masked_pushes);
-  tty->print_cr("    overflow pushes         %8d", _overflow_pushes);
-  tty->print_cr("    max overflow length     %8d", _max_overflow_length);
-  tty->print_cr("");
-  tty->print_cr("    arrays chunked          %8d", _arrays_chunked);
-  tty->print_cr("    array chunks processed  %8d", _array_chunks_processed);
-  tty->print_cr("");
-  tty->print_cr("    total steals            %8d", _total_steals);
-  tty->print_cr("    masked steals           %8d", _masked_steals);
-  tty->print_cr("");
+PSPromotionManager::print_local_stats(uint i) const {
+  #define FMT " " SIZE_FORMAT_W(10)
+  tty->print_cr("%3u" FMT FMT FMT FMT, i, _masked_pushes, _masked_steals,
+                _arrays_chunked, _array_chunks_processed);
+  #undef FMT
 }
+
+static const char* const pm_stats_hdr[] = {
+  "    --------masked-------     arrays      array",
+  "thr       push      steal    chunked     chunks",
+  "--- ---------- ---------- ---------- ----------"
+};
 
 void
 PSPromotionManager::print_stats() {
-  tty->print_cr("== GC Tasks Stats (%s), GC %3d",
-                (UseDepthFirstScavengeOrder) ? "Depth-First" : "Breadth-First",
+  const bool df = UseDepthFirstScavengeOrder;
+  tty->print_cr("== GC Task Stats (%s-First), GC %3d", df ? "Depth" : "Breadth",
                 Universe::heap()->total_collections());
 
-  for (uint i = 0; i < ParallelGCThreads+1; ++i) {
-    PSPromotionManager* manager = manager_array(i);
-    manager->print_stats(i);
+  tty->print("thr "); TaskQueueStats::print_header(1); tty->cr();
+  tty->print("--- "); TaskQueueStats::print_header(2); tty->cr();
+  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
+    manager_array(i)->print_taskqueue_stats(i);
+  }
+
+  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
+  for (uint i = 0; i < hlines; ++i) tty->print_cr(pm_stats_hdr[i]);
+  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
+    manager_array(i)->print_local_stats(i);
   }
 }
 
-#endif // PS_PM_STATS
+void
+PSPromotionManager::reset_stats() {
+  TaskQueueStats& stats = depth_first() ?
+    claimed_stack_depth()->stats : claimed_stack_breadth()->stats;
+  stats.reset();
+  _masked_pushes = _masked_steals = 0;
+  _arrays_chunked = _array_chunks_processed = 0;
+}
+#endif // TASKQUEUE_STATS
 
 PSPromotionManager::PSPromotionManager() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -181,15 +167,9 @@ PSPromotionManager::PSPromotionManager() {
   if (depth_first()) {
     claimed_stack_depth()->initialize();
     queue_size = claimed_stack_depth()->max_elems();
-    // We want the overflow stack to be permanent
-    _overflow_stack_depth = new (ResourceObj::C_HEAP) GrowableArray<StarTask>(10, true);
-    _overflow_stack_breadth = NULL;
   } else {
     claimed_stack_breadth()->initialize();
     queue_size = claimed_stack_breadth()->max_elems();
-    // We want the overflow stack to be permanent
-    _overflow_stack_breadth = new (ResourceObj::C_HEAP) GrowableArray<oop>(10, true);
-    _overflow_stack_depth = NULL;
   }
 
   _totally_drain = (ParallelGCThreads == 1) || (GCDrainStackTargetSize == 0);
@@ -209,8 +189,7 @@ PSPromotionManager::PSPromotionManager() {
 }
 
 void PSPromotionManager::reset() {
-  assert(claimed_stack_empty(), "reset of non-empty claimed stack");
-  assert(overflow_stack_empty(), "reset of non-empty overflow stack");
+  assert(stacks_empty(), "reset of non-empty stack");
 
   // We need to get an assert in here to make sure the labs are always flushed.
 
@@ -228,22 +207,13 @@ void PSPromotionManager::reset() {
 
   _prefetch_queue.clear();
 
-#if PS_PM_STATS
-  _total_pushes = 0;
-  _masked_pushes = 0;
-  _overflow_pushes = 0;
-  _max_overflow_length = 0;
-  _arrays_chunked = 0;
-  _array_chunks_processed = 0;
-  _total_steals = 0;
-  _masked_steals = 0;
-#endif // PS_PM_STATS
+  TASKQUEUE_STATS_ONLY(reset_stats());
 }
 
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   assert(depth_first(), "invariant");
-  assert(overflow_stack_depth() != NULL, "invariant");
+  assert(claimed_stack_depth()->overflow_stack() != NULL, "invariant");
   totally_drain = totally_drain || _totally_drain;
 
 #ifdef ASSERT
@@ -254,41 +224,35 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   MutableSpace* perm_space = heap->perm_gen()->object_space();
 #endif /* ASSERT */
 
+  OopStarTaskQueue* const tq = claimed_stack_depth();
   do {
     StarTask p;
 
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
-    while(!overflow_stack_depth()->is_empty()) {
-      // linux compiler wants different overloaded operator= in taskqueue to
-      // assign to p that the other compilers don't like.
-      StarTask ptr = overflow_stack_depth()->pop();
-      process_popped_location_depth(ptr);
+    while (tq->pop_overflow(p)) {
+      process_popped_location_depth(p);
     }
 
     if (totally_drain) {
-      while (claimed_stack_depth()->pop_local(p)) {
+      while (tq->pop_local(p)) {
         process_popped_location_depth(p);
       }
     } else {
-      while (claimed_stack_depth()->size() > _target_stack_size &&
-             claimed_stack_depth()->pop_local(p)) {
+      while (tq->size() > _target_stack_size && tq->pop_local(p)) {
         process_popped_location_depth(p);
       }
     }
-  } while( (totally_drain && claimed_stack_depth()->size() > 0) ||
-           (overflow_stack_depth()->length() > 0) );
+  } while (totally_drain && !tq->taskqueue_empty() || !tq->overflow_empty());
 
-  assert(!totally_drain || claimed_stack_empty(), "Sanity");
-  assert(totally_drain ||
-         claimed_stack_depth()->size() <= _target_stack_size,
-         "Sanity");
-  assert(overflow_stack_empty(), "Sanity");
+  assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
+  assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
+  assert(tq->overflow_empty(), "Sanity");
 }
 
 void PSPromotionManager::drain_stacks_breadth(bool totally_drain) {
   assert(!depth_first(), "invariant");
-  assert(overflow_stack_breadth() != NULL, "invariant");
+  assert(claimed_stack_breadth()->overflow_stack() != NULL, "invariant");
   totally_drain = totally_drain || _totally_drain;
 
 #ifdef ASSERT
@@ -299,51 +263,39 @@ void PSPromotionManager::drain_stacks_breadth(bool totally_drain) {
   MutableSpace* perm_space = heap->perm_gen()->object_space();
 #endif /* ASSERT */
 
+  OverflowTaskQueue<oop>* const tq = claimed_stack_breadth();
   do {
     oop obj;
 
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
-    while(!overflow_stack_breadth()->is_empty()) {
-      obj = overflow_stack_breadth()->pop();
+    while (tq->pop_overflow(obj)) {
       obj->copy_contents(this);
     }
 
     if (totally_drain) {
-      // obj is a reference!!!
-      while (claimed_stack_breadth()->pop_local(obj)) {
-        // It would be nice to assert about the type of objects we might
-        // pop, but they can come from anywhere, unfortunately.
+      while (tq->pop_local(obj)) {
         obj->copy_contents(this);
       }
     } else {
-      // obj is a reference!!!
-      while (claimed_stack_breadth()->size() > _target_stack_size &&
-             claimed_stack_breadth()->pop_local(obj)) {
-        // It would be nice to assert about the type of objects we might
-        // pop, but they can come from anywhere, unfortunately.
+      while (tq->size() > _target_stack_size && tq->pop_local(obj)) {
         obj->copy_contents(this);
       }
     }
 
     // If we could not find any other work, flush the prefetch queue
-    if (claimed_stack_breadth()->size() == 0 &&
-        (overflow_stack_breadth()->length() == 0)) {
+    if (tq->is_empty()) {
       flush_prefetch_queue();
     }
-  } while((totally_drain && claimed_stack_breadth()->size() > 0) ||
-          (overflow_stack_breadth()->length() > 0));
+  } while (totally_drain && !tq->taskqueue_empty() || !tq->overflow_empty());
 
-  assert(!totally_drain || claimed_stack_empty(), "Sanity");
-  assert(totally_drain ||
-         claimed_stack_breadth()->size() <= _target_stack_size,
-         "Sanity");
-  assert(overflow_stack_empty(), "Sanity");
+  assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
+  assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
+  assert(tq->overflow_empty(), "Sanity");
 }
 
 void PSPromotionManager::flush_labs() {
-  assert(claimed_stack_empty(), "Attempt to flush lab with live stack");
-  assert(overflow_stack_empty(), "Attempt to flush lab with live overflow stack");
+  assert(stacks_empty(), "Attempt to flush lab with live stack");
 
   // If either promotion lab fills up, we can flush the
   // lab but not refill it, so check first.
@@ -480,14 +432,9 @@ oop PSPromotionManager::copy_to_survivor_space(oop o, bool depth_first) {
             new_obj->is_objArray() &&
             PSChunkLargeArrays) {
           // we'll chunk it
-#if PS_PM_STATS
-          ++_arrays_chunked;
-#endif // PS_PM_STATS
           oop* const masked_o = mask_chunked_array_oop(o);
           push_depth(masked_o);
-#if PS_PM_STATS
-          ++_masked_pushes;
-#endif // PS_PM_STATS
+          TASKQUEUE_STATS_ONLY(++_arrays_chunked; ++_masked_pushes);
         } else {
           // we'll just push its contents
           new_obj->push_contents(this);
@@ -551,9 +498,7 @@ void PSPromotionManager::process_array_chunk(oop old) {
   assert(old->is_objArray(), "invariant");
   assert(old->is_forwarded(), "invariant");
 
-#if PS_PM_STATS
-  ++_array_chunks_processed;
-#endif // PS_PM_STATS
+  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
 
   oop const obj = old->forwardee();
 
@@ -565,9 +510,7 @@ void PSPromotionManager::process_array_chunk(oop old) {
     assert(start > 0, "invariant");
     arrayOop(old)->set_length(start);
     push_depth(mask_chunked_array_oop(old));
-#if PS_PM_STATS
-    ++_masked_pushes;
-#endif // PS_PM_STATS
+    TASKQUEUE_STATS_ONLY(++_masked_pushes);
   } else {
     // this is the final chunk for this array
     start = 0;

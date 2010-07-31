@@ -83,6 +83,18 @@ IRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* thread, bool wide))
   }
 IRT_END
 
+IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::Code bytecode)) {
+  assert(bytecode == Bytecodes::_fast_aldc ||
+         bytecode == Bytecodes::_fast_aldc_w, "wrong bc");
+  ResourceMark rm(thread);
+  methodHandle m (thread, method(thread));
+  Bytecode_loadconstant* ldc = Bytecode_loadconstant_at(m, bci(thread));
+  oop result = ldc->resolve_constant(THREAD);
+  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc->cache_index()));
+  assert(result == cpce->f1(), "expected result for assembly code");
+}
+IRT_END
+
 
 //------------------------------------------------------------------------------------------------------------------------
 // Allocation
@@ -328,7 +340,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   typeArrayHandle    h_extable  (thread, h_method->exception_table());
   bool               should_repeat;
   int                handler_bci;
-  int                current_bci = bcp(thread) - h_method->code_base();
+  int                current_bci = bci(thread);
 
   // Need to do this check first since when _do_not_unlock_if_synchronized
   // is set, we don't want to trigger any classloading which may make calls
@@ -615,8 +627,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
-    int bci = m->bci_from(bcp(thread));
-    Bytecode_invoke* call = Bytecode_invoke_at(m, bci);
+    Bytecode_invoke* call = Bytecode_invoke_at(m, bci(thread));
     symbolHandle signature (thread, call->signature());
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
@@ -691,10 +702,6 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
 
   methodHandle caller_method(thread, method(thread));
 
-  // first find the bootstrap method
-  KlassHandle caller_klass(thread, caller_method->method_holder());
-  Handle bootm = SystemDictionary::find_bootstrap_method(caller_klass, CHECK);
-
   constantPoolHandle pool(thread, caller_method->constants());
   pool->set_invokedynamic();    // mark header to flag active call sites
 
@@ -715,7 +722,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     CallInfo info;
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  site_index, bytecode, CHECK);
-    // The main entry corresponds to a JVM_CONSTANT_NameAndType, and serves
+    // The main entry corresponds to a JVM_CONSTANT_InvokeDynamic, and serves
     // as a common reference point for all invokedynamic call sites with
     // that exact call descriptor.  We will link it in the CP cache exactly
     // as if it were an invokevirtual of MethodHandle.invoke.
@@ -723,22 +730,29 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
       bytecode,
       info.resolved_method(),
       info.vtable_index());
-    assert(pool->cache()->entry_at(main_index)->is_vfinal(), "f2 must be a methodOop");
   }
 
   // The method (f2 entry) of the main entry is the MH.invoke for the
   // invokedynamic target call signature.
-  intptr_t f2_value = pool->cache()->entry_at(main_index)->f2();
-  methodHandle signature_invoker(THREAD, (methodOop) f2_value);
+  oop f1_value = pool->cache()->entry_at(main_index)->f1();
+  methodHandle signature_invoker(THREAD, (methodOop) f1_value);
   assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
+
+  Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
+                                                         main_index, CHECK);
+  if (bootm.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
+              "no bootstrap method found for invokedynamic");
+  }
+
+  // Short circuit if CallSite has been bound already:
+  if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
+    return;
 
   symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
 
   Handle info;  // NYI: Other metadata from a new kind of CP entry.  (Annotations?)
-
-  // this is the index which gets stored on the CallSite object (as "callerPosition"):
-  int call_site_position = constantPoolCacheOopDesc::decode_secondary_index(site_index);
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,
@@ -1257,7 +1271,7 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   Bytecode_invoke* invoke = Bytecode_invoke_at(mh, bci);
   ArgumentSizeComputer asc(invoke->signature());
   int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
-  Copy::conjoint_bytes(src_address, dest_address,
+  Copy::conjoint_jbytes(src_address, dest_address,
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
 #endif

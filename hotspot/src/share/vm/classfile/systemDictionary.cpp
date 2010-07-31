@@ -2454,6 +2454,48 @@ Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
   return Handle(THREAD, (oop) result.get_jobject());
 }
 
+// Ask Java code to find or construct a method handle constant.
+Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
+                                                     int ref_kind, //e.g., JVM_REF_invokeVirtual
+                                                     KlassHandle callee,
+                                                     symbolHandle name_sym,
+                                                     symbolHandle signature,
+                                                     TRAPS) {
+  Handle empty;
+  Handle name = java_lang_String::create_from_symbol(name_sym(), CHECK_(empty));
+  Handle type;
+  if (signature->utf8_length() > 0 && signature->byte_at(0) == '(') {
+    bool ignore_is_on_bcp = false;
+    type = find_method_handle_type(signature, caller, ignore_is_on_bcp, CHECK_(empty));
+  } else {
+    SignatureStream ss(signature(), false);
+    if (!ss.is_done()) {
+      oop mirror = ss.as_java_mirror(caller->class_loader(), caller->protection_domain(),
+                                     SignatureStream::NCDFError, CHECK_(empty));
+      type = Handle(THREAD, mirror);
+      ss.next();
+      if (!ss.is_done())  type = Handle();  // error!
+    }
+  }
+  if (type.is_null()) {
+    THROW_MSG_(vmSymbols::java_lang_LinkageError(), "bad signature", empty);
+  }
+
+  // call sun.dyn.MethodHandleNatives::linkMethodHandleConstant(Class caller, int refKind, Class callee, String name, Object type) -> MethodHandle
+  JavaCallArguments args;
+  args.push_oop(caller->java_mirror());  // the referring class
+  args.push_int(ref_kind);
+  args.push_oop(callee->java_mirror());  // the target class
+  args.push_oop(name());
+  args.push_oop(type());
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmSymbols::linkMethodHandleConstant_name(),
+                         vmSymbols::linkMethodHandleConstant_signature(),
+                         &args, CHECK_(empty));
+  return Handle(THREAD, (oop) result.get_jobject());
+}
 
 // Ask Java code to find or construct a java.dyn.CallSite for the given
 // name and signature, as interpreted relative to the given class loader.
@@ -2465,6 +2507,10 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
                                                 int caller_bci,
                                                 TRAPS) {
   Handle empty;
+  guarantee(bootstrap_method.not_null() &&
+            java_dyn_MethodHandle::is_instance(bootstrap_method()),
+            "caller must supply a valid BSM");
+
   Handle caller_mname = MethodHandles::new_MemberName(CHECK_(empty));
   MethodHandles::init_MemberName(caller_mname(), caller_method());
 
@@ -2495,20 +2541,61 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
   return call_site_oop;
 }
 
-Handle SystemDictionary::find_bootstrap_method(KlassHandle caller, TRAPS) {
+Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int caller_bci,
+                                               int cache_index, TRAPS) {
   Handle empty;
-  if (!caller->oop_is_instance())  return empty;
 
-  instanceKlassHandle ik(THREAD, caller());
+  constantPoolHandle pool;
+  {
+    klassOop caller = caller_method->method_holder();
+    if (!Klass::cast(caller)->oop_is_instance())  return empty;
+    pool = constantPoolHandle(THREAD, instanceKlass::cast(caller)->constants());
+  }
 
-  oop boot_method_oop = ik->bootstrap_method();
-  if (boot_method_oop != NULL) {
-    if (TraceMethodHandles) {
-      tty->print_cr("bootstrap method for "PTR_FORMAT" cached as "PTR_FORMAT":", ik(), boot_method_oop);
+  int constant_pool_index = pool->cache()->entry_at(cache_index)->constant_pool_index();
+  constantTag tag = pool->tag_at(constant_pool_index);
+
+  if (tag.is_invoke_dynamic()) {
+    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type]
+    // The bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
+    int bsm_index = pool->invoke_dynamic_bootstrap_method_ref_index_at(constant_pool_index);
+    if (bsm_index != 0) {
+      int bsm_index_in_cache = pool->cache()->entry_at(cache_index)->bootstrap_method_index_in_cache();
+      DEBUG_ONLY(int bsm_index_2 = pool->cache()->entry_at(bsm_index_in_cache)->constant_pool_index());
+      assert(bsm_index == bsm_index_2, "BSM constant lifted to cache");
+      if (TraceMethodHandles) {
+        tty->print_cr("resolving bootstrap method for "PTR_FORMAT" at %d at cache[%d]CP[%d]...",
+                      (intptr_t) caller_method(), caller_bci, cache_index, constant_pool_index);
+      }
+      oop bsm_oop = pool->resolve_cached_constant_at(bsm_index_in_cache, CHECK_(empty));
+      if (TraceMethodHandles) {
+        tty->print_cr("bootstrap method for "PTR_FORMAT" at %d retrieved as "PTR_FORMAT":",
+                      (intptr_t) caller_method(), caller_bci, (intptr_t) bsm_oop);
+      }
+      assert(bsm_oop->is_oop()
+             && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
+      return Handle(THREAD, bsm_oop);
     }
-    assert(boot_method_oop->is_oop()
-           && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
-    return Handle(THREAD, boot_method_oop);
+    // else null BSM; fall through
+  } else if (tag.is_name_and_type()) {
+    // JSR 292 EDR does not have JVM_CONSTANT_InvokeDynamic
+    // a bare name&type defaults its BSM to null, so fall through...
+  } else {
+    ShouldNotReachHere();  // verifier does not allow this
+  }
+
+  // Fall through to pick up the per-class bootstrap method.
+  // This mechanism may go away in the PFD.
+  assert(AllowTransitionalJSR292, "else the verifier should have stopped us already");
+  oop bsm_oop = instanceKlass::cast(caller_method->method_holder())->bootstrap_method();
+  if (bsm_oop != NULL) {
+    if (TraceMethodHandles) {
+      tty->print_cr("bootstrap method for "PTR_FORMAT" registered as "PTR_FORMAT":",
+                    (intptr_t) caller_method(), (intptr_t) bsm_oop);
+    }
+    assert(bsm_oop->is_oop()
+           && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
+    return Handle(THREAD, bsm_oop);
   }
 
   return empty;

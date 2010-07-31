@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,6 +345,35 @@ inline intptr_t align_object_offset(intptr_t offset) {
   return align_size_up(offset, HeapWordsPerLong);
 }
 
+// The expected size in bytes of a cache line, used to pad data structures.
+#define DEFAULT_CACHE_LINE_SIZE 64
+
+// Bytes needed to pad type to avoid cache-line sharing; alignment should be the
+// expected cache line size (a power of two).  The first addend avoids sharing
+// when the start address is not a multiple of alignment; the second maintains
+// alignment of starting addresses that happen to be a multiple.
+#define PADDING_SIZE(type, alignment)                           \
+  ((alignment) + align_size_up_(sizeof(type), alignment))
+
+// Templates to create a subclass padded to avoid cache line sharing.  These are
+// effective only when applied to derived-most (leaf) classes.
+
+// When no args are passed to the base ctor.
+template <class T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class Padded: public T {
+private:
+  char _pad_buf_[PADDING_SIZE(T, alignment)];
+};
+
+// When either 0 or 1 args may be passed to the base ctor.
+template <class T, typename Arg1T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class Padded01: public T {
+public:
+  Padded01(): T() { }
+  Padded01(Arg1T arg1): T(arg1) { }
+private:
+  char _pad_buf_[PADDING_SIZE(T, alignment)];
+};
 
 //----------------------------------------------------------------------------------------------------
 // Utility macros for compilers

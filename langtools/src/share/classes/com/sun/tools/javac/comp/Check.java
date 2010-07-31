@@ -47,8 +47,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 
 /** Type checking helper class for the attribution phase.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -64,6 +64,7 @@ public class Check {
     private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
     private boolean warnOnSyntheticConflicts;
+    private boolean suppressAbortOnBadClassFile;
     private final TreeInfo treeinfo;
 
     // The set of lint options currently in effect. It is initialized
@@ -98,12 +99,14 @@ public class Check {
         complexInference = options.get("-complexinference") != null;
         skipAnnotations = options.get("skipAnnotations") != null;
         warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
+        suppressAbortOnBadClassFile = options.get("suppressAbortOnBadClassFile") != null;
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean verboseVarargs = lint.isEnabled(LintCategory.VARARGS);
         boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
@@ -111,6 +114,8 @@ public class Check {
                 enforceMandatoryWarnings, "deprecated");
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked");
+        unsafeVarargsHandler = new MandatoryWarningHandler(log, verboseVarargs,
+                enforceMandatoryWarnings, "varargs");
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
                 enforceMandatoryWarnings, "sunapi");
     }
@@ -148,7 +153,11 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
-    /** A handler for messages about using Sun proprietary API.
+    /** A handler for messages about unchecked or unsafe vararg method decl.
+     */
+    private MandatoryWarningHandler unsafeVarargsHandler;
+
+    /** A handler for messages about using proprietary API.
      */
     private MandatoryWarningHandler sunApiHandler;
 
@@ -180,7 +189,16 @@ public class Check {
             uncheckedHandler.report(pos, msg, args);
     }
 
-    /** Warn about using Sun proprietary API.
+    /** Warn about unsafe vararg method decl.
+     *  @param pos        Position to be used for error reporting.
+     *  @param sym        The deprecated symbol.
+     */
+    void warnUnsafeVararg(DiagnosticPosition pos, Type elemType) {
+        if (!lint.isSuppressed(LintCategory.VARARGS))
+            unsafeVarargsHandler.report(pos, "varargs.non.reifiable.type", elemType);
+    }
+
+    /** Warn about using proprietary API.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
      */
@@ -200,6 +218,7 @@ public class Check {
     public void reportDeferredDiagnostics() {
         deprecationHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
+        unsafeVarargsHandler.reportDeferredDiagnostic();
         sunApiHandler.reportDeferredDiagnostic();
     }
 
@@ -210,7 +229,8 @@ public class Check {
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
         log.error(pos, "cant.access", ex.sym, ex.getDetailValue());
-        if (ex instanceof ClassReader.BadClassFile) throw new Abort();
+        if (ex instanceof ClassReader.BadClassFile
+                && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
     }
 
@@ -543,7 +563,7 @@ public class Check {
             while (args.nonEmpty()) {
                 if (args.head.tag == WILDCARD)
                     return typeTagError(pos,
-                                        Log.getLocalizedString("type.req.exact"),
+                                        diags.fragment("type.req.exact"),
                                         args.head);
                 args = args.tail;
             }
@@ -677,17 +697,33 @@ public class Check {
         }
     }
 
+    void checkVarargMethodDecl(JCMethodDecl tree) {
+        MethodSymbol m = tree.sym;
+        //check the element type of the vararg
+        if (m.isVarArgs()) {
+            Type varargElemType = types.elemtype(tree.params.last().type);
+            if (!types.isReifiable(varargElemType)) {
+                warnUnsafeVararg(tree.params.head.pos(), varargElemType);
+            }
+        }
+    }
+
     /**
      * Check that vararg method call is sound
      * @param pos Position to be used for error reporting.
      * @param argtypes Actual arguments supplied to vararg method.
      */
-    void checkVararg(DiagnosticPosition pos, List<Type> argtypes) {
+    void checkVararg(DiagnosticPosition pos, List<Type> argtypes, Symbol msym, Env<AttrContext> env) {
+        Env<AttrContext> calleeLintEnv = env;
+        while (calleeLintEnv.info.lint == null)
+            calleeLintEnv = calleeLintEnv.next;
+        Lint calleeLint = calleeLintEnv.info.lint.augment(msym.attributes_field, msym.flags());
         Type argtype = argtypes.last();
-        if (!types.isReifiable(argtype))
+        if (!types.isReifiable(argtype) && !calleeLint.isSuppressed(Lint.LintCategory.VARARGS)) {
             warnUnchecked(pos,
                               "unchecked.generic.array.creation",
                               argtype);
+        }
     }
 
     /** Check that given modifiers are legal for given symbol and
@@ -886,6 +922,7 @@ public class Check {
     void checkRaw(JCTree tree, Env<AttrContext> env) {
         if (lint.isEnabled(Lint.LintCategory.RAW) &&
             tree.type.tag == CLASS &&
+            !TreeInfo.isDiamond(tree) &&
             !env.enclClass.name.isEmpty() &&  //anonymous or intersection
             tree.type.isRaw()) {
             log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
@@ -915,7 +952,7 @@ public class Check {
                 List<Type> actuals = tree.type.allparams();
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = tree.type.tsym.type.getTypeArguments();
-                ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
+                ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
 
                 // For matching pairs of actual argument types `a' and
                 // formal type parameters with declared bound `b' ...
@@ -946,12 +983,15 @@ public class Check {
                 }
 
                 args = tree.arguments;
-                List<TypeVar> tvars = tvars_buf.toList();
+                List<Type> tvars = tvars_buf.toList();
 
                 while (args.nonEmpty() && tvars.nonEmpty()) {
+                    Type actual = types.subst(args.head.type,
+                        tree.type.tsym.type.getTypeArguments(),
+                        tvars_buf.toList());
                     checkExtends(args.head.pos(),
-                                 args.head.type,
-                                 tvars.head);
+                                 actual,
+                                 (TypeVar)tvars.head);
                     args = args.tail;
                     tvars = tvars.tail;
                 }

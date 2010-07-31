@@ -12339,7 +12339,7 @@ public class GB18030
             int start = 0x40, end = 0xFE;
             if (((byte1 < 0) || (byte1 > index1.length))
                 || ((byte2 < start) || (byte2 > end)))
-                return (char)'\uFFFD';
+                return '\uFFFD';
 
             int n = (index1[byte1] & 0xf) * (end - start + 1) + (byte2 - start);
             return index2[index1[byte1] >> 4].charAt(n);
@@ -12628,7 +12628,7 @@ public class GB18030
                     if (Character.isSurrogate(c)) {
                         if ((condensedKey=sgp.parse(c, sa, sp, sl)) < 0)
                             return sgp.error();
-                        // Surogate.toUCS4 looks like
+                        // Character.toCodePoint looks like
                         // (((high & 0x3ff) << 10) | (low & 0x3ff)) + 0x10000;
                         // so we add (0x2e248 - 0x10000) to get the "key".
                         condensedKey += 0x1E248;

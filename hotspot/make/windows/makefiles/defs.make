@@ -32,6 +32,17 @@ SLASH_JAVA ?= J:
 PATH_SEP = ;
 
 # Need PLATFORM (os-arch combo names) for jdk and hotspot, plus libarch name
+ifeq ($(ARCH_DATA_MODEL),32)
+  ARCH_DATA_MODEL=32
+  PLATFORM=windows-i586
+  VM_PLATFORM=windows_i486
+  HS_ARCH=x86
+  MAKE_ARGS += ARCH=x86
+  MAKE_ARGS += BUILDARCH=i486
+  MAKE_ARGS += Platform_arch=x86
+  MAKE_ARGS += Platform_arch_model=x86_32
+endif
+
 ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) x86),)
   ARCH_DATA_MODEL=32
   PLATFORM=windows-i586
@@ -43,43 +54,57 @@ ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) x86),)
   MAKE_ARGS += Platform_arch_model=x86_32
 endif
 
-ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) ia64),)
-  ARCH_DATA_MODEL=64
-  PLATFORM=windows-ia64
-  VM_PLATFORM=windows_ia64
-  HS_ARCH=ia64
-  MAKE_ARGS += LP64=1
-  MAKE_ARGS += ARCH=ia64
-  MAKE_ARGS += BUILDARCH=ia64
-  MAKE_ARGS += Platform_arch=ia64
-  MAKE_ARGS += Platform_arch_model=ia64
-endif
+ifneq ($(ARCH_DATA_MODEL),32)
+  ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) ia64),)
+    ARCH_DATA_MODEL=64
+    PLATFORM=windows-ia64
+    VM_PLATFORM=windows_ia64
+    HS_ARCH=ia64
+    MAKE_ARGS += LP64=1
+    MAKE_ARGS += ARCH=ia64
+    MAKE_ARGS += BUILDARCH=ia64
+    MAKE_ARGS += Platform_arch=ia64
+    MAKE_ARGS += Platform_arch_model=ia64
+  endif
 
 # http://support.microsoft.com/kb/888731 : this can be either
 # AMD64 for AMD, or EM64T for Intel chips.
-ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) AMD64),)
-  ARCH_DATA_MODEL=64
-  PLATFORM=windows-amd64
-  VM_PLATFORM=windows_amd64
-  HS_ARCH=x86
-  MAKE_ARGS += LP64=1
-  MAKE_ARGS += ARCH=x86
-  MAKE_ARGS += BUILDARCH=amd64
-  MAKE_ARGS += Platform_arch=x86
-  MAKE_ARGS += Platform_arch_model=x86_64
-endif
+  ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) AMD64),)
+    ARCH_DATA_MODEL=64
+    PLATFORM=windows-amd64
+    VM_PLATFORM=windows_amd64
+    HS_ARCH=x86
+    MAKE_ARGS += LP64=1
+    MAKE_ARGS += ARCH=x86
+    MAKE_ARGS += BUILDARCH=amd64
+    MAKE_ARGS += Platform_arch=x86
+    MAKE_ARGS += Platform_arch_model=x86_64
+  endif
+
+ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) EM64T),)
+    ARCH_DATA_MODEL=64
+    PLATFORM=windows-amd64
+    VM_PLATFORM=windows_amd64
+    HS_ARCH=x86
+    MAKE_ARGS += LP64=1
+    MAKE_ARGS += ARCH=x86
+    MAKE_ARGS += BUILDARCH=amd64
+    MAKE_ARGS += Platform_arch=x86
+    MAKE_ARGS += Platform_arch_model=x86_64
+  endif
 
 # NB later OS versions than 2003 may report "Intel64"
-ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) "EM64T\|Intel64"),)
-  ARCH_DATA_MODEL=64
-  PLATFORM=windows-amd64
-  VM_PLATFORM=windows_amd64
-  HS_ARCH=x86
-  MAKE_ARGS += LP64=1
-  MAKE_ARGS += ARCH=x86
-  MAKE_ARGS += BUILDARCH=amd64
-  MAKE_ARGS += Platform_arch=x86
-  MAKE_ARGS += Platform_arch_model=x86_64
+  ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) Intel64),)
+    ARCH_DATA_MODEL=64
+    PLATFORM=windows-amd64
+    VM_PLATFORM=windows_amd64
+    HS_ARCH=x86
+    MAKE_ARGS += LP64=1
+    MAKE_ARGS += ARCH=x86
+    MAKE_ARGS += BUILDARCH=amd64
+    MAKE_ARGS += Platform_arch=x86
+    MAKE_ARGS += Platform_arch_model=x86_64
+  endif
 endif
 
 JDK_INCLUDE_SUBDIR=win32

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,48 @@ uint ParallelTaskTerminator::_total_yields = 0;
 uint ParallelTaskTerminator::_total_spins = 0;
 uint ParallelTaskTerminator::_total_peeks = 0;
 #endif
+
+#if TASKQUEUE_STATS
+const char * const TaskQueueStats::_names[last_stat_id] = {
+  "qpush", "qpop", "qpop-s", "qattempt", "qsteal", "opush", "omax"
+};
+
+void TaskQueueStats::print_header(unsigned int line, outputStream* const stream,
+                                  unsigned int width)
+{
+  // Use a width w: 1 <= w <= max_width
+  const unsigned int max_width = 40;
+  const unsigned int w = MAX2(MIN2(width, max_width), 1U);
+
+  if (line == 0) { // spaces equal in width to the header
+    const unsigned int hdr_width = w * last_stat_id + last_stat_id - 1;
+    stream->print("%*s", hdr_width, " ");
+  } else if (line == 1) { // labels
+    stream->print("%*s", w, _names[0]);
+    for (unsigned int i = 1; i < last_stat_id; ++i) {
+      stream->print(" %*s", w, _names[i]);
+    }
+  } else if (line == 2) { // dashed lines
+    char dashes[max_width + 1];
+    memset(dashes, '-', w);
+    dashes[w] = '\0';
+    stream->print("%s", dashes);
+    for (unsigned int i = 1; i < last_stat_id; ++i) {
+      stream->print(" %s", dashes);
+    }
+  }
+}
+
+void TaskQueueStats::print(outputStream* stream, unsigned int width) const
+{
+  #define FMT SIZE_FORMAT_W(*)
+  stream->print(FMT, width, _stats[0]);
+  for (unsigned int i = 1; i < last_stat_id; ++i) {
+    stream->print(" " FMT, width, _stats[i]);
+  }
+  #undef FMT
+}
+#endif // TASKQUEUE_STATS
 
 int TaskQueueSetSuper::randomParkAndMiller(int *seed0) {
   const int a =      16807;
@@ -182,73 +224,3 @@ bool ObjArrayTask::is_valid() const {
     _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT
-
-bool RegionTaskQueueWithOverflow::is_empty() {
-  return (_region_queue.size() == 0) &&
-         (_overflow_stack->length() == 0);
-}
-
-bool RegionTaskQueueWithOverflow::stealable_is_empty() {
-  return _region_queue.size() == 0;
-}
-
-bool RegionTaskQueueWithOverflow::overflow_is_empty() {
-  return _overflow_stack->length() == 0;
-}
-
-void RegionTaskQueueWithOverflow::initialize() {
-  _region_queue.initialize();
-  assert(_overflow_stack == 0, "Creating memory leak");
-  _overflow_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<RegionTask>(10, true);
-}
-
-void RegionTaskQueueWithOverflow::save(RegionTask t) {
-  if (TraceRegionTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: save " PTR_FORMAT, t);
-  }
-  if(!_region_queue.push(t)) {
-    _overflow_stack->push(t);
-  }
-}
-
-// Note that using this method will retrieve all regions
-// that have been saved but that it will always check
-// the overflow stack.  It may be more efficient to
-// check the stealable queue and the overflow stack
-// separately.
-bool RegionTaskQueueWithOverflow::retrieve(RegionTask& region_task) {
-  bool result = retrieve_from_overflow(region_task);
-  if (!result) {
-    result = retrieve_from_stealable_queue(region_task);
-  }
-  if (TraceRegionTasksQueuing && Verbose && result) {
-    gclog_or_tty->print_cr("  CTQ: retrieve " PTR_FORMAT, result);
-  }
-  return result;
-}
-
-bool RegionTaskQueueWithOverflow::retrieve_from_stealable_queue(
-                                   RegionTask& region_task) {
-  bool result = _region_queue.pop_local(region_task);
-  if (TraceRegionTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
-  }
-  return result;
-}
-
-bool
-RegionTaskQueueWithOverflow::retrieve_from_overflow(RegionTask& region_task) {
-  bool result;
-  if (!_overflow_stack->is_empty()) {
-    region_task = _overflow_stack->pop();
-    result = true;
-  } else {
-    region_task = (RegionTask) NULL;
-    result = false;
-  }
-  if (TraceRegionTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
-  }
-  return result;
-}
