@@ -42,45 +42,46 @@ public class EmptyBuffer {
     }
 
     static void test() throws Exception {
-        Sprintable server = new Server();
+        Server server = new Server();
         Thread serverThread = new Thread(server);
         serverThread.start();
-        while (!server.ready())
-            Thread.sleep(50);
         DatagramChannel dc = DatagramChannel.open();
-        ByteBuffer bb = ByteBuffer.allocateDirect(12);
-        bb.order(ByteOrder.BIG_ENDIAN);
-        bb.putInt(1).putLong(1);
-        bb.flip();
-        InetAddress address = InetAddress.getLocalHost();
-        InetSocketAddress isa = new InetSocketAddress(address, 8888);
-        dc.connect(isa);
-        dc.write(bb);
-        bb.rewind();
-        dc.write(bb);
-        bb.rewind();
-        dc.write(bb);
-        Thread.sleep(2000);
-        serverThread.interrupt();
-        server.throwException();
+        try {
+            ByteBuffer bb = ByteBuffer.allocateDirect(12);
+            bb.order(ByteOrder.BIG_ENDIAN);
+            bb.putInt(1).putLong(1);
+            bb.flip();
+            InetAddress address = InetAddress.getLocalHost();
+            InetSocketAddress isa = new InetSocketAddress(address, server.port());
+            dc.connect(isa);
+            dc.write(bb);
+            bb.rewind();
+            dc.write(bb);
+            bb.rewind();
+            dc.write(bb);
+            Thread.sleep(2000);
+            serverThread.interrupt();
+            server.throwException();
+        } finally {
+            dc.close();
+        }
     }
 
-    public interface Sprintable extends Runnable {
-        public void throwException() throws Exception;
-        public boolean ready();
-    }
-
-    public static class Server implements Sprintable {
+    public static class Server implements Runnable {
+        final DatagramChannel dc;
         Exception e = null;
-        private volatile boolean ready = false;
 
-        public void throwException() throws Exception {
-            if (e != null)
-                throw e;
+        Server() throws IOException {
+            this.dc = DatagramChannel.open().bind(new InetSocketAddress(0));
         }
 
-        public boolean ready() {
-            return ready;
+        int port() {
+            return dc.socket().getLocalPort();
+        }
+
+        void throwException() throws Exception {
+            if (e != null)
+                throw e;
         }
 
         void showBuffer(String s, ByteBuffer bb) {
@@ -97,9 +98,6 @@ public class EmptyBuffer {
             SocketAddress sa = null;
             int numberReceived = 0;
             try {
-                DatagramChannel dc = DatagramChannel.open();
-                dc.socket().bind(new InetSocketAddress(8888));
-                ready = true;
                 ByteBuffer bb = ByteBuffer.allocateDirect(12);
                 bb.clear();
                 // Only one clear. The buffer will be full after
@@ -124,6 +122,8 @@ public class EmptyBuffer {
                 }
             } catch (Exception ex) {
                 e = ex;
+            } finally {
+                try { dc.close(); } catch (IOException ignore) { }
             }
         }
     }

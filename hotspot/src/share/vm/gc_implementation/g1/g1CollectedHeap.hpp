@@ -277,6 +277,18 @@ private:
   void update_surviving_young_words(size_t* surv_young_words);
   void cleanup_surviving_young_words();
 
+  // It decides whether an explicit GC should start a concurrent cycle
+  // instead of doing a STW GC. Currently, a concurrent cycle is
+  // explicitly started if:
+  // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
+  // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
+  bool should_do_concurrent_full_gc(GCCause::Cause cause);
+
+  // Keeps track of how many "full collections" (i.e., Full GCs or
+  // concurrent cycles) we have completed. The number of them we have
+  // started is maintained in _total_full_collections in CollectedHeap.
+  volatile unsigned int _full_collections_completed;
+
 protected:
 
   // Returns "true" iff none of the gc alloc regions have any allocations
@@ -356,13 +368,14 @@ protected:
   // GC pause.
   void  retire_alloc_region(HeapRegion* alloc_region, bool par);
 
-  // Helper function for two callbacks below.
-  // "full", if true, indicates that the GC is for a System.gc() request,
-  // and should collect the entire heap.  If "clear_all_soft_refs" is true,
-  // all soft references are cleared during the GC.  If "full" is false,
-  // "word_size" describes the allocation that the GC should
-  // attempt (at least) to satisfy.
-  void do_collection(bool full, bool clear_all_soft_refs,
+  // - if explicit_gc is true, the GC is for a System.gc() or a heap
+  // inspection request and should collect the entire heap
+  // - if clear_all_soft_refs is true, all soft references are cleared
+  // during the GC
+  // - if explicit_gc is false, word_size describes the allocation that
+  // the GC should attempt (at least) to satisfy
+  void do_collection(bool explicit_gc,
+                     bool clear_all_soft_refs,
                      size_t word_size);
 
   // Callback from VM_G1CollectFull operation.
@@ -431,6 +444,26 @@ public:
         _in_cset_fast_test_length * sizeof(bool));
   }
 
+  // This is called at the end of either a concurrent cycle or a Full
+  // GC to update the number of full collections completed. Those two
+  // can happen in a nested fashion, i.e., we start a concurrent
+  // cycle, a Full GC happens half-way through it which ends first,
+  // and then the cycle notices that a Full GC happened and ends
+  // too. The outer parameter is a boolean to help us do a bit tighter
+  // consistency checking in the method. If outer is false, the caller
+  // is the inner caller in the nesting (i.e., the Full GC). If outer
+  // is true, the caller is the outer caller in this nesting (i.e.,
+  // the concurrent cycle). Further nesting is not currently
+  // supported. The end of the this call also notifies the
+  // FullGCCount_lock in case a Java thread is waiting for a full GC
+  // to happen (e.g., it called System.gc() with
+  // +ExplicitGCInvokesConcurrent).
+  void increment_full_collections_completed(bool outer);
+
+  unsigned int full_collections_completed() {
+    return _full_collections_completed;
+  }
+
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -444,7 +477,7 @@ protected:
 
   // The guts of the incremental collection pause, executed by the vm
   // thread.
-  virtual void do_collection_pause_at_safepoint();
+  virtual void do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
   virtual void evacuate_collection_set();
@@ -1549,7 +1582,7 @@ protected:
   int _hash_seed;
   int _queue_num;
 
-  int _term_attempts;
+  size_t _term_attempts;
 #if G1_DETAILED_STATS
   int _pushes, _pops, _steals, _steal_attempts;
   int _overflow_pushes;
@@ -1727,8 +1760,8 @@ public:
   int* hash_seed() { return &_hash_seed; }
   int  queue_num() { return _queue_num; }
 
-  int term_attempts()   { return _term_attempts; }
-  void note_term_attempt()  { _term_attempts++; }
+  size_t term_attempts()   { return _term_attempts; }
+  void note_term_attempt() { _term_attempts++; }
 
 #if G1_DETAILED_STATS
   int pushes()          { return _pushes; }

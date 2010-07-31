@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,23 +342,20 @@ public class KrbAsReq extends KrbKdcReq {
         }
 
         princName = cname;
-
-        EncryptionKey key = null;
-        int[] tktETypes = null;
-        if (pa_exists && pa_etype != EncryptedData.ETYPE_NULL) {
-            if (DEBUG) {
-                System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
-            }
-            key = EncryptionKey.findKey(pa_etype, keys);
-            tktETypes = new int[1];
-            tktETypes[0] = pa_etype;
-        } else {
-            tktETypes = EType.getDefaults("default_tkt_enctypes", keys);
-            key = EncryptionKey.findKey(tktETypes[0], keys);
-        }
-
+        int[] tktETypes = EType.getDefaults("default_tkt_enctypes", keys);
         PAData[] paData = null;
         if (PA_ENC_TIMESTAMP_REQUIRED) {
+            EncryptionKey key = null;
+            if (pa_etype != EncryptedData.ETYPE_NULL) {
+                if (DEBUG) {
+                    System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
+                }
+                key = EncryptionKey.findKey(pa_etype, keys);
+            } else {
+                if (tktETypes.length > 0) {
+                    key = EncryptionKey.findKey(tktETypes[0], keys);
+                }
+            }
             if (DEBUG) {
                 System.out.println("AS-REQ: Add PA_ENC_TIMESTAMP now");
             }

@@ -33,9 +33,15 @@ import java.io.IOException;
 
 public class HelperSlowToDie {
     private static final int CHANNELS_PER_THREAD = 1023;
+    private static final int TEST_ITERATIONS = 200;
     private static volatile boolean done;
 
     public static void main(String[] args) throws IOException {
+        if (!System.getProperty("os.name").startsWith("Windows")) {
+            System.out.println("Test skipped as it verifies a Windows specific bug");
+            return;
+        }
+
         Selector sel = Selector.open();
 
         // register channels
@@ -60,7 +66,7 @@ public class HelperSlowToDie {
             new Thread(busy).start();
 
         // Loop changing the number of channels from 1023 to 1024 and back.
-        for (int i=0; i<1000; i++) {
+        for (int i=0; i<TEST_ITERATIONS; i++) {
             SocketChannel sc = SocketChannel.open();
             sc.configureBlocking(false);
             sc.register(sel, SelectionKey.OP_CONNECT);
@@ -71,5 +77,11 @@ public class HelperSlowToDie {
 
         // terminate busy threads
         done = true;
+
+        // clean-up
+        for (int i=0; i<CHANNELS_PER_THREAD; i++) {
+            channels[i].close();
+        }
+        sel.close();
     }
 }

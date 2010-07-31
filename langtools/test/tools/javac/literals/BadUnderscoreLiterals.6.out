@@ -1,4 +1,4 @@
-BadUnderscoreLiterals.java:14:17: compiler.err.unsupported.underscore: 1.6
+BadUnderscoreLiterals.java:14:17: compiler.err.unsupported.underscore.lit: 1.6
 BadUnderscoreLiterals.java:18:15: compiler.err.illegal.underscore
 BadUnderscoreLiterals.java:22:19: compiler.err.illegal.underscore
 BadUnderscoreLiterals.java:25:14: compiler.err.unsupported.binary.lit: 1.6

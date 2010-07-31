@@ -2474,7 +2474,7 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
     for (size_t cur = end_region - 1; cur >= beg_region; --cur) {
       if (sd.region(cur)->claim_unsafe()) {
         ParCompactionManager* cm = ParCompactionManager::manager_array(which);
-        cm->save_for_processing(cur);
+        cm->push_region(cur);
 
         if (TraceParallelOldGCCompactionPhase && Verbose) {
           const size_t count_mod_8 = fillable_regions & 7;
@@ -3138,7 +3138,7 @@ void PSParallelCompact::decrement_destination_counts(ParCompactionManager* cm,
     assert(cur->data_size() > 0, "region must have live data");
     cur->decrement_destination_count();
     if (cur < enqueue_end && cur->available() && cur->claim()) {
-      cm->save_for_processing(sd.region(cur));
+      cm->push_region(sd.region(cur));
     }
   }
 }

@@ -1598,7 +1598,10 @@ void ClassVerifier::verify_ldc(
   if (opcode == Bytecodes::_ldc || opcode == Bytecodes::_ldc_w) {
     if (!tag.is_unresolved_string() && !tag.is_unresolved_klass()) {
       types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float)
-            | (1 << JVM_CONSTANT_String)  | (1 << JVM_CONSTANT_Class);
+            | (1 << JVM_CONSTANT_String)  | (1 << JVM_CONSTANT_Class)
+            | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType);
+      // Note:  The class file parser already verified the legality of
+      // MethodHandle and MethodType constants.
       verify_cp_type(index, cp, types, CHECK_VERIFY(this));
     }
   } else {
@@ -1632,6 +1635,14 @@ void ClassVerifier::verify_ldc(
     current_frame->push_stack_2(
       VerificationType::long_type(),
       VerificationType::long2_type(), CHECK_VERIFY(this));
+  } else if (tag.is_method_handle()) {
+    current_frame->push_stack(
+      VerificationType::reference_type(
+        vmSymbols::java_dyn_MethodHandle()), CHECK_VERIFY(this));
+  } else if (tag.is_method_type()) {
+    current_frame->push_stack(
+      VerificationType::reference_type(
+        vmSymbols::java_dyn_MethodType()), CHECK_VERIFY(this));
   } else {
     verify_error(bci, "Invalid index in ldc");
     return;
@@ -1902,7 +1913,8 @@ void ClassVerifier::verify_invoke_instructions(
   unsigned int types = (opcode == Bytecodes::_invokeinterface
                                 ? 1 << JVM_CONSTANT_InterfaceMethodref
                       : opcode == Bytecodes::_invokedynamic
-                                ? 1 << JVM_CONSTANT_NameAndType
+                                ? (1 << JVM_CONSTANT_NameAndType
+                                  |1 << JVM_CONSTANT_InvokeDynamic)
                                 : 1 << JVM_CONSTANT_Methodref);
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));
 
@@ -1920,9 +1932,12 @@ void ClassVerifier::verify_invoke_instructions(
   // Get referenced class type
   VerificationType ref_class_type;
   if (opcode == Bytecodes::_invokedynamic) {
-    if (!EnableInvokeDynamic) {
+    if (!EnableInvokeDynamic ||
+        _klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
       class_format_error(
-        "invokedynamic instructions not enabled on this JVM",
+        (!EnableInvokeDynamic ?
+         "invokedynamic instructions not enabled in this JVM" :
+         "invokedynamic instructions not supported by this class file version"),
         _klass->external_name());
       return;
     }

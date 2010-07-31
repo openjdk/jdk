@@ -146,6 +146,21 @@ class constantPoolOopDesc : public oopDesc {
     oop_store_without_check(obj_at_addr(which), oop(s));
   }
 
+  void method_handle_index_at_put(int which, int ref_kind, int ref_index) {
+    tag_at_put(which, JVM_CONSTANT_MethodHandle);
+    *int_at_addr(which) = ((jint) ref_index<<16) | ref_kind;
+  }
+
+  void method_type_index_at_put(int which, int ref_index) {
+    tag_at_put(which, JVM_CONSTANT_MethodType);
+    *int_at_addr(which) = ref_index;
+  }
+
+  void invoke_dynamic_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
+    tag_at_put(which, JVM_CONSTANT_InvokeDynamic);
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_method_index;
+  }
+
   // Temporary until actual use
   void unresolved_string_at_put(int which, symbolOop s) {
     *obj_at_addr(which) = NULL;
@@ -357,6 +372,46 @@ class constantPoolOopDesc : public oopDesc {
     return *int_at_addr(which);
   }
 
+  int method_handle_ref_kind_at(int which) {
+    assert(tag_at(which).is_method_handle(), "Corrupted constant pool");
+    return extract_low_short_from_int(*int_at_addr(which));  // mask out unwanted ref_index bits
+  }
+  int method_handle_index_at(int which) {
+    assert(tag_at(which).is_method_handle(), "Corrupted constant pool");
+    return extract_high_short_from_int(*int_at_addr(which));  // shift out unwanted ref_kind bits
+  }
+  int method_type_index_at(int which) {
+    assert(tag_at(which).is_method_type(), "Corrupted constant pool");
+    return *int_at_addr(which);
+  }
+  // Derived queries:
+  symbolOop method_handle_name_ref_at(int which) {
+    int member = method_handle_index_at(which);
+    return impl_name_ref_at(member, true);
+  }
+  symbolOop method_handle_signature_ref_at(int which) {
+    int member = method_handle_index_at(which);
+    return impl_signature_ref_at(member, true);
+  }
+  int method_handle_klass_index_at(int which) {
+    int member = method_handle_index_at(which);
+    return impl_klass_ref_index_at(member, true);
+  }
+  symbolOop method_type_signature_at(int which) {
+    int sym = method_type_index_at(which);
+    return symbol_at(sym);
+  }
+  int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    jint ref_index = *int_at_addr(which);
+    return extract_low_short_from_int(ref_index);
+  }
+  int invoke_dynamic_name_and_type_ref_index_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    jint ref_index = *int_at_addr(which);
+    return extract_high_short_from_int(ref_index);
+  }
+
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
   // name_and_type_ref_index_at) all expect to be passed indices obtained
   // directly from the bytecode, and extracted according to java byte order.
@@ -386,6 +441,17 @@ class constantPoolOopDesc : public oopDesc {
   void resolve_string_constants(TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     resolve_string_constants_impl(h_this, CHECK);
+  }
+
+  // Resolve late bound constants.
+  oop resolve_constant_at(int index, TRAPS) {
+    constantPoolHandle h_this(THREAD, this);
+    return resolve_constant_at_impl(h_this, index, -1, THREAD);
+  }
+
+  oop resolve_cached_constant_at(int cache_index, TRAPS) {
+    constantPoolHandle h_this(THREAD, this);
+    return resolve_constant_at_impl(h_this, -1, cache_index, THREAD);
   }
 
   // Klass name matches name at offset
@@ -420,6 +486,7 @@ class constantPoolOopDesc : public oopDesc {
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than possibly-byte-swapped
   // constant pool cache indices as do the peer methods above.
+  symbolOop uncached_klass_ref_at_noresolve(int which);
   symbolOop uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
   symbolOop uncached_signature_ref_at(int which)            { return impl_signature_ref_at(which, true); }
   int       uncached_klass_ref_index_at(int which)          { return impl_klass_ref_index_at(which, true); }
@@ -436,6 +503,8 @@ class constantPoolOopDesc : public oopDesc {
 
 #ifdef ASSERT
   enum { CPCACHE_INDEX_TAG = 0x10000 };  // helps keep CP cache indices distinct from CP indices
+#else
+  enum { CPCACHE_INDEX_TAG = 0 };        // in product mode, this zero value is a no-op
 #endif //ASSERT
 
  private:
@@ -468,6 +537,8 @@ class constantPoolOopDesc : public oopDesc {
 
   // Resolve string constants (to prevent allocation during compilation)
   static void resolve_string_constants_impl(constantPoolHandle this_oop, TRAPS);
+
+  static oop resolve_constant_at_impl(constantPoolHandle this_oop, int index, int cache_index, TRAPS);
 
  public:
   // Merging constantPoolOop support:

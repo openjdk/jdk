@@ -367,4 +367,6 @@ vm_operations_g1.hpp			vmGCOperations.hpp
 
 vm_operations_g1.cpp			vm_operations_g1.hpp
 vm_operations_g1.cpp                    g1CollectedHeap.inline.hpp
+vm_operations_g1.cpp                    g1CollectorPolicy.hpp
+vm_operations_g1.cpp                    interfaceSupport.hpp
 vm_operations_g1.cpp                    isGCActiveMark.hpp

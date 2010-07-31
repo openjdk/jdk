@@ -117,6 +117,45 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           cp->string_index_at_put(index, string_index);
         }
         break;
+      case JVM_CONSTANT_MethodHandle :
+      case JVM_CONSTANT_MethodType :
+        if (!EnableMethodHandles ||
+            _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+          classfile_parse_error(
+            (!EnableMethodHandles ?
+             "This JVM does not support constant tag %u in class file %s" :
+             "Class file version does not support constant tag %u in class file %s"),
+            tag, CHECK);
+        }
+        if (tag == JVM_CONSTANT_MethodHandle) {
+          cfs->guarantee_more(4, CHECK);  // ref_kind, method_index, tag/access_flags
+          u1 ref_kind = cfs->get_u1_fast();
+          u2 method_index = cfs->get_u2_fast();
+          cp->method_handle_index_at_put(index, ref_kind, method_index);
+        } else if (tag == JVM_CONSTANT_MethodType) {
+          cfs->guarantee_more(3, CHECK);  // signature_index, tag/access_flags
+          u2 signature_index = cfs->get_u2_fast();
+          cp->method_type_index_at_put(index, signature_index);
+        } else {
+          ShouldNotReachHere();
+        }
+        break;
+      case JVM_CONSTANT_InvokeDynamic :
+        {
+          if (!EnableInvokeDynamic ||
+              _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+            classfile_parse_error(
+              (!EnableInvokeDynamic ?
+               "This JVM does not support constant tag %u in class file %s" :
+               "Class file version does not support constant tag %u in class file %s"),
+              tag, CHECK);
+          }
+          cfs->guarantee_more(5, CHECK);  // bsm_index, name_and_type_index, tag/access_flags
+          u2 bootstrap_method_index = cfs->get_u2_fast();
+          u2 name_and_type_index = cfs->get_u2_fast();
+          cp->invoke_dynamic_at_put(index, bootstrap_method_index, name_and_type_index);
+        }
+        break;
       case JVM_CONSTANT_Integer :
         {
           cfs->guarantee_more(5, CHECK);  // bytes, tag/access_flags
@@ -337,6 +376,78 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
           cp->unresolved_string_at_put(index, sym);
         }
         break;
+      case JVM_CONSTANT_MethodHandle :
+        {
+          int ref_index = cp->method_handle_index_at(index);
+          check_property(
+            valid_cp_range(ref_index, length) &&
+                EnableMethodHandles,
+              "Invalid constant pool index %u in class file %s",
+              ref_index, CHECK_(nullHandle));
+          constantTag tag = cp->tag_at(ref_index);
+          int ref_kind  = cp->method_handle_ref_kind_at(index);
+          switch (ref_kind) {
+          case JVM_REF_getField:
+          case JVM_REF_getStatic:
+          case JVM_REF_putField:
+          case JVM_REF_putStatic:
+            check_property(
+              tag.is_field(),
+              "Invalid constant pool index %u in class file %s (not a field)",
+              ref_index, CHECK_(nullHandle));
+            break;
+          case JVM_REF_invokeVirtual:
+          case JVM_REF_invokeStatic:
+          case JVM_REF_invokeSpecial:
+          case JVM_REF_newInvokeSpecial:
+            check_property(
+              tag.is_method(),
+              "Invalid constant pool index %u in class file %s (not a method)",
+              ref_index, CHECK_(nullHandle));
+            break;
+          case JVM_REF_invokeInterface:
+            check_property(
+              tag.is_interface_method(),
+              "Invalid constant pool index %u in class file %s (not an interface method)",
+              ref_index, CHECK_(nullHandle));
+            break;
+          default:
+            classfile_parse_error(
+              "Bad method handle kind at constant pool index %u in class file %s",
+              index, CHECK_(nullHandle));
+          }
+          // Keep the ref_index unchanged.  It will be indirected at link-time.
+        }
+        break;
+      case JVM_CONSTANT_MethodType :
+        {
+          int ref_index = cp->method_type_index_at(index);
+          check_property(
+            valid_cp_range(ref_index, length) &&
+                cp->tag_at(ref_index).is_utf8() &&
+                EnableMethodHandles,
+              "Invalid constant pool index %u in class file %s",
+              ref_index, CHECK_(nullHandle));
+        }
+        break;
+      case JVM_CONSTANT_InvokeDynamic :
+        {
+          int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
+          int name_and_type_ref_index = cp->invoke_dynamic_name_and_type_ref_index_at(index);
+          check_property((bootstrap_method_ref_index == 0 && AllowTransitionalJSR292)
+                         ||
+                         (valid_cp_range(bootstrap_method_ref_index, length) &&
+                          cp->tag_at(bootstrap_method_ref_index).is_method_handle()),
+                         "Invalid constant pool index %u in class file %s",
+                         bootstrap_method_ref_index,
+                         CHECK_(nullHandle));
+          check_property(valid_cp_range(name_and_type_ref_index, length) &&
+                         cp->tag_at(name_and_type_ref_index).is_name_and_type(),
+                         "Invalid constant pool index %u in class file %s",
+                         name_and_type_ref_index,
+                         CHECK_(nullHandle));
+          break;
+        }
       default:
         fatal(err_msg("bad constant pool tag value %u",
                       cp->tag_at(index).value()));
@@ -452,6 +563,43 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         }
         break;
       }
+      case JVM_CONSTANT_MethodHandle: {
+        int ref_index = cp->method_handle_index_at(index);
+        int ref_kind  = cp->method_handle_ref_kind_at(index);
+        switch (ref_kind) {
+        case JVM_REF_invokeVirtual:
+        case JVM_REF_invokeStatic:
+        case JVM_REF_invokeSpecial:
+        case JVM_REF_newInvokeSpecial:
+          {
+            int name_and_type_ref_index = cp->name_and_type_ref_index_at(ref_index);
+            int name_ref_index = cp->name_ref_index_at(name_and_type_ref_index);
+            symbolHandle name(THREAD, cp->symbol_at(name_ref_index));
+            if (ref_kind == JVM_REF_newInvokeSpecial) {
+              if (name() != vmSymbols::object_initializer_name()) {
+                classfile_parse_error(
+                  "Bad constructor name at constant pool index %u in class file %s",
+                  name_ref_index, CHECK_(nullHandle));
+              }
+            } else {
+              if (name() == vmSymbols::object_initializer_name()) {
+                classfile_parse_error(
+                  "Bad method name at constant pool index %u in class file %s",
+                  name_ref_index, CHECK_(nullHandle));
+              }
+            }
+          }
+          break;
+          // Other ref_kinds are already fully checked in previous pass.
+        }
+        break;
+      }
+      case JVM_CONSTANT_MethodType: {
+        symbolHandle no_name = vmSymbolHandles::type_name(); // place holder
+        symbolHandle signature(THREAD, cp->method_type_signature_at(index));
+        verify_legal_method_signature(no_name, signature, CHECK_(nullHandle));
+        break;
+      }
     }  // end of switch
   }  // end of for
 
@@ -467,7 +615,7 @@ void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Hand
   case JVM_CONSTANT_UnresolvedClass :
     // Patching a class means pre-resolving it.
     // The name in the constant pool is ignored.
-    if (patch->klass() == SystemDictionary::Class_klass()) { // %%% java_lang_Class::is_instance
+    if (java_lang_Class::is_instance(patch())) {
       guarantee_property(!java_lang_Class::is_primitive(patch()),
                          "Illegal class patch at %d in class file %s",
                          index, CHECK);

@@ -117,7 +117,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * size check or synchronization.
      */
     void expandCapacity(int minimumCapacity) {
-        int newCapacity = value.length * 2;
+        int newCapacity = value.length * 2 + 2;
         if (newCapacity - minimumCapacity < 0)
             newCapacity = minimumCapacity;
         if (newCapacity < 0) {
@@ -721,19 +721,18 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * {@code codePoint} isn't a valid Unicode code point
      */
     public AbstractStringBuilder appendCodePoint(int codePoint) {
-        if (!Character.isValidCodePoint(codePoint)) {
-            throw new IllegalArgumentException();
-        }
-        int n = 1;
-        if (codePoint >= Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-            n++;
-        }
-        ensureCapacityInternal(count + n);
-        if (n == 1) {
-            value[count++] = (char) codePoint;
-        } else {
+        final int count = this.count;
+
+        if (Character.isBmpCodePoint(codePoint)) {
+            ensureCapacityInternal(count + 1);
+            value[count] = (char) codePoint;
+            this.count = count + 1;
+        } else if (Character.isValidCodePoint(codePoint)) {
+            ensureCapacityInternal(count + 2);
             Character.toSurrogates(codePoint, value, count);
-            count += n;
+            this.count = count + 2;
+        } else {
+            throw new IllegalArgumentException();
         }
         return this;
     }

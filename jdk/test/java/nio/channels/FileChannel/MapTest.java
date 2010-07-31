@@ -23,6 +23,7 @@
 
 /* @test
  * @summary Test file mapping with FileChannel
+ * @run main/othervm MapTest
  */
 
 import java.io.*;

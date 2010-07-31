@@ -44,6 +44,8 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.DefaultCaret;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
+
 import sun.swing.PrintColorUIResource;
 import sun.swing.ImageIconUIResource;
 import sun.print.ProxyPrintGraphics;
@@ -105,6 +107,12 @@ public class SwingUtilities2 {
      */
     public static final Object AA_TEXT_PROPERTY_KEY =
                           new StringBuffer("AATextInfoPropertyKey");
+
+    /**
+     * Attribute key for the content elements.  If it is set on an element, the
+     * element is considered to be a line break.
+     */
+    public static final String IMPLIED_CR = "CR";
 
     /**
      * Used to tell a text component, being used as an editor for table
@@ -430,8 +438,12 @@ public class SwingUtilities2 {
         // c may be null here.
         String clipString = "...";
         availTextWidth -= SwingUtilities2.stringWidth(c, fm, clipString);
-        boolean needsTextLayout;
+        if (availTextWidth <= 0) {
+            //can not fit any characters
+            return clipString;
+        }
 
+        boolean needsTextLayout;
         synchronized (charsBufferLock) {
             int stringLength = syncCharsBuffer(string);
             needsTextLayout =
@@ -1806,5 +1818,55 @@ public class SwingUtilities2 {
     public static Section liesInVertical(Rectangle rect, Point p,
                                          boolean three) {
         return liesIn(rect, p, false, false, three);
+    }
+
+    /**
+     * Maps the index of the column in the view at
+     * {@code viewColumnIndex} to the index of the column
+     * in the table model.  Returns the index of the corresponding
+     * column in the model.  If {@code viewColumnIndex}
+     * is less than zero, returns {@code viewColumnIndex}.
+     *
+     * @param cm the table model
+     * @param   viewColumnIndex     the index of the column in the view
+     * @return  the index of the corresponding column in the model
+     *
+     * @see JTable#convertColumnIndexToModel(int)
+     * @see javax.swing.plaf.basic.BasicTableHeaderUI
+     */
+    public static int convertColumnIndexToModel(TableColumnModel cm,
+                                                int viewColumnIndex) {
+        if (viewColumnIndex < 0) {
+            return viewColumnIndex;
+        }
+        return cm.getColumn(viewColumnIndex).getModelIndex();
+    }
+
+    /**
+     * Maps the index of the column in the {@code cm} at
+     * {@code modelColumnIndex} to the index of the column
+     * in the view.  Returns the index of the
+     * corresponding column in the view; returns {@code -1} if this column
+     * is not being displayed. If {@code modelColumnIndex} is less than zero,
+     * returns {@code modelColumnIndex}.
+     *
+     * @param cm the table model
+     * @param modelColumnIndex the index of the column in the model
+     * @return the index of the corresponding column in the view
+     *
+     * @see JTable#convertColumnIndexToView(int)
+     * @see javax.swing.plaf.basic.BasicTableHeaderUI
+     */
+    public static int convertColumnIndexToView(TableColumnModel cm,
+                                        int modelColumnIndex) {
+        if (modelColumnIndex < 0) {
+            return modelColumnIndex;
+        }
+        for (int column = 0; column < cm.getColumnCount(); column++) {
+            if (cm.getColumn(column).getModelIndex() == modelColumnIndex) {
+                return column;
+            }
+        }
+        return -1;
     }
 }

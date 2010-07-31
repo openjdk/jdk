@@ -39,6 +39,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import sun.util.logging.PlatformLogger;
 import sun.misc.SoftCache;
@@ -592,7 +593,7 @@ public abstract class SunToolkit extends Toolkit
         }
         PostEventQueue postEventQueue =
             (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
-        if(postEventQueue != null) {
+        if (postEventQueue != null) {
             postEventQueue.postEvent(event);
         }
     }
@@ -610,16 +611,29 @@ public abstract class SunToolkit extends Toolkit
         postEvent(targetToAppContext(e.getSource()), pe);
     }
 
+    private static final Lock flushLock = new ReentrantLock();
+    private static boolean isFlushingPendingEvents = false;
+
     /*
      * Flush any pending events which haven't been posted to the AWT
      * EventQueue yet.
      */
     public static void flushPendingEvents()  {
-        AppContext appContext = AppContext.getAppContext();
-        PostEventQueue postEventQueue =
-            (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
-        if(postEventQueue != null) {
-            postEventQueue.flush();
+        flushLock.lock();
+        try {
+            // Don't call flushPendingEvents() recursively
+            if (!isFlushingPendingEvents) {
+                isFlushingPendingEvents = true;
+                AppContext appContext = AppContext.getAppContext();
+                PostEventQueue postEventQueue =
+                    (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
+                if (postEventQueue != null) {
+                    postEventQueue.flush();
+                }
+            }
+        } finally {
+            isFlushingPendingEvents = false;
+            flushLock.unlock();
         }
     }
 
@@ -1930,6 +1944,25 @@ public abstract class SunToolkit extends Toolkit
         return (Window)comp;
     }
 
+    /**
+     * Returns the value of the system property indicated by the specified key.
+     */
+    public static String getSystemProperty(final String key) {
+        return (String)AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return System.getProperty(key);
+                }
+            });
+    }
+
+    /**
+     * Returns the boolean value of the system property indicated by the specified key.
+     */
+    protected static Boolean getBooleanSystemProperty(String key) {
+        return Boolean.valueOf(AccessController.
+                   doPrivileged(new GetBooleanAction(key)));
+    }
+
     private static Boolean sunAwtDisableMixing = null;
 
     /**
@@ -1938,9 +1971,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public synchronized static boolean getSunAwtDisableMixing() {
         if (sunAwtDisableMixing == null) {
-            sunAwtDisableMixing = Boolean.valueOf(
-                    AccessController.doPrivileged(
-                        new GetBooleanAction("sun.awt.disableMixing")));
+            sunAwtDisableMixing = getBooleanSystemProperty("sun.awt.disableMixing");
         }
         return sunAwtDisableMixing.booleanValue();
     }
@@ -2079,12 +2110,14 @@ class PostEventQueue {
         eventQueue = eq;
     }
 
-    public boolean noEvents() {
+    public synchronized boolean noEvents() {
         return queueHead == null;
     }
 
     /*
-     * Continually post pending AWTEvents to the Java EventQueue.
+     * Continually post pending AWTEvents to the Java EventQueue. The method
+     * is synchronized to ensure the flush is completed before a new event
+     * can be posted to this queue.
      */
     public synchronized void flush() {
         EventQueueItem tempQueue = queueHead;
