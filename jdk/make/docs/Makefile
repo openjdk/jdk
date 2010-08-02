@@ -84,6 +84,11 @@ ALL_SOURCE_DIRS = $(SHARE_SRC)/classes \
                   $(SHARE_SRC)/../solaris/classes \
 	          $(SHARE_SRC)/../windows/classes \
 		  $(SHARE_SRC)/doc/stub
+
+# List of directories that actually exist
+ALL_EXISTING_SOURCE_DIRS := $(wildcard $(ALL_SOURCE_DIRS))
+
+# List with classpath separator between them
 EMPTY:=
 SPACE:= $(EMPTY) $(EMPTY)
 RELEASEDOCS_SOURCEPATH = \
@@ -240,7 +245,8 @@ include NON_CORE_PKGS.gmk
 # Default target is same as docs target, create core api and all others it can
 #
 
-all docs: coredocs otherdocs
+all: docs
+docs: coredocs otherdocs
 
 #################################################################
 # Production Targets -- USE THESE TARGETS WHEN:
@@ -1178,9 +1184,9 @@ $(TRACING_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TRACIN
 #
 # Get a cache of all the directories
 
-$(DIRECTORY_CACHE): $(ALL_SOURCE_DIRS)
+$(DIRECTORY_CACHE): $(ALL_EXISTING_SOURCE_DIRS)
 	$(prep-target)
-	@for cp in $(ALL_SOURCE_DIRS) ; do 		\
+	@for cp in $(ALL_EXISTING_SOURCE_DIRS) ; do 	\
 	  $(ECHO) "$(FIND) $${cp} -type f >> $@"; 	\
 	  $(FIND) $${cp} -type f >> $@; 		\
 	done
