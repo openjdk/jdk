@@ -900,11 +900,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Run a processing round. */
         void run(boolean lastRound, boolean errorStatus) {
-            assert lastRound
-                ? (topLevelClasses.size() == 0 && annotationsPresent.size() == 0)
-                : (errorStatus == false);
-
-            printRoundInfo(topLevelClasses, annotationsPresent, lastRound);
+//            assert lastRound
+//                ? (topLevelClasses.size() == 0 && annotationsPresent.size() == 0)
+//                : (errorStatus == false);
+//
+//            printRoundInfo(topLevelClasses, annotationsPresent, lastRound);
 
             TaskListener taskListener = context.get(TaskListener.class);
             if (taskListener != null)
@@ -912,6 +912,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             try {
                 if (lastRound) {
+                    printRoundInfo(List.<ClassSymbol>nil(), Collections.<TypeElement>emptySet(), lastRound);
                     filer.setLastRound(true);
                     Set<Element> emptyRootElements = Collections.emptySet(); // immutable
                     RoundEnvironment renv = new JavacRoundEnvironment(true,
@@ -920,6 +921,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                             JavacProcessingEnvironment.this);
                     discoveredProcs.iterator().runContributingProcs(renv);
                 } else {
+                    printRoundInfo(topLevelClasses, annotationsPresent, lastRound);
                     discoverAndRunProcs(context, annotationsPresent, topLevelClasses, packageInfoFiles);
                 }
             } finally {
@@ -947,7 +949,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 boolean lastRound) {
             if (printRounds || verbose) {
                 log.printNoteLines("x.print.rounds",
-                        number,
+                        (!lastRound ? number : number + 1),
                         "{" + topLevelClasses.toString(", ") + "}",
                         annotationsPresent,
                         lastRound);
