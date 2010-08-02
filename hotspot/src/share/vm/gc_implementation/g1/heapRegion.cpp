@@ -683,6 +683,8 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
     return NULL;
   }
 
+  assert(!is_young(), "check value of filter_young");
+
   // We used to use "block_start_careful" here.  But we're actually happy
   // to update the BOT while we do this...
   HeapWord* cur = block_start(mr.start());

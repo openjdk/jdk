@@ -505,6 +505,12 @@ protected:
   // A function to check the consistency of dirty card logs.
   void check_ct_logs_at_safepoint();
 
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
+
   // After a collection pause, make the regions in the CS into free
   // regions.
   void free_collection_set(HeapRegion* cs_head);
@@ -661,6 +667,13 @@ public:
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
 
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet& into_cset_dirty_card_queue_set()
+        { return _into_cset_dirty_card_queue_set; }
+
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.
   // May not return if something goes wrong.
@@ -715,7 +728,9 @@ public:
     OrderAccess::fence();
   }
 
-  void iterate_dirty_card_closure(bool concurrent, int worker_i);
+  void iterate_dirty_card_closure(CardTableEntryClosure* cl,
+                                  DirtyCardQueue* into_cset_dcq,
+                                  bool concurrent, int worker_i);
 
   // The shared block offset table array.
   G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }
