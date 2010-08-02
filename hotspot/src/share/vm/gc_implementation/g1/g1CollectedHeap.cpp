@@ -56,7 +56,12 @@ public:
     _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
   {}
   bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    _g1rs->concurrentRefineOneCard(card_ptr, worker_i);
+    bool oops_into_cset = _g1rs->concurrentRefineOneCard(card_ptr, worker_i, false);
+    // This path is executed by the concurrent refine or mutator threads,
+    // concurrently, and so we do not care if card_ptr contains references
+    // that point into the collection set.
+    assert(!oops_into_cset, "should be");
+
     if (_concurrent && _sts->should_yield()) {
       // Caller will actually yield.
       return false;
@@ -1322,6 +1327,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   SharedHeap(policy_),
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
+  _into_cset_dirty_card_queue_set(false),
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
@@ -1572,6 +1578,16 @@ jint G1CollectedHeap::initialize() {
                                       Shared_DirtyCardQ_lock,
                                       &JavaThread::dirty_card_queue_set());
   }
+
+  // Initialize the card queue set used to hold cards containing
+  // references into the collection set.
+  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
+                                             DirtyCardQ_FL_lock,
+                                             -1, // never trigger processing
+                                             -1, // no limit on length
+                                             Shared_DirtyCardQ_lock,
+                                             &JavaThread::dirty_card_queue_set());
+
   // In case we're keeping closure specialization stats, initialize those
   // counts and that mechanism.
   SpecializationStats::clear();
@@ -1603,14 +1619,16 @@ size_t G1CollectedHeap::capacity() const {
   return _g1_committed.byte_size();
 }
 
-void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
+void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
+                                                 DirtyCardQueue* into_cset_dcq,
+                                                 bool concurrent,
                                                  int worker_i) {
   // Clean cards in the hot card cache
-  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set());
+  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set(), into_cset_dcq);
 
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   int n_completed_buffers = 0;
-  while (dcqs.apply_closure_to_completed_buffer(worker_i, 0, true)) {
+  while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
     n_completed_buffers++;
   }
   g1_policy()->record_update_rs_processed_buffers(worker_i,
@@ -3346,25 +3364,6 @@ public:
   }
 };
 
-class UpdateRSetImmediate : public OopsInHeapRegionClosure {
-private:
-  G1CollectedHeap* _g1;
-  G1RemSet* _g1_rem_set;
-public:
-  UpdateRSetImmediate(G1CollectedHeap* g1) :
-    _g1(g1), _g1_rem_set(g1->g1_rem_set()) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    assert(_from->is_in_reserved(p), "paranoia");
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop) && !_from->is_survivor()) {
-      _g1_rem_set->par_write_ref(_from, p, 0);
-    }
-  }
-};
-
 class UpdateRSetDeferred : public OopsInHeapRegionClosure {
 private:
   G1CollectedHeap* _g1;
@@ -3388,8 +3387,6 @@ public:
     }
   }
 };
-
-
 
 class RemoveSelfPointerClosure: public ObjectClosure {
 private:
@@ -3453,7 +3450,7 @@ public:
 };
 
 void G1CollectedHeap::remove_self_forwarding_pointers() {
-  UpdateRSetImmediate immediate_update(_g1h);
+  UpdateRSetImmediate immediate_update(_g1h->g1_rem_set());
   DirtyCardQueue dcq(&_g1h->dirty_card_queue_set());
   UpdateRSetDeferred deferred_update(_g1h, &dcq);
   OopsInHeapRegionClosure *cl;

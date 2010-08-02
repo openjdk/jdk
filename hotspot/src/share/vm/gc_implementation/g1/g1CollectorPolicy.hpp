@@ -63,8 +63,6 @@ class MainBodySummary: public CHeapObj {
     define_num_seq(mark_stack_scan)
     define_num_seq(update_rs)
     define_num_seq(scan_rs)
-    define_num_seq(scan_new_refs) // Only for temp use; added to
-                                  // in parallel case.
     define_num_seq(obj_copy)
     define_num_seq(termination) // parallel only
     define_num_seq(parallel_other) // parallel only
@@ -177,7 +175,6 @@ protected:
   double* _par_last_update_rs_times_ms;
   double* _par_last_update_rs_processed_buffers;
   double* _par_last_scan_rs_times_ms;
-  double* _par_last_scan_new_refs_times_ms;
   double* _par_last_obj_copy_times_ms;
   double* _par_last_termination_times_ms;
   double* _par_last_termination_attempts;
@@ -931,14 +928,6 @@ public:
 
   void record_scan_rs_time(int thread, double ms) {
     _par_last_scan_rs_times_ms[thread] = ms;
-  }
-
-  void record_scan_new_refs_time(int thread, double ms) {
-    _par_last_scan_new_refs_times_ms[thread] = ms;
-  }
-
-  double get_scan_new_refs_time(int thread) {
-    return _par_last_scan_new_refs_times_ms[thread];
   }
 
   void reset_obj_copy_time(int thread) {

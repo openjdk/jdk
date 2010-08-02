@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,13 @@ public:
   // Refine the card corresponding to "card_ptr".  If "sts" is non-NULL,
   // join and leave around parts that must be atomic wrt GC.  (NULL means
   // being done at a safepoint.)
-  virtual void concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {}
+  // With some implementations of this routine, when check_for_refs_into_cset
+  // is true, a true result may be returned if the given card contains oops
+  // that have references into the current collection set.
+  virtual bool concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
+                                       bool check_for_refs_into_cset) {
+    return false;
+  }
 
   // Print any relevant summary info.
   virtual void print_summary_info() {}
@@ -143,23 +149,21 @@ protected:
   size_t              _total_cards_scanned;
 
   // _par_traversal_in_progress is "true" iff a parallel traversal is in
-  // progress.  If so, then cards added to remembered sets should also have
-  // their references into the collection summarized in "_new_refs".
+  // progress.
   bool _par_traversal_in_progress;
   void set_par_traversal(bool b) { _par_traversal_in_progress = b; }
-  GrowableArray<OopOrNarrowOopStar>** _new_refs;
-  template <class T> void new_refs_iterate_work(OopClosure* cl);
-  void new_refs_iterate(OopClosure* cl) {
-    if (UseCompressedOops) {
-      new_refs_iterate_work<narrowOop>(cl);
-    } else {
-      new_refs_iterate_work<oop>(cl);
-    }
-  }
+
+  // Used for caching the closure that is responsible for scanning
+  // references into the collection set.
+  OopsInHeapRegionClosure** _cset_rs_update_cl;
 
   // The routine that performs the actual work of refining a dirty
   // card.
-  void concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i);
+  // If check_for_refs_into_refs is true then a true result is returned
+  // if the card contains oops that have references into the current
+  // collection set.
+  bool concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
+                                    bool check_for_refs_into_cset);
 
 protected:
   template <class T> void write_ref_nv(HeapRegion* from, T* p);
@@ -188,7 +192,7 @@ public:
       scanNewRefsRS_work<oop>(oc, worker_i);
     }
   }
-  void updateRS(int worker_i);
+  void updateRS(DirtyCardQueue* into_cset_dcq, int worker_i);
   HeapRegion* calculateStartRegion(int i);
 
   HRInto_G1RemSet* as_HRInto_G1RemSet() { return this; }
@@ -219,7 +223,11 @@ public:
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
                  int worker_num, int claim_val);
 
-  virtual void concurrentRefineOneCard(jbyte* card_ptr, int worker_i);
+  // If check_for_refs_into_cset is true then a true result is returned
+  // if the card contains oops that have references into the current
+  // collection set.
+  virtual bool concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
+                                       bool check_for_refs_into_cset);
 
   virtual void print_summary_info();
   virtual void prepare_for_verify();
@@ -264,4 +272,17 @@ public:
   // Override: this closure is idempotent.
   //  bool idempotent() { return true; }
   bool apply_to_weak_ref_discovered_field() { return true; }
+};
+
+class UpdateRSetImmediate: public OopsInHeapRegionClosure {
+private:
+  G1RemSet* _g1_rem_set;
+
+  template <class T> void do_oop_work(T* p);
+public:
+  UpdateRSetImmediate(G1RemSet* rs) :
+    _g1_rem_set(rs) {}
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
 };

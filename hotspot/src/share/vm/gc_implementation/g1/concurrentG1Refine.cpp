@@ -339,7 +339,9 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr, bool* defer) {
   return res;
 }
 
-void ConcurrentG1Refine::clean_up_cache(int worker_i, G1RemSet* g1rs) {
+void ConcurrentG1Refine::clean_up_cache(int worker_i,
+                                        G1RemSet* g1rs,
+                                        DirtyCardQueue* into_cset_dcq) {
   assert(!use_cache(), "cache should be disabled");
   int start_idx;
 
@@ -353,7 +355,19 @@ void ConcurrentG1Refine::clean_up_cache(int worker_i, G1RemSet* g1rs) {
       for (int i = start_idx; i < end_idx; i++) {
         jbyte* entry = _hot_cache[i];
         if (entry != NULL) {
-          g1rs->concurrentRefineOneCard(entry, worker_i);
+          if (g1rs->concurrentRefineOneCard(entry, worker_i, true)) {
+            // 'entry' contains references that point into the current
+            // collection set. We need to record 'entry' in the DCQS
+            // that's used for that purpose.
+            //
+            // The only time we care about recording cards that contain
+            // references that point into the collection set is during
+            // RSet updating while within an evacuation pause.
+            // In this case worker_i should be the id of a GC worker thread
+            assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
+            assert(worker_i < (int) DirtyCardQueueSet::num_par_ids(), "incorrect worker id");
+            into_cset_dcq->enqueue(entry);
+          }
         }
       }
     }

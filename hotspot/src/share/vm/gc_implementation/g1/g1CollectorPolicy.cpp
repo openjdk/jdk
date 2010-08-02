@@ -238,7 +238,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _par_last_update_rs_processed_buffers = new double[_parallel_gc_threads];
 
   _par_last_scan_rs_times_ms = new double[_parallel_gc_threads];
-  _par_last_scan_new_refs_times_ms = new double[_parallel_gc_threads];
 
   _par_last_obj_copy_times_ms = new double[_parallel_gc_threads];
 
@@ -842,7 +841,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _par_last_update_rs_times_ms[i] = -1234.0;
     _par_last_update_rs_processed_buffers[i] = -1234.0;
     _par_last_scan_rs_times_ms[i] = -1234.0;
-    _par_last_scan_new_refs_times_ms[i] = -1234.0;
     _par_last_obj_copy_times_ms[i] = -1234.0;
     _par_last_termination_times_ms[i] = -1234.0;
     _par_last_termination_attempts[i] = -1234.0;

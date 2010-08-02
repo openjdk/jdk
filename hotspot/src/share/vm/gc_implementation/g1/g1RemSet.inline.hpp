@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,19 +56,25 @@ template <class T> inline void HRInto_G1RemSet::par_write_ref_nv(HeapRegion* fro
     assert(Universe::heap()->is_in_reserved(obj), "must be in heap");
   }
 #endif // ASSERT
-  assert(from == NULL || from->is_in_reserved(p),
-         "p is not in from");
+
+  assert(from == NULL || from->is_in_reserved(p), "p is not in from");
+
   HeapRegion* to = _g1->heap_region_containing(obj);
   // The test below could be optimized by applying a bit op to to and from.
   if (to != NULL && from != NULL && from != to) {
-    // There is a tricky infinite loop if we keep pushing
-    // self forwarding pointers onto our _new_refs list.
     // The _par_traversal_in_progress flag is true during the collection pause,
-    // false during the evacuation failure handing.
+    // false during the evacuation failure handing. This should avoid a
+    // potential loop if we were to add the card containing 'p' to the DCQS
+    // that's used to regenerate the remembered sets for the collection set,
+    // in the event of an evacuation failure, here. The UpdateRSImmediate
+    // closure will eventally call this routine.
     if (_par_traversal_in_progress &&
         to->in_collection_set() && !self_forwarded(obj)) {
-      _new_refs[tid]->push((void*)p);
-      // Deferred updates to the Cset are either discarded (in the normal case),
+
+      assert(_cset_rs_update_cl[tid] != NULL, "should have been set already");
+      _cset_rs_update_cl[tid]->do_oop(p);
+
+      // Deferred updates to the CSet are either discarded (in the normal case),
       // or processed (if an evacuation failure occurs) at the end
       // of the collection.
       // See HRInto_G1RemSet::cleanup_after_oops_into_collection_set_do().
@@ -89,3 +95,12 @@ template <class T> inline void UpdateRSOopClosure::do_oop_work(T* p) {
   assert(_from != NULL, "from region must be non-NULL");
   _rs->par_write_ref(_from, p, _worker_i);
 }
+
+template <class T> inline void UpdateRSetImmediate::do_oop_work(T* p) {
+  assert(_from->is_in_reserved(p), "paranoia");
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop) && !_from->is_survivor()) {
+    _g1_rem_set->par_write_ref(_from, p, 0);
+  }
+}
+
