@@ -596,6 +596,9 @@ class Bits {                            // package-private
         return pageSize;
     }
 
+    static int pageCount(long size) {
+        return (int)(size + (long)pageSize() - 1L) / pageSize();
+    }
 
     private static boolean unaligned;
     private static boolean unalignedKnown = false;

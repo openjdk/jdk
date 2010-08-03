@@ -139,3 +139,16 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
 
     return 0;
 }
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_SocketChannelImpl_sendOutOfBandData(JNIEnv* env, jclass this,
+                                                    jobject fdo, jbyte b)
+{
+    int n = send(fdval(env, fdo), (const char*)&b, 1, MSG_OOB);
+    if (n == SOCKET_ERROR) {
+        handleSocketError(env, WSAGetLastError());
+        return IOS_THROWN;
+    } else {
+        return n;
+    }
+}

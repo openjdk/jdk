@@ -111,9 +111,8 @@ class myHttpServer implements Runnable, Cloneable {
             } catch(Exception e) {
                 System.out.print("Server failure\n");
                 e.printStackTrace();
-                try {
-                    serverSocket.close();
-                } catch(IOException e2) {}
+            } finally {
+                try { serverSocket.close(); } catch(IOException unused) {}
             }
         } else {
             try {
@@ -127,10 +126,9 @@ class myHttpServer implements Runnable, Cloneable {
             } catch(Exception e) {
                 // System.out.print("Service handler failure\n");
                 // e.printStackTrace();
+            } finally {
+                try { close(); }  catch(IOException unused) {}
             }
-            try {
-                close();
-            } catch(IOException e2) {}
         }
     }
 
