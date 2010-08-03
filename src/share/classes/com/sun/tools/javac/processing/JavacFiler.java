@@ -379,6 +379,15 @@ public class JavacFiler implements Filer, Closeable {
     }
 
     private JavaFileObject createSourceOrClassFile(boolean isSourceFile, String name) throws IOException {
+        if (lint) {
+            int periodIndex = name.lastIndexOf(".");
+            if (periodIndex != -1) {
+                String base = name.substring(periodIndex);
+                String extn = (isSourceFile ? ".java" : ".class");
+                if (base.equals(extn))
+                    log.warning("proc.suspicious.class.name", name, extn);
+            }
+        }
         checkNameAndExistence(name, isSourceFile);
         Location loc = (isSourceFile ? SOURCE_OUTPUT : CLASS_OUTPUT);
         JavaFileObject.Kind kind = (isSourceFile ?
@@ -530,11 +539,14 @@ public class JavacFiler implements Filer, Closeable {
     /**
      * Update internal state for a new round.
      */
-    public void newRound(Context context, boolean lastRound) {
+    public void newRound(Context context) {
         this.context = context;
         this.log = Log.instance(context);
-        this.lastRound = lastRound;
         clearRoundState();
+    }
+
+    void setLastRound(boolean lastRound) {
+        this.lastRound = lastRound;
     }
 
     public void close() {

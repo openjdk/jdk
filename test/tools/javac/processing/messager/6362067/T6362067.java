@@ -4,7 +4,7 @@
  * @summary Messager methods do not print out source position information
  * @build   T6362067
  * @compile -processor T6362067 -proc:only T6362067.java
- * @compile/ref=T6362067.out -XDstdout -XDrawDiagnostics -processor T6362067 -proc:only T6362067.java
+ * @compile/ref=T6362067.out -XDrawDiagnostics -processor T6362067 -proc:only T6362067.java
  */
 
 import java.util.Set;

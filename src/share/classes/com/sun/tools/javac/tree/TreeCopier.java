@@ -332,10 +332,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     public JCTree visitTry(TryTree node, P p) {
         JCTry t = (JCTry) node;
+        List<JCTree> resources = copy(t.resources, p);
         JCBlock body = copy(t.body, p);
         List<JCCatch> catchers = copy(t.catchers, p);
         JCBlock finalizer = copy(t.finalizer, p);
-        return M.at(t.pos).Try(body, catchers, finalizer);
+        return M.at(t.pos).Try(resources, body, catchers, finalizer);
     }
 
     public JCTree visitParameterizedType(ParameterizedTypeTree node, P p) {

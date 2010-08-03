@@ -111,13 +111,13 @@ public class Check {
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
         deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
-                enforceMandatoryWarnings, "deprecated");
+                enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
-                enforceMandatoryWarnings, "unchecked");
+                enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
         unsafeVarargsHandler = new MandatoryWarningHandler(log, verboseVarargs,
-                enforceMandatoryWarnings, "varargs");
+                enforceMandatoryWarnings, "varargs", LintCategory.VARARGS);
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
-                enforceMandatoryWarnings, "sunapi");
+                enforceMandatoryWarnings, "sunapi", null);
     }
 
     /** Switch: generics enabled?
@@ -209,7 +209,7 @@ public class Check {
 
     public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
         if (lint.isEnabled(LintCategory.STATIC))
-            log.warning(pos, msg, args);
+            log.warning(LintCategory.STATIC, pos, msg, args);
     }
 
     /**
@@ -393,6 +393,10 @@ public class Check {
      *  @param req        The type that was required.
      */
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
+        return checkType(pos, found, req, "incompatible.types");
+    }
+
+    Type checkType(DiagnosticPosition pos, Type found, Type req, String errKey) {
         if (req.tag == ERROR)
             return req;
         if (found.tag == FORALL)
@@ -411,7 +415,7 @@ public class Check {
             log.error(pos, "assignment.to.extends-bound", req);
             return types.createErrorType(found);
         }
-        return typeError(pos, diags.fragment("incompatible.types"), found, req);
+        return typeError(pos, diags.fragment(errKey), found, req);
     }
 
     /** Instantiate polymorphic type to some prototype, unless
@@ -925,7 +929,8 @@ public class Check {
             !TreeInfo.isDiamond(tree) &&
             !env.enclClass.name.isEmpty() &&  //anonymous or intersection
             tree.type.isRaw()) {
-            log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
+            log.warning(Lint.LintCategory.RAW,
+                    tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
         }
     }
 
@@ -1853,6 +1858,7 @@ public class Check {
                     types.isSameType(types.erasure(sym.type), types.erasure(e.sym.type)) &&
                     sym != e.sym &&
                     (sym.flags() & Flags.SYNTHETIC) != (e.sym.flags() & Flags.SYNTHETIC) &&
+                    (sym.flags() & IPROXY) == 0 && (e.sym.flags() & IPROXY) == 0 &&
                     (sym.flags() & BRIDGE) == 0 && (e.sym.flags() & BRIDGE) == 0) {
                     syntheticError(pos, (e.sym.flags() & SYNTHETIC) == 0 ? e.sym : sym);
                     return;
@@ -2151,7 +2157,8 @@ public class Check {
             (s.flags() & DEPRECATED) != 0 &&
             !syms.deprecatedType.isErroneous() &&
             s.attribute(syms.deprecatedType.tsym) == null) {
-            log.warning(pos, "missing.deprecated.annotation");
+            log.warning(Lint.LintCategory.DEP_ANN,
+                    pos, "missing.deprecated.annotation");
         }
     }
 
@@ -2302,7 +2309,7 @@ public class Check {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                log.warning(pos, "div.zero");
+                log.warning(Lint.LintCategory.DIVZERO, pos, "div.zero");
             }
         }
     }
@@ -2312,7 +2319,7 @@ public class Check {
      */
     void checkEmptyIf(JCIf tree) {
         if (tree.thenpart.getTag() == JCTree.SKIP && tree.elsepart == null && lint.isEnabled(Lint.LintCategory.EMPTY))
-            log.warning(tree.thenpart.pos(), "empty.if");
+            log.warning(Lint.LintCategory.EMPTY, tree.thenpart.pos(), "empty.if");
     }
 
     /** Check that symbol is unique in given scope.

@@ -212,6 +212,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitTry(JCTry tree) {
+        tree.resources = translate(tree.resources);
         tree.body = translate(tree.body);
         tree.catchers = translateCatchers(tree.catchers);
         tree.finalizer = translate(tree.finalizer);

@@ -23,20 +23,20 @@
 
 /*
  * @test
- * @compile/ref=byfile.AB.out -XDstdout -XDverboseCompilePolicy -XDcompile.policy=byfile A.java B.java
+ * @compile/ref=byfile.AB.out -XDverboseCompilePolicy -XDcompile.policy=byfile A.java B.java
  */
 
 /*
  * @test
- * @compile/ref=byfile.BA.out -XDstdout -XDverboseCompilePolicy -XDcompile.policy=byfile B.java A.java
+ * @compile/ref=byfile.BA.out -XDverboseCompilePolicy -XDcompile.policy=byfile B.java A.java
  */
 
 /*
  * @test
- * @compile/ref=bytodo.AB.out -XDstdout -XDverboseCompilePolicy -XDcompile.policy=bytodo A.java B.java
+ * @compile/ref=bytodo.AB.out -XDverboseCompilePolicy -XDcompile.policy=bytodo A.java B.java
  */
 
 /*
  * @test
- * @compile/ref=bytodo.BA.out -XDstdout -XDverboseCompilePolicy -XDcompile.policy=bytodo B.java A.java
+ * @compile/ref=bytodo.BA.out -XDverboseCompilePolicy -XDcompile.policy=bytodo B.java A.java
  */
