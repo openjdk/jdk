@@ -3,7 +3,7 @@
  * @bug     6207386
  * @summary Undecidable type system leads to crash
  * @author  Martin Odersky
- * @compile/fail/ref=T6207386.out -XDstdout -XDrawDiagnostics T6207386.java
+ * @compile/fail/ref=T6207386.out -XDrawDiagnostics T6207386.java
  */
 
 public class T6207386 {
