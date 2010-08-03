@@ -98,6 +98,22 @@ ifeq ($(ARCH), i686)
   HS_ARCH          = x86
 endif
 
+# ARM
+ifeq ($(ARCH), arm)
+  ARCH_DATA_MODEL  = 32
+  PLATFORM         = linux-arm
+  VM_PLATFORM      = linux_arm
+  HS_ARCH          = arm
+endif
+
+# PPC
+ifeq ($(ARCH), ppc)
+  ARCH_DATA_MODEL  = 32
+  PLATFORM         = linux-ppc
+  VM_PLATFORM      = linux_ppc
+  HS_ARCH          = ppc
+endif
+
 JDK_INCLUDE_SUBDIR=linux
 
 # FIXUP: The subdirectory for a debug build is NOT the same on all platforms
@@ -107,22 +123,32 @@ EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.so
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.so
-
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
+
+ifndef BUILD_CLIENT_ONLY
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.so
+endif
+
 ifneq ($(ZERO_BUILD), true)
   ifeq ($(ARCH_DATA_MODEL), 32)
     EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
-    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
-    EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar 
-  else
-    ifeq ($(ARCH),ia64)
-      else
-        EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
-        EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
-    endif
   endif
 endif
+
+# Serviceability Binaries
+# No SA Support for PPC, IA64, ARM or zero
+ADD_SA_BINARIES/x86   = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so \
+                        $(EXPORT_LIB_DIR)/sa-jdi.jar 
+ADD_SA_BINARIES/sparc = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so \
+                        $(EXPORT_LIB_DIR)/sa-jdi.jar 
+ADD_SA_BINARIES/ppc   = 
+ADD_SA_BINARIES/ia64  = 
+ADD_SA_BINARIES/arm   = 
+ADD_SA_BINARIES/zero  = 
+
+EXPORT_LIST += $(ADD_SA_BINARIES/$(HS_ARCH))
+
+

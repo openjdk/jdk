@@ -410,9 +410,6 @@ public:
   // Sweeper support
   void nmethods_do(CodeBlobClosure* cf);
 
-  // Tells if adr belong to this thread. This is used
-  // for checking if a lock is owned by the running thread.
-
   // Used by fast lock support
   virtual bool is_lock_owned(address adr) const;
 
@@ -609,7 +606,7 @@ class WatcherThread: public Thread {
  private:
   static WatcherThread* _watcher_thread;
 
-  static bool _should_terminate;
+  volatile static bool _should_terminate; // updated without holding lock
  public:
   enum SomeConstants {
     delay_interval = 10                          // interrupt delay in milliseconds
@@ -838,6 +835,10 @@ class JavaThread: public Thread {
   struct JNINativeInterface_* get_jni_functions() {
     return (struct JNINativeInterface_ *)_jni_environment.functions;
   }
+
+  // This function is called at thread creation to allow
+  // platform specific thread variables to be initialized.
+  void cache_global_variables();
 
   // Executes Shutdown.shutdown()
   void invoke_shutdown_hooks();

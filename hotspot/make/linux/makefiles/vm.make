@@ -98,6 +98,7 @@ CFLAGS += $(CFLAGS/NOEX)
 
 # Extra flags from gnumake's invocation or environment
 CFLAGS += $(EXTRA_CFLAGS)
+LFLAGS += $(EXTRA_CFLAGS)
 
 LIBS += -lm -ldl -lpthread
 
@@ -210,15 +211,17 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	    $(LINK_LIB.CC/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
-	    if [ -x /usr/sbin/selinuxenabled ] ; then                   \
-	      /usr/sbin/selinuxenabled;                                 \
-              if [ $$? = 0 ] ; then					\
-		/usr/bin/chcon -t textrel_shlib_t $@;                   \
-		if [ $$? != 0 ]; then                                   \
-		  echo "ERROR: Cannot chcon $@";			\
-		fi							\
-	      fi							\
-	    fi                                                          \
+            if [ \"$(CROSS_COMPILE_ARCH)\" = \"\" ] ; then                    \
+	      if [ -x /usr/sbin/selinuxenabled ] ; then                 \
+	        /usr/sbin/selinuxenabled;                               \
+                if [ $$? = 0 ] ; then					\
+		  /usr/bin/chcon -t textrel_shlib_t $@;                 \
+		  if [ $$? != 0 ]; then                                 \
+		    echo "ERROR: Cannot chcon $@";			\
+		  fi							\
+	        fi							\
+	      fi                                                        \
+            fi 								\
 	}
 
 DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)

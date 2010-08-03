@@ -168,10 +168,19 @@ class Compilation: public StackObj {
   const char* bailout_msg() const                { return _bailout_msg; }
 
   static int desired_max_code_buffer_size() {
+#ifndef PPC
     return (int) NMethodSizeLimit;  // default 256K or 512K
+#else
+    // conditional branches on PPC are restricted to 16 bit signed
+    return MAX2((unsigned int)NMethodSizeLimit,32*K);
+#endif
   }
   static int desired_max_constant_size() {
+#ifndef PPC
     return (int) NMethodSizeLimit / 10;  // about 25K
+#else
+    return (MAX2((unsigned int)NMethodSizeLimit, 32*K)) / 10;
+#endif
   }
 
   static void setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);

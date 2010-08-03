@@ -607,7 +607,7 @@ class CommandLineFlags {
   notproduct(bool, PrintMallocFree, false,                                  \
           "Trace calls to C heap malloc/free allocation")                   \
                                                                             \
-  notproduct(bool, PrintOopAddress, false,                                  \
+  product(bool, PrintOopAddress, false,                                     \
           "Always print the location of the oop")                           \
                                                                             \
   notproduct(bool, VerifyCodeCacheOften, false,                             \
@@ -3553,7 +3553,6 @@ class CommandLineFlags {
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
           "EINTR for I/O operations results in OS_INTRPT. The default value"\
           " of this flag is true for JDK 6 and earliers")
-
 
 /*
  *  Macros for factoring of globals

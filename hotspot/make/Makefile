@@ -90,9 +90,15 @@ ZERO_VM_TARGETS=productzero fastdebugzero optimizedzero jvmgzero
 JDK_DIRS=bin include jre lib demo
 
 all:           all_product all_fastdebug
+ifndef BUILD_CLIENT_ONLY
 all_product:   product product1 productkernel docs export_product
 all_fastdebug: fastdebug fastdebug1 fastdebugkernel docs export_fastdebug
 all_debug:     jvmg jvmg1 jvmgkernel docs export_debug
+else
+all_product:   product1 docs export_product
+all_fastdebug: fastdebug1 docs export_fastdebug
+all_debug:     jvmg1 docs export_debug
+endif
 all_optimized: optimized optimized1 optimizedkernel docs export_optimized
 
 allzero:           all_productzero all_fastdebugzero
@@ -295,6 +301,8 @@ $(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(ZERO_DIR)/%.so
 $(EXPORT_SERVER_DIR)/%.so:       $(ZERO_DIR)/%.so
 	$(install-file)
   else
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(C1_DIR)/%.so
+	$(install-file)
 $(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(C2_DIR)/%.so
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.so:       $(C1_DIR)/%.so

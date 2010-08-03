@@ -41,20 +41,20 @@ void InterpreterCodelet::verify() {
 }
 
 
-void InterpreterCodelet::print() {
+void InterpreterCodelet::print_on(outputStream* st) const {
   if (PrintInterpreter) {
-    tty->cr();
-    tty->print_cr("----------------------------------------------------------------------");
+    st->cr();
+    st->print_cr("----------------------------------------------------------------------");
   }
 
-  if (description() != NULL) tty->print("%s  ", description());
-  if (bytecode()    >= 0   ) tty->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
-  tty->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
+  if (description() != NULL) st->print("%s  ", description());
+  if (bytecode()    >= 0   ) st->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
+  st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 code_begin(), code_end(), code_size());
 
   if (PrintInterpreter) {
-    tty->cr();
-    Disassembler::decode(code_begin(), code_end(), tty);
+    st->cr();
+    Disassembler::decode(code_begin(), code_end(), st);
   }
 }
 
