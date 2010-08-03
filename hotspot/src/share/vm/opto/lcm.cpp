@@ -461,7 +461,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSe
       n_choice = 1;
     }
 
-    uint n_latency = cfg->_node_latency.at_grow(n->_idx);
+    uint n_latency = cfg->_node_latency->at_grow(n->_idx);
     uint n_score   = n->req();   // Many inputs get high score to break ties
 
     // Keep best latency found
@@ -738,7 +738,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
         Node     *n = _nodes[j];
         int     idx = n->_idx;
         tty->print("#   ready cnt:%3d  ", ready_cnt[idx]);
-        tty->print("latency:%3d  ", cfg->_node_latency.at_grow(idx));
+        tty->print("latency:%3d  ", cfg->_node_latency->at_grow(idx));
         tty->print("%4d: %s\n", idx, n->Name());
       }
     }
@@ -765,7 +765,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
 #ifndef PRODUCT
     if (cfg->trace_opto_pipelining()) {
       tty->print("#    select %d: %s", n->_idx, n->Name());
-      tty->print(", latency:%d", cfg->_node_latency.at_grow(n->_idx));
+      tty->print(", latency:%d", cfg->_node_latency->at_grow(n->_idx));
       n->dump();
       if (Verbose) {
         tty->print("#   ready list:");

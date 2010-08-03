@@ -43,23 +43,67 @@ void* ResourceObj::operator new(size_t size, allocation_type type) {
   switch (type) {
    case C_HEAP:
     res = (address)AllocateHeap(size, "C_Heap: ResourceOBJ");
+    DEBUG_ONLY(set_allocation_type(res, C_HEAP);)
     break;
    case RESOURCE_AREA:
+    // Will set allocation type in the resource object.
     res = (address)operator new(size);
     break;
    default:
     ShouldNotReachHere();
   }
-  // Set allocation type in the resource object for assertion checks.
-  DEBUG_ONLY(((ResourceObj *)res)->_allocation = type;)
   return res;
 }
 
 void ResourceObj::operator delete(void* p) {
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
+  DEBUG_ONLY(((ResourceObj *)p)->_allocation = badHeapOopVal;)
   FreeHeap(p);
 }
+
+#ifdef ASSERT
+void ResourceObj::set_allocation_type(address res, allocation_type type) {
+    // Set allocation type in the resource object
+    uintptr_t allocation = (uintptr_t)res;
+    assert((allocation & allocation_mask) == 0, "address should be aligned ot 4 bytes at least");
+    assert(type <= allocation_mask, "incorrect allocation type");
+    ((ResourceObj *)res)->_allocation = ~(allocation + type);
+}
+
+ResourceObj::allocation_type ResourceObj::get_allocation_type() {
+    assert(~(_allocation | allocation_mask) == (uintptr_t)this, "lost resource object");
+    return (allocation_type)((~_allocation) & allocation_mask);
+}
+
+ResourceObj::ResourceObj() { // default construtor
+    if (~(_allocation | allocation_mask) != (uintptr_t)this) {
+      set_allocation_type((address)this, STACK_OR_EMBEDDED);
+    } else {
+      assert(allocated_on_res_area() || allocated_on_C_heap() || allocated_on_arena(),
+             "allocation_type should be set by operator new()");
+    }
+}
+
+ResourceObj::ResourceObj(const ResourceObj& r) { // default copy construtor
+    // Used in ClassFileParser::parse_constant_pool_entries() for ClassFileStream.
+    set_allocation_type((address)this, STACK_OR_EMBEDDED);
+}
+
+ResourceObj& ResourceObj::operator=(const ResourceObj& r) { // default copy assignment
+    // Used in InlineTree::ok_to_inline() for WarmCallInfo.
+    assert(allocated_on_stack(), "copy only into local");
+    // Keep current _allocation value;
+    return *this;
+}
+
+ResourceObj::~ResourceObj() {
+    if (!allocated_on_C_heap()) { // operator delete() checks C_heap allocation_type.
+      _allocation = badHeapOopVal;
+    }
+}
+#endif // ASSERT
+
 
 void trace_heap_malloc(size_t size, const char* name, void* p) {
   // A lock is not needed here - tty uses a lock internally
