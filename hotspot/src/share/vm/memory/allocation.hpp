@@ -174,8 +174,9 @@ class Chunk: public CHeapObj {
 
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
-};
 
+  static void clean_chunk_pool();
+};
 
 //------------------------------Arena------------------------------------------
 // Fast allocation of memory

@@ -1020,7 +1020,7 @@ void NamedThread::set_name(const char* format, ...) {
 // timer interrupts exists on the platform.
 
 WatcherThread* WatcherThread::_watcher_thread   = NULL;
-bool           WatcherThread::_should_terminate = false;
+volatile bool  WatcherThread::_should_terminate = false;
 
 WatcherThread::WatcherThread() : Thread() {
   assert(watcher_thread() == NULL, "we can only allocate one WatcherThread");
@@ -1052,8 +1052,26 @@ void WatcherThread::run() {
 
     // Calculate how long it'll be until the next PeriodicTask work
     // should be done, and sleep that amount of time.
-    const size_t time_to_wait = PeriodicTask::time_to_wait();
-    os::sleep(this, time_to_wait, false);
+    size_t time_to_wait = PeriodicTask::time_to_wait();
+
+    // we expect this to timeout - we only ever get unparked when
+    // we should terminate
+    {
+      OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
+
+      jlong prev_time = os::javaTimeNanos();
+      for (;;) {
+        int res= _SleepEvent->park(time_to_wait);
+        if (res == OS_TIMEOUT || _should_terminate)
+          break;
+        // spurious wakeup of some kind
+        jlong now = os::javaTimeNanos();
+        time_to_wait -= (now - prev_time) / 1000000;
+        if (time_to_wait <= 0)
+          break;
+        prev_time = now;
+      }
+    }
 
     if (is_error_reported()) {
       // A fatal error has happened, the error handler(VMError::report_and_die)
@@ -1115,6 +1133,12 @@ void WatcherThread::stop() {
   // it is ok to take late safepoints here, if needed
   MutexLocker mu(Terminator_lock);
   _should_terminate = true;
+  OrderAccess::fence();  // ensure WatcherThread sees update in main loop
+
+  Thread* watcher = watcher_thread();
+  if (watcher != NULL)
+    watcher->_SleepEvent->unpark();
+
   while(watcher_thread() != NULL) {
     // This wait should make safepoint checks, wait without a timeout,
     // and wait as a suspend-equivalent condition.
@@ -1363,6 +1387,8 @@ void JavaThread::run() {
   this->initialize_thread_local_storage();
 
   this->create_stack_guard_pages();
+
+  this->cache_global_variables();
 
   // Thread is now sufficient initialized to be handled by the safepoint code as being
   // in the VM. Change thread state from _thread_new to _thread_in_vm
@@ -2955,6 +2981,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  // Should be done after the heap is fully created
+  main_thread->cache_global_variables();
+
   HandleMark hm;
 
   { MutexLocker mu(Threads_lock);
@@ -3229,6 +3258,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (PeriodicTask::num_tasks() > 0) {
     WatcherThread::start();
   }
+
+  // Give os specific code one last chance to start
+  os::init_3();
 
   create_vm_timer.end();
   return JNI_OK;

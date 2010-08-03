@@ -216,8 +216,16 @@ extern "C" {
 
 #define DEBUG_EXCEPTION ::abort();
 
+#ifdef ARM
+#ifdef SOLARIS
+#define BREAKPOINT __asm__ volatile (".long 0xe1200070")
+#else
+#define BREAKPOINT __asm__ volatile (".long 0xe7f001f0")
+#endif
+#else
 extern "C" void breakpoint();
 #define BREAKPOINT ::breakpoint()
+#endif
 
 // checking for nanness
 #ifdef SOLARIS
@@ -234,6 +242,12 @@ inline int g_isnan(double f) { return isnan(f); }
 #else
 #error "missing platform-specific definition here"
 #endif
+
+// GCC 4.3 does not allow 0.0/0.0 to produce a NAN value
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ > 2)
+#define CAN_USE_NAN_DEFINE 1
+#endif
+
 
 // Checking for finiteness
 

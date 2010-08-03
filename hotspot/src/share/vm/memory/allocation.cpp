@@ -166,32 +166,40 @@ class ChunkPool {
     _medium_pool = new ChunkPool(Chunk::medium_size + Chunk::aligned_overhead_size());
     _small_pool  = new ChunkPool(Chunk::init_size   + Chunk::aligned_overhead_size());
   }
+
+  static void clean() {
+    enum { BlocksToKeep = 5 };
+     _small_pool->free_all_but(BlocksToKeep);
+     _medium_pool->free_all_but(BlocksToKeep);
+     _large_pool->free_all_but(BlocksToKeep);
+  }
 };
 
 ChunkPool* ChunkPool::_large_pool  = NULL;
 ChunkPool* ChunkPool::_medium_pool = NULL;
 ChunkPool* ChunkPool::_small_pool  = NULL;
 
-
 void chunkpool_init() {
   ChunkPool::initialize();
+}
+
+void
+Chunk::clean_chunk_pool() {
+  ChunkPool::clean();
 }
 
 
 //--------------------------------------------------------------------------------------
 // ChunkPoolCleaner implementation
+//
 
 class ChunkPoolCleaner : public PeriodicTask {
-  enum { CleaningInterval = 5000,        // cleaning interval in ms
-         BlocksToKeep     = 5            // # of extra blocks to keep
-  };
+  enum { CleaningInterval = 5000 };      // cleaning interval in ms
 
  public:
    ChunkPoolCleaner() : PeriodicTask(CleaningInterval) {}
    void task() {
-     ChunkPool::small_pool()->free_all_but(BlocksToKeep);
-     ChunkPool::medium_pool()->free_all_but(BlocksToKeep);
-     ChunkPool::large_pool()->free_all_but(BlocksToKeep);
+     ChunkPool::clean();
    }
 };
 

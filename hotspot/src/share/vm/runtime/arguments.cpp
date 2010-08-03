@@ -2665,6 +2665,28 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   }
 #endif
 
+  // If we are running in a headless jre, force java.awt.headless property
+  // to be true unless the property has already been set.
+  // Also allow the OS environment variable JAVA_AWT_HEADLESS to set headless state.
+  if (os::is_headless_jre()) {
+    const char* headless = Arguments::get_property("java.awt.headless");
+    if (headless == NULL) {
+      char envbuffer[128];
+      if (!os::getenv("JAVA_AWT_HEADLESS", envbuffer, sizeof(envbuffer))) {
+        if (!add_property("java.awt.headless=true")) {
+          return JNI_ENOMEM;
+        }
+      } else {
+        char buffer[256];
+        strcpy(buffer, "java.awt.headless=");
+        strcat(buffer, envbuffer);
+        if (!add_property(buffer)) {
+          return JNI_ENOMEM;
+        }
+      }
+    }
+  }
+
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
   }
@@ -2983,6 +3005,14 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   if (PrintFlagsFinal) {
     CommandLineFlags::printFlags();
+  }
+
+  // Apply CPU specific policy for the BiasedLocking
+  if (UseBiasedLocking) {
+    if (!VM_Version::use_biased_locking() &&
+        !(FLAG_IS_CMDLINE(UseBiasedLocking))) {
+      UseBiasedLocking = false;
+    }
   }
 
   return JNI_OK;

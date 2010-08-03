@@ -606,6 +606,8 @@ public:
   void print_nul_chk_table()                      PRODUCT_RETURN;
   void print_nmethod(bool print_code);
 
+  // need to re-define this from CodeBlob else the overload hides it
+  virtual void print_on(outputStream* st) const { CodeBlob::print_on(st); }
   void print_on(outputStream* st, const char* title) const;
 
   // Logging

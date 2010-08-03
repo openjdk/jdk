@@ -371,7 +371,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
 address decode_env::decode_instructions(address start, address end) {
   _start = start; _end = end;
 
-  assert((((intptr_t)start | (intptr_t)end) % Disassembler::pd_instruction_alignment() == 0), "misaligned insn addr");
+  assert(((((intptr_t)start | (intptr_t)end) % Disassembler::pd_instruction_alignment()) == 0), "misaligned insn addr");
 
   const int show_bytes = false; // for disassembler debugging
 

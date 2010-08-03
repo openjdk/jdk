@@ -25,8 +25,14 @@
 #------------------------------------------------------------------------
 # CC, CPP & AS
 
+ifdef ALT_COMPILER_PATH
+CPP = $(ALT_COMPILER_PATH)/g++
+CC  = $(ALT_COMPILER_PATH)/gcc
+else
 CPP = g++
 CC  = gcc
+endif
+
 AS  = $(CC) -c
 
 # -dumpversion in gcc-2.91 shows "egcs-2.91.66". In later version, it only
@@ -67,16 +73,29 @@ ARCHFLAG/amd64   = -m64
 ARCHFLAG/ia64    =
 ARCHFLAG/sparc   = -m32 -mcpu=v9
 ARCHFLAG/sparcv9 = -m64 -mcpu=v9
+ARCHFLAG/arm     =  -fsigned-char
 ARCHFLAG/zero    = $(ZERO_ARCHFLAG)
+ifndef E500V2
+ARCHFLAG/ppc     =  -mcpu=powerpc
+endif
 
 CFLAGS     += $(ARCHFLAG)
 AOUT_FLAGS += $(ARCHFLAG)
 LFLAGS     += $(ARCHFLAG)
 ASFLAGS    += $(ARCHFLAG)
 
+ifdef E500V2
+CFLAGS += -DE500V2
+endif
+
 # Use C++ Interpreter
 ifdef CC_INTERP
   CFLAGS += -DCC_INTERP
+endif
+
+# Build for embedded targets
+ifdef JAVASE_EMBEDDED
+  CFLAGS += -DJAVASE_EMBEDDED
 endif
 
 # Keep temporary files (.ii, .s)
@@ -171,6 +190,8 @@ AOUT_FLAGS += -export-dynamic
 # Note: The Itanium gcc compiler crashes when using -gstabs.
 DEBUG_CFLAGS/ia64  = -g
 DEBUG_CFLAGS/amd64 = -g
+DEBUG_CFLAGS/arm   = -g
+DEBUG_CFLAGS/ppc   = -g
 DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
 ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
 DEBUG_CFLAGS += -gstabs
@@ -180,4 +201,16 @@ endif
 ifeq ($(DEBUG_BINARIES), true)
   DEBUG_CFLAGS = -g
   CFLAGS += $(DEBUG_CFLAGS)
+endif
+
+# If we are building HEADLESS, pass on to VM
+# so it can set the java.awt.headless property
+ifdef HEADLESS
+CFLAGS += -DHEADLESS
+endif
+
+# We are building Embedded for a small device
+# favor code space over speed
+ifdef MINIMIZE_RAM_USAGE
+CFLAGS += -DMINIMIZE_RAM_USAGE
 endif

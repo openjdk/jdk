@@ -587,6 +587,61 @@ void os::print_context(outputStream *st, void *context) {
   st->print_cr(" PC=" INTPTR_FORMAT " nPC=" INTPTR_FORMAT,
             uc->uc_mcontext.gregs[REG_PC],
             uc->uc_mcontext.gregs[REG_nPC]);
+
+  st->cr();
+  st->cr();
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+
+  st->print_cr("O0=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O0]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O0]);
+  st->cr();
+  st->print_cr("O1=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O1]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O1]);
+  st->cr();
+  st->print_cr("O2=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O2]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O2]);
+  st->cr();
+  st->print_cr("O3=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O3]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O3]);
+  st->cr();
+  st->print_cr("O4=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O4]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O4]);
+  st->cr();
+  st->print_cr("O5=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O5]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O5]);
+  st->cr();
+  st->print_cr("O6=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O6]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O6]);
+  st->cr();
+  st->print_cr("O7=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O7]);
+  print_location(st, uc->uc_mcontext.gregs[REG_O7]);
+  st->cr();
+
+  st->print_cr("G1=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G1]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G1]);
+  st->cr();
+  st->print_cr("G2=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G2]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G2]);
+  st->cr();
+  st->print_cr("G3=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G3]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G3]);
+  st->cr();
+  st->print_cr("G4=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G4]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G4]);
+  st->cr();
+  st->print_cr("G5=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G5]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G5]);
+  st->cr();
+  st->print_cr("G6=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G6]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G6]);
+  st->cr();
+  st->print_cr("G7=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G7]);
+  print_location(st, uc->uc_mcontext.gregs[REG_G7]);
+
   st->cr();
   st->cr();
 
