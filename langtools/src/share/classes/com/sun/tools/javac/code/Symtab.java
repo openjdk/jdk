@@ -148,6 +148,7 @@ public class Symtab {
     public final Type inheritedType;
     public final Type proprietaryType;
     public final Type systemType;
+    public final Type autoCloseableType;
 
     /** The symbol representing the length field of an array.
      */
@@ -158,6 +159,9 @@ public class Symtab {
 
     /** The symbol representing the final finalize method on enums */
     public final MethodSymbol enumFinalFinalize;
+
+    /** The symbol representing the close method on TWR AutoCloseable type */
+    public final MethodSymbol autoCloseableClose;
 
     /** The predefined type that belongs to a tag.
      */
@@ -444,6 +448,12 @@ public class Symtab {
         suppressWarningsType = enterClass("java.lang.SuppressWarnings");
         inheritedType = enterClass("java.lang.annotation.Inherited");
         systemType = enterClass("java.lang.System");
+        autoCloseableType = enterClass("java.lang.AutoCloseable");
+        autoCloseableClose = new MethodSymbol(PUBLIC,
+                             names.close,
+                             new MethodType(List.<Type>nil(), voidType,
+                                            List.of(exceptionType), methodClass),
+                             autoCloseableType.tsym);
 
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);

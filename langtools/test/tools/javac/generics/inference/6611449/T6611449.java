@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 6611449
  * @summary Internal Error thrown during generic method/constructor invocation
- * @compile/fail/ref=T6611449.out -XDstdout -XDrawDiagnostics T6611449.java
+ * @compile/fail/ref=T6611449.out -XDrawDiagnostics T6611449.java
  */
 public class T6611449<S> {
 

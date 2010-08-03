@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 
@@ -105,13 +106,16 @@ public class MandatoryWarningHandler {
      *                True if mandatory warnings and notes are being enforced.
      * @param prefix  A common prefix for the set of message keys for
      *                the messages that may be generated.
+     * @param lc      An associated lint category for the warnings, or null if none.
      */
     public MandatoryWarningHandler(Log log, boolean verbose,
-                                   boolean enforceMandatory, String prefix) {
+                                   boolean enforceMandatory, String prefix,
+                                   LintCategory lc) {
         this.log = log;
         this.verbose = verbose;
         this.prefix = prefix;
         this.enforceMandatory = enforceMandatory;
+        this.lintCategory = lc;
     }
 
     /**
@@ -235,15 +239,22 @@ public class MandatoryWarningHandler {
     private final boolean enforceMandatory;
 
     /**
+     * A LintCategory to be included in point-of-use diagnostics to indicate
+     * how messages might be suppressed (i.e. with @SuppressWarnings).
+     */
+    private final LintCategory lintCategory;
+
+    /**
      * Reports a mandatory warning to the log.  If mandatory warnings
      * are not being enforced, treat this as an ordinary warning.
      */
     private void logMandatoryWarning(DiagnosticPosition pos, String msg,
                                      Object... args) {
+        // Note: the following log methods are safe if lintCategory is null.
         if (enforceMandatory)
-            log.mandatoryWarning(pos, msg, args);
+            log.mandatoryWarning(lintCategory, pos, msg, args);
         else
-            log.warning(pos, msg, args);
+            log.warning(lintCategory, pos, msg, args);
     }
 
     /**
