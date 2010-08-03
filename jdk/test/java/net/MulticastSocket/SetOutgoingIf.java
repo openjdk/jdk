@@ -76,6 +76,10 @@ public class SetOutgoingIf {
 
                 // now determine what (if any) type of addresses are assigned to this interface
                 for (InetAddress addr : Collections.list(nic.getInetAddresses())) {
+                    if (addr.isAnyLocalAddress())
+                        continue;
+
+                    System.out.println("    addr " + addr);
                     if (addr instanceof Inet4Address) {
                         netIf.ipv4Address(true);
                     } else if (addr instanceof Inet6Address) {

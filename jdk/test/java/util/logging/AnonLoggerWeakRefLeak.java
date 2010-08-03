@@ -23,24 +23,32 @@
 
 import java.util.logging.*;
 
-public class AnonLoggerWeakRefLeak {
-    public static int DEFAULT_LOOP_TIME = 60;  // time is in seconds
+public class AnonLoggerWeakRefLeak extends SimpleApplication {
+    // The test driver script will allow this program to run until we
+    // reach DEFAULT_LOOP_TIME or a decrease in instance counts is
+    // observed. For this particular WeakReference leak, the count
+    // was always observed to be increasing so if we get a decreasing
+    // count, then the leak is fixed in the bits being tested.
+    // Two minutes has been enough time to observe a decrease in
+    // fixed bits on overloaded systems, but the test will likely
+    // finish more quickly.
+    public static int DEFAULT_LOOP_TIME = 120;  // time is in seconds
 
-    public static void main(String[] args) {
+    // execute the AnonLoggerWeakRefLeak app work
+    public void doMyAppWork(String[] args) throws Exception {
         int loop_time = 0;
         int max_loop_time = DEFAULT_LOOP_TIME;
 
-        if (args.length == 0) {
+        // args[0] is the port-file
+        if (args.length < 2) {
             System.out.println("INFO: using default time of "
                 + max_loop_time + " seconds.");
         } else {
             try {
-                max_loop_time = Integer.parseInt(args[0]);
+                max_loop_time = Integer.parseInt(args[1]);
             } catch (NumberFormatException nfe) {
-                System.err.println("Error: '" + args[0]
+                throw new RuntimeException("Error: '" + args[1]
                     + "': is not a valid seconds value.");
-                System.err.println("Usage: AnonLoggerWeakRefLeak [seconds]");
-                System.exit(1);
             }
         }
 
@@ -72,5 +80,13 @@ public class AnonLoggerWeakRefLeak {
         }
 
         System.out.println("INFO: final loop count = " + count);
+    }
+
+    public static void main(String[] args) throws Exception {
+        AnonLoggerWeakRefLeak myApp = new AnonLoggerWeakRefLeak();
+
+        SimpleApplication.setMyApp(myApp);
+
+        SimpleApplication.main(args);
     }
 }

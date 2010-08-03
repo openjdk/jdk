@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ java.lang.System.out.println('hello world from script');
 new java.lang.Runnable() { run: function() { println('I am runnable'); }}.run();
 EOF
 
-diff jrunscriptTest.out ${TESTSRC}/repl.out
+$golden_diff jrunscriptTest.out ${TESTSRC}/repl.out
 if [ $? != 0 ]
 then
   echo "Output of jrunscript session differ from expected output. Failed."
@@ -67,7 +67,7 @@ java.lang.System.out.println('hello world from script');
 new java.lang.Runnable() { run: function() { println('I am runnable'); }}.run();
 EOF
 
-diff jrunscriptTest.out ${TESTSRC}/repl.out
+$golden_diff jrunscriptTest.out ${TESTSRC}/repl.out
 if [ $? != 0 ]
 then
   echo "Output of jrunscript -l js differ from expected output. Failed."
