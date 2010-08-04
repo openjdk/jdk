@@ -2843,93 +2843,57 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-      // Now choose the CS. We may abandon a pause if we find no
-      // region that will fit in the MMU pause.
-      bool abandoned = g1_policy()->choose_collection_set(target_pause_time_ms);
+      g1_policy()->choose_collection_set(target_pause_time_ms);
 
       // Nothing to do if we were unable to choose a collection set.
-      if (!abandoned) {
 #if G1_REM_SET_LOGGING
-        gclog_or_tty->print_cr("\nAfter pause, heap:");
-        print();
+      gclog_or_tty->print_cr("\nAfter pause, heap:");
+      print();
 #endif
-        PrepareForRSScanningClosure prepare_for_rs_scan;
-        collection_set_iterate(&prepare_for_rs_scan);
+      PrepareForRSScanningClosure prepare_for_rs_scan;
+      collection_set_iterate(&prepare_for_rs_scan);
 
-        setup_surviving_young_words();
+      setup_surviving_young_words();
 
-        // Set up the gc allocation regions.
-        get_gc_alloc_regions();
+      // Set up the gc allocation regions.
+      get_gc_alloc_regions();
 
-        // Actually do the work...
-        evacuate_collection_set();
+      // Actually do the work...
+      evacuate_collection_set();
 
-        free_collection_set(g1_policy()->collection_set());
-        g1_policy()->clear_collection_set();
+      free_collection_set(g1_policy()->collection_set());
+      g1_policy()->clear_collection_set();
 
-        cleanup_surviving_young_words();
+      cleanup_surviving_young_words();
 
-        // Start a new incremental collection set for the next pause.
-        g1_policy()->start_incremental_cset_building();
+      // Start a new incremental collection set for the next pause.
+      g1_policy()->start_incremental_cset_building();
 
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
-        clear_cset_fast_test();
+      // Clear the _cset_fast_test bitmap in anticipation of adding
+      // regions to the incremental collection set for the next
+      // evacuation pause.
+      clear_cset_fast_test();
 
-        if (g1_policy()->in_young_gc_mode()) {
-          _young_list->reset_sampled_info();
+      if (g1_policy()->in_young_gc_mode()) {
+        _young_list->reset_sampled_info();
 
-          // Don't check the whole heap at this point as the
-          // GC alloc regions from this pause have been tagged
-          // as survivors and moved on to the survivor list.
-          // Survivor regions will fail the !is_young() check.
-          assert(check_young_list_empty(false /* check_heap */),
-              "young list should be empty");
+        // Don't check the whole heap at this point as the
+        // GC alloc regions from this pause have been tagged
+        // as survivors and moved on to the survivor list.
+        // Survivor regions will fail the !is_young() check.
+        assert(check_young_list_empty(false /* check_heap */),
+               "young list should be empty");
 
 #if YOUNG_LIST_VERBOSE
-          gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
-          _young_list->print();
+        gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
+        _young_list->print();
 #endif // YOUNG_LIST_VERBOSE
 
-          g1_policy()->record_survivor_regions(_young_list->survivor_length(),
+        g1_policy()->record_survivor_regions(_young_list->survivor_length(),
                                           _young_list->first_survivor_region(),
                                           _young_list->last_survivor_region());
 
-          _young_list->reset_auxilary_lists();
-        }
-      } else {
-        // We have abandoned the current collection. This can only happen
-        // if we're not doing young or partially young collections, and
-        // we didn't find an old region that we're able to collect within
-        // the allowed time.
-
-        assert(g1_policy()->collection_set() == NULL, "should be");
-        assert(_young_list->length() == 0, "because it should be");
-
-        // This should be a no-op.
-        abandon_collection_set(g1_policy()->inc_cset_head());
-
-        g1_policy()->clear_incremental_cset();
-        g1_policy()->stop_incremental_cset_building();
-
-        // Start a new incremental collection set for the next pause.
-        g1_policy()->start_incremental_cset_building();
-
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
-        clear_cset_fast_test();
-
-        // This looks confusing, because the DPT should really be empty
-        // at this point -- since we have not done any collection work,
-        // there should not be any derived pointers in the table to update;
-        // however, there is some additional state in the DPT which is
-        // reset at the end of the (null) "gc" here via the following call.
-        // A better approach might be to split off that state resetting work
-        // into a separate method that asserts that the DPT is empty and call
-        // that here. That is deferred for now.
-        COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+        _young_list->reset_auxilary_lists();
       }
 
       if (evacuation_failed()) {
@@ -2963,7 +2927,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
       g1_policy()->record_pause_time_ms(pause_time_ms);
-      g1_policy()->record_collection_pause_end(abandoned);
+      g1_policy()->record_collection_pause_end();
 
       assert(regions_accounted_for(), "Region leakage.");
 
