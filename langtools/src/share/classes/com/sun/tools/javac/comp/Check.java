@@ -1929,6 +1929,23 @@ public class Check {
  * Check annotations
  **************************************************************************/
 
+    /**
+     * Validate annotations in default values
+     */
+    void validateAnnotationDefaultValue(JCTree defaultValue) {
+        class DefaultValueValidator extends TreeScanner {
+            @Override
+            public void visitAnnotation(JCAnnotation tree) {
+                super.visitAnnotation(tree);
+                validateAnnotation(tree);
+            }
+        }
+        // defaultValue may be null if an error occurred, so don't bother validating it
+        if (defaultValue != null) {
+            defaultValue.accept(new DefaultValueValidator());
+        }
+    }
+
     /** Annotation types are restricted to primitives, String, an
      *  enum, an annotation, Class, Class<?>, Class<? extends
      *  Anything>, arrays of the preceding.
