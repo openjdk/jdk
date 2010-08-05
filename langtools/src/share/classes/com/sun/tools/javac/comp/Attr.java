@@ -675,24 +675,32 @@ public class Attr extends JCTree.Visitor {
 
             // Check that type parameters are well-formed.
             chk.validate(tree.typarams, localEnv);
-            if ((owner.flags() & ANNOTATION) != 0 &&
-                tree.typarams.nonEmpty())
-                log.error(tree.typarams.head.pos(),
-                          "intf.annotation.members.cant.have.type.params");
 
             // Check that result type is well-formed.
             chk.validate(tree.restype, localEnv);
-            if ((owner.flags() & ANNOTATION) != 0)
-                chk.validateAnnotationType(tree.restype);
 
-            if ((owner.flags() & ANNOTATION) != 0)
+            // annotation method checks
+            if ((owner.flags() & ANNOTATION) != 0) {
+                // annotation method cannot have throws clause
+                if (tree.thrown.nonEmpty()) {
+                    log.error(tree.thrown.head.pos(),
+                            "throws.not.allowed.in.intf.annotation");
+                }
+                // annotation method cannot declare type-parameters
+                if (tree.typarams.nonEmpty()) {
+                    log.error(tree.typarams.head.pos(),
+                            "intf.annotation.members.cant.have.type.params");
+                }
+                // validate annotation method's return type (could be an annotation type)
+                chk.validateAnnotationType(tree.restype);
+                // ensure that annotation method does not clash with members of Object/Annotation
                 chk.validateAnnotationMethod(tree.pos(), m);
 
-            // Check that all exceptions mentioned in the throws clause extend
-            // java.lang.Throwable.
-            if ((owner.flags() & ANNOTATION) != 0 && tree.thrown.nonEmpty())
-                log.error(tree.thrown.head.pos(),
-                          "throws.not.allowed.in.intf.annotation");
+                // if default value is an annotation, check it is a well-formed
+                // annotation value (e.g. no duplicate values, no missing values, etc.)
+                chk.validateAnnotationDefaultValue(tree.defaultValue);
+            }
+
             for (List<JCExpression> l = tree.thrown; l.nonEmpty(); l = l.tail)
                 chk.checkType(l.head.pos(), l.head.type, syms.throwableType);
 
