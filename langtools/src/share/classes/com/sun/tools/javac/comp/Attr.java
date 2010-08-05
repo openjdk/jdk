@@ -1594,13 +1594,15 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.varArgs = false;
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                tree.constructorType = checkMethod(clazztype,
-                                                tree.constructor,
-                                                localEnv,
-                                                tree.args,
-                                                argtypes,
-                                                typeargtypes,
-                                                localEnv.info.varArgs);
+                tree.constructorType = tree.constructor.type.isErroneous() ?
+                    syms.errType :
+                    checkMethod(clazztype,
+                        tree.constructor,
+                        localEnv,
+                        tree.args,
+                        argtypes,
+                        typeargtypes,
+                        localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
                     assert tree.constructorType.isErroneous() || tree.varargsElement != null;
             }
