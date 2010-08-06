@@ -62,13 +62,13 @@ template <class T> inline void HRInto_G1RemSet::par_write_ref_nv(HeapRegion* fro
   HeapRegion* to = _g1->heap_region_containing(obj);
   // The test below could be optimized by applying a bit op to to and from.
   if (to != NULL && from != NULL && from != to) {
-    // The _par_traversal_in_progress flag is true during the collection pause,
-    // false during the evacuation failure handing. This should avoid a
+    // The _traversal_in_progress flag is true during the collection pause,
+    // false during the evacuation failure handling. This should avoid a
     // potential loop if we were to add the card containing 'p' to the DCQS
     // that's used to regenerate the remembered sets for the collection set,
     // in the event of an evacuation failure, here. The UpdateRSImmediate
     // closure will eventally call this routine.
-    if (_par_traversal_in_progress &&
+    if (_traversal_in_progress &&
         to->in_collection_set() && !self_forwarded(obj)) {
 
       assert(_cset_rs_update_cl[tid] != NULL, "should have been set already");

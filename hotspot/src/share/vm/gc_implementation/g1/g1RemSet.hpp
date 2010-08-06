@@ -148,10 +148,10 @@ protected:
   size_t*             _cards_scanned;
   size_t              _total_cards_scanned;
 
-  // _par_traversal_in_progress is "true" iff a parallel traversal is in
-  // progress.
-  bool _par_traversal_in_progress;
-  void set_par_traversal(bool b) { _par_traversal_in_progress = b; }
+  // _traversal_in_progress is "true" iff a traversal is in progress.
+
+  bool _traversal_in_progress;
+  void set_traversal(bool b) { _traversal_in_progress = b; }
 
   // Used for caching the closure that is responsible for scanning
   // references into the collection set.
