@@ -122,7 +122,7 @@ public:
 HRInto_G1RemSet::HRInto_G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   : G1RemSet(g1), _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
     _cg1r(g1->concurrent_g1_refine()),
-    _par_traversal_in_progress(false),
+    _traversal_in_progress(false),
     _cset_rs_update_cl(NULL),
     _cards_scanned(NULL), _total_cards_scanned(0)
 {
@@ -484,28 +484,24 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   //   is updated immediately.
   DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
 
-  if (ParallelGCThreads > 0) {
-    // The two flags below were introduced temporarily to serialize
-    // the updating and scanning of remembered sets. There are some
-    // race conditions when these two operations are done in parallel
-    // and they are causing failures. When we resolve said race
-    // conditions, we'll revert back to parallel remembered set
-    // updating and scanning. See CRs 6677707 and 6677708.
-    if (G1UseParallelRSetUpdating || (worker_i == 0)) {
-      updateRS(&into_cset_dcq, worker_i);
-    } else {
-      _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
-      _g1p->record_update_rs_time(worker_i, 0.0);
-    }
-    if (G1UseParallelRSetScanning || (worker_i == 0)) {
-      scanRS(oc, worker_i);
-    } else {
-      _g1p->record_scan_rs_time(worker_i, 0.0);
-    }
+  assert((ParallelGCThreads > 0) || worker_i == 0, "invariant");
+
+  // The two flags below were introduced temporarily to serialize
+  // the updating and scanning of remembered sets. There are some
+  // race conditions when these two operations are done in parallel
+  // and they are causing failures. When we resolve said race
+  // conditions, we'll revert back to parallel remembered set
+  // updating and scanning. See CRs 6677707 and 6677708.
+  if (G1UseParallelRSetUpdating || (worker_i == 0)) {
+    updateRS(&into_cset_dcq, worker_i);
   } else {
-    assert(worker_i == 0, "invariant");
-    updateRS(&into_cset_dcq, 0);
-    scanRS(oc, 0);
+    _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
+    _g1p->record_update_rs_time(worker_i, 0.0);
+  }
+  if (G1UseParallelRSetScanning || (worker_i == 0)) {
+    scanRS(oc, worker_i);
+  } else {
+    _g1p->record_scan_rs_time(worker_i, 0.0);
   }
 
   // We now clear the cached values of _cset_rs_update_cl for this worker
@@ -524,9 +520,9 @@ prepare_for_oops_into_collection_set_do() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
-  assert(!_par_traversal_in_progress, "Invariant between iterations.");
+  assert(!_traversal_in_progress, "Invariant between iterations.");
+  set_traversal(true);
   if (ParallelGCThreads > 0) {
-    set_par_traversal(true);
     _seq_task->set_par_threads((int)n_workers());
   }
   guarantee( _cards_scanned == NULL, "invariant" );
@@ -623,9 +619,7 @@ void HRInto_G1RemSet::cleanup_after_oops_into_collection_set_do() {
   // Set all cards back to clean.
   _g1->cleanUpCardTable();
 
-  if (ParallelGCThreads > 0) {
-    set_par_traversal(false);
-  }
+  set_traversal(false);
 
   DirtyCardQueueSet& into_cset_dcqs = _g1->into_cset_dirty_card_queue_set();
   int into_cset_n_buffers = into_cset_dcqs.completed_buffers_num();
@@ -660,7 +654,7 @@ void HRInto_G1RemSet::cleanup_after_oops_into_collection_set_do() {
          "all buffers should be freed");
   _g1->into_cset_dirty_card_queue_set().clear_n_completed_buffers();
 
-  assert(!_par_traversal_in_progress, "Invariant between iterations.");
+  assert(!_traversal_in_progress, "Invariant between iterations.");
 }
 
 class UpdateRSObjectClosure: public ObjectClosure {
