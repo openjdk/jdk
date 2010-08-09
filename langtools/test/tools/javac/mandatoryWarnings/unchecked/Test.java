@@ -28,96 +28,96 @@
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test1.out -XDstdout -XDrawDiagnostics A.java
+ * @compile/ref=Test1.out -XDrawDiagnostics A.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test1.out -XDstdout -XDrawDiagnostics -nowarn A.java
+ * @compile/ref=Test1.out -XDrawDiagnostics -nowarn A.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test1.out -XDstdout -XDrawDiagnostics -Xmaxwarns 1 A.java
+ * @compile/ref=Test1.out -XDrawDiagnostics -Xmaxwarns 1 A.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test2.out -XDstdout -XDrawDiagnostics A.java B.java
+ * @compile/ref=Test2.out -XDrawDiagnostics A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test2.out -XDstdout -XDrawDiagnostics -nowarn A.java B.java
+ * @compile/ref=Test2.out -XDrawDiagnostics -nowarn A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test2.out -XDstdout -XDrawDiagnostics -Xmaxwarns 1 A.java B.java
+ * @compile/ref=Test2.out -XDrawDiagnostics -Xmaxwarns 1 A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test3.out -XDstdout -XDrawDiagnostics -Xlint:unchecked A.java
+ * @compile/ref=Test3.out -XDrawDiagnostics -Xlint:unchecked A.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test3.out -XDstdout -XDrawDiagnostics -nowarn -Xlint:unchecked A.java
+ * @compile/ref=Test3.out -XDrawDiagnostics -nowarn -Xlint:unchecked A.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test3b.out -XDstdout -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 1 A.java
+ * @compile/ref=Test3b.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 1 A.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test4.out -XDstdout -XDrawDiagnostics -Xlint:unchecked A.java B.java
+ * @compile/ref=Test4.out -XDrawDiagnostics -Xlint:unchecked A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test4.out -XDstdout -XDrawDiagnostics -nowarn -Xlint:unchecked A.java B.java
+ * @compile/ref=Test4.out -XDrawDiagnostics -nowarn -Xlint:unchecked A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test4b.out -XDstdout -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 1 A.java B.java
+ * @compile/ref=Test4b.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 1 A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test4c.out -XDstdout -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 2 A.java B.java
+ * @compile/ref=Test4c.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 2 A.java B.java
  */
 
 /*
  * @test
  * @bug 5047307
  * @summary javac -nowarn improperly suppresses JLS-mandated warnings
- * @compile/ref=Test4d.out -XDstdout -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 3 A.java B.java
+ * @compile/ref=Test4d.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 3 A.java B.java
  */

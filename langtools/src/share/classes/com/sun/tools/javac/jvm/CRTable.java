@@ -325,6 +325,7 @@ implements CRTFlags {
 
         public void visitTry(JCTry tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.resources));
             sr.mergeWith(csp(tree.body));
             sr.mergeWith(cspCatchers(tree.catchers));
             sr.mergeWith(csp(tree.finalizer));

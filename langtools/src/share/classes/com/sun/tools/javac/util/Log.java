@@ -269,7 +269,7 @@ public class Log extends AbstractLog {
      */
     public void prompt() {
         if (promptOnError) {
-            System.err.println(getLocalizedString("resume.abort"));
+            System.err.println(localize("resume.abort"));
             char ch;
             try {
                 while (true) {
@@ -317,8 +317,23 @@ public class Log extends AbstractLog {
         if (msg.length() != 0) writer.println(msg);
     }
 
+    /** Print the text of a message to the errWriter stream,
+     *  translating newlines appropriately for the platform.
+     */
+    public void printErrLines(String key, Object... args) {
+        printLines(errWriter, localize(key, args));
+    }
+
+
+    /** Print the text of a message to the noticeWriter stream,
+     *  translating newlines appropriately for the platform.
+     */
+    public void printNoteLines(String key, Object... args) {
+        printLines(noticeWriter, localize(key, args));
+    }
+
     protected void directError(String key, Object... args) {
-        printLines(errWriter, getLocalizedString(key, args));
+        printErrLines(key, args);
         errWriter.flush();
     }
 
@@ -426,11 +441,21 @@ public class Log extends AbstractLog {
     }
 
     /** Find a localized string in the resource bundle.
+     *  Because this method is static, it ignores the locale.
+     *  Use localize(key, args) when possible.
      *  @param key    The key for the localized string.
      *  @param args   Fields to substitute into the string.
      */
     public static String getLocalizedString(String key, Object ... args) {
         return JavacMessages.getDefaultLocalizedString("compiler.misc." + key, args);
+    }
+
+    /** Find a localized string in the resource bundle.
+     *  @param key    The key for the localized string.
+     *  @param args   Fields to substitute into the string.
+     */
+    public String localize(String key, Object... args) {
+        return messages.getLocalizedString("compiler.misc." + key, args);
     }
 
 /***************************************************************************

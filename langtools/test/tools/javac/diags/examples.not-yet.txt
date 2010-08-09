@@ -1,0 +1,114 @@
+compiler.err.already.annotated                          # internal compiler error?
+compiler.err.already.defined.this.unit                  # seems to be masked by compiler.err.duplicate.class
+compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
+compiler.err.assignment.from.super-bound                # DEAD
+compiler.err.assignment.to.extends-bound                # DEAD
+compiler.err.cant.apply.symbol.1
+compiler.err.cant.read.file                             # (apt.JavaCompiler?)
+compiler.err.cant.select.static.class.from.param.type
+compiler.err.illegal.char.for.encoding
+compiler.err.internal.error.cant.instantiate            # Attr: should not happen
+compiler.err.io.exception                               # (javah.JavahTask?)
+compiler.err.limit.code                                 # Code
+compiler.err.limit.code.too.large.for.try.stmt          # Gen
+compiler.err.limit.dimensions                           # Gen
+compiler.err.limit.locals                               # Code
+compiler.err.limit.parameters                           # Gen
+compiler.err.limit.pool                                 # Gen,JavaCompiler
+compiler.err.limit.pool.in.class                        # UNUSED?
+compiler.err.limit.stack                                # Code
+compiler.err.limit.string                               # Gen
+compiler.err.limit.string.overflow                      # JavaCompiler
+compiler.err.name.reserved.for.internal.use             # UNUSED
+compiler.err.no.annotation.member
+compiler.err.no.encl.instance.of.type.in.scope          # cannot occur; always followed by assert false;
+compiler.err.no.match.entry                             # UNUSED?
+compiler.err.not.annotation.type                        # cannot occur given preceding checkType
+compiler.err.not.within.bounds.explain                  # UNUSED?
+compiler.err.prob.found.req.1                           # Check: DEAD, in unused method
+compiler.err.proc.bad.config.file                       # JavacProcessingEnvironment
+compiler.err.proc.cant.access                           # completion failure
+compiler.err.proc.cant.create.loader                    # security exception from service loader
+compiler.err.proc.no.service                            # JavacProcessingEnvironment: no service loader available
+compiler.err.proc.processor.bad.option.name             # cannot happen? masked by javac.err.invalid.A.key
+compiler.err.proc.processor.constructor.error
+compiler.err.proc.service.problem                       # JavacProcessingEnvironment: catch Throwable from service loader
+compiler.err.signature.doesnt.match.intf                # UNUSED
+compiler.err.signature.doesnt.match.supertype           # UNUSED
+compiler.err.source.cant.overwrite.input.file
+compiler.err.stack.sim.error
+compiler.err.type.var.more.than.once                    # UNUSED
+compiler.err.type.var.more.than.once.in.result          # UNUSED
+compiler.err.undetermined.type
+compiler.err.unexpected.type
+compiler.err.unknown.enum.constant                      # in bad class file
+compiler.err.unsupported.cross.fp.lit                   # Scanner: host system dependent
+compiler.misc.arg.length.mismatch
+compiler.misc.assignment.from.super-bound
+compiler.misc.assignment.to.extends-bound
+compiler.misc.bad.class.file.header                     # bad class file
+compiler.misc.bad.class.signature                       # bad class file
+compiler.misc.bad.const.pool.tag                        # bad class file
+compiler.misc.bad.const.pool.tag.at                     # bad class file
+compiler.misc.bad.enclosing.method                      # bad class file
+compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
+compiler.misc.bad.signature                             # bad class file
+compiler.misc.bad.type.annotation.value
+compiler.misc.base.membership                           # UNUSED
+compiler.misc.ccf.found.later.version
+compiler.misc.ccf.unrecognized.attribute
+compiler.misc.class.file.not.found                      # ClassReader
+compiler.misc.class.file.wrong.class
+compiler.misc.fatal.err.cant.locate.ctor                # Resolve, from Lower
+compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
+compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
+compiler.misc.file.does.not.contain.package
+compiler.misc.illegal.start.of.class.file
+compiler.misc.kindname.annotation
+compiler.misc.kindname.enum
+compiler.misc.kindname.package
+compiler.misc.kindname.static
+compiler.misc.kindname.type.variable
+compiler.misc.kindname.type.variable.bound
+compiler.misc.kindname.value
+compiler.misc.no.conforming.assignment.exists
+compiler.misc.non.denotable.type
+compiler.misc.no.unique.minimal.instance.exists
+compiler.misc.resume.abort                              # prompt for a response
+compiler.misc.source.unavailable                        # DiagnosticSource
+compiler.misc.token.bad-symbol
+compiler.misc.token.character
+compiler.misc.token.double
+compiler.misc.token.end-of-input
+compiler.misc.token.float
+compiler.misc.token.integer
+compiler.misc.token.long-integer
+compiler.misc.token.string
+compiler.misc.type.captureof
+compiler.misc.type.captureof.1
+compiler.misc.type.none
+compiler.misc.type.req.exact
+compiler.misc.type.variable.has.undetermined.type
+compiler.misc.unable.to.access.file                     # ClassFile
+compiler.misc.undecl.type.var                           # ClassReader
+compiler.misc.undetermined.type
+compiler.misc.unicode.str.not.supported                 # ClassReader
+compiler.misc.verbose.retro                             # UNUSED
+compiler.misc.verbose.retro.with                        # UNUSED
+compiler.misc.verbose.retro.with.list                   # UNUSED
+compiler.misc.version.not.available                     # JavaCompiler; implies build error
+compiler.misc.where.description.captured
+compiler.misc.where.description.intersection.1
+compiler.misc.where.typevar.1
+compiler.misc.wrong.version                             # ClassReader
+compiler.warn.annotation.method.not.found               # ClassReader
+compiler.warn.annotation.method.not.found.reason        # ClassReader
+compiler.warn.big.major.version                         # ClassReader
+compiler.warn.illegal.char.for.encoding
+compiler.warn.invalid.archive.file
+compiler.warn.override.bridge
+compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars
+compiler.warn.proc.type.already.exists                  # JavacFiler: just mentioned in TODO
+compiler.warn.unchecked.assign                          # DEAD, replaced by compiler.misc.unchecked.assign
+compiler.warn.unchecked.cast.to.type                    # DEAD, replaced by compiler.misc.unchecked.cast.to.type
+compiler.warn.unexpected.archive.file                   # Paths: zip file with unknown extn
