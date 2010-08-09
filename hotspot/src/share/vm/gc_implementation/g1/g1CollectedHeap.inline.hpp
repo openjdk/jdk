@@ -81,10 +81,9 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
   return attempt_allocation_slow(word_size, permit_collection_pause);
 }
 
-inline RefToScanQueue* G1CollectedHeap::task_queue(int i) {
+inline RefToScanQueue* G1CollectedHeap::task_queue(int i) const {
   return _task_queues->queue(i);
 }
-
 
 inline  bool G1CollectedHeap::isMarkedPrev(oop obj) const {
   return _cm->prevMarkBitMap()->isMarked((HeapWord *)obj);
