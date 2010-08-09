@@ -2710,6 +2710,35 @@ struct PrepareForRSScanningClosure : public HeapRegionClosure {
   }
 };
 
+#if TASKQUEUE_STATS
+void G1CollectedHeap::print_taskqueue_stats_hdr(outputStream* const st) {
+  st->print_raw_cr("GC Task Stats");
+  st->print_raw("thr "); TaskQueueStats::print_header(1, st); st->cr();
+  st->print_raw("--- "); TaskQueueStats::print_header(2, st); st->cr();
+}
+
+void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
+  print_taskqueue_stats_hdr(st);
+
+  TaskQueueStats totals;
+  const int n = MAX2(workers()->total_workers(), 1);
+  for (int i = 0; i < n; ++i) {
+    st->print("%3d ", i); task_queue(i)->stats.print(st); st->cr();
+    totals += task_queue(i)->stats;
+  }
+  st->print_raw("tot "); totals.print(st); st->cr();
+
+  DEBUG_ONLY(totals.verify());
+}
+
+void G1CollectedHeap::reset_taskqueue_stats() {
+  const int n = MAX2(workers()->total_workers(), 1);
+  for (int i = 0; i < n; ++i) {
+    task_queue(i)->stats.reset();
+  }
+}
+#endif // TASKQUEUE_STATS
+
 void
 G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (GC_locker::check_active_before_gc()) {
@@ -2969,6 +2998,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       vm_exit(-1);
     }
   }
+
+  TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
@@ -3715,10 +3747,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
     _surviving_alloc_buffer(g1h->desired_plab_sz(GCAllocForSurvived)),
     _tenured_alloc_buffer(g1h->desired_plab_sz(GCAllocForTenured)),
     _age_table(false),
-#if G1_DETAILED_STATS
-    _pushes(0), _pops(0), _steals(0),
-    _steal_attempts(0),  _overflow_pushes(0),
-#endif
     _strong_roots_time(0), _term_time(0),
     _alloc_buffer_waste(0), _undo_waste(0)
 {
@@ -3738,12 +3766,39 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, real_length * sizeof(size_t));
 
-  _overflowed_refs = new OverflowQueue(10);
-
   _alloc_buffers[GCAllocForSurvived] = &_surviving_alloc_buffer;
   _alloc_buffers[GCAllocForTenured]  = &_tenured_alloc_buffer;
 
   _start = os::elapsedTime();
+}
+
+void
+G1ParScanThreadState::print_termination_stats_hdr(outputStream* const st)
+{
+  st->print_raw_cr("GC Termination Stats");
+  st->print_raw_cr("     elapsed  --strong roots-- -------termination-------"
+                   " ------waste (KiB)------");
+  st->print_raw_cr("thr     ms        ms      %        ms      %    attempts"
+                   "  total   alloc    undo");
+  st->print_raw_cr("--- --------- --------- ------ --------- ------ --------"
+                   " ------- ------- -------");
+}
+
+void
+G1ParScanThreadState::print_termination_stats(int i,
+                                              outputStream* const st) const
+{
+  const double elapsed_ms = elapsed_time() * 1000.0;
+  const double s_roots_ms = strong_roots_time() * 1000.0;
+  const double term_ms    = term_time() * 1000.0;
+  st->print_cr("%3d %9.2f %9.2f %6.2f "
+               "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
+               SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
+               i, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
+               term_ms, term_ms * 100 / elapsed_ms, term_attempts(),
+               (alloc_buffer_waste() + undo_waste()) * HeapWordSize / K,
+               alloc_buffer_waste() * HeapWordSize / K,
+               undo_waste() * HeapWordSize / K);
 }
 
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
@@ -3952,12 +4007,9 @@ public:
     G1ParScanThreadState* pss = par_scan_state();
     while (true) {
       pss->trim_queue();
-      IF_G1_DETAILED_STATS(pss->note_steal_attempt());
 
       StarTask stolen_task;
       if (queues()->steal(pss->queue_num(), pss->hash_seed(), stolen_task)) {
-        IF_G1_DETAILED_STATS(pss->note_steal());
-
         // slightly paranoid tests; I'm trying to catch potential
         // problems before we go into push_on_queue to know where the
         // problem is coming from
@@ -4076,35 +4128,9 @@ public:
     // Clean up any par-expanded rem sets.
     HeapRegionRemSet::par_cleanup();
 
-    MutexLocker x(stats_lock());
     if (ParallelGCVerbose) {
-      gclog_or_tty->print("Thread %d complete:\n", i);
-#if G1_DETAILED_STATS
-      gclog_or_tty->print("  Pushes: %7d    Pops: %7d   Overflows: %7d   Steals %7d (in %d attempts)\n",
-                          pss.pushes(),
-                          pss.pops(),
-                          pss.overflow_pushes(),
-                          pss.steals(),
-                          pss.steal_attempts());
-#endif
-      double elapsed      = pss.elapsed();
-      double strong_roots = pss.strong_roots_time();
-      double term         = pss.term_time();
-      gclog_or_tty->print("  Elapsed: %7.2f ms.\n"
-                          "    Strong roots: %7.2f ms (%6.2f%%)\n"
-                          "    Termination:  %7.2f ms (%6.2f%%) "
-                                                 "(in "SIZE_FORMAT" entries)\n",
-                          elapsed * 1000.0,
-                          strong_roots * 1000.0, (strong_roots*100.0/elapsed),
-                          term * 1000.0, (term*100.0/elapsed),
-                          pss.term_attempts());
-      size_t total_waste = pss.alloc_buffer_waste() + pss.undo_waste();
-      gclog_or_tty->print("  Waste: %8dK\n"
-                 "    Alloc Buffer: %8dK\n"
-                 "    Undo: %8dK\n",
-                 (total_waste * HeapWordSize) / K,
-                 (pss.alloc_buffer_waste() * HeapWordSize) / K,
-                 (pss.undo_waste() * HeapWordSize) / K);
+      MutexLocker x(stats_lock());
+      pss.print_termination_stats(i);
     }
 
     assert(pss.refs_to_scan() == 0, "Task queue should be empty");
@@ -4221,6 +4247,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (ParallelGCThreads > 0) {
     // The individual threads will set their evac-failure closures.
     StrongRootsScope srs(this);
+    if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
     workers()->run_task(&g1_par_task);
   } else {
     StrongRootsScope srs(this);
