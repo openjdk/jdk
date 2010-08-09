@@ -37,11 +37,11 @@ class RedirServer extends Thread {
     OutputStream os;
     int port;
 
-    String reply1 = "HTTP/1.1 307 Temporary Redirect\r\n" +
+    String reply1Part1 = "HTTP/1.1 307 Temporary Redirect\r\n" +
         "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
         "Server: Apache/1.3.14 (Unix)\r\n" +
         "Location: http://localhost:";
-    String reply2 = "/redirected.html\r\n" +
+    String reply1Part2 = "/redirected.html\r\n" +
         "Connection: close\r\n" +
         "Content-Type: text/html; charset=iso-8859-1\r\n\r\n" +
         "<html>Hello</html>";
@@ -49,9 +49,10 @@ class RedirServer extends Thread {
     RedirServer (ServerSocket y) {
         s = y;
         port = s.getLocalPort();
+        System.out.println("Server created listening on " + port);
     }
 
-    String reply3 = "HTTP/1.1 200 Ok\r\n" +
+    String reply2 = "HTTP/1.1 200 Ok\r\n" +
         "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
         "Server: Apache/1.3.14 (Unix)\r\n" +
         "Connection: close\r\n" +
@@ -64,16 +65,24 @@ class RedirServer extends Thread {
             is = s1.getInputStream ();
             os = s1.getOutputStream ();
             is.read ();
-            String reply = reply1 + port + reply2;
+            String reply = reply1Part1 + port + reply1Part2;
             os.write (reply.getBytes());
+            os.close();
             /* wait for redirected connection */
             s.setSoTimeout (5000);
             s1 = s.accept ();
+            is = s1.getInputStream ();
             os = s1.getOutputStream ();
-            os.write (reply3.getBytes());
+            is.read();
+            os.write (reply2.getBytes());
+            os.close();
         }
         catch (Exception e) {
             /* Just need thread to terminate */
+            System.out.println("Server: caught " + e);
+            e.printStackTrace();
+        } finally {
+            try { s.close(); } catch (IOException unused) {}
         }
     }
 };
@@ -84,10 +93,7 @@ public class Redirect307Test {
     public static final int DELAY = 10;
 
     public static void main(String[] args) throws Exception {
-        int nLoops = 1;
-        int nSize = 10;
-        int port, n =0;
-        byte b[] = new byte[nSize];
+        int port;
         RedirServer server;
         ServerSocket sock;
 
@@ -119,7 +125,8 @@ public class Redirect307Test {
             }
         }
         catch(IOException e) {
-            throw new RuntimeException ("Exception caught");
+            e.printStackTrace();
+            throw new RuntimeException ("Exception caught + " + e);
         }
     }
 }

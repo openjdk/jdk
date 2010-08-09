@@ -56,7 +56,6 @@ public class DisconnectAfterEOF {
                 int cl = -1;
                 int remaining = -1;
                 StringBuffer sb = new StringBuffer();
-                Random r = new Random();
                 boolean close = false;
 
                 boolean inBody = false;
@@ -239,8 +238,6 @@ public class DisconnectAfterEOF {
     }
 
     public static void main(String args[]) throws Exception {
-        Random r = new Random();
-
         // start server
         ServerSocket ss = new ServerSocket(0);
         Server svr = new Server(ss);
@@ -273,7 +270,7 @@ public class DisconnectAfterEOF {
         URLConnection uc1 = doRequest(uri);
         doResponse(uc1);
 
-        Thread.currentThread().sleep(2000);
+        Thread.sleep(2000);
 
         URLConnection uc2 = doRequest(uri);
 

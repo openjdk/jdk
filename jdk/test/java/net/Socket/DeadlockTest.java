@@ -33,29 +33,32 @@ import java.io.*;
 
 public class DeadlockTest {
     public static void main(String [] argv) throws Exception {
+        ServerSocket ss = new ServerSocket(0);
+        Socket clientSocket = new Socket();
 
-        // Start the server thread
-        Thread s1 = new Thread(new ServerThread());
-        s1.start();
+        try {
+            // Start the server thread
+            Thread s1 = new Thread(new ServerThread(ss));
+            s1.start();
 
-        // Sleep to make sure s1 has created a server socket
-        Thread.sleep(1000);
+            // Start the client thread
+            ClientThread ct = new ClientThread(clientSocket, ss.getLocalPort());
+            Thread c1 = new Thread(ct);
+            c1.start();
 
-        // Start the client thread
-        ClientThread ct = new ClientThread();
-        Thread c1 = new Thread(ct);
-        c1.start();
+            // Wait for the client thread to finish
+            c1.join(20000);
 
-        // Wait for the client thread to finish
-        c1.join(40000);
-
-        // If timeout, we assume there is a deadlock
-        if (c1.isAlive() == true) {
-            // Close the socket to force the server thread
-            // terminate too
-            s1.stop();
-            ct.getSock().close();
-            throw new Exception("Takes too long. Dead lock");
+            // If timeout, we assume there is a deadlock
+            if (c1.isAlive() == true) {
+                // Close the socket to force the server thread
+                // terminate too
+                s1.stop();
+                throw new Exception("Takes too long. Dead lock");
+            }
+        } finally {
+            ss.close();
+            clientSocket.close();
         }
     }
 }
@@ -71,8 +74,8 @@ class ServerThread implements Runnable {
 
     Socket sock;
 
-    public ServerThread() throws Exception {
-
+    public ServerThread(ServerSocket serverSocket) throws Exception {
+        this.server = serverSocket;
     }
 
     public void ping(int cnt) {
@@ -85,7 +88,6 @@ class ServerThread implements Runnable {
 
         try {
             if (Thread.currentThread().getName().startsWith("child") == false) {
-                server = new ServerSocket(4711);
                 sock  = server.accept();
 
                 new Thread(this, "child").start();
@@ -107,6 +109,7 @@ class ServerThread implements Runnable {
             }
 
         } catch (Throwable e) {
+            System.out.println(e);
             // If anything goes wrong, just quit.
         }
 
@@ -141,10 +144,11 @@ class ClientThread implements Runnable {
 
     Socket sock;
 
-    public ClientThread() throws Exception {
+    public ClientThread(Socket sock, int serverPort) throws Exception {
         try {
-            System.out.println("About to create a socket");
-            sock = new Socket(InetAddress.getLocalHost().getHostName(), 4711);
+            System.out.println("About to connect the client socket");
+            this.sock = sock;
+            this.sock.connect(new InetSocketAddress("localhost", serverPort));
             System.out.println("connected");
 
             out = new ObjectOutputStream(sock.getOutputStream());
@@ -154,10 +158,6 @@ class ClientThread implements Runnable {
           e.printStackTrace();
           throw new Exception("Unexpected exception");
         }
-    }
-
-    public Socket getSock() {
-        return sock;
     }
 
     private int cnt = 1;
@@ -213,6 +213,7 @@ class Message implements java.io.Serializable {
             System.out.println("write message done " + cnt++);
         } catch (IOException ioe) {
             // Ignore the exception
+            System.out.println(ioe);
         }
      }
 }
