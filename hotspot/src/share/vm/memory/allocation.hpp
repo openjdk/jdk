@@ -317,6 +317,7 @@ extern void resource_free_bytes( char *old, size_t size );
 class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
   enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
+  static void set_allocation_type(address res, allocation_type type) NOT_DEBUG_RETURN;
 #ifdef ASSERT
  private:
   // When this object is allocated on stack the new() operator is not
@@ -324,12 +325,11 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   // Store negated 'this' pointer when new() is called to distinguish cases.
   uintptr_t _allocation;
  public:
-  static void set_allocation_type(address res, allocation_type type);
-  allocation_type get_allocation_type();
-  bool allocated_on_stack()     { return get_allocation_type() == STACK_OR_EMBEDDED; }
-  bool allocated_on_res_area()  { return get_allocation_type() == RESOURCE_AREA; }
-  bool allocated_on_C_heap()    { return get_allocation_type() == C_HEAP; }
-  bool allocated_on_arena()     { return get_allocation_type() == ARENA; }
+  allocation_type get_allocation_type() const;
+  bool allocated_on_stack()    const { return get_allocation_type() == STACK_OR_EMBEDDED; }
+  bool allocated_on_res_area() const { return get_allocation_type() == RESOURCE_AREA; }
+  bool allocated_on_C_heap()   const { return get_allocation_type() == C_HEAP; }
+  bool allocated_on_arena()    const { return get_allocation_type() == ARENA; }
   ResourceObj(); // default construtor
   ResourceObj(const ResourceObj& r); // default copy construtor
   ResourceObj& operator=(const ResourceObj& r); // default copy assignment
@@ -346,11 +346,6 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   void* operator new(size_t size) {
       address res = (address)resource_allocate_bytes(size);
       DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-  void* operator new(size_t size, void* where, allocation_type type) {
-      address res = (address)where;
-      DEBUG_ONLY(set_allocation_type(res, type);)
       return res;
   }
   void  operator delete(void* p);

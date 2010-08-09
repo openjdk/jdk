@@ -46,7 +46,7 @@ void* ResourceObj::operator new(size_t size, allocation_type type) {
     DEBUG_ONLY(set_allocation_type(res, C_HEAP);)
     break;
    case RESOURCE_AREA:
-    // Will set allocation type in the resource object.
+    // new(size) sets allocation type RESOURCE_AREA.
     res = (address)operator new(size);
     break;
    default:
@@ -66,26 +66,30 @@ void ResourceObj::operator delete(void* p) {
 void ResourceObj::set_allocation_type(address res, allocation_type type) {
     // Set allocation type in the resource object
     uintptr_t allocation = (uintptr_t)res;
-    assert((allocation & allocation_mask) == 0, "address should be aligned ot 4 bytes at least");
+    assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least");
     assert(type <= allocation_mask, "incorrect allocation type");
     ((ResourceObj *)res)->_allocation = ~(allocation + type);
 }
 
-ResourceObj::allocation_type ResourceObj::get_allocation_type() {
+ResourceObj::allocation_type ResourceObj::get_allocation_type() const {
     assert(~(_allocation | allocation_mask) == (uintptr_t)this, "lost resource object");
     return (allocation_type)((~_allocation) & allocation_mask);
 }
 
-ResourceObj::ResourceObj() { // default construtor
+ResourceObj::ResourceObj() { // default constructor
     if (~(_allocation | allocation_mask) != (uintptr_t)this) {
       set_allocation_type((address)this, STACK_OR_EMBEDDED);
+    } else if (allocated_on_stack()) {
+      // For some reason we got a value which looks like an allocation on stack.
+      // Pass if it is really allocated on stack.
+      assert(Thread::current()->on_local_stack((address)this),"should be on stack");
     } else {
       assert(allocated_on_res_area() || allocated_on_C_heap() || allocated_on_arena(),
              "allocation_type should be set by operator new()");
     }
 }
 
-ResourceObj::ResourceObj(const ResourceObj& r) { // default copy construtor
+ResourceObj::ResourceObj(const ResourceObj& r) { // default copy constructor
     // Used in ClassFileParser::parse_constant_pool_entries() for ClassFileStream.
     set_allocation_type((address)this, STACK_OR_EMBEDDED);
 }
@@ -98,8 +102,9 @@ ResourceObj& ResourceObj::operator=(const ResourceObj& r) { // default copy assi
 }
 
 ResourceObj::~ResourceObj() {
-    if (!allocated_on_C_heap()) { // operator delete() checks C_heap allocation_type.
-      _allocation = badHeapOopVal;
+    // allocated_on_C_heap() also checks that encoded (in _allocation) address == this.
+    if (!allocated_on_C_heap()) {  // ResourceObj::delete() zaps _allocation for C_heap.
+      _allocation = badHeapOopVal; // zap type
     }
 }
 #endif // ASSERT
