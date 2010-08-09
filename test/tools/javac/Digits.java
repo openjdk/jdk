@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 6183529
  * @summary javac gives warnings instead of errors on non-ASCII digits
- * @compile/fail/ref=Digits.out -XDstdout -XDrawDiagnostics Digits.java
+ * @compile/fail/ref=Digits.out -XDrawDiagnostics Digits.java
  */
 
 class Digits

@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 4906100
  * @summary detect empty statement after if
- * @compile/ref=T4906100.out -XDstdout -XDrawDiagnostics -Xlint:empty T4906100.java
+ * @compile/ref=T4906100.out -XDrawDiagnostics -Xlint:empty T4906100.java
  */
 
 class T4906100 {

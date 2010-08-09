@@ -1105,7 +1105,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             return env;
 
         if (verboseCompilePolicy)
-            Log.printLines(log.noticeWriter, "[attribute " + env.enclClass.sym + "]");
+            printNote("[attribute " + env.enclClass.sym + "]");
         if (verbose)
             printVerbose("checking.attribution", env.enclClass.sym);
 
@@ -1174,7 +1174,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             try {
                 make.at(Position.FIRSTPOS);
                 TreeMaker localMake = make.forToplevel(env.toplevel);
-                flow.analyzeTree(env.tree, localMake);
+                flow.analyzeTree(env, localMake);
                 compileStates.put(env, CompileState.FLOW);
 
                 if (shouldStop(CompileState.FLOW))
@@ -1527,19 +1527,19 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      *  @param arg An argument for substitution into the output string.
      */
     protected void printVerbose(String key, Object arg) {
-        Log.printLines(log.noticeWriter, Log.getLocalizedString("verbose." + key, arg));
+        log.printNoteLines("verbose." + key, arg);
     }
 
     /** Print numbers of errors and warnings.
      */
     protected void printCount(String kind, int count) {
         if (count != 0) {
-            String text;
+            String key;
             if (count == 1)
-                text = Log.getLocalizedString("count." + kind, String.valueOf(count));
+                key = "count." + kind;
             else
-                text = Log.getLocalizedString("count." + kind + ".plural", String.valueOf(count));
-            Log.printLines(log.errWriter, text);
+                key = "count." + kind + ".plural";
+            log.printErrLines(key, String.valueOf(count));
             log.errWriter.flush();
         }
     }

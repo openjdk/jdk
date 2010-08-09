@@ -3,7 +3,7 @@
  * @bug 6827009
  * @summary Check for non-constant case labels.
  * @compile/fail -source 6 NonConstantLabel.java
- * @compile/fail/ref=NonConstantLabel.out -XDstdout -XDrawDiagnostics NonConstantLabel.java
+ * @compile/fail/ref=NonConstantLabel.out -XDrawDiagnostics NonConstantLabel.java
  */
 class NonConstantLabel {
     String m(String s) {

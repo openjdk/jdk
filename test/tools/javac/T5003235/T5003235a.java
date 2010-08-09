@@ -3,7 +3,7 @@
  * @bug     5003235
  * @summary Private inner class accessible from subclasses
  * @author  Peter von der Ah\u00e9
- * @compile/fail/ref=T5003235a.out -XDstdout -XDdiags=%b:%l:%_%m T5003235a.java
+ * @compile/fail/ref=T5003235a.out -XDdiags=%b:%l:%_%m T5003235a.java
  */
 
 class Super {

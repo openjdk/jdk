@@ -209,7 +209,8 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     public R visitTry(TryTree node, P p) {
-        R r = scan(node.getBlock(), p);
+        R r = scan(node.getResources(), p);
+        r = scanAndReduce(node.getBlock(), p, r);
         r = scanAndReduce(node.getCatches(), p, r);
         r = scanAndReduce(node.getFinallyBlock(), p, r);
         return r;

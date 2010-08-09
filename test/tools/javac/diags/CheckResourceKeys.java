@@ -294,6 +294,7 @@ public class CheckResourceKeys {
         Set<String> results = new TreeSet<String>();
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         JavaFileManager fm = c.getStandardFileManager(null, null, null);
+        JavaFileManager.Location javacLoc = findJavacLocation(fm);
         String[] pkgs = {
             "javax.annotation.processing",
             "javax.lang.model",
@@ -302,7 +303,7 @@ public class CheckResourceKeys {
             "com.sun.tools.javac"
         };
         for (String pkg: pkgs) {
-            for (JavaFileObject fo: fm.list(StandardLocation.PLATFORM_CLASS_PATH,
+            for (JavaFileObject fo: fm.list(javacLoc,
                     pkg, EnumSet.of(JavaFileObject.Kind.CLASS), true)) {
                 String name = fo.getName();
                 // ignore resource files, and files which are not really part of javac
@@ -314,6 +315,23 @@ public class CheckResourceKeys {
             }
         }
         return results;
+    }
+
+    // depending on how the test is run, javac may be on bootclasspath or classpath
+    JavaFileManager.Location findJavacLocation(JavaFileManager fm) {
+        JavaFileManager.Location[] locns =
+            { StandardLocation.PLATFORM_CLASS_PATH, StandardLocation.CLASS_PATH };
+        try {
+            for (JavaFileManager.Location l: locns) {
+                JavaFileObject fo = fm.getJavaFileForInput(l,
+                    "com.sun.tools.javac.Main", JavaFileObject.Kind.CLASS);
+                if (fo != null)
+                    return l;
+            }
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+        throw new IllegalStateException("Cannot find javac");
     }
 
     /**

@@ -1,7 +1,7 @@
 /*
  * @test  /nodynamiccopyright/
  * @bug 6245591
- * @compile/ref=T6245591.out -XDstdout -XDrawDiagnostics -Xlint:all,-path T6245591.java
+ * @compile/ref=T6245591.out -XDrawDiagnostics -Xlint:all,-path T6245591.java
  */
 enum Season {
     /** @deprecated */
