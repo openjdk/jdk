@@ -571,6 +571,16 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "META-INF/services/com.sun.tools.xjc.Plugin" >> $@
 	$(ECHO) "com/sun/tools/" >> $@
 	$(ECHO) "sun/jvmstat/" >> $@
+	$(ECHO) "sun/nio/cs/ext/" >> $@
+	$(ECHO) "sun/awt/HKSCS.class" >> $@
+	$(ECHO) "sun/awt/motif/X11GB2312$Decoder.class" >> $@
+	$(ECHO) "sun/awt/motif/X11GB2312$Encoder.class" >> $@
+	$(ECHO) "sun/awt/motif/X11GB2312.class" >> $@
+	$(ECHO) "sun/awt/motif/X11GBK$Encoder.class" >> $@
+	$(ECHO) "sun/awt/motif/X11GBK.class" >> $@
+	$(ECHO) "sun/awt/motif/X11KSC5601$Decoder.class" >> $@
+	$(ECHO) "sun/awt/motif/X11KSC5601$Encoder.class" >> $@
+	$(ECHO) "sun/awt/motif/X11KSC5601.class" >> $@
 	$(ECHO) "sun/rmi/rmic/" >> $@
 	$(ECHO) "sun/tools/asm/" >> $@
 	$(ECHO) "sun/tools/java/" >> $@

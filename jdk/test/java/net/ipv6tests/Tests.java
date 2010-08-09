@@ -134,11 +134,11 @@ public class Tests {
         }
     }
 
-    /* check the time got is within 20% of the time expected */
+    /* check the time got is within 50% of the time expected */
     public static void checkTime (long got, long expected) {
         dprintln ("checkTime: got " + got + " expected " + expected);
-        long upper = expected + (expected / 5);
-        long lower = expected - (expected / 5);
+        long upper = expected + (expected / 2);
+        long lower = expected - (expected / 2);
         if (got > upper || got < lower) {
             throw new RuntimeException ("checkTime failed: got " + got + " expected " + expected);
         }
