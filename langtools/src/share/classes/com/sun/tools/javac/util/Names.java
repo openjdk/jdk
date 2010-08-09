@@ -148,6 +148,8 @@ public class Names {
     public final Name getDeclaringClass;
     public final Name ex;
     public final Name finalize;
+    public final Name java_lang_AutoCloseable;
+    public final Name close;
 
     public final Name.Table table;
 
@@ -263,6 +265,9 @@ public class Names {
         getDeclaringClass = fromString("getDeclaringClass");
         ex = fromString("ex");
         finalize = fromString("finalize");
+
+        java_lang_AutoCloseable = fromString("java.lang.AutoCloseable");
+        close = fromString("close");
     }
 
     protected Name.Table createTable(Options options) {

@@ -4,7 +4,7 @@
  * @summary javac crash when declare an annotation type illegally
  *
  * @compile/fail IllegalAnnotation.java
- * @compile/fail/ref=IllegalAnnotation.out -XDdev -XDrawDiagnostics -XDstdout IllegalAnnotation.java
+ * @compile/fail/ref=IllegalAnnotation.out -XDdev -XDrawDiagnostics IllegalAnnotation.java
  */
 class IllegalAnnotation {
     {

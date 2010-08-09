@@ -4,7 +4,7 @@
  * @summary Verify correct implementation of JLS2e 6.6.2.1
  * @author maddox
  *
- * @compile/fail/ref=ProtectedMemberAccess4.out -XDstdout -XDdiags=-simpleNames -XDdiagsFormat=%b:%l:%_%m ProtectedMemberAccess4.java
+ * @compile/fail/ref=ProtectedMemberAccess4.out -XDdiags=-simpleNames -XDdiagsFormat=%b:%l:%_%m ProtectedMemberAccess4.java
  */
 
 // 33 errors expected.

@@ -28,7 +28,7 @@
  * file are correct, including those within InnerClasses attributes.
  * @author John Rose (jrose). Entered as a regression test by Bill Maddox (maddox).
  *
- * @compile/ref=ClassModifiers.out -XDstdout  -XDdumpmodifiers=ci ClassModifiers.java
+ * @compile/ref=ClassModifiers.out  -XDdumpmodifiers=ci ClassModifiers.java
  *
  */
 
