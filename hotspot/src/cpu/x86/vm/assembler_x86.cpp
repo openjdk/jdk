@@ -7151,7 +7151,7 @@ void MacroAssembler::tlab_refill(Label& retry,
   subptr(t1, typeArrayOopDesc::header_size(T_INT));
   addptr(t1, (int32_t)ThreadLocalAllocBuffer::alignment_reserve());
   shlptr(t1, log2_intptr(HeapWordSize/sizeof(jint)));
-  movptr(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
+  movl(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
   // set klass to intArrayKlass
   // dubious reloc why not an oop reloc?
   movptr(t1, ExternalAddress((address) Universe::intArrayKlassObj_addr()));
