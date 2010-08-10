@@ -479,8 +479,8 @@ void VMError::report(outputStream* st) {
 
        if (fr.sp()) {
          st->print(",  sp=" PTR_FORMAT, fr.sp());
-         st->print(",  free space=%" INTPTR_FORMAT "k",
-                     ((intptr_t)fr.sp() - (intptr_t)stack_bottom) >> 10);
+         size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
+         st->print(",  free space=" SIZE_FORMAT "k", free_stack_size);
        }
 
        st->cr();

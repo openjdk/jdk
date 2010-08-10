@@ -807,7 +807,7 @@ bool Thread::is_in_stack(address adr) const {
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
-  return (_stack_base >= adr && adr >= (_stack_base - _stack_size));
+  return on_local_stack(adr);
 }
 
 bool Thread::set_as_starting_thread() {
