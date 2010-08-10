@@ -187,7 +187,6 @@ class UnixFileSystem extends FileSystem {
                     }
                 }
             }
-            assert canonicalize0(path).equals(res) || path.startsWith(javaHome);
             return res;
         }
     }
