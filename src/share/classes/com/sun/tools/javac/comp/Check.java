@@ -2120,8 +2120,12 @@ public class Check {
     public void validateAnnotation(JCAnnotation a) {
         if (a.type.isErroneous()) return;
 
-        // collect an inventory of the members
-        Set<MethodSymbol> members = new HashSet<MethodSymbol>();
+        // collect an inventory of the members (sorted alphabetically)
+        Set<MethodSymbol> members = new TreeSet<MethodSymbol>(new Comparator<Symbol>() {
+            public int compare(Symbol t, Symbol t1) {
+                return t.name.compareTo(t1.name);
+            }
+        });
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
              e != null;
              e = e.sibling)
@@ -2142,10 +2146,18 @@ public class Check {
         }
 
         // all the remaining ones better have default values
-        for (MethodSymbol m : members)
-            if (m.defaultValue == null && !m.type.isErroneous())
-                log.error(a.pos(), "annotation.missing.default.value",
-                          a.type, m.name);
+        ListBuffer<Name> missingDefaults = ListBuffer.lb();
+        for (MethodSymbol m : members) {
+            if (m.defaultValue == null && !m.type.isErroneous()) {
+                missingDefaults.append(m.name);
+            }
+        }
+        if (missingDefaults.nonEmpty()) {
+            String key = (missingDefaults.size() > 1)
+                    ? "annotation.missing.default.value.1"
+                    : "annotation.missing.default.value";
+            log.error(a.pos(), key, a.type, missingDefaults);
+        }
 
         // special case: java.lang.annotation.Target must not have
         // repeated values in its value member
