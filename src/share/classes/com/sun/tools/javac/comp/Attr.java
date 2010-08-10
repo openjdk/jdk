@@ -1554,7 +1554,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
         if (TreeInfo.isDiamond(tree)) {
-            clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes, true);
+            clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes);
             clazz.type = clazztype;
         }
 
@@ -1692,8 +1692,7 @@ public class Attr extends JCTree.Visitor {
                         Type clazztype,
                         Pair<Scope, Scope> mapping,
                         List<Type> argtypes,
-                        List<Type> typeargtypes,
-                        boolean reportErrors) {
+                        List<Type> typeargtypes) {
         if (clazztype.isErroneous() || mapping == erroneousMapping) {
             //if the type of the instance creation expression is erroneous,
             //or something prevented us to form a valid mapping, return the
@@ -1731,7 +1730,7 @@ public class Attr extends JCTree.Visitor {
                         env,
                         clazztype.tsym.type,
                         argtypes,
-                        typeargtypes, reportErrors);
+                        typeargtypes);
             } finally {
                 ((ClassSymbol) clazztype.tsym).members_field = mapping.fst;
             }
@@ -1760,42 +1759,37 @@ public class Attr extends JCTree.Visitor {
                         Warner.noWarnings);
             } catch (Infer.InferenceException ex) {
                 //an error occurred while inferring uninstantiated type-variables
-                //we need to optionally report an error
-                if (reportErrors) {
-                    log.error(tree.clazz.pos(),
-                            "cant.apply.diamond.1",
-                            diags.fragment("diamond", clazztype.tsym),
-                            ex.diagnostic);
-                }
+                log.error(tree.clazz.pos(),
+                        "cant.apply.diamond.1",
+                        diags.fragment("diamond", clazztype.tsym),
+                        ex.diagnostic);
             }
         }
-        if (reportErrors) {
-            clazztype = chk.checkClassType(tree.clazz.pos(),
-                    clazztype,
-                    true);
-            if (clazztype.tag == CLASS) {
-                List<Type> invalidDiamondArgs = chk.checkDiamond((ClassType)clazztype);
-                if (!clazztype.isErroneous() && invalidDiamondArgs.nonEmpty()) {
-                    //one or more types inferred in the previous steps is either a
-                    //captured type or an intersection type --- we need to report an error.
-                    String subkey = invalidDiamondArgs.size() > 1 ?
-                        "diamond.invalid.args" :
-                        "diamond.invalid.arg";
-                    //The error message is of the kind:
-                    //
-                    //cannot infer type arguments for {clazztype}<>;
-                    //reason: {subkey}
-                    //
-                    //where subkey is a fragment of the kind:
-                    //
-                    //type argument(s) {invalidDiamondArgs} inferred for {clazztype}<> is not allowed in this context
-                    log.error(tree.clazz.pos(),
-                                "cant.apply.diamond.1",
-                                diags.fragment("diamond", clazztype.tsym),
-                                diags.fragment(subkey,
-                                               invalidDiamondArgs,
-                                               diags.fragment("diamond", clazztype.tsym)));
-                }
+        clazztype = chk.checkClassType(tree.clazz.pos(),
+                clazztype,
+                true);
+        if (clazztype.tag == CLASS) {
+            List<Type> invalidDiamondArgs = chk.checkDiamond((ClassType)clazztype);
+            if (!clazztype.isErroneous() && invalidDiamondArgs.nonEmpty()) {
+                //one or more types inferred in the previous steps is either a
+                //captured type or an intersection type --- we need to report an error.
+                String subkey = invalidDiamondArgs.size() > 1 ?
+                    "diamond.invalid.args" :
+                    "diamond.invalid.arg";
+                //The error message is of the kind:
+                //
+                //cannot infer type arguments for {clazztype}<>;
+                //reason: {subkey}
+                //
+                //where subkey is a fragment of the kind:
+                //
+                //type argument(s) {invalidDiamondArgs} inferred for {clazztype}<> is not allowed in this context
+                log.error(tree.clazz.pos(),
+                            "cant.apply.diamond.1",
+                            diags.fragment("diamond", clazztype.tsym),
+                            diags.fragment(subkey,
+                                           invalidDiamondArgs,
+                                           diags.fragment("diamond", clazztype.tsym)));
             }
         }
         return clazztype;

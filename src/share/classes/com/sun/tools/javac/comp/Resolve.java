@@ -40,6 +40,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import javax.lang.model.element.ElementVisitor;
 
 import java.util.Map;
@@ -1447,7 +1448,7 @@ public class Resolve {
                               Env<AttrContext> env,
                               Type site,
                               List<Type> argtypes,
-                              List<Type> typeargtypes, boolean reportErrors) {
+                              List<Type> typeargtypes) {
         Symbol sym = methodNotFound;
         JCDiagnostic explanation = null;
         List<MethodResolutionPhase> steps = methodResolutionSteps;
@@ -1466,11 +1467,20 @@ public class Resolve {
             }
             steps = steps.tail;
         }
-        if (sym.kind >= AMBIGUOUS && reportErrors) {
-            String key = explanation == null ?
-                "cant.apply.diamond" :
-                "cant.apply.diamond.1";
-            log.error(pos, key, diags.fragment("diamond", site.tsym), explanation);
+        if (sym.kind >= AMBIGUOUS) {
+            final JCDiagnostic details = explanation;
+            Symbol errSym = new ResolveError(WRONG_MTH, "diamond error") {
+                @Override
+                JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                    String key = details == null ?
+                        "cant.apply.diamond" :
+                        "cant.apply.diamond.1";
+                    return diags.create(dkind, log.currentSource(), pos, key, diags.fragment("diamond", site.tsym), details);
+                }
+            };
+            MethodResolutionPhase errPhase = firstErroneousResolutionPhase();
+            sym = access(errSym, pos, site, names.init, true, argtypes, typeargtypes);
+            env.info.varArgs = errPhase.isVarargsRequired();
         }
         return sym;
     }
