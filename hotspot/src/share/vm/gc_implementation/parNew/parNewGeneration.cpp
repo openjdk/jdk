@@ -970,8 +970,10 @@ void ParNewGeneration::collect(bool   full,
     gch->print_heap_change(gch_prev_used);
   }
 
-  TASKQUEUE_STATS_ONLY(thread_state_set.print_termination_stats());
-  TASKQUEUE_STATS_ONLY(thread_state_set.print_taskqueue_stats());
+  if (PrintGCDetails && ParallelGCVerbose) {
+    TASKQUEUE_STATS_ONLY(thread_state_set.print_termination_stats());
+    TASKQUEUE_STATS_ONLY(thread_state_set.print_taskqueue_stats());
+  }
 
   if (UseAdaptiveSizePolicy) {
     size_policy->minor_collection_end(gch->gc_cause());
