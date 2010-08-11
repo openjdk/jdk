@@ -441,7 +441,9 @@ class Thread implements Runnable {
             t.threadLocals = null;
 
             group.checkAccess();
-            group.addUnstarted();
+            if (threadStatus == 0) {
+                group.addUnstarted();
+            }
             t.setPriority(priority);
 
             final Thread current = Thread.currentThread();
