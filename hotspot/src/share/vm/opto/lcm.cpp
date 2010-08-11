@@ -113,7 +113,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
     was_store = false;
-    switch( mach->ideal_Opcode() ) {
+    int iop = mach->ideal_Opcode();
+    switch( iop ) {
     case Op_LoadB:
     case Op_LoadUS:
     case Op_LoadD:
@@ -155,6 +156,12 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     default:                    // Also check for embedded loads
       if( !mach->needs_anti_dependence_check() )
         continue;               // Not an memory op; skip it
+      if( must_clone[iop] ) {
+        // Do not move nodes which produce flags because
+        // RA will try to clone it to place near branch and
+        // it will cause recompilation, see clone_node().
+        continue;
+      }
       {
         // Check that value is used in memory address in
         // instructions with embedded load (CmpP val1,(val2+off)).
@@ -957,6 +964,8 @@ void Block::call_catch_cleanup(Block_Array &bbs) {
     Block *sb = _succs[i];
     // Clone the entire area; ignoring the edge fixup for now.
     for( uint j = end; j > beg; j-- ) {
+      // It is safe here to clone a node with anti_dependence
+      // since clones dominate on each path.
       Node *clone = _nodes[j-1]->clone();
       sb->_nodes.insert( 1, clone );
       bbs.map(clone->_idx,sb);
