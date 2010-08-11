@@ -329,6 +329,7 @@ class nmethod : public CodeBlob {
 
   bool is_compiled_by_c1() const;
   bool is_compiled_by_c2() const;
+  bool is_compiled_by_shark() const;
 
   // boundaries for different parts
   address code_begin            () const          { return _entry_point; }

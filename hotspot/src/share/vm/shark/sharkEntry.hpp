@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2010 Red Hat, Inc.
+ * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,36 @@
  *
  */
 
-  static int pd_instruction_alignment() {
-    return 1;
+class SharkContext;
+
+class SharkEntry : public ZeroEntry {
+ private:
+  address         _code_limit;
+  SharkContext*   _context;
+  llvm::Function* _function;
+
+ public:
+  address code_start() const {
+    return entry_point();
+  }
+  address code_limit() const {
+    return _code_limit;
+  }
+  SharkContext* context() const {
+    return _context;
+  }
+  llvm::Function* function() const {
+    return _function;
   }
 
-  static const char* pd_cpu_opts() {
-    return "";
+ public:
+  void set_code_limit(address code_limit) {
+    _code_limit = code_limit;
   }
+  void set_context(SharkContext* context) {
+    _context = context;
+  }
+  void set_function(llvm::Function* function) {
+    _function = function;
+  }
+};

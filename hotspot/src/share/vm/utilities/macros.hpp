@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,9 +151,11 @@
 #if defined(IA32) || defined(AMD64)
 #define X86
 #define X86_ONLY(code) code
+#define NOT_X86(code)
 #else
 #undef X86
 #define X86_ONLY(code)
+#define NOT_X86(code) code
 #endif
 
 #ifdef IA32

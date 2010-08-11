@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,9 @@ VM_PICFLAG        = $(VM_PICFLAG/$(LINK_INTO))
 
 ifeq ($(ZERO_BUILD), true)
 CFLAGS += $(LIBFFI_CFLAGS)
+endif
+ifeq ($(SHARK_BUILD), true)
+CFLAGS += $(LLVM_CFLAGS)
 endif
 CFLAGS += $(VM_PICFLAG)
 CFLAGS += -fno-rtti

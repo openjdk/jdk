@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2010 Red Hat, Inc.
+ * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,7 @@
  *
  */
 
-  static int pd_instruction_alignment() {
-    return 1;
-  }
+#include "incls/_precompiled.incl"
+#include "incls/_shark_globals.cpp.incl"
 
-  static const char* pd_cpu_opts() {
-    return "";
-  }
+SHARK_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG)

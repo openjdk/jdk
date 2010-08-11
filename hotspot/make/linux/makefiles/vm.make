@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,14 @@ mapfile_reorder : mapfile $(REORDERFILE)
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
-ifeq ($(ZERO_LIBARCH), ppc64)
+ifeq ($(SHARK_BUILD), true)
   STATIC_CXX = false
 else
-  STATIC_CXX = true
+  ifeq ($(ZERO_LIBARCH), ppc64)
+    STATIC_CXX = false
+  else
+    STATIC_CXX = true
+  endif
 endif
 
 ifeq ($(LINK_INTO),AOUT)
@@ -167,6 +171,10 @@ else
 endif
 ifeq ($(ZERO_BUILD), true)
   LIBS_VM += $(LIBFFI_LIBS)
+endif
+ifeq ($(SHARK_BUILD), true)
+  LFLAGS_VM += $(LLVM_LDFLAGS)
+  LIBS_VM   += $(LLVM_LIBS)
 endif
 
 LINK_VM = $(LINK_LIB.c)
