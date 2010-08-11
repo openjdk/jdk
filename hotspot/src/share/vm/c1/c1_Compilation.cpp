@@ -220,11 +220,13 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   code_offsets->set_value(CodeOffsets::Deopt, assembler->emit_deopt_handler());
   CHECK_BAILOUT();
 
-  // Generate code for MethodHandle deopt handler.  We can use the
-  // same code as for the normal deopt handler, we just need a
-  // different entry point address.
-  code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
-  CHECK_BAILOUT();
+  // Emit the MethodHandle deopt handler code (if required).
+  if (has_method_handle_invokes()) {
+    // We can use the same code as for the normal deopt handler, we
+    // just need a different entry point address.
+    code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
+    CHECK_BAILOUT();
+  }
 
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
@@ -446,6 +448,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
 , _has_unsafe_access(false)
+, _has_method_handle_invokes(false)
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
 , _allocator(NULL)
