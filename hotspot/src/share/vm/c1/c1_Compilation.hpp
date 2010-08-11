@@ -69,6 +69,7 @@ class Compilation: public StackObj {
   bool               _has_exception_handlers;
   bool               _has_fpu_code;
   bool               _has_unsafe_access;
+  bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   const char*        _bailout_msg;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
@@ -146,6 +147,10 @@ class Compilation: public StackObj {
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
   void notice_inlined_method(ciMethod* method);
+
+  // JSR 292
+  bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
+  void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   DebugInformationRecorder* debug_info_recorder() const; // = _env->debug_info();
   Dependencies* dependency_recorder() const; // = _env->dependencies()
