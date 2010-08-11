@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2010 Red Hat, Inc.
+ * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,32 @@
  *
  */
 
-  static int pd_instruction_alignment() {
-    return 1;
+class SharkIntrinsics : public SharkTargetInvariants {
+ public:
+  static bool is_intrinsic(ciMethod* target);
+  static void inline_intrinsic(ciMethod* target, SharkState* state);
+
+ private:
+  SharkIntrinsics(SharkState* state, ciMethod* target)
+    : SharkTargetInvariants(state, target), _state(state) {}
+
+ private:
+  SharkState* _state;
+
+ private:
+  SharkState* state() const {
+    return _state;
   }
 
-  static const char* pd_cpu_opts() {
-    return "";
-  }
+ private:
+  void do_intrinsic();
+
+ private:
+  void do_Math_minmax(llvm::ICmpInst::Predicate p);
+  void do_Math_1to1(llvm::Value* function);
+  void do_Math_2to1(llvm::Value* function);
+  void do_Object_getClass();
+  void do_System_currentTimeMillis();
+  void do_Thread_currentThread();
+  void do_Unsafe_compareAndSwapInt();
+};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,8 +423,14 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   env.output()->print_cr("Decoding compiled method " INTPTR_FORMAT ":", nm);
   env.output()->print_cr("Code:");
 
+#ifdef SHARK
+  SharkEntry* entry = (SharkEntry *) nm->instructions_begin();
+  unsigned char* p = entry->code_start();
+  unsigned char* end = entry->code_limit();
+#else
   unsigned char* p = nm->instructions_begin();
   unsigned char* end = nm->instructions_end();
+#endif // SHARK
 
   // If there has been profiling, print the buckets.
   if (FlatProfiler::bucket_start_for(p) != NULL) {

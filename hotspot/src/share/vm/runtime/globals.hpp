@@ -22,7 +22,7 @@
  *
  */
 
-#if !defined(COMPILER1) && !defined(COMPILER2)
+#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
 define_pd_global(bool, BackgroundCompilation,        false);
 define_pd_global(bool, UseTLAB,                      false);
 define_pd_global(bool, CICompileOSR,                 false);
