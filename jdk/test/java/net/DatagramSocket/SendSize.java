@@ -32,35 +32,26 @@
  * @author Benjamin Renaud
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class SendSize {
-
-    static final int clientPort = 8989;
-    static final int serverPort = 9999;
     static final int bufferLength = 512;
     static final int packetLength = 256;
 
     public static void main(String[] args) throws Exception {
-        new ServerThread().start();
-        new ClientThread().start();
+        DatagramSocket serverSocket = new DatagramSocket();
+        new ServerThread(serverSocket).start();
+        new ClientThread(serverSocket.getLocalPort()).start();
     }
 
-
     static class ServerThread extends Thread {
-
-        int port;
         DatagramSocket server;
 
-        ServerThread(int port) throws IOException {
-            this.port = port;
-            this.server = new DatagramSocket(port);
-        }
-
-        ServerThread() throws IOException {
-            this(SendSize.serverPort);
+        ServerThread(DatagramSocket server) {
+            this.server = server;
         }
 
         public void run() {
@@ -85,33 +76,22 @@ public class SendSize {
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException("caugth: " + e);
+            } finally {
+                if (server != null) { server.close(); }
             }
         }
     }
 
     static class ClientThread extends Thread {
 
-        int port;
         int serverPort;
-        int bufferLength;
-        int packetLength;
-
         DatagramSocket client;
         InetAddress host;
 
-        ClientThread(int port, int serverPort,
-                     int bufferLength, int packetLength) throws IOException {
-            this.port = port;
+        ClientThread(int serverPort)throws IOException {
             this.serverPort = serverPort;
             this.host = InetAddress.getLocalHost();
-            this.bufferLength = bufferLength;
-            this.packetLength = packetLength;
-            this.client = new DatagramSocket(port, host);
-        }
-
-        ClientThread() throws IOException {
-            this(SendSize.clientPort, SendSize.serverPort,
-                 SendSize.bufferLength, SendSize.packetLength);
+            this.client = new DatagramSocket();
         }
 
         public void run() {
@@ -129,6 +109,8 @@ public class SendSize {
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException("caught: " + e);
+            } finally {
+                if (client != null) { client.close(); }
             }
         }
     }

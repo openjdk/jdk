@@ -119,6 +119,7 @@ public class Lint
         this.suppressedValues = other.suppressedValues.clone();
     }
 
+    @Override
     public String toString() {
         return "Lint:[values" + values + " suppressedValues" + suppressedValues + "]";
     }
@@ -208,7 +209,12 @@ public class Lint
         /**
          * Warn about potentially unsafe vararg methods
          */
-        VARARGS("varargs");
+        VARARGS("varargs"),
+
+        /**
+         * Warn about arm resources
+         */
+        ARM("arm");
 
         LintCategory(String option) {
             this(option, false);

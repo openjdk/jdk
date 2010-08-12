@@ -38,7 +38,6 @@ public class TcpTest extends Tests {
     static InetAddress ia4any;
     static InetAddress ia6any;
     static Inet6Address ia6addr;
-    static InetAddress ia6bad; /* a global 6to4 IPv6 address, which cant be connected to */
     static Inet4Address ia4addr;
 
     static {
@@ -47,14 +46,6 @@ public class TcpTest extends Tests {
         try {
             ia4any = InetAddress.getByName ("0.0.0.0");
             ia6any = InetAddress.getByName ("::0");
-            if (ia6addr != null) {
-                int scope = ia6addr.getScopeId();
-                if (scope != 0) {
-                    ia6bad = InetAddress.getByName ("fe80::1:2:3:4:5:6%"+scope);
-                }
-            } else {
-                ia6bad = InetAddress.getByName ("fe80::1:2:3:4:5:6");
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -69,7 +60,6 @@ public class TcpTest extends Tests {
         dprintln ("Local Addresses");
         dprintln (ia4addr.toString());
         dprintln (ia6addr.toString());
-        dprintln ("Bad address: " + ia6bad);
         test1 (0);
         test1 (5100);
         test2();
@@ -224,19 +214,6 @@ public class TcpTest extends Tests {
         c1.close (); c2.close();
         s1.close (); s2.close();
 
-        /* check if connect() timesout when connecting to unknown dest. */
-
-        c1 = new Socket();
-        t1 = System.currentTimeMillis();
-        InetSocketAddress ad1 = new InetSocketAddress (ia6bad, 2500);
-        try {
-            c1.connect (ad1, 5000);
-            throw new RuntimeException ("timeout exception was expected");
-        } catch (SocketTimeoutException e) {
-            t1 = System.currentTimeMillis() - t1;
-            checkTime (t1, 5000);
-        } catch (NoRouteToHostException e1) {
-        }
         System.out.println ("Test3: OK");
     }
 

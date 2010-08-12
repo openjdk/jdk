@@ -691,6 +691,19 @@ public class Pretty extends JCTree.Visitor {
     public void visitTry(JCTry tree) {
         try {
             print("try ");
+            if (tree.resources.nonEmpty()) {
+                print("(");
+                boolean first = true;
+                for (JCTree var : tree.resources) {
+                    if (!first) {
+                        println();
+                        indent();
+                    }
+                    printStat(var);
+                    first = false;
+                }
+                print(") ");
+            }
             printStat(tree.body);
             for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
                 printStat(l.head);
