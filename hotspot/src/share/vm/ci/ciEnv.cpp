@@ -728,8 +728,8 @@ ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
   }
 
   // Get the invoker methodOop from the constant pool.
-  intptr_t f2_value = cpool->cache()->main_entry_at(index)->f2();
-  methodOop signature_invoker = methodOop(f2_value);
+  oop f1_value = cpool->cache()->main_entry_at(index)->f1();
+  methodOop signature_invoker = methodOop(f1_value);
   assert(signature_invoker != NULL && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
 

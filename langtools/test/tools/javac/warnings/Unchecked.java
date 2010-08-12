@@ -1,9 +1,9 @@
 /**
  * @test  /nodynamiccopyright/
  * @bug 4986256
- * @compile/ref=Unchecked.noLint.out -XDstdout                         -XDrawDiagnostics Unchecked.java
- * @compile/ref=Unchecked.lintUnchecked.out -XDstdout -Xlint:unchecked -XDrawDiagnostics Unchecked.java
- * @compile/ref=Unchecked.lintAll.out -XDstdout       -Xlint:all,-path -XDrawDiagnostics Unchecked.java
+ * @compile/ref=Unchecked.noLint.out                         -XDrawDiagnostics Unchecked.java
+ * @compile/ref=Unchecked.lintUnchecked.out -Xlint:unchecked -XDrawDiagnostics Unchecked.java
+ * @compile/ref=Unchecked.lintAll.out       -Xlint:all,-path -XDrawDiagnostics Unchecked.java
  */
 
 import java.util.ArrayList;

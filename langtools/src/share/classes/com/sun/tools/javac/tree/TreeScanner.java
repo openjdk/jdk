@@ -147,6 +147,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitTry(JCTry tree) {
+        scan(tree.resources);
         scan(tree.body);
         scan(tree.catchers);
         scan(tree.finalizer);

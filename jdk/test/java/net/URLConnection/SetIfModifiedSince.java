@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4397096
- * @run main SetIfModifiedSince
+ * @run main/othervm SetIfModifiedSince
  * @summary setIfModifiedSince() of HttpURLConnection sets invalid date of default locale
  */
 

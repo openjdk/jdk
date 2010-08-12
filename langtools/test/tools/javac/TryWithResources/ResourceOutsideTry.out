@@ -1,0 +1,3 @@
+ResourceOutsideTry.java:14:13: compiler.err.cant.resolve.location: kindname.variable, c, , , kindname.class, ResourceOutsideTry
+ResourceOutsideTry.java:16:13: compiler.err.cant.resolve.location: kindname.variable, c, , , kindname.class, ResourceOutsideTry
+2 errors

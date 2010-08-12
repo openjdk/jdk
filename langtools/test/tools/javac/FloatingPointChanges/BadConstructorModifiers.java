@@ -4,7 +4,7 @@
  * @summary strictfp may not be used with constructors
  * @author David Stoutamire (dps)
  *
- * @compile/fail/ref=BadConstructorModifiers.out -XDrawDiagnostics -XDstdout BadConstructorModifiers.java
+ * @compile/fail/ref=BadConstructorModifiers.out -XDrawDiagnostics BadConstructorModifiers.java
  */
 
 public class BadConstructorModifiers {

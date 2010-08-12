@@ -4,7 +4,7 @@
  * @summary hiding versus generics versus binary compatibility
  * @author Maurizio Cimadamore
  *
- * @compile/fail/ref=T5009937.out -XDstdout -XDrawDiagnostics T5009937.java
+ * @compile/fail/ref=T5009937.out -XDrawDiagnostics T5009937.java
  */
 
 public class T5009937<X> {

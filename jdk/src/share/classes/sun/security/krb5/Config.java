@@ -42,6 +42,8 @@ import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
+import sun.net.dns.ResolverConfiguration;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.ktab.*;
 import sun.security.krb5.internal.Krb5;
@@ -1180,6 +1182,33 @@ public class Config {
         }
         // get the domain realm mapping from the configuration
         String mapRealm = PrincipalName.mapHostToRealm(hostName);
+        if (mapRealm == null) {
+            // No match. Try search and/or domain in /etc/resolv.conf
+            List<String> srchlist = ResolverConfiguration.open().searchlist();
+            for (String domain: srchlist) {
+                realm = checkRealm(domain);
+                if (realm != null) {
+                    break;
+                }
+            }
+        } else {
+            realm = checkRealm(mapRealm);
+        }
+        if (realm == null) {
+            throw new KrbException(Krb5.KRB_ERR_GENERIC,
+                                "Unable to locate Kerberos realm");
+        }
+        return realm;
+    }
+
+    /**
+     * Check if the provided realm is the correct realm
+     * @return the realm if correct, or null otherwise
+     */
+    private static String checkRealm(String mapRealm) {
+        if (DEBUG) {
+            System.out.println("getRealmFromDNS: trying " + mapRealm);
+        }
         String[] records = null;
         String newRealm = mapRealm;
         while ((records == null) && (newRealm != null)) {
@@ -1188,23 +1217,14 @@ public class Config {
             newRealm = Realm.parseRealmComponent(newRealm);
             // if no DNS TXT records found, try again using sub-realm
         }
-        if (records == null) {
-            // no DNS TXT records
-            throw new KrbException(Krb5.KRB_ERR_GENERIC,
-                                "Unable to locate Kerberos realm");
-        }
-        boolean found = false;
-        for (int i = 0; i < records.length; i++) {
-            if (records[i].equals(mapRealm)) {
-                found = true;
-                realm = records[i];
+        if (records != null) {
+            for (int i = 0; i < records.length; i++) {
+                if (records[i].equalsIgnoreCase(mapRealm)) {
+                    return records[i];
+                }
             }
         }
-        if (found == false) {
-            throw new KrbException(Krb5.KRB_ERR_GENERIC,
-                                "Unable to locate Kerberos realm");
-        }
-        return realm;
+        return null;
     }
 
     /**
@@ -1218,10 +1238,16 @@ public class Config {
         String kdcs = null;
         String[] srvs = null;
         // locate DNS SRV record using UDP
-        srvs = KrbServiceLocator.getKerberosService(realm, "_udp.");
+        if (DEBUG) {
+            System.out.println("getKDCFromDNS using UDP");
+        }
+        srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
         if (srvs == null) {
             // locate DNS SRV record using TCP
-            srvs = KrbServiceLocator.getKerberosService(realm, "_tcp.");
+            if (DEBUG) {
+                System.out.println("getKDCFromDNS using UDP");
+            }
+            srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
         }
         if (srvs == null) {
             // no DNS SRV records

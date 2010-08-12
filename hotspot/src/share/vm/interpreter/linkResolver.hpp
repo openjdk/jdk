@@ -73,6 +73,7 @@ class CallInfo: public LinkInfo {
   void         set_static(   KlassHandle resolved_klass,                             methodHandle resolved_method                                                , TRAPS);
   void         set_interface(KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method                  , TRAPS);
   void         set_virtual(  KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS);
+  void         set_dynamic(                                                          methodHandle resolved_method,                                                 TRAPS);
   void         set_common(   KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS);
 
   friend class LinkResolver;
