@@ -143,7 +143,11 @@ public class FileChannelImpl
         }
     }
 
-    private long read0(ByteBuffer[] dsts) throws IOException {
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
+            throw new IndexOutOfBoundsException();
         ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
@@ -156,7 +160,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.read(fd, dsts, nd);
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -165,15 +169,6 @@ public class FileChannelImpl
                 assert IOStatus.check(n);
             }
         }
-    }
-
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return read0(Util.subsequence(dsts, offset, length));
     }
 
     public int write(ByteBuffer src) throws IOException {
@@ -200,7 +195,11 @@ public class FileChannelImpl
         }
     }
 
-    private long write0(ByteBuffer[] srcs) throws IOException {
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
+            throw new IndexOutOfBoundsException();
         ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
@@ -213,7 +212,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.write(fd, srcs, nd);
+                    n = IOUtil.write(fd, srcs, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -223,16 +222,6 @@ public class FileChannelImpl
             }
         }
     }
-
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return write0(Util.subsequence(srcs, offset, length));
-    }
-
 
     // -- Other operations --
 
