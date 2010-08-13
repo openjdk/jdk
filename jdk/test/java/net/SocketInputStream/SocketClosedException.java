@@ -32,68 +32,37 @@ import java.io.*;
 import java.net.*;
 
 public class SocketClosedException {
-
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
-
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
     static void doServerSide() throws Exception {
-        ServerSocket serverSocket = new ServerSocket(serverPort);
-        serverPort = serverSocket.getLocalPort();
+        try {
+            Socket socket = serverSocket.accept();
 
-        /*
-         * Signal Client, we're ready for a connect.
-         */
-        serverReady = true;
+            OutputStream os = socket.getOutputStream();
 
-        Socket socket = serverSocket.accept();
-
-        InputStream is = socket.getInputStream();
-        OutputStream os = socket.getOutputStream();
-
-        os.write(85);
-        os.flush();
-        socket.close();
-    }
-
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    static void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(5000);
+            os.write(85);
+            os.flush();
+            socket.close();
+        } finally {
+            serverSocket.close();
         }
-
-        Socket socket = new Socket("localhost", serverPort);
-        InputStream is = socket.getInputStream();
-        OutputStream os = socket.getOutputStream();
-
-        int read = is.read();
-        socket.close();
-        read = is.read();
     }
 
-    static int serverPort = 0;
+    static void doClientSide(int port) throws Exception {
+        Socket socket = new Socket("localhost", port);
+        InputStream is = socket.getInputStream();
+
+        is.read();
+        socket.close();
+        is.read();
+    }
+
+    static ServerSocket serverSocket;
     static Exception serverException = null;
 
     public static void main(String[] args) throws Exception {
+        serverSocket = new ServerSocket(0);
         startServer();
         try {
-            doClientSide();
+            doClientSide(serverSocket.getLocalPort());
         } catch (SocketException e) {
             if (!e.getMessage().equalsIgnoreCase("Socket closed")) {
                 throw new Exception("Received a wrong exception message: " +
@@ -108,21 +77,14 @@ public class SocketClosedException {
     }
 
     static void startServer() {
-        Thread serverThread = new Thread() {
+        (new Thread() {
             public void run() {
                 try {
                     doServerSide();
                 } catch (Exception e) {
-                    /*
-                     * server thread just died.
-                     * Release the client, if not active already...
-                     */
-                    System.err.println("Server died...");
-                    serverReady = true;
-                    serverException = e;
+                    e.printStackTrace();
                 }
             }
-        };
-        serverThread.start();
+        }).start();
     }
 }

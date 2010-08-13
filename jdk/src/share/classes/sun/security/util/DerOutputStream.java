@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 
 package sun.security.util;
 
-import java.io.FilterOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.Vector;
 import java.util.Comparator;
 import java.util.Arrays;
 import java.math.BigInteger;
+import java.util.Locale;
 
 
 /**
@@ -501,7 +500,7 @@ extends ByteArrayOutputStream implements DerEncoder {
             pattern = "yyyyMMddHHmmss'Z'";
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.US);
         sdf.setTimeZone(tz);
         byte[] time = (sdf.format(d)).getBytes("ISO-8859-1");
 

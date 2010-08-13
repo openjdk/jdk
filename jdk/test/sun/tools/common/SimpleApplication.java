@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 
 /*
+ * A simple application used by unit tests. The first argument to this
+ * class is the name of a file to which a TCP port number can be written.
  *
- *
- * A simple application used for tool unit tests. It does nothing else
- * bind to a TCP port and wait for a shutdown message.
+ * By default, this class does nothing other than bind to a TCP port,
+ * write the TCP port number to a file, and wait for an incoming connection
+ * in order to complete the application shutdown protocol.
  */
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -33,25 +35,86 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 public class SimpleApplication {
-    public static void main(String args[]) throws Exception {
+    private static SimpleApplication myApp;      // simple app or a subclass
+    private static String            myAppName;  // simple app name
+    private static int               myPort;     // coordination port #
+    private static ServerSocket      mySS;       // coordination socket
+
+    // protected so a subclass can extend it; not public so creation is
+    // limited.
+    protected SimpleApplication() {
+        // save simple app (or subclass) name for messages
+        myAppName = getClass().getName();
+    }
+
+    // return the simple application (or a subclass)
+    final public static SimpleApplication getMyApp() {
+        return myApp;
+    }
+
+    // set the simple application (for use by a subclass)
+    final public static void setMyApp(SimpleApplication _myApp) {
+        myApp = _myApp;
+    }
+
+    // execute the application finish protocol
+    final public void doMyAppFinish(String[] args) throws Exception {
+        System.out.println("INFO: " + myAppName + " is waiting on port: " +
+            myPort);
+        System.out.flush();
+
+        // wait for test harness to connect
+        Socket s = mySS.accept();
+        s.close();
+        mySS.close();
+
+        System.out.println("INFO: " + myAppName + " is shutting down.");
+        System.out.flush();
+    }
+
+    // execute the application start protocol
+    final public void doMyAppStart(String[] args) throws Exception {
+        if (args.length < 1) {
+            throw new RuntimeException("Usage: " + myAppName +
+                " port-file [arg(s)]");
+        }
+
         // bind to a random port
-        ServerSocket ss = new ServerSocket(0);
-        int port = ss.getLocalPort();
+        mySS = new ServerSocket(0);
+        myPort = mySS.getLocalPort();
 
         // Write the port number to the given file
         File f = new File(args[0]);
         FileOutputStream fos = new FileOutputStream(f);
-        fos.write( Integer.toString(port).getBytes("UTF-8") );
+        fos.write( Integer.toString(myPort).getBytes("UTF-8") );
         fos.close();
 
-        System.out.println("Application waiting on port: " + port);
+        System.out.println("INFO: " + myAppName + " created socket on port: " +
+            myPort);
+        System.out.flush();
+    }
+
+    // execute the app work (subclass can override this)
+    public void doMyAppWork(String[] args) throws Exception {
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (myApp == null) {
+            // create myApp since a subclass hasn't done so
+            myApp = new SimpleApplication();
+        }
+
+        myApp.doMyAppStart(args);   // do the app start protocol
+
+        System.out.println("INFO: " + myAppName + " is calling doMyAppWork()");
+        System.out.flush();
+        myApp.doMyAppWork(args);    // do the app work
+        System.out.println("INFO: " + myAppName + " returned from" +
+            " doMyAppWork()");
         System.out.flush();
 
-        // wait for test harness to connect
-        Socket s = ss.accept();
-        s.close();
-        ss.close();
+        myApp.doMyAppFinish(args);  // do the app finish protocol
 
-        System.out.println("Application shutdown.");
+        System.exit(0);
     }
 }

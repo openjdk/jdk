@@ -26,10 +26,10 @@
  * @bug 5086088
  * @summary check warnings generated when overriding deprecated methods
  *
- * @compile/ref=empty   -XDstdout -XDrawDiagnostics -Xlint:deprecation P.java
- * @compile/ref=Test2Q.out -XDstdout -XDrawDiagnostics -Xlint:deprecation Q.java
- * @compile/ref=Test2R.out -XDstdout -XDrawDiagnostics -Xlint:deprecation R.java
- * @compile/ref=empty   -XDstdout -XDrawDiagnostics -Xlint:deprecation Test2.java
+ * @compile/ref=empty   -XDrawDiagnostics -Xlint:deprecation P.java
+ * @compile/ref=Test2Q.out -XDrawDiagnostics -Xlint:deprecation Q.java
+ * @compile/ref=Test2R.out -XDrawDiagnostics -Xlint:deprecation R.java
+ * @compile/ref=empty   -XDrawDiagnostics -Xlint:deprecation Test2.java
  */
 
 

@@ -27,20 +27,45 @@
  * @summary Test for FileNotFoundException when loading bogus class
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.InputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.net.URLClassLoader;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 public class ClassLoad {
      public static void main(String[] args) throws Exception {
          boolean error = true;
+
+         // Start a dummy server to return 404
+         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+         HttpHandler handler = new HttpHandler() {
+             public void handle(HttpExchange t) throws IOException {
+                 InputStream is = t.getRequestBody();
+                 while (is.read() != -1);
+                 t.sendResponseHeaders (404, -1);
+                 t.close();
+             }
+         };
+         server.createContext("/", handler);
+         server.start();
+
+         // Client request
          try {
-             URL url = new URL(args.length >= 1 ? args[0] : "http://jini.east/");
+             URL url = new URL("http://localhost:" + server.getAddress().getPort());
              String name = args.length >= 2 ? args[1] : "foo.bar.Baz";
              ClassLoader loader = new URLClassLoader(new URL[] { url });
+             System.out.println(url);
              Class c = loader.loadClass(name);
              System.out.println("Loaded class \"" + c.getName() + "\".");
          } catch (ClassNotFoundException ex) {
+             System.out.println(ex);
              error = false;
+         } finally {
+             server.stop(0);
          }
          if (error)
              throw new RuntimeException("No ClassNotFoundException generated");

@@ -26,6 +26,7 @@ package sun.security.pkcs11;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Locale;
 
 import java.security.*;
 import java.security.spec.*;
@@ -201,7 +202,7 @@ final class P11Cipher extends CipherSpi {
     }
 
     private int parseMode(String mode) throws NoSuchAlgorithmException {
-        mode = mode.toUpperCase();
+        mode = mode.toUpperCase(Locale.ENGLISH);
         int result;
         if (mode.equals("ECB")) {
             result = MODE_ECB;
@@ -222,7 +223,7 @@ final class P11Cipher extends CipherSpi {
             throws NoSuchPaddingException {
         paddingObj = null;
         padBuffer = null;
-        padding = padding.toUpperCase();
+        padding = padding.toUpperCase(Locale.ENGLISH);
         if (padding.equals("NOPADDING")) {
             paddingType = PAD_NONE;
         } else if (padding.equals("PKCS5PADDING")) {
