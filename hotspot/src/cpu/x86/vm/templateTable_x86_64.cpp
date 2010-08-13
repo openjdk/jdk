@@ -3126,17 +3126,17 @@ void TemplateTable::_new() {
   Label allocate_shared;
 
   __ get_cpool_and_tags(rsi, rax);
-  // get instanceKlass
-  __ movptr(rsi, Address(rsi, rdx,
-                         Address::times_8, sizeof(constantPoolOopDesc)));
-
-  // make sure the class we're about to instantiate has been
-  // resolved. Note: slow_case does a pop of stack, which is why we
-  // loaded class/pushed above
+  // Make sure the class we're about to instantiate has been resolved.
+  // This is done before loading instanceKlass to be consistent with the order
+  // how Constant Pool is updated (see constantPoolOopDesc::klass_at_put)
   const int tags_offset = typeArrayOopDesc::header_size(T_BYTE) * wordSize;
   __ cmpb(Address(rax, rdx, Address::times_1, tags_offset),
           JVM_CONSTANT_Class);
   __ jcc(Assembler::notEqual, slow_case);
+
+  // get instanceKlass
+  __ movptr(rsi, Address(rsi, rdx,
+            Address::times_8, sizeof(constantPoolOopDesc)));
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
