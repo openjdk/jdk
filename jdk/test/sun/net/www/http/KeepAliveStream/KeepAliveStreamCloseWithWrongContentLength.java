@@ -43,10 +43,6 @@ public class KeepAliveStreamCloseWithWrongContentLength {
             srv = s;
         }
 
-        Socket getSocket () {
-            return (s);
-        }
-
         public void run() {
             try {
                 s = srv.accept ();
@@ -57,7 +53,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
                     is.read();
                 }
                 OutputStreamWriter ow =
-                    new OutputStreamWriter(s.getOutputStream());
+                    new OutputStreamWriter((os = s.getOutputStream()));
                 ow.write("HTTP/1.0 200 OK\n");
 
                 // Note: The client expects 10 bytes.
@@ -71,19 +67,16 @@ public class KeepAliveStreamCloseWithWrongContentLength {
                 // Note: The (buggy) server only sends 9 bytes.
                 ow.write("123456789");
                 ow.flush();
-                ow.close();
             } catch (Exception e) {
+            } finally {
+                try {if (os != null) { os.close(); }} catch (IOException e) {}
             }
         }
     }
 
-    /*
-     *
-     */
-
-    public static void main (String[] args) {
+    public static void main (String[] args) throws Exception {
+        ServerSocket serversocket = new ServerSocket (0);
         try {
-            ServerSocket serversocket = new ServerSocket (0);
             int port = serversocket.getLocalPort ();
             XServer server = new XServer (serversocket);
             server.start ();
@@ -100,11 +93,12 @@ public class KeepAliveStreamCloseWithWrongContentLength {
                 }
             }
             is.close();
-            server.getSocket().close ();
         } catch (IOException e) {
             return;
         } catch (NullPointerException e) {
             throw new RuntimeException (e);
+        } finally {
+            if (serversocket != null) serversocket.close();
         }
     }
 }

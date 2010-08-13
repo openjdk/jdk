@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  * @test
  * @bug 6857795
  * @bug 6858589
+ * @bug 6972005
  * @summary krb5.conf ignored if system properties on realm and kdc are provided
  */
 
@@ -96,7 +97,8 @@ public class ConfPlusProp {
             System.setProperty("java.security.krb5.conf", "i-am-not-a file");
             refresh();
 
-            checkDefaultRealm(null);
+            // Default realm might come from DNS
+            //checkDefaultRealm(null);
             check("R1", null);
             check("R2", null);
             check("R3", null);

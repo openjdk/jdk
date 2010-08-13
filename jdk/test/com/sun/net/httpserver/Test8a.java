@@ -24,18 +24,15 @@
 /**
  * @test
  * @bug 6270015
+ * @run main/othervm Test8a
  * @summary  Light weight HTTP server
  */
 
 import com.sun.net.httpserver.*;
 
-import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
 import java.io.*;
 import java.net.*;
-import java.security.*;
-import javax.security.auth.callback.*;
 import javax.net.ssl.*;
 
 /**
@@ -50,46 +47,50 @@ public class Test8a extends Test {
         //h.setLevel (Level.INFO);
         //log.addHandler (h);
         //log.setLevel (Level.INFO);
-        Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
-        HttpsServer server = HttpsServer.create (addr, 0);
-        HttpContext ctx = server.createContext ("/test", handler);
-        ExecutorService executor = Executors.newCachedThreadPool();
-        SSLContext ssl = new SimpleSSLContext(System.getProperty("test.src")).get();
-        server.setHttpsConfigurator(new HttpsConfigurator (ssl));
-        server.setExecutor (executor);
-        server.start ();
+        HttpsServer server = null;
+        ExecutorService executor = null;
+        try {
+            Handler handler = new Handler();
+            InetSocketAddress addr = new InetSocketAddress (0);
+            server = HttpsServer.create (addr, 0);
+            HttpContext ctx = server.createContext ("/test", handler);
+            executor = Executors.newCachedThreadPool();
+            SSLContext ssl = new SimpleSSLContext(System.getProperty("test.src")).get();
+            server.setHttpsConfigurator(new HttpsConfigurator (ssl));
+            server.setExecutor (executor);
+            server.start ();
 
-        URL url = new URL ("https://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        System.out.print ("Test8a: " );
-        HttpsURLConnection urlc = (HttpsURLConnection)url.openConnection ();
-        urlc.setDoOutput (true);
-        urlc.setRequestMethod ("POST");
-        urlc.setHostnameVerifier (new DummyVerifier());
-        urlc.setSSLSocketFactory (ssl.getSocketFactory());
-        OutputStream os = new BufferedOutputStream (urlc.getOutputStream(), 8000);
-        for (int i=0; i<SIZE; i++) {
-            os.write (i % 250);
-        }
-        os.close();
-        int resp = urlc.getResponseCode();
-        if (resp != 200) {
-            throw new RuntimeException ("test failed response code");
-        }
-        InputStream is = urlc.getInputStream ();
-        for (int i=0; i<SIZE; i++) {
-            int f = is.read();
-            if (f != (i % 250)) {
-                System.out.println ("Setting error(" +f +")("+i+")" );
-                error = true;
-                break;
+            URL url = new URL ("https://localhost:"+server.getAddress().getPort()+"/test/foo.html");
+            System.out.print ("Test8a: " );
+            HttpsURLConnection urlc = (HttpsURLConnection)url.openConnection ();
+            urlc.setDoOutput (true);
+            urlc.setRequestMethod ("POST");
+            urlc.setHostnameVerifier (new DummyVerifier());
+            urlc.setSSLSocketFactory (ssl.getSocketFactory());
+            OutputStream os = new BufferedOutputStream (urlc.getOutputStream(), 8000);
+            for (int i=0; i<SIZE; i++) {
+                os.write (i % 250);
             }
+            os.close();
+            int resp = urlc.getResponseCode();
+            if (resp != 200) {
+                throw new RuntimeException ("test failed response code");
+            }
+            InputStream is = urlc.getInputStream ();
+            for (int i=0; i<SIZE; i++) {
+                int f = is.read();
+                if (f != (i % 250)) {
+                    System.out.println ("Setting error(" +f +")("+i+")" );
+                    error = true;
+                    break;
+                }
+            }
+            is.close();
+        } finally {
+            delay();
+            if (server != null) server.stop(2);
+            if (executor != null) executor.shutdown();
         }
-        is.close();
-
-        delay();
-        server.stop(2);
-        executor.shutdown();
         if (error) {
             throw new RuntimeException ("test failed error");
         }
