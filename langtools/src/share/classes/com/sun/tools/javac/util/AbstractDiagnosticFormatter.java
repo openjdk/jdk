@@ -38,6 +38,7 @@ import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.DiagnosticPart;
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.MultilineLimit;
 import com.sun.tools.javac.api.DiagnosticFormatter.PositionKind;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
@@ -283,6 +284,13 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             buf.append(indent("^", nSpaces));
         }
         return buf.toString();
+    }
+
+    protected String formatLintCategory(JCDiagnostic d, Locale l) {
+        LintCategory lc = d.getLintCategory();
+        if (lc == null)
+            return "";
+        return localize(l, "compiler.warn.lintOption", lc.option);
     }
 
     /**

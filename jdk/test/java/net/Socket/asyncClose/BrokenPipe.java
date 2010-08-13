@@ -61,7 +61,6 @@ public class BrokenPipe {
         try {
             client.getOutputStream().write(new byte[1000000]);
         } catch (IOException ioe) {
-
             /*
              * Check that the exception text doesn't indicate the
              * socket is closed. In tiger we should be able to
@@ -71,8 +70,9 @@ public class BrokenPipe {
             if (text.toLowerCase().indexOf("closed") >= 0) {
                 throw ioe;
             }
+        } finally {
+            server.close();
         }
-        server.close();
     }
 
 }

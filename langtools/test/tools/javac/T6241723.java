@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 6241723
  * @summary compiler can miss some references to at-Deprecated classes
- * @compile/fail/ref=T6241723.out -XDstdout -XDrawDiagnostics -Xlint:deprecation -Werror T6241723.java
+ * @compile/fail/ref=T6241723.out -XDrawDiagnostics -Xlint:deprecation -Werror T6241723.java
  */
 
 @Deprecated class A1

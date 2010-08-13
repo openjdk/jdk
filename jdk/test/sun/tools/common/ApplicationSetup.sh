@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,54 +24,187 @@
 #
 
 
-# Support function to start and stop a given application
+# Support functions to start, stop, wait for or kill a given SimpleApplication
 
-# Starts a given application as background process, usage:
-#   startApplication <class> [args...]
+# Starts a given app as background process, usage:
+#   startApplication <class> port-file [args...]
 #
-# Waits for application to print something to indicate it is running
-# (and initialized). Output is directed to ${TESTCLASSES}/Application.out.
-# Sets $pid to be the process-id of the application.
-
+# The following variables are set:
+#
+# appJavaPid  - application's Java pid
+# appOtherPid - pid associated with the app other than appJavaPid
+# appPidList  - all pids associated with the app
+# appOutput   - file containing stdout and stderr from the app
+#
+# Waits for at least one line of output from the app to indicate
+# that it is up and running.
+#
 startApplication()
 {
-  OUTPUTFILE=${TESTCLASSES}/Application.out
-  ${JAVA} $1 $2 $3 $4 $5 $6 > ${OUTPUTFILE} &
-  pid="$!"
-                                                                                                     
-  # MKS creates an intermediate shell to launch ${JAVA} so
-  # ${pid} is not the actual pid. We have put in a small sleep
-  # to give the intermediate shell process time to launch the
-  # "java" process.
-  if [ "$OS" = "Windows" ]; then
-    sleep 2
-    if [ "${isCygwin}" = "true" ] ; then
-      realpid=`ps -p ${pid} | tail -1 | awk '{print $4;}'`
-    else
-      realpid=`ps -o pid,ppid,comm|grep ${pid}|grep "java"|cut -c1-6`
-    fi
-    pid=${realpid}
-  fi
-                                                                                                     
-  echo "Waiting for Application to initialize..."
-  attempts=0
+  appOutput="${TESTCLASSES}/Application.out"
+
+  ${JAVA} -classpath "${TESTCLASSES}" "$@" > "$appOutput" 2>&1 &
+  appJavaPid="$!"
+  appOtherPid=
+  appPidList="$appJavaPid"
+
+  echo "INFO: waiting for $1 to initialize..."
+  _cnt=0
   while true; do
+    # if the app doesn't start then the JavaTest/JTREG timeout will
+    # kick in so this isn't really a endless loop
     sleep 1
-    out=`tail -1 ${OUTPUTFILE}`
-    if [ ! -z "$out" ]; then
+    out=`tail -1 "$appOutput"`
+    if [ -n "$out" ]; then
+      # we got some output from the app so it's running
       break
     fi
-    attempts=`expr $attempts + 1`
-    echo "Waiting $attempts second(s) ..."
+    _cnt=`expr $_cnt + 1`
+    echo "INFO: waited $_cnt second(s) ..."
   done
+  unset _cnt
 
-  echo "Application is process $pid"
+  if $isWindows; then
+    # Windows requires special handling
+    appOtherPid="$appJavaPid"
+
+    if $isCygwin; then
+      appJavaPid=`ps -p "$appOtherPid" \
+        | sed -n '
+          # See if $appOtherPid is in PID column; there are sometimes
+          # non-blanks in column 1 (I and S observed so far)
+          /^.'"${PATTERN_WS}${PATTERN_WS}*${appOtherPid}${PATTERN_WS}"'/{
+            # strip PID column
+            s/^.'"${PATTERN_WS}${PATTERN_WS}*${appOtherPid}${PATTERN_WS}${PATTERN_WS}"'*//
+            # strip PPID column
+            s/^[1-9][0-9]*'"${PATTERN_WS}${PATTERN_WS}"'*//
+            # strip PGID column
+            s/^[1-9][0-9]*'"${PATTERN_WS}${PATTERN_WS}"'*//
+            # strip everything after WINPID column
+            s/'"${PATTERN_WS}"'.*//
+            p
+            q
+          }
+        '`
+      echo "INFO: Cygwin pid=$appOtherPid maps to Windows pid=$appJavaPid"
+    else
+      # show PID, PPID and COMM columns only
+      appJavaPid=`ps -o pid,ppid,comm \
+        | sed -n '
+          # see if appOtherPid is in either PID or PPID columns
+          /'"${PATTERN_WS}${appOtherPid}${PATTERN_WS}"'/{
+            # see if this is a java command
+            /java'"${PATTERN_EOL}"'/{
+              # strip leading white space
+              s/^'"${PATTERN_WS}${PATTERN_WS}"'*//
+              # strip everything after the first word
+              s/'"${PATTERN_WS}"'.*//
+              # print the pid and we are done
+              p
+              q
+            }
+          }
+        '`
+      echo "INFO: MKS shell pid=$appOtherPid; Java pid=$appJavaPid"
+    fi
+
+    if [ -z "$appJavaPid" ]; then
+      echo "ERROR: could not find app's Java pid." >&2
+      killApplication
+      exit 2
+    fi
+    appPidList="$appOtherPid $appJavaPid"
+  fi
+
+  echo "INFO: $1 is process $appJavaPid"
+  echo "INFO: $1 output is in $appOutput"
 }
 
-# Stops an application by invoking the given class and argument, usage:
-#   stopApplication <class> <argument>
+
+# Stops a simple application by invoking ShutdownSimpleApplication
+# class with a specific port-file, usage:
+#   stopApplication port-file
+#
+# Note: When this function returns, the SimpleApplication (or a subclass)
+# may still be running because the application has not yet reached the
+# shutdown check.
+#
 stopApplication()
 {
-  $JAVA -classpath "${TESTCLASSES}" $1 $2
+  $JAVA -classpath "${TESTCLASSES}" ShutdownSimpleApplication $1
 }
 
+
+# Wait for a simple application to stop running.
+#
+waitForApplication() {
+  if [ $isWindows = false ]; then
+    # non-Windows is easy; just one process
+    echo "INFO: waiting for $appJavaPid"
+    set +e
+    wait "$appJavaPid"
+    set -e
+
+  elif $isCygwin; then
+    # Cygwin pid and not the Windows pid
+    echo "INFO: waiting for $appOtherPid"
+    set +e
+    wait "$appOtherPid"
+    set -e
+
+  else # implied isMKS
+    # MKS has intermediate shell and Java process
+    echo "INFO: waiting for $appJavaPid"
+
+    # appJavaPid can be empty if pid search in startApplication() failed
+    if [ -n "$appJavaPid" ]; then
+      # only need to wait for the Java process
+      set +e
+      wait "$appJavaPid"
+      set -e
+    fi
+  fi
+}
+
+
+# Kills a simple application by sending a SIGTERM to the appropriate
+# process(es); on Windows SIGQUIT (-9) is used.
+#
+killApplication()
+{
+  if [ $isWindows = false ]; then
+    # non-Windows is easy; just one process
+    echo "INFO: killing $appJavaPid"
+    set +e
+    kill -TERM "$appJavaPid"  # try a polite SIGTERM first
+    sleep 2
+    # send SIGQUIT (-9) just in case SIGTERM didn't do it
+    # but don't show any complaints
+    kill -QUIT "$appJavaPid" > /dev/null 2>&1
+    wait "$appJavaPid"
+    set -e
+
+  elif $isCygwin; then
+    # Cygwin pid and not the Windows pid
+    echo "INFO: killing $appOtherPid"
+    set +e
+    kill -9 "$appOtherPid"
+    wait "$appOtherPid"
+    set -e
+
+  else # implied isMKS
+    # MKS has intermediate shell and Java process
+    echo "INFO: killing $appPidList"
+    set +e
+    kill -9 $appPidList
+    set -e
+
+    # appJavaPid can be empty if pid search in startApplication() failed
+    if [ -n "$appJavaPid" ]; then
+      # only need to wait for the Java process
+      set +e
+      wait "$appJavaPid"
+      set -e
+    fi
+  fi
+}

@@ -39,6 +39,7 @@ public class ProxyCons {
         public void run () {
             try {
                 Socket s = server.accept ();
+                s.close();
                 while (!finished ()) {
                     Thread.sleep (500);
                 }
@@ -58,10 +59,9 @@ public class ProxyCons {
     public ProxyCons() {
     }
 
-    void test() {
+    void test() throws Exception {
+        ServerSocket ss = new ServerSocket(0);
         try {
-            ServerSocket ss = new ServerSocket();
-            ss.bind(new InetSocketAddress(0));
             Server s = new Server(ss);
             s.start();
             Socket sock = new Socket(Proxy.NO_PROXY);
@@ -70,10 +70,12 @@ public class ProxyCons {
             sock.close();
         } catch (java.io.IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            ss.close();
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ProxyCons c = new ProxyCons();
         c.test();
     }

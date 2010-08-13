@@ -1604,7 +1604,7 @@ public class ClassWriter extends ClassFile {
         try {
             writeClassFile(out, c);
             if (verbose)
-                log.errWriter.println(Log.getLocalizedString("verbose.wrote.file", outFile));
+                log.printErrLines("verbose.wrote.file", outFile);
             out.close();
             out = null;
         } finally {

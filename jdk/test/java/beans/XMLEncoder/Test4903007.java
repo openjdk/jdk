@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4903007
+ * @bug 4903007 6972468
  * @summary Tests encoding of container with boxes and BoxLayout
  * @author Sergey Malenkov, Mark Davidson
  */
@@ -36,7 +36,7 @@ import javax.swing.JPanel;
 
 public class Test4903007 extends AbstractTest<JPanel> {
     public static void main(String[] args) throws Exception {
-        new Test4903007().test(false); // TODO: could not encode with security manager
+        new Test4903007().test(true);
     }
 
     protected JPanel getObject() {

@@ -3,7 +3,7 @@
  * @bug     5003235
  * @summary Accessibility of private inner class
  * @author  Peter von der Ah\u00e9
- * @compile/fail/ref=T5003235b.out -XDstdout -XDdiags=%b:%l:%_%m T5003235b.java
+ * @compile/fail/ref=T5003235b.out -XDdiags=%b:%l:%_%m T5003235b.java
  */
 
 class Outer {
