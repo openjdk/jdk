@@ -738,6 +738,12 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
 
   // bi
   case Bytecodes::_ldc:
+    assert(Bytecodes::format_bits(op, false) == (Bytecodes::_fmt_b|Bytecodes::_fmt_has_k), "wrong bytecode format");
+    assert((char) index == index, "index does not fit in 8-bit");
+    _bytecode.push(op);
+    _bytecode.push(index);
+    break;
+
   case Bytecodes::_iload:
   case Bytecodes::_lload:
   case Bytecodes::_fload:
@@ -754,7 +760,8 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
     _bytecode.push(index);
     break;
 
-  // bii
+  // bkk
+  case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w:
   case Bytecodes::_checkcast:
     assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bkk, "wrong bytecode format");

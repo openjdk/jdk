@@ -6,7 +6,7 @@
  * @author  Peter von der Ah\u00e9
  * @compile A.java B.java
  * @clean   a.A
- * @compile/fail/ref=T6437894.out -XDstdout -XDrawDiagnostics T6437894.java
+ * @compile/fail/ref=T6437894.out -XDrawDiagnostics T6437894.java
  */
 
 public class T6437894 {

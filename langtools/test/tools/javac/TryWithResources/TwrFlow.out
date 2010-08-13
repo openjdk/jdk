@@ -1,0 +1,5 @@
+TwrFlow.java:14:11: compiler.err.except.never.thrown.in.try: java.io.IOException
+TwrFlow.java:24:11: compiler.err.except.never.thrown.in.try: java.io.IOException
+TwrFlow.java:12:46: compiler.err.unreported.exception.need.to.catch.or.throw: CustomCloseException
+TwrFlow.java:22:26: compiler.err.unreported.exception.need.to.catch.or.throw: CustomCloseException
+4 errors

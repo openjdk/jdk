@@ -202,6 +202,11 @@ void BufferBlob::free( BufferBlob *blob ) {
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
+  BufferBlob("I2C/C2I adapters", size, cb) {
+  CodeCache::commit(this);
+}
+
 AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
@@ -210,7 +215,6 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) AdapterBlob(size, cb);
-    CodeCache::commit(blob);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
