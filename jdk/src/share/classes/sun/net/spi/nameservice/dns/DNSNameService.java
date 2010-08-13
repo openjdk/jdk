@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,21 @@ import sun.security.action.*;
 public final class DNSNameService implements NameService {
 
     // List of domains specified by property
-    private LinkedList domainList = null;
+    private LinkedList<String> domainList = null;
 
     // JNDI-DNS URL for name servers specified via property
     private String nameProviderUrl = null;
 
     // Per-thread soft cache of the last temporary context
-    private static ThreadLocal contextRef = new ThreadLocal();
+    private static ThreadLocal<SoftReference<ThreadContext>> contextRef =
+            new ThreadLocal<>();
 
     // Simple class to encapsulate the temporary context
     private static class ThreadContext {
         private DirContext dirCtxt;
-        private List nsList;
+        private List<String> nsList;
 
-        public ThreadContext(DirContext dirCtxt, List nsList) {
+        public ThreadContext(DirContext dirCtxt, List<String> nsList) {
             this.dirCtxt = dirCtxt;
             this.nsList = nsList;
         }
@@ -67,16 +68,16 @@ public final class DNSNameService implements NameService {
             return dirCtxt;
         }
 
-        public List nameservers() {
+        public List<String> nameservers() {
             return nsList;
         }
     }
 
     // Returns a per-thread DirContext
     private DirContext getTemporaryContext() throws NamingException {
-        SoftReference ref = (SoftReference)contextRef.get();
+        SoftReference<ThreadContext> ref = contextRef.get();
         ThreadContext thrCtxt = null;
-        List nsList = null;
+        List<String> nsList = null;
 
         // if no property specified we need to obtain the list of servers
         //
@@ -87,7 +88,7 @@ public final class DNSNameService implements NameService {
         // specified then we need to check if the DNS configuration
         // has changed.
         //
-        if ((ref != null) && ((thrCtxt = (ThreadContext)ref.get()) != null)) {
+        if ((ref != null) && ((thrCtxt = ref.get()) != null)) {
             if (nameProviderUrl == null) {
                 if (!thrCtxt.nameservers().equals(nsList)) {
                     // DNS configuration has changed
@@ -98,7 +99,7 @@ public final class DNSNameService implements NameService {
 
         // new thread context needs to be created
         if (thrCtxt == null) {
-            final Hashtable<String,Object> env = new Hashtable<String,Object>();
+            final Hashtable<String,Object> env = new Hashtable<>();
             env.put("java.naming.factory.initial",
                     "com.sun.jndi.dns.DnsContextFactory");
 
@@ -119,10 +120,9 @@ public final class DNSNameService implements NameService {
             //
             DirContext dirCtxt;
             try {
-                dirCtxt = (DirContext)
-                    java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedExceptionAction() {
-                            public Object run() throws NamingException {
+                dirCtxt = java.security.AccessController.doPrivileged(
+                        new java.security.PrivilegedExceptionAction<DirContext>() {
+                            public DirContext run() throws NamingException {
                                 // Create the DNS context using NamingManager rather than using
                                 // the initial context constructor. This avoids having the initial
                                 // context constructor call itself.
@@ -130,7 +130,7 @@ public final class DNSNameService implements NameService {
                                 if (!(ctx instanceof DirContext)) {
                                     return null; // cannot create a DNS context
                                 }
-                                return ctx;
+                                return (DirContext)ctx;
                             }
                     });
             } catch (java.security.PrivilegedActionException pae) {
@@ -161,18 +161,18 @@ public final class DNSNameService implements NameService {
      *
      * @throws  UnknownHostException if lookup fails or other error.
      */
-    private ArrayList resolve(final DirContext ctx, final String name, final String[] ids,
-                              int depth) throws UnknownHostException
+    private ArrayList<String> resolve(final DirContext ctx, final String name,
+                                      final String[] ids, int depth)
+            throws UnknownHostException
     {
-        ArrayList results = new ArrayList();
+        ArrayList<String> results = new ArrayList<>();
         Attributes attrs;
 
         // do the query
         try {
-            attrs = (Attributes)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedExceptionAction() {
-                        public Object run() throws NamingException {
+            attrs = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedExceptionAction<Attributes>() {
+                        public Attributes run() throws NamingException {
                             return ctx.getAttributes(name, ids);
                         }
                 });
@@ -181,7 +181,7 @@ public final class DNSNameService implements NameService {
         }
 
         // non-requested type returned so enumeration is empty
-        NamingEnumeration ne = attrs.getAll();
+        NamingEnumeration<? extends Attribute> ne = attrs.getAll();
         if (!ne.hasMoreElements()) {
             throw new UnknownHostException("DNS record not found");
         }
@@ -190,7 +190,7 @@ public final class DNSNameService implements NameService {
         UnknownHostException uhe = null;
         try {
             while (ne.hasMoreElements()) {
-                Attribute attr = (Attribute)ne.next();
+                Attribute attr = ne.next();
                 String attrID = attr.getID();
 
                 for (NamingEnumeration e = attr.getAll(); e.hasMoreElements();) {
@@ -251,13 +251,12 @@ public final class DNSNameService implements NameService {
             // no property specified so check host DNS resolver configured
             // with at least one nameserver in dotted notation.
             //
-            List nsList = ResolverConfiguration.open().nameservers();
-            if (nsList.size() == 0)
+            List<String> nsList = ResolverConfiguration.open().nameservers();
+            if (nsList.isEmpty()) {
                 throw new RuntimeException("no nameservers provided");
+            }
             boolean found = false;
-            Iterator i = nsList.iterator();
-            while (i.hasNext()) {
-                String addr = (String)i.next();
+            for (String addr: nsList) {
                 if (IPAddressUtil.isIPv4LiteralAddress(addr) ||
                     IPAddressUtil.isIPv6LiteralAddress(addr)) {
                     found = true;
@@ -308,8 +307,8 @@ public final class DNSNameService implements NameService {
         // suffix if the list has one entry.
 
         if (results == null) {
-            List searchList = null;
-            Iterator i;
+            List<String> searchList = null;
+            Iterator<String> i;
             boolean usingSearchList = false;
 
             if (domainList != null) {
@@ -324,7 +323,7 @@ public final class DNSNameService implements NameService {
 
             // iterator through each domain suffix
             while (i.hasNext()) {
-                String parentDomain = (String)i.next();
+                String parentDomain = i.next();
                 int start = 0;
                 while ((start = parentDomain.indexOf(".")) != -1
                        && start < parentDomain.length() -1) {
@@ -407,7 +406,7 @@ public final class DNSNameService implements NameService {
             String literalip = "";
             String[] ids = { "PTR" };
             DirContext ctx;
-            ArrayList results = null;
+            ArrayList<String> results = null;
             try {
                 ctx = getTemporaryContext();
             } catch (NamingException nx) {
@@ -420,7 +419,7 @@ public final class DNSNameService implements NameService {
                 literalip += "IN-ADDR.ARPA.";
 
                 results = resolve(ctx, literalip, ids, 0);
-                host = (String)results.get(0);
+                host = results.get(0);
             } else if (addr.length == 16) { // IPv6 Address
                 /**
                  * Because RFC 3152 changed the root domain name for reverse
@@ -437,7 +436,7 @@ public final class DNSNameService implements NameService {
 
                 try {
                     results = resolve(ctx, ip6lit, ids, 0);
-                    host = (String)results.get(0);
+                    host = results.get(0);
                 } catch (UnknownHostException e) {
                     host = null;
                 }
@@ -445,7 +444,7 @@ public final class DNSNameService implements NameService {
                     // IP6.ARPA lookup failed, let's try the older IP6.INT
                     ip6lit = literalip + "IP6.INT.";
                     results = resolve(ctx, ip6lit, ids, 0);
-                    host = (String)results.get(0);
+                    host = results.get(0);
                 }
             }
         } catch (Exception e) {
@@ -478,11 +477,10 @@ public final class DNSNameService implements NameService {
      * @return String containing the JNDI-DNS provider URL
      *         corresponding to the supplied List of nameservers.
      */
-    private static String createProviderURL(List nsList) {
-        Iterator i = nsList.iterator();
+    private static String createProviderURL(List<String> nsList) {
         StringBuffer sb = new StringBuffer();
-        while (i.hasNext()) {
-            appendIfLiteralAddress((String)i.next(), sb);
+        for (String s: nsList) {
+            appendIfLiteralAddress(s, sb);
         }
         return sb.toString();
     }
