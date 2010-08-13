@@ -3,7 +3,7 @@
  * @bug 4739428 4785453
  * @summary when \u000a is used, diagnostics are reported on the wrong line.
  *
- * @compile/fail/ref=UnicodeNewline.out -XDstdout -XDdiags=%b:%l:%_%m UnicodeNewline.java
+ * @compile/fail/ref=UnicodeNewline.out -XDdiags=%b:%l:%_%m UnicodeNewline.java
  */
 
 class UnicodeNewline {

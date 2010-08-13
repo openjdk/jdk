@@ -234,6 +234,11 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   if (_gc_cause != GCCause::_gc_locker &&
       gch->total_full_collections_completed() <= _full_gc_count_before) {
+    // maybe we should change the condition to test _gc_cause ==
+    // GCCause::_java_lang_system_gc, instead of
+    // _gc_cause != GCCause::_gc_locker
+    assert(_gc_cause == GCCause::_java_lang_system_gc,
+           "the only way to get here if this was a System.gc()-induced GC");
     assert(ExplicitGCInvokesConcurrent, "Error");
     // Now, wait for witnessing concurrent gc cycle to complete,
     // but do so in native mode, because we want to lock the

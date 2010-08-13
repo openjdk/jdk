@@ -535,6 +535,14 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
+    public void visitTry(JCTry tree) {
+        tree.resources = translate(tree.resources, syms.autoCloseableType);
+        tree.body = translate(tree.body);
+        tree.catchers = translateCatchers(tree.catchers);
+        tree.finalizer = translate(tree.finalizer);
+        result = tree;
+    }
+
     public void visitConditional(JCConditional tree) {
         tree.cond = translate(tree.cond, syms.booleanType);
         tree.truepart = translate(tree.truepart, erasure(tree.type));

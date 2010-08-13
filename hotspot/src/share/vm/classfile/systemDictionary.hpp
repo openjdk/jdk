@@ -492,7 +492,10 @@ public:
                                           TRAPS);
 
   // coordinate with Java about bootstrap methods
-  static Handle    find_bootstrap_method(KlassHandle caller, TRAPS);
+  static Handle    find_bootstrap_method(methodHandle caller_method,
+                                         int caller_bci,  // N.B. must be an invokedynamic
+                                         int cache_index, // must be corresponding main_entry
+                                         TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints
   static const char* loader_name(oop loader) {

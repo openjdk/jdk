@@ -42,8 +42,65 @@ void VM_G1CollectFull::doit() {
 void VM_G1IncCollectionPause::doit() {
   JvmtiGCForAllocationMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  assert(!_should_initiate_conc_mark ||
+  ((_gc_cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
+   (_gc_cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent)),
+         "only a GC locker or a System.gc() induced GC should start a cycle");
+
   GCCauseSetter x(g1h, _gc_cause);
-  g1h->do_collection_pause_at_safepoint();
+  if (_should_initiate_conc_mark) {
+    // It's safer to read full_collections_completed() here, given
+    // that noone else will be updating it concurrently. Since we'll
+    // only need it if we're initiating a marking cycle, no point in
+    // setting it earlier.
+    _full_collections_completed_before = g1h->full_collections_completed();
+
+    // At this point we are supposed to start a concurrent cycle. We
+    // will do so if one is not already in progress.
+    bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle();
+  }
+  g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+}
+
+void VM_G1IncCollectionPause::doit_epilogue() {
+  VM_GC_Operation::doit_epilogue();
+
+  // If the pause was initiated by a System.gc() and
+  // +ExplicitGCInvokesConcurrent, we have to wait here for the cycle
+  // that just started (or maybe one that was already in progress) to
+  // finish.
+  if (_gc_cause == GCCause::_java_lang_system_gc &&
+      _should_initiate_conc_mark) {
+    assert(ExplicitGCInvokesConcurrent,
+           "the only way to be here is if ExplicitGCInvokesConcurrent is set");
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+    // In the doit() method we saved g1h->full_collections_completed()
+    // in the _full_collections_completed_before field. We have to
+    // wait until we observe that g1h->full_collections_completed()
+    // has increased by at least one. This can happen if a) we started
+    // a cycle and it completes, b) a cycle already in progress
+    // completes, or c) a Full GC happens.
+
+    // If the condition has already been reached, there's no point in
+    // actually taking the lock and doing the wait.
+    if (g1h->full_collections_completed() <=
+                                          _full_collections_completed_before) {
+      // The following is largely copied from CMS
+
+      Thread* thr = Thread::current();
+      assert(thr->is_Java_thread(), "invariant");
+      JavaThread* jt = (JavaThread*)thr;
+      ThreadToNativeFromVM native(jt);
+
+      MutexLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+      while (g1h->full_collections_completed() <=
+                                          _full_collections_completed_before) {
+        FullGCCount_lock->wait(Mutex::_no_safepoint_check_flag);
+      }
+    }
+  }
 }
 
 void VM_CGC_Operation::doit() {

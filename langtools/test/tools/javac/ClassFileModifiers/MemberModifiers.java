@@ -26,7 +26,7 @@
  * @bug 4249112 4785453
  * @summary Verify that implicit member modifiers are set correctly.
  *
- * @compile/ref=MemberModifiers.out -XDstdout  -source 1.4 -target 1.4.2 -XDdumpmodifiers=cfm MemberModifiers.java
+ * @compile/ref=MemberModifiers.out  -source 1.4 -target 1.4.2 -XDdumpmodifiers=cfm MemberModifiers.java
  */
 
 // Currently, we check only that members of final classes are not final.

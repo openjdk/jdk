@@ -46,6 +46,7 @@ public class JavacMessager implements Messager {
     Log log;
     JavacProcessingEnvironment processingEnv;
     int errorCount = 0;
+    int warningCount = 0;
 
     JavacMessager(Context context, JavacProcessingEnvironment processingEnv) {
         log = Log.instance(context);
@@ -116,10 +117,12 @@ public class JavacMessager implements Messager {
                 break;
 
             case WARNING:
+                warningCount++;
                 log.warning(pos, "proc.messager", msg.toString());
                 break;
 
             case MANDATORY_WARNING:
+                warningCount++;
                 log.mandatoryWarning(pos, "proc.messager", msg.toString());
                 break;
 
@@ -165,6 +168,10 @@ public class JavacMessager implements Messager {
 
     public int errorCount() {
         return errorCount;
+    }
+
+    public int warningCount() {
+        return warningCount;
     }
 
     public void newRound(Context context) {

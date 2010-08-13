@@ -622,18 +622,8 @@ public class InternationalFormatter extends DefaultFormatter {
 
     /**
      * Overriden in an attempt to honor the literals.
-     * <p>
-     * If we do
-     * not allow invalid values and are in overwrite mode, this does the
-     * following for each character in the replacement range:
-     * <ol>
-     *   <li>If the character is a literal, add it to the string to replace
-     *       with.  If there is text to insert and it doesn't match the
-     *       literal, then insert the literal in the the middle of the insert
-     *       text.  This allows you to either paste in literals or not and
-     *       get the same behavior.
-     *   <li>If there is no text to insert, replace it with ' '.
-     * </ol>
+     * <p>If we do not allow invalid values and are in overwrite mode, this
+     * {@code rh.length} is corrected as to preserve trailing literals.
      * If not in overwrite mode, and there is text to insert it is
      * inserted at the next non literal index going forward.  If there
      * is only text to remove, it is removed from the next non literal
@@ -643,61 +633,27 @@ public class InternationalFormatter extends DefaultFormatter {
         if (!getAllowsInvalid()) {
             String text = rh.text;
             int tl = (text != null) ? text.length() : 0;
+            JTextComponent c = getFormattedTextField();
 
-            if (tl == 0 && rh.length == 1 && getFormattedTextField().
-                              getSelectionStart() != rh.offset) {
+            if (tl == 0 && rh.length == 1 && c.getSelectionStart() != rh.offset) {
                 // Backspace, adjust to actually delete next non-literal.
                 rh.offset = getNextNonliteralIndex(rh.offset, -1);
-            }
-            if (getOverwriteMode()) {
-                StringBuffer replace = null;
+            } else if (getOverwriteMode()) {
+                int pos = rh.offset;
+                int textPos = pos;
+                boolean overflown = false;
 
-                for (int counter = 0, textIndex = 0,
-                         max = Math.max(tl, rh.length); counter < max;
-                         counter++) {
-                    if (isLiteral(rh.offset + counter)) {
-                        if (replace != null) {
-                            replace.append(getLiteral(rh.offset +
-                                                      counter));
-                        }
-                        if (textIndex < tl && text.charAt(textIndex) ==
-                                      getLiteral(rh.offset + counter)) {
-                            textIndex++;
-                        }
-                        else if (textIndex == 0) {
-                            rh.offset++;
-                            rh.length--;
-                            counter--;
-                            max--;
-                        }
-                        else if (replace == null) {
-                            replace = new StringBuffer(max);
-                            replace.append(text.substring(0, textIndex));
-                            replace.append(getLiteral(rh.offset +
-                                                      counter));
-                        }
+                for (int i = 0; i < rh.length; i++) {
+                    while (isLiteral(pos)) pos++;
+                    if (pos >= string.length()) {
+                        pos = textPos;
+                        overflown = true;
+                        break;
                     }
-                    else if (textIndex < tl) {
-                        if (replace != null) {
-                            replace.append(text.charAt(textIndex));
-                        }
-                        textIndex++;
-                    }
-                    else {
-                        // Nothing to replace it with, assume ' '
-                        if (replace == null) {
-                            replace = new StringBuffer(max);
-                            if (textIndex > 0) {
-                                replace.append(text.substring(0, textIndex));
-                            }
-                        }
-                        if (replace != null) {
-                            replace.append(' ');
-                        }
-                    }
+                    textPos = ++pos;
                 }
-                if (replace != null) {
-                    rh.text = replace.toString();
+                if (overflown || c.getSelectedText() == null) {
+                    rh.length = pos - rh.offset;
                 }
             }
             else if (tl > 0) {

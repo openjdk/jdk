@@ -202,8 +202,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * Implementation of ComboPopup.show().
      */
     public void show() {
+        comboBox.firePopupMenuWillBecomeVisible();
         setListSelection(comboBox.getSelectedIndex());
-
         Point location = getPopupLocation();
         show( comboBox, location.x, location.y );
     }
@@ -344,7 +344,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
     protected void firePopupMenuWillBecomeVisible() {
         super.firePopupMenuWillBecomeVisible();
-        comboBox.firePopupMenuWillBecomeVisible();
+        // comboBox.firePopupMenuWillBecomeVisible() is called from BasicComboPopup.show() method
+        // to let the user change the popup menu from the PopupMenuListener.popupMenuWillBecomeVisible()
     }
 
     protected void firePopupMenuWillBecomeInvisible() {
