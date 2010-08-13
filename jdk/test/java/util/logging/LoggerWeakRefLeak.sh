@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,75 +25,23 @@
 
 # @test
 # @bug 6942989
-# @ignore until 6964018 is fixed
 # @summary Check for WeakReference leak in Logger objects
 # @author Daniel D. Daugherty
 #
-# @run build LoggerWeakRefLeak
+# @library ../../../sun/tools/common
+# @build SimpleApplication ShutdownSimpleApplication
+# @build LoggerWeakRefLeak
 # @run shell/timeout=240 LoggerWeakRefLeak.sh
 
-# The timeout is: 2 minutes for infrastructure and 1 minute for the test
+# The timeout is: 2 minutes for infrastructure and 2 minutes for the test
 #
 
-if [ "${TESTJAVA}" = "" ]
-then
-  echo "TESTJAVA not set.  Test cannot execute.  Failed."
-  exit 1
-fi
+. ${TESTSRC}/../../../sun/tools/common/CommonSetup.sh
+. ${TESTSRC}/../../../sun/tools/common/ApplicationSetup.sh
 
-if [ "${TESTSRC}" = "" ]
-then
-  echo "TESTSRC not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-
-if [ "${TESTCLASSES}" = "" ]
-then
-  echo "TESTCLASSES not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-
-JAVA="${TESTJAVA}"/bin/java
-JMAP="${TESTJAVA}"/bin/jmap
-JPS="${TESTJAVA}"/bin/jps
-
-set -eu
 
 TEST_NAME="LoggerWeakRefLeak"
 TARGET_CLASS="java\.lang\.ref\.WeakReference"
-
-is_cygwin=false
-is_mks=false
-is_windows=false
-
-case `uname -s` in
-CYGWIN*)
-    is_cygwin=true
-    is_windows=true
-    ;;
-Windows_*)
-    is_mks=true
-    is_windows=true
-    ;;
-*)
-    ;;
-esac
-
-
-# wrapper for grep
-#
-grep_cmd() {
-    set +e
-    if $is_windows; then
-        # need dos2unix to get rid of CTRL-M chars from java output
-        dos2unix | grep "$@"
-        status="$?"
-    else
-        grep "$@"
-        status="$?"
-    fi
-    set -e
-}
 
 
 # MAIN begins here
@@ -105,62 +55,64 @@ fi
 # see if this version of jmap supports the '-histo:live' option
 jmap_option="-histo:live"
 set +e
-"${JMAP}" "$jmap_option" 0 > "$TEST_NAME.jmap" 2>&1
-grep '^Usage: ' "$TEST_NAME.jmap" > /dev/null 2>&1
+"${JMAP}" 2>&1 | grep ':live' > /dev/null 2>&1
 status="$?"
 set -e
-if [ "$status" = 0 ]; then
-    echo "INFO: switching jmap option from '$jmap_option'\c"
-    jmap_option="-histo"
-    echo " to '$jmap_option'."
-fi
+if [ "$status" != 0 ]; then
+    # usage message doesn't show ':live' option
 
-"${JAVA}" ${TESTVMOPTS} -classpath "${TESTCLASSES}" \
-    "$TEST_NAME" $seconds > "$TEST_NAME.log" 2>&1 &
-test_pid="$!"
-echo "INFO: starting $TEST_NAME as pid = $test_pid"
-
-# wait for test program to get going
-count=0
-while [ "$count" -lt 30 ]; do
-    sleep 2
-    grep_cmd '^INFO: call count = 0$' < "$TEST_NAME.log" > /dev/null 2>&1
-    if [ "$status" = 0 ]; then
-        break
+    if $isWindows; then
+        # If SA isn't present, then jmap gives a different usage message
+        # that doesn't show the ':live' option. However, that's a bug that
+        # is covered by 6971851 so we try using the option just to be sure.
+        # For some reason, this problem has only been seen on OpenJDK6 on
+        # Windows. Not sure why.
+        set +e
+        # Note: Don't copy this code to try probing process 0 on Linux; it
+        # will kill the process group in strange ways.
+        "${JMAP}" "$jmap_option" 0 2>&1 | grep 'Usage' > /dev/null 2>&1
+        status="$?"
+        set -e
+        if [ "$status" = 0 ]; then
+            # Usage message generated so flag the problem.
+            status=1
+        else
+            # No usage message so clear the flag.
+            status=0
+        fi
     fi
-    count=`expr $count + 1`
-done
 
-if [ "$count" -ge 30 ]; then
-    echo "ERROR: $TEST_NAME failed to get going." >&2
-    echo "INFO: killing $test_pid"
-    kill "$test_pid"
-    exit 1
-elif [ "$count" -gt 1 ]; then
-    echo "INFO: $TEST_NAME took $count loops to start."
-fi
-
-if $is_cygwin; then
-    # We need the Windows pid for jmap and not the Cygwin pid.
-    # Note: '\t' works on Cygwin, but doesn't seem to work on Solaris.
-    jmap_pid=`"${JPS}"| grep_cmd "[ \t]$TEST_NAME$" | sed 's/[ \t].*//'`
-    if [ -z "$jmap_pid" ]; then
-        echo "FAIL: jps could not map Cygwin pid to Windows pid." >&2
-        echo "INFO: killing $test_pid"
-        kill "$test_pid"
+    if [ "$status" != 0 ]; then
+        echo "ERROR: 'jmap $jmap_option' is not supported so this test"
+        echo "ERROR: cannot work reliably. Aborting!"
         exit 2
     fi
-    echo "INFO: pid = $test_pid maps to Windows pid = $jmap_pid"
-else
-    jmap_pid="$test_pid"
 fi
+
+# Start application and use TEST_NAME.port for coordination
+startApplication "$TEST_NAME" "$TEST_NAME.port" $seconds
+
+finished_early=false
 
 decreasing_cnt=0
 increasing_cnt=0
 loop_cnt=0
 prev_instance_cnt=0
 
+MAX_JMAP_TRY_CNT=10
+jmap_retry_cnt=0
+loop_cnt_on_retry=0
+
 while true; do
+    # see if the target process has finished its run and bail if it has
+    set +e
+    grep "^INFO: final loop count = " "$appOutput" > /dev/null 2>&1
+    status="$?"
+    set -e
+    if [ "$status" = 0 ]; then
+        break
+    fi
+
     # Output format for 'jmap -histo' in JDK1.5.0:
     #
     #     <#bytes> <#instances> <class_name>
@@ -170,38 +122,70 @@ while true; do
     #     <num>: <#instances> <#bytes> <class_name>
     #
     set +e
-    "${JMAP}" "$jmap_option" "$jmap_pid" > "$TEST_NAME.jmap" 2>&1
+    "${JMAP}" "$jmap_option" "$appJavaPid" > "$TEST_NAME.jmap" 2>&1
     status="$?"
     set -e
 
     if [ "$status" != 0 ]; then
         echo "INFO: jmap exited with exit code = $status"
-        if [ "$loop_cnt" = 0 ]; then
-            echo "INFO: on the first iteration so no samples were taken."
-            echo "INFO: start of jmap output:"
-            cat "$TEST_NAME.jmap"
-            echo "INFO: end of jmap output."
+
+        # There are intermittent jmap failures; see 6498448.
+        #
+        # So far the following have been observed in a jmap call
+        # that was not in a race with target process termination:
+        #
+        # (Solaris specific, 2nd sample)
+        # <pid>: Unable to open door: target process not responding or HotSpot VM not loaded
+        # The -F option can be used when the target process is not responding
+        #
+        # (on Solaris so far)
+        # java.io.IOException
+        #
+        # (on Solaris so far, 1st sample)
+        # <pid>: Permission denied
+        #
+        sed 's/^/INFO: /' "$TEST_NAME.jmap"
+
+        if [ "$loop_cnt" = "$loop_cnt_on_retry" ]; then
+            # loop count hasn't changed
+            jmap_retry_cnt=`expr $jmap_retry_cnt + 1`
+        else
+            # loop count has changed so remember it
+            jmap_retry_cnt=1
+            loop_cnt_on_retry="$loop_cnt"
+        fi
+
+        # This is '-ge' because we have the original attempt plus
+        # MAX_JMAP_TRY_CNT - 1 retries.
+        if [ "$jmap_retry_cnt" -ge "$MAX_JMAP_TRY_CNT" ]; then
+            echo "INFO: jmap failed $MAX_JMAP_TRY_CNT times in a row" \
+                "without making any progress."
             echo "FAIL: jmap is unable to take any samples." >&2
-            echo "INFO: killing $test_pid"
-            kill "$test_pid"
+            killApplication
             exit 2
         fi
-        echo "INFO: The likely reason is that $TEST_NAME has finished running."
-        break
+
+        # short delay and try again
+        # Note: sleep 1 didn't help with "<pid>: Permission denied"
+        sleep 2
+        echo "INFO: retrying jmap (retry=$jmap_retry_cnt, loop=$loop_cnt)."
+        continue
     fi
 
-    instance_cnt=`grep_cmd "[ 	]$TARGET_CLASS$" \
-        < "$TEST_NAME.jmap" \
+    set +e
+    instance_cnt=`grep "${PATTERN_WS}${TARGET_CLASS}${PATTERN_EOL}" \
+        "$TEST_NAME.jmap" \
         | sed '
             # strip leading whitespace; does nothing in JDK1.5.0
-            s/^[ 	][ 	]*//
+            s/^'"${PATTERN_WS}${PATTERN_WS}"'*//
             # strip <#bytes> in JDK1.5.0; does nothing otherwise
-            s/^[1-9][0-9]*[ 	][ 	]*//
+            s/^[1-9][0-9]*'"${PATTERN_WS}${PATTERN_WS}"'*//
             # strip <num>: field; does nothing in JDK1.5.0
-            s/^[1-9][0-9]*:[ 	][ 	]*//
+            s/^[1-9][0-9]*:'"${PATTERN_WS}${PATTERN_WS}"'*//
             # strip <class_name> field
-            s/[ 	].*//
+            s/'"${PATTERN_WS}"'.*//
             '`
+    set -e
     if [ -z "$instance_cnt" ]; then
         echo "INFO: instance count is unexpectedly empty"
         if [ "$loop_cnt" = 0 ]; then
@@ -211,8 +195,7 @@ while true; do
             cat "$TEST_NAME.jmap"
             echo "INFO: end of jmap output."
             echo "FAIL: cannot find the instance count value." >&2
-            echo "INFO: killing $test_pid"
-            kill "$test_pid"
+            killApplication
             exit 2
         fi
     else
@@ -221,7 +204,17 @@ while true; do
         if [ "$instance_cnt" -gt "$prev_instance_cnt" ]; then
             increasing_cnt=`expr $increasing_cnt + 1`
         else
+            # actually decreasing or the same
             decreasing_cnt=`expr $decreasing_cnt + 1`
+
+            # For these particular WeakReference leaks, the count was
+            # always observed to be increasing so if we get a decreasing
+            # or the same count, then the leaks are fixed in the bits
+            # being tested.
+            echo "INFO: finishing early due to non-increasing instance count."
+            finished_early=true
+            killApplication
+            break
         fi
         prev_instance_cnt="$instance_cnt"
     fi
@@ -232,8 +225,22 @@ while true; do
     loop_cnt=`expr $loop_cnt + 1`
 done
 
+if [ $finished_early = false ]; then
+    stopApplication "$TEST_NAME.port"
+    waitForApplication
+fi
+
+echo "INFO: $TEST_NAME has finished running."
 echo "INFO: increasing_cnt = $increasing_cnt"
 echo "INFO: decreasing_cnt = $decreasing_cnt"
+if [ "$jmap_retry_cnt" -gt 0 ]; then
+    echo "INFO: jmap_retry_cnt = $jmap_retry_cnt (in $loop_cnt iterations)"
+fi
+
+if [ "$loop_cnt" = 0 ]; then
+    echo "FAIL: jmap is unable to take any samples." >&2
+    exit 2
+fi
 
 echo "INFO: The instance count of" `eval echo $TARGET_CLASS` "objects"
 if [ "$decreasing_cnt" = 0 ]; then
@@ -242,6 +249,6 @@ if [ "$decreasing_cnt" = 0 ]; then
     exit 2
 fi
 
-echo "INFO: is both increasing and decreasing."
+echo "INFO: is not always increasing."
 echo "PASS: This indicates that there is not a memory leak."
 exit 0

@@ -36,12 +36,14 @@ public class ShutdownBoth {
         Socket s1 = new Socket(ss.getInetAddress(), ss.getLocalPort());
         Socket s2 = ss.accept();
 
-        s1.shutdownInput();
-        s1.shutdownOutput();            // failed b55
-
-        s1.close();
-        s2.close();
-        ss.close();
+        try {
+            s1.shutdownInput();
+            s1.shutdownOutput();            // failed b55
+        } finally {
+            s1.close();
+            s2.close();
+            ss.close();
+        }
     }
 
 }

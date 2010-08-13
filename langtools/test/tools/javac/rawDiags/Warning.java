@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 6177732
  * @summary add hidden option to have compiler generate diagnostics in more machine-readable form
- * @compile/ref=Warning.out -XDrawDiagnostics -XDstdout -Xlint:unchecked Warning.java
+ * @compile/ref=Warning.out -XDrawDiagnostics -Xlint:unchecked Warning.java
  */
 
 import java.util.HashSet;

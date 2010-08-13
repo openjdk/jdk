@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,10 @@ topPid=$$
 cleanup()
 {
     if [ -r "$failFile" ] ; then
-        cat $failFile  >& 2
+        ls -l "$failFile" >&2
+        echo "<cleanup:_begin_failFile_contents>" >&2
+        cat "$failFile" >&2
+        echo "<cleanup:_end_failFile_contents>" >&2
     fi
 
     # Kill all processes that have our special
@@ -337,6 +340,10 @@ EOF
     failFile=$tmpFileDir/testFailed
     debuggeepidFile=$tmpFileDir/debuggeepid
     rm -f $failFile $debuggeepidFile
+    if [ -f "$failFile" ]; then
+        echo "ERROR: unable to delete existing failFile:" >&2
+        ls -l "$failFile" >&2
+    fi
 
     if [ -z "$pkg" ] ; then
         pkgSlash=
@@ -524,6 +531,10 @@ cmd()
         # See 6562090. Maybe there is a way that the exit
         # can cause jdb to not get the quit.
         sleep 5
+
+        # The exit code value here doesn't matter since this function
+        # is called as part of a pipeline and it is not the last command
+        # in the pipeline.
         exit 1
     fi
     
@@ -938,6 +949,10 @@ waitForFinish()
     done
 
     if [ -r "$failFile" ] ; then
+        ls -l "$failFile" >&2
+        echo "<waitForFinish:_begin_failFile_contents>" >&2
+        cat "$failFile" >&2
+        echo "<waitForFinish:_end_failFile_contents>" >&2
         exit 1
     fi
 }
@@ -946,33 +961,45 @@ waitForFinish()
 # $3 is the number of lines to search (from the end)
 grepForString()
 {
-    # See bug 6220903.  Sometimes the jdb '> ' prompt chars
-    # get inserted into the string we are searching for 
-    # so ignore those chars.
     if [ -z "$3" ] ; then
         theCmd=cat
     else
         theCmd="tail -$3"
     fi
+
     case "$2" in 
-      *\>*)
-        # Target string contains a > so we better
-        # not ignore it
+    *\>*)
+        # Target string contains a '>' so we better not ignore it
         $theCmd $1 | $grep -s "$2"  > $devnull 2>&1
-        return $?
+        stat="$?"
         ;;
+    *)
+        # Target string does not contain a '>'.
+        # NOTE:  if $1 does not end with a new line, piping it to sed
+        # doesn't include the chars on the last line.  Detect this
+        # case, and add a new line.
+        theFile="$1"
+        if [ `tail -1 "$theFile" | wc -l | sed -e 's@ @@g'` = 0 ] ; then
+            # The target file doesn't end with a new line so we have
+            # add one to a copy of the target file so the sed command
+            # below can filter that last line.
+            cp "$theFile" "$theFile.tmp"
+            theFile="$theFile.tmp"
+            echo >> "$theFile"
+        fi
+
+        # See bug 6220903. Sometimes the jdb prompt chars ('> ') can
+        # get interleaved in the target file which can keep us from
+        # matching the target string.
+        $theCmd "$theFile" | sed -e 's@> @@g' -e 's@>@@g' \
+            | $grep -s "$2" > $devnull 2>&1
+        stat=$?
+        if [ "$theFile" != "$1" ]; then
+            # remove the copy of the target file
+            rm -f "$theFile"
+        fi
+        unset theFile
     esac
-    # Target string does not contain a >.
-    # Ignore > and '> ' in the file.
-    # NOTE:  if $1 does not end with a new line, piping it to sed doesn't include the
-    # chars on the last line.  Detect this case, and add a new line.
-    cp $1 $1.tmp
-    if [ `tail -1 $1.tmp | wc -l | sed -e 's@ @@g'` = 0 ] ; then
-        echo >> $1.tmp
-    fi
-    $theCmd $1.tmp | sed -e 's@> @@g' -e 's@>@@g' | $grep -s "$2" > $devnull 2>&1
-    stat=$?
-    rm -f $1.tmp
     return $stat
 }
 
@@ -1037,6 +1064,11 @@ pass()
         echo
         echo "--Done: test passed"
         exit 0
+    else
+        ls -l "$failFile" >&2
+        echo "<pass:_begin_failFile_contents>" >&2
+        cat "$failFile" >&2
+        echo "<pass:_end_failFile_contents>" >&2
     fi
 }
 

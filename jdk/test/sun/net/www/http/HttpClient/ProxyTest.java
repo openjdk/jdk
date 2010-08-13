@@ -47,7 +47,7 @@ public class ProxyTest {
     private class HttpProxyServer extends Thread {
         private ServerSocket    server;
         private int port;
-        private boolean done = false;
+        private volatile boolean done = false;
         private String askedUrl;
 
         /**
@@ -125,12 +125,8 @@ public class ProxyTest {
             }
         }
 
-        public HttpProxyServer(int port) {
-            this.port = port;
-        }
-
-        public HttpProxyServer() {
-            this(0);
+        public HttpProxyServer() throws IOException {
+            server = new ServerSocket(0);
         }
 
         public int getPort() {
@@ -148,51 +144,49 @@ public class ProxyTest {
          */
         synchronized public void terminate() {
             done = true;
+            try { server.close(); } catch (IOException unused) {}
         }
 
         public void run() {
             try {
-                server = new ServerSocket(port);
                 Socket client;
                 while (!done) {
                     client = server.accept();
                     (new HttpProxyHandler(client)).start();
                 }
-                server.close();
             } catch (Exception e) {
+            } finally {
+                try { server.close(); } catch (IOException unused) {}
             }
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ProxyTest test = new ProxyTest();
     }
 
-    public ProxyTest() {
+    public ProxyTest() throws Exception {
+        BufferedReader in = null;
         String testURL = "ftp://anonymous:password@myhost.mydomain/index.html";
         HttpProxyServer server = new HttpProxyServer();
         try {
-        server.start();
-        int port = 0;
-        while (port == 0) {
-            Thread.sleep(500);
-            port = server.getPort();
-        }
+            server.start();
+            int port = server.getPort();
 
-        System.setProperty("ftp.proxyHost","localhost");
-        System.setProperty("ftp.proxyPort", String.valueOf(port));
-        URL url = new URL(testURL);
-        InputStream ins = url.openStream();
-        BufferedReader in = new BufferedReader(new InputStreamReader(ins));
-        String line;
-        do {
-            line = in.readLine();
-        } while (line != null);
-        in.close();
-        server.terminate();
-        server.interrupt();
+            Proxy ftpProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port));
+            URL url = new URL(testURL);
+            InputStream ins = (url.openConnection(ftpProxy)).getInputStream();
+            in = new BufferedReader(new InputStreamReader(ins));
+            String line;
+            do {
+                line = in.readLine();
+            } while (line != null);
+            in.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            server.terminate();
+            try { in.close(); } catch (IOException unused) {}
         }
         /*
          * If the URLs don't match, we've got a bug!
