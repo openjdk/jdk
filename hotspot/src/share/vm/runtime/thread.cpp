@@ -3281,12 +3281,18 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
     const char *name = agent->name();
+    const char *msg = "Could not find agent library ";
 
     if (agent->is_absolute_path()) {
       library = hpi::dll_load(name, ebuf, sizeof ebuf);
       if (library == NULL) {
+        const char *sub_msg = " in absolute path, with error: ";
+        size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
+        char *buf = NEW_C_HEAP_ARRAY(char, len);
+        jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
         // If we can't find the agent, exit.
-        vm_exit_during_initialization("Could not find agent library in absolute path", name);
+        vm_exit_during_initialization(buf, NULL);
+        FREE_C_HEAP_ARRAY(char, buf);
       }
     } else {
       // Try to load the agent from the standard dll directory
@@ -3299,17 +3305,17 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
         char *home  = Arguments::get_java_home();
         const char *fmt   = "%s/bin/java %s -Dkernel.background.download=false"
                       " sun.jkernel.DownloadManager -download client_jvm";
-        int length = strlen(props) + strlen(home) + strlen(fmt) + 1;
-        char *cmd = AllocateHeap(length);
+        size_t length = strlen(props) + strlen(home) + strlen(fmt) + 1;
+        char *cmd = NEW_C_HEAP_ARRAY(char, length);
         jio_snprintf(cmd, length, fmt, home, props);
         int status = os::fork_and_exec(cmd);
         FreeHeap(props);
-        FreeHeap(cmd);
         if (status == -1) {
           warning(cmd);
           vm_exit_during_initialization("fork_and_exec failed: %s",
                                          strerror(errno));
         }
+        FREE_C_HEAP_ARRAY(char, cmd);
         // when this comes back the instrument.dll should be where it belongs.
         library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
       }
@@ -3319,8 +3325,13 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
         hpi::dll_build_name(buffer, sizeof(buffer), ns, name);
         library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
         if (library == NULL) {
+          const char *sub_msg = " on the library path, with error: ";
+          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
+          char *buf = NEW_C_HEAP_ARRAY(char, len);
+          jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
           // If we can't find the agent, exit.
-          vm_exit_during_initialization("Could not find agent library on the library path or in the local directory", name);
+          vm_exit_during_initialization(buf, NULL);
+          FREE_C_HEAP_ARRAY(char, buf);
         }
       }
     }
