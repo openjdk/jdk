@@ -3236,12 +3236,14 @@ void TemplateTable::_new() {
   __ get_2_byte_integer_at_bcp(1, Rscratch, Roffset, InterpreterMacroAssembler::Unsigned);
   __ get_cpool_and_tags(Rscratch, G3_scratch);
   // make sure the class we're about to instantiate has been resolved
+  // This is done before loading instanceKlass to be consistent with the order
+  // how Constant Pool is updated (see constantPoolOopDesc::klass_at_put)
   __ add(G3_scratch, typeArrayOopDesc::header_size(T_BYTE) * wordSize, G3_scratch);
   __ ldub(G3_scratch, Roffset, G3_scratch);
   __ cmp(G3_scratch, JVM_CONSTANT_Class);
   __ br(Assembler::notEqual, false, Assembler::pn, slow_case);
   __ delayed()->sll(Roffset, LogBytesPerWord, Roffset);
-
+  // get instanceKlass
   //__ sll(Roffset, LogBytesPerWord, Roffset);        // executed in delay slot
   __ add(Roffset, sizeof(constantPoolOopDesc), Roffset);
   __ ld_ptr(Rscratch, Roffset, RinstanceKlass);

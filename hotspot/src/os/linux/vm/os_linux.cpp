@@ -30,6 +30,8 @@
 // put OS-includes here
 # include <sys/types.h>
 # include <sys/mman.h>
+# include <sys/stat.h>
+# include <sys/select.h>
 # include <pthread.h>
 # include <signal.h>
 # include <errno.h>
@@ -188,6 +190,10 @@ static char cpu_arch[] = "ia64";
 static char cpu_arch[] = "i386";
 #elif defined(AMD64)
 static char cpu_arch[] = "amd64";
+#elif defined(ARM)
+static char cpu_arch[] = "arm";
+#elif defined(PPC)
+static char cpu_arch[] = "ppc";
 #elif defined(SPARC)
 #  ifdef _LP64
 static char cpu_arch[] = "sparcv9";
@@ -1137,8 +1143,8 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     long it_real;
     uintptr_t start;
     uintptr_t vsize;
-    uintptr_t rss;
-    unsigned long rsslim;
+    intptr_t rss;
+    uintptr_t rsslim;
     uintptr_t scodes;
     uintptr_t ecode;
     int i;
@@ -1168,12 +1174,12 @@ void os::Linux::capture_initial_stack(size_t max_size) {
         // Skip blank chars
         do s++; while (isspace(*s));
 
-        /*                                     1   1   1   1   1   1   1   1   1   1   2   2   2   2   2   2   2   2   2 */
-        /*              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5   6   7   8 */
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld "
-                   UINTX_FORMAT UINTX_FORMAT UINTX_FORMAT
-                   " %lu "
-                   UINTX_FORMAT UINTX_FORMAT UINTX_FORMAT,
+#define _UFM UINTX_FORMAT
+#define _DFM INTX_FORMAT
+
+        /*                                     1   1   1   1   1   1   1   1   1   1   2   2    2    2    2    2    2    2    2 */
+        /*              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1    2    3    4    5    6    7    8 */
+        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld " _UFM _UFM _DFM _UFM _UFM _UFM _UFM,
              &state,          /* 3  %c  */
              &ppid,           /* 4  %d  */
              &pgrp,           /* 5  %d  */
@@ -1193,14 +1199,17 @@ void os::Linux::capture_initial_stack(size_t max_size) {
              &nice,           /* 19 %ld  */
              &junk,           /* 20 %ld  */
              &it_real,        /* 21 %ld  */
-             &start,          /* 22 UINTX_FORMAT  */
-             &vsize,          /* 23 UINTX_FORMAT  */
-             &rss,            /* 24 UINTX_FORMAT  */
-             &rsslim,         /* 25 %lu  */
-             &scodes,         /* 26 UINTX_FORMAT  */
-             &ecode,          /* 27 UINTX_FORMAT  */
-             &stack_start);   /* 28 UINTX_FORMAT  */
+             &start,          /* 22 UINTX_FORMAT */
+             &vsize,          /* 23 UINTX_FORMAT */
+             &rss,            /* 24 INTX_FORMAT  */
+             &rsslim,         /* 25 UINTX_FORMAT */
+             &scodes,         /* 26 UINTX_FORMAT */
+             &ecode,          /* 27 UINTX_FORMAT */
+             &stack_start);   /* 28 UINTX_FORMAT */
       }
+
+#undef _UFM
+#undef _DFM
 
       if (i != 28 - 2) {
          assert(false, "Bad conversion from /proc/self/stat");
@@ -1336,13 +1345,15 @@ void os::Linux::clock_init() {
 
 #if defined(IA32) || defined(AMD64)
 #define SYS_clock_getres IA32_ONLY(266)  AMD64_ONLY(229)
-#else
-#error Value of SYS_clock_getres not known on this platform
-#endif
-
-#endif
-
 #define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
+#else
+#warning "SYS_clock_getres not defined for this platform, disabling fast_thread_cpu_time"
+#define sys_clock_getres(x,y)  -1
+#endif
+
+#else
+#define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
+#endif
 
 void os::Linux::fast_thread_clock_init() {
   if (!UseLinuxPosixThreadCPUClocks) {
@@ -1905,7 +1916,9 @@ void os::print_os_info(outputStream* st) {
       !_print_ascii_file("/etc/SuSE-release", st) &&
       !_print_ascii_file("/etc/turbolinux-release", st) &&
       !_print_ascii_file("/etc/gentoo-release", st) &&
-      !_print_ascii_file("/etc/debian_version", st)) {
+      !_print_ascii_file("/etc/debian_version", st) &&
+      !_print_ascii_file("/etc/ltib-release", st) &&
+      !_print_ascii_file("/etc/angstrom-version", st)) {
       st->print("Linux");
   }
   st->cr();
@@ -1970,6 +1983,11 @@ void os::print_os_info(outputStream* st) {
   double loadavg[3];
   os::loadavg(loadavg, 3);
   st->print("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
+  st->cr();
+
+  // meminfo
+  st->print("\n/proc/meminfo:\n");
+  _print_ascii_file("/proc/meminfo", st);
   st->cr();
 }
 
@@ -2097,7 +2115,8 @@ void os::jvm_path(char *buf, jint buflen) {
                 CAST_FROM_FN_PTR(address, os::jvm_path),
                 dli_fname, sizeof(dli_fname), NULL);
   assert(ret != 0, "cannot locate libjvm");
-  if (realpath(dli_fname, buf) == NULL)
+  char *rp = realpath(dli_fname, buf);
+  if (rp == NULL)
     return;
 
   if (strcmp(Arguments::sun_java_launcher(), "gamma") == 0) {
@@ -2125,7 +2144,8 @@ void os::jvm_path(char *buf, jint buflen) {
         assert(strstr(p, "/libjvm") == p, "invalid library name");
         p = strstr(p, "_g") ? "_g" : "";
 
-        if (realpath(java_home_var, buf) == NULL)
+        rp = realpath(java_home_var, buf);
+        if (rp == NULL)
           return;
 
         // determine if this is a legacy image or modules image
@@ -2147,7 +2167,8 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
         } else {
           // Go back to path of .so
-          if (realpath(dli_fname, buf) == NULL)
+          rp = realpath(dli_fname, buf);
+          if (rp == NULL)
             return;
         }
       }
@@ -2508,9 +2529,9 @@ os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::uncommit_memory(char* addr, size_t size) {
-  return ::mmap(addr, size, PROT_NONE,
-                MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0)
-    != MAP_FAILED;
+  uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
+                MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+  return res  != (uintptr_t) MAP_FAILED;
 }
 
 // Linux uses a growable mapping for the stack, and if the mapping for
@@ -2718,7 +2739,8 @@ bool os::large_page_init() {
     // the processor.
 
 #ifndef ZERO
-    _large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M);
+    _large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M)
+                       ARM_ONLY(2 * M) PPC_ONLY(4 * M);
 #endif // ZERO
 
     FILE *fp = fopen("/proc/meminfo", "r");
@@ -3981,6 +4003,9 @@ jint os::init_2(void)
   return JNI_OK;
 }
 
+// this is called at the end of vm_initialization
+void os::init_3(void) { }
+
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
   if( !guard_memory((char*)_polling_page, Linux::page_size()) )
@@ -4061,7 +4086,6 @@ int os::Linux::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mute
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 
-#ifndef PRODUCT
 static address same_page(address x, address y) {
   int page_bits = -os::vm_page_size();
   if ((intptr_t(x) & page_bits) == (intptr_t(y) & page_bits))
@@ -4072,26 +4096,26 @@ static address same_page(address x, address y) {
     return (address)(intptr_t(y) & page_bits);
 }
 
-bool os::find(address addr) {
+bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
   if (dladdr(addr, &dlinfo)) {
-    tty->print(PTR_FORMAT ": ", addr);
+    st->print(PTR_FORMAT ": ", addr);
     if (dlinfo.dli_sname != NULL) {
-      tty->print("%s+%#x", dlinfo.dli_sname,
+      st->print("%s+%#x", dlinfo.dli_sname,
                  addr - (intptr_t)dlinfo.dli_saddr);
     } else if (dlinfo.dli_fname) {
-      tty->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
+      st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
     } else {
-      tty->print("<absolute address>");
+      st->print("<absolute address>");
     }
     if (dlinfo.dli_fname) {
-      tty->print(" in %s", dlinfo.dli_fname);
+      st->print(" in %s", dlinfo.dli_fname);
     }
     if (dlinfo.dli_fbase) {
-      tty->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
+      st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
     }
-    tty->cr();
+    st->cr();
 
     if (Verbose) {
       // decode some bytes around the PC
@@ -4104,14 +4128,12 @@ bool os::find(address addr) {
       if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
-      Disassembler::decode(begin, end);
+      Disassembler::decode(begin, end, st);
     }
     return true;
   }
   return false;
 }
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // misc
@@ -4321,6 +4343,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   int count;
   long sys_time, user_time;
   char string[64];
+  char cdummy;
   int idummy;
   long ldummy;
   FILE *fp;
@@ -4381,11 +4404,11 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   // Skip blank chars
   do s++; while (isspace(*s));
 
-  count = sscanf(s,"%*c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
-                 &idummy, &idummy, &idummy, &idummy, &idummy,
+  count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
+                 &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
-  if ( count != 12 ) return -1;
+  if ( count != 13 ) return -1;
   if (user_sys_cpu_time) {
     return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
   } else {
@@ -4980,3 +5003,43 @@ int os::fork_and_exec(char* cmd) {
     }
   }
 }
+
+// is_headless_jre()
+//
+// Test for the existence of libmawt in motif21 or xawt directories
+// in order to report if we are running in a headless jre
+//
+bool os::is_headless_jre() {
+    struct stat statbuf;
+    char buf[MAXPATHLEN];
+    char libmawtpath[MAXPATHLEN];
+    const char *xawtstr  = "/xawt/libmawt.so";
+    const char *motifstr = "/motif21/libmawt.so";
+    char *p;
+
+    // Get path to libjvm.so
+    os::jvm_path(buf, sizeof(buf));
+
+    // Get rid of libjvm.so
+    p = strrchr(buf, '/');
+    if (p == NULL) return false;
+    else *p = '\0';
+
+    // Get rid of client or server
+    p = strrchr(buf, '/');
+    if (p == NULL) return false;
+    else *p = '\0';
+
+    // check xawt/libmawt.so
+    strcpy(libmawtpath, buf);
+    strcat(libmawtpath, xawtstr);
+    if (::stat(libmawtpath, &statbuf) == 0) return false;
+
+    // check motif21/libmawt.so
+    strcpy(libmawtpath, buf);
+    strcat(libmawtpath, motifstr);
+    if (::stat(libmawtpath, &statbuf) == 0) return false;
+
+    return true;
+}
+

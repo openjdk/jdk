@@ -159,6 +159,9 @@ class Runtime1: public AllStatic {
   static const char* name_for (StubID id);
   static const char* name_for_address(address entry);
 
+  // platform might add runtime names.
+  static const char* pd_name_for_address(address entry);
+
   // method tracing
   static void trace_block_entry(jint block_id);
 

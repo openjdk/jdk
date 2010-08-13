@@ -364,6 +364,7 @@ extern "C" {
 // Create the door
 int SolarisAttachListener::create_door() {
   char door_path[PATH_MAX+1];
+  char initial_path[PATH_MAX+1];
   int fd, res;
 
   // register exit function
@@ -375,36 +376,46 @@ int SolarisAttachListener::create_door() {
     return -1;
   }
 
+  // create initial file to attach door descriptor
   snprintf(door_path, sizeof(door_path), "%s/.java_pid%d",
            os::get_temp_directory(), os::current_process_id());
-  RESTARTABLE(::creat(door_path, S_IRUSR | S_IWUSR), fd);
-
+  snprintf(initial_path, sizeof(initial_path), "%s.tmp", door_path);
+  RESTARTABLE(::creat(initial_path, S_IRUSR | S_IWUSR), fd);
   if (fd == -1) {
-    debug_only(warning("attempt to create %s failed", door_path));
+    debug_only(warning("attempt to create %s failed", initial_path));
+    ::door_revoke(dd);
     return -1;
   }
   assert(fd >= 0, "bad file descriptor");
-  set_door_path(door_path);
   RESTARTABLE(::close(fd), res);
 
   // attach the door descriptor to the file
-  if ((res = ::fattach(dd, door_path)) == -1) {
+  if ((res = ::fattach(dd, initial_path)) == -1) {
     // if busy then detach and try again
     if (errno == EBUSY) {
-      ::fdetach(door_path);
-      res = ::fattach(dd, door_path);
+      ::fdetach(initial_path);
+      res = ::fattach(dd, initial_path);
     }
     if (res == -1) {
       ::door_revoke(dd);
       dd = -1;
     }
   }
+
+  // rename file so that clients can attach
+  if (dd >= 0) {
+    if (::rename(initial_path, door_path) == -1) {
+        RESTARTABLE(::close(dd), res);
+        ::fdetach(initial_path);
+        dd = -1;
+    }
+  }
   if (dd >= 0) {
     set_door_descriptor(dd);
+    set_door_path(door_path);
   } else {
-    // unable to create door or attach it to the file
-    ::unlink(door_path);
-    set_door_path(NULL);
+    // unable to create door, attach it to file, or rename file into place
+    ::unlink(initial_path);
     return -1;
   }
 
