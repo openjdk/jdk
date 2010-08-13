@@ -3,7 +3,7 @@
  * @bug 6827009
  * @summary Check for case lables of different types.
  * @compile/fail -source 6 BadlyTypedLabel2.java
- * @compile/fail/ref=BadlyTypedLabel2.out -XDstdout -XDrawDiagnostics BadlyTypedLabel2.java
+ * @compile/fail/ref=BadlyTypedLabel2.out -XDrawDiagnostics BadlyTypedLabel2.java
  */
 import static java.math.RoundingMode.*;
 

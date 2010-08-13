@@ -4,7 +4,7 @@
  * @summary Verify that a local class cannot be redefined within its scope.
  * @author William Maddox (maddox)
  *
- * @compile/fail/ref=LocalClasses_2.out -XDrawDiagnostics -XDstdout LocalClasses_2.java
+ * @compile/fail/ref=LocalClasses_2.out -XDrawDiagnostics LocalClasses_2.java
  */
 
 class LocalClasses_2 {

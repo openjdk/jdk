@@ -1007,9 +1007,9 @@ class StubGenerator: public StubCodeGenerator {
         __ brx(Assembler::lessEqualUnsigned, false, Assembler::pt, (*NOLp));
       __ delayed()->cmp(to_from, byte_count);
       if (NOLp == NULL)
-        __ brx(Assembler::greaterEqual, false, Assembler::pt, no_overlap_target);
+        __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, no_overlap_target);
       else
-        __ brx(Assembler::greaterEqual, false, Assembler::pt, (*NOLp));
+        __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, (*NOLp));
       __ delayed()->nop();
   }
 

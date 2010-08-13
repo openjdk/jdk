@@ -53,11 +53,13 @@ public class GetContent implements Runnable {
 
             // wait for client to read response - otherwise http
             // client get error and re-establish connection
-            Thread.currentThread().sleep(2000);
+            Thread.sleep(2000);
 
             s.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try { ss.close(); } catch (IOException unused) {}
         }
      }
 
@@ -80,8 +82,6 @@ public class GetContent implements Runnable {
          } catch (IOException ex) {
              error = false;
          }
-
-         ss.close();
 
          if (error)
              throw new RuntimeException("No IOException generated.");

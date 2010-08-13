@@ -3,7 +3,7 @@
  * @bug     5024091
  * @summary AssertionError shouldn't be thrown
  * @author  Wei Tao
- * @compile/fail/ref=T5024091.out -XDfailcomplete=java.lang.StringBuilder -XDdev -XDstdout -XDrawDiagnostics T5024091.java
+ * @compile/fail/ref=T5024091.out -XDfailcomplete=java.lang.StringBuilder -XDdev -XDrawDiagnostics T5024091.java
  */
 
 public class T5024091 {

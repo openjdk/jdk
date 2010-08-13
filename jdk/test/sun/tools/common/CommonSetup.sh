@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,56 +24,94 @@
 #
 
 
-# Common setup for tool tests. 
+# Common setup for tool tests and other tests that use jtools.
 # Checks that TESTJAVA, TESTSRC, and TESTCLASSES environment variables are set.
-# Creates the following for use by the tool tests
-#   JAVA     java launcher
-#   JSTACK   jstack utility
-#   JMAP     jmap utility
-#   JINFO    jinfo utility
-#   JHAT     jhat utility
-#   PS       path separator (";" or ":")
-#   OS       operating system 
+#
+# Creates the following constants for use by the caller:
+#   JAVA        - java launcher
+#   JHAT        - jhat utility
+#   JINFO       - jinfo utility
+#   JMAP        - jmap utility
+#   JPS         - jps utility
+#   JSTACK      - jstack utility
+#   OS          - operating system name
+#   PATTERN_EOL - grep or sed end-of-line pattern
+#   PATTERN_WS  - grep or sed whitespace pattern
+#   PS          - path separator (";" or ":")
+#
+# Sets the following variables:
+#
+#   isCygwin  - true if environment is Cygwin
+#   isMKS     - true if environment is MKS
+#   isLinux   - true if OS is Linux
+#   isSolaris - true if OS is Solaris
+#   isWindows - true if OS is Windows
 
 
-if [ "${TESTJAVA}" = "" ]
-then
-  echo "TESTJAVA not set.  Test cannot execute.  Failed."
+if [ -z "${TESTJAVA}" ]; then
+  echo "ERROR: TESTJAVA not set.  Test cannot execute.  Failed."
   exit 1
 fi
-                                                                                                     
-if [ "${TESTSRC}" = "" ]
-then
-  echo "TESTSRC not set.  Test cannot execute.  Failed."
+
+if [ -z "${TESTSRC}" ]; then
+  echo "ERROR: TESTSRC not set.  Test cannot execute.  Failed."
   exit 1
 fi
-                                                                                                     
-if [ "${TESTCLASSES}" = "" ]
-then
-  echo "TESTCLASSES not set.  Test cannot execute.  Failed."
+
+if [ -z "${TESTCLASSES}" ]; then
+  echo "ERROR: TESTCLASSES not set.  Test cannot execute.  Failed."
   exit 1
 fi
-                                                                                                     
+
+# only enable these after checking the expected incoming env variables
+set -eu
+
 JAVA="${TESTJAVA}/bin/java"
-JSTACK="${TESTJAVA}/bin/jstack"
-JMAP="${TESTJAVA}/bin/jmap"
-JINFO="${TESTJAVA}/bin/jinfo"
 JHAT="${TESTJAVA}/bin/jhat"
+JINFO="${TESTJAVA}/bin/jinfo"
+JMAP="${TESTJAVA}/bin/jmap"
+JPS="${TESTJAVA}/bin/jps"
+JSTACK="${TESTJAVA}/bin/jstack"
+
+isCygwin=false
+isMKS=false
+isLinux=false
+isSolaris=false
+isUnknownOS=false
+isWindows=false
 
 OS=`uname -s`
 
+# start with some UNIX like defaults
+PATTERN_EOL='$'
+# blank and tab
+PATTERN_WS='[ 	]'
+PS=":"
+
 case "$OS" in
-  Windows* )
-    PS=";"
-    OS="Windows"
-    ;;
   CYGWIN* )
-    PS=";"
     OS="Windows"
+    PATTERN_EOL='[]*$'
+    # blank and tab
+    PATTERN_WS='[ \t]'
     isCygwin=true
+    isWindows=true
+    ;;
+  Linux )
+    OS="Linux"
+    isLinux=true
+    ;;
+  SunOS )
+    OS="Solaris"
+    isSolaris=true
+    ;;
+  Windows* )
+    OS="Windows"
+    PATTERN_EOL='[]*$'
+    PS=";"
+    isWindows=true
     ;;
   * )
-    PS=":"
+    isUnknownOS=true
     ;;
 esac
-

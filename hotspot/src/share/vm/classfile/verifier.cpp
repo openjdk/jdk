@@ -1913,7 +1913,8 @@ void ClassVerifier::verify_invoke_instructions(
   unsigned int types = (opcode == Bytecodes::_invokeinterface
                                 ? 1 << JVM_CONSTANT_InterfaceMethodref
                       : opcode == Bytecodes::_invokedynamic
-                                ? 1 << JVM_CONSTANT_NameAndType
+                                ? (1 << JVM_CONSTANT_NameAndType
+                                  |1 << JVM_CONSTANT_InvokeDynamic)
                                 : 1 << JVM_CONSTANT_Methodref);
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));
 
