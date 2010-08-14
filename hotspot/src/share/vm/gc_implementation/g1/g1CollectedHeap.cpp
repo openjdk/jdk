@@ -56,7 +56,12 @@ public:
     _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
   {}
   bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    _g1rs->concurrentRefineOneCard(card_ptr, worker_i);
+    bool oops_into_cset = _g1rs->concurrentRefineOneCard(card_ptr, worker_i, false);
+    // This path is executed by the concurrent refine or mutator threads,
+    // concurrently, and so we do not care if card_ptr contains references
+    // that point into the collection set.
+    assert(!oops_into_cset, "should be");
+
     if (_concurrent && _sts->should_yield()) {
       // Caller will actually yield.
       return false;
@@ -1322,6 +1327,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   SharedHeap(policy_),
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
+  _into_cset_dirty_card_queue_set(false),
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
@@ -1572,6 +1578,16 @@ jint G1CollectedHeap::initialize() {
                                       Shared_DirtyCardQ_lock,
                                       &JavaThread::dirty_card_queue_set());
   }
+
+  // Initialize the card queue set used to hold cards containing
+  // references into the collection set.
+  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
+                                             DirtyCardQ_FL_lock,
+                                             -1, // never trigger processing
+                                             -1, // no limit on length
+                                             Shared_DirtyCardQ_lock,
+                                             &JavaThread::dirty_card_queue_set());
+
   // In case we're keeping closure specialization stats, initialize those
   // counts and that mechanism.
   SpecializationStats::clear();
@@ -1603,14 +1619,16 @@ size_t G1CollectedHeap::capacity() const {
   return _g1_committed.byte_size();
 }
 
-void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
+void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
+                                                 DirtyCardQueue* into_cset_dcq,
+                                                 bool concurrent,
                                                  int worker_i) {
   // Clean cards in the hot card cache
-  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set());
+  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set(), into_cset_dcq);
 
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   int n_completed_buffers = 0;
-  while (dcqs.apply_closure_to_completed_buffer(worker_i, 0, true)) {
+  while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
     n_completed_buffers++;
   }
   g1_policy()->record_update_rs_processed_buffers(worker_i,
@@ -2692,6 +2710,35 @@ struct PrepareForRSScanningClosure : public HeapRegionClosure {
   }
 };
 
+#if TASKQUEUE_STATS
+void G1CollectedHeap::print_taskqueue_stats_hdr(outputStream* const st) {
+  st->print_raw_cr("GC Task Stats");
+  st->print_raw("thr "); TaskQueueStats::print_header(1, st); st->cr();
+  st->print_raw("--- "); TaskQueueStats::print_header(2, st); st->cr();
+}
+
+void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
+  print_taskqueue_stats_hdr(st);
+
+  TaskQueueStats totals;
+  const int n = MAX2(workers()->total_workers(), 1);
+  for (int i = 0; i < n; ++i) {
+    st->print("%3d ", i); task_queue(i)->stats.print(st); st->cr();
+    totals += task_queue(i)->stats;
+  }
+  st->print_raw("tot "); totals.print(st); st->cr();
+
+  DEBUG_ONLY(totals.verify());
+}
+
+void G1CollectedHeap::reset_taskqueue_stats() {
+  const int n = MAX2(workers()->total_workers(), 1);
+  for (int i = 0; i < n; ++i) {
+    task_queue(i)->stats.reset();
+  }
+}
+#endif // TASKQUEUE_STATS
+
 void
 G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (GC_locker::check_active_before_gc()) {
@@ -2825,93 +2872,57 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-      // Now choose the CS. We may abandon a pause if we find no
-      // region that will fit in the MMU pause.
-      bool abandoned = g1_policy()->choose_collection_set(target_pause_time_ms);
+      g1_policy()->choose_collection_set(target_pause_time_ms);
 
       // Nothing to do if we were unable to choose a collection set.
-      if (!abandoned) {
 #if G1_REM_SET_LOGGING
-        gclog_or_tty->print_cr("\nAfter pause, heap:");
-        print();
+      gclog_or_tty->print_cr("\nAfter pause, heap:");
+      print();
 #endif
-        PrepareForRSScanningClosure prepare_for_rs_scan;
-        collection_set_iterate(&prepare_for_rs_scan);
+      PrepareForRSScanningClosure prepare_for_rs_scan;
+      collection_set_iterate(&prepare_for_rs_scan);
 
-        setup_surviving_young_words();
+      setup_surviving_young_words();
 
-        // Set up the gc allocation regions.
-        get_gc_alloc_regions();
+      // Set up the gc allocation regions.
+      get_gc_alloc_regions();
 
-        // Actually do the work...
-        evacuate_collection_set();
+      // Actually do the work...
+      evacuate_collection_set();
 
-        free_collection_set(g1_policy()->collection_set());
-        g1_policy()->clear_collection_set();
+      free_collection_set(g1_policy()->collection_set());
+      g1_policy()->clear_collection_set();
 
-        cleanup_surviving_young_words();
+      cleanup_surviving_young_words();
 
-        // Start a new incremental collection set for the next pause.
-        g1_policy()->start_incremental_cset_building();
+      // Start a new incremental collection set for the next pause.
+      g1_policy()->start_incremental_cset_building();
 
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
-        clear_cset_fast_test();
+      // Clear the _cset_fast_test bitmap in anticipation of adding
+      // regions to the incremental collection set for the next
+      // evacuation pause.
+      clear_cset_fast_test();
 
-        if (g1_policy()->in_young_gc_mode()) {
-          _young_list->reset_sampled_info();
+      if (g1_policy()->in_young_gc_mode()) {
+        _young_list->reset_sampled_info();
 
-          // Don't check the whole heap at this point as the
-          // GC alloc regions from this pause have been tagged
-          // as survivors and moved on to the survivor list.
-          // Survivor regions will fail the !is_young() check.
-          assert(check_young_list_empty(false /* check_heap */),
-              "young list should be empty");
+        // Don't check the whole heap at this point as the
+        // GC alloc regions from this pause have been tagged
+        // as survivors and moved on to the survivor list.
+        // Survivor regions will fail the !is_young() check.
+        assert(check_young_list_empty(false /* check_heap */),
+               "young list should be empty");
 
 #if YOUNG_LIST_VERBOSE
-          gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
-          _young_list->print();
+        gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
+        _young_list->print();
 #endif // YOUNG_LIST_VERBOSE
 
-          g1_policy()->record_survivor_regions(_young_list->survivor_length(),
+        g1_policy()->record_survivor_regions(_young_list->survivor_length(),
                                           _young_list->first_survivor_region(),
                                           _young_list->last_survivor_region());
 
-          _young_list->reset_auxilary_lists();
-        }
-      } else {
-        // We have abandoned the current collection. This can only happen
-        // if we're not doing young or partially young collections, and
-        // we didn't find an old region that we're able to collect within
-        // the allowed time.
-
-        assert(g1_policy()->collection_set() == NULL, "should be");
-        assert(_young_list->length() == 0, "because it should be");
-
-        // This should be a no-op.
-        abandon_collection_set(g1_policy()->inc_cset_head());
-
-        g1_policy()->clear_incremental_cset();
-        g1_policy()->stop_incremental_cset_building();
-
-        // Start a new incremental collection set for the next pause.
-        g1_policy()->start_incremental_cset_building();
-
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
-        clear_cset_fast_test();
-
-        // This looks confusing, because the DPT should really be empty
-        // at this point -- since we have not done any collection work,
-        // there should not be any derived pointers in the table to update;
-        // however, there is some additional state in the DPT which is
-        // reset at the end of the (null) "gc" here via the following call.
-        // A better approach might be to split off that state resetting work
-        // into a separate method that asserts that the DPT is empty and call
-        // that here. That is deferred for now.
-        COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+        _young_list->reset_auxilary_lists();
       }
 
       if (evacuation_failed()) {
@@ -2945,7 +2956,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
       g1_policy()->record_pause_time_ms(pause_time_ms);
-      g1_policy()->record_collection_pause_end(abandoned);
+      g1_policy()->record_collection_pause_end();
 
       assert(regions_accounted_for(), "Region leakage.");
 
@@ -2987,6 +2998,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       vm_exit(-1);
     }
   }
+
+  TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
@@ -3346,25 +3360,6 @@ public:
   }
 };
 
-class UpdateRSetImmediate : public OopsInHeapRegionClosure {
-private:
-  G1CollectedHeap* _g1;
-  G1RemSet* _g1_rem_set;
-public:
-  UpdateRSetImmediate(G1CollectedHeap* g1) :
-    _g1(g1), _g1_rem_set(g1->g1_rem_set()) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    assert(_from->is_in_reserved(p), "paranoia");
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop) && !_from->is_survivor()) {
-      _g1_rem_set->par_write_ref(_from, p, 0);
-    }
-  }
-};
-
 class UpdateRSetDeferred : public OopsInHeapRegionClosure {
 private:
   G1CollectedHeap* _g1;
@@ -3388,8 +3383,6 @@ public:
     }
   }
 };
-
-
 
 class RemoveSelfPointerClosure: public ObjectClosure {
 private:
@@ -3453,7 +3446,7 @@ public:
 };
 
 void G1CollectedHeap::remove_self_forwarding_pointers() {
-  UpdateRSetImmediate immediate_update(_g1h);
+  UpdateRSetImmediate immediate_update(_g1h->g1_rem_set());
   DirtyCardQueue dcq(&_g1h->dirty_card_queue_set());
   UpdateRSetDeferred deferred_update(_g1h, &dcq);
   OopsInHeapRegionClosure *cl;
@@ -3754,10 +3747,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
     _surviving_alloc_buffer(g1h->desired_plab_sz(GCAllocForSurvived)),
     _tenured_alloc_buffer(g1h->desired_plab_sz(GCAllocForTenured)),
     _age_table(false),
-#if G1_DETAILED_STATS
-    _pushes(0), _pops(0), _steals(0),
-    _steal_attempts(0),  _overflow_pushes(0),
-#endif
     _strong_roots_time(0), _term_time(0),
     _alloc_buffer_waste(0), _undo_waste(0)
 {
@@ -3777,12 +3766,39 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, real_length * sizeof(size_t));
 
-  _overflowed_refs = new OverflowQueue(10);
-
   _alloc_buffers[GCAllocForSurvived] = &_surviving_alloc_buffer;
   _alloc_buffers[GCAllocForTenured]  = &_tenured_alloc_buffer;
 
   _start = os::elapsedTime();
+}
+
+void
+G1ParScanThreadState::print_termination_stats_hdr(outputStream* const st)
+{
+  st->print_raw_cr("GC Termination Stats");
+  st->print_raw_cr("     elapsed  --strong roots-- -------termination-------"
+                   " ------waste (KiB)------");
+  st->print_raw_cr("thr     ms        ms      %        ms      %    attempts"
+                   "  total   alloc    undo");
+  st->print_raw_cr("--- --------- --------- ------ --------- ------ --------"
+                   " ------- ------- -------");
+}
+
+void
+G1ParScanThreadState::print_termination_stats(int i,
+                                              outputStream* const st) const
+{
+  const double elapsed_ms = elapsed_time() * 1000.0;
+  const double s_roots_ms = strong_roots_time() * 1000.0;
+  const double term_ms    = term_time() * 1000.0;
+  st->print_cr("%3d %9.2f %9.2f %6.2f "
+               "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
+               SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
+               i, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
+               term_ms, term_ms * 100 / elapsed_ms, term_attempts(),
+               (alloc_buffer_waste() + undo_waste()) * HeapWordSize / K,
+               alloc_buffer_waste() * HeapWordSize / K,
+               undo_waste() * HeapWordSize / K);
 }
 
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
@@ -3991,12 +4007,9 @@ public:
     G1ParScanThreadState* pss = par_scan_state();
     while (true) {
       pss->trim_queue();
-      IF_G1_DETAILED_STATS(pss->note_steal_attempt());
 
       StarTask stolen_task;
       if (queues()->steal(pss->queue_num(), pss->hash_seed(), stolen_task)) {
-        IF_G1_DETAILED_STATS(pss->note_steal());
-
         // slightly paranoid tests; I'm trying to catch potential
         // problems before we go into push_on_queue to know where the
         // problem is coming from
@@ -4115,35 +4128,9 @@ public:
     // Clean up any par-expanded rem sets.
     HeapRegionRemSet::par_cleanup();
 
-    MutexLocker x(stats_lock());
     if (ParallelGCVerbose) {
-      gclog_or_tty->print("Thread %d complete:\n", i);
-#if G1_DETAILED_STATS
-      gclog_or_tty->print("  Pushes: %7d    Pops: %7d   Overflows: %7d   Steals %7d (in %d attempts)\n",
-                          pss.pushes(),
-                          pss.pops(),
-                          pss.overflow_pushes(),
-                          pss.steals(),
-                          pss.steal_attempts());
-#endif
-      double elapsed      = pss.elapsed();
-      double strong_roots = pss.strong_roots_time();
-      double term         = pss.term_time();
-      gclog_or_tty->print("  Elapsed: %7.2f ms.\n"
-                          "    Strong roots: %7.2f ms (%6.2f%%)\n"
-                          "    Termination:  %7.2f ms (%6.2f%%) "
-                                                 "(in "SIZE_FORMAT" entries)\n",
-                          elapsed * 1000.0,
-                          strong_roots * 1000.0, (strong_roots*100.0/elapsed),
-                          term * 1000.0, (term*100.0/elapsed),
-                          pss.term_attempts());
-      size_t total_waste = pss.alloc_buffer_waste() + pss.undo_waste();
-      gclog_or_tty->print("  Waste: %8dK\n"
-                 "    Alloc Buffer: %8dK\n"
-                 "    Undo: %8dK\n",
-                 (total_waste * HeapWordSize) / K,
-                 (pss.alloc_buffer_waste() * HeapWordSize) / K,
-                 (pss.undo_waste() * HeapWordSize) / K);
+      MutexLocker x(stats_lock());
+      pss.print_termination_stats(i);
     }
 
     assert(pss.refs_to_scan() == 0, "Task queue should be empty");
@@ -4260,6 +4247,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (ParallelGCThreads > 0) {
     // The individual threads will set their evac-failure closures.
     StrongRootsScope srs(this);
+    if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
     workers()->run_task(&g1_par_task);
   } else {
     StrongRootsScope srs(this);

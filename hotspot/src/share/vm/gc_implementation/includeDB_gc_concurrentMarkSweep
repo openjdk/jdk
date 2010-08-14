@@ -149,6 +149,7 @@ concurrentMarkSweepGeneration.cpp       isGCActiveMark.hpp
 concurrentMarkSweepGeneration.cpp       iterator.hpp
 concurrentMarkSweepGeneration.cpp       java.hpp
 concurrentMarkSweepGeneration.cpp       jvmtiExport.hpp
+concurrentMarkSweepGeneration.cpp       memoryService.hpp
 concurrentMarkSweepGeneration.cpp       oop.inline.hpp
 concurrentMarkSweepGeneration.cpp       parNewGeneration.hpp
 concurrentMarkSweepGeneration.cpp       referencePolicy.hpp
@@ -165,6 +166,7 @@ concurrentMarkSweepGeneration.hpp       gSpaceCounters.hpp
 concurrentMarkSweepGeneration.hpp       gcStats.hpp
 concurrentMarkSweepGeneration.hpp       generation.hpp
 concurrentMarkSweepGeneration.hpp       generationCounters.hpp
+concurrentMarkSweepGeneration.hpp       memoryService.hpp
 concurrentMarkSweepGeneration.hpp       mutexLocker.hpp
 concurrentMarkSweepGeneration.hpp       taskqueue.hpp
 concurrentMarkSweepGeneration.hpp       virtualspace.hpp
