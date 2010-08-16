@@ -696,9 +696,11 @@ public class Attr extends JCTree.Visitor {
                 // ensure that annotation method does not clash with members of Object/Annotation
                 chk.validateAnnotationMethod(tree.pos(), m);
 
-                // if default value is an annotation, check it is a well-formed
-                // annotation value (e.g. no duplicate values, no missing values, etc.)
-                chk.validateAnnotationDefaultValue(tree.defaultValue);
+                if (tree.defaultValue != null) {
+                    // if default value is an annotation, check it is a well-formed
+                    // annotation value (e.g. no duplicate values, no missing values, etc.)
+                    chk.validateAnnotationTree(tree.defaultValue);
+                }
             }
 
             for (List<JCExpression> l = tree.thrown; l.nonEmpty(); l = l.tail)
