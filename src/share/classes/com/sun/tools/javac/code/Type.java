@@ -347,11 +347,17 @@ public class Type implements PrimitiveType {
         return false;
     }
 
-    /** Does this type contain an occurrence of some type in `elems'?
+    /** Does this type contain an occurrence of some type in 'ts'?
      */
-    public boolean containsSome(List<Type> ts) {
-        for (List<Type> l = ts; l.nonEmpty(); l = l.tail)
-            if (this.contains(ts.head)) return true;
+    public boolean containsAny(List<Type> ts) {
+        for (Type t : ts)
+            if (this.contains(t)) return true;
+        return false;
+    }
+
+    public static boolean containsAny(List<Type> ts1, List<Type> ts2) {
+        for (Type t : ts1)
+            if (t.containsAny(ts2)) return true;
         return false;
     }
 
@@ -429,6 +435,10 @@ public class Type implements PrimitiveType {
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym, TypeVar bound) {
             this(type, kind, tsym);
             this.bound = bound;
+        }
+
+        public boolean contains(Type t) {
+            return kind != UNBOUND && type.contains(t);
         }
 
         public boolean isSuperBound() {
@@ -681,7 +691,9 @@ public class Type implements PrimitiveType {
             return
                 elem == this
                 || (isParameterized()
-                    && (getEnclosingType().contains(elem) || contains(getTypeArguments(), elem)));
+                    && (getEnclosingType().contains(elem) || contains(getTypeArguments(), elem)))
+                || (isCompound()
+                    && (supertype_field.contains(elem) || contains(interfaces_field, elem)));
         }
 
         public void complete() {
