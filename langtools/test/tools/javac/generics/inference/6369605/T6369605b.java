@@ -21,18 +21,29 @@
  * questions.
  */
 
-// key: compiler.err.invalid.inferred.types
-// key: compiler.misc.inferred.do.not.conform.to.bounds
+/**
+ * @test
+ * @bug 6369605
+ * @summary Unconstrained type variables fails to include bounds
+ * @author mcimadamore
+ * @compile T6369605b.java
+ */
+import java.util.List;
 
-import java.util.*;
-
-class InvalidInferredTypes {
-
-    <T extends List<? super T>> T makeList() {
+class T6369605b {
+    static <T extends List<X>, X> List<T> m1() {
         return null;
     }
 
-    public void test() {
-        List<? super String> l = makeList();
+    static <T extends List<U>, U extends List<X>, X> List<T> m2() {
+        return null;
     }
+
+    static <T extends List<U>, U extends List<V>, V extends List<X>, X> List<T> m3() {
+        return null;
+    }
+
+    List<?> l1 = m1();
+    List<?> l2 = m2();
+    List<?> l3 = m3();
 }
