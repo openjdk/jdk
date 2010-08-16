@@ -1010,10 +1010,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Non-product stat counters
   NOT_PRODUCT(
-    int _numObjectsPromoted;
-    int _numWordsPromoted;
-    int _numObjectsAllocated;
-    int _numWordsAllocated;
+    size_t _numObjectsPromoted;
+    size_t _numWordsPromoted;
+    size_t _numObjectsAllocated;
+    size_t _numWordsAllocated;
   )
 
   // Used for sizing decisions
