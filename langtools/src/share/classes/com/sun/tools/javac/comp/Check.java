@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.source.tree.AssignmentTree;
 import java.util.*;
 import java.util.Set;
 
@@ -1930,20 +1931,17 @@ public class Check {
  **************************************************************************/
 
     /**
-     * Validate annotations in default values
+     * Recursively validate annotations values
      */
-    void validateAnnotationDefaultValue(JCTree defaultValue) {
-        class DefaultValueValidator extends TreeScanner {
+    void validateAnnotationTree(JCTree tree) {
+        class AnnotationValidator extends TreeScanner {
             @Override
             public void visitAnnotation(JCAnnotation tree) {
                 super.visitAnnotation(tree);
                 validateAnnotation(tree);
             }
         }
-        // defaultValue may be null if an error occurred, so don't bother validating it
-        if (defaultValue != null) {
-            defaultValue.accept(new DefaultValueValidator());
-        }
+        tree.accept(new AnnotationValidator());
     }
 
     /** Annotation types are restricted to primitives, String, an
@@ -2009,7 +2007,7 @@ public class Check {
     /** Check an annotation of a symbol.
      */
     public void validateAnnotation(JCAnnotation a, Symbol s) {
-        validateAnnotation(a);
+        validateAnnotationTree(a);
 
         if (!annotationApplicable(a, s))
             log.error(a.pos(), "annotation.type.not.applicable");
@@ -2023,7 +2021,7 @@ public class Check {
     public void validateTypeAnnotation(JCTypeAnnotation a, boolean isTypeParameter) {
         if (a.type == null)
             throw new AssertionError("annotation tree hasn't been attributed yet: " + a);
-        validateAnnotation(a);
+        validateAnnotationTree(a);
 
         if (!isTypeAnnotation(a, isTypeParameter))
             log.error(a.pos(), "annotation.type.not.applicable");
@@ -2141,8 +2139,6 @@ public class Check {
             if (!members.remove(m))
                 log.error(assign.lhs.pos(), "duplicate.annotation.member.value",
                           m.name, a.type);
-            if (assign.rhs.getTag() == ANNOTATION)
-                validateAnnotation((JCAnnotation)assign.rhs);
         }
 
         // all the remaining ones better have default values
