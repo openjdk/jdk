@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,22 @@ inline HeapWord* BlockOffsetSharedArray::address_for_index(size_t index) const {
   return result;
 }
 
+inline void BlockOffsetSharedArray::check_reducing_assertion(bool reducing) {
+    assert(reducing || !SafepointSynchronize::is_at_safepoint() || init_to_zero() ||
+           Thread::current()->is_VM_thread() ||
+           Thread::current()->is_ConcurrentGC_thread() ||
+           ((!Thread::current()->is_ConcurrentGC_thread()) &&
+            ParGCRareEvent_lock->owned_by_self()), "Crack");
+}
 
 //////////////////////////////////////////////////////////////////////////
 // BlockOffsetArrayNonContigSpace inlines
 //////////////////////////////////////////////////////////////////////////
+inline void BlockOffsetArrayNonContigSpace::freed(HeapWord* blk,
+                                                  size_t size) {
+  freed(blk, blk + size);
+}
+
 inline void BlockOffsetArrayNonContigSpace::freed(HeapWord* blk_start,
                                                   HeapWord* blk_end) {
   // Verify that the BOT shows [blk_start, blk_end) to be one block.
