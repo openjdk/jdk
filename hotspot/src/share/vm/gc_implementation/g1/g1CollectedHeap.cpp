@@ -3608,7 +3608,7 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
   if (!r->evacuation_failed()) {
     r->set_evacuation_failed(true);
     if (G1PrintHeapRegions) {
-      gclog_or_tty->print("evacuation failed in heap region "PTR_FORMAT" "
+      gclog_or_tty->print("overflow in heap region "PTR_FORMAT" "
                           "["PTR_FORMAT","PTR_FORMAT")\n",
                           r, r->bottom(), r->end());
     }
@@ -4321,7 +4321,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
     if (PrintGCDetails) {
-      gclog_or_tty->print(" (evacuation failed)");
+      gclog_or_tty->print(" (to-space overflow)");
     } else if (PrintGC) {
       gclog_or_tty->print("--");
     }
