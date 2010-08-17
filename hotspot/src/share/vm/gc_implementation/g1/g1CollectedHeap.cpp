@@ -2194,9 +2194,12 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   }
 }
 
-HeapWord* G1CollectedHeap::allocate_new_tlab(size_t size) {
+HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
+  assert(!isHumongous(word_size),
+         err_msg("a TLAB should not be of humongous size, "
+                 "word_size = "SIZE_FORMAT, word_size));
   bool dummy;
-  return G1CollectedHeap::mem_allocate(size, false, true, &dummy);
+  return G1CollectedHeap::mem_allocate(word_size, false, true, &dummy);
 }
 
 bool G1CollectedHeap::allocs_are_zero_filled() {
@@ -3639,6 +3642,10 @@ void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
 
 HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
                                                   size_t word_size) {
+  assert(!isHumongous(word_size),
+         err_msg("we should not be seeing humongous allocation requests "
+                 "during GC, word_size = "SIZE_FORMAT, word_size));
+
   HeapRegion* alloc_region = _gc_alloc_regions[purpose];
   // let the caller handle alloc failure
   if (alloc_region == NULL) return NULL;
@@ -3671,6 +3678,10 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
                                          HeapRegion*    alloc_region,
                                          bool           par,
                                          size_t         word_size) {
+  assert(!isHumongous(word_size),
+         err_msg("we should not be seeing humongous allocation requests "
+                 "during GC, word_size = "SIZE_FORMAT, word_size));
+
   HeapWord* block = NULL;
   // In the parallel case, a previous thread to obtain the lock may have
   // already assigned a new gc_alloc_region.

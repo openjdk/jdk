@@ -1032,7 +1032,7 @@ public:
   virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-  virtual HeapWord* allocate_new_tlab(size_t size);
+  virtual HeapWord* allocate_new_tlab(size_t word_size);
 
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
