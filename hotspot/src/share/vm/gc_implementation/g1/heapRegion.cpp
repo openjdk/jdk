@@ -790,8 +790,18 @@ void HeapRegion::verify(bool allow_dirty,
   int objs = 0;
   int blocks = 0;
   VerifyLiveClosure vl_cl(g1, use_prev_marking);
+  bool is_humongous = isHumongous();
+  size_t object_num = 0;
   while (p < top()) {
     size_t size = oop(p)->size();
+    if (is_humongous != g1->isHumongous(size)) {
+      gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
+                             SIZE_FORMAT" words) in a %shumongous region",
+                             p, g1->isHumongous(size) ? "" : "non-",
+                             size, is_humongous ? "" : "non-");
+       *failures = true;
+    }
+    object_num += 1;
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
       HeapWord* res = block_start_const(p + (size/2));
       if (p != res) {
@@ -855,6 +865,13 @@ void HeapRegion::verify(bool allow_dirty,
         *failures = true;
         return;
     }
+  }
+
+  if (is_humongous && object_num > 1) {
+    gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
+                           "but has "SIZE_FORMAT", objects",
+                           bottom(), end(), object_num);
+    *failures = true;
   }
 
   if (p != top()) {
