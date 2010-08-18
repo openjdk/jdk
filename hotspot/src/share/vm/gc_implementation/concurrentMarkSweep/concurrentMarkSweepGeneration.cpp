@@ -7937,14 +7937,20 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
   FreeChunk* fc = (FreeChunk*)addr;
   size_t res;
 
-  // check if we are done sweepinrg
-  if (addr == _limit) { // we have swept up to the limit, do nothing more
+  // Check if we are done sweeping. Below we check "addr >= _limit" rather
+  // than "addr == _limit" because although _limit was a block boundary when
+  // we started the sweep, it may no longer be one because heap expansion
+  // may have caused us to coalesce the block ending at the address _limit
+  // with a newly expanded chunk (this happens when _limit was set to the
+  // previous _end of the space), so we may have stepped past _limit; see CR 6977970.
+  if (addr >= _limit) { // we have swept up to or past the limit, do nothing more
     assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
            "sweep _limit out of bounds");
+    assert(addr < _sp->end(), "addr out of bounds");
     // help the closure application finish
-    return pointer_delta(_sp->end(), _limit);
+    return pointer_delta(_sp->end(), addr);
   }
-  assert(addr <= _limit, "sweep invariant");
+  assert(addr < _limit, "sweep invariant");
 
   // check if we should yield
   do_yield_check(addr);
