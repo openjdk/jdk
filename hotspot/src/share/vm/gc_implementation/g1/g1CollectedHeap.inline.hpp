@@ -57,8 +57,9 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
   assert( SafepointSynchronize::is_at_safepoint() ||
           Heap_lock->owned_by_self(), "pre-condition of the call" );
 
-  if (_cur_alloc_region != NULL) {
-
+  // All humongous allocation requests should go through the slow path in
+  // attempt_allocation_slow().
+  if (!isHumongous(word_size) && _cur_alloc_region != NULL) {
     // If this allocation causes a region to become non empty,
     // then we need to update our free_regions count.
 
@@ -69,13 +70,14 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
     } else {
       res = _cur_alloc_region->allocate(word_size);
     }
-  }
-  if (res != NULL) {
-    if (!SafepointSynchronize::is_at_safepoint()) {
-      assert( Heap_lock->owned_by_self(), "invariant" );
-      Heap_lock->unlock();
+
+    if (res != NULL) {
+      if (!SafepointSynchronize::is_at_safepoint()) {
+        assert( Heap_lock->owned_by_self(), "invariant" );
+        Heap_lock->unlock();
+      }
+      return res;
     }
-    return res;
   }
   // attempt_allocation_slow will also unlock the heap lock when appropriate.
   return attempt_allocation_slow(word_size, permit_collection_pause);

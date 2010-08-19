@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,8 @@ class BlockOffsetSharedArray: public CHeapObj {
     N_words = 1 << LogN_words
   };
 
+  bool _init_to_zero;
+
   // The reserved region covered by the shared array.
   MemRegion _reserved;
 
@@ -125,17 +127,28 @@ class BlockOffsetSharedArray: public CHeapObj {
     assert(index < _vs.committed_size(), "index out of range");
     return _offset_array[index];
   }
-  void set_offset_array(size_t index, u_char offset) {
+  // An assertion-checking helper method for the set_offset_array() methods below.
+  void check_reducing_assertion(bool reducing);
+
+  void set_offset_array(size_t index, u_char offset, bool reducing = false) {
+    check_reducing_assertion(reducing);
     assert(index < _vs.committed_size(), "index out of range");
+    assert(!reducing || _offset_array[index] >= offset, "Not reducing");
     _offset_array[index] = offset;
   }
-  void set_offset_array(size_t index, HeapWord* high, HeapWord* low) {
+
+  void set_offset_array(size_t index, HeapWord* high, HeapWord* low, bool reducing = false) {
+    check_reducing_assertion(reducing);
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
     assert(pointer_delta(high, low) <= N_words, "offset too large");
+    assert(!reducing || _offset_array[index] >=  (u_char)pointer_delta(high, low),
+           "Not reducing");
     _offset_array[index] = (u_char)pointer_delta(high, low);
   }
-  void set_offset_array(HeapWord* left, HeapWord* right, u_char offset) {
+
+  void set_offset_array(HeapWord* left, HeapWord* right, u_char offset, bool reducing = false) {
+    check_reducing_assertion(reducing);
     assert(index_for(right - 1) < _vs.committed_size(),
            "right address out of range");
     assert(left  < right, "Heap addresses out of order");
@@ -150,12 +163,14 @@ class BlockOffsetSharedArray: public CHeapObj {
       size_t i = index_for(left);
       const size_t end = i + num_cards;
       for (; i < end; i++) {
+        assert(!reducing || _offset_array[i] >= offset, "Not reducing");
         _offset_array[i] = offset;
       }
     }
   }
 
-  void set_offset_array(size_t left, size_t right, u_char offset) {
+  void set_offset_array(size_t left, size_t right, u_char offset, bool reducing = false) {
+    check_reducing_assertion(reducing);
     assert(right < _vs.committed_size(), "right address out of range");
     assert(left  <= right, "indexes out of order");
     size_t num_cards = right - left + 1;
@@ -169,6 +184,7 @@ class BlockOffsetSharedArray: public CHeapObj {
       size_t i = left;
       const size_t end = i + num_cards;
       for (; i < end; i++) {
+        assert(!reducing || _offset_array[i] >= offset, "Not reducing");
         _offset_array[i] = offset;
       }
     }
@@ -211,6 +227,11 @@ public:
   void resize(size_t new_word_size);
 
   void set_bottom(HeapWord* new_bottom);
+
+  // Whether entries should be initialized to zero. Used currently only for
+  // error checking.
+  void set_init_to_zero(bool val) { _init_to_zero = val; }
+  bool init_to_zero() { return _init_to_zero; }
 
   // Updates all the BlockOffsetArray's sharing this shared array to
   // reflect the current "top"'s of their spaces.
@@ -285,17 +306,23 @@ class BlockOffsetArray: public BlockOffsetTable {
   // initialized to point backwards to the beginning of the covered region.
   bool _init_to_zero;
 
+  // An assertion-checking helper method for the set_remainder*() methods below.
+  void check_reducing_assertion(bool reducing) { _array->check_reducing_assertion(reducing); }
+
   // Sets the entries
   // corresponding to the cards starting at "start" and ending at "end"
   // to point back to the card before "start": the interval [start, end)
-  // is right-open.
-  void set_remainder_to_point_to_start(HeapWord* start, HeapWord* end);
+  // is right-open. The last parameter, reducing, indicates whether the
+  // updates to individual entries always reduce the entry from a higher
+  // to a lower value. (For example this would hold true during a temporal
+  // regime during which only block splits were updating the BOT.
+  void set_remainder_to_point_to_start(HeapWord* start, HeapWord* end, bool reducing = false);
   // Same as above, except that the args here are a card _index_ interval
   // that is closed: [start_index, end_index]
-  void set_remainder_to_point_to_start_incl(size_t start, size_t end);
+  void set_remainder_to_point_to_start_incl(size_t start, size_t end, bool reducing = false);
 
   // A helper function for BOT adjustment/verification work
-  void do_block_internal(HeapWord* blk_start, HeapWord* blk_end, Action action);
+  void do_block_internal(HeapWord* blk_start, HeapWord* blk_end, Action action, bool reducing = false);
 
  public:
   // The space may not have its bottom and top set yet, which is why the
@@ -303,7 +330,7 @@ class BlockOffsetArray: public BlockOffsetTable {
   // elements of the array are initialized to zero.  Otherwise, they are
   // initialized to point backwards to the beginning.
   BlockOffsetArray(BlockOffsetSharedArray* array, MemRegion mr,
-                   bool init_to_zero);
+                   bool init_to_zero_);
 
   // Note: this ought to be part of the constructor, but that would require
   // "this" to be passed as a parameter to a member constructor for
@@ -358,6 +385,12 @@ class BlockOffsetArray: public BlockOffsetTable {
   // If true, initialize array slots with no allocated blocks to zero.
   // Otherwise, make them point back to the front.
   bool init_to_zero() { return _init_to_zero; }
+  // Corresponding setter
+  void set_init_to_zero(bool val) {
+    _init_to_zero = val;
+    assert(_array != NULL, "_array should be non-NULL");
+    _array->set_init_to_zero(val);
+  }
 
   // Debugging
   // Return the index of the last entry in the "active" region.
@@ -424,16 +457,16 @@ class BlockOffsetArrayNonContigSpace: public BlockOffsetArray {
   // of BOT is touched. It is assumed (and verified in the
   // non-product VM) that the remaining cards of the block
   // are correct.
-  void mark_block(HeapWord* blk_start, HeapWord* blk_end);
-  void mark_block(HeapWord* blk, size_t size) {
-    mark_block(blk, blk + size);
+  void mark_block(HeapWord* blk_start, HeapWord* blk_end, bool reducing = false);
+  void mark_block(HeapWord* blk, size_t size, bool reducing = false) {
+    mark_block(blk, blk + size, reducing);
   }
 
   // Adjust _unallocated_block to indicate that a particular
   // block has been newly allocated or freed. It is assumed (and
   // verified in the non-product VM) that the BOT is correct for
   // the given block.
-  void allocated(HeapWord* blk_start, HeapWord* blk_end) {
+  void allocated(HeapWord* blk_start, HeapWord* blk_end, bool reducing = false) {
     // Verify that the BOT shows [blk, blk + blk_size) to be one block.
     verify_single_block(blk_start, blk_end);
     if (BlockOffsetArrayUseUnallocatedBlock) {
@@ -441,21 +474,18 @@ class BlockOffsetArrayNonContigSpace: public BlockOffsetArray {
     }
   }
 
-  void allocated(HeapWord* blk, size_t size) {
-    allocated(blk, blk + size);
+  void allocated(HeapWord* blk, size_t size, bool reducing = false) {
+    allocated(blk, blk + size, reducing);
   }
 
   void freed(HeapWord* blk_start, HeapWord* blk_end);
-  void freed(HeapWord* blk, size_t size) {
-    freed(blk, blk + size);
-  }
+  void freed(HeapWord* blk, size_t size);
 
   HeapWord* block_start_unsafe(const void* addr) const;
 
   // Requires "addr" to be the start of a card and returns the
   // start of the block that contains the given address.
   HeapWord* block_start_careful(const void* addr) const;
-
 
   // Verification & debugging: ensure that the offset table reflects
   // the fact that the block [blk_start, blk_end) or [blk, blk + size)
