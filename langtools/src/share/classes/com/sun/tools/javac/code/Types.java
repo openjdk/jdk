@@ -2945,6 +2945,13 @@ public class Types {
     public Type capture(Type t) {
         if (t.tag != CLASS)
             return t;
+        if (t.getEnclosingType() != Type.noType) {
+            Type capturedEncl = capture(t.getEnclosingType());
+            if (capturedEncl != t.getEnclosingType()) {
+                Type type1 = memberType(capturedEncl, t.tsym);
+                t = subst(type1, t.tsym.type.getTypeArguments(), t.getTypeArguments());
+            }
+        }
         ClassType cls = (ClassType)t;
         if (cls.isRaw() || !cls.isParameterized())
             return cls;
