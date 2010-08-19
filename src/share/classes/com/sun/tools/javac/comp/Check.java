@@ -906,33 +906,15 @@ public class Check {
      *
      *  and we can't make sure that the bound is already attributed because
      *  of possible cycles.
-     */
-    private Validator validator = new Validator();
-
-    /** Visitor method: Validate a type expression, if it is not null, catching
+     *
+     * Visitor method: Validate a type expression, if it is not null, catching
      *  and reporting any completion failures.
      */
     void validate(JCTree tree, Env<AttrContext> env) {
-        try {
-            if (tree != null) {
-                validator.env = env;
-                tree.accept(validator);
-                checkRaw(tree, env);
-            }
-        } catch (CompletionFailure ex) {
-            completionError(tree.pos(), ex);
-        }
+        validate(tree, env, true);
     }
-    //where
-    void checkRaw(JCTree tree, Env<AttrContext> env) {
-        if (lint.isEnabled(Lint.LintCategory.RAW) &&
-            tree.type.tag == CLASS &&
-            !TreeInfo.isDiamond(tree) &&
-            !env.enclClass.name.isEmpty() &&  //anonymous or intersection
-            tree.type.isRaw()) {
-            log.warning(Lint.LintCategory.RAW,
-                    tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
-        }
+    void validate(JCTree tree, Env<AttrContext> env, boolean checkRaw) {
+        new Validator(env).validateTree(tree, checkRaw, true);
     }
 
     /** Visitor method: Validate a list of type expressions.
@@ -946,9 +928,16 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        boolean isOuter;
+        Env<AttrContext> env;
+
+        Validator(Env<AttrContext> env) {
+            this.env = env;
+        }
+
         @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
-            validate(tree.elemtype, env);
+            tree.elemtype.accept(this);
         }
 
         @Override
@@ -960,10 +949,14 @@ public class Check {
                 List<Type> forms = tree.type.tsym.type.getTypeArguments();
                 ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
 
+                boolean is_java_lang_Class = tree.type.tsym.flatName() == names.java_lang_Class;
+
                 // For matching pairs of actual argument types `a' and
                 // formal type parameters with declared bound `b' ...
                 while (args.nonEmpty() && forms.nonEmpty()) {
-                    validate(args.head, env);
+                    validateTree(args.head,
+                            !(isOuter && is_java_lang_Class),
+                            false);
 
                     // exact type arguments needs to know their
                     // bounds (for upper and lower bound
@@ -1015,14 +1008,14 @@ public class Check {
 
         @Override
         public void visitTypeParameter(JCTypeParameter tree) {
-            validate(tree.bounds, env);
+            validateTrees(tree.bounds, true, isOuter);
             checkClassBounds(tree.pos(), tree.type);
         }
 
         @Override
         public void visitWildcard(JCWildcard tree) {
             if (tree.inner != null)
-                validate(tree.inner, env);
+                validateTree(tree.inner, true, isOuter);
         }
 
         @Override
@@ -1060,7 +1053,34 @@ public class Check {
         public void visitTree(JCTree tree) {
         }
 
-        Env<AttrContext> env;
+        public void validateTree(JCTree tree, boolean checkRaw, boolean isOuter) {
+            try {
+                if (tree != null) {
+                    this.isOuter = isOuter;
+                    tree.accept(this);
+                    if (checkRaw)
+                        checkRaw(tree, env);
+                }
+            } catch (CompletionFailure ex) {
+                completionError(tree.pos(), ex);
+            }
+        }
+
+        public void validateTrees(List<? extends JCTree> trees, boolean checkRaw, boolean isOuter) {
+            for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
+                validateTree(l.head, checkRaw, isOuter);
+        }
+
+        void checkRaw(JCTree tree, Env<AttrContext> env) {
+            if (lint.isEnabled(Lint.LintCategory.RAW) &&
+                tree.type.tag == CLASS &&
+                !TreeInfo.isDiamond(tree) &&
+                !env.enclClass.name.isEmpty() &&  //anonymous or intersection
+                tree.type.isRaw()) {
+                log.warning(Lint.LintCategory.RAW,
+                        tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
+            }
+        }
     }
 
 /* *************************************************************************
