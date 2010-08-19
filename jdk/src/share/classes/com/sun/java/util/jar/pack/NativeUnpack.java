@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,8 @@ package com.sun.java.util.jar.pack;
 
 import java.nio.*;
 import java.io.*;
-import java.nio.channels.*;
-import java.util.Date;
 import java.util.jar.*;
 import java.util.zip.*;
-import java.util.*;
-//import com.sun.java.util.jar.pack.Pack200;
-
 
 class NativeUnpack {
     // Pointer to the native unpacker obj
@@ -91,13 +86,13 @@ class NativeUnpack {
     NativeUnpack(UnpackerImpl p200) {
         super();
         _p200  = p200;
-        _props = p200._props;
+        _props = p200.props;
         p200._nunp = this;
     }
 
     // for JNI callbacks
     static private Object currentInstance() {
-        UnpackerImpl p200 = (UnpackerImpl) Utils.currentInstance.get();
+        UnpackerImpl p200 = (UnpackerImpl) Utils.getTLGlobals();
         return (p200 == null)? null: p200._nunp;
     }
 
