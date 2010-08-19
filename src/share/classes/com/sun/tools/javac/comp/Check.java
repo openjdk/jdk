@@ -330,7 +330,7 @@ public class Check {
             for (Scope.Entry e = s.next.lookup(c.name);
                  e.scope != null && e.sym.owner == c.owner;
                  e = e.next()) {
-                if (e.sym.kind == TYP &&
+                if (e.sym.kind == TYP && e.sym.type.tag != TYPEVAR &&
                     (e.sym.owner.kind & (VAR | MTH)) != 0 &&
                     c.name != names.error) {
                     duplicateError(pos, e.sym);
