@@ -338,6 +338,7 @@ class Arguments : AllStatic {
   }
   static bool verify_interval(uintx val, uintx min,
                               uintx max, const char* name);
+  static bool verify_min_value(intx val, intx min, const char* name);
   static bool verify_percentage(uintx value, const char* name);
   static void describe_range_error(ArgsRange errcode);
   static ArgsRange check_memory_size(julong size, julong min_size);
@@ -400,6 +401,8 @@ class Arguments : AllStatic {
   static bool check_gc_consistency();
   // Check consistecy or otherwise of VM argument settings
   static bool check_vm_args_consistency();
+  // Check stack pages settings
+  static bool check_stack_pages();
   // Used by os_solaris
   static bool process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized);
 
