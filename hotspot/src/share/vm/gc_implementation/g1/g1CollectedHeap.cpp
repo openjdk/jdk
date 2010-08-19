@@ -1044,29 +1044,56 @@ resize_if_necessary_after_full_collection(size_t word_size) {
   const size_t capacity_after_gc = capacity();
   const size_t free_after_gc = capacity_after_gc - used_after_gc;
 
+  // This is enforced in arguments.cpp.
+  assert(MinHeapFreeRatio <= MaxHeapFreeRatio,
+         "otherwise the code below doesn't make sense");
+
   // We don't have floating point command-line arguments
-  const double minimum_free_percentage = (double) MinHeapFreeRatio / 100;
+  const double minimum_free_percentage = (double) MinHeapFreeRatio / 100.0;
   const double maximum_used_percentage = 1.0 - minimum_free_percentage;
-  const double maximum_free_percentage = (double) MaxHeapFreeRatio / 100;
+  const double maximum_free_percentage = (double) MaxHeapFreeRatio / 100.0;
   const double minimum_used_percentage = 1.0 - maximum_free_percentage;
 
-  size_t minimum_desired_capacity = (size_t) (used_after_gc / maximum_used_percentage);
-  size_t maximum_desired_capacity = (size_t) (used_after_gc / minimum_used_percentage);
+  const size_t min_heap_size = collector_policy()->min_heap_byte_size();
+  const size_t max_heap_size = collector_policy()->max_heap_byte_size();
 
-  // Don't shrink less than the initial size.
-  minimum_desired_capacity =
-    MAX2(minimum_desired_capacity,
-         collector_policy()->initial_heap_byte_size());
-  maximum_desired_capacity =
-    MAX2(maximum_desired_capacity,
-         collector_policy()->initial_heap_byte_size());
+  // We have to be careful here as these two calculations can overflow
+  // 32-bit size_t's.
+  double used_after_gc_d = (double) used_after_gc;
+  double minimum_desired_capacity_d = used_after_gc_d / maximum_used_percentage;
+  double maximum_desired_capacity_d = used_after_gc_d / minimum_used_percentage;
 
-  // We are failing here because minimum_desired_capacity is
-  assert(used_after_gc <= minimum_desired_capacity, "sanity check");
-  assert(minimum_desired_capacity <= maximum_desired_capacity, "sanity check");
+  // Let's make sure that they are both under the max heap size, which
+  // by default will make them fit into a size_t.
+  double desired_capacity_upper_bound = (double) max_heap_size;
+  minimum_desired_capacity_d = MIN2(minimum_desired_capacity_d,
+                                    desired_capacity_upper_bound);
+  maximum_desired_capacity_d = MIN2(maximum_desired_capacity_d,
+                                    desired_capacity_upper_bound);
+
+  // We can now safely turn them into size_t's.
+  size_t minimum_desired_capacity = (size_t) minimum_desired_capacity_d;
+  size_t maximum_desired_capacity = (size_t) maximum_desired_capacity_d;
+
+  // This assert only makes sense here, before we adjust them
+  // with respect to the min and max heap size.
+  assert(minimum_desired_capacity <= maximum_desired_capacity,
+         err_msg("minimum_desired_capacity = "SIZE_FORMAT", "
+                 "maximum_desired_capacity = "SIZE_FORMAT,
+                 minimum_desired_capacity, maximum_desired_capacity));
+
+  // Should not be greater than the heap max size. No need to adjust
+  // it with respect to the heap min size as it's a lower bound (i.e.,
+  // we'll try to make the capacity larger than it, not smaller).
+  minimum_desired_capacity = MIN2(minimum_desired_capacity, max_heap_size);
+  // Should not be less than the heap min size. No need to adjust it
+  // with respect to the heap max size as it's an upper bound (i.e.,
+  // we'll try to make the capacity smaller than it, not greater).
+  maximum_desired_capacity =  MAX2(maximum_desired_capacity, min_heap_size);
 
   if (PrintGC && Verbose) {
-    const double free_percentage = ((double)free_after_gc) / capacity();
+    const double free_percentage =
+      (double) free_after_gc / (double) capacity_after_gc;
     gclog_or_tty->print_cr("Computing new size after full GC ");
     gclog_or_tty->print_cr("  "
                            "  minimum_free_percentage: %6.2f",
@@ -1078,45 +1105,47 @@ resize_if_necessary_after_full_collection(size_t word_size) {
                            "  capacity: %6.1fK"
                            "  minimum_desired_capacity: %6.1fK"
                            "  maximum_desired_capacity: %6.1fK",
-                           capacity() / (double) K,
-                           minimum_desired_capacity / (double) K,
-                           maximum_desired_capacity / (double) K);
+                           (double) capacity_after_gc / (double) K,
+                           (double) minimum_desired_capacity / (double) K,
+                           (double) maximum_desired_capacity / (double) K);
     gclog_or_tty->print_cr("  "
-                           "   free_after_gc   : %6.1fK"
-                           "   used_after_gc   : %6.1fK",
-                           free_after_gc / (double) K,
-                           used_after_gc / (double) K);
+                           "  free_after_gc: %6.1fK"
+                           "  used_after_gc: %6.1fK",
+                           (double) free_after_gc / (double) K,
+                           (double) used_after_gc / (double) K);
     gclog_or_tty->print_cr("  "
                            "   free_percentage: %6.2f",
                            free_percentage);
   }
-  if (capacity() < minimum_desired_capacity) {
+  if (capacity_after_gc < minimum_desired_capacity) {
     // Don't expand unless it's significant
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
     expand(expand_bytes);
     if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("    expanding:"
+      gclog_or_tty->print_cr("  "
+                             "  expanding:"
+                             "  max_heap_size: %6.1fK"
                              "  minimum_desired_capacity: %6.1fK"
                              "  expand_bytes: %6.1fK",
-                             minimum_desired_capacity / (double) K,
-                             expand_bytes / (double) K);
+                             (double) max_heap_size / (double) K,
+                             (double) minimum_desired_capacity / (double) K,
+                             (double) expand_bytes / (double) K);
     }
 
     // No expansion, now see if we want to shrink
-  } else if (capacity() > maximum_desired_capacity) {
+  } else if (capacity_after_gc > maximum_desired_capacity) {
     // Capacity too large, compute shrinking size
     size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
     shrink(shrink_bytes);
     if (PrintGC && Verbose) {
       gclog_or_tty->print_cr("  "
                              "  shrinking:"
-                             "  initSize: %.1fK"
-                             "  maximum_desired_capacity: %.1fK",
-                             collector_policy()->initial_heap_byte_size() / (double) K,
-                             maximum_desired_capacity / (double) K);
-      gclog_or_tty->print_cr("  "
-                             "  shrink_bytes: %.1fK",
-                             shrink_bytes / (double) K);
+                             "  min_heap_size: %6.1fK"
+                             "  maximum_desired_capacity: %6.1fK"
+                             "  shrink_bytes: %6.1fK",
+                             (double) min_heap_size / (double) K,
+                             (double) maximum_desired_capacity / (double) K,
+                             (double) shrink_bytes / (double) K);
     }
   }
 }
@@ -2165,9 +2194,12 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   }
 }
 
-HeapWord* G1CollectedHeap::allocate_new_tlab(size_t size) {
+HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
+  assert(!isHumongous(word_size),
+         err_msg("a TLAB should not be of humongous size, "
+                 "word_size = "SIZE_FORMAT, word_size));
   bool dummy;
-  return G1CollectedHeap::mem_allocate(size, false, true, &dummy);
+  return G1CollectedHeap::mem_allocate(word_size, false, true, &dummy);
 }
 
 bool G1CollectedHeap::allocs_are_zero_filled() {
@@ -3576,7 +3608,7 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
   if (!r->evacuation_failed()) {
     r->set_evacuation_failed(true);
     if (G1PrintHeapRegions) {
-      gclog_or_tty->print("evacuation failed in heap region "PTR_FORMAT" "
+      gclog_or_tty->print("overflow in heap region "PTR_FORMAT" "
                           "["PTR_FORMAT","PTR_FORMAT")\n",
                           r, r->bottom(), r->end());
     }
@@ -3610,6 +3642,10 @@ void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
 
 HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
                                                   size_t word_size) {
+  assert(!isHumongous(word_size),
+         err_msg("we should not be seeing humongous allocation requests "
+                 "during GC, word_size = "SIZE_FORMAT, word_size));
+
   HeapRegion* alloc_region = _gc_alloc_regions[purpose];
   // let the caller handle alloc failure
   if (alloc_region == NULL) return NULL;
@@ -3642,6 +3678,10 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
                                          HeapRegion*    alloc_region,
                                          bool           par,
                                          size_t         word_size) {
+  assert(!isHumongous(word_size),
+         err_msg("we should not be seeing humongous allocation requests "
+                 "during GC, word_size = "SIZE_FORMAT, word_size));
+
   HeapWord* block = NULL;
   // In the parallel case, a previous thread to obtain the lock may have
   // already assigned a new gc_alloc_region.
@@ -4281,7 +4321,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
     if (PrintGCDetails) {
-      gclog_or_tty->print(" (evacuation failed)");
+      gclog_or_tty->print(" (to-space overflow)");
     } else if (PrintGC) {
       gclog_or_tty->print("--");
     }
