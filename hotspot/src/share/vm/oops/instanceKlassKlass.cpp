@@ -292,41 +292,7 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void instanceKlassKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(!pm->depth_first(), "invariant");
-  instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->copy_static_fields(pm);
-
-  oop* loader_addr = ik->adr_class_loader();
-  if (PSScavenge::should_scavenge(loader_addr)) {
-    pm->claim_or_forward_breadth(loader_addr);
-  }
-
-  oop* pd_addr = ik->adr_protection_domain();
-  if (PSScavenge::should_scavenge(pd_addr)) {
-    pm->claim_or_forward_breadth(pd_addr);
-  }
-
-  oop* hk_addr = ik->adr_host_klass();
-  if (PSScavenge::should_scavenge(hk_addr)) {
-    pm->claim_or_forward_breadth(hk_addr);
-  }
-
-  oop* sg_addr = ik->adr_signers();
-  if (PSScavenge::should_scavenge(sg_addr)) {
-    pm->claim_or_forward_breadth(sg_addr);
-  }
-
-  oop* bsm_addr = ik->adr_bootstrap_method();
-  if (PSScavenge::should_scavenge(bsm_addr)) {
-    pm->claim_or_forward_breadth(bsm_addr);
-  }
-
-  klassKlass::oop_copy_contents(pm, obj);
-}
-
 void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  assert(pm->depth_first(), "invariant");
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
   ik->push_static_fields(pm);
 
@@ -355,7 +321,7 @@ void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
     pm->claim_or_forward_depth(bsm_addr);
   }
 
-  klassKlass::oop_copy_contents(pm, obj);
+  klassKlass::oop_push_contents(pm, obj);
 }
 
 int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
