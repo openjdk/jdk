@@ -21,22 +21,18 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6575373
  * @summary verify default segment limit
- * @compile SegmentLimit.java
+ * @compile -XDignore.symbol.file Utils.java SegmentLimit.java
  * @run main SegmentLimit
+ * @author ksrini
  */
 
-import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * Run this against a large jar file, by default the packer should generate only
@@ -45,89 +41,36 @@ import java.io.PrintStream;
 
 public class SegmentLimit {
 
-    private static final File  javaHome = new File(System.getProperty("java.home"));
-
     public static void main(String... args) {
-        if (!javaHome.getName().endsWith("jre")) {
-            throw new RuntimeException("Error: requires an SDK to run");
-        }
-
-        File out = new File("test" + Pack200Test.PACKEXT);
+        File out = new File("test" + Utils.PACK_FILE_EXT);
         out.delete();
         runPack200(out);
     }
 
-    static void close(Closeable c) {
-        if (c == null) {
-            return;
-        }
-        try {
-            c.close();
-        } catch (IOException ignore) {}
-    }
-
     static void runPack200(File outFile) {
-        File binDir = new File(javaHome, "bin");
-        File pack200Exe = System.getProperty("os.name").startsWith("Windows")
-                ? new File(binDir, "pack200.exe")
-                : new File(binDir, "pack200");
-        File sdkHome = javaHome.getParentFile();
+        File sdkHome = Utils.JavaSDK;
         File testJar = new File(new File(sdkHome, "lib"), "tools.jar");
 
-        System.out.println("using pack200: " + pack200Exe.getAbsolutePath());
+        System.out.println("using pack200: " + Utils.getPack200Cmd());
 
-        String[] cmds = { pack200Exe.getAbsolutePath(),
-                          "--effort=1",
-                          "--verbose",
-                          "--no-gzip",
-                          outFile.getName(),
-                          testJar.getAbsolutePath()
-        };
-        InputStream is = null;
-        BufferedReader br = null;
-        InputStreamReader ir = null;
+        List<String> cmdsList = new ArrayList<String>();
+        cmdsList.add(Utils.getPack200Cmd());
+        cmdsList.add("--effort=1");
+        cmdsList.add("--verbose");
+        cmdsList.add("--no-gzip");
+        cmdsList.add(outFile.getName());
+        cmdsList.add(testJar.getAbsolutePath());
+        List<String> outList = Utils.runExec(cmdsList);
 
-        FileOutputStream fos = null;
-        PrintStream ps = null;
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(cmds);
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-            is = p.getInputStream();
-            ir = new InputStreamReader(is);
-            br = new BufferedReader(ir);
-
-            File logFile = new File("pack200.log");
-            fos = new FileOutputStream(logFile);
-            ps  = new PrintStream(fos);
-
-            String line = br.readLine();
-            int count = 0;
-            while (line != null) {
-                line = line.trim();
-                if (line.matches(".*Transmitted.*files of.*input bytes in a segment of.*bytes")) {
-                    count++;
-                }
-                ps.println(line);
-                line=br.readLine();
+        int count = 0;
+        for (String line : outList) {
+            System.out.println(line);
+            if (line.matches(".*Transmitted.*files of.*input bytes in a segment of.*bytes")) {
+                count++;
             }
-            p.waitFor();
-            if (p.exitValue() != 0) {
-                throw new RuntimeException("pack200 failed");
-            }
-            p.destroy();
-            if (count > 1) {
-                throw new Error("test fails: check for multiple segments(" +
-                        count + ") in: " + logFile.getAbsolutePath());
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex.getMessage());
-        } catch (InterruptedException ignore){
-        } finally {
-            close(is);
-            close(ps);
-            close(fos);
+        }
+        if (count != 1) {
+            throw new Error("test fails: check for 0 or multiple segments");
         }
     }
 }
