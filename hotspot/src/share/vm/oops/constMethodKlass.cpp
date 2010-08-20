@@ -157,10 +157,6 @@ int constMethodKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void constMethodKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_constMethod(), "should be constMethod");
-}
-
 void constMethodKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constMethod(), "should be constMethod");
 }
