@@ -80,13 +80,14 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
 
   bool is_method_type() const              { return _tag == JVM_CONSTANT_MethodType; }
   bool is_method_handle() const            { return _tag == JVM_CONSTANT_MethodHandle; }
+  bool is_invoke_dynamic() const           { return _tag == JVM_CONSTANT_InvokeDynamic; }
 
   constantTag() {
     _tag = JVM_CONSTANT_Invalid;
   }
   constantTag(jbyte tag) {
     assert((tag >= 0 && tag <= JVM_CONSTANT_NameAndType) ||
-           (tag >= JVM_CONSTANT_MethodHandle && tag <= JVM_CONSTANT_MethodType) ||
+           (tag >= JVM_CONSTANT_MethodHandle && tag <= JVM_CONSTANT_InvokeDynamic) ||
            (tag >= JVM_CONSTANT_InternalMin && tag <= JVM_CONSTANT_InternalMax), "Invalid constant tag");
     _tag = tag;
   }

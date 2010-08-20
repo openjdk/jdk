@@ -299,8 +299,6 @@ void constantPoolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 // Printing
 
 void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
@@ -379,6 +377,10 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
       case JVM_CONSTANT_MethodType :
         st->print("signature_index=%d", cp->method_type_index_at(index));
         break;
+      case JVM_CONSTANT_InvokeDynamic :
+        st->print("bootstrap_method_index=%d", cp->invoke_dynamic_bootstrap_method_ref_index_at(index));
+        st->print(" name_and_type_index=%d", cp->invoke_dynamic_name_and_type_ref_index_at(index));
+        break;
       default:
         ShouldNotReachHere();
         break;
@@ -387,8 +389,6 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   }
   st->cr();
 }
-
-#endif
 
 void constantPoolKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_constantPool(), "must be constantPool");

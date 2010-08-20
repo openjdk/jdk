@@ -199,8 +199,6 @@ protected:
   size_t _young_cset_length;
   bool   _last_young_gc_full;
 
-  double _target_pause_time_ms;
-
   unsigned              _full_young_pause_num;
   unsigned              _partial_young_pause_num;
 
@@ -524,6 +522,10 @@ public:
 
   G1MMUTracker* mmu_tracker() {
     return _mmu_tracker;
+  }
+
+  double max_pause_time_ms() {
+    return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
   double predict_init_time_ms() {
@@ -1008,7 +1010,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  virtual bool choose_collection_set() = 0;
+  virtual bool choose_collection_set(double target_pause_time_ms) = 0;
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
@@ -1076,6 +1078,12 @@ public:
   bool during_initial_mark_pause()      { return _during_initial_mark_pause;  }
   void set_during_initial_mark_pause()  { _during_initial_mark_pause = true;  }
   void clear_during_initial_mark_pause(){ _during_initial_mark_pause = false; }
+
+  // This sets the initiate_conc_mark_if_possible() flag to start a
+  // new cycle, as long as we are not already in one. It's best if it
+  // is called during a safepoint when the test whether a cycle is in
+  // progress or not is stable.
+  bool force_initial_mark_if_outside_cycle();
 
   // This is called at the very beginning of an evacuation pause (it
   // has to be the first thing that the pause does). If
@@ -1259,7 +1267,7 @@ class G1CollectorPolicy_BestRegionsFirst: public G1CollectorPolicy {
   // If the estimated is less then desirable, resize if possible.
   void expand_if_possible(size_t numRegions);
 
-  virtual bool choose_collection_set();
+  virtual bool choose_collection_set(double target_pause_time_ms);
   virtual void record_collection_pause_start(double start_time_sec,
                                              size_t start_used);
   virtual void record_concurrent_mark_cleanup_end(size_t freed_bytes,

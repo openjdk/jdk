@@ -1021,10 +1021,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCBlock body;
         public List<JCCatch> catchers;
         public JCBlock finalizer;
-        protected JCTry(JCBlock body, List<JCCatch> catchers, JCBlock finalizer) {
+        public List<JCTree> resources;
+        protected JCTry(List<JCTree> resources,
+                        JCBlock body,
+                        List<JCCatch> catchers,
+                        JCBlock finalizer) {
             this.body = body;
             this.catchers = catchers;
             this.finalizer = finalizer;
+            this.resources = resources;
         }
         @Override
         public void accept(Visitor v) { v.visitTry(this); }
@@ -1038,6 +1043,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitTry(this, d);
+        }
+        @Override
+        public List<? extends JCTree> getResources() {
+            return resources;
         }
         @Override
         public int getTag() {
@@ -2162,6 +2171,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCCase Case(JCExpression pat, List<JCStatement> stats);
         JCSynchronized Synchronized(JCExpression lock, JCBlock body);
         JCTry Try(JCBlock body, List<JCCatch> catchers, JCBlock finalizer);
+        JCTry Try(List<JCTree> resources,
+                  JCBlock body,
+                  List<JCCatch> catchers,
+                  JCBlock finalizer);
         JCCatch Catch(JCVariableDecl param, JCBlock body);
         JCConditional Conditional(JCExpression cond,
                                 JCExpression thenpart,

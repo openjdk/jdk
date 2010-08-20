@@ -1847,12 +1847,8 @@ void ClassVerifier::verify_invoke_init(
   if (type == VerificationType::uninitialized_this_type()) {
     // The method must be an <init> method of either this class, or one of its
     // superclasses
-    klassOop oop = current_class()();
-    Klass* klass = oop->klass_part();
-    while (klass != NULL && ref_class_type.name() != klass->name()) {
-      klass = klass->super()->klass_part();
-    }
-    if (klass == NULL) {
+    if (ref_class_type.name() != current_class()->name() &&
+        !name_in_supers(ref_class_type.name(), current_class())) {
       verify_error(bci, "Bad <init> method call");
       return;
     }
@@ -1913,7 +1909,8 @@ void ClassVerifier::verify_invoke_instructions(
   unsigned int types = (opcode == Bytecodes::_invokeinterface
                                 ? 1 << JVM_CONSTANT_InterfaceMethodref
                       : opcode == Bytecodes::_invokedynamic
-                                ? 1 << JVM_CONSTANT_NameAndType
+                                ? (1 << JVM_CONSTANT_NameAndType
+                                  |1 << JVM_CONSTANT_InvokeDynamic)
                                 : 1 << JVM_CONSTANT_Methodref);
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));
 

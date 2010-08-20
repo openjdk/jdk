@@ -378,7 +378,8 @@ void before_exit(JavaThread * thread) {
   }
 
   // Terminate watcher thread - must before disenrolling any periodic task
-  WatcherThread::stop();
+  if (PeriodicTask::num_tasks() > 0)
+    WatcherThread::stop();
 
   // Print statistics gathered (profiling ...)
   if (Arguments::has_profile()) {

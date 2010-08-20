@@ -159,6 +159,9 @@ public enum Source {
     public boolean enforceMandatoryWarnings() {
         return compareTo(JDK1_5) >= 0;
     }
+    public boolean allowTryWithResources() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public boolean allowTypeAnnotations() {
         return compareTo(JDK1_7) >= 0;
     }

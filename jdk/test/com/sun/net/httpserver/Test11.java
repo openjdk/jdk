@@ -28,7 +28,6 @@
  */
 
 import java.net.*;
-import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
 import com.sun.net.httpserver.*;
@@ -52,22 +51,25 @@ public class Test11 {
 
     public static void main (String[] args) throws Exception {
         System.out.print ("Test 11: ");
-        HttpServer server = HttpServer.create (new InetSocketAddress(0), 0);
-        HttpContext ctx = server.createContext (
-            "/foo/bar/", new Handler ()
-        );
-        ExecutorService s =  Executors.newCachedThreadPool();
-        server.setExecutor (s);
-        server.start ();
-        URL url = new URL ("http://localhost:" + server.getAddress().getPort()+
-                "/Foo/bar/test.html");
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
-        int r = urlc.getResponseCode();
-        System.out.println ("OK");
-        s.shutdown();
-        server.stop(5);
-        if (r == 200) {
-            throw new RuntimeException ("wrong response received");
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        ExecutorService s = Executors.newCachedThreadPool();
+        try {
+            HttpContext ctx = server.createContext (
+                "/foo/bar/", new Handler ()
+            );
+            s =  Executors.newCachedThreadPool();
+            server.start ();
+            URL url = new URL ("http://localhost:" + server.getAddress().getPort()+
+                    "/Foo/bar/test.html");
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+            int r = urlc.getResponseCode();
+            if (r == 200) {
+                throw new RuntimeException ("wrong response received");
+            }
+            System.out.println ("OK");
+        } finally {
+            s.shutdown();
+            server.stop(2);
         }
     }
 }

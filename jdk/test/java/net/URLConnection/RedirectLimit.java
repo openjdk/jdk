@@ -76,15 +76,19 @@ class RedirLimitServer extends Thread {
                 is.read ();
                 String reply = reply1 + port + "/redirect" + i + reply2;
                 os.write (reply.getBytes());
+                os.close();
             }
             s1 = s.accept ();
             is = s1.getInputStream ();
             os = s1.getOutputStream ();
             is.read ();
             os.write (reply3.getBytes());
+            os.close();
         }
         catch (Exception e) {
             /* Just need thread to terminate */
+        } finally {
+            try { s.close(); } catch (IOException unused) {}
         }
     }
 };

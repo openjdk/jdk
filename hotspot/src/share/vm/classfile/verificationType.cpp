@@ -70,7 +70,9 @@ bool VerificationType::is_reference_assignable_from(
   } else if (is_array() && from.is_array()) {
     VerificationType comp_this = get_component(CHECK_false);
     VerificationType comp_from = from.get_component(CHECK_false);
-    return comp_this.is_assignable_from(comp_from, context, CHECK_false);
+    if (!comp_this.is_bogus() && !comp_from.is_bogus()) {
+      return comp_this.is_assignable_from(comp_from, context, CHECK_false);
+    }
   }
   return false;
 }
@@ -98,7 +100,7 @@ VerificationType VerificationType::get_component(TRAPS) const {
         CHECK_(VerificationType::bogus_type()));
       return VerificationType::reference_type(component);
     default:
-      ShouldNotReachHere();
+      // Met an invalid type signature, e.g. [X
       return VerificationType::bogus_type();
   }
 }

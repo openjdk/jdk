@@ -409,7 +409,7 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   LIR_Opr lock      = FrameMap::G1_opr;
   LIR_Opr hdr       = FrameMap::G3_opr;
   LIR_Opr obj_temp  = FrameMap::G4_opr;
-  monitor_exit(obj_temp, lock, hdr, x->monitor_no());
+  monitor_exit(obj_temp, lock, hdr, LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
 

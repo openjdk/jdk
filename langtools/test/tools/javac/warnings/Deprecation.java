@@ -1,9 +1,9 @@
 /**
  * @test  /nodynamiccopyright/
  * @bug 4986256
- * @compile/ref=Deprecation.noLint.out -XDstdout                             -XDrawDiagnostics Deprecation.java
- * @compile/ref=Deprecation.lintDeprecation.out -XDstdout -Xlint:deprecation -XDrawDiagnostics Deprecation.java
- * @compile/ref=Deprecation.lintAll.out -XDstdout         -Xlint:all,-path   -XDrawDiagnostics Deprecation.java
+ * @compile/ref=Deprecation.noLint.out                             -XDrawDiagnostics Deprecation.java
+ * @compile/ref=Deprecation.lintDeprecation.out -Xlint:deprecation -XDrawDiagnostics Deprecation.java
+ * @compile/ref=Deprecation.lintAll.out         -Xlint:all,-path   -XDrawDiagnostics Deprecation.java
  */
 
 @Deprecated

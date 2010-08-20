@@ -4,7 +4,7 @@
  *
  * @summary javac fails to substitute type variables into a constructor's throws clause
  * @author Mark Mahieu
- * @compile/fail/ref=T6723444.out -XDstdout -XDrawDiagnostics T6723444.java
+ * @compile/fail/ref=T6723444.out -XDrawDiagnostics T6723444.java
  *
  */
 public class T6723444 {

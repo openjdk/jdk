@@ -751,10 +751,14 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
   }
 
   OrderAccess::storestore();
+#ifdef SHARK
+  mh->_from_interpreted_entry = code->instructions_begin();
+#else
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();
   // Instantly compiled code can execute.
   mh->_from_interpreted_entry = mh->get_i2c_entry();
+#endif // SHARK
 
 }
 
@@ -851,9 +855,15 @@ jint* methodOopDesc::method_type_offsets_chain() {
 // MethodHandleCompiler.
 // Must be consistent with MethodHandleCompiler::get_method_oop().
 bool methodOopDesc::is_method_handle_adapter() const {
-  return (is_method_handle_invoke_name(name()) &&
-          is_synthetic() &&
-          MethodHandleCompiler::klass_is_method_handle_adapter_holder(method_holder()));
+  if (is_synthetic() &&
+      !is_native() &&   // has code from MethodHandleCompiler
+      is_method_handle_invoke_name(name()) &&
+      MethodHandleCompiler::klass_is_method_handle_adapter_holder(method_holder())) {
+    assert(!is_method_handle_invoke(), "disjoint");
+    return true;
+  } else {
+    return false;
+  }
 }
 
 methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
