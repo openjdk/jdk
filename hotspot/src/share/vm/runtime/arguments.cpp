@@ -3005,10 +3005,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     CommandLineFlags::printSetFlags();
   }
 
-  if (PrintFlagsFinal) {
-    CommandLineFlags::printFlags();
-  }
-
   // Apply CPU specific policy for the BiasedLocking
   if (UseBiasedLocking) {
     if (!VM_Version::use_biased_locking() &&

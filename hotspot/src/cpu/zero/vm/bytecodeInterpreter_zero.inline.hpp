@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007 Red Hat, Inc.
+ * Copyright 2007, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,7 @@ inline jint BytecodeInterpreter::VMintSub(jint op1, jint op2) {
   return op1 - op2;
 }
 
-inline jint BytecodeInterpreter::VMintUshr(jint op1, jint op2) {
+inline juint BytecodeInterpreter::VMintUshr(jint op1, jint op2) {
   return ((juint) op1) >> (op2 & 0x1F);
 }
 
