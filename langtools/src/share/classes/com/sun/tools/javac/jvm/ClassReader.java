@@ -2628,7 +2628,7 @@ public class ClassReader implements Completer {
      *  @param arg An argument for substitution into the output string.
      */
     private void printVerbose(String key, CharSequence arg) {
-        Log.printLines(log.noticeWriter, Log.getLocalizedString("verbose." + key, arg));
+        log.printNoteLines("verbose." + key, arg);
     }
 
     /** Output for "-checkclassfile" option.
@@ -2636,7 +2636,7 @@ public class ClassReader implements Completer {
      *  @param arg An argument for substitution into the output string.
      */
     private void printCCF(String key, Object arg) {
-        Log.printLines(log.noticeWriter, Log.getLocalizedString(key, arg));
+        log.printNoteLines(key, arg);
     }
 
 

@@ -58,6 +58,25 @@ CHARSETS_JAR = $(LIBDIR)/charsets.jar
 FILES_genout_extcs = $(FILES_gen_extcs:%.java=$(GENSRCDIR)/%.java)
 
 #
+# These sun.awt charsets use sun/nio/cs/ext charsets that only exist
+# in JDK7 charsets.jar, which causes problem when build the symbol
+# table for rt.jar in Release.gmk. They are now removed from the
+# rt.jar when building jdk/jre image (in Release.gmk), so add them
+# into charsets.jar here
+#
+ifeq ($(PLATFORM), windows)
+FILES_src += \
+	sun/awt/HKSCS.java
+else
+# Solaris/Linux
+FILES_src += \
+	sun/awt/HKSCS.java \
+	sun/awt/motif/X11GB2312.java \
+	sun/awt/motif/X11GBK.java \
+	sun/awt/motif/X11KSC5601.java
+endif # PLATFORM
+
+#
 # Rules
 #
 include $(BUILDDIR)/common/Classes.gmk

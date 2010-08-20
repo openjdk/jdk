@@ -78,6 +78,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _old_generation_too_full_to_scavenge:
       return "Old Generation Too Full To Scavenge";
 
+    case _g1_inc_collection_pause:
+      return "G1 Evacuation Pause";
+
     case _last_ditch_collection:
       return "Last ditch collection";
 

@@ -582,6 +582,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                buf.cell(Integer.toString(cpool.getIntAt(index)));
                break;
 
+            case JVM_CONSTANT_InvokeDynamic:
+               buf.cell("JVM_CONSTANT_InvokeDynamic");
+               buf.cell(genLowHighShort(cpool.getIntAt(index)));
+               break;
+
             default:
                throw new InternalError("unknown tag: " + ctag);
          }

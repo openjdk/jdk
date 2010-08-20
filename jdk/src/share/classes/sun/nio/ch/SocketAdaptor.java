@@ -336,7 +336,12 @@ public class SocketAdaptor
     }
 
     public void sendUrgentData(int data) throws IOException {
-        throw new SocketException("Urgent data not supported");
+        synchronized (sc.blockingLock()) {
+            if (!sc.isBlocking())
+                throw new IllegalBlockingModeException();
+            int n = sc.sendOutOfBandData((byte)data);
+            assert n == 1;
+        }
     }
 
     public void setOOBInline(boolean on) throws SocketException {

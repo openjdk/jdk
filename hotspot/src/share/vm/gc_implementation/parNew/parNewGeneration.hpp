@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ class ParEvacuateFollowersClosure;
 // but they must be here to allow ParScanClosure::do_oop_work to be defined
 // in genOopClosures.inline.hpp.
 
-typedef OopTaskQueue       ObjToScanQueue;
-typedef OopTaskQueueSet    ObjToScanQueueSet;
+typedef Padded<OopTaskQueue> ObjToScanQueue;
+typedef GenericTaskQueueSet<ObjToScanQueue> ObjToScanQueueSet;
 
 // Enable this to get push/pop/steal stats.
 const int PAR_STATS_ENABLED = 0;
@@ -304,12 +304,6 @@ class ParNewGeneration: public DefNewGeneration {
   friend class ParEvacuateFollowersClosure;
 
  private:
-  // XXX use a global constant instead of 64!
-  struct ObjToScanQueuePadded {
-        ObjToScanQueue work_queue;
-        char pad[64 - sizeof(ObjToScanQueue)];  // prevent false sharing
-  };
-
   // The per-worker-thread work queues
   ObjToScanQueueSet* _task_queues;
 

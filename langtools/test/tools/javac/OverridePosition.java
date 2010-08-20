@@ -4,7 +4,7 @@
  * @summary "attemping to assign weaker access" message doesn't give method line number
  * @author Neal Gafter
  *
- * @compile/fail/ref=OverridePosition.out -XDstdout -XDrawDiagnostics OverridePosition.java
+ * @compile/fail/ref=OverridePosition.out -XDrawDiagnostics OverridePosition.java
  */
 
 package T4524388;

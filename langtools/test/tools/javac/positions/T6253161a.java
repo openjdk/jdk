@@ -4,7 +4,7 @@
  * @summary Compiler will fail to find the correct location of serial warnings for anonymous inner classes
  * @author  Seetharama Avadhanam
  * @compile -Xlint:serial -XDdev T6253161a.java
- * @compile/ref=T6253161a.out -Xlint:serial -XDdev -XDrawDiagnostics -XDstdout T6253161a.java
+ * @compile/ref=T6253161a.out -Xlint:serial -XDdev -XDrawDiagnostics T6253161a.java
  */
 import java.util.List;
 import java.util.ArrayList;

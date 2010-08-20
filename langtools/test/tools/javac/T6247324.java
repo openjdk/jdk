@@ -1,7 +1,7 @@
 /*
  * @test  /nodynamiccopyright/
  * @bug 6247324
- * @compile/fail/ref=T6247324.out -XDrawDiagnostics -XDstdout -Xlint -Xlint:-path T6247324.java
+ * @compile/fail/ref=T6247324.out -XDrawDiagnostics -Xlint -Xlint:-path T6247324.java
  */
 class Pair<X,Y> {
     private X x;

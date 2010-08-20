@@ -1,0 +1,3 @@
+TwrIntersection02.java:25:21: compiler.err.unreported.exception.need.to.catch.or.throw: TwrIntersection02.Exception2
+TwrIntersection02.java:31:21: compiler.err.unreported.exception.need.to.catch.or.throw: TwrIntersection02.Exception1
+2 errors
