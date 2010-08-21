@@ -2476,6 +2476,9 @@ class CommandLineFlags {
   develop(bool, MonomorphicArrayCheck, true,                                \
           "Uncommon-trap array store checks that require full type check")  \
                                                                             \
+  diagnostic(bool, ProfileDynamicTypes, true,                               \
+          "do extra type profiling and use it more aggressively")           \
+                                                                            \
   develop(bool, DelayCompilationDuringStartup, true,                        \
           "Delay invoking the compiler until main application class is "    \
           "loaded")                                                         \
