@@ -1455,24 +1455,27 @@ public class Gen extends JCTree.Visitor {
                       List<Integer> gaps) {
             if (startpc != endpc) {
                 List<JCExpression> subClauses = TreeInfo.isMultiCatch(tree) ?
-                    ((JCTypeDisjoint)tree.param.vartype).components :
-                    List.of(tree.param.vartype);
-                for (JCExpression subCatch : subClauses) {
-                    int catchType = makeRef(tree.pos(), subCatch.type);
-                    List<Integer> lGaps = gaps;
-                    while (lGaps.nonEmpty()) {
-                        int end = lGaps.head.intValue();
+                        ((JCTypeDisjoint)tree.param.vartype).components :
+                        List.of(tree.param.vartype);
+                while (gaps.nonEmpty()) {
+                    for (JCExpression subCatch : subClauses) {
+                        int catchType = makeRef(tree.pos(), subCatch.type);
+                        int end = gaps.head.intValue();
                         registerCatch(tree.pos(),
                                       startpc,  end, code.curPc(),
                                       catchType);
-                        lGaps = lGaps.tail;
-                        startpc = lGaps.head.intValue();
-                        lGaps = lGaps.tail;
                     }
-                    if (startpc < endpc)
+                    gaps = gaps.tail;
+                    startpc = gaps.head.intValue();
+                    gaps = gaps.tail;
+                }
+                if (startpc < endpc) {
+                    for (JCExpression subCatch : subClauses) {
+                        int catchType = makeRef(tree.pos(), subCatch.type);
                         registerCatch(tree.pos(),
                                       startpc, endpc, code.curPc(),
                                       catchType);
+                    }
                 }
                 VarSymbol exparam = tree.param.sym;
                 code.statBegin(tree.pos);
