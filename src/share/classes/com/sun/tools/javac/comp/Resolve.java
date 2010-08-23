@@ -40,6 +40,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import javax.lang.model.element.ElementVisitor;
 
@@ -1665,8 +1666,10 @@ public class Resolve {
             List<Type> typeargtypes) {
         JCDiagnostic d = error.getDiagnostic(JCDiagnostic.DiagnosticType.ERROR,
                 pos, site, name, argtypes, typeargtypes);
-        if (d != null)
+        if (d != null) {
+            d.setFlag(DiagnosticFlag.RESOLVE_ERROR);
             log.report(d);
+        }
     }
 
     private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
