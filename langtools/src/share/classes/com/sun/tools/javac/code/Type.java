@@ -328,6 +328,10 @@ public class Type implements PrimitiveType {
         return (tsym.flags() & INTERFACE) != 0;
     }
 
+    public boolean isFinal() {
+        return (tsym.flags() & FINAL) != 0;
+    }
+
     public boolean isPrimitive() {
         return tag < VOID;
     }
