@@ -415,12 +415,17 @@ class Utils {
         }
         return out;
     }
-
     static List<String> runExec(List<String> cmdsList) {
+        return runExec(cmdsList, null);
+    }
+    static List<String> runExec(List<String> cmdsList, Map<String, String> penv) {
         ArrayList<String> alist = new ArrayList<String>();
         ProcessBuilder pb =
                 new ProcessBuilder(cmdsList);
         Map<String, String> env = pb.environment();
+        if (penv != null && !penv.isEmpty()) {
+            env.putAll(penv);
+        }
         pb.directory(new File("."));
         dirlist(new File("."));
         for (String x : cmdsList) {
