@@ -429,24 +429,45 @@ public class FileChannelImpl
         }
     }
 
-    private long transferToTrustedChannel(long position, int icount,
+    // Maximum size to map when using a mapped buffer
+    private static final long MAPPED_TRANSFER_SIZE = 8L*1024L*1024L;
+
+    private long transferToTrustedChannel(long position, long count,
                                           WritableByteChannel target)
         throws IOException
     {
-        if (  !((target instanceof FileChannelImpl)
-                || (target instanceof SelChImpl)))
+        boolean isSelChImpl = (target instanceof SelChImpl);
+        if (!((target instanceof FileChannelImpl) || isSelChImpl))
             return IOStatus.UNSUPPORTED;
 
         // Trusted target: Use a mapped buffer
-        MappedByteBuffer dbb = null;
-        try {
-            dbb = map(MapMode.READ_ONLY, position, icount);
-            // ## Bug: Closing this channel will not terminate the write
-            return target.write(dbb);
-        } finally {
-            if (dbb != null)
-                unmap(dbb);
+        long remaining = count;
+        while (remaining > 0L) {
+            long size = Math.min(remaining, MAPPED_TRANSFER_SIZE);
+            try {
+                MappedByteBuffer dbb = map(MapMode.READ_ONLY, position, size);
+                try {
+                    // ## Bug: Closing this channel will not terminate the write
+                    int n = target.write(dbb);
+                    assert n >= 0;
+                    remaining -= n;
+                    if (isSelChImpl) {
+                        // one attempt to write to selectable channel
+                        break;
+                    }
+                    assert n > 0;
+                    position += n;
+                } finally {
+                    unmap(dbb);
+                }
+            } catch (IOException ioe) {
+                // Only throw exception if no bytes have been written
+                if (remaining == count)
+                    throw ioe;
+                break;
+            }
         }
+        return count - remaining;
     }
 
     private long transferToArbitraryChannel(long position, int icount,
@@ -524,20 +545,34 @@ public class FileChannelImpl
                                          long position, long count)
         throws IOException
     {
-        // Note we could loop here to accumulate more at once
         synchronized (src.positionLock) {
-            long p = src.position();
-            int icount = (int)Math.min(Math.min(count, Integer.MAX_VALUE),
-                                       src.size() - p);
-            // ## Bug: Closing this channel will not terminate the write
-            MappedByteBuffer bb = src.map(MapMode.READ_ONLY, p, icount);
-            try {
-                long n = write(bb, position);
-                src.position(p + n);
-                return n;
-            } finally {
-                unmap(bb);
+            long pos = src.position();
+            long max = Math.min(count, src.size() - pos);
+
+            long remaining = max;
+            long p = pos;
+            while (remaining > 0L) {
+                long size = Math.min(remaining, MAPPED_TRANSFER_SIZE);
+                // ## Bug: Closing this channel will not terminate the write
+                MappedByteBuffer bb = src.map(MapMode.READ_ONLY, p, size);
+                try {
+                    long n = write(bb, position);
+                    assert n > 0;
+                    p += n;
+                    position += n;
+                    remaining -= n;
+                } catch (IOException ioe) {
+                    // Only throw exception if no bytes have been written
+                    if (remaining == max)
+                        throw ioe;
+                    break;
+                } finally {
+                    unmap(bb);
+                }
             }
+            long nwritten = max - remaining;
+            src.position(pos + nwritten);
+            return nwritten;
         }
     }
 
