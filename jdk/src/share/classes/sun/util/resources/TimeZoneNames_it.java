@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
                                      "Ora estiva dell'Europa centrale", "CEST"};
         String CHAST[] = new String[] {"Ora di Chatham standard", "CHAST",
                                        "Ora legale di Chatham", "CHADT"};
+        String CHUT[] = new String[] {"Chuuk Time", "CHUT",
+                                      "Chuuk Summer Time", "CHUST"};
         String CIT[] = new String[] {"Ora dell'Indonesia centrale", "CIT",
                                      "Ora estiva dell'Indonesia centrale", "CIST"};
         String CLT[] = new String[] {"Ora del Cile", "CLT",
@@ -153,6 +155,8 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
                                           "Ora legale di Pitcairn", "PDT"};
         String PKT[] = new String[] {"Ora del Pakistan", "PKT",
                                      "Ora estiva del Pakistan", "PKST"};
+        String PONT[] = new String[] {"Pohnpei Time", "PONT",
+                                      "Pohnpei Summer Time", "PONST"};
         String PST[] = new String[] {"Ora solare della costa occidentale USA", "PST",
                                      "Ora legale della costa occidentale USA", "PDT"};
         String RST[] = new String[] {"Ora solare USA orientale", "EST",
@@ -169,8 +173,6 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
                                           "Ora estiva orientale (Tasmania)", "EST"};
         String TMT[] = new String[] {"Ora del Turkmenistan", "TMT",
                                      "Ora estiva del Turkmenistan", "TMST"};
-        String TRUT[] = new String[] {"Ora di Truk", "TRUT",
-                                      "Ora estiva di Truk", "TRUST"};
         String ULAT[]= new String[] {"Ora di Ulaanbaatar", "ULAT",
                                      "Ora estiva di Ulaanbaatar", "ULAST"};
         String WART[] = new String[] {"Ora dell'Argentina occidentale", "WART",
@@ -309,6 +311,7 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"America/Atikokan", EST},
             {"America/Atka", HAST},
             {"America/Bahia", BRT},
+            {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
             {"America/Belem", BRT},
             {"America/Belize", CST},
@@ -446,10 +449,13 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
+            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"Ora di Davis", "DAVT",
                                                "Ora estiva di Davis", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"Ora di Dumont-d'Urville", "DDUT",
                                                         "Ora estiva di Dumont-d'Urville", "DDUST"}},
+            {"Antarctica/Macquarie", new String[] {"Macquarie Island Time", "MIST",
+                                                   "Macquarie Island Summer Time", "MIST"}},
             {"Antarctica/Mawson", new String[] {"Ora di Mawson", "MAWT",
                                                 "Ora estiva di Mawson", "MAWST"}},
             {"Antarctica/McMurdo", NZST},
@@ -752,6 +758,7 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"Pacific/Apia", WST_SAMOA},
             {"Pacific/Auckland", NZST},
             {"Pacific/Chatham", CHAST},
+            {"Pacific/Chuuk", CHUT},
             {"Pacific/Easter", EASTER},
             {"Pacific/Efate", new String[] {"Ora di Vanuatu", "VUT",
                                             "Ora estiva di Vanuatu", "VUST"}},
@@ -790,8 +797,8 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"Pacific/Palau", new String[] {"Ora di Palau", "PWT",
                                             "Ora estiva di Palau", "PWST"}},
             {"Pacific/Pitcairn", PITCAIRN},
-            {"Pacific/Ponape", new String[] {"Ora di Ponape", "PONT",
-                                             "Ora estiva di Ponape", "PONST"}},
+            {"Pacific/Pohnpei", PONT},
+            {"Pacific/Ponape", PONT},
             {"Pacific/Port_Moresby", new String[] {"Ora di Papua Nuova Guinea", "PGT",
                                                    "Ora estiva di Papua Nuova Guinea", "PGST"}},
             {"Pacific/Rarotonga", new String[] {"Ora delle Isole Cook", "CKT",
@@ -804,12 +811,12 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
                                              "Ora estiva delle Isole Gilbert", "GILST"}},
             {"Pacific/Tongatapu", new String[] {"Ora di Tonga", "TOT",
                                                 "Ora estiva di Tonga", "TOST"}},
-            {"Pacific/Truk", TRUT},
+            {"Pacific/Truk", CHUT},
             {"Pacific/Wake", new String[] {"Ora di Wake", "WAKT",
                                            "Ora estiva di Wake", "WAKST"}},
             {"Pacific/Wallis", new String[] {"Ora di Wallis e Futuna", "WFT",
                                              "Ora estiva di Wallis e Futuna", "WFST"}},
-            {"Pacific/Yap", TRUT},
+            {"Pacific/Yap", CHUT},
             {"Poland", CET},
             {"PRC", CTT},
             {"PST8PDT", PST},
