@@ -221,6 +221,18 @@ class Utils {
         setFileAttributes(src, dst);
     }
 
+    static String baseName(File file, String extension) {
+        return baseName(file.getAbsolutePath(), extension);
+    }
+
+    static String baseName(String name, String extension) {
+        int cut = name.length() - extension.length();
+        return name.lastIndexOf(extension) == cut
+                ? name.substring(0, cut)
+                : name;
+
+    }
+
     /*
      * Suppose a path is provided which consists of a full path
      * this method returns the sub path for a full path ex: /foo/bar/baz/foobar.z

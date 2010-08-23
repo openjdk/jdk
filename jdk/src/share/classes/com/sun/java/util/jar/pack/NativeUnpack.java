@@ -211,10 +211,10 @@ class NativeUnpack {
                 ++_fileCount;
                 updateProgress();
             }
+            presetInput = getUnusedInput();
             long consumed = finish();
             if (_verbose > 0)
                 Utils.log.info("bytes consumed = "+consumed);
-            presetInput = getUnusedInput();
             if (presetInput == null &&
                 !Utils.isPackMagic(Utils.readMagic(in))) {
                 break;
