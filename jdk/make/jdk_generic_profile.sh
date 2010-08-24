@@ -340,6 +340,10 @@ PATH="${path4sdk}"
 export PATH
 
 # Export variables required for Zero
+if [ "${SHARK_BUILD}" = true ] ; then
+  ZERO_BUILD=true
+  export ZERO_BUILD
+fi
 if [ "${ZERO_BUILD}" = true ] ; then
   # ZERO_LIBARCH is the name of the architecture-specific
   # subdirectory under $JAVA_HOME/jre/lib
@@ -417,4 +421,55 @@ if [ "${ZERO_BUILD}" = true ] ; then
   fi
   export LIBFFI_CFLAGS
   export LIBFFI_LIBS
+
+  # LLVM_CFLAGS, LLVM_LDFLAGS and LLVM_LIBS tell the compiler how to
+  # compile and link against LLVM
+  if [ "${SHARK_BUILD}" = true ] ; then
+    if [ "${LLVM_CONFIG}" = "" ] ; then
+      LLVM_CONFIG=$(which llvm-config 2>/dev/null)
+    fi
+    if [ ! -x "${LLVM_CONFIG}" ] ; then
+      echo "ERROR: Unable to locate llvm-config"
+      exit 1
+    fi
+    llvm_components="jit engine nativecodegen"
+
+    unset LLVM_CFLAGS
+    for flag in $("${LLVM_CONFIG}" --cxxflags $llvm_components); do
+      if echo "${flag}" | grep -q '^-[ID]'; then
+        if [ "${flag}" != "-D_DEBUG" ] ; then
+          if [ "${LLVM_CFLAGS}" != "" ] ; then
+            LLVM_CFLAGS="${LLVM_CFLAGS} "
+          fi
+          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
+        fi
+      fi
+    done
+    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
+    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
+
+    unset LLVM_LDFLAGS
+    for flag in $("${LLVM_CONFIG}" --ldflags $llvm_components); do
+      if echo "${flag}" | grep -q '^-L'; then
+        if [ "${LLVM_LDFLAGS}" != "" ] ; then
+          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
+        fi
+        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
+      fi
+    done
+
+    unset LLVM_LIBS
+    for flag in $("${LLVM_CONFIG}" --libs $llvm_components); do
+      if echo "${flag}" | grep -q '^-l'; then
+        if [ "${LLVM_LIBS}" != "" ] ; then
+          LLVM_LIBS="${LLVM_LIBS} "
+        fi
+        LLVM_LIBS="${LLVM_LIBS}${flag}"
+      fi
+    done
+
+    export LLVM_CFLAGS
+    export LLVM_LDFLAGS
+    export LLVM_LIBS
+  fi
 fi
