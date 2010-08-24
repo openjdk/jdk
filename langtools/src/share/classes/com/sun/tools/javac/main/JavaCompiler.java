@@ -916,6 +916,15 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             }
             rootClasses = cdefs.toList();
         }
+
+        // Ensure the input files have been recorded. Although this is normally
+        // done by readSource, it may not have been done if the trees were read
+        // in a prior round of annotation processing, and the trees have been
+        // cleaned and are being reused.
+        for (JCCompilationUnit unit : roots) {
+            inputFiles.add(unit.sourcefile);
+        }
+
         return roots;
     }
 
