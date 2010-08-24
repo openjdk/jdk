@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,30 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug 6369605
+ * @summary Unconstrained type variables fails to include bounds
+ * @author mcimadamore
+ * @compile T6369605a.java
  */
+import java.util.List;
 
-import java.lang.annotation.*;
+class T6369605a {
+    static <T extends List<T>> T m1() {
+        return null;
+    }
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
+    static <T extends List<U>, U extends List<T>> T m2() {
+        return null;
+    }
+
+    static <T extends List<U>, U extends List<V>, V extends List<T>> T m3() {
+        return null;
+    }
+
+    List<?> l1 = m1();
+    List<?> l2 = m2();
+    List<?> l3 = m3();
 }
 
-
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
-}
