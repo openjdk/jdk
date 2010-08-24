@@ -993,11 +993,6 @@ public:
   void record_before_bytes(size_t bytes);
   void record_after_bytes(size_t bytes);
 
-  // Returns "true" if this is a good time to do a collection pause.
-  // The "word_size" argument, if non-zero, indicates the size of an
-  // allocation request that is prompting this query.
-  virtual bool should_do_collection_pause(size_t word_size) = 0;
-
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
@@ -1116,7 +1111,16 @@ public:
     // do that for any other surv rate groups
   }
 
-  bool should_add_next_region_to_young_list();
+  bool is_young_list_full() {
+    size_t young_list_length = _g1->young_list()->length();
+    size_t young_list_max_length = _young_list_target_length;
+    if (G1FixedEdenSize) {
+      young_list_max_length -= _max_survivor_regions;
+    }
+
+    return young_list_length >= young_list_max_length;
+  }
+  void update_region_num(bool young);
 
   bool in_young_gc_mode() {
     return _in_young_gc_mode;
@@ -1270,7 +1274,6 @@ public:
     _collectionSetChooser = new CollectionSetChooser();
   }
   void record_collection_pause_end();
-  bool should_do_collection_pause(size_t word_size);
   // This is not needed any more, after the CSet choosing code was
   // changed to use the pause prediction work. But let's leave the
   // hook in just in case.
