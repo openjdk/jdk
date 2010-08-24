@@ -27,8 +27,8 @@ class T6747671<E> {
     A<B>.Z<A<B>> z3;//raw warning (2)
 
     void test(Object arg1, B arg2) {//raw warning
-        boolean b = arg1 instanceof A;//raw warning
-        Object a = (A)arg1;//raw warning
+        boolean b = arg1 instanceof A;//ok
+        Object a = (A)arg1;//ok
         A a2 = new A() {};//raw warning (2)
         a2.new Z() {};//raw warning
     }

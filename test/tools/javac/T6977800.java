@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,19 @@
 
 /*
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug 6977800
+ * @summary Regression: invalid resolution of supertype for local class
+ * @compile T6977800.java
  */
 
-import java.lang.annotation.*;
+class T6977800 {
+    public static void test() {
+        class A {
+            int x = 1;
+        }
+        class B extends A {}
+        System.out.println(new B().x);
+    }
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
-}
-
-
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
+    static class A {}
 }
