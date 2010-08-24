@@ -91,7 +91,7 @@ class PropMap extends TreeMap {
                   String.valueOf(Boolean.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)));
 
         // The segment size is unlimited
-        props.put(Pack200.Packer.SEGMENT_LIMIT, "");
+        props.put(Pack200.Packer.SEGMENT_LIMIT, "-1");
 
         // Preserve file ordering by default.
         props.put(Pack200.Packer.KEEP_FILE_ORDER, Pack200.Packer.TRUE);

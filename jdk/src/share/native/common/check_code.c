@@ -2730,7 +2730,10 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                                                                 operand);
             const char *result_signature;
             check_and_push(context, signature, VM_STRING_UTF);
-            result_signature = strchr(signature, JVM_SIGNATURE_ENDFUNC) + 1;
+            result_signature = strchr(signature, JVM_SIGNATURE_ENDFUNC);
+            if (result_signature++ == NULL) {
+                CCerror(context, "Illegal signature %s", signature);
+            }
             if (result_signature[0] == JVM_SIGNATURE_VOID) {
                 stack_results = "";
             } else {
@@ -3654,14 +3657,13 @@ signature_to_fieldtype(context_type *context,
                        const char **signature_p, fullinfo_type *full_info_p)
 {
     const char *p = *signature_p;
-    fullinfo_type full_info = MAKE_FULLINFO(0, 0, 0);
+    fullinfo_type full_info = MAKE_FULLINFO(ITEM_Bogus, 0, 0);
     char result;
     int array_depth = 0;
 
     for (;;) {
         switch(*p++) {
             default:
-                full_info = MAKE_FULLINFO(ITEM_Bogus, 0, 0);
                 result = 0;
                 break;
 
@@ -3714,7 +3716,14 @@ signature_to_fieldtype(context_type *context,
                 char buffer_space[256];
                 char *buffer = buffer_space;
                 char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
-                int length = finish - p;
+                int length;
+                if (finish == NULL) {
+                    /* Signature must have ';' after the class name.
+                     * If it does not, return 0 and ITEM_Bogus in full_info. */
+                    result = 0;
+                    break;
+                }
+                length = finish - p;
                 if (length + 1 > (int)sizeof(buffer_space)) {
                     buffer = malloc(length + 1);
                     check_and_push(context, buffer, VM_MALLOC_BLK);
