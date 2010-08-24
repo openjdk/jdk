@@ -112,7 +112,9 @@ Link	Pacific/Chatham		NZ-CHAT
 Link	America/Denver		Navajo
 Link	Asia/Shanghai		PRC
 Link	Pacific/Pago_Pago	Pacific/Samoa
-Link	Pacific/Truk		Pacific/Yap
+Link	Pacific/Chuuk		Pacific/Yap
+Link	Pacific/Chuuk		Pacific/Truk
+Link	Pacific/Pohnpei		Pacific/Ponape
 Link	Europe/Warsaw		Poland
 Link	Europe/Lisbon		Portugal
 Link	Asia/Taipei		ROC
