@@ -34,8 +34,8 @@ package java.lang;
 public interface AutoCloseable {
     /**
      * Close this resource, relinquishing any underlying resources.
-     * This method is invoked automatically by the automatic resource
-     * management block construct.
+     * This method is invoked automatically by the {@code
+     * try}-with-resources statement.
      *
      * <p>Classes implementing this method are strongly encouraged to
      * be declared to throw more specific exceptions (or no exception
