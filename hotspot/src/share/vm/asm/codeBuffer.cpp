@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,11 @@
 
 typedef CodeBuffer::csize_t csize_t;  // file-local definition
 
-// external buffer, in a predefined CodeBlob or other buffer area
+// External buffer, in a predefined CodeBlob.
 // Important: The code_start must be taken exactly, and not realigned.
-CodeBuffer::CodeBuffer(address code_start, csize_t code_size) {
-  assert(code_start != NULL, "sanity");
+CodeBuffer::CodeBuffer(CodeBlob* blob) {
   initialize_misc("static buffer");
-  initialize(code_start, code_size);
+  initialize(blob->content_begin(), blob->content_size());
   assert(verify_section_allocation(), "initial use of buffer OK");
 }
 
@@ -99,7 +98,7 @@ void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
   // Set up various pointers into the blob.
   initialize(_total_start, _total_size);
 
-  assert((uintptr_t)code_begin() % CodeEntryAlignment == 0, "instruction start not code entry aligned");
+  assert((uintptr_t)insts_begin() % CodeEntryAlignment == 0, "instruction start not code entry aligned");
 
   pd_initialize();
 
@@ -192,8 +191,8 @@ void CodeBuffer::freeze_section(CodeSection* cs) {
 void CodeBuffer::set_blob(BufferBlob* blob) {
   _blob = blob;
   if (blob != NULL) {
-    address start = blob->instructions_begin();
-    address end   = blob->instructions_end();
+    address start = blob->content_begin();
+    address end   = blob->content_end();
     // Round up the starting address.
     int align = _insts.alignment();
     start += (-(intptr_t)start) & (align-1);
@@ -422,21 +421,21 @@ void CodeSection::expand_locs(int new_capacity) {
 /// The pattern is the same for all functions.
 /// We iterate over all the sections, padding each to alignment.
 
-csize_t CodeBuffer::total_code_size() const {
-  csize_t code_size_so_far = 0;
+csize_t CodeBuffer::total_content_size() const {
+  csize_t size_so_far = 0;
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
     const CodeSection* cs = code_section(n);
     if (cs->is_empty())  continue;  // skip trivial section
-    code_size_so_far = cs->align_at_start(code_size_so_far);
-    code_size_so_far += cs->size();
+    size_so_far = cs->align_at_start(size_so_far);
+    size_so_far += cs->size();
   }
-  return code_size_so_far;
+  return size_so_far;
 }
 
 void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   address buf = dest->_total_start;
   csize_t buf_offset = 0;
-  assert(dest->_total_size >= total_code_size(), "must be big enough");
+  assert(dest->_total_size >= total_content_size(), "must be big enough");
 
   {
     // not sure why this is here, but why not...
@@ -489,7 +488,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   }
 
   // Done calculating sections; did it come out to the right end?
-  assert(buf_offset == total_code_size(), "sanity");
+  assert(buf_offset == total_content_size(), "sanity");
   assert(dest->verify_section_allocation(), "final configuration works");
 }
 
@@ -515,7 +514,7 @@ csize_t CodeBuffer::total_offset_of(address addr) const {
 
 csize_t CodeBuffer::total_relocation_size() const {
   csize_t lsize = copy_relocations_to(NULL);  // dry run only
-  csize_t csize = total_code_size();
+  csize_t csize = total_content_size();
   csize_t total = RelocIterator::locs_and_index_size(csize, lsize);
   return (csize_t) align_size_up(total, HeapWordSize);
 }
@@ -601,7 +600,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
     buf_offset += sizeof(relocInfo);
   }
 
-  assert(code_end_so_far == total_code_size(), "sanity");
+  assert(code_end_so_far == total_content_size(), "sanity");
 
   // Account for index:
   if (buf != NULL) {
@@ -621,9 +620,8 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   }
 #endif //PRODUCT
 
-  CodeBuffer dest(dest_blob->instructions_begin(),
-                  dest_blob->instructions_size());
-  assert(dest_blob->instructions_size() >= total_code_size(), "good sizing");
+  CodeBuffer dest(dest_blob);
+  assert(dest_blob->content_size() >= total_content_size(), "good sizing");
   this->compute_final_layout(&dest);
   relocate_code_to(&dest);
 
@@ -631,11 +629,10 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   dest_blob->set_comments(_comments);
 
   // Done moving code bytes; were they the right size?
-  assert(round_to(dest.total_code_size(), oopSize) == dest_blob->instructions_size(), "sanity");
+  assert(round_to(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
 
   // Flush generated code
-  ICache::invalidate_range(dest_blob->instructions_begin(),
-                           dest_blob->instructions_size());
+  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.
@@ -844,8 +841,8 @@ bool CodeBuffer::verify_section_allocation() {
   if (tstart == badAddress)  return true;  // smashed by set_blob(NULL)
   address tend   = tstart + _total_size;
   if (_blob != NULL) {
-    assert(tstart >= _blob->instructions_begin(), "sanity");
-    assert(tend   <= _blob->instructions_end(),   "sanity");
+    assert(tstart >= _blob->content_begin(), "sanity");
+    assert(tend   <= _blob->content_end(),   "sanity");
   }
   address tcheck = tstart;  // advancing pointer to verify disjointness
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
@@ -981,13 +978,13 @@ void CodeComments::free() {
 
 
 void CodeBuffer::decode() {
-  Disassembler::decode(decode_begin(), code_end());
-  _decode_begin = code_end();
+  Disassembler::decode(decode_begin(), insts_end());
+  _decode_begin = insts_end();
 }
 
 
 void CodeBuffer::skip_decode() {
-  _decode_begin = code_end();
+  _decode_begin = insts_end();
 }
 
 

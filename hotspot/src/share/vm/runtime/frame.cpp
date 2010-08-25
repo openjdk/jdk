@@ -537,8 +537,8 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
     st->cr();
 #ifndef PRODUCT
     if (end == NULL) {
-      begin = _cb->instructions_begin();
-      end = _cb->instructions_end();
+      begin = _cb->code_begin();
+      end   = _cb->code_end();
     }
 #endif
   }

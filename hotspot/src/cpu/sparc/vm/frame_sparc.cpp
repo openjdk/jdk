@@ -253,11 +253,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // Could just be some random pointer within the codeBlob
-    if (!sender.cb()->instructions_contains(sender_pc)) return false;
+    if (!sender.cb()->code_contains(sender_pc)) {
+      return false;
+    }
 
     // We should never be able to see an adapter if the current frame is something from code cache
-
-    if ( sender_blob->is_adapter_blob()) {
+    if (sender_blob->is_adapter_blob()) {
       return false;
     }
 
