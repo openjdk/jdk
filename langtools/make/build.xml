@@ -673,6 +673,7 @@
                     <filterset begintoken="#" endtoken="#">
                         <filter token="PROGRAM" value="@{name}"/>
                         <filter token="TARGET_JAVA" value="@{java}"/>
+                        <filter token="PS" value="${path.separator}"/>
                     </filterset>
                 </copy>
                 <chmod file="@{bin.dir}/@{name}" perm="ugo+rx"/>
