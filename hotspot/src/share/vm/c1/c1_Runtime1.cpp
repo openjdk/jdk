@@ -118,8 +118,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   assert(0 <= id && id < number_of_ids, "illegal stub id");
   ResourceMark rm;
   // create code buffer for code storage
-  CodeBuffer code(buffer_blob->instructions_begin(),
-                  buffer_blob->instructions_size());
+  CodeBuffer code(buffer_blob);
 
   Compilation::setup_code_buffer(&code, 0);
 

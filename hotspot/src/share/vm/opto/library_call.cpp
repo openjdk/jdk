@@ -4962,8 +4962,7 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr,
       for (DUIterator_Fast jmax, j = not_ctl->fast_outs(jmax); j < jmax; j++) {
         Node* obs = not_ctl->fast_out(j);
         if (obs->in(0) == not_ctl && obs->is_Call() &&
-            (obs->as_Call()->entry_point() ==
-             SharedRuntime::uncommon_trap_blob()->instructions_begin())) {
+            (obs->as_Call()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
           found_trap = true; break;
         }
       }
