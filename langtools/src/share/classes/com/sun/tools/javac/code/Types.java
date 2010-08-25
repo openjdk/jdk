@@ -32,6 +32,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.comp.Check;
 
 import static com.sun.tools.javac.code.Type.*;
@@ -3552,6 +3553,26 @@ public class Types {
     public static class MapVisitor<S> extends DefaultTypeVisitor<Type,S> {
         final public Type visit(Type t) { return t.accept(this, null); }
         public Type visitType(Type t, S s) { return t; }
+    }
+    // </editor-fold>
+
+
+    // <editor-fold defaultstate="collapsed" desc="Annotation support">
+
+    public RetentionPolicy getRetention(Attribute.Compound a) {
+        RetentionPolicy vis = RetentionPolicy.CLASS; // the default
+        Attribute.Compound c = a.type.tsym.attribute(syms.retentionType.tsym);
+        if (c != null) {
+            Attribute value = c.member(names.value);
+            if (value != null && value instanceof Attribute.Enum) {
+                Name levelName = ((Attribute.Enum)value).value.name;
+                if (levelName == names.SOURCE) vis = RetentionPolicy.SOURCE;
+                else if (levelName == names.CLASS) vis = RetentionPolicy.CLASS;
+                else if (levelName == names.RUNTIME) vis = RetentionPolicy.RUNTIME;
+                else ;// /* fail soft */ throw new AssertionError(levelName);
+            }
+        }
+        return vis;
     }
     // </editor-fold>
 }
