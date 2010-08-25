@@ -504,6 +504,7 @@ graphKit.hpp                            addnode.hpp
 graphKit.hpp                            callnode.hpp
 graphKit.hpp                            cfgnode.hpp
 graphKit.hpp                            ciEnv.hpp
+graphKit.hpp                            ciMethodData.hpp
 graphKit.hpp                            divnode.hpp
 graphKit.hpp                            compile.hpp
 graphKit.hpp                            deoptimization.hpp

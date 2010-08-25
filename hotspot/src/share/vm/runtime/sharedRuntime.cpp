@@ -455,11 +455,11 @@ address SharedRuntime::get_poll_stub(address pc) {
   if (at_poll_return) {
     assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
            "polling page return stub not created yet");
-    stub = SharedRuntime::polling_page_return_handler_blob()->instructions_begin();
+    stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
   } else {
     assert(SharedRuntime::polling_page_safepoint_handler_blob() != NULL,
            "polling page safepoint stub not created yet");
-    stub = SharedRuntime::polling_page_safepoint_handler_blob()->instructions_begin();
+    stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
 #ifndef PRODUCT
   if( TraceSafepoint ) {
@@ -574,7 +574,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   }
 
   // found handling method => lookup exception handler
-  int catch_pco = ret_pc - nm->instructions_begin();
+  int catch_pco = ret_pc - nm->code_begin();
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
@@ -607,7 +607,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     return NULL;
   }
 
-  return nm->instructions_begin() + t->pco();
+  return nm->code_begin() + t->pco();
 }
 
 JRT_ENTRY(void, SharedRuntime::throw_AbstractMethodError(JavaThread* thread))
@@ -2252,7 +2252,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 
   ResourceMark rm;
 
-  NOT_PRODUCT(int code_size);
+  NOT_PRODUCT(int insts_size);
   AdapterBlob* B = NULL;
   AdapterHandlerEntry* entry = NULL;
   AdapterFingerPrint* fingerprint = NULL;
@@ -2305,7 +2305,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 
     BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
-      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      CodeBuffer buffer(buf);
       short buffer_locs[20];
       buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
                                              sizeof(buffer_locs)/sizeof(relocInfo));
@@ -2321,19 +2321,19 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 #ifdef ASSERT
       if (VerifyAdapterSharing) {
         if (shared_entry != NULL) {
-          assert(shared_entry->compare_code(buf->instructions_begin(), buffer.code_size(), total_args_passed, sig_bt),
+          assert(shared_entry->compare_code(buf->code_begin(), buffer.insts_size(), total_args_passed, sig_bt),
                  "code must match");
           // Release the one just created and return the original
           _adapters->free_entry(entry);
           return shared_entry;
         } else  {
-          entry->save_code(buf->instructions_begin(), buffer.code_size(), total_args_passed, sig_bt);
+          entry->save_code(buf->code_begin(), buffer.insts_size(), total_args_passed, sig_bt);
         }
       }
 #endif
 
       B = AdapterBlob::create(&buffer);
-      NOT_PRODUCT(code_size = buffer.code_size());
+      NOT_PRODUCT(insts_size = buffer.insts_size());
     }
     if (B == NULL) {
       // CodeCache is full, disable compilation
@@ -2343,16 +2343,16 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       CompileBroker::handle_full_code_cache();
       return NULL; // Out of CodeCache space
     }
-    entry->relocate(B->instructions_begin());
+    entry->relocate(B->content_begin());
 #ifndef PRODUCT
     // debugging suppport
     if (PrintAdapterHandlers) {
       tty->cr();
       tty->print_cr("i2c argument handler #%d for: %s %s (fingerprint = %s, %d bytes generated)",
                     _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
-                    method->signature()->as_C_string(), fingerprint->as_string(), code_size );
+                    method->signature()->as_C_string(), fingerprint->as_string(), insts_size );
       tty->print_cr("c2i argument handler starts at %p",entry->get_c2i_entry());
-      Disassembler::decode(entry->get_i2c_entry(), entry->get_i2c_entry() + code_size);
+      Disassembler::decode(entry->get_i2c_entry(), entry->get_i2c_entry() + insts_size);
     }
 #endif
 
@@ -2366,13 +2366,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
                  "%s(%s)@" PTR_FORMAT,
                  B->name(),
                  fingerprint->as_string(),
-                 B->instructions_begin());
-    Forte::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
+                 B->content_begin());
+    Forte::register_stub(blob_id, B->content_begin(), B->content_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated(blob_id,
-                                               B->instructions_begin(),
-                                               B->instructions_end());
+      JvmtiExport::post_dynamic_code_generated(blob_id, B->content_begin(), B->content_end());
     }
   }
   return entry;
@@ -2456,7 +2454,7 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
 
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
-      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      CodeBuffer buffer(buf);
       double locs_buf[20];
       buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);
@@ -2540,7 +2538,7 @@ nmethod *AdapterHandlerLibrary::create_dtrace_nmethod(methodHandle method) {
 
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
-      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      CodeBuffer buffer(buf);
       // Need a few relocation entries
       double locs_buf[20];
       buffer.insts()->initialize_shared_locs(
