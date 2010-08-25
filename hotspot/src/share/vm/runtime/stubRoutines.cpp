@@ -119,10 +119,9 @@ void StubRoutines::initialize1() {
     TraceTime timer("StubRoutines generation 1", TraceStartupTime);
     _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
     if (_code1 == NULL) {
-      vm_exit_out_of_memory(code_size1,
-                            "CodeCache: no room for StubRoutines (1)");
+      vm_exit_out_of_memory(code_size1, "CodeCache: no room for StubRoutines (1)");
     }
-    CodeBuffer buffer(_code1->instructions_begin(), _code1->instructions_size());
+    CodeBuffer buffer(_code1);
     StubGenerator_generate(&buffer, false);
   }
 }
@@ -172,10 +171,9 @@ void StubRoutines::initialize2() {
     TraceTime timer("StubRoutines generation 2", TraceStartupTime);
     _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
     if (_code2 == NULL) {
-      vm_exit_out_of_memory(code_size2,
-                            "CodeCache: no room for StubRoutines (2)");
+      vm_exit_out_of_memory(code_size2, "CodeCache: no room for StubRoutines (2)");
     }
-    CodeBuffer buffer(_code2->instructions_begin(), _code2->instructions_size());
+    CodeBuffer buffer(_code2);
     StubGenerator_generate(&buffer, true);
   }
 

@@ -399,7 +399,7 @@ void CompileTask::log_task_done(CompileLog* log) {
   // <task_done ... stamp='1.234'>  </task>
   nmethod* nm = code();
   log->begin_elem("task_done success='%d' nmsize='%d' count='%d'",
-                  _is_success, nm == NULL ? 0 : nm->instructions_size(),
+                  _is_success, nm == NULL ? 0 : nm->content_size(),
                   method->invocation_count());
   int bec = method->backedge_count();
   if (bec != 0)  log->print(" backedge_count='%d'", bec);
@@ -1847,13 +1847,13 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     }
 
     // Collect counts of successful compilations
-    _sum_nmethod_size += code->total_size();
-    _sum_nmethod_code_size += code->code_size();
+    _sum_nmethod_size      += code->total_size();
+    _sum_nmethod_code_size += code->insts_size();
     _total_compile_count++;
 
     if (UsePerfData) {
-      _perf_sum_nmethod_size->inc(code->total_size());
-      _perf_sum_nmethod_code_size->inc(code->code_size());
+      _perf_sum_nmethod_size->inc(     code->total_size());
+      _perf_sum_nmethod_code_size->inc(code->insts_size());
       _perf_total_compile_count->inc();
     }
 

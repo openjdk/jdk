@@ -186,6 +186,12 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
     _locs_point = pc;
   }
 
+  // Code emission
+  void emit_int8 (int8_t  x) { *((int8_t*)  end()) = x; set_end(end() + 1); }
+  void emit_int16(int16_t x) { *((int16_t*) end()) = x; set_end(end() + 2); }
+  void emit_int32(int32_t x) { *((int32_t*) end()) = x; set_end(end() + 4); }
+  void emit_int64(int64_t x) { *((int64_t*) end()) = x; set_end(end() + 8); }
+
   // Share a scratch buffer for relocinfo.  (Hacky; saves a resource allocation.)
   void initialize_shared_locs(relocInfo* buf, int length);
 
@@ -374,9 +380,17 @@ class CodeBuffer: public StackObj {
 
  public:
   // (1) code buffer referring to pre-allocated instruction memory
-  CodeBuffer(address code_start, csize_t code_size);
+  CodeBuffer(address code_start, csize_t code_size) {
+    assert(code_start != NULL, "sanity");
+    initialize_misc("static buffer");
+    initialize(code_start, code_size);
+    assert(verify_section_allocation(), "initial use of buffer OK");
+  }
 
-  // (2) code buffer allocating codeBlob memory for code & relocation
+  // (2) CodeBuffer referring to pre-allocated CodeBlob.
+  CodeBuffer(CodeBlob* blob);
+
+  // (3) code buffer allocating codeBlob memory for code & relocation
   // info but with lazy initialization.  The name must be something
   // informative.
   CodeBuffer(const char* name) {
@@ -384,7 +398,7 @@ class CodeBuffer: public StackObj {
   }
 
 
-  // (3) code buffer allocating codeBlob memory for code & relocation
+  // (4) code buffer allocating codeBlob memory for code & relocation
   // info.  The name must be something informative and code_size must
   // include both code and stubs sizes.
   CodeBuffer(const char* name, csize_t code_size, csize_t locs_size) {
@@ -394,8 +408,8 @@ class CodeBuffer: public StackObj {
 
   ~CodeBuffer();
 
-  // Initialize a CodeBuffer constructed using constructor 2.  Using
-  // constructor 3 is equivalent to calling constructor 2 and then
+  // Initialize a CodeBuffer constructed using constructor 3.  Using
+  // constructor 4 is equivalent to calling constructor 3 and then
   // calling this method.  It's been factored out for convenience of
   // construction.
   void initialize(csize_t code_size, csize_t locs_size);
@@ -438,36 +452,37 @@ class CodeBuffer: public StackObj {
   void   free_blob();                       // Free the blob, if we own one.
 
   // Properties relative to the insts section:
-  address code_begin() const            { return _insts.start(); }
-  address code_end() const              { return _insts.end();   }
-  void set_code_end(address end)        { _insts.set_end(end); }
-  address code_limit() const            { return _insts.limit(); }
-  address inst_mark() const             { return _insts.mark(); }
-  void set_inst_mark()                  { _insts.set_mark(); }
-  void clear_inst_mark()                { _insts.clear_mark(); }
+  address       insts_begin() const      { return _insts.start();      }
+  address       insts_end() const        { return _insts.end();        }
+  void      set_insts_end(address end)   {        _insts.set_end(end); }
+  address       insts_limit() const      { return _insts.limit();      }
+  address       insts_mark() const       { return _insts.mark();       }
+  void      set_insts_mark()             {        _insts.set_mark();   }
+  void    clear_insts_mark()             {        _insts.clear_mark(); }
 
   // is there anything in the buffer other than the current section?
-  bool    is_pure() const               { return code_size() == total_code_size(); }
+  bool    is_pure() const                { return insts_size() == total_content_size(); }
 
   // size in bytes of output so far in the insts sections
-  csize_t code_size() const             { return _insts.size(); }
+  csize_t insts_size() const             { return _insts.size(); }
 
-  // same as code_size(), except that it asserts there is no non-code here
-  csize_t pure_code_size() const        { assert(is_pure(), "no non-code");
-                                          return code_size(); }
+  // same as insts_size(), except that it asserts there is no non-code here
+  csize_t pure_insts_size() const        { assert(is_pure(), "no non-code");
+                                           return insts_size(); }
   // capacity in bytes of the insts sections
-  csize_t code_capacity() const         { return _insts.capacity(); }
+  csize_t insts_capacity() const         { return _insts.capacity(); }
 
   // number of bytes remaining in the insts section
-  csize_t code_remaining() const        { return _insts.remaining(); }
+  csize_t insts_remaining() const        { return _insts.remaining(); }
 
   // is a given address in the insts section?  (2nd version is end-inclusive)
-  bool code_contains(address pc) const  { return _insts.contains(pc); }
-  bool code_contains2(address pc) const { return _insts.contains2(pc); }
+  bool insts_contains(address pc) const  { return _insts.contains(pc); }
+  bool insts_contains2(address pc) const { return _insts.contains2(pc); }
 
-  // allocated size of code in all sections, when aligned and concatenated
-  // (this is the eventual state of the code in its final CodeBlob)
-  csize_t total_code_size() const;
+  // Allocated size in all sections, when aligned and concatenated
+  // (this is the eventual state of the content in its final
+  // CodeBlob).
+  csize_t total_content_size() const;
 
   // combined offset (relative to start of insts) of given address,
   // as eventually found in the final CodeBlob

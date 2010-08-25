@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ class Runtime1: public AllStatic {
 
   // stubs
   static CodeBlob* blob_for (StubID id);
-  static address   entry_for(StubID id)          { return blob_for(id)->instructions_begin(); }
+  static address   entry_for(StubID id)          { return blob_for(id)->code_begin(); }
   static const char* name_for (StubID id);
   static const char* name_for_address(address entry);
 

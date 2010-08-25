@@ -128,13 +128,11 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   _code    = nm;
   _current = nm->relocation_begin() - 1;
   _end     = nm->relocation_end();
-  _addr    = (address) nm->instructions_begin();
+  _addr    = (address) nm->code_begin();
 
   assert(!has_current(), "just checking");
-  address code_end = nm->instructions_end();
-
-  assert(begin == NULL || begin >= nm->instructions_begin(), "in bounds");
- // FIX THIS  assert(limit == NULL || limit <= code_end,     "in bounds");
+  assert(begin == NULL || begin >= nm->code_begin(), "in bounds");
+  assert(limit == NULL || limit <= nm->code_end(),   "in bounds");
   set_limits(begin, limit);
 }
 
@@ -267,7 +265,7 @@ void RelocIterator::set_limits(address begin, address limit) {
       // skip ahead
       RelocIndexEntry* index       = (RelocIndexEntry*)_end;
       RelocIndexEntry* index_limit = (RelocIndexEntry*)((address)index + index_size);
-      assert(_addr == _code->instructions_begin(), "_addr must be unadjusted");
+      assert(_addr == _code->code_begin(), "_addr must be unadjusted");
       int card = (begin - _addr) / indexCardSize;
       if (card > 0) {
         if (index+card-1 < index_limit)  index += card-1;
@@ -369,7 +367,7 @@ address RelocIterator::compute_section_start(int n) const {
   CodeBlob* cb = code();
   guarantee(cb != NULL, "must have a code blob");
   if (n == CodeBuffer::SECT_INSTS)
-    return CACHE = cb->instructions_begin();
+    return CACHE = cb->code_begin();
   assert(cb->is_nmethod(), "only nmethods have these sections");
   nmethod* nm = (nmethod*) cb;
   address res = NULL;
@@ -383,7 +381,7 @@ address RelocIterator::compute_section_start(int n) const {
   default:
     ShouldNotReachHere();
   }
-  assert(nm->contains(res) || res == nm->instructions_end(), "tame pointer");
+  assert(nm->contains(res) || res == nm->code_end(), "tame pointer");
   CACHE = res;
   return res;
 #undef CACHE

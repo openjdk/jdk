@@ -312,7 +312,7 @@ class nmethod : public CodeBlob {
                                      int frame_size);
 
   int trap_offset() const      { return _trap_offset; }
-  address trap_address() const { return code_begin() + _trap_offset; }
+  address trap_address() const { return insts_begin() + _trap_offset; }
 
 #endif // def HAVE_DTRACE_H
 
@@ -336,8 +336,8 @@ class nmethod : public CodeBlob {
   bool is_compiled_by_shark() const;
 
   // boundaries for different parts
-  address code_begin            () const          { return _entry_point; }
-  address code_end              () const          { return           header_begin() + _stub_offset          ; }
+  address insts_begin           () const          { return code_begin(); }
+  address insts_end             () const          { return           header_begin() + _stub_offset          ; }
   address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
   address deopt_handler_begin   () const          { return           header_begin() + _deoptimize_offset    ; }
   address deopt_mh_handler_begin() const          { return           header_begin() + _deoptimize_mh_offset ; }
@@ -361,7 +361,7 @@ class nmethod : public CodeBlob {
   address nul_chk_table_end     () const          { return           header_begin() + _nmethod_end_offset   ; }
 
   // Sizes
-  int code_size         () const                  { return            code_end         () -            code_begin         (); }
+  int insts_size        () const                  { return            insts_end        () -            insts_begin        (); }
   int stub_size         () const                  { return            stub_end         () -            stub_begin         (); }
   int consts_size       () const                  { return            consts_end       () -            consts_begin       (); }
   int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
@@ -374,7 +374,7 @@ class nmethod : public CodeBlob {
   int total_size        () const;
 
   // Containment
-  bool code_contains         (address addr) const { return code_begin         () <= addr && addr < code_end         (); }
+  bool insts_contains        (address addr) const { return insts_begin        () <= addr && addr < insts_end        (); }
   bool stub_contains         (address addr) const { return stub_begin         () <= addr && addr < stub_end         (); }
   bool consts_contains       (address addr) const { return consts_begin       () <= addr && addr < consts_end       (); }
   bool oops_contains         (oop*    addr) const { return oops_begin         () <= addr && addr < oops_end         (); }
@@ -506,7 +506,7 @@ public:
   void clear_inline_caches();
   void cleanup_inline_caches();
   bool inlinecache_check_contains(address addr) const {
-    return (addr >= instructions_begin() && addr < verified_entry_point());
+    return (addr >= code_begin() && addr < verified_entry_point());
   }
 
   // unlink and deallocate this nmethod
@@ -559,7 +559,7 @@ public:
 
   PcDesc* find_pc_desc(address pc, bool approximate) {
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != NULL && desc->pc_offset() == pc - instructions_begin()) {
+    if (desc != NULL && desc->pc_offset() == pc - code_begin()) {
       return desc;
     }
     return find_pc_desc_internal(pc, approximate);
