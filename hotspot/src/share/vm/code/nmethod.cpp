@@ -87,9 +87,9 @@ struct nmethod_stats_struct {
   int nmethod_count;
   int total_size;
   int relocation_size;
+  int consts_size;
   int insts_size;
   int stub_size;
-  int consts_size;
   int scopes_data_size;
   int scopes_pcs_size;
   int dependencies_size;
@@ -101,9 +101,9 @@ struct nmethod_stats_struct {
     nmethod_count += 1;
     total_size          += nm->size();
     relocation_size     += nm->relocation_size();
+    consts_size         += nm->consts_size();
     insts_size          += nm->insts_size();
     stub_size           += nm->stub_size();
-    consts_size         += nm->consts_size();
     oops_size           += nm->oops_size();
     scopes_data_size    += nm->scopes_data_size();
     scopes_pcs_size     += nm->scopes_pcs_size();
@@ -116,9 +116,9 @@ struct nmethod_stats_struct {
     tty->print_cr("Statistics for %d bytecoded nmethods:", nmethod_count);
     if (total_size != 0)          tty->print_cr(" total in heap  = %d", total_size);
     if (relocation_size != 0)     tty->print_cr(" relocation     = %d", relocation_size);
+    if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
     if (insts_size != 0)          tty->print_cr(" main code      = %d", insts_size);
     if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
-    if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
     if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
     if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %d", scopes_data_size);
     if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
@@ -404,9 +404,9 @@ void nmethod::add_handler_for_exception_and_pc(Handle exception, address pc, add
 
 int nmethod::total_size() const {
   return
+    consts_size()        +
     insts_size()         +
     stub_size()          +
-    consts_size()        +
     scopes_data_size()   +
     scopes_pcs_size()    +
     handler_table_size() +
@@ -789,13 +789,17 @@ nmethod::nmethod(
     _orig_pc_offset          = orig_pc_offset;
 
     // Section offsets
-    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts()->start());
-    _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs()->start());
+    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
+    _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
 
     // Exception handler and deopt handler are in the stub section
     _exception_offset        = _stub_offset          + offsets->value(CodeOffsets::Exceptions);
     _deoptimize_offset       = _stub_offset          + offsets->value(CodeOffsets::Deopt);
-    _deoptimize_mh_offset    = _stub_offset          + offsets->value(CodeOffsets::DeoptMH);
+    if (has_method_handle_invokes()) {
+      _deoptimize_mh_offset  = _stub_offset          + offsets->value(CodeOffsets::DeoptMH);
+    } else {
+      _deoptimize_mh_offset  = -1;
+    }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       _unwind_handler_offset = code_offset()         + offsets->value(CodeOffsets::UnwindHandler);
     } else {
@@ -885,9 +889,9 @@ void nmethod::log_new_nmethod() const {
     xtty->print(" address='" INTPTR_FORMAT "'", (intptr_t) this);
 
     LOG_OFFSET(xtty, relocation);
+    LOG_OFFSET(xtty, consts);
     LOG_OFFSET(xtty, insts);
     LOG_OFFSET(xtty, stub);
-    LOG_OFFSET(xtty, consts);
     LOG_OFFSET(xtty, scopes_data);
     LOG_OFFSET(xtty, scopes_pcs);
     LOG_OFFSET(xtty, dependencies);
@@ -2336,6 +2340,10 @@ void nmethod::print() const {
                                               relocation_begin(),
                                               relocation_end(),
                                               relocation_size());
+  if (consts_size       () > 0) tty->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                              consts_begin(),
+                                              consts_end(),
+                                              consts_size());
   if (insts_size        () > 0) tty->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                               insts_begin(),
                                               insts_end(),
@@ -2344,10 +2352,6 @@ void nmethod::print() const {
                                               stub_begin(),
                                               stub_end(),
                                               stub_size());
-  if (consts_size       () > 0) tty->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              consts_begin(),
-                                              consts_end(),
-                                              consts_size());
   if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                               oops_begin(),
                                               oops_end(),
@@ -2372,10 +2376,6 @@ void nmethod::print() const {
                                               nul_chk_table_begin(),
                                               nul_chk_table_end(),
                                               nul_chk_table_size());
-  if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              oops_begin(),
-                                              oops_end(),
-                                              oops_size());
 }
 
 void nmethod::print_code() {
