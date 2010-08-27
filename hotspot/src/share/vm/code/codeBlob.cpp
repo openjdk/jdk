@@ -92,7 +92,7 @@ CodeBlob::CodeBlob(
   _header_size           = header_size;
   _relocation_size       = round_to(cb->total_relocation_size(), oopSize);
   _content_offset        = align_code_offset(header_size + _relocation_size);
-  _code_offset           = _content_offset + cb->total_offset_of(cb->insts()->start());
+  _code_offset           = _content_offset + cb->total_offset_of(cb->insts());
   _data_offset           = _content_offset + round_to(cb->total_content_size(), oopSize);
   assert(_data_offset <= size, "codeBlob is too small");
 

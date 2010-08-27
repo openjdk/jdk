@@ -128,7 +128,16 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   _code    = nm;
   _current = nm->relocation_begin() - 1;
   _end     = nm->relocation_end();
-  _addr    = (address) nm->code_begin();
+  _addr    = nm->content_begin();
+
+  // Initialize code sections.
+  _section_start[CodeBuffer::SECT_CONSTS] = nm->consts_begin();
+  _section_start[CodeBuffer::SECT_INSTS ] = nm->insts_begin() ;
+  _section_start[CodeBuffer::SECT_STUBS ] = nm->stub_begin()  ;
+
+  _section_end  [CodeBuffer::SECT_CONSTS] = nm->consts_end()  ;
+  _section_end  [CodeBuffer::SECT_INSTS ] = nm->insts_end()   ;
+  _section_end  [CodeBuffer::SECT_STUBS ] = nm->stub_end()    ;
 
   assert(!has_current(), "just checking");
   assert(begin == NULL || begin >= nm->code_begin(), "in bounds");
@@ -146,9 +155,11 @@ RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   _code    = NULL; // Not cb->blob();
 
   CodeBuffer* cb = cs->outer();
-  assert((int)SECT_LIMIT == CodeBuffer::SECT_LIMIT, "my copy must be equal");
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
-    _section_start[n] = cb->code_section(n)->start();
+  assert((int) SECT_LIMIT == CodeBuffer::SECT_LIMIT, "my copy must be equal");
+  for (int n = (int) CodeBuffer::SECT_FIRST; n < (int) CodeBuffer::SECT_LIMIT; n++) {
+    CodeSection* cs = cb->code_section(n);
+    _section_start[n] = cs->start();
+    _section_end  [n] = cs->end();
   }
 
   assert(!has_current(), "just checking");
@@ -164,6 +175,12 @@ struct RelocIndexEntry {
   jint addr_offset;          // offset from header_end of an addr()
   jint reloc_offset;         // offset from header_end of a relocInfo (prefix)
 };
+
+
+bool RelocIterator::addr_in_const() const {
+  const int n = CodeBuffer::SECT_CONSTS;
+  return section_start(n) <= addr() && addr() < section_end(n);
+}
 
 
 static inline int num_cards(int code_size) {
@@ -360,31 +377,12 @@ void RelocIterator::advance_over_prefix() {
 }
 
 
-address RelocIterator::compute_section_start(int n) const {
-// This routine not only computes a section start, but also
-// memoizes it for later.
-#define CACHE ((RelocIterator*)this)->_section_start[n]
-  CodeBlob* cb = code();
-  guarantee(cb != NULL, "must have a code blob");
-  if (n == CodeBuffer::SECT_INSTS)
-    return CACHE = cb->code_begin();
-  assert(cb->is_nmethod(), "only nmethods have these sections");
-  nmethod* nm = (nmethod*) cb;
-  address res = NULL;
-  switch (n) {
-  case CodeBuffer::SECT_STUBS:
-    res = nm->stub_begin();
-    break;
-  case CodeBuffer::SECT_CONSTS:
-    res = nm->consts_begin();
-    break;
-  default:
-    ShouldNotReachHere();
+void RelocIterator::initialize_misc() {
+  set_has_current(false);
+  for (int i = (int) CodeBuffer::SECT_FIRST; i < (int) CodeBuffer::SECT_LIMIT; i++) {
+    _section_start[i] = NULL;  // these will be lazily computed, if needed
+    _section_end  [i] = NULL;
   }
-  assert(nm->contains(res) || res == nm->code_end(), "tame pointer");
-  CACHE = res;
-  return res;
-#undef CACHE
 }
 
 
