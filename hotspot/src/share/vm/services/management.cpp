@@ -785,10 +785,11 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
     }
   }
 
-  // In our current implementation, all pools should have
-  // defined init and max size
-  assert(!has_undefined_init_size, "Undefined init size");
-  assert(!has_undefined_max_size, "Undefined max size");
+  // In our current implementation, we make sure that all non-heap
+  // pools have defined init and max sizes. Heap pools do not matter,
+  // as we never use total_init and total_max for them.
+  assert(heap || !has_undefined_init_size, "Undefined init size");
+  assert(heap || !has_undefined_max_size,  "Undefined max size");
 
   MemoryUsage usage((heap ? InitialHeapSize : total_init),
                     total_used,
