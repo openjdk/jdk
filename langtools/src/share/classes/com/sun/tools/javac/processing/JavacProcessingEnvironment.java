@@ -67,6 +67,8 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.FatalError;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.JavacMessages;
@@ -131,6 +133,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     Log log;
 
+    /** Diagnostic factory.
+     */
+    JCDiagnostic.Factory diags;
+
     /**
      * Source level of the compile.
      */
@@ -146,10 +152,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private Context context;
 
     public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
-        options = Options.instance(context);
         this.context = context;
         log = Log.instance(context);
         source = Source.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
+        options = Options.instance(context);
         printProcessorInfo = options.get("-XprintProcessorInfo") != null;
         printRounds = options.get("-XprintRounds") != null;
         verbose = options.get("-verbose") != null;
@@ -848,8 +855,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Create a new round. */
         private Round(Round prev,
-                Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles)
-                throws IOException {
+                Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles) {
             this(prev.nextContext(), prev.number+1, prev.compiler.log.nwarnings);
             this.genClassFiles = prev.genClassFiles;
 
@@ -882,8 +888,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Create the next round to be used. */
-        Round next(Set<JavaFileObject> newSourceFiles, Map<String, JavaFileObject> newClassFiles)
-                throws IOException {
+        Round next(Set<JavaFileObject> newSourceFiles, Map<String, JavaFileObject> newClassFiles) {
             try {
                 return new Round(this, newSourceFiles, newClassFiles);
             } finally {
@@ -1083,8 +1088,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     public JavaCompiler doProcessing(Context context,
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
-                                     Iterable<? extends PackageSymbol> pckSymbols)
-        throws IOException {
+                                     Iterable<? extends PackageSymbol> pckSymbols) {
 
         TaskListener taskListener = context.get(TaskListener.class);
         log = Log.instance(context);
@@ -1184,13 +1188,19 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     /**
      * Free resources related to annotation processing.
      */
-    public void close() throws IOException {
+    public void close() {
         filer.close();
         if (discoveredProcs != null) // Make calling close idempotent
             discoveredProcs.close();
         discoveredProcs = null;
-        if (processorClassLoader != null && processorClassLoader instanceof Closeable)
-            ((Closeable) processorClassLoader).close();
+        if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
+            try {
+                ((Closeable) processorClassLoader).close();
+            } catch (IOException e) {
+                JCDiagnostic msg = diags.fragment("fatal.err.cant.close.loader");
+                throw new FatalError(msg, e);
+            }
+        }
     }
 
     private List<ClassSymbol> getTopLevelClasses(List<? extends JCCompilationUnit> units) {

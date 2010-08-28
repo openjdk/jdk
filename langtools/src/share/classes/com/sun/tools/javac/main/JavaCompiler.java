@@ -608,7 +608,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      *  @param filename     The name of the file to be parsed.
      */
     @Deprecated
-    public JCTree.JCCompilationUnit parse(String filename) throws IOException {
+    public JCTree.JCCompilationUnit parse(String filename) {
         JavacFileManager fm = (JavacFileManager)fileManager;
         return parse(fm.getJavaFileObjectsFromStrings(List.of(filename)).iterator().next());
     }
@@ -778,7 +778,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public void compile(List<JavaFileObject> sourceFileObjects,
                         List<String> classnames,
                         Iterable<? extends Processor> processors)
-        throws IOException // TODO: temp, from JavacProcessingEnvironment
     {
         if (processors != null && processors.iterator().hasNext())
             explicitAnnotationProcessingRequested = true;
@@ -868,7 +867,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     /**
      * Parses a list of files.
      */
-   public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects) throws IOException {
+   public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects) {
        if (shouldStop(CompileState.PARSE))
            return List.nil();
 
@@ -950,8 +949,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
      */
-    public void initProcessAnnotations(Iterable<? extends Processor> processors)
-                throws IOException {
+    public void initProcessAnnotations(Iterable<? extends Processor> processors) {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
         Options options = Options.instance(context);
@@ -978,8 +976,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     // TODO: called by JavacTaskImpl
-    public JavaCompiler processAnnotations(List<JCCompilationUnit> roots)
-            throws IOException {
+    public JavaCompiler processAnnotations(List<JCCompilationUnit> roots) {
         return processAnnotations(roots, List.<String>nil());
     }
 
@@ -989,8 +986,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @return an instance of the compiler in which to complete the compilation
      */
     public JavaCompiler processAnnotations(List<JCCompilationUnit> roots,
-                                           List<String> classnames)
-            throws IOException  { // TODO: see TEMP note in JavacProcessingEnvironment
+                                           List<String> classnames) {
         if (shouldStop(CompileState.PROCESS)) {
             // Errors were encountered.
             // If log.unrecoverableError is set, the errors were parse errors
