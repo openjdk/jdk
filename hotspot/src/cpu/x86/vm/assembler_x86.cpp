@@ -8767,6 +8767,186 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
   bind(DONE);
 }
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) block_comment(str)
+#endif
+
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+void MacroAssembler::generate_fill(BasicType t, bool aligned,
+                                   Register to, Register value, Register count,
+                                   Register rtmp, XMMRegister xtmp) {
+  assert_different_registers(to, value, count, rtmp);
+  Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
+  Label L_fill_2_bytes, L_fill_4_bytes;
+
+  int shift = -1;
+  switch (t) {
+    case T_BYTE:
+      shift = 2;
+      break;
+    case T_SHORT:
+      shift = 1;
+      break;
+    case T_INT:
+      shift = 0;
+      break;
+    default: ShouldNotReachHere();
+  }
+
+  if (t == T_BYTE) {
+    andl(value, 0xff);
+    movl(rtmp, value);
+    shll(rtmp, 8);
+    orl(value, rtmp);
+  }
+  if (t == T_SHORT) {
+    andl(value, 0xffff);
+  }
+  if (t == T_BYTE || t == T_SHORT) {
+    movl(rtmp, value);
+    shll(rtmp, 16);
+    orl(value, rtmp);
+  }
+
+  cmpl(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
+  jcc(Assembler::below, L_fill_4_bytes); // use unsigned cmp
+  if (!UseUnalignedLoadStores && !aligned && (t == T_BYTE || t == T_SHORT)) {
+    // align source address at 4 bytes address boundary
+    if (t == T_BYTE) {
+      // One byte misalignment happens only for byte arrays
+      testptr(to, 1);
+      jccb(Assembler::zero, L_skip_align1);
+      movb(Address(to, 0), value);
+      increment(to);
+      decrement(count);
+      BIND(L_skip_align1);
+    }
+    // Two bytes misalignment happens only for byte and short (char) arrays
+    testptr(to, 2);
+    jccb(Assembler::zero, L_skip_align2);
+    movw(Address(to, 0), value);
+    addptr(to, 2);
+    subl(count, 1<<(shift-1));
+    BIND(L_skip_align2);
+  }
+  if (UseSSE < 2) {
+    Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
+    // Fill 32-byte chunks
+    subl(count, 8 << shift);
+    jcc(Assembler::less, L_check_fill_8_bytes);
+    align(16);
+
+    BIND(L_fill_32_bytes_loop);
+
+    for (int i = 0; i < 32; i += 4) {
+      movl(Address(to, i), value);
+    }
+
+    addptr(to, 32);
+    subl(count, 8 << shift);
+    jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
+    BIND(L_check_fill_8_bytes);
+    addl(count, 8 << shift);
+    jccb(Assembler::zero, L_exit);
+    jmpb(L_fill_8_bytes);
+
+    //
+    // length is too short, just fill qwords
+    //
+    BIND(L_fill_8_bytes_loop);
+    movl(Address(to, 0), value);
+    movl(Address(to, 4), value);
+    addptr(to, 8);
+    BIND(L_fill_8_bytes);
+    subl(count, 1 << (shift + 1));
+    jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
+    // fall through to fill 4 bytes
+  } else {
+    Label L_fill_32_bytes;
+    if (!UseUnalignedLoadStores) {
+      // align to 8 bytes, we know we are 4 byte aligned to start
+      testptr(to, 4);
+      jccb(Assembler::zero, L_fill_32_bytes);
+      movl(Address(to, 0), value);
+      addptr(to, 4);
+      subl(count, 1<<shift);
+    }
+    BIND(L_fill_32_bytes);
+    {
+      assert( UseSSE >= 2, "supported cpu only" );
+      Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
+      // Fill 32-byte chunks
+      movdl(xtmp, value);
+      pshufd(xtmp, xtmp, 0);
+
+      subl(count, 8 << shift);
+      jcc(Assembler::less, L_check_fill_8_bytes);
+      align(16);
+
+      BIND(L_fill_32_bytes_loop);
+
+      if (UseUnalignedLoadStores) {
+        movdqu(Address(to, 0), xtmp);
+        movdqu(Address(to, 16), xtmp);
+      } else {
+        movq(Address(to, 0), xtmp);
+        movq(Address(to, 8), xtmp);
+        movq(Address(to, 16), xtmp);
+        movq(Address(to, 24), xtmp);
+      }
+
+      addptr(to, 32);
+      subl(count, 8 << shift);
+      jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
+      BIND(L_check_fill_8_bytes);
+      addl(count, 8 << shift);
+      jccb(Assembler::zero, L_exit);
+      jmpb(L_fill_8_bytes);
+
+      //
+      // length is too short, just fill qwords
+      //
+      BIND(L_fill_8_bytes_loop);
+      movq(Address(to, 0), xtmp);
+      addptr(to, 8);
+      BIND(L_fill_8_bytes);
+      subl(count, 1 << (shift + 1));
+      jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
+    }
+  }
+  // fill trailing 4 bytes
+  BIND(L_fill_4_bytes);
+  testl(count, 1<<shift);
+  jccb(Assembler::zero, L_fill_2_bytes);
+  movl(Address(to, 0), value);
+  if (t == T_BYTE || t == T_SHORT) {
+    addptr(to, 4);
+    BIND(L_fill_2_bytes);
+    // fill trailing 2 bytes
+    testl(count, 1<<(shift-1));
+    jccb(Assembler::zero, L_fill_byte);
+    movw(Address(to, 0), value);
+    if (t == T_BYTE) {
+      addptr(to, 2);
+      BIND(L_fill_byte);
+      // fill trailing byte
+      testl(count, 1);
+      jccb(Assembler::zero, L_exit);
+      movb(Address(to, 0), value);
+    } else {
+      BIND(L_fill_byte);
+    }
+  } else {
+    BIND(L_fill_2_bytes);
+  }
+  BIND(L_exit);
+}
+#undef BIND
+#undef BLOCK_COMMENT
+
+
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
   switch (cond) {
     // Note some conditions are synonyms for others
