@@ -1513,6 +1513,9 @@ void Arguments::set_aggressive_opts_flags() {
   if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeStringConcat)) {
     FLAG_SET_DEFAULT(OptimizeStringConcat, true);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeFill)) {
+    FLAG_SET_DEFAULT(OptimizeFill, true);
+  }
 #endif
 
   if (AggressiveOpts) {

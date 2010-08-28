@@ -97,6 +97,15 @@ address StubRoutines::_checkcast_arraycopy               = NULL;
 address StubRoutines::_unsafe_arraycopy                  = NULL;
 address StubRoutines::_generic_arraycopy                 = NULL;
 
+
+address StubRoutines::_jbyte_fill;
+address StubRoutines::_jshort_fill;
+address StubRoutines::_jint_fill;
+address StubRoutines::_arrayof_jbyte_fill;
+address StubRoutines::_arrayof_jshort_fill;
+address StubRoutines::_arrayof_jint_fill;
+
+
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
 double (* StubRoutines::_intrinsic_exp   )(double) = NULL;
@@ -194,6 +203,46 @@ void StubRoutines::initialize2() {
   TEST_ARRAYCOPY(jlong);
 
 #undef TEST_ARRAYCOPY
+
+#define TEST_FILL(type)                                                                      \
+  if (_##type##_fill != NULL) {                                                              \
+    union {                                                                                  \
+      double d;                                                                              \
+      type body[96];                                                                         \
+    } s;                                                                                     \
+                                                                                             \
+    int v = 32;                                                                              \
+    for (int offset = -2; offset <= 2; offset++) {                                           \
+      for (int i = 0; i < 96; i++) {                                                         \
+        s.body[i] = 1;                                                                       \
+      }                                                                                      \
+      type* start = s.body + 8 + offset;                                                     \
+      for (int aligned = 0; aligned < 2; aligned++) {                                        \
+        if (aligned) {                                                                       \
+          if (((intptr_t)start) % HeapWordSize == 0) {                                       \
+            ((void (*)(type*, int, int))StubRoutines::_arrayof_##type##_fill)(start, v, 80); \
+          } else {                                                                           \
+            continue;                                                                        \
+          }                                                                                  \
+        } else {                                                                             \
+          ((void (*)(type*, int, int))StubRoutines::_##type##_fill)(start, v, 80);           \
+        }                                                                                    \
+        for (int i = 0; i < 96; i++) {                                                       \
+          if (i < (8 + offset) || i >= (88 + offset)) {                                      \
+            assert(s.body[i] == 1, "what?");                                                 \
+          } else {                                                                           \
+            assert(s.body[i] == 32, "what?");                                                \
+          }                                                                                  \
+        }                                                                                    \
+      }                                                                                      \
+    }                                                                                        \
+  }                                                                                          \
+
+  TEST_FILL(jbyte);
+  TEST_FILL(jshort);
+  TEST_FILL(jint);
+
+#undef TEST_FILL
 
 #define TEST_COPYRTN(type) \
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
@@ -315,3 +364,39 @@ JRT_LEAF(void, StubRoutines::arrayof_oop_copy(HeapWord* src, HeapWord* dest, siz
   Copy::arrayof_conjoint_oops(src, dest, count);
   gen_arraycopy_barrier((oop *) dest, count);
 JRT_END
+
+
+address StubRoutines::select_fill_function(BasicType t, bool aligned, const char* &name) {
+#define RETURN_STUB(xxx_fill) { \
+  name = #xxx_fill; \
+  return StubRoutines::xxx_fill(); }
+
+  switch (t) {
+  case T_BYTE:
+  case T_BOOLEAN:
+    if (!aligned) RETURN_STUB(jbyte_fill);
+    RETURN_STUB(arrayof_jbyte_fill);
+  case T_CHAR:
+  case T_SHORT:
+    if (!aligned) RETURN_STUB(jshort_fill);
+    RETURN_STUB(arrayof_jshort_fill);
+  case T_INT:
+  case T_FLOAT:
+    if (!aligned) RETURN_STUB(jint_fill);
+    RETURN_STUB(arrayof_jint_fill);
+  case T_DOUBLE:
+  case T_LONG:
+  case T_ARRAY:
+  case T_OBJECT:
+  case T_NARROWOOP:
+  case T_ADDRESS:
+    // Currently unsupported
+    return NULL;
+
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+#undef RETURN_STUB
+}
