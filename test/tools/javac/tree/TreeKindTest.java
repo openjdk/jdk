@@ -29,7 +29,7 @@
 
 import com.sun.source.tree.*;
 
-public class T6341023 {
+public class TreeKindTest{
     public static void main(String... args) {
         boolean ok = true;
 
@@ -99,6 +99,13 @@ public class T6341023 {
             case EXTENDS_WILDCARD:
             case SUPER_WILDCARD:
                 ok = ok & verify(k, i, i == WildcardTree.class);
+                break;
+
+            case INTERFACE:
+            case ANNOTATION_TYPE:
+            case ENUM:
+            case CLASS:
+                ok = ok & verify(k, i, i == ClassTree.class);
                 break;
 
             case OTHER:
