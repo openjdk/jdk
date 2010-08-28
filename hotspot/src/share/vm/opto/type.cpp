@@ -314,7 +314,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegL] = TypeLong::LONG;
   mreg2type[Op_RegFlags] = TypeInt::CC;
 
-  TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), current->env()->Object_klass(), false, arrayOopDesc::length_offset_in_bytes());
+  TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), NULL /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());
 
   TypeAryPtr::NARROWOOPS = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeNarrowOop::BOTTOM, TypeInt::POS), NULL /*ciArrayKlass::make(o)*/,  false,  Type::OffsetBot);
 
@@ -3683,12 +3683,10 @@ int TypeKlassPtr::hash(void) const {
 }
 
 
-//------------------------------klass------------------------------------------
-// Return the defining klass for this class
-ciKlass* TypeAryPtr::klass() const {
-  if( _klass ) return _klass;   // Return cached value, if possible
-
-  // Oops, need to compute _klass and cache it
+//----------------------compute_klass------------------------------------------
+// Compute the defining klass for this class
+ciKlass* TypeAryPtr::compute_klass(DEBUG_ONLY(bool verify)) const {
+  // Compute _klass based on element type.
   ciKlass* k_ary = NULL;
   const TypeInstPtr *tinst;
   const TypeAryPtr *tary;
@@ -3715,11 +3713,39 @@ ciKlass* TypeAryPtr::klass() const {
   } else {
     // Cannot compute array klass directly from basic type,
     // since subtypes of TypeInt all have basic type T_INT.
+#ifdef ASSERT
+    if (verify && el->isa_int()) {
+      // Check simple cases when verifying klass.
+      BasicType bt = T_ILLEGAL;
+      if (el == TypeInt::BYTE) {
+        bt = T_BYTE;
+      } else if (el == TypeInt::SHORT) {
+        bt = T_SHORT;
+      } else if (el == TypeInt::CHAR) {
+        bt = T_CHAR;
+      } else if (el == TypeInt::INT) {
+        bt = T_INT;
+      } else {
+        return _klass; // just return specified klass
+      }
+      return ciTypeArrayKlass::make(bt);
+    }
+#endif
     assert(!el->isa_int(),
            "integral arrays must be pre-equipped with a class");
     // Compute array klass directly from basic type
     k_ary = ciTypeArrayKlass::make(el->basic_type());
   }
+  return k_ary;
+}
+
+//------------------------------klass------------------------------------------
+// Return the defining klass for this class
+ciKlass* TypeAryPtr::klass() const {
+  if( _klass ) return _klass;   // Return cached value, if possible
+
+  // Oops, need to compute _klass and cache it
+  ciKlass* k_ary = compute_klass();
 
   if( this != TypeAryPtr::OOPS ) {
     // The _klass field acts as a cache of the underlying

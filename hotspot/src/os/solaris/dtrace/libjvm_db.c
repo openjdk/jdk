@@ -124,7 +124,7 @@ typedef struct Nmethod_t {
   uint64_t pc_desc;
 
   int32_t  orig_pc_offset;      /* _orig_pc_offset */
-  int32_t  instrs_beg;          /* _instructions_offset */
+  int32_t  instrs_beg;          /* _code_offset */
   int32_t  instrs_end;
   int32_t  deopt_beg;           /* _deoptimize_offset */
   int32_t  scopes_data_beg;     /* _scopes_data_offset */
@@ -587,7 +587,7 @@ static int nmethod_info(Nmethod_t *N)
       fprintf(stderr, "\t nmethod_info: BEGIN \n");
 
   /* Instructions */
-  err = ps_pread(J->P, nm + OFFSET_CodeBlob_instructions_offset, &N->instrs_beg, SZ32);
+  err = ps_pread(J->P, nm + OFFSET_CodeBlob_code_offset, &N->instrs_beg, SZ32);
   CHECK_FAIL(err);
   err = ps_pread(J->P, nm + OFFSET_CodeBlob_data_offset, &N->instrs_end, SZ32);
   CHECK_FAIL(err);
