@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,32 @@
 
 /*
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug 6978574
+ * @summary  return statement in try block with multi-catch causes ClassFormatError
  */
 
-import java.lang.annotation.*;
+public class T6978574  {
+    static class A extends Exception { }
+    static class B extends Exception { }
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
-}
+    static void foo() throws A { throw new A(); }
+    static void bar() throws B { throw new B(); }
 
+    static void test(boolean b) {
+        try {
+            if (b) foo(); else bar();
+            return; // This should *not* cause ClassFormatError
+        } catch (final A | B e ) { caught = true; }
+        return;
+    }
 
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
+    static boolean caught = false;
+
+    public static void main(String[] args) {
+        test(true);
+        if (!caught) throw new AssertionError();
+        caught = false;
+        test(false);
+        if (!caught) throw new AssertionError();
+    }
 }

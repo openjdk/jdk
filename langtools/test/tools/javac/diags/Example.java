@@ -421,7 +421,7 @@ class Example implements Comparable<Example> {
             if (verbose)
                 System.err.println("run_simple: " + opts + " " + files);
 
-            List<String> args = new ArrayList<String>(opts);
+            List<String> args = new ArrayList<String>();
 
             if (keys != null || raw)
                 args.add("-XDrawDiagnostics");
