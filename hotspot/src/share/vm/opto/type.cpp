@@ -3369,7 +3369,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         tary = TypeAry::make(Type::BOTTOM, tary->_size);
       }
     }
-    bool xk;
+    bool xk = false;
     switch (tap->ptr()) {
     case AnyNull:
     case TopPTR:
@@ -3391,9 +3391,10 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         o = tap->const_oop();
         xk = true;
       } else {
-        xk = this->_klass_is_exact;
+        // Only precise for identical arrays
+        xk = this->_klass_is_exact && (klass() == tap->klass());
       }
-      return TypeAryPtr::make( ptr, o, tary, tap->_klass, xk, off, instance_id );
+      return TypeAryPtr::make( ptr, o, tary, lazy_klass, xk, off, instance_id );
     }
     case NotNull:
     case BotPTR:
