@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 /*
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug     6569057 6932571
+ * @summary Generics regression on cast
+ * @compile T6569057.java
  */
 
-import java.lang.annotation.*;
+class T6569057 {
+    static class A<X extends B<?>> {  }
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
-}
+    static class B<X extends A<?>> {
+        D<? extends B<X>> get() { return null; }
+    }
 
+    static class D<Y extends B<?>> {}
 
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
+    <E extends B<?>> void test(E x, D<B<A<?>>> d) {
+        boolean b = x.get() == d;
+    }
 }

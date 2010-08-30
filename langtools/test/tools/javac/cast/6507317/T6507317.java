@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,15 @@
 
 /*
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug     6507317 6932571
+ * @summary Problem when casting from parametrized type to concrete class
+ * @compile T6507317.java
  */
 
-import java.lang.annotation.*;
+import java.util.Comparator;
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
-}
-
-
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
+abstract class T6507317<T extends Comparable<T>> implements Comparator<T> {
+    void test(T t) {
+        String s = (String)t;
+    }
 }

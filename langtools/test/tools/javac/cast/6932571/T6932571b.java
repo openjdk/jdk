@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,30 @@
 
 /*
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug     6932571
+ * @summary Compiling Generics causing Inconvertible types
+ * @compile T6932571b.java
  */
 
-import java.lang.annotation.*;
+class T6932571b {
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
-}
+    interface A1<T extends B<? super T>> {
+        public T getT();
+    }
 
+    interface A2<T extends B<? extends T>> {
+        public T getT();
+    }
 
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
+    class B<T extends B<T>> {}
+
+    class C extends B<C> {}
+
+    void test1(A1<?> a) {
+        Object o = (C)a.getT();
+    }
+
+    void test2(A2<?> a) {
+        Object o = (C)a.getT();
+    }
 }

@@ -26,7 +26,7 @@
  * @bug     5060485
  * @summary The scope of a class type parameter is too wide
  * @author  Peter von der Ah\u00e9
- * @compile/fail Compatibility.java
+ * @compile/fail/ref=Compatibility.out -XDrawDiagnostics Compatibility.java
  */
 
 class NumberList<T extends Number> {}
