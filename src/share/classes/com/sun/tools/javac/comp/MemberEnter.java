@@ -1079,14 +1079,21 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
 
     private Env<AttrContext> baseEnv(JCClassDecl tree, Env<AttrContext> env) {
-        Scope typaramScope = new Scope(tree.sym);
+        Scope baseScope = new Scope(tree.sym);
+        //import already entered local classes into base scope
+        for (Scope.Entry e = env.outer.info.scope.elems ; e != null ; e = e.sibling) {
+            if (e.sym.isLocal()) {
+                baseScope.enter(e.sym);
+            }
+        }
+        //import current type-parameters into base scope
         if (tree.typarams != null)
             for (List<JCTypeParameter> typarams = tree.typarams;
                  typarams.nonEmpty();
                  typarams = typarams.tail)
-                typaramScope.enter(typarams.head.type.tsym);
+                baseScope.enter(typarams.head.type.tsym);
         Env<AttrContext> outer = env.outer; // the base clause can't see members of this class
-        Env<AttrContext> localEnv = outer.dup(tree, outer.info.dup(typaramScope));
+        Env<AttrContext> localEnv = outer.dup(tree, outer.info.dup(baseScope));
         localEnv.baseClause = true;
         localEnv.outer = outer;
         localEnv.info.isSelfCall = false;

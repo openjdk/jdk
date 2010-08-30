@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,18 @@
 
 /*
  * @test
- * @bug 6337964
- * @summary javac incorrectly disallows trailing comma in annotation arrays
- * @author darcy
- * @compile TrailingComma.java
+ * @bug     6886247
+ * @author Maurizio Cimadamore
+ * @summary regression: javac crashes with an assertion error in Attr.java
+ * @compile T6886247_1.java
  */
+class Outer<E> {
 
-import java.lang.annotation.*;
+   public void method(Outer<? extends E>.Inner inner) {
+       E entry = inner.getE();
+   }
 
-@interface TestAnnotation {
-    SuppressWarnings[] value() default {@SuppressWarnings({"",})};
-}
-
-
-@TestAnnotation({@SuppressWarnings({}),
-                 @SuppressWarnings({"Beware the ides of March.",}),
-                 @SuppressWarnings({"Look both ways", "Before Crossing",}), })
-public class TrailingComma {
+   class Inner {
+       E getE() {return null;}
+   }
 }
