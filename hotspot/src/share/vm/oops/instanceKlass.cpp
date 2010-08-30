@@ -382,7 +382,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
       const char* desc = "Could not initialize class ";
       const char* className = this_oop->external_name();
       size_t msglen = strlen(desc) + strlen(className) + 1;
-      char* message = NEW_C_HEAP_ARRAY(char, msglen);
+      char* message = NEW_RESOURCE_ARRAY(char, msglen);
       if (NULL == message) {
         // Out of memory: can't create detailed error message
         THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), className);
