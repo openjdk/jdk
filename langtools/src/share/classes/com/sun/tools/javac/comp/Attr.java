@@ -578,6 +578,8 @@ public class Attr extends JCTree.Visitor {
                    boolean classExpected,
                    boolean interfaceExpected,
                    boolean checkExtensible) {
+        if (t.isErroneous())
+            return t;
         if (t.tag == TYPEVAR && !classExpected && !interfaceExpected) {
             // check that type variable is already visible
             if (t.getUpperBound() == null) {
@@ -595,7 +597,7 @@ public class Attr extends JCTree.Visitor {
         } else if (checkExtensible &&
                    classExpected &&
                    (t.tsym.flags() & INTERFACE) != 0) {
-            log.error(tree.pos(), "no.intf.expected.here");
+                log.error(tree.pos(), "no.intf.expected.here");
             return types.createErrorType(t);
         }
         if (checkExtensible &&
@@ -2845,7 +2847,6 @@ public class Attr extends JCTree.Visitor {
                 if (tree.bounds.tail.nonEmpty()) {
                     log.error(tree.bounds.tail.head.pos(),
                               "type.var.may.not.be.followed.by.other.bounds");
-                    log.unrecoverableError = true;
                     tree.bounds = List.of(tree.bounds.head);
                     a.bound = bs.head;
                 }

@@ -59,6 +59,7 @@ import com.sun.tools.javac.processing.*;
 import javax.annotation.processing.Processor;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
 // TEMP, until we have a more efficient way to save doc comment info
@@ -579,10 +580,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
             }
-            int initialErrorCount = log.nerrors;
             Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
             tree = parser.parseCompilationUnit();
-            log.unrecoverableError |= (log.nerrors > initialErrorCount);
             if (verbose) {
                 printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }
@@ -967,8 +966,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 keepComments = true;
                 if (taskListener != null)
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-
-
+                log.deferDiagnostics = true;
             } else { // free resources
                 procEnvImpl.close();
             }
@@ -985,15 +983,23 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @param roots a list of compilation units
      * @return an instance of the compiler in which to complete the compilation
      */
+    // Implementation note: when this method is called, log.deferredDiagnostics
+    // will have been set true by initProcessAnnotations, meaning that any diagnostics
+    // that are reported will go into the log.deferredDiagnostics queue.
+    // By the time this method exits, log.deferDiagnostics must be set back to false,
+    // and all deferredDiagnostics must have been handled: i.e. either reported
+    // or determined to be transient, and therefore suppressed.
     public JavaCompiler processAnnotations(List<JCCompilationUnit> roots,
                                            List<String> classnames) {
         if (shouldStop(CompileState.PROCESS)) {
             // Errors were encountered.
-            // If log.unrecoverableError is set, the errors were parse errors
+            // Unless all the errors are resolve errors, the errors were parse errors
             // or other errors during enter which cannot be fixed by running
             // any annotation processors.
-            if (log.unrecoverableError)
+            if (unrecoverableError()) {
+                log.reportDeferredDiagnostics();
                 return this;
+            }
         }
 
         // ASSERT: processAnnotations and procEnvImpl should have been set up by
@@ -1015,6 +1021,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 log.error("proc.no.explicit.annotation.processing.requested",
                           classnames);
             }
+            log.reportDeferredDiagnostics();
             return this; // continue regular compilation
         }
 
@@ -1027,6 +1034,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 if (!explicitAnnotationProcessingRequested()) {
                     log.error("proc.no.explicit.annotation.processing.requested",
                               classnames);
+                    log.reportDeferredDiagnostics();
                     return this; // TODO: Will this halt compilation?
                 } else {
                     boolean errors = false;
@@ -1041,7 +1049,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                             if (sym.kind == Kinds.PCK)
                                 sym.complete();
                             if (sym.exists()) {
-                                Name name = names.fromString(nameStr);
                                 if (sym.kind == Kinds.PCK)
                                     pckSymbols = pckSymbols.prepend((PackageSymbol)sym);
                                 else
@@ -1057,23 +1064,36 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                             continue;
                         }
                     }
-                    if (errors)
+                    if (errors) {
+                        log.reportDeferredDiagnostics();
                         return this;
+                    }
                 }
             }
             try {
                 JavaCompiler c = procEnvImpl.doProcessing(context, roots, classSymbols, pckSymbols);
                 if (c != this)
                     annotationProcessingOccurred = c.annotationProcessingOccurred = true;
+                // doProcessing will have handled deferred diagnostics
+                assert c.log.deferDiagnostics == false;
+                assert c.log.deferredDiagnostics.size() == 0;
                 return c;
             } finally {
                 procEnvImpl.close();
             }
         } catch (CompletionFailure ex) {
             log.error("cant.access", ex.sym, ex.getDetailValue());
+            log.reportDeferredDiagnostics();
             return this;
-
         }
+    }
+
+    private boolean unrecoverableError() {
+        for (JCDiagnostic d: log.deferredDiagnostics) {
+            if (d.getKind() == JCDiagnostic.Kind.ERROR && !d.isFlagSet(RESOLVE_ERROR))
+                return true;
+        }
+        return false;
     }
 
     boolean explicitAnnotationProcessingRequested() {
