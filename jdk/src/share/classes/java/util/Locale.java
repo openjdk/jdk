@@ -395,31 +395,103 @@ public final class Locale implements Cloneable, Serializable {
         // do not synchronize this method - see 4071298
         // it's OK if more than one default locale happens to be created
         if (defaultLocale == null) {
-            String language, region, country, variant;
-            language = AccessController.doPrivileged(
-                new GetPropertyAction("user.language", "en"));
-            // for compatibility, check for old user.region property
-            region = AccessController.doPrivileged(
-                new GetPropertyAction("user.region"));
-            if (region != null) {
-                // region can be of form country, country_variant, or _variant
-                int i = region.indexOf('_');
-                if (i >= 0) {
-                    country = region.substring(0, i);
-                    variant = region.substring(i + 1);
-                } else {
-                    country = region;
-                    variant = "";
-                }
-            } else {
-                country = AccessController.doPrivileged(
-                    new GetPropertyAction("user.country", ""));
-                variant = AccessController.doPrivileged(
-                    new GetPropertyAction("user.variant", ""));
-            }
-            defaultLocale = getInstance(language, country, variant);
+            initDefault();
         }
         return defaultLocale;
+    }
+
+    /**
+     * Gets the current value of the default locale for the specified Category
+     * for this instance of the Java Virtual Machine.
+     * <p>
+     * The Java Virtual Machine sets the default locale during startup based
+     * on the host environment. It is used by many locale-sensitive methods
+     * if no locale is explicitly specified. It can be changed using the
+     * setDefault(Locale.Category, Locale) method.
+     *
+     * @param category - the specified category to get the default locale
+     * @throws NullPointerException - if category is null
+     * @return the default locale for the specified Category for this instance
+     *     of the Java Virtual Machine
+     * @see #setDefault(Locale.Category, Locale)
+     * @since 1.7
+     */
+    public static Locale getDefault(Locale.Category category) {
+        // do not synchronize this method - see 4071298
+        // it's OK if more than one default locale happens to be created
+        switch (category) {
+        case DISPLAY:
+            if (defaultDisplayLocale == null) {
+                initDefault(category);
+            }
+            return defaultDisplayLocale;
+        case FORMAT:
+            if (defaultFormatLocale == null) {
+                initDefault(category);
+            }
+            return defaultFormatLocale;
+        default:
+            assert false: "Unknown Category";
+        }
+        return getDefault();
+    }
+
+    private static void initDefault() {
+        String language, region, country, variant;
+        language = AccessController.doPrivileged(
+            new GetPropertyAction("user.language", "en"));
+        // for compatibility, check for old user.region property
+        region = AccessController.doPrivileged(
+            new GetPropertyAction("user.region"));
+        if (region != null) {
+            // region can be of form country, country_variant, or _variant
+            int i = region.indexOf('_');
+            if (i >= 0) {
+                country = region.substring(0, i);
+                variant = region.substring(i + 1);
+            } else {
+                country = region;
+                variant = "";
+            }
+        } else {
+            country = AccessController.doPrivileged(
+                new GetPropertyAction("user.country", ""));
+            variant = AccessController.doPrivileged(
+                new GetPropertyAction("user.variant", ""));
+        }
+        defaultLocale = getInstance(language, country, variant);
+    }
+
+    private static void initDefault(Locale.Category category) {
+        String language, region, country, variant;
+        switch (category) {
+        case DISPLAY:
+            language = AccessController.doPrivileged(
+                new GetPropertyAction("user.language.display", ""));
+            if ("".equals(language)) {
+                defaultDisplayLocale = getDefault();
+            } else {
+                country = AccessController.doPrivileged(
+                    new GetPropertyAction("user.country.display", ""));
+                variant = AccessController.doPrivileged(
+                    new GetPropertyAction("user.variant.display", ""));
+                defaultDisplayLocale = getInstance(language, country, variant);
+            }
+            break;
+        case FORMAT:
+            language = AccessController.doPrivileged(
+                new GetPropertyAction("user.language.format", ""));
+            if ("".equals(language)) {
+                defaultFormatLocale = getDefault();
+            } else {
+                country = AccessController.doPrivileged(
+                    new GetPropertyAction("user.country.format", ""));
+                variant = AccessController.doPrivileged(
+                    new GetPropertyAction("user.variant.format", ""));
+                defaultFormatLocale = getInstance(language, country, variant);
+            }
+            break;
+        }
     }
 
     /**
@@ -438,6 +510,9 @@ public final class Locale implements Cloneable, Serializable {
      * of functionality, this method should only be used if the caller
      * is prepared to reinitialize locale-sensitive code running
      * within the same Java Virtual Machine.
+     * <p>
+     * By setting the default locale with this method, all of the default
+     * locales for each Category are also set to the specified default locale.
      *
      * @throws SecurityException
      *        if a security manager exists and its
@@ -448,13 +523,59 @@ public final class Locale implements Cloneable, Serializable {
      * @see java.util.PropertyPermission
      */
     public static synchronized void setDefault(Locale newLocale) {
+        setDefault(Category.DISPLAY, newLocale);
+        setDefault(Category.FORMAT, newLocale);
+        defaultLocale = newLocale;
+    }
+
+    /**
+     * Sets the default locale for the specified Category for this instance
+     * of the Java Virtual Machine. This does not affect the host locale.
+     * <p>
+     * If there is a security manager, its checkPermission method is called
+     * with a PropertyPermission("user.language", "write") permission before
+     * the default locale is changed.
+     * <p>
+     * The Java Virtual Machine sets the default locale during startup based
+     * on the host environment. It is used by many locale-sensitive methods
+     * if no locale is explicitly specified.
+     * <p>
+     * Since changing the default locale may affect many different areas of
+     * functionality, this method should only be used if the caller is
+     * prepared to reinitialize locale-sensitive code running within the
+     * same Java Virtual Machine.
+     * <p>
+     *
+     * @param category - the specified category to set the default locale
+     * @param newLocale - the new default locale
+     * @throws SecurityException - if a security manager exists and its
+     *     checkPermission method doesn't allow the operation.
+     * @throws NullPointerException - if category and/or newLocale is null
+     * @see SecurityManager.checkPermission(java.security.Permission)
+     * @see PropertyPermission
+     * @see #getDefault(Locale.Category)
+     * @since 1.7
+     */
+    public static synchronized void setDefault(Locale.Category category,
+        Locale newLocale) {
+        if (category == null)
+            throw new NullPointerException("Category cannot be NULL");
         if (newLocale == null)
             throw new NullPointerException("Can't set default locale to NULL");
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new PropertyPermission
                         ("user.language", "write"));
-            defaultLocale = newLocale;
+        switch (category) {
+        case DISPLAY:
+            defaultDisplayLocale = newLocale;
+            break;
+        case FORMAT:
+            defaultFormatLocale = newLocale;
+            break;
+        default:
+            assert false: "Unknown Category";
+        }
     }
 
     /**
@@ -642,7 +763,7 @@ public final class Locale implements Cloneable, Serializable {
      * value.  If the locale doesn't specify a language, this function returns the empty string.
      */
     public final String getDisplayLanguage() {
-        return getDisplayLanguage(getDefault());
+        return getDisplayLanguage(getDefault(Category.DISPLAY));
     }
 
     /**
@@ -677,7 +798,7 @@ public final class Locale implements Cloneable, Serializable {
      * value.  If the locale doesn't specify a country, this function returns the empty string.
      */
     public final String getDisplayCountry() {
-        return getDisplayCountry(getDefault());
+        return getDisplayCountry(getDefault(Category.DISPLAY));
     }
 
     /**
@@ -744,7 +865,7 @@ public final class Locale implements Cloneable, Serializable {
      * doesn't specify a variant code, this function returns the empty string.
      */
     public final String getDisplayVariant() {
-        return getDisplayVariant(getDefault());
+        return getDisplayVariant(getDefault(Category.DISPLAY));
     }
 
     /**
@@ -790,7 +911,7 @@ public final class Locale implements Cloneable, Serializable {
      * and variant fields are all empty, this function returns the empty string.
      */
     public final String getDisplayName() {
-        return getDisplayName(getDefault());
+        return getDisplayName(getDefault(Category.DISPLAY));
     }
 
     /**
@@ -970,6 +1091,8 @@ public final class Locale implements Cloneable, Serializable {
     private transient volatile int hashCodeValue = 0;
 
     private static Locale defaultLocale = null;
+    private static Locale defaultDisplayLocale = null;
+    private static Locale defaultFormatLocale = null;
 
     /**
      * Return an array of the display names of the variant.
@@ -1139,5 +1262,29 @@ public final class Locale implements Cloneable, Serializable {
 
             return null;
         }
+    }
+
+    /**
+     * Enum for locale categories.  These locale categories are used to get/set
+     * the default locale for the specific functionality represented by the
+     * category.
+     *
+     * @see #getDefault(Locale.Category)
+     * @see #setDefault(Locale.Category, Locale)
+     * @since 1.7
+     */
+    public enum Category {
+
+        /**
+         * Category used to represent the default locale for
+         * displaying user interfaces.
+         */
+        DISPLAY,
+
+        /**
+         * Category used to represent the default locale for
+         * formatting dates, numbers, and/or currencies.
+         */
+        FORMAT,
     }
 }

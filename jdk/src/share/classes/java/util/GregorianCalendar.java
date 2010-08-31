@@ -555,7 +555,7 @@ public class GregorianCalendar extends Calendar {
      * in the default time zone with the default locale.
      */
     public GregorianCalendar() {
-        this(TimeZone.getDefaultRef(), Locale.getDefault());
+        this(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
         setZoneShared(true);
     }
 
@@ -566,7 +566,7 @@ public class GregorianCalendar extends Calendar {
      * @param zone the given time zone.
      */
     public GregorianCalendar(TimeZone zone) {
-        this(zone, Locale.getDefault());
+        this(zone, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**

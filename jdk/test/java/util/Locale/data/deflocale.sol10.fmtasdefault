@@ -1707,19 +1707,19 @@ Testing some typical combinations
 
 
 OS Locale (LC_CTYPE: ja_JP.UTF-8, LC_MESSAGES: zh_CN.UTF-8)
-default locale: ID: zh_CN, Name: Chinese (China)
+default locale: ID: ja_JP, Name: Japanese (Japan)
 display locale: ID: zh_CN, Name: Chinese (China)
 format locale: ID: ja_JP, Name: Japanese (Japan)
 default charset: UTF-8
 
 OS Locale (LC_CTYPE: zh_CN.UTF-8, LC_MESSAGES: en_US.UTF-8)
-default locale: ID: en_US, Name: English (United States)
+default locale: ID: zh_CN, Name: Chinese (China)
 display locale: ID: en_US, Name: English (United States)
 format locale: ID: zh_CN, Name: Chinese (China)
 default charset: UTF-8
 
 OS Locale (LC_CTYPE: C, LC_MESSAGES: zh_CN.UTF-8)
-default locale: ID: zh_CN, Name: Chinese (China)
+default locale: ID: en, Name: English
 display locale: ID: zh_CN, Name: Chinese (China)
 format locale: ID: en, Name: English
 default charset: US-ASCII

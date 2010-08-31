@@ -474,7 +474,7 @@ public class SimpleDateFormat extends DateFormat {
      * class.
      */
     public SimpleDateFormat() {
-        this(SHORT, SHORT, Locale.getDefault());
+        this(SHORT, SHORT, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -490,7 +490,7 @@ public class SimpleDateFormat extends DateFormat {
      */
     public SimpleDateFormat(String pattern)
     {
-        this(pattern, Locale.getDefault());
+        this(pattern, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -535,7 +535,7 @@ public class SimpleDateFormat extends DateFormat {
 
         this.pattern = pattern;
         this.formatData = (DateFormatSymbols) formatSymbols.clone();
-        this.locale = Locale.getDefault();
+        this.locale = Locale.getDefault(Locale.Category.FORMAT);
         initializeCalendar(this.locale);
         initialize(this.locale);
         useDateFormatSymbols = true;
