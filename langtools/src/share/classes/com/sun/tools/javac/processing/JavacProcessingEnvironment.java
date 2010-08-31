@@ -77,6 +77,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 /**
  * Objects of this class hold and manage the state needed to support
@@ -97,6 +98,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean procOnly;
     private final boolean fatalErrors;
     private final boolean werror;
+    private final boolean showResolveErrors;
     private boolean foundTypeProcessors;
 
     private final JavacFiler filer;
@@ -164,6 +166,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         procOnly = options.get("-proc:only") != null ||
             options.get("-Xprint") != null;
         fatalErrors = options.get("fatalEnterError") != null;
+        showResolveErrors = options.get("showResolveErrors") != null;
         werror = options.get("-Werror") != null;
         platformAnnotations = initPlatformAnnotations();
         foundTypeProcessors = false;
@@ -825,6 +828,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             compiler = JavaCompiler.instance(context);
             log = Log.instance(context);
+            log.deferDiagnostics = true;
 
             // the following is for the benefit of JavacProcessingEnvironment.getContext()
             JavacProcessingEnvironment.this.context = context;
@@ -924,10 +928,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Return whether or not an unrecoverable error has occurred. */
         boolean unrecoverableError() {
-            return log.unrecoverableError
-                    || messager.errorRaised()
-                    || (werror && log.nwarnings > 0)
-                    || (fatalErrors && log.nerrors > 0);
+            if (messager.errorRaised())
+                return true;
+
+            for (JCDiagnostic d: log.deferredDiagnostics) {
+                switch (d.getKind()) {
+                    case WARNING:
+                        if (werror)
+                            return true;
+                        break;
+
+                    case ERROR:
+                        if (fatalErrors || !d.isFlagSet(RESOLVE_ERROR))
+                            return true;
+                        break;
+                }
+            }
+
+            return false;
         }
 
         /** Find the set of annotations present in the set of top level
@@ -943,7 +961,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Enter a set of generated class files. */
-        List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
+        private List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
             ClassReader reader = ClassReader.instance(context);
             Names names = Names.instance(context);
             List<ClassSymbol> list = List.nil();
@@ -970,7 +988,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Enter a set of syntax trees. */
-        void enterTrees(List<JCCompilationUnit> roots) {
+        private void enterTrees(List<JCCompilationUnit> roots) {
             compiler.enterTrees(roots);
         }
 
@@ -998,6 +1016,15 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 if (taskListener != null)
                     taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
             }
+        }
+
+        void showDiagnostics(boolean showAll) {
+            Set<JCDiagnostic.Kind> kinds = EnumSet.allOf(JCDiagnostic.Kind.class);
+            if (!showAll) {
+                // suppress errors, which are all presumed to be transient resolve errors
+                kinds.remove(JCDiagnostic.Kind.ERROR);
+            }
+            log.reportDeferredDiagnostics(kinds);
         }
 
         /** Update the processing state for the current context. */
@@ -1111,6 +1138,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             errorStatus = round.unrecoverableError();
             moreToDo = moreToDo();
 
+            round.showDiagnostics(errorStatus || showResolveErrors);
+
             // Set up next round.
             // Copy mutable collections returned from filer.
             round = round.next(
@@ -1125,6 +1154,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         // run last round
         round.run(true, errorStatus);
+        round.showDiagnostics(true);
 
         filer.warnIfUnclosedFiles();
         warnIfUnmatchedOptions();
