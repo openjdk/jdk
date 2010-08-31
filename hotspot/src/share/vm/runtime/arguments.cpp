@@ -2855,6 +2855,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags();
       vm_exit(0);
     }
+
+#ifndef PRODUCT
+    if (match_option(option, "-XX:+PrintFlagsWithComments", &tail)) {
+      CommandLineFlags::printFlags(true);
+      vm_exit(0);
+    }
+#endif
   }
 
   if (IgnoreUnrecognizedVMOptions) {
