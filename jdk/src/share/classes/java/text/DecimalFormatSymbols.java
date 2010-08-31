@@ -76,7 +76,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@link #getInstance(Locale) getInstance} method.
      */
     public DecimalFormatSymbols() {
-        initialize( Locale.getDefault() );
+        initialize( Locale.getDefault(Locale.Category.FORMAT) );
     }
 
     /**
@@ -125,7 +125,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance() {
-        return getInstance(Locale.getDefault());
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**

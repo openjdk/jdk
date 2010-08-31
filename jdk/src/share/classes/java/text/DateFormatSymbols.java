@@ -118,7 +118,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      */
     public DateFormatSymbols()
     {
-        initializeData(Locale.getDefault());
+        initializeData(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -282,7 +282,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance() {
-        return getInstance(Locale.getDefault());
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
