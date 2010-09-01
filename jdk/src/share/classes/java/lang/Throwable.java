@@ -200,7 +200,16 @@ public class Throwable implements Serializable {
      * @serial
      * @since 1.7
      */
-    private List<Throwable> suppressedExceptions = Collections.emptyList();
+    private List<Throwable> suppressedExceptions = null;
+    /*
+     * This field is lazily initialized when the first suppressed
+     * exception is added.
+     *
+     * OutOfMemoryError is preallocated in the VM for better OOM
+     * diagnosability during VM initialization. Constructor can't
+     * be not invoked. If a new field to be added in the future must
+     * be initialized to non-null, it requires a synchronized VM change.
+     */
 
     /** Message for trying to suppress a null exception. */
     private static final String NULL_CAUSE_MESSAGE = "Cannot suppress a null exception.";
@@ -329,7 +338,7 @@ public class Throwable implements Serializable {
      *          cause is nonexistent or unknown.
      * @since 1.4
      */
-    public Throwable getCause() {
+    public synchronized Throwable getCause() {
         return (cause==this ? null : cause);
     }
 
@@ -563,7 +572,7 @@ public class Throwable implements Serializable {
                 s.println("\tat " + traceElement);
 
             // Print suppressed exceptions, if any
-            for (Throwable se : suppressedExceptions)
+            for (Throwable se : getSuppressedExceptions())
                 se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
 
             // Print cause, if any
@@ -604,7 +613,7 @@ public class Throwable implements Serializable {
                 s.println(prefix + "\t... " + framesInCommon + " more");
 
             // Print suppressed exceptions, if any
-            for (Throwable se : suppressedExceptions)
+            for (Throwable se : getSuppressedExceptions())
                 se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION,
                                            prefix +"\t", dejaVu);
 
@@ -747,7 +756,9 @@ public class Throwable implements Serializable {
             if (defensiveCopy[i] == null)
                 throw new NullPointerException("stackTrace[" + i + "]");
 
-        this.stackTrace = defensiveCopy;
+        synchronized (this) {
+            this.stackTrace = defensiveCopy;
+        }
     }
 
     /**
@@ -772,11 +783,11 @@ public class Throwable implements Serializable {
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();     // read in all fields
-        List<Throwable> suppressed = Collections.emptyList();
+        List<Throwable> suppressed = null;
         if (suppressedExceptions != null &&
             !suppressedExceptions.isEmpty()) { // Copy Throwables to new list
             suppressed = new ArrayList<Throwable>();
-            for(Throwable t : suppressedExceptions) {
+            for (Throwable t : suppressedExceptions) {
                 if (t == null)
                     throw new NullPointerException(NULL_CAUSE_MESSAGE);
                 suppressed.add(t);
@@ -819,7 +830,7 @@ public class Throwable implements Serializable {
         if (exception == this)
             throw new IllegalArgumentException("Self-suppression not permitted");
 
-        if (suppressedExceptions.size() == 0)
+        if (suppressedExceptions == null)
             suppressedExceptions = new ArrayList<Throwable>();
         suppressedExceptions.add(exception);
     }
@@ -835,7 +846,10 @@ public class Throwable implements Serializable {
      *         suppressed to deliver this exception.
      * @since 1.7
      */
-    public Throwable[] getSuppressedExceptions() {
-        return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
+    public synchronized Throwable[] getSuppressedExceptions() {
+        if (suppressedExceptions == null)
+            return EMPTY_THROWABLE_ARRAY;
+        else
+            return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.lang.Error;
 import java.io.*;
 import java.text.MessageFormat;
 import java.util.*;
@@ -35,10 +34,11 @@ import java.util.zip.*;
 /** Command line interface for Pack200.
  */
 class Driver {
-        private static final ResourceBundle RESOURCE= ResourceBundle.getBundle("com.sun.java.util.jar.pack.DriverResource");
+        private static final ResourceBundle RESOURCE =
+                ResourceBundle.getBundle("com.sun.java.util.jar.pack.DriverResource");
 
     public static void main(String[] ava) throws IOException {
-        ArrayList<String> av = new ArrayList<String>(Arrays.asList(ava));
+        ArrayList<String> av = new ArrayList<>(Arrays.asList(ava));
 
         boolean doPack   = true;
         boolean doUnpack = false;
@@ -61,7 +61,7 @@ class Driver {
         }
 
         // Collect engine properties here:
-        HashMap<String,String> engProps = new HashMap<String,String>();
+        HashMap<String,String> engProps = new HashMap<>();
         engProps.put(verboseProp, System.getProperty(verboseProp));
 
         String optionMap;
@@ -75,7 +75,7 @@ class Driver {
         }
 
         // Collect argument properties here:
-        HashMap<String,String> avProps = new HashMap<String,String>();
+        HashMap<String,String> avProps = new HashMap<>();
         try {
             for (;;) {
                 String state = parseCommandOptions(av, optionMap, avProps);
@@ -133,8 +133,9 @@ class Driver {
                     if (engProps.get(verboseProp) != null)
                         fileProps.list(System.out);
                     propIn.close();
-                    for (Map.Entry<Object,Object> me : fileProps.entrySet())
-                        engProps.put((String)me.getKey(), (String)me.getValue());
+                    for (Map.Entry<Object,Object> me : fileProps.entrySet()) {
+                        engProps.put((String) me.getKey(), (String) me.getValue());
+                    }
                 } else if (state == "--version") {
                         System.out.println(MessageFormat.format(RESOURCE.getString(DriverResource.VERSION), Driver.class.getName(), "1.31, 07/05/05"));
                     return;
@@ -493,7 +494,7 @@ class Driver {
         String resultString = null;
 
         // Convert options string into optLines dictionary.
-        TreeMap<String,String[]> optmap = new TreeMap<String,String[]>();
+        TreeMap<String,String[]> optmap = new TreeMap<>();
     loadOptmap:
         for (String optline : options.split("\n")) {
             String[] words = optline.split("\\p{Space}+");
@@ -687,7 +688,9 @@ class Driver {
         // Report number of arguments consumed.
         args.subList(0, argp.nextIndex()).clear();
         // Report any unconsumed partial argument.
-        while (pbp.hasPrevious())  args.add(0, pbp.previous());
+        while (pbp.hasPrevious()) {
+            args.add(0, pbp.previous());
+        }
         //System.out.println(args+" // "+properties+" -> "+resultString);
         return resultString;
     }

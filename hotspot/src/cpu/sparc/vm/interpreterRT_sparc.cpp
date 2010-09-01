@@ -56,14 +56,18 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
 }
 
 
-#ifdef _LP64
 void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
   Argument  jni_arg(jni_offset(), false);
+#ifdef _LP64
   FloatRegister  Rtmp = F0;
   __ ldf(FloatRegisterImpl::S, Llocals, Interpreter::local_offset_in_bytes(offset()), Rtmp);
   __ store_float_argument(Rtmp, jni_arg);
-}
+#else
+  Register     Rtmp = O0;
+  __ ld(Llocals, Interpreter::local_offset_in_bytes(offset()), Rtmp);
+  __ store_argument(Rtmp, jni_arg);
 #endif
+}
 
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
@@ -185,6 +189,13 @@ class SlowSignatureHandler: public NativeSignatureIterator {
     _from -= 2*Interpreter::stackElementSize;
     add_signature( non_float );
   }
+
+  virtual void pass_float() {
+    *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
+    _from -= Interpreter::stackElementSize;
+    add_signature( non_float );
+  }
+
 #endif // _LP64
 
   virtual void add_signature( intptr_t sig_type ) {

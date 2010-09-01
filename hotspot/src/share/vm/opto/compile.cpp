@@ -904,8 +904,8 @@ void Compile::Init(int aliaslevel) {
   probe_alias_cache(NULL)->_index = AliasIdxTop;
 
   _intrinsics = NULL;
-  _macro_nodes = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
-  _predicate_opaqs = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _macro_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 

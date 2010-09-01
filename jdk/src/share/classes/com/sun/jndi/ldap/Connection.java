@@ -813,7 +813,8 @@ public final class Connection implements Runnable {
         try {
             while (true) {
                 try {
-                    inbuf = new byte[10];
+                    // type and length (at most 128 octets for long form)
+                    inbuf = new byte[129];
 
                     offset = 0;
                     seqlen = 0;

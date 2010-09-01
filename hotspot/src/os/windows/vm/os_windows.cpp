@@ -3444,6 +3444,9 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
+void os::init_3(void) {
+  return;
+}
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
@@ -4105,12 +4108,10 @@ bool os::check_heap(bool force) {
 }
 
 
-#ifndef PRODUCT
-bool os::find(address addr) {
+bool os::find(address addr, outputStream* st) {
   // Nothing yet
   return false;
 }
-#endif
 
 LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
   DWORD exception_code = e->ExceptionRecord->ExceptionCode;
@@ -4164,3 +4165,8 @@ static int getLastErrorString(char *buf, size_t len)
     }
     return 0;
 }
+
+
+// We don't build a headless jre for Windows
+bool os::is_headless_jre() { return false; }
+
