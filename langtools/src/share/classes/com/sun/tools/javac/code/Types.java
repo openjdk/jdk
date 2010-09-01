@@ -915,7 +915,7 @@ public class Types {
             return true;
 
         if (t.isPrimitive() != s.isPrimitive())
-            return allowBoxing && isConvertible(t, s, warn);
+            return allowBoxing && (isConvertible(t, s, warn) || isConvertible(s, t, warn));
 
         if (warn != warnStack.head) {
             try {
