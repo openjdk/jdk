@@ -197,8 +197,6 @@ int constMethodKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 // Printing
 
 void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
@@ -215,8 +213,6 @@ void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   }
 }
-
-#endif //PRODUCT
 
 // Short version of printing constMethodOop - just print the name of the
 // method it belongs to.

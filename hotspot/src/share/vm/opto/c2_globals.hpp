@@ -281,6 +281,12 @@
   product(bool, InsertMemBarAfterArraycopy, true,                           \
           "Insert memory barrier after arraycopy call")                     \
                                                                             \
+  develop(bool, SubsumeLoads, true,                                         \
+          "Attempt to compile while subsuming loads into machine instructions.") \
+                                                                            \
+  develop(bool, StressRecompilation, false,                                 \
+          "Recompile each compiled method without subsuming loads or escape analysis.") \
+                                                                            \
   /* controls for tier 1 compilations */                                    \
                                                                             \
   develop(bool, Tier1CountInvocations, true,                                \

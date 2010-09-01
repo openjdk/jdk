@@ -448,6 +448,10 @@ class SimpleExceptionStub: public CodeStub {
     _obj(obj), _info(info), _stub(stub) {
   }
 
+  void set_obj(LIR_Opr obj) {
+    _obj = obj;
+  }
+
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual bool is_exception_throw_stub() const   { return true; }

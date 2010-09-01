@@ -50,8 +50,7 @@ XMMRegister LIR_OprDesc::as_xmm_double_reg() const {
 
 #endif // X86
 
-
-#ifdef SPARC
+#if defined(SPARC) || defined(PPC)
 
 FloatRegister LIR_OprDesc::as_float_reg() const {
   return FrameMap::nr2floatreg(fpu_regnr());
@@ -62,6 +61,19 @@ FloatRegister LIR_OprDesc::as_double_reg() const {
 }
 
 #endif
+
+#ifdef ARM
+
+FloatRegister LIR_OprDesc::as_float_reg() const {
+  return as_FloatRegister(fpu_regnr());
+}
+
+FloatRegister LIR_OprDesc::as_double_reg() const {
+  return as_FloatRegister(fpu_regnrLo());
+}
+
+#endif
+
 
 LIR_Opr LIR_OprFact::illegalOpr = LIR_OprFact::illegal();
 
@@ -119,9 +131,13 @@ LIR_Address::Scale LIR_Address::scale(BasicType type) {
 
 #ifndef PRODUCT
 void LIR_Address::verify() const {
-#ifdef SPARC
-  assert(scale() == times_1, "Scaled addressing mode not available on SPARC and should not be used");
+#if defined(SPARC) || defined(PPC)
+  assert(scale() == times_1, "Scaled addressing mode not available on SPARC/PPC and should not be used");
   assert(disp() == 0 || index()->is_illegal(), "can't have both");
+#endif
+#ifdef ARM
+  assert(disp() == 0 || index()->is_illegal(), "can't have both");
+  assert(-4096 < disp() && disp() < 4096, "architecture constraint");
 #endif
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
@@ -173,13 +189,22 @@ void LIR_OprDesc::validate_type() const {
   if (!is_pointer() && !is_illegal()) {
     switch (as_BasicType(type_field())) {
     case T_LONG:
-      assert((kind_field() == cpu_register || kind_field() == stack_value) && size_field() == double_size, "must match");
+      assert((kind_field() == cpu_register || kind_field() == stack_value) &&
+             size_field() == double_size, "must match");
       break;
     case T_FLOAT:
-      assert((kind_field() == fpu_register || kind_field() == stack_value) && size_field() == single_size, "must match");
+      // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
+      assert((kind_field() == fpu_register || kind_field() == stack_value
+             ARM_ONLY(|| kind_field() == cpu_register)
+             PPC_ONLY(|| kind_field() == cpu_register) ) &&
+             size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
-      assert((kind_field() == fpu_register || kind_field() == stack_value) && size_field() == double_size, "must match");
+      // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
+      assert((kind_field() == fpu_register || kind_field() == stack_value
+             ARM_ONLY(|| kind_field() == cpu_register)
+             PPC_ONLY(|| kind_field() == cpu_register) ) &&
+             size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
     case T_CHAR:
@@ -188,7 +213,8 @@ void LIR_OprDesc::validate_type() const {
     case T_INT:
     case T_OBJECT:
     case T_ARRAY:
-      assert((kind_field() == cpu_register || kind_field() == stack_value) && size_field() == single_size, "must match");
+      assert((kind_field() == cpu_register || kind_field() == stack_value) &&
+             size_field() == single_size, "must match");
       break;
 
     case T_ILLEGAL:
@@ -503,6 +529,10 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == NULL, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
+#ifdef PPC
+      if (opConvert->_tmp1->is_valid())      do_temp(opConvert->_tmp1);
+      if (opConvert->_tmp2->is_valid())      do_temp(opConvert->_tmp2);
+#endif
       do_stub(opConvert->_stub);
 
       break;
@@ -530,7 +560,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       LIR_OpAllocObj* opAllocObj = (LIR_OpAllocObj*)op;
 
       if (opAllocObj->_info)                     do_info(opAllocObj->_info);
-      if (opAllocObj->_opr->is_valid())          do_input(opAllocObj->_opr);
+      if (opAllocObj->_opr->is_valid()) {        do_input(opAllocObj->_opr);
+                                                 do_temp(opAllocObj->_opr);
+                                        }
       if (opAllocObj->_tmp1->is_valid())         do_temp(opAllocObj->_tmp1);
       if (opAllocObj->_tmp2->is_valid())         do_temp(opAllocObj->_tmp2);
       if (opAllocObj->_tmp3->is_valid())         do_temp(opAllocObj->_tmp3);
@@ -826,10 +858,16 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(op->as_OpCompareAndSwap() != NULL, "must be");
       LIR_OpCompareAndSwap* opCompareAndSwap = (LIR_OpCompareAndSwap*)op;
 
+      assert(opCompareAndSwap->_addr->is_valid(),      "used");
+      assert(opCompareAndSwap->_cmp_value->is_valid(), "used");
+      assert(opCompareAndSwap->_new_value->is_valid(), "used");
       if (opCompareAndSwap->_info)                    do_info(opCompareAndSwap->_info);
-      if (opCompareAndSwap->_addr->is_valid())        do_input(opCompareAndSwap->_addr);
-      if (opCompareAndSwap->_cmp_value->is_valid())   do_input(opCompareAndSwap->_cmp_value);
-      if (opCompareAndSwap->_new_value->is_valid())   do_input(opCompareAndSwap->_new_value);
+                                                      do_input(opCompareAndSwap->_addr);
+                                                      do_temp(opCompareAndSwap->_addr);
+                                                      do_input(opCompareAndSwap->_cmp_value);
+                                                      do_temp(opCompareAndSwap->_cmp_value);
+                                                      do_input(opCompareAndSwap->_new_value);
+                                                      do_temp(opCompareAndSwap->_new_value);
       if (opCompareAndSwap->_tmp1->is_valid())        do_temp(opCompareAndSwap->_tmp1);
       if (opCompareAndSwap->_tmp2->is_valid())        do_temp(opCompareAndSwap->_tmp2);
       if (opCompareAndSwap->_result->is_valid())      do_output(opCompareAndSwap->_result);
@@ -1303,13 +1341,13 @@ void LIR_List::lock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scrat
                     info));
 }
 
-void LIR_List::unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, CodeStub* stub) {
+void LIR_List::unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scratch, CodeStub* stub) {
   append(new LIR_OpLock(
                     lir_unlock,
                     hdr,
                     obj,
                     lock,
-                    LIR_OprFact::illegalOpr,
+                    scratch,
                     stub,
                     NULL));
 }
@@ -1342,22 +1380,19 @@ void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr 
 }
 
 
-void LIR_List::cas_long(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value, LIR_Opr t1, LIR_Opr t2) {
-  // Compare and swap produces condition code "zero" if contents_of(addr) == cmp_value,
-  // implying successful swap of new_value into addr
-  append(new LIR_OpCompareAndSwap(lir_cas_long, addr, cmp_value, new_value, t1, t2));
+void LIR_List::cas_long(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
+                        LIR_Opr t1, LIR_Opr t2, LIR_Opr result) {
+  append(new LIR_OpCompareAndSwap(lir_cas_long, addr, cmp_value, new_value, t1, t2, result));
 }
 
-void LIR_List::cas_obj(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value, LIR_Opr t1, LIR_Opr t2) {
-  // Compare and swap produces condition code "zero" if contents_of(addr) == cmp_value,
-  // implying successful swap of new_value into addr
-  append(new LIR_OpCompareAndSwap(lir_cas_obj, addr, cmp_value, new_value, t1, t2));
+void LIR_List::cas_obj(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
+                       LIR_Opr t1, LIR_Opr t2, LIR_Opr result) {
+  append(new LIR_OpCompareAndSwap(lir_cas_obj, addr, cmp_value, new_value, t1, t2, result));
 }
 
-void LIR_List::cas_int(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value, LIR_Opr t1, LIR_Opr t2) {
-  // Compare and swap produces condition code "zero" if contents_of(addr) == cmp_value,
-  // implying successful swap of new_value into addr
-  append(new LIR_OpCompareAndSwap(lir_cas_int, addr, cmp_value, new_value, t1, t2));
+void LIR_List::cas_int(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
+                       LIR_Opr t1, LIR_Opr t2, LIR_Opr result) {
+  append(new LIR_OpCompareAndSwap(lir_cas_int, addr, cmp_value, new_value, t1, t2, result));
 }
 
 
@@ -1400,6 +1435,11 @@ void LIR_OprDesc::print(outputStream* out) const {
     out->print("fpu%d", fpu_regnr());
   } else if (is_double_fpu()) {
     out->print("fpu%d", fpu_regnrLo());
+#elif defined(ARM)
+  } else if (is_single_fpu()) {
+    out->print("s%d", fpu_regnr());
+  } else if (is_double_fpu()) {
+    out->print("d%d", fpu_regnrLo() >> 1);
 #else
   } else if (is_single_fpu()) {
     out->print(as_float_reg()->name());
@@ -1756,6 +1796,12 @@ void LIR_OpConvert::print_instr(outputStream* out) const {
   print_bytecode(out, bytecode());
   in_opr()->print(out);                  out->print(" ");
   result_opr()->print(out);              out->print(" ");
+#ifdef PPC
+  if(tmp1()->is_valid()) {
+    tmp1()->print(out); out->print(" ");
+    tmp2()->print(out); out->print(" ");
+  }
+#endif
 }
 
 void LIR_OpConvert::print_bytecode(outputStream* out, Bytecodes::Code code) {
