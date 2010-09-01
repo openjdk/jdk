@@ -289,10 +289,12 @@ class CodeBuffer: public StackObj {
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
   enum {
-    // Here is the list of all possible sections, in order of ascending address.
+    // Here is the list of all possible sections.  The order reflects
+    // the final layout.
+    SECT_FIRST = 0,
+    SECT_CONSTS = SECT_FIRST, // Non-instruction data:  Floats, jump tables, etc.
     SECT_INSTS,               // Executable instructions.
     SECT_STUBS,               // Outbound trampolines for supporting call sites.
-    SECT_CONSTS,              // Non-instruction data:  Floats, jump tables, etc.
     SECT_LIMIT, SECT_NONE = -1
   };
 
@@ -304,9 +306,9 @@ class CodeBuffer: public StackObj {
 
   const char*  _name;
 
+  CodeSection  _consts;             // constants, jump tables
   CodeSection  _insts;              // instructions (the main section)
   CodeSection  _stubs;              // stubs (call site support), deopt, exception handling
-  CodeSection  _consts;             // constants, jump tables
 
   CodeBuffer*  _before_expand;  // dead buffer, from before the last expansion
 
@@ -334,9 +336,9 @@ class CodeBuffer: public StackObj {
   }
 
   void initialize(address code_start, csize_t code_size) {
+    _consts.initialize_outer(this,  SECT_CONSTS);
     _insts.initialize_outer(this,   SECT_INSTS);
     _stubs.initialize_outer(this,   SECT_STUBS);
-    _consts.initialize_outer(this,  SECT_CONSTS);
     _total_start = code_start;
     _total_size  = code_size;
     // Initialize the main section:
@@ -414,16 +416,16 @@ class CodeBuffer: public StackObj {
   // construction.
   void initialize(csize_t code_size, csize_t locs_size);
 
+  CodeSection* consts()            { return &_consts; }
   CodeSection* insts()             { return &_insts; }
   CodeSection* stubs()             { return &_stubs; }
-  CodeSection* consts()            { return &_consts; }
 
-  // present sections in order; return NULL at end; insts is #0, etc.
+  // present sections in order; return NULL at end; consts is #0, etc.
   CodeSection* code_section(int n) {
-    // This makes the slightly questionable but portable assumption that
-    // the various members (_insts, _stubs, etc.) are adjacent in the
-    // layout of CodeBuffer.
-    CodeSection* cs = &_insts + n;
+    // This makes the slightly questionable but portable assumption
+    // that the various members (_consts, _insts, _stubs, etc.) are
+    // adjacent in the layout of CodeBuffer.
+    CodeSection* cs = &_consts + n;
     assert(cs->index() == n || !cs->is_allocated(), "sanity");
     return cs;
   }
@@ -484,9 +486,9 @@ class CodeBuffer: public StackObj {
   // CodeBlob).
   csize_t total_content_size() const;
 
-  // combined offset (relative to start of insts) of given address,
-  // as eventually found in the final CodeBlob
-  csize_t total_offset_of(address addr) const;
+  // Combined offset (relative to start of first section) of given
+  // section, as eventually found in the final CodeBlob.
+  csize_t total_offset_of(CodeSection* cs) const;
 
   // allocated size of all relocation data, including index, rounded up
   csize_t total_relocation_size() const;

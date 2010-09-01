@@ -143,13 +143,6 @@ void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
 
 void CodeBuffer::initialize_section_size(CodeSection* cs, csize_t size) {
   assert(cs != &_insts, "insts is the memory provider, not the consumer");
-#ifdef ASSERT
-  for (int n = (int)SECT_INSTS+1; n < (int)SECT_LIMIT; n++) {
-    CodeSection* prevCS = code_section(n);
-    if (prevCS == cs)  break;
-    assert(!prevCS->is_allocated(), "section allocation must be in reverse order");
-  }
-#endif
   csize_t slop = CodeSection::end_slop();  // margin between sections
   int align = cs->alignment();
   assert(is_power_of_2(align), "sanity");
@@ -199,13 +192,13 @@ void CodeBuffer::set_blob(BufferBlob* blob) {
     _total_start = start;
     _total_size  = end - start;
   } else {
-    #ifdef ASSERT
+#ifdef ASSERT
     // Clean out dangling pointers.
     _total_start    = badAddress;
+    _consts._start  = _consts._end  = badAddress;
     _insts._start   = _insts._end   = badAddress;
     _stubs._start   = _stubs._end   = badAddress;
-    _consts._start  = _consts._end  = badAddress;
-    #endif //ASSERT
+#endif //ASSERT
   }
 }
 
@@ -221,9 +214,9 @@ const char* CodeBuffer::code_section_name(int n) {
   return NULL;
 #else //PRODUCT
   switch (n) {
+  case SECT_CONSTS:            return "consts";
   case SECT_INSTS:             return "insts";
   case SECT_STUBS:             return "stubs";
-  case SECT_CONSTS:            return "consts";
   default:                     return NULL;
   }
 #endif //PRODUCT
@@ -445,12 +438,11 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
 
   const CodeSection* prev_cs      = NULL;
   CodeSection*       prev_dest_cs = NULL;
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
+
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // figure compact layout of each section
     const CodeSection* cs = code_section(n);
-    address cstart = cs->start();
-    address cend   = cs->end();
-    csize_t csize  = cend - cstart;
+    csize_t csize = cs->size();
 
     CodeSection* dest_cs = dest->code_section(n);
     if (!cs->is_empty()) {
@@ -463,7 +455,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
         prev_dest_cs->_limit += padding;
       }
       #ifdef ASSERT
-      if (prev_cs != NULL && prev_cs->is_frozen() && n < SECT_CONSTS) {
+      if (prev_cs != NULL && prev_cs->is_frozen() && n < (SECT_LIMIT - 1)) {
         // Make sure the ends still match up.
         // This is important because a branch in a frozen section
         // might target code in a following section, via a Label,
@@ -492,22 +484,18 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   assert(dest->verify_section_allocation(), "final configuration works");
 }
 
-csize_t CodeBuffer::total_offset_of(address addr) const {
-  csize_t code_size_so_far = 0;
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
-    const CodeSection* cs = code_section(n);
-    if (!cs->is_empty()) {
-      code_size_so_far = cs->align_at_start(code_size_so_far);
+csize_t CodeBuffer::total_offset_of(CodeSection* cs) const {
+  csize_t size_so_far = 0;
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
+    const CodeSection* cur_cs = code_section(n);
+    if (!cur_cs->is_empty()) {
+      size_so_far = cur_cs->align_at_start(size_so_far);
     }
-    if (cs->contains2(addr)) {
-      return code_size_so_far + (addr - cs->start());
+    if (cur_cs->index() == cs->index()) {
+      return size_so_far;
     }
-    code_size_so_far += cs->size();
+    size_so_far += cur_cs->size();
   }
-#ifndef PRODUCT
-  tty->print_cr("Dangling address " PTR_FORMAT " in:", addr);
-  ((CodeBuffer*)this)->print();
-#endif
   ShouldNotReachHere();
   return -1;
 }
@@ -533,7 +521,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
 
   csize_t code_end_so_far = 0;
   csize_t code_point_so_far = 0;
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
+  for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
     // pull relocs out of each section
     const CodeSection* cs = code_section(n);
     assert(!(cs->is_empty() && cs->locs_count() > 0), "sanity");
@@ -635,11 +623,14 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
-// Move all my code into another code buffer.
-// Consult applicable relocs to repair embedded addresses.
+// Move all my code into another code buffer.  Consult applicable
+// relocs to repair embedded addresses.  The layout in the destination
+// CodeBuffer is different to the source CodeBuffer: the destination
+// CodeBuffer gets the final layout (consts, insts, stubs in order of
+// ascending address).
 void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   DEBUG_ONLY(address dest_end = dest->_total_start + dest->_total_size);
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // pull code out of each section
     const CodeSection* cs = code_section(n);
     if (cs->is_empty())  continue;  // skip trivial section
@@ -681,20 +672,19 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
                                                csize_t* new_capacity) {
   csize_t new_total_cap = 0;
 
-  int prev_n = -1;
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     const CodeSection* sect = code_section(n);
 
     if (!sect->is_empty()) {
-      // Compute initial padding; assign it to the previous non-empty guy.
-      // Cf. compute_final_layout.
+      // Compute initial padding; assign it to the previous section,
+      // even if it's empty (e.g. consts section can be empty).
+      // Cf. compute_final_layout
       csize_t padding = sect->align_at_start(new_total_cap) - new_total_cap;
       if (padding != 0) {
         new_total_cap += padding;
-        assert(prev_n >= 0, "sanity");
-        new_capacity[prev_n] += padding;
+        assert(n - 1 >= SECT_FIRST, "sanity");
+        new_capacity[n - 1] += padding;
       }
-      prev_n = n;
     }
 
     csize_t exp = sect->size();  // 100% increase
@@ -774,11 +764,11 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   this->_before_expand = bxp;
 
   // Give each section its required (expanded) capacity.
-  for (int n = (int)SECT_LIMIT-1; n >= SECT_INSTS; n--) {
+  for (int n = (int)SECT_LIMIT-1; n >= SECT_FIRST; n--) {
     CodeSection* cb_sect   = cb.code_section(n);
     CodeSection* this_sect = code_section(n);
     if (new_capacity[n] == 0)  continue;  // already nulled out
-    if (n > SECT_INSTS) {
+    if (n != SECT_INSTS) {
       cb.initialize_section_size(cb_sect, new_capacity[n]);
     }
     assert(cb_sect->capacity() >= new_capacity[n], "big enough");
@@ -844,17 +834,22 @@ bool CodeBuffer::verify_section_allocation() {
     assert(tstart >= _blob->content_begin(), "sanity");
     assert(tend   <= _blob->content_end(),   "sanity");
   }
-  address tcheck = tstart;  // advancing pointer to verify disjointness
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
+  // Verify disjointness.
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     CodeSection* sect = code_section(n);
-    if (!sect->is_allocated())  continue;
-    assert(sect->start() >= tcheck, "sanity");
-    tcheck = sect->start();
-    assert((intptr_t)tcheck % sect->alignment() == 0
+    if (!sect->is_allocated() || sect->is_empty())  continue;
+    assert((intptr_t)sect->start() % sect->alignment() == 0
            || sect->is_empty() || _blob == NULL,
            "start is aligned");
-    assert(sect->end()   >= tcheck, "sanity");
-    assert(sect->end()   <= tend,   "sanity");
+    for (int m = (int) SECT_FIRST; m < (int) SECT_LIMIT; m++) {
+      CodeSection* other = code_section(m);
+      if (!other->is_allocated() || other == sect)  continue;
+      assert(!other->contains(sect->start()    ), "sanity");
+      // limit is an exclusive address and can be the start of another
+      // section.
+      assert(!other->contains(sect->limit() - 1), "sanity");
+    }
+    assert(sect->end() <= tend, "sanity");
   }
   return true;
 }
