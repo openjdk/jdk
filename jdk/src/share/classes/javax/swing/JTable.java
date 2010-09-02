@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -946,7 +946,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns the height of a table row, in pixels.
-     * The default row height is 16.0.
      *
      * @return  the height in pixels of a table row
      * @see     #setRowHeight
