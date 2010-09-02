@@ -115,20 +115,15 @@ class arrayKlass: public Klass {
   // Return a handle.
   static void     complete_create_array_klass(arrayKlassHandle k, KlassHandle super_klass, TRAPS);
 
- public:
-   // jvm support
-   jint compute_modifier_flags(TRAPS) const;
+  // jvm support
+  jint compute_modifier_flags(TRAPS) const;
 
- public:
-   // JVMTI support
-   jint jvmti_class_status() const;
+  // JVMTI support
+  jint jvmti_class_status() const;
 
-#ifndef PRODUCT
- public:
   // Printing
   void oop_print_on(oop obj, outputStream* st);
-#endif
- public:
+
   // Verification
   void oop_verify_on(oop obj, outputStream* st);
 };

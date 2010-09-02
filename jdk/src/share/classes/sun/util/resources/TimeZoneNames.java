@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                      "Central European Summer Time", "CEST"};
         String CHAST[] = new String[] {"Chatham Standard Time", "CHAST",
                                        "Chatham Daylight Time", "CHADT"};
+        String CHUT[] = new String[] {"Chuuk Time", "CHUT",
+                                      "Chuuk Summer Time", "CHUST"};
         String CIT[] = new String[] {"Central Indonesia Time", "CIT",
                                      "Central Indonesia Summer Time", "CIST"};
         String CLT[] = new String[] {"Chile Time", "CLT",
@@ -153,6 +155,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                           "Pitcairn Daylight Time", "PDT"};
         String PKT[] = new String[] {"Pakistan Time", "PKT",
                                      "Pakistan Summer Time", "PKST"};
+        String PONT[] = new String[] {"Pohnpei Time", "PONT",
+                                      "Pohnpei Summer Time", "PONST"};
         String PST[] = new String[] {"Pacific Standard Time", "PST",
                                      "Pacific Daylight Time", "PDT"};
         String RST[] = new String[] {"Eastern Standard Time", "EST",
@@ -169,8 +173,6 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                           "Eastern Summer Time (Tasmania)", "EST"};
         String TMT[] = new String[] {"Turkmenistan Time", "TMT",
                                      "Turkmenistan Summer Time", "TMST"};
-        String TRUT[] = new String[] {"Truk Time", "TRUT",
-                                      "Truk Summer Time", "TRUST"};
         String ULAT[]= new String[] {"Ulaanbaatar Time", "ULAT",
                                      "Ulaanbaatar Summer Time", "ULAST"};
         String WART[] = new String[] {"Western Argentine Time", "WART",
@@ -309,6 +311,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Atikokan", EST},
             {"America/Atka", HAST},
             {"America/Bahia", BRT},
+            {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
             {"America/Belem", BRT},
             {"America/Belize", CST},
@@ -755,6 +758,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Pacific/Apia", WST_SAMOA},
             {"Pacific/Auckland", NZST},
             {"Pacific/Chatham", CHAST},
+            {"Pacific/Chuuk", CHUT},
             {"Pacific/Easter", EASTER},
             {"Pacific/Efate", new String[] {"Vanuatu Time", "VUT",
                                             "Vanuatu Summer Time", "VUST"}},
@@ -793,8 +797,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Pacific/Palau", new String[] {"Palau Time", "PWT",
                                             "Palau Summer Time", "PWST"}},
             {"Pacific/Pitcairn", PITCAIRN},
-            {"Pacific/Ponape", new String[] {"Ponape Time", "PONT",
-                                             "Ponape Summer Time", "PONST"}},
+            {"Pacific/Pohnpei", PONT},
+            {"Pacific/Ponape", PONT},
             {"Pacific/Port_Moresby", new String[] {"Papua New Guinea Time", "PGT",
                                                    "Papua New Guinea Summer Time", "PGST"}},
             {"Pacific/Rarotonga", new String[] {"Cook Is. Time", "CKT",
@@ -807,12 +811,12 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                              "Gilbert Is. Summer Time", "GILST"}},
             {"Pacific/Tongatapu", new String[] {"Tonga Time", "TOT",
                                                 "Tonga Summer Time", "TOST"}},
-            {"Pacific/Truk", TRUT},
+            {"Pacific/Truk", CHUT},
             {"Pacific/Wake", new String[] {"Wake Time", "WAKT",
                                            "Wake Summer Time", "WAKST"}},
             {"Pacific/Wallis", new String[] {"Wallis & Futuna Time", "WFT",
                                              "Wallis & Futuna Summer Time", "WFST"}},
-            {"Pacific/Yap", TRUT},
+            {"Pacific/Yap", CHUT},
             {"Poland", CET},
             {"PRC", CTT},
             {"PST8PDT", PST},

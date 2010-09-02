@@ -70,7 +70,7 @@ class ciMethod : public ciObject {
 
   // Optional liveness analyzer.
   MethodLiveness* _liveness;
-#ifdef COMPILER2
+#if defined(COMPILER2) || defined(SHARK)
   ciTypeFlow*         _flow;
   BCEscapeAnalyzer*   _bcea;
 #endif
@@ -141,6 +141,9 @@ class ciMethod : public ciObject {
 
   // Runtime information.
   int           vtable_index();
+#ifdef SHARK
+  int           itable_index();
+#endif // SHARK
   address       native_entry();
   address       interpreter_entry();
 

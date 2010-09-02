@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,10 @@ class os: AllStatic {
   }
 
  public:
-  static void init(void);   // Called before command line parsing
-  static jint init_2(void); // Called after command line parsing
+
+  static void init(void);                      // Called before command line parsing
+  static jint init_2(void);                    // Called after command line parsing
+  static void init_3(void);                    // Called at the end of vm init
 
   // File names are case-insensitive on windows only
   // Override me as needed
@@ -322,7 +324,8 @@ class os: AllStatic {
     pgc_thread,        // Parallel GC thread
     java_thread,
     compiler_thread,
-    watcher_thread
+    watcher_thread,
+    os_thread
   };
 
   static bool create_thread(Thread* thread,
@@ -451,6 +454,8 @@ class os: AllStatic {
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st);
 
+  static void print_location(outputStream* st, intptr_t x, bool print_pc = false);
+
   // The following two functions are used by fatal error handler to trace
   // native (C) frames. They are not part of frame.hpp/frame.cpp because
   // frame.hpp/cpp assume thread is JavaThread, and also because different
@@ -479,6 +484,9 @@ class os: AllStatic {
 
   // Fills in path to jvm.dll/libjvm.so (this info used to find hpi).
   static void     jvm_path(char *buf, jint buflen);
+
+  // Returns true if we are running in a headless jre.
+  static bool     is_headless_jre();
 
   // JNI names
   static void     print_jni_name_prefix_on(outputStream* st, int args_size);
@@ -580,8 +588,8 @@ class os: AllStatic {
   // Platform dependent stuff
   #include "incls/_os_pd.hpp.incl"
 
-  // debugging support (mostly used by debug.cpp)
-  static bool find(address pc) PRODUCT_RETURN0; // OS specific function to make sense out of an address
+  // debugging support (mostly used by debug.cpp but also fatal error handler)
+  static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
   static bool dont_yield();                     // when true, JVM_Yield() is nop
   static void print_statistics();

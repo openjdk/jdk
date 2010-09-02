@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,17 +131,19 @@ import javax.security.auth.callback.*;
  * to read existing entries from the keystore, or to write new entries
  * into the keystore:
  * <pre>
+ *    KeyStore.ProtectionParameter protParam =
+ *        new KeyStore.PasswordProtection(password);
+ *
  *    // get my private key
  *    KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
- *        ks.getEntry("privateKeyAlias", password);
+ *        ks.getEntry("privateKeyAlias", protParam);
  *    PrivateKey myPrivateKey = pkEntry.getPrivateKey();
  *
  *    // save my secret key
  *    javax.crypto.SecretKey mySecretKey;
  *    KeyStore.SecretKeyEntry skEntry =
  *        new KeyStore.SecretKeyEntry(mySecretKey);
- *    ks.setEntry("secretKeyAlias", skEntry,
- *        new KeyStore.PasswordProtection(password));
+ *    ks.setEntry("secretKeyAlias", skEntry, protParam);
  *
  *    // store away the keystore
  *    java.io.FileOutputStream fos = null;

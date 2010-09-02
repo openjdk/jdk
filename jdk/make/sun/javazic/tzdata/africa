@@ -316,8 +316,25 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	23:00s	0	-
 # and can be found by searching for "winter" in their search engine
 # (at least today).
 
+# From Alexander Krivenyshev (2010-07-20):
+# According to News from Egypt -  Al-Masry Al-Youm Egypt's cabinet has
+# decided that Daylight Saving Time will not be used in Egypt during
+# Ramadan.
+#
+# Arabic translation:
+# "Clocks to go back during Ramadan--and then forward again"
+# <a href="http://www.almasryalyoum.com/en/news/clocks-go-back-during-ramadan-and-then-forward-again">
+# http://www.almasryalyoum.com/en/news/clocks-go-back-during-ramadan-and-then-forward-again
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_egypt02.html">
+# http://www.worldtimezone.com/dst_news/dst_news_egypt02.html
+# </a>
+
 Rule	Egypt	2008	only	-	Aug	lastThu	23:00s	0	-
 Rule	Egypt	2009	only	-	Aug	20	23:00s	0	-
+Rule	Egypt	2010	only	-	Aug	11	0:00	0	-
+Rule	Egypt	2010	only	-	Sep	10	0:00	1:00	S
 Rule	Egypt	2010	max	-	Sep	lastThu	23:00s	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
