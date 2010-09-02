@@ -1683,12 +1683,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    Label L_check_fill_8_bytes;
-    // Fill 32-byte chunks
-    __ subcc(count, 8 << shift, count);
-    __ brx(Assembler::less, false, Assembler::pt, L_check_fill_8_bytes);
-    __ delayed()->nop();
-
     if (t == T_INT) {
       // Zero extend value
       __ srl(value, 0, value);
@@ -1697,6 +1691,12 @@ class StubGenerator: public StubCodeGenerator {
       __ sllx(value, 32, O3);
       __ or3(value, O3, value);
     }
+
+    Label L_check_fill_8_bytes;
+    // Fill 32-byte chunks
+    __ subcc(count, 8 << shift, count);
+    __ brx(Assembler::less, false, Assembler::pt, L_check_fill_8_bytes);
+    __ delayed()->nop();
 
     Label L_fill_32_bytes_loop;
     __ align(16);
