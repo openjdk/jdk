@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4225317
+ * @bug 4225317 6969651
  * @summary Check extracted files have date as per those in the .jar file
  */
 
@@ -68,17 +68,9 @@ public class JarEntryTime {
     }
 
     public static void realMain(String[] args) throws Throwable {
-        final long now = System.currentTimeMillis();
-        final long earlier = now - (60L * 60L * 6L * 1000L);
-        final long yesterday = now - (60L * 60L * 24L * 1000L);
-
-        // ZipEntry's mod date has 2 seconds precision: give extra time to
-        // allow for e.g. rounding/truncation and networked/samba drives.
-        final long PRECISION = 10000L;
 
         File dirOuter = new File("outer");
         File dirInner = new File(dirOuter, "inner");
-
         File jarFile = new File("JarEntryTime.jar");
 
         // Remove any leftovers from prior run
@@ -99,6 +91,17 @@ public class JarEntryTime {
         PrintWriter pw = new PrintWriter(fileInner);
         pw.println("hello, world");
         pw.close();
+
+        // Get the "now" from the "last-modified-time" of the last file we
+        // just created, instead of the "System.currentTimeMillis()", to
+        // workaround the possible "time difference" due to nfs.
+        final long now = fileInner.lastModified();
+        final long earlier = now - (60L * 60L * 6L * 1000L);
+        final long yesterday = now - (60L * 60L * 24L * 1000L);
+        // ZipEntry's mod date has 2 seconds precision: give extra time to
+        // allow for e.g. rounding/truncation and networked/samba drives.
+        final long PRECISION = 10000L;
+
         dirOuter.setLastModified(now);
         dirInner.setLastModified(yesterday);
         fileInner.setLastModified(earlier);

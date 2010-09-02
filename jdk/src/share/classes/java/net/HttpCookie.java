@@ -1093,14 +1093,8 @@ public final class HttpCookie implements Cloneable {
         return sb.toString();
     }
 
-    private static SimpleDateFormat[] cDateFormats = null;
-    static {
-            cDateFormats = new SimpleDateFormat[COOKIE_DATE_FORMATS.length];
-            for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
-                cDateFormats[i] = new SimpleDateFormat(COOKIE_DATE_FORMATS[i], Locale.US);
-                cDateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
-            }
-    }
+    static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+
     /*
      * @param dateString        a date string in one of the formats
      *                          defined in Netscape cookie spec
@@ -1109,12 +1103,14 @@ public final class HttpCookie implements Cloneable {
      *                          time and the time specified by dateString
      */
     private long expiryDate2DeltaSeconds(String dateString) {
-        for (SimpleDateFormat df : cDateFormats) {
+        for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
+            SimpleDateFormat df = new SimpleDateFormat(COOKIE_DATE_FORMATS[i], Locale.US);
+            df.setTimeZone(GMT);
             try {
                 Date date = df.parse(dateString);
                 return (date.getTime() - whenCreated) / 1000;
             } catch (Exception e) {
-
+                // Ignore, try the next date format
             }
         }
         return 0;
