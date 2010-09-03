@@ -24,6 +24,8 @@
 #ifndef _JAVA_JVMTIENVTHREADSTATE_H_
 #define _JAVA_JVMTIENVTHREADSTATE_H_
 
+class JvmtiEnv;
+
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiFramePop

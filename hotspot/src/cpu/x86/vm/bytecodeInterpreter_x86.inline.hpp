@@ -236,11 +236,11 @@ inline jint BytecodeInterpreter::VMintRem(jint op1, jint op2) {
 }
 
 inline jint BytecodeInterpreter::VMintShl(jint op1, jint op2) {
-  return op1 <<  op2;
+  return op1 << op2;
 }
 
 inline jint BytecodeInterpreter::VMintShr(jint op1, jint op2) {
-  return op1 >>  op2; // QQ op2 & 0x1f??
+  return op1 >> (op2 & 0x1f);
 }
 
 inline jint BytecodeInterpreter::VMintSub(jint op1, jint op2) {
@@ -248,7 +248,7 @@ inline jint BytecodeInterpreter::VMintSub(jint op1, jint op2) {
 }
 
 inline jint BytecodeInterpreter::VMintUshr(jint op1, jint op2) {
-  return ((juint) op1) >> op2; // QQ op2 & 0x1f??
+  return ((juint) op1) >> (op2 & 0x1f);
 }
 
 inline jint BytecodeInterpreter::VMintXor(jint op1, jint op2) {

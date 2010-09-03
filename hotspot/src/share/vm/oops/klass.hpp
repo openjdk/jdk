@@ -772,16 +772,12 @@ class Klass : public Klass_vtbl {
   // jvm support
   virtual jint compute_modifier_flags(TRAPS) const;
 
- public:
   // JVMTI support
   virtual jint jvmti_class_status() const;
 
- public:
   // Printing
   virtual void oop_print_value_on(oop obj, outputStream* st);
-#ifndef PRODUCT
   virtual void oop_print_on      (oop obj, outputStream* st);
-#endif //PRODUCT
 
   // Verification
   virtual const char* internal_name() const = 0;
