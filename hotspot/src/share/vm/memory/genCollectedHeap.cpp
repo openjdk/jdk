@@ -941,7 +941,9 @@ bool GenCollectedHeap::is_in(const void* p) const {
             VerifyBeforeExit ||
             PrintAssembly    ||
             tty->count() != 0 ||   // already printing
-            VerifyAfterGC, "too expensive");
+            VerifyAfterGC    ||
+    VMError::fatal_error_in_progress(), "too expensive");
+
   #endif
   // This might be sped up with a cache of the last generation that
   // answered yes.

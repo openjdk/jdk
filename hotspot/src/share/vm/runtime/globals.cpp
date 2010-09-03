@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,18 @@ void Flag::print_as_flag(outputStream* st) {
   #define C2_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 notproduct}", DEFAULT },
 #endif
 
+#define SHARK_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark product}", DEFAULT },
+#define SHARK_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{Shark pd product}", DEFAULT },
+#define SHARK_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark diagnostic}", DEFAULT },
+#ifdef PRODUCT
+  #define SHARK_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
+  #define SHARK_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     /* flag is constant */
+  #define SHARK_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc)
+#else
+  #define SHARK_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark}", DEFAULT },
+  #define SHARK_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{Shark pd}", DEFAULT },
+  #define SHARK_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark notproduct}", DEFAULT },
+#endif
 
 static Flag flagTable[] = {
  RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
@@ -193,6 +205,9 @@ static Flag flagTable[] = {
 #endif
 #ifdef COMPILER2
  C2_FLAGS(C2_DEVELOP_FLAG_STRUCT, C2_PD_DEVELOP_FLAG_STRUCT, C2_PRODUCT_FLAG_STRUCT, C2_PD_PRODUCT_FLAG_STRUCT, C2_DIAGNOSTIC_FLAG_STRUCT, C2_EXPERIMENTAL_FLAG_STRUCT, C2_NOTPRODUCT_FLAG_STRUCT)
+#endif
+#ifdef SHARK
+ SHARK_FLAGS(SHARK_DEVELOP_FLAG_STRUCT, SHARK_PD_DEVELOP_FLAG_STRUCT, SHARK_PRODUCT_FLAG_STRUCT, SHARK_PD_PRODUCT_FLAG_STRUCT, SHARK_DIAGNOSTIC_FLAG_STRUCT, SHARK_NOTPRODUCT_FLAG_STRUCT)
 #endif
  {0, NULL, NULL}
 };

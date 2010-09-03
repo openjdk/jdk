@@ -329,6 +329,7 @@ class nmethod : public CodeBlob {
 
   bool is_compiled_by_c1() const;
   bool is_compiled_by_c2() const;
+  bool is_compiled_by_shark() const;
 
   // boundaries for different parts
   address code_begin            () const          { return _entry_point; }
@@ -606,6 +607,8 @@ public:
   void print_nul_chk_table()                      PRODUCT_RETURN;
   void print_nmethod(bool print_code);
 
+  // need to re-define this from CodeBlob else the overload hides it
+  virtual void print_on(outputStream* st) const { CodeBlob::print_on(st); }
   void print_on(outputStream* st, const char* title) const;
 
   // Logging
