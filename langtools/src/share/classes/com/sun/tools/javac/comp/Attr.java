@@ -328,6 +328,12 @@ public class Attr extends JCTree.Visitor {
             attribExpr(expr, env);
         } catch (BreakAttr b) {
             return b.env;
+        } catch (AssertionError ae) {
+            if (ae.getCause() instanceof BreakAttr) {
+                return ((BreakAttr)(ae.getCause())).env;
+            } else {
+                throw ae;
+            }
         } finally {
             breakTree = null;
             log.useSource(prev);
@@ -342,6 +348,12 @@ public class Attr extends JCTree.Visitor {
             attribStat(stmt, env);
         } catch (BreakAttr b) {
             return b.env;
+        } catch (AssertionError ae) {
+            if (ae.getCause() instanceof BreakAttr) {
+                return ((BreakAttr)(ae.getCause())).env;
+            } else {
+                throw ae;
+            }
         } finally {
             breakTree = null;
             log.useSource(prev);
