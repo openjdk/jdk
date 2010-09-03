@@ -105,14 +105,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         exit(1);
     }
 
-    /* Do this before we read jvm.cfg */
-    EnsureJreInstallation(jrepath);
-
     /* Find out where the JRE is that we will be using. */
     if (!GetJREPath(jrepath, so_jrepath)) {
         JLI_ReportErrorMessage(JRE_ERROR1);
         exit(2);
     }
+
+    /* Do this before we read jvm.cfg and after jrepath is initialized */
+    EnsureJreInstallation(jrepath);
 
     /* Find the specified JVM type */
     if (ReadKnownVMs(jrepath, (char*)GetArch(), JNI_FALSE) < 1) {
@@ -213,6 +213,7 @@ EnsureJreInstallation(const char* jrepath)
     }
     /* Does our bundle directory exist ? */
     JLI_Snprintf(tmpbuf, sizeof(tmpbuf), "%s\\lib\\bundles", jrepath);
+    JLI_TraceLauncher("EnsureJreInstallation: %s\n", tmpbuf);
     if (stat(tmpbuf, &s) != 0) {
         return;
     }
