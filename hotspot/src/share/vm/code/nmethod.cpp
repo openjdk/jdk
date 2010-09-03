@@ -65,6 +65,11 @@ bool nmethod::is_compiled_by_c2() const {
   if (is_native_method()) return false;
   return compiler()->is_c2();
 }
+bool nmethod::is_compiled_by_shark() const {
+  if (is_native_method()) return false;
+  assert(compiler() != NULL, "must be");
+  return compiler()->is_shark();
+}
 
 
 
@@ -1353,6 +1358,10 @@ void nmethod::flush() {
     CodeCache::remove_saved_code(this);
   }
 
+#ifdef SHARK
+  ((SharkCompiler *) compiler())->free_compiled_method(instructions_begin());
+#endif // SHARK
+
   ((CodeBlob*)(this))->flush();
 
   CodeCache::free(this);
@@ -1769,6 +1778,7 @@ bool nmethod::detect_scavenge_root_oops() {
 // Method that knows how to preserve outgoing arguments at call. This method must be
 // called with a frame corresponding to a Java invoke
 void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
+#ifndef SHARK
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke* call = Bytecode_invoke_at(ssd.method(), ssd.bci());
@@ -1776,6 +1786,7 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
     symbolOop signature = call->signature();
     fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
+#endif // !SHARK
 }
 
 
@@ -2279,6 +2290,8 @@ void nmethod::print() const {
     tty->print("(c1) ");
   } else if (is_compiled_by_c2()) {
     tty->print("(c2) ");
+  } else if (is_compiled_by_shark()) {
+    tty->print("(shark) ");
   } else {
     tty->print("(nm) ");
   }
@@ -2472,8 +2485,12 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
   if (block_begin == exception_begin())         stream->print_cr("[Exception Handler]");
   if (block_begin == stub_begin())              stream->print_cr("[Stub Code]");
   if (block_begin == deopt_handler_begin())     stream->print_cr("[Deopt Handler Code]");
-  if (block_begin == deopt_mh_handler_begin())  stream->print_cr("[Deopt MH Handler Code]");
+
+  if (has_method_handle_invokes())
+    if (block_begin == deopt_mh_handler_begin())  stream->print_cr("[Deopt MH Handler Code]");
+
   if (block_begin == consts_begin())            stream->print_cr("[Constants]");
+
   if (block_begin == entry_point()) {
     methodHandle m = method();
     if (m.not_null()) {

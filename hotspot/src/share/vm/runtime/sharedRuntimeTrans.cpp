@@ -572,7 +572,11 @@ double __ieee754_pow(double x, double y) {
       if(hy<0) z = one/z;       /* z = (1/|x|) */
       if(hx<0) {
         if(((ix-0x3ff00000)|yisint)==0) {
+#ifdef CAN_USE_NAN_DEFINE
+          z = NAN;
+#else
           z = (z-z)/(z-z); /* (-1)**non-int is NaN */
+#endif
         } else if(yisint==1)
           z = -1.0*z;           /* (x<0)**odd = -(|x|**odd) */
       }
@@ -583,7 +587,12 @@ double __ieee754_pow(double x, double y) {
   n = (hx>>31)+1;
 
   /* (x<0)**(non-int) is NaN */
-  if((n|yisint)==0) return (x-x)/(x-x);
+  if((n|yisint)==0)
+#ifdef CAN_USE_NAN_DEFINE
+    return NAN;
+#else
+    return (x-x)/(x-x);
+#endif
 
   s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
   if((n|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */

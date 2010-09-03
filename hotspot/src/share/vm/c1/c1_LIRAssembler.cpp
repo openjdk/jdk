@@ -438,6 +438,12 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   default: ShouldNotReachHere();
   }
 
+  // JSR 292
+  // Record if this method has MethodHandle invokes.
+  if (op->is_method_handle_invoke()) {
+    compilation()->set_has_method_handle_invokes(true);
+  }
+
 #if defined(X86) && defined(TIERED)
   // C2 leave fpu stack dirty clean it
   if (UseSSE < 2) {

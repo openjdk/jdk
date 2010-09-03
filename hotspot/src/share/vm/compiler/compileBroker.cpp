@@ -568,6 +568,14 @@ void CompileBroker::compilation_init() {
 #endif
 #endif // COMPILER2
 
+#ifdef SHARK
+#if defined(COMPILER1) || defined(COMPILER2)
+#error "Can't use COMPILER1 or COMPILER2 with shark"
+#endif
+  _compilers[0] = new SharkCompiler();
+  _compilers[1] = _compilers[0];
+#endif
+
   // Initialize the CompileTask free list
   _task_free_list = NULL;
 
