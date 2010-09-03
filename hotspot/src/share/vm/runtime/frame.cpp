@@ -876,6 +876,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
 
 #endif /* CC_INTERP */
 
+#ifndef PPC
   if (m->is_native()) {
 #ifdef CC_INTERP
     f->do_oop((oop*)&istate->_oop_temp);
@@ -883,6 +884,11 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
     f->do_oop((oop*)( fp() + interpreter_frame_oop_temp_offset ));
 #endif /* CC_INTERP */
   }
+#else // PPC
+  if (m->is_native() && m->is_static()) {
+    f->do_oop(interpreter_frame_mirror_addr());
+  }
+#endif // PPC
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
@@ -1094,6 +1100,10 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* ma
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
     oops_code_blob_do(f, cf, map);
+#ifdef SHARK
+  } else if (is_fake_stub_frame()) {
+    // nothing to do
+#endif // SHARK
   } else {
     ShouldNotReachHere();
   }
