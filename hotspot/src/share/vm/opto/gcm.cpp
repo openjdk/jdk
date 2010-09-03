@@ -841,7 +841,7 @@ void PhaseCFG::partial_latency_of_defs(Node *n) {
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
     tty->print("# latency_to_inputs: node_latency[%d] = %d for node",
-               n->_idx, _node_latency.at_grow(n->_idx));
+               n->_idx, _node_latency->at_grow(n->_idx));
     dump();
   }
 #endif
@@ -853,7 +853,7 @@ void PhaseCFG::partial_latency_of_defs(Node *n) {
     return;
 
   uint nlen = n->len();
-  uint use_latency = _node_latency.at_grow(n->_idx);
+  uint use_latency = _node_latency->at_grow(n->_idx);
   uint use_pre_order = _bbs[n->_idx]->_pre_order;
 
   for ( uint j=0; j<nlen; j++ ) {
@@ -884,15 +884,15 @@ void PhaseCFG::partial_latency_of_defs(Node *n) {
     uint delta_latency = n->latency(j);
     uint current_latency = delta_latency + use_latency;
 
-    if (_node_latency.at_grow(def->_idx) < current_latency) {
-      _node_latency.at_put_grow(def->_idx, current_latency);
+    if (_node_latency->at_grow(def->_idx) < current_latency) {
+      _node_latency->at_put_grow(def->_idx, current_latency);
     }
 
 #ifndef PRODUCT
     if (trace_opto_pipelining()) {
       tty->print_cr("#      %d + edge_latency(%d) == %d -> %d, node_latency[%d] = %d",
                     use_latency, j, delta_latency, current_latency, def->_idx,
-                    _node_latency.at_grow(def->_idx));
+                    _node_latency->at_grow(def->_idx));
     }
 #endif
   }
@@ -926,7 +926,7 @@ int PhaseCFG::latency_from_use(Node *n, const Node *def, Node *use) {
       return 0;
 
     uint nlen = use->len();
-    uint nl = _node_latency.at_grow(use->_idx);
+    uint nl = _node_latency->at_grow(use->_idx);
 
     for ( uint j=0; j<nlen; j++ ) {
       if (use->in(j) == n) {
@@ -962,7 +962,7 @@ void PhaseCFG::latency_from_uses(Node *n) {
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
     tty->print("# latency_from_outputs: node_latency[%d] = %d for node",
-               n->_idx, _node_latency.at_grow(n->_idx));
+               n->_idx, _node_latency->at_grow(n->_idx));
     dump();
   }
 #endif
@@ -975,7 +975,7 @@ void PhaseCFG::latency_from_uses(Node *n) {
     if (latency < l) latency = l;
   }
 
-  _node_latency.at_put_grow(n->_idx, latency);
+  _node_latency->at_put_grow(n->_idx, latency);
 }
 
 //------------------------------hoist_to_cheaper_block-------------------------
@@ -985,9 +985,9 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   const double delta = 1+PROB_UNLIKELY_MAG(4);
   Block* least       = LCA;
   double least_freq  = least->_freq;
-  uint target        = _node_latency.at_grow(self->_idx);
-  uint start_latency = _node_latency.at_grow(LCA->_nodes[0]->_idx);
-  uint end_latency   = _node_latency.at_grow(LCA->_nodes[LCA->end_idx()]->_idx);
+  uint target        = _node_latency->at_grow(self->_idx);
+  uint start_latency = _node_latency->at_grow(LCA->_nodes[0]->_idx);
+  uint end_latency   = _node_latency->at_grow(LCA->_nodes[LCA->end_idx()]->_idx);
   bool in_latency    = (target <= start_latency);
   const Block* root_block = _bbs[_root->_idx];
 
@@ -1005,7 +1005,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
     tty->print("# Find cheaper block for latency %d: ",
-      _node_latency.at_grow(self->_idx));
+      _node_latency->at_grow(self->_idx));
     self->dump();
     tty->print_cr("#   B%d: start latency for [%4d]=%d, end latency for [%4d]=%d, freq=%g",
       LCA->_pre_order,
@@ -1032,9 +1032,9 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     if (mach && LCA == root_block)
       break;
 
-    uint start_lat = _node_latency.at_grow(LCA->_nodes[0]->_idx);
+    uint start_lat = _node_latency->at_grow(LCA->_nodes[0]->_idx);
     uint end_idx   = LCA->end_idx();
-    uint end_lat   = _node_latency.at_grow(LCA->_nodes[end_idx]->_idx);
+    uint end_lat   = _node_latency->at_grow(LCA->_nodes[end_idx]->_idx);
     double LCA_freq = LCA->_freq;
 #ifndef PRODUCT
     if (trace_opto_pipelining()) {
@@ -1073,7 +1073,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
       tty->print_cr("#  Change latency for [%4d] from %d to %d", self->_idx, target, end_latency);
     }
 #endif
-    _node_latency.at_put_grow(self->_idx, end_latency);
+    _node_latency->at_put_grow(self->_idx, end_latency);
     partial_latency_of_defs(self);
   }
 
@@ -1255,8 +1255,7 @@ void PhaseCFG::GlobalCodeMotion( Matcher &matcher, uint unique, Node_List &proj_
 
   // Compute the latency information (via backwards walk) for all the
   // instructions in the graph
-  GrowableArray<uint> node_latency;
-  _node_latency = node_latency;
+  _node_latency = new GrowableArray<uint>(); // resource_area allocation
 
   if( C->do_scheduling() )
     ComputeLatenciesBackwards(visited, stack);
@@ -1341,6 +1340,8 @@ void PhaseCFG::GlobalCodeMotion( Matcher &matcher, uint unique, Node_List &proj_
     }
   }
 #endif
+  // Dead.
+  _node_latency = (GrowableArray<uint> *)0xdeadbeef;
 }
 
 

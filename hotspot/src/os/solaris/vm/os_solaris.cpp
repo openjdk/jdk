@@ -1839,8 +1839,8 @@ void os::dll_build_name(char* buffer, size_t buflen,
 
   // Quietly truncate on buffer overflow.  Should be an error.
   if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
-      *buffer = '\0';
-      return;
+    *buffer = '\0';
+    return;
   }
 
   if (pnamelen == 0) {
@@ -2051,7 +2051,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_SPARC32PLUS, EM_SPARC,   ELFCLASS32, ELFDATA2MSB, (char*)"Sparc 32"},
     {EM_SPARCV9,     EM_SPARCV9, ELFCLASS64, ELFDATA2MSB, (char*)"Sparc v9 64"},
     {EM_PPC,         EM_PPC,     ELFCLASS32, ELFDATA2MSB, (char*)"Power PC 32"},
-    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"}
+    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
+    {EM_ARM,         EM_ARM,     ELFCLASS32, ELFDATA2LSB, (char*)"ARM 32"}
   };
 
   #if  (defined IA32)
@@ -2068,9 +2069,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     static  Elf32_Half running_arch_code=EM_PPC64;
   #elif  (defined __powerpc__)
     static  Elf32_Half running_arch_code=EM_PPC;
+  #elif (defined ARM)
+    static  Elf32_Half running_arch_code=EM_ARM;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__
+         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, ARM
   #endif
 
   // Identify compatability class for VM's architecture and library's architecture
@@ -3149,7 +3152,8 @@ bool os::Solaris::ism_sanity_check(bool warn, size_t * page_size) {
   // ISM is only recommended on old Solaris where there is no MPSS support.
   // Simply choose a conservative value as default.
   *page_size = LargePageSizeInBytes ? LargePageSizeInBytes :
-               SPARC_ONLY(4 * M) IA32_ONLY(4 * M) AMD64_ONLY(2 * M);
+               SPARC_ONLY(4 * M) IA32_ONLY(4 * M) AMD64_ONLY(2 * M)
+               ARM_ONLY(2 * M);
 
   // ISM is available on all supported Solaris versions
   return true;
@@ -5007,6 +5011,9 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
+void os::init_3(void) {
+  return;
+}
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
@@ -5412,7 +5419,6 @@ int os::loadavg(double loadavg[], int nelem) {
 }
 
 //---------------------------------------------------------------------------------
-#ifndef PRODUCT
 
 static address same_page(address x, address y) {
   intptr_t page_bits = -os::vm_page_size();
@@ -5424,28 +5430,28 @@ static address same_page(address x, address y) {
     return (address)(intptr_t(y) & page_bits);
 }
 
-bool os::find(address addr) {
+bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
   if (dladdr(addr, &dlinfo)) {
 #ifdef _LP64
-    tty->print("0x%016lx: ", addr);
+    st->print("0x%016lx: ", addr);
 #else
-    tty->print("0x%08x: ", addr);
+    st->print("0x%08x: ", addr);
 #endif
     if (dlinfo.dli_sname != NULL)
-      tty->print("%s+%#lx", dlinfo.dli_sname, addr-(intptr_t)dlinfo.dli_saddr);
+      st->print("%s+%#lx", dlinfo.dli_sname, addr-(intptr_t)dlinfo.dli_saddr);
     else if (dlinfo.dli_fname)
-      tty->print("<offset %#lx>", addr-(intptr_t)dlinfo.dli_fbase);
+      st->print("<offset %#lx>", addr-(intptr_t)dlinfo.dli_fbase);
     else
-      tty->print("<absolute address>");
-    if (dlinfo.dli_fname)  tty->print(" in %s", dlinfo.dli_fname);
+      st->print("<absolute address>");
+    if (dlinfo.dli_fname)  st->print(" in %s", dlinfo.dli_fname);
 #ifdef _LP64
-    if (dlinfo.dli_fbase)  tty->print(" at 0x%016lx", dlinfo.dli_fbase);
+    if (dlinfo.dli_fbase)  st->print(" at 0x%016lx", dlinfo.dli_fbase);
 #else
-    if (dlinfo.dli_fbase)  tty->print(" at 0x%08x", dlinfo.dli_fbase);
+    if (dlinfo.dli_fbase)  st->print(" at 0x%08x", dlinfo.dli_fbase);
 #endif
-    tty->cr();
+    st->cr();
 
     if (Verbose) {
       // decode some bytes around the PC
@@ -5458,15 +5464,12 @@ bool os::find(address addr) {
       if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
-      Disassembler::decode(begin, end);
+      Disassembler::decode(begin, end, st);
     }
     return true;
   }
   return false;
 }
-
-#endif
-
 
 // Following function has been added to support HotSparc's libjvm.so running
 // under Solaris production JDK 1.2.2 / 1.3.0.  These came from
@@ -5910,7 +5913,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (jt->handle_special_suspend_equivalent_condition()) {
     jt->java_suspend_self();
   }
-
   OrderAccess::fence();
 }
 
@@ -5997,3 +5999,44 @@ int os::fork_and_exec(char* cmd) {
     }
   }
 }
+
+// is_headless_jre()
+//
+// Test for the existence of libmawt in motif21 or xawt directories
+// in order to report if we are running in a headless jre
+//
+bool os::is_headless_jre() {
+    struct stat statbuf;
+    char buf[MAXPATHLEN];
+    char libmawtpath[MAXPATHLEN];
+    const char *xawtstr  = "/xawt/libmawt.so";
+    const char *motifstr = "/motif21/libmawt.so";
+    char *p;
+
+    // Get path to libjvm.so
+    os::jvm_path(buf, sizeof(buf));
+
+    // Get rid of libjvm.so
+    p = strrchr(buf, '/');
+    if (p == NULL) return false;
+    else *p = '\0';
+
+    // Get rid of client or server
+    p = strrchr(buf, '/');
+    if (p == NULL) return false;
+    else *p = '\0';
+
+    // check xawt/libmawt.so
+    strcpy(libmawtpath, buf);
+    strcat(libmawtpath, xawtstr);
+    if (::stat(libmawtpath, &statbuf) == 0) return false;
+
+    // check motif21/libmawt.so
+    strcpy(libmawtpath, buf);
+    strcat(libmawtpath, motifstr);
+    if (::stat(libmawtpath, &statbuf) == 0) return false;
+
+    return true;
+}
+
+

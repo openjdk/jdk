@@ -46,8 +46,6 @@ import static java.awt.event.KeyEvent.*;
  */
 public class JConsoleResources extends ListResourceBundle {
 
-    private static final String cr = System.getProperty("line.separator");
-
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
      *
@@ -56,8 +54,8 @@ public class JConsoleResources extends ListResourceBundle {
      * @return the contents of this <code>ResourceBundle</code>.
      */
     protected Object[][] getContents0() {
-        return new Object[][] {
-        // NOTE 1: The value strings in this file containing "{0}" are
+        Object[][] temp = new Object[][] {
+                // NOTE 1: The value strings in this file containing "{0}" are
         //         processed by the java.text.MessageFormat class.  Any
         //         single quotes appearing in these strings need to be
         //         doubled up.
@@ -98,7 +96,7 @@ public class JConsoleResources extends ListResourceBundle {
         {"Attributes","Attributes"},
         {"Blank", "Blank"},
         {"BlockedCount WaitedCount",
-             "Total blocked: {0}  Total waited: {1}" + cr},
+             "Total blocked: {0}  Total waited: {1}\n"},
         {"Boot class path","Boot class path"},
         {"BorderedComponent.moreOrLessButton.toolTip", "Toggle to show more or less information"},
         {"CPU Usage","CPU Usage"},
@@ -271,21 +269,21 @@ public class JConsoleResources extends ListResourceBundle {
         {"Minimize All.mnemonic", 'M'},
         {"Minus Version", "This is {0} version {1}"},
         {"Monitor locked",
-             "   - locked {0}" + cr},
+             "   - locked {0}\n"},
         {"Motif","Motif"},
         {"Name Build and Mode","{0} (build {1}, {2})"},
         {"Name and Build","{0} (build {1})"},
         {"Name","Name"},
         {"Name: ","Name: "},
         {"Name State",
-             "Name: {0}" + cr +
-             "State: {1}" + cr},
+             "Name: {0}\n" +
+             "State: {1}\n"},
         {"Name State LockName",
-             "Name: {0}" + cr +
-             "State: {1} on {2}" + cr},
+             "Name: {0}\n" +
+             "State: {1} on {2}\n"},
         {"Name State LockName LockOwner",
-             "Name: {0}" + cr +
-             "State: {1} on {2} owned by: {3}" + cr},
+             "Name: {0}\n" +
+             "State: {1} on {2} owned by: {3}\n"},
         {"New Connection...", "New Connection..."},
         {"New Connection....mnemonic", 'N'},
         {"New value applied","New value applied"},
@@ -351,7 +349,7 @@ public class JConsoleResources extends ListResourceBundle {
         {"Size Mb","{0} Mb"},
         {"Source","Source"},
         {"Stack trace",
-             cr + "Stack trace: " + cr},
+              "\nStack trace: \n"},
         {"Success:","Success:"},
         // Note: SummaryTab.headerDateTimeFormat can be one the following:
         // 1. A combination of two styles for date and time, using the
@@ -433,22 +431,27 @@ public class JConsoleResources extends ListResourceBundle {
         {"plot", "plot"},
         {"visualize","visualize"},
         {"zz usage text",
-             "Usage: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ... ]" + cr +
-             cr +
-             "  -interval   Set the update interval to n seconds (default is 4 seconds)" + cr +
-             "  -notile     Do not tile windows initially (for two or more connections)" + cr +
-             "  -pluginpath Specify the path that jconsole uses to look up the plugins" + cr +
-             "  -version    Print program version" + cr +
-             cr +
-             "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)" + cr +
-             "  pid         The process id of a target process" + cr +
-             "  host        A remote host name or IP address" + cr +
-             "  port        The port number for the remote connection" + cr +
-             cr +
-             "  -J          Specify the input arguments to the Java virtual machine" + cr +
+             "Usage: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ... ]\n\n" +
+             "  -interval   Set the update interval to n seconds (default is 4 seconds)\n" +
+             "  -notile     Do not tile windows initially (for two or more connections)\n" +
+             "  -pluginpath Specify the path that jconsole uses to look up the plugins\n\n" +
+             "  -version    Print program version\n" +
+             "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)\n" +
+             "  pid         The process id of a target process\n" +
+             "  host        A remote host name or IP address\n" +
+             "  port        The port number for the remote connection\n\n" +
+             "  -J          Specify the input arguments to the Java virtual machine\n" +
              "              on which jconsole is running"},
         // END OF MATERIAL TO LOCALIZE
         };
+
+        String ls = System.getProperty("line.separator");
+        for(int i=0;i<temp.length;i++) {
+            temp[i][1] = temp[i][1].toString().replaceAll("\n",ls);
+        }
+
+        return temp;
+
     }
 
     public synchronized Object[][] getContents() {
