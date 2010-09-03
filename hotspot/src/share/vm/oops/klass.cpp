@@ -520,8 +520,6 @@ jint Klass::jvmti_class_status() const {
   return 0;
 }
 
-#ifndef PRODUCT
-
 // Printing
 
 void Klass::oop_print_on(oop obj, outputStream* st) {
@@ -540,8 +538,6 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   obj->klass()->print_value_on(st);
   st->cr();
 }
-
-#endif //PRODUCT
 
 void Klass::oop_print_value_on(oop obj, outputStream* st) {
   // print title

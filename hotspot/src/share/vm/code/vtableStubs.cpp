@@ -67,8 +67,8 @@ void* VtableStub::operator new(size_t size, int code_size) {
 }
 
 
-void VtableStub::print() {
-  tty->print("vtable stub (index = %d, receiver_location = %d, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "[)",
+void VtableStub::print_on(outputStream* st) const {
+  st->print("vtable stub (index = %d, receiver_location = %d, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "[)",
              index(), receiver_location(), code_begin(), code_end());
 }
 
