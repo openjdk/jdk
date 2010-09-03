@@ -501,6 +501,10 @@ public class TreeInfo {
                 if (that.sym == sym) result = that;
                 else super.visitVarDef(that);
             }
+            public void visitTypeParameter(JCTypeParameter that) {
+                if (that.type.tsym == sym) result = that;
+                else super.visitTypeParameter(that);
+            }
         }
         DeclScanner s = new DeclScanner();
         tree.accept(s);
