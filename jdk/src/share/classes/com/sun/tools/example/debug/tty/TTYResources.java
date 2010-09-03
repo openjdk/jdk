@@ -45,7 +45,7 @@ public class TTYResources extends java.util.ListResourceBundle {
      * @return the contents of this <code>ResourceBundle</code>.
      */
     public Object[][] getContents() {
-        return new Object[][] {
+        Object[][] temp = new Object[][] {
         // NOTE: The value strings in this file containing "{0}" are
         //       processed by the java.text.MessageFormat class.  Any
         //       single quotes appearing in these strings need to be
@@ -449,5 +449,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "For command help type ''help'' at {0} prompt"},
         // END OF MATERIAL TO LOCALIZE
         };
+
+        return temp;
     }
 }

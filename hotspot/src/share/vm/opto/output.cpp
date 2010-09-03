@@ -382,6 +382,10 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
           if (min_offset_from_last_call == 0) {
             blk_size += nop_size;
           }
+        } else if (mach->ideal_Opcode() == Op_Jump) {
+          const_size += b->_num_succs; // Address table size
+          // The size is valid even for 64 bit since it is
+          // multiplied by 2*jintSize on this method exit.
         }
       }
       min_offset_from_last_call += inst_size;

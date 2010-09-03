@@ -76,6 +76,8 @@ public:
 
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; }
 
+  address last_Java_pc(void)                     { return _last_Java_pc; }
+
   // These are only used by friends
 private:
 

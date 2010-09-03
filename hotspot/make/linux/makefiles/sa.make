@@ -55,10 +55,13 @@ SA_BUILD_VERSION_PROP = "sun.jvm.hotspot.runtime.VM.saBuildVersion=$(SA_BUILD_VE
 SA_PROPERTIES = $(SA_CLASSDIR)/sa.properties
 
 # if $(AGENT_DIR) does not exist, we don't build SA
-# also, we don't build SA on Itanium or zero.
+# also, we don't build SA on Itanium, PowerPC, ARM or zero.
 
 all: 
-	if [ -d $(AGENT_DIR) -a "$(SRCARCH)" != "ia64" -a "$(SRCARCH)" != "zero" ] ; then \
+	if [ -d $(AGENT_DIR) -a "$(SRCARCH)" != "ia64" \
+             -a "$(SRCARCH)" != "arm" \
+             -a "$(SRCARCH)" != "ppc" \
+             -a "$(SRCARCH)" != "zero" ] ; then \
 	   $(MAKE) -f sa.make $(GENERATED)/sa-jdi.jar; \
 	fi
 

@@ -70,6 +70,9 @@ class Abstract_VM_Version: AllStatic {
     return _logical_processors_per_package;
   }
 
+  // ARCH specific policy for the BiasedLocking
+  static bool use_biased_locking()  { return true; }
+
   // Number of page sizes efficiently supported by the hardware.  Most chips now
   // support two sizes, thus this default implementation.  Processor-specific
   // subclasses should define new versions to hide this one as needed.  Note

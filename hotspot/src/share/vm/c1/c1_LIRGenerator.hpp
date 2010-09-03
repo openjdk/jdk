@@ -314,7 +314,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void logic_op   (Bytecodes::Code code, LIR_Opr dst_reg, LIR_Opr left, LIR_Opr right);
 
   void monitor_enter (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info);
-  void monitor_exit  (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, int monitor_no);
+  void monitor_exit  (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no);
 
   void new_instance    (LIR_Opr  dst, ciInstanceKlass* klass, LIR_Opr  scratch1, LIR_Opr  scratch2, LIR_Opr  scratch3,  LIR_Opr scratch4, LIR_Opr  klass_reg, CodeEmitInfo* info);
 
@@ -337,6 +337,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     return generate_address(base, LIR_OprFact::illegalOpr, 0, disp, type);
   }
   LIR_Address* emit_array_address(LIR_Opr array_opr, LIR_Opr index_opr, BasicType type, bool needs_card_mark);
+
+  // the helper for generate_address
+  void add_large_constant(LIR_Opr src, int c, LIR_Opr dest);
 
   // machine preferences and characteristics
   bool can_inline_as_constant(Value i) const;
@@ -393,6 +396,10 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     return l;
   }
 
+#ifdef __SOFTFP__
+  void do_soft_float_compare(If *x);
+#endif // __SOFTFP__
+
   void init();
 
   SwitchRangeArray* create_lookup_ranges(TableSwitch* x);
@@ -444,6 +451,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   static LIR_Opr remOutOpr();
   static LIR_Opr shiftCountOpr();
   LIR_Opr syncTempOpr();
+  LIR_Opr atomicLockOpr();
 
   // returns a register suitable for saving the thread in a
   // call_runtime_leaf if one is needed.
