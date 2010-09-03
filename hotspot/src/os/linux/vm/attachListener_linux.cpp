@@ -32,11 +32,15 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
+#endif
+
 // The attach mechanism on Linux uses a UNIX domain socket. An attach listener
 // thread is created at startup or is created on-demand via a signal from
 // the client tool. The attach listener creates a socket and binds it to a file
 // in the filesystem. The attach listener then acts as a simple (single-
-// threaded) server - tt waits for a client to connect, reads the request,
+// threaded) server - it waits for a client to connect, reads the request,
 // executes it, and returns the response to the client via the socket
 // connection.
 //
@@ -54,7 +58,7 @@ class LinuxAttachOperation;
 class LinuxAttachListener: AllStatic {
  private:
   // the path to which we bind the UNIX domain socket
-  static char _path[PATH_MAX+1];
+  static char _path[UNIX_PATH_MAX];
   static bool _has_path;
 
   // the file descriptor for the listening socket
@@ -64,8 +68,8 @@ class LinuxAttachListener: AllStatic {
     if (path == NULL) {
       _has_path = false;
     } else {
-      strncpy(_path, path, PATH_MAX);
-      _path[PATH_MAX] = '\0';
+      strncpy(_path, path, UNIX_PATH_MAX);
+      _path[UNIX_PATH_MAX-1] = '\0';
       _has_path = true;
     }
   }
@@ -113,7 +117,7 @@ class LinuxAttachOperation: public AttachOperation {
 };
 
 // statics
-char LinuxAttachListener::_path[PATH_MAX+1];
+char LinuxAttachListener::_path[UNIX_PATH_MAX];
 bool LinuxAttachListener::_has_path;
 int LinuxAttachListener::_listener = -1;
 
@@ -163,11 +167,21 @@ extern "C" {
 // Initialization - create a listener socket and bind it to a file
 
 int LinuxAttachListener::init() {
-  char path[PATH_MAX+1];        // socket file
-  int listener;                 // listener socket (file descriptor)
+  char path[UNIX_PATH_MAX];          // socket file
+  char initial_path[UNIX_PATH_MAX];  // socket file during setup
+  int listener;                      // listener socket (file descriptor)
 
   // register function to cleanup
   ::atexit(listener_cleanup);
+
+  int n = snprintf(path, UNIX_PATH_MAX, "%s/.java_pid%d",
+                   os::get_temp_directory(), os::current_process_id());
+  if (n <= (int)UNIX_PATH_MAX) {
+    n = snprintf(initial_path, UNIX_PATH_MAX, "%s.tmp", path);
+  }
+  if (n > (int)UNIX_PATH_MAX) {
+    return -1;
+  }
 
   // create the listener socket
   listener = ::socket(PF_UNIX, SOCK_STREAM, 0);
@@ -175,42 +189,31 @@ int LinuxAttachListener::init() {
     return -1;
   }
 
-  int res = -1;
+  // bind socket
   struct sockaddr_un addr;
   addr.sun_family = AF_UNIX;
-
-  // FIXME: Prior to b39 the tool-side API expected to find the well
-  // known file in the working directory. To allow this libjvm.so work with
-  // a pre-b39 SDK we create it in the working directory if
-  // +StartAttachListener is used is used. All unit tests for this feature
-  // currently used this flag. Once b39 SDK has been promoted we can remove
-  // this code.
-  if (StartAttachListener) {
-    sprintf(path, ".java_pid%d", os::current_process_id());
-    strcpy(addr.sun_path, path);
-    ::unlink(path);
-    res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
-  }
+  strcpy(addr.sun_path, initial_path);
+  ::unlink(initial_path);
+  int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1) {
-    snprintf(path, PATH_MAX+1, "%s/.java_pid%d",
-             os::get_temp_directory(), os::current_process_id());
-    strcpy(addr.sun_path, path);
-    ::unlink(path);
-    res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
+    RESTARTABLE(::close(listener), res);
+    return -1;
+  }
+
+  // put in listen mode, set permissions, and rename into place
+  res = ::listen(listener, 5);
+  if (res == 0) {
+      RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
+      if (res == 0) {
+          res = ::rename(initial_path, path);
+      }
   }
   if (res == -1) {
     RESTARTABLE(::close(listener), res);
+    ::unlink(initial_path);
     return -1;
   }
   set_path(path);
-
-  // put in listen mode and set permission
-  if ((::listen(listener, 5) == -1) || (::chmod(path, S_IREAD|S_IWRITE) == -1)) {
-    RESTARTABLE(::close(listener), res);
-    ::unlink(path);
-    set_path(NULL);
-    return -1;
-  }
   set_listener(listener);
 
   return 0;

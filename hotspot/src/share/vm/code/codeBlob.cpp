@@ -564,71 +564,52 @@ void CodeBlob::verify() {
   ShouldNotReachHere();
 }
 
-#ifndef PRODUCT
-
-void CodeBlob::print() const {
-  tty->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", this);
-  tty->print_cr("Framesize: %d", _frame_size);
+void CodeBlob::print_on(outputStream* st) const {
+  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", this);
+  st->print_cr("Framesize: %d", _frame_size);
 }
-
 
 void CodeBlob::print_value_on(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
 
-#endif
-
 void BufferBlob::verify() {
   // unimplemented
 }
 
-#ifndef PRODUCT
-
-void BufferBlob::print() const {
-  CodeBlob::print();
-  print_value_on(tty);
+void BufferBlob::print_on(outputStream* st) const {
+  CodeBlob::print_on(st);
+  print_value_on(st);
 }
-
 
 void BufferBlob::print_value_on(outputStream* st) const {
   st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", this, name());
 }
 
-
-#endif
-
 void RuntimeStub::verify() {
   // unimplemented
 }
 
-#ifndef PRODUCT
-
-void RuntimeStub::print() const {
-  CodeBlob::print();
-  tty->print("Runtime Stub (" INTPTR_FORMAT "): ", this);
-  tty->print_cr(name());
-  Disassembler::decode((CodeBlob*)this);
+void RuntimeStub::print_on(outputStream* st) const {
+  CodeBlob::print_on(st);
+  st->print("Runtime Stub (" INTPTR_FORMAT "): ", this);
+  st->print_cr(name());
+  Disassembler::decode((CodeBlob*)this, st);
 }
-
 
 void RuntimeStub::print_value_on(outputStream* st) const {
   st->print("RuntimeStub (" INTPTR_FORMAT "): ", this); st->print(name());
 }
 
-#endif
-
 void SingletonBlob::verify() {
   // unimplemented
 }
 
-#ifndef PRODUCT
-
-void SingletonBlob::print() const {
-  CodeBlob::print();
-  tty->print_cr(name());
-  Disassembler::decode((CodeBlob*)this);
+void SingletonBlob::print_on(outputStream* st) const {
+  CodeBlob::print_on(st);
+  st->print_cr(name());
+  Disassembler::decode((CodeBlob*)this, st);
 }
-
 
 void SingletonBlob::print_value_on(outputStream* st) const {
   st->print_cr(name());
@@ -637,5 +618,3 @@ void SingletonBlob::print_value_on(outputStream* st) const {
 void DeoptimizationBlob::print_value_on(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
-
-#endif // PRODUCT

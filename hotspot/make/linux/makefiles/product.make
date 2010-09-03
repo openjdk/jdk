@@ -46,7 +46,11 @@ VERSION = optimized
 
 # use -g to strip library as -x will discard its symbol table; -x is fine for
 # executables.
-STRIP = strip
+ifdef CROSS_COMPILE_ARCH
+  STRIP = $(ALT_COMPILER_PATH)/strip
+else
+  STRIP = strip
+endif
 STRIP_LIBJVM = $(STRIP) -g $@ || exit 1;
 STRIP_AOUT   = $(STRIP) -x $@ || exit 1;
 
