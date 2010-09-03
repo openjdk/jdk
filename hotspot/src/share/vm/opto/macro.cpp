@@ -720,7 +720,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       if (basic_elem_type == T_OBJECT || basic_elem_type == T_ARRAY) {
         if (!elem_type->is_loaded()) {
           field_type = TypeInstPtr::BOTTOM;
-        } else if (field != NULL && field->is_constant()) {
+        } else if (field != NULL && field->is_constant() && field->is_static()) {
           // This can happen if the constant oop is non-perm.
           ciObject* con = field->constant_value().as_object();
           // Do not "join" in the previous type; it doesn't add value,
