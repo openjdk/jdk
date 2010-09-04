@@ -98,7 +98,7 @@ class       UnsafePrefetch;
 class         UnsafePrefetchRead;
 class         UnsafePrefetchWrite;
 class   ProfileCall;
-class   ProfileCounter;
+class   ProfileInvoke;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
@@ -195,7 +195,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) = 0;
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
-  virtual void do_ProfileCounter (ProfileCounter*  x) = 0;
+  virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
 };
 
 
@@ -1734,19 +1734,44 @@ BASE(BlockEnd, StateSplit)
 
 LEAF(Goto, BlockEnd)
  public:
+  enum Direction {
+    none,            // Just a regular goto
+    taken, not_taken // Goto produced from If
+  };
+ private:
+  ciMethod*   _profiled_method;
+  int         _profiled_bci;
+  Direction   _direction;
+ public:
   // creation
-  Goto(BlockBegin* sux, ValueStack* state_before, bool is_safepoint = false) : BlockEnd(illegalType, state_before, is_safepoint) {
+  Goto(BlockBegin* sux, ValueStack* state_before, bool is_safepoint = false)
+    : BlockEnd(illegalType, state_before, is_safepoint)
+    , _direction(none)
+    , _profiled_method(NULL)
+    , _profiled_bci(0) {
     BlockList* s = new BlockList(1);
     s->append(sux);
     set_sux(s);
   }
 
-  Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, NULL, is_safepoint) {
+  Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, NULL, is_safepoint)
+                                           , _direction(none)
+                                           , _profiled_method(NULL)
+                                           , _profiled_bci(0) {
     BlockList* s = new BlockList(1);
     s->append(sux);
     set_sux(s);
   }
 
+  bool should_profile() const                    { return check_flag(ProfileMDOFlag); }
+  ciMethod* profiled_method() const              { return _profiled_method; } // set only for profiled branches
+  int profiled_bci() const                       { return _profiled_bci; }
+  Direction direction() const                    { return _direction; }
+
+  void set_should_profile(bool value)            { set_flag(ProfileMDOFlag, value); }
+  void set_profiled_method(ciMethod* method)     { _profiled_method = method; }
+  void set_profiled_bci(int bci)                 { _profiled_bci = bci; }
+  void set_direction(Direction d)                { _direction = d; }
 };
 
 
@@ -1757,6 +1782,8 @@ LEAF(If, BlockEnd)
   Value       _y;
   ciMethod*   _profiled_method;
   int         _profiled_bci; // Canonicalizer may alter bci of If node
+  bool        _swapped;      // Is the order reversed with respect to the original If in the
+                             // bytecode stream?
  public:
   // creation
   // unordered_is_true is valid for float/double compares only
@@ -1767,6 +1794,7 @@ LEAF(If, BlockEnd)
   , _y(y)
   , _profiled_method(NULL)
   , _profiled_bci(0)
+  , _swapped(false)
   {
     ASSERT_VALUES
     set_flag(UnorderedIsTrueFlag, unordered_is_true);
@@ -1788,7 +1816,8 @@ LEAF(If, BlockEnd)
   BlockBegin* usux() const                       { return sux_for(unordered_is_true()); }
   bool should_profile() const                    { return check_flag(ProfileMDOFlag); }
   ciMethod* profiled_method() const              { return _profiled_method; } // set only for profiled branches
-  int profiled_bci() const                       { return _profiled_bci; }    // set only for profiled branches
+  int profiled_bci() const                       { return _profiled_bci; }    // set for profiled branches and tiered
+  bool is_swapped() const                        { return _swapped; }
 
   // manipulation
   void swap_operands() {
@@ -1807,7 +1836,7 @@ LEAF(If, BlockEnd)
   void set_should_profile(bool value)             { set_flag(ProfileMDOFlag, value); }
   void set_profiled_method(ciMethod* method)      { _profiled_method = method; }
   void set_profiled_bci(int bci)                  { _profiled_bci = bci;       }
-
+  void set_swapped(bool value)                    { _swapped = value;         }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_x); f->visit(&_y); }
 };
@@ -2235,7 +2264,6 @@ LEAF(UnsafePrefetchWrite, UnsafePrefetch)
   }
 };
 
-
 LEAF(ProfileCall, Instruction)
  private:
   ciMethod* _method;
@@ -2263,34 +2291,31 @@ LEAF(ProfileCall, Instruction)
   virtual void input_values_do(ValueVisitor* f)   { if (_recv != NULL) f->visit(&_recv); }
 };
 
+// Use to trip invocation counter of an inlined method
 
-//
-// Simple node representing a counter update generally used for updating MDOs
-//
-LEAF(ProfileCounter, Instruction)
+LEAF(ProfileInvoke, Instruction)
  private:
-  Value     _mdo;
-  int       _offset;
-  int       _increment;
+  ciMethod*   _inlinee;
+  ValueStack* _state;
+  int         _bci_of_invoke;
 
  public:
-  ProfileCounter(Value mdo, int offset, int increment = 1)
+  ProfileInvoke(ciMethod* inlinee,  ValueStack* state, int bci)
     : Instruction(voidType)
-    , _mdo(mdo)
-    , _offset(offset)
-    , _increment(increment)
+    , _inlinee(inlinee)
+    , _bci_of_invoke(bci)
+    , _state(state)
   {
-    // The ProfileCounter has side-effects and must occur precisely where located
+    // The ProfileInvoke has side-effects and must occur precisely where located QQQ???
     pin();
   }
 
-  Value mdo()      { return _mdo; }
-  int offset()     { return _offset; }
-  int increment()  { return _increment; }
-
-  virtual void input_values_do(ValueVisitor* f)   { f->visit(&_mdo); }
+  ciMethod* inlinee()      { return _inlinee; }
+  ValueStack* state()      { return _state; }
+  int bci_of_invoke()      { return _bci_of_invoke; }
+  virtual void input_values_do(ValueVisitor*)   {}
+  virtual void state_values_do(ValueVisitor*);
 };
-
 
 class BlockPair: public CompilationResourceObj {
  private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,28 +227,36 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   }
 }
 
+LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+  LIR_Opr r;
+  if (type == T_LONG) {
+    r = LIR_OprFact::longConst(x);
+  } else if (type == T_INT) {
+    r = LIR_OprFact::intConst(x);
+  } else {
+    ShouldNotReachHere();
+  }
+  if (!Assembler::is_simm13(x)) {
+    LIR_Opr tmp = new_register(type);
+    __ move(r, tmp);
+    return tmp;
+  }
+  return r;
+}
 
-void LIRGenerator::increment_counter(address counter, int step) {
+void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
   LIR_Opr pointer = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, T_INT);
+  LIR_Address* addr = new LIR_Address(pointer, type);
   increment_counter(addr, step);
 }
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
-  LIR_Opr temp = new_register(T_INT);
+  LIR_Opr temp = new_register(addr->type());
   __ move(addr, temp);
-  LIR_Opr c = LIR_OprFact::intConst(step);
-  if (Assembler::is_simm13(step)) {
-    __ add(temp, c, temp);
-  } else {
-    LIR_Opr temp2 = new_register(T_INT);
-    __ move(c, temp2);
-    __ add(temp, temp2, temp);
-  }
+  __ add(temp, load_immediate(step, addr->type()), temp);
   __ move(temp, addr);
 }
-
 
 void LIRGenerator::cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info) {
   LIR_Opr o7opr = FrameMap::O7_opr;
@@ -611,7 +619,6 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
   left.load_item();
   right.load_item();
   LIR_Opr reg = rlock_result(x);
-
   if (x->x()->type()->is_float_kind()) {
     Bytecodes::Code code = x->op();
     __ fcmp2int(left.result(), right.result(), reg, (code == Bytecodes::_fcmpl || code == Bytecodes::_dcmpl));
@@ -1089,12 +1096,12 @@ void LIRGenerator::do_If(If* x) {
   // add safepoint before generating condition code so it can be recomputed
   if (x->is_safepoint()) {
     // increment backedge counter if needed
-    increment_backedge_counter(state_for(x, x->state_before()));
-
+    increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
     __ safepoint(new_register(T_INT), state_for(x, x->state_before()));
   }
 
   __ cmp(lir_cond(cond), left, right);
+  // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {

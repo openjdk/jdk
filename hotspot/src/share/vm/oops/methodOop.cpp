@@ -233,7 +233,7 @@ void methodOopDesc::remove_unshareable_info() {
 }
 
 
-bool methodOopDesc::was_executed_more_than(int n) const {
+bool methodOopDesc::was_executed_more_than(int n) {
   // Invocation counter is reset when the methodOop is compiled.
   // If the method has compiled code we therefore assume it has
   // be excuted more than n times.
@@ -241,7 +241,8 @@ bool methodOopDesc::was_executed_more_than(int n) const {
     // interpreter doesn't bump invocation counter of trivial methods
     // compiler does not bump invocation counter of compiled methods
     return true;
-  } else if (_invocation_counter.carry()) {
+  }
+  else if (_invocation_counter.carry() || (method_data() != NULL && method_data()->invocation_counter()->carry())) {
     // The carry bit is set when the counter overflows and causes
     // a compilation to occur.  We don't know how many times
     // the counter has been reset, so we simply assume it has
@@ -253,7 +254,7 @@ bool methodOopDesc::was_executed_more_than(int n) const {
 }
 
 #ifndef PRODUCT
-void methodOopDesc::print_invocation_count() const {
+void methodOopDesc::print_invocation_count() {
   if (is_static()) tty->print("static ");
   if (is_final()) tty->print("final ");
   if (is_synchronized()) tty->print("synchronized ");
@@ -574,16 +575,19 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
     // compilers must recognize this method specially, or not at all
     return true;
   }
-
-#ifdef COMPILER2
-  if (is_tier1_compile(comp_level)) {
-    if (is_not_tier1_compilable()) {
-      return true;
-    }
+  if (number_of_breakpoints() > 0) {
+    return true;
   }
-#endif // COMPILER2
-  return (_invocation_counter.state() == InvocationCounter::wait_for_nothing)
-          || (number_of_breakpoints() > 0);
+  if (comp_level == CompLevel_any) {
+    return is_not_c1_compilable() || is_not_c2_compilable();
+  }
+  if (is_c1_compile(comp_level)) {
+    return is_not_c1_compilable();
+  }
+  if (is_c2_compile(comp_level)) {
+    return is_not_c2_compilable();
+  }
+  return false;
 }
 
 // call this when compiler finds that this method is not compilable
@@ -604,15 +608,18 @@ void methodOopDesc::set_not_compilable(int comp_level, bool report) {
     xtty->stamp();
     xtty->end_elem();
   }
-#ifdef COMPILER2
-  if (is_tier1_compile(comp_level)) {
-    set_not_tier1_compilable();
-    return;
+  if (comp_level == CompLevel_all) {
+    set_not_c1_compilable();
+    set_not_c2_compilable();
+  } else {
+    if (is_c1_compile(comp_level)) {
+      set_not_c1_compilable();
+    } else
+      if (is_c2_compile(comp_level)) {
+        set_not_c2_compilable();
+      }
   }
-#endif /* COMPILER2 */
-  assert(comp_level == CompLevel_highest_tier, "unexpected compilation level");
-  invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
-  backedge_counter()->set_state(InvocationCounter::wait_for_nothing);
+  CompilationPolicy::policy()->disable_compilation(this);
 }
 
 // Revert to using the interpreter and clear out the nmethod
@@ -649,7 +656,6 @@ void methodOopDesc::unlink_method() {
   set_method_data(NULL);
   set_interpreter_throwout_count(0);
   set_interpreter_invocation_count(0);
-  _highest_tier_compile = CompLevel_none;
 }
 
 // Called when the method_holder is getting linked. Setup entrypoints so the method
@@ -746,8 +752,8 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
   int comp_level = code->comp_level();
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
-  if (comp_level > mh->highest_tier_compile()) {
-    mh->set_highest_tier_compile(comp_level);
+  if (comp_level > mh->highest_comp_level()) {
+    mh->set_highest_comp_level(comp_level);
   }
 
   OrderAccess::storestore();
@@ -1441,6 +1447,64 @@ void methodOopDesc::clear_all_breakpoints() {
   clear_matches(this, -1);
 }
 
+
+int methodOopDesc::invocation_count() {
+  if (TieredCompilation) {
+    const methodDataOop mdo = method_data();
+    if (invocation_counter()->carry() || ((mdo != NULL) ? mdo->invocation_counter()->carry() : false)) {
+      return InvocationCounter::count_limit;
+    } else {
+      return invocation_counter()->count() + ((mdo != NULL) ? mdo->invocation_counter()->count() : 0);
+    }
+  } else {
+    return invocation_counter()->count();
+  }
+}
+
+int methodOopDesc::backedge_count() {
+  if (TieredCompilation) {
+    const methodDataOop mdo = method_data();
+    if (backedge_counter()->carry() || ((mdo != NULL) ? mdo->backedge_counter()->carry() : false)) {
+      return InvocationCounter::count_limit;
+    } else {
+      return backedge_counter()->count() + ((mdo != NULL) ? mdo->backedge_counter()->count() : 0);
+    }
+  } else {
+    return backedge_counter()->count();
+  }
+}
+
+int methodOopDesc::highest_comp_level() const {
+  methodDataOop mdo = method_data();
+  if (mdo != NULL) {
+    return mdo->highest_comp_level();
+  } else {
+    return CompLevel_none;
+  }
+}
+
+int methodOopDesc::highest_osr_comp_level() const {
+  methodDataOop mdo = method_data();
+  if (mdo != NULL) {
+    return mdo->highest_osr_comp_level();
+  } else {
+    return CompLevel_none;
+  }
+}
+
+void methodOopDesc::set_highest_comp_level(int level) {
+  methodDataOop mdo = method_data();
+  if (mdo != NULL) {
+    mdo->set_highest_comp_level(level);
+  }
+}
+
+void methodOopDesc::set_highest_osr_comp_level(int level) {
+  methodDataOop mdo = method_data();
+  if (mdo != NULL) {
+    mdo->set_highest_osr_comp_level(level);
+  }
+}
 
 BreakpointInfo::BreakpointInfo(methodOop m, int bci) {
   _bci = bci;

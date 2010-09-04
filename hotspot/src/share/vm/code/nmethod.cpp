@@ -867,9 +867,9 @@ void nmethod::log_identity(xmlStream* log) const {
   if (compiler() != NULL) {
     log->print(" compiler='%s'", compiler()->name());
   }
-#ifdef TIERED
-  log->print(" level='%d'", comp_level());
-#endif // TIERED
+  if (TieredCompilation) {
+    log->print(" level='%d'", comp_level());
+  }
 }
 
 
@@ -908,35 +908,71 @@ void nmethod::log_new_nmethod() const {
 #undef LOG_OFFSET
 
 
+void nmethod::print_compilation(outputStream *st, const char *method_name, const char *title,
+                                methodOop method, bool is_blocking, int compile_id, int bci, int comp_level) {
+  bool is_synchronized = false, has_xhandler = false, is_native = false;
+  int code_size = -1;
+  if (method != NULL) {
+    is_synchronized = method->is_synchronized();
+    has_xhandler    = method->has_exception_handler();
+    is_native       = method->is_native();
+    code_size       = method->code_size();
+  }
+  // print compilation number
+  st->print("%7d %3d", (int)tty->time_stamp().milliseconds(), compile_id);
+
+  // print method attributes
+  const bool is_osr = bci != InvocationEntryBci;
+  const char blocking_char  = is_blocking     ? 'b' : ' ';
+  const char compile_type   = is_osr          ? '%' : ' ';
+  const char sync_char      = is_synchronized ? 's' : ' ';
+  const char exception_char = has_xhandler    ? '!' : ' ';
+  const char native_char    = is_native       ? 'n' : ' ';
+  st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
+  if (TieredCompilation) {
+    st->print("%d ", comp_level);
+  }
+
+  // print optional title
+  bool do_nl = false;
+  if (title != NULL) {
+    int tlen = (int) strlen(title);
+    bool do_nl = false;
+    if (tlen > 0 && title[tlen-1] == '\n') { tlen--; do_nl = true; }
+    st->print("%.*s", tlen, title);
+  } else {
+    do_nl = true;
+  }
+
+  // print method name string if given
+  if (method_name != NULL) {
+    st->print(method_name);
+  } else {
+    // otherwise as the method to print itself
+    if (method != NULL && !Universe::heap()->is_gc_active()) {
+      method->print_short_name(st);
+    } else {
+      st->print("(method)");
+    }
+  }
+
+  if (method != NULL) {
+    // print osr_bci if any
+    if (is_osr) st->print(" @ %d", bci);
+    // print method size
+    st->print(" (%d bytes)", code_size);
+  }
+  if (do_nl) st->cr();
+}
+
 // Print out more verbose output usually for a newly created nmethod.
 void nmethod::print_on(outputStream* st, const char* title) const {
   if (st != NULL) {
     ttyLocker ttyl;
-    // Print a little tag line that looks like +PrintCompilation output:
-    int tlen = (int) strlen(title);
-    bool do_nl = false;
-    if (tlen > 0 && title[tlen-1] == '\n') { tlen--; do_nl = true; }
-    st->print("%3d%c  %.*s",
-              compile_id(),
-              is_osr_method() ? '%' :
-              method() != NULL &&
-              is_native_method() ? 'n' : ' ',
-              tlen, title);
-#ifdef TIERED
-    st->print(" (%d) ", comp_level());
-#endif // TIERED
+    print_compilation(st, /*method_name*/NULL, title,
+                      method(), /*is_blocking*/false,
+                      compile_id(), osr_entry_bci(), comp_level());
     if (WizardMode) st->print(" (" INTPTR_FORMAT ")", this);
-    if (Universe::heap()->is_gc_active() && method() != NULL) {
-      st->print("(method)");
-    } else if (method() != NULL) {
-        method()->print_short_name(st);
-      if (is_osr_method())
-        st->print(" @ %d", osr_entry_bci());
-      if (method()->code_size() > 0)
-        st->print(" (%d bytes)", method()->code_size());
-    }
-
-    if (do_nl)  st->cr();
   }
 }
 
@@ -1137,6 +1173,7 @@ bool nmethod::can_not_entrant_be_converted() {
 }
 
 void nmethod::inc_decompile_count() {
+  if (!is_compiled_by_c2()) return;
   // Could be gated by ProfileTraps, but do not bother...
   methodOop m = method();
   if (m == NULL)  return;

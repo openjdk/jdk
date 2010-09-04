@@ -50,7 +50,6 @@ bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
-intx   Arguments::_Tier2CompileThreshold        = Tier2CompileThreshold;
 
 char*  Arguments::SharedArchivePath             = NULL;
 
@@ -913,7 +912,6 @@ void Arguments::set_mode_flags(Mode mode) {
   AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
-  Tier2CompileThreshold      = Arguments::_Tier2CompileThreshold;
 
   // Change from defaults based on mode
   switch (mode) {
@@ -947,6 +945,31 @@ static void no_shared_spaces() {
     vm_exit_during_initialization("Unable to use shared archive.", NULL);
   } else {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
+  }
+}
+
+void Arguments::set_tiered_flags() {
+  if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
+    FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
+  }
+
+  if (CompilationPolicyChoice < 2) {
+    vm_exit_during_initialization(
+      "Incompatible compilation policy selected", NULL);
+  }
+
+#ifdef _LP64
+  if (FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops)) {
+    UseCompressedOops = false;
+  }
+  if (UseCompressedOops) {
+    vm_exit_during_initialization(
+      "Tiered compilation is not supported with compressed oops yet", NULL);
+  }
+#endif
+ // Increase the code cache size - tiered compiles a lot more.
+  if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
+    FLAG_SET_DEFAULT(ReservedCodeCacheSize, ReservedCodeCacheSize * 2);
   }
 }
 
@@ -1299,7 +1322,7 @@ void Arguments::set_ergonomics_flags() {
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
-#ifndef COMPILER1
+#if !defined(COMPILER1) || defined(TIERED)
     if (FLAG_IS_DEFAULT(UseCompressedOops) && !UseG1GC) {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
@@ -1933,7 +1956,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
-  Arguments::_Tier2CompileThreshold    = Tier2CompileThreshold;
 
   // Parse JAVA_TOOL_OPTIONS environment variable (if present)
   jint result = parse_java_tool_options_environment_variable(&scp, &scp_assembly_required);
@@ -2651,23 +2673,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     set_mode_flags(_int);
   }
 
-#ifdef TIERED
-  // If we are using tiered compilation in the tiered vm then c1 will
-  // do the profiling and we don't want to waste that time in the
-  // interpreter.
-  if (TieredCompilation) {
-    ProfileInterpreter = false;
-  } else {
-    // Since we are running vanilla server we must adjust the compile threshold
-    // unless the user has already adjusted it because the default threshold assumes
-    // we will run tiered.
-
-    if (FLAG_IS_DEFAULT(CompileThreshold)) {
-      CompileThreshold = Tier2CompileThreshold;
-    }
-  }
-#endif // TIERED
-
 #ifndef COMPILER2
   // Don't degrade server performance for footprint
   if (FLAG_IS_DEFAULT(UseLargePages) &&
@@ -2682,7 +2687,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
 
   // Tiered compilation is undefined with C1.
   TieredCompilation = false;
-
 #else
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
     FLAG_SET_DEFAULT(MaxLoopPad, OptoLoopAlignment-1);
@@ -2939,7 +2943,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     PrintGC = true;
   }
 
-#if defined(_LP64) && defined(COMPILER1)
+#if defined(_LP64) && defined(COMPILER1) && !defined(TIERED)
   UseCompressedOops = false;
 #endif
 
@@ -2968,6 +2972,16 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Check the GC selections again.
   if (!check_gc_consistency()) {
     return JNI_EINVAL;
+  }
+
+  if (TieredCompilation) {
+    set_tiered_flags();
+  } else {
+    // Check if the policy is valid. Policies 0 and 1 are valid for non-tiered setup.
+    if (CompilationPolicyChoice >= 2) {
+      vm_exit_during_initialization(
+        "Incompatible compilation policy selected", NULL);
+    }
   }
 
 #ifndef KERNEL

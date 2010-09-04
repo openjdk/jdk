@@ -35,14 +35,7 @@ define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, TieredCompilation,            false);
 
 define_pd_global(intx, CompileThreshold,             0);
-define_pd_global(intx, Tier2CompileThreshold,        0);
-define_pd_global(intx, Tier3CompileThreshold,        0);
-define_pd_global(intx, Tier4CompileThreshold,        0);
-
 define_pd_global(intx, BackEdgeThreshold,            0);
-define_pd_global(intx, Tier2BackEdgeThreshold,       0);
-define_pd_global(intx, Tier3BackEdgeThreshold,       0);
-define_pd_global(intx, Tier4BackEdgeThreshold,       0);
 
 define_pd_global(intx, OnStackReplacePercentage,     0);
 define_pd_global(bool, ResizeTLAB,                   false);
@@ -1971,7 +1964,7 @@ class CommandLineFlags {
   product(uintx, TenuredGenerationSizeSupplementDecay, 2,                   \
           "Decay factor to TenuredGenerationSizeIncrement")                 \
                                                                             \
-  product(uintx, MaxGCPauseMillis, max_uintx,                               \
+  product(uintx, MaxGCPauseMillis, max_uintx,                           \
           "Adaptive size policy maximum GC pause time goal in msec, "       \
           "or (G1 Only) the max. GC time per MMU time slice")               \
                                                                             \
@@ -2365,9 +2358,6 @@ class CommandLineFlags {
                                                                             \
   develop(bool, EagerInitialization, false,                                 \
           "Eagerly initialize classes if possible")                         \
-                                                                            \
-  product(bool, Tier1UpdateMethodData, trueInTiered,                        \
-          "Update methodDataOops in Tier1-generated code")                  \
                                                                             \
   develop(bool, TraceMethodReplacement, false,                              \
           "Print when methods are replaced do to recompilation")            \
@@ -2898,7 +2888,7 @@ class CommandLineFlags {
           "if non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
                                                                             \
-  product(intx, TypeProfileWidth,      2,                                   \
+  product(intx, TypeProfileWidth,     2,                                   \
           "number of receiver types to record in call/cast profile")        \
                                                                             \
   develop(intx, BciProfileWidth,      2,                                    \
@@ -3306,30 +3296,98 @@ class CommandLineFlags {
   product_pd(intx, BackEdgeThreshold,                                       \
           "Interpreter Back edge threshold at which an OSR compilation is invoked")\
                                                                             \
-  product(intx, Tier1BytecodeLimit,      10,                                \
-          "Must have at least this many bytecodes before tier1"             \
-          "invocation counters are used")                                   \
+  product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
+          "Interpreter (tier 0) invocation notification frequency.")        \
                                                                             \
-  product_pd(intx, Tier2CompileThreshold,                                   \
-          "threshold at which a tier 2 compilation is invoked")             \
+  product(intx, Tier2InvokeNotifyFreqLog, 11,                               \
+          "C1 without MDO (tier 2) invocation notification frequency.")     \
                                                                             \
-  product_pd(intx, Tier2BackEdgeThreshold,                                  \
-          "Back edge threshold at which a tier 2 compilation is invoked")   \
+  product(intx, Tier3InvokeNotifyFreqLog, 10,                               \
+          "C1 with MDO profiling (tier 3) invocation notification "         \
+          "frequency.")                                                     \
                                                                             \
-  product_pd(intx, Tier3CompileThreshold,                                   \
-          "threshold at which a tier 3 compilation is invoked")             \
+  product(intx, Tier0BackedgeNotifyFreqLog, 10,                             \
+          "Interpreter (tier 0) invocation notification frequency.")        \
                                                                             \
-  product_pd(intx, Tier3BackEdgeThreshold,                                  \
-          "Back edge threshold at which a tier 3 compilation is invoked")   \
+  product(intx, Tier2BackedgeNotifyFreqLog, 14,                             \
+          "C1 without MDO (tier 2) invocation notification frequency.")     \
                                                                             \
-  product_pd(intx, Tier4CompileThreshold,                                   \
-          "threshold at which a tier 4 compilation is invoked")             \
+  product(intx, Tier3BackedgeNotifyFreqLog, 13,                             \
+          "C1 with MDO profiling (tier 3) invocation notification "         \
+          "frequency.")                                                     \
                                                                             \
-  product_pd(intx, Tier4BackEdgeThreshold,                                  \
-          "Back edge threshold at which a tier 4 compilation is invoked")   \
+  product(intx, Tier2CompileThreshold, 0,                                   \
+          "threshold at which tier 2 compilation is invoked")               \
+                                                                            \
+  product(intx, Tier2BackEdgeThreshold, 0,                                  \
+          "Back edge threshold at which tier 2 compilation is invoked")     \
+                                                                            \
+  product(intx, Tier3InvocationThreshold, 200,                              \
+          "Compile if number of method invocations crosses this "           \
+          "threshold")                                                      \
+                                                                            \
+  product(intx, Tier3MinInvocationThreshold, 100,                           \
+          "Minimum invocation to compile at tier 3")                        \
+                                                                            \
+  product(intx, Tier3CompileThreshold, 2000,                                \
+          "Threshold at which tier 3 compilation is invoked (invocation "   \
+          "minimum must be satisfied.")                                     \
+                                                                            \
+  product(intx, Tier3BackEdgeThreshold,  7000,                              \
+          "Back edge threshold at which tier 3 OSR compilation is invoked") \
+                                                                            \
+  product(intx, Tier4InvocationThreshold, 5000,                             \
+          "Compile if number of method invocations crosses this "           \
+          "threshold")                                                      \
+                                                                            \
+  product(intx, Tier4MinInvocationThreshold, 600,                           \
+          "Minimum invocation to compile at tier 4")                        \
+                                                                            \
+  product(intx, Tier4CompileThreshold, 15000,                               \
+          "Threshold at which tier 4 compilation is invoked (invocation "   \
+          "minimum must be satisfied.")                                     \
+                                                                            \
+  product(intx, Tier4BackEdgeThreshold, 40000,                              \
+          "Back edge threshold at which tier 4 OSR compilation is invoked") \
+                                                                            \
+  product(intx, Tier3DelayOn, 5,                                            \
+          "If C2 queue size grows over this amount per compiler thread "    \
+          "stop compiling at tier 3 and start compiling at tier 2")         \
+                                                                            \
+  product(intx, Tier3DelayOff, 2,                                           \
+          "If C2 queue size is less than this amount per compiler thread "  \
+          "allow methods compiled at tier 2 transition to tier 3")          \
+                                                                            \
+  product(intx, Tier3LoadFeedback, 5,                                       \
+          "Tier 3 thresholds will increase twofold when C1 queue size "     \
+          "reaches this amount per compiler thread")                        \
+                                                                            \
+  product(intx, Tier4LoadFeedback, 3,                                       \
+          "Tier 4 thresholds will increase twofold when C2 queue size "     \
+          "reaches this amount per compiler thread")                        \
+                                                                            \
+  product(intx, TieredCompileTaskTimeout, 50,                               \
+          "Kill compile task if method was not used within "                \
+          "given timeout in milliseconds")                                  \
+                                                                            \
+  product(intx, TieredStopAtLevel, 4,                                       \
+          "Stop at given compilation level")                                \
+                                                                            \
+  product(intx, Tier0ProfilingStartPercentage, 200,                         \
+          "Start profiling in interpreter if the counters exceed tier 3"    \
+          "thresholds by the specified percentage")                         \
+                                                                            \
+  product(intx, TieredRateUpdateMinTime, 1,                                 \
+          "Minimum rate sampling interval (in milliseconds)")               \
+                                                                            \
+  product(intx, TieredRateUpdateMaxTime, 25,                                \
+          "Maximum rate sampling interval (in milliseconds)")               \
                                                                             \
   product_pd(bool, TieredCompilation,                                       \
-          "Enable two-tier compilation")                                    \
+          "Enable tiered compilation")                                      \
+                                                                            \
+  product(bool, PrintTieredEvents, false,                                   \
+          "Print tiered events notifications")                              \
                                                                             \
   product(bool, StressTieredRuntime, false,                                 \
           "Alternate client and server compiler on compile requests")       \
