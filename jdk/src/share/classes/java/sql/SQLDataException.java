@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,13 @@
 package java.sql;
 
 /**
- * The subclass of {@link SQLException} thrown when the SQLState class value is '<i>22</i>'. This indicates
- * various data errors, including but not limited to not-allowed conversion, division by 0
- * and invalid arguments to functions.
- *
+ * The subclass of {@link SQLException} thrown when the SQLState class value
+ * is '<i>22</i>', or under vendor-specified conditions.  This indicates
+ * various data errors, including but not limited to data conversion errors,
+ * division by 0, and invalid arguments to functions.
+ * <p>
+ * Please consult your driver vendor documentation for the vendor-specified
+ * conditions for which this <code>Exception</code> may be thrown.
  * @since 1.6
  */
 public class SQLDataException extends SQLNonTransientException {
