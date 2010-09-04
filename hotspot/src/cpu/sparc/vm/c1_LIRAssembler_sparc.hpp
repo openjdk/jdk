@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,13 @@
 
   static bool is_single_instruction(LIR_Op* op);
 
+  // Record the type of the receiver in ReceiverTypeData
+  void type_profile_helper(Register mdo, int mdo_offset_bias,
+                           ciMethodData *md, ciProfileData *data,
+                           Register recv, Register tmp1, Label* update_done);
  public:
-  void pack64( Register rs, Register rd );
-  void unpack64( Register rd );
+  void   pack64(LIR_Opr src, LIR_Opr dst);
+  void unpack64(LIR_Opr src, LIR_Opr dst);
 
 enum {
 #ifdef _LP64

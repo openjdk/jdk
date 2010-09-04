@@ -187,6 +187,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_alloc_obj(LIR_OpAllocObj* op);
   void emit_alloc_array(LIR_OpAllocArray* op);
   void emit_opTypeCheck(LIR_OpTypeCheck* op);
+  void emit_checkcast(LIR_OpTypeCheck* op);
   void emit_compare_and_swap(LIR_OpCompareAndSwap* op);
   void emit_lock(LIR_OpLock* op);
   void emit_call(LIR_OpJavaCall* op);

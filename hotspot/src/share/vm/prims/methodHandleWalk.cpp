@@ -979,7 +979,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
 
   // Inline the method.
   InvocationCounter* ic = m->invocation_counter();
-  ic->set_carry();
+  ic->set_carry_flag();
 
   for (int i = 0; i < argc; i++) {
     ArgToken arg = argv[i];
@@ -1209,7 +1209,7 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   // Set the carry bit of the invocation counter to force inlining of
   // the adapter.
   InvocationCounter* ic = m->invocation_counter();
-  ic->set_carry();
+  ic->set_carry_flag();
 
   // Rewrite the method and set up the constant pool cache.
   objArrayOop m_array = oopFactory::new_system_objArray(1, CHECK_(nullHandle));

@@ -294,34 +294,64 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 // ??: invocation counter
 //
 void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
-  // Update standard invocation counters
-  __ increment_invocation_counter(O0, G3_scratch);
-  if (ProfileInterpreter) {  // %%% Merge this into methodDataOop
-    Address interpreter_invocation_counter(Lmethod, methodOopDesc::interpreter_invocation_counter_offset());
-    __ ld(interpreter_invocation_counter, G3_scratch);
-    __ inc(G3_scratch);
-    __ st(G3_scratch, interpreter_invocation_counter);
-  }
+  // Note: In tiered we increment either counters in methodOop or in MDO depending if we're profiling or not.
+  if (TieredCompilation) {
+    const int increment = InvocationCounter::count_increment;
+    const int mask = ((1 << Tier0InvokeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
+    Label no_mdo, done;
+    if (ProfileInterpreter) {
+      // If no method data exists, go to profile_continue.
+      __ ld_ptr(Lmethod, methodOopDesc::method_data_offset(), G4_scratch);
+      __ br_null(G4_scratch, false, Assembler::pn, no_mdo);
+      __ delayed()->nop();
+      // Increment counter
+      Address mdo_invocation_counter(G4_scratch,
+                                     in_bytes(methodDataOopDesc::invocation_counter_offset()) +
+                                     in_bytes(InvocationCounter::counter_offset()));
+      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask,
+                                 G3_scratch, Lscratch,
+                                 Assembler::zero, overflow);
+      __ ba(false, done);
+      __ delayed()->nop();
+    }
 
-  if (ProfileInterpreter && profile_method != NULL) {
-    // Test to see if we should create a method data oop
-    AddressLiteral profile_limit(&InvocationCounter::InterpreterProfileLimit);
-    __ sethi(profile_limit, G3_scratch);
-    __ ld(G3_scratch, profile_limit.low10(), G3_scratch);
+    // Increment counter in methodOop
+    __ bind(no_mdo);
+    Address invocation_counter(Lmethod,
+                               in_bytes(methodOopDesc::invocation_counter_offset()) +
+                               in_bytes(InvocationCounter::counter_offset()));
+    __ increment_mask_and_jump(invocation_counter, increment, mask,
+                               G3_scratch, Lscratch,
+                               Assembler::zero, overflow);
+    __ bind(done);
+  } else {
+    // Update standard invocation counters
+    __ increment_invocation_counter(O0, G3_scratch);
+    if (ProfileInterpreter) {  // %%% Merge this into methodDataOop
+      Address interpreter_invocation_counter(Lmethod,in_bytes(methodOopDesc::interpreter_invocation_counter_offset()));
+      __ ld(interpreter_invocation_counter, G3_scratch);
+      __ inc(G3_scratch);
+      __ st(G3_scratch, interpreter_invocation_counter);
+    }
+
+    if (ProfileInterpreter && profile_method != NULL) {
+      // Test to see if we should create a method data oop
+      AddressLiteral profile_limit((address)&InvocationCounter::InterpreterProfileLimit);
+      __ load_contents(profile_limit, G3_scratch);
+      __ cmp(O0, G3_scratch);
+      __ br(Assembler::lessUnsigned, false, Assembler::pn, *profile_method_continue);
+      __ delayed()->nop();
+
+      // if no method data exists, go to profile_method
+      __ test_method_data_pointer(*profile_method);
+    }
+
+    AddressLiteral invocation_limit((address)&InvocationCounter::InterpreterInvocationLimit);
+    __ load_contents(invocation_limit, G3_scratch);
     __ cmp(O0, G3_scratch);
-    __ br(Assembler::lessUnsigned, false, Assembler::pn, *profile_method_continue);
+    __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow);
     __ delayed()->nop();
-
-    // if no method data exists, go to profile_method
-    __ test_method_data_pointer(*profile_method);
   }
-
-  AddressLiteral invocation_limit(&InvocationCounter::InterpreterInvocationLimit);
-  __ sethi(invocation_limit, G3_scratch);
-  __ ld(G3_scratch, invocation_limit.low10(), G3_scratch);
-  __ cmp(O0, G3_scratch);
-  __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow);
-  __ delayed()->nop();
 
 }
 

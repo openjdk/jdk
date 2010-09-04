@@ -1625,13 +1625,18 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
 void LIR_Assembler::return_op(LIR_Opr result) {
   // the poll may need a register so just pick one that isn't the return register
-#ifdef TIERED
+#if defined(TIERED) && !defined(_LP64)
   if (result->type_field() == LIR_OprDesc::long_type) {
     // Must move the result to G1
     // Must leave proper result in O0,O1 and G1 (TIERED only)
     __ sllx(I0, 32, G1);          // Shift bits into high G1
     __ srl (I1, 0, I1);           // Zero extend O1 (harmless?)
     __ or3 (I1, G1, G1);          // OR 64 bits into G1
+#ifdef ASSERT
+    // mangle it so any problems will show up
+    __ set(0xdeadbeef, I0);
+    __ set(0xdeadbeef, I1);
+#endif
   }
 #endif // TIERED
   __ set((intptr_t)os::get_polling_page(), L0);
@@ -2424,6 +2429,195 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 }
 
 
+void LIR_Assembler::type_profile_helper(Register mdo, int mdo_offset_bias,
+                                        ciMethodData *md, ciProfileData *data,
+                                        Register recv, Register tmp1, Label* update_done) {
+  uint i;
+  for (i = 0; i < VirtualCallData::row_limit(); i++) {
+    Label next_test;
+    // See if the receiver is receiver[n].
+    Address receiver_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) -
+                          mdo_offset_bias);
+    __ ld_ptr(receiver_addr, tmp1);
+    __ verify_oop(tmp1);
+    __ cmp(recv, tmp1);
+    __ brx(Assembler::notEqual, false, Assembler::pt, next_test);
+    __ delayed()->nop();
+    Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) -
+                      mdo_offset_bias);
+    __ ld_ptr(data_addr, tmp1);
+    __ add(tmp1, DataLayout::counter_increment, tmp1);
+    __ st_ptr(tmp1, data_addr);
+    __ ba(false, *update_done);
+    __ delayed()->nop();
+    __ bind(next_test);
+  }
+
+  // Didn't find receiver; find next empty slot and fill it in
+  for (i = 0; i < VirtualCallData::row_limit(); i++) {
+    Label next_test;
+    Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) -
+                      mdo_offset_bias);
+    load(recv_addr, tmp1, T_OBJECT);
+    __ br_notnull(tmp1, false, Assembler::pt, next_test);
+    __ delayed()->nop();
+    __ st_ptr(recv, recv_addr);
+    __ set(DataLayout::counter_increment, tmp1);
+    __ st_ptr(tmp1, mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) -
+              mdo_offset_bias);
+    __ ba(false, *update_done);
+    __ delayed()->nop();
+    __ bind(next_test);
+  }
+}
+
+void LIR_Assembler::emit_checkcast(LIR_OpTypeCheck *op) {
+  assert(op->code() == lir_checkcast, "Invalid operation");
+  // we always need a stub for the failure case.
+  CodeStub* stub = op->stub();
+  Register obj = op->object()->as_register();
+  Register k_RInfo = op->tmp1()->as_register();
+  Register klass_RInfo = op->tmp2()->as_register();
+  Register dst = op->result_opr()->as_register();
+  Register Rtmp1 = op->tmp3()->as_register();
+  ciKlass* k = op->klass();
+
+
+  if (obj == k_RInfo) {
+    k_RInfo = klass_RInfo;
+    klass_RInfo = obj;
+  }
+
+  ciMethodData* md;
+  ciProfileData* data;
+  int mdo_offset_bias = 0;
+  if (op->should_profile()) {
+    ciMethod* method = op->profiled_method();
+    assert(method != NULL, "Should have method");
+    int bci          = op->profiled_bci();
+    md = method->method_data();
+    if (md == NULL) {
+      bailout("out of memory building methodDataOop");
+      return;
+    }
+    data = md->bci_to_data(bci);
+    assert(data != NULL,       "need data for checkcast");
+    assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for checkcast");
+    if (!Assembler::is_simm13(md->byte_offset_of_slot(data, DataLayout::header_offset()) + data->size_in_bytes())) {
+      // The offset is large so bias the mdo by the base of the slot so
+      // that the ld can use simm13s to reference the slots of the data
+      mdo_offset_bias = md->byte_offset_of_slot(data, DataLayout::header_offset());
+    }
+
+    // We need two temporaries to perform this operation on SPARC,
+    // so to keep things simple we perform a redundant test here
+    Label profile_done;
+    __ br_notnull(obj, false, Assembler::pn, profile_done);
+    __ delayed()->nop();
+    Register mdo      = k_RInfo;
+    Register data_val = Rtmp1;
+    jobject2reg(md->constant_encoding(), mdo);
+    if (mdo_offset_bias > 0) {
+      __ set(mdo_offset_bias, data_val);
+      __ add(mdo, data_val, mdo);
+    }
+    Address flags_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()) - mdo_offset_bias);
+    __ ldub(flags_addr, data_val);
+    __ or3(data_val, BitData::null_seen_byte_constant(), data_val);
+    __ stb(data_val, flags_addr);
+    __ bind(profile_done);
+  }
+  Label profile_cast_failure;
+
+  Label done, done_null;
+  // Where to go in case of cast failure
+  Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
+
+  // patching may screw with our temporaries on sparc,
+  // so let's do it before loading the class
+  if (k->is_loaded()) {
+    jobject2reg(k->constant_encoding(), k_RInfo);
+  } else {
+    jobject2reg_with_patching(k_RInfo, op->info_for_patch());
+  }
+  assert(obj != k_RInfo, "must be different");
+  __ br_null(obj, false, Assembler::pn, done_null);
+  __ delayed()->nop();
+
+  // get object class
+  // not a safepoint as obj null check happens earlier
+  load(obj, oopDesc::klass_offset_in_bytes(), klass_RInfo, T_OBJECT, NULL);
+  if (op->fast_check()) {
+    assert_different_registers(klass_RInfo, k_RInfo);
+    __ cmp(k_RInfo, klass_RInfo);
+    __ brx(Assembler::notEqual, false, Assembler::pt, *failure_target);
+    __ delayed()->nop();
+  } else {
+    bool need_slow_path = true;
+    if (k->is_loaded()) {
+      if (k->super_check_offset() != sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())
+        need_slow_path = false;
+      // perform the fast part of the checking logic
+      __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, noreg,
+                                       (need_slow_path ? &done : NULL),
+                                       failure_target, NULL,
+                                       RegisterOrConstant(k->super_check_offset()));
+    } else {
+      // perform the fast part of the checking logic
+      __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7, &done,
+                                       failure_target, NULL);
+    }
+    if (need_slow_path) {
+      // call out-of-line instance of __ check_klass_subtype_slow_path(...):
+      assert(klass_RInfo == G3 && k_RInfo == G1, "incorrect call setup");
+      __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+      __ delayed()->nop();
+      __ cmp(G3, 0);
+      __ br(Assembler::equal, false, Assembler::pn, *failure_target);
+      __ delayed()->nop();
+    }
+  }
+  __ bind(done);
+
+  if (op->should_profile()) {
+    Register mdo  = klass_RInfo, recv = k_RInfo, tmp1 = Rtmp1;
+    assert_different_registers(obj, mdo, recv, tmp1);
+
+    jobject2reg(md->constant_encoding(), mdo);
+    if (mdo_offset_bias > 0) {
+      __ set(mdo_offset_bias, tmp1);
+      __ add(mdo, tmp1, mdo);
+    }
+    Label update_done;
+    load(Address(obj, oopDesc::klass_offset_in_bytes()), recv, T_OBJECT);
+    type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1, &update_done);
+    // Jump over the failure case
+    __ ba(false, update_done);
+    __ delayed()->nop();
+
+
+    // Cast failure case
+    __ bind(profile_cast_failure);
+    jobject2reg(md->constant_encoding(), mdo);
+    if (mdo_offset_bias > 0) {
+      __ set(mdo_offset_bias, tmp1);
+      __ add(mdo, tmp1, mdo);
+    }
+    Address data_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias);
+    __ ld_ptr(data_addr, tmp1);
+    __ sub(tmp1, DataLayout::counter_increment, tmp1);
+    __ st_ptr(tmp1, data_addr);
+    __ ba(false, *stub->entry());
+    __ delayed()->nop();
+
+    __ bind(update_done);
+  }
+
+  __ bind(done_null);
+  __ mov(obj, dst);
+}
+
+
 void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
   LIR_Code code = op->code();
   if (code == lir_store_check) {
@@ -2437,8 +2631,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
     CodeStub* stub = op->stub();
     Label done;
-    __ cmp(value, 0);
-    __ br(Assembler::equal, false, Assembler::pn, done);
+    __ br_null(value, false, Assembler::pn, done);
     __ delayed()->nop();
     load(array, oopDesc::klass_offset_in_bytes(), k_RInfo, T_OBJECT, op->info_for_exception());
     load(value, oopDesc::klass_offset_in_bytes(), klass_RInfo, T_OBJECT, NULL);
@@ -2456,109 +2649,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
     __ delayed()->nop();
     __ bind(done);
-  } else if (op->code() == lir_checkcast) {
-    // we always need a stub for the failure case.
-    CodeStub* stub = op->stub();
-    Register obj = op->object()->as_register();
-    Register k_RInfo = op->tmp1()->as_register();
-    Register klass_RInfo = op->tmp2()->as_register();
-    Register dst = op->result_opr()->as_register();
-    Register Rtmp1 = op->tmp3()->as_register();
-    ciKlass* k = op->klass();
-
-    if (obj == k_RInfo) {
-      k_RInfo = klass_RInfo;
-      klass_RInfo = obj;
-    }
-    if (op->profiled_method() != NULL) {
-      ciMethod* method = op->profiled_method();
-      int bci          = op->profiled_bci();
-
-      // We need two temporaries to perform this operation on SPARC,
-      // so to keep things simple we perform a redundant test here
-      Label profile_done;
-      __ cmp(obj, 0);
-      __ br(Assembler::notEqual, false, Assembler::pn, profile_done);
-      __ delayed()->nop();
-      // Object is null; update methodDataOop
-      ciMethodData* md = method->method_data();
-      if (md == NULL) {
-        bailout("out of memory building methodDataOop");
-        return;
-      }
-      ciProfileData* data = md->bci_to_data(bci);
-      assert(data != NULL,       "need data for checkcast");
-      assert(data->is_BitData(), "need BitData for checkcast");
-      Register mdo      = k_RInfo;
-      Register data_val = Rtmp1;
-      jobject2reg(md->constant_encoding(), mdo);
-
-      int mdo_offset_bias = 0;
-      if (!Assembler::is_simm13(md->byte_offset_of_slot(data, DataLayout::header_offset()) + data->size_in_bytes())) {
-        // The offset is large so bias the mdo by the base of the slot so
-        // that the ld can use simm13s to reference the slots of the data
-        mdo_offset_bias = md->byte_offset_of_slot(data, DataLayout::header_offset());
-        __ set(mdo_offset_bias, data_val);
-        __ add(mdo, data_val, mdo);
-      }
-
-
-      Address flags_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()) - mdo_offset_bias);
-      __ ldub(flags_addr, data_val);
-      __ or3(data_val, BitData::null_seen_byte_constant(), data_val);
-      __ stb(data_val, flags_addr);
-      __ bind(profile_done);
-    }
-
-    Label done;
-    // patching may screw with our temporaries on sparc,
-    // so let's do it before loading the class
-    if (k->is_loaded()) {
-      jobject2reg(k->constant_encoding(), k_RInfo);
-    } else {
-      jobject2reg_with_patching(k_RInfo, op->info_for_patch());
-    }
-    assert(obj != k_RInfo, "must be different");
-    __ cmp(obj, 0);
-    __ br(Assembler::equal, false, Assembler::pn, done);
-    __ delayed()->nop();
-
-    // get object class
-    // not a safepoint as obj null check happens earlier
-    load(obj, oopDesc::klass_offset_in_bytes(), klass_RInfo, T_OBJECT, NULL);
-    if (op->fast_check()) {
-      assert_different_registers(klass_RInfo, k_RInfo);
-      __ cmp(k_RInfo, klass_RInfo);
-      __ br(Assembler::notEqual, false, Assembler::pt, *stub->entry());
-      __ delayed()->nop();
-      __ bind(done);
-    } else {
-      bool need_slow_path = true;
-      if (k->is_loaded()) {
-        if (k->super_check_offset() != sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())
-          need_slow_path = false;
-        // perform the fast part of the checking logic
-        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, noreg,
-                                         (need_slow_path ? &done : NULL),
-                                         stub->entry(), NULL,
-                                         RegisterOrConstant(k->super_check_offset()));
-      } else {
-        // perform the fast part of the checking logic
-        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7,
-                                         &done, stub->entry(), NULL);
-      }
-      if (need_slow_path) {
-        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-        assert(klass_RInfo == G3 && k_RInfo == G1, "incorrect call setup");
-        __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
-        __ delayed()->nop();
-        __ cmp(G3, 0);
-        __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
-        __ delayed()->nop();
-      }
-      __ bind(done);
-    }
-    __ mov(obj, dst);
   } else if (code == lir_instanceof) {
     Register obj = op->object()->as_register();
     Register k_RInfo = op->tmp1()->as_register();
@@ -2580,8 +2670,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       jobject2reg_with_patching(k_RInfo, op->info_for_patch());
     }
     assert(obj != k_RInfo, "must be different");
-    __ cmp(obj, 0);
-    __ br(Assembler::equal, true, Assembler::pn, done);
+    __ br_null(obj, true, Assembler::pn, done);
     __ delayed()->set(0, dst);
 
     // get object class
@@ -2589,7 +2678,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     load(obj, oopDesc::klass_offset_in_bytes(), klass_RInfo, T_OBJECT, NULL);
     if (op->fast_check()) {
       __ cmp(k_RInfo, klass_RInfo);
-      __ br(Assembler::equal, true, Assembler::pt, done);
+      __ brx(Assembler::equal, true, Assembler::pt, done);
       __ delayed()->set(1, dst);
       __ set(0, dst);
       __ bind(done);
@@ -2776,9 +2865,14 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciProfileData* data = md->bci_to_data(bci);
   assert(data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
-  assert(op->tmp1()->is_single_cpu(), "tmp1 must be allocated");
   Register mdo  = op->mdo()->as_register();
+#ifdef _LP64
+  assert(op->tmp1()->is_double_cpu(), "tmp1 must be allocated");
+  Register tmp1 = op->tmp1()->as_register_lo();
+#else
+  assert(op->tmp1()->is_single_cpu(), "tmp1 must be allocated");
   Register tmp1 = op->tmp1()->as_register();
+#endif
   jobject2reg(md->constant_encoding(), mdo);
   int mdo_offset_bias = 0;
   if (!Assembler::is_simm13(md->byte_offset_of_slot(data, CounterData::count_offset()) +
@@ -2795,13 +2889,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
   if ((bc == Bytecodes::_invokevirtual || bc == Bytecodes::_invokeinterface) &&
-      Tier1ProfileVirtualCalls) {
+      C1ProfileVirtualCalls) {
     assert(op->recv()->is_single_cpu(), "recv must be allocated");
     Register recv = op->recv()->as_register();
     assert_different_registers(mdo, tmp1, recv);
     assert(data->is_VirtualCallData(), "need VirtualCallData for virtual calls");
     ciKlass* known_klass = op->known_holder();
-    if (Tier1OptimizeVirtualCallProfiling && known_klass != NULL) {
+    if (C1OptimizeVirtualCallProfiling && known_klass != NULL) {
       // We know the type that will be seen at this call site; we can
       // statically update the methodDataOop rather than needing to do
       // dynamic tests on the receiver type
@@ -2816,9 +2910,9 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           Address data_addr(mdo, md->byte_offset_of_slot(data,
                                                          VirtualCallData::receiver_count_offset(i)) -
                             mdo_offset_bias);
-          __ lduw(data_addr, tmp1);
+          __ ld_ptr(data_addr, tmp1);
           __ add(tmp1, DataLayout::counter_increment, tmp1);
-          __ stw(tmp1, data_addr);
+          __ st_ptr(tmp1, data_addr);
           return;
         }
       }
@@ -2837,69 +2931,31 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           __ st_ptr(tmp1, recv_addr);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
                             mdo_offset_bias);
-          __ lduw(data_addr, tmp1);
+          __ ld_ptr(data_addr, tmp1);
           __ add(tmp1, DataLayout::counter_increment, tmp1);
-          __ stw(tmp1, data_addr);
+          __ st_ptr(tmp1, data_addr);
           return;
         }
       }
     } else {
       load(Address(recv, oopDesc::klass_offset_in_bytes()), recv, T_OBJECT);
       Label update_done;
-      uint i;
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        Label next_test;
-        // See if the receiver is receiver[n].
-        Address receiver_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)) -
-                              mdo_offset_bias);
-        __ ld_ptr(receiver_addr, tmp1);
-        __ verify_oop(tmp1);
-        __ cmp(recv, tmp1);
-        __ brx(Assembler::notEqual, false, Assembler::pt, next_test);
-        __ delayed()->nop();
-        Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
-                          mdo_offset_bias);
-        __ lduw(data_addr, tmp1);
-        __ add(tmp1, DataLayout::counter_increment, tmp1);
-        __ stw(tmp1, data_addr);
-        __ br(Assembler::always, false, Assembler::pt, update_done);
-        __ delayed()->nop();
-        __ bind(next_test);
-      }
-
-      // Didn't find receiver; find next empty slot and fill it in
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        Label next_test;
-        Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)) -
-                          mdo_offset_bias);
-        load(recv_addr, tmp1, T_OBJECT);
-        __ tst(tmp1);
-        __ brx(Assembler::notEqual, false, Assembler::pt, next_test);
-        __ delayed()->nop();
-        __ st_ptr(recv, recv_addr);
-        __ set(DataLayout::counter_increment, tmp1);
-        __ st_ptr(tmp1, mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
-                  mdo_offset_bias);
-        __ br(Assembler::always, false, Assembler::pt, update_done);
-        __ delayed()->nop();
-        __ bind(next_test);
-      }
+      type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
       // Increment total counter to indicate polymorphic case.
-      __ lduw(counter_addr, tmp1);
+      __ ld_ptr(counter_addr, tmp1);
       __ add(tmp1, DataLayout::counter_increment, tmp1);
-      __ stw(tmp1, counter_addr);
+      __ st_ptr(tmp1, counter_addr);
 
       __ bind(update_done);
     }
   } else {
     // Static call
-    __ lduw(counter_addr, tmp1);
+    __ ld_ptr(counter_addr, tmp1);
     __ add(tmp1, DataLayout::counter_increment, tmp1);
-    __ stw(tmp1, counter_addr);
+    __ st_ptr(tmp1, counter_addr);
   }
 }
-
 
 void LIR_Assembler::align_backward_branch_target() {
   __ align(OptoLoopAlignment);
@@ -3093,31 +3149,36 @@ void LIR_Assembler::membar_release() {
   // no-op on TSO
 }
 
-// Macro to Pack two sequential registers containing 32 bit values
+// Pack two sequential registers containing 32 bit values
 // into a single 64 bit register.
-// rs and rs->successor() are packed into rd
-// rd and rs may be the same register.
-// Note: rs and rs->successor() are destroyed.
-void LIR_Assembler::pack64( Register rs, Register rd ) {
+// src and src->successor() are packed into dst
+// src and dst may be the same register.
+// Note: src is destroyed
+void LIR_Assembler::pack64(LIR_Opr src, LIR_Opr dst) {
+  Register rs = src->as_register();
+  Register rd = dst->as_register_lo();
   __ sllx(rs, 32, rs);
   __ srl(rs->successor(), 0, rs->successor());
   __ or3(rs, rs->successor(), rd);
 }
 
-// Macro to unpack a 64 bit value in a register into
+// Unpack a 64 bit value in a register into
 // two sequential registers.
-// rd is unpacked into rd and rd->successor()
-void LIR_Assembler::unpack64( Register rd ) {
-  __ mov(rd, rd->successor());
-  __ srax(rd, 32, rd);
-  __ sra(rd->successor(), 0, rd->successor());
+// src is unpacked into dst and dst->successor()
+void LIR_Assembler::unpack64(LIR_Opr src, LIR_Opr dst) {
+  Register rs = src->as_register_lo();
+  Register rd = dst->as_register_hi();
+  assert_different_registers(rs, rd, rd->successor());
+  __ srlx(rs, 32, rd);
+  __ srl (rs,  0, rd->successor());
 }
 
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest) {
   LIR_Address* addr = addr_opr->as_address_ptr();
   assert(addr->index()->is_illegal() && addr->scale() == LIR_Address::times_1 && Assembler::is_simm13(addr->disp()), "can't handle complex addresses yet");
-  __ add(addr->base()->as_register(), addr->disp(), dest->as_register());
+
+  __ add(addr->base()->as_pointer_register(), addr->disp(), dest->as_pointer_register());
 }
 
 
@@ -3188,11 +3249,36 @@ void LIR_Assembler::peephole(LIR_List* lir) {
             tty->cr();
           }
 #endif
-          continue;
+        } else {
+          LIR_Op* delay_op = new LIR_OpDelay(new LIR_Op0(lir_nop), op->as_OpJavaCall()->info());
+          inst->insert_before(i + 1, delay_op);
+          i++;
         }
 
-        LIR_Op* delay_op = new LIR_OpDelay(new LIR_Op0(lir_nop), op->as_OpJavaCall()->info());
-        inst->insert_before(i + 1, delay_op);
+#if defined(TIERED) && !defined(_LP64)
+        // fixup the return value from G1 to O0/O1 for long returns.
+        // It's done here instead of in LIRGenerator because there's
+        // such a mismatch between the single reg and double reg
+        // calling convention.
+        LIR_OpJavaCall* callop = op->as_OpJavaCall();
+        if (callop->result_opr() == FrameMap::out_long_opr) {
+          LIR_OpJavaCall* call;
+          LIR_OprList* arguments = new LIR_OprList(callop->arguments()->length());
+          for (int a = 0; a < arguments->length(); a++) {
+            arguments[a] = callop->arguments()[a];
+          }
+          if (op->code() == lir_virtual_call) {
+            call = new LIR_OpJavaCall(op->code(), callop->method(), callop->receiver(), FrameMap::g1_long_single_opr,
+                                      callop->vtable_offset(), arguments, callop->info());
+          } else {
+            call = new LIR_OpJavaCall(op->code(), callop->method(), callop->receiver(), FrameMap::g1_long_single_opr,
+                                      callop->addr(), arguments, callop->info());
+          }
+          inst->at_put(i - 1, call);
+          inst->insert_before(i + 1, new LIR_Op1(lir_unpack64, FrameMap::g1_long_single_opr, callop->result_opr(),
+                                                 T_LONG, lir_patch_none, NULL));
+        }
+#endif
         break;
       }
     }
