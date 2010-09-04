@@ -41,7 +41,7 @@ else
   IMAGES_TARGET = images
 endif
 
-DEPLOY_BUILD_TARGETS = sanity javaws-all plugin-all 
+DEPLOY_BUILD_TARGETS = sanity deploy 
 # Only build 7-Zip LZMA file compression if it is available
 # Enable 7-Zip LZMA file (de)compression for Java Kernel if it is available
 ifeq ($(ARCH_DATA_MODEL), 32)
