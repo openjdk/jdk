@@ -637,6 +637,18 @@ public class TreeInfo {
         }
     }
 
+    public static boolean isDeclaration(JCTree node) {
+        node = skipParens(node);
+        switch (node.getTag()) {
+        case JCTree.CLASSDEF:
+        case JCTree.METHODDEF:
+        case JCTree.VARDEF:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     /** If this tree is an identifier or a field, return its symbol,
      *  otherwise return null.
      */
