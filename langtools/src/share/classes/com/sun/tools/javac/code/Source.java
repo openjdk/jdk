@@ -171,11 +171,10 @@ public enum Source {
     public boolean allowUnderscoresInLiterals() {
         return compareTo(JDK1_7) >= 0;
     }
-    public boolean allowStringsInSwitch() {
+    public boolean allowExoticIdentifiers() {
         return compareTo(JDK1_7) >= 0;
     }
-    // JSR 292: recognize @PolymorphicSignature on java/dyn names
-    public boolean allowPolymorphicSignature() {
+    public boolean allowStringsInSwitch() {
         return compareTo(JDK1_7) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

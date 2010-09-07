@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +26,7 @@
  * @summary Generate call sites for method handle
  * @author jrose
  *
- * @compile -source 7 -target 7 -XDallowTransitionalJSR292=no InvokeMH.java
+ * @compile/fail/ref=InvokeMHTrans.out -Werror -XDrawDiagnostics -source 7 -target 7 InvokeMHTrans.java
  */
 
 /*
@@ -44,7 +43,7 @@ package meth;
 
 import java.dyn.MethodHandle;
 
-public class InvokeMH {
+public class InvokeMHTrans {
     void test(MethodHandle mh_SiO,
               MethodHandle mh_vS,
               MethodHandle mh_vi,
@@ -57,17 +56,20 @@ public class InvokeMH {
         Object k = "kosmos";
         mh_SiO.invokeExact((String)k, 789);
         o = mh_SiO.invokeExact((String)null, 000);
-        o = (Object) mh_SiO.invokeExact("arda", -123);
+        o = mh_SiO.<Object>invokeExact("arda", -123);
 
         // sig = ()String
-        s = (String) mh_vS.invokeExact();
+        s = mh_vS.<String>invokeExact();
 
         // sig = ()int
-        i = (int) mh_vi.invokeExact();
-        o = (int) mh_vi.invokeExact();
+        i = mh_vi.<int>invokeExact();
+        o = mh_vi.<int>invokeExact();
+        //s = mh_vi.<int>invokeExact(); //BAD
+        mh_vi.<int>invokeExact();
 
         // sig = ()void
-        mh_vv.invokeExact();
+        //o = mh_vv.<void>invokeExact(); //BAD
+        mh_vv.<void>invokeExact();
     }
 
     void testGen(MethodHandle mh_SiO,
@@ -77,23 +79,24 @@ public class InvokeMH {
         Object o; String s; int i;  // for return type testing
 
         // next five must have sig = (*,*)*
-        o = mh_SiO.invokeGeneric((Object)"world", (Object)123);
-        mh_SiO.invokeGeneric((Object)"mundus", (Object)456);
+        mh_SiO.invokeGeneric((Object)"world", (Object)123);
+        mh_SiO.<void>invokeGeneric((Object)"mundus", (Object)456);
         Object k = "kosmos";
-        o = mh_SiO.invokeGeneric(k, 789);
+        mh_SiO.invokeGeneric(k, 789);
         o = mh_SiO.invokeGeneric(null, 000);
-        o = mh_SiO.invokeGeneric("arda", -123);
+        o = mh_SiO.<Object>invokeGeneric("arda", -123);
 
         // sig = ()String
         o = mh_vS.invokeGeneric();
 
         // sig = ()int
-        i = (int) mh_vi.invokeGeneric();
-        o = (int) mh_vi.invokeGeneric();
-        mh_vi.invokeGeneric();
+        i = mh_vi.<int>invokeGeneric();
+        o = mh_vi.invokeGeneric();
+        //s = mh_vi.<int>invokeGeneric(); //BAD
+        mh_vi.<void>invokeGeneric();
 
         // sig = ()void
-        mh_vv.invokeGeneric();
+        //o = mh_vv.<void>invokeGeneric(); //BAD
         o = mh_vv.invokeGeneric();
     }
 }

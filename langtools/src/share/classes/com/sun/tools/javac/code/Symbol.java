@@ -214,6 +214,16 @@ public abstract class Symbol implements Element {
         return (flags() & INTERFACE) != 0;
     }
 
+    /** Recognize if this symbol was marked @PolymorphicSignature in the source. */
+    public boolean isPolymorphicSignatureGeneric() {
+        return (flags() & (POLYMORPHIC_SIGNATURE | HYPOTHETICAL)) == POLYMORPHIC_SIGNATURE;
+    }
+
+    /** Recognize if this symbol was split from a @PolymorphicSignature symbol in the source. */
+    public boolean isPolymorphicSignatureInstance() {
+        return (flags() & (POLYMORPHIC_SIGNATURE | HYPOTHETICAL)) == (POLYMORPHIC_SIGNATURE | HYPOTHETICAL);
+    }
+
     /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
