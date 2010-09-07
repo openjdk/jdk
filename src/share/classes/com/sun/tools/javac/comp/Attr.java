@@ -3201,4 +3201,104 @@ public class Attr extends JCTree.Visitor {
             super.visitMethodDef(tree);
         }
     };
+
+    // <editor-fold desc="post-attribution visitor">
+
+    /**
+     * Handle missing types/symbols in an AST. This routine is useful when
+     * the compiler has encountered some errors (which might have ended up
+     * terminating attribution abruptly); if the compiler is used in fail-over
+     * mode (e.g. by an IDE) and the AST contains semantic errors, this routine
+     * prevents NPE to be progagated during subsequent compilation steps.
+     */
+    public void postAttr(Env<AttrContext> env) {
+        new PostAttrAnalyzer().scan(env.tree);
+    }
+
+    class PostAttrAnalyzer extends TreeScanner {
+
+        private void initTypeIfNeeded(JCTree that) {
+            if (that.type == null) {
+                that.type = syms.unknownType;
+            }
+        }
+
+        @Override
+        public void scan(JCTree tree) {
+            if (tree == null) return;
+            if (tree instanceof JCExpression) {
+                initTypeIfNeeded(tree);
+            }
+            super.scan(tree);
+        }
+
+        @Override
+        public void visitIdent(JCIdent that) {
+            if (that.sym == null) {
+                that.sym = syms.unknownSymbol;
+            }
+        }
+
+        @Override
+        public void visitSelect(JCFieldAccess that) {
+            if (that.sym == null) {
+                that.sym = syms.unknownSymbol;
+            }
+            super.visitSelect(that);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl that) {
+            initTypeIfNeeded(that);
+            if (that.sym == null) {
+                that.sym = new ClassSymbol(0, that.name, that.type, syms.noSymbol);
+            }
+            super.visitClassDef(that);
+        }
+
+        @Override
+        public void visitMethodDef(JCMethodDecl that) {
+            initTypeIfNeeded(that);
+            if (that.sym == null) {
+                that.sym = new MethodSymbol(0, that.name, that.type, syms.noSymbol);
+            }
+            super.visitMethodDef(that);
+        }
+
+        @Override
+        public void visitVarDef(JCVariableDecl that) {
+            initTypeIfNeeded(that);
+            if (that.sym == null) {
+                that.sym = new VarSymbol(0, that.name, that.type, syms.noSymbol);
+                that.sym.adr = 0;
+            }
+            super.visitVarDef(that);
+        }
+
+        @Override
+        public void visitNewClass(JCNewClass that) {
+            if (that.constructor == null) {
+                that.constructor = new MethodSymbol(0, names.init, syms.unknownType, syms.noSymbol);
+            }
+            if (that.constructorType == null) {
+                that.constructorType = syms.unknownType;
+            }
+            super.visitNewClass(that);
+        }
+
+        @Override
+        public void visitBinary(JCBinary that) {
+            if (that.operator == null)
+                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            super.visitBinary(that);
+        }
+
+        @Override
+        public void visitUnary(JCUnary that) {
+            if (that.operator == null)
+                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            super.visitUnary(that);
+        }
+    }
+    // </editor-fold>
 }
