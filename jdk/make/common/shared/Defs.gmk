@@ -341,7 +341,33 @@ dummy:=$(warning "WARNING: Using definitions from $(_PRIVATE_DEFS_FILE)")
 include $(_PRIVATE_DEFS_FILE)
 endif
 
+# OUTPUTDIR: Location of all output for the build
+ifdef ALT_OUTPUTDIR
+  OUTPUTDIR:=$(subst \,/,$(ALT_OUTPUTDIR))
+  # Assumes this is absolute (checks later)
+  ABS_OUTPUTDIR:=$(OUTPUTDIR)
+else
+  ifndef _OUTPUTDIR
+    # Default:  Get "build" parent directory, which should always exist
+    ifndef BUILD_PARENT_DIRECTORY
+      BUILD_PARENT_DIRECTORY=$(BUILDDIR)/..
+    endif
+    ifdef OPENJDK
+      _OUTPUTDIRNAME=$(PLATFORM)-$(ARCH)$(OPENJDK_SUFFIX)
+    else
+      _OUTPUTDIRNAME=$(PLATFORM)-$(ARCH)
+    endif
+    _OUTPUTDIR=$(BUILD_PARENT_DIRECTORY)/build/$(_OUTPUTDIRNAME)
+  endif
+  OUTPUTDIR:=$(_OUTPUTDIR)
+endif
+# Check for spaces and null value
+OUTPUTDIR:=$(call AltCheckSpaces,OUTPUTDIR)
+OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
+
 # Get platform specific settings
+# NB: OUTPUTDIR must be defined. Otherwise hotspot import detection will not work correctly
+# On other hand this must be included early as it provides platform specific defines such as FullPath
 include $(JDK_MAKE_SHARED_DIR)/Defs-$(PLATFORM).gmk
 
 # Components
@@ -478,32 +504,6 @@ endif
 CACERTS_FILE:=$(call AltCheckSpaces,CACERTS_FILE)
 CACERTS_FILE:=$(call AltCheckValue,CACERTS_FILE)
 
-# OUTPUTDIR: Location of all output for the build
-ifdef ALT_OUTPUTDIR
-  OUTPUTDIR:=$(subst \,/,$(ALT_OUTPUTDIR))
-  # Assumes this is absolute (checks later)
-  ABS_OUTPUTDIR:=$(OUTPUTDIR)
-else
-  ifndef _OUTPUTDIR
-    # Default:  Get "build" parent directory, which should always exist
-    ifndef BUILD_PARENT_DIRECTORY
-      BUILD_PARENT_DIRECTORY=$(BUILDDIR)/..
-    endif
-    ABS_BUILD_PARENT_DIRECTORY:=$(call FullPath,$(BUILD_PARENT_DIRECTORY))
-    ifdef OPENJDK
-      _OUTPUTDIRNAME=$(PLATFORM)-$(ARCH)$(OPENJDK_SUFFIX)
-    else
-      _OUTPUTDIRNAME=$(PLATFORM)-$(ARCH)
-    endif
-    _OUTPUTDIR=$(BUILD_PARENT_DIRECTORY)/build/$(_OUTPUTDIRNAME)
-    ABS_OUTPUTDIR:=$(ABS_BUILD_PARENT_DIRECTORY)/build/$(_OUTPUTDIRNAME)
-  endif
-  OUTPUTDIR:=$(_OUTPUTDIR)
-endif
-# Check for spaces and null value
-OUTPUTDIR:=$(call AltCheckSpaces,OUTPUTDIR)
-OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
-
 #
 # When signing the JCE framework and provider, we could be using built
 # bits on a read-only filesystem.  If so, this test will fail and crash
@@ -519,7 +519,13 @@ endif
 
 # Define absolute path if needed and check for spaces and null value
 ifndef ABS_OUTPUTDIR
-  ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
+  ifdef _OUTPUTDIRNAME
+    #Could not define this at the same time as _OUTPUTDIRNAME as FullPath is not defined at that point
+    ABS_BUILD_PARENT_DIRECTORY:=$(call FullPath,$(BUILD_PARENT_DIRECTORY))
+    ABS_OUTPUTDIR:=$(ABS_BUILD_PARENT_DIRECTORY)/build/$(_OUTPUTDIRNAME)
+  else
+    ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
+  endif
 endif
 ABS_OUTPUTDIR:=$(call AltCheckSpaces,ABS_OUTPUTDIR)
 ABS_OUTPUTDIR:=$(call AltCheckValue,ABS_OUTPUTDIR)
