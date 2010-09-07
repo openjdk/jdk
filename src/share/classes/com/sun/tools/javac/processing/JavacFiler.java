@@ -34,6 +34,7 @@ import javax.lang.model.element.Element;
 import java.util.*;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FilterOutputStream;
@@ -450,10 +451,15 @@ public class JavacFiler implements Filer, Closeable {
         // TODO: Only support reading resources in selected output
         // locations?  Only allow reading of non-source, non-class
         // files from the supported input locations?
-        FileObject fileObject = fileManager.getFileForOutput(location,
-                                                             pkg.toString(),
-                                                             relativeName.toString(),
-                                                             null);
+        FileObject fileObject = fileManager.getFileForInput(location,
+                    pkg.toString(),
+                    relativeName.toString());
+        if (fileObject == null) {
+            String name = (pkg.length() == 0)
+                    ? relativeName.toString() : (pkg + "/" + relativeName);
+            throw new FileNotFoundException(name);
+        }
+
         // If the path was already opened for writing, throw an exception.
         checkFileReopening(fileObject, false);
         return new FilerInputFileObject(fileObject);

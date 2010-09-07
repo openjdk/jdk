@@ -272,6 +272,12 @@ public class Scope {
         return false;
     }
 
+    static final Filter<Symbol> noFilter = new Filter<Symbol>() {
+        public boolean accepts(Symbol s) {
+            return true;
+        }
+    };
+
     /** Return the entry associated with given name, starting in
      *  this scope and proceeding outwards. If no entry was found,
      *  return the sentinel, which is characterized by having a null in
@@ -279,13 +285,20 @@ public class Scope {
      *  for regular entries.
      */
     public Entry lookup(Name name) {
+        return lookup(name, noFilter);
+    }
+    public Entry lookup(Name name, Filter<Symbol> sf) {
         Entry e = table[name.hashCode() & hashMask];
-        while (e.scope != null && e.sym.name != name)
+        while (e.scope != null && (e.sym.name != name || !sf.accepts(e.sym)))
             e = e.shadowed;
         return e;
     }
 
     public Iterable<Symbol> getElements() {
+        return getElements(noFilter);
+    }
+
+    public Iterable<Symbol> getElements(final Filter<Symbol> sf) {
         return new Iterable<Symbol>() {
             public Iterator<Symbol> iterator() {
                 return new Iterator<Symbol>() {
@@ -301,7 +314,9 @@ public class Scope {
 
                     public Symbol next() {
                         Symbol sym = (currEntry == null ? null : currEntry.sym);
-                        currEntry = currEntry.sibling;
+                        if (currEntry != null) {
+                            currEntry = currEntry.sibling;
+                        }
                         update();
                         return sym;
                     }
@@ -311,9 +326,17 @@ public class Scope {
                     }
 
                     private void update() {
+                        skipToNextMatchingEntry();
                         while (currEntry == null && currScope.next != null) {
                             currScope = currScope.next;
                             currEntry = currScope.elems;
+                            skipToNextMatchingEntry();
+                        }
+                    }
+
+                    void skipToNextMatchingEntry() {
+                        while (currEntry != null && !sf.accepts(currEntry.sym)) {
+                            currEntry = currEntry.sibling;
                         }
                     }
                 };

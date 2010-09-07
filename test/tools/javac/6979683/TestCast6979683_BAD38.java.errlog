@@ -1,0 +1,2 @@
+TestCast6979683_BAD38.java:38:62: compiler.err.prob.found.req: (compiler.misc.incompatible.types), java.lang.Comparable<java.lang.Character>, float
+1 error

@@ -27,8 +27,10 @@ package com.sun.tools.javac.util;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
@@ -109,6 +111,12 @@ public class Log extends AbstractLog {
      * JavacMessages object used for localization.
      */
     private JavacMessages messages;
+
+    /**
+     * Deferred diagnostics
+     */
+    public boolean deferDiagnostics;
+    public Queue<JCDiagnostic> deferredDiagnostics = new ListBuffer<JCDiagnostic>();
 
     /** Construct a log with given I/O redirections.
      */
@@ -203,12 +211,6 @@ public class Log extends AbstractLog {
     /** The number of warnings encountered so far.
      */
     public int nwarnings = 0;
-
-    /**
-     * Whether or not an unrecoverable error has been seen.
-     * Unrecoverable errors prevent subsequent annotation processing.
-     */
-    public boolean unrecoverableError;
 
     /** A set of all errors generated so far. This is used to avoid printing an
      *  error message more than once. For each error, a pair consisting of the
@@ -347,12 +349,32 @@ public class Log extends AbstractLog {
         nwarnings++;
     }
 
+    /** Report all deferred diagnostics, and clear the deferDiagnostics flag. */
+    public void reportDeferredDiagnostics() {
+        reportDeferredDiagnostics(EnumSet.allOf(JCDiagnostic.Kind.class));
+    }
+
+    /** Report selected deferred diagnostics, and clear the deferDiagnostics flag. */
+    public void reportDeferredDiagnostics(Set<JCDiagnostic.Kind> kinds) {
+        deferDiagnostics = false;
+        JCDiagnostic d;
+        while ((d = deferredDiagnostics.poll()) != null) {
+            if (kinds.contains(d.getKind()))
+                report(d);
+        }
+    }
+
     /**
      * Common diagnostic handling.
      * The diagnostic is counted, and depending on the options and how many diagnostics have been
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     public void report(JCDiagnostic diagnostic) {
+        if (deferDiagnostics) {
+            deferredDiagnostics.add(diagnostic);
+            return;
+        }
+
         if (expectDiagKeys != null)
             expectDiagKeys.remove(diagnostic.getCode());
 
