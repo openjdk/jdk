@@ -199,6 +199,7 @@ FILES_src = \
 	sun/nio/ch/PipeImpl.java \
 	sun/nio/ch/PollArrayWrapper.java \
 	sun/nio/ch/Reflect.java \
+	sun/nio/ch/Secrets.java \
 	sun/nio/ch/SelectionKeyImpl.java \
 	sun/nio/ch/SelectorImpl.java \
 	sun/nio/ch/SelectorProviderImpl.java \

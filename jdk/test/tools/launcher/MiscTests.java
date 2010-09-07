@@ -23,19 +23,22 @@
 
 /*
  * @test
- * @bug 6856415
- * @summary Checks to ensure that proper exceptions are thrown by java
- * @compile -XDignore.symbol.file VerifyExceptions.java TestHelper.java
- * @run main VerifyExceptions
+ * @bug 6856415 6981001
+ * @summary Miscellaneous tests, Exceptions, EnsureJRE etc.
+ * @compile -XDignore.symbol.file MiscTests.java TestHelper.java
+ * @run main MiscTests
  */
 
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 
 
-public class VerifyExceptions {
+public class MiscTests {
 
+    // 6856415: Checks to ensure that proper exceptions are thrown by java
     static void test6856415() {
         // No pkcs library on win-x64, so we bail out.
         if (TestHelper.is64Bit && TestHelper.isWindows) {
@@ -53,13 +56,35 @@ public class VerifyExceptions {
         } catch (FileNotFoundException fnfe) {
             throw new RuntimeException(fnfe);
         }
-        TestHelper.TestResult tr = TestHelper.doExec(TestHelper.javacCmd,
+        TestHelper.TestResult tr = TestHelper.doExec(TestHelper.javaCmd,
                 "-Djava.security.manager", "-jar", testJar.getName(), "foo.bak");
-        tr.checkNegative();
-        tr.contains("Exception in thread \"main\" java.security.AccessControlException: access denied (\"java.lang.RuntimePermission\" \"accessClassInPackage.sun.security.pkcs11\")\")");
+        for (String s : tr.testOutput) {
+            System.out.println(s);
     }
-
+        if (!tr.contains("java.security.AccessControlException:" +
+                " access denied (\"java.lang.RuntimePermission\"" +
+                " \"accessClassInPackage.sun.security.pkcs11\")")) {
+            System.out.println(tr.status);
+        }
+    }
+    // 6981001 : Check EnsureJreInstallation is ok, note we cannot
+    // thoroughly test this function, we simply do our best.
+    static void test6981001() {
+        if (TestHelper.is64Bit || !TestHelper.isWindows) {
+            return;
+        }
+        Map<String, String> env = new HashMap<String, String>();
+        env.put("_JAVA_LAUNCHER_DEBUG", "true");
+        TestHelper.TestResult tr = TestHelper.doExec(env, TestHelper.javaCmd);
+        if (!tr.contains(TestHelper.JAVAHOME + "\\lib\\bundles")) {
+            System.out.println(tr.status);
+        }
+    }
     public static void main(String... args) {
         test6856415();
+        test6981001();
+        if (TestHelper.testExitValue != 0) {
+            throw new Error(TestHelper.testExitValue + " tests failed");
     }
+}
 }
