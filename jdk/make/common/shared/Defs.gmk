@@ -578,10 +578,23 @@ ifeq ($(PLATFORM), windows)
     ANT_HOME := $(call DirExists,$(JDK_DEVTOOLS_DIR)/share/ant/latest,,)
   endif
 endif
+
+# There are few problems with ant we need to workaround:
+#  1) ant is using temporary directory java.io.tmpdir
+#     However, this directory is not unique enough and two separate ant processes
+#     can easily end up using the exact same temp directory. This may lead to weird build failures
+#     To workaround this we will define tmp dir explicitly
+#  2) ant attempts to detect JDK location based on java.exe location
+#     This is fragile as developer may have JRE first on the PATH. 
+#     To workaround this we will specify JAVA_HOME explicitly
+
+ANT_TMPDIR = $(ABS_OUTPUTDIR)/tmp
+ANT_WORKAROUNDS = ANT_OPTS=-Djava.io.tmpdir='$(ANT_TMPDIR)' JAVA_HOME='$(BOOTDIR)'
+
 ifeq ($(ANT_HOME),)
-  ANT = ant
+  ANT = $(ANT_WORKAROUNDS) ant
 else
-  ANT = $(ANT_HOME)/bin/ant
+  ANT = $(ANT_WORKAROUNDS) $(ANT_HOME)/bin/ant
 endif
 
 ifdef ALT_COPYRIGHT_YEAR
