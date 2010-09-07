@@ -1185,7 +1185,10 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitExec(JCExpressionStatement tree) {
-        attribExpr(tree.expr, env);
+        //a fresh environment is required for 292 inference to work properly ---
+        //see Infer.instantiatePolymorphicSignatureInstance()
+        Env<AttrContext> localEnv = env.dup(tree);
+        attribExpr(tree.expr, localEnv);
         result = null;
     }
 
@@ -1443,23 +1446,19 @@ public class Attr extends JCTree.Visitor {
                               restype.tsym);
             }
 
-            // as a special case, MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
-            // has type <T>, and T can be a primitive type.
-            if (tree.meth.getTag() == JCTree.SELECT && !typeargtypes.isEmpty()) {
-              JCFieldAccess mfield = (JCFieldAccess) tree.meth;
-              if ((mfield.selected.type.tsym != null &&
-                   (mfield.selected.type.tsym.flags() & POLYMORPHIC_SIGNATURE) != 0)
-                  ||
-                  (mfield.sym != null &&
-                   (mfield.sym.flags() & POLYMORPHIC_SIGNATURE) != 0)) {
-                  assert types.isSameType(restype, typeargtypes.head) : mtype;
-                  assert mfield.selected.type == syms.methodHandleType
-                      || mfield.selected.type == syms.invokeDynamicType;
-                  typeargtypesNonRefOK = true;
-              }
+            // Special case logic for JSR 292 types.
+            if (rs.allowTransitionalJSR292 &&
+                    tree.meth.getTag() == JCTree.SELECT &&
+                    !typeargtypes.isEmpty()) {
+                JCFieldAccess mfield = (JCFieldAccess) tree.meth;
+                // MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
+                // has type <T>, and T can be a primitive type.
+                if (mfield.sym != null &&
+                        mfield.sym.isPolymorphicSignatureInstance())
+                    typeargtypesNonRefOK = true;
             }
 
-            if (!typeargtypesNonRefOK) {
+            if (!(rs.allowTransitionalJSR292 && typeargtypesNonRefOK)) {
                 chk.checkRefTypes(tree.typeargs, typeargtypes);
             }
 
@@ -2023,7 +2022,10 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeCast(JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
         chk.validate(tree.clazz, env, false);
-        Type exprtype = attribExpr(tree.expr, env, Infer.anyPoly);
+        //a fresh environment is required for 292 inference to work properly ---
+        //see Infer.instantiatePolymorphicSignatureInstance()
+        Env<AttrContext> localEnv = env.dup(tree);
+        Type exprtype = attribExpr(tree.expr, localEnv, Infer.anyPoly);
         Type owntype = chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         if (exprtype.constValue() != null)
             owntype = cfolder.coerce(exprtype, owntype);

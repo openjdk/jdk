@@ -259,6 +259,14 @@ public enum Target {
         return compareTo(JDK1_7) >= 0;
     }
 
+    /** Does the VM support polymorphic method handle invocation?
+     *  Affects the linkage information output to the classfile.
+     *  An alias for {@code hasInvokedynamic}, since all the JSR 292 features appear together.
+     */
+    public boolean hasMethodHandles() {
+        return hasInvokedynamic();
+    }
+
     /** Although we may not have support for class literals, should we
      *  avoid initializing the class that the literal refers to?
      *  See 4468823
