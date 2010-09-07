@@ -1217,7 +1217,18 @@ public abstract class Symbol implements Element {
          *  as possible implementations.
          */
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
-            MethodSymbol res = types.implementation(this, origin, types, checkResult);
+            return implementation(origin, types, checkResult, implementation_filter);
+        }
+        // where
+            private static final Filter<Symbol> implementation_filter = new Filter<Symbol>() {
+                public boolean accepts(Symbol s) {
+                    return s.kind == Kinds.MTH &&
+                            (s.flags() & SYNTHETIC) == 0;
+                }
+            };
+
+        public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
+            MethodSymbol res = types.implementation(this, origin, types, checkResult, implFilter);
             if (res != null)
                 return res;
             // if origin is derived from a raw type, we might have missed
