@@ -88,9 +88,10 @@ SUNWprivate_1.1 {
 		Java_java_net_PlainDatagramSocketImpl_setTimeToLive;
 		Java_sun_net_dns_ResolverConfigurationImpl_localDomain0;
 		Java_sun_net_dns_ResolverConfigurationImpl_fallbackDomain0;
+		Java_sun_net_sdp_SdpSupport_convert0;
+		Java_sun_net_sdp_SdpSupport_create0;
 		Java_sun_net_spi_DefaultProxySelector_init;
 		Java_sun_net_spi_DefaultProxySelector_getSystemProxy;
-		Java_sun_net_spi_SdpProvider_convert;
 		NET_AllocSockaddr;
 		NET_SockaddrToInetAddress;
                 NET_SockaddrEqualsInetAddress;
