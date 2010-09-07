@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008-2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @author jrose
  *
  * @library ..
- * @compile -source 7 -target 7 -XDinvokedynamic -XDallowTransitionalJSR292=no InvokeDyn.java
+ * @compile/fail/ref=InvokeDynTrans.out -Werror -XDrawDiagnostics -source 7 -target 7 InvokeDynTrans.java
  */
 //No: @run main/othervm -XX:+EnableInvokeDynamic meth.InvokeDyn
 
@@ -44,21 +44,16 @@
 
 package meth;
 
-import java.dyn.*;
+import java.dyn.InvokeDynamic;
 
-public class InvokeDyn {
-    class CS extends CallSite {
-        CS(Object x, Object y, Object z) { throw new RuntimeException(); }
-    }
-    //@BootstrapMethod(CS.class)  //note: requires 6964498
+public class InvokeDynTrans {
     void test() throws Throwable {
         Object x = "hello";
-        Object ojunk; int ijunk;
-        ojunk = InvokeDynamic.greet(x, "world", 123);
-        ojunk = InvokeDynamic.greet(x, "mundus", 456);
-        ojunk = InvokeDynamic.greet(x, "kosmos", 789);
-        ojunk = (String) InvokeDynamic.cogitate(10.11121, 3.14);
-        InvokeDynamic.#"yow: what I mean to say is, please treat this one specially"(null);
-        ijunk = (int) InvokeDynamic.invoke("goodbye");
+        InvokeDynamic.greet(x, "world", 123);
+        InvokeDynamic.greet(x, "mundus", 456);
+        InvokeDynamic.greet(x, "kosmos", 789);
+        InvokeDynamic.<String>cogitate(10.11121, 3.14);
+        InvokeDynamic.<void>#"yow: what I mean to say is, please treat this one specially"(null);
+        InvokeDynamic.<int>invoke("goodbye");
     }
 }
