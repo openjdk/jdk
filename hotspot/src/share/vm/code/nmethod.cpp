@@ -971,7 +971,9 @@ void nmethod::print_on(outputStream* st, const char* title) const {
     ttyLocker ttyl;
     print_compilation(st, /*method_name*/NULL, title,
                       method(), /*is_blocking*/false,
-                      compile_id(), osr_entry_bci(), comp_level());
+                      compile_id(),
+                      is_osr_method() ? osr_entry_bci() : InvocationEntryBci,
+                      comp_level());
     if (WizardMode) st->print(" (" INTPTR_FORMAT ")", this);
   }
 }
