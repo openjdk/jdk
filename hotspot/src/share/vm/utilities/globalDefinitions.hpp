@@ -1034,22 +1034,22 @@ inline intx byte_size(void* from, void* to) {
 
 // This routine takes eight bytes:
 inline u8 build_u8_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  return  ( u8(c1) << 56 )  &  ( u8(0xff) << 56 )
-       |  ( u8(c2) << 48 )  &  ( u8(0xff) << 48 )
-       |  ( u8(c3) << 40 )  &  ( u8(0xff) << 40 )
-       |  ( u8(c4) << 32 )  &  ( u8(0xff) << 32 )
-       |  ( u8(c5) << 24 )  &  ( u8(0xff) << 24 )
-       |  ( u8(c6) << 16 )  &  ( u8(0xff) << 16 )
-       |  ( u8(c7) <<  8 )  &  ( u8(0xff) <<  8 )
-       |  ( u8(c8) <<  0 )  &  ( u8(0xff) <<  0 );
+  return  (( u8(c1) << 56 )  &  ( u8(0xff) << 56 ))
+       |  (( u8(c2) << 48 )  &  ( u8(0xff) << 48 ))
+       |  (( u8(c3) << 40 )  &  ( u8(0xff) << 40 ))
+       |  (( u8(c4) << 32 )  &  ( u8(0xff) << 32 ))
+       |  (( u8(c5) << 24 )  &  ( u8(0xff) << 24 ))
+       |  (( u8(c6) << 16 )  &  ( u8(0xff) << 16 ))
+       |  (( u8(c7) <<  8 )  &  ( u8(0xff) <<  8 ))
+       |  (( u8(c8) <<  0 )  &  ( u8(0xff) <<  0 ));
 }
 
 // This routine takes four bytes:
 inline u4 build_u4_from( u1 c1, u1 c2, u1 c3, u1 c4 ) {
-  return  ( u4(c1) << 24 )  &  0xff000000
-       |  ( u4(c2) << 16 )  &  0x00ff0000
-       |  ( u4(c3) <<  8 )  &  0x0000ff00
-       |  ( u4(c4) <<  0 )  &  0x000000ff;
+  return  (( u4(c1) << 24 )  &  0xff000000)
+       |  (( u4(c2) << 16 )  &  0x00ff0000)
+       |  (( u4(c3) <<  8 )  &  0x0000ff00)
+       |  (( u4(c4) <<  0 )  &  0x000000ff);
 }
 
 // And this one works if the four bytes are contiguous in memory:
@@ -1059,8 +1059,8 @@ inline u4 build_u4_from( u1* p ) {
 
 // Ditto for two-byte ints:
 inline u2 build_u2_from( u1 c1, u1 c2 ) {
-  return  u2(( u2(c1) <<  8 )  &  0xff00
-          |  ( u2(c2) <<  0 )  &  0x00ff);
+  return  u2((( u2(c1) <<  8 )  &  0xff00)
+          |  (( u2(c2) <<  0 )  &  0x00ff));
 }
 
 // And this one works if the two bytes are contiguous in memory:
@@ -1083,14 +1083,14 @@ inline jfloat build_float_from( u1* p ) {
 // now (64-bit) longs
 
 inline jlong build_long_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  return  ( jlong(c1) << 56 )  &  ( jlong(0xff) << 56 )
-       |  ( jlong(c2) << 48 )  &  ( jlong(0xff) << 48 )
-       |  ( jlong(c3) << 40 )  &  ( jlong(0xff) << 40 )
-       |  ( jlong(c4) << 32 )  &  ( jlong(0xff) << 32 )
-       |  ( jlong(c5) << 24 )  &  ( jlong(0xff) << 24 )
-       |  ( jlong(c6) << 16 )  &  ( jlong(0xff) << 16 )
-       |  ( jlong(c7) <<  8 )  &  ( jlong(0xff) <<  8 )
-       |  ( jlong(c8) <<  0 )  &  ( jlong(0xff) <<  0 );
+  return  (( jlong(c1) << 56 )  &  ( jlong(0xff) << 56 ))
+       |  (( jlong(c2) << 48 )  &  ( jlong(0xff) << 48 ))
+       |  (( jlong(c3) << 40 )  &  ( jlong(0xff) << 40 ))
+       |  (( jlong(c4) << 32 )  &  ( jlong(0xff) << 32 ))
+       |  (( jlong(c5) << 24 )  &  ( jlong(0xff) << 24 ))
+       |  (( jlong(c6) << 16 )  &  ( jlong(0xff) << 16 ))
+       |  (( jlong(c7) <<  8 )  &  ( jlong(0xff) <<  8 ))
+       |  (( jlong(c8) <<  0 )  &  ( jlong(0xff) <<  0 ));
 }
 
 inline jlong build_long_from( u1* p ) {
