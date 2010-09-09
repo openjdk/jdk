@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,8 @@ bool os::register_code_area(char *low, char *high) {
   // If we are using Vectored Exceptions we don't need this registration
   if (UseVectoredExceptions) return true;
 
-  BufferBlob* b = BufferBlob::create("CodeCache Exception Handler", sizeof (DynamicCodeData));
-  CodeBuffer cb(b->instructions_begin(), b->instructions_size());
+  BufferBlob* blob = BufferBlob::create("CodeCache Exception Handler", sizeof(DynamicCodeData));
+  CodeBuffer cb(blob);
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 

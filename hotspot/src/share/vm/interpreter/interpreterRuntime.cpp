@@ -1124,7 +1124,7 @@ address SignatureHandlerLibrary::set_handler_blob() {
   if (handler_blob == NULL) {
     return NULL;
   }
-  address handler = handler_blob->instructions_begin();
+  address handler = handler_blob->code_begin();
   _handler_blob = handler_blob;
   _handler = handler;
   return handler;
@@ -1140,7 +1140,7 @@ void SignatureHandlerLibrary::initialize() {
 
   BufferBlob* bb = BufferBlob::create("Signature Handler Temp Buffer",
                                       SignatureHandlerLibrary::buffer_size);
-  _buffer = bb->instructions_begin();
+  _buffer = bb->code_begin();
 
   _fingerprints = new(ResourceObj::C_HEAP)GrowableArray<uint64_t>(32, true);
   _handlers     = new(ResourceObj::C_HEAP)GrowableArray<address>(32, true);
@@ -1148,16 +1148,16 @@ void SignatureHandlerLibrary::initialize() {
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
   address handler   = _handler;
-  int     code_size = buffer->pure_code_size();
-  if (handler + code_size > _handler_blob->instructions_end()) {
+  int     insts_size = buffer->pure_insts_size();
+  if (handler + insts_size > _handler_blob->code_end()) {
     // get a new handler blob
     handler = set_handler_blob();
   }
   if (handler != NULL) {
-    memcpy(handler, buffer->code_begin(), code_size);
+    memcpy(handler, buffer->insts_begin(), insts_size);
     pd_set_handler(handler);
-    ICache::invalidate_range(handler, code_size);
-    _handler = handler + code_size;
+    ICache::invalidate_range(handler, insts_size);
+    _handler = handler + insts_size;
   }
   return handler;
 }
@@ -1196,8 +1196,8 @@ void SignatureHandlerLibrary::add(methodHandle method) {
                           (method->is_static() ? "static" : "receiver"),
                           method->name_and_sig_as_C_string(),
                           fingerprint,
-                          buffer.code_size());
-            Disassembler::decode(handler, handler + buffer.code_size());
+                          buffer.insts_size());
+            Disassembler::decode(handler, handler + buffer.insts_size());
 #ifndef PRODUCT
             tty->print_cr(" --- associated result handler ---");
             address rh_begin = Interpreter::result_handler(method()->result_type());

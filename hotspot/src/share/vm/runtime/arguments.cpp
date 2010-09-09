@@ -1513,6 +1513,9 @@ void Arguments::set_aggressive_opts_flags() {
   if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeStringConcat)) {
     FLAG_SET_DEFAULT(OptimizeStringConcat, true);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeFill)) {
+    FLAG_SET_DEFAULT(OptimizeFill, true);
+  }
 #endif
 
   if (AggressiveOpts) {
@@ -1558,6 +1561,18 @@ bool Arguments::verify_interval(uintx val, uintx min,
               "%s of " UINTX_FORMAT " is invalid; must be between " UINTX_FORMAT
               " and " UINTX_FORMAT "\n",
               name, val, min, max);
+  return false;
+}
+
+bool Arguments::verify_min_value(intx val, intx min, const char* name) {
+  // Returns true if given value is greater than specified min threshold
+  // false, otherwise.
+  if (val >= min ) {
+      return true;
+  }
+  jio_fprintf(defaultStream::error_stream(),
+              "%s of " INTX_FORMAT " is invalid; must be greater than " INTX_FORMAT "\n",
+              name, val, min);
   return false;
 }
 
@@ -1610,6 +1625,16 @@ bool Arguments::check_gc_consistency() {
     status = false;
   }
 
+  return status;
+}
+
+// Check stack pages settings
+bool Arguments::check_stack_pages()
+{
+  bool status = true;
+  status = status && verify_min_value(StackYellowPages, 1, "StackYellowPages");
+  status = status && verify_min_value(StackRedPages, 1, "StackRedPages");
+  status = status && verify_min_value(StackShadowPages, 1, "StackShadowPages");
   return status;
 }
 
@@ -1725,6 +1750,7 @@ bool Arguments::check_vm_args_consistency() {
   }
 
   status = status && check_gc_consistency();
+  status = status && check_stack_pages();
 
   if (_has_alloc_profile) {
     if (UseParallelGC || UseParallelOldGC) {
@@ -2832,6 +2858,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags();
       vm_exit(0);
     }
+
+#ifndef PRODUCT
+    if (match_option(option, "-XX:+PrintFlagsWithComments", &tail)) {
+      CommandLineFlags::printFlags(true);
+      vm_exit(0);
+    }
+#endif
   }
 
   if (IgnoreUnrecognizedVMOptions) {

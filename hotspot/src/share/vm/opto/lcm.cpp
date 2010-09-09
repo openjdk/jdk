@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     for (uint i1 = 0; i1 < null_block->_nodes.size(); i1++) {
       Node* nn = null_block->_nodes[i1];
       if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() ==
-          SharedRuntime::uncommon_trap_blob()->instructions_begin()) {
+          nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
         if (trtype->isa_int() && trtype->is_int()->is_con()) {
           jint tr_con = trtype->is_int()->get_con();

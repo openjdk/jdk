@@ -529,7 +529,7 @@ extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used
 #ifdef ASSERT
 extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
 #else
-inline int type2aelembytes(BasicType t) { return _type2aelembytes[t]; }
+inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
 #endif
 
 

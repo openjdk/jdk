@@ -58,7 +58,7 @@ void* ResourceObj::operator new(size_t size, allocation_type type) {
 void ResourceObj::operator delete(void* p) {
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
-  DEBUG_ONLY(((ResourceObj *)p)->_allocation = (uintptr_t) badHeapOopVal;)
+  DEBUG_ONLY(((ResourceObj *)p)->_allocation = (uintptr_t)badHeapOopVal;)
   FreeHeap(p);
 }
 
@@ -104,7 +104,7 @@ ResourceObj& ResourceObj::operator=(const ResourceObj& r) { // default copy assi
 ResourceObj::~ResourceObj() {
     // allocated_on_C_heap() also checks that encoded (in _allocation) address == this.
     if (!allocated_on_C_heap()) {  // ResourceObj::delete() zaps _allocation for C_heap.
-      _allocation = (uintptr_t) badHeapOopVal; // zap type
+      _allocation = (uintptr_t)badHeapOopVal; // zap type
     }
 }
 #endif // ASSERT
