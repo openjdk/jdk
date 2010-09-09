@@ -148,7 +148,7 @@
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
-                        <td>Sun Studio 12</td>
+                        <td>Sun Studio 12 Update 1 + patches</td>
                         <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
@@ -158,7 +158,7 @@
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
-                        <td>Sun Studio 12</td>
+                        <td>Sun Studio 12 Update 1 + patches</td>
                         <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
@@ -168,7 +168,7 @@
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
-                        <td>Sun Studio 12</td>
+                        <td>Sun Studio 12 Update 1 + patches</td>
                         <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
@@ -178,7 +178,7 @@
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
-                        <td>Sun Studio 12</td>
+                        <td>Sun Studio 12 Update 1 + patches</td>
                         <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
@@ -941,21 +941,78 @@
                 <strong><a name="studio">Solaris: Sun Studio</a></strong>
                 <blockquote>
                     At a minimum, the
-                    <a href="http://developers.sun.com/sunstudio/index.jsp" target="_blank">
-                    Sun Studio 12 Compilers</a>
-                    (containing version 5.9 of the C and C++ compilers) is required,
-                    with patches from the
-                    <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/patch-access" target="_blank">
-                    SunSolve web site</a>.
+                    <a href="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.htm" target="_blank">
+                    Sun Studio 12 Update 1 Compilers</a>
+                    (containing version 5.10 of the C and C++ compilers) is required,
+		    including specific patches.
+		    <p>
+		    The Solaris SPARC patch list is:
+		    <ul>
+		    <li>
+                    118683-05: SunOS 5.10: Patch for profiling libraries and assembler
+                    </li>
+                    <li>
+                    119963-21: SunOS 5.10: Shared library patch for C++
+                    </li>
+                    <li>
+                    120753-08: SunOS 5.10: Microtasking libraries (libmtsk) patch
+                    </li>
+                    <li>
+                    128228-09: Sun Studio 12 Update 1: Patch for Sun C++ Compiler
+                    </li>
+                    <li>
+                    141860-03: Sun Studio 12 Update 1: Patch for Compiler Common patch for Sun C C++ F77 F95
+                    </li>
+                    <li>
+                    141861-05: Sun Studio 12 Update 1: Patch for Sun C Compiler
+                    </li>
+                    <li>
+                    142371-01: Sun Studio 12.1 Update 1: Patch for dbx
+                    </li>
+                    <li>
+                    143384-02: Sun Studio 12 Update 1: Patch for debuginfo handling
+                    </li>
+                    <li>
+                    143385-02: Sun Studio 12 Update 1: Patch for Compiler Common patch for Sun C C++ F77 F95
+                    </li>
+                    <li>
+                    142369-01: Sun Studio 12.1: Patch for Performance Analyzer Tools
+                    </li>
+                    </ul>
+                    <p>
+                    The Solaris X86 patch list is:
+                    <ul>
+                    <li>
+                    119961-07: SunOS 5.10_x86, x64, Patch for profiling libraries and assembler
+                    </li>
+                    <li>
+                    119964-21: SunOS 5.10_x86: Shared library patch for C++_x86
+                    </li>
+                    <li>
+                    120754-08: SunOS 5.10_x86: Microtasking libraries (libmtsk) patch
+                    </li>
+                    <li>
+                    141858-06: Sun Studio 12 Update 1_x86: Sun Compiler Common patch for x86 backend
+                    </li>
+                    <li>
+                    128229-09: Sun Studio 12 Update 1_x86: Patch for C++ Compiler
+                    </li>
+                    <li>
+                    142363-05: Sun Studio 12 Update 1_x86: Patch for C Compiler
+                    </li>
+                    <li>
+                    142368-01: Sun Studio 12.1_x86: Patch for Performance Analyzer Tools
+                    </li>
+                    </ul>
                     <p> 
                     Set 
                     <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a>
                     to point to the location of
                     the compiler binaries, and place this location in the <tt>PATH</tt>.
                     <p>
-                    The Sun Studio Express compilers at:
+                    The Oracle Solaris Studio Express compilers at:
                     <a href="http://developers.sun.com/sunstudio/downloads/express.jsp" target="_blank">
-                    Sun Studio Express Download site</a>
+                    Oracle Solaris Studio Express Download site</a>
                     are also an option, although these compilers have not
                     been extensively used yet.
                 </blockquote>
