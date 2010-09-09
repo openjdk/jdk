@@ -265,6 +265,12 @@ public class MethodHandlesTest {
 //            wrap = Wrapper.forWrapperType(dst);
 //        if (wrap != Wrapper.OBJECT)
 //            return wrap.wrap(nextArg++);
+        if (param.isInterface()) {
+            for (Class<?> c : param.getClasses()) {
+                if (param.isAssignableFrom(c) && !c.isInterface())
+                    { param = c; break; }
+            }
+        }
         if (param.isInterface() || param.isAssignableFrom(String.class))
             return "#"+nextArg();
         else
@@ -380,7 +386,7 @@ public class MethodHandlesTest {
     }
     public static interface IntExample {
         public void            v0();
-        static class Impl implements IntExample {
+        public static class Impl implements IntExample {
             public void        v0()     { called("Int/v0", this); }
             final String name;
             public Impl() { name = "Impl#"+nextArg(); }
@@ -1955,6 +1961,107 @@ public class MethodHandlesTest {
         args = randomArgs(mh.type().parameterArray());
         mh.invokeVarargs(args);
         assertCalled(name, args);
+    }
+
+    static void runForRunnable() {
+        called("runForRunnable");
+    }
+    private interface Fooable {
+        Object foo(Fooable x, Object y);
+        // this is for randomArg:
+        public class Impl implements Fooable {
+            public Object foo(Fooable x, Object y) {
+                throw new RuntimeException("do not call");
+            }
+            final String name;
+            public Impl() { name = "Fooable#"+nextArg(); }
+            @Override public String toString() { return name; }
+        }
+    }
+    static Object fooForFooable(Fooable x, Object y) {
+        return called("fooForFooable", x, y);
+    }
+    private static class MyCheckedException extends Exception {
+    }
+    private interface WillThrow {
+        void willThrow() throws MyCheckedException;
+    }
+
+    @Test
+    public void testAsInstance() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        Lookup lookup = MethodHandles.lookup();
+        {
+            MethodType mt = MethodType.methodType(void.class);
+            MethodHandle mh = lookup.findStatic(MethodHandlesTest.class, "runForRunnable", mt);
+            Runnable proxy = MethodHandles.asInstance(mh, Runnable.class);
+            proxy.run();
+            assertCalled("runForRunnable");
+        }
+        {
+            MethodType mt = MethodType.methodType(Object.class, Fooable.class, Object.class);
+            MethodHandle mh = lookup.findStatic(MethodHandlesTest.class, "fooForFooable", mt);
+            Fooable proxy = MethodHandles.asInstance(mh, Fooable.class);
+            Object[] args = randomArgs(mt.parameterArray());
+            Object result = proxy.foo((Fooable) args[0], args[1]);
+            assertCalled("fooForFooable", args);
+            assertEquals(result, logEntry("fooForFooable", args));
+        }
+        for (Throwable ex : new Throwable[] { new NullPointerException("ok"),
+                                              new InternalError("ok"),
+                                              new Throwable("fail"),
+                                              new Exception("fail"),
+                                              new MyCheckedException()
+                                            }) {
+            MethodHandle mh = MethodHandles.throwException(void.class, Throwable.class);
+            mh = MethodHandles.insertArguments(mh, 0, ex);
+            WillThrow proxy = MethodHandles.asInstance(mh, WillThrow.class);
+            try {
+                proxy.willThrow();
+                System.out.println("Failed to throw: "+ex);
+                assertTrue(false);
+            } catch (Throwable ex1) {
+                if (verbosity > 2) {
+                    System.out.println("throw "+ex);
+                    System.out.println("catch "+(ex == ex1 ? "UNWRAPPED" : ex1));
+                }
+                if (ex instanceof RuntimeException ||
+                    ex instanceof Error) {
+                    assertSame("must pass unchecked exception out without wrapping", ex, ex1);
+                } else if (ex instanceof MyCheckedException) {
+                    assertSame("must pass declared exception out without wrapping", ex, ex1);
+                } else {
+                    assertNotSame("must pass undeclared checked exception with wrapping", ex, ex1);
+                    UndeclaredThrowableException utex = (UndeclaredThrowableException) ex1;
+                    assertSame(ex, utex.getCause());
+                }
+            }
+        }
+        // Test error checking:
+        MethodHandle genericMH = ValueConversions.varargsArray(0);
+        genericMH = MethodHandles.convertArguments(genericMH, genericMH.type().generic());
+        for (Class<?> sam : new Class[] { Runnable.class,
+                                          Fooable.class,
+                                          Iterable.class }) {
+            try {
+                // Must throw, because none of these guys has generic type.
+                MethodHandles.asInstance(genericMH, sam);
+                System.out.println("Failed to throw");
+                assertTrue(false);
+            } catch (IllegalArgumentException ex) {
+            }
+        }
+        for (Class<?> nonSAM : new Class[] { Object.class,
+                                             String.class,
+                                             CharSequence.class,
+                                             Example.class }) {
+            try {
+                MethodHandles.asInstance(ValueConversions.varargsArray(0), nonSAM);
+                System.out.println("Failed to throw");
+                assertTrue(false);
+            } catch (IllegalArgumentException ex) {
+            }
+        }
     }
 }
 // Local abbreviated copy of sun.dyn.util.ValueConversions

@@ -25,15 +25,12 @@
 
 package java.dyn;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.*;
 import sun.dyn.Access;
 import sun.dyn.MemberName;
 import sun.dyn.MethodHandleImpl;
 import sun.dyn.util.VerifyAccess;
 import sun.dyn.util.Wrapper;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1590,5 +1587,108 @@ public class MethodHandles {
     public static
     MethodHandle throwException(Class<?> returnType, Class<? extends Throwable> exType) {
         return MethodHandleImpl.throwException(IMPL_TOKEN, MethodType.methodType(returnType, exType));
+    }
+
+    /**
+     * Produce a wrapper instance of the given "SAM" type which redirects its calls to the given method handle.
+     * A SAM type is a type which declares a single abstract method.
+     * Additionally, it must have either no constructor (as an interface)
+     * or have a public or protected constructor of zero arguments (as a class).
+     * <p>
+     * The resulting instance of the required SAM type will respond to
+     * invocation of the SAM type's single abstract method by calling
+     * the given {@code target} on the incoming arguments,
+     * and returning or throwing whatever the {@code target}
+     * returns or throws.  The invocation will be as if by
+     * {@code target.invokeExact}.
+     * <p>
+     * The method handle may throw an <em>undeclared exception</em>,
+     * which means any checked exception (or other checked throwable)
+     * not declared by the SAM type's single abstract method.
+     * If this happens, the throwable will be wrapped in an instance
+     * of {@link UndeclaredThrowableException} and thrown in that
+     * wrapped form.
+     * <p>
+     * The wrapper instance is guaranteed to be of a non-public
+     * implementation class C in a package containing no classes
+     * or methods except system-defined classes and methods.
+     * The implementation class C will have no public supertypes
+     * or public methods beyond the following:
+     * <ul>
+     * <li>the SAM type itself and any methods in the SAM type
+     * <li>the supertypes of the SAM type (if any) and their methods
+     * <li>{@link Object} and its methods
+     * <li>{@link MethodHandleProvider} and its methods
+     * </ul>
+     * <p>
+     * No stable mapping is promised between the SAM type and
+     * the implementation class C.  Over time, several implementation
+     * classes might be used for the same SAM type.
+     * <p>
+     * This method is not guaranteed to return a distinct
+     * wrapper object for each separate call.  If the JVM is able
+     * to prove that a wrapper has already been created for a given
+     * method handle, or for another method handle with the
+     * same behavior, the JVM may return that wrapper in place of
+     * a new wrapper.
+     * @param target the method handle to invoke from the wrapper
+     * @param samType the desired type of the wrapper, a SAM type
+     * @return a correctly-typed wrapper for the given {@code target}
+     * @throws IllegalArgumentException if the {@code target} throws
+     *         an undeclared exception
+     */
+    // ISSUE: Should we delegate equals/hashCode to the targets?
+    // Not useful unless there is a stable equals/hashCode behavior
+    // for MethodHandle, and for MethodHandleProvider.asMethodHandle.
+    public static
+    <T> T asInstance(MethodHandle target, Class<T> samType) {
+        // POC implementation only; violates the above contract several ways
+        final Method sam = getSamMethod(samType);
+        if (sam == null)
+            throw new IllegalArgumentException("not a SAM type: "+samType.getName());
+        MethodType samMT = MethodType.methodType(sam.getReturnType(), sam.getParameterTypes());
+        if (!samMT.equals(target.type()))
+            throw new IllegalArgumentException("wrong method type");
+        final MethodHandle mh = target;
+        return samType.cast(Proxy.newProxyInstance(
+                samType.getClassLoader(),
+                new Class[]{ samType, MethodHandleProvider.class },
+                new InvocationHandler() {
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        if (method.getDeclaringClass() == MethodHandleProvider.class) {
+                            return method.invoke(mh, args);
+                        }
+                        assert method.equals(sam) : method;
+                        return mh.invokeVarargs(args);
+                    }
+                }));
+    }
+
+    private static
+    Method getSamMethod(Class<?> samType) {
+        Method sam = null;
+        for (Method m : samType.getMethods()) {
+            int mod = m.getModifiers();
+            if (Modifier.isAbstract(mod)) {
+                if (sam != null)
+                    return null;  // too many abstract methods
+                sam = m;
+            }
+        }
+        if (!samType.isInterface() && getSamConstructor(samType) == null)
+            return null;  // wrong kind of constructor
+        return sam;
+    }
+
+    private static
+    Constructor getSamConstructor(Class<?> samType) {
+        for (Constructor c : samType.getDeclaredConstructors()) {
+            if (c.getParameterTypes().length == 0) {
+                int mod = c.getModifiers();
+                if (Modifier.isPublic(mod) || Modifier.isProtected(mod))
+                    return c;
+            }
+        }
+        return null;
     }
 }
