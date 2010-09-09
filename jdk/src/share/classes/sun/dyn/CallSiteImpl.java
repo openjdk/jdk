@@ -49,18 +49,21 @@ public class CallSiteImpl {
         }
         CallSite site;
         try {
-            if (bootstrapMethod.type().parameterCount() == 3)
-                site = bootstrapMethod.<CallSite>invokeExact(caller, name, type);
-            else if (bootstrapMethod.type().parameterCount() == 4)
-                site = bootstrapMethod.<CallSite>invokeExact(caller, name, type,
-                                                             !(info instanceof java.lang.annotation.Annotation[]) ? null
-                                                             : (java.lang.annotation.Annotation[]) info);
+            Object binding;
+            if (false)  // switch when invokeGeneric works
+                binding = bootstrapMethod.invokeGeneric(caller, name, type);
             else
-                throw new InternalError("bad BSM: "+bootstrapMethod);
-            if (!(site instanceof CallSite))
-                throw new InvokeDynamicBootstrapError("class bootstrap method failed to create a call site: "+caller);
-            PRIVATE_INITIALIZE_CALL_SITE.<void>invokeExact(site,
-                                                           name, type,
+                binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type });
+            //System.out.println("BSM for "+name+type+" => "+binding);
+            if (binding instanceof CallSite) {
+                site = (CallSite) binding;
+            } else if (binding instanceof MethodHandleProvider) {
+                MethodHandle target = ((MethodHandleProvider) binding).asMethodHandle();
+                site = new ConstantCallSite(target);
+            } else {
+                throw new ClassCastException("bootstrap method failed to produce a MethodHandle or CallSite");
+            }
+            PRIVATE_INITIALIZE_CALL_SITE.<void>invokeExact(site, name, type,
                                                            callerMethod, callerBCI);
             assert(site.getTarget() != null);
             assert(site.getTarget().type().equals(type));

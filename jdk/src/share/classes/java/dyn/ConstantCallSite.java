@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,43 +26,18 @@
 package java.dyn;
 
 /**
- * Thrown to indicate that an {@code invokedynamic} instruction has
- * failed to find its
- * {@linkplain BootstrapMethod bootstrap method},
- * or the bootstrap method has
- * failed to provide a
- * {@linkplain CallSite} call site with a non-null {@linkplain MethodHandle target}
- * of the correct {@linkplain MethodType method type}.
- *
+ * A {@code ConstantCallSite} is a {@link CallSite} whose target is permanent, and can never be changed.
+ * The only way to relink an {@code invokedynamic} instruction bound to a {@code ConstantCallSite} is
+ * to invalidate the instruction as a whole.
  * @author John Rose, JSR 292 EG
  */
-public class InvokeDynamicBootstrapError extends LinkageError {
-    /**
-     * Constructs an {@code InvokeDynamicBootstrapError} with no detail message.
-     */
-    public InvokeDynamicBootstrapError() {
-        super();
+public class ConstantCallSite extends CallSite {
+    /** Create a call site with a permanent target. */
+    public ConstantCallSite(MethodHandle target) {
+        super(target);
     }
-
-    /**
-     * Constructs an {@code InvokeDynamicBootstrapError} with the specified
-     * detail message.
-     *
-     * @param s the detail message.
-     */
-    public InvokeDynamicBootstrapError(String s) {
-        super(s);
-    }
-
-    /**
-     * Constructs a {@code InvokeDynamicBootstrapError} with the specified
-     * detail message and cause.
-     *
-     * @param s the detail message.
-     * @param cause the cause.
-     */
-    public InvokeDynamicBootstrapError(String s, Throwable cause) {
-        super(s);
-        this.initCause(cause);
+    /** Throw an {@link IllegalArgumentException}, because this kind of call site cannot change its target. */
+    @Override public final void setTarget(MethodHandle ignore) {
+        throw new IllegalArgumentException("ConstantCallSite");
     }
 }
