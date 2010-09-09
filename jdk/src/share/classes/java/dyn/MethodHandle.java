@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,13 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
 /**
  * A method handle is a typed, directly executable reference to a method,
  * constructor, field, or similar low-level operation, with optional
- * conversion or substitution of arguments or return values.
+ * transformations of arguments or return values.
+ * (These transformations include conversion, insertion, deletion,
+ * substitution.  See the methods of this class and of {@link MethodHandles}.)
  * <p>
  * Method handles are strongly typed according to signature.
  * They are not distinguished by method name or enclosing class.
- * A method handle must be invoked under a signature which exactly matches
+ * A method handle must be invoked under a signature which matches
  * the method handle's own {@link MethodType method type}.
  * <p>
  * Every method handle confesses its type via the {@code type} accessor.
@@ -174,9 +176,10 @@ assert(i == 3);
  * merely a documentation convention.  These type parameters do
  * not play a role in type-checking method handle invocations.
  * <p>
- * Note: Like classes and strings, method handles that correspond directly
- * to fields and methods can be represented directly as constants to be
- * loaded by {@code ldc} bytecodes.
+ * Like classes and strings, method handles that correspond to accessible
+ * fields, methods, and constructors can be represented directly
+ * in a class file's constant pool as constants to be loaded by {@code ldc} bytecodes.
+ * Loading such a constant causes the component classes of its type to be loaded as necessary.
  *
  * @see MethodType
  * @see MethodHandles
@@ -186,6 +189,7 @@ public abstract class MethodHandle
         // Note: This is an implementation inheritance hack, and will be removed
         // with a JVM change which moves the required hidden state onto this class.
         extends MethodHandleImpl
+        implements MethodHandleProvider
 {
     private static Access IMPL_TOKEN = Access.getToken();
 
@@ -197,7 +201,7 @@ public abstract class MethodHandle
      * those methods which are signature polymorphic.
      */
     @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD,java.lang.annotation.ElementType.TYPE})
-    @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)
+    @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
     @interface PolymorphicSignature { }
 
     private MethodType type;
@@ -274,10 +278,14 @@ public abstract class MethodHandle
      * and performing simple conversions for arguments and return types.
      * The signature at the call site of {@code invokeGeneric} must
      * have the same arity as this method handle's {@code type}.
-     * The same conversions are allowed on arguments or return values as are supported by
-     * by {@link MethodHandles#convertArguments}.
+     * <p>
      * If the call site signature exactly matches this method handle's {@code type},
      * the call proceeds as if by {@link #invokeExact}.
+     * <p>
+     * Otherwise, the call proceeds as if this method handle were first
+     * adjusted by calling {@link #asType} to adjust this method handle
+     * to the required type, and then the call proceeds as if by
+     * {@link #invokeExact} on the adjusted method handle.
      */
     public final native @PolymorphicSignature <R,A> R invokeGeneric(A... args) throws Throwable;
 
@@ -538,4 +546,10 @@ public abstract class MethodHandle
     public final MethodHandle bindTo(Object x) {
         return MethodHandles.insertArguments(this, 0, x);
     }
+
+    /** Implementation of {@link MethodHandleProvider}, which returns {@code this}. */
+    public final MethodHandle asMethodHandle() { return this; }
+
+    /** Implementation of {@link MethodHandleProvider}, which returns {@code this.asType(type)}. */
+    public final MethodHandle asMethodHandle(MethodType type) { return this.asType(type); }
 }

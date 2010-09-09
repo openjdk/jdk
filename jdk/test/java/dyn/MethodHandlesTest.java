@@ -1327,7 +1327,8 @@ public class MethodHandlesTest {
         MethodHandle result = MethodHandles.spreadArguments(target2, newType);
         Object[] returnValue;
         if (pos == 0) {
-            returnValue = (Object[]) result.invokeExact(args);
+            Object rawRetVal = result.invokeExact(args);
+            returnValue = (Object[]) rawRetVal;
         } else {
             Object[] args1 = Arrays.copyOfRange(args, 0, pos+1);
             args1[pos] = Arrays.copyOfRange(args, pos, args.length);
