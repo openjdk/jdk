@@ -439,7 +439,7 @@ const char* StackWalkCompPolicy::shouldNotInline(methodHandle m) {
   if (!instanceKlass::cast(m->method_holder())->is_initialized()) return (_msg = "method holder not initialized");
   if (m->is_native()) return (_msg = "native method");
   nmethod* m_code = m->code();
-  if( m_code != NULL && m_code->instructions_size() > InlineSmallCode )
+  if (m_code != NULL && m_code->code_size() > InlineSmallCode)
     return (_msg = "already compiled into a big method");
 
   // use frequency-based objections only for non-trivial methods

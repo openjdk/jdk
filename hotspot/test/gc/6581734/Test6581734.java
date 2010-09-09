@@ -121,7 +121,7 @@ public class Test6581734 {
         }
 
         if (collectorsWithTime<collectorsFound) {
-            throw new RuntimeException("collectors found with zero time";
+            throw new RuntimeException("collectors found with zero time");
         }
         System.out.println("Test passed.");
     }

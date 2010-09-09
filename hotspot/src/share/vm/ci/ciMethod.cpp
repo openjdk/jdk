@@ -922,12 +922,12 @@ bool ciMethod::has_compiled_code() {
 
 // ------------------------------------------------------------------
 // ciMethod::instructions_size
-// This is a rough metric for "fat" methods, compared
-// before inlining with InlineSmallCode.
-// The CodeBlob::instructions_size accessor includes
-// junk like exception handler, stubs, and constant table,
-// which are not highly relevant to an inlined method.
-// So we use the more specific accessor nmethod::code_size.
+//
+// This is a rough metric for "fat" methods, compared before inlining
+// with InlineSmallCode.  The CodeBlob::code_size accessor includes
+// junk like exception handler, stubs, and constant table, which are
+// not highly relevant to an inlined method.  So we use the more
+// specific accessor nmethod::insts_size.
 int ciMethod::instructions_size() {
   GUARDED_VM_ENTRY(
     nmethod* code = get_methodOop()->code();
@@ -939,7 +939,7 @@ int ciMethod::instructions_size() {
         (TieredCompilation && code->compiler() != NULL && code->compiler()->is_c1())) {
       return 0;
     }
-    return code->code_end() - code->verified_entry_point();
+    return code->insts_end() - code->verified_entry_point();
   )
 }
 

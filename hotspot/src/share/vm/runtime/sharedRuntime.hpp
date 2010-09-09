@@ -173,12 +173,12 @@ class SharedRuntime: AllStatic {
 
   static address get_ic_miss_stub() {
     assert(_ic_miss_blob!= NULL, "oops");
-    return _ic_miss_blob->instructions_begin();
+    return _ic_miss_blob->entry_point();
   }
 
   static address get_handle_wrong_method_stub() {
     assert(_wrong_method_blob!= NULL, "oops");
-    return _wrong_method_blob->instructions_begin();
+    return _wrong_method_blob->entry_point();
   }
 
 #ifdef COMPILER2
@@ -188,15 +188,15 @@ class SharedRuntime: AllStatic {
 
   static address get_resolve_opt_virtual_call_stub(){
     assert(_resolve_opt_virtual_call_blob != NULL, "oops");
-    return _resolve_opt_virtual_call_blob->instructions_begin();
+    return _resolve_opt_virtual_call_blob->entry_point();
   }
   static address get_resolve_virtual_call_stub() {
     assert(_resolve_virtual_call_blob != NULL, "oops");
-    return _resolve_virtual_call_blob->instructions_begin();
+    return _resolve_virtual_call_blob->entry_point();
   }
   static address get_resolve_static_call_stub() {
     assert(_resolve_static_call_blob != NULL, "oops");
-    return _resolve_static_call_blob->instructions_begin();
+    return _resolve_static_call_blob->entry_point();
   }
 
   static SafepointBlob* polling_page_return_handler_blob()     { return _polling_page_return_handler_blob; }
@@ -548,16 +548,17 @@ class SharedRuntime: AllStatic {
 // This library manages argument marshaling adapters and native wrappers.
 // There are 2 flavors of adapters: I2C and C2I.
 //
-// The I2C flavor takes a stock interpreted call setup, marshals the arguments
-// for a Java-compiled call, and jumps to Rmethod-> code()->
-// instructions_begin().  It is broken to call it without an nmethod assigned.
-// The usual behavior is to lift any register arguments up out of the stack
-// and possibly re-pack the extra arguments to be contigious.  I2C adapters
-// will save what the interpreter's stack pointer will be after arguments are
-// popped, then adjust the interpreter's frame size to force alignment and
-// possibly to repack the arguments.  After re-packing, it jumps to the
-// compiled code start.  There are no safepoints in this adapter code and a GC
-// cannot happen while marshaling is in progress.
+// The I2C flavor takes a stock interpreted call setup, marshals the
+// arguments for a Java-compiled call, and jumps to Rmethod-> code()->
+// code_begin().  It is broken to call it without an nmethod assigned.
+// The usual behavior is to lift any register arguments up out of the
+// stack and possibly re-pack the extra arguments to be contigious.
+// I2C adapters will save what the interpreter's stack pointer will be
+// after arguments are popped, then adjust the interpreter's frame
+// size to force alignment and possibly to repack the arguments.
+// After re-packing, it jumps to the compiled code start.  There are
+// no safepoints in this adapter code and a GC cannot happen while
+// marshaling is in progress.
 //
 // The C2I flavor takes a stock compiled call setup plus the target method in
 // Rmethod, marshals the arguments for an interpreted call and jumps to

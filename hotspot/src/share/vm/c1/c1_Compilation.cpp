@@ -454,8 +454,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _allocator(NULL)
 , _next_id(0)
 , _next_block_id(0)
-, _code(buffer_blob->instructions_begin(),
-        buffer_blob->instructions_size())
+, _code(buffer_blob)
 , _current_instruction(NULL)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
