@@ -26,6 +26,7 @@
 package sun.dyn;
 
 import java.dyn.*;
+import static sun.dyn.MemberName.uncaughtException;
 
 /**
  * Parts of CallSite known to the JVM.
@@ -80,11 +81,18 @@ public class CallSiteImpl {
 
     // This method is private in CallSite because it touches private fields in CallSite.
     // These private fields (vmmethod, vmindex) are specific to the JVM.
-    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE =
+    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE;
+    static {
+        try {
+            PRIVATE_INITIALIZE_CALL_SITE =
             MethodHandleImpl.IMPL_LOOKUP.findVirtual(CallSite.class, "initializeFromJVM",
                 MethodType.methodType(void.class,
                                       String.class, MethodType.class,
                                       MemberName.class, int.class));
+        } catch (NoAccessException ex) {
+            throw uncaughtException(ex);
+        }
+    }
 
     public static void setCallSiteTarget(Access token, CallSite site, MethodHandle target) {
         Access.check(token);
