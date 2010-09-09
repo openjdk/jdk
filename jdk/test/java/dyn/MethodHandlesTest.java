@@ -449,7 +449,7 @@ public class MethodHandlesTest {
         countTest(positive);
         MethodType type = MethodType.methodType(ret, params);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.findStatic(defc, name, type);
@@ -513,7 +513,7 @@ public class MethodHandlesTest {
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
         MethodType type = MethodType.methodType(ret, params);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.findVirtual(defc, methodName, type);
@@ -567,7 +567,7 @@ public class MethodHandlesTest {
         countTest(positive);
         MethodType type = MethodType.methodType(ret, params);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.findSpecial(defc, name, type, specialCaller);
@@ -623,7 +623,7 @@ public class MethodHandlesTest {
         MethodType type = MethodType.methodType(ret, params);
         Object receiver = randomArg(defc);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.bind(receiver, methodName, type);
@@ -688,7 +688,7 @@ public class MethodHandlesTest {
         MethodType type = MethodType.methodType(ret, params);
         Method rmethod = null;
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             rmethod = defc.getDeclaredMethod(name, params);
         } catch (NoSuchMethodException ex) {
@@ -1088,7 +1088,11 @@ public class MethodHandlesTest {
             if (rtype != Object.class)
                 pfx = rtype.getSimpleName().substring(0, 1).toLowerCase();
             String name = pfx+"id";
-            return PRIVATE.findStatic(Callee.class, name, type);
+            try {
+                return PRIVATE.findStatic(Callee.class, name, type);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 
@@ -1818,8 +1822,13 @@ public class MethodHandlesTest {
         testCastFailure("unbox/return", 11000);
     }
 
-    static class Surprise extends JavaMethodHandle {
-        Surprise() { super("value"); }
+    static class Surprise implements MethodHandleProvider {
+        public MethodHandle asMethodHandle() {
+            return VALUE.bindTo(this);
+        }
+        public MethodHandle asMethodHandle(MethodType type) {
+            return asMethodHandle().asType(type);
+        }
         Object value(Object x) {
             trace("value", x);
             if (boo != null)  return boo;
@@ -1834,22 +1843,32 @@ public class MethodHandlesTest {
         static Object  refIdentity(Object x)  { trace("ref.x", x); return x; }
         static Integer boxIdentity(Integer x) { trace("box.x", x); return x; }
         static int     intIdentity(int x)     { trace("int.x", x); return x; }
-        static MethodHandle REF_IDENTITY = PRIVATE.findStatic(
-                Surprise.class, "refIdentity",
-                    MethodType.methodType(Object.class, Object.class));
-        static MethodHandle BOX_IDENTITY = PRIVATE.findStatic(
-                Surprise.class, "boxIdentity",
-                    MethodType.methodType(Integer.class, Integer.class));
-        static MethodHandle INT_IDENTITY = PRIVATE.findStatic(
-                Surprise.class, "intIdentity",
-                    MethodType.methodType(int.class, int.class));
+        static MethodHandle VALUE, REF_IDENTITY, BOX_IDENTITY, INT_IDENTITY;
+        static {
+            try {
+                VALUE = PRIVATE.findVirtual(
+                    Surprise.class, "value",
+                        MethodType.methodType(Object.class, Object.class));
+                REF_IDENTITY = PRIVATE.findStatic(
+                    Surprise.class, "refIdentity",
+                        MethodType.methodType(Object.class, Object.class));
+                BOX_IDENTITY = PRIVATE.findStatic(
+                    Surprise.class, "boxIdentity",
+                        MethodType.methodType(Integer.class, Integer.class));
+                INT_IDENTITY = PRIVATE.findStatic(
+                    Surprise.class, "intIdentity",
+                        MethodType.methodType(int.class, int.class));
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
     }
 
     void testCastFailure(String mode, int okCount) throws Throwable {
         countTest(false);
         if (verbosity > 2)  System.out.println("mode="+mode);
         Surprise boo = new Surprise();
-        MethodHandle identity = Surprise.REF_IDENTITY, surprise = boo;
+        MethodHandle identity = Surprise.REF_IDENTITY, surprise0 = boo.asMethodHandle(), surprise = surprise0;
         if (mode.endsWith("/return")) {
             if (mode.equals("unbox/return")) {
                 // fail on return to ((Integer)surprise).intValue
@@ -1875,7 +1894,7 @@ public class MethodHandlesTest {
                 identity = MethodHandles.filterArguments(callee, identity);
             }
         }
-        assertNotSame(mode, surprise, boo);
+        assertNotSame(mode, surprise, surprise0);
         identity = MethodHandles.convertArguments(identity, MethodType.genericMethodType(1));
         surprise = MethodHandles.convertArguments(surprise, MethodType.genericMethodType(1));
         Object x = 42;

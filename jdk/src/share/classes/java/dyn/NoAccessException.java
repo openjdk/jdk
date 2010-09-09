@@ -36,7 +36,7 @@ package java.dyn;
  * at the time of creation.
  * @author John Rose, JSR 292 EG
  */
-public class NoAccessException extends RuntimeException {
+public class NoAccessException extends ReflectiveOperationException {
     /**
      * Constructs a {@code NoAccessException} with no detail message.
      */

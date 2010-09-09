@@ -273,15 +273,19 @@ public class CallSite
     public final MethodHandle dynamicInvoker() {
         if (this instanceof ConstantCallSite)
             return getTarget();  // will not change dynamically
-        MethodHandle getCSTarget = GET_TARGET;
-        if (getCSTarget == null)
-            GET_TARGET = getCSTarget = MethodHandles.Lookup.IMPL_LOOKUP.
-                findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
-        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, getCSTarget, this);
+        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, GET_TARGET, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }
-    private static MethodHandle GET_TARGET = null;  // link this lazily, not eagerly
+    private static final MethodHandle GET_TARGET;
+    static {
+        try {
+            GET_TARGET = MethodHandles.Lookup.IMPL_LOOKUP.
+                findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+        } catch (NoAccessException ignore) {
+            throw new InternalError();
+        }
+    }
 
     /** Implementation of {@link MethodHandleProvider} which returns {@code this.dynamicInvoker()}. */
     public final MethodHandle asMethodHandle() { return dynamicInvoker(); }
