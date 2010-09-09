@@ -53,7 +53,8 @@ public class LCMS implements PCMM {
     public static native long getProfileID(ICC_Profile profile);
 
     public static native long createNativeTransform(
-        long[] profileIDs, int renderType, Object disposerRef);
+        long[] profileIDs, int renderType, int inFormatter, int outFormatter,
+        Object disposerRef);
 
    /**
      * Constructs ColorTransform object corresponding to an ICC_profile
