@@ -852,6 +852,39 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
   }
 }
 
+static int impl_movgpr2x_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+                            int src_hi, int dst_hi, int size, outputStream* st ) {
+  // 32-bit
+  if (cbuf) {
+    emit_opcode(*cbuf, 0x66);
+    emit_opcode(*cbuf, 0x0F);
+    emit_opcode(*cbuf, 0x6E);
+    emit_rm(*cbuf, 0x3, Matcher::_regEncode[dst_lo] & 7, Matcher::_regEncode[src_lo] & 7);
+#ifndef PRODUCT
+  } else if (!do_size) {
+    st->print("movdl   %s, %s\t# spill", Matcher::regName[dst_lo], Matcher::regName[src_lo]);
+#endif
+  }
+  return 4;
+}
+
+
+static int impl_movx2gpr_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+                                 int src_hi, int dst_hi, int size, outputStream* st ) {
+  // 32-bit
+  if (cbuf) {
+    emit_opcode(*cbuf, 0x66);
+    emit_opcode(*cbuf, 0x0F);
+    emit_opcode(*cbuf, 0x7E);
+    emit_rm(*cbuf, 0x3, Matcher::_regEncode[src_lo] & 7, Matcher::_regEncode[dst_lo] & 7);
+#ifndef PRODUCT
+  } else if (!do_size) {
+    st->print("movdl   %s, %s\t# spill", Matcher::regName[dst_lo], Matcher::regName[src_lo]);
+#endif
+  }
+  return 4;
+}
+
 static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int size, outputStream* st ) {
   if( cbuf ) {
     emit_opcode(*cbuf, 0x8B );
@@ -947,6 +980,12 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( dst_first_rc == rc_int && src_first_rc == rc_stack )
     size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size, st);
 
+  // Check for integer reg-xmm reg copy
+  if( src_first_rc == rc_int && dst_first_rc == rc_xmm ) {
+    assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad),
+            "no 64 bit integer-float reg moves" );
+    return impl_movgpr2x_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+  }
   // --------------------------------------
   // Check for float reg-reg copy
   if( src_first_rc == rc_float && dst_first_rc == rc_float ) {
@@ -1016,6 +1055,13 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
             (src_first+1 == src_second && dst_first+1 == dst_second),
             "no non-adjacent float-moves" );
     return impl_movx_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+  }
+
+  // Check for xmm reg-integer reg copy
+  if( src_first_rc == rc_xmm && dst_first_rc == rc_int ) {
+    assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad),
+            "no 64 bit float-integer reg moves" );
+    return impl_movx2gpr_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
   }
 
   // Check for xmm store
