@@ -28,7 +28,6 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Iterator;
-import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.io.IOException;
 
@@ -121,17 +120,10 @@ class WindowsDirectoryStream
         }
     }
 
-    private static void throwAsConcurrentModificationException(Throwable t) {
-        ConcurrentModificationException cme = new ConcurrentModificationException();
-        cme.initCause(t);
-        throw cme;
-    }
-
     private class WindowsDirectoryIterator implements Iterator<Path> {
         private boolean atEof;
         private String first;
         private Path nextEntry;
-        private Path prevEntry;
 
         WindowsDirectoryIterator(String first) {
             atEof = false;
@@ -156,7 +148,7 @@ class WindowsDirectoryStream
                 if (filter.accept(entry))
                     return entry;
             } catch (IOException ioe) {
-                throwAsConcurrentModificationException(ioe);
+                throw new DirectoryIteratorException(ioe);
             }
             return null;
         }
@@ -177,21 +169,19 @@ class WindowsDirectoryStream
 
                 // synchronize on closeLock to prevent close while reading
                 synchronized (closeLock) {
-                    if (!isOpen)
-                        throwAsConcurrentModificationException(new
-                            ClosedDirectoryStreamException());
                     try {
-                        name = FindNextFile(handle, findDataBuffer.address());
-                        if (name == null) {
-                            // NO_MORE_FILES
-                            return null;
+                        if (isOpen) {
+                            name = FindNextFile(handle, findDataBuffer.address());
                         }
                     } catch (WindowsException x) {
-                        try {
-                            x.rethrowAsIOException(dir);
-                        } catch (IOException ioe) {
-                            throwAsConcurrentModificationException(ioe);
-                        }
+                        IOException ioe = x.asIOException(dir);
+                        throw new DirectoryIteratorException(ioe);
+                    }
+
+                    // NO_MORE_FILES or stream closed
+                    if (name == null) {
+                        atEof = true;
+                        return null;
                     }
 
                     // grab the attributes from the WIN32_FIND_DATA structure
@@ -210,49 +200,28 @@ class WindowsDirectoryStream
 
         @Override
         public synchronized boolean hasNext() {
-            if (nextEntry == null && !atEof) {
+            if (nextEntry == null && !atEof)
                 nextEntry = readNextEntry();
-                atEof = (nextEntry == null);
-            }
             return nextEntry != null;
         }
 
         @Override
         public synchronized Path next() {
-            if (nextEntry == null) {
-                if (!atEof) {
-                    nextEntry = readNextEntry();
-                }
-                if (nextEntry == null) {
-                    atEof = true;
-                    throw new NoSuchElementException();
-                }
+            Path result = null;
+            if (nextEntry == null && !atEof) {
+                result = readNextEntry();
+            } else {
+                result = nextEntry;
+                nextEntry = null;
             }
-            prevEntry = nextEntry;
-            nextEntry = null;
-            return prevEntry;
+            if (result == null)
+                throw new NoSuchElementException();
+            return result;
         }
 
         @Override
         public void remove() {
-            if (!isOpen) {
-                throwAsConcurrentModificationException(new
-                    ClosedDirectoryStreamException());
-            }
-            Path entry;
-            synchronized (this) {
-                if (prevEntry == null)
-                    throw new IllegalStateException("no last element");
-                entry = prevEntry;
-                prevEntry = null;
-            }
-            try {
-                entry.delete();
-            } catch (IOException ioe) {
-                throwAsConcurrentModificationException(ioe);
-            } catch (SecurityException se) {
-                throwAsConcurrentModificationException(se);
-            }
+            throw new UnsupportedOperationException();
         }
     }
 }
