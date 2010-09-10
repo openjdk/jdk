@@ -330,7 +330,7 @@ void PromotionInfo::verify() const {
 void PromotionInfo::print_on(outputStream* st) const {
   SpoolBlock* curSpool = NULL;
   size_t i = 0;
-  st->print_cr("start & end indices: [" SIZE_FORMAT ", " SIZE_FORMAT ")",
+  st->print_cr(" start & end indices: [" SIZE_FORMAT ", " SIZE_FORMAT ")",
                _firstIndex, _nextIndex);
   for (curSpool = _spoolHead; curSpool != _spoolTail && curSpool != NULL;
        curSpool = curSpool->nextSpoolBlock) {
@@ -350,7 +350,7 @@ void PromotionInfo::print_on(outputStream* st) const {
     st->print_cr(" free ");
     i++;
   }
-  st->print_cr(SIZE_FORMAT " header spooling blocks", i);
+  st->print_cr("  " SIZE_FORMAT " header spooling blocks", i);
 }
 
 void SpoolBlock::print_on(outputStream* st) const {
