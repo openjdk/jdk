@@ -7034,4 +7034,14 @@ a
     }
 
    static final long serialVersionUID = -3591946023893483003L;
+
+ //------------------------- JDBC 4.1 -----------------------------------
+
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException("Not supported yet.");
+    }
+
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException("Not supported yet.");
+    }
 }

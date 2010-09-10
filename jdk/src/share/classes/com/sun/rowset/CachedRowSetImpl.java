@@ -765,7 +765,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         if( conn != null){
            // JDBC 4.0 mandates as does the Java EE spec that all DataBaseMetaData methods
            // must be implemented, therefore, the previous fix for 5055528 is being backed out
-
             dbmslocatorsUpdateCopy = conn.getMetaData().locatorsUpdateCopy();
         }
     }
@@ -10129,6 +10128,15 @@ a
             throw new RuntimeException(ioe);
         }
 
+    }
+
+    //------------------------- JDBC 4.1 -----------------------------------
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException("Not supported yet.");
+    }
+
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException("Not supported yet.");
     }
 
     static final long serialVersionUID =1884577171200622428L;
