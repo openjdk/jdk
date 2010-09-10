@@ -3578,9 +3578,9 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves a description of the pseudo or hidden columns available
      * in a given table within the specified catalog and schema.
-     * Psuedo or hidden columns may not always be stored within
+     * Pseudo or hidden columns may not always be stored within
      * a table and are not visible in a ResultSet unless they are
-     * specified in the query's outermost SELECT list. Psuedo or hidden
+     * specified in the query's outermost SELECT list. Pseudo or hidden
      * columns may not necessarily be able to be modified. If there are
      * no pseudo or hidden columns, an empty ResultSet is returned.
      *
