@@ -1946,8 +1946,8 @@ void CompactibleFreeListSpace::save_marks() {
 
 bool CompactibleFreeListSpace::no_allocs_since_save_marks() {
   assert(_promoInfo.tracking(), "No preceding save_marks?");
-  guarantee(SharedHeap::heap()->n_par_threads() == 0,
-            "Shouldn't be called (yet) during parallel part of gc.");
+  assert(SharedHeap::heap()->n_par_threads() == 0,
+         "Shouldn't be called if using parallel gc.");
   return _promoInfo.noPromotions();
 }
 
@@ -2569,7 +2569,7 @@ void CFLS_LAB::modify_initialization(size_t n, unsigned wt) {
 
 HeapWord* CFLS_LAB::alloc(size_t word_sz) {
   FreeChunk* res;
-  guarantee(word_sz == _cfls->adjustObjectSize(word_sz), "Error");
+  assert(word_sz == _cfls->adjustObjectSize(word_sz), "Error");
   if (word_sz >=  CompactibleFreeListSpace::IndexSetSize) {
     // This locking manages sync with other large object allocations.
     MutexLockerEx x(_cfls->parDictionaryAllocLock(),
