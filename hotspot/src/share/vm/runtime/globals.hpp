@@ -90,6 +90,9 @@ struct Flag {
   const char *type;
   const char *name;
   void*       addr;
+
+  NOT_PRODUCT(const char *doc;)
+
   const char *kind;
   FlagValueOrigin origin;
 
@@ -131,7 +134,7 @@ struct Flag {
   bool is_writeable() const;
   bool is_external() const;
 
-  void print_on(outputStream* st);
+  void print_on(outputStream* st, bool withComments = false );
   void print_as_flag(outputStream* st);
 };
 
@@ -211,7 +214,7 @@ class CommandLineFlags {
   static bool wasSetOnCmdline(const char* name, bool* value);
   static void printSetFlags();
 
-  static void printFlags();
+  static void printFlags(bool withComments = false );
 
   static void verify() PRODUCT_RETURN;
 };
@@ -2405,6 +2408,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, PrintFlagsFinal, false,                                     \
          "Print all VM flags after argument and ergonomic processing")      \
+                                                                            \
+  notproduct(bool, PrintFlagsWithComments, false,                           \
+         "Print all VM flags with default values and descriptions and exit")\
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \
