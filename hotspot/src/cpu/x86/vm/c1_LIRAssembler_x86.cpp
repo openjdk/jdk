@@ -2066,11 +2066,11 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
         case lir_add: {
-          __ increment(lreg, c);
+          __ incrementl(lreg, c);
           break;
         }
         case lir_sub: {
-          __ decrement(lreg, c);
+          __ decrementl(lreg, c);
           break;
         }
         default: ShouldNotReachHere();
