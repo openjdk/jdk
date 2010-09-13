@@ -673,6 +673,8 @@ void Canonicalizer::do_If(If* x) {
     } else if (l->as_InstanceOf() != NULL) {
       // NOTE: Code permanently disabled for now since it leaves the old InstanceOf
       //       instruction in the graph (it is pinned). Need to fix this at some point.
+      //       It should also be left in the graph when generating a profiled method version or Goto
+      //       has to know that it was an InstanceOf.
       return;
       // pattern: If ((obj instanceof klass) cond rc) => simplify to: IfInstanceOf or: Goto
       InstanceOf* inst = l->as_InstanceOf();

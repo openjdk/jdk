@@ -967,6 +967,17 @@ void GraphBuilder::store_indexed(BasicType type) {
   StoreIndexed* result = new StoreIndexed(array, index, length, type, value, lock_stack());
   append(result);
   _memory->store_value(value);
+
+  if (type == T_OBJECT && is_profiling()) {
+    // Note that we'd collect profile data in this method if we wanted it.
+    compilation()->set_would_profile(true);
+
+    if (profile_checkcasts()) {
+      result->set_profiled_method(method());
+      result->set_profiled_bci(bci());
+      result->set_should_profile(true);
+    }
+  }
 }
 
 
@@ -1852,6 +1863,17 @@ void GraphBuilder::instance_of(int klass_index) {
   InstanceOf* i = new InstanceOf(klass, apop(), state_before);
   ipush(append_split(i));
   i->set_direct_compare(direct_compare(klass));
+
+  if (is_profiling()) {
+    // Note that we'd collect profile data in this method if we wanted it.
+    compilation()->set_would_profile(true);
+
+    if (profile_checkcasts()) {
+      i->set_profiled_method(method());
+      i->set_profiled_bci(bci());
+      i->set_should_profile(true);
+    }
+  }
 }
 
 

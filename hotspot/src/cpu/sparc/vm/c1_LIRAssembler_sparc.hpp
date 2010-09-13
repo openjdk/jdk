@@ -75,6 +75,9 @@
   void type_profile_helper(Register mdo, int mdo_offset_bias,
                            ciMethodData *md, ciProfileData *data,
                            Register recv, Register tmp1, Label* update_done);
+  // Setup pointers to MDO, MDO slot, also compute offset bias to access the slot.
+  void setup_md_access(ciMethod* method, int bci,
+                       ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);
  public:
   void   pack64(LIR_Opr src, LIR_Opr dst);
   void unpack64(LIR_Opr src, LIR_Opr dst);

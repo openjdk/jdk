@@ -2041,7 +2041,7 @@ class LIR_List: public CompilationResourceObj {
 
   void fpop_raw()                                { append(new LIR_Op0(lir_fpop_raw)); }
 
-  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch);
+  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
   void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception);
 
   void checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
