@@ -175,7 +175,6 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
                 for (int c = 0; c < targetChannels; c++) {
                     for (int i = 0, ix = off + c; i < len2; i++, ix += cs) {
                         b[ix] = conversion_buffer[i];
-                        ;
                     }
                 }
             } else if (targetChannels == 1) {
@@ -186,7 +185,6 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
                 for (int c = 1; c < sourceChannels; c++) {
                     for (int i = c, ix = off; i < len2; i += cs, ix++) {
                         b[ix] += conversion_buffer[i];
-                        ;
                     }
                 }
                 float vol = 1f / ((float) sourceChannels);
@@ -390,6 +388,7 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
                 return -1;
             if (len < 0)
                 return 0;
+            int offlen = off + len;
             int remain = len / nrofchannels;
             int destPos = 0;
             int in_end = ibuffer_len;
@@ -423,7 +422,7 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
             for (int c = 0; c < nrofchannels; c++) {
                 int ix = 0;
                 float[] buff = cbuffer[c];
-                for (int i = c; i < b.length; i += nrofchannels) {
+                for (int i = c + off; i < offlen; i += nrofchannels) {
                     b[i] = buff[ix++];
                 }
             }
@@ -447,7 +446,7 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
         }
 
         public long skip(long len) throws IOException {
-            if (len > 0)
+            if (len < 0)
                 return 0;
             if (skipbuffer == null)
                 skipbuffer = new float[1024 * targetFormat.getFrameSize()];

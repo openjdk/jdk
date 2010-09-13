@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
  */
 
 /* @test
-   @summary Test SoftSynthesizer unloadInstrument method */
+ @summary Test Disable/enable loading default soundbank in SoftSynthesizer */
+
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiUnavailableException;
@@ -35,17 +38,15 @@ import javax.sound.midi.MidiDevice.Info;
 
 import com.sun.media.sound.*;
 
-public class UnloadInstrument {
+public class TestDisableLoadDefaultSoundbank {
 
-    private static void assertEquals(Object a, Object b) throws Exception
-    {
-        if(!a.equals(b))
+    private static void assertEquals(Object a, Object b) throws Exception {
+        if (!a.equals(b))
             throw new RuntimeException("assertEquals fails!");
     }
 
-    private static void assertTrue(boolean value) throws Exception
-    {
-        if(!value)
+    private static void assertTrue(boolean value) throws Exception {
+        if (!value)
             throw new RuntimeException("assertTrue fails!");
     }
 
@@ -53,19 +54,15 @@ public class UnloadInstrument {
         AudioSynthesizer synth = new SoftSynthesizer();
         synth.openStream(null, null);
         Soundbank defsbk = synth.getDefaultSoundbank();
-        if(defsbk != null)
-        {
-            synth.unloadAllInstruments(defsbk);
-            SimpleSoundbank sbk = new SimpleSoundbank();
-            SimpleInstrument ins = new SimpleInstrument();
-            ins.setPatch(new Patch(0,1));
-            sbk.addInstrument(ins);
-            SimpleInstrument ins2 = new SimpleInstrument();
-            ins2.setPatch(new Patch(0,2));
-            sbk.addInstrument(ins2);
-            synth.loadInstrument(ins2);
-            assertTrue(synth.getLoadedInstruments().length == 1);
-            synth.unloadInstrument(ins2);
+        if (defsbk != null) {
+            assertTrue(defsbk.getInstruments().length == synth
+                    .getLoadedInstruments().length);
+        }
+        synth.close();
+        Map<String, Object> p = new HashMap<String, Object>();
+        p.put("load default soundbank", false);
+        synth.openStream(null, p);
+        if (defsbk != null) {
             assertTrue(synth.getLoadedInstruments().length == 0);
         }
         synth.close();
