@@ -675,24 +675,34 @@ public class Attr extends JCTree.Visitor {
 
             // Check that type parameters are well-formed.
             chk.validate(tree.typarams, localEnv);
-            if ((owner.flags() & ANNOTATION) != 0 &&
-                tree.typarams.nonEmpty())
-                log.error(tree.typarams.head.pos(),
-                          "intf.annotation.members.cant.have.type.params");
 
             // Check that result type is well-formed.
             chk.validate(tree.restype, localEnv);
-            if ((owner.flags() & ANNOTATION) != 0)
-                chk.validateAnnotationType(tree.restype);
 
-            if ((owner.flags() & ANNOTATION) != 0)
+            // annotation method checks
+            if ((owner.flags() & ANNOTATION) != 0) {
+                // annotation method cannot have throws clause
+                if (tree.thrown.nonEmpty()) {
+                    log.error(tree.thrown.head.pos(),
+                            "throws.not.allowed.in.intf.annotation");
+                }
+                // annotation method cannot declare type-parameters
+                if (tree.typarams.nonEmpty()) {
+                    log.error(tree.typarams.head.pos(),
+                            "intf.annotation.members.cant.have.type.params");
+                }
+                // validate annotation method's return type (could be an annotation type)
+                chk.validateAnnotationType(tree.restype);
+                // ensure that annotation method does not clash with members of Object/Annotation
                 chk.validateAnnotationMethod(tree.pos(), m);
 
-            // Check that all exceptions mentioned in the throws clause extend
-            // java.lang.Throwable.
-            if ((owner.flags() & ANNOTATION) != 0 && tree.thrown.nonEmpty())
-                log.error(tree.thrown.head.pos(),
-                          "throws.not.allowed.in.intf.annotation");
+                if (tree.defaultValue != null) {
+                    // if default value is an annotation, check it is a well-formed
+                    // annotation value (e.g. no duplicate values, no missing values, etc.)
+                    chk.validateAnnotationTree(tree.defaultValue);
+                }
+            }
+
             for (List<JCExpression> l = tree.thrown; l.nonEmpty(); l = l.tail)
                 chk.checkType(l.head.pos(), l.head.type, syms.throwableType);
 
@@ -1546,7 +1556,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
         if (TreeInfo.isDiamond(tree)) {
-            clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes, true);
+            clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes);
             clazz.type = clazztype;
         }
 
@@ -1586,13 +1596,15 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.varArgs = false;
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                tree.constructorType = checkMethod(clazztype,
-                                                tree.constructor,
-                                                localEnv,
-                                                tree.args,
-                                                argtypes,
-                                                typeargtypes,
-                                                localEnv.info.varArgs);
+                tree.constructorType = tree.constructor.type.isErroneous() ?
+                    syms.errType :
+                    checkMethod(clazztype,
+                        tree.constructor,
+                        localEnv,
+                        tree.args,
+                        argtypes,
+                        typeargtypes,
+                        localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
                     assert tree.constructorType.isErroneous() || tree.varargsElement != null;
             }
@@ -1682,8 +1694,7 @@ public class Attr extends JCTree.Visitor {
                         Type clazztype,
                         Pair<Scope, Scope> mapping,
                         List<Type> argtypes,
-                        List<Type> typeargtypes,
-                        boolean reportErrors) {
+                        List<Type> typeargtypes) {
         if (clazztype.isErroneous() || mapping == erroneousMapping) {
             //if the type of the instance creation expression is erroneous,
             //or something prevented us to form a valid mapping, return the
@@ -1721,7 +1732,7 @@ public class Attr extends JCTree.Visitor {
                         env,
                         clazztype.tsym.type,
                         argtypes,
-                        typeargtypes, reportErrors);
+                        typeargtypes);
             } finally {
                 ((ClassSymbol) clazztype.tsym).members_field = mapping.fst;
             }
@@ -1750,42 +1761,37 @@ public class Attr extends JCTree.Visitor {
                         Warner.noWarnings);
             } catch (Infer.InferenceException ex) {
                 //an error occurred while inferring uninstantiated type-variables
-                //we need to optionally report an error
-                if (reportErrors) {
-                    log.error(tree.clazz.pos(),
-                            "cant.apply.diamond.1",
-                            diags.fragment("diamond", clazztype.tsym),
-                            ex.diagnostic);
-                }
+                log.error(tree.clazz.pos(),
+                        "cant.apply.diamond.1",
+                        diags.fragment("diamond", clazztype.tsym),
+                        ex.diagnostic);
             }
         }
-        if (reportErrors) {
-            clazztype = chk.checkClassType(tree.clazz.pos(),
-                    clazztype,
-                    true);
-            if (clazztype.tag == CLASS) {
-                List<Type> invalidDiamondArgs = chk.checkDiamond((ClassType)clazztype);
-                if (!clazztype.isErroneous() && invalidDiamondArgs.nonEmpty()) {
-                    //one or more types inferred in the previous steps is either a
-                    //captured type or an intersection type --- we need to report an error.
-                    String subkey = invalidDiamondArgs.size() > 1 ?
-                        "diamond.invalid.args" :
-                        "diamond.invalid.arg";
-                    //The error message is of the kind:
-                    //
-                    //cannot infer type arguments for {clazztype}<>;
-                    //reason: {subkey}
-                    //
-                    //where subkey is a fragment of the kind:
-                    //
-                    //type argument(s) {invalidDiamondArgs} inferred for {clazztype}<> is not allowed in this context
-                    log.error(tree.clazz.pos(),
-                                "cant.apply.diamond.1",
-                                diags.fragment("diamond", clazztype.tsym),
-                                diags.fragment(subkey,
-                                               invalidDiamondArgs,
-                                               diags.fragment("diamond", clazztype.tsym)));
-                }
+        clazztype = chk.checkClassType(tree.clazz.pos(),
+                clazztype,
+                true);
+        if (clazztype.tag == CLASS) {
+            List<Type> invalidDiamondArgs = chk.checkDiamond((ClassType)clazztype);
+            if (!clazztype.isErroneous() && invalidDiamondArgs.nonEmpty()) {
+                //one or more types inferred in the previous steps is either a
+                //captured type or an intersection type --- we need to report an error.
+                String subkey = invalidDiamondArgs.size() > 1 ?
+                    "diamond.invalid.args" :
+                    "diamond.invalid.arg";
+                //The error message is of the kind:
+                //
+                //cannot infer type arguments for {clazztype}<>;
+                //reason: {subkey}
+                //
+                //where subkey is a fragment of the kind:
+                //
+                //type argument(s) {invalidDiamondArgs} inferred for {clazztype}<> is not allowed in this context
+                log.error(tree.clazz.pos(),
+                            "cant.apply.diamond.1",
+                            diags.fragment("diamond", clazztype.tsym),
+                            diags.fragment(subkey,
+                                           invalidDiamondArgs,
+                                           diags.fragment("diamond", clazztype.tsym)));
             }
         }
         return clazztype;
@@ -2002,7 +2008,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitTypeCast(JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
-        chk.validate(tree.clazz, env);
+        chk.validate(tree.clazz, env, false);
         Type exprtype = attribExpr(tree.expr, env, Infer.anyPoly);
         Type owntype = chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         if (exprtype.constValue() != null)
@@ -2015,7 +2021,7 @@ public class Attr extends JCTree.Visitor {
             tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype = chk.checkReifiableReferenceType(
             tree.clazz.pos(), attribType(tree.clazz, env));
-        chk.validate(tree.clazz, env);
+        chk.validate(tree.clazz, env, false);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, VAL, pkind, pt);
     }
