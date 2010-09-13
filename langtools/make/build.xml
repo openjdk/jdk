@@ -621,7 +621,7 @@
         <genstubs
             srcdir="${import.jdk.src.dir}" destdir="${build.genstubs.dir}"
             includes="${import.jdk.stub.files}"
-            fork="true" classpath="${build.toolclasses.dir}:${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"
+            fork="true" classpath="${build.toolclasses.dir}:${build.bootstrap.dir}/classes:${ant.core.lib}"
         />
     </target>
 
@@ -813,7 +813,8 @@
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}/CompileProperties"
                destdir="${build.toolclasses.dir}/"
-               classpath="${ant.home}/lib/ant.jar"/>
+               classpath="${ant.core.lib}"
+               includeantruntime="false"/>
         <taskdef name="pcompile"
                  classname="CompilePropertiesTask"
                  classpath="${build.toolclasses.dir}/"/>
@@ -827,7 +828,8 @@
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}/GenStubs"
                destdir="${build.toolclasses.dir}/"
-               classpath="${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"/>
+               classpath="${build.bootstrap.dir}/classes:${ant.core.lib}"
+               includeantruntime="false"/>
         <taskdef name="genstubs"
                  classname="GenStubs$$Ant"
                  classpath="${build.toolclasses.dir}/"/>
