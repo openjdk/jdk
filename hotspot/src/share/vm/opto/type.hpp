@@ -836,7 +836,7 @@ class TypeAryPtr : public TypeOopPtr {
     if (k != NULL) {
       // Verify that specified klass and TypeAryPtr::klass() follow the same rules.
       ciKlass* ck = compute_klass(true);
-      if (UseNewCode || k != ck) {
+      if (k != ck) {
         this->dump(); tty->cr();
         tty->print(" k: ");
         k->print(); tty->cr();
