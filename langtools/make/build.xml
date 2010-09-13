@@ -275,6 +275,7 @@
             failOnError="false"
             errorProperty="findbugs.all.errors"
             warningsProperty="findbugs.all.warnings"
+            jvm="${target.java.home}/bin/java"
             jvmargs="-Xmx512M">
             <class location="${build.classes.dir}"/>
             <sourcePath>
@@ -938,7 +939,8 @@
         <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
     </target>
 
-    <target name="-def-findbugs" unless="findbugs.defined" depends="-check-findbugs.home">
+    <target name="-def-findbugs" unless="findbugs.defined"
+        depends="-check-findbugs.home,-check-target.java.home">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
             <classpath>
                 <pathelement location="${findbugs.home}/lib/findbugs.jar"/>
@@ -958,6 +960,7 @@
                     failOnError="false"
                     errorProperty="findbugs.@{name}.errors"
                     warningsProperty="findbugs.@{name}.warnings"
+                    jvm="${target.java.home}/bin/java"
                     jvmargs="-Xmx512M" >
                     <class location="${dist.dir}/lib/@{name}.jar"/>
                     <auxClasspath>
