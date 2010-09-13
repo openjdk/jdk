@@ -1264,7 +1264,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     }
 
     public void programChange(int bank, int program) {
-        bank = restrict7Bit(bank);
+        bank = restrict14Bit(bank);
         program = restrict7Bit(program);
         synchronized (control_mutex) {
             mainmixer.activity();

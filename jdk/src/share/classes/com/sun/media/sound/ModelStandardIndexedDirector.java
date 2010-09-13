@@ -57,8 +57,7 @@ public class ModelStandardIndexedDirector implements ModelDirector {
         buildindex();
     }
 
-    private int[] lookupIndex(int x, int y)
-    {
+    private int[] lookupIndex(int x, int y) {
         if ((x >= 0) && (x < 128) && (y >= 0) && (y < 128)) {
             int xt = trantables[0][x];
             int yt = trantables[1][y];
@@ -69,14 +68,30 @@ public class ModelStandardIndexedDirector implements ModelDirector {
         return null;
     }
 
+    private int restrict(int value) {
+        if(value < 0) return 0;
+        if(value > 127) return 127;
+        return value;
+    }
+
     private void buildindex() {
         trantables = new byte[2][129];
         counters = new int[trantables.length];
         for (ModelPerformer performer : performers) {
-            trantables[0][performer.getKeyFrom()] = 1;
-            trantables[0][performer.getKeyTo() + 1] = 1;
-            trantables[1][performer.getVelFrom()] = 1;
-            trantables[1][performer.getVelTo() + 1] = 1;
+            int keyFrom = performer.getKeyFrom();
+            int keyTo = performer.getKeyTo();
+            int velFrom = performer.getVelFrom();
+            int velTo = performer.getVelTo();
+            if (keyFrom > keyTo) continue;
+            if (velFrom > velTo) continue;
+            keyFrom = restrict(keyFrom);
+            keyTo = restrict(keyTo);
+            velFrom = restrict(velFrom);
+            velTo = restrict(velTo);
+            trantables[0][keyFrom] = 1;
+            trantables[0][keyTo + 1] = 1;
+            trantables[1][velFrom] = 1;
+            trantables[1][velTo + 1] = 1;
         }
         for (int d = 0; d < trantables.length; d++) {
             byte[] trantable = trantables[d];
@@ -102,10 +117,20 @@ public class ModelStandardIndexedDirector implements ModelDirector {
         mat = new int[counters[0] * counters[1]][];
         int ix = 0;
         for (ModelPerformer performer : performers) {
-            int x_from = trantables[0][performer.getKeyFrom()];
-            int x_to = trantables[0][performer.getKeyTo() + 1];
-            int y_from = trantables[1][performer.getVelFrom()];
-            int y_to = trantables[1][performer.getVelTo() + 1];
+            int keyFrom = performer.getKeyFrom();
+            int keyTo = performer.getKeyTo();
+            int velFrom = performer.getVelFrom();
+            int velTo = performer.getVelTo();
+            if (keyFrom > keyTo) continue;
+            if (velFrom > velTo) continue;
+            keyFrom = restrict(keyFrom);
+            keyTo = restrict(keyTo);
+            velFrom = restrict(velFrom);
+            velTo = restrict(velTo);
+            int x_from = trantables[0][keyFrom];
+            int x_to = trantables[0][keyTo + 1];
+            int y_from = trantables[1][velFrom];
+            int y_to = trantables[1][velTo + 1];
             if (x_to == -1)
                 x_to = counters[0];
             if (y_to == -1)
