@@ -40,16 +40,23 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.locks.Condition;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
  * A {@code ForkJoinPool} provides the entry point for submissions
- * from non-{@code ForkJoinTask}s, as well as management and
+ * from non-{@code ForkJoinTask} clients, as well as management and
  * monitoring operations.
  *
  * <p>A {@code ForkJoinPool} differs from other kinds of {@link
@@ -58,29 +65,19 @@ import java.util.concurrent.atomic.AtomicLong;
  * execute subtasks created by other active tasks (eventually blocking
  * waiting for work if none exist). This enables efficient processing
  * when most tasks spawn other subtasks (as do most {@code
- * ForkJoinTask}s). A {@code ForkJoinPool} may also be used for mixed
- * execution of some plain {@code Runnable}- or {@code Callable}-
- * based activities along with {@code ForkJoinTask}s. When setting
- * {@linkplain #setAsyncMode async mode}, a {@code ForkJoinPool} may
- * also be appropriate for use with fine-grained tasks of any form
- * that are never joined. Otherwise, other {@code ExecutorService}
- * implementations are typically more appropriate choices.
+ * ForkJoinTask}s). When setting <em>asyncMode</em> to true in
+ * constructors, {@code ForkJoinPool}s may also be appropriate for use
+ * with event-style tasks that are never joined.
  *
  * <p>A {@code ForkJoinPool} is constructed with a given target
  * parallelism level; by default, equal to the number of available
- * processors. Unless configured otherwise via {@link
- * #setMaintainsParallelism}, the pool attempts to maintain this
- * number of active (or available) threads by dynamically adding,
- * suspending, or resuming internal worker threads, even if some tasks
- * are stalled waiting to join others. However, no such adjustments
- * are performed in the face of blocked IO or other unmanaged
- * synchronization. The nested {@link ManagedBlocker} interface
- * enables extension of the kinds of synchronization accommodated.
- * The target parallelism level may also be changed dynamically
- * ({@link #setParallelism}). The total number of threads may be
- * limited using method {@link #setMaximumPoolSize}, in which case it
- * may become possible for the activities of a pool to stall due to
- * the lack of available threads to process new tasks.
+ * processors. The pool attempts to maintain enough active (or
+ * available) threads by dynamically adding, suspending, or resuming
+ * internal worker threads, even if some tasks are stalled waiting to
+ * join others. However, no such adjustments are guaranteed in the
+ * face of blocked IO or other unmanaged synchronization. The nested
+ * {@link ManagedBlocker} interface enables extension of the kinds of
+ * synchronization accommodated.
  *
  * <p>In addition to execution and lifecycle control methods, this
  * class provides status check methods (for example
@@ -88,6 +85,40 @@ import java.util.concurrent.atomic.AtomicLong;
  * tuning, and monitoring fork/join applications. Also, method
  * {@link #toString} returns indications of pool state in a
  * convenient form for informal monitoring.
+ *
+ * <p> As is the case with other ExecutorServices, there are three
+ * main task execution methods summarized in the following
+ * table. These are designed to be used by clients not already engaged
+ * in fork/join computations in the current pool.  The main forms of
+ * these methods accept instances of {@code ForkJoinTask}, but
+ * overloaded forms also allow mixed execution of plain {@code
+ * Runnable}- or {@code Callable}- based activities as well.  However,
+ * tasks that are already executing in a pool should normally
+ * <em>NOT</em> use these pool execution methods, but instead use the
+ * within-computation forms listed in the table.
+ *
+ * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ *  <tr>
+ *    <td></td>
+ *    <td ALIGN=CENTER> <b>Call from non-fork/join clients</b></td>
+ *    <td ALIGN=CENTER> <b>Call from within fork/join computations</b></td>
+ *  </tr>
+ *  <tr>
+ *    <td> <b>Arrange async execution</td>
+ *    <td> {@link #execute(ForkJoinTask)}</td>
+ *    <td> {@link ForkJoinTask#fork}</td>
+ *  </tr>
+ *  <tr>
+ *    <td> <b>Await and obtain result</td>
+ *    <td> {@link #invoke(ForkJoinTask)}</td>
+ *    <td> {@link ForkJoinTask#invoke}</td>
+ *  </tr>
+ *  <tr>
+ *    <td> <b>Arrange exec and obtain Future</td>
+ *    <td> {@link #submit(ForkJoinTask)}</td>
+ *    <td> {@link ForkJoinTask#fork} (ForkJoinTasks <em>are</em> Futures)</td>
+ *  </tr>
+ * </table>
  *
  * <p><b>Sample Usage.</b> Normally a single {@code ForkJoinPool} is
  * used for all parallel task execution in a program or subsystem.
@@ -113,7 +144,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@code IllegalArgumentException}.
  *
  * <p>This implementation rejects submitted tasks (that is, by throwing
- * {@link RejectedExecutionException}) only when the pool is shut down.
+ * {@link RejectedExecutionException}) only when the pool is shut down
+ * or internal resources have been exhausted.
  *
  * @since 1.7
  * @author Doug Lea
@@ -121,15 +153,246 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ForkJoinPool extends AbstractExecutorService {
 
     /*
-     * See the extended comments interspersed below for design,
-     * rationale, and walkthroughs.
+     * Implementation Overview
+     *
+     * This class provides the central bookkeeping and control for a
+     * set of worker threads: Submissions from non-FJ threads enter
+     * into a submission queue. Workers take these tasks and typically
+     * split them into subtasks that may be stolen by other workers.
+     * The main work-stealing mechanics implemented in class
+     * ForkJoinWorkerThread give first priority to processing tasks
+     * from their own queues (LIFO or FIFO, depending on mode), then
+     * to randomized FIFO steals of tasks in other worker queues, and
+     * lastly to new submissions. These mechanics do not consider
+     * affinities, loads, cache localities, etc, so rarely provide the
+     * best possible performance on a given machine, but portably
+     * provide good throughput by averaging over these factors.
+     * (Further, even if we did try to use such information, we do not
+     * usually have a basis for exploiting it. For example, some sets
+     * of tasks profit from cache affinities, but others are harmed by
+     * cache pollution effects.)
+     *
+     * Beyond work-stealing support and essential bookkeeping, the
+     * main responsibility of this framework is to take actions when
+     * one worker is waiting to join a task stolen (or always held by)
+     * another.  Because we are multiplexing many tasks on to a pool
+     * of workers, we can't just let them block (as in Thread.join).
+     * We also cannot just reassign the joiner's run-time stack with
+     * another and replace it later, which would be a form of
+     * "continuation", that even if possible is not necessarily a good
+     * idea. Given that the creation costs of most threads on most
+     * systems mainly surrounds setting up runtime stacks, thread
+     * creation and switching is usually not much more expensive than
+     * stack creation and switching, and is more flexible). Instead we
+     * combine two tactics:
+     *
+     *   Helping: Arranging for the joiner to execute some task that it
+     *      would be running if the steal had not occurred.  Method
+     *      ForkJoinWorkerThread.helpJoinTask tracks joining->stealing
+     *      links to try to find such a task.
+     *
+     *   Compensating: Unless there are already enough live threads,
+     *      method helpMaintainParallelism() may create or
+     *      re-activate a spare thread to compensate for blocked
+     *      joiners until they unblock.
+     *
+     * It is impossible to keep exactly the target (parallelism)
+     * number of threads running at any given time.  Determining
+     * existence of conservatively safe helping targets, the
+     * availability of already-created spares, and the apparent need
+     * to create new spares are all racy and require heuristic
+     * guidance, so we rely on multiple retries of each.  Compensation
+     * occurs in slow-motion. It is triggered only upon timeouts of
+     * Object.wait used for joins. This reduces poor decisions that
+     * would otherwise be made when threads are waiting for others
+     * that are stalled because of unrelated activities such as
+     * garbage collection.
+     *
+     * The ManagedBlocker extension API can't use helping so relies
+     * only on compensation in method awaitBlocker.
+     *
+     * The main throughput advantages of work-stealing stem from
+     * decentralized control -- workers mostly steal tasks from each
+     * other. We do not want to negate this by creating bottlenecks
+     * implementing other management responsibilities. So we use a
+     * collection of techniques that avoid, reduce, or cope well with
+     * contention. These entail several instances of bit-packing into
+     * CASable fields to maintain only the minimally required
+     * atomicity. To enable such packing, we restrict maximum
+     * parallelism to (1<<15)-1 (enabling twice this (to accommodate
+     * unbalanced increments and decrements) to fit into a 16 bit
+     * field, which is far in excess of normal operating range.  Even
+     * though updates to some of these bookkeeping fields do sometimes
+     * contend with each other, they don't normally cache-contend with
+     * updates to others enough to warrant memory padding or
+     * isolation. So they are all held as fields of ForkJoinPool
+     * objects.  The main capabilities are as follows:
+     *
+     * 1. Creating and removing workers. Workers are recorded in the
+     * "workers" array. This is an array as opposed to some other data
+     * structure to support index-based random steals by workers.
+     * Updates to the array recording new workers and unrecording
+     * terminated ones are protected from each other by a lock
+     * (workerLock) but the array is otherwise concurrently readable,
+     * and accessed directly by workers. To simplify index-based
+     * operations, the array size is always a power of two, and all
+     * readers must tolerate null slots. Currently, all worker thread
+     * creation is on-demand, triggered by task submissions,
+     * replacement of terminated workers, and/or compensation for
+     * blocked workers. However, all other support code is set up to
+     * work with other policies.
+     *
+     * To ensure that we do not hold on to worker references that
+     * would prevent GC, ALL accesses to workers are via indices into
+     * the workers array (which is one source of some of the unusual
+     * code constructions here). In essence, the workers array serves
+     * as a WeakReference mechanism. Thus for example the event queue
+     * stores worker indices, not worker references. Access to the
+     * workers in associated methods (for example releaseEventWaiters)
+     * must both index-check and null-check the IDs. All such accesses
+     * ignore bad IDs by returning out early from what they are doing,
+     * since this can only be associated with shutdown, in which case
+     * it is OK to give up. On termination, we just clobber these
+     * data structures without trying to use them.
+     *
+     * 2. Bookkeeping for dynamically adding and removing workers. We
+     * aim to approximately maintain the given level of parallelism.
+     * When some workers are known to be blocked (on joins or via
+     * ManagedBlocker), we may create or resume others to take their
+     * place until they unblock (see below). Implementing this
+     * requires counts of the number of "running" threads (i.e., those
+     * that are neither blocked nor artificially suspended) as well as
+     * the total number.  These two values are packed into one field,
+     * "workerCounts" because we need accurate snapshots when deciding
+     * to create, resume or suspend.  Note however that the
+     * correspondence of these counts to reality is not guaranteed. In
+     * particular updates for unblocked threads may lag until they
+     * actually wake up.
+     *
+     * 3. Maintaining global run state. The run state of the pool
+     * consists of a runLevel (SHUTDOWN, TERMINATING, etc) similar to
+     * those in other Executor implementations, as well as a count of
+     * "active" workers -- those that are, or soon will be, or
+     * recently were executing tasks. The runLevel and active count
+     * are packed together in order to correctly trigger shutdown and
+     * termination. Without care, active counts can be subject to very
+     * high contention.  We substantially reduce this contention by
+     * relaxing update rules.  A worker must claim active status
+     * prospectively, by activating if it sees that a submitted or
+     * stealable task exists (it may find after activating that the
+     * task no longer exists). It stays active while processing this
+     * task (if it exists) and any other local subtasks it produces,
+     * until it cannot find any other tasks. It then tries
+     * inactivating (see method preStep), but upon update contention
+     * instead scans for more tasks, later retrying inactivation if it
+     * doesn't find any.
+     *
+     * 4. Managing idle workers waiting for tasks. We cannot let
+     * workers spin indefinitely scanning for tasks when none are
+     * available. On the other hand, we must quickly prod them into
+     * action when new tasks are submitted or generated.  We
+     * park/unpark these idle workers using an event-count scheme.
+     * Field eventCount is incremented upon events that may enable
+     * workers that previously could not find a task to now find one:
+     * Submission of a new task to the pool, or another worker pushing
+     * a task onto a previously empty queue.  (We also use this
+     * mechanism for configuration and termination actions that
+     * require wakeups of idle workers).  Each worker maintains its
+     * last known event count, and blocks when a scan for work did not
+     * find a task AND its lastEventCount matches the current
+     * eventCount. Waiting idle workers are recorded in a variant of
+     * Treiber stack headed by field eventWaiters which, when nonzero,
+     * encodes the thread index and count awaited for by the worker
+     * thread most recently calling eventSync. This thread in turn has
+     * a record (field nextEventWaiter) for the next waiting worker.
+     * In addition to allowing simpler decisions about need for
+     * wakeup, the event count bits in eventWaiters serve the role of
+     * tags to avoid ABA errors in Treiber stacks. Upon any wakeup,
+     * released threads also try to release at most two others.  The
+     * net effect is a tree-like diffusion of signals, where released
+     * threads (and possibly others) help with unparks.  To further
+     * reduce contention effects a bit, failed CASes to increment
+     * field eventCount are tolerated without retries in signalWork.
+     * Conceptually they are merged into the same event, which is OK
+     * when their only purpose is to enable workers to scan for work.
+     *
+     * 5. Managing suspension of extra workers. When a worker notices
+     * (usually upon timeout of a wait()) that there are too few
+     * running threads, we may create a new thread to maintain
+     * parallelism level, or at least avoid starvation. Usually, extra
+     * threads are needed for only very short periods, yet join
+     * dependencies are such that we sometimes need them in
+     * bursts. Rather than create new threads each time this happens,
+     * we suspend no-longer-needed extra ones as "spares". For most
+     * purposes, we don't distinguish "extra" spare threads from
+     * normal "core" threads: On each call to preStep (the only point
+     * at which we can do this) a worker checks to see if there are
+     * now too many running workers, and if so, suspends itself.
+     * Method helpMaintainParallelism looks for suspended threads to
+     * resume before considering creating a new replacement. The
+     * spares themselves are encoded on another variant of a Treiber
+     * Stack, headed at field "spareWaiters".  Note that the use of
+     * spares is intrinsically racy.  One thread may become a spare at
+     * about the same time as another is needlessly being created. We
+     * counteract this and related slop in part by requiring resumed
+     * spares to immediately recheck (in preStep) to see whether they
+     * should re-suspend.
+     *
+     * 6. Killing off unneeded workers. A timeout mechanism is used to
+     * shed unused workers: The oldest (first) event queue waiter uses
+     * a timed rather than hard wait. When this wait times out without
+     * a normal wakeup, it tries to shutdown any one (for convenience
+     * the newest) other spare or event waiter via
+     * tryShutdownUnusedWorker. This eventually reduces the number of
+     * worker threads to a minimum of one after a long enough period
+     * without use.
+     *
+     * 7. Deciding when to create new workers. The main dynamic
+     * control in this class is deciding when to create extra threads
+     * in method helpMaintainParallelism. We would like to keep
+     * exactly #parallelism threads running, which is an impossible
+     * task. We always need to create one when the number of running
+     * threads would become zero and all workers are busy. Beyond
+     * this, we must rely on heuristics that work well in the
+     * presence of transient phenomena such as GC stalls, dynamic
+     * compilation, and wake-up lags. These transients are extremely
+     * common -- we are normally trying to fully saturate the CPUs on
+     * a machine, so almost any activity other than running tasks
+     * impedes accuracy. Our main defense is to allow parallelism to
+     * lapse for a while during joins, and use a timeout to see if,
+     * after the resulting settling, there is still a need for
+     * additional workers.  This also better copes with the fact that
+     * some of the methods in this class tend to never become compiled
+     * (but are interpreted), so some components of the entire set of
+     * controls might execute 100 times faster than others. And
+     * similarly for cases where the apparent lack of work is just due
+     * to GC stalls and other transient system activity.
+     *
+     * Beware that there is a lot of representation-level coupling
+     * among classes ForkJoinPool, ForkJoinWorkerThread, and
+     * ForkJoinTask.  For example, direct access to "workers" array by
+     * workers, and direct access to ForkJoinTask.status by both
+     * ForkJoinPool and ForkJoinWorkerThread.  There is little point
+     * trying to reduce this, since any associated future changes in
+     * representations will need to be accompanied by algorithmic
+     * changes anyway.
+     *
+     * Style notes: There are lots of inline assignments (of form
+     * "while ((local = field) != 0)") which are usually the simplest
+     * way to ensure the required read orderings (which are sometimes
+     * critical). Also several occurrences of the unusual "do {}
+     * while (!cas...)" which is the simplest way to force an update of
+     * a CAS'ed variable. There are also other coding oddities that
+     * help some methods perform reasonably even when interpreted (not
+     * compiled), at the expense of some messy constructions that
+     * reduce byte code counts.
+     *
+     * The order of declarations in this file is: (1) statics (2)
+     * fields (along with constants used when unpacking some of them)
+     * (3) internal control methods (4) callbacks and other support
+     * for ForkJoinTask and ForkJoinWorkerThread classes, (5) exported
+     * methods (plus a few little helpers).
      */
-
-    /** Mask for packing and unpacking shorts */
-    private static final int  shortMask = 0xffff;
-
-    /** Max pool size -- must be a power of two minus 1 */
-    private static final int MAX_THREADS =  0x7FFF;
 
     /**
      * Factory for creating new {@link ForkJoinWorkerThread}s.
@@ -151,14 +414,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Default ForkJoinWorkerThreadFactory implementation; creates a
      * new ForkJoinWorkerThread.
      */
-    static class  DefaultForkJoinWorkerThreadFactory
+    static class DefaultForkJoinWorkerThreadFactory
         implements ForkJoinWorkerThreadFactory {
         public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
-            try {
-                return new ForkJoinWorkerThread(pool);
-            } catch (OutOfMemoryError oom)  {
-                return null;
-            }
+            return new ForkJoinWorkerThread(pool);
         }
     }
 
@@ -194,47 +453,44 @@ public class ForkJoinPool extends AbstractExecutorService {
         new AtomicInteger();
 
     /**
-     * Array holding all worker threads in the pool. Initialized upon
-     * first use. Array size must be a power of two.  Updates and
-     * replacements are protected by workerLock, but it is always kept
-     * in a consistent enough state to be randomly accessed without
-     * locking by workers performing work-stealing.
+     * The time to block in a join (see awaitJoin) before checking if
+     * a new worker should be (re)started to maintain parallelism
+     * level. The value should be short enough to maintain global
+     * responsiveness and progress but long enough to avoid
+     * counterproductive firings during GC stalls or unrelated system
+     * activity, and to not bog down systems with continual re-firings
+     * on GCs or legitimately long waits.
+     */
+    private static final long JOIN_TIMEOUT_MILLIS = 250L; // 4 per second
+
+    /**
+     * The wakeup interval (in nanoseconds) for the oldest worker
+     * waiting for an event to invoke tryShutdownUnusedWorker to
+     * shrink the number of workers.  The exact value does not matter
+     * too much. It must be short enough to release resources during
+     * sustained periods of idleness, but not so short that threads
+     * are continually re-created.
+     */
+    private static final long SHRINK_RATE_NANOS =
+        30L * 1000L * 1000L * 1000L; // 2 per minute
+
+    /**
+     * Absolute bound for parallelism level. Twice this number plus
+     * one (i.e., 0xfff) must fit into a 16bit field to enable
+     * word-packing for some counts and indices.
+     */
+    private static final int MAX_WORKERS   = 0x7fff;
+
+    /**
+     * Array holding all worker threads in the pool.  Array size must
+     * be a power of two.  Updates and replacements are protected by
+     * workerLock, but the array is always kept in a consistent enough
+     * state to be randomly accessed without locking by workers
+     * performing work-stealing, as well as other traversal-based
+     * methods in this class. All readers must tolerate that some
+     * array slots may be null.
      */
     volatile ForkJoinWorkerThread[] workers;
-
-    /**
-     * Lock protecting access to workers.
-     */
-    private final ReentrantLock workerLock;
-
-    /**
-     * Condition for awaitTermination.
-     */
-    private final Condition termination;
-
-    /**
-     * The uncaught exception handler used when any worker
-     * abruptly terminates
-     */
-    private Thread.UncaughtExceptionHandler ueh;
-
-    /**
-     * Creation factory for worker threads.
-     */
-    private final ForkJoinWorkerThreadFactory factory;
-
-    /**
-     * Head of stack of threads that were created to maintain
-     * parallelism when other threads blocked, but have since
-     * suspended when the parallelism level rose.
-     */
-    private volatile WaitQueueNode spareStack;
-
-    /**
-     * Sum of per-thread steal counts, updated only when threads are
-     * idle or terminating.
-     */
-    private final AtomicLong stealCount;
 
     /**
      * Queue for external submissions.
@@ -242,160 +498,732 @@ public class ForkJoinPool extends AbstractExecutorService {
     private final LinkedTransferQueue<ForkJoinTask<?>> submissionQueue;
 
     /**
-     * Head of Treiber stack for barrier sync. See below for explanation.
+     * Lock protecting updates to workers array.
      */
-    private volatile WaitQueueNode syncStack;
+    private final ReentrantLock workerLock;
 
     /**
-     * The count for event barrier
+     * Latch released upon termination.
      */
-    private volatile long eventCount;
+    private final Phaser termination;
+
+    /**
+     * Creation factory for worker threads.
+     */
+    private final ForkJoinWorkerThreadFactory factory;
+
+    /**
+     * Sum of per-thread steal counts, updated only when threads are
+     * idle or terminating.
+     */
+    private volatile long stealCount;
+
+    /**
+     * Encoded record of top of Treiber stack of threads waiting for
+     * events. The top 32 bits contain the count being waited for. The
+     * bottom 16 bits contains one plus the pool index of waiting
+     * worker thread. (Bits 16-31 are unused.)
+     */
+    private volatile long eventWaiters;
+
+    private static final int  EVENT_COUNT_SHIFT = 32;
+    private static final long WAITER_ID_MASK    = (1L << 16) - 1L;
+
+    /**
+     * A counter for events that may wake up worker threads:
+     *   - Submission of a new task to the pool
+     *   - A worker pushing a task on an empty queue
+     *   - termination
+     */
+    private volatile int eventCount;
+
+    /**
+     * Encoded record of top of Treiber stack of spare threads waiting
+     * for resumption. The top 16 bits contain an arbitrary count to
+     * avoid ABA effects. The bottom 16bits contains one plus the pool
+     * index of waiting worker thread.
+     */
+    private volatile int spareWaiters;
+
+    private static final int SPARE_COUNT_SHIFT = 16;
+    private static final int SPARE_ID_MASK     = (1 << 16) - 1;
+
+    /**
+     * Lifecycle control. The low word contains the number of workers
+     * that are (probably) executing tasks. This value is atomically
+     * incremented before a worker gets a task to run, and decremented
+     * when a worker has no tasks and cannot find any.  Bits 16-18
+     * contain runLevel value. When all are zero, the pool is
+     * running. Level transitions are monotonic (running -> shutdown
+     * -> terminating -> terminated) so each transition adds a bit.
+     * These are bundled together to ensure consistent read for
+     * termination checks (i.e., that runLevel is at least SHUTDOWN
+     * and active threads is zero).
+     *
+     * Notes: Most direct CASes are dependent on these bitfield
+     * positions.  Also, this field is non-private to enable direct
+     * performance-sensitive CASes in ForkJoinWorkerThread.
+     */
+    volatile int runState;
+
+    // Note: The order among run level values matters.
+    private static final int RUNLEVEL_SHIFT     = 16;
+    private static final int SHUTDOWN           = 1 << RUNLEVEL_SHIFT;
+    private static final int TERMINATING        = 1 << (RUNLEVEL_SHIFT + 1);
+    private static final int TERMINATED         = 1 << (RUNLEVEL_SHIFT + 2);
+    private static final int ACTIVE_COUNT_MASK  = (1 << RUNLEVEL_SHIFT) - 1;
+
+    /**
+     * Holds number of total (i.e., created and not yet terminated)
+     * and running (i.e., not blocked on joins or other managed sync)
+     * threads, packed together to ensure consistent snapshot when
+     * making decisions about creating and suspending spare
+     * threads. Updated only by CAS. Note that adding a new worker
+     * requires incrementing both counts, since workers start off in
+     * running state.
+     */
+    private volatile int workerCounts;
+
+    private static final int TOTAL_COUNT_SHIFT  = 16;
+    private static final int RUNNING_COUNT_MASK = (1 << TOTAL_COUNT_SHIFT) - 1;
+    private static final int ONE_RUNNING        = 1;
+    private static final int ONE_TOTAL          = 1 << TOTAL_COUNT_SHIFT;
+
+    /**
+     * The target parallelism level.
+     * Accessed directly by ForkJoinWorkerThreads.
+     */
+    final int parallelism;
+
+    /**
+     * True if use local fifo, not default lifo, for local polling
+     * Read by, and replicated by ForkJoinWorkerThreads
+     */
+    final boolean locallyFifo;
+
+    /**
+     * The uncaught exception handler used when any worker abruptly
+     * terminates.
+     */
+    private final Thread.UncaughtExceptionHandler ueh;
 
     /**
      * Pool number, just for assigning useful names to worker threads
      */
     private final int poolNumber;
 
-    /**
-     * The maximum allowed pool size
-     */
-    private volatile int maxPoolSize;
+    // Utilities for CASing fields. Note that most of these
+    // are usually manually inlined by callers
 
     /**
-     * The desired parallelism level, updated only under workerLock.
+     * Increments running count part of workerCounts
      */
-    private volatile int parallelism;
-
-    /**
-     * True if use local fifo, not default lifo, for local polling
-     */
-    private volatile boolean locallyFifo;
-
-    /**
-     * Holds number of total (i.e., created and not yet terminated)
-     * and running (i.e., not blocked on joins or other managed sync)
-     * threads, packed into one int to ensure consistent snapshot when
-     * making decisions about creating and suspending spare
-     * threads. Updated only by CAS.  Note: CASes in
-     * updateRunningCount and preJoin assume that running active count
-     * is in low word, so need to be modified if this changes.
-     */
-    private volatile int workerCounts;
-
-    private static int totalCountOf(int s)           { return s >>> 16;  }
-    private static int runningCountOf(int s)         { return s & shortMask; }
-    private static int workerCountsFor(int t, int r) { return (t << 16) + r; }
-
-    /**
-     * Adds delta (which may be negative) to running count.  This must
-     * be called before (with negative arg) and after (with positive)
-     * any managed synchronization (i.e., mainly, joins).
-     *
-     * @param delta the number to add
-     */
-    final void updateRunningCount(int delta) {
-        int s;
-        do {} while (!casWorkerCounts(s = workerCounts, s + delta));
+    final void incrementRunningCount() {
+        int c;
+        do {} while (!UNSAFE.compareAndSwapInt(this, workerCountsOffset,
+                                               c = workerCounts,
+                                               c + ONE_RUNNING));
     }
 
     /**
-     * Adds delta (which may be negative) to both total and running
-     * count.  This must be called upon creation and termination of
-     * worker threads.
-     *
-     * @param delta the number to add
+     * Tries to decrement running count unless already zero
      */
-    private void updateWorkerCount(int delta) {
-        int d = delta + (delta << 16); // add to both lo and hi parts
-        int s;
-        do {} while (!casWorkerCounts(s = workerCounts, s + d));
-    }
-
-    /**
-     * Lifecycle control. High word contains runState, low word
-     * contains the number of workers that are (probably) executing
-     * tasks. This value is atomically incremented before a worker
-     * gets a task to run, and decremented when worker has no tasks
-     * and cannot find any. These two fields are bundled together to
-     * support correct termination triggering.  Note: activeCount
-     * CAS'es cheat by assuming active count is in low word, so need
-     * to be modified if this changes
-     */
-    private volatile int runControl;
-
-    // RunState values. Order among values matters
-    private static final int RUNNING     = 0;
-    private static final int SHUTDOWN    = 1;
-    private static final int TERMINATING = 2;
-    private static final int TERMINATED  = 3;
-
-    private static int runStateOf(int c)             { return c >>> 16; }
-    private static int activeCountOf(int c)          { return c & shortMask; }
-    private static int runControlFor(int r, int a)   { return (r << 16) + a; }
-
-    /**
-     * Tries incrementing active count; fails on contention.
-     * Called by workers before/during executing tasks.
-     *
-     * @return true on success
-     */
-    final boolean tryIncrementActiveCount() {
-        int c = runControl;
-        return casRunControl(c, c+1);
-    }
-
-    /**
-     * Tries decrementing active count; fails on contention.
-     * Possibly triggers termination on success.
-     * Called by workers when they can't find tasks.
-     *
-     * @return true on success
-     */
-    final boolean tryDecrementActiveCount() {
-        int c = runControl;
-        int nextc = c - 1;
-        if (!casRunControl(c, nextc))
+    final boolean tryDecrementRunningCount() {
+        int wc = workerCounts;
+        if ((wc & RUNNING_COUNT_MASK) == 0)
             return false;
-        if (canTerminateOnShutdown(nextc))
-            terminateOnShutdown();
-        return true;
+        return UNSAFE.compareAndSwapInt(this, workerCountsOffset,
+                                        wc, wc - ONE_RUNNING);
     }
 
     /**
-     * Returns {@code true} if argument represents zero active count
-     * and nonzero runstate, which is the triggering condition for
-     * terminating on shutdown.
+     * Forces decrement of encoded workerCounts, awaiting nonzero if
+     * (rarely) necessary when other count updates lag.
+     *
+     * @param dr -- either zero or ONE_RUNNING
+     * @param dt -- either zero or ONE_TOTAL
      */
-    private static boolean canTerminateOnShutdown(int c) {
-        // i.e. least bit is nonzero runState bit
-        return ((c & -c) >>> 16) != 0;
-    }
-
-    /**
-     * Transition run state to at least the given state. Return true
-     * if not already at least given state.
-     */
-    private boolean transitionRunStateTo(int state) {
+    private void decrementWorkerCounts(int dr, int dt) {
         for (;;) {
-            int c = runControl;
-            if (runStateOf(c) >= state)
-                return false;
-            if (casRunControl(c, runControlFor(state, activeCountOf(c))))
-                return true;
+            int wc = workerCounts;
+            if ((wc & RUNNING_COUNT_MASK)  - dr < 0 ||
+                (wc >>> TOTAL_COUNT_SHIFT) - dt < 0) {
+                if ((runState & TERMINATED) != 0)
+                    return; // lagging termination on a backout
+                Thread.yield();
+            }
+            if (UNSAFE.compareAndSwapInt(this, workerCountsOffset,
+                                         wc, wc - (dr + dt)))
+                return;
         }
     }
 
     /**
-     * Controls whether to add spares to maintain parallelism
+     * Tries decrementing active count; fails on contention.
+     * Called when workers cannot find tasks to run.
      */
-    private volatile boolean maintainsParallelism;
+    final boolean tryDecrementActiveCount() {
+        int c;
+        return UNSAFE.compareAndSwapInt(this, runStateOffset,
+                                        c = runState, c - 1);
+    }
+
+    /**
+     * Advances to at least the given level. Returns true if not
+     * already in at least the given level.
+     */
+    private boolean advanceRunLevel(int level) {
+        for (;;) {
+            int s = runState;
+            if ((s & level) != 0)
+                return false;
+            if (UNSAFE.compareAndSwapInt(this, runStateOffset, s, s | level))
+                return true;
+        }
+    }
+
+    // workers array maintenance
+
+    /**
+     * Records and returns a workers array index for new worker.
+     */
+    private int recordWorker(ForkJoinWorkerThread w) {
+        // Try using slot totalCount-1. If not available, scan and/or resize
+        int k = (workerCounts >>> TOTAL_COUNT_SHIFT) - 1;
+        final ReentrantLock lock = this.workerLock;
+        lock.lock();
+        try {
+            ForkJoinWorkerThread[] ws = workers;
+            int n = ws.length;
+            if (k < 0 || k >= n || ws[k] != null) {
+                for (k = 0; k < n && ws[k] != null; ++k)
+                    ;
+                if (k == n)
+                    ws = Arrays.copyOf(ws, n << 1);
+            }
+            ws[k] = w;
+            workers = ws; // volatile array write ensures slot visibility
+        } finally {
+            lock.unlock();
+        }
+        return k;
+    }
+
+    /**
+     * Nulls out record of worker in workers array.
+     */
+    private void forgetWorker(ForkJoinWorkerThread w) {
+        int idx = w.poolIndex;
+        // Locking helps method recordWorker avoid unnecessary expansion
+        final ReentrantLock lock = this.workerLock;
+        lock.lock();
+        try {
+            ForkJoinWorkerThread[] ws = workers;
+            if (idx >= 0 && idx < ws.length && ws[idx] == w) // verify
+                ws[idx] = null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Final callback from terminating worker.  Removes record of
+     * worker from array, and adjusts counts. If pool is shutting
+     * down, tries to complete termination.
+     *
+     * @param w the worker
+     */
+    final void workerTerminated(ForkJoinWorkerThread w) {
+        forgetWorker(w);
+        decrementWorkerCounts(w.isTrimmed()? 0 : ONE_RUNNING, ONE_TOTAL);
+        while (w.stealCount != 0) // collect final count
+            tryAccumulateStealCount(w);
+        tryTerminate(false);
+    }
+
+    // Waiting for and signalling events
+
+    /**
+     * Releases workers blocked on a count not equal to current count.
+     * Normally called after precheck that eventWaiters isn't zero to
+     * avoid wasted array checks. Gives up upon a change in count or
+     * upon releasing two workers, letting others take over.
+     */
+    private void releaseEventWaiters() {
+        ForkJoinWorkerThread[] ws = workers;
+        int n = ws.length;
+        long h = eventWaiters;
+        int ec = eventCount;
+        boolean releasedOne = false;
+        ForkJoinWorkerThread w; int id;
+        while ((id = ((int)(h & WAITER_ID_MASK)) - 1) >= 0 &&
+               (int)(h >>> EVENT_COUNT_SHIFT) != ec &&
+               id < n && (w = ws[id]) != null) {
+            if (UNSAFE.compareAndSwapLong(this, eventWaitersOffset,
+                                          h,  w.nextWaiter)) {
+                LockSupport.unpark(w);
+                if (releasedOne) // exit on second release
+                    break;
+                releasedOne = true;
+            }
+            if (eventCount != ec)
+                break;
+            h = eventWaiters;
+        }
+    }
+
+    /**
+     * Tries to advance eventCount and releases waiters. Called only
+     * from workers.
+     */
+    final void signalWork() {
+        int c; // try to increment event count -- CAS failure OK
+        UNSAFE.compareAndSwapInt(this, eventCountOffset, c = eventCount, c+1);
+        if (eventWaiters != 0L)
+            releaseEventWaiters();
+    }
+
+    /**
+     * Adds the given worker to event queue and blocks until
+     * terminating or event count advances from the given value
+     *
+     * @param w the calling worker thread
+     * @param ec the count
+     */
+    private void eventSync(ForkJoinWorkerThread w, int ec) {
+        long nh = (((long)ec) << EVENT_COUNT_SHIFT) | ((long)(w.poolIndex+1));
+        long h;
+        while ((runState < SHUTDOWN || !tryTerminate(false)) &&
+               (((int)((h = eventWaiters) & WAITER_ID_MASK)) == 0 ||
+                (int)(h >>> EVENT_COUNT_SHIFT) == ec) &&
+               eventCount == ec) {
+            if (UNSAFE.compareAndSwapLong(this, eventWaitersOffset,
+                                          w.nextWaiter = h, nh)) {
+                awaitEvent(w, ec);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Blocks the given worker (that has already been entered as an
+     * event waiter) until terminating or event count advances from
+     * the given value. The oldest (first) waiter uses a timed wait to
+     * occasionally one-by-one shrink the number of workers (to a
+     * minimum of one) if the pool has not been used for extended
+     * periods.
+     *
+     * @param w the calling worker thread
+     * @param ec the count
+     */
+    private void awaitEvent(ForkJoinWorkerThread w, int ec) {
+        while (eventCount == ec) {
+            if (tryAccumulateStealCount(w)) { // transfer while idle
+                boolean untimed = (w.nextWaiter != 0L ||
+                                   (workerCounts & RUNNING_COUNT_MASK) <= 1);
+                long startTime = untimed? 0 : System.nanoTime();
+                Thread.interrupted();         // clear/ignore interrupt
+                if (eventCount != ec || w.runState != 0 ||
+                    runState >= TERMINATING)  // recheck after clear
+                    break;
+                if (untimed)
+                    LockSupport.park(w);
+                else {
+                    LockSupport.parkNanos(w, SHRINK_RATE_NANOS);
+                    if (eventCount != ec || w.runState != 0 ||
+                        runState >= TERMINATING)
+                        break;
+                    if (System.nanoTime() - startTime >= SHRINK_RATE_NANOS)
+                        tryShutdownUnusedWorker(ec);
+                }
+            }
+        }
+    }
+
+    // Maintaining parallelism
+
+    /**
+     * Pushes worker onto the spare stack.
+     */
+    final void pushSpare(ForkJoinWorkerThread w) {
+        int ns = (++w.spareCount << SPARE_COUNT_SHIFT) | (w.poolIndex + 1);
+        do {} while (!UNSAFE.compareAndSwapInt(this, spareWaitersOffset,
+                                               w.nextSpare = spareWaiters,ns));
+    }
+
+    /**
+     * Tries (once) to resume a spare if the number of running
+     * threads is less than target.
+     */
+    private void tryResumeSpare() {
+        int sw, id;
+        ForkJoinWorkerThread[] ws = workers;
+        int n = ws.length;
+        ForkJoinWorkerThread w;
+        if ((sw = spareWaiters) != 0 &&
+            (id = (sw & SPARE_ID_MASK) - 1) >= 0 &&
+            id < n && (w = ws[id]) != null &&
+            (workerCounts & RUNNING_COUNT_MASK) < parallelism &&
+            spareWaiters == sw &&
+            UNSAFE.compareAndSwapInt(this, spareWaitersOffset,
+                                     sw, w.nextSpare)) {
+            int c; // increment running count before resume
+            do {} while (!UNSAFE.compareAndSwapInt
+                         (this, workerCountsOffset,
+                          c = workerCounts, c + ONE_RUNNING));
+            if (w.tryUnsuspend())
+                LockSupport.unpark(w);
+            else   // back out if w was shutdown
+                decrementWorkerCounts(ONE_RUNNING, 0);
+        }
+    }
+
+    /**
+     * Tries to increase the number of running workers if below target
+     * parallelism: If a spare exists tries to resume it via
+     * tryResumeSpare.  Otherwise, if not enough total workers or all
+     * existing workers are busy, adds a new worker. In all cases also
+     * helps wake up releasable workers waiting for work.
+     */
+    private void helpMaintainParallelism() {
+        int pc = parallelism;
+        int wc, rs, tc;
+        while (((wc = workerCounts) & RUNNING_COUNT_MASK) < pc &&
+               (rs = runState) < TERMINATING) {
+            if (spareWaiters != 0)
+                tryResumeSpare();
+            else if ((tc = wc >>> TOTAL_COUNT_SHIFT) >= MAX_WORKERS ||
+                     (tc >= pc && (rs & ACTIVE_COUNT_MASK) != tc))
+                break;   // enough total
+            else if (runState == rs && workerCounts == wc &&
+                     UNSAFE.compareAndSwapInt(this, workerCountsOffset, wc,
+                                              wc + (ONE_RUNNING|ONE_TOTAL))) {
+                ForkJoinWorkerThread w = null;
+                try {
+                    w = factory.newThread(this);
+                } finally { // adjust on null or exceptional factory return
+                    if (w == null) {
+                        decrementWorkerCounts(ONE_RUNNING, ONE_TOTAL);
+                        tryTerminate(false); // handle failure during shutdown
+                    }
+                }
+                if (w == null)
+                    break;
+                w.start(recordWorker(w), ueh);
+                if ((workerCounts >>> TOTAL_COUNT_SHIFT) >= pc) {
+                    int c; // advance event count
+                    UNSAFE.compareAndSwapInt(this, eventCountOffset,
+                                             c = eventCount, c+1);
+                    break; // add at most one unless total below target
+                }
+            }
+        }
+        if (eventWaiters != 0L)
+            releaseEventWaiters();
+    }
+
+    /**
+     * Callback from the oldest waiter in awaitEvent waking up after a
+     * period of non-use. If all workers are idle, tries (once) to
+     * shutdown an event waiter or a spare, if one exists. Note that
+     * we don't need CAS or locks here because the method is called
+     * only from one thread occasionally waking (and even misfires are
+     * OK). Note that until the shutdown worker fully terminates,
+     * workerCounts will overestimate total count, which is tolerable.
+     *
+     * @param ec the event count waited on by caller (to abort
+     * attempt if count has since changed).
+     */
+    private void tryShutdownUnusedWorker(int ec) {
+        if (runState == 0 && eventCount == ec) { // only trigger if all idle
+            ForkJoinWorkerThread[] ws = workers;
+            int n = ws.length;
+            ForkJoinWorkerThread w = null;
+            boolean shutdown = false;
+            int sw;
+            long h;
+            if ((sw = spareWaiters) != 0) { // prefer killing spares
+                int id = (sw & SPARE_ID_MASK) - 1;
+                if (id >= 0 && id < n && (w = ws[id]) != null &&
+                    UNSAFE.compareAndSwapInt(this, spareWaitersOffset,
+                                             sw, w.nextSpare))
+                    shutdown = true;
+            }
+            else if ((h = eventWaiters) != 0L) {
+                long nh;
+                int id = ((int)(h & WAITER_ID_MASK)) - 1;
+                if (id >= 0 && id < n && (w = ws[id]) != null &&
+                    (nh = w.nextWaiter) != 0L && // keep at least one worker
+                    UNSAFE.compareAndSwapLong(this, eventWaitersOffset, h, nh))
+                    shutdown = true;
+            }
+            if (w != null && shutdown) {
+                w.shutdown();
+                LockSupport.unpark(w);
+            }
+        }
+        releaseEventWaiters(); // in case of interference
+    }
+
+    /**
+     * Callback from workers invoked upon each top-level action (i.e.,
+     * stealing a task or taking a submission and running it).
+     * Performs one or more of the following:
+     *
+     * 1. If the worker is active and either did not run a task
+     *    or there are too many workers, try to set its active status
+     *    to inactive and update activeCount. On contention, we may
+     *    try again in this or a subsequent call.
+     *
+     * 2. If not enough total workers, help create some.
+     *
+     * 3. If there are too many running workers, suspend this worker
+     *    (first forcing inactive if necessary).  If it is not needed,
+     *    it may be shutdown while suspended (via
+     *    tryShutdownUnusedWorker).  Otherwise, upon resume it
+     *    rechecks running thread count and need for event sync.
+     *
+     * 4. If worker did not run a task, await the next task event via
+     *    eventSync if necessary (first forcing inactivation), upon
+     *    which the worker may be shutdown via
+     *    tryShutdownUnusedWorker.  Otherwise, help release any
+     *    existing event waiters that are now releasable,
+     *
+     * @param w the worker
+     * @param ran true if worker ran a task since last call to this method
+     */
+    final void preStep(ForkJoinWorkerThread w, boolean ran) {
+        int wec = w.lastEventCount;
+        boolean active = w.active;
+        boolean inactivate = false;
+        int pc = parallelism;
+        int rs;
+        while (w.runState == 0 && (rs = runState) < TERMINATING) {
+            if ((inactivate || (active && (rs & ACTIVE_COUNT_MASK) >= pc)) &&
+                UNSAFE.compareAndSwapInt(this, runStateOffset, rs, rs - 1))
+                inactivate = active = w.active = false;
+            int wc = workerCounts;
+            if ((wc & RUNNING_COUNT_MASK) > pc) {
+                if (!(inactivate |= active) && // must inactivate to suspend
+                    workerCounts == wc &&      // try to suspend as spare
+                    UNSAFE.compareAndSwapInt(this, workerCountsOffset,
+                                             wc, wc - ONE_RUNNING))
+                    w.suspendAsSpare();
+            }
+            else if ((wc >>> TOTAL_COUNT_SHIFT) < pc)
+                helpMaintainParallelism();     // not enough workers
+            else if (!ran) {
+                long h = eventWaiters;
+                int ec = eventCount;
+                if (h != 0L && (int)(h >>> EVENT_COUNT_SHIFT) != ec)
+                    releaseEventWaiters();     // release others before waiting
+                else if (ec != wec) {
+                    w.lastEventCount = ec;     // no need to wait
+                    break;
+                }
+                else if (!(inactivate |= active))
+                    eventSync(w, wec);         // must inactivate before sync
+            }
+            else
+                break;
+        }
+    }
+
+    /**
+     * Helps and/or blocks awaiting join of the given task.
+     * See above for explanation.
+     *
+     * @param joinMe the task to join
+     * @param worker the current worker thread
+     */
+    final void awaitJoin(ForkJoinTask<?> joinMe, ForkJoinWorkerThread worker) {
+        int retries = 2 + (parallelism >> 2); // #helpJoins before blocking
+        while (joinMe.status >= 0) {
+            int wc;
+            worker.helpJoinTask(joinMe);
+            if (joinMe.status < 0)
+                break;
+            else if (retries > 0)
+                --retries;
+            else if (((wc = workerCounts) & RUNNING_COUNT_MASK) != 0 &&
+                     UNSAFE.compareAndSwapInt(this, workerCountsOffset,
+                                              wc, wc - ONE_RUNNING)) {
+                int stat, c; long h;
+                while ((stat = joinMe.status) >= 0 &&
+                       (h = eventWaiters) != 0L && // help release others
+                       (int)(h >>> EVENT_COUNT_SHIFT) != eventCount)
+                    releaseEventWaiters();
+                if (stat >= 0 &&
+                    ((workerCounts & RUNNING_COUNT_MASK) == 0 ||
+                     (stat =
+                      joinMe.internalAwaitDone(JOIN_TIMEOUT_MILLIS)) >= 0))
+                    helpMaintainParallelism(); // timeout or no running workers
+                do {} while (!UNSAFE.compareAndSwapInt
+                             (this, workerCountsOffset,
+                              c = workerCounts, c + ONE_RUNNING));
+                if (stat < 0)
+                    break;   // else restart
+            }
+        }
+    }
+
+    /**
+     * Same idea as awaitJoin, but no helping, retries, or timeouts.
+     */
+    final void awaitBlocker(ManagedBlocker blocker)
+        throws InterruptedException {
+        while (!blocker.isReleasable()) {
+            int wc = workerCounts;
+            if ((wc & RUNNING_COUNT_MASK) != 0 &&
+                UNSAFE.compareAndSwapInt(this, workerCountsOffset,
+                                         wc, wc - ONE_RUNNING)) {
+                try {
+                    while (!blocker.isReleasable()) {
+                        long h = eventWaiters;
+                        if (h != 0L &&
+                            (int)(h >>> EVENT_COUNT_SHIFT) != eventCount)
+                            releaseEventWaiters();
+                        else if ((workerCounts & RUNNING_COUNT_MASK) == 0 &&
+                                 runState < TERMINATING)
+                            helpMaintainParallelism();
+                        else if (blocker.block())
+                            break;
+                    }
+                } finally {
+                    int c;
+                    do {} while (!UNSAFE.compareAndSwapInt
+                                 (this, workerCountsOffset,
+                                  c = workerCounts, c + ONE_RUNNING));
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Possibly initiates and/or completes termination.
+     *
+     * @param now if true, unconditionally terminate, else only
+     * if shutdown and empty queue and no active workers
+     * @return true if now terminating or terminated
+     */
+    private boolean tryTerminate(boolean now) {
+        if (now)
+            advanceRunLevel(SHUTDOWN); // ensure at least SHUTDOWN
+        else if (runState < SHUTDOWN ||
+                 !submissionQueue.isEmpty() ||
+                 (runState & ACTIVE_COUNT_MASK) != 0)
+            return false;
+
+        if (advanceRunLevel(TERMINATING))
+            startTerminating();
+
+        // Finish now if all threads terminated; else in some subsequent call
+        if ((workerCounts >>> TOTAL_COUNT_SHIFT) == 0) {
+            advanceRunLevel(TERMINATED);
+            termination.arrive();
+        }
+        return true;
+    }
+
+    /**
+     * Actions on transition to TERMINATING
+     *
+     * Runs up to four passes through workers: (0) shutting down each
+     * (without waking up if parked) to quickly spread notifications
+     * without unnecessary bouncing around event queues etc (1) wake
+     * up and help cancel tasks (2) interrupt (3) mop up races with
+     * interrupted workers
+     */
+    private void startTerminating() {
+        cancelSubmissions();
+        for (int passes = 0; passes < 4 && workerCounts != 0; ++passes) {
+            int c; // advance event count
+            UNSAFE.compareAndSwapInt(this, eventCountOffset,
+                                     c = eventCount, c+1);
+            eventWaiters = 0L; // clobber lists
+            spareWaiters = 0;
+            for (ForkJoinWorkerThread w : workers) {
+                if (w != null) {
+                    w.shutdown();
+                    if (passes > 0 && !w.isTerminated()) {
+                        w.cancelTasks();
+                        LockSupport.unpark(w);
+                        if (passes > 1) {
+                            try {
+                                w.interrupt();
+                            } catch (SecurityException ignore) {
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Clears out and cancels submissions, ignoring exceptions.
+     */
+    private void cancelSubmissions() {
+        ForkJoinTask<?> task;
+        while ((task = submissionQueue.poll()) != null) {
+            try {
+                task.cancel(false);
+            } catch (Throwable ignore) {
+            }
+        }
+    }
+
+    // misc support for ForkJoinWorkerThread
+
+    /**
+     * Returns pool number.
+     */
+    final int getPoolNumber() {
+        return poolNumber;
+    }
+
+    /**
+     * Tries to accumulate steal count from a worker, clearing
+     * the worker's value if successful.
+     *
+     * @return true if worker steal count now zero
+     */
+    final boolean tryAccumulateStealCount(ForkJoinWorkerThread w) {
+        int sc = w.stealCount;
+        long c = stealCount;
+        // CAS even if zero, for fence effects
+        if (UNSAFE.compareAndSwapLong(this, stealCountOffset, c, c + sc)) {
+            if (sc != 0)
+                w.stealCount = 0;
+            return true;
+        }
+        return sc == 0;
+    }
+
+    /**
+     * Returns the approximate (non-atomic) number of idle threads per
+     * active thread.
+     */
+    final int idlePerActive() {
+        int pc = parallelism; // use parallelism, not rc
+        int ac = runState;    // no mask -- artificially boosts during shutdown
+        // Use exact results for small values, saturate past 4
+        return ((pc <= ac) ? 0 :
+                (pc >>> 1 <= ac) ? 1 :
+                (pc >>> 2 <= ac) ? 3 :
+                pc >>> 3);
+    }
+
+    // Public and protected methods
 
     // Constructors
 
     /**
      * Creates a {@code ForkJoinPool} with parallelism equal to {@link
-     * java.lang.Runtime#availableProcessors}, and using the {@linkplain
-     * #defaultForkJoinWorkerThreadFactory default thread factory}.
+     * java.lang.Runtime#availableProcessors}, using the {@linkplain
+     * #defaultForkJoinWorkerThreadFactory default thread factory},
+     * no UncaughtExceptionHandler, and non-async LIFO processing mode.
      *
      * @throws SecurityException if a security manager exists and
      *         the caller is not permitted to modify threads
@@ -404,13 +1232,14 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public ForkJoinPool() {
         this(Runtime.getRuntime().availableProcessors(),
-             defaultForkJoinWorkerThreadFactory);
+             defaultForkJoinWorkerThreadFactory, null, false);
     }
 
     /**
      * Creates a {@code ForkJoinPool} with the indicated parallelism
-     * level and using the {@linkplain
-     * #defaultForkJoinWorkerThreadFactory default thread factory}.
+     * level, the {@linkplain
+     * #defaultForkJoinWorkerThreadFactory default thread factory},
+     * no UncaughtExceptionHandler, and non-async LIFO processing mode.
      *
      * @param parallelism the parallelism level
      * @throws IllegalArgumentException if parallelism less than or
@@ -421,31 +1250,25 @@ public class ForkJoinPool extends AbstractExecutorService {
      *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
     public ForkJoinPool(int parallelism) {
-        this(parallelism, defaultForkJoinWorkerThreadFactory);
+        this(parallelism, defaultForkJoinWorkerThreadFactory, null, false);
     }
 
     /**
-     * Creates a {@code ForkJoinPool} with parallelism equal to {@link
-     * java.lang.Runtime#availableProcessors}, and using the given
-     * thread factory.
+     * Creates a {@code ForkJoinPool} with the given parameters.
      *
-     * @param factory the factory for creating new threads
-     * @throws NullPointerException if the factory is null
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
-     */
-    public ForkJoinPool(ForkJoinWorkerThreadFactory factory) {
-        this(Runtime.getRuntime().availableProcessors(), factory);
-    }
-
-    /**
-     * Creates a {@code ForkJoinPool} with the given parallelism and
-     * thread factory.
-     *
-     * @param parallelism the parallelism level
-     * @param factory the factory for creating new threads
+     * @param parallelism the parallelism level. For default value,
+     * use {@link java.lang.Runtime#availableProcessors}.
+     * @param factory the factory for creating new threads. For default value,
+     * use {@link #defaultForkJoinWorkerThreadFactory}.
+     * @param handler the handler for internal worker threads that
+     * terminate due to unrecoverable errors encountered while executing
+     * tasks. For default value, use {@code null}.
+     * @param asyncMode if true,
+     * establishes local first-in-first-out scheduling mode for forked
+     * tasks that are never joined. This mode may be more appropriate
+     * than default locally stack-based mode in applications in which
+     * worker threads only process event-style asynchronous tasks.
+     * For default value, use {@code false}.
      * @throws IllegalArgumentException if parallelism less than or
      *         equal to zero, or greater than implementation limit
      * @throws NullPointerException if the factory is null
@@ -454,153 +1277,40 @@ public class ForkJoinPool extends AbstractExecutorService {
      *         because it does not hold {@link
      *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
-    public ForkJoinPool(int parallelism, ForkJoinWorkerThreadFactory factory) {
-        if (parallelism <= 0 || parallelism > MAX_THREADS)
-            throw new IllegalArgumentException();
+    public ForkJoinPool(int parallelism,
+                        ForkJoinWorkerThreadFactory factory,
+                        Thread.UncaughtExceptionHandler handler,
+                        boolean asyncMode) {
+        checkPermission();
         if (factory == null)
             throw new NullPointerException();
-        checkPermission();
-        this.factory = factory;
+        if (parallelism <= 0 || parallelism > MAX_WORKERS)
+            throw new IllegalArgumentException();
         this.parallelism = parallelism;
-        this.maxPoolSize = MAX_THREADS;
-        this.maintainsParallelism = true;
-        this.poolNumber = poolNumberGenerator.incrementAndGet();
-        this.workerLock = new ReentrantLock();
-        this.termination = workerLock.newCondition();
-        this.stealCount = new AtomicLong();
+        this.factory = factory;
+        this.ueh = handler;
+        this.locallyFifo = asyncMode;
+        int arraySize = initialArraySizeFor(parallelism);
+        this.workers = new ForkJoinWorkerThread[arraySize];
         this.submissionQueue = new LinkedTransferQueue<ForkJoinTask<?>>();
-        // worker array and workers are lazily constructed
+        this.workerLock = new ReentrantLock();
+        this.termination = new Phaser(1);
+        this.poolNumber = poolNumberGenerator.incrementAndGet();
     }
 
     /**
-     * Creates a new worker thread using factory.
-     *
-     * @param index the index to assign worker
-     * @return new worker, or null if factory failed
+     * Returns initial power of two size for workers array.
+     * @param pc the initial parallelism level
      */
-    private ForkJoinWorkerThread createWorker(int index) {
-        Thread.UncaughtExceptionHandler h = ueh;
-        ForkJoinWorkerThread w = factory.newThread(this);
-        if (w != null) {
-            w.poolIndex = index;
-            w.setDaemon(true);
-            w.setAsyncMode(locallyFifo);
-            w.setName("ForkJoinPool-" + poolNumber + "-worker-" + index);
-            if (h != null)
-                w.setUncaughtExceptionHandler(h);
-        }
-        return w;
-    }
-
-    /**
-     * Returns a good size for worker array given pool size.
-     * Currently requires size to be a power of two.
-     */
-    private static int arraySizeFor(int poolSize) {
-        if (poolSize <= 1)
-            return 1;
-        // See Hackers Delight, sec 3.2
-        int c = poolSize >= MAX_THREADS ? MAX_THREADS : (poolSize - 1);
-        c |= c >>>  1;
-        c |= c >>>  2;
-        c |= c >>>  4;
-        c |= c >>>  8;
-        c |= c >>> 16;
-        return c + 1;
-    }
-
-    /**
-     * Creates or resizes array if necessary to hold newLength.
-     * Call only under exclusion.
-     *
-     * @return the array
-     */
-    private ForkJoinWorkerThread[] ensureWorkerArrayCapacity(int newLength) {
-        ForkJoinWorkerThread[] ws = workers;
-        if (ws == null)
-            return workers = new ForkJoinWorkerThread[arraySizeFor(newLength)];
-        else if (newLength > ws.length)
-            return workers = Arrays.copyOf(ws, arraySizeFor(newLength));
-        else
-            return ws;
-    }
-
-    /**
-     * Tries to shrink workers into smaller array after one or more terminate.
-     */
-    private void tryShrinkWorkerArray() {
-        ForkJoinWorkerThread[] ws = workers;
-        if (ws != null) {
-            int len = ws.length;
-            int last = len - 1;
-            while (last >= 0 && ws[last] == null)
-                --last;
-            int newLength = arraySizeFor(last+1);
-            if (newLength < len)
-                workers = Arrays.copyOf(ws, newLength);
-        }
-    }
-
-    /**
-     * Initializes workers if necessary.
-     */
-    final void ensureWorkerInitialization() {
-        ForkJoinWorkerThread[] ws = workers;
-        if (ws == null) {
-            final ReentrantLock lock = this.workerLock;
-            lock.lock();
-            try {
-                ws = workers;
-                if (ws == null) {
-                    int ps = parallelism;
-                    ws = ensureWorkerArrayCapacity(ps);
-                    for (int i = 0; i < ps; ++i) {
-                        ForkJoinWorkerThread w = createWorker(i);
-                        if (w != null) {
-                            ws[i] = w;
-                            w.start();
-                            updateWorkerCount(1);
-                        }
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
-     * Worker creation and startup for threads added via setParallelism.
-     */
-    private void createAndStartAddedWorkers() {
-        resumeAllSpares();  // Allow spares to convert to nonspare
-        int ps = parallelism;
-        ForkJoinWorkerThread[] ws = ensureWorkerArrayCapacity(ps);
-        int len = ws.length;
-        // Sweep through slots, to keep lowest indices most populated
-        int k = 0;
-        while (k < len) {
-            if (ws[k] != null) {
-                ++k;
-                continue;
-            }
-            int s = workerCounts;
-            int tc = totalCountOf(s);
-            int rc = runningCountOf(s);
-            if (rc >= ps || tc >= ps)
-                break;
-            if (casWorkerCounts (s, workerCountsFor(tc+1, rc+1))) {
-                ForkJoinWorkerThread w = createWorker(k);
-                if (w != null) {
-                    ws[k++] = w;
-                    w.start();
-                }
-                else {
-                    updateWorkerCount(-1); // back out on failed creation
-                    break;
-                }
-            }
-        }
+    private static int initialArraySizeFor(int pc) {
+        // If possible, initially allocate enough space for one spare
+        int size = pc < MAX_WORKERS ? pc + 1 : MAX_WORKERS;
+        // See Hackers Delight, sec 3.2. We know MAX_WORKERS < (1 >>> 16)
+        size |= size >>> 1;
+        size |= size >>> 2;
+        size |= size >>> 4;
+        size |= size >>> 8;
+        return size + 1;
     }
 
     // Execution methods
@@ -611,12 +1321,12 @@ public class ForkJoinPool extends AbstractExecutorService {
     private <T> void doSubmit(ForkJoinTask<T> task) {
         if (task == null)
             throw new NullPointerException();
-        if (isShutdown())
+        if (runState >= SHUTDOWN)
             throw new RejectedExecutionException();
-        if (workers == null)
-            ensureWorkerInitialization();
         submissionQueue.offer(task);
-        signalIdleWorkers();
+        int c; // try to increment event count -- CAS failure OK
+        UNSAFE.compareAndSwapInt(this, eventCountOffset, c = eventCount, c+1);
+        helpMaintainParallelism(); // create, start, or resume some workers
     }
 
     /**
@@ -662,6 +1372,20 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
+     * Submits a ForkJoinTask for execution.
+     *
+     * @param task the task to submit
+     * @return the task
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
+     */
+    public <T> ForkJoinTask<T> submit(ForkJoinTask<T> task) {
+        doSubmit(task);
+        return task;
+    }
+
+    /**
      * @throws NullPointerException if the task is null
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
@@ -699,21 +1423,6 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Submits a ForkJoinTask for execution.
-     *
-     * @param task the task to submit
-     * @return the task
-     * @throws NullPointerException if the task is null
-     * @throws RejectedExecutionException if the task cannot be
-     *         scheduled for execution
-     */
-    public <T> ForkJoinTask<T> submit(ForkJoinTask<T> task) {
-        doSubmit(task);
-        return task;
-    }
-
-
-    /**
      * @throws NullPointerException       {@inheritDoc}
      * @throws RejectedExecutionException {@inheritDoc}
      */
@@ -725,7 +1434,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         invoke(new InvokeAll<T>(forkJoinTasks));
 
         @SuppressWarnings({"unchecked", "rawtypes"})
-        List<Future<T>> futures = (List<Future<T>>) (List) forkJoinTasks;
+            List<Future<T>> futures = (List<Future<T>>) (List) forkJoinTasks;
         return futures;
     }
 
@@ -738,8 +1447,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         private static final long serialVersionUID = -7914297376763021607L;
     }
-
-    // Configuration and status settings and queries
 
     /**
      * Returns the factory used for constructing new workers.
@@ -757,84 +1464,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return the handler, or {@code null} if none
      */
     public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
-        Thread.UncaughtExceptionHandler h;
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            h = ueh;
-        } finally {
-            lock.unlock();
-        }
-        return h;
-    }
-
-    /**
-     * Sets the handler for internal worker threads that terminate due
-     * to unrecoverable errors encountered while executing tasks.
-     * Unless set, the current default or ThreadGroup handler is used
-     * as handler.
-     *
-     * @param h the new handler
-     * @return the old handler, or {@code null} if none
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
-     */
-    public Thread.UncaughtExceptionHandler
-        setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler h) {
-        checkPermission();
-        Thread.UncaughtExceptionHandler old = null;
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            old = ueh;
-            ueh = h;
-            ForkJoinWorkerThread[] ws = workers;
-            if (ws != null) {
-                for (int i = 0; i < ws.length; ++i) {
-                    ForkJoinWorkerThread w = ws[i];
-                    if (w != null)
-                        w.setUncaughtExceptionHandler(h);
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-        return old;
-    }
-
-
-    /**
-     * Sets the target parallelism level of this pool.
-     *
-     * @param parallelism the target parallelism
-     * @throws IllegalArgumentException if parallelism less than or
-     * equal to zero or greater than maximum size bounds
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
-     */
-    public void setParallelism(int parallelism) {
-        checkPermission();
-        if (parallelism <= 0 || parallelism > maxPoolSize)
-            throw new IllegalArgumentException();
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            if (isProcessingTasks()) {
-                int p = this.parallelism;
-                this.parallelism = parallelism;
-                if (parallelism > p)
-                    createAndStartAddedWorkers();
-                else
-                    trimSpares();
-            }
-        } finally {
-            lock.unlock();
-        }
-        signalIdleWorkers();
+        return ueh;
     }
 
     /**
@@ -848,92 +1478,14 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     /**
      * Returns the number of worker threads that have started but not
-     * yet terminated.  This result returned by this method may differ
+     * yet terminated.  The result returned by this method may differ
      * from {@link #getParallelism} when threads are created to
      * maintain parallelism when others are cooperatively blocked.
      *
      * @return the number of worker threads
      */
     public int getPoolSize() {
-        return totalCountOf(workerCounts);
-    }
-
-    /**
-     * Returns the maximum number of threads allowed to exist in the
-     * pool. Unless set using {@link #setMaximumPoolSize}, the
-     * maximum is an implementation-defined value designed only to
-     * prevent runaway growth.
-     *
-     * @return the maximum
-     */
-    public int getMaximumPoolSize() {
-        return maxPoolSize;
-    }
-
-    /**
-     * Sets the maximum number of threads allowed to exist in the
-     * pool. The given value should normally be greater than or equal
-     * to the {@link #getParallelism parallelism} level. Setting this
-     * value has no effect on current pool size. It controls
-     * construction of new threads.
-     *
-     * @throws IllegalArgumentException if negative or greater than
-     * internal implementation limit
-     */
-    public void setMaximumPoolSize(int newMax) {
-        if (newMax < 0 || newMax > MAX_THREADS)
-            throw new IllegalArgumentException();
-        maxPoolSize = newMax;
-    }
-
-
-    /**
-     * Returns {@code true} if this pool dynamically maintains its
-     * target parallelism level. If false, new threads are added only
-     * to avoid possible starvation.  This setting is by default true.
-     *
-     * @return {@code true} if maintains parallelism
-     */
-    public boolean getMaintainsParallelism() {
-        return maintainsParallelism;
-    }
-
-    /**
-     * Sets whether this pool dynamically maintains its target
-     * parallelism level. If false, new threads are added only to
-     * avoid possible starvation.
-     *
-     * @param enable {@code true} to maintain parallelism
-     */
-    public void setMaintainsParallelism(boolean enable) {
-        maintainsParallelism = enable;
-    }
-
-    /**
-     * Establishes local first-in-first-out scheduling mode for forked
-     * tasks that are never joined. This mode may be more appropriate
-     * than default locally stack-based mode in applications in which
-     * worker threads only process asynchronous tasks.  This method is
-     * designed to be invoked only when the pool is quiescent, and
-     * typically only before any tasks are submitted. The effects of
-     * invocations at other times may be unpredictable.
-     *
-     * @param async if {@code true}, use locally FIFO scheduling
-     * @return the previous mode
-     * @see #getAsyncMode
-     */
-    public boolean setAsyncMode(boolean async) {
-        boolean oldMode = locallyFifo;
-        locallyFifo = async;
-        ForkJoinWorkerThread[] ws = workers;
-        if (ws != null) {
-            for (int i = 0; i < ws.length; ++i) {
-                ForkJoinWorkerThread t = ws[i];
-                if (t != null)
-                    t.setAsyncMode(async);
-            }
-        }
-        return oldMode;
+        return workerCounts >>> TOTAL_COUNT_SHIFT;
     }
 
     /**
@@ -941,7 +1493,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * scheduling mode for forked tasks that are never joined.
      *
      * @return {@code true} if this pool uses async mode
-     * @see #setAsyncMode
      */
     public boolean getAsyncMode() {
         return locallyFifo;
@@ -950,12 +1501,13 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Returns an estimate of the number of worker threads that are
      * not blocked waiting to join tasks or for other managed
-     * synchronization.
+     * synchronization. This method may overestimate the
+     * number of running threads.
      *
      * @return the number of worker threads
      */
     public int getRunningThreadCount() {
-        return runningCountOf(workerCounts);
+        return workerCounts & RUNNING_COUNT_MASK;
     }
 
     /**
@@ -966,19 +1518,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return the number of active threads
      */
     public int getActiveThreadCount() {
-        return activeCountOf(runControl);
-    }
-
-    /**
-     * Returns an estimate of the number of threads that are currently
-     * idle waiting for tasks. This method may underestimate the
-     * number of idle threads.
-     *
-     * @return the number of idle threads
-     */
-    final int getIdleThreadCount() {
-        int c = runningCountOf(workerCounts) - activeCountOf(runControl);
-        return (c <= 0) ? 0 : c;
+        return runState & ACTIVE_COUNT_MASK;
     }
 
     /**
@@ -993,7 +1533,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return {@code true} if all threads are currently idle
      */
     public boolean isQuiescent() {
-        return activeCountOf(runControl) == 0;
+        return (runState & ACTIVE_COUNT_MASK) == 0;
     }
 
     /**
@@ -1008,17 +1548,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return the number of steals
      */
     public long getStealCount() {
-        return stealCount.get();
-    }
-
-    /**
-     * Accumulates steal count from a worker.
-     * Call only when worker known to be idle.
-     */
-    private void updateStealCount(ForkJoinWorkerThread w) {
-        int sc = w.getAndClearStealCount();
-        if (sc != 0)
-            stealCount.addAndGet(sc);
+        return stealCount;
     }
 
     /**
@@ -1033,14 +1563,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public long getQueuedTaskCount() {
         long count = 0;
-        ForkJoinWorkerThread[] ws = workers;
-        if (ws != null) {
-            for (int i = 0; i < ws.length; ++i) {
-                ForkJoinWorkerThread t = ws[i];
-                if (t != null)
-                    count += t.getQueueSize();
-            }
-        }
+        for (ForkJoinWorkerThread w : workers)
+            if (w != null)
+                count += w.getQueueSize();
         return count;
     }
 
@@ -1094,16 +1619,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return the number of elements transferred
      */
     protected int drainTasksTo(Collection<? super ForkJoinTask<?>> c) {
-        int n = submissionQueue.drainTo(c);
-        ForkJoinWorkerThread[] ws = workers;
-        if (ws != null) {
-            for (int i = 0; i < ws.length; ++i) {
-                ForkJoinWorkerThread w = ws[i];
-                if (w != null)
-                    n += w.drainTasksTo(c);
-            }
-        }
-        return n;
+        int count = submissionQueue.drainTo(c);
+        for (ForkJoinWorkerThread w : workers)
+            if (w != null)
+                count += w.drainTasksTo(c);
+        return count;
     }
 
     /**
@@ -1114,35 +1634,33 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return a string identifying this pool, as well as its state
      */
     public String toString() {
-        int ps = parallelism;
-        int wc = workerCounts;
-        int rc = runControl;
         long st = getStealCount();
         long qt = getQueuedTaskCount();
         long qs = getQueuedSubmissionCount();
+        int wc = workerCounts;
+        int tc = wc >>> TOTAL_COUNT_SHIFT;
+        int rc = wc & RUNNING_COUNT_MASK;
+        int pc = parallelism;
+        int rs = runState;
+        int ac = rs & ACTIVE_COUNT_MASK;
         return super.toString() +
-            "[" + runStateToString(runStateOf(rc)) +
-            ", parallelism = " + ps +
-            ", size = " + totalCountOf(wc) +
-            ", active = " + activeCountOf(rc) +
-            ", running = " + runningCountOf(wc) +
+            "[" + runLevelToString(rs) +
+            ", parallelism = " + pc +
+            ", size = " + tc +
+            ", active = " + ac +
+            ", running = " + rc +
             ", steals = " + st +
             ", tasks = " + qt +
             ", submissions = " + qs +
             "]";
     }
 
-    private static String runStateToString(int rs) {
-        switch(rs) {
-        case RUNNING: return "Running";
-        case SHUTDOWN: return "Shutting down";
-        case TERMINATING: return "Terminating";
-        case TERMINATED: return "Terminated";
-        default: throw new Error("Unknown run state");
-        }
+    private static String runLevelToString(int s) {
+        return ((s & TERMINATED) != 0 ? "Terminated" :
+                ((s & TERMINATING) != 0 ? "Terminating" :
+                 ((s & SHUTDOWN) != 0 ? "Shutting down" :
+                  "Running")));
     }
-
-    // lifecycle control
 
     /**
      * Initiates an orderly shutdown in which previously submitted
@@ -1158,23 +1676,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public void shutdown() {
         checkPermission();
-        transitionRunStateTo(SHUTDOWN);
-        if (canTerminateOnShutdown(runControl)) {
-            if (workers == null) { // shutting down before workers created
-                final ReentrantLock lock = this.workerLock;
-                lock.lock();
-                try {
-                    if (workers == null) {
-                        terminate();
-                        transitionRunStateTo(TERMINATED);
-                        termination.signalAll();
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            }
-            terminateOnShutdown();
-        }
+        advanceRunLevel(SHUTDOWN);
+        tryTerminate(false);
     }
 
     /**
@@ -1195,7 +1698,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public List<Runnable> shutdownNow() {
         checkPermission();
-        terminate();
+        tryTerminate(true);
         return Collections.emptyList();
     }
 
@@ -1205,7 +1708,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return {@code true} if all tasks have completed following shut down
      */
     public boolean isTerminated() {
-        return runStateOf(runControl) == TERMINATED;
+        return runState >= TERMINATED;
     }
 
     /**
@@ -1219,7 +1722,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return {@code true} if terminating but not yet terminated
      */
     public boolean isTerminating() {
-        return runStateOf(runControl) == TERMINATING;
+        return (runState & (TERMINATING|TERMINATED)) == TERMINATING;
     }
 
     /**
@@ -1228,15 +1731,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return {@code true} if this pool has been shut down
      */
     public boolean isShutdown() {
-        return runStateOf(runControl) >= SHUTDOWN;
-    }
-
-    /**
-     * Returns true if pool is not terminating or terminated.
-     * Used internally to suppress execution when terminating.
-     */
-    final boolean isProcessingTasks() {
-        return runStateOf(runControl) < TERMINATING;
+        return runState >= SHUTDOWN;
     }
 
     /**
@@ -1252,585 +1747,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public boolean awaitTermination(long timeout, TimeUnit unit)
         throws InterruptedException {
-        long nanos = unit.toNanos(timeout);
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
         try {
-            for (;;) {
-                if (isTerminated())
-                    return true;
-                if (nanos <= 0)
-                    return false;
-                nanos = termination.awaitNanos(nanos);
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    // Shutdown and termination support
-
-    /**
-     * Callback from terminating worker. Nulls out the corresponding
-     * workers slot, and if terminating, tries to terminate; else
-     * tries to shrink workers array.
-     *
-     * @param w the worker
-     */
-    final void workerTerminated(ForkJoinWorkerThread w) {
-        updateStealCount(w);
-        updateWorkerCount(-1);
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            ForkJoinWorkerThread[] ws = workers;
-            if (ws != null) {
-                int idx = w.poolIndex;
-                if (idx >= 0 && idx < ws.length && ws[idx] == w)
-                    ws[idx] = null;
-                if (totalCountOf(workerCounts) == 0) {
-                    terminate(); // no-op if already terminating
-                    transitionRunStateTo(TERMINATED);
-                    termination.signalAll();
-                }
-                else if (isProcessingTasks()) {
-                    tryShrinkWorkerArray();
-                    tryResumeSpare(true); // allow replacement
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-        signalIdleWorkers();
-    }
-
-    /**
-     * Initiates termination.
-     */
-    private void terminate() {
-        if (transitionRunStateTo(TERMINATING)) {
-            stopAllWorkers();
-            resumeAllSpares();
-            signalIdleWorkers();
-            cancelQueuedSubmissions();
-            cancelQueuedWorkerTasks();
-            interruptUnterminatedWorkers();
-            signalIdleWorkers(); // resignal after interrupt
-        }
-    }
-
-    /**
-     * Possibly terminates when on shutdown state.
-     */
-    private void terminateOnShutdown() {
-        if (!hasQueuedSubmissions() && canTerminateOnShutdown(runControl))
-            terminate();
-    }
-
-    /**
-     * Clears out and cancels submissions.
-     */
-    private void cancelQueuedSubmissions() {
-        ForkJoinTask<?> task;
-        while ((task = pollSubmission()) != null)
-            task.cancel(false);
-    }
-
-    /**
-     * Cleans out worker queues.
-     */
-    private void cancelQueuedWorkerTasks() {
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            ForkJoinWorkerThread[] ws = workers;
-            if (ws != null) {
-                for (int i = 0; i < ws.length; ++i) {
-                    ForkJoinWorkerThread t = ws[i];
-                    if (t != null)
-                        t.cancelTasks();
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets each worker's status to terminating. Requires lock to avoid
-     * conflicts with add/remove.
-     */
-    private void stopAllWorkers() {
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            ForkJoinWorkerThread[] ws = workers;
-            if (ws != null) {
-                for (int i = 0; i < ws.length; ++i) {
-                    ForkJoinWorkerThread t = ws[i];
-                    if (t != null)
-                        t.shutdownNow();
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Interrupts all unterminated workers.  This is not required for
-     * sake of internal control, but may help unstick user code during
-     * shutdown.
-     */
-    private void interruptUnterminatedWorkers() {
-        final ReentrantLock lock = this.workerLock;
-        lock.lock();
-        try {
-            ForkJoinWorkerThread[] ws = workers;
-            if (ws != null) {
-                for (int i = 0; i < ws.length; ++i) {
-                    ForkJoinWorkerThread t = ws[i];
-                    if (t != null && !t.isTerminated()) {
-                        try {
-                            t.interrupt();
-                        } catch (SecurityException ignore) {
-                        }
-                    }
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-
-    /*
-     * Nodes for event barrier to manage idle threads.  Queue nodes
-     * are basic Treiber stack nodes, also used for spare stack.
-     *
-     * The event barrier has an event count and a wait queue (actually
-     * a Treiber stack).  Workers are enabled to look for work when
-     * the eventCount is incremented. If they fail to find work, they
-     * may wait for next count. Upon release, threads help others wake
-     * up.
-     *
-     * Synchronization events occur only in enough contexts to
-     * maintain overall liveness:
-     *
-     *   - Submission of a new task to the pool
-     *   - Resizes or other changes to the workers array
-     *   - pool termination
-     *   - A worker pushing a task on an empty queue
-     *
-     * The case of pushing a task occurs often enough, and is heavy
-     * enough compared to simple stack pushes, to require special
-     * handling: Method signalWork returns without advancing count if
-     * the queue appears to be empty.  This would ordinarily result in
-     * races causing some queued waiters not to be woken up. To avoid
-     * this, the first worker enqueued in method sync (see
-     * syncIsReleasable) rescans for tasks after being enqueued, and
-     * helps signal if any are found. This works well because the
-     * worker has nothing better to do, and so might as well help
-     * alleviate the overhead and contention on the threads actually
-     * doing work.  Also, since event counts increments on task
-     * availability exist to maintain liveness (rather than to force
-     * refreshes etc), it is OK for callers to exit early if
-     * contending with another signaller.
-     */
-    static final class WaitQueueNode {
-        WaitQueueNode next; // only written before enqueued
-        volatile ForkJoinWorkerThread thread; // nulled to cancel wait
-        final long count; // unused for spare stack
-
-        WaitQueueNode(long c, ForkJoinWorkerThread w) {
-            count = c;
-            thread = w;
-        }
-
-        /**
-         * Wakes up waiter, returning false if known to already
-         */
-        boolean signal() {
-            ForkJoinWorkerThread t = thread;
-            if (t == null)
-                return false;
-            thread = null;
-            LockSupport.unpark(t);
-            return true;
-        }
-
-        /**
-         * Awaits release on sync.
-         */
-        void awaitSyncRelease(ForkJoinPool p) {
-            while (thread != null && !p.syncIsReleasable(this))
-                LockSupport.park(this);
-        }
-
-        /**
-         * Awaits resumption as spare.
-         */
-        void awaitSpareRelease() {
-            while (thread != null) {
-                if (!Thread.interrupted())
-                    LockSupport.park(this);
-            }
-        }
-    }
-
-    /**
-     * Ensures that no thread is waiting for count to advance from the
-     * current value of eventCount read on entry to this method, by
-     * releasing waiting threads if necessary.
-     *
-     * @return the count
-     */
-    final long ensureSync() {
-        long c = eventCount;
-        WaitQueueNode q;
-        while ((q = syncStack) != null && q.count < c) {
-            if (casBarrierStack(q, null)) {
-                do {
-                    q.signal();
-                } while ((q = q.next) != null);
-                break;
-            }
-        }
-        return c;
-    }
-
-    /**
-     * Increments event count and releases waiting threads.
-     */
-    private void signalIdleWorkers() {
-        long c;
-        do {} while (!casEventCount(c = eventCount, c+1));
-        ensureSync();
-    }
-
-    /**
-     * Signals threads waiting to poll a task. Because method sync
-     * rechecks availability, it is OK to only proceed if queue
-     * appears to be non-empty, and OK to skip under contention to
-     * increment count (since some other thread succeeded).
-     */
-    final void signalWork() {
-        long c;
-        WaitQueueNode q;
-        if (syncStack != null &&
-            casEventCount(c = eventCount, c+1) &&
-            (((q = syncStack) != null && q.count <= c) &&
-             (!casBarrierStack(q, q.next) || !q.signal())))
-            ensureSync();
-    }
-
-    /**
-     * Waits until event count advances from last value held by
-     * caller, or if excess threads, caller is resumed as spare, or
-     * caller or pool is terminating. Updates caller's event on exit.
-     *
-     * @param w the calling worker thread
-     */
-    final void sync(ForkJoinWorkerThread w) {
-        updateStealCount(w); // Transfer w's count while it is idle
-
-        while (!w.isShutdown() && isProcessingTasks() && !suspendIfSpare(w)) {
-            long prev = w.lastEventCount;
-            WaitQueueNode node = null;
-            WaitQueueNode h;
-            while (eventCount == prev &&
-                   ((h = syncStack) == null || h.count == prev)) {
-                if (node == null)
-                    node = new WaitQueueNode(prev, w);
-                if (casBarrierStack(node.next = h, node)) {
-                    node.awaitSyncRelease(this);
-                    break;
-                }
-            }
-            long ec = ensureSync();
-            if (ec != prev) {
-                w.lastEventCount = ec;
-                break;
-            }
-        }
-    }
-
-    /**
-     * Returns {@code true} if worker waiting on sync can proceed:
-     *  - on signal (thread == null)
-     *  - on event count advance (winning race to notify vs signaller)
-     *  - on interrupt
-     *  - if the first queued node, we find work available
-     * If node was not signalled and event count not advanced on exit,
-     * then we also help advance event count.
-     *
-     * @return {@code true} if node can be released
-     */
-    final boolean syncIsReleasable(WaitQueueNode node) {
-        long prev = node.count;
-        if (!Thread.interrupted() && node.thread != null &&
-            (node.next != null ||
-             !ForkJoinWorkerThread.hasQueuedTasks(workers)) &&
-            eventCount == prev)
+            return termination.awaitAdvanceInterruptibly(0, timeout, unit) > 0;
+        } catch (TimeoutException ex) {
             return false;
-        if (node.thread != null) {
-            node.thread = null;
-            long ec = eventCount;
-            if (prev <= ec) // help signal
-                casEventCount(ec, ec+1);
-        }
-        return true;
-    }
-
-    /**
-     * Returns {@code true} if a new sync event occurred since last
-     * call to sync or this method, if so, updating caller's count.
-     */
-    final boolean hasNewSyncEvent(ForkJoinWorkerThread w) {
-        long lc = w.lastEventCount;
-        long ec = ensureSync();
-        if (ec == lc)
-            return false;
-        w.lastEventCount = ec;
-        return true;
-    }
-
-    //  Parallelism maintenance
-
-    /**
-     * Decrements running count; if too low, adds spare.
-     *
-     * Conceptually, all we need to do here is add or resume a
-     * spare thread when one is about to block (and remove or
-     * suspend it later when unblocked -- see suspendIfSpare).
-     * However, implementing this idea requires coping with
-     * several problems: we have imperfect information about the
-     * states of threads. Some count updates can and usually do
-     * lag run state changes, despite arrangements to keep them
-     * accurate (for example, when possible, updating counts
-     * before signalling or resuming), especially when running on
-     * dynamic JVMs that don't optimize the infrequent paths that
-     * update counts. Generating too many threads can make these
-     * problems become worse, because excess threads are more
-     * likely to be context-switched with others, slowing them all
-     * down, especially if there is no work available, so all are
-     * busy scanning or idling.  Also, excess spare threads can
-     * only be suspended or removed when they are idle, not
-     * immediately when they aren't needed. So adding threads will
-     * raise parallelism level for longer than necessary.  Also,
-     * FJ applications often encounter highly transient peaks when
-     * many threads are blocked joining, but for less time than it
-     * takes to create or resume spares.
-     *
-     * @param joinMe if non-null, return early if done
-     * @param maintainParallelism if true, try to stay within
-     * target counts, else create only to avoid starvation
-     * @return true if joinMe known to be done
-     */
-    final boolean preJoin(ForkJoinTask<?> joinMe,
-                          boolean maintainParallelism) {
-        maintainParallelism &= maintainsParallelism; // overrride
-        boolean dec = false;  // true when running count decremented
-        while (spareStack == null || !tryResumeSpare(dec)) {
-            int counts = workerCounts;
-            if (dec || (dec = casWorkerCounts(counts, --counts))) {
-                if (!needSpare(counts, maintainParallelism))
-                    break;
-                if (joinMe.status < 0)
-                    return true;
-                if (tryAddSpare(counts))
-                    break;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Same idea as preJoin
-     */
-    final boolean preBlock(ManagedBlocker blocker,
-                           boolean maintainParallelism) {
-        maintainParallelism &= maintainsParallelism;
-        boolean dec = false;
-        while (spareStack == null || !tryResumeSpare(dec)) {
-            int counts = workerCounts;
-            if (dec || (dec = casWorkerCounts(counts, --counts))) {
-                if (!needSpare(counts, maintainParallelism))
-                    break;
-                if (blocker.isReleasable())
-                    return true;
-                if (tryAddSpare(counts))
-                    break;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns {@code true} if a spare thread appears to be needed.
-     * If maintaining parallelism, returns true when the deficit in
-     * running threads is more than the surplus of total threads, and
-     * there is apparently some work to do.  This self-limiting rule
-     * means that the more threads that have already been added, the
-     * less parallelism we will tolerate before adding another.
-     *
-     * @param counts current worker counts
-     * @param maintainParallelism try to maintain parallelism
-     */
-    private boolean needSpare(int counts, boolean maintainParallelism) {
-        int ps = parallelism;
-        int rc = runningCountOf(counts);
-        int tc = totalCountOf(counts);
-        int runningDeficit = ps - rc;
-        int totalSurplus = tc - ps;
-        return (tc < maxPoolSize &&
-                (rc == 0 || totalSurplus < 0 ||
-                 (maintainParallelism &&
-                  runningDeficit > totalSurplus &&
-                  ForkJoinWorkerThread.hasQueuedTasks(workers))));
-    }
-
-    /**
-     * Adds a spare worker if lock available and no more than the
-     * expected numbers of threads exist.
-     *
-     * @return true if successful
-     */
-    private boolean tryAddSpare(int expectedCounts) {
-        final ReentrantLock lock = this.workerLock;
-        int expectedRunning = runningCountOf(expectedCounts);
-        int expectedTotal = totalCountOf(expectedCounts);
-        boolean success = false;
-        boolean locked = false;
-        // confirm counts while locking; CAS after obtaining lock
-        try {
-            for (;;) {
-                int s = workerCounts;
-                int tc = totalCountOf(s);
-                int rc = runningCountOf(s);
-                if (rc > expectedRunning || tc > expectedTotal)
-                    break;
-                if (!locked && !(locked = lock.tryLock()))
-                    break;
-                if (casWorkerCounts(s, workerCountsFor(tc+1, rc+1))) {
-                    createAndStartSpare(tc);
-                    success = true;
-                    break;
-                }
-            }
-        } finally {
-            if (locked)
-                lock.unlock();
-        }
-        return success;
-    }
-
-    /**
-     * Adds the kth spare worker. On entry, pool counts are already
-     * adjusted to reflect addition.
-     */
-    private void createAndStartSpare(int k) {
-        ForkJoinWorkerThread w = null;
-        ForkJoinWorkerThread[] ws = ensureWorkerArrayCapacity(k + 1);
-        int len = ws.length;
-        // Probably, we can place at slot k. If not, find empty slot
-        if (k < len && ws[k] != null) {
-            for (k = 0; k < len && ws[k] != null; ++k)
-                ;
-        }
-        if (k < len && isProcessingTasks() && (w = createWorker(k)) != null) {
-            ws[k] = w;
-            w.start();
-        }
-        else
-            updateWorkerCount(-1); // adjust on failure
-        signalIdleWorkers();
-    }
-
-    /**
-     * Suspends calling thread w if there are excess threads.  Called
-     * only from sync.  Spares are enqueued in a Treiber stack using
-     * the same WaitQueueNodes as barriers.  They are resumed mainly
-     * in preJoin, but are also woken on pool events that require all
-     * threads to check run state.
-     *
-     * @param w the caller
-     */
-    private boolean suspendIfSpare(ForkJoinWorkerThread w) {
-        WaitQueueNode node = null;
-        int s;
-        while (parallelism < runningCountOf(s = workerCounts)) {
-            if (node == null)
-                node = new WaitQueueNode(0, w);
-            if (casWorkerCounts(s, s-1)) { // representation-dependent
-                // push onto stack
-                do {} while (!casSpareStack(node.next = spareStack, node));
-                // block until released by resumeSpare
-                node.awaitSpareRelease();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Tries to pop and resume a spare thread.
-     *
-     * @param updateCount if true, increment running count on success
-     * @return true if successful
-     */
-    private boolean tryResumeSpare(boolean updateCount) {
-        WaitQueueNode q;
-        while ((q = spareStack) != null) {
-            if (casSpareStack(q, q.next)) {
-                if (updateCount)
-                    updateRunningCount(1);
-                q.signal();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Pops and resumes all spare threads. Same idea as ensureSync.
-     *
-     * @return true if any spares released
-     */
-    private boolean resumeAllSpares() {
-        WaitQueueNode q;
-        while ( (q = spareStack) != null) {
-            if (casSpareStack(q, null)) {
-                do {
-                    updateRunningCount(1);
-                    q.signal();
-                } while ((q = q.next) != null);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Pops and shuts down excessive spare threads. Call only while
-     * holding lock. This is not guaranteed to eliminate all excess
-     * threads, only those suspended as spares, which are the ones
-     * unlikely to be needed in the future.
-     */
-    private void trimSpares() {
-        int surplus = totalCountOf(workerCounts) - parallelism;
-        WaitQueueNode q;
-        while (surplus > 0 && (q = spareStack) != null) {
-            if (casSpareStack(q, null)) {
-                do {
-                    updateRunningCount(1);
-                    ForkJoinWorkerThread w = q.thread;
-                    if (w != null && surplus > 0 &&
-                        runningCountOf(workerCounts) > 0 && w.shutdown())
-                        --surplus;
-                    q.signal();
-                } while ((q = q.next) != null);
-            }
         }
     }
 
@@ -1838,11 +1758,17 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Interface for extending managed parallelism for tasks running
      * in {@link ForkJoinPool}s.
      *
-     * <p>A {@code ManagedBlocker} provides two methods.
-     * Method {@code isReleasable} must return {@code true} if
-     * blocking is not necessary. Method {@code block} blocks the
-     * current thread if necessary (perhaps internally invoking
-     * {@code isReleasable} before actually blocking).
+     * <p>A {@code ManagedBlocker} provides two methods.  Method
+     * {@code isReleasable} must return {@code true} if blocking is
+     * not necessary. Method {@code block} blocks the current thread
+     * if necessary (perhaps internally invoking {@code isReleasable}
+     * before actually blocking). The unusual methods in this API
+     * accommodate synchronizers that may, but don't usually, block
+     * for long periods. Similarly, they allow more efficient internal
+     * handling of cases in which additional workers may be, but
+     * usually are not, needed to ensure sufficient parallelism.
+     * Toward this end, implementations of method {@code isReleasable}
+     * must be amenable to repeated invocation.
      *
      * <p>For example, here is a ManagedBlocker based on a
      * ReentrantLock:
@@ -1858,6 +1784,26 @@ public class ForkJoinPool extends AbstractExecutorService {
      *   }
      *   public boolean isReleasable() {
      *     return hasLock || (hasLock = lock.tryLock());
+     *   }
+     * }}</pre>
+     *
+     * <p>Here is a class that possibly blocks waiting for an
+     * item on a given queue:
+     *  <pre> {@code
+     * class QueueTaker<E> implements ManagedBlocker {
+     *   final BlockingQueue<E> queue;
+     *   volatile E item = null;
+     *   QueueTaker(BlockingQueue<E> q) { this.queue = q; }
+     *   public boolean block() throws InterruptedException {
+     *     if (item == null)
+     *       item = queue.take();
+     *     return true;
+     *   }
+     *   public boolean isReleasable() {
+     *     return item != null || (item = queue.poll()) != null;
+     *   }
+     *   public E getItem() { // call after pool.managedBlock completes
+     *     return item;
      *   }
      * }}</pre>
      */
@@ -1883,14 +1829,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Blocks in accord with the given blocker.  If the current thread
      * is a {@link ForkJoinWorkerThread}, this method possibly
      * arranges for a spare thread to be activated if necessary to
-     * ensure parallelism while the current thread is blocked.
-     *
-     * <p>If {@code maintainParallelism} is {@code true} and the pool
-     * supports it ({@link #getMaintainsParallelism}), this method
-     * attempts to maintain the pool's nominal parallelism. Otherwise
-     * it activates a thread only if necessary to avoid complete
-     * starvation. This option may be preferable when blockages use
-     * timeouts, or are almost always brief.
+     * ensure sufficient parallelism while the current thread is blocked.
      *
      * <p>If the caller is not a {@link ForkJoinTask}, this method is
      * behaviorally equivalent to
@@ -1904,33 +1843,18 @@ public class ForkJoinPool extends AbstractExecutorService {
      * first be expanded to ensure parallelism, and later adjusted.
      *
      * @param blocker the blocker
-     * @param maintainParallelism if {@code true} and supported by
-     * this pool, attempt to maintain the pool's nominal parallelism;
-     * otherwise activate a thread only if necessary to avoid
-     * complete starvation.
      * @throws InterruptedException if blocker.block did so
      */
-    public static void managedBlock(ManagedBlocker blocker,
-                                    boolean maintainParallelism)
+    public static void managedBlock(ManagedBlocker blocker)
         throws InterruptedException {
         Thread t = Thread.currentThread();
-        ForkJoinPool pool = ((t instanceof ForkJoinWorkerThread) ?
-                             ((ForkJoinWorkerThread) t).pool : null);
-        if (!blocker.isReleasable()) {
-            try {
-                if (pool == null ||
-                    !pool.preBlock(blocker, maintainParallelism))
-                    awaitBlocker(blocker);
-            } finally {
-                if (pool != null)
-                    pool.updateRunningCount(1);
-            }
+        if (t instanceof ForkJoinWorkerThread) {
+            ForkJoinWorkerThread w = (ForkJoinWorkerThread) t;
+            w.pool.awaitBlocker(blocker);
         }
-    }
-
-    private static void awaitBlocker(ManagedBlocker blocker)
-        throws InterruptedException {
-        do {} while (!blocker.isReleasable() && !blocker.block());
+        else {
+            do {} while (!blocker.isReleasable() && !blocker.block());
+        }
     }
 
     // AbstractExecutorService overrides.  These rely on undocumented
@@ -1948,32 +1872,18 @@ public class ForkJoinPool extends AbstractExecutorService {
     // Unsafe mechanics
 
     private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-    private static final long eventCountOffset =
-        objectFieldOffset("eventCount", ForkJoinPool.class);
     private static final long workerCountsOffset =
         objectFieldOffset("workerCounts", ForkJoinPool.class);
-    private static final long runControlOffset =
-        objectFieldOffset("runControl", ForkJoinPool.class);
-    private static final long syncStackOffset =
-        objectFieldOffset("syncStack",ForkJoinPool.class);
-    private static final long spareStackOffset =
-        objectFieldOffset("spareStack", ForkJoinPool.class);
-
-    private boolean casEventCount(long cmp, long val) {
-        return UNSAFE.compareAndSwapLong(this, eventCountOffset, cmp, val);
-    }
-    private boolean casWorkerCounts(int cmp, int val) {
-        return UNSAFE.compareAndSwapInt(this, workerCountsOffset, cmp, val);
-    }
-    private boolean casRunControl(int cmp, int val) {
-        return UNSAFE.compareAndSwapInt(this, runControlOffset, cmp, val);
-    }
-    private boolean casSpareStack(WaitQueueNode cmp, WaitQueueNode val) {
-        return UNSAFE.compareAndSwapObject(this, spareStackOffset, cmp, val);
-    }
-    private boolean casBarrierStack(WaitQueueNode cmp, WaitQueueNode val) {
-        return UNSAFE.compareAndSwapObject(this, syncStackOffset, cmp, val);
-    }
+    private static final long runStateOffset =
+        objectFieldOffset("runState", ForkJoinPool.class);
+    private static final long eventCountOffset =
+        objectFieldOffset("eventCount", ForkJoinPool.class);
+    private static final long eventWaitersOffset =
+        objectFieldOffset("eventWaiters", ForkJoinPool.class);
+    private static final long stealCountOffset =
+        objectFieldOffset("stealCount", ForkJoinPool.class);
+    private static final long spareWaitersOffset =
+        objectFieldOffset("spareWaiters", ForkJoinPool.class);
 
     private static long objectFieldOffset(String field, Class<?> klazz) {
         try {
