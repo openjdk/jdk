@@ -906,11 +906,13 @@ LEAF(StoreIndexed, AccessIndexed)
  private:
   Value       _value;
 
+  ciMethod* _profiled_method;
+  int       _profiled_bci;
  public:
   // creation
   StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* lock_stack)
   : AccessIndexed(array, index, length, elt_type, lock_stack)
-  , _value(value)
+  , _value(value), _profiled_method(NULL), _profiled_bci(0)
   {
     set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
     set_flag(NeedsStoreCheckFlag, (as_ValueType(elt_type)->is_object()));
@@ -923,7 +925,13 @@ LEAF(StoreIndexed, AccessIndexed)
   IRScope* scope() const;                        // the state's scope
   bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
   bool needs_store_check() const                 { return check_flag(NeedsStoreCheckFlag); }
-
+  // Helpers for methodDataOop profiling
+  void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
+  void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
+  void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
+  bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
+  ciMethod* profiled_method() const                  { return _profiled_method;     }
+  int       profiled_bci() const                     { return _profiled_bci;        }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessIndexed::input_values_do(f); f->visit(&_value); }
 };
@@ -1297,9 +1305,14 @@ BASE(TypeCheck, StateSplit)
   Value       _obj;
   ValueStack* _state_before;
 
+  ciMethod* _profiled_method;
+  int       _profiled_bci;
+
  public:
   // creation
-  TypeCheck(ciKlass* klass, Value obj, ValueType* type, ValueStack* state_before) : StateSplit(type), _klass(klass), _obj(obj), _state_before(state_before) {
+  TypeCheck(ciKlass* klass, Value obj, ValueType* type, ValueStack* state_before)
+  : StateSplit(type), _klass(klass), _obj(obj), _state_before(state_before),
+    _profiled_method(NULL), _profiled_bci(0) {
     ASSERT_VALUES
     set_direct_compare(false);
   }
@@ -1318,27 +1331,6 @@ BASE(TypeCheck, StateSplit)
   virtual bool can_trap() const                  { return true; }
   virtual void input_values_do(ValueVisitor* f)   { StateSplit::input_values_do(f); f->visit(&_obj); }
   virtual void other_values_do(ValueVisitor* f);
-};
-
-
-LEAF(CheckCast, TypeCheck)
- private:
-  ciMethod* _profiled_method;
-  int       _profiled_bci;
-
- public:
-  // creation
-  CheckCast(ciKlass* klass, Value obj, ValueStack* state_before)
-  : TypeCheck(klass, obj, objectType, state_before)
-  , _profiled_method(NULL)
-  , _profiled_bci(0) {}
-
-  void set_incompatible_class_change_check() {
-    set_flag(ThrowIncompatibleClassChangeErrorFlag, true);
-  }
-  bool is_incompatible_class_change_check() const {
-    return check_flag(ThrowIncompatibleClassChangeErrorFlag);
-  }
 
   // Helpers for methodDataOop profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
@@ -1347,10 +1339,24 @@ LEAF(CheckCast, TypeCheck)
   bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
   ciMethod* profiled_method() const                  { return _profiled_method;     }
   int       profiled_bci() const                     { return _profiled_bci;        }
+};
+
+
+LEAF(CheckCast, TypeCheck)
+ public:
+  // creation
+  CheckCast(ciKlass* klass, Value obj, ValueStack* state_before)
+  : TypeCheck(klass, obj, objectType, state_before) {}
+
+  void set_incompatible_class_change_check() {
+    set_flag(ThrowIncompatibleClassChangeErrorFlag, true);
+  }
+  bool is_incompatible_class_change_check() const {
+    return check_flag(ThrowIncompatibleClassChangeErrorFlag);
+  }
 
   ciType* declared_type() const;
   ciType* exact_type() const;
-
 };
 
 

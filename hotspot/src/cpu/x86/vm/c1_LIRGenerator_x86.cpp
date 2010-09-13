@@ -1156,10 +1156,10 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
     patching_info = state_for(x, x->state_before());
   }
   obj.load_item();
-  LIR_Opr tmp = new_register(objectType);
   __ instanceof(reg, obj.result(), x->klass(),
-                tmp, new_register(objectType), LIR_OprFact::illegalOpr,
-                x->direct_compare(), patching_info);
+                new_register(objectType), new_register(objectType),
+                !x->klass()->is_loaded() ? new_register(objectType) : LIR_OprFact::illegalOpr,
+                x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 
 

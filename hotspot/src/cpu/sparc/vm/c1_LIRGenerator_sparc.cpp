@@ -1047,7 +1047,9 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   LIR_Opr tmp1 = FrameMap::G1_oop_opr;
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
-  __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,  x->direct_compare(), patching_info);
+  __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
+                x->direct_compare(), patching_info,
+                x->profiled_method(), x->profiled_bci());
 }
 
 

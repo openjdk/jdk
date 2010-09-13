@@ -1019,11 +1019,7 @@ void LIR_OpAllocArray::emit_code(LIR_Assembler* masm) {
 }
 
 void LIR_OpTypeCheck::emit_code(LIR_Assembler* masm) {
-  if (code() == lir_checkcast) {
-    masm->emit_checkcast(this);
-  } else {
-    masm->emit_opTypeCheck(this);
-  }
+  masm->emit_opTypeCheck(this);
   if (stub()) {
     masm->emit_code_stub(stub());
   }
@@ -1380,8 +1376,14 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
   append(c);
 }
 
-void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch) {
-  append(new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, NULL, info_for_patch, NULL));
+void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
+  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, NULL, info_for_patch, NULL);
+  if (profiled_method != NULL) {
+    c->set_profiled_method(profiled_method);
+    c->set_profiled_bci(profiled_bci);
+    c->set_should_profile(true);
+  }
+  append(c);
 }
 
 
