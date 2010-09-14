@@ -516,6 +516,8 @@ class methodOopDesc : public oopDesc {
   static int method_data_offset_in_bytes()       { return offset_of(methodOopDesc, _method_data); }
   static int interpreter_invocation_counter_offset_in_bytes()
                                                  { return offset_of(methodOopDesc, _interpreter_invocation_count); }
+  static int intrinsic_id_offset_in_bytes()      { return offset_of(methodOopDesc, _intrinsic_id); }
+  static int intrinsic_id_size_in_bytes()        { return sizeof(u1); }
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs
