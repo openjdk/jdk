@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.media.sound;
 
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.Receiver;
+package javax.sound.midi;
 
 /**
- * A Receiver with reference to it's MidiDevice object.
+ * <p>{@code MidiDeviceReceiver} is a {@code Receiver} which represents
+ * a MIDI input connector of a {@code MidiDevice}
+ * (see {@link MidiDevice#getReceiver()}).
  *
- * @author Karl Helgason
+ * @since 1.7
  */
 public interface MidiDeviceReceiver extends Receiver {
-
-    /** Obtains the MidiDevice object associated with this Receiver.
+    /** Obtains a MidiDevice object which is an owner of this Receiver.
      */
     public MidiDevice getMidiDevice();
-
 }
