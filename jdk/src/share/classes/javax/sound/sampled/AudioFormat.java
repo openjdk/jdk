@@ -431,34 +431,36 @@ public class AudioFormat {
 
 
     /**
-     * Indicates whether this format matches the one specified.  To match,
-     * two formats must have the same encoding, the same number of channels,
-     * and the same number of bits per sample and bytes per frame.
-     * The two formats must also have the same sample rate,
-     * unless the specified format has the sample rate value <code>AudioSystem.NOT_SPECIFIED</code>,
-     * which any sample rate will match.  The frame rates must
-     * similarly be equal, unless the specified format has the frame rate
-     * value <code>AudioSystem.NOT_SPECIFIED</code>.  The byte order (big-endian or little-endian)
-     * must match if the sample size is greater than one byte.
+     * Indicates whether this format matches the one specified.
+     * To match, two formats must have the same encoding,
+     * and consistent values of the number of channels, sample rate, sample size,
+     * frame rate, and frame size.
+     * The values of the property are consistent if they are equal
+     * or the specified format has the property value
+     * {@code AudioSystem.NOT_SPECIFIED}.
+     * The byte order (big-endian or little-endian) must be the same
+     * if the sample size is greater than one byte.
      *
      * @param format format to test for match
-     * @return <code>true</code> if this format matches the one specified,
-     * <code>false</code> otherwise.
-     */
-    /*
-     * $$kk: 04.20.99: i changed the semantics of this.
+     * @return {@code true} if this format matches the one specified,
+     *         {@code false} otherwise.
      */
     public boolean matches(AudioFormat format) {
-
-        if (format.getEncoding().equals(getEncoding()) &&
-            ( (format.getSampleRate() == (float)AudioSystem.NOT_SPECIFIED) || (format.getSampleRate() == getSampleRate()) ) &&
-            (format.getSampleSizeInBits() == getSampleSizeInBits()) &&
-            (format.getChannels() == getChannels() &&
-             (format.getFrameSize() == getFrameSize()) &&
-             ( (format.getFrameRate() == (float)AudioSystem.NOT_SPECIFIED) || (format.getFrameRate() == getFrameRate()) ) &&
-             ( (format.getSampleSizeInBits() <= 8)  || (format.isBigEndian() == isBigEndian()) ) ) )
+        if (format.getEncoding().equals(getEncoding())
+                && (format.getChannels() == AudioSystem.NOT_SPECIFIED
+                    || format.getChannels() == getChannels())
+                && (format.getSampleRate() == (float)AudioSystem.NOT_SPECIFIED
+                    || format.getSampleRate() == getSampleRate())
+                && (format.getSampleSizeInBits() == AudioSystem.NOT_SPECIFIED
+                    || format.getSampleSizeInBits() == getSampleSizeInBits())
+                && (format.getFrameRate() == (float)AudioSystem.NOT_SPECIFIED
+                    || format.getFrameRate() == getFrameRate())
+                && (format.getFrameSize() == AudioSystem.NOT_SPECIFIED
+                    || format.getFrameSize() == getFrameSize())
+                && (getSampleSizeInBits() <= 8
+                    || format.isBigEndian() == isBigEndian())) {
             return true;
-
+        }
         return false;
     }
 
