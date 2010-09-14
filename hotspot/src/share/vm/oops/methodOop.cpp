@@ -819,11 +819,13 @@ bool methodOopDesc::should_not_be_cached() const {
 
 bool methodOopDesc::is_method_handle_invoke_name(vmSymbols::SID name_sid) {
   switch (name_sid) {
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):  // FIXME: remove this transitional form
   case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name):
   case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
     return true;
   }
+  if (AllowTransitionalJSR292
+      && name_sid == vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name))
+    return true;
   return false;
 }
 
@@ -911,12 +913,16 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   m->set_signature_index(_imcp_invoke_signature);
   assert(is_method_handle_invoke_name(m->name()), "");
   assert(m->signature() == signature(), "");
+  assert(m->is_method_handle_invoke(), "");
 #ifdef CC_INTERP
   ResultTypeFinder rtf(signature());
   m->set_result_index(rtf.type());
 #endif
   m->compute_size_of_parameters(THREAD);
   m->set_exception_table(Universe::the_empty_int_array());
+  m->init_intrinsic_id();
+  assert(m->intrinsic_id() == vmIntrinsics::_invokeExact ||
+         m->intrinsic_id() == vmIntrinsics::_invokeGeneric, "must be an invoker");
 
   // Finally, set up its entry points.
   assert(m->method_handle_type() == method_type(), "");
@@ -1029,6 +1035,7 @@ void methodOopDesc::init_intrinsic_id() {
   assert(_intrinsic_id == vmIntrinsics::_none, "do this just once");
   const uintptr_t max_id_uint = right_n_bits((int)(sizeof(_intrinsic_id) * BitsPerByte));
   assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_id_uint, "else fix size");
+  assert(intrinsic_id_size_in_bytes() == sizeof(_intrinsic_id), "");
 
   // the klass name is well-known:
   vmSymbols::SID klass_id = klass_id_for_intrinsics(method_holder());
@@ -1036,9 +1043,10 @@ void methodOopDesc::init_intrinsic_id() {
 
   // ditto for method and signature:
   vmSymbols::SID  name_id = vmSymbols::find_sid(name());
-  if (name_id  == vmSymbols::NO_SID)  return;
+  if (name_id == vmSymbols::NO_SID)  return;
   vmSymbols::SID   sig_id = vmSymbols::find_sid(signature());
-  if (sig_id   == vmSymbols::NO_SID)  return;
+  if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_dyn_MethodHandle)
+      && sig_id == vmSymbols::NO_SID)  return;
   jshort flags = access_flags().as_short();
 
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
@@ -1067,10 +1075,13 @@ void methodOopDesc::init_intrinsic_id() {
     if (is_static() || !is_native())  break;
     switch (name_id) {
     case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
-      id = vmIntrinsics::_invokeGeneric; break;
-    default:
-      if (is_method_handle_invoke_name(name()))
-        id = vmIntrinsics::_invokeExact;
+      id = vmIntrinsics::_invokeGeneric;
+      break;
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name):
+      id = vmIntrinsics::_invokeExact;
+      break;
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):
+      if (AllowTransitionalJSR292)  id = vmIntrinsics::_invokeExact;
       break;
     }
     break;

@@ -200,6 +200,7 @@ IRT_END
 void InterpreterRuntime::note_trap(JavaThread* thread, int reason, TRAPS) {
   assert(ProfileTraps, "call me only if profiling");
   methodHandle trap_method(thread, method(thread));
+
   if (trap_method.not_null()) {
     methodDataHandle trap_mdo(thread, trap_method->method_data());
     if (trap_mdo.is_null()) {
