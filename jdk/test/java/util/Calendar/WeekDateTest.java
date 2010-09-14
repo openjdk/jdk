@@ -36,27 +36,44 @@ public class WeekDateTest {
     // Week dates are in the ISO numbering for day-of-week.
     static int[][][] data = {
         // Calendar year-date, Week year-date
-        {{ 2005, 01, 01}, {2004, 53, 6}},
-        {{ 2005, 01, 02}, {2004, 53, 7}},
-        {{ 2005, 12, 31}, {2005, 52, 6}},
-        {{ 2007, 01, 01}, {2007, 01, 1}},
-        {{ 2007, 12, 30}, {2007, 52, 7}},
-        {{ 2007, 12, 31}, {2008, 01, 1}},
-        {{ 2008, 01, 01}, {2008, 01, 2}},
-        {{ 2008, 12, 29}, {2009, 01, 1}},
-        {{ 2008, 12, 31}, {2009, 01, 3}},
-        {{ 2009, 01, 01}, {2009, 01, 4}},
-        {{ 2009, 12, 31}, {2009, 53, 4}},
-        {{ 2010, 01, 03}, {2009, 53, 7}},
-        {{ 2009, 12, 31}, {2009, 53, 4}},
-        {{ 2010, 01, 01}, {2009, 53, 5}},
-        {{ 2010, 01, 02}, {2009, 53, 6}},
-        {{ 2010, 01, 03}, {2009, 53, 7}},
-        {{ 2008, 12, 28}, {2008, 52, 7}},
-        {{ 2008, 12, 29}, {2009, 01, 1}},
-        {{ 2008, 12, 30}, {2009, 01, 2}},
-        {{ 2008, 12, 31}, {2009, 01, 3}},
-        {{ 2009, 01, 01}, {2009, 01, 4}}
+        {{ 2005, 01, 01}, { 2004, 53, 6}},
+        {{ 2005, 01, 02}, { 2004, 53, 7}},
+        {{ 2005, 12, 31}, { 2005, 52, 6}},
+        {{ 2007, 01, 01}, { 2007, 01, 1}},
+        {{ 2007, 12, 30}, { 2007, 52, 7}},
+        {{ 2007, 12, 31}, { 2008, 01, 1}},
+        {{ 2008, 01, 01}, { 2008, 01, 2}},
+        {{ 2008, 12, 29}, { 2009, 01, 1}},
+        {{ 2008, 12, 31}, { 2009, 01, 3}},
+        {{ 2009, 01, 01}, { 2009, 01, 4}},
+        {{ 2009, 12, 31}, { 2009, 53, 4}},
+        {{ 2010, 01, 03}, { 2009, 53, 7}},
+        {{ 2009, 12, 31}, { 2009, 53, 4}},
+        {{ 2010, 01, 01}, { 2009, 53, 5}},
+        {{ 2010, 01, 02}, { 2009, 53, 6}},
+        {{ 2010, 01, 03}, { 2009, 53, 7}},
+        {{ 2008, 12, 28}, { 2008, 52, 7}},
+        {{ 2008, 12, 29}, { 2009, 01, 1}},
+        {{ 2008, 12, 30}, { 2009, 01, 2}},
+        {{ 2008, 12, 31}, { 2009, 01, 3}},
+        {{ 2009, 01, 01}, { 2009, 01, 4}}
+    };
+
+    // Data for leniency test
+    static final int[][][] leniencyData = {
+        {{ 2008, 12, 28}, { 2009,  0, 7}},
+        {{ 2008, 12, 21}, { 2009, -1, 7}},
+        {{ 2009,  1,  4}, { 2008, 53, 7}},
+    };
+
+    static final int[][] invalidData = {
+        { 2010, -1,  1},
+        { 2010, 00,  1},
+        { 2010, 55,  1},
+        { 2010, 03,  0},
+        { 2010, 04,  8},
+        { 2010, 04, 19},
+        { 2010, 05, -1},
     };
 
     public static void main(String[] args) {
@@ -65,7 +82,7 @@ public class WeekDateTest {
             int[] expected = dates[0];
             int[] weekDate = dates[1];
             // Convert ISO 8601 day-of-week to Calendar.DAY_OF_WEEK.
-            int dayOfWeek = weekDate[2] == 7 ? SUNDAY : weekDate[2] + 1;
+            int dayOfWeek = getCalendarDayOfWeek(weekDate[2]);
 
             cal.clear();
             cal.setWeekDate(weekDate[0], weekDate[1], dayOfWeek);
@@ -102,19 +119,53 @@ public class WeekDateTest {
                                          n, cal.getActualMaximum(WEEK_OF_YEAR));
                 throw new RuntimeException(s);
             }
+
             cal.setWeekDate(cal.getWeekYear(), 1, MONDAY);
-            System.out.println(cal.getTime());
             if (cal.getWeeksInWeekYear() != n) {
                 String s = String.format("first day: got %d, expected %d%n",
                                          cal.getWeeksInWeekYear(), n);
                 throw new RuntimeException(s);
             }
+
             cal.setWeekDate(cal.getWeekYear(), n, SUNDAY);
-            System.out.println(cal.getTime());
             if (cal.getWeeksInWeekYear() != n) {
                 String s = String.format("last day: got %d, expected %d%n",
                                          cal.getWeeksInWeekYear(), n);
                 throw new RuntimeException(s);
+            }
+        }
+
+        // Test lenient mode with out of range values.
+        for (int[][] dates : leniencyData) {
+            int[] expected = dates[0];
+            int[] weekDate = dates[1];
+            // Convert ISO 8601 day-of-week to Calendar.DAY_OF_WEEK.
+            int dayOfWeek = getCalendarDayOfWeek(weekDate[2]);
+
+            cal.clear();
+            cal.setWeekDate(weekDate[0], weekDate[1], dayOfWeek);
+            if (cal.get(YEAR) != expected[0]
+                || cal.get(MONTH)+1 != expected[1]
+                || cal.get(DAY_OF_MONTH) != expected[2]) {
+                String s = String.format("got=%4d-%02d-%02d, expected=%4d-%02d-%02d",
+                               cal.get(YEAR), cal.get(MONTH)+1, cal.get(DAY_OF_MONTH),
+                               expected[0], expected[1], expected[2]);
+                throw new RuntimeException(s);
+            }
+        }
+
+        // Test non-lenient mode
+        cal.setLenient(false);
+        for (int[] date : invalidData) {
+            cal.clear();
+            try {
+                // Use the raw dayOfWeek value as invalid data
+                cal.setWeekDate(date[0], date[1], date[2]);
+                String s = String.format("didn't throw an IllegalArgumentException with"
+                                         + " %d, %d, %d",date[0], date[1], date[2]);
+                throw new RuntimeException(s);
+            } catch (IllegalArgumentException e) {
+                // OK
             }
         }
     }
@@ -129,5 +180,9 @@ public class WeekDateTest {
         cal.setFirstDayOfWeek(MONDAY);
         cal.setMinimalDaysInFirstWeek(4);
         return cal;
+    }
+
+    private static int getCalendarDayOfWeek(int isoDayOfWeek) {
+        return (isoDayOfWeek == 7) ? SUNDAY : isoDayOfWeek + 1;
     }
 }
