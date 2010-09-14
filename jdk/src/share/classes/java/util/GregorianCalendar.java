@@ -2160,20 +2160,22 @@ public class GregorianCalendar extends Calendar {
             gc.complete();
         }
 
+        if (!isLenient() &&
+            (gc.getWeekYear() != weekYear
+             || gc.internalGet(WEEK_OF_YEAR) != weekOfYear
+             || gc.internalGet(DAY_OF_WEEK) != dayOfWeek)) {
+            throw new IllegalArgumentException();
+        }
+
         set(ERA, gc.internalGet(ERA));
         set(YEAR, gc.internalGet(YEAR));
         set(MONTH, gc.internalGet(MONTH));
         set(DAY_OF_MONTH, gc.internalGet(DAY_OF_MONTH));
 
         // to avoid throwing an IllegalArgumentException in
-        // non-lenient, set WEEK_OF_YEAR and DAY_OF_WEEK internally
+        // non-lenient, set WEEK_OF_YEAR internally
         internalSet(WEEK_OF_YEAR, weekOfYear);
-        internalSet(DAY_OF_WEEK, dayOfWeek);
         complete();
-
-        assert getWeekYear() == weekYear;
-        assert get(WEEK_OF_YEAR) == weekOfYear;
-        assert get(DAY_OF_WEEK) == dayOfWeek;
     }
 
     /**

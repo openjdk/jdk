@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,14 +554,14 @@ public class AudioFormat {
      * which is simply a linear (proportional) representation of the sound
      * waveform.  With PCM, the number stored in each sample is proportional
      * to the instantaneous amplitude of the sound pressure at that point in
-     * time.  The numbers are frequently signed or unsigned integers.
+     * time.  The numbers may be signed or unsigned integers or floats.
      * Besides PCM, other encodings include mu-law and a-law, which are nonlinear
      * mappings of the sound amplitude that are often used for recording speech.
      * <p>
      * You can use a predefined encoding by referring to one of the static
      * objects created by this class, such as PCM_SIGNED or
      * PCM_UNSIGNED.  Service providers can create new encodings, such as
-     * compressed audio formats or floating-point PCM samples, and make
+     * compressed audio formats, and make
      * these available through the <code>{@link AudioSystem}</code> class.
      * <p>
      * The <code>Encoding</code> class is static, so that all
@@ -590,6 +590,13 @@ public class AudioFormat {
          * Specifies unsigned, linear PCM data.
          */
         public static final Encoding PCM_UNSIGNED = new Encoding("PCM_UNSIGNED");
+
+        /**
+         * Specifies floating-point PCM data.
+         *
+         * @since 1.7
+         */
+        public static final Encoding PCM_FLOAT = new Encoding("PCM_FLOAT");
 
         /**
          * Specifies u-law encoded data.
