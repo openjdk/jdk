@@ -204,6 +204,11 @@ import static java.text.DateFormatSymbols.*;
  *         <td>Time zone
  *         <td><a href="#rfc822timezone">RFC 822 time zone</a>
  *         <td><code>-0800</code>
+ *     <tr bgcolor="#eeeeff">
+ *         <td><code>X</code>
+ *         <td>Time zone
+ *         <td><a href="#iso8601timezone">ISO 8601 time zone</a>
+ *         <td><code>-08</code>; <code>-0800</code>;  <code>-08:00</code>
  * </table>
  * </blockquote>
  * Pattern letters are usually repeated, as their number determines the
@@ -288,6 +293,7 @@ import static java.text.DateFormatSymbols.*;
  *     accepted.<br><br></li>
  * <li><strong><a name="rfc822timezone">RFC 822 time zone:</a></strong>
  *     For formatting, the RFC 822 4-digit time zone format is used:
+ *
  *     <pre>
  *     <i>RFC822TimeZone:</i>
  *             <i>Sign</i> <i>TwoDigitHours</i> <i>Minutes</i>
@@ -295,8 +301,41 @@ import static java.text.DateFormatSymbols.*;
  *             <i>Digit Digit</i></pre>
  *     <i>TwoDigitHours</i> must be between 00 and 23. Other definitions
  *     are as for <a href="#timezone">general time zones</a>.
+ *
  *     <p>For parsing, <a href="#timezone">general time zones</a> are also
  *     accepted.
+ * <li><strong><a name="iso8601timezone">ISO 8601 Time zone:</a></strong>
+ *     The number of pattern letters designates the format for both formatting
+ *     and parsing as follows:
+ *     <pre>
+ *     <i>ISO8601TimeZone:</i>
+ *             <i>OneLetterISO8601TimeZone</i>
+ *             <i>TwoLetterISO8601TimeZone</i>
+ *             <i>ThreeLetterISO8601TimeZone</i>
+ *     <i>OneLetterISO8601TimeZone:</i>
+ *             <i>Sign</i> <i>TwoDigitHours</i>
+ *             {@code Z}
+ *     <i>TwoLetterISO8601TimeZone:</i>
+ *             <i>Sign</i> <i>TwoDigitHours</i> <i>Minutes</i>
+ *             {@code Z}
+ *     <i>ThreeLetterISO8601TimeZone:</i>
+ *             <i>Sign</i> <i>TwoDigitHours</i> {@code :} <i>Minutes</i>
+ *             {@code Z}</pre>
+ *     Other definitions are as for <a href="#timezone">general time zones</a> or
+ *     <a href="#rfc822timezone">RFC 822 time zones</a>.
+ *
+ *     <p>For formatting, if the offset value from GMT is 0, {@code "Z"} is
+ *     produced. If the number of pattern letters is 1, any fraction of an hour
+ *     is ignored. For example, if the pattern is {@code "X"} and the time zone is
+ *     {@code "GMT+05:30"}, {@code "+05"} is produced.
+ *
+ *     <p>For parsing, {@code "Z"} is parsed as the UTC time zone designator.
+ *     <a href="#timezone">General time zones</a> are <em>not</em> accepted.
+ *
+ *     <p>If the number of pattern letters is 4 or more, {@link
+ *     IllegalArgumentException} is thrown when constructing a {@code
+ *     SimpleDateFormat} or {@linkplain #applyPattern(String) applying a
+ *     pattern}.
  * </ul>
  * <code>SimpleDateFormat</code> also supports <em>localized date and time
  * pattern</em> strings. In these strings, the pattern letters described above
@@ -343,6 +382,9 @@ import static java.text.DateFormatSymbols.*;
  *         <td><code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>
  *         <td><code>2001-07-04T12:08:56.235-0700</code>
  *     <tr bgcolor="#eeeeff">
+ *         <td><code>"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"</code>
+ *         <td><code>2001-07-04T12:08:56.235-07:00</code>
+ *     <tr>
  *         <td><code>"YYYY-'W'ww-u"</code>
  *         <td><code>2001-W27-3</code>
  * </table>
@@ -839,6 +881,9 @@ public class SimpleDateFormat extends DateFormat {
      * Encodes the given tag and length and puts encoded char(s) into buffer.
      */
     private static final void encode(int tag, int length, StringBuilder buffer) {
+        if (tag == PATTERN_ISO_ZONE && length >= 4) {
+            throw new IllegalArgumentException("invalid ISO 8601 format: length=" + length);
+        }
         if (length < 255) {
             buffer.append((char)(tag << 8 | length));
         } else {
@@ -995,7 +1040,8 @@ public class SimpleDateFormat extends DateFormat {
         Calendar.ZONE_OFFSET,
         // Pseudo Calendar fields
         CalendarBuilder.WEEK_YEAR,
-        CalendarBuilder.ISO_DAY_OF_WEEK
+        CalendarBuilder.ISO_DAY_OF_WEEK,
+        Calendar.ZONE_OFFSET
     };
 
     // Map index into pattern character string to DateFormat field number
@@ -1009,7 +1055,8 @@ public class SimpleDateFormat extends DateFormat {
         DateFormat.WEEK_OF_MONTH_FIELD, DateFormat.AM_PM_FIELD,
         DateFormat.HOUR1_FIELD, DateFormat.HOUR0_FIELD,
         DateFormat.TIMEZONE_FIELD, DateFormat.TIMEZONE_FIELD,
-        DateFormat.YEAR_FIELD, DateFormat.DAY_OF_WEEK_FIELD
+        DateFormat.YEAR_FIELD, DateFormat.DAY_OF_WEEK_FIELD,
+        DateFormat.TIMEZONE_FIELD
     };
 
     // Maps from DecimalFormatSymbols index to Field constant
@@ -1021,7 +1068,8 @@ public class SimpleDateFormat extends DateFormat {
         Field.WEEK_OF_YEAR, Field.WEEK_OF_MONTH,
         Field.AM_PM, Field.HOUR1, Field.HOUR0, Field.TIME_ZONE,
         Field.TIME_ZONE,
-        Field.YEAR, Field.DAY_OF_WEEK
+        Field.YEAR, Field.DAY_OF_WEEK,
+        Field.TIME_ZONE
     };
 
     /**
@@ -1187,6 +1235,34 @@ public class SimpleDateFormat extends DateFormat {
 
             int num = (value / 60) * 100 + (value % 60);
             CalendarUtils.sprintf0d(buffer, num, width);
+            break;
+
+        case PATTERN_ISO_ZONE:   // 'X'
+            value = calendar.get(Calendar.ZONE_OFFSET)
+                    + calendar.get(Calendar.DST_OFFSET);
+
+            if (value == 0) {
+                buffer.append('Z');
+                break;
+            }
+
+            value /=  60000;
+            if (value >= 0) {
+                buffer.append('+');
+            } else {
+                buffer.append('-');
+                value = -value;
+            }
+
+            CalendarUtils.sprintf0d(buffer, value / 60, 2);
+            if (count == 1) {
+                break;
+            }
+
+            if (count == 3) {
+                buffer.append(':');
+            }
+            CalendarUtils.sprintf0d(buffer, value % 60, 2);
             break;
 
         default:
@@ -1973,6 +2049,94 @@ public class SimpleDateFormat extends DateFormat {
                 }
                 break parsing;
 
+            case PATTERN_ISO_ZONE:   // 'X'
+                {
+                    int sign = 0;
+                    int offset = 0;
+
+                    iso8601: {
+                        try {
+                            char c = text.charAt(pos.index);
+                            if (c == 'Z') {
+                                calb.set(Calendar.ZONE_OFFSET, 0).set(Calendar.DST_OFFSET, 0);
+                                return ++pos.index;
+                            }
+
+                            // parse text as "+/-hh[[:]mm]" based on count
+                            if (c == '+') {
+                                sign = 1;
+                            } else if (c == '-') {
+                                sign = -1;
+                            }
+                            // Look for hh.
+                            int hours = 0;
+                            c = text.charAt(++pos.index);
+                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
+                                break parsing;
+                            }
+                            hours = c - '0';
+                            c = text.charAt(++pos.index);
+                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
+                                break parsing;
+                            }
+                            hours *= 10;
+                            hours += c - '0';
+                            if (hours > 23) {
+                                break parsing;
+                            }
+
+                            if (count == 1) { // "X"
+                                offset = hours * 60;
+                                break iso8601;
+                            }
+
+                            c = text.charAt(++pos.index);
+                            // Skip ':' if "XXX"
+                            if (c == ':') {
+                                if (count == 2) {
+                                    break parsing;
+                                }
+                                c = text.charAt(++pos.index);
+                            } else {
+                                if (count == 3) {
+                                    // missing ':'
+                                    break parsing;
+                                }
+                            }
+
+                            // Look for mm.
+                            int minutes = 0;
+                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
+                                break parsing;
+                            }
+                            minutes = c - '0';
+                            c = text.charAt(++pos.index);
+                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
+                                break parsing;
+                            }
+                            minutes *= 10;
+                            minutes += c - '0';
+
+                            if (minutes > 59) {
+                                break parsing;
+                            }
+
+                            offset = hours * 60 + minutes;
+                        } catch (StringIndexOutOfBoundsException e) {
+                            break parsing;
+                        }
+                    }
+
+                    // Do the final processing for both of the above cases.  We only
+                    // arrive here if the form GMT+/-... or an RFC 822 form was seen.
+                    if (sign != 0) {
+                        offset *= MILLIS_PER_MINUTE * sign;
+                        calb.set(Calendar.ZONE_OFFSET, offset).set(Calendar.DST_OFFSET, 0);
+                        return ++pos.index;
+                    }
+                }
+                break parsing;
+
             default:
          // case PATTERN_DAY_OF_MONTH:         // 'd'
          // case PATTERN_HOUR_OF_DAY0:         // 'H' 0-based.  eg, 23:59 + 1 hour =>> 00:59
@@ -2102,7 +2266,7 @@ public class SimpleDateFormat extends DateFormat {
      * @exception NullPointerException if the given pattern is null
      * @exception IllegalArgumentException if the given pattern is invalid
      */
-    public void applyPattern (String pattern)
+    public void applyPattern(String pattern)
     {
         compiledPattern = compile(pattern);
         this.pattern = pattern;

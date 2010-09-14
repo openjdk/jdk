@@ -1013,19 +1013,30 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private static Calendar createCalendar(TimeZone zone,
                                            Locale aLocale)
     {
-        // If the specified locale is a Thai locale, returns a BuddhistCalendar
-        // instance.
-        if ("th".equals(aLocale.getLanguage())
-            && ("TH".equals(aLocale.getCountry()))) {
-            return new sun.util.BuddhistCalendar(zone, aLocale);
-        } else if ("JP".equals(aLocale.getVariant())
-                   && "JP".equals(aLocale.getCountry())
-                   && "ja".equals(aLocale.getLanguage())) {
-            return new JapaneseImperialCalendar(zone, aLocale);
+        Calendar cal = null;
+
+        String caltype = aLocale.getUnicodeLocaleType("ca");
+        if (caltype == null) {
+            // Calendar type is not specified.
+            // If the specified locale is a Thai locale,
+            // returns a BuddhistCalendar instance.
+            if ("th".equals(aLocale.getLanguage())
+                    && ("TH".equals(aLocale.getCountry()))) {
+                    cal = new BuddhistCalendar(zone, aLocale);
+            } else {
+                cal = new GregorianCalendar(zone, aLocale);
+            }
+        } else if (caltype.equals("japanese")) {
+            cal = new JapaneseImperialCalendar(zone, aLocale);
+        } else if (caltype.equals("buddhist")) {
+            cal = new BuddhistCalendar(zone, aLocale);
+        } else {
+            // Unsupported calendar type.
+            // Use Gregorian calendar as a fallback.
+            cal = new GregorianCalendar(zone, aLocale);
         }
 
-        // else create the default calendar
-        return new GregorianCalendar(zone, aLocale);
+        return cal;
     }
 
     /**
