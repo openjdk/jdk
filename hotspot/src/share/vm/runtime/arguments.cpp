@@ -1273,7 +1273,8 @@ bool verify_object_alignment() {
 }
 
 inline uintx max_heap_for_compressed_oops() {
-  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
+  // Heap should be above HeapBaseMinAddress to get zero based compressed oops.
+  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size() - HeapBaseMinAddress);
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
