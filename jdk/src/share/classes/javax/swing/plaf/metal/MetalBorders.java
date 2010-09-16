@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,11 @@ import javax.swing.text.JTextComponent;
 
 import java.awt.Component;
 import java.awt.Insets;
-import java.awt.Dimension;
-import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Window;
-import java.io.Serializable;
 
 import sun.swing.StringUIClientPropertyKey;
 
@@ -81,6 +78,9 @@ public class MetalBorders {
         protected static Insets borderInsets = new Insets( 3, 3, 3, 3 );
 
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+            if (!(c instanceof AbstractButton)) {
+                return;
+            }
             if (MetalLookAndFeel.usingOcean()) {
                 paintOceanBorder(c, g, x, y, w, h);
                 return;
@@ -473,8 +473,8 @@ public class MetalBorders {
             if (c instanceof JInternalFrame) {
                 Object obj = ((JInternalFrame) c).getClientProperty(
                               "JInternalFrame.messageType");
-                if (obj != null && (obj instanceof Integer)) {
-                    messageType = ((Integer) obj).intValue();
+                if (obj instanceof Integer) {
+                    messageType = (Integer) obj;
                 }
             }
 
@@ -533,7 +533,7 @@ public class MetalBorders {
             if (MetalLookAndFeel.usingOcean()) {
                 // Only paint a border if we're not next to a horizontal
                 // toolbar
-                if (!MetalToolBarUI.doesMenuBarBorderToolBar((JMenuBar)c)) {
+                if ((c instanceof JMenuBar) && !MetalToolBarUI.doesMenuBarBorderToolBar((JMenuBar)c)) {
                     g.setColor(MetalLookAndFeel.getControl());
                     g.drawLine(0, h - 2, w, h - 2);
                     g.setColor(UIManager.getColor("MenuBar.borderColor"));
@@ -564,6 +564,9 @@ public class MetalBorders {
         protected static Insets borderInsets = new Insets( 2, 2, 2, 2 );
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
+            if (!(c instanceof JMenuItem)) {
+                return;
+            }
             JMenuItem b = (JMenuItem) c;
             ButtonModel model = b.getModel();
 
@@ -687,6 +690,9 @@ public class MetalBorders {
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h )
         {
+            if (!(c instanceof JToolBar)) {
+                return;
+            }
             g.translate( x, y );
 
             if ( ((JToolBar) c).isFloatable() )
@@ -729,6 +735,9 @@ public class MetalBorders {
                 newInsets.top = newInsets.left = newInsets.bottom = newInsets.right = 2;
             }
 
+            if (!(c instanceof JToolBar)) {
+                return newInsets;
+            }
             if ( ((JToolBar) c).isFloatable() ) {
                 if ( ((JToolBar) c).getOrientation() == HORIZONTAL ) {
                     if (c.getComponentOrientation().isLeftToRight()) {
@@ -827,6 +836,9 @@ public class MetalBorders {
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
 
+            if (!(c instanceof JScrollPane)) {
+                return;
+            }
             JScrollPane scroll = (JScrollPane)c;
             JComponent colHeader = scroll.getColumnHeader();
             int colHeaderHeight = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.media.sound;
 
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.Receiver;
-
-/**
- * A Receiver with reference to it's MidiDevice object.
- *
- * @author Karl Helgason
+/*
+ *******************************************************************************
+ * Copyright (C) 2009, International Business Machines Corporation and         *
+ * others. All Rights Reserved.                                                *
+ *******************************************************************************
  */
-public interface MidiDeviceReceiver extends Receiver {
+package sun.util.locale;
 
-    /** Obtains the MidiDevice object associated with this Receiver.
-     */
-    public MidiDevice getMidiDevice();
+public class LocaleSyntaxException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
+    private int _index = -1;
+
+    public LocaleSyntaxException(String msg) {
+        this(msg, 0);
+    }
+
+    public LocaleSyntaxException(String msg, int errorIndex) {
+        super(msg);
+        _index = errorIndex;
+    }
+
+    public int getErrorIndex() {
+        return _index;
+    }
 }
