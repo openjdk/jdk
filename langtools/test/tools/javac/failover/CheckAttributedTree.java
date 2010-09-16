@@ -282,13 +282,13 @@ public class CheckAttributedTree {
             Iterable<? extends CompilationUnitTree> trees = task.parse();
             task.analyze();
             List<Pair<JCCompilationUnit, JCTree>> res = new ArrayList<>();
-            System.out.println("Try to add pairs. Elems are " + analyzedElems);
+            //System.out.println("Try to add pairs. Elems are " + analyzedElems);
             for (CompilationUnitTree t : trees) {
                JCCompilationUnit cu = (JCCompilationUnit)t;
                for (JCTree def : cu.defs) {
                    if (def.getTag() == JCTree.CLASSDEF &&
                            analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
-                       System.out.println("Adding pair...");
+                       //System.out.println("Adding pair...");
                        res.add(new Pair<>(cu, def));
                    }
                }
