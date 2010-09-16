@@ -282,6 +282,13 @@ public class Main {
             }
         }
 
+        // phase this out with JSR 292 PFD
+        if ("no".equals(options.get("allowTransitionalJSR292"))) {
+            options.put("allowTransitionalJSR292", null);
+        } else if (target.hasInvokedynamic() && options.get("allowTransitionalJSR292") == null) {
+            options.put("allowTransitionalJSR292", "allowTransitionalJSR292");
+        }
+
         // handle this here so it works even if no other options given
         String showClass = options.get("showClass");
         if (showClass != null) {
@@ -467,10 +474,13 @@ public class Main {
         ex.printStackTrace(out);
     }
 
-    /** Print a message reporting an fatal error.
+    /** Print a message reporting a fatal error.
      */
     void feMessage(Throwable ex) {
         Log.printLines(out, ex.getMessage());
+        if (ex.getCause() != null && options.get("dev") != null) {
+            ex.getCause().printStackTrace(out);
+        }
     }
 
     /** Print a message reporting an input/output error.

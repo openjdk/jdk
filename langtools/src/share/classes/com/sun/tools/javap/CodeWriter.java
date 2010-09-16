@@ -239,7 +239,10 @@ class CodeWriter extends BasicWriter {
                 new ArrayList<InstructionDetailWriter>();
         if (options.details.contains(InstructionDetailWriter.Kind.SOURCE)) {
             sourceWriter.reset(classWriter.getClassFile(), attr);
-            detailWriters.add(sourceWriter);
+            if (sourceWriter.hasSource())
+                detailWriters.add(sourceWriter);
+            else
+                println("(Source code not available)");
         }
 
         if (options.details.contains(InstructionDetailWriter.Kind.LOCAL_VARS)) {

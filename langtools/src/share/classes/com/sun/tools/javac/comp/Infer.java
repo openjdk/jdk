@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
@@ -543,4 +545,56 @@ public class Infer {
                                 args.head, bounds);
         }
     }
+
+    /**
+     * Compute a synthetic method type corresponding to the requested polymorphic
+     * method signature. If no explicit return type is supplied, a provisional
+     * return type is computed (just Object in case of non-transitional 292)
+     */
+    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
+                                            Name name,
+                                            MethodSymbol spMethod,  // sig. poly. method or null if none
+                                            List<Type> argtypes,
+                                            List<Type> typeargtypes) {
+        final Type restype;
+        if (rs.allowTransitionalJSR292 && typeargtypes.nonEmpty()) {
+            restype = typeargtypes.head;
+        } else {
+            //The return type for a polymorphic signature call is computed from
+            //the enclosing tree E, as follows: if E is a cast, then use the
+            //target type of the cast expression as a return type; if E is an
+            //expression statement, the return type is 'void' - otherwise the
+            //return type is simply 'Object'.
+            switch (env.outer.tree.getTag()) {
+                case JCTree.TYPECAST:
+                    restype = ((JCTypeCast)env.outer.tree).clazz.type; break;
+                case JCTree.EXEC:
+                    restype = syms.voidType; break;
+                default:
+                    restype = syms.objectType;
+            }
+        }
+
+        List<Type> paramtypes = Type.map(argtypes, implicitArgType);
+        List<Type> exType = spMethod != null ?
+            spMethod.getThrownTypes() :
+            List.of(syms.throwableType); // make it throw all exceptions
+
+        MethodType mtype = new MethodType(paramtypes,
+                                          restype,
+                                          exType,
+                                          syms.methodClass);
+        return mtype;
+    }
+    //where
+        Mapping implicitArgType = new Mapping ("implicitArgType") {
+                public Type apply(Type t) {
+                    t = types.erasure(t);
+                    if (t.tag == BOT)
+                        // nulls type as the marker type Null (which has no instances)
+                        // infer as java.lang.Void for now
+                        t = types.boxedClass(syms.voidType).type;
+                    return t;
+                }
+        };
 }
