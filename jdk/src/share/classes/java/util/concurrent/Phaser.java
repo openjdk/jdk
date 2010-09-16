@@ -898,7 +898,7 @@ public class Phaser {
         boolean doWait() {
             if (thread != null) {
                 try {
-                    ForkJoinPool.managedBlock(this, false);
+                    ForkJoinPool.managedBlock(this);
                 } catch (InterruptedException ie) {
                 }
             }

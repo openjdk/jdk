@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.net.spi;
+package sun.net.sdp;
 
 import sun.net.NetHooks;
 import java.net.InetAddress;
@@ -34,9 +34,10 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.AccessController;
 
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import sun.net.sdp.SdpSupport;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A NetHooks provider that converts sockets from the TCP to SDP protocol prior
@@ -44,9 +45,6 @@ import sun.misc.JavaIOFileDescriptorAccess;
  */
 
 public class SdpProvider extends NetHooks.Provider {
-    private static final JavaIOFileDescriptorAccess fdAccess =
-        SharedSecrets.getJavaIOFileDescriptorAccess();
-
     // maximum port
     private static final int MAX_PORT = 65535;
 
@@ -59,7 +57,8 @@ public class SdpProvider extends NetHooks.Provider {
 
     public SdpProvider() {
         // if this property is not defined then there is nothing to do.
-        String file = System.getProperty("com.sun.sdp.conf");
+        String file = AccessController.doPrivileged(
+            new GetPropertyAction("com.sun.sdp.conf"));
         if (file == null) {
             this.enabled = false;
             this.rules = null;
@@ -78,7 +77,8 @@ public class SdpProvider extends NetHooks.Provider {
 
         // check if debugging is enabled
         PrintStream out = null;
-        String logfile = System.getProperty("com.sun.sdp.debug");
+        String logfile = AccessController.doPrivileged(
+            new GetPropertyAction("com.sun.sdp.debug"));
         if (logfile != null) {
             out = System.out;
             if (logfile.length() > 0) {
@@ -297,8 +297,7 @@ public class SdpProvider extends NetHooks.Provider {
         boolean matched = false;
         for (Rule rule: rules) {
             if (rule.match(action, address, port)) {
-                int fd = fdAccess.get(fdObj);
-                convert(fd);
+                SdpSupport.convertSocket(fdObj);
                 matched = true;
                 break;
             }
@@ -333,7 +332,4 @@ public class SdpProvider extends NetHooks.Provider {
         if (enabled)
             convertTcpToSdpIfMatch(fdObj, Action.CONNECT, address, port);
     }
-
-    // -- native methods --
-    private static native void convert(int fd) throws IOException;
 }

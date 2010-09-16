@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4434723 4482726 4559072 4638365 4795550 5081340 5103988 6253145
+ *   6984545
  * @summary Test FileChannel.transferFrom and transferTo
  * @library ..
  */
@@ -55,6 +56,7 @@ public class Transfer {
         xferTest06(); // for bug 5081340
         xferTest07(); // for bug 5103988
         xferTest08(); // for bug 6253145
+        xferTest09(); // for bug 6984545
     }
 
     private static void testFileChannel() throws Exception {
@@ -502,6 +504,27 @@ public class Transfer {
             ssc.close();
             fc.close();
             file.delete();
+        }
+    }
+
+    // Test that transferFrom with FileChannel source that is not readable
+    // throws NonReadableChannelException
+    static void xferTest09() throws Exception {
+        File source = File.createTempFile("source", null);
+        source.deleteOnExit();
+
+        File target = File.createTempFile("target", null);
+        target.deleteOnExit();
+
+        FileChannel fc1 = new FileOutputStream(source).getChannel();
+        FileChannel fc2 = new RandomAccessFile(target, "rw").getChannel();
+        try {
+            fc2.transferFrom(fc1, 0L, 0);
+            throw new RuntimeException("NonReadableChannelException expected");
+        } catch (NonReadableChannelException expected) {
+        } finally {
+            fc1.close();
+            fc2.close();
         }
     }
 

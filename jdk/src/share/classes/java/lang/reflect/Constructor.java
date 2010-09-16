@@ -166,8 +166,7 @@ public final
 
     /**
      * Returns the name of this constructor, as a string.  This is
-     * always the same as the simple name of the constructor's declaring
-     * class.
+     * the binary name of the constructor's declaring class.
      */
     public String getName() {
         return getDeclaringClass().getName();
