@@ -113,8 +113,7 @@ class EventDispatchThread extends Thread {
         pumpEventsForHierarchy(id, cond, null);
     }
 
-    void pumpEventsForHierarchy(int id, Conditional cond, Component modalComponent)
-    {
+    void pumpEventsForHierarchy(int id, Conditional cond, Component modalComponent) {
         pumpEventsForFilter(id, cond, new HierarchyEventFilter(modalComponent));
     }
 
@@ -124,6 +123,7 @@ class EventDispatchThread extends Thread {
 
     void pumpEventsForFilter(int id, Conditional cond, EventFilter filter) {
         addEventFilter(filter);
+        doDispatch = true;
         while (doDispatch && cond.evaluate()) {
             if (isInterrupted() || !pumpOneEventForFilters(id)) {
                 doDispatch = false;
@@ -133,6 +133,7 @@ class EventDispatchThread extends Thread {
     }
 
     void addEventFilter(EventFilter filter) {
+        eventLog.finest("adding the event filter: " + filter);
         synchronized (eventFilters) {
             if (!eventFilters.contains(filter)) {
                 if (filter instanceof ModalEventFilter) {
@@ -156,6 +157,7 @@ class EventDispatchThread extends Thread {
     }
 
     void removeEventFilter(EventFilter filter) {
+        eventLog.finest("removing the event filter: " + filter);
         synchronized (eventFilters) {
             eventFilters.remove(filter);
         }
