@@ -25,9 +25,16 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
 
-#if defined(__solaris__) && !defined(PROTO_SDP)
-#define PROTO_SDP       257
+#if defined(__solaris__)
+  #if !defined(PROTO_SDP)
+    #define PROTO_SDP       257
+  #endif
+#elif defined(__linux__)
+  #if !defined(AF_INET_SDP)
+    #define AF_INET_SDP     27
+  #endif
 #endif
 
 #include "jni.h"
@@ -40,20 +47,61 @@
   } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-JNIEXPORT void JNICALL
-Java_sun_net_spi_SdpProvider_convert(JNIEnv *env, jclass cls, jint fd)
+
+/**
+ * Creates a SDP socket.
+ */
+static int create(JNIEnv* env)
 {
-#ifdef PROTO_SDP
-#ifdef AF_INET6
+    int s;
+
+#if defined(__solaris__)
+  #ifdef AF_INET6
     int domain = ipv6_available() ? AF_INET6 : AF_INET;
-#else
+  #else
     int domain = AF_INET;
+  #endif
+    s = socket(domain, SOCK_STREAM, PROTO_SDP);
+#elif defined(__linux__)
+    /**
+     * IPv6 not supported by SDP on Linux
+     */
+    if (ipv6_available()) {
+        JNU_ThrowIOException(env, "IPv6 not supported");
+        return;
+    }
+    s = socket(AF_INET_SDP, SOCK_STREAM, 0);
+#else
+    /* not supported on other platforms at this time */
+    s = -1;
+    errno = EPROTONOSUPPORT;
 #endif
-    int s = socket(domain, SOCK_STREAM, PROTO_SDP);
-    if (s < 0) {
+
+    if (s < 0)
         JNU_ThrowIOExceptionWithLastError(env, "socket");
-    } else {
-        int arg, len, res;
+    return s;
+}
+
+/**
+ * Creates a SDP socket, returning file descriptor referencing the socket.
+ */
+JNIEXPORT jint JNICALL
+Java_sun_net_sdp_SdpSupport_create0(JNIEnv *env, jclass cls)
+{
+    return create(env);
+}
+
+/**
+ * Converts an existing file descriptor, that references an unbound TCP socket,
+ * to SDP.
+ */
+JNIEXPORT void JNICALL
+Java_sun_net_sdp_SdpSupport_convert0(JNIEnv *env, jclass cls, int fd)
+{
+    int s = create(env);
+    if (s >= 0) {
+        socklen_t len;
+        int arg, res;
         struct linger linger;
 
         /* copy socket options that are relevant to SDP */
@@ -72,7 +120,4 @@ Java_sun_net_spi_SdpProvider_convert(JNIEnv *env, jclass cls, jint fd)
             JNU_ThrowIOExceptionWithLastError(env, "dup2");
         RESTARTABLE(close(s), res);
     }
-#else
-    JNU_ThrowInternalError(env, "should not reach here");
-#endif
 }

@@ -69,6 +69,15 @@ class ServerSocket implements java.io.Closeable {
     private boolean oldImpl = false;
 
     /**
+     * Package-private constructor to create a ServerSocket associated with
+     * the given SocketImpl.
+     */
+    ServerSocket(SocketImpl impl) {
+        this.impl = impl;
+        impl.setServerSocket(this);
+    }
+
+    /**
      * Creates an unbound server socket.
      *
      * @exception IOException IO error when opening the socket.

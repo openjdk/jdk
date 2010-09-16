@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,23 @@ JFILE=em.jar
 
 KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS"
 JAR=$TESTJAVA${FS}bin${FS}jar
+JAVA=$TESTJAVA${FS}bin${FS}java
+JAVAC=$TESTJAVA${FS}bin${FS}javac
 JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
 
 rm $KS $JFILE
 echo A > A
 echo B > B
 mkdir META-INF
-printf "\r\n" > META-INF${FS}MANIFEST.MF
+cat <<EOF > CrLf.java
+class CrLf {
+  public static void main(String[] args) throws Exception {
+    System.out.write(new byte[] {'\r', '\n'});
+  }
+}
+EOF
+$JAVAC CrLf.java
+$JAVA CrLf > META-INF${FS}MANIFEST.MF
 zip $JFILE META-INF${FS}MANIFEST.MF A B
 
 $KT -alias a -dname CN=a -keyalg rsa -genkey -validity 300
