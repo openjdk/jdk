@@ -275,6 +275,8 @@ public class JavacTrees extends Trees {
                     env = enter.getTopLevelEnv((JCCompilationUnit)tree);
                     break;
                 case CLASS:
+                case INTERFACE:
+                case ENUM:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
                     break;
