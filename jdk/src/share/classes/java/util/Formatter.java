@@ -1866,7 +1866,7 @@ public final class Formatter implements Closeable, Flushable {
      * virtual machine.
      */
     public Formatter() {
-        init(new StringBuilder(), Locale.getDefault());
+        init(new StringBuilder(), Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -1882,7 +1882,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(Appendable a) {
         if (a == null)
             a = new StringBuilder();
-        init(a, Locale.getDefault());
+        init(a, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -1949,7 +1949,7 @@ public final class Formatter implements Closeable, Flushable {
      */
     public Formatter(String fileName) throws FileNotFoundException {
         init(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName))),
-             Locale.getDefault());
+             Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -1985,7 +1985,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(String fileName, String csn)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        this(fileName, csn, Locale.getDefault());
+        this(fileName, csn, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -2057,7 +2057,7 @@ public final class Formatter implements Closeable, Flushable {
      */
     public Formatter(File file) throws FileNotFoundException {
         init(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file))),
-             Locale.getDefault());
+             Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -2093,7 +2093,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(File file, String csn)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        this(file, csn, Locale.getDefault());
+        this(file, csn, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -2152,7 +2152,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(PrintStream ps) {
         if (ps == null)
             throw new NullPointerException();
-        init((Appendable)ps, Locale.getDefault());
+        init((Appendable)ps, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -2171,7 +2171,7 @@ public final class Formatter implements Closeable, Flushable {
      */
     public Formatter(OutputStream os) {
         init(new BufferedWriter(new OutputStreamWriter(os)),
-             Locale.getDefault());
+             Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -2195,7 +2195,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(OutputStream os, String csn)
         throws UnsupportedEncodingException
     {
-        this(os, csn, Locale.getDefault());
+        this(os, csn, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
