@@ -529,7 +529,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 log.error("warnings.and.werror");
             }
         }
-            return log.nerrors;
+        return log.nerrors;
     }
 
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
@@ -868,7 +868,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     /**
      * Parses a list of files.
      */
-   public List<JCCompilationUnit> parseFiles(List<JavaFileObject> fileObjects) throws IOException {
+   public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects) throws IOException {
        if (shouldStop(CompileState.PARSE))
            return List.nil();
 
@@ -981,14 +981,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public JavaCompiler processAnnotations(List<JCCompilationUnit> roots,
                                            List<String> classnames)
-        throws IOException  { // TODO: see TEMP note in JavacProcessingEnvironment
+            throws IOException  { // TODO: see TEMP note in JavacProcessingEnvironment
         if (shouldStop(CompileState.PROCESS)) {
-            // Errors were encountered.  If todo is empty, then the
-            // encountered errors were parse errors.  Otherwise, the
-            // errors were found during the enter phase which should
-            // be ignored when processing annotations.
-
-            if (todo.isEmpty())
+            // Errors were encountered.
+            // If log.unrecoverableError is set, the errors were parse errors
+            // or other errors during enter which cannot be fixed by running
+            // any annotation processors.
+            if (log.unrecoverableError)
                 return this;
         }
 

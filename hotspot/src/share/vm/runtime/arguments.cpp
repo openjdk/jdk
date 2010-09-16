@@ -184,6 +184,8 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "DefaultMaxRAM",       JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
   { "DefaultInitialRAMFraction",
                            JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
+  { "UseDepthFirstScavengeOrder",
+                           JDK_Version::jdk_update(6,22), JDK_Version::jdk(7) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -3001,10 +3003,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();
-  }
-
-  if (PrintFlagsFinal) {
-    CommandLineFlags::printFlags();
   }
 
   // Apply CPU specific policy for the BiasedLocking

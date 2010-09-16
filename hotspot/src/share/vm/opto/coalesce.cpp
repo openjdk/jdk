@@ -780,6 +780,14 @@ bool PhaseConservativeCoalesce::copy_copy( Node *dst_copy, Node *src_copy, Block
   // Number of bits free
   uint rm_size = rm.Size();
 
+  if (UseFPUForSpilling && rm.is_AllStack() ) {
+    // Don't coalesce when frequency difference is large
+    Block *dst_b = _phc._cfg._bbs[dst_copy->_idx];
+    Block *src_def_b = _phc._cfg._bbs[src_def->_idx];
+    if (src_def_b->_freq > 10*dst_b->_freq )
+      return false;
+  }
+
   // If we can use any stack slot, then effective size is infinite
   if( rm.is_AllStack() ) rm_size += 1000000;
   // Incompatible masks, no way to coalesce

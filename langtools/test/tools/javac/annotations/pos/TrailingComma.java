@@ -36,7 +36,7 @@ import java.lang.annotation.*;
 }
 
 
-@TestAnnotation({@SuppressWarnings(),
+@TestAnnotation({@SuppressWarnings({}),
                  @SuppressWarnings({"Beware the ides of March.",}),
                  @SuppressWarnings({"Look both ways", "Before Crossing",}), })
 public class TrailingComma {

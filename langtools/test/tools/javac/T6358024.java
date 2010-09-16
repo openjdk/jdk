@@ -60,7 +60,7 @@ public class T6358024 extends AbstractProcessor {
              new Option[] { new XOption("-XprintRounds"),
                             new Option("-processorpath", "."),
                             new Option("-processor", self) },
-             11);
+             12);
     }
 
     static void test(JavacFileManager fm, JavaFileObject f, Option[] opts, int expect) throws Throwable {

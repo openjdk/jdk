@@ -435,22 +435,22 @@ extern "C" {
   void _Copy_arrayof_conjoint_bytes(HeapWord* from,
                                     HeapWord* to,
                                     size_t    count) {
-    ShouldNotCallThis();
+    memmove(to, from, count);
   }
   void _Copy_arrayof_conjoint_jshorts(HeapWord* from,
                                       HeapWord* to,
                                       size_t    count) {
-    ShouldNotCallThis();
+    memmove(to, from, count * 2);
   }
   void _Copy_arrayof_conjoint_jints(HeapWord* from,
                                     HeapWord* to,
                                     size_t    count) {
-    ShouldNotCallThis();
+    memmove(to, from, count * 4);
   }
   void _Copy_arrayof_conjoint_jlongs(HeapWord* from,
                                      HeapWord* to,
                                      size_t    count) {
-    ShouldNotCallThis();
+    memmove(to, from, count * 8);
   }
 };
 

@@ -482,6 +482,15 @@ void VM_Version::get_processor_features() {
     }
   }
 
+#ifdef COMPILER2
+  if (UseFPUForSpilling) {
+    if (UseSSE < 2) {
+      // Only supported with SSE2+
+      FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+    }
+  }
+#endif
+
   assert(0 <= ReadPrefetchInstr && ReadPrefetchInstr <= 3, "invalid value");
   assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 3, "invalid value");
 
@@ -520,6 +529,11 @@ void VM_Version::get_processor_features() {
     if( supports_sse4_2() && supports_ht() ) { // Nehalem based cpus
       AllocatePrefetchDistance = 192;
       AllocatePrefetchLines = 4;
+#ifdef COMPILER2
+      if (AggressiveOpts && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      }
+#endif
     }
   }
   assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");

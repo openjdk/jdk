@@ -2493,15 +2493,13 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
   }
 
   // Must unlock before calling set_code
+
   // Install the generated code.
   if (nm != NULL) {
     method->set_code(method, nm);
     nm->post_compiled_method_load_event();
   } else {
     // CodeCache is full, disable compilation
-    // Ought to log this but compile log is only per compile thread
-    // and we're some non descript Java thread.
-    MutexUnlocker mu(AdapterHandlerLibrary_lock);
     CompileBroker::handle_full_code_cache();
   }
   return nm;
