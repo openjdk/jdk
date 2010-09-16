@@ -850,25 +850,13 @@ void Compile::Init(int aliaslevel) {
   set_decompile_count(0);
 
   set_do_freq_based_layout(BlockLayoutByFrequency || method_has_option("BlockLayoutByFrequency"));
-  // Compilation level related initialization
-  if (env()->comp_level() == CompLevel_fast_compile) {
-    set_num_loop_opts(Tier1LoopOptsCount);
-    set_do_inlining(Tier1Inline != 0);
-    set_max_inline_size(Tier1MaxInlineSize);
-    set_freq_inline_size(Tier1FreqInlineSize);
-    set_do_scheduling(false);
-    set_do_count_invocations(Tier1CountInvocations);
-    set_do_method_data_update(Tier1UpdateMethodData);
-  } else {
-    assert(env()->comp_level() == CompLevel_full_optimization, "unknown comp level");
-    set_num_loop_opts(LoopOptsCount);
-    set_do_inlining(Inline);
-    set_max_inline_size(MaxInlineSize);
-    set_freq_inline_size(FreqInlineSize);
-    set_do_scheduling(OptoScheduling);
-    set_do_count_invocations(false);
-    set_do_method_data_update(false);
-  }
+  set_num_loop_opts(LoopOptsCount);
+  set_do_inlining(Inline);
+  set_max_inline_size(MaxInlineSize);
+  set_freq_inline_size(FreqInlineSize);
+  set_do_scheduling(OptoScheduling);
+  set_do_count_invocations(false);
+  set_do_method_data_update(false);
 
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>

@@ -45,10 +45,17 @@ void compilationPolicy_init() {
     Unimplemented();
 #endif
     break;
-
+  case 2:
+#ifdef TIERED
+    CompilationPolicy::set_policy(new SimpleThresholdPolicy());
+#else
+    Unimplemented();
+#endif
+    break;
   default:
-    fatal("CompilationPolicyChoice must be in the range: [0-1]");
+    fatal("CompilationPolicyChoice must be in the range: [0-2]");
   }
+  CompilationPolicy::policy()->initialize();
 }
 
 void CompilationPolicy::completed_vm_startup() {
@@ -61,16 +68,16 @@ void CompilationPolicy::completed_vm_startup() {
 // Returns true if m must be compiled before executing it
 // This is intended to force compiles for methods (usually for
 // debugging) that would otherwise be interpreted for some reason.
-bool CompilationPolicy::mustBeCompiled(methodHandle m) {
+bool CompilationPolicy::must_be_compiled(methodHandle m, int comp_level) {
   if (m->has_compiled_code()) return false;       // already compiled
-  if (!canBeCompiled(m))      return false;
+  if (!can_be_compiled(m, comp_level)) return false;
 
   return !UseInterpreter ||                                              // must compile all methods
          (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
 // Returns true if m is allowed to be compiled
-bool CompilationPolicy::canBeCompiled(methodHandle m) {
+bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
 
@@ -83,8 +90,16 @@ bool CompilationPolicy::canBeCompiled(methodHandle m) {
   if (!AbstractInterpreter::can_be_compiled(m)) {
     return false;
   }
+  if (comp_level == CompLevel_all) {
+    return !m->is_not_compilable(CompLevel_simple) && !m->is_not_compilable(CompLevel_full_optimization);
+  } else {
+    return !m->is_not_compilable(comp_level);
+  }
+}
 
-  return !m->is_not_compilable();
+bool CompilationPolicy::is_compilation_enabled() {
+  // NOTE: CompileBroker::should_compile_new_jobs() checks for UseCompiler
+  return !delay_compilation_during_startup() && CompileBroker::should_compile_new_jobs();
 }
 
 #ifndef PRODUCT
@@ -94,7 +109,7 @@ void CompilationPolicy::print_time() {
   tty->print_cr ("  Total: %3.3f sec.", _accumulated_time.seconds());
 }
 
-static void trace_osr_completion(nmethod* osr_nm) {
+void NonTieredCompPolicy::trace_osr_completion(nmethod* osr_nm) {
   if (TraceOnStackReplacement) {
     if (osr_nm == NULL) tty->print_cr("compilation failed");
     else tty->print_cr("nmethod " INTPTR_FORMAT, osr_nm);
@@ -102,7 +117,35 @@ static void trace_osr_completion(nmethod* osr_nm) {
 }
 #endif // !PRODUCT
 
-void CompilationPolicy::reset_counter_for_invocation_event(methodHandle m) {
+void NonTieredCompPolicy::initialize() {
+  // Setup the compiler thread numbers
+  if (CICompilerCountPerCPU) {
+    // Example: if CICompilerCountPerCPU is true, then we get
+    // max(log2(8)-1,1) = 2 compiler threads on an 8-way machine.
+    // May help big-app startup time.
+    _compiler_count = MAX2(log2_intptr(os::active_processor_count())-1,1);
+  } else {
+    _compiler_count = CICompilerCount;
+  }
+}
+
+int NonTieredCompPolicy::compiler_count(CompLevel comp_level) {
+#ifdef COMPILER1
+  if (is_c1_compile(comp_level)) {
+    return _compiler_count;
+  }
+#endif
+
+#ifdef COMPILER2
+  if (is_c2_compile(comp_level)) {
+    return _compiler_count;
+  }
+#endif
+
+  return 0;
+}
+
+void NonTieredCompPolicy::reset_counter_for_invocation_event(methodHandle m) {
   // Make sure invocation and backedge counter doesn't overflow again right away
   // as would be the case for native methods.
 
@@ -114,7 +157,7 @@ void CompilationPolicy::reset_counter_for_invocation_event(methodHandle m) {
   assert(!m->was_never_executed(), "don't reset to 0 -- could be mistaken for never-executed");
 }
 
-void CompilationPolicy::reset_counter_for_back_branch_event(methodHandle m) {
+void NonTieredCompPolicy::reset_counter_for_back_branch_event(methodHandle m) {
   // Delay next back-branch event but pump up invocation counter to triger
   // whole method compilation.
   InvocationCounter* i = m->invocation_counter();
@@ -128,6 +171,185 @@ void CompilationPolicy::reset_counter_for_back_branch_event(methodHandle m) {
   b->set(b->state(), CompileThreshold / 2);
 }
 
+//
+// CounterDecay
+//
+// Interates through invocation counters and decrements them. This
+// is done at each safepoint.
+//
+class CounterDecay : public AllStatic {
+  static jlong _last_timestamp;
+  static void do_method(methodOop m) {
+    m->invocation_counter()->decay();
+  }
+public:
+  static void decay();
+  static bool is_decay_needed() {
+    return (os::javaTimeMillis() - _last_timestamp) > CounterDecayMinIntervalLength;
+  }
+};
+
+jlong CounterDecay::_last_timestamp = 0;
+
+void CounterDecay::decay() {
+  _last_timestamp = os::javaTimeMillis();
+
+  // This operation is going to be performed only at the end of a safepoint
+  // and hence GC's will not be going on, all Java mutators are suspended
+  // at this point and hence SystemDictionary_lock is also not needed.
+  assert(SafepointSynchronize::is_at_safepoint(), "can only be executed at a safepoint");
+  int nclasses = SystemDictionary::number_of_classes();
+  double classes_per_tick = nclasses * (CounterDecayMinIntervalLength * 1e-3 /
+                                        CounterHalfLifeTime);
+  for (int i = 0; i < classes_per_tick; i++) {
+    klassOop k = SystemDictionary::try_get_next_class();
+    if (k != NULL && k->klass_part()->oop_is_instance()) {
+      instanceKlass::cast(k)->methods_do(do_method);
+    }
+  }
+}
+
+// Called at the end of the safepoint
+void NonTieredCompPolicy::do_safepoint_work() {
+  if(UseCounterDecay && CounterDecay::is_decay_needed()) {
+    CounterDecay::decay();
+  }
+}
+
+void NonTieredCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
+  ScopeDesc* sd = trap_scope;
+  for (; !sd->is_top(); sd = sd->sender()) {
+    // Reset ICs of inlined methods, since they can trigger compilations also.
+    sd->method()->invocation_counter()->reset();
+  }
+  InvocationCounter* c = sd->method()->invocation_counter();
+  if (is_osr) {
+    // It was an OSR method, so bump the count higher.
+    c->set(c->state(), CompileThreshold);
+  } else {
+    c->reset();
+  }
+  sd->method()->backedge_counter()->reset();
+}
+
+// This method can be called by any component of the runtime to notify the policy
+// that it's recommended to delay the complation of this method.
+void NonTieredCompPolicy::delay_compilation(methodOop method) {
+  method->invocation_counter()->decay();
+  method->backedge_counter()->decay();
+}
+
+void NonTieredCompPolicy::disable_compilation(methodOop method) {
+  method->invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
+  method->backedge_counter()->set_state(InvocationCounter::wait_for_nothing);
+}
+
+CompileTask* NonTieredCompPolicy::select_task(CompileQueue* compile_queue) {
+  return compile_queue->first();
+}
+
+bool NonTieredCompPolicy::is_mature(methodOop method) {
+  methodDataOop mdo = method->method_data();
+  assert(mdo != NULL, "Should be");
+  uint current = mdo->mileage_of(method);
+  uint initial = mdo->creation_mileage();
+  if (current < initial)
+    return true;  // some sort of overflow
+  uint target;
+  if (ProfileMaturityPercentage <= 0)
+    target = (uint) -ProfileMaturityPercentage;  // absolute value
+  else
+    target = (uint)( (ProfileMaturityPercentage * CompileThreshold) / 100 );
+  return (current >= initial + target);
+}
+
+nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, TRAPS) {
+  assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
+  NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
+  if (JvmtiExport::can_post_interpreter_events()) {
+    assert(THREAD->is_Java_thread(), "Wrong type of thread");
+    if (((JavaThread*)THREAD)->is_interp_only_mode()) {
+      // If certain JVMTI events (e.g. frame pop event) are requested then the
+      // thread is forced to remain in interpreted code. This is
+      // implemented partly by a check in the run_compiled_code
+      // section of the interpreter whether we should skip running
+      // compiled code, and partly by skipping OSR compiles for
+      // interpreted-only threads.
+      if (bci != InvocationEntryBci) {
+        reset_counter_for_back_branch_event(method);
+        return NULL;
+      }
+    }
+  }
+  if (bci == InvocationEntryBci) {
+    // when code cache is full, compilation gets switched off, UseCompiler
+    // is set to false
+    if (!method->has_compiled_code() && UseCompiler) {
+      method_invocation_event(method, CHECK_NULL);
+    } else {
+      // Force counter overflow on method entry, even if no compilation
+      // happened.  (The method_invocation_event call does this also.)
+      reset_counter_for_invocation_event(method);
+    }
+    // compilation at an invocation overflow no longer goes and retries test for
+    // compiled method. We always run the loser of the race as interpreted.
+    // so return NULL
+    return NULL;
+  } else {
+    // counter overflow in a loop => try to do on-stack-replacement
+    nmethod* osr_nm = method->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true);
+    NOT_PRODUCT(trace_osr_request(method, osr_nm, bci));
+    // when code cache is full, we should not compile any more...
+    if (osr_nm == NULL && UseCompiler) {
+      method_back_branch_event(method, bci, CHECK_NULL);
+      osr_nm = method->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true);
+    }
+    if (osr_nm == NULL) {
+      reset_counter_for_back_branch_event(method);
+      return NULL;
+    }
+    return osr_nm;
+  }
+  return NULL;
+}
+
+#ifndef PRODUCT
+void NonTieredCompPolicy::trace_frequency_counter_overflow(methodHandle m, int branch_bci, int bci) {
+  if (TraceInvocationCounterOverflow) {
+    InvocationCounter* ic = m->invocation_counter();
+    InvocationCounter* bc = m->backedge_counter();
+    ResourceMark rm;
+    const char* msg =
+      bci == InvocationEntryBci
+      ? "comp-policy cntr ovfl @ %d in entry of "
+      : "comp-policy cntr ovfl @ %d in loop of ";
+    tty->print(msg, bci);
+    m->print_value();
+    tty->cr();
+    ic->print();
+    bc->print();
+    if (ProfileInterpreter) {
+      if (bci != InvocationEntryBci) {
+        methodDataOop mdo = m->method_data();
+        if (mdo != NULL) {
+          int count = mdo->bci_to_data(branch_bci)->as_JumpData()->taken();
+          tty->print_cr("back branch count = %d", count);
+        }
+      }
+    }
+  }
+}
+
+void NonTieredCompPolicy::trace_osr_request(methodHandle method, nmethod* osr, int bci) {
+  if (TraceOnStackReplacement) {
+    ResourceMark rm;
+    tty->print(osr != NULL ? "Reused OSR entry for " : "Requesting OSR entry for ");
+    method->print_short_name(tty);
+    tty->print_cr(" at bci %d", bci);
+  }
+}
+#endif // !PRODUCT
+
 // SimpleCompPolicy - compile current method
 
 void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
@@ -137,59 +359,28 @@ void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
-  if (!delayCompilationDuringStartup() && canBeCompiled(m) && UseCompiler && CompileBroker::should_compile_new_jobs()) {
+  if (is_compilation_enabled() && can_be_compiled(m)) {
     nmethod* nm = m->code();
     if (nm == NULL ) {
       const char* comment = "count";
-      CompileBroker::compile_method(m, InvocationEntryBci,
+      CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_highest_tier,
                                     m, hot_count, comment, CHECK);
-    } else {
-#ifdef TIERED
-
-      if (nm->is_compiled_by_c1()) {
-        const char* comment = "tier1 overflow";
-        CompileBroker::compile_method(m, InvocationEntryBci,
-                                      m, hot_count, comment, CHECK);
-      }
-#endif // TIERED
     }
   }
 }
 
-void SimpleCompPolicy::method_back_branch_event(methodHandle m, int branch_bci, int loop_top_bci, TRAPS) {
+void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, TRAPS) {
   assert(UseCompiler || CompileTheWorld, "UseCompiler should be set by now.");
 
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (!m->is_not_osr_compilable() && !delayCompilationDuringStartup() && canBeCompiled(m) && CompileBroker::should_compile_new_jobs()) {
-    CompileBroker::compile_method(m, loop_top_bci, m, hot_count, comment, CHECK);
-
-    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(loop_top_bci));)
+  if (is_compilation_enabled() && !m->is_not_osr_compilable() && can_be_compiled(m)) {
+    CompileBroker::compile_method(m, bci, CompLevel_highest_tier,
+                                  m, hot_count, comment, CHECK);
+    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true));)
   }
 }
-
-int SimpleCompPolicy::compilation_level(methodHandle m, int branch_bci)
-{
-#ifdef TIERED
-  if (!TieredCompilation) {
-    return CompLevel_highest_tier;
-  }
-  if (/* m()->tier1_compile_done() && */
-     // QQQ HACK FIX ME set tier1_compile_done!!
-      !m()->is_native()) {
-    // Grab the nmethod so it doesn't go away while it's being queried
-    nmethod* code = m()->code();
-    if (code != NULL && code->is_compiled_by_c1()) {
-      return CompLevel_highest_tier;
-    }
-  }
-  return CompLevel_fast_compile;
-#else
-  return CompLevel_highest_tier;
-#endif // TIERED
-}
-
 // StackWalkCompPolicy - walk up stack to find a suitable method to compile
 
 #ifdef COMPILER2
@@ -204,7 +395,7 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
-  if (m->code() == NULL && !delayCompilationDuringStartup() && canBeCompiled(m) && UseCompiler && CompileBroker::should_compile_new_jobs()) {
+  if (is_compilation_enabled() && m->code() == NULL && can_be_compiled(m)) {
     ResourceMark rm(THREAD);
     JavaThread *thread = (JavaThread*)THREAD;
     frame       fr     = thread->last_frame();
@@ -224,10 +415,6 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
     if (first->top_method()->code() != NULL) {
       // called obsolete method/nmethod -- no need to recompile
       if (TraceCompilationPolicy) tty->print_cr(" --> " INTPTR_FORMAT, first->top_method()->code());
-    } else if (compilation_level(m, InvocationEntryBci) == CompLevel_fast_compile) {
-      // Tier1 compilation policy avaoids stack walking.
-      CompileBroker::compile_method(m, InvocationEntryBci,
-                                    m, hot_count, comment, CHECK);
     } else {
       if (TimeCompilationPolicy) accumulated_time()->start();
       GrowableArray<RFrame*>* stack = new GrowableArray<RFrame*>(50);
@@ -236,52 +423,24 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
       if (TimeCompilationPolicy) accumulated_time()->stop();
       assert(top != NULL, "findTopInlinableFrame returned null");
       if (TraceCompilationPolicy) top->print();
-      CompileBroker::compile_method(top->top_method(), InvocationEntryBci,
+      CompileBroker::compile_method(top->top_method(), InvocationEntryBci, CompLevel_highest_tier,
                                     m, hot_count, comment, CHECK);
     }
   }
 }
 
-void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int branch_bci, int loop_top_bci, TRAPS) {
+void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, TRAPS) {
   assert(UseCompiler || CompileTheWorld, "UseCompiler should be set by now.");
 
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (!m->is_not_osr_compilable() && !delayCompilationDuringStartup() && canBeCompiled(m) && CompileBroker::should_compile_new_jobs()) {
-    CompileBroker::compile_method(m, loop_top_bci, m, hot_count, comment, CHECK);
+  if (is_compilation_enabled() && !m->is_not_osr_compilable() && can_be_compiled(m)) {
+    CompileBroker::compile_method(m, bci, CompLevel_highest_tier, m, hot_count, comment, CHECK);
 
-    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(loop_top_bci));)
+    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true));)
   }
 }
-
-int StackWalkCompPolicy::compilation_level(methodHandle m, int osr_bci)
-{
-  int comp_level = CompLevel_full_optimization;
-  if (TieredCompilation && osr_bci == InvocationEntryBci) {
-    if (CompileTheWorld) {
-      // Under CTW, the first compile is tier1, the second tier2
-      if (m->highest_tier_compile() == CompLevel_none) {
-        comp_level = CompLevel_fast_compile;
-      }
-    } else if (!m->has_osr_nmethod()) {
-      // Before tier1 is done, use invocation_count + backedge_count to
-      // compare against the threshold.  After that, the counters may/will
-      // be reset, so rely on the straight interpreter_invocation_count.
-      if (m->highest_tier_compile() == CompLevel_initial_compile) {
-        if (m->interpreter_invocation_count() < Tier2CompileThreshold) {
-          comp_level = CompLevel_fast_compile;
-        }
-      } else if (m->invocation_count() + m->backedge_count() <
-                 Tier2CompileThreshold) {
-        comp_level = CompLevel_fast_compile;
-      }
-    }
-
-  }
-  return comp_level;
-}
-
 
 RFrame* StackWalkCompPolicy::findTopInlinableFrame(GrowableArray<RFrame*>* stack) {
   // go up the stack until finding a frame that (probably) won't be inlined
@@ -372,7 +531,7 @@ RFrame* StackWalkCompPolicy::findTopInlinableFrame(GrowableArray<RFrame*>* stack
 
     // If the caller method is too big or something then we do not want to
     // compile it just to inline a method
-    if (!canBeCompiled(next_m)) {
+    if (!can_be_compiled(next_m)) {
       msg = "caller cannot be compiled";
       break;
     }

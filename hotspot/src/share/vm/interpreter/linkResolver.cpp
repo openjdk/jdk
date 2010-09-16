@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,12 +83,12 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
   _resolved_method = resolved_method;
   _selected_method = selected_method;
   _vtable_index    = vtable_index;
-  if (CompilationPolicy::mustBeCompiled(selected_method)) {
+  if (CompilationPolicy::must_be_compiled(selected_method)) {
     // This path is unusual, mostly used by the '-Xcomp' stress test mode.
 
-    // Note: with several active threads, the mustBeCompiled may be true
-    //       while canBeCompiled is false; remove assert
-    // assert(CompilationPolicy::canBeCompiled(selected_method), "cannot compile");
+    // Note: with several active threads, the must_be_compiled may be true
+    //       while can_be_compiled is false; remove assert
+    // assert(CompilationPolicy::can_be_compiled(selected_method), "cannot compile");
     if (THREAD->is_Compiler_thread()) {
       // don't force compilation, resolve was on behalf of compiler
       return;
@@ -104,7 +104,8 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
       return;
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
-                                  methodHandle(), 0, "mustBeCompiled", CHECK);
+                                  CompLevel_initial_compile,
+                                  methodHandle(), 0, "must_be_compiled", CHECK);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,8 @@ class NoRefDiscovery: StackObj {
   bool _was_discovering_refs;
  public:
   NoRefDiscovery(ReferenceProcessor* rp) : _rp(rp) {
-    if (_was_discovering_refs = _rp->discovery_enabled()) {
+    _was_discovering_refs = _rp->discovery_enabled();
+    if (_was_discovering_refs) {
       _rp->disable_discovery();
     }
   }
