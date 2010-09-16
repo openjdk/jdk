@@ -71,6 +71,14 @@
 #define NOT_COMPILER2(code) code
 #endif // COMPILER2
 
+#ifdef TIERED
+#define TIERED_ONLY(code) code
+#define NOT_TIERED(code)
+#else
+#define TIERED_ONLY(code)
+#define NOT_TIERED(code) code
+#endif // TIERED
+
 
 // PRODUCT variant
 #ifdef PRODUCT

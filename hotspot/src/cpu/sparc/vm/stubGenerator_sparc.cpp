@@ -1609,7 +1609,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_clean_int(count, O3);     // Make sure 'count' is clean int.
 
     Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
-    Label L_fill_2_bytes, L_fill_4_bytes, L_fill_32_bytes;
+    Label L_fill_2_bytes, L_fill_elements, L_fill_32_bytes;
 
     int shift = -1;
     switch (t) {
@@ -1635,8 +1635,8 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (t == T_SHORT) {
       // Zero extend value
-      __ sethi(0xffff0000, O3);
-      __ andn(value, O3, value);
+      __ sllx(value, 48, value);
+      __ srlx(value, 48, value);
     }
     if (t == T_BYTE || t == T_SHORT) {
       __ sllx(value, 16, O3);
@@ -1644,8 +1644,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ cmp(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
-    __ brx(Assembler::lessUnsigned, false, Assembler::pn, L_fill_4_bytes); // use unsigned cmp
-    __ delayed()->andcc(count, 1<<shift, G0);
+    __ brx(Assembler::lessUnsigned, false, Assembler::pn, L_fill_elements); // use unsigned cmp
+    __ delayed()->andcc(count, 1, G0);
 
     if (!aligned && (t == T_BYTE || t == T_SHORT)) {
       // align source address at 4 bytes address boundary
@@ -1683,12 +1683,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    Label L_check_fill_8_bytes;
-    // Fill 32-byte chunks
-    __ subcc(count, 8 << shift, count);
-    __ brx(Assembler::less, false, Assembler::pt, L_check_fill_8_bytes);
-    __ delayed()->nop();
-
     if (t == T_INT) {
       // Zero extend value
       __ srl(value, 0, value);
@@ -1698,7 +1692,13 @@ class StubGenerator: public StubCodeGenerator {
       __ or3(value, O3, value);
     }
 
-    Label L_fill_32_bytes_loop;
+    Label L_check_fill_8_bytes;
+    // Fill 32-byte chunks
+    __ subcc(count, 8 << shift, count);
+    __ brx(Assembler::less, false, Assembler::pt, L_check_fill_8_bytes);
+    __ delayed()->nop();
+
+    Label L_fill_32_bytes_loop, L_fill_4_bytes;
     __ align(16);
     __ BIND(L_fill_32_bytes_loop);
 
@@ -1730,6 +1730,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // fill trailing 4 bytes
     __ andcc(count, 1<<shift, G0);  // in delay slot of branches
+    if (t == T_INT) {
+      __ BIND(L_fill_elements);
+    }
     __ BIND(L_fill_4_bytes);
     __ brx(Assembler::zero, false, Assembler::pt, L_fill_2_bytes);
     if (t == T_BYTE || t == T_SHORT) {
@@ -1762,7 +1765,48 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ BIND(L_exit);
     __ retl();
-    __ delayed()->mov(G0, O0); // return 0
+    __ delayed()->nop();
+
+    // Handle copies less than 8 bytes.  Int is handled elsewhere.
+    if (t == T_BYTE) {
+      __ BIND(L_fill_elements);
+      Label L_fill_2, L_fill_4;
+      // in delay slot __ andcc(count, 1, G0);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_2);
+      __ delayed()->andcc(count, 2, G0);
+      __ stb(value, to, 0);
+      __ inc(to, 1);
+      __ BIND(L_fill_2);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_4);
+      __ delayed()->andcc(count, 4, G0);
+      __ stb(value, to, 0);
+      __ stb(value, to, 1);
+      __ inc(to, 2);
+      __ BIND(L_fill_4);
+      __ brx(Assembler::zero, false, Assembler::pt, L_exit);
+      __ delayed()->nop();
+      __ stb(value, to, 0);
+      __ stb(value, to, 1);
+      __ stb(value, to, 2);
+      __ retl();
+      __ delayed()->stb(value, to, 3);
+    }
+
+    if (t == T_SHORT) {
+      Label L_fill_2;
+      __ BIND(L_fill_elements);
+      // in delay slot __ andcc(count, 1, G0);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_2);
+      __ delayed()->andcc(count, 2, G0);
+      __ sth(value, to, 0);
+      __ inc(to, 2);
+      __ BIND(L_fill_2);
+      __ brx(Assembler::zero, false, Assembler::pt, L_exit);
+      __ delayed()->nop();
+      __ sth(value, to, 0);
+      __ retl();
+      __ delayed()->sth(value, to, 2);
+    }
     return start;
   }
 

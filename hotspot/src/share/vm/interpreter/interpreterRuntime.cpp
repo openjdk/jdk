@@ -200,6 +200,7 @@ IRT_END
 void InterpreterRuntime::note_trap(JavaThread* thread, int reason, TRAPS) {
   assert(ProfileTraps, "call me only if profiling");
   methodHandle trap_method(thread, method(thread));
+
   if (trap_method.not_null()) {
     methodDataHandle trap_mdo(thread, trap_method->method_data());
     if (trap_mdo.is_null()) {
@@ -777,43 +778,6 @@ IRT_END
 // Miscellaneous
 
 
-#ifndef PRODUCT
-static void trace_frequency_counter_overflow(methodHandle m, int branch_bci, int bci, address branch_bcp) {
-  if (TraceInvocationCounterOverflow) {
-    InvocationCounter* ic = m->invocation_counter();
-    InvocationCounter* bc = m->backedge_counter();
-    ResourceMark rm;
-    const char* msg =
-      branch_bcp == NULL
-      ? "comp-policy cntr ovfl @ %d in entry of "
-      : "comp-policy cntr ovfl @ %d in loop of ";
-    tty->print(msg, bci);
-    m->print_value();
-    tty->cr();
-    ic->print();
-    bc->print();
-    if (ProfileInterpreter) {
-      if (branch_bcp != NULL) {
-        methodDataOop mdo = m->method_data();
-        if (mdo != NULL) {
-          int count = mdo->bci_to_data(branch_bci)->as_JumpData()->taken();
-          tty->print_cr("back branch count = %d", count);
-        }
-      }
-    }
-  }
-}
-
-static void trace_osr_request(methodHandle method, nmethod* osr, int bci) {
-  if (TraceOnStackReplacement) {
-    ResourceMark rm;
-    tty->print(osr != NULL ? "Reused OSR entry for " : "Requesting OSR entry for ");
-    method->print_short_name(tty);
-    tty->print_cr(" at bci %d", bci);
-  }
-}
-#endif // !PRODUCT
-
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
   nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
   assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
@@ -826,7 +790,7 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
     frame fr = thread->last_frame();
     methodOop method =  fr.interpreter_frame_method();
     int bci = method->bci_from(fr.interpreter_frame_bcp());
-    nm = method->lookup_osr_nmethod_for(bci);
+    nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
   }
   return nm;
 }
@@ -840,74 +804,32 @@ IRT_ENTRY(nmethod*,
   frame fr = thread->last_frame();
   assert(fr.is_interpreted_frame(), "must come from interpreter");
   methodHandle method(thread, fr.interpreter_frame_method());
-  const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : 0;
-  const int bci = method->bci_from(fr.interpreter_frame_bcp());
-  NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci, branch_bcp);)
+  const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
+  const int bci = branch_bcp != NULL ? method->bci_from(fr.interpreter_frame_bcp()) : InvocationEntryBci;
 
-  if (JvmtiExport::can_post_interpreter_events()) {
-    if (thread->is_interp_only_mode()) {
-      // If certain JVMTI events (e.g. frame pop event) are requested then the
-      // thread is forced to remain in interpreted code. This is
-      // implemented partly by a check in the run_compiled_code
-      // section of the interpreter whether we should skip running
-      // compiled code, and partly by skipping OSR compiles for
-      // interpreted-only threads.
-      if (branch_bcp != NULL) {
-        CompilationPolicy::policy()->reset_counter_for_back_branch_event(method);
-        return NULL;
-      }
-    }
-  }
+  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, thread);
 
-  if (branch_bcp == NULL) {
-    // when code cache is full, compilation gets switched off, UseCompiler
-    // is set to false
-    if (!method->has_compiled_code() && UseCompiler) {
-      CompilationPolicy::policy()->method_invocation_event(method, CHECK_NULL);
-    } else {
-      // Force counter overflow on method entry, even if no compilation
-      // happened.  (The method_invocation_event call does this also.)
-      CompilationPolicy::policy()->reset_counter_for_invocation_event(method);
-    }
-    // compilation at an invocation overflow no longer goes and retries test for
-    // compiled method. We always run the loser of the race as interpreted.
-    // so return NULL
-    return NULL;
-  } else {
-    // counter overflow in a loop => try to do on-stack-replacement
-    nmethod* osr_nm = method->lookup_osr_nmethod_for(bci);
-    NOT_PRODUCT(trace_osr_request(method, osr_nm, bci);)
-    // when code cache is full, we should not compile any more...
-    if (osr_nm == NULL && UseCompiler) {
-      const int branch_bci = method->bci_from(branch_bcp);
-      CompilationPolicy::policy()->method_back_branch_event(method, branch_bci, bci, CHECK_NULL);
-      osr_nm = method->lookup_osr_nmethod_for(bci);
-    }
-    if (osr_nm == NULL) {
-      CompilationPolicy::policy()->reset_counter_for_back_branch_event(method);
-      return NULL;
-    } else {
-      // We may need to do on-stack replacement which requires that no
-      // monitors in the activation are biased because their
-      // BasicObjectLocks will need to migrate during OSR. Force
-      // unbiasing of all monitors in the activation now (even though
-      // the OSR nmethod might be invalidated) because we don't have a
-      // safepoint opportunity later once the migration begins.
-      if (UseBiasedLocking) {
-        ResourceMark rm;
-        GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-        for( BasicObjectLock *kptr = fr.interpreter_frame_monitor_end();
-             kptr < fr.interpreter_frame_monitor_begin();
-             kptr = fr.next_monitor_in_interpreter_frame(kptr) ) {
-          if( kptr->obj() != NULL ) {
-            objects_to_revoke->append(Handle(THREAD, kptr->obj()));
-          }
+  if (osr_nm != NULL) {
+    // We may need to do on-stack replacement which requires that no
+    // monitors in the activation are biased because their
+    // BasicObjectLocks will need to migrate during OSR. Force
+    // unbiasing of all monitors in the activation now (even though
+    // the OSR nmethod might be invalidated) because we don't have a
+    // safepoint opportunity later once the migration begins.
+    if (UseBiasedLocking) {
+      ResourceMark rm;
+      GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
+      for( BasicObjectLock *kptr = fr.interpreter_frame_monitor_end();
+           kptr < fr.interpreter_frame_monitor_begin();
+           kptr = fr.next_monitor_in_interpreter_frame(kptr) ) {
+        if( kptr->obj() != NULL ) {
+          objects_to_revoke->append(Handle(THREAD, kptr->obj()));
         }
-        BiasedLocking::revoke(objects_to_revoke);
       }
-      return osr_nm;
+      BiasedLocking::revoke(objects_to_revoke);
     }
   }
+  return osr_nm;
 IRT_END
 
 IRT_LEAF(jint, InterpreterRuntime::bcp_to_di(methodOopDesc* method, address cur_bcp))
