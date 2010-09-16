@@ -1544,13 +1544,13 @@ class CommandLineFlags {
           "Use BinaryTreeDictionary as default in the CMS generation")      \
                                                                             \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
-          "Replenish and indexed free list with this number of chunks")     \
+          "Replenish an indexed free list with this number of chunks")     \
                                                                             \
   product(bool, CMSReplenishIntermediate, true,                             \
           "Replenish all intermediate free-list caches")                    \
                                                                             \
   product(bool, CMSSplitIndexedFreeListBlocks, true,                        \
-          "When satisfying batched demand, splot blocks from the "          \
+          "When satisfying batched demand, split blocks from the "          \
           "IndexedFreeList whose size is a multiple of requested size")     \
                                                                             \
   product(bool, CMSLoopWarn, false,                                         \
