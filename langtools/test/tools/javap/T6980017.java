@@ -39,7 +39,7 @@ public class T6980017 {
         String[] args = {
             "-v",
             "-XDdetails:source",
-            "java.lang.String"
+            "java.lang.Object"
         };
 
         StringWriter sw = new StringWriter();

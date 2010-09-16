@@ -182,6 +182,16 @@ public abstract class AbstractTreeScannerTest {
     }
 
     /**
+     * Report an error. When the program is complete, the program will either
+     * exit or throw an Error if any errors have been reported.
+     * @param msg the error message
+     */
+    void error(JavaFileObject file, String msg) {
+        System.err.println(file.getName() + ": " + msg);
+        errors++;
+    }
+
+    /**
      *  Report an error for a specific tree node.
      *  @param file the source file for the tree
      *  @param t    the tree node
@@ -197,7 +207,7 @@ public abstract class AbstractTreeScannerTest {
      */
     String trim(Tree tree, int len) {
         JCTree t = (JCTree) tree;
-        String s = t.toString().replaceAll("[\r\n]+", " ").replaceAll(" +", " ");
+        String s = t.toString().replaceAll("\\s+", " ");
         return (s.length() < len) ? s : s.substring(0, len);
     }
 

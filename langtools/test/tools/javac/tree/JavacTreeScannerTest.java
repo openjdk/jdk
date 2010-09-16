@@ -89,12 +89,13 @@ public class JavacTreeScannerTest extends AbstractTreeScannerTest {
             scan(tree);
             expect = new HashSet<JCTree>();
             reflectiveScan(tree);
+
             if (found.equals(expect)) {
-                System.err.println(found.size() + " trees compared OK");
+                //System.err.println(sourcefile.getName() + ": trees compared OK");
                 return found.size();
             }
 
-            error("Differences found for " + tree.sourcefile.getName());
+            error(sourcefile, "differences found");
 
             if (found.size() != expect.size())
                 error("Size mismatch; found: " + found.size() + ", expected: " + expect.size());
@@ -103,13 +104,13 @@ public class JavacTreeScannerTest extends AbstractTreeScannerTest {
             missing.addAll(expect);
             missing.removeAll(found);
             for (JCTree t: missing)
-                error(tree.sourcefile, t, "missing");
+                error(sourcefile, t, "missing");
 
             Set<JCTree> excess = new HashSet<JCTree>();
             excess.addAll(found);
             excess.removeAll(expect);
             for (JCTree t: excess)
-                error(tree.sourcefile, t, "unexpected");
+                error(sourcefile, t, "unexpected");
 
             return 0;
         }
@@ -119,7 +120,7 @@ public class JavacTreeScannerTest extends AbstractTreeScannerTest {
         public void scan(JCTree tree) {
             if (tree == null)
                 return;
-            System.err.println("FOUND: " + tree.getTag() + " " + trim(tree, 64));
+            //System.err.println("FOUND: " + tree.getTag() + " " + trim(tree, 64));
             found.add(tree);
             super.scan(tree);
         }
@@ -130,7 +131,7 @@ public class JavacTreeScannerTest extends AbstractTreeScannerTest {
                 return;
             if (o instanceof JCTree) {
                 JCTree tree = (JCTree) o;
-                System.err.println("EXPECT: " + tree.getTag() + " " + trim(tree, 64));
+                //System.err.println("EXPECT: " + tree.getTag() + " " + trim(tree, 64));
                 expect.add(tree);
                 for (Field f: getFields(tree)) {
                     try {
