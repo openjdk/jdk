@@ -91,12 +91,13 @@ public class SourceTreeScannerTest extends AbstractTreeScannerTest {
             scan(tree, null);
             expect = new HashSet<Tree>();
             reflectiveScan(tree);
+
             if (found.equals(expect)) {
-                System.err.println(found.size() + " trees compared OK");
+                //System.err.println(sourcefile.getName() + ": trees compared OK");
                 return found.size();
             }
 
-            error("Differences found for " + tree.sourcefile.getName());
+            error(sourcefile.getName() + ": differences found");
 
             if (found.size() != expect.size())
                 error("Size mismatch; found: " + found.size() + ", expected: " + expect.size());
@@ -105,13 +106,13 @@ public class SourceTreeScannerTest extends AbstractTreeScannerTest {
             missing.addAll(expect);
             missing.removeAll(found);
             for (Tree t: missing)
-                error(tree.sourcefile, t, "missing");
+                error(sourcefile, t, "missing");
 
             Set<Tree> excess = new HashSet<Tree>();
             excess.addAll(found);
             excess.removeAll(expect);
             for (Tree t: excess)
-                error(tree.sourcefile, t, "unexpected");
+                error(sourcefile, t, "unexpected");
 
             return 0;
         }
@@ -121,7 +122,7 @@ public class SourceTreeScannerTest extends AbstractTreeScannerTest {
         public Void scan(Tree tree, Void ignore) {
             if (tree == null)
                 return null;
-            System.err.println("FOUND: " + tree.getKind() + " " + trim(tree, 64));
+            //System.err.println("FOUND: " + tree.getKind() + " " + trim(tree, 64));
             found.add(tree);
             return super.scan(tree, ignore);
         }
@@ -132,7 +133,7 @@ public class SourceTreeScannerTest extends AbstractTreeScannerTest {
                 return;
             if (o instanceof JCTree) {
                 JCTree tree = (JCTree) o;
-                System.err.println("EXPECT: " + tree.getKind() + " " + trim(tree, 64));
+                //System.err.println("EXPECT: " + tree.getKind() + " " + trim(tree, 64));
                 expect.add(tree);
                 for (Field f: getFields(tree)) {
                     if (TypeBoundKind.class.isAssignableFrom(f.getType())) {
