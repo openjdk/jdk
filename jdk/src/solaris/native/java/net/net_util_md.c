@@ -61,6 +61,7 @@
 
 getaddrinfo_f getaddrinfo_ptr = NULL;
 freeaddrinfo_f freeaddrinfo_ptr = NULL;
+gai_strerror_f gai_strerror_ptr = NULL;
 getnameinfo_f getnameinfo_ptr = NULL;
 
 /*
@@ -342,17 +343,46 @@ jint  IPv6_supported()
     freeaddrinfo_ptr = (freeaddrinfo_f)
         JVM_FindLibraryEntry(RTLD_DEFAULT, "freeaddrinfo");
 
+    gai_strerror_ptr = (gai_strerror_f)
+        JVM_FindLibraryEntry(RTLD_DEFAULT, "gai_strerror");
+
     getnameinfo_ptr = (getnameinfo_f)
         JVM_FindLibraryEntry(RTLD_DEFAULT, "getnameinfo");
 
     if (freeaddrinfo_ptr == NULL || getnameinfo_ptr == NULL) {
-        /* Wee need all 3 of them */
+        /* We need all 3 of them */
         getaddrinfo_ptr = NULL;
     }
 
     close(fd);
     return JNI_TRUE;
 #endif /* AF_INET6 */
+}
+
+void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
+                                           const char* hostname,
+                                           int gai_error)
+{
+    const char *format = "%s: %s";
+    const char *error_string =
+        (gai_strerror_ptr == NULL) ? NULL : (*gai_strerror_ptr)(gai_error);
+    if (error_string == NULL)
+        error_string = "unknown error";
+
+    int size = strlen(format) + strlen(hostname) + strlen(error_string) + 2;
+    char *buf = (char *) malloc(size);
+    if (buf) {
+        sprintf(buf, format, hostname, error_string);
+        jstring s = JNU_NewStringPlatform(env, buf);
+        if (s != NULL) {
+            jobject x = JNU_NewObjectByName(env,
+                                            "java/net/UnknownHostException",
+                                            "(Ljava/lang/String;)V", s);
+            if (x != NULL)
+                (*env)->Throw(env, x);
+        }
+        free(buf);
+    }
 }
 
 void
