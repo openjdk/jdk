@@ -33,6 +33,8 @@ import java.math.*;
 import java.util.*;
 
 import javax.sql.rowset.*;
+import javax.sql.rowset.spi.SyncProvider;
+import javax.sql.rowset.spi.SyncProviderException;
 
 /**
  * The standard implementation of the <code>JoinRowSet</code>
@@ -4309,6 +4311,27 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      */
      public CachedRowSet createCopySchema() throws SQLException {
          return crsInternal.createCopySchema();
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public void setSyncProvider(String providerStr) throws SQLException {
+         crsInternal.setSyncProvider(providerStr);
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public void acceptChanges() throws SyncProviderException {
+         crsInternal.acceptChanges();
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public SyncProvider getSyncProvider() throws SQLException {
+        return crsInternal.getSyncProvider();
      }
 
     /**
