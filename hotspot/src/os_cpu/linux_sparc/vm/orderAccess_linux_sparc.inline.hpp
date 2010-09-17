@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ inline void OrderAccess::acquire() {
 }
 
 inline void OrderAccess::release() {
-  jint* dummy = (jint*)&dummy;
-  __asm__ volatile("stw %%g0, [%0]" : : "r" (dummy) : "memory");
+  jint* local_dummy = (jint*)&local_dummy;
+  __asm__ volatile("stw %%g0, [%0]" : : "r" (local_dummy) : "memory");
 }
 
 inline void OrderAccess::fence() {
