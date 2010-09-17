@@ -889,7 +889,12 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                     success = false;
                 } else {
                     tWriter = (TransactionalWriter)rowSetWriter;
-                    ((CachedRowSetWriter)tWriter).commit(this, updateOnInsert);
+                    if (tWriter instanceof CachedRowSetWriter) {
+                        ((CachedRowSetWriter)tWriter).commit(this, updateOnInsert);
+                    } else {
+                        tWriter.commit();
+                    }
+
                     success = true;
                 }
             }
