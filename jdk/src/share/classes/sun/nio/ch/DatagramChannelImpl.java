@@ -536,9 +536,11 @@ class DatagramChannelImpl
         }
     }
 
-    private long read0(ByteBuffer[] bufs) throws IOException {
-        if (bufs == null)
-            throw new NullPointerException();
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
+            throw new IndexOutOfBoundsException();
         synchronized (readLock) {
             synchronized (stateLock) {
                 ensureOpen();
@@ -552,7 +554,7 @@ class DatagramChannelImpl
                     return 0;
                 readerThread = NativeThread.current();
                 do {
-                    n = IOUtil.read(fd, bufs, nd);
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -561,15 +563,6 @@ class DatagramChannelImpl
                 assert IOStatus.check(n);
             }
         }
-    }
-
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return read0(Util.subsequence(dsts, offset, length));
     }
 
     public int write(ByteBuffer buf) throws IOException {
@@ -599,9 +592,11 @@ class DatagramChannelImpl
         }
     }
 
-    private long write0(ByteBuffer[] bufs) throws IOException {
-        if (bufs == null)
-            throw new NullPointerException();
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
+            throw new IndexOutOfBoundsException();
         synchronized (writeLock) {
             synchronized (stateLock) {
                 ensureOpen();
@@ -615,7 +610,7 @@ class DatagramChannelImpl
                     return 0;
                 writerThread = NativeThread.current();
                 do {
-                    n = IOUtil.write(fd, bufs, nd);
+                    n = IOUtil.write(fd, srcs, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -624,15 +619,6 @@ class DatagramChannelImpl
                 assert IOStatus.check(n);
             }
         }
-    }
-
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-            throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return write0(Util.subsequence(srcs, offset, length));
     }
 
     protected void implConfigureBlocking(boolean block) throws IOException {
