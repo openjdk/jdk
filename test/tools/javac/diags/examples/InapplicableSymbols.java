@@ -21,14 +21,12 @@
  * questions.
  */
 
-// key: compiler.misc.incompatible.types.1
-// key: compiler.misc.infer.no.conforming.instance.exists
-// key: compiler.err.prob.found.req
+// key: compiler.err.cant.apply.symbols
+// key: compiler.misc.arg.length.mismatch
+// key: compiler.misc.inapplicable.method
 
-class IncompatibleTypes1<V> {
-    <T extends Integer & Runnable> IncompatibleTypes1<T> m() {
-        return null;
-    }
-
-    IncompatibleTypes1<? super String> o = m();
+class ExplicitParamsDoNotConformToBounds {
+    void m(int i1) {}
+    void m(int i1, int i2) {}
+    { this.m(); }
 }

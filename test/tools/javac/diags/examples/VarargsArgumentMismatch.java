@@ -21,14 +21,10 @@
  * questions.
  */
 
-// key: compiler.misc.incompatible.types.1
-// key: compiler.misc.infer.no.conforming.instance.exists
-// key: compiler.err.prob.found.req
+// key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.varargs.argument.mismatch
 
-class IncompatibleTypes1<V> {
-    <T extends Integer & Runnable> IncompatibleTypes1<T> m() {
-        return null;
-    }
-
-    IncompatibleTypes1<? super String> o = m();
+class VarargsArgumentMismatch {
+    void m(String s, Integer... is) {}
+    { this.m("1", "2", "3"); }
 }

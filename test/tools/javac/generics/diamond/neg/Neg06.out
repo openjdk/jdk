@@ -1,4 +1,4 @@
-Neg06.java:18:36: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.IFoo), (compiler.misc.no.conforming.instance.exists: X, Neg06.IFoo<X>, Neg06.ISuperFoo<java.lang.String>)
-Neg06.java:19:37: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.no.conforming.instance.exists: X, Neg06.CFoo<X>, Neg06.CSuperFoo<java.lang.String>)
-Neg06.java:20:37: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.no.conforming.instance.exists: X, Neg06.CFoo<X>, Neg06.CSuperFoo<java.lang.String>)
+Neg06.java:18:36: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.IFoo), (compiler.misc.infer.no.conforming.instance.exists: X, Neg06.IFoo<X>, Neg06.ISuperFoo<java.lang.String>)
+Neg06.java:19:37: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.infer.no.conforming.instance.exists: X, Neg06.CFoo<X>, Neg06.CSuperFoo<java.lang.String>)
+Neg06.java:20:37: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.infer.no.conforming.instance.exists: X, Neg06.CFoo<X>, Neg06.CSuperFoo<java.lang.String>)
 3 errors
