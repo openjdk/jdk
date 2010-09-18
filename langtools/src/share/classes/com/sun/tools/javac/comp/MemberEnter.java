@@ -67,6 +67,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Check chk;
     private final Attr attr;
     private final Symtab syms;
+    private final Scope.ScopeCounter scopeCounter;
     private final TreeMaker make;
     private final ClassReader reader;
     private final Todo todo;
@@ -92,6 +93,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         chk = Check.instance(context);
         attr = Attr.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         make = TreeMaker.instance(context);
         reader = ClassReader.instance(context);
         todo = Todo.instance(context);
@@ -1087,7 +1089,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
 
     private Env<AttrContext> baseEnv(JCClassDecl tree, Env<AttrContext> env) {
-        Scope baseScope = new Scope(tree.sym);
+        Scope baseScope = new Scope.ClassScope(tree.sym, scopeCounter);
         //import already entered local classes into base scope
         for (Scope.Entry e = env.outer.info.scope.elems ; e != null ; e = e.sibling) {
             if (e.sym.isLocal()) {
