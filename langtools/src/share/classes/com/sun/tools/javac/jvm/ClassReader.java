@@ -122,6 +122,9 @@ public class ClassReader implements Completer {
     /** The symbol table. */
     Symtab syms;
 
+    /** The scope counter */
+    Scope.ScopeCounter scopeCounter;
+
     Types types;
 
     /** The name table. */
@@ -244,6 +247,7 @@ public class ClassReader implements Completer {
 
         names = Names.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null)
@@ -1984,7 +1988,7 @@ public class ClassReader implements Completer {
         ClassType ct = (ClassType)c.type;
 
         // allocate scope for members
-        c.members_field = new Scope(c);
+        c.members_field = new Scope.ClassScope(c, scopeCounter);
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);
