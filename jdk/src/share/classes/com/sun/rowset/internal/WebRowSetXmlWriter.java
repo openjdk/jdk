@@ -248,7 +248,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             String strProvider = strProviderInstance.substring(0, (caller.getSyncProvider()).toString().indexOf("@"));
 
             propString("sync-provider-name", strProvider);
-            propString("sync-provider-vendor", "Sun Microsystems Inc.");
+            propString("sync-provider-vendor", "Oracle Corporation");
             propString("sync-provider-version", "1.0");
             propInteger("sync-provider-grade", caller.getSyncProvider().getProviderGrade());
             propInteger("data-source-lock", caller.getSyncProvider().getDataSourceLock());
