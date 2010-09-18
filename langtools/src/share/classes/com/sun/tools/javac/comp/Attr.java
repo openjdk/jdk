@@ -1422,7 +1422,8 @@ public class Attr extends JCTree.Visitor {
 
             // Compute the result type.
             Type restype = mtype.getReturnType();
-            assert restype.tag != WILDCARD : mtype;
+            if (restype.tag == WILDCARD)
+                throw new AssertionError(mtype);
 
             // as a special case, array.clone() has a result that is
             // the same as static type of the array being cloned
