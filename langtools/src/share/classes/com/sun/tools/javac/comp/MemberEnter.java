@@ -927,7 +927,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 tp.accept(new TypeAnnotate(baseEnv));
             tree.accept(new TypeAnnotate(env));
 
-            chk.checkNonCyclic(tree.pos(), c.type);
+            chk.checkNonCyclicDecl(tree);
 
             attr.attribTypeVariables(tree.typarams, baseEnv);
 
