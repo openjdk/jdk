@@ -583,10 +583,13 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 #endif
 
     guarantee(parallel_marking_threads() > 0, "peace of mind");
-    _parallel_workers = new WorkGang("G1 Parallel Marking Threads",
-                                     (int) parallel_marking_threads(), false, true);
-    if (_parallel_workers == NULL)
+    _parallel_workers = new FlexibleWorkGang("G1 Parallel Marking Threads",
+         (int) _parallel_marking_threads, false, true);
+    if (_parallel_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");
+    } else {
+      _parallel_workers->initialize_workers();
+    }
   }
 
   // so that the call below can read a sensible value
@@ -1451,7 +1454,7 @@ public:
                                   _bm, _g1h->concurrent_mark(),
                                   _region_bm, _card_bm);
     calccl.no_yield();
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&calccl, i,
                                             HeapRegion::FinalCountClaimValue);
     } else {
@@ -1531,7 +1534,7 @@ public:
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h,
                                            &_par_cleanup_thread_state[i]->list,
                                            i);
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&g1_note_end, i,
                                             HeapRegion::NoteEndClaimValue);
     } else {
@@ -1575,7 +1578,7 @@ public:
   {}
 
   void work(int i) {
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1rs->scrub_par(_region_bm, _card_bm, i,
                        HeapRegion::ScrubRemSetClaimValue);
     } else {
@@ -1647,7 +1650,7 @@ void ConcurrentMark::cleanup() {
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
                                         &_region_bm, &_card_bm);
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     assert(g1h->check_heap_region_claim_values(
                                                HeapRegion::InitialClaimValue),
            "sanity check");
@@ -1695,7 +1698,7 @@ void ConcurrentMark::cleanup() {
   // Note end of marking in all heap regions.
   double note_end_start = os::elapsedTime();
   G1ParNoteEndTask g1_par_note_end_task(g1h, _par_cleanup_thread_state);
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     int n_workers = g1h->workers()->total_workers();
     g1h->set_par_threads(n_workers);
     g1h->workers()->run_task(&g1_par_note_end_task);
@@ -1720,7 +1723,7 @@ void ConcurrentMark::cleanup() {
   if (G1ScrubRemSets) {
     double rs_scrub_start = os::elapsedTime();
     G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm);
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       int n_workers = g1h->workers()->total_workers();
       g1h->set_par_threads(n_workers);
       g1h->workers()->run_task(&g1_par_scrub_rs_task);
@@ -1934,7 +1937,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     G1CollectedHeap::StrongRootsScope srs(g1h);
     // this is remark, so we'll use up all available threads
     int active_workers = ParallelGCThreads;
@@ -3369,14 +3372,14 @@ void CMTask::drain_satb_buffers() {
 
   CMObjectClosure oc(this);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  if (ParallelGCThreads > 0)
+  if (G1CollectedHeap::use_parallel_gc_threads())
     satb_mq_set.set_par_closure(_task_id, &oc);
   else
     satb_mq_set.set_closure(&oc);
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     while (!has_aborted() &&
            satb_mq_set.par_apply_closure_to_completed_buffer(_task_id)) {
       if (_cm->verbose_medium())
@@ -3396,7 +3399,7 @@ void CMTask::drain_satb_buffers() {
 
   if (!concurrent() && !has_aborted()) {
     // We should only do this during remark.
-    if (ParallelGCThreads > 0)
+    if (G1CollectedHeap::use_parallel_gc_threads())
       satb_mq_set.par_iterate_closure_all_threads(_task_id);
     else
       satb_mq_set.iterate_closure_all_threads();
@@ -3408,7 +3411,7 @@ void CMTask::drain_satb_buffers() {
          concurrent() ||
          satb_mq_set.completed_buffers_num() == 0, "invariant");
 
-  if (ParallelGCThreads > 0)
+  if (G1CollectedHeap::use_parallel_gc_threads())
     satb_mq_set.set_par_closure(_task_id, NULL);
   else
     satb_mq_set.set_closure(NULL);

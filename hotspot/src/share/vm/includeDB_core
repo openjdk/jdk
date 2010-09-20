@@ -4721,6 +4721,7 @@ workgroup.cpp                           allocation.inline.hpp
 workgroup.cpp                           os.hpp
 workgroup.cpp                           workgroup.hpp
 
+workgroup.hpp                           taskqueue.hpp
 workgroup.hpp                           thread_<os_family>.inline.hpp
 
 xmlstream.cpp                           allocation.hpp

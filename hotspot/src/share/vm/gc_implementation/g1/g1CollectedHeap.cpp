@@ -961,7 +961,8 @@ void G1CollectedHeap::do_collection(bool explicit_gc,
     }
 
     // Rebuild remembered sets of all regions.
-    if (ParallelGCThreads > 0) {
+
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       ParRebuildRSTask rebuild_rs_task(this);
       assert(check_heap_region_claim_values(
              HeapRegion::InitialClaimValue), "sanity check");
@@ -1960,7 +1961,7 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
                                                  int worker,
                                                  jint claim_value) {
   const size_t regions = n_regions();
-  const size_t worker_num = (ParallelGCThreads > 0 ? ParallelGCThreads : 1);
+  const size_t worker_num = (G1CollectedHeap::use_parallel_gc_threads() ? ParallelGCThreads : 1);
   // try to spread out the starting points of the workers
   const size_t start_index = regions / worker_num * (size_t) worker;
 
@@ -2527,7 +2528,7 @@ void G1CollectedHeap::print_on_extended(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     workers()->print_worker_threads_on(st);
   }
 
@@ -2543,7 +2544,7 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     workers()->threads_do(tc);
   }
   tc->do_thread(_cmThread);
@@ -3083,7 +3084,7 @@ void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   if (r != NULL) {
     r_used = r->used();
 
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       // need to take the lock to guard against two threads calling
       // get_gc_alloc_region concurrently (very unlikely but...)
       MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
@@ -4182,6 +4183,8 @@ public:
 
 // *** Common G1 Evacuation Stuff
 
+// This method is run in a GC worker.
+
 void
 G1CollectedHeap::
 g1_process_strong_roots(bool collecting_perm_gen,
@@ -4259,7 +4262,7 @@ public:
 };
 
 void G1CollectedHeap::save_marks() {
-  if (ParallelGCThreads == 0) {
+  if (!CollectedHeap::use_parallel_gc_threads()) {
     SaveMarksClosure sm;
     heap_region_iterate(&sm);
   }
@@ -4284,7 +4287,7 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
   double start_par = os::elapsedTime();
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     // The individual threads will set their evac-failure closures.
     StrongRootsScope srs(this);
     if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();

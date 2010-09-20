@@ -1533,3 +1533,7 @@ void ParNewGeneration::ref_processor_init()
 const char* ParNewGeneration::name() const {
   return "par new generation";
 }
+
+bool ParNewGeneration::in_use() {
+  return UseParNewGC && ParallelGCThreads > 0;
+}
