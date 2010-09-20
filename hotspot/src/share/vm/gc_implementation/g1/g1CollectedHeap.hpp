@@ -656,6 +656,9 @@ protected:
   bool _unclean_regions_coming;
 
 public:
+
+  SubTasksDone* process_strong_tasks() { return _process_strong_tasks; }
+
   void set_refine_cte_cl_concurrency(bool concurrent);
 
   RefToScanQueue *task_queue(int i) const;
@@ -684,7 +687,7 @@ public:
 
   void set_par_threads(int t) {
     SharedHeap::set_par_threads(t);
-    _process_strong_tasks->set_par_threads(t);
+    _process_strong_tasks->set_n_threads(t);
   }
 
   virtual CollectedHeap::Name kind() const {

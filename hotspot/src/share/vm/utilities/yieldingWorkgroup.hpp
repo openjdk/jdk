@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,25 @@ protected: // Override from parent class
   virtual void loop();
 };
 
+class FlexibleGangTask: public AbstractGangTask {
+  int _actual_size;                      // size of gang obtained
+protected:
+  int _requested_size;                   // size of gang requested
+public:
+ FlexibleGangTask(const char* name): AbstractGangTask(name),
+    _requested_size(0) {}
+
+  // The abstract work method.
+  // The argument tells you which member of the gang you are.
+  virtual void work(int i) = 0;
+
+  int requested_size() const { return _requested_size; }
+  int actual_size()    const { return _actual_size; }
+
+  void set_requested_size(int sz) { _requested_size = sz; }
+  void set_actual_size(int sz)    { _actual_size    = sz; }
+};
+
 // An abstract task to be worked on by a flexible work gang,
 // and where the workers will periodically yield, usually
 // in response to some condition that is signalled by means
@@ -70,19 +89,15 @@ protected: // Override from parent class
 // maximum) in response to task requests at certain points.
 // The last part (the flexible part) has not yet been fully
 // fleshed out and is a work in progress.
-class YieldingFlexibleGangTask: public AbstractGangTask {
+class YieldingFlexibleGangTask: public FlexibleGangTask {
   Status _status;
   YieldingFlexibleWorkGang* _gang;
-  int _actual_size;                      // size of gang obtained
 
 protected:
-  int _requested_size;                   // size of gang requested
-
   // Constructor and desctructor: only construct subclasses.
-  YieldingFlexibleGangTask(const char* name): AbstractGangTask(name),
+  YieldingFlexibleGangTask(const char* name): FlexibleGangTask(name),
     _status(INACTIVE),
-    _gang(NULL),
-    _requested_size(0) { }
+    _gang(NULL) { }
 
   virtual ~YieldingFlexibleGangTask() { }
 
@@ -126,20 +141,13 @@ public:
   bool completed() const { return _status == COMPLETED; }
   bool aborted()   const { return _status == ABORTED; }
   bool active()    const { return _status == ACTIVE; }
-
-  int requested_size() const { return _requested_size; }
-  int actual_size()    const { return _actual_size; }
-
-  void set_requested_size(int sz) { _requested_size = sz; }
-  void set_actual_size(int sz)    { _actual_size    = sz; }
 };
-
 // Class YieldingWorkGang: A subclass of WorkGang.
 // In particular, a YieldingWorkGang is made up of
 // YieldingGangWorkers, and provides infrastructure
 // supporting yielding to the "GangOverseer",
 // being the thread that orchestrates the WorkGang via run_task().
-class YieldingFlexibleWorkGang: public AbstractWorkGang {
+class YieldingFlexibleWorkGang: public FlexibleWorkGang {
   // Here's the public interface to this class.
 public:
   // Constructor and destructor.
@@ -151,6 +159,9 @@ public:
            "Incorrect cast");
     return (YieldingFlexibleGangTask*)task();
   }
+  // Allocate a worker and return a pointer to it.
+  GangWorker* allocate_worker(int which);
+
   // Run a task; returns when the task is done, or the workers yield,
   // or the task is aborted, or the work gang is terminated via stop().
   // A task that has been yielded can be continued via this same interface
@@ -180,10 +191,6 @@ public:
   void abort();
 
 private:
-  // The currently active workers in this gang.
-  // This is a number that is dynamically adjusted by
-  // the run_task() method at each subsequent invocation,
-  // using data in the YieldingFlexibleGangTask.
   int _active_workers;
   int _yielded_workers;
   void wait_for_gang();
@@ -194,6 +201,7 @@ public:
     return _active_workers;
   }
 
+  // Accessors for fields
   int yielded_workers() const {
     return _yielded_workers;
   }

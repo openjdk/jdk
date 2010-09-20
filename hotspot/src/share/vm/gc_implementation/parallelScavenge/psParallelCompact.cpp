@@ -2449,7 +2449,7 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
   const unsigned int task_count = MAX2(parallel_gc_threads, 1U);
   for (unsigned int j = 0; j < task_count; j++) {
-    q->enqueue(new DrainStacksCompactionTask());
+    q->enqueue(new DrainStacksCompactionTask(j));
   }
 
   // Find all regions that are available (can be filled immediately) and

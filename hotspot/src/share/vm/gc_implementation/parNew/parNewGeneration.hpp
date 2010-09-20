@@ -350,6 +350,8 @@ class ParNewGeneration: public DefNewGeneration {
     delete _task_queues;
   }
 
+  static bool in_use();
+
   virtual void ref_processor_init();
   virtual Generation::Name kind()        { return Generation::ParNew; }
   virtual const char* name() const;
