@@ -68,7 +68,7 @@ all:
 	   $(MAKE) -f sa.make $(GENERATED)/sa-jdi.jar; \
 	fi
 
-$(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2) agent_files_preclean
+$(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 	$(QUIETLY) echo "Making $@"
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
@@ -83,6 +83,17 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2) agent_files_preclean
 	  mkdir -p $(SA_CLASSDIR);        \
 	fi
 	
+# Note: When indented, make tries to execute the '$(shell' comment.
+# In some environments, cmd processors have limited line length.
+# To prevent the javac invocation in the next block from using
+# a very long cmd line, we use javac's @file-list option. We
+# generate the file lists using make's built-in 'foreach' control
+# flow which also avoids cmd processor line length issues. Since
+# the 'foreach' is done as part of make's macro expansion phase,
+# the initialization of the lists is also done in the same phase
+# using '$(shell rm ...' instead of using the more traditional
+# 'rm ...' rule.
+	$(shell rm -rf $(AGENT_FILES1_LIST) $(AGENT_FILES2_LIST))
 	$(foreach file,$(AGENT_FILES1),$(shell echo $(file) >> $(AGENT_FILES1_LIST)))
 	$(foreach file,$(AGENT_FILES2),$(shell echo $(file) >> $(AGENT_FILES2_LIST)))
 	
@@ -103,9 +114,6 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2) agent_files_preclean
 	$(QUIETLY) $(REMOTE) $(RUN.JAVAH) -classpath $(SA_CLASSDIR) -d $(GENERATED) -jni sun.jvm.hotspot.debugger.ia64.IA64ThreadContext
 	$(QUIETLY) $(REMOTE) $(RUN.JAVAH) -classpath $(SA_CLASSDIR) -d $(GENERATED) -jni sun.jvm.hotspot.debugger.amd64.AMD64ThreadContext
 	$(QUIETLY) $(REMOTE) $(RUN.JAVAH) -classpath $(SA_CLASSDIR) -d $(GENERATED) -jni sun.jvm.hotspot.debugger.sparc.SPARCThreadContext
-
-agent_files_preclean:
-	rm -rf $(AGENT_FILES1_LIST) $(AGENT_FILES2_LIST)
 
 clean:
 	rm -rf $(SA_CLASSDIR)
