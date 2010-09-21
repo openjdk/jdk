@@ -1183,6 +1183,7 @@ void JavaThread::initialize() {
   set_vframe_array_last(NULL);
   set_deferred_locals(NULL);
   set_deopt_mark(NULL);
+  set_deopt_nmethod(NULL);
   clear_must_deopt_id();
   set_monitor_chunks(NULL);
   set_next(NULL);
