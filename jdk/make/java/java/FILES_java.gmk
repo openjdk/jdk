@@ -272,6 +272,7 @@ JAVA_JAVA_java = \
     java/util/concurrent/CancellationException.java \
     java/util/concurrent/CompletionService.java \
     java/util/concurrent/ConcurrentHashMap.java \
+    java/util/concurrent/ConcurrentLinkedDeque.java \
     java/util/concurrent/ConcurrentLinkedQueue.java \
     java/util/concurrent/ConcurrentMap.java \
     java/util/concurrent/ConcurrentNavigableMap.java \
