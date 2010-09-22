@@ -193,14 +193,15 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
     }
   }
 #endif
-  // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
+  // TypeOopPtr::NOTNULL+any is an OOP with unknown offset - generally
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
-  const TypeOopPtr *tinst = tp->isa_oopptr();
+  const TypeOopPtr *toop = tp->isa_oopptr();
   if( tp->base() != Type::AnyPtr &&
-      !(tinst &&
-        tinst->klass()->is_java_lang_Object() &&
-        tinst->offset() == Type::OffsetBot) ) {
+      !(toop &&
+        toop->klass() != NULL &&
+        toop->klass()->is_java_lang_Object() &&
+        toop->offset() == Type::OffsetBot) ) {
     // compress paths and change unreachable cycles to TOP
     // If not, we can update the input infinitely along a MergeMem cycle
     // Equivalent code in PhiNode::Ideal
