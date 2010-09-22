@@ -2679,7 +2679,8 @@ public class Lower extends TreeTranslator {
     }
 //where
         private JCTree convert(JCTree tree, Type pt) {
-            if (tree.type == pt) return tree;
+            if (tree.type == pt || tree.type.tag == TypeTags.BOT)
+                return tree;
             JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
             result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
                                                            : pt;
