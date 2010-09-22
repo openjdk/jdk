@@ -123,9 +123,7 @@ class Runtime1: public AllStatic {
   static void new_object_array(JavaThread* thread, klassOopDesc* klass, jint length);
   static void new_multi_array (JavaThread* thread, klassOopDesc* klass, int rank, jint* dims);
 
-#ifdef TIERED
-  static void counter_overflow(JavaThread* thread, int bci);
-#endif // TIERED
+  static address counter_overflow(JavaThread* thread, int bci, methodOopDesc* method);
 
   static void unimplemented_entry   (JavaThread* thread, StubID id);
 

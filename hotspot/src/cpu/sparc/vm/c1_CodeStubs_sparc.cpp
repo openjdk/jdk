@@ -57,13 +57,12 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
 #endif
 }
 
-#ifdef TIERED
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   __ set(_bci, G4);
   __ call(Runtime1::entry_for(Runtime1::counter_overflow_id), relocInfo::runtime_call_type);
-  __ delayed()->nop();
+  __ delayed()->mov_or_nop(_method->as_register(), G5);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 
@@ -71,7 +70,6 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ delayed()->nop();
 }
 
-#endif // TIERED
 
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   if (_offset != -1) {

@@ -599,6 +599,10 @@ public:
   void verify_scopes();
   void verify_interrupt_point(address interrupt_point);
 
+  // print compilation helper
+  static void print_compilation(outputStream *st, const char *method_name, const char *title,
+                                methodOop method, bool is_blocking, int compile_id, int bci, int comp_level);
+
   // printing support
   void print()                          const;
   void print_code();

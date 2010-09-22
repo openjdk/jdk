@@ -4993,19 +4993,22 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
       ttyLocker ttyl;
       tty->print_cr("eip = 0x%08x", eip);
 #ifndef PRODUCT
-      tty->cr();
-      findpc(eip);
-      tty->cr();
+      if ((WizardMode || Verbose) && PrintMiscellaneous) {
+        tty->cr();
+        findpc(eip);
+        tty->cr();
+      }
 #endif
-      tty->print_cr("rax, = 0x%08x", rax);
-      tty->print_cr("rbx, = 0x%08x", rbx);
+      tty->print_cr("rax = 0x%08x", rax);
+      tty->print_cr("rbx = 0x%08x", rbx);
       tty->print_cr("rcx = 0x%08x", rcx);
       tty->print_cr("rdx = 0x%08x", rdx);
       tty->print_cr("rdi = 0x%08x", rdi);
       tty->print_cr("rsi = 0x%08x", rsi);
-      tty->print_cr("rbp, = 0x%08x", rbp);
+      tty->print_cr("rbp = 0x%08x", rbp);
       tty->print_cr("rsp = 0x%08x", rsp);
       BREAKPOINT;
+      assert(false, "start up GDB");
     }
   } else {
     ttyLocker ttyl;
@@ -7677,11 +7680,19 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
   movptr(tmp, ExternalAddress((address) delayed_value_addr));
 
 #ifdef ASSERT
-  Label L;
-  testptr(tmp, tmp);
-  jccb(Assembler::notZero, L);
-  hlt();
-  bind(L);
+  { Label L;
+    testptr(tmp, tmp);
+    if (WizardMode) {
+      jcc(Assembler::notZero, L);
+      char* buf = new char[40];
+      sprintf(buf, "DelayedValue="INTPTR_FORMAT, delayed_value_addr[1]);
+      stop(buf);
+    } else {
+      jccb(Assembler::notZero, L);
+      hlt();
+    }
+    bind(L);
+  }
 #endif
 
   if (offset != 0)

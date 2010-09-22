@@ -290,9 +290,13 @@ int Compilation::compile_java_method() {
 
   CHECK_BAILOUT_(no_frame_size);
 
+  if (is_profiling()) {
+    method()->build_method_data();
+  }
+
   {
     PhaseTraceTime timeit(_t_buildIR);
-  build_hir();
+    build_hir();
   }
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
@@ -447,6 +451,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _masm(NULL)
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
+, _would_profile(false)
 , _has_unsafe_access(false)
 , _has_method_handle_invokes(false)
 , _bailout_msg(NULL)
@@ -461,12 +466,16 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 #endif // PRODUCT
 {
   PhaseTraceTime timeit(_t_compile);
-
   _arena = Thread::current()->resource_area();
   _env->set_compiler_data(this);
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
   compile_method();
+  if (is_profiling() && _would_profile) {
+    ciMethodData *md = method->method_data();
+    assert (md != NULL, "Should have MDO");
+    md->set_would_profile(_would_profile);
+  }
 }
 
 Compilation::~Compilation() {
