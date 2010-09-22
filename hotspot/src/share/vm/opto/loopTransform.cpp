@@ -2417,6 +2417,8 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       Node* value = n->in(MemNode::ValueIn);
       if (!lpt->is_invariant(value)) {
         msg  = "variant store value";
+      } else if (!_igvn.type(n->in(MemNode::Address))->isa_aryptr()) {
+        msg = "not array address";
       }
       store = n;
       store_value = value;
@@ -2468,6 +2470,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   // head->phi * elsize + con.  head->phi might have a ConvI2L.
   Node* elements[4];
   Node* conv = NULL;
+  bool found_index = false;
   int count = store->in(MemNode::Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
   for (int e = 0; e < count; e++) {
     Node* n = elements[e];
@@ -2484,17 +2487,20 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       if (value != head->phi()) {
         msg = "unhandled shift in address";
       } else {
+        found_index = true;
         shift = n;
         assert(type2aelembytes(store->as_Mem()->memory_type(), true) == 1 << shift->in(2)->get_int(), "scale should match");
       }
     } else if (n->Opcode() == Op_ConvI2L && conv == NULL) {
       if (n->in(1) == head->phi()) {
+        found_index = true;
         conv = n;
       } else {
         msg = "unhandled input to ConvI2L";
       }
     } else if (n == head->phi()) {
       // no shift, check below for allowed cases
+      found_index = true;
     } else {
       msg = "unhandled node in address";
       msg_node = n;
@@ -2504,6 +2510,10 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   if (count == -1) {
     msg = "malformed address expression";
     msg_node = store;
+  }
+
+  if (!found_index) {
+    msg = "missing use of index";
   }
 
   // byte sized items won't have a shift

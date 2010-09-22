@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ methodOop methodKlass::allocate(constMethodHandle xconst,
 
   // Fix and bury in methodOop
   m->set_interpreter_entry(NULL); // sets i2i entry and from_int
-  m->set_highest_tier_compile(CompLevel_none);
   m->set_adapter_entry(NULL);
   m->clear_code(); // from_c/from_i get set to c2i/i2i
 
@@ -89,6 +88,7 @@ methodOop methodKlass::allocate(constMethodHandle xconst,
   m->invocation_counter()->init();
   m->backedge_counter()->init();
   m->clear_number_of_breakpoints();
+
   assert(m->is_parsable(), "must be parsable here.");
   assert(m->size() == size, "wrong size for object");
   // We should not publish an uprasable object's reference
@@ -246,8 +246,8 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
   st->print_cr(" - method size:       %d",   m->method_size());
   if (m->intrinsic_id() != vmIntrinsics::_none)
     st->print_cr(" - intrinsic id:      %d %s", m->intrinsic_id(), vmIntrinsics::name_at(m->intrinsic_id()));
-  if (m->highest_tier_compile() != CompLevel_none)
-    st->print_cr(" - highest tier:      %d", m->highest_tier_compile());
+  if (m->highest_comp_level() != CompLevel_none)
+    st->print_cr(" - highest level:     %d", m->highest_comp_level());
   st->print_cr(" - vtable index:      %d",   m->_vtable_index);
   st->print_cr(" - i2i entry:         " INTPTR_FORMAT, m->interpreter_entry());
   st->print_cr(" - adapter:           " INTPTR_FORMAT, m->adapter());

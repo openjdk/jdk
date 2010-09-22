@@ -1633,8 +1633,13 @@ char* SharedRuntime::generate_class_cast_message(
 char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
                                                         oopDesc* required,
                                                         oopDesc* actual) {
+  if (TraceMethodHandles) {
+    tty->print_cr("WrongMethodType thread="PTR_FORMAT" req="PTR_FORMAT" act="PTR_FORMAT"",
+                  thread, required, actual);
+  }
   assert(EnableMethodHandles, "");
   oop singleKlass = wrong_method_type_is_for_single_argument(thread, required);
+  char* message = NULL;
   if (singleKlass != NULL) {
     const char* objName = "argument or return value";
     if (actual != NULL) {
@@ -1647,7 +1652,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     Klass* targetKlass = Klass::cast(required->is_klass()
                                      ? (klassOop)required
                                      : java_lang_Class::as_klassOop(required));
-    return generate_class_cast_message(objName, targetKlass->external_name());
+    message = generate_class_cast_message(objName, targetKlass->external_name());
   } else {
     // %%% need to get the MethodType string, without messing around too much
     // Get a signature from the invoke instruction
@@ -1679,9 +1684,13 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
       if (mhName[0] == '$')
         mhName = actual_method->signature()->as_C_string();
     }
-    return generate_class_cast_message(mhName, targetType,
-                                       " cannot be called as ");
+    message = generate_class_cast_message(mhName, targetType,
+                                          " cannot be called as ");
   }
+  if (TraceMethodHandles) {
+    tty->print_cr("WrongMethodType => message=%s", message);
+  }
+  return message;
 }
 
 oop SharedRuntime::wrong_method_type_is_for_single_argument(JavaThread* thr,
