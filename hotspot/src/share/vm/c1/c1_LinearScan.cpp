@@ -2018,6 +2018,12 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
         return LIR_OprFact::single_cpu_oop(assigned_reg);
       }
 
+      case T_ADDRESS: {
+        assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_cpu_address(assigned_reg);
+      }
+
 #ifdef __SOFTFP__
       case T_FLOAT:  // fall through
 #endif // __SOFTFP__
