@@ -936,7 +936,6 @@ LIR_Opr LIRGenerator::new_register(BasicType type) {
     }
   }
   _virtual_register_number += 1;
-  if (type == T_ADDRESS) type = T_INT;
   return LIR_OprFact::virtual_register(vreg, type);
 }
 
@@ -2829,4 +2828,3 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIRItemList* args,
   }
   return result;
 }
-

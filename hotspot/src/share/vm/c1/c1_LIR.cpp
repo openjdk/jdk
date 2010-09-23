@@ -211,6 +211,7 @@ void LIR_OprDesc::validate_type() const {
     case T_BYTE:
     case T_SHORT:
     case T_INT:
+    case T_ADDRESS:
     case T_OBJECT:
     case T_ARRAY:
       assert((kind_field() == cpu_register || kind_field() == stack_value) &&
