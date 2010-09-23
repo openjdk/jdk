@@ -1215,7 +1215,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             if (userCookies2 != null) {
                 int k;
-                if ((k = requests.getKey("Cookie")) != -1)
+                if ((k = requests.getKey("Cookie2")) != -1)
                     requests.set("Cookie2", requests.getValue(k) + ";" + userCookies2);
                 else
                     requests.set("Cookie2", userCookies2);
