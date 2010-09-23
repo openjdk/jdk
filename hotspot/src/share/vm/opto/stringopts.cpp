@@ -75,8 +75,7 @@ class StringConcat : public ResourceObj {
       for (SimpleDUIterator i(endprojs.resproj); i.has_next(); i.next()) {
         CallStaticJavaNode *use = i.get()->isa_CallStaticJava();
         if (use != NULL && use->method() != NULL &&
-            use->method()->holder() == C->env()->String_klass() &&
-            use->method()->name() == ciSymbol::object_initializer_name() &&
+            use->method()->intrinsic_id() == vmIntrinsics::_String_String &&
             use->in(TypeFunc::Parms + 1) == endprojs.resproj) {
           // Found useless new String(sb.toString()) so reuse the newly allocated String
           // when creating the result instead of allocating a new one.
@@ -394,7 +393,9 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       Node* constructor = NULL;
       for (SimpleDUIterator i(result); i.has_next(); i.next()) {
         CallStaticJavaNode *use = i.get()->isa_CallStaticJava();
-        if (use != NULL && use->method() != NULL &&
+        if (use != NULL &&
+            use->method() != NULL &&
+            !use->method()->is_static() &&
             use->method()->name() == ciSymbol::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
           // Matched the constructor.
@@ -444,7 +445,8 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       }
     } else if (cnode->method() == NULL) {
       break;
-    } else if (cnode->method()->holder() == m->holder() &&
+    } else if (!cnode->method()->is_static() &&
+               cnode->method()->holder() == m->holder() &&
                cnode->method()->name() == ciSymbol::append_name() &&
                (cnode->method()->signature()->as_symbol() == string_sig ||
                 cnode->method()->signature()->as_symbol() == char_sig ||
@@ -459,8 +461,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
           CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
           if (csj->method() != NULL &&
-              csj->method()->holder() == C->env()->Integer_klass() &&
-              csj->method()->name() == ciSymbol::toString_name()) {
+              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString) {
             sc->add_control(csj);
             sc->push_int(csj->in(TypeFunc::Parms));
             continue;
@@ -537,9 +538,8 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
       if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
         CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
         if (csj->method() != NULL &&
-            (csj->method()->holder() == C->env()->StringBuffer_klass() ||
-             csj->method()->holder() == C->env()->StringBuilder_klass()) &&
-            csj->method()->name() == ciSymbol::toString_name()) {
+            (csj->method()->intrinsic_id() == vmIntrinsics::_StringBuilder_toString ||
+             csj->method()->intrinsic_id() == vmIntrinsics::_StringBuffer_toString)) {
           for (int o = 0; o < concats.length(); o++) {
             if (c == o) continue;
             StringConcat* other = concats.at(o);
