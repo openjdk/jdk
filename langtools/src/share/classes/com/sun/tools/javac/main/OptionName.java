@@ -80,6 +80,7 @@ public enum OptionName {
     XMAXERRS("-Xmaxerrs"),
     XMAXWARNS("-Xmaxwarns"),
     XSTDOUT("-Xstdout"),
+    XPKGINFO("-Xpkginfo:"),
     XPRINT("-Xprint"),
     XPRINTROUNDS("-XprintRounds"),
     XPRINTPROCESSORINFO("-XprintProcessorInfo"),

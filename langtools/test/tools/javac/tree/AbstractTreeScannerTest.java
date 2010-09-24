@@ -21,57 +21,20 @@
  * questions.
  */
 
-
-/**
- * Utility and test program to check javac's internal TreeScanner class.
- * The program can be run standalone, or as a jtreg test.  For info on
- * command line args, run program with no args.
- *
- * <p>
- * jtreg: Note that by using the -r switch in the test description below, this test
- * will process all java files in the langtools/test directory, thus implicitly
- * covering any new language features that may be tested in this test suite.
- */
-
-/*
- * @test
- * @bug 6923080
- * @summary TreeScanner.visitNewClass should scan tree.typeargs
- * @run main TreeScannerTest -q -r .
- */
-
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import javax.tools.*;
 
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.List;
 
-public class TreeScannerTest {
-    /**
-     * Main entry point.
-     * If test.src is set, program runs in jtreg mode, and will throw an Error
-     * if any errors arise, otherwise System.exit will be used. In jtreg mode,
-     * the default base directory for file args is the value of ${test.src}.
-     * In jtreg mode, the -r option can be given to change the default base
-     * directory to the root test directory.
-     */
-    public static void main(String... args) {
-        String testSrc = System.getProperty("test.src");
-        File baseDir = (testSrc == null) ? null : new File(testSrc);
-        boolean ok = new TreeScannerTest().run(baseDir, args);
-        if (!ok) {
-            if (testSrc != null)  // jtreg mode
-                throw new Error("failed");
-            else
-                System.exit(1);
-        }
-    }
+public abstract class AbstractTreeScannerTest {
 
     /**
      * Run the program. A base directory can be provided for file arguments.
@@ -120,6 +83,7 @@ public class TreeScannerTest {
 
         if (fileCount != 1)
             System.err.println(fileCount + " files read");
+        System.err.println(treeCount + " tree nodes compared");
         if (errors > 0)
             System.err.println(errors + " errors");
 
@@ -132,7 +96,7 @@ public class TreeScannerTest {
      */
     void usage(PrintStream out) {
         out.println("Usage:");
-        out.println("  java TreeScannerTest options... files...");
+        out.println("  java " + getClass().getName() + " options... files...");
         out.println("");
         out.println("where options include:");
         out.println("-q        Quiet: don't report on inapplicable files");
@@ -162,8 +126,7 @@ public class TreeScannerTest {
                 if (verbose)
                     System.err.println(file);
                 fileCount++;
-                ScanTester t = new ScanTester();
-                t.test(read(file));
+                treeCount += test(read(file));
             } catch (ParseException e) {
                 if (!quiet) {
                     error("Error parsing " + file + "\n" + e.getMessage());
@@ -177,6 +140,8 @@ public class TreeScannerTest {
         if (!quiet)
             error("File " + file + " ignored");
     }
+
+    abstract int test(JCCompilationUnit t);
 
     /**
      * Read a file.
@@ -217,25 +182,39 @@ public class TreeScannerTest {
     }
 
     /**
+     * Report an error. When the program is complete, the program will either
+     * exit or throw an Error if any errors have been reported.
+     * @param msg the error message
+     */
+    void error(JavaFileObject file, String msg) {
+        System.err.println(file.getName() + ": " + msg);
+        errors++;
+    }
+
+    /**
      *  Report an error for a specific tree node.
      *  @param file the source file for the tree
      *  @param t    the tree node
      *  @param label an indication of the error
      */
-    void error(JavaFileObject file, JCTree t, String msg) {
+    void error(JavaFileObject file, Tree tree, String msg) {
+        JCTree t = (JCTree) tree;
         error(file.getName() + ":" + getLine(file, t) + ": " + msg + " " + trim(t, 64));
     }
 
     /**
      * Get a trimmed string for a tree node, with normalized white space and limited length.
      */
-    String trim(JCTree t, int len) {
-        String s = t.toString().replaceAll("[\r\n]+", " ").replaceAll(" +", " ");
+    String trim(Tree tree, int len) {
+        JCTree t = (JCTree) tree;
+        String s = t.toString().replaceAll("\\s+", " ");
         return (s.length() < len) ? s : s.substring(0, len);
     }
 
     /** Number of files that have been analyzed. */
     int fileCount;
+    /** Number of trees that have been successfully compared. */
+    int treeCount;
     /** Number of errors reported. */
     int errors;
     /** Flag: don't report irrelevant files. */
@@ -243,78 +222,6 @@ public class TreeScannerTest {
     /** Flag: report files as they are processed. */
     boolean verbose;
 
-    /**
-     * Main class for testing operation of tree scanner.
-     * The set of nodes found by the scanner are compared
-     * against the set of nodes found by reflection.
-     */
-    private class ScanTester extends TreeScanner {
-        /** Main entry method for the class. */
-        void test(JCCompilationUnit tree) {
-            sourcefile = tree.sourcefile;
-            found = new HashSet<JCTree>();
-            scan(tree);
-            expect = new HashSet<JCTree>();
-            reflectiveScan(tree);
-            if (found.equals(expect))
-                return;
-
-            error("Differences found for " + tree.sourcefile.getName());
-
-            if (found.size() != expect.size())
-                error("Size mismatch; found: " + found.size() + ", expected: " + expect.size());
-
-            Set<JCTree> missing = new HashSet<JCTree>();
-            missing.addAll(expect);
-            missing.removeAll(found);
-            for (JCTree t: missing)
-                error(tree.sourcefile, t, "missing");
-
-            Set<JCTree> excess = new HashSet<JCTree>();
-            excess.addAll(found);
-            excess.removeAll(expect);
-            for (JCTree t: excess)
-                error(tree.sourcefile, t, "unexpected");
-        }
-
-        /** Record all tree nodes found by scanner. */
-        @Override
-        public void scan(JCTree tree) {
-            if (tree == null)
-                return;
-            System.err.println("FOUND: " + tree.getTag() + " " + trim(tree, 64));
-            found.add(tree);
-            super.scan(tree);
-        }
-
-        /** record all tree nodes found by reflection. */
-        public void reflectiveScan(Object o) {
-            if (o == null)
-                return;
-            if (o instanceof JCTree) {
-                JCTree tree = (JCTree) o;
-                System.err.println("EXPECT: " + tree.getTag() + " " + trim(tree, 64));
-                expect.add(tree);
-                for (Field f: getFields(tree)) {
-                    try {
-                        //System.err.println("FIELD: " + f.getName());
-                        reflectiveScan(f.get(tree));
-                    } catch (IllegalAccessException e) {
-                        error(e.toString());
-                    }
-                }
-            } else if (o instanceof List) {
-                List<?> list = (List<?>) o;
-                for (Object item: list)
-                    reflectiveScan(item);
-            } else
-                error("unexpected item: " + o);
-        }
-
-        JavaFileObject sourcefile;
-        Set<JCTree> found;
-        Set<JCTree> expect;
-    }
 
     /**
      * Thrown when errors are found parsing a java file.
