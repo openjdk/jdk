@@ -1,0 +1,13 @@
+InvokeMHTrans.java:59:39: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:62:38: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:65:35: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:66:35: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:68:31: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:72:32: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:83:35: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:87:41: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:93:37: compiler.warn.type.parameter.on.polymorphic.signature
+InvokeMHTrans.java:96:34: compiler.warn.type.parameter.on.polymorphic.signature
+- compiler.err.warnings.and.werror
+1 error
+10 warnings

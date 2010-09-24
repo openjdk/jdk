@@ -114,6 +114,8 @@ public class TypeAnnotations {
                     return p;
 
                 case CLASS:
+                case INTERFACE:
+                case ENUM:
                     p.pos = frame.pos;
                     if (((JCClassDecl)frame).extending == tree) {
                         p.type = TargetType.CLASS_EXTENDS;
