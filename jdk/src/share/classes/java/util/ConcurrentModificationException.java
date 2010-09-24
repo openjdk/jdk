@@ -49,9 +49,9 @@ package java.util;
  * <p>Note that fail-fast behavior cannot be guaranteed as it is, generally
  * speaking, impossible to make any hard guarantees in the presence of
  * unsynchronized concurrent modification.  Fail-fast operations
- * throw <tt>ConcurrentModificationException</tt> on a best-effort basis.
+ * throw {@code ConcurrentModificationException} on a best-effort basis.
  * Therefore, it would be wrong to write a program that depended on this
- * exception for its correctness: <i><tt>ConcurrentModificationException</tt>
+ * exception for its correctness: <i>{@code ConcurrentModificationException}
  * should be used only to detect bugs.</i>
  *
  * @author  Josh Bloch
@@ -77,12 +77,47 @@ public class ConcurrentModificationException extends RuntimeException {
     }
 
     /**
-     * Constructs a <tt>ConcurrentModificationException</tt> with the
+     * Constructs a {@code ConcurrentModificationException} with the
      * specified detail message.
      *
      * @param message the detail message pertaining to this exception.
      */
     public ConcurrentModificationException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs a new exception with the specified cause and a detail
+     * message of {@code (cause==null ? null : cause.toString())} (which
+     * typically contains the class and detail message of {@code cause}.
+     *
+     * @param  cause the cause (which is saved for later retrieval by the
+     *         {@link Throwable#getCause()} method).  (A {@code null} value is
+     *         permitted, and indicates that the cause is nonexistent or
+     *         unknown.)
+     * @since  1.7
+     */
+    public ConcurrentModificationException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new exception with the specified detail message and
+     * cause.
+     *
+     * <p>Note that the detail message associated with <code>cause</code> is
+     * <i>not</i> automatically incorporated in this exception's detail
+     * message.
+     *
+     * @param  message the detail message (which is saved for later retrieval
+     *         by the {@link Throwable#getMessage()} method).
+     * @param  cause the cause (which is saved for later retrieval by the
+     *         {@link Throwable#getCause()} method).  (A {@code null} value
+     *         is permitted, and indicates that the cause is nonexistent or
+     *         unknown.)
+     * @since 1.7
+     */
+    public ConcurrentModificationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

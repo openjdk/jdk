@@ -113,8 +113,6 @@ public:
     // Used to prevent untrusted code from synthesizing a WM_PASTE message
     // by posting a <CTRL>-V KeyEvent
     BOOL    m_synthetic;
-    virtual void EditSetSel(CHARRANGE &cr) = 0;
-    virtual void EditGetSel(CHARRANGE &cr) = 0;
     virtual LONG EditGetCharFromPos(POINT& pt) = 0;
 
 private:

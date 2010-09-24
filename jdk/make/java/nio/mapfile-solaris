@@ -76,7 +76,7 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_IOUtil_drain;
                 Java_sun_nio_ch_IOUtil_fdVal;
                 Java_sun_nio_ch_IOUtil_initIDs;
-                Java_sun_nio_ch_IOUtil_initPipe;
+                Java_sun_nio_ch_IOUtil_makePipe;
                 Java_sun_nio_ch_IOUtil_randomBytes;
                 Java_sun_nio_ch_IOUtil_setfdVal;
 		Java_sun_nio_ch_NativeThread_current;
