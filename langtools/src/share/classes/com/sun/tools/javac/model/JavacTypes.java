@@ -103,7 +103,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public boolean contains(TypeMirror t1, TypeMirror t2) {
         validateTypeNotIn(t1, EXEC_OR_PKG);
         validateTypeNotIn(t2, EXEC_OR_PKG);
-        return ((Type) t1).contains((Type) t2);
+        return types.containsType((Type) t1, (Type) t2);
     }
 
     public boolean isSubsignature(ExecutableType m1, ExecutableType m2) {

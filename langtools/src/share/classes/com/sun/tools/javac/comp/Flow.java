@@ -408,7 +408,9 @@ public class Flow extends TreeScanner {
         tree = TreeInfo.skipParens(tree);
         if (tree.getTag() == JCTree.IDENT || tree.getTag() == JCTree.SELECT) {
             Symbol sym = TreeInfo.symbol(tree);
-            letInit(tree.pos(), (VarSymbol)sym);
+            if (sym.kind == VAR) {
+                letInit(tree.pos(), (VarSymbol)sym);
+            }
         }
     }
 
@@ -481,12 +483,13 @@ public class Flow extends TreeScanner {
 
     /** Split (duplicate) inits/uninits into WhenTrue/WhenFalse sets
      */
-    void split() {
+    void split(boolean setToNull) {
         initsWhenFalse = inits.dup();
         uninitsWhenFalse = uninits.dup();
         initsWhenTrue = inits;
         uninitsWhenTrue = uninits;
-        inits = uninits = null;
+        if (setToNull)
+            inits = uninits = null;
     }
 
     /** Merge (intersect) inits/uninits from WhenTrue/WhenFalse sets.
@@ -568,9 +571,11 @@ public class Flow extends TreeScanner {
             uninitsWhenTrue = uninits;
         } else {
             scan(tree);
-            if (inits != null) split();
+            if (inits != null)
+                split(tree.type != syms.unknownType);
         }
-        inits = uninits = null;
+        if (tree.type != syms.unknownType)
+            inits = uninits = null;
     }
 
     /* ------------ Visitor methods for various sorts of trees -------------*/
@@ -1007,7 +1012,7 @@ public class Flow extends TreeScanner {
                 List.of(resource.type);
             for (Type sup : closeableSupertypes) {
                 if (types.asSuper(sup, syms.autoCloseableType.tsym) != null) {
-                    Symbol closeMethod = rs.resolveInternalMethod(tree,
+                    Symbol closeMethod = rs.resolveQualifiedMethod(tree,
                             attrEnv,
                             sup,
                             names.close,
@@ -1050,20 +1055,22 @@ public class Flow extends TreeScanner {
             List<Type> rethrownTypes = chk.diff(thrownInTry, caughtInTry);
             for (JCExpression ct : subClauses) {
                 Type exc = ct.type;
-                ctypes = ctypes.append(exc);
-                if (types.isSameType(exc, syms.objectType))
-                    continue;
-                if (chk.subset(exc, caughtInTry)) {
-                    log.error(l.head.pos(),
-                              "except.already.caught", exc);
-                } else if (!chk.isUnchecked(l.head.pos(), exc) &&
-                           exc.tsym != syms.throwableType.tsym &&
-                           exc.tsym != syms.exceptionType.tsym &&
-                           !chk.intersects(exc, thrownInTry)) {
-                    log.error(l.head.pos(),
-                              "except.never.thrown.in.try", exc);
+                if (exc != syms.unknownType) {
+                    ctypes = ctypes.append(exc);
+                    if (types.isSameType(exc, syms.objectType))
+                        continue;
+                    if (chk.subset(exc, caughtInTry)) {
+                        log.error(l.head.pos(),
+                                  "except.already.caught", exc);
+                    } else if (!chk.isUnchecked(l.head.pos(), exc) &&
+                               exc.tsym != syms.throwableType.tsym &&
+                               exc.tsym != syms.exceptionType.tsym &&
+                               !chk.intersects(exc, thrownInTry)) {
+                        log.error(l.head.pos(),
+                                  "except.never.thrown.in.try", exc);
+                    }
+                    caughtInTry = chk.incl(exc, caughtInTry);
                 }
-                caughtInTry = chk.incl(exc, caughtInTry);
             }
             inits = initsTry.dup();
             uninits = uninitsTry.dup();

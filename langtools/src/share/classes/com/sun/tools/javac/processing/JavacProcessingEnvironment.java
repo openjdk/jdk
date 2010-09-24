@@ -67,6 +67,8 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.FatalError;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.JavacMessages;
@@ -75,6 +77,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 /**
  * Objects of this class hold and manage the state needed to support
@@ -95,6 +98,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean procOnly;
     private final boolean fatalErrors;
     private final boolean werror;
+    private final boolean showResolveErrors;
     private boolean foundTypeProcessors;
 
     private final JavacFiler filer;
@@ -131,6 +135,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     Log log;
 
+    /** Diagnostic factory.
+     */
+    JCDiagnostic.Factory diags;
+
     /**
      * Source level of the compile.
      */
@@ -146,10 +154,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private Context context;
 
     public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
-        options = Options.instance(context);
         this.context = context;
         log = Log.instance(context);
         source = Source.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
+        options = Options.instance(context);
         printProcessorInfo = options.get("-XprintProcessorInfo") != null;
         printRounds = options.get("-XprintRounds") != null;
         verbose = options.get("-verbose") != null;
@@ -157,6 +166,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         procOnly = options.get("-proc:only") != null ||
             options.get("-Xprint") != null;
         fatalErrors = options.get("fatalEnterError") != null;
+        showResolveErrors = options.get("showResolveErrors") != null;
         werror = options.get("-Werror") != null;
         platformAnnotations = initPlatformAnnotations();
         foundTypeProcessors = false;
@@ -818,6 +828,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             compiler = JavaCompiler.instance(context);
             log = Log.instance(context);
+            log.deferDiagnostics = true;
 
             // the following is for the benefit of JavacProcessingEnvironment.getContext()
             JavacProcessingEnvironment.this.context = context;
@@ -848,8 +859,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Create a new round. */
         private Round(Round prev,
-                Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles)
-                throws IOException {
+                Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles) {
             this(prev.nextContext(), prev.number+1, prev.compiler.log.nwarnings);
             this.genClassFiles = prev.genClassFiles;
 
@@ -882,8 +892,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Create the next round to be used. */
-        Round next(Set<JavaFileObject> newSourceFiles, Map<String, JavaFileObject> newClassFiles)
-                throws IOException {
+        Round next(Set<JavaFileObject> newSourceFiles, Map<String, JavaFileObject> newClassFiles) {
             try {
                 return new Round(this, newSourceFiles, newClassFiles);
             } finally {
@@ -919,10 +928,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Return whether or not an unrecoverable error has occurred. */
         boolean unrecoverableError() {
-            return log.unrecoverableError
-                    || messager.errorRaised()
-                    || (werror && log.nwarnings > 0)
-                    || (fatalErrors && log.nerrors > 0);
+            if (messager.errorRaised())
+                return true;
+
+            for (JCDiagnostic d: log.deferredDiagnostics) {
+                switch (d.getKind()) {
+                    case WARNING:
+                        if (werror)
+                            return true;
+                        break;
+
+                    case ERROR:
+                        if (fatalErrors || !d.isFlagSet(RESOLVE_ERROR))
+                            return true;
+                        break;
+                }
+            }
+
+            return false;
         }
 
         /** Find the set of annotations present in the set of top level
@@ -938,7 +961,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Enter a set of generated class files. */
-        List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
+        private List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
             ClassReader reader = ClassReader.instance(context);
             Names names = Names.instance(context);
             List<ClassSymbol> list = List.nil();
@@ -965,7 +988,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Enter a set of syntax trees. */
-        void enterTrees(List<JCCompilationUnit> roots) {
+        private void enterTrees(List<JCCompilationUnit> roots) {
             compiler.enterTrees(roots);
         }
 
@@ -993,6 +1016,15 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 if (taskListener != null)
                     taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
             }
+        }
+
+        void showDiagnostics(boolean showAll) {
+            Set<JCDiagnostic.Kind> kinds = EnumSet.allOf(JCDiagnostic.Kind.class);
+            if (!showAll) {
+                // suppress errors, which are all presumed to be transient resolve errors
+                kinds.remove(JCDiagnostic.Kind.ERROR);
+            }
+            log.reportDeferredDiagnostics(kinds);
         }
 
         /** Update the processing state for the current context. */
@@ -1083,8 +1115,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     public JavaCompiler doProcessing(Context context,
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
-                                     Iterable<? extends PackageSymbol> pckSymbols)
-        throws IOException {
+                                     Iterable<? extends PackageSymbol> pckSymbols) {
 
         TaskListener taskListener = context.get(TaskListener.class);
         log = Log.instance(context);
@@ -1107,6 +1138,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             errorStatus = round.unrecoverableError();
             moreToDo = moreToDo();
 
+            round.showDiagnostics(errorStatus || showResolveErrors);
+
             // Set up next round.
             // Copy mutable collections returned from filer.
             round = round.next(
@@ -1121,6 +1154,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         // run last round
         round.run(true, errorStatus);
+        round.showDiagnostics(true);
 
         filer.warnIfUnclosedFiles();
         warnIfUnmatchedOptions();
@@ -1184,13 +1218,19 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     /**
      * Free resources related to annotation processing.
      */
-    public void close() throws IOException {
+    public void close() {
         filer.close();
         if (discoveredProcs != null) // Make calling close idempotent
             discoveredProcs.close();
         discoveredProcs = null;
-        if (processorClassLoader != null && processorClassLoader instanceof Closeable)
-            ((Closeable) processorClassLoader).close();
+        if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
+            try {
+                ((Closeable) processorClassLoader).close();
+            } catch (IOException e) {
+                JCDiagnostic msg = diags.fragment("fatal.err.cant.close.loader");
+                throw new FatalError(msg, e);
+            }
+        }
     }
 
     private List<ClassSymbol> getTopLevelClasses(List<? extends JCCompilationUnit> units) {
