@@ -984,11 +984,11 @@ public abstract class Path
      * directory.
      *
      * <p> Where the filter terminates due to an uncaught error or runtime
-     * exception then it is propogated to the iterator's {@link Iterator#hasNext()
+     * exception then it is propagated to the {@link Iterator#hasNext()
      * hasNext} or {@link Iterator#next() next} method. Where an {@code
-     * IOException} is thrown, it is propogated as a {@link
-     * java.util.ConcurrentModificationException} with the {@code
-     * IOException} as the cause.
+     * IOException} is thrown, it results in the {@code hasNext} or {@code
+     * next} method throwing a {@link DirectoryIteratorException} with the
+     * {@code IOException} as the cause.
      *
      * <p> When an implementation supports operations on entries in the
      * directory that execute in a race-free manner then the returned directory

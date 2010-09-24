@@ -114,6 +114,7 @@ public class SpuriousExitEnter_3 {
         checkEvents(frameAdapter, 1, 1);
         checkEvents(buttonAdapter, 0, 0);
         w.setVisible(false);
+        Util.waitForIdle(r);
     }
 
     public static void main(String []s)
