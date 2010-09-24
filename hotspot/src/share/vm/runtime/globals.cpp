@@ -68,30 +68,38 @@ bool Flag::is_external() const {
 // Length of format string (e.g. "%.1234s") for printing ccstr below
 #define FORMAT_BUFFER_LEN 16
 
-void Flag::print_on(outputStream* st) {
-  st->print("%5s %-35s %c= ", type, name, (origin != DEFAULT ? ':' : ' '));
+void Flag::print_on(outputStream* st, bool withComments) {
+  st->print("%9s %-40s %c= ", type, name, (origin != DEFAULT ? ':' : ' '));
   if (is_bool())     st->print("%-16s", get_bool() ? "true" : "false");
   if (is_intx())     st->print("%-16ld", get_intx());
   if (is_uintx())    st->print("%-16lu", get_uintx());
   if (is_uint64_t()) st->print("%-16lu", get_uint64_t());
+  if (is_double())   st->print("%-16f", get_double());
+
   if (is_ccstr()) {
-    const char* cp = get_ccstr();
-    if (cp != NULL) {
-      const char* eol;
-      while ((eol = strchr(cp, '\n')) != NULL) {
-        char format_buffer[FORMAT_BUFFER_LEN];
-        size_t llen = pointer_delta(eol, cp, sizeof(char));
-        jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
+     const char* cp = get_ccstr();
+     if (cp != NULL) {
+       const char* eol;
+       while ((eol = strchr(cp, '\n')) != NULL) {
+         char format_buffer[FORMAT_BUFFER_LEN];
+         size_t llen = pointer_delta(eol, cp, sizeof(char));
+         jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
                      "%%." SIZE_FORMAT "s", llen);
-        st->print(format_buffer, cp);
-        st->cr();
-        cp = eol+1;
-        st->print("%5s %-35s += ", "", name);
-      }
-      st->print("%-16s", cp);
-    }
+         st->print(format_buffer, cp);
+         st->cr();
+         cp = eol+1;
+         st->print("%5s %-35s += ", "", name);
+       }
+       st->print("%-16s", cp);
+     }
+     else st->print("%-16s", "");
   }
-  st->print(" %s", kind);
+  st->print("%-20s", kind);
+  if (withComments) {
+#ifndef PRODUCT
+    st->print("%s", doc );
+#endif
+  }
   st->cr();
 }
 
@@ -131,67 +139,67 @@ void Flag::print_as_flag(outputStream* st) {
 // 4991491 do not "optimize out" the was_set false values: omitting them
 // tickles a Microsoft compiler bug causing flagTable to be malformed
 
-#define RUNTIME_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{product}", DEFAULT },
-#define RUNTIME_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{pd product}", DEFAULT },
-#define RUNTIME_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{diagnostic}", DEFAULT },
-#define RUNTIME_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{experimental}", DEFAULT },
-#define RUNTIME_MANAGEABLE_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{manageable}", DEFAULT },
-#define RUNTIME_PRODUCT_RW_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{product rw}", DEFAULT },
+#define RUNTIME_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{product}", DEFAULT },
+#define RUNTIME_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{pd product}", DEFAULT },
+#define RUNTIME_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{diagnostic}", DEFAULT },
+#define RUNTIME_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{experimental}", DEFAULT },
+#define RUNTIME_MANAGEABLE_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{manageable}", DEFAULT },
+#define RUNTIME_PRODUCT_RW_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{product rw}", DEFAULT },
 
 #ifdef PRODUCT
   #define RUNTIME_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
   #define RUNTIME_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     /* flag is constant */
   #define RUNTIME_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc)
 #else
-  #define RUNTIME_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "", DEFAULT },
-  #define RUNTIME_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{pd}", DEFAULT },
-  #define RUNTIME_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{notproduct}", DEFAULT },
+  #define RUNTIME_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "", DEFAULT },
+  #define RUNTIME_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, doc, "{pd}", DEFAULT },
+  #define RUNTIME_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{notproduct}", DEFAULT },
 #endif
 
 #ifdef _LP64
-  #define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{lp64_product}", DEFAULT },
+  #define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{lp64_product}", DEFAULT },
 #else
   #define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
 #endif // _LP64
 
-#define C1_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C1 product}", DEFAULT },
-#define C1_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{C1 pd product}", DEFAULT },
+#define C1_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C1 product}", DEFAULT },
+#define C1_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C1 pd product}", DEFAULT },
 #ifdef PRODUCT
   #define C1_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
   #define C1_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     /* flag is constant */
   #define C1_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc)
 #else
-  #define C1_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C1}", DEFAULT },
-  #define C1_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{C1 pd}", DEFAULT },
-  #define C1_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C1 notproduct}", DEFAULT },
+  #define C1_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C1}", DEFAULT },
+  #define C1_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, doc, "{C1 pd}", DEFAULT },
+  #define C1_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C1 notproduct}", DEFAULT },
 #endif
 
 
-#define C2_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 product}", DEFAULT },
-#define C2_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{C2 pd product}", DEFAULT },
-#define C2_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 diagnostic}", DEFAULT },
-#define C2_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 experimental}", DEFAULT },
+#define C2_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 product}", DEFAULT },
+#define C2_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 pd product}", DEFAULT },
+#define C2_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 diagnostic}", DEFAULT },
+#define C2_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 experimental}", DEFAULT },
 #ifdef PRODUCT
   #define C2_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
   #define C2_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     /* flag is constant */
   #define C2_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc)
 #else
-  #define C2_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2}", DEFAULT },
-  #define C2_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{C2 pd}", DEFAULT },
-  #define C2_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 notproduct}", DEFAULT },
+  #define C2_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C2}", DEFAULT },
+  #define C2_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, doc, "{C2 pd}", DEFAULT },
+  #define C2_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C2 notproduct}", DEFAULT },
 #endif
 
-#define SHARK_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark product}", DEFAULT },
-#define SHARK_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{Shark pd product}", DEFAULT },
-#define SHARK_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark diagnostic}", DEFAULT },
+#define SHARK_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{Shark product}", DEFAULT },
+#define SHARK_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{Shark pd product}", DEFAULT },
+#define SHARK_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{Shark diagnostic}", DEFAULT },
 #ifdef PRODUCT
   #define SHARK_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
   #define SHARK_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     /* flag is constant */
   #define SHARK_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc)
 #else
-  #define SHARK_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark}", DEFAULT },
-  #define SHARK_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{Shark pd}", DEFAULT },
-  #define SHARK_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{Shark notproduct}", DEFAULT },
+  #define SHARK_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{Shark}", DEFAULT },
+  #define SHARK_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, doc, "{Shark pd}", DEFAULT },
+  #define SHARK_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{Shark notproduct}", DEFAULT },
 #endif
 
 static Flag flagTable[] = {
@@ -485,7 +493,7 @@ void CommandLineFlags::verify() {
 
 #endif // PRODUCT
 
-void CommandLineFlags::printFlags() {
+void CommandLineFlags::printFlags(bool withComments) {
   // Print the flags sorted by name
   // note: this method is called before the thread structure is in place
   //       which means resource allocation cannot be used.
@@ -505,7 +513,7 @@ void CommandLineFlags::printFlags() {
   tty->print_cr("[Global flags]");
   for (int i = 0; i < length; i++) {
     if (array[i]->is_unlocked()) {
-      array[i]->print_on(tty);
+      array[i]->print_on(tty, withComments);
     }
   }
   FREE_C_HEAP_ARRAY(Flag*, array);

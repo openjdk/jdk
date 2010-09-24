@@ -341,6 +341,14 @@ class GraphKit : public Phase {
   Node* null_check_oop(Node* value, Node* *null_control,
                        bool never_see_null = false);
 
+  // Check the null_seen bit.
+  bool seems_never_null(Node* obj, ciProfileData* data);
+
+  // Use the type profile to narrow an object type.
+  Node* maybe_cast_profiled_receiver(Node* not_null_obj,
+                                     ciProfileData* data,
+                                     ciKlass* require_klass);
+
   // Cast obj to not-null on this path
   Node* cast_not_null(Node* obj, bool do_replace_in_map = true);
   // Replace all occurrences of one node by another.
