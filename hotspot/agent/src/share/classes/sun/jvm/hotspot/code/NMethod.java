@@ -134,10 +134,10 @@ public class NMethod extends CodeBlob {
   public boolean isOSRMethod()    { return getEntryBCI() != VM.getVM().getInvocationEntryBCI(); }
 
   /** Boundaries for different parts */
-  public Address constantsBegin()       { return instructionsBegin();                                }
+  public Address constantsBegin()       { return contentBegin();                                     }
   public Address constantsEnd()         { return getEntryPoint();                                    }
-  public Address codeBegin()            { return getEntryPoint();                                    }
-  public Address codeEnd()              { return headerBegin().addOffsetTo(getStubOffset());         }
+  public Address instsBegin()           { return codeBegin();                                       }
+  public Address instsEnd()             { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address exceptionBegin()       { return headerBegin().addOffsetTo(getExceptionOffset());    }
   public Address deoptBegin()           { return headerBegin().addOffsetTo(getDeoptOffset());        }
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
@@ -156,7 +156,7 @@ public class NMethod extends CodeBlob {
   public Address nulChkTableEnd()       { return headerBegin().addOffsetTo(getNMethodEndOffset());   }
 
   public int constantsSize()            { return (int) constantsEnd()   .minus(constantsBegin());    }
-  public int codeSize()                 { return (int) codeEnd()        .minus(codeBegin());         }
+  public int instsSize()                { return (int) instsEnd()       .minus(instsBegin());        }
   public int stubSize()                 { return (int) stubEnd()        .minus(stubBegin());         }
   public int oopsSize()                 { return (int) oopsEnd()        .minus(oopsBegin());         }
   public int scopesDataSize()           { return (int) scopesDataEnd()  .minus(scopesDataBegin());   }
@@ -169,7 +169,7 @@ public class NMethod extends CodeBlob {
   public int totalSize() {
     return
       constantsSize()    +
-      codeSize()         +
+      instsSize()        +
       stubSize()         +
       scopesDataSize()   +
       scopesPCsSize()    +
@@ -179,7 +179,7 @@ public class NMethod extends CodeBlob {
   }
 
   public boolean constantsContains   (Address addr) { return constantsBegin()   .lessThanOrEqual(addr) && constantsEnd()   .greaterThan(addr); }
-  public boolean codeContains        (Address addr) { return codeBegin()        .lessThanOrEqual(addr) && codeEnd()        .greaterThan(addr); }
+  public boolean instsContains       (Address addr) { return instsBegin()       .lessThanOrEqual(addr) && instsEnd()       .greaterThan(addr); }
   public boolean stubContains        (Address addr) { return stubBegin()        .lessThanOrEqual(addr) && stubEnd()        .greaterThan(addr); }
   public boolean oopsContains        (Address addr) { return oopsBegin()        .lessThanOrEqual(addr) && oopsEnd()        .greaterThan(addr); }
   public boolean scopesDataContains  (Address addr) { return scopesDataBegin()  .lessThanOrEqual(addr) && scopesDataEnd()  .greaterThan(addr); }
@@ -353,7 +353,8 @@ public class NMethod extends CodeBlob {
 
   protected void printComponentsOn(PrintStream tty) {
     // FIXME: add relocation information
-    tty.println(" instructions: [" + instructionsBegin() + ", " + instructionsEnd() + "), " +
+    tty.println(" content: [" + contentBegin() + ", " + contentEnd() + "), " +
+                " code: [" + codeBegin() + ", " + codeEnd() + "), " +
                 " data: [" + dataBegin() + ", " + dataEnd() + "), " +
                 " oops: [" + oopsBegin() + ", " + oopsEnd() + "), " +
                 " frame size: " + getFrameSize());

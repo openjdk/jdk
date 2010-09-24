@@ -49,7 +49,8 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _handler_count      = h_m()->exception_table()->length() / 4;
   _uses_monitors      = h_m()->access_flags().has_monitor_bytecodes();
   _balanced_monitors  = !_uses_monitors || h_m()->access_flags().is_monitor_matching();
-  _is_compilable      = !h_m()->is_not_compilable();
+  _is_c1_compilable   = !h_m()->is_not_c1_compilable();
+  _is_c2_compilable   = !h_m()->is_not_c2_compilable();
   // Lazy fields, filled in on demand.  Require allocation.
   _code               = NULL;
   _exception_handlers = NULL;
@@ -61,11 +62,12 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
 #endif // COMPILER2 || SHARK
 
   ciEnv *env = CURRENT_ENV;
-  if (env->jvmti_can_hotswap_or_post_breakpoint() && _is_compilable) {
+  if (env->jvmti_can_hotswap_or_post_breakpoint() && can_be_compiled()) {
     // 6328518 check hotswap conditions under the right lock.
     MutexLocker locker(Compile_lock);
     if (Dependencies::check_evol_method(h_m()) != NULL) {
-      _is_compilable = false;
+      _is_c1_compilable = false;
+      _is_c2_compilable = false;
     }
   } else {
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
@@ -93,7 +95,7 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _signature = new (env->arena()) ciSignature(_holder, sig_symbol);
   _method_data = NULL;
   // Take a snapshot of these values, so they will be commensurate with the MDO.
-  if (ProfileInterpreter) {
+  if (ProfileInterpreter || TieredCompilation) {
     int invcnt = h_m()->interpreter_invocation_count();
     // if the value overflowed report it as max int
     _interpreter_invocation_count = invcnt < 0 ? max_jint : invcnt ;
@@ -437,11 +439,26 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
         // In addition, virtual call sites have receiver type information
         int receivers_count_total = 0;
         int morphism = 0;
+        // Precompute morphism for the possible fixup
         for (uint i = 0; i < call->row_limit(); i++) {
           ciKlass* receiver = call->receiver(i);
           if (receiver == NULL)  continue;
-          morphism += 1;
-          int rcount = call->receiver_count(i);
+          morphism++;
+        }
+        int epsilon = 0;
+        if (TieredCompilation && ProfileInterpreter) {
+          // Interpreter and C1 treat final and special invokes differently.
+          // C1 will record a type, whereas the interpreter will just
+          // increment the count. Detect this case.
+          if (morphism == 1 && count > 0) {
+            epsilon = count;
+            count = 0;
+          }
+        }
+        for (uint i = 0; i < call->row_limit(); i++) {
+          ciKlass* receiver = call->receiver(i);
+          if (receiver == NULL)  continue;
+          int rcount = call->receiver_count(i) + epsilon;
           if (rcount == 0) rcount = 1; // Should be valid value
           receivers_count_total += rcount;
           // Add the receiver to result data.
@@ -687,10 +704,17 @@ int ciMethod::interpreter_call_site_count(int bci) {
 // invocation counts in methods.
 int ciMethod::scale_count(int count, float prof_factor) {
   if (count > 0 && method_data() != NULL) {
-    int current_mileage = method_data()->current_mileage();
-    int creation_mileage = method_data()->creation_mileage();
-    int counter_life = current_mileage - creation_mileage;
+    int counter_life;
     int method_life = interpreter_invocation_count();
+    if (TieredCompilation) {
+      // In tiered the MDO's life is measured directly, so just use the snapshotted counters
+      counter_life = MAX2(method_data()->invocation_count(), method_data()->backedge_count());
+    } else {
+      int current_mileage = method_data()->current_mileage();
+      int creation_mileage = method_data()->creation_mileage();
+      counter_life = current_mileage - creation_mileage;
+    }
+
     // counter_life due to backedge_counter could be > method_life
     if (counter_life > method_life)
       counter_life = method_life;
@@ -778,7 +802,8 @@ ciMethodData* ciMethod::method_data() {
   Thread* my_thread = JavaThread::current();
   methodHandle h_m(my_thread, get_methodOop());
 
-  if (Tier1UpdateMethodData && is_tier1_compile(env->comp_level())) {
+  // Create an MDO for the inlinee
+  if (TieredCompilation && is_c1_compile(env->comp_level())) {
     build_method_data(h_m);
   }
 
@@ -885,7 +910,11 @@ bool ciMethod::has_option(const char* option) {
 // Have previous compilations of this method succeeded?
 bool ciMethod::can_be_compiled() {
   check_is_loaded();
-  return _is_compilable;
+  ciEnv* env = CURRENT_ENV;
+  if (is_c1_compile(env->comp_level())) {
+    return _is_c1_compilable;
+  }
+  return _is_c2_compilable;
 }
 
 // ------------------------------------------------------------------
@@ -895,8 +924,13 @@ bool ciMethod::can_be_compiled() {
 void ciMethod::set_not_compilable() {
   check_is_loaded();
   VM_ENTRY_MARK;
-  _is_compilable = false;
-  get_methodOop()->set_not_compilable();
+  ciEnv* env = CURRENT_ENV;
+  if (is_c1_compile(env->comp_level())) {
+    _is_c1_compilable = false;
+  } else {
+    _is_c2_compilable = false;
+  }
+  get_methodOop()->set_not_compilable(env->comp_level());
 }
 
 // ------------------------------------------------------------------
@@ -910,7 +944,8 @@ void ciMethod::set_not_compilable() {
 bool ciMethod::can_be_osr_compiled(int entry_bci) {
   check_is_loaded();
   VM_ENTRY_MARK;
-  return !get_methodOop()->access_flags().is_not_osr_compilable();
+  ciEnv* env = CURRENT_ENV;
+  return !get_methodOop()->is_not_osr_compilable(env->comp_level());
 }
 
 // ------------------------------------------------------------------
@@ -920,26 +955,29 @@ bool ciMethod::has_compiled_code() {
   return get_methodOop()->code() != NULL;
 }
 
+int ciMethod::comp_level() {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  nmethod* nm = get_methodOop()->code();
+  if (nm != NULL) return nm->comp_level();
+  return 0;
+}
+
 // ------------------------------------------------------------------
 // ciMethod::instructions_size
-// This is a rough metric for "fat" methods, compared
-// before inlining with InlineSmallCode.
-// The CodeBlob::instructions_size accessor includes
-// junk like exception handler, stubs, and constant table,
-// which are not highly relevant to an inlined method.
-// So we use the more specific accessor nmethod::code_size.
-int ciMethod::instructions_size() {
+//
+// This is a rough metric for "fat" methods, compared before inlining
+// with InlineSmallCode.  The CodeBlob::code_size accessor includes
+// junk like exception handler, stubs, and constant table, which are
+// not highly relevant to an inlined method.  So we use the more
+// specific accessor nmethod::insts_size.
+int ciMethod::instructions_size(int comp_level) {
   GUARDED_VM_ENTRY(
     nmethod* code = get_methodOop()->code();
-    // if there's no compiled code or the code was produced by the
-    // tier1 profiler return 0 for the code size.  This should
-    // probably be based on the compilation level of the nmethod but
-    // that currently isn't properly recorded.
-    if (code == NULL ||
-        (TieredCompilation && code->compiler() != NULL && code->compiler()->is_c1())) {
-      return 0;
+    if (code != NULL && (comp_level == CompLevel_any || comp_level == code->comp_level())) {
+      return code->code_end() - code->verified_entry_point();
     }
-    return code->code_end() - code->verified_entry_point();
+    return 0;
   )
 }
 

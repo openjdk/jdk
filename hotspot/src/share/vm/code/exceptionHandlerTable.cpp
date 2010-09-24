@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,8 @@ void ImplicitExceptionTable::copy_to( nmethod* nm ) {
 
 void ImplicitExceptionTable::verify(nmethod *nm) const {
   for (uint i = 0; i < len(); i++) {
-     if ((*adr(i) > (unsigned int)nm->code_size()) ||
-         (*(adr(i)+1) > (unsigned int)nm->code_size()))
+     if ((*adr(i) > (unsigned int)nm->insts_size()) ||
+         (*(adr(i)+1) > (unsigned int)nm->insts_size()))
        fatal(err_msg("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, _data));
   }
 }

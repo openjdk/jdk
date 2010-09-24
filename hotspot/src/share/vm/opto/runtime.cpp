@@ -645,6 +645,22 @@ const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
 }
 
 
+const TypeFunc* OptoRuntime::array_fill_Type() {
+  // create input type (domain)
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms+0] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms+1] = TypeInt::INT;
+  fields[TypeFunc::Parms+2] = TypeInt::INT;
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+
+  // create result type
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL; // void
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
   // create input type (domain)

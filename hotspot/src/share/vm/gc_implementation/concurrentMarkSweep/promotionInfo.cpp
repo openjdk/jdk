@@ -253,8 +253,8 @@ void PromotionInfo::print_statistics(uint worker_id) const {
        cur_spool = cur_spool->nextSpoolBlock) {
     // the first entry is just a self-pointer; indices 1 through
     // bufferSize - 1 are occupied (thus, bufferSize - 1 slots).
-    guarantee((void*)cur_spool->displacedHdr == (void*)&cur_spool->displacedHdr,
-              "first entry of displacedHdr should be self-referential");
+    assert((void*)cur_spool->displacedHdr == (void*)&cur_spool->displacedHdr,
+           "first entry of displacedHdr should be self-referential");
     slots += cur_spool->bufferSize - 1;
     blocks++;
   }
