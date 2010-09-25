@@ -407,7 +407,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   if (!load_library())  return;
   decode_env env(cb, st);
   env.output()->print_cr("Decoding CodeBlob " INTPTR_FORMAT, cb);
-  env.decode_instructions(cb->instructions_begin(), cb->instructions_end());
+  env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
 
@@ -424,12 +424,12 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   env.output()->print_cr("Code:");
 
 #ifdef SHARK
-  SharkEntry* entry = (SharkEntry *) nm->instructions_begin();
-  unsigned char* p = entry->code_start();
+  SharkEntry* entry = (SharkEntry *) nm->code_begin();
+  unsigned char* p   = entry->code_start();
   unsigned char* end = entry->code_limit();
 #else
-  unsigned char* p = nm->instructions_begin();
-  unsigned char* end = nm->instructions_end();
+  unsigned char* p   = nm->code_begin();
+  unsigned char* end = nm->code_end();
 #endif // SHARK
 
   // If there has been profiling, print the buckets.

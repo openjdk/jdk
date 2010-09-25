@@ -55,7 +55,6 @@ public class UnloadInstrument {
         Soundbank defsbk = synth.getDefaultSoundbank();
         if(defsbk != null)
         {
-            assertTrue(synth.getLoadedInstruments().length == 0);
             synth.unloadAllInstruments(defsbk);
             SimpleSoundbank sbk = new SimpleSoundbank();
             SimpleInstrument ins = new SimpleInstrument();

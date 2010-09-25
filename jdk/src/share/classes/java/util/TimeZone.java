@@ -312,7 +312,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @since 1.2
      */
     public final String getDisplayName() {
-        return getDisplayName(false, LONG, Locale.getDefault());
+        return getDisplayName(false, LONG, Locale.getDefault(Locale.Category.DISPLAY));
     }
 
     /**
@@ -342,7 +342,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @since 1.2
      */
     public final String getDisplayName(boolean daylight, int style) {
-        return getDisplayName(daylight, style, Locale.getDefault());
+        return getDisplayName(daylight, style, Locale.getDefault(Locale.Category.DISPLAY));
     }
 
     /**

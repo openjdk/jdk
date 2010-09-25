@@ -166,22 +166,6 @@ public class SecureDS {
         stream.deleteDirectory(dirEntry);
         stream.deleteFile(fileEntry);
 
-        // Test: remove
-        // (requires resetting environment to get new iterator)
-        stream.close();
-        dir2.moveTo(dir1);
-        dir1.resolve(fileEntry).createFile();
-        stream = (SecureDirectoryStream<Path>)dir1.newDirectoryStream();
-        dir1.moveTo(dir2);
-        Iterator<Path> iter = stream.iterator();
-        int removed = 0;
-        while (iter.hasNext()) {
-            iter.next();
-            iter.remove();
-            removed++;
-        }
-        assertTrue(removed == 1);
-
         // clean-up
         stream.close();
         dir2.delete();

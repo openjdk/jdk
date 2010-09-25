@@ -143,7 +143,11 @@ public class FileChannelImpl
         }
     }
 
-    private long read0(ByteBuffer[] dsts) throws IOException {
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
+            throw new IndexOutOfBoundsException();
         ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
@@ -156,7 +160,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.read(fd, dsts, nd);
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -165,15 +169,6 @@ public class FileChannelImpl
                 assert IOStatus.check(n);
             }
         }
-    }
-
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return read0(Util.subsequence(dsts, offset, length));
     }
 
     public int write(ByteBuffer src) throws IOException {
@@ -200,7 +195,11 @@ public class FileChannelImpl
         }
     }
 
-    private long write0(ByteBuffer[] srcs) throws IOException {
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
+            throw new IndexOutOfBoundsException();
         ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
@@ -213,7 +212,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.write(fd, srcs, nd);
+                    n = IOUtil.write(fd, srcs, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -223,16 +222,6 @@ public class FileChannelImpl
             }
         }
     }
-
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-           throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return write0(Util.subsequence(srcs, offset, length));
-    }
-
 
     // -- Other operations --
 
@@ -440,24 +429,45 @@ public class FileChannelImpl
         }
     }
 
-    private long transferToTrustedChannel(long position, int icount,
+    // Maximum size to map when using a mapped buffer
+    private static final long MAPPED_TRANSFER_SIZE = 8L*1024L*1024L;
+
+    private long transferToTrustedChannel(long position, long count,
                                           WritableByteChannel target)
         throws IOException
     {
-        if (  !((target instanceof FileChannelImpl)
-                || (target instanceof SelChImpl)))
+        boolean isSelChImpl = (target instanceof SelChImpl);
+        if (!((target instanceof FileChannelImpl) || isSelChImpl))
             return IOStatus.UNSUPPORTED;
 
         // Trusted target: Use a mapped buffer
-        MappedByteBuffer dbb = null;
-        try {
-            dbb = map(MapMode.READ_ONLY, position, icount);
-            // ## Bug: Closing this channel will not terminate the write
-            return target.write(dbb);
-        } finally {
-            if (dbb != null)
-                unmap(dbb);
+        long remaining = count;
+        while (remaining > 0L) {
+            long size = Math.min(remaining, MAPPED_TRANSFER_SIZE);
+            try {
+                MappedByteBuffer dbb = map(MapMode.READ_ONLY, position, size);
+                try {
+                    // ## Bug: Closing this channel will not terminate the write
+                    int n = target.write(dbb);
+                    assert n >= 0;
+                    remaining -= n;
+                    if (isSelChImpl) {
+                        // one attempt to write to selectable channel
+                        break;
+                    }
+                    assert n > 0;
+                    position += n;
+                } finally {
+                    unmap(dbb);
+                }
+            } catch (IOException ioe) {
+                // Only throw exception if no bytes have been written
+                if (remaining == count)
+                    throw ioe;
+                break;
+            }
         }
+        return count - remaining;
     }
 
     private long transferToArbitraryChannel(long position, int icount,
@@ -535,20 +545,36 @@ public class FileChannelImpl
                                          long position, long count)
         throws IOException
     {
-        // Note we could loop here to accumulate more at once
+        if (!src.readable)
+            throw new NonReadableChannelException();
         synchronized (src.positionLock) {
-            long p = src.position();
-            int icount = (int)Math.min(Math.min(count, Integer.MAX_VALUE),
-                                       src.size() - p);
-            // ## Bug: Closing this channel will not terminate the write
-            MappedByteBuffer bb = src.map(MapMode.READ_ONLY, p, icount);
-            try {
-                long n = write(bb, position);
-                src.position(p + n);
-                return n;
-            } finally {
-                unmap(bb);
+            long pos = src.position();
+            long max = Math.min(count, src.size() - pos);
+
+            long remaining = max;
+            long p = pos;
+            while (remaining > 0L) {
+                long size = Math.min(remaining, MAPPED_TRANSFER_SIZE);
+                // ## Bug: Closing this channel will not terminate the write
+                MappedByteBuffer bb = src.map(MapMode.READ_ONLY, p, size);
+                try {
+                    long n = write(bb, position);
+                    assert n > 0;
+                    p += n;
+                    position += n;
+                    remaining -= n;
+                } catch (IOException ioe) {
+                    // Only throw exception if no bytes have been written
+                    if (remaining == max)
+                        throw ioe;
+                    break;
+                } finally {
+                    unmap(bb);
+                }
             }
+            long nwritten = max - remaining;
+            src.position(pos + nwritten);
+            return nwritten;
         }
     }
 

@@ -785,10 +785,11 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
     }
   }
 
-  // In our current implementation, all pools should have
-  // defined init and max size
-  assert(!has_undefined_init_size, "Undefined init size");
-  assert(!has_undefined_max_size, "Undefined max size");
+  // In our current implementation, we make sure that all non-heap
+  // pools have defined init and max sizes. Heap pools do not matter,
+  // as we never use total_init and total_max for them.
+  assert(heap || !has_undefined_init_size, "Undefined init size");
+  assert(heap || !has_undefined_max_size,  "Undefined max size");
 
   MemoryUsage usage((heap ? InitialHeapSize : total_init),
                     total_used,
@@ -1900,16 +1901,15 @@ JVM_ENTRY(void, jmm_GetLastGCStat(JNIEnv *env, jobject obj, jmmGCStat *gc_stat))
 
   // Get the GCMemoryManager
   GCMemoryManager* mgr = get_gc_memory_manager_from_jobject(obj, CHECK);
-  if (mgr->last_gc_stat() == NULL) {
-    gc_stat->gc_index = 0;
-    return;
-  }
 
   // Make a copy of the last GC statistics
   // GC may occur while constructing the last GC information
   int num_pools = MemoryService::num_memory_pools();
   GCStatInfo* stat = new GCStatInfo(num_pools);
-  stat->copy_stat(mgr->last_gc_stat());
+  if (mgr->get_last_gc_stat(stat) == 0) {
+    gc_stat->gc_index = 0;
+    return;
+  }
 
   gc_stat->gc_index = stat->gc_index();
   gc_stat->start_time = Management::ticks_to_ms(stat->start_time());

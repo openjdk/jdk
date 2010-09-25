@@ -261,6 +261,21 @@ public class Misc {
         assertTrue(file.toRealPath(true).isSameFile(file.toRealPath(false)));
 
         /**
+         * Test: toRealPath should fail if file does not exist
+         */
+        Path doesNotExist = dir.resolve("DoesNotExist");
+        try {
+            doesNotExist.toRealPath(true);
+            throw new RuntimeException("IOException expected");
+        } catch (IOException expected) {
+        }
+        try {
+            doesNotExist.toRealPath(false);
+            throw new RuntimeException("IOException expected");
+        } catch (IOException expected) {
+        }
+
+        /**
          * Test: toRealPath(true) should resolve links
          */
         if (supportsLinks) {

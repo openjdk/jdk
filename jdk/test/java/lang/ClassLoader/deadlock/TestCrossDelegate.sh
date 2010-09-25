@@ -25,7 +25,7 @@
 # @summary (cl) ClassLoader.loadClass locks all instances in chain 
 #          when delegating
 # 
-# @run shell/timeout=10 TestCrossDelegate.sh
+# @run shell/timeout=300 TestCrossDelegate.sh
 
 # if running by hand on windows, change TESTSRC and TESTCLASSES to "."
 if [ "${TESTSRC}" = "" ] ; then
@@ -41,10 +41,6 @@ if [ "${TESTJAVA}" = "" ] ; then
     echo "FAILED!!!"
     exit 1
 fi
-echo TESTSRC=${TESTSRC}
-echo TESTCLASSES=${TESTCLASSES}
-echo TESTJAVA=${TESTJAVA}
-echo ""
 
 # set platform-specific variables
 OS=`uname -s`
@@ -55,10 +51,19 @@ case "$OS" in
   Linux )
     FS="/"
     ;;
-  Windows* )
+  Windows*)
     FS="\\"
     ;;
+  CYGWIN* )
+    FS="\\"
+    TESTCLASSES=`/usr/bin/cygpath -a -s -m ${TESTCLASSES}`
+    ;;
 esac
+
+echo TESTSRC=${TESTSRC}
+echo TESTCLASSES=${TESTCLASSES}
+echo TESTJAVA=${TESTJAVA}
+echo ""
 
 # compile test
 ${TESTJAVA}${FS}bin${FS}javac \

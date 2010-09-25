@@ -39,9 +39,7 @@ class Compiler: public AbstractCompiler {
   // Name of this compiler
   virtual const char* name()                     { return "C1"; }
 
-#ifdef TIERED
-  virtual bool is_c1() { return true; };
-#endif // TIERED
+  virtual bool is_c1()                           { return true; };
 
   BufferBlob* build_buffer_blob();
 

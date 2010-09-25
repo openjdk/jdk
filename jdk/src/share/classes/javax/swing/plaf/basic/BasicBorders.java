@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.io.Serializable;
-
 
 /**
  * Factory object that can vend Borders appropriate for the basic L & F.
@@ -431,6 +429,9 @@ public class BasicBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
+            if (!(c instanceof BasicSplitPaneDivider)) {
+                return;
+            }
             Component          child;
             Rectangle          cBounds;
             JSplitPane         splitPane = ((BasicSplitPaneDivider)c).
@@ -510,6 +511,9 @@ public class BasicBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
+            if (!(c instanceof JSplitPane)) {
+                return;
+            }
             // The only tricky part with this border is that the divider is
             // not positioned at the top (for horizontal) or left (for vert),
             // so this border draws to where the divider is:
