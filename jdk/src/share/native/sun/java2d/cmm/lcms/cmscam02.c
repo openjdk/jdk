@@ -27,9 +27,10 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
+//---------------------------------------------------------------------------------
 //
-//  Little cms
-//  Copyright (C) 1998-2007 Marti Maria
+//  Little Color Management System
+//  Copyright (c) 1998-2010 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -48,69 +49,65 @@
 // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//---------------------------------------------------------------------------------
+//
 
-
+#include "lcms2_internal.h"
 
 // CIECAM 02 appearance model. Many thanks to Jordi Vilar for the debugging.
-
-#include "lcms.h"
-
-
-LCMSAPI LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC);
-LCMSAPI void       LCMSEXPORT cmsCIECAM02Done(LCMSHANDLE hModel);
-LCMSAPI void       LCMSEXPORT cmsCIECAM02Forward(LCMSHANDLE hModel, LPcmsCIEXYZ pIn, LPcmsJCh pOut);
-LCMSAPI void       LCMSEXPORT cmsCIECAM02Reverse(LCMSHANDLE hModel, LPcmsJCh pIn,    LPcmsCIEXYZ pOut);
-
 
 // ---------- Implementation --------------------------------------------
 
 typedef struct  {
 
-    double XYZ[3];
-    double RGB[3];
-    double RGBc[3];
-    double RGBp[3];
-    double RGBpa[3];
-    double a, b, h, e, H, A, J, Q, s, t, C, M;
-    double abC[2];
-    double abs[2];
-    double abM[2];
+    cmsFloat64Number XYZ[3];
+    cmsFloat64Number RGB[3];
+    cmsFloat64Number RGBc[3];
+    cmsFloat64Number RGBp[3];
+    cmsFloat64Number RGBpa[3];
+    cmsFloat64Number a, b, h, e, H, A, J, Q, s, t, C, M;
+    cmsFloat64Number abC[2];
+    cmsFloat64Number abs[2];
+    cmsFloat64Number abM[2];
 
-} CAM02COLOR, *LPCAM02COLOR;
+} CAM02COLOR;
 
 typedef struct  {
 
     CAM02COLOR adoptedWhite;
-    double LA, Yb;
-    double F, c, Nc;
-    int surround;
-    double n, Nbb, Ncb, z, FL, D;
+    cmsFloat64Number LA, Yb;
+    cmsFloat64Number F, c, Nc;
+    cmsUInt32Number surround;
+    cmsFloat64Number n, Nbb, Ncb, z, FL, D;
 
-} cmsCIECAM02, *LPcmsCIECAM02;
+       cmsContext ContextID;
+
+} cmsCIECAM02;
 
 
 static
-double compute_n(LPcmsCIECAM02 pMod)
+cmsFloat64Number compute_n(cmsCIECAM02* pMod)
 {
-    return(pMod -> Yb / pMod -> adoptedWhite.XYZ[1]);
+    return (pMod -> Yb / pMod -> adoptedWhite.XYZ[1]);
 }
 
 static
-double compute_z(LPcmsCIECAM02 pMod)
+cmsFloat64Number compute_z(cmsCIECAM02* pMod)
 {
-    return(1.48 + pow(pMod -> n, 0.5));
+    return (1.48 + pow(pMod -> n, 0.5));
 }
 
 static
-double computeNbb(LPcmsCIECAM02 pMod)
+cmsFloat64Number computeNbb(cmsCIECAM02* pMod)
 {
-    return(0.725 * pow((1.0 / pMod -> n), 0.2));
+    return (0.725 * pow((1.0 / pMod -> n), 0.2));
 }
 
 static
-double computeFL(LPcmsCIECAM02 pMod)
+cmsFloat64Number computeFL(cmsCIECAM02* pMod)
 {
-    double k, FL;
+    cmsFloat64Number k, FL;
 
     k = 1.0 / ((5.0 * pMod->LA) + 1.0);
     FL = 0.2 * pow(k, 4.0) * (5.0 * pMod->LA) + 0.1 *
@@ -121,9 +118,9 @@ double computeFL(LPcmsCIECAM02 pMod)
 }
 
 static
-double computeD(LPcmsCIECAM02 pMod)
+cmsFloat64Number computeD(cmsCIECAM02* pMod)
 {
-    double D;
+    cmsFloat64Number D;
 
     D = pMod->F - (1.0/3.6)*(exp(((-pMod ->LA-42) / 92.0)));
 
@@ -142,9 +139,10 @@ CAM02COLOR XYZtoCAT02(CAM02COLOR clr)
 }
 
 static
-CAM02COLOR ChromaticAdaptation(CAM02COLOR clr, LPcmsCIECAM02 pMod)
+CAM02COLOR ChromaticAdaptation(CAM02COLOR clr, cmsCIECAM02* pMod)
 {
-    int i;
+    cmsUInt32Number i;
+
     for (i = 0; i < 3; i++) {
         clr.RGBc[i] = ((pMod -> adoptedWhite.XYZ[1] *
             (pMod->D / pMod -> adoptedWhite.RGB[i])) +
@@ -156,11 +154,9 @@ CAM02COLOR ChromaticAdaptation(CAM02COLOR clr, LPcmsCIECAM02 pMod)
 
 
 static
-CAM02COLOR CAT02toHPE (CAM02COLOR clr)
+CAM02COLOR CAT02toHPE(CAM02COLOR clr)
 {
-
-    double M[9];
-
+    cmsFloat64Number M[9];
 
     M[0] =(( 0.38971 *  1.096124) + (0.68898 * 0.454369) + (-0.07868 * -0.009628));
     M[1] =(( 0.38971 * -0.278869) + (0.68898 * 0.473533) + (-0.07868 * -0.005698));
@@ -180,10 +176,10 @@ CAM02COLOR CAT02toHPE (CAM02COLOR clr)
 }
 
 static
-CAM02COLOR NonlinearCompression(CAM02COLOR clr, LPcmsCIECAM02 pMod)
+CAM02COLOR NonlinearCompression(CAM02COLOR clr, cmsCIECAM02* pMod)
 {
-    int i;
-    double temp;
+    cmsUInt32Number i;
+    cmsFloat64Number temp;
 
     for (i = 0; i < 3; i++) {
         if (clr.RGBp[i] < 0) {
@@ -204,9 +200,9 @@ CAM02COLOR NonlinearCompression(CAM02COLOR clr, LPcmsCIECAM02 pMod)
 }
 
 static
-CAM02COLOR ComputeCorrelates(CAM02COLOR clr, LPcmsCIECAM02 pMod)
+CAM02COLOR ComputeCorrelates(CAM02COLOR clr, cmsCIECAM02* pMod)
 {
-    double a, b, temp, e, t, r2d, d2r;
+    cmsFloat64Number a, b, temp, e, t, r2d, d2r;
 
     a = clr.RGBpa[0] - (12.0 * clr.RGBpa[1] / 11.0) + (clr.RGBpa[2] / 11.0);
     b = (clr.RGBpa[0] + clr.RGBpa[1] - (2.0 * clr.RGBpa[2])) / 9.0;
@@ -274,10 +270,10 @@ CAM02COLOR ComputeCorrelates(CAM02COLOR clr, LPcmsCIECAM02 pMod)
 
 
 static
-CAM02COLOR InverseCorrelates(CAM02COLOR clr, LPcmsCIECAM02 pMod)
+CAM02COLOR InverseCorrelates(CAM02COLOR clr, cmsCIECAM02* pMod)
 {
 
-    double t, e, p1, p2, p3, p4, p5, hr, d2r;
+    cmsFloat64Number t, e, p1, p2, p3, p4, p5, hr, d2r;
     d2r = 3.141592654 / 180.0;
 
     t = pow( (clr.C / (pow((clr.J / 100.0), 0.5) *
@@ -327,10 +323,10 @@ CAM02COLOR InverseCorrelates(CAM02COLOR clr, LPcmsCIECAM02 pMod)
 }
 
 static
-CAM02COLOR InverseNonlinearity(CAM02COLOR clr, LPcmsCIECAM02 pMod)
+CAM02COLOR InverseNonlinearity(CAM02COLOR clr, cmsCIECAM02* pMod)
 {
-    int i;
-    double c1;
+    cmsUInt32Number i;
+    cmsFloat64Number c1;
 
     for (i = 0; i < 3; i++) {
         if ((clr.RGBpa[i] - 0.1) < 0) c1 = -1;
@@ -347,7 +343,7 @@ CAM02COLOR InverseNonlinearity(CAM02COLOR clr, LPcmsCIECAM02 pMod)
 static
 CAM02COLOR HPEtoCAT02(CAM02COLOR clr)
 {
-    double M[9];
+    cmsFloat64Number M[9];
 
     M[0] = (( 0.7328 *  1.910197) + (0.4296 * 0.370950));
     M[1] = (( 0.7328 * -1.112124) + (0.4296 * 0.629054));
@@ -362,19 +358,19 @@ CAM02COLOR HPEtoCAT02(CAM02COLOR clr)
     clr.RGBc[0] = (clr.RGBp[0] * M[0]) + (clr.RGBp[1] * M[1]) + (clr.RGBp[2] * M[2]);
     clr.RGBc[1] = (clr.RGBp[0] * M[3]) + (clr.RGBp[1] * M[4]) + (clr.RGBp[2] * M[5]);
     clr.RGBc[2] = (clr.RGBp[0] * M[6]) + (clr.RGBp[1] * M[7]) + (clr.RGBp[2] * M[8]);
-    return (clr);
+    return clr;
 }
 
 
 static
-CAM02COLOR InverseChromaticAdaptation(CAM02COLOR clr,  LPcmsCIECAM02 pMod)
+CAM02COLOR InverseChromaticAdaptation(CAM02COLOR clr,  cmsCIECAM02* pMod)
 {
-    int i;
+    cmsUInt32Number i;
     for (i = 0; i < 3; i++) {
         clr.RGB[i] = clr.RGBc[i] /
             ((pMod->adoptedWhite.XYZ[1] * pMod->D / pMod->adoptedWhite.RGB[i]) + 1.0 - pMod->D);
     }
-    return(clr);
+    return clr;
 }
 
 
@@ -385,23 +381,21 @@ CAM02COLOR CAT02toXYZ(CAM02COLOR clr)
     clr.XYZ[1] = (clr.RGB[0] *  0.454369) + (clr.RGB[1] *  0.473533) + (clr.RGB[2] *  0.072098);
     clr.XYZ[2] = (clr.RGB[0] * -0.009628) + (clr.RGB[1] * -0.005698) + (clr.RGB[2] *  1.015326);
 
-    return(clr);
+    return clr;
 }
 
 
-
-
-LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
+cmsHANDLE  CMSEXPORT cmsCIECAM02Init(cmsContext ContextID, const cmsViewingConditions* pVC)
 {
-    LPcmsCIECAM02 lpMod;
+    cmsCIECAM02* lpMod;
 
+    _cmsAssert(pVC != NULL);
 
-   if((lpMod = (LPcmsCIECAM02) _cmsMalloc(sizeof(cmsCIECAM02))) == NULL) {
-        return (LCMSHANDLE) NULL;
+    if((lpMod = (cmsCIECAM02*) _cmsMallocZero(ContextID, sizeof(cmsCIECAM02))) == NULL) {
+        return NULL;
     }
 
-
-    ZeroMemory(lpMod, sizeof(cmsCIECAM02));
+    lpMod ->ContextID = ContextID;
 
     lpMod ->adoptedWhite.XYZ[0] = pVC ->whitePoint.X;
     lpMod ->adoptedWhite.XYZ[1] = pVC ->whitePoint.Y;
@@ -414,36 +408,30 @@ LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
 
     switch (lpMod -> surround) {
 
-    case AVG_SURROUND_4:
-        lpMod->F = 1.0;     // Not included in CAM02
-        lpMod->c = 0.69;
-        lpMod->Nc = 1.0;
-        break;
 
-    case CUTSHEET_SURROUND:
-        lpMod->F = 0.8;
-        lpMod->c = 0.41;
-        lpMod->Nc = 0.8;
-        break;
+      case CUTSHEET_SURROUND:
+          lpMod->F = 0.8;
+          lpMod->c = 0.41;
+          lpMod->Nc = 0.8;
+          break;
 
-    case DARK_SURROUND:
-        lpMod -> F  = 0.8;
-        lpMod -> c  = 0.525;
-        lpMod -> Nc = 0.8;
-        break;
+      case DARK_SURROUND:
+          lpMod -> F  = 0.8;
+          lpMod -> c  = 0.525;
+          lpMod -> Nc = 0.8;
+          break;
 
+      case DIM_SURROUND:
+          lpMod -> F  = 0.9;
+          lpMod -> c  = 0.59;
+          lpMod -> Nc = 0.95;
+          break;
 
-    case DIM_SURROUND:
-        lpMod -> F  = 0.9;
-        lpMod -> c  = 0.59;
-        lpMod -> Nc = 0.95;
-        break;
-
-    default:
-        // Average surround
-        lpMod -> F  = 1.0;
-        lpMod -> c  = 0.69;
-        lpMod -> Nc = 1.0;
+      default:
+          // Average surround
+          lpMod -> F  = 1.0;
+          lpMod -> c  = 0.69;
+          lpMod -> Nc = 1.0;
     }
 
     lpMod -> n   = compute_n(lpMod);
@@ -451,10 +439,8 @@ LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
     lpMod -> Nbb = computeNbb(lpMod);
     lpMod -> FL  = computeFL(lpMod);
 
-    if (lpMod -> D == D_CALCULATE ||
-        lpMod -> D == D_CALCULATE_DISCOUNT) {
-
-    lpMod -> D   = computeD(lpMod);
+    if (lpMod -> D == D_CALCULATE) {
+        lpMod -> D   = computeD(lpMod);
     }
 
     lpMod -> Ncb = lpMod -> Nbb;
@@ -464,21 +450,26 @@ LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
     lpMod -> adoptedWhite = CAT02toHPE(lpMod -> adoptedWhite);
     lpMod -> adoptedWhite = NonlinearCompression(lpMod -> adoptedWhite, lpMod);
 
-    return (LCMSHANDLE) lpMod;
+    return (cmsHANDLE) lpMod;
 
 }
 
-void LCMSEXPORT cmsCIECAM02Done(LCMSHANDLE hModel)
+void CMSEXPORT cmsCIECAM02Done(cmsHANDLE hModel)
 {
-    LPcmsCIECAM02 lpMod = (LPcmsCIECAM02) (LPSTR) hModel;
-    if (lpMod) _cmsFree(lpMod);
+    cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
+
+    if (lpMod) _cmsFree(lpMod ->ContextID, lpMod);
 }
 
 
-void LCMSEXPORT cmsCIECAM02Forward(LCMSHANDLE hModel, LPcmsCIEXYZ pIn, LPcmsJCh pOut)
+void CMSEXPORT cmsCIECAM02Forward(cmsHANDLE hModel, const cmsCIEXYZ* pIn, cmsJCh* pOut)
 {
     CAM02COLOR clr;
-    LPcmsCIECAM02 lpMod = (LPcmsCIECAM02) (LPSTR) hModel;
+    cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
+
+    _cmsAssert(lpMod != NULL);
+    _cmsAssert(pIn != NULL);
+    _cmsAssert(pOut != NULL);
 
     clr.XYZ[0] = pIn ->X;
     clr.XYZ[1] = pIn ->Y;
@@ -495,11 +486,14 @@ void LCMSEXPORT cmsCIECAM02Forward(LCMSHANDLE hModel, LPcmsCIEXYZ pIn, LPcmsJCh 
     pOut ->h = clr.h;
 }
 
-void LCMSEXPORT cmsCIECAM02Reverse(LCMSHANDLE hModel, LPcmsJCh pIn, LPcmsCIEXYZ pOut)
+void CMSEXPORT cmsCIECAM02Reverse(cmsHANDLE hModel, const cmsJCh* pIn, cmsCIEXYZ* pOut)
 {
     CAM02COLOR clr;
-    LPcmsCIECAM02 lpMod = (LPcmsCIECAM02) (LPSTR) hModel;
+    cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
 
+    _cmsAssert(lpMod != NULL);
+    _cmsAssert(pIn != NULL);
+    _cmsAssert(pOut != NULL);
 
     clr.J = pIn -> J;
     clr.C = pIn -> C;
@@ -514,6 +508,5 @@ void LCMSEXPORT cmsCIECAM02Reverse(LCMSHANDLE hModel, LPcmsJCh pIn, LPcmsCIEXYZ 
     pOut ->X = clr.XYZ[0];
     pOut ->Y = clr.XYZ[1];
     pOut ->Z = clr.XYZ[2];
-
 }
 

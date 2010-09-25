@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class PointerLocation {
   InterpreterCodelet interpreterCodelet;
   CodeBlob blob;
   // FIXME: add more detail about CodeBlob
-  boolean inBlobInstructions;
+  boolean inBlobCode;
   boolean inBlobData;
   boolean inBlobOops;
   boolean inBlobUnknownLocation;
@@ -142,8 +142,8 @@ public class PointerLocation {
     return blob;
   }
 
-  public boolean isInBlobInstructions() {
-    return inBlobInstructions;
+  public boolean isInBlobCode() {
+    return inBlobCode;
   }
 
   public boolean isInBlobData() {
@@ -233,8 +233,8 @@ public class PointerLocation {
     } else if (isInCodeCache()) {
       CodeBlob b = getCodeBlob();
       tty.print("In ");
-      if (isInBlobInstructions()) {
-        tty.print("instructions");
+      if (isInBlobCode()) {
+        tty.print("code");
       } else if (isInBlobData()) {
         tty.print("data");
       } else if (isInBlobOops()) {

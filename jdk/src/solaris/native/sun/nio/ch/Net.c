@@ -170,6 +170,22 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     if (fd < 0) {
         return handleSocketError(env, errno);
     }
+
+#ifdef AF_INET6
+    /* Disable IPV6_V6ONLY to ensure dual-socket support */
+    if (domain == AF_INET6) {
+        int arg = 0;
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
+                       sizeof(int)) < 0) {
+            JNU_ThrowByNameWithLastError(env,
+                                         JNU_JAVANETPKG "SocketException",
+                                         "sun.nio.ch.Net.setIntOption");
+            close(fd);
+            return -1;
+        }
+    }
+#endif
+
     if (reuse) {
         int arg = 1;
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,

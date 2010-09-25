@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
-
-import java.io.Serializable;
 
 /**
  * Factory object that can vend Icons appropriate for the basic L & F.
@@ -99,7 +97,7 @@ public class MotifBorders {
         }
 
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
-            if (((JComponent)c).hasFocus()) {
+            if (c.hasFocus()) {
                 g.setColor(focus);
                 g.drawRect(x, y, w-1, h-1);
             } else {
@@ -233,6 +231,9 @@ public class MotifBorders {
         }
 
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            if (!(c instanceof JMenuBar)) {
+                return;
+            }
             JMenuBar menuBar = (JMenuBar)c;
             if (menuBar.isBorderPainted() == true) {
                 // this draws the MenuBar border
@@ -658,6 +659,9 @@ public class MotifBorders {
          * @param height the height of the painted border
          */
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            if (!(c instanceof JPopupMenu)) {
+                return;
+            }
 
             Font origFont = g.getFont();
             Color origColor = g.getColor();
@@ -701,6 +705,9 @@ public class MotifBorders {
          * @param insets the object to be reinitialized
          */
         public Insets getBorderInsets(Component c, Insets insets) {
+            if (!(c instanceof JPopupMenu)) {
+                return insets;
+            }
             FontMetrics fm;
             int         descent = 0;
             int         ascent = 16;

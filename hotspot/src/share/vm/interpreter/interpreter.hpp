@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ class CodeletMark: ResourceMark {
 
 
     // commit Codelet
-    AbstractInterpreter::code()->commit((*_masm)->code()->pure_code_size());
+    AbstractInterpreter::code()->commit((*_masm)->code()->pure_insts_size());
     // make sure nobody can use _masm outside a CodeletMark lifespan
     *_masm = NULL;
   }

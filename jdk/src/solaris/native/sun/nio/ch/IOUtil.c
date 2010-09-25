@@ -67,12 +67,9 @@ static int
 configureBlocking(int fd, jboolean blocking)
 {
     int flags = fcntl(fd, F_GETFL);
+    int newflags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
 
-    if ((blocking == JNI_FALSE) && !(flags & O_NONBLOCK))
-        return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    else if ((blocking == JNI_TRUE) && (flags & O_NONBLOCK))
-        return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
-    return 0;
+    return (flags == newflags) ? 0 : fcntl(fd, F_SETFL, newflags);
 }
 
 JNIEXPORT void JNICALL
@@ -83,27 +80,25 @@ Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz,
         JNU_ThrowIOExceptionWithLastError(env, "Configure blocking failed");
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_IOUtil_initPipe(JNIEnv *env, jobject this,
-                                    jintArray intArray, jboolean block)
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_IOUtil_makePipe(JNIEnv *env, jobject this, jboolean blocking)
 {
     int fd[2];
-    jint *ptr = 0;
 
     if (pipe(fd) < 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Pipe failed");
-        return;
+        return 0;
     }
-    if (block == JNI_FALSE) {
+    if (blocking == JNI_FALSE) {
         if ((configureBlocking(fd[0], JNI_FALSE) < 0)
             || (configureBlocking(fd[1], JNI_FALSE) < 0)) {
             JNU_ThrowIOExceptionWithLastError(env, "Configure blocking failed");
+            close(fd[0]);
+            close(fd[1]);
+            return 0;
         }
     }
-    ptr = (*env)->GetPrimitiveArrayCritical(env, intArray, 0);
-    ptr[0] = fd[0];
-    ptr[1] = fd[1];
-    (*env)->ReleasePrimitiveArrayCritical(env, intArray, ptr, 0);
+    return ((jlong) fd[0] << 32) | (jlong) fd[1];
 }
 
 JNIEXPORT jboolean JNICALL
@@ -131,21 +126,22 @@ convertReturnVal(JNIEnv *env, jint n, jboolean reading)
 {
     if (n > 0) /* Number of bytes written */
         return n;
-    if (n < 0) {
-        if (errno == EAGAIN)
-            return IOS_UNAVAILABLE;
-        if (errno == EINTR)
-            return IOS_INTERRUPTED;
-    }
-    if (n == 0) {
+    else if (n == 0) {
         if (reading) {
             return IOS_EOF; /* EOF is -1 in javaland */
         } else {
             return 0;
         }
     }
-    JNU_ThrowIOExceptionWithLastError(env, "Read/write failed");
-    return IOS_THROWN;
+    else if (errno == EAGAIN)
+        return IOS_UNAVAILABLE;
+    else if (errno == EINTR)
+        return IOS_INTERRUPTED;
+    else {
+        const char *msg = reading ? "Read failed" : "Write failed";
+        JNU_ThrowIOExceptionWithLastError(env, msg);
+        return IOS_THROWN;
+    }
 }
 
 /* Declared in nio_util.h for use elsewhere in NIO */
@@ -155,21 +151,22 @@ convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading)
 {
     if (n > 0) /* Number of bytes written */
         return n;
-    if (n < 0) {
-        if (errno == EAGAIN)
-            return IOS_UNAVAILABLE;
-        if (errno == EINTR)
-            return IOS_INTERRUPTED;
-    }
-    if (n == 0) {
+    else if (n == 0) {
         if (reading) {
             return IOS_EOF; /* EOF is -1 in javaland */
         } else {
             return 0;
         }
     }
-    JNU_ThrowIOExceptionWithLastError(env, "Read/write failed");
-    return IOS_THROWN;
+    else if (errno == EAGAIN)
+        return IOS_UNAVAILABLE;
+    else if (errno == EINTR)
+        return IOS_INTERRUPTED;
+    else {
+        const char *msg = reading ? "Read failed" : "Write failed";
+        JNU_ThrowIOExceptionWithLastError(env, msg);
+        return IOS_THROWN;
+    }
 }
 
 jint

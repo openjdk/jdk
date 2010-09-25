@@ -535,7 +535,7 @@ jboolean
 GetApplicationHome(char *buf, jint bufsize)
 {
     if (execname != NULL) {
-        JLI_StrNCpy(buf, execname, bufsize-1);
+        JLI_Snprintf(buf, bufsize, "%s", execname);
         buf[bufsize-1] = '\0';
     } else {
         return JNI_FALSE;
