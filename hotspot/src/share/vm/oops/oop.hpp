@@ -306,7 +306,6 @@ class oopDesc {
 
 #ifndef SERIALGC
   // Parallel Scavenge
-  void copy_contents(PSPromotionManager* pm);
   void push_contents(PSPromotionManager* pm);
 
   // Parallel Old

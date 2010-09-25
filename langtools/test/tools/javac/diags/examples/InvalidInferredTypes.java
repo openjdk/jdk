@@ -22,17 +22,17 @@
  */
 
 // key: compiler.err.invalid.inferred.types
-// key: compiler.misc.inferred.do.not.conform.to.params
+// key: compiler.misc.inferred.do.not.conform.to.bounds
 
 import java.util.*;
 
 class InvalidInferredTypes {
 
-    <T> Comparator<T> compound(Iterable<? extends Comparator<? super T>> it) {
+    <T extends List<? super T>> T makeList() {
         return null;
     }
 
-    public void test(List<Comparator<?>> x) {
-        Comparator<String> c3 = compound(x);
+    public void test() {
+        List<? super String> l = makeList();
     }
 }

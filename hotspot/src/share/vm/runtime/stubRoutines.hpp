@@ -148,6 +148,13 @@ class StubRoutines: AllStatic {
   static address _unsafe_arraycopy;
   static address _generic_arraycopy;
 
+  static address _jbyte_fill;
+  static address _jshort_fill;
+  static address _jint_fill;
+  static address _arrayof_jbyte_fill;
+  static address _arrayof_jshort_fill;
+  static address _arrayof_jint_fill;
+
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
   // constant folding in the compiler to ensure equivalence.  If the
@@ -258,6 +265,16 @@ class StubRoutines: AllStatic {
   static address checkcast_arraycopy()     { return _checkcast_arraycopy; }
   static address unsafe_arraycopy()        { return _unsafe_arraycopy; }
   static address generic_arraycopy()       { return _generic_arraycopy; }
+
+  static address jbyte_fill()          { return _jbyte_fill; }
+  static address jshort_fill()         { return _jshort_fill; }
+  static address jint_fill()           { return _jint_fill; }
+  static address arrayof_jbyte_fill()  { return _arrayof_jbyte_fill; }
+  static address arrayof_jshort_fill() { return _arrayof_jshort_fill; }
+  static address arrayof_jint_fill()   { return _arrayof_jint_fill; }
+
+  static address select_fill_function(BasicType t, bool aligned, const char* &name);
+
 
   static double  intrinsic_log(double d) {
     assert(_intrinsic_log != NULL, "must be defined");

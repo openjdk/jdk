@@ -108,6 +108,10 @@ public class Scanner implements Lexer {
      */
     private boolean allowUnderscoresInLiterals;
 
+    /** Allow exotic identifiers.
+     */
+    private boolean allowExoticIdentifiers;
+
     /** The source language setting.
      */
     private Source source;
@@ -181,6 +185,7 @@ public class Scanner implements Lexer {
         allowBinaryLiterals = source.allowBinaryLiterals();
         allowHexFloats = source.allowHexFloats();
         allowUnderscoresInLiterals = source.allowBinaryLiterals();
+        allowExoticIdentifiers = source.allowExoticIdentifiers();  // for invokedynamic
     }
 
     private static final boolean hexFloatsWork = hexFloatsWork();
@@ -1010,6 +1015,10 @@ public class Scanner implements Lexer {
                 case '#':
                     scanChar();
                     if (ch == '\"') {
+                        if (!allowExoticIdentifiers) {
+                            lexError("unsupported.exotic.id", source.name);
+                            allowExoticIdentifiers = true;
+                        }
                         scanChar();
                         if (ch == '\"')
                             lexError(pos, "empty.bytecode.ident");

@@ -275,6 +275,7 @@
             failOnError="false"
             errorProperty="findbugs.all.errors"
             warningsProperty="findbugs.all.warnings"
+            jvm="${target.java.home}/bin/java"
             jvmargs="-Xmx512M">
             <class location="${build.classes.dir}"/>
             <sourcePath>
@@ -621,7 +622,7 @@
         <genstubs
             srcdir="${import.jdk.src.dir}" destdir="${build.genstubs.dir}"
             includes="${import.jdk.stub.files}"
-            fork="true" classpath="${build.toolclasses.dir}:${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"
+            fork="true" classpath="${build.toolclasses.dir}:${build.bootstrap.dir}/classes:${ant.core.lib}"
         />
     </target>
 
@@ -673,6 +674,7 @@
                     <filterset begintoken="#" endtoken="#">
                         <filter token="PROGRAM" value="@{name}"/>
                         <filter token="TARGET_JAVA" value="@{java}"/>
+                        <filter token="PS" value="${path.separator}"/>
                     </filterset>
                 </copy>
                 <chmod file="@{bin.dir}/@{name}" perm="ugo+rx"/>
@@ -812,7 +814,8 @@
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}/CompileProperties"
                destdir="${build.toolclasses.dir}/"
-               classpath="${ant.home}/lib/ant.jar"/>
+               classpath="${ant.core.lib}"
+               includeantruntime="false"/>
         <taskdef name="pcompile"
                  classname="CompilePropertiesTask"
                  classpath="${build.toolclasses.dir}/"/>
@@ -826,7 +829,8 @@
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}/GenStubs"
                destdir="${build.toolclasses.dir}/"
-               classpath="${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"/>
+               classpath="${build.bootstrap.dir}/classes:${ant.core.lib}"
+               includeantruntime="false"/>
         <taskdef name="genstubs"
                  classname="GenStubs$$Ant"
                  classpath="${build.toolclasses.dir}/"/>
@@ -935,7 +939,8 @@
         <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
     </target>
 
-    <target name="-def-findbugs" unless="findbugs.defined" depends="-check-findbugs.home">
+    <target name="-def-findbugs" unless="findbugs.defined"
+        depends="-check-findbugs.home,-check-target.java.home">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
             <classpath>
                 <pathelement location="${findbugs.home}/lib/findbugs.jar"/>
@@ -955,6 +960,7 @@
                     failOnError="false"
                     errorProperty="findbugs.@{name}.errors"
                     warningsProperty="findbugs.@{name}.warnings"
+                    jvm="${target.java.home}/bin/java"
                     jvmargs="-Xmx512M" >
                     <class location="${dist.dir}/lib/@{name}.jar"/>
                     <auxClasspath>

@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 4399129
+ * @bug 4399129 6980724
  * @summary Check that assertions compile properly when nested in an interface
  * @author gafter
+ * @compile InterfaceAssert.java
+ * @run main InterfaceAssert
  */
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,6 +551,9 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
+            if (!(c instanceof JComponent)) {
+                return;
+            }
             JComponent jc = (JComponent)c;
             SynthContext context = getContext(jc);
             SynthStyle style = context.getStyle();

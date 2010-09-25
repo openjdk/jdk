@@ -142,11 +142,8 @@ public class BasicColorChooserUI extends ColorChooserUI
         if (previewPanel == null) {
             previewPanel = ColorChooserComponentFactory.getPreviewPanel();
         }
-        else {
-            Dimension size = new BorderLayout().minimumLayoutSize(previewPanel);
-            if ((size.width == 0) && (size.height == 0)) {
-                previewPanel = null;
-            }
+        else if (JPanel.class.equals(previewPanel.getClass()) && (0 == previewPanel.getComponentCount())) {
+            previewPanel = null;
         }
         this.previewPanel = previewPanel;
         if (previewPanel != null) {
@@ -215,9 +212,10 @@ public class BasicColorChooserUI extends ColorChooserUI
     }
 
     private void selectionChanged(ColorSelectionModel model) {
-        if (this.previewPanel != null) {
-            this.previewPanel.setForeground(model.getSelectedColor());
-            this.previewPanel.repaint();
+        JComponent previewPanel = this.chooser.getPreviewPanel();
+        if (previewPanel != null) {
+            previewPanel.setForeground(model.getSelectedColor());
+            previewPanel.repaint();
         }
         AbstractColorChooserPanel[] panels = this.chooser.getChooserPanels();
         if (panels != null) {
