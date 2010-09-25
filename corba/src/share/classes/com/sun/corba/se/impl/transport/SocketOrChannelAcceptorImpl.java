@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
-
-import org.omg.CORBA.CompletionStatus;
-import org.omg.CORBA.INTERNAL;
 
 import com.sun.corba.se.pept.broker.Broker;
 import com.sun.corba.se.pept.encoding.InputObject;
@@ -61,18 +54,12 @@ import com.sun.corba.se.spi.ior.iiop.IIOPFactories;
 import com.sun.corba.se.spi.ior.iiop.IIOPProfileTemplate ;
 import com.sun.corba.se.spi.ior.iiop.GIOPVersion ;
 import com.sun.corba.se.spi.ior.iiop.AlternateIIOPAddressComponent;
-import com.sun.corba.se.spi.legacy.connection.LegacyServerSocketEndPointInfo;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
-import com.sun.corba.se.spi.monitoring.LongMonitoredAttributeBase;
-import com.sun.corba.se.spi.monitoring.MonitoringConstants;
-import com.sun.corba.se.spi.monitoring.MonitoringFactories;
-import com.sun.corba.se.spi.monitoring.MonitoredObject;
 import com.sun.corba.se.spi.orb.ORB;
 import com.sun.corba.se.spi.orbutil.threadpool.Work;
 import com.sun.corba.se.spi.protocol.CorbaMessageMediator;
 import com.sun.corba.se.spi.transport.CorbaAcceptor;
 import com.sun.corba.se.spi.transport.CorbaConnection;
-import com.sun.corba.se.spi.transport.CorbaContactInfo;
 import com.sun.corba.se.spi.transport.SocketInfo;
 import com.sun.corba.se.spi.transport.SocketOrChannelAcceptor;
 
@@ -82,7 +69,6 @@ import com.sun.corba.se.impl.logging.ORBUtilSystemException;
 import com.sun.corba.se.impl.oa.poa.Policies; // REVISIT impl/poa specific
 import com.sun.corba.se.impl.orbutil.ORBConstants;
 import com.sun.corba.se.impl.orbutil.ORBUtility;
-import com.sun.corba.se.impl.ior.iiop.JavaSerializationComponent;
 
 // BEGIN Legacy support.
 import com.sun.corba.se.spi.legacy.connection.LegacyServerSocketEndPointInfo;
@@ -442,12 +428,7 @@ public class SocketOrChannelAcceptorImpl
                 dprint(".doWork->: " + this);
             }
             if (selectionKey.isAcceptable()) {
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public java.lang.Object run() {
                         accept();
-                        return null;
-                    }
-                });
             } else {
                 if (orb.transportDebugFlag) {
                     dprint(".doWork: ! selectionKey.isAcceptable: " + this);
