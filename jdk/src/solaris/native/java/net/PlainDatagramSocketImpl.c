@@ -1052,29 +1052,37 @@ JNIEXPORT void JNICALL
 Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
                                                            jobject this) {
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
-    int fd;
-
-    int t = 1;
+    int fd, t = 1;
+#ifdef AF_INET6
+    int domain = ipv6_available() ? AF_INET6 : AF_INET;
+#else
+    int domain = AF_INET;
+#endif
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Socket closed");
         return;
-    } else {
-#ifdef AF_INET6
-        if (ipv6_available()) {
-            fd =  JVM_Socket(AF_INET6, SOCK_DGRAM, 0);
-        } else
-#endif /* AF_INET6 */
-            {
-                fd =  JVM_Socket(AF_INET, SOCK_DGRAM, 0);
-            }
     }
-    if (fd == JVM_IO_ERR) {
+
+    if ((fd = JVM_Socket(domain, SOCK_DGRAM, 0)) == JVM_IO_ERR) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Error creating socket");
         return;
     }
+
+#ifdef AF_INET6
+    /* Disable IPV6_V6ONLY to ensure dual-socket support */
+    if (domain == AF_INET6) {
+        int arg = 0;
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
+                       sizeof(int)) < 0) {
+            NET_ThrowNew(env, errno, "cannot set IPPROTO_IPV6");
+            close(fd);
+            return;
+        }
+    }
+#endif /* AF_INET6 */
 
      setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof(int));
 
@@ -1088,7 +1096,7 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
      * On Linux for IPv6 sockets we must set the hop limit
      * to 1 to be compatible with default ttl of 1 for IPv4 sockets.
      */
-    if (ipv6_available()) {
+    if (domain == AF_INET6) {
         int ttl = 1;
         setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char *)&ttl,
                    sizeof(ttl));

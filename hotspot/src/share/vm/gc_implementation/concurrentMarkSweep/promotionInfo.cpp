@@ -253,8 +253,8 @@ void PromotionInfo::print_statistics(uint worker_id) const {
        cur_spool = cur_spool->nextSpoolBlock) {
     // the first entry is just a self-pointer; indices 1 through
     // bufferSize - 1 are occupied (thus, bufferSize - 1 slots).
-    guarantee((void*)cur_spool->displacedHdr == (void*)&cur_spool->displacedHdr,
-              "first entry of displacedHdr should be self-referential");
+    assert((void*)cur_spool->displacedHdr == (void*)&cur_spool->displacedHdr,
+           "first entry of displacedHdr should be self-referential");
     slots += cur_spool->bufferSize - 1;
     blocks++;
   }
@@ -330,7 +330,7 @@ void PromotionInfo::verify() const {
 void PromotionInfo::print_on(outputStream* st) const {
   SpoolBlock* curSpool = NULL;
   size_t i = 0;
-  st->print_cr("start & end indices: [" SIZE_FORMAT ", " SIZE_FORMAT ")",
+  st->print_cr(" start & end indices: [" SIZE_FORMAT ", " SIZE_FORMAT ")",
                _firstIndex, _nextIndex);
   for (curSpool = _spoolHead; curSpool != _spoolTail && curSpool != NULL;
        curSpool = curSpool->nextSpoolBlock) {
@@ -350,7 +350,7 @@ void PromotionInfo::print_on(outputStream* st) const {
     st->print_cr(" free ");
     i++;
   }
-  st->print_cr(SIZE_FORMAT " header spooling blocks", i);
+  st->print_cr("  " SIZE_FORMAT " header spooling blocks", i);
 }
 
 void SpoolBlock::print_on(outputStream* st) const {

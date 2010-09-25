@@ -446,6 +446,8 @@ class MethodHandles: AllStatic {
                                RegisterOrConstant arg_slots,
                                Register argslot_reg,
                                Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
+
+  static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
 };
 
 

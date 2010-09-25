@@ -330,7 +330,6 @@ psPromotionManager.cpp                  psPromotionManager.inline.hpp
 psPromotionManager.cpp                  psScavenge.inline.hpp
 
 psPromotionManager.hpp                  allocation.hpp
-psPromotionManager.hpp                  prefetchQueue.hpp
 psPromotionManager.hpp                  psPromotionLAB.hpp
 psPromotionManager.hpp                  taskqueue.hpp
 
