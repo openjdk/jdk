@@ -157,6 +157,12 @@
   develop(bool, TraceLoopPredicate, false,                                  \
           "Trace generation of loop predicates")                            \
                                                                             \
+  product(bool, OptimizeFill, false,                                        \
+          "convert fill/copy loops into intrinsic")                         \
+                                                                            \
+  develop(bool, TraceOptimizeFill, false,                                   \
+          "print detailed information about fill conversion")               \
+                                                                            \
   develop(bool, OptoCoalesce, true,                                         \
           "Use Conservative Copy Coalescing in the Register Allocator")     \
                                                                             \
@@ -177,6 +183,9 @@
                                                                             \
   product(bool, ReduceBulkZeroing, true,                                    \
           "When bulk-initializing, try to avoid needless zeroing")          \
+                                                                            \
+  product(bool, UseFPUForSpilling, false,                                   \
+          "Spill integer registers to FPU instead of stack when possible")  \
                                                                             \
   develop_pd(intx, RegisterCostAreaRatio,                                   \
           "Spill selection in reg allocator: scale area by (X/64K) before " \

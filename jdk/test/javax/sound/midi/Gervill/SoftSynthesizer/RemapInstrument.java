@@ -56,15 +56,15 @@ public class RemapInstrument {
         Soundbank defsbk = synth.getDefaultSoundbank();
         if(defsbk != null)
         {
-            Instrument ins0 = defsbk.getInstrument(new Patch(0,0));
+            Instrument ins3 = defsbk.getInstrument(new Patch(0,3));
             Instrument ins10 = defsbk.getInstrument(new Patch(0,10));
-            assertTrue(synth.remapInstrument(ins0, ins10));
+            assertTrue(synth.remapInstrument(ins3, ins10));
             Instrument[] loaded = synth.getLoadedInstruments();
             for (int i = 0; i < loaded.length; i++) {
-                if(loaded[i].getPatch().getBank() == 0)
-                if(loaded[i].getPatch().getProgram() == 10)
+                if(loaded[i].getPatch().getBank() == ins3.getPatch().getBank())
+                if(loaded[i].getPatch().getProgram() == ins3.getPatch().getProgram())
                 {
-                    assertEquals(loaded[i].getName(), ins0.getName());
+                    assertEquals(loaded[i].getName(), ins10.getName());
                     break;
                 }
             }

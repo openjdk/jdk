@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,8 +502,7 @@ class RelocationHolder VALUE_OBJ_CLASS_SPEC {
 //   }
 
 class RelocIterator : public StackObj {
-  enum { SECT_CONSTS = 2,
-         SECT_LIMIT = 3 };  // must be equal to CodeBuffer::SECT_LIMIT
+  enum { SECT_LIMIT = 3 };  // must be equal to CodeBuffer::SECT_LIMIT, checked in ctor
   friend class Relocation;
   friend class relocInfo;       // for change_reloc_info_for_address only
   typedef relocInfo::relocType relocType;
@@ -521,6 +520,7 @@ class RelocIterator : public StackObj {
 
   // Base addresses needed to compute targets of section_word_type relocs.
   address    _section_start[SECT_LIMIT];
+  address    _section_end  [SECT_LIMIT];
 
   void set_has_current(bool b) {
     _datalen = !b ? -1 : 0;
@@ -540,14 +540,7 @@ class RelocIterator : public StackObj {
 
   void advance_over_prefix();    // helper method
 
-  void initialize_misc() {
-    set_has_current(false);
-    for (int i = 0; i < SECT_LIMIT; i++) {
-      _section_start[i] = NULL;  // these will be lazily computed, if needed
-    }
-  }
-
-  address compute_section_start(int n) const;  // out-of-line helper
+  void initialize_misc();
 
   void initialize(nmethod* nm, address begin, address limit);
 
@@ -598,11 +591,15 @@ class RelocIterator : public StackObj {
   bool     has_current()      const { return _datalen >= 0; }
 
   void       set_addr(address addr) { _addr = addr; }
-  bool   addr_in_const()      const { return addr() >= section_start(SECT_CONSTS); }
+  bool   addr_in_const()      const;
 
   address section_start(int n) const {
-    address res = _section_start[n];
-    return (res != NULL) ? res : compute_section_start(n);
+    assert(_section_start[n], "must be initialized");
+    return _section_start[n];
+  }
+  address section_end(int n) const {
+    assert(_section_end[n], "must be initialized");
+    return _section_end[n];
   }
 
   // The address points to the affected displacement part of the instruction.

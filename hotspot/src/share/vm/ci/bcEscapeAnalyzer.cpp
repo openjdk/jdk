@@ -92,11 +92,11 @@ public:
     empty_map.clear();
   }
 
-  ArgumentMap raw_pop()  { assert(_stack_height > 0, "stack underflow"); return _stack[--_stack_height]; }
+  ArgumentMap raw_pop()  { guarantee(_stack_height > 0, "stack underflow"); return _stack[--_stack_height]; }
   ArgumentMap  apop()    { return raw_pop(); }
   void spop()            { raw_pop(); }
   void lpop()            { spop(); spop(); }
-  void raw_push(ArgumentMap i)   { assert(_stack_height < _max_stack, "stack overflow"); _stack[_stack_height++] = i; }
+  void raw_push(ArgumentMap i)   { guarantee(_stack_height < _max_stack, "stack overflow"); _stack[_stack_height++] = i; }
   void apush(ArgumentMap i)      { raw_push(i); }
   void spush()           { raw_push(empty_map); }
   void lpush()           { spush(); spush(); }
@@ -365,12 +365,19 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
       case Bytecodes::_ldc2_w:
-        if (type2size[s.get_constant().basic_type()] == 1) {
-          state.spush();
-        } else {
+      {
+        // Avoid calling get_constant() which will try to allocate
+        // unloaded constant. We need only constant's type.
+        int index = s.get_constant_pool_index();
+        constantTag tag = s.get_constant_pool_tag(index);
+        if (tag.is_long() || tag.is_double()) {
+          // Only longs and doubles use 2 stack slots.
           state.lpush();
+        } else {
+          state.spush();
         }
         break;
+      }
       case Bytecodes::_aload:
         state.apush(state._vars[s.get_index()]);
         break;

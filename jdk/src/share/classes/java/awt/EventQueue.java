@@ -884,6 +884,41 @@ public class EventQueue {
     }
 
     /**
+     * Creates a new {@code secondary loop} associated with this
+     * event queue. Use the {@link SecondaryLoop#enter} and
+     * {@link SecondaryLoop#exit} methods to start and stop the
+     * event loop and dispatch the events from this queue.
+     *
+     * @return secondaryLoop A new secondary loop object, which can
+     *                       be used to launch a new nested event
+     *                       loop and dispatch events from this queue
+     *
+     * @see SecondaryLoop#enter
+     * @see SecondaryLoop#exit
+     *
+     * @since 1.7
+     */
+    public SecondaryLoop createSecondaryLoop() {
+        return createSecondaryLoop(null, null, 0);
+    }
+
+    SecondaryLoop createSecondaryLoop(Conditional cond, EventFilter filter, long interval) {
+        pushPopLock.lock();
+        try {
+            if (nextQueue != null) {
+                // Forward the request to the top of EventQueue stack
+                return nextQueue.createSecondaryLoop(cond, filter, interval);
+            }
+            if (dispatchThread == null) {
+                initDispatchThread();
+            }
+            return new WaitDispatchSupport(dispatchThread, cond, filter, interval);
+        } finally {
+            pushPopLock.unlock();
+        }
+    }
+
+    /**
      * Returns true if the calling thread is
      * {@link Toolkit#getSystemEventQueue the current AWT EventQueue}'s
      * dispatch thread. Use this method to ensure that a particular

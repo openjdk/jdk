@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeStartPainting(
         JNIEnv *env, jobject this, jint w, jint h)
 {
     fp_gdk_threads_enter();
-    gtk2_init_painting(w, h);
+    gtk2_init_painting(env, w, h);
     fp_gdk_threads_leave();
 }
 

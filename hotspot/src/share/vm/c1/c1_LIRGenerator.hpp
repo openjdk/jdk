@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr load_constant(Constant* x);
   LIR_Opr load_constant(LIR_Const* constant);
 
+  // Given an immediate value, return an operand usable in logical ops.
+  LIR_Opr load_immediate(int x, BasicType type);
+
   void  set_result(Value x, LIR_Opr opr)           {
     assert(opr->is_valid(), "must set to valid value");
     assert(x->operand()->is_illegal(), "operand should never change");
@@ -212,8 +215,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   LIR_Opr round_item(LIR_Opr opr);
   LIR_Opr force_to_spill(LIR_Opr value, BasicType t);
-
-  void  profile_branch(If* if_instr, If::Condition cond);
 
   PhiResolverState& resolver_state() { return _resolver_state; }
 
@@ -285,11 +286,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void arithmetic_call_op (Bytecodes::Code code, LIR_Opr result, LIR_OprList* args);
 
-  void increment_counter(address counter, int step = 1);
+  void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
-
-  // increment a counter returning the incremented value
-  LIR_Opr increment_and_return_counter(LIR_Opr base, int offset, int increment);
 
   // is_strictfp is only needed for mul and div (and only generates different code on i486)
   void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp, CodeEmitInfo* info = NULL);
@@ -347,9 +345,21 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   bool can_store_as_constant(Value i, BasicType type) const;
 
   LIR_Opr safepoint_poll_register();
-  void increment_invocation_counter(CodeEmitInfo* info, bool backedge = false);
-  void increment_backedge_counter(CodeEmitInfo* info) {
-    increment_invocation_counter(info, true);
+
+  void profile_branch(If* if_instr, If::Condition cond);
+  void increment_event_counter_impl(CodeEmitInfo* info,
+                                    ciMethod *method, int frequency,
+                                    int bci, bool backedge, bool notify);
+  void increment_event_counter(CodeEmitInfo* info, int bci, bool backedge);
+  void increment_invocation_counter(CodeEmitInfo *info) {
+    if (compilation()->count_invocations()) {
+      increment_event_counter(info, InvocationEntryBci, false);
+    }
+  }
+  void increment_backedge_counter(CodeEmitInfo* info, int bci) {
+    if (compilation()->count_backedges()) {
+      increment_event_counter(info, bci, true);
+    }
   }
 
   CodeEmitInfo* state_for(Instruction* x, ValueStack* state, bool ignore_xhandler = false);
@@ -503,7 +513,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
-  virtual void do_ProfileCounter (ProfileCounter*  x);
+  virtual void do_ProfileInvoke  (ProfileInvoke*   x);
 };
 
 
