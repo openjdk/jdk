@@ -51,7 +51,8 @@ public class b6341534 extends AbstractProcessor {
             try {
                 PackageElement PE = E.getPackageElement("dir1");
                 List<? extends Element> LEE = PE.getEnclosedElements();    /* <=This line elicits the error message.  */
-                for(Element e : LEE)    System.out.println("found " + e.toString() + " in dir1.");
+                for(Element e : LEE)
+                    System.out.println("found " + e.toString() + " in dir1.");
             }
             catch(NullPointerException npe) {
                 msgr.printMessage(ERROR,npe.toString());
@@ -59,7 +60,11 @@ public class b6341534 extends AbstractProcessor {
                 return false;
             }
         }
-        if( renv.errorRaised() ) {      msgr.printMessage(ERROR, "FAILED");}
+        // on round 1, expect errorRaised == false && processingOver == false
+        // on round 2, expect errorRaised == true && processingOver == true
+        if( renv.errorRaised() != renv.processingOver()) {
+            msgr.printMessage(ERROR, "FAILED");
+        }
         return true;
     }
 

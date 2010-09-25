@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  *
  *
@@ -112,6 +115,8 @@ public class LocaleTestFmwk {
                 prompt = true;
             } else if (args[i].equals("-nothrow")) {
                 nothrow = true;
+            } else if (args[i].equals("-exitcode")) {
+                exitcode = true;
             } else {
                 Object m = testMethods.get( args[i] );
                 if( m != null ) {
@@ -165,7 +170,12 @@ public class LocaleTestFmwk {
             }
         }
         if (nothrow) {
-            System.exit(errorCount);
+            if (exitcode) {
+                System.exit(errorCount);
+            }
+            if (errorCount > 0) {
+                throw new IllegalArgumentException("encountered " + errorCount + " errors");
+            }
         }
     }
 
@@ -235,7 +245,7 @@ public class LocaleTestFmwk {
      */
     void usage() {
         System.out.println(getClass().getName() +
-                            ": [-verbose] [-nothrow] [-prompt] [test names]");
+                            ": [-verbose] [-nothrow] [-exitcode] [-prompt] [test names]");
 
         System.out.println("test names:");
         Enumeration methodNames = testMethods.keys();
@@ -246,6 +256,7 @@ public class LocaleTestFmwk {
 
     private boolean     prompt = false;
     private boolean     nothrow = false;
+    private boolean     exitcode = false;
     protected boolean   verbose = false;
 
     private PrintWriter log;

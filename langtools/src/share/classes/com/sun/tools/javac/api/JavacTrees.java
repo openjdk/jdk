@@ -45,6 +45,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol;
@@ -189,8 +190,24 @@ public class JavacTrees extends Trees {
     }
 
     public Element getElement(TreePath path) {
-        Tree t = path.getLeaf();
-        return TreeInfo.symbolFor((JCTree) t);
+        JCTree tree = (JCTree) path.getLeaf();
+        Symbol sym = TreeInfo.symbolFor(tree);
+        if (sym == null && TreeInfo.isDeclaration(tree)) {
+            for (TreePath p = path; p != null; p = p.getParentPath()) {
+                JCTree t = (JCTree) p.getLeaf();
+                if (t.getTag() == JCTree.CLASSDEF) {
+                    JCClassDecl ct = (JCClassDecl) t;
+                    if (ct.sym != null) {
+                        if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {
+                            attr.attribClass(ct.pos(), ct.sym);
+                            sym = TreeInfo.symbolFor(tree);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return sym;
     }
 
     public TypeMirror getTypeMirror(TreePath path) {
@@ -258,6 +275,8 @@ public class JavacTrees extends Trees {
                     env = enter.getTopLevelEnv((JCCompilationUnit)tree);
                     break;
                 case CLASS:
+                case INTERFACE:
+                case ENUM:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
                     break;

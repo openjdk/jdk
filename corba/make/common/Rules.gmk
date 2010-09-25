@@ -34,7 +34,7 @@ rules_default_rule: all
 #
 # Directory set up.  (Needed by deploy workspace)
 # 
-$(CLASSDESTDIR) $(CLASSHDRDIR) $(OBJDIR) $(OUTPUTDIR) $(BINDIR) $(LIBDIR) $(LIBDIR)/$(LIBARCH) $(TEMPDIR) $(EXTDIR):
+$(CLASSDESTDIR) $(OUTPUTDIR) $(TEMPDIR) $(EXTDIR):
 	$(MKDIR) -p $@ 
 
 #
@@ -163,9 +163,6 @@ $(CLASSDESTDIR)/%.class: $(SHARE_SRC)/classes/%.java
 # List of class files needed
 FILES_class = $(FILES_java:%.java=$(CLASSDESTDIR)/%.class)
 
-# Got to include exported files.
-FILES_class += $(FILES_export:%.java=$(CLASSDESTDIR)/%.class)
-
 # Construct list of java sources we need to compile
 source_list_prime:
 	@$(MKDIR) -p $(TEMPDIR)
@@ -214,50 +211,7 @@ endif
 classes.clean: packages.clean
 	$(RM) $(JAVA_SOURCE_LIST)
 
-#
-# C and C++ make dependencies
-#
-include $(TOPDIR)/make/common/internal/NativeCompileRules.gmk
-
-#
-# Running Javah to generate stuff into CClassHeaders.
-#
-
-ifdef FILES_export
-
-CLASSES.export  = $(subst /,.,$(FILES_export:%.java=%))
-CLASSES.export += $(subst /,.,$(FILES_export2:%.java=%))
-CLASSES.export += $(subst /,.,$(FILES_export3:%.java=%))
-CLASSES_export  = $(FILES_export:%.java=$(CLASSDESTDIR)/%.class)
-CLASSES_export += $(FILES_export2:%.java=$(CLASSDESTDIR)/%.class)
-CLASSES_export += $(FILES_export3:%.java=$(CLASSDESTDIR)/%.class)
-
-# Fix when deploy workspace makefiles don't depend on this name
-#CLASSHDR_DOTFILE=$(CLASSHDRDIR)/.classheaders
-
-CLASSHDR_DOTFILE=$(OBJDIR)/.class.headers.$(ARCH)
-
-classheaders: classes $(CLASSHDR_DOTFILE)
-
-$(CLASSHDR_DOTFILE): $(CLASSES_export)
-	$(prep-target)
-	$(JAVAH_CMD) -d $(CLASSHDRDIR)/ \
-		$(CLASSES.export) $(subst $$,\$$,$(EXPORTED_inner))
-	@$(java-vm-cleanup)
-	@$(TOUCH) $@
-
-classheaders.clean:
-	$(RM) -r $(CLASSHDRDIR) $(CLASSHDR_DOTFILE)
-
-else # FILES_export
-
-classheaders: classes
-
-classheaders.clean: 
-
-endif # FILES_export
-
-clean clobber:: classheaders.clean classes.clean .delete.classlist
+clean clobber:: classes.clean .delete.classlist
 
 # 
 # Default dependencies
@@ -265,12 +219,11 @@ clean clobber:: classheaders.clean classes.clean .delete.classlist
 
 all: build
 
-build: classheaders
+build: classes
 
 default: all
 
 .PHONY: all build clean clobber \
         .delete.classlist classes .compile.classlist classes.clean \
-	 classheaders classheaders.clean \
 	 batch_compile
 

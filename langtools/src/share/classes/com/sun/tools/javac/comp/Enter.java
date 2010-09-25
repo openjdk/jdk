@@ -38,6 +38,7 @@ import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -102,6 +103,7 @@ public class Enter extends JCTree.Visitor {
     Lint lint;
     Names names;
     JavaFileManager fileManager;
+    PkgInfo pkginfoOpt;
 
     private final Todo todo;
 
@@ -132,6 +134,9 @@ public class Enter extends JCTree.Visitor {
         predefClassDef.sym = syms.predefClass;
         todo = Todo.instance(context);
         fileManager = context.get(JavaFileManager.class);
+
+        Options options = Options.instance(context);
+        pkginfoOpt = PkgInfo.get(options);
     }
 
     /** A hashtable mapping classes and packages to the environments current
@@ -278,7 +283,7 @@ public class Enter extends JCTree.Visitor {
                                                              JavaFileObject.Kind.SOURCE);
         if (tree.pid != null) {
             tree.packge = reader.enterPackage(TreeInfo.fullName(tree.pid));
-            if (tree.packageAnnotations.nonEmpty()) {
+            if (tree.packageAnnotations.nonEmpty() || pkginfoOpt == PkgInfo.ALWAYS) {
                 if (isPkgInfo) {
                     addEnv = true;
                 } else {

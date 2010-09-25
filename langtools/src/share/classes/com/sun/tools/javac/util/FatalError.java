@@ -37,17 +37,20 @@ package com.sun.tools.javac.util;
 public class FatalError extends Error {
     private static final long serialVersionUID = 0;
 
-    /** Construct a <code>FatalError</code> with no detail message.
-     */
-    public FatalError() {
-        super();
-    }
-
     /** Construct a <code>FatalError</code> with the specified detail message.
      *  @param d A diagnostic containing the reason for failure.
      */
     public FatalError(JCDiagnostic d) {
         super(d.toString());
+    }
+
+    /** Construct a <code>FatalError</code> with the specified detail message
+     * and cause.
+     *  @param d A diagnostic containing the reason for failure.
+     *  @param t An exception causing the error
+     */
+    public FatalError(JCDiagnostic d, Throwable t) {
+        super(d.toString(), t);
     }
 
     /** Construct a <code>FatalError</code> with the specified detail message.
