@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2436,4 +2436,64 @@ public interface CallableStatement extends PreparedStatement {
      */
      void setNClob(String parameterName, Reader reader)
        throws SQLException;
+
+    //------------------------- JDBC 4.1 -----------------------------------
+
+
+    /**
+     *<p>Returns an object representing the value of OUT parameter
+     * {@code parameterIndex} and will convert from the
+     * SQL type of the parameter to the requested Java data type, if the
+     * conversion is supported. If the conversion is not
+     * supported or null is specified for the type, a
+     * <code>SQLException</code> is thrown.
+     *<p>
+     * At a minimum, an implementation must support the conversions defined in
+     * Appendix B, Table B-3 and conversion of appropriate user defined SQL
+     * types to a Java type which implements {@code SQLData}, or {@code Struct}.
+     * Additional conversions may be supported and are vendor defined.
+     *
+     * @param parameterIndex the first parameter is 1, the second is 2, and so on
+     * @param type Class representing the Java data type to convert the
+     * designated parameter to.
+     * @return an instance of {@code type} holding the OUT parameter value
+     * @throws SQLException if conversion is not supported, type is null or
+     *         another error occurs. The getCause() method of the
+     * exception may provide a more detailed exception, for example, if
+     * a conversion error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
+     * this method
+     * @since 1.7
+     */
+     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException;
+
+
+    /**
+     *<p>Returns an object representing the value of OUT parameter
+     * {@code parameterName} and will convert from the
+     * SQL type of the parameter to the requested Java data type, if the
+     * conversion is supported. If the conversion is not
+     * supported  or null is specified for the type, a
+     * <code>SQLException</code> is thrown.
+     *<p>
+     * At a minimum, an implementation must support the conversions defined in
+     * Appendix B, Table B-3 and conversion of appropriate user defined SQL
+     * types to a Java type which implements {@code SQLData}, or {@code Struct}.
+     * Additional conversions may be supported and are vendor defined.
+     *
+     * @param parameterName the name of the parameter
+     * @param type Class representing the Java data type to convert
+     * the designated parameter to.
+     * @return an instance of {@code type} holding the OUT parameter
+     * value
+     * @throws SQLException if conversion is not supported, type is null or
+     *         another error occurs. The getCause() method of the
+     * exception may provide a more detailed exception, for example, if
+     * a conversion error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
+     * this method
+     * @since 1.7
+     */
+     public <T> T getObject(String parameterName, Class<T> type) throws SQLException;
+
 }

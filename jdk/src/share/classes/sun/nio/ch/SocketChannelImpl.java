@@ -103,6 +103,19 @@ class SocketChannelImpl
         this.state = ST_UNCONNECTED;
     }
 
+    SocketChannelImpl(SelectorProvider sp,
+                      FileDescriptor fd,
+                      boolean bound)
+        throws IOException
+    {
+        super(sp);
+        this.fd = fd;
+        this.fdVal = IOUtil.fdVal(fd);
+        this.state = ST_UNCONNECTED;
+        if (bound)
+            this.localAddress = Net.localAddress(fd);
+    }
+
     // Constructor for sockets obtained from server sockets
     //
     SocketChannelImpl(SelectorProvider sp,

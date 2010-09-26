@@ -47,12 +47,12 @@ public class T6392782 {
         check(scanner, 6, scanner.scan(trees, null));
 
         CountNodes nodeCounter = new CountNodes();
-        // 383 nodes with the regular parser; 384 nodes with EndPosParser
-        // We automatically swith to EndPosParser when calling JavacTask.parse()
-        check(nodeCounter, 384, nodeCounter.scan(trees, null));
+        // 359 nodes with the regular parser; 360 nodes with EndPosParser
+        // We automatically switch to EndPosParser when calling JavacTask.parse()
+        check(nodeCounter, 360, nodeCounter.scan(trees, null));
 
         CountIdentifiers idCounter = new CountIdentifiers();
-        check(idCounter, 106, idCounter.scan(trees, null));
+        check(idCounter, 107, idCounter.scan(trees, null));
     }
 
     private static void check(TreeScanner<?,?> scanner, int expect, int found) {
@@ -73,10 +73,11 @@ public class T6392782 {
         }
     }
 
-    // example from TreeScanner javadoc
     static class CountNodes extends TreeScanner<Integer,Void> {
         @Override
         public Integer scan(Tree node, Void p) {
+            if (node == null)
+                return 0;
             Integer n = super.scan(node, p);
             return (n == null ? 0 : n) + 1;
         }

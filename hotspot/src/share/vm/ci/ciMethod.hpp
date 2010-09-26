@@ -61,7 +61,8 @@ class ciMethod : public ciObject {
 
   bool _uses_monitors;
   bool _balanced_monitors;
-  bool _is_compilable;
+  bool _is_c1_compilable;
+  bool _is_c2_compilable;
   bool _can_be_statically_bound;
 
   // Lazy fields, filled in on demand
@@ -126,6 +127,8 @@ class ciMethod : public ciObject {
   int exception_table_length() const             { check_is_loaded(); return _handler_count; }
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
+
+  int comp_level();
 
   Bytecodes::Code java_code_at_bci(int bci) {
     address bcp = code() + bci;
@@ -209,7 +212,7 @@ class ciMethod : public ciObject {
   bool can_be_osr_compiled(int entry_bci);
   void set_not_compilable();
   bool has_compiled_code();
-  int  instructions_size();
+  int  instructions_size(int comp_level = CompLevel_any);
   void log_nmethod_identity(xmlStream* log);
   bool is_not_reached(int bci);
   bool was_executed_more_than(int times);
