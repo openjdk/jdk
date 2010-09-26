@@ -62,8 +62,10 @@ compiler.misc.class.file.wrong.class
 compiler.misc.fatal.err.cant.locate.ctor                # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
+compiler.misc.fatal.err.cant.close.loader               # JavacProcessingEnvironment
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
+compiler.misc.inferred.do.not.conform.to.params         # UNUSED (hard to see if very complex inference scenario might require this though, so leaving it in, as per JLS3)
 compiler.misc.kindname.annotation
 compiler.misc.kindname.enum
 compiler.misc.kindname.package
@@ -112,3 +114,4 @@ compiler.warn.proc.type.already.exists                  # JavacFiler: just menti
 compiler.warn.unchecked.assign                          # DEAD, replaced by compiler.misc.unchecked.assign
 compiler.warn.unchecked.cast.to.type                    # DEAD, replaced by compiler.misc.unchecked.cast.to.type
 compiler.warn.unexpected.archive.file                   # Paths: zip file with unknown extn
+compiler.warn.wrong.target.for.polymorphic.signature.definition     # Transitional 292

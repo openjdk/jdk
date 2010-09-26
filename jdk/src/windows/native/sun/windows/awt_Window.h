@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,12 +193,17 @@ public:
 
     // Execute on Toolkit only.
     INLINE static LRESULT SynthesizeWmActivate(BOOL doActivate, HWND targetHWnd, HWND oppositeHWnd) {
-        if (::IsWindowVisible(targetHWnd)) {
-            return ::SendMessage(targetHWnd, WM_ACTIVATE,
-                                 MAKEWPARAM(doActivate ? WA_ACTIVE : WA_INACTIVE, FALSE),
-                                 (LPARAM) oppositeHWnd);
+        if (doActivate &&
+            (!::IsWindowVisible(targetHWnd) || ::IsIconic(::GetAncestor(targetHWnd, GA_ROOT))))
+        {
+            // The activation is rejected if either:
+            // - The toplevel is not visible
+            // - The toplevel (or its embedder) is minimised
+            return 1;
         }
-        return 1; // if not processed
+        return ::SendMessage(targetHWnd, WM_ACTIVATE,
+                             MAKEWPARAM(doActivate ? WA_ACTIVE : WA_INACTIVE, FALSE),
+                             (LPARAM) oppositeHWnd);
     }
 
     void moveToDefaultLocation(); /* moves Window to X,Y specified by Window Manger */

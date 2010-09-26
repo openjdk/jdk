@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     default:        ShouldNotReachHere();
   }
   ResourceMark rm;
-  BufferBlob* b = BufferBlob::create(name, BUFFER_SIZE);
-  address fast_entry = b->instructions_begin();
-  CodeBuffer cbuf(fast_entry, b->instructions_size());
+  BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE);
+  CodeBuffer cbuf(blob);
   MacroAssembler* masm = new MacroAssembler(&cbuf);
+  address fast_entry = __ pc();
 
   Label slow;
 
@@ -156,10 +156,10 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
     default:          ShouldNotReachHere();
   }
   ResourceMark rm;
-  BufferBlob* b = BufferBlob::create(name, BUFFER_SIZE);
-  address fast_entry = b->instructions_begin();
-  CodeBuffer cbuf(fast_entry, b->instructions_size());
+  BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE);
+  CodeBuffer cbuf(blob);
   MacroAssembler* masm = new MacroAssembler(&cbuf);
+  address fast_entry = __ pc();
 
   Label slow;
 

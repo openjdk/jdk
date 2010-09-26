@@ -447,7 +447,9 @@ public class JConsoleResources extends ListResourceBundle {
 
         String ls = System.getProperty("line.separator");
         for(int i=0;i<temp.length;i++) {
+            if (temp[i][1] instanceof String){
             temp[i][1] = temp[i][1].toString().replaceAll("\n",ls);
+            }
         }
 
         return temp;

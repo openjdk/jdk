@@ -80,21 +80,24 @@ class ServerSocketChannelImpl
     // -- End of fields protected by stateLock
 
 
-    public ServerSocketChannelImpl(SelectorProvider sp) throws IOException {
+    ServerSocketChannelImpl(SelectorProvider sp) throws IOException {
         super(sp);
         this.fd =  Net.serverSocket(true);
         this.fdVal = IOUtil.fdVal(fd);
         this.state = ST_INUSE;
     }
 
-    public ServerSocketChannelImpl(SelectorProvider sp, FileDescriptor fd)
+    ServerSocketChannelImpl(SelectorProvider sp,
+                            FileDescriptor fd,
+                            boolean bound)
         throws IOException
     {
         super(sp);
         this.fd =  fd;
         this.fdVal = IOUtil.fdVal(fd);
         this.state = ST_INUSE;
-        localAddress = Net.localAddress(fd);
+        if (bound)
+            localAddress = Net.localAddress(fd);
     }
 
     public ServerSocket socket() {

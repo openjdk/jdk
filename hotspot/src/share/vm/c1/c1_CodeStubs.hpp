@@ -80,20 +80,21 @@ class CodeStubList: public _CodeStubList {
   }
 };
 
-#ifdef TIERED
 class CounterOverflowStub: public CodeStub {
  private:
   CodeEmitInfo* _info;
   int           _bci;
+  LIR_Opr       _method;
 
 public:
-  CounterOverflowStub(CodeEmitInfo* info, int bci) : _info(info), _bci(bci) {
+  CounterOverflowStub(CodeEmitInfo* info, int bci, LIR_Opr method) :  _info(info), _bci(bci), _method(method) {
   }
 
   virtual void emit_code(LIR_Assembler* e);
 
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_slow_case(_info);
+    visitor->do_input(_method);
   }
 
 #ifndef PRODUCT
@@ -101,7 +102,6 @@ public:
 #endif // PRODUCT
 
 };
-#endif // TIERED
 
 class ConversionStub: public CodeStub {
  private:
