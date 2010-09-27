@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,6 @@ import javax.annotation.processing.Processor;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
-
-// TEMP, until we have a more efficient way to save doc comment info
-import com.sun.tools.javac.parser.DocCommentScanner;
 
 import java.util.HashMap;
 import java.util.Queue;
@@ -964,11 +961,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {
-                if (context.get(Scanner.Factory.scannerFactoryKey) == null)
-                    DocCommentScanner.Factory.preRegister(context);
                 options.put("save-parameter-names", "save-parameter-names");
                 reader.saveParameterNames = true;
                 keepComments = true;
+                genEndPos = true;
                 if (taskListener != null)
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 log.deferDiagnostics = true;
@@ -1587,6 +1583,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     public void initRound(JavaCompiler prev) {
+        genEndPos = prev.genEndPos;
         keepComments = prev.keepComments;
         start_msec = prev.start_msec;
         hasBeenUsed = true;
