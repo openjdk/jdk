@@ -88,8 +88,8 @@ public class RowSetProvider {
      * </li>
      * </ul>
      * <li>
-     * The ServiceLocator API. The ServiceLocator API will look
-     * for a classname in the file
+     * The {@link ServiceLoader} API. The {@code ServiceLoader} API will look
+     * for a class name in the file
      * {@code META-INF/services/javax.sql.rowset.RowSetFactory}
      * in jars available to the runtime. For example, to have the the RowSetFactory
      * implementation {@code com.sun.rowset.RowSetFactoryImpl } loaded, the
