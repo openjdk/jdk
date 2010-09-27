@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.parser.*; // XXX
-import com.sun.tools.javac.util.*; // XXX
+import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.util.*;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
@@ -65,7 +65,7 @@ public class TestJavacTaskScanner extends ToolTester {
             fm.getJavaFileObjects(new File[] {file});
         StandardJavaFileManager fm = getLocalFileManager(tool, null, null);
         task = (JavacTaskImpl)tool.getTask(null, fm, null, null, null, compilationUnits);
-        task.getContext().put(Scanner.Factory.scannerFactoryKey,
+        task.getContext().put(ScannerFactory.scannerFactoryKey,
                 new MyScanner.Factory(task.getContext(), this));
         elements = task.getElements();
         types = task.getTypes();
@@ -170,34 +170,36 @@ public class TestJavacTaskScanner extends ToolTester {
 
 class MyScanner extends Scanner {
 
-    public static class Factory extends Scanner.Factory {
+    public static class Factory extends ScannerFactory {
         public Factory(Context context, TestJavacTaskScanner test) {
             super(context);
             this.test = test;
         }
 
         @Override
-        public Scanner newScanner(CharSequence input) {
+        public Scanner newScanner(CharSequence input, boolean keepDocComments) {
+            assert !keepDocComments;
             if (input instanceof CharBuffer) {
                 return new MyScanner(this, (CharBuffer)input, test);
             } else {
                 char[] array = input.toString().toCharArray();
-                return newScanner(array, array.length);
+                return newScanner(array, array.length, keepDocComments);
             }
         }
 
         @Override
-        public Scanner newScanner(char[] input, int inputLength) {
+        public Scanner newScanner(char[] input, int inputLength, boolean keepDocComments) {
+            assert !keepDocComments;
             return new MyScanner(this, input, inputLength, test);
         }
 
         private TestJavacTaskScanner test;
     }
-    protected MyScanner(Factory fac, CharBuffer buffer, TestJavacTaskScanner test) {
+    protected MyScanner(ScannerFactory fac, CharBuffer buffer, TestJavacTaskScanner test) {
         super(fac, buffer);
         this.test = test;
     }
-    protected MyScanner(Factory fac, char[] input, int inputLength, TestJavacTaskScanner test) {
+    protected MyScanner(ScannerFactory fac, char[] input, int inputLength, TestJavacTaskScanner test) {
         super(fac, input, inputLength);
         this.test = test;
     }

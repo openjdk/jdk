@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,50 +42,17 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  */
 public class DocCommentScanner extends Scanner {
 
-    /** A factory for creating scanners. */
-    public static class Factory extends Scanner.Factory {
-
-        public static void preRegister(final Context context) {
-            context.put(scannerFactoryKey, new Context.Factory<Scanner.Factory>() {
-                public Factory make() {
-                    return new Factory(context);
-                }
-            });
-        }
-
-        /** Create a new scanner factory. */
-        protected Factory(Context context) {
-            super(context);
-        }
-
-        @Override
-        public Scanner newScanner(CharSequence input) {
-            if (input instanceof CharBuffer) {
-                return new DocCommentScanner(this, (CharBuffer)input);
-            } else {
-                char[] array = input.toString().toCharArray();
-                return newScanner(array, array.length);
-            }
-        }
-
-        @Override
-        public Scanner newScanner(char[] input, int inputLength) {
-            return new DocCommentScanner(this, input, inputLength);
-        }
-    }
-
-
     /** Create a scanner from the input buffer.  buffer must implement
      *  array() and compact(), and remaining() must be less than limit().
      */
-    protected DocCommentScanner(Factory fac, CharBuffer buffer) {
+    protected DocCommentScanner(ScannerFactory fac, CharBuffer buffer) {
         super(fac, buffer);
     }
 
     /** Create a scanner from the input array.  The array must have at
      *  least a single character of extra space.
      */
-    protected DocCommentScanner(Factory fac, char[] input, int inputLength) {
+    protected DocCommentScanner(ScannerFactory fac, char[] input, int inputLength) {
         super(fac, input, inputLength);
     }
 
