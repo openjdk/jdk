@@ -1098,12 +1098,6 @@ public class ClassReader implements Completer {
                 }
             },
 
-            new AttributeReader(names.PolymorphicSignature, V45_3/*S.B.V51*/, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
-                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
-                }
-            },
-
 
             // The following attributes for a Code attribute are not currently handled
             // StackMapTable
@@ -1289,6 +1283,9 @@ public class ClassReader implements Completer {
                     sym.flags_field |= PROPRIETARY;
                 else
                     proxies.append(proxy);
+                if (majorVersion >= V51.major && proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
+                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
+                }
             }
             annotate.later(new AnnotationCompleter(sym, proxies.toList()));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,11 +185,11 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ }
   void do_RoundFP        (RoundFP*         x) { /* nothing to do */ }
   void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ }
+  void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
   void do_UnsafeGetObject(UnsafeGetObject* x) { /* nothing to do */ }
   void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) { /* nothing to do */ }
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) { /* nothing to do */ }
   void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ }
-  void do_ProfileCounter (ProfileCounter*  x) { /* nothing to do */ }
 };
 
 

@@ -157,7 +157,7 @@ public class OnScreenRenderingResizeTest {
             if (cnt == 90 && robot != null) {
                 // area where we blitted to should be either white or green
                 Point p = frame.getLocationOnScreen();
-                p.move(in.left+10, in.top+10);
+                p.translate(in.left+10, in.top+10);
                 BufferedImage bi =
                     robot.createScreenCapture(
                         new Rectangle(p.x, p.y, IMAGE_W/2, IMAGE_H/2));
@@ -166,7 +166,7 @@ public class OnScreenRenderingResizeTest {
 
                 // the are where we didn't render should stay white
                 p = frame.getLocationOnScreen();
-                p.move(in.left, in.top+IMAGE_H+5);
+                p.translate(in.left, in.top+IMAGE_H+5);
                 bi = robot.createScreenCapture(
                     new Rectangle(p.x, p.y,
                                   frame.getWidth()-in.left-in.right,

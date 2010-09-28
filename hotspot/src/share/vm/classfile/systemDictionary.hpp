@@ -471,6 +471,7 @@ public:
   // ask Java to compute a java.dyn.MethodType object for a given signature
   static Handle    find_method_handle_type(symbolHandle signature,
                                            KlassHandle accessing_klass,
+                                           bool for_invokeGeneric,
                                            bool& return_bcp_flag,
                                            TRAPS);
   // ask Java to compute a java.dyn.MethodHandle object for a given CP entry

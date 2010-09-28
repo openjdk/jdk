@@ -39,25 +39,25 @@ public class T6868539
     }
 
     void run() {
-        verify("T6868539", "Utf8 +java/lang/String");                                   // 1: Utf8
+        String output = javap("T6868539");
+        verify(output, "Utf8 +java/lang/String");                                   // 1: Utf8
                                                                                         // 2: currently unused
-        verify("T6868539", "Integer +123456");                                          // 3: Integer
-        verify("T6868539", "Float +123456.0f");                                         // 4: Float
-        verify("T6868539", "Long +123456l");                                            // 5: Long
-        verify("T6868539", "Double +123456.0d");                                        // 6: Double
-        verify("T6868539", "Class +#[0-9]+ +// + T6868539");                            // 7: Class
-        verify("T6868539", "String +#[0-9]+ +// + not found");                          // 8: String
-        verify("T6868539", "Fieldref +#[0-9]+\\.#[0-9]+ +// +T6868539.errors:I");       // 9: Fieldref
-        verify("T6868539", "Methodref +#[0-9]+\\.#[0-9]+ +// +T6868539.run:\\(\\)V");   // 10: Methodref
-        verify("T6868539", "InterfaceMethodref +#[0-9]+\\.#[0-9]+ +// +java/lang/Runnable\\.run:\\(\\)V");
+        verify(output, "Integer +123456");                                          // 3: Integer
+        verify(output, "Float +123456.0f");                                         // 4: Float
+        verify(output, "Long +123456l");                                            // 5: Long
+        verify(output, "Double +123456.0d");                                        // 6: Double
+        verify(output, "Class +#[0-9]+ +// + T6868539");                            // 7: Class
+        verify(output, "String +#[0-9]+ +// + not found");                          // 8: String
+        verify(output, "Fieldref +#[0-9]+\\.#[0-9]+ +// +T6868539.errors:I");       // 9: Fieldref
+        verify(output, "Methodref +#[0-9]+\\.#[0-9]+ +// +T6868539.run:\\(\\)V");   // 10: Methodref
+        verify(output, "InterfaceMethodref +#[0-9]+\\.#[0-9]+ +// +java/lang/Runnable\\.run:\\(\\)V");
                                                                                         // 11: InterfaceMethodref
-        verify("T6868539", "NameAndType +#[0-9]+:#[0-9]+ +// +run:\\(\\)V");            // 12: NameAndType
+        verify(output, "NameAndType +#[0-9]+:#[0-9]+ +// +run:\\(\\)V");            // 12: NameAndType
         if (errors > 0)
             throw new Error(errors + " found.");
     }
 
-    void verify(String className, String... expects) {
-        String output = javap(className);
+    void verify(String output, String... expects) {
         for (String expect: expects) {
             if (!output.matches("(?s).*" + expect + ".*"))
                 error(expect + " not found");

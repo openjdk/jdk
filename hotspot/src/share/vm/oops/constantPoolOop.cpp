@@ -466,6 +466,7 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
       bool ignore_is_on_bcp = false;
       Handle value = SystemDictionary::find_method_handle_type(signature,
                                                                klass,
+                                                               false,
                                                                ignore_is_on_bcp,
                                                                CHECK_NULL);
       result_oop = value();

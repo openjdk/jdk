@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      */
     public DateFormatSymbols()
     {
-        initializeData(Locale.getDefault());
+        initializeData(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -226,7 +226,30 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Unlocalized date-time pattern characters. For example: 'y', 'd', etc.
      * All locales use the same these unlocalized pattern characters.
      */
-    static final String  patternChars = "GyMdkHmsSEDFwWahKzZ";
+    static final String  patternChars = "GyMdkHmsSEDFwWahKzZYuX";
+
+    static final int PATTERN_ERA                  =  0; // G
+    static final int PATTERN_YEAR                 =  1; // y
+    static final int PATTERN_MONTH                =  2; // M
+    static final int PATTERN_DAY_OF_MONTH         =  3; // d
+    static final int PATTERN_HOUR_OF_DAY1         =  4; // k
+    static final int PATTERN_HOUR_OF_DAY0         =  5; // H
+    static final int PATTERN_MINUTE               =  6; // m
+    static final int PATTERN_SECOND               =  7; // s
+    static final int PATTERN_MILLISECOND          =  8; // S
+    static final int PATTERN_DAY_OF_WEEK          =  9; // E
+    static final int PATTERN_DAY_OF_YEAR          = 10; // D
+    static final int PATTERN_DAY_OF_WEEK_IN_MONTH = 11; // F
+    static final int PATTERN_WEEK_OF_YEAR         = 12; // w
+    static final int PATTERN_WEEK_OF_MONTH        = 13; // W
+    static final int PATTERN_AM_PM                = 14; // a
+    static final int PATTERN_HOUR1                = 15; // h
+    static final int PATTERN_HOUR0                = 16; // K
+    static final int PATTERN_ZONE_NAME            = 17; // z
+    static final int PATTERN_ZONE_VALUE           = 18; // Z
+    static final int PATTERN_WEEK_YEAR            = 19; // Y
+    static final int PATTERN_ISO_DAY_OF_WEEK      = 20; // u
+    static final int PATTERN_ISO_ZONE             = 21; // X
 
     /**
      * Localized date-time pattern characters. For example, a locale may
@@ -282,7 +305,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance() {
-        return getInstance(Locale.getDefault());
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -505,7 +528,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @return the localized date-time pattern characters.
      */
     public String getLocalPatternChars() {
-        return new String(localPatternChars);
+        return localPatternChars;
     }
 
     /**
@@ -514,7 +537,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * pattern characters.
      */
     public void setLocalPatternChars(String newLocalPatternChars) {
-        localPatternChars = new String(newLocalPatternChars);
+        // Call toString() to throw an NPE in case the argument is null
+        localPatternChars = newLocalPatternChars.toString();
     }
 
     /**
@@ -699,7 +723,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         } else {
             dst.zoneStrings = null;
         }
-        dst.localPatternChars = new String (src.localPatternChars);
+        dst.localPatternChars = src.localPatternChars;
     }
 
     /**

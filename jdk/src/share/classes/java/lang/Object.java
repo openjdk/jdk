@@ -189,7 +189,9 @@ public class Object {
      * specific cloning operation. First, if the class of this object does
      * not implement the interface {@code Cloneable}, then a
      * {@code CloneNotSupportedException} is thrown. Note that all arrays
-     * are considered to implement the interface {@code Cloneable}.
+     * are considered to implement the interface {@code Cloneable} and that
+     * the return type of the {@code clone} method of an array type {@code T[]}
+     * is {@code T[]} where T is any reference or primitive type.
      * Otherwise, this method creates a new instance of the class of this
      * object and initializes all its fields with exactly the contents of
      * the corresponding fields of this object, as if by assignment; the

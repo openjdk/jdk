@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ void InvocationCounter::reset() {
 }
 
 void InvocationCounter::set_carry() {
-  _counter |= carry_mask;
-
+  set_carry_flag();
   // The carry bit now indicates that this counter had achieved a very
   // large value.  Now reduce the value, so that the method can be
   // executed many more times before re-entering the VM.
@@ -51,7 +50,6 @@ void InvocationCounter::set_carry() {
   if (new_count == 0)  new_count = 1;
   if (old_count != new_count)  set(state(), new_count);
 }
-
 
 void InvocationCounter::set_state(State state) {
   assert(0 <= state && state < number_of_states, "illegal state");
@@ -81,11 +79,6 @@ InvocationCounter::Action InvocationCounter::_action[InvocationCounter::number_o
 int                       InvocationCounter::InterpreterInvocationLimit;
 int                       InvocationCounter::InterpreterBackwardBranchLimit;
 int                       InvocationCounter::InterpreterProfileLimit;
-
-// Tier1 limits
-int                       InvocationCounter::Tier1InvocationLimit;
-int                       InvocationCounter::Tier1BackEdgeLimit;
-
 
 
 const char* InvocationCounter::state_as_string(State state) {
@@ -146,8 +139,6 @@ void InvocationCounter::reinitialize(bool delay_overflow) {
 
   InterpreterInvocationLimit = CompileThreshold << number_of_noncount_bits;
   InterpreterProfileLimit = ((CompileThreshold * InterpreterProfilePercentage) / 100)<< number_of_noncount_bits;
-  Tier1InvocationLimit = Tier2CompileThreshold << number_of_noncount_bits;
-  Tier1BackEdgeLimit   = Tier2BackEdgeThreshold << number_of_noncount_bits;
 
   // When methodData is collected, the backward branch limit is compared against a
   // methodData counter, rather than an InvocationCounter.  In the former case, we
