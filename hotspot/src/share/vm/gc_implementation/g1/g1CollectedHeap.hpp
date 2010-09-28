@@ -1691,8 +1691,8 @@ public:
     ref = new_ref;
   }
 
-  int refs_to_scan()            { return refs()->size(); }
-  int overflowed_refs_to_scan() { return refs()->overflow_stack()->length(); }
+  int refs_to_scan()            { return (int)refs()->size(); }
+  int overflowed_refs_to_scan() { return (int)refs()->overflow_stack()->size(); }
 
   template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
     if (G1DeferredRSUpdate) {

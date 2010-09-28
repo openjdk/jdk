@@ -540,8 +540,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _is_alive_closure(_span, &_markBitMap),
   _restart_addr(NULL),
   _overflow_list(NULL),
-  _preserved_oop_stack(NULL),
-  _preserved_mark_stack(NULL),
   _stats(cmsGen),
   _eden_chunk_array(NULL),     // may be set in ctor body
   _eden_chunk_capacity(0),     // -- ditto --
@@ -8907,23 +8905,10 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
 // failures where possible, thus, incrementally hardening the VM
 // in such low resource situations.
 void CMSCollector::preserve_mark_work(oop p, markOop m) {
-  if (_preserved_oop_stack == NULL) {
-    assert(_preserved_mark_stack == NULL,
-           "bijection with preserved_oop_stack");
-    // Allocate the stacks
-    _preserved_oop_stack  = new (ResourceObj::C_HEAP)
-      GrowableArray<oop>(PreserveMarkStackSize, true);
-    _preserved_mark_stack = new (ResourceObj::C_HEAP)
-      GrowableArray<markOop>(PreserveMarkStackSize, true);
-    if (_preserved_oop_stack == NULL || _preserved_mark_stack == NULL) {
-      vm_exit_out_of_memory(2* PreserveMarkStackSize * sizeof(oop) /* punt */,
-                            "Preserved Mark/Oop Stack for CMS (C-heap)");
-    }
-  }
-  _preserved_oop_stack->push(p);
-  _preserved_mark_stack->push(m);
+  _preserved_oop_stack.push(p);
+  _preserved_mark_stack.push(m);
   assert(m == p->mark(), "Mark word changed");
-  assert(_preserved_oop_stack->length() == _preserved_mark_stack->length(),
+  assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
          "bijection");
 }
 
@@ -8965,42 +8950,30 @@ void CMSCollector::par_preserve_mark_if_necessary(oop p) {
 // effect on performance so great that this will
 // likely just be in the noise anyway.
 void CMSCollector::restore_preserved_marks_if_any() {
-  if (_preserved_oop_stack == NULL) {
-    assert(_preserved_mark_stack == NULL,
-           "bijection with preserved_oop_stack");
-    return;
-  }
-
   assert(SafepointSynchronize::is_at_safepoint(),
          "world should be stopped");
   assert(Thread::current()->is_ConcurrentGC_thread() ||
          Thread::current()->is_VM_thread(),
          "should be single-threaded");
+  assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
+         "bijection");
 
-  int length = _preserved_oop_stack->length();
-  assert(_preserved_mark_stack->length() == length, "bijection");
-  for (int i = 0; i < length; i++) {
-    oop p = _preserved_oop_stack->at(i);
+  while (!_preserved_oop_stack.is_empty()) {
+    oop p = _preserved_oop_stack.pop();
     assert(p->is_oop(), "Should be an oop");
     assert(_span.contains(p), "oop should be in _span");
     assert(p->mark() == markOopDesc::prototype(),
            "Set when taken from overflow list");
-    markOop m = _preserved_mark_stack->at(i);
+    markOop m = _preserved_mark_stack.pop();
     p->set_mark(m);
   }
-  _preserved_mark_stack->clear();
-  _preserved_oop_stack->clear();
-  assert(_preserved_mark_stack->is_empty() &&
-         _preserved_oop_stack->is_empty(),
+  assert(_preserved_mark_stack.is_empty() && _preserved_oop_stack.is_empty(),
          "stacks were cleared above");
 }
 
 #ifndef PRODUCT
 bool CMSCollector::no_preserved_marks() const {
-  return (   (   _preserved_mark_stack == NULL
-              && _preserved_oop_stack == NULL)
-          || (   _preserved_mark_stack->is_empty()
-              && _preserved_oop_stack->is_empty()));
+  return _preserved_mark_stack.is_empty() && _preserved_oop_stack.is_empty();
 }
 #endif
 

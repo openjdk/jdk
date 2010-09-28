@@ -1073,6 +1073,7 @@ void WatcherThread::run() {
       }
     }
 
+#if 0
     if (is_error_reported()) {
       // A fatal error has happened, the error handler(VMError::report_and_die)
       // should abort JVM after creating an error log file. However in some
@@ -1100,6 +1101,7 @@ void WatcherThread::run() {
         os::sleep(this, 5 * 1000, false);
       }
     }
+#endif // #if 0
 
     PeriodicTask::real_time_tick(time_to_wait);
 

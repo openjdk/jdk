@@ -641,6 +641,9 @@ class CommandLineFlags {
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
                                                                             \
+  notproduct(bool, ZapStackSegments, trueInDebug,                           \
+             "Zap allocated/freed Stack segments with 0xFADFADED")          \
+                                                                            \
   develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space with 0xBAADBABE")                          \
                                                                             \
