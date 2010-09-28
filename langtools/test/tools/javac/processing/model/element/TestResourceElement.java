@@ -23,35 +23,22 @@
 
 /*
  * @test
- * @bug  6911256 6964740 6967842
- * @summary Test that the resource variable kind is appropriately set
- * @author  Joseph D. Darcy
- * @build TestResourceVariable
- * @compile -processor TestResourceVariable -proc:only TestResourceVariable.java
+ * @bug 6967842
+ * @summary Element not returned from tree API for ARM resource variables.
+ * @author A. Sundararajan
+ * @build TestResourceElement
+ * @compile -processor TestResourceElement -proc:only TestResourceElement.java
  */
 
-// Bug should be filed for this misbehavior
-
-import java.io.*;
 import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
-import javax.lang.model.type.*;
-import javax.lang.model.util.*;
 import java.util.*;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
-/**
- * Using the tree API, retrieve element representations of the
- * resource of an ARM block and verify their kind tags are set
- * appropriately.
- */
 @SupportedAnnotationTypes("*")
-public class TestResourceVariable extends AbstractProcessor implements AutoCloseable {
-    int resourceVariableCount = 0;
-
+public class TestResourceElement extends AbstractProcessor implements AutoCloseable {
     public boolean process(Set<? extends TypeElement> annotations,
                           RoundEnvironment roundEnv) {
        if (!roundEnv.processingOver()) {
@@ -60,13 +47,13 @@ public class TestResourceVariable extends AbstractProcessor implements AutoClose
            for(Element rootElement : roundEnv.getRootElements()) {
                TreePath treePath = trees.getPath(rootElement);
 
-               (new ResourceVariableScanner(trees)).
-                   scan(trees.getTree(rootElement),
+               VariableScanner varScanner =  new VariableScanner(trees);
+               varScanner.scan(trees.getTree(rootElement),
                         treePath.getCompilationUnit());
+               if (varScanner.getTrvElement() == null) {
+                   throw new AssertionError("Element is null for 'trv'");
+               }
            }
-           if (resourceVariableCount != 3)
-               throw new RuntimeException("Bad resource variable count " +
-                                          resourceVariableCount);
        }
        return true;
     }
@@ -75,34 +62,30 @@ public class TestResourceVariable extends AbstractProcessor implements AutoClose
     public void close() {}
 
     private void test1() {
-        try(TestResourceVariable trv = this) {}
+        // The resource variable "trv"'s Element is checked.
+        // Do not change the name of the variable.
+        try(TestResourceElement trv = this) {}
     }
 
-    private void test2() {
-        try(TestResourceVariable trv1 = this; TestResourceVariable trv2 = trv1) {}
-    }
-
-    class ResourceVariableScanner extends TreeScanner<Void, CompilationUnitTree> {
+    class VariableScanner extends TreeScanner<Void, CompilationUnitTree> {
        private Trees trees;
+       private Element trvElement;
 
-       public ResourceVariableScanner(Trees trees) {
+       public VariableScanner(Trees trees) {
            super();
            this.trees = trees;
        }
        @Override
        public Void visitVariable(VariableTree node, CompilationUnitTree cu) {
-           Element element = trees.getElement(trees.getPath(cu, node));
-           if (element == null) {
-               System.out.println("Null variable element: " + node);
-           } else {
-               System.out.println("Name: " + element.getSimpleName() +
-                                  "\tKind: " + element.getKind());
-           }
-           if (element != null &&
-               element.getKind() == ElementKind.RESOURCE_VARIABLE) {
-               resourceVariableCount++;
+           // if this is "trv", get it's element.
+           if (node.getName().contentEquals("trv")) {
+               trvElement = trees.getElement(trees.getPath(cu, node));
            }
            return super.visitVariable(node, cu);
+       }
+
+       Element getTrvElement() {
+           return trvElement;
        }
    }
 
