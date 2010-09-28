@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
 
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.source.util.AbstractTypeProcessor;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
@@ -1102,6 +1103,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (task != null) {
                 next.put(JavacTaskImpl.class, task);
                 task.updateContext(next);
+            }
+
+            JavacTrees trees = context.get(JavacTrees.class);
+            if (trees != null) {
+                next.put(JavacTrees.class, trees);
+                trees.updateContext(next);
             }
 
             context.clear();

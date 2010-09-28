@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6877202
+ * @bug 6877202 6986246
  * @summary Elements.getDocComment() is not getting JavaDocComments
  */
 
@@ -139,6 +139,7 @@ public class TestDocComments extends AbstractProcessor {
     Filer filer;
     Messager messager;
     Elements elements;
+    Trees trees;
     ScanKind skind;
 
     int round = 0;
@@ -155,6 +156,7 @@ public class TestDocComments extends AbstractProcessor {
         filer = pEnv.getFiler();
         messager = pEnv.getMessager();
         elements = pEnv.getElementUtils();
+        trees = Trees.instance(processingEnv);
         skind = ScanKind.valueOf(options.get("scan"));
     }
 
@@ -167,7 +169,6 @@ public class TestDocComments extends AbstractProcessor {
         for (Element e: roundEnv.getRootElements()) {
             System.err.println("scan " + skind + " " + e.getKind() + " " + e.getSimpleName());
             if (skind == ScanKind.TREE) {
-                Trees trees = Trees.instance(processingEnv); // cannot cache this across rounds
                 new TestTreeScanner().scan(trees.getPath(e), trees);
             }  else
                 new TestElementScanner().scan(e);
