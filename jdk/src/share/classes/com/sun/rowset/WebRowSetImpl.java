@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,12 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
      * if the Hashtanle is null
      */
     public WebRowSetImpl(Hashtable env) throws SQLException {
+
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
 
         if ( env == null) {
             throw new SQLException(resBundle.handleGetObject("webrowsetimpl.nullhash").toString());
@@ -263,5 +269,23 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
 
             this.writeXml(oStream);
     }
-static final long serialVersionUID = -8771775154092422943L;
+
+    /**
+     * This method re populates the resBundle
+     * during the deserialization process
+     *
+     */
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        // Default state initialization happens here
+        ois.defaultReadObject();
+        // Initialization of transient Res Bundle happens here .
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+    }
+
+    static final long serialVersionUID = -8771775154092422943L;
 }

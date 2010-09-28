@@ -2597,10 +2597,14 @@ get_stack_bounds(uintptr_t *bottom, uintptr_t *top)
 // where we're going to put our guard pages, truncate the mapping at
 // that point by munmap()ping it.  This ensures that when we later
 // munmap() the guard pages we don't leave a hole in the stack
-// mapping.
+// mapping. This only affects the main/initial thread, but guard
+// against future OS changes
 bool os::create_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
-  if (get_stack_bounds(&stack_extent, &stack_base)) {
+  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
+  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
+      assert(os::Linux::is_initial_thread(),
+           "growable stack in non-initial thread");
     if (stack_extent < (uintptr_t)addr)
       ::munmap((void*)stack_extent, (uintptr_t)addr - stack_extent);
   }
@@ -2609,10 +2613,15 @@ bool os::create_stack_guard_pages(char* addr, size_t size) {
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
-// munmap()ping them.  If not, just call uncommit_memory().
+// munmap()ping them.  If not, just call uncommit_memory(). This only
+// affects the main/initial thread, but guard against future OS changes
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
-  if (get_stack_bounds(&stack_extent, &stack_base)) {
+  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
+  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
+      assert(os::Linux::is_initial_thread(),
+           "growable stack in non-initial thread");
+
     return ::munmap(addr, size) == 0;
   }
 

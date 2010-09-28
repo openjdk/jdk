@@ -99,7 +99,10 @@ public class SourceWriter extends InstructionDetailWriter {
                 }
             }
         }
+    }
 
+    public boolean hasSource() {
+        return (sourceLines.length > 0);
     }
 
     private void setLineMap(Code_attribute attr) {

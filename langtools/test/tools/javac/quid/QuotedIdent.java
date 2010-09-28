@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  *      (The filename, directory name, or volume label syntax is incorrect)
  *
  * @library ..
+ * @compile -source 7 -target 7 -XDinvokedynamic QuotedIdent.java
  * @run main quid.QuotedIdent
  */
 
@@ -119,7 +120,7 @@ public class QuotedIdent {
         s = #"int".class.getName();
         check(31, s, QuotedIdent.class.getName()+"$int");
 
-        Class x86 = Class.forName(QuotedIdent.class.getName()+"$*86");
+        Class<?> x86 = Class.forName(QuotedIdent.class.getName()+"$*86");
         if (x86 != #"*86".class)
             check(32, "reflected "+x86, "static "+#"*86".class);
 

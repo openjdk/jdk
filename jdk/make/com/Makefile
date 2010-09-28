@@ -31,7 +31,7 @@ BUILDDIR = ..
 PRODUCT = com
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = sun
+SUBDIRS = sun oracle
 include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::

@@ -4231,7 +4231,10 @@ class SQLPerm extends Perm {
     super("SQLPermission",
         "java.sql.SQLPermission",
         new String[]    {
-                "setLog"
+                "setLog",
+                "callAbort",
+                "setSyncFactory",
+                "setNetworkTimeout",
                 },
         null);
     }

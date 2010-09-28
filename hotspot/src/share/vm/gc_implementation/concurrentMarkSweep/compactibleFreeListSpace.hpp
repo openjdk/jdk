@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ class LinearAllocBlock VALUE_OBJ_CLASS_SPEC {
   size_t    _word_size;
   size_t    _refillSize;
   size_t    _allocation_size_limit;  // largest size that will be allocated
+
+  void print_on(outputStream* st) const;
 };
 
 // Concrete subclass of CompactibleSpace that implements
@@ -249,10 +251,14 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   size_t     numFreeBlocksInIndexedFreeLists() const;
   // Accessor
   HeapWord* unallocated_block() const {
-    HeapWord* ub = _bt.unallocated_block();
-    assert(ub >= bottom() &&
-           ub <= end(), "space invariant");
-    return ub;
+    if (BlockOffsetArrayUseUnallocatedBlock) {
+      HeapWord* ub = _bt.unallocated_block();
+      assert(ub >= bottom() &&
+             ub <= end(), "space invariant");
+      return ub;
+    } else {
+      return end();
+    }
   }
   void freed(HeapWord* start, size_t size) {
     _bt.freed(start, size);
@@ -476,6 +482,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   // Debugging support
   void print()                            const;
+  void print_on(outputStream* st)         const;
   void prepare_for_verify();
   void verify(bool allow_dirty)           const;
   void verifyFreeLists()                  const PRODUCT_RETURN;

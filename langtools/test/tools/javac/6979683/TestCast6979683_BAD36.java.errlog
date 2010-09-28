@@ -1,0 +1,2 @@
+TestCast6979683_BAD36.java:36:58: compiler.err.prob.found.req: (compiler.misc.incompatible.types), java.lang.Comparable<java.lang.Integer>, int
+1 error
