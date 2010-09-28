@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6985205
+ * @bug 6985205 6986246
  * @summary access to tree positions and doc comments may be lost across annotation processing rounds
  * @build TreePosRoundsTest
  * @compile -proc:only -processor TreePosRoundsTest TreePosRoundsTest.java
@@ -70,6 +70,7 @@ public class TreePosRoundsTest extends AbstractProcessor {
 
     Filer filer;
     Messager messager;
+    Trees trees;
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -81,6 +82,7 @@ public class TreePosRoundsTest extends AbstractProcessor {
         super.init(pEnv);
         filer = pEnv.getFiler();
         messager = pEnv.getMessager();
+        trees = Trees.instance(pEnv);
     }
 
     int round = 0;
@@ -92,7 +94,6 @@ public class TreePosRoundsTest extends AbstractProcessor {
         // Scan trees for elements, verifying source tree positions
         for (Element e: roundEnv.getRootElements()) {
             try {
-                Trees trees = Trees.instance(processingEnv); // cannot cache this across rounds
                 TreePath p = trees.getPath(e);
                 new TestTreeScanner(p.getCompilationUnit(), trees).scan(trees.getPath(e), null);
             } catch (IOException ex) {
