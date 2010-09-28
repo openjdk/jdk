@@ -79,7 +79,6 @@ ifneq ($(KERNEL), off)
       ifeq ($(UP_TMP), true)
         DEPLOY_BUILD_TARGETS += cmd-comp-all
       endif
-      DEPLOY_BUILD_TARGETS += kernel-all
     endif
   endif
 endif
