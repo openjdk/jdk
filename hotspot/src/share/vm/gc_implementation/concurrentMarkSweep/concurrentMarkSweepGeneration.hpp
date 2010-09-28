@@ -537,8 +537,8 @@ class CMSCollector: public CHeapObj {
   // The following array-pair keeps track of mark words
   // displaced for accomodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
-  GrowableArray<oop>*     _preserved_oop_stack;
-  GrowableArray<markOop>* _preserved_mark_stack;
+  Stack<oop>     _preserved_oop_stack;
+  Stack<markOop> _preserved_mark_stack;
 
   int*             _hash_seed;
 
