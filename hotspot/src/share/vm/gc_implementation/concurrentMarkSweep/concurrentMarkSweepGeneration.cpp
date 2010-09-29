@@ -3264,6 +3264,7 @@ HeapWord*
 ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
                                                    bool   tlab,
                                                    bool   parallel) {
+  CMSSynchronousYieldRequest yr;
   assert(!tlab, "Can't deal with TLAB allocation");
   MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
   expand(word_size*HeapWordSize, MinHeapDeltaBytes,
@@ -3710,20 +3711,26 @@ class CMSConcMarkingTask;
 class CMSConcMarkingTerminator: public ParallelTaskTerminator {
   CMSCollector*       _collector;
   CMSConcMarkingTask* _task;
-  bool _yield;
- protected:
-  virtual void yield();
  public:
+  virtual void yield();
+
   // "n_threads" is the number of threads to be terminated.
   // "queue_set" is a set of work queues of other threads.
   // "collector" is the CMS collector associated with this task terminator.
   // "yield" indicates whether we need the gang as a whole to yield.
-  CMSConcMarkingTerminator(int n_threads, TaskQueueSetSuper* queue_set,
-                           CMSCollector* collector, bool yield) :
+  CMSConcMarkingTerminator(int n_threads, TaskQueueSetSuper* queue_set, CMSCollector* collector) :
     ParallelTaskTerminator(n_threads, queue_set),
-    _collector(collector),
-    _yield(yield) { }
+    _collector(collector) { }
 
+  void set_task(CMSConcMarkingTask* task) {
+    _task = task;
+  }
+};
+
+class CMSConcMarkingTerminatorTerminator: public TerminatorTerminator {
+  CMSConcMarkingTask* _task;
+ public:
+  bool should_exit_termination();
   void set_task(CMSConcMarkingTask* task) {
     _task = task;
   }
@@ -3737,7 +3744,9 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   bool          _result;
   CompactibleFreeListSpace*  _cms_space;
   CompactibleFreeListSpace* _perm_space;
-  HeapWord*     _global_finger;
+  char          _pad_front[64];   // padding to ...
+  HeapWord*     _global_finger;   // ... avoid sharing cache line
+  char          _pad_back[64];
   HeapWord*     _restart_addr;
 
   //  Exposed here for yielding support
@@ -3745,7 +3754,10 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
 
   // The per thread work queues, available here for stealing
   OopTaskQueueSet*  _task_queues;
+
+  // Termination (and yielding) support
   CMSConcMarkingTerminator _term;
+  CMSConcMarkingTerminatorTerminator _term_term;
 
  public:
   CMSConcMarkingTask(CMSCollector* collector,
@@ -3760,11 +3772,12 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
     _perm_space(perm_space),
     _asynch(asynch), _n_workers(0), _result(true),
     _task_queues(task_queues),
-    _term(_n_workers, task_queues, _collector, asynch),
+    _term(_n_workers, task_queues, _collector),
     _bit_map_lock(collector->bitMapLock())
   {
     _requested_size = _n_workers;
     _term.set_task(this);
+    _term_term.set_task(this);
     assert(_cms_space->bottom() < _perm_space->bottom(),
            "Finger incorrectly initialized below");
     _restart_addr = _global_finger = _cms_space->bottom();
@@ -3784,6 +3797,11 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   }
 
   void work(int i);
+  bool should_yield() {
+    return    ConcurrentMarkSweepThread::should_yield()
+           && !_collector->foregroundGCIsActive()
+           && _asynch;
+  }
 
   virtual void coordinator_yield();  // stuff done by coordinator
   bool result() { return _result; }
@@ -3805,10 +3823,17 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   void bump_global_finger(HeapWord* f);
 };
 
+bool CMSConcMarkingTerminatorTerminator::should_exit_termination() {
+  assert(_task != NULL, "Error");
+  return _task->yielding();
+  // Note that we do not need the disjunct || _task->should_yield() above
+  // because we want terminating threads to yield only if the task
+  // is already in the midst of yielding, which happens only after at least one
+  // thread has yielded.
+}
+
 void CMSConcMarkingTerminator::yield() {
-  if (ConcurrentMarkSweepThread::should_yield() &&
-      !_collector->foregroundGCIsActive() &&
-      _yield) {
+  if (_task->should_yield()) {
     _task->yield();
   } else {
     ParallelTaskTerminator::yield();
@@ -4033,6 +4058,7 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
 
 class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
  private:
+  CMSConcMarkingTask* _task;
   MemRegion     _span;
   CMSBitMap*    _bit_map;
   CMSMarkStack* _overflow_stack;
@@ -4040,11 +4066,12 @@ class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
  protected:
   DO_OOP_WORK_DEFN
  public:
-  Par_ConcMarkingClosure(CMSCollector* collector, OopTaskQueue* work_queue,
+  Par_ConcMarkingClosure(CMSCollector* collector, CMSConcMarkingTask* task, OopTaskQueue* work_queue,
                          CMSBitMap* bit_map, CMSMarkStack* overflow_stack,
                          CMSMarkStack* revisit_stack):
     Par_KlassRememberingOopClosure(collector, NULL, revisit_stack),
-    _span(_collector->_span),
+    _task(task),
+    _span(collector->_span),
     _work_queue(work_queue),
     _bit_map(bit_map),
     _overflow_stack(overflow_stack)
@@ -4053,6 +4080,11 @@ class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
   virtual void do_oop(narrowOop* p);
   void trim_queue(size_t max);
   void handle_stack_overflow(HeapWord* lost);
+  void do_yield_check() {
+    if (_task->should_yield()) {
+      _task->yield();
+    }
+  }
 };
 
 // Grey object scanning during work stealing phase --
@@ -4096,6 +4128,7 @@ void Par_ConcMarkingClosure::do_oop(oop obj) {
         handle_stack_overflow(addr);
       }
     } // Else, some other thread got there first
+    do_yield_check();
   }
 }
 
@@ -4111,6 +4144,7 @@ void Par_ConcMarkingClosure::trim_queue(size_t max) {
       assert(_span.contains((HeapWord*)new_oop), "Not in span");
       assert(new_oop->is_parsable(), "Should be parsable");
       new_oop->oop_iterate(this);  // do_oop() above
+      do_yield_check();
     }
   }
 }
@@ -4138,7 +4172,7 @@ void CMSConcMarkingTask::do_work_steal(int i) {
   CMSMarkStack* ovflw = &(_collector->_markStack);
   CMSMarkStack* revisit = &(_collector->_revisitStack);
   int* seed = _collector->hash_seed(i);
-  Par_ConcMarkingClosure cl(_collector, work_q, bm, ovflw, revisit);
+  Par_ConcMarkingClosure cl(_collector, this, work_q, bm, ovflw, revisit);
   while (true) {
     cl.trim_queue(0);
     assert(work_q->size() == 0, "Should have been emptied above");
@@ -4151,9 +4185,11 @@ void CMSConcMarkingTask::do_work_steal(int i) {
       assert(obj_to_scan->is_oop(), "Should be an oop");
       assert(bm->isMarked((HeapWord*)obj_to_scan), "Grey object");
       obj_to_scan->oop_iterate(&cl);
-    } else if (terminator()->offer_termination()) {
+    } else if (terminator()->offer_termination(&_term_term)) {
       assert(work_q->size() == 0, "Impossible!");
       break;
+    } else if (yielding() || should_yield()) {
+      yield();
     }
   }
 }

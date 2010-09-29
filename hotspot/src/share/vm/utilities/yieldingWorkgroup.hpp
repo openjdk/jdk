@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,7 @@ public:
   virtual void abort();
 
   Status status()  const { return _status; }
+  bool yielding()  const { return _status == YIELDING; }
   bool yielded()   const { return _status == YIELDED; }
   bool completed() const { return _status == COMPLETED; }
   bool aborted()   const { return _status == ABORTED; }
