@@ -358,7 +358,7 @@ class Instruction: public CompilationResourceObj {
   }
 
   // creation
-  Instruction(ValueType* type, ValueStack* state_before = NULL, bool type_is_constant = false, bool create_hi = true)
+  Instruction(ValueType* type, ValueStack* state_before = NULL, bool type_is_constant = false)
   : _use_count(0)
 #ifndef PRODUCT
   , _printable_bci(-99)
@@ -1966,9 +1966,9 @@ LEAF(OsrEntry, Instruction)
  public:
   // creation
 #ifdef _LP64
-  OsrEntry() : Instruction(longType, false) { pin(); }
+  OsrEntry() : Instruction(longType) { pin(); }
 #else
-  OsrEntry() : Instruction(intType,  false) { pin(); }
+  OsrEntry() : Instruction(intType)  { pin(); }
 #endif
 
   // generic
@@ -1980,7 +1980,7 @@ LEAF(OsrEntry, Instruction)
 LEAF(ExceptionObject, Instruction)
  public:
   // creation
-  ExceptionObject() : Instruction(objectType, false) {
+  ExceptionObject() : Instruction(objectType) {
     pin();
   }
 
