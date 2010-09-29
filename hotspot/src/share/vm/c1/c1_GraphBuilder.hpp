@@ -347,7 +347,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   NOT_PRODUCT(void print_inline_result(ciMethod* callee, bool res);)
 
   void profile_call(Value recv, ciKlass* predicted_holder);
-  void profile_invocation(ciMethod* inlinee, ValueStack* state, int bci);
+  void profile_invocation(ciMethod* inlinee, ValueStack* state);
 
   // Shortcuts to profiling control.
   bool is_profiling()          { return _compilation->is_profiling();          }

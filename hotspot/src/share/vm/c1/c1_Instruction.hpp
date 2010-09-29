@@ -2246,13 +2246,11 @@ LEAF(ProfileInvoke, Instruction)
  private:
   ciMethod*   _inlinee;
   ValueStack* _state;
-  int         _bci_of_invoke;
 
  public:
-  ProfileInvoke(ciMethod* inlinee,  ValueStack* state, int bci)
+  ProfileInvoke(ciMethod* inlinee,  ValueStack* state)
     : Instruction(voidType)
     , _inlinee(inlinee)
-    , _bci_of_invoke(bci)
     , _state(state)
   {
     // The ProfileInvoke has side-effects and must occur precisely where located QQQ???
@@ -2261,7 +2259,6 @@ LEAF(ProfileInvoke, Instruction)
 
   ciMethod* inlinee()      { return _inlinee; }
   ValueStack* state()      { return _state; }
-  int bci_of_invoke()      { return _bci_of_invoke; }
   virtual void input_values_do(ValueVisitor*)   {}
   virtual void state_values_do(ValueVisitor*);
 };

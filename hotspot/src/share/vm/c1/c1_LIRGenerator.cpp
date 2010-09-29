@@ -2309,7 +2309,7 @@ void LIRGenerator::do_Base(Base* x) {
 
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
-    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state(), NULL);
+    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL);
     increment_invocation_counter(info);
   }
 

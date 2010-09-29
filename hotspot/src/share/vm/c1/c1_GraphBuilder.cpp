@@ -3405,7 +3405,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
       profile_call(recv, holder_known ? callee->holder() : NULL);
     }
     if (profile_inlined_calls()) {
-      profile_invocation(callee, state(), 0);
+      profile_invocation(callee, copy_state_before());
     }
   }
 
@@ -3780,6 +3780,6 @@ void GraphBuilder::profile_call(Value recv, ciKlass* known_holder) {
   append(new ProfileCall(method(), bci(), recv, known_holder));
 }
 
-void GraphBuilder::profile_invocation(ciMethod* callee, ValueStack* state, int bci) {
-  append(new ProfileInvoke(callee, state, bci));
+void GraphBuilder::profile_invocation(ciMethod* callee, ValueStack* state) {
+  append(new ProfileInvoke(callee, state));
 }
