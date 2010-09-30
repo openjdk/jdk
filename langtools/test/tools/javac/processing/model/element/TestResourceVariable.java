@@ -26,7 +26,8 @@
  * @bug  6911256 6964740 6967842
  * @summary Test that the resource variable kind is appropriately set
  * @author  Joseph D. Darcy
- * @build TestResourceVariable
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor TestResourceVariable
  * @compile -processor TestResourceVariable -proc:only TestResourceVariable.java
  */
 
@@ -48,8 +49,7 @@ import static javax.tools.Diagnostic.Kind.*;
  * resource of an ARM block and verify their kind tags are set
  * appropriately.
  */
-@SupportedAnnotationTypes("*")
-public class TestResourceVariable extends AbstractProcessor implements AutoCloseable {
+public class TestResourceVariable extends JavacTestingAbstractProcessor implements AutoCloseable {
     int resourceVariableCount = 0;
 
     public boolean process(Set<? extends TypeElement> annotations,
@@ -104,10 +104,5 @@ public class TestResourceVariable extends AbstractProcessor implements AutoClose
            }
            return super.visitVariable(node, cu);
        }
-   }
-
-   @Override
-   public SourceVersion getSupportedSourceVersion() {
-       return SourceVersion.latest();
    }
 }

@@ -26,7 +26,8 @@
  * @bug 6967842
  * @summary Element not returned from tree API for ARM resource variables.
  * @author A. Sundararajan
- * @build TestResourceElement
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor TestResourceElement
  * @compile -processor TestResourceElement -proc:only TestResourceElement.java
  */
 
@@ -37,8 +38,7 @@ import java.util.*;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
 
-@SupportedAnnotationTypes("*")
-public class TestResourceElement extends AbstractProcessor implements AutoCloseable {
+public class TestResourceElement extends JavacTestingAbstractProcessor implements AutoCloseable {
     public boolean process(Set<? extends TypeElement> annotations,
                           RoundEnvironment roundEnv) {
        if (!roundEnv.processingOver()) {
@@ -87,10 +87,5 @@ public class TestResourceElement extends AbstractProcessor implements AutoClosea
        Element getTrvElement() {
            return trvElement;
        }
-   }
-
-   @Override
-   public SourceVersion getSupportedSourceVersion() {
-       return SourceVersion.latest();
    }
 }

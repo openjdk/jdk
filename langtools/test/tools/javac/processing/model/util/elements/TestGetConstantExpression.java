@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 6471577 6517779
  * @summary Test Elements.getConstantExpression
  * @author  Joseph D. Darcy
- * @build TestGetConstantExpression
+ * @library ../../../../lib
+ * @build   JavacTestingAbstractProcessor TestGetConstantExpression
  * @compile -processor TestGetConstantExpression Foo.java
  */
 
@@ -44,10 +45,7 @@ import java.io.*;
 /**
  * Test basic workings of Elements.getConstantExpression.
  */
-@SupportedAnnotationTypes("*")
-public class TestGetConstantExpression extends AbstractProcessor {
-    private Elements eltUtils;
-    private Filer filer;
+public class TestGetConstantExpression extends JavacTestingAbstractProcessor {
     private int round = 1;
 
     /**
@@ -129,15 +127,5 @@ public class TestGetConstantExpression extends AbstractProcessor {
         } catch (IllegalArgumentException iae) {
             return 0;
         }
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        eltUtils = processingEnv.getElementUtils();
-        filer    = processingEnv.getFiler();
     }
 }
