@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.source.tree.AssignmentTree;
 import java.util.*;
 import java.util.Set;
 
@@ -45,6 +44,8 @@ import com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
+
+import static com.sun.tools.javac.main.OptionName.*;
 
 /** Type checking helper class for the attribution phase.
  *
@@ -99,10 +100,10 @@ public class Check {
         allowGenerics = source.allowGenerics();
         allowAnnotations = source.allowAnnotations();
         allowCovariantReturns = source.allowCovariantReturns();
-        complexInference = options.get("-complexinference") != null;
-        skipAnnotations = options.get("skipAnnotations") != null;
-        warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
-        suppressAbortOnBadClassFile = options.get("suppressAbortOnBadClassFile") != null;
+        complexInference = options.isSet(COMPLEXINFERENCE);
+        skipAnnotations = options.isSet("skipAnnotations");
+        warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
+        suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
