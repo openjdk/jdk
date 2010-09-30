@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     6341173 6341072
  * @summary Test presence of Messager methods
  * @author  Joseph D. Darcy
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile MessagerBasics.java
  * @compile -processor MessagerBasics -proc:only MessagerBasics.java
  * @compile/fail -processor MessagerBasics -proc:only -AfinalError MessagerBasics.java
@@ -39,18 +41,16 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import static javax.tools.Diagnostic.Kind.*;
 
-@SupportedAnnotationTypes("*")
 @SupportedOptions("finalError")
-public class MessagerBasics extends AbstractProcessor {
+public class MessagerBasics extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        Messager m = processingEnv.getMessager();
         if (roundEnv.processingOver()) {
             if (processingEnv.getOptions().containsKey("finalError"))
-                m.printMessage(ERROR,   "Does not compute");
+                messager.printMessage(ERROR,   "Does not compute");
             else {
-                m.printMessage(NOTE,    "Post no bills");
-                m.printMessage(WARNING, "Beware the ides of March!");
+                messager.printMessage(NOTE,    "Post no bills");
+                messager.printMessage(WARNING, "Beware the ides of March!");
             }
         }
         return true;
