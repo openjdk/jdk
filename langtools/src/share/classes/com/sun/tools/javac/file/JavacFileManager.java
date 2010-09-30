@@ -150,8 +150,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         useZipFileIndex = System.getProperty("useJavaUtilZip") == null;// TODO: options.get("useJavaUtilZip") == null;
 
-        mmappedIO = options.get("mmappedIO") != null;
-        ignoreSymbolFile = options.get("ignore.symbol.file") != null;
+        mmappedIO = options.isSet("mmappedIO");
+        ignoreSymbolFile = options.isSet("ignore.symbol.file");
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -435,7 +435,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     zdir = new ZipFile(zipFileName);
                 }
                 else {
-                    usePreindexedCache = options.get("usezipindex") != null;
+                    usePreindexedCache = options.isSet("usezipindex");
                     preindexCacheLocation = options.get("java.io.tmpdir");
                     String optCacheLoc = options.get("cachezipindexdir");
 
@@ -469,7 +469,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                     null,
                                     usePreindexedCache,
                                     preindexCacheLocation,
-                                    options.get("writezipindexfiles") != null));
+                                    options.isSet("writezipindexfiles")));
                     }
                 }
                 else {
@@ -482,7 +482,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                     symbolFilePrefix,
                                     usePreindexedCache,
                                     preindexCacheLocation,
-                                    options.get("writezipindexfiles") != null));
+                                    options.isSet("writezipindexfiles")));
                     }
                 }
             } catch (FileNotFoundException ex) {

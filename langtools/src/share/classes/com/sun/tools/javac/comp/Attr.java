@@ -119,10 +119,10 @@ public class Attr extends JCTree.Visitor {
         allowAnonOuterThis = source.allowAnonOuterThis();
         allowStringsInSwitch = source.allowStringsInSwitch();
         sourceName = source.name;
-        relax = (options.get("-retrofit") != null ||
-                 options.get("-relax") != null);
-        useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
-        enableSunApiLintControl = options.get("enableSunApiLintControl") != null;
+        relax = (options.isSet("-retrofit") ||
+                 options.isSet("-relax"));
+        useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        enableSunApiLintControl = options.isSet("enableSunApiLintControl");
     }
 
     /** Switch: relax some constraints for retrofit mode.

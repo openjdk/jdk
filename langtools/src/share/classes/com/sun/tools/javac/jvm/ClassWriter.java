@@ -45,7 +45,9 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
+import static com.sun.tools.javac.main.OptionName.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+
 
 /** This class provides operations to map an internal symbol table graph
  *  rooted in a ClassSymbol into a classfile.
@@ -178,15 +180,16 @@ public class ClassWriter extends ClassFile {
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
 
-        debugJSR308    = options.get("TA:writer") != null;
-        verbose        = options.get("-verbose")     != null;
-        scramble       = options.get("-scramble")    != null;
-        scrambleAll    = options.get("-scrambleAll") != null;
-        retrofit       = options.get("-retrofit") != null;
-        genCrt         = options.get("-Xjcov") != null;
-        debugstackmap  = options.get("debugstackmap") != null;
+        debugJSR308    = options.isSet("TA:writer");
+        verbose        = options.isSet(VERBOSE);
+        scramble       = options.isSet("-scramble");
+        scrambleAll    = options.isSet("-scrambleAll");
+        retrofit       = options.isSet("-retrofit");
+        genCrt         = options.isSet(XJCOV);
+        debugstackmap  = options.isSet("debugstackmap");
 
-        emitSourceFile = options.get("-g:")==null || options.get("-g:source")!=null;
+        emitSourceFile = options.isUnset(G_CUSTOM) ||
+                            options.isSet(G_CUSTOM, "source");
 
         String dumpModFlags = options.get("dumpmodifiers");
         dumpClassModifiers =

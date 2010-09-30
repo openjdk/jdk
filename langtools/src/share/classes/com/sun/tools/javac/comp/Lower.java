@@ -109,7 +109,7 @@ public class Lower extends TreeTranslator {
 
         types = Types.instance(context);
         Options options = Options.instance(context);
-        debugLower = options.get("debuglower") != null;
+        debugLower = options.isSet("debuglower");
         pkginfoOpt = PkgInfo.get(options);
     }
 

@@ -56,6 +56,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
+import static com.sun.tools.javac.main.OptionName.*;
+
 /** This class provides operations to read a classfile into an internal
  *  representation. The internal representation is anchored in a
  *  ClassSymbol which contains in its scope symbol representations
@@ -259,23 +261,23 @@ public class ClassReader implements Completer {
 
         Options options = Options.instance(context);
         annotate = Annotate.instance(context);
-        verbose        = options.get("-verbose")        != null;
-        checkClassFile = options.get("-checkclassfile") != null;
+        verbose        = options.isSet(VERBOSE);
+        checkClassFile = options.isSet("-checkclassfile");
         Source source = Source.instance(context);
         allowGenerics    = source.allowGenerics();
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
-        saveParameterNames = options.get("save-parameter-names") != null;
-        cacheCompletionFailure = options.get("dev") == null;
+        saveParameterNames = options.isSet("save-parameter-names");
+        cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
 
         completionFailureName =
-            (options.get("failcomplete") != null)
+            options.isSet("failcomplete")
             ? names.fromString(options.get("failcomplete"))
             : null;
 
         typevars = new Scope(syms.noSymbol);
-        debugJSR308 = options.get("TA:reader") != null;
+        debugJSR308 = options.isSet("TA:reader");
 
         initAttributeReaders();
     }
