@@ -25,6 +25,8 @@
  * @test
  * @bug 6502392
  * @summary Invalid relative names for Filer.createResource and Filer.getResource
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile TestInvalidRelativeNames.java
  * @compile/process -processor TestInvalidRelativeNames java.lang.Object
  */
@@ -37,29 +39,12 @@ import javax.lang.model.element.*;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 
-
-@SupportedAnnotationTypes("*")
-public class TestInvalidRelativeNames extends AbstractProcessor {
+public class TestInvalidRelativeNames extends JavacTestingAbstractProcessor {
     enum Kind { CREATE_WRITER, GET_READER, CREATE_OUTPUT_STREAM, GET_INPUT_STREAM };
 
     static final String[] invalidRelativeNames = {
             "/boo", "goo/../hoo", "./ioo", ""
     };
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    Filer filer;
-    Messager messager;
-
-    @Override
-    public void init(ProcessingEnvironment pEnv) {
-        super.init(pEnv);
-        filer = processingEnv.getFiler();
-        messager = processingEnv.getMessager();
-    }
 
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
