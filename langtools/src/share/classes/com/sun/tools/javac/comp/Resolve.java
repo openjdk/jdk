@@ -110,14 +110,14 @@ public class Resolve {
         boxingEnabled = source.allowBoxing();
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
-        debugResolve = options.get("debugresolve") != null;
-        allowTransitionalJSR292 = options.get("allowTransitionalJSR292") != null;
+        debugResolve = options.isSet("debugresolve");
+        allowTransitionalJSR292 = options.isSet("allowTransitionalJSR292");
         Target target = Target.instance(context);
         allowMethodHandles = allowTransitionalJSR292 ||
                 target.hasMethodHandles();
         allowInvokeDynamic = (allowTransitionalJSR292 ||
                 target.hasInvokedynamic()) &&
-                options.get("invokedynamic") != null;
+                options.isSet("invokedynamic");
         polymorphicSignatureScope = new Scope(syms.noSymbol);
 
         inapplicableMethodException = new InapplicableMethodException(diags);

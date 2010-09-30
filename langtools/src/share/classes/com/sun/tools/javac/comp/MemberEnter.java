@@ -102,7 +102,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         diags = JCDiagnostic.Factory.instance(context);
         target = Target.instance(context);
         Options options = Options.instance(context);
-        skipAnnotations = options.get("skipAnnotations") != null;
+        skipAnnotations = options.isSet("skipAnnotations");
     }
 
     /** A queue for classes whose members still need to be entered into the
