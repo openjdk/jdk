@@ -33,6 +33,10 @@ class CMSPermGen:  public PermGen {
   // The "generation" view.
   ConcurrentMarkSweepGeneration* _gen;
 
+  // Override default implementation from PermGen
+  virtual HeapWord* request_expand_and_allocate(Generation* gen, size_t size,
+                                                GCCause::Cause prev_cause);
+
  public:
   CMSPermGen(ReservedSpace rs, size_t initial_byte_size,
              CardTableRS* ct, FreeBlockDictionary::DictionaryChoice);
