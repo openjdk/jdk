@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -734,7 +734,7 @@ public static final int ASCII_STREAM_PARAM = 2;
                  throw new SQLException("Set initParams() before setCommand");
             }
             params.clear();
-            command = new String(cmd);
+            command = cmd;
         }
 
     }
@@ -797,7 +797,7 @@ public static final int ASCII_STREAM_PARAM = 2;
             throw new SQLException("Invalid url string detected. " +
             "Cannot be of length less than 1");
         } else {
-            URL = new String(url);
+            URL = url;
         }
 
         dataSource = null;
@@ -854,7 +854,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         } else if (name.equals("")) {
            throw new SQLException("DataSource name cannot be empty string");
         } else {
-           dataSource = new String(name);
+           dataSource = name;
         }
 
         URL = null;
@@ -889,7 +889,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         {
            username = null;
         } else {
-           username = new String(name);
+           username = name;
         }
     }
 
@@ -924,7 +924,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         {
            password = null;
         } else {
-           password = new String(pass);
+           password = pass;
         }
     }
 
@@ -1645,7 +1645,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         nullVal = new Object[3];
         nullVal[0] = null;
         nullVal[1] = new Integer(sqlType);
-        nullVal[2] = new String(typeName);
+        nullVal[2] = typeName;
 
        if(params == null){
             throw new SQLException("Set initParams() before setNull");

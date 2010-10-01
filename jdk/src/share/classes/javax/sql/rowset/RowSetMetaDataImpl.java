@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,9 +306,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
     public void setColumnLabel(int columnIndex, String label) throws SQLException {
         checkColRange(columnIndex);
         if (label != null) {
-            colInfo[columnIndex].columnLabel = new String(label);
+            colInfo[columnIndex].columnLabel = label;
         } else {
-            colInfo[columnIndex].columnLabel = new String("");
+            colInfo[columnIndex].columnLabel = "";
         }
     }
 
@@ -326,9 +326,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
     public void setColumnName(int columnIndex, String columnName) throws SQLException {
         checkColRange(columnIndex);
         if (columnName != null) {
-            colInfo[columnIndex].columnName = new String(columnName);
+            colInfo[columnIndex].columnName = columnName;
         } else {
-            colInfo[columnIndex].columnName = new String("");
+            colInfo[columnIndex].columnName = "";
         }
     }
 
@@ -348,9 +348,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
     public void setSchemaName(int columnIndex, String schemaName) throws SQLException {
         checkColRange(columnIndex);
         if (schemaName != null ) {
-            colInfo[columnIndex].schemaName = new String(schemaName);
+            colInfo[columnIndex].schemaName = schemaName;
         } else {
-            colInfo[columnIndex].schemaName = new String("");
+            colInfo[columnIndex].schemaName = "";
         }
     }
 
@@ -411,9 +411,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
     public void setTableName(int columnIndex, String tableName) throws SQLException {
         checkColRange(columnIndex);
         if (tableName != null) {
-            colInfo[columnIndex].tableName = new String(tableName);
+            colInfo[columnIndex].tableName = tableName;
         } else {
-            colInfo[columnIndex].tableName = new String("");
+            colInfo[columnIndex].tableName = "";
         }
     }
 
@@ -432,9 +432,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
     public void setCatalogName(int columnIndex, String catalogName) throws SQLException {
         checkColRange(columnIndex);
         if (catalogName != null)
-            colInfo[columnIndex].catName = new String(catalogName);
+            colInfo[columnIndex].catName = catalogName;
         else
-            colInfo[columnIndex].catName = new String("");
+            colInfo[columnIndex].catName = "";
     }
 
     /**
@@ -474,9 +474,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
         throws SQLException {
         checkColRange(columnIndex);
         if (typeName != null) {
-            colInfo[columnIndex].colTypeName = new String(typeName);
+            colInfo[columnIndex].colTypeName = typeName;
         } else {
-            colInfo[columnIndex].colTypeName = new String("");
+            colInfo[columnIndex].colTypeName = "";
         }
     }
 
@@ -827,7 +827,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      *         or the given column number is out of bounds
      */
     public String getColumnClassName(int columnIndex) throws SQLException {
-        String className = (new String()).getClass().getName();
+        String className = String.class.getName();
 
         int sqlType = getColumnType(columnIndex);
 
@@ -835,65 +835,62 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
 
         case Types.NUMERIC:
         case Types.DECIMAL:
-            className = (new java.math.BigDecimal(0)).getClass().getName ();
+            className = java.math.BigDecimal.class.getName();
             break;
 
         case Types.BIT:
-            className = (new Boolean(false)).getClass().getName ();
+            className = java.lang.Boolean.class.getName();
             break;
 
         case Types.TINYINT:
-            className = (new Byte("0")).getClass().getName ();
+            className = java.lang.Byte.class.getName();
             break;
 
         case Types.SMALLINT:
-            className = (new Short("0")).getClass().getName ();
+            className = java.lang.Short.class.getName();
             break;
 
         case Types.INTEGER:
-            className = (new Integer(0)).getClass().getName ();
+            className = java.lang.Integer.class.getName();
             break;
 
         case Types.BIGINT:
-            className = (new Long(0)).getClass().getName ();
+            className = java.lang.Long.class.getName();
             break;
 
         case Types.REAL:
-            className = (new Float(0)).getClass().getName ();
+            className = java.lang.Float.class.getName();
             break;
 
         case Types.FLOAT:
         case Types.DOUBLE:
-            className = (new Double(0)).getClass().getName();
+            className = java.lang.Double.class.getName();
             break;
 
         case Types.BINARY:
         case Types.VARBINARY:
         case Types.LONGVARBINARY:
-            byte[] b = {};
-            className = (b.getClass()).getName();
+            className = "byte[]";
             break;
 
         case Types.DATE:
-            className = (new java.sql.Date(123456)).getClass().getName ();
+            className = java.sql.Date.class.getName();
             break;
 
         case Types.TIME:
-            className = (new java.sql.Time(123456)).getClass().getName ();
+            className = java.sql.Time.class.getName();
             break;
 
         case Types.TIMESTAMP:
-            className = (new java.sql.Timestamp(123456)).getClass().getName ();
+            className = java.sql.Timestamp.class.getName();
             break;
 
         case Types.BLOB:
-            byte[] blob = {};
-            className = (blob.getClass()).getName();
+            className = java.sql.Blob.class.getName();
             break;
 
         case Types.CLOB:
-            char[] c = {};
-            className = (c.getClass()).getName();
+            className = java.sql.Clob.class.getName();
             break;
         }
 
