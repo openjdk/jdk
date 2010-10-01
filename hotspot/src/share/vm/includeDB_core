@@ -3456,6 +3456,7 @@ permGen.hpp                             gcCause.hpp
 permGen.hpp                             generation.hpp
 permGen.hpp                             handles.hpp
 permGen.hpp                             iterator.hpp
+permGen.hpp                             mutexLocker.hpp
 permGen.hpp                             virtualspace.hpp
 
 placeholders.cpp                        fieldType.hpp
