@@ -256,7 +256,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
   if( can_reshape && igvn != NULL &&
-      (igvn->_worklist.member(address) || phase->type(address) != adr_type()) ) {
+      (igvn->_worklist.member(address) ||
+       igvn->_worklist.size() > 0 && (phase->type(address) != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
