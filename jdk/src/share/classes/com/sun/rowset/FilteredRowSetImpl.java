@@ -1106,7 +1106,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
    public void updateBytes(int columnIndex , byte []x) throws SQLException {
 
       boolean bool;
-      String val = new String();
+      String val = "";
 
       Byte [] obj_arr = new Byte[x.length];
 

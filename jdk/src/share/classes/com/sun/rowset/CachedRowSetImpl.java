@@ -4042,7 +4042,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 case java.sql.Types.CHAR:
                 case java.sql.Types.VARCHAR:
                 case java.sql.Types.LONGVARCHAR:
-                    return new String(srcObj.toString());
+                    return srcObj.toString();
                 default:
                     throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.dtypemismt").toString()+ trgType);
             }
@@ -4139,7 +4139,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 case java.sql.Types.CHAR:
                 case java.sql.Types.VARCHAR:
                 case java.sql.Types.LONGVARCHAR:
-                    return new String(srcObj.toString());
+                    return srcObj.toString();
                 default:
                     throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.dtypemismt").toString());
             }
@@ -6434,7 +6434,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         if (tabName == null)
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.tablename").toString());
         else
-            tableName = new String(tabName);
+            tableName = tabName;
     }
 
     /**
