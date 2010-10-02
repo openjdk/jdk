@@ -1785,6 +1785,14 @@ void G1CollectedHeap::increment_full_collections_completed(bool outer) {
 
   _full_collections_completed += 1;
 
+  // We need to clear the "in_progress" flag in the CM thread before
+  // we wake up any waiters (especially when ExplicitInvokesConcurrent
+  // is set) so that if a waiter requests another System.gc() it doesn't
+  // incorrectly see that a marking cyle is still in progress.
+  if (outer) {
+    _cmThread->clear_in_progress();
+  }
+
   // This notify_all() will ensure that a thread that called
   // System.gc() with (with ExplicitGCInvokesConcurrent set or not)
   // and it's waiting for a full GC to finish will be woken up. It is
