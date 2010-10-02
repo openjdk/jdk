@@ -769,9 +769,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 && types.isSameType(c.type, syms.deprecatedType))
                 s.flags_field |= Flags.DEPRECATED;
             // Internally to java.dyn, a @PolymorphicSignature annotation
-            // translates to a classfile attribute.
-            if (!c.type.isErroneous()
-                && types.isSameType(c.type, syms.polymorphicSignatureType)) {
+            // acts like a classfile attribute.
+            if (!c.type.isErroneous() &&
+                    types.isSameType(c.type, syms.polymorphicSignatureType)) {
+                if (!target.hasMethodHandles()) {
+                    // Somebody is compiling JDK7 source code to a JDK6 target.
+                    // Make it a strict warning, since it is unlikely but important.
+                    log.strictWarning(env.tree.pos(),
+                            "wrong.target.for.polymorphic.signature.definition",
+                            target.name);
+                }
+                // Pull the flag through for better diagnostics, even on a bad target.
                 s.flags_field |= Flags.POLYMORPHIC_SIGNATURE;
             }
             if (!annotated.add(a.type.tsym))

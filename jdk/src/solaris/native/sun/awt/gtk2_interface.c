@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,16 @@ const char *getStrFor(JNIEnv *env, jstring val)
 
     (*env)->GetStringUTFRegion(env, val, 0, length, convertionBuffer);
     return convertionBuffer;
+}
+
+static void throw_exception(JNIEnv *env, const char* name, const char* message)
+{
+    jclass class = (*env)->FindClass(env, name);
+
+    if (class != NULL)
+        (*env)->ThrowNew(env, class, message);
+
+    (*env)->DeleteLocalRef(env, class);
 }
 
 /* This is a workaround for the bug:
@@ -859,14 +869,26 @@ static void init_containers()
  * comparing results. This can be optimized by using subclassed pixmap and
  * doing the second drawing only if necessary.
 */
-void gtk2_init_painting(gint width, gint height)
+void gtk2_init_painting(JNIEnv *env, gint width, gint height)
 {
     GdkGC *gc;
+    GdkPixbuf *white, *black;
 
     init_containers();
 
     if (gtk2_pixbuf_width < width || gtk2_pixbuf_height < height)
     {
+        white = (*fp_gdk_pixbuf_new)(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+        black = (*fp_gdk_pixbuf_new)(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+
+        if (white == NULL || black == NULL)
+        {
+            snprintf(convertionBuffer, CONV_BUFFER_SIZE, "Couldn't create pixbuf of size %dx%d", width, height);
+            throw_exception(env, "java/lang/RuntimeException", convertionBuffer);
+            fp_gdk_threads_leave();
+            return;
+        }
+
         if (gtk2_white_pixmap != NULL) {
             /* free old stuff */
             (*fp_g_object_unref)(gtk2_white_pixmap);
@@ -875,14 +897,12 @@ void gtk2_init_painting(gint width, gint height)
             (*fp_g_object_unref)(gtk2_black_pixbuf);
         }
 
-        gtk2_white_pixmap = (*fp_gdk_pixmap_new)
-                                (gtk2_window->window, width, height, -1);
-        gtk2_black_pixmap = (*fp_gdk_pixmap_new)
-                                (gtk2_window->window, width, height, -1);
-        gtk2_white_pixbuf = (*fp_gdk_pixbuf_new)(GDK_COLORSPACE_RGB, TRUE, 8,
-                                                 width, height);
-        gtk2_black_pixbuf = (*fp_gdk_pixbuf_new)(GDK_COLORSPACE_RGB, TRUE, 8,
-                                                 width, height);
+        gtk2_white_pixmap = (*fp_gdk_pixmap_new)(gtk2_window->window, width, height, -1);
+        gtk2_black_pixmap = (*fp_gdk_pixmap_new)(gtk2_window->window, width, height, -1);
+
+        gtk2_white_pixbuf = white;
+        gtk2_black_pixbuf = black;
+
         gtk2_pixbuf_width = width;
         gtk2_pixbuf_height = height;
     }

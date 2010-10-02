@@ -582,7 +582,7 @@ public final class Scanner implements Iterator<String>, Closeable {
         matcher = delimPattern.matcher(buf);
         matcher.useTransparentBounds(true);
         matcher.useAnchoringBounds(false);
-        useLocale(Locale.getDefault());
+        useLocale(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -2642,7 +2642,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      */
     public Scanner reset() {
         delimPattern = WHITESPACE_PATTERN;
-        useLocale(Locale.getDefault());
+        useLocale(Locale.getDefault(Locale.Category.FORMAT));
         useRadix(10);
         clearCaches();
         return this;

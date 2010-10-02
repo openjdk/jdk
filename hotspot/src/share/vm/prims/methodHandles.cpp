@@ -113,8 +113,7 @@ void MethodHandles::generate_adapters() {
   _adapter_code = MethodHandlesAdapterBlob::create(_adapter_code_size);
   if (_adapter_code == NULL)
     vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
-  CodeBuffer code(_adapter_code->instructions_begin(), _adapter_code->instructions_size());
-
+  CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
 }

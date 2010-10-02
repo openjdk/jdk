@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,7 +518,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             setReadOnly(true);
         setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
         setEscapeProcessing(true);
-        setTypeMap(null);
+        //setTypeMap(null);
         checkTransactionalWriter();
 
         //Instantiating the vector for MatchColumns
@@ -679,7 +679,10 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 } else if (obj instanceof Clob) {
                     obj = new SerialClob((Clob)obj);
                 } else if (obj instanceof java.sql.Array) {
-                    obj = new SerialArray((java.sql.Array)obj, map);
+                    if(map != null)
+                        obj = new SerialArray((java.sql.Array)obj, map);
+                    else
+                        obj = new SerialArray((java.sql.Array)obj);
                 }
 
                 ((Row)currentRow).initColumnObject(i, obj);
@@ -762,7 +765,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         if( conn != null){
            // JDBC 4.0 mandates as does the Java EE spec that all DataBaseMetaData methods
            // must be implemented, therefore, the previous fix for 5055528 is being backed out
-           dbmslocatorsUpdateCopy = conn.getMetaData().locatorsUpdateCopy();
+            dbmslocatorsUpdateCopy = conn.getMetaData().locatorsUpdateCopy();
         }
     }
 
@@ -6322,6 +6325,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         crs.RowSetMD = RowSetMD;
         crs.numRows = 1;
         crs.cursorPos = 0;
+        crs.setTypeMap(this.getTypeMap());
 
         // make sure we don't get someone playing with these
         // %%% is this now necessary ???
@@ -10114,7 +10118,7 @@ a
      * during the deserialization process
      *
      */
-    protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         // Default state initialization happens here
         ois.defaultReadObject();
         // Initialization of transient Res Bundle happens here .
@@ -10125,5 +10129,15 @@ a
         }
 
     }
-        static final long serialVersionUID =1884577171200622428L;
+
+    //------------------------- JDBC 4.1 -----------------------------------
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException("Not supported yet.");
+    }
+
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException("Not supported yet.");
+    }
+
+    static final long serialVersionUID =1884577171200622428L;
 }

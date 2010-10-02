@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,11 +190,11 @@ public class FindInCodeCachePanel extends SAPanel {
 
   private void reportResult(StringBuffer result, CodeBlob blob) {
     result.append("<a href='blob:");
-    result.append(blob.instructionsBegin().toString());
+    result.append(blob.contentBegin().toString());
     result.append("'>");
     result.append(blob.getName());
     result.append("@");
-    result.append(blob.instructionsBegin());
+    result.append(blob.contentBegin());
     result.append("</a><br>");
   }
 

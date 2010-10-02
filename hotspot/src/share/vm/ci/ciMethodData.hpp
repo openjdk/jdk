@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,12 @@ private:
   // Maturity of the oop when the snapshot is taken.
   int _current_mileage;
 
+  // These counters hold the age of MDO in tiered. In tiered we can have the same method
+  // running at different compilation levels concurrently. So, in order to precisely measure
+  // its maturity we need separate counters.
+  int _invocation_counter;
+  int _backedge_counter;
+
   // Coherent snapshot of original header.
   methodDataOopDesc _orig;
 
@@ -222,6 +228,16 @@ public:
 
   int creation_mileage() { return _orig.creation_mileage(); }
   int current_mileage()  { return _current_mileage; }
+
+  int invocation_count() { return _invocation_counter; }
+  int backedge_count()   { return _backedge_counter;   }
+  // Transfer information about the method to methodDataOop.
+  // would_profile means we would like to profile this method,
+  // meaning it's not trivial.
+  void set_would_profile(bool p);
+  // Also set the numer of loops and blocks in the method.
+  // Again, this is used to determine if a method is trivial.
+  void set_compilation_stats(short loops, short blocks);
 
   void load_data();
 

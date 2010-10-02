@@ -39,13 +39,14 @@ class PipeImpl
     private final SinkChannel sink;
 
     PipeImpl(SelectorProvider sp) {
-        int[] fdes = new int[2];
-        IOUtil.initPipe(fdes, true);
+        long pipeFds = IOUtil.makePipe(true);
+        int readFd = (int) (pipeFds >>> 32);
+        int writeFd = (int) pipeFds;
         FileDescriptor sourcefd = new FileDescriptor();
-        IOUtil.setfdVal(sourcefd, fdes[0]);
+        IOUtil.setfdVal(sourcefd, readFd);
         source = new SourceChannelImpl(sp, sourcefd);
         FileDescriptor sinkfd = new FileDescriptor();
-        IOUtil.setfdVal(sinkfd, fdes[1]);
+        IOUtil.setfdVal(sinkfd, writeFd);
         sink = new SinkChannelImpl(sp, sinkfd);
     }
 
