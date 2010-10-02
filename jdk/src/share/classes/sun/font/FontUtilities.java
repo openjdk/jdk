@@ -373,8 +373,7 @@ public final class FontUtilities {
      */
     public static FontUIResource getCompositeFontUIResource(Font font) {
 
-        FontUIResource fuir =
-            new FontUIResource(font.getName(),font.getStyle(),font.getSize());
+        FontUIResource fuir = new FontUIResource(font);
         Font2D font2D = FontUtilities.getFont2D(font);
 
         if (!(font2D instanceof PhysicalFont)) {

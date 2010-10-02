@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,11 +96,12 @@ public class Date extends java.util.Date {
      * a <code>Date</code> value.
      *
      * @param s a <code>String</code> object representing a date in
-     *        in the format "yyyy-mm-dd"
+     *        in the format "yyyy-[m]m-[d]d". The leading zero for <code>mm</code>
+     * and <code>dd</code> may also be omitted.
      * @return a <code>java.sql.Date</code> object representing the
      *         given date
      * @throws IllegalArgumentException if the date given is not in the
-     *         JDBC date escape format (yyyy-mm-dd)
+     *         JDBC date escape format (yyyy-[m]m-[d]d)
      */
     public static Date valueOf(String s) {
         final int YEAR_LENGTH = 4;
@@ -123,8 +124,9 @@ public class Date extends java.util.Date {
             String yyyy = s.substring(0, firstDash);
             String mm = s.substring(firstDash + 1, secondDash);
             String dd = s.substring(secondDash + 1);
-            if (yyyy.length() == YEAR_LENGTH && mm.length() == MONTH_LENGTH &&
-                    dd.length() == DAY_LENGTH) {
+            if (yyyy.length() == YEAR_LENGTH &&
+                    (mm.length() >= 1 && mm.length() <= MONTH_LENGTH) &&
+                    (dd.length() >= 1 && dd.length() <= DAY_LENGTH)) {
                 int year = Integer.parseInt(yyyy);
                 int month = Integer.parseInt(mm);
                 int day = Integer.parseInt(dd);

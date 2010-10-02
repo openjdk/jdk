@@ -2148,7 +2148,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
             body_summary->get_termination_seq()
           };
           NumberSeq calc_other_times_ms(body_summary->get_parallel_seq(),
-                                        7, other_parts);
+                                        6, other_parts);
           check_other_times(2, body_summary->get_parallel_other_seq(),
                             &calc_other_times_ms);
         }
@@ -2166,30 +2166,32 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
     }
     print_summary(1, "Other", summary->get_other_seq());
     {
-      NumberSeq calc_other_times_ms;
-      if (parallel) {
-        // parallel
-        NumberSeq* other_parts[] = {
-          body_summary->get_satb_drain_seq(),
-          body_summary->get_parallel_seq(),
-          body_summary->get_clear_ct_seq()
-        };
-        calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                        3, other_parts);
-      } else {
-        // serial
-        NumberSeq* other_parts[] = {
-          body_summary->get_satb_drain_seq(),
-          body_summary->get_update_rs_seq(),
-          body_summary->get_ext_root_scan_seq(),
-          body_summary->get_mark_stack_scan_seq(),
-          body_summary->get_scan_rs_seq(),
-          body_summary->get_obj_copy_seq()
-        };
-        calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                        7, other_parts);
+      if (body_summary != NULL) {
+        NumberSeq calc_other_times_ms;
+        if (parallel) {
+          // parallel
+          NumberSeq* other_parts[] = {
+            body_summary->get_satb_drain_seq(),
+            body_summary->get_parallel_seq(),
+            body_summary->get_clear_ct_seq()
+          };
+          calc_other_times_ms = NumberSeq(summary->get_total_seq(),
+                                                3, other_parts);
+        } else {
+          // serial
+          NumberSeq* other_parts[] = {
+            body_summary->get_satb_drain_seq(),
+            body_summary->get_update_rs_seq(),
+            body_summary->get_ext_root_scan_seq(),
+            body_summary->get_mark_stack_scan_seq(),
+            body_summary->get_scan_rs_seq(),
+            body_summary->get_obj_copy_seq()
+          };
+          calc_other_times_ms = NumberSeq(summary->get_total_seq(),
+                                                6, other_parts);
+        }
+        check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
       }
-      check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
     }
   } else {
     print_indent(0);

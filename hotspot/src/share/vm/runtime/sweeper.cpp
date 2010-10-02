@@ -368,8 +368,7 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
         disconnected++;
       } else if (nm->is_speculatively_disconnected()) {
         // This method was previously considered for preemptive unloading and was not called since then
-        nm->method()->invocation_counter()->decay();
-        nm->method()->backedge_counter()->decay();
+        CompilationPolicy::policy()->delay_compilation(nm->method());
         nm->make_not_entrant();
         made_not_entrant++;
       }

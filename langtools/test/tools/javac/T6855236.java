@@ -71,12 +71,10 @@ public class T6855236 extends AbstractProcessor {
 
         @Override
         public Object visitMethodInvocation(MethodInvocationTree node, Trees p) {
-            System.out.print("current path: ");
+            System.out.println("current path: ");
             for (Tree t : getCurrentPath()) {
-                System.out.print('/');
-                System.out.print(t);
-           }
-            System.out.println();
+                System.out.println("    " + t.getKind() + ": " + trim(t, 64));
+            }
             System.out.println("parent path: " + getCurrentPath().getParentPath());
             System.out.println("method select: " + node.getMethodSelect().toString());
             for (ExpressionTree arg : node.getArguments()) {
@@ -88,10 +86,18 @@ public class T6855236 extends AbstractProcessor {
         @Override
         public Object visitExpressionStatement(ExpressionStatementTree node, Trees p) {
             ExpressionTree t = node.getExpression();
-            System.out.println("expression statement: " + t.toString());
+            System.out.println();
+            System.out.println("expression statement: " + trim(t, 64));
             return super.visitExpressionStatement(node, p);
         }
 
+    }
+
+    private String trim(Tree t, int len) {
+        String s = t.toString().trim().replaceAll("\\s+", " ");
+        if (s.length() > len)
+            s = s.substring(0, len) + "...";
+        return s;
     }
 
 }

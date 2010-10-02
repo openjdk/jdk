@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.OutputStream;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioFileFormat.Type;
@@ -48,8 +49,7 @@ public class WaveFloatFileWriter extends AudioFileWriter {
 
     public Type[] getAudioFileTypes(AudioInputStream stream) {
 
-        if (!stream.getFormat().getEncoding().equals(
-                AudioFloatConverter.PCM_FLOAT))
+        if (!stream.getFormat().getEncoding().equals(Encoding.PCM_FLOAT))
             return new Type[0];
         return new Type[] { Type.WAVE };
     }
@@ -58,8 +58,7 @@ public class WaveFloatFileWriter extends AudioFileWriter {
         if (!Type.WAVE.equals(type))
             throw new IllegalArgumentException("File type " + type
                     + " not supported.");
-        if (!stream.getFormat().getEncoding().equals(
-                AudioFloatConverter.PCM_FLOAT))
+        if (!stream.getFormat().getEncoding().equals(Encoding.PCM_FLOAT))
             throw new IllegalArgumentException("File format "
                     + stream.getFormat() + " not supported.");
     }

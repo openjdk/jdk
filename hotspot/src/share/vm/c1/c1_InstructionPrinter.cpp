@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,7 +819,6 @@ void InstructionPrinter::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {
   output()->put(')');
 }
 
-
 void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->print("profile ");
   print_value(x->recv());
@@ -831,20 +830,11 @@ void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_ProfileInvoke(ProfileInvoke* x) {
+  output()->print("profile_invoke ");
+  output()->print(" %s.%s", x->inlinee()->holder()->name()->as_utf8(), x->inlinee()->name()->as_utf8());
+  output()->put(')');
 
-void InstructionPrinter::do_ProfileCounter(ProfileCounter* x) {
-
-  ObjectConstant* oc = x->mdo()->type()->as_ObjectConstant();
-  if (oc != NULL && oc->value()->is_method() &&
-      x->offset() == methodOopDesc::interpreter_invocation_counter_offset_in_bytes()) {
-    print_value(x->mdo());
-    output()->print(".interpreter_invocation_count += %d", x->increment());
-  } else {
-    output()->print("counter [");
-    print_value(x->mdo());
-    output()->print(" + %d] += %d", x->offset(), x->increment());
-  }
 }
-
 
 #endif // PRODUCT

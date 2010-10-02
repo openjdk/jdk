@@ -34,21 +34,16 @@ import java.util.Enumeration;
 
 public class ProbeIB {
     public static void main(String[] args) throws IOException {
-        Scanner s = new Scanner(new File("/etc/path_to_inst"));
+        Scanner s = new Scanner(new File(args[0]));
         try {
             while (s.hasNextLine()) {
-                String line = s.nextLine();
-                if (line.startsWith("#"))
-                    continue;
-                String[] fields = line.split("\\s+");
-                if (!fields[2].equals("\"ibd\""))
-                    continue;
-                String name = fields[2].substring(1, fields[2].length()-1) + fields[1];
-                NetworkInterface ni = NetworkInterface.getByName(name);
+                String link = s.nextLine();
+                NetworkInterface ni = NetworkInterface.getByName(link);
                 if (ni != null) {
                     Enumeration<InetAddress> addrs = ni.getInetAddresses();
                     while (addrs.hasMoreElements()) {
-                        System.out.println(addrs.nextElement().getHostAddress());
+                        InetAddress addr = addrs.nextElement();
+                        System.out.println(addr.getHostAddress());
                     }
                 }
             }

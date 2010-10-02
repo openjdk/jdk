@@ -69,8 +69,12 @@ public class Resolve {
     JCDiagnostic.Factory diags;
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
-    public final boolean allowPolymorphicSignature;
+    public final boolean allowMethodHandles;
+    public final boolean allowInvokeDynamic;
+    public final boolean allowTransitionalJSR292;
     private final boolean debugResolve;
+
+    Scope polymorphicSignatureScope;
 
     public static Resolve instance(Context context) {
         Resolve instance = context.get(resolveKey);
@@ -107,7 +111,14 @@ public class Resolve {
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.get("debugresolve") != null;
-        allowPolymorphicSignature = source.allowPolymorphicSignature() || options.get("invokedynamic") != null;
+        allowTransitionalJSR292 = options.get("allowTransitionalJSR292") != null;
+        Target target = Target.instance(context);
+        allowMethodHandles = allowTransitionalJSR292 ||
+                target.hasMethodHandles();
+        allowInvokeDynamic = (allowTransitionalJSR292 ||
+                target.hasInvokedynamic()) &&
+                options.get("invokedynamic") != null;
+        polymorphicSignatureScope = new Scope(syms.noSymbol);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -246,7 +257,8 @@ public class Resolve {
     /* `sym' is accessible only if not overridden by
      * another symbol which is a member of `site'
      * (because, if it is overridden, `sym' is not strictly
-     * speaking a member of `site'.)
+     * speaking a member of `site'). A polymorphic signature method
+     * cannot be overridden (e.g. MH.invokeExact(Object[])).
      */
     private boolean notOverriddenIn(Type site, Symbol sym) {
         if (sym.kind != MTH || sym.isConstructor() || sym.isStatic())
@@ -254,6 +266,7 @@ public class Resolve {
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
             return (s2 == null || s2 == sym ||
+                    s2.isPolymorphicSignatureGeneric() ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
     }
@@ -303,7 +316,8 @@ public class Resolve {
                         boolean useVarargs,
                         Warner warn)
         throws Infer.InferenceException {
-        assert ((m.flags() & (POLYMORPHIC_SIGNATURE|HYPOTHETICAL)) != POLYMORPHIC_SIGNATURE);
+        boolean polymorphicSignature = (m.isPolymorphicSignatureGeneric() && allowMethodHandles) ||
+                                        isTransitionalDynamicCallSite(site, m);
         if (useVarargs && (m.flags() & VARARGS) == 0) return null;
         Type mt = types.memberType(site, m);
 
@@ -311,7 +325,10 @@ public class Resolve {
         // need to inferred.
         List<Type> tvars = env.info.tvars;
         if (typeargtypes == null) typeargtypes = List.nil();
-        if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
+        if (allowTransitionalJSR292 && polymorphicSignature && typeargtypes.nonEmpty()) {
+            //transitional 292 call sites might have wrong number of targs
+        }
+        else if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
             // which is fine, see JLS3 15.12.2.1
         } else if (mt.tag == FORALL && typeargtypes.nonEmpty()) {
@@ -339,7 +356,8 @@ public class Resolve {
         }
 
         // find out whether we need to go the slow route via infer
-        boolean instNeeded = tvars.tail != null/*inlined: tvars.nonEmpty()*/;
+        boolean instNeeded = tvars.tail != null || /*inlined: tvars.nonEmpty()*/
+                polymorphicSignature;
         for (List<Type> l = argtypes;
              l.tail != null/*inlined: l.nonEmpty()*/ && !instNeeded;
              l = l.tail) {
@@ -347,8 +365,9 @@ public class Resolve {
         }
 
         if (instNeeded)
-            return
-            infer.instantiateMethod(env,
+            return polymorphicSignature ?
+                infer.instantiatePolymorphicSignatureInstance(env, site, m.name, (MethodSymbol)m, argtypes, typeargtypes) :
+                infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
                                     m,
@@ -361,6 +380,14 @@ public class Resolve {
                                 allowBoxing, useVarargs, warn)
             ? mt
             : null;
+    }
+
+    boolean isTransitionalDynamicCallSite(Type site, Symbol sym) {
+        return allowTransitionalJSR292 &&  // old logic that doesn't use annotations
+                !sym.isPolymorphicSignatureInstance() &&
+                ((allowMethodHandles && site == syms.methodHandleType && // invokeExact, invokeGeneric, invoke
+                    (sym.name == names.invoke && sym.isPolymorphicSignatureGeneric())) ||
+                (site == syms.invokeDynamicType && allowInvokeDynamic)); // InvokeDynamic.XYZ
     }
 
     /** Same but returns null instead throwing a NoInstanceException
@@ -580,14 +607,6 @@ public class Resolve {
         if (sym.kind == ERR) return bestSoFar;
         if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
         assert sym.kind < AMBIGUOUS;
-        if ((sym.flags() & POLYMORPHIC_SIGNATURE) != 0 && allowPolymorphicSignature) {
-            assert(site.tag == CLASS);
-            // Never match a MethodHandle.invoke directly.
-            if (useVarargs | allowBoxing | operator)
-                return bestSoFar;
-            // Supply an exactly-typed implicit method instead.
-            sym = findPolymorphicSignatureInstance(env, sym.owner.type, sym.name, (MethodSymbol) sym, argtypes, typeargtypes);
-        }
         try {
             if (rawInstantiate(env, site, sym, argtypes, typeargtypes,
                                allowBoxing, useVarargs, Warner.noWarnings) == null) {
@@ -759,13 +778,6 @@ public class Resolve {
                       boolean useVarargs,
                       boolean operator) {
         Symbol bestSoFar = methodNotFound;
-        if ((site.tsym.flags() & POLYMORPHIC_SIGNATURE) != 0 &&
-            allowPolymorphicSignature &&
-            site.tag == CLASS &&
-            !(useVarargs | allowBoxing | operator)) {
-            // supply an exactly-typed implicit method in java.dyn.InvokeDynamic
-            bestSoFar = findPolymorphicSignatureInstance(env, site, name, null, argtypes, typeargtypes);
-        }
         return findMethod(env,
                           site,
                           name,
@@ -906,90 +918,6 @@ public class Resolve {
         }
         return bestSoFar;
     }
-
-    /** Find or create an implicit method of exactly the given type (after erasure).
-     *  Searches in a side table, not the main scope of the site.
-     *  This emulates the lookup process required by JSR 292 in JVM.
-     *  @param env       The current environment.
-     *  @param site      The original type from where the selection
-     *                   takes place.
-     *  @param name      The method's name.
-     *  @param argtypes  The method's value arguments.
-     *  @param typeargtypes The method's type arguments
-     */
-    Symbol findPolymorphicSignatureInstance(Env<AttrContext> env,
-                                            Type site,
-                                            Name name,
-                                            MethodSymbol spMethod,  // sig. poly. method or null if none
-                                            List<Type> argtypes,
-                                            List<Type> typeargtypes) {
-        assert allowPolymorphicSignature;
-        //assert site == syms.invokeDynamicType || site == syms.methodHandleType : site;
-        ClassSymbol c = (ClassSymbol) site.tsym;
-        Scope implicit = c.members().next;
-        if (implicit == null) {
-            c.members().next = implicit = new Scope(c);
-        }
-        Type restype;
-        if (typeargtypes.isEmpty()) {
-            restype = syms.objectType;
-        } else {
-            restype = typeargtypes.head;
-            if (!typeargtypes.tail.isEmpty())
-                return methodNotFound;
-        }
-        List<Type> paramtypes = Type.map(argtypes, implicitArgType);
-        long flags;
-        List<Type> exType;
-        if (spMethod != null) {
-            exType = spMethod.getThrownTypes();
-            flags = spMethod.flags() & AccessFlags;
-        } else {
-            // make it throw all exceptions
-            //assert(site == syms.invokeDynamicType);
-            exType = List.of(syms.throwableType);
-            flags = PUBLIC | STATIC;
-        }
-        MethodType mtype = new MethodType(paramtypes,
-                                          restype,
-                                          exType,
-                                          syms.methodClass);
-        flags |= ABSTRACT | HYPOTHETICAL | POLYMORPHIC_SIGNATURE;
-        Symbol m = null;
-        for (Scope.Entry e = implicit.lookup(name);
-             e.scope != null;
-             e = e.next()) {
-            Symbol sym = e.sym;
-            assert sym.kind == MTH;
-            if (types.isSameType(mtype, sym.type)
-                && (sym.flags() & STATIC) == (flags & STATIC)) {
-                m = sym;
-                break;
-            }
-        }
-        if (m == null) {
-            // create the desired method
-            m = new MethodSymbol(flags, name, mtype, c);
-            implicit.enter(m);
-        }
-        assert argumentsAcceptable(argtypes, types.memberType(site, m).getParameterTypes(),
-                                   false, false, Warner.noWarnings);
-        assert null != instantiate(env, site, m, argtypes, typeargtypes, false, false, Warner.noWarnings);
-        return m;
-    }
-    //where
-        Mapping implicitArgType = new Mapping ("implicitArgType") {
-                public Type apply(Type t) { return implicitArgType(t); }
-            };
-        Type implicitArgType(Type argType) {
-            argType = types.erasure(argType);
-            if (argType.tag == BOT)
-                // nulls type as the marker type Null (which has no instances)
-                // TO DO: figure out how to access java.lang.Null safely, else throw nice error
-                //argType = types.boxedClass(syms.botType).type;
-                argType = types.boxedClass(syms.voidType).type;  // REMOVE
-            return argType;
-        }
 
     /** Load toplevel or member class with given fully qualified name and
      *  verify that it is accessible.
@@ -1369,14 +1297,75 @@ public class Resolve {
             methodResolutionCache.put(steps.head, sym);
             steps = steps.tail;
         }
-        if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
-            MethodResolutionPhase errPhase =
-                    firstErroneousResolutionPhase();
-            sym = access(methodResolutionCache.get(errPhase),
-                    pos, site, name, true, argtypes, typeargtypes);
-            env.info.varArgs = errPhase.isVarargsRequired;
+        if (sym.kind >= AMBIGUOUS) {
+            if (site.tsym.isPolymorphicSignatureGeneric() ||
+                    isTransitionalDynamicCallSite(site, sym)) {
+                //polymorphic receiver - synthesize new method symbol
+                env.info.varArgs = false;
+                sym = findPolymorphicSignatureInstance(env,
+                        site, name, null, argtypes, typeargtypes);
+            }
+            else {
+                //if nothing is found return the 'first' error
+                MethodResolutionPhase errPhase =
+                        firstErroneousResolutionPhase();
+                sym = access(methodResolutionCache.get(errPhase),
+                        pos, site, name, true, argtypes, typeargtypes);
+                env.info.varArgs = errPhase.isVarargsRequired;
+            }
+        } else if (allowMethodHandles && sym.isPolymorphicSignatureGeneric()) {
+            //non-instantiated polymorphic signature - synthesize new method symbol
+            env.info.varArgs = false;
+            sym = findPolymorphicSignatureInstance(env,
+                    site, name, (MethodSymbol)sym, argtypes, typeargtypes);
         }
         return sym;
+    }
+
+    /** Find or create an implicit method of exactly the given type (after erasure).
+     *  Searches in a side table, not the main scope of the site.
+     *  This emulates the lookup process required by JSR 292 in JVM.
+     *  @param env       Attribution environment
+     *  @param site      The original type from where the selection takes place.
+     *  @param name      The method's name.
+     *  @param spMethod  A template for the implicit method, or null.
+     *  @param argtypes  The required argument types.
+     *  @param typeargtypes  The required type arguments.
+     */
+    Symbol findPolymorphicSignatureInstance(Env<AttrContext> env, Type site,
+                                            Name name,
+                                            MethodSymbol spMethod,  // sig. poly. method or null if none
+                                            List<Type> argtypes,
+                                            List<Type> typeargtypes) {
+        if (typeargtypes.nonEmpty() && (site.tsym.isPolymorphicSignatureGeneric() ||
+                (spMethod != null && spMethod.isPolymorphicSignatureGeneric()))) {
+            log.warning(env.tree.pos(), "type.parameter.on.polymorphic.signature");
+        }
+
+        Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
+                site, name, spMethod, argtypes, typeargtypes);
+        long flags = ABSTRACT | HYPOTHETICAL | POLYMORPHIC_SIGNATURE |
+                    (spMethod != null ?
+                        spMethod.flags() & Flags.AccessFlags :
+                        Flags.PUBLIC | Flags.STATIC);
+        Symbol m = null;
+        for (Scope.Entry e = polymorphicSignatureScope.lookup(name);
+             e.scope != null;
+             e = e.next()) {
+            Symbol sym = e.sym;
+            if (types.isSameType(mtype, sym.type) &&
+                (sym.flags() & Flags.STATIC) == (flags & Flags.STATIC) &&
+                types.isSameType(sym.owner.type, site)) {
+               m = sym;
+               break;
+            }
+        }
+        if (m == null) {
+            // create the desired method
+            m = new MethodSymbol(flags, name, mtype, site.tsym);
+            polymorphicSignatureScope.enter(m);
+        }
+        return m;
     }
 
     /** Resolve a qualified method identifier, throw a fatal error if not
