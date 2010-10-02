@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,7 +588,7 @@ class instanceKlass: public Klass {
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
   void remove_osr_nmethod(nmethod* n);
-  nmethod* lookup_osr_nmethod(const methodOop m, int bci) const;
+  nmethod* lookup_osr_nmethod(const methodOop m, int bci, int level, bool match_level) const;
 
   // Breakpoint support (see methods on methodOop for details)
   BreakpointInfo* breakpoints() const       { return _breakpoints; };

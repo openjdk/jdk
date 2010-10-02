@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
+import java.applet.Applet;
 import java.awt.AWTEvent;
 import java.awt.EventQueue;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Window;
 import javax.swing.JComponent;
 import javax.swing.RepaintManager;
-import javax.swing.SwingUtilities;
 
 /**
  * A collection of utility methods for Swing.
@@ -91,7 +92,7 @@ public class SwingUtilities3 {
      */
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
-        assert SwingUtilities.getRoot(rootContainer) == rootContainer;
+        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
         if (isRequested) {
             vsyncedMap.put(rootContainer, Boolean.TRUE);
         } else {
@@ -106,7 +107,7 @@ public class SwingUtilities3 {
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
     public static boolean isVsyncRequested(Container rootContainer) {
-        assert SwingUtilities.getRoot(rootContainer) == rootContainer;
+        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);
     }
 

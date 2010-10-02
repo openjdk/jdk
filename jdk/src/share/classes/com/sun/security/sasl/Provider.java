@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,12 @@ import java.security.PrivilegedAction;
  * - CRAM-MD5
  * - DIGEST-MD5
  * - GSSAPI/Kerberos v5
+ * - NTLM
  * And server support for
  * - CRAM-MD5
  * - DIGEST-MD5
  * - GSSAPI/Kerberos v5
+ * - NTLM
  */
 
 public final class Provider extends java.security.Provider {
@@ -47,8 +49,8 @@ public final class Provider extends java.security.Provider {
 
     private static final String info = "Sun SASL provider" +
         "(implements client mechanisms for: " +
-        "DIGEST-MD5, GSSAPI, EXTERNAL, PLAIN, CRAM-MD5;" +
-        " server mechanisms for: DIGEST-MD5, GSSAPI, CRAM-MD5)";
+        "DIGEST-MD5, GSSAPI, EXTERNAL, PLAIN, CRAM-MD5, NTLM;" +
+        " server mechanisms for: DIGEST-MD5, GSSAPI, CRAM-MD5, NTLM)";
 
     public Provider() {
         super("SunSASL", 1.7d, info);
@@ -58,6 +60,8 @@ public final class Provider extends java.security.Provider {
                 // Client mechanisms
                 put("SaslClientFactory.DIGEST-MD5",
                     "com.sun.security.sasl.digest.FactoryImpl");
+                put("SaslClientFactory.NTLM",
+                    "com.sun.security.sasl.ntlm.FactoryImpl");
                 put("SaslClientFactory.GSSAPI",
                     "com.sun.security.sasl.gsskerb.FactoryImpl");
 
@@ -75,6 +79,8 @@ public final class Provider extends java.security.Provider {
                     "com.sun.security.sasl.gsskerb.FactoryImpl");
                 put("SaslServerFactory.DIGEST-MD5",
                     "com.sun.security.sasl.digest.FactoryImpl");
+                put("SaslServerFactory.NTLM",
+                    "com.sun.security.sasl.ntlm.FactoryImpl");
                 return null;
             }
         });

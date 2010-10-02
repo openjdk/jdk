@@ -87,9 +87,9 @@ struct nmethod_stats_struct {
   int nmethod_count;
   int total_size;
   int relocation_size;
-  int code_size;
-  int stub_size;
   int consts_size;
+  int insts_size;
+  int stub_size;
   int scopes_data_size;
   int scopes_pcs_size;
   int dependencies_size;
@@ -101,9 +101,9 @@ struct nmethod_stats_struct {
     nmethod_count += 1;
     total_size          += nm->size();
     relocation_size     += nm->relocation_size();
-    code_size           += nm->code_size();
-    stub_size           += nm->stub_size();
     consts_size         += nm->consts_size();
+    insts_size          += nm->insts_size();
+    stub_size           += nm->stub_size();
     oops_size           += nm->oops_size();
     scopes_data_size    += nm->scopes_data_size();
     scopes_pcs_size     += nm->scopes_pcs_size();
@@ -116,9 +116,9 @@ struct nmethod_stats_struct {
     tty->print_cr("Statistics for %d bytecoded nmethods:", nmethod_count);
     if (total_size != 0)          tty->print_cr(" total in heap  = %d", total_size);
     if (relocation_size != 0)     tty->print_cr(" relocation     = %d", relocation_size);
-    if (code_size != 0)           tty->print_cr(" main code      = %d", code_size);
-    if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
     if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
+    if (insts_size != 0)          tty->print_cr(" main code      = %d", insts_size);
+    if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
     if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
     if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %d", scopes_data_size);
     if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
@@ -130,13 +130,13 @@ struct nmethod_stats_struct {
   int native_nmethod_count;
   int native_total_size;
   int native_relocation_size;
-  int native_code_size;
+  int native_insts_size;
   int native_oops_size;
   void note_native_nmethod(nmethod* nm) {
     native_nmethod_count += 1;
     native_total_size       += nm->size();
     native_relocation_size  += nm->relocation_size();
-    native_code_size        += nm->code_size();
+    native_insts_size       += nm->insts_size();
     native_oops_size        += nm->oops_size();
   }
   void print_native_nmethod_stats() {
@@ -144,7 +144,7 @@ struct nmethod_stats_struct {
     tty->print_cr("Statistics for %d native nmethods:", native_nmethod_count);
     if (native_total_size != 0)       tty->print_cr(" N. total size  = %d", native_total_size);
     if (native_relocation_size != 0)  tty->print_cr(" N. relocation  = %d", native_relocation_size);
-    if (native_code_size != 0)        tty->print_cr(" N. main code   = %d", native_code_size);
+    if (native_insts_size != 0)       tty->print_cr(" N. main code   = %d", native_insts_size);
     if (native_oops_size != 0)        tty->print_cr(" N. oops        = %d", native_oops_size);
   }
 
@@ -404,9 +404,9 @@ void nmethod::add_handler_for_exception_and_pc(Handle exception, address pc, add
 
 int nmethod::total_size() const {
   return
-    code_size()          +
-    stub_size()          +
     consts_size()        +
+    insts_size()         +
+    stub_size()          +
     scopes_data_size()   +
     scopes_pcs_size()    +
     handler_table_size() +
@@ -618,8 +618,8 @@ nmethod::nmethod(
     _deoptimize_mh_offset    = 0;
     _orig_pc_offset          = 0;
 
-    _stub_offset             = data_offset();
     _consts_offset           = data_offset();
+    _stub_offset             = data_offset();
     _oops_offset             = data_offset();
     _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
     _scopes_pcs_offset       = _scopes_data_offset;
@@ -629,8 +629,8 @@ nmethod::nmethod(
     _nmethod_end_offset      = _nul_chk_table_offset;
     _compile_id              = 0;  // default
     _comp_level              = CompLevel_none;
-    _entry_point             = instructions_begin();
-    _verified_entry_point    = instructions_begin() + offsets->value(CodeOffsets::Verified_Entry);
+    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
+    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = NULL;
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(NULL);
@@ -696,8 +696,8 @@ nmethod::nmethod(
     _unwind_handler_offset   = -1;
     _trap_offset             = offsets->value(CodeOffsets::Dtrace_trap);
     _orig_pc_offset          = 0;
-    _stub_offset             = data_offset();
     _consts_offset           = data_offset();
+    _stub_offset             = data_offset();
     _oops_offset             = data_offset();
     _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
     _scopes_pcs_offset       = _scopes_data_offset;
@@ -707,8 +707,8 @@ nmethod::nmethod(
     _nmethod_end_offset      = _nul_chk_table_offset;
     _compile_id              = 0;  // default
     _comp_level              = CompLevel_none;
-    _entry_point             = instructions_begin();
-    _verified_entry_point    = instructions_begin() + offsets->value(CodeOffsets::Verified_Entry);
+    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
+    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = NULL;
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(NULL);
@@ -787,18 +787,25 @@ nmethod::nmethod(
     _comp_level              = comp_level;
     _compiler                = compiler;
     _orig_pc_offset          = orig_pc_offset;
-    _stub_offset             = instructions_offset() + code_buffer->total_offset_of(code_buffer->stubs()->start());
+
+    // Section offsets
+    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
+    _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
 
     // Exception handler and deopt handler are in the stub section
-    _exception_offset        = _stub_offset + offsets->value(CodeOffsets::Exceptions);
-    _deoptimize_offset       = _stub_offset + offsets->value(CodeOffsets::Deopt);
-    _deoptimize_mh_offset    = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
-    if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
-      _unwind_handler_offset   = instructions_offset() + offsets->value(CodeOffsets::UnwindHandler);
+    _exception_offset        = _stub_offset          + offsets->value(CodeOffsets::Exceptions);
+    _deoptimize_offset       = _stub_offset          + offsets->value(CodeOffsets::Deopt);
+    if (has_method_handle_invokes()) {
+      _deoptimize_mh_offset  = _stub_offset          + offsets->value(CodeOffsets::DeoptMH);
     } else {
-      _unwind_handler_offset   = -1;
+      _deoptimize_mh_offset  = -1;
     }
-    _consts_offset           = instructions_offset() + code_buffer->total_offset_of(code_buffer->consts()->start());
+    if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
+      _unwind_handler_offset = code_offset()         + offsets->value(CodeOffsets::UnwindHandler);
+    } else {
+      _unwind_handler_offset = -1;
+    }
+
     _oops_offset             = data_offset();
     _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size (), oopSize);
     _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size       (), oopSize);
@@ -807,9 +814,9 @@ nmethod::nmethod(
     _nul_chk_table_offset    = _handler_table_offset + round_to(handler_table->size_in_bytes(), oopSize);
     _nmethod_end_offset      = _nul_chk_table_offset + round_to(nul_chk_table->size_in_bytes(), oopSize);
 
-    _entry_point             = instructions_begin();
-    _verified_entry_point    = instructions_begin() + offsets->value(CodeOffsets::Verified_Entry);
-    _osr_entry_point         = instructions_begin() + offsets->value(CodeOffsets::OSR_Entry);
+    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
+    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
+    _osr_entry_point         = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(scopes_pcs_begin());
 
@@ -860,9 +867,9 @@ void nmethod::log_identity(xmlStream* log) const {
   if (compiler() != NULL) {
     log->print(" compiler='%s'", compiler()->name());
   }
-#ifdef TIERED
-  log->print(" level='%d'", comp_level());
-#endif // TIERED
+  if (TieredCompilation) {
+    log->print(" level='%d'", comp_level());
+  }
 }
 
 
@@ -878,14 +885,13 @@ void nmethod::log_new_nmethod() const {
     HandleMark hm;
     xtty->begin_elem("nmethod");
     log_identity(xtty);
-    xtty->print(" entry='" INTPTR_FORMAT "' size='%d'",
-                instructions_begin(), size());
+    xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", code_begin(), size());
     xtty->print(" address='" INTPTR_FORMAT "'", (intptr_t) this);
 
     LOG_OFFSET(xtty, relocation);
-    LOG_OFFSET(xtty, code);
-    LOG_OFFSET(xtty, stub);
     LOG_OFFSET(xtty, consts);
+    LOG_OFFSET(xtty, insts);
+    LOG_OFFSET(xtty, stub);
     LOG_OFFSET(xtty, scopes_data);
     LOG_OFFSET(xtty, scopes_pcs);
     LOG_OFFSET(xtty, dependencies);
@@ -902,35 +908,73 @@ void nmethod::log_new_nmethod() const {
 #undef LOG_OFFSET
 
 
+void nmethod::print_compilation(outputStream *st, const char *method_name, const char *title,
+                                methodOop method, bool is_blocking, int compile_id, int bci, int comp_level) {
+  bool is_synchronized = false, has_xhandler = false, is_native = false;
+  int code_size = -1;
+  if (method != NULL) {
+    is_synchronized = method->is_synchronized();
+    has_xhandler    = method->has_exception_handler();
+    is_native       = method->is_native();
+    code_size       = method->code_size();
+  }
+  // print compilation number
+  st->print("%7d %3d", (int)tty->time_stamp().milliseconds(), compile_id);
+
+  // print method attributes
+  const bool is_osr = bci != InvocationEntryBci;
+  const char blocking_char  = is_blocking     ? 'b' : ' ';
+  const char compile_type   = is_osr          ? '%' : ' ';
+  const char sync_char      = is_synchronized ? 's' : ' ';
+  const char exception_char = has_xhandler    ? '!' : ' ';
+  const char native_char    = is_native       ? 'n' : ' ';
+  st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
+  if (TieredCompilation) {
+    st->print("%d ", comp_level);
+  }
+
+  // print optional title
+  bool do_nl = false;
+  if (title != NULL) {
+    int tlen = (int) strlen(title);
+    bool do_nl = false;
+    if (tlen > 0 && title[tlen-1] == '\n') { tlen--; do_nl = true; }
+    st->print("%.*s", tlen, title);
+  } else {
+    do_nl = true;
+  }
+
+  // print method name string if given
+  if (method_name != NULL) {
+    st->print(method_name);
+  } else {
+    // otherwise as the method to print itself
+    if (method != NULL && !Universe::heap()->is_gc_active()) {
+      method->print_short_name(st);
+    } else {
+      st->print("(method)");
+    }
+  }
+
+  if (method != NULL) {
+    // print osr_bci if any
+    if (is_osr) st->print(" @ %d", bci);
+    // print method size
+    st->print(" (%d bytes)", code_size);
+  }
+  if (do_nl) st->cr();
+}
+
 // Print out more verbose output usually for a newly created nmethod.
 void nmethod::print_on(outputStream* st, const char* title) const {
   if (st != NULL) {
     ttyLocker ttyl;
-    // Print a little tag line that looks like +PrintCompilation output:
-    int tlen = (int) strlen(title);
-    bool do_nl = false;
-    if (tlen > 0 && title[tlen-1] == '\n') { tlen--; do_nl = true; }
-    st->print("%3d%c  %.*s",
-              compile_id(),
-              is_osr_method() ? '%' :
-              method() != NULL &&
-              is_native_method() ? 'n' : ' ',
-              tlen, title);
-#ifdef TIERED
-    st->print(" (%d) ", comp_level());
-#endif // TIERED
+    print_compilation(st, /*method_name*/NULL, title,
+                      method(), /*is_blocking*/false,
+                      compile_id(),
+                      is_osr_method() ? osr_entry_bci() : InvocationEntryBci,
+                      comp_level());
     if (WizardMode) st->print(" (" INTPTR_FORMAT ")", this);
-    if (Universe::heap()->is_gc_active() && method() != NULL) {
-      st->print("(method)");
-    } else if (method() != NULL) {
-        method()->print_short_name(st);
-      if (is_osr_method())
-        st->print(" @ %d", osr_entry_bci());
-      if (method()->code_size() > 0)
-        st->print(" (%d bytes)", method()->code_size());
-    }
-
-    if (do_nl)  st->cr();
   }
 }
 
@@ -1131,6 +1175,7 @@ bool nmethod::can_not_entrant_be_converted() {
 }
 
 void nmethod::inc_decompile_count() {
+  if (!is_compiled_by_c2()) return;
   // Could be gated by ProfileTraps, but do not bother...
   methodOop m = method();
   if (m == NULL)  return;
@@ -1460,7 +1505,7 @@ void nmethod::post_compiled_method_load_event() {
       moop->name()->utf8_length(),
       moop->signature()->bytes(),
       moop->signature()->utf8_length(),
-      code_begin(), code_size());
+      insts_begin(), insts_size());
 
   if (JvmtiExport::should_post_compiled_method_load() ||
       JvmtiExport::should_post_compiled_method_unload()) {
@@ -1502,7 +1547,7 @@ void nmethod::post_compiled_method_unload() {
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     HandleMark hm;
-    JvmtiExport::post_compiled_method_unload(_jmethod_id, code_begin());
+    JvmtiExport::post_compiled_method_unload(_jmethod_id, insts_begin());
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at
@@ -1854,7 +1899,7 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
   // Adjust the final sentinel downward.
   PcDesc* last_pc = &scopes_pcs_begin()[count-1];
   assert(last_pc->pc_offset() == PcDesc::upper_offset_limit, "sanity");
-  last_pc->set_pc_offset(instructions_size() + 1);
+  last_pc->set_pc_offset(content_size() + 1);
   for (; last_pc + 1 < scopes_pcs_end(); last_pc += 1) {
     // Fill any rounding gaps with copies of the last record.
     last_pc[1] = last_pc[0];
@@ -1894,7 +1939,7 @@ static PcDesc* linear_search(nmethod* nm, int pc_offset, bool approximate) {
 
 // Finds a PcDesc with real-pc equal to "pc"
 PcDesc* nmethod::find_pc_desc_internal(address pc, bool approximate) {
-  address base_address = instructions_begin();
+  address base_address = code_begin();
   if ((pc < base_address) ||
       (pc - base_address) >= (ptrdiff_t) PcDesc::upper_offset_limit) {
     return NULL;  // PC is wildly out of range
@@ -2042,7 +2087,7 @@ bool nmethod::is_dependent_on_method(methodOop dependee) {
 
 
 bool nmethod::is_patchable_at(address instr_addr) {
-  assert (code_contains(instr_addr), "wrong nmethod used");
+  assert(insts_contains(instr_addr), "wrong nmethod used");
   if (is_zombie()) {
     // a zombie may never be patched
     return false;
@@ -2054,7 +2099,7 @@ bool nmethod::is_patchable_at(address instr_addr) {
 address nmethod::continuation_for_implicit_exception(address pc) {
   // Exception happened outside inline-cache check code => we are inside
   // an active nmethod => use cpc to determine a return address
-  int exception_offset = pc - instructions_begin();
+  int exception_offset = pc - code_begin();
   int cont_offset = ImplicitExceptionTable(this).at( exception_offset );
 #ifdef ASSERT
   if (cont_offset == 0) {
@@ -2075,7 +2120,7 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     // Let the normal error handling report the exception
     return NULL;
   }
-  return instructions_begin() + cont_offset;
+  return code_begin() + cont_offset;
 }
 
 
@@ -2334,18 +2379,18 @@ void nmethod::print() const {
                                               relocation_begin(),
                                               relocation_end(),
                                               relocation_size());
-  if (code_size         () > 0) tty->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              code_begin(),
-                                              code_end(),
-                                              code_size());
-  if (stub_size         () > 0) tty->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              stub_begin(),
-                                              stub_end(),
-                                              stub_size());
   if (consts_size       () > 0) tty->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                               consts_begin(),
                                               consts_end(),
                                               consts_size());
+  if (insts_size        () > 0) tty->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                              insts_begin(),
+                                              insts_end(),
+                                              insts_size());
+  if (stub_size         () > 0) tty->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                              stub_begin(),
+                                              stub_end(),
+                                              stub_size());
   if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                               oops_begin(),
                                               oops_end(),
@@ -2370,10 +2415,6 @@ void nmethod::print() const {
                                               nul_chk_table_begin(),
                                               nul_chk_table_end(),
                                               nul_chk_table_size());
-  if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              oops_begin(),
-                                              oops_end(),
-                                              oops_size());
 }
 
 void nmethod::print_code() {
@@ -2607,7 +2648,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   // First, find an oopmap in (begin, end].
   // We use the odd half-closed interval so that oop maps and scope descs
   // which are tied to the byte after a call are printed with the call itself.
-  address base = instructions_begin();
+  address base = code_begin();
   OopMapSet* oms = oop_maps();
   if (oms != NULL) {
     for (int i = 0, imax = oms->size(); i < imax; i++) {
@@ -2695,10 +2736,10 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
     st->move_to(column);
     st->print(";   {%s}", str);
   }
-  int cont_offset = ImplicitExceptionTable(this).at(begin - instructions_begin());
+  int cont_offset = ImplicitExceptionTable(this).at(begin - code_begin());
   if (cont_offset != 0) {
     st->move_to(column);
-    st->print("; implicit exception: dispatches to " INTPTR_FORMAT, instructions_begin() + cont_offset);
+    st->print("; implicit exception: dispatches to " INTPTR_FORMAT, code_begin() + cont_offset);
   }
 
 }
@@ -2732,7 +2773,7 @@ void nmethod::print_handler_table() {
 }
 
 void nmethod::print_nul_chk_table() {
-  ImplicitExceptionTable(this).print(instructions_begin());
+  ImplicitExceptionTable(this).print(code_begin());
 }
 
 void nmethod::print_statistics() {
