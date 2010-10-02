@@ -541,7 +541,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 // how many fields need to be updated
                 int colsNotChanged = 0;
                 Vector cols = new Vector();
-                String updateExec = new String(updateCmd);
+                String updateExec = updateCmd;
                 Object orig;
                 Object curr;
                 Object rsval;
@@ -1184,7 +1184,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
        // trim all the leading and trailing whitespaces,
        // white spaces can never be catalog, schema or a table name.
 
-        String cmd = new String();
+        String cmd = "";
 
         catalog = catalog.trim();
         schema = schema.trim();

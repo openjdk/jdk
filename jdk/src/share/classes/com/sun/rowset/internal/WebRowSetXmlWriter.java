@@ -641,7 +641,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             return null;
         }
         char []charStr = s.toCharArray();
-        String specialStr = new String();
+        String specialStr = "";
 
         for(int i = 0; i < charStr.length; i++) {
             if(charStr[i] == '&') {
