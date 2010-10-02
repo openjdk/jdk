@@ -441,9 +441,9 @@ public class XmlReaderContentHandler extends DefaultHandler {
         updates = new Vector();
 
         // start out with the empty string
-        columnValue = new String("");
-        propertyValue = new String("");
-        metaDataValue = new String("");
+        columnValue = "";
+        propertyValue = "";
+        metaDataValue = "";
 
         nullVal = false;
         idx = 0;
@@ -686,7 +686,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
             }
 
             // propertyValue need to be reset to an empty string
-            propertyValue = new String("");
+            propertyValue = "";
             setTag(-1);
             break;
         case METADATA:
@@ -710,7 +710,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
 
                 }
                 // metaDataValue needs to be reset to an empty string
-                metaDataValue = new String("");
+                metaDataValue = "";
             }
             setTag(-1);
             break;
@@ -736,7 +736,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
                         insertValue(tempStr);
                     }
                     // columnValue now need to be reset to the empty string
-                    columnValue = new String("");
+                    columnValue = "";
                 } catch (SQLException ex) {
                     throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errinsert").toString(), ex.getMessage()));
                 }

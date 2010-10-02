@@ -876,8 +876,8 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
 
        String strWhereClause = "Select ";
        String whereClause;
-       String tabName= null;
-       String strTabName = null;
+       String tabName= "";
+       String strTabName = "";
        int sz,cols;
        int j;
        CachedRowSetImpl crs;
@@ -891,8 +891,6 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
        // tableNameX.(rowsetX.getMatchColumnName()) ==
        // tableNameZ.(rowsetZ.getMatchColumnName()));
 
-       tabName = new String();
-       strTabName  = new String();
        sz = vecRowSetsInJOIN.size();
        for(int i=0;i<sz; i++) {
           crs = (CachedRowSetImpl)vecRowSetsInJOIN.get(i);
