@@ -296,19 +296,21 @@ IR::IR(Compilation* compilation, ciMethod* method, int osr_bci) :
 
 void IR::optimize() {
   Optimizer opt(this);
-  if (DoCEE) {
-    opt.eliminate_conditional_expressions();
+  if (!compilation()->profile_branches()) {
+    if (DoCEE) {
+      opt.eliminate_conditional_expressions();
 #ifndef PRODUCT
-    if (PrintCFG || PrintCFG1) { tty->print_cr("CFG after CEE"); print(true); }
-    if (PrintIR  || PrintIR1 ) { tty->print_cr("IR after CEE"); print(false); }
+      if (PrintCFG || PrintCFG1) { tty->print_cr("CFG after CEE"); print(true); }
+      if (PrintIR  || PrintIR1 ) { tty->print_cr("IR after CEE"); print(false); }
 #endif
-  }
-  if (EliminateBlocks) {
-    opt.eliminate_blocks();
+    }
+    if (EliminateBlocks) {
+      opt.eliminate_blocks();
 #ifndef PRODUCT
-    if (PrintCFG || PrintCFG1) { tty->print_cr("CFG after block elimination"); print(true); }
-    if (PrintIR  || PrintIR1 ) { tty->print_cr("IR after block elimination"); print(false); }
+      if (PrintCFG || PrintCFG1) { tty->print_cr("CFG after block elimination"); print(true); }
+      if (PrintIR  || PrintIR1 ) { tty->print_cr("IR after block elimination"); print(false); }
 #endif
+    }
   }
   if (EliminateNullChecks) {
     opt.eliminate_null_checks();
@@ -484,6 +486,8 @@ class ComputeLinearScanOrder : public StackObj {
   BitMap2D   _loop_map;            // two-dimensional bit set: a bit is set if a block is contained in a loop
   BlockList  _work_list;           // temporary list (used in mark_loops and compute_order)
 
+  Compilation* _compilation;
+
   // accessors for _visited_blocks and _active_blocks
   void init_visited()                     { _active_blocks.clear(); _visited_blocks.clear(); }
   bool is_visited(BlockBegin* b) const    { return _visited_blocks.at(b->block_id()); }
@@ -526,8 +530,9 @@ class ComputeLinearScanOrder : public StackObj {
   NOT_PRODUCT(void print_blocks();)
   DEBUG_ONLY(void verify();)
 
+  Compilation* compilation() const { return _compilation; }
  public:
-  ComputeLinearScanOrder(BlockBegin* start_block);
+  ComputeLinearScanOrder(Compilation* c, BlockBegin* start_block);
 
   // accessors for final result
   BlockList* linear_scan_order() const    { return _linear_scan_order; }
@@ -535,7 +540,7 @@ class ComputeLinearScanOrder : public StackObj {
 };
 
 
-ComputeLinearScanOrder::ComputeLinearScanOrder(BlockBegin* start_block) :
+ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start_block) :
   _max_block_id(BlockBegin::number_of_blocks()),
   _num_blocks(0),
   _num_loops(0),
@@ -547,12 +552,17 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(BlockBegin* start_block) :
   _loop_end_blocks(8),
   _work_list(8),
   _linear_scan_order(NULL), // initialized later with correct size
-  _loop_map(0, 0)           // initialized later with correct size
+  _loop_map(0, 0),          // initialized later with correct size
+  _compilation(c)
 {
   TRACE_LINEAR_SCAN(2, "***** computing linear-scan block order");
 
   init_visited();
   count_edges(start_block, NULL);
+
+  if (compilation()->is_profiling()) {
+    compilation()->method()->method_data()->set_compilation_stats(_num_loops, _num_blocks);
+  }
 
   if (_num_loops > 0) {
     mark_loops();
@@ -1130,7 +1140,7 @@ void ComputeLinearScanOrder::verify() {
 void IR::compute_code() {
   assert(is_valid(), "IR must be valid");
 
-  ComputeLinearScanOrder compute_order(start());
+  ComputeLinearScanOrder compute_order(compilation(), start());
   _num_loops = compute_order.num_loops();
   _code = compute_order.linear_scan_order();
 }

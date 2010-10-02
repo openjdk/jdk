@@ -1206,7 +1206,25 @@ private:
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
 
-  int _creation_mileage;            // method mileage at MDO creation
+  int _creation_mileage;              // method mileage at MDO creation
+
+  // How many invocations has this MDO seen?
+  // These counters are used to determine the exact age of MDO.
+  // We need those because in tiered a method can be concurrently
+  // executed at different levels.
+  InvocationCounter _invocation_counter;
+  // Same for backedges.
+  InvocationCounter _backedge_counter;
+  // Number of loops and blocks is computed when compiling the first
+  // time with C1. It is used to determine if method is trivial.
+  short             _num_loops;
+  short             _num_blocks;
+  // Highest compile level this method has ever seen.
+  u1                _highest_comp_level;
+  // Same for OSR level
+  u1                _highest_osr_comp_level;
+  // Does this method contain anything worth profiling?
+  bool              _would_profile;
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
   int _data_size;
@@ -1292,6 +1310,36 @@ public:
 
   int      creation_mileage() const  { return _creation_mileage; }
   void set_creation_mileage(int x)   { _creation_mileage = x; }
+
+  int invocation_count() {
+    if (invocation_counter()->carry()) {
+      return InvocationCounter::count_limit;
+    }
+    return invocation_counter()->count();
+  }
+  int backedge_count() {
+    if (backedge_counter()->carry()) {
+      return InvocationCounter::count_limit;
+    }
+    return backedge_counter()->count();
+  }
+
+  InvocationCounter* invocation_counter()     { return &_invocation_counter; }
+  InvocationCounter* backedge_counter()       { return &_backedge_counter;   }
+
+  void set_would_profile(bool p)              { _would_profile = p;    }
+  bool would_profile() const                  { return _would_profile; }
+
+  int highest_comp_level()                    { return _highest_comp_level;      }
+  void set_highest_comp_level(int level)      { _highest_comp_level = level;     }
+  int highest_osr_comp_level()                { return _highest_osr_comp_level;  }
+  void set_highest_osr_comp_level(int level)  { _highest_osr_comp_level = level; }
+
+  int num_loops() const                       { return _num_loops;  }
+  void set_num_loops(int n)                   { _num_loops = n;     }
+  int num_blocks() const                      { return _num_blocks; }
+  void set_num_blocks(int n)                  { _num_blocks = n;    }
+
   bool is_mature() const;  // consult mileage and ProfileMaturityPercentage
   static int mileage_of(methodOop m);
 
@@ -1413,13 +1461,20 @@ public:
   void inc_decompile_count() {
     _nof_decompiles += 1;
     if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
-      method()->set_not_compilable();
+      method()->set_not_compilable(CompLevel_full_optimization);
     }
   }
 
   // Support for code generation
   static ByteSize data_offset() {
     return byte_offset_of(methodDataOopDesc, _data[0]);
+  }
+
+  static ByteSize invocation_counter_offset() {
+    return byte_offset_of(methodDataOopDesc, _invocation_counter);
+  }
+  static ByteSize backedge_counter_offset() {
+    return byte_offset_of(methodDataOopDesc, _backedge_counter);
   }
 
   // GC support

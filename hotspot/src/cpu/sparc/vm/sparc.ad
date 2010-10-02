@@ -677,8 +677,7 @@ static inline void emit2_19(CodeBuffer &cbuf, int f30, int f29, int f25, int f22
            (f20 << 20) |
            (f19 << 19) |
            (f0  <<  0);
-  *((int*)(cbuf.code_end())) = op;
-  cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+  cbuf.insts()->emit_int32(op);
 }
 
 // Standard Sparc opcode form2 field breakdown
@@ -689,8 +688,7 @@ static inline void emit2_22(CodeBuffer &cbuf, int f30, int f25, int f22, int f0 
            (f25 << 25) |
            (f22 << 22) |
            (f0  <<  0);
-  *((int*)(cbuf.code_end())) = op;
-  cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+  cbuf.insts()->emit_int32(op);
 }
 
 // Standard Sparc opcode form3 field breakdown
@@ -701,8 +699,7 @@ static inline void emit3(CodeBuffer &cbuf, int f30, int f25, int f19, int f14, i
            (f14 << 14) |
            (f5  <<  5) |
            (f0  <<  0);
-  *((int*)(cbuf.code_end())) = op;
-  cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+  cbuf.insts()->emit_int32(op);
 }
 
 // Standard Sparc opcode form3 field breakdown
@@ -714,8 +711,7 @@ static inline void emit3_simm13(CodeBuffer &cbuf, int f30, int f25, int f19, int
            (f14 << 14) |
            (1   << 13) | // bit to indicate immediate-mode
            (simm13<<0);
-  *((int*)(cbuf.code_end())) = op;
-  cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+  cbuf.insts()->emit_int32(op);
 }
 
 static inline void emit3_simm10(CodeBuffer &cbuf, int f30, int f25, int f19, int f14, int simm10 ) {
@@ -910,9 +906,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
     instr |= disp & 0x1FFF;
   }
 
-  uint *code = (uint*)cbuf.code_end();
-  *code = instr;
-  cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+  cbuf.insts()->emit_int32(instr);
 
 #ifdef ASSERT
   {
@@ -1532,7 +1526,7 @@ void emit_java_to_interp(CodeBuffer &cbuf ) {
   // set (empty), G5
   // jmp -1
 
-  address mark = cbuf.inst_mark();  // get mark within main instrs section
+  address mark = cbuf.insts_mark();  // get mark within main instrs section
 
   MacroAssembler _masm(&cbuf);
 
@@ -1632,7 +1626,7 @@ uint size_deopt_handler() {
 // Emit exception handler code.
 int emit_exception_handler(CodeBuffer& cbuf) {
   Register temp_reg = G3;
-  AddressLiteral exception_blob(OptoRuntime::exception_blob()->instructions_begin());
+  AddressLiteral exception_blob(OptoRuntime::exception_blob()->entry_point());
   MacroAssembler _masm(&cbuf);
 
   address base =
@@ -2292,8 +2286,7 @@ encode %{
              (0 << 13) |                    // select register move
              ($pcc$$constant << 11) |       // cc1, cc0 bits for 'icc' or 'xcc'
              ($src$$reg << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   enc_class enc_cmov_imm( cmpOp cmp, iRegI dst, immI11 src, immI pcc ) %{
@@ -2306,8 +2299,7 @@ encode %{
              (1 << 13) |                    // select immediate move
              ($pcc$$constant << 11) |       // cc1, cc0 bits for 'icc'
              (simm11 << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   enc_class enc_cmov_reg_f( cmpOpF cmp, iRegI dst, iRegI src, flagsRegF fcc ) %{
@@ -2319,8 +2311,7 @@ encode %{
              (0 << 13) |                    // select register move
              ($fcc$$reg << 11) |            // cc1, cc0 bits for fcc0-fcc3
              ($src$$reg << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   enc_class enc_cmov_imm_f( cmpOp cmp, iRegI dst, immI11 src, flagsRegF fcc ) %{
@@ -2333,8 +2324,7 @@ encode %{
              (1 << 13) |                    // select immediate move
              ($fcc$$reg << 11) |            // cc1, cc0 bits for fcc0-fcc3
              (simm11 << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   enc_class enc_cmovf_reg( cmpOp cmp, regD dst, regD src, immI pcc ) %{
@@ -2347,8 +2337,7 @@ encode %{
              ($pcc$$constant << 11) |       // cc1-cc0 bits for 'icc' or 'xcc'
              ($primary << 5) |              // select single, double or quad
              ($src$$reg << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   enc_class enc_cmovff_reg( cmpOpF cmp, flagsRegF fcc, regD dst, regD src ) %{
@@ -2360,8 +2349,7 @@ encode %{
              ($fcc$$reg << 11) |            // cc2-cc0 bits for 'fccX'
              ($primary << 5) |              // select single, double or quad
              ($src$$reg << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   // Used by the MIN/MAX encodings.  Same as a CMOV, but
@@ -2375,8 +2363,7 @@ encode %{
              (0 << 13) |                    // select register move
              (0 << 11) |                    // cc1, cc0 bits for 'icc'
              ($src$$reg << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   enc_class enc_cmov_reg_minmax_long( iRegL dst, iRegL src ) %{
@@ -2388,8 +2375,7 @@ encode %{
              (0 << 13) |                    // select register move
              (0 << 11) |                    // cc1, cc0 bits for 'icc'
              ($src$$reg << 0);
-    *((int*)(cbuf.code_end())) = op;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32(op);
   %}
 
   // Utility encoding for loading a 64 bit Pointer into a register
@@ -3055,7 +3041,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
   %}
 
   enc_class enc_rethrow() %{
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     Register temp_reg = G3;
     AddressLiteral rethrow_stub(OptoRuntime::rethrow_stub());
     assert(temp_reg != reg_to_register_object(R_I0_num), "temp must not break oop_reg");
@@ -3076,23 +3062,17 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
 
   enc_class emit_mem_nop() %{
     // Generates the instruction LDUXA [o6,g0],#0x82,g0
-    unsigned int *code = (unsigned int*)cbuf.code_end();
-    *code = (unsigned int)0xc0839040;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32((unsigned int) 0xc0839040);
   %}
 
   enc_class emit_fadd_nop() %{
     // Generates the instruction FMOVS f31,f31
-    unsigned int *code = (unsigned int*)cbuf.code_end();
-    *code = (unsigned int)0xbfa0003f;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32((unsigned int) 0xbfa0003f);
   %}
 
   enc_class emit_br_nop() %{
     // Generates the instruction BPN,PN .
-    unsigned int *code = (unsigned int*)cbuf.code_end();
-    *code = (unsigned int)0x00400000;
-    cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
+    cbuf.insts()->emit_int32((unsigned int) 0x00400000);
   %}
 
   enc_class enc_membar_acquire %{

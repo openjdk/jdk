@@ -83,6 +83,7 @@ FILES_src = \
 	java/nio/file/ClosedFileSystemException.java \
 	java/nio/file/ClosedWatchServiceException.java \
 	java/nio/file/CopyOption.java \
+	java/nio/file/DirectoryIteratorException.java \
 	java/nio/file/DirectoryNotEmptyException.java \
 	java/nio/file/DirectoryStream.java \
 	java/nio/file/FileAlreadyExistsException.java \
@@ -199,6 +200,7 @@ FILES_src = \
 	sun/nio/ch/PipeImpl.java \
 	sun/nio/ch/PollArrayWrapper.java \
 	sun/nio/ch/Reflect.java \
+	sun/nio/ch/Secrets.java \
 	sun/nio/ch/SelectionKeyImpl.java \
 	sun/nio/ch/SelectorImpl.java \
 	sun/nio/ch/SelectorProviderImpl.java \
