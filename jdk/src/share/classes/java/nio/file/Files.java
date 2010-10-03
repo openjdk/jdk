@@ -135,9 +135,9 @@ public final class Files {
      * FileVisitor} invoked for each file encountered. File tree traversal
      * completes when all accessible files in the tree have been visited, or a
      * visit method returns a result of {@link FileVisitResult#TERMINATE
-     * TERMINATE}. Where a visit method terminates due an uncaught error or
-     * runtime exception then the traversal is terminated and the error or
-     * exception is propagated to the caller of this method.
+     * TERMINATE}. Where a visit method terminates due an {@code IOException},
+     * an uncaught error, or runtime exception, then the traversal is terminated
+     * and the error or exception is propagated to the caller of this method.
      *
      * <p> For each file encountered this method attempts to gets its {@link
      * java.nio.file.attribute.BasicFileAttributes}. If the file is not a
@@ -146,12 +146,10 @@ public final class Files {
      * due to an I/O exception, then the {@link FileVisitor#visitFileFailed
      * visitFileFailed} method is invoked with the I/O exception.
      *
-     * <p> Where the file is a directory, this method attempts to open it by
-     * invoking its {@link Path#newDirectoryStream newDirectoryStream} method.
-     * Where the directory could not be opened, due to an {@code IOException},
-     * then the {@link FileVisitor#preVisitDirectoryFailed preVisitDirectoryFailed}
-     * method is invoked with the I/O exception, after which, the file tree walk
-     * continues, by default, at the next <em>sibling</em> of the directory.
+     * <p> Where the file is a directory, and the directory could not be opened,
+     * then the {@code visitFileFailed} method is invoked with the I/O exception,
+     * after which, the file tree walk continues, by default, at the next
+     * <em>sibling</em> of the directory.
      *
      * <p> Where the directory is opened successfully, then the entries in the
      * directory, and their <em>descendants</em> are visited. When all entries
@@ -171,26 +169,25 @@ public final class Files {
      * method is invoked as specified above).
      *
      * <p> If the {@code options} parameter contains the {@link
-     * FileVisitOption#DETECT_CYCLES DETECT_CYCLES} or {@link
-     * FileVisitOption#FOLLOW_LINKS FOLLOW_LINKS} options then this method keeps
+     * FileVisitOption#FOLLOW_LINKS FOLLOW_LINKS} option then this method keeps
      * track of directories visited so that cycles can be detected. A cycle
      * arises when there is an entry in a directory that is an ancestor of the
      * directory. Cycle detection is done by recording the {@link
      * java.nio.file.attribute.BasicFileAttributes#fileKey file-key} of directories,
      * or if file keys are not available, by invoking the {@link Path#isSameFile
      * isSameFile} method to test if a directory is the same file as an
-     * ancestor. When a cycle is detected the {@link FileVisitor#visitFile
-     * visitFile} is invoked with the attributes of the directory. The {@link
-     * java.nio.file.attribute.BasicFileAttributes#isDirectory isDirectory}
-     * method may be used to test if the file is a directory and that a cycle is
-     * detected. The {@code preVisitDirectory} and {@code postVisitDirectory}
-     * methods are not invoked.
+     * ancestor. When a cycle is detected it is treated as an I/O error, and the
+     * {@link FileVisitor#visitFileFailed visitFileFailed} method is invoked with
+     * an instance of {@link FileSystemLoopException}.
      *
      * <p> The {@code maxDepth} parameter is the maximum number of levels of
      * directories to visit. A value of {@code 0} means that only the starting
      * file is visited, unless denied by the security manager. A value of
      * {@link Integer#MAX_VALUE MAX_VALUE} may be used to indicate that all
-     * levels should be visited.
+     * levels should be visited. The {@code visitFile} method is invoked for all
+     * files, including directories, encountered at {@code maxDepth}, unless the
+     * basic file attributes cannot be read, in which case the {@code
+     * visitFileFailed} method is invoked.
      *
      * <p> If a visitor returns a result of {@code null} then {@code
      * NullPointerException} is thrown.
@@ -215,11 +212,14 @@ public final class Files {
      *          In the case of the default provider, the {@link
      *          SecurityManager#checkRead(String) checkRead} method is invoked
      *          to check read access to the directory.
+     * @throws  IOException
+     *          If an I/O error is thrown by a visitor method
      */
     public static void walkFileTree(Path start,
                                     Set<FileVisitOption> options,
                                     int maxDepth,
                                     FileVisitor<? super Path> visitor)
+        throws IOException
     {
         if (maxDepth < 0)
             throw new IllegalArgumentException("'maxDepth' is negative");
@@ -245,8 +245,12 @@ public final class Files {
      *          In the case of the default provider, the {@link
      *          SecurityManager#checkRead(String) checkRead} method is invoked
      *          to check read access to the directory.
+     * @throws  IOException
+     *          If an I/O error is thrown by a visitor method
      */
-    public static void walkFileTree(Path start, FileVisitor<? super Path> visitor) {
+    public static void walkFileTree(Path start, FileVisitor<? super Path> visitor)
+        throws IOException
+    {
         walkFileTree(start,
                      EnumSet.noneOf(FileVisitOption.class),
                      Integer.MAX_VALUE,
