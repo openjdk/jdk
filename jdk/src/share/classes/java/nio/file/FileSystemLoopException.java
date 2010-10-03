@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,25 @@
 package java.nio.file;
 
 /**
- * Defines the file tree traversal options.
+ * Checked exception thrown when a file system loop, or cycle, is encountered.
  *
  * @since 1.7
- *
  * @see Files#walkFileTree
  */
 
-public enum FileVisitOption {
+public class FileSystemLoopException
+    extends FileSystemException
+{
+    private static final long serialVersionUID = 4843039591949217617L;
+
     /**
-     * Follow symbolic links.
+     * Constructs an instance of this class.
+     *
+     * @param   file
+     *          a string identifying the file causing the cycle or {@code null} if
+     *          not known
      */
-    FOLLOW_LINKS;
+    public FileSystemLoopException(String file) {
+        super(file);
+    }
 }
