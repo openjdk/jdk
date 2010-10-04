@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug     6346251
  * @summary Test Elements.getBinaryName
  * @author  Scott Seligman
- * @build   BinaryName
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor BinaryName
  * @compile -processor BinaryName -proc:only BinaryName.java
  */
 
@@ -38,17 +39,8 @@ import javax.lang.model.util.*;
 
 import static javax.lang.model.util.ElementFilter.typesIn;
 
-@SupportedAnnotationTypes("*")
 @HelloIm("BinaryName")
-public class BinaryName extends AbstractProcessor {
-
-    Elements elements;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        elements = penv.getElementUtils();
-    }
-
+public class BinaryName extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes,
                            RoundEnvironment round) {
         if (round.processingOver()) return true;

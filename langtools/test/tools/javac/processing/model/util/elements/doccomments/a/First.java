@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,34 @@
  * questions.
  */
 
-/*
- * @test
- * @bug     6266828
- * @summary JSR 269: Java Language Model API
- * @author  Peter von der Ah\u00e9
- */
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+package a;
 
-public class Xprint {
-    public static void main(String[] args) {
-        JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
-        javac.run(System.in, null, null,
-                  "-Xprint",
-                  "com.sun.tools.javac.code.Types",
-                  "com.sun.tools.javac.parser.Parser",
-                  "java.util.EnumSet");
+/** CLASS First */
+public class First {
+    /** CONSTRUCTOR <init> */
+    First() { }
+
+    /** FIELD x */
+    p.Gen1 x;
+
+    /** METHOD m **/
+    void m(int i) {
+        /** CLASS Local */
+        class Local {
+            /** CONSTRUCTOR <init> */
+            Local() { }
+        }
+
+        Runnable r = new Runnable() {
+            /** METHOD run **/
+            public void run() { }
+        };
+
+    }
+
+    /** ENUM E */
+    enum E {
+        /** ENUM_CONSTANT e1 */
+        e1
     }
 }

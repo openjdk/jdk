@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6403468
  * @summary Test that an erroneous return code results from raising an error.
  * @author  Joseph D. Darcy
+ * @library ../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile TestReturnCode.java
  *
  * @compile      -processor TestReturnCode -proc:only                                                                   Foo.java
@@ -60,19 +62,16 @@ import static javax.tools.Diagnostic.Kind.*;
  * This processor raises errors or throws exceptions on different
  * rounds to allow the return code to be test.
  */
-@SupportedAnnotationTypes("*")
 @SupportedOptions({"ErrorOnFirst",
                    "ErrorOnLast",
                    "ExceptionOnFirst",
                    "ExceptionOnLast"})
-public class TestReturnCode extends AbstractProcessor {
+public class TestReturnCode extends JavacTestingAbstractProcessor {
 
     private boolean errorOnFirst;
     private boolean errorOnLast;
     private boolean exceptionOnFirst;
     private boolean exceptionOnLast;
-
-    private Messager messager;
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
@@ -103,11 +102,5 @@ public class TestReturnCode extends AbstractProcessor {
         errorOnLast     = keySet.contains("ErrorOnLast");
         exceptionOnFirst  = keySet.contains("ExceptionOnFirst");
         exceptionOnLast = keySet.contains("ExceptionOnLast");
-        messager = processingEnv.getMessager();
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }
