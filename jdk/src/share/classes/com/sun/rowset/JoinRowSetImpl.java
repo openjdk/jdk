@@ -552,7 +552,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
                // This 'if' will be removed after all joins are implemented.
                throw new SQLException(resBundle.handleGetObject("joinrowsetimpl.notsupported").toString());
            } else {
-              Integer Intgr = new Integer(JoinRowSet.INNER_JOIN);
+              Integer Intgr = Integer.valueOf(JoinRowSet.INNER_JOIN);
               vecJoinType.add(Intgr);
            }
        } else {

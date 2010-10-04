@@ -338,11 +338,11 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
             if (crs.rowDeleted()) {
                 // The row has been deleted.
                 if (conflict = (deleteOriginalRow(crs, this.crsResolve)) == true) {
-                       status.add(rows, new Integer(SyncResolver.DELETE_ROW_CONFLICT));
+                       status.add(rows, Integer.valueOf(SyncResolver.DELETE_ROW_CONFLICT));
                 } else {
                       // delete happened without any occurrence of conflicts
                       // so update status accordingly
-                       status.add(rows, new Integer(SyncResolver.NO_ROW_CONFLICT));
+                       status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
                 }
 
            } else if (crs.rowInserted()) {
@@ -350,20 +350,20 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
                 pstmtIns = con.prepareStatement(insertCmd);
                 if ( (conflict = insertNewRow(crs, pstmtIns, this.crsResolve)) == true) {
-                          status.add(rows, new Integer(SyncResolver.INSERT_ROW_CONFLICT));
+                          status.add(rows, Integer.valueOf(SyncResolver.INSERT_ROW_CONFLICT));
                 } else {
                       // insert happened without any occurrence of conflicts
                       // so update status accordingly
-                       status.add(rows, new Integer(SyncResolver.NO_ROW_CONFLICT));
+                       status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
                 }
             } else  if (crs.rowUpdated()) {
                   // The row has been updated.
                        if ( conflict = (updateOriginalRow(crs)) == true) {
-                             status.add(rows, new Integer(SyncResolver.UPDATE_ROW_CONFLICT));
+                             status.add(rows, Integer.valueOf(SyncResolver.UPDATE_ROW_CONFLICT));
                } else {
                       // update happened without any occurrence of conflicts
                       // so update status accordingly
-                      status.add(rows, new Integer(SyncResolver.NO_ROW_CONFLICT));
+                      status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
                }
 
             } else {
@@ -375,7 +375,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 *  that is fine.
                 **/
                 int icolCount = crs.getMetaData().getColumnCount();
-                status.add(rows, new Integer(SyncResolver.NO_ROW_CONFLICT));
+                status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
 
                 this.crsResolve.moveToInsertRow();
                 for(int cols=0;cols<iColCount;cols++) {
@@ -398,7 +398,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
       boolean boolConf = false;
       for (int j=1;j<status.size();j++){
           // ignore status for index = 0 which is set to null
-          if(! ((status.get(j)).equals(new Integer(SyncResolver.NO_ROW_CONFLICT)))) {
+          if(! ((status.get(j)).equals(Integer.valueOf(SyncResolver.NO_ROW_CONFLICT)))) {
               // there is at least one conflict which needs to be resolved
               boolConf = true;
              break;
@@ -652,7 +652,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                           updateExec += ", ";
                          }
                         updateExec += crs.getMetaData().getColumnName(i);
-                        cols.add(new Integer(i));
+                        cols.add(Integer.valueOf(i));
                         updateExec += " = ? ";
                         first = false;
 
@@ -698,7 +698,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                                     updateExec += ", ";
                                  }
                                 updateExec += crs.getMetaData().getColumnName(i);
-                                cols.add(new Integer(i));
+                                cols.add(Integer.valueOf(i));
                                 updateExec += " = ? ";
                                 flag = false;
                              } else {

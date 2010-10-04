@@ -499,7 +499,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
      if(onInsertRow) {
         if(p != null) {
-           bool = p.evaluate(new Integer(x),columnIndex);
+           bool = p.evaluate(Integer.valueOf(x),columnIndex);
 
            if(!bool) {
               throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -566,7 +566,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Boolean(x) , columnIndex);
+            bool = p.evaluate(Boolean.valueOf(x) , columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -634,7 +634,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Byte(x),columnIndex);
+            bool = p.evaluate(Byte.valueOf(x),columnIndex);
 
             if(!bool) {
                 throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -703,7 +703,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Short(x), columnIndex);
+            bool = p.evaluate(Short.valueOf(x), columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -771,7 +771,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Long(x), columnIndex);
+            bool = p.evaluate(Long.valueOf(x), columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -1111,7 +1111,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
       Byte [] obj_arr = new Byte[x.length];
 
       for(int i = 0; i < x.length; i++) {
-         obj_arr[i] = new Byte(x[i]);
+         obj_arr[i] = Byte.valueOf(x[i]);
          val = val.concat(obj_arr[i].toString());
      }
 

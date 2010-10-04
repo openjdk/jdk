@@ -525,7 +525,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         iMatchColumns = new Vector(10);
         for(int i = 0; i < 10 ; i++) {
-           iMatchColumns.add(i,new Integer(-1));
+           iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
         strMatchColumns = new Vector(10);
@@ -1299,7 +1299,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         tMap = new TreeMap();
 
         for (int i = 0; i<numRows; i++) {
-            tMap.put(new Integer(i), rvh.get(i));
+            tMap.put(Integer.valueOf(i), rvh.get(i));
         }
 
         return (tMap.values());
@@ -1811,7 +1811,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return (byte)0;
         }
         try {
-            return ((new Byte(value.toString())).byteValue());
+            return ((Byte.valueOf(value.toString())).byteValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.bytefail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -1855,7 +1855,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         try {
-            return ((new Short(value.toString().trim())).shortValue());
+            return ((Short.valueOf(value.toString().trim())).shortValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.shortfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -1898,7 +1898,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         try {
-            return ((new Integer(value.toString().trim())).intValue());
+            return ((Integer.valueOf(value.toString().trim())).intValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.intfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -1941,7 +1941,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return (long)0;
         }
         try {
-            return ((new Long(value.toString().trim())).longValue());
+            return ((Long.valueOf(value.toString().trim())).longValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.longfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -4019,18 +4019,18 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         try {
             switch (trgType) {
                 case java.sql.Types.BIT:
-                    Integer i = new Integer(srcObj.toString().trim());
-                    return i.equals(new Integer((int)0)) ?
-                    new Boolean(false) :
-                        new Boolean(true);
+                    Integer i = Integer.valueOf(srcObj.toString().trim());
+                    return i.equals(Integer.valueOf((int)0)) ?
+                    Boolean.valueOf(false) :
+                        Boolean.valueOf(true);
                 case java.sql.Types.TINYINT:
-                    return new Byte(srcObj.toString().trim());
+                    return Byte.valueOf(srcObj.toString().trim());
                 case java.sql.Types.SMALLINT:
-                    return new Short(srcObj.toString().trim());
+                    return Short.valueOf(srcObj.toString().trim());
                 case java.sql.Types.INTEGER:
-                    return new Integer(srcObj.toString().trim());
+                    return Integer.valueOf(srcObj.toString().trim());
                 case java.sql.Types.BIGINT:
-                    return new Long(srcObj.toString().trim());
+                    return Long.valueOf(srcObj.toString().trim());
                 case java.sql.Types.NUMERIC:
                 case java.sql.Types.DECIMAL:
                     return new BigDecimal(srcObj.toString().trim());
@@ -4186,12 +4186,12 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         try {
             switch (trgType) {
                 case java.sql.Types.BIT:
-                    Integer i = new Integer(srcObj.toString().trim());
-                    return i.equals(new Integer((int)0)) ?
-                    new Boolean(false) :
-                        new Boolean(true);
+                    Integer i = Integer.valueOf(srcObj.toString().trim());
+                    return i.equals(Integer.valueOf((int)0)) ?
+                    Boolean.valueOf(false) :
+                        Boolean.valueOf(true);
                 case java.sql.Types.BOOLEAN:
-                    return new Boolean(srcObj.toString().trim());
+                    return Boolean.valueOf(srcObj.toString().trim());
                 default:
                     throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.dtypemismt").toString()+ trgType);
             }
@@ -4265,7 +4265,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         checkIndex(columnIndex);
         // make sure the cursor is on a valid row
         checkCursor();
-        Object obj = convertBoolean(new Boolean(x),
+        Object obj = convertBoolean(Boolean.valueOf(x),
         java.sql.Types.BIT,
         RowSetMD.getColumnType(columnIndex));
 
@@ -4301,7 +4301,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // make sure the cursor is on a valid row
         checkCursor();
 
-        Object obj = convertNumeric(new Byte(x),
+        Object obj = convertNumeric(Byte.valueOf(x),
         java.sql.Types.TINYINT,
         RowSetMD.getColumnType(columnIndex));
 
@@ -4337,7 +4337,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // make sure the cursor is on a valid row
         checkCursor();
 
-        Object obj = convertNumeric(new Short(x),
+        Object obj = convertNumeric(Short.valueOf(x),
         java.sql.Types.SMALLINT,
         RowSetMD.getColumnType(columnIndex));
 
@@ -4372,7 +4372,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         checkIndex(columnIndex);
         // make sure the cursor is on a valid row
         checkCursor();
-        Object obj = convertNumeric(new Integer(x),
+        Object obj = convertNumeric(Integer.valueOf(x),
         java.sql.Types.INTEGER,
         RowSetMD.getColumnType(columnIndex));
 
@@ -4408,7 +4408,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // make sure the cursor is on a valid row
         checkCursor();
 
-        Object obj = convertNumeric(new Long(x),
+        Object obj = convertNumeric(Long.valueOf(x),
         java.sql.Types.BIGINT,
         RowSetMD.getColumnType(columnIndex));
 
@@ -6945,7 +6945,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
          }
 
          for( int i = 0;i < columnIdxes.length ;i++) {
-            iMatchColumns.set(i,new Integer(-1));
+            iMatchColumns.set(i,Integer.valueOf(-1));
          }
     }
 
@@ -7054,7 +7054,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
            }
         }
         for(int i = 0 ;i < columnIdxes.length; i++) {
-           iMatchColumns.add(i,new Integer(columnIdxes[i]));
+           iMatchColumns.add(i,Integer.valueOf(columnIdxes[i]));
         }
     }
 
@@ -7109,7 +7109,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.matchcols1").toString());
         } else {
             // set iMatchColumn
-            iMatchColumns.set(0, new Integer(columnIdx));
+            iMatchColumns.set(0, Integer.valueOf(columnIdx));
             //strMatchColumn = null;
         }
     }
@@ -7131,7 +7131,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public void setMatchColumn(String columnName) throws SQLException {
         // validate, if col is ok to be set
-        if(columnName.equals(null) || ((columnName = columnName.trim()) == "" )) {
+        if(columnName == null || (columnName= columnName.trim()).equals("") ) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.matchcols2").toString());
         } else {
             // set strMatchColumn
@@ -7156,13 +7156,13 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public void unsetMatchColumn(int columnIdx) throws SQLException {
         // check if we are unsetting the SAME column
-        if(! iMatchColumns.get(0).equals(new Integer(columnIdx) )  ) {
+        if(! iMatchColumns.get(0).equals(Integer.valueOf(columnIdx) )  ) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.unsetmatch").toString());
         } else if(strMatchColumns.get(0) != null) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.unsetmatch1").toString());
         } else {
                 // that is, we are unsetting it.
-               iMatchColumns.set(0, new Integer(-1));
+               iMatchColumns.set(0, Integer.valueOf(-1));
         }
     }
 

@@ -387,7 +387,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
                     if (caller.wasNull())
                         writeNull();
                     else
-                        writeInteger(caller.getInt(idx));
+                        writeInteger(i);
                     break;
                 case java.sql.Types.BIGINT:
                     long l = caller.getLong(idx);
@@ -574,7 +574,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     }
 
     private void writeBoolean(boolean b) throws java.io.IOException {
-        writer.write(new Boolean(b).toString());
+        writer.write(Boolean.valueOf(b).toString());
     }
 
     private void writeFloat(float f) throws java.io.IOException {
