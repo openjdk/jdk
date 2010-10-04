@@ -90,7 +90,7 @@ public class ToolkitPropertyTest_Enable extends Frame {
         int [] buttonMasks = new int[MouseInfo.getNumberOfButtons()]; // = InputEvent.getButtonDownMasks();
         for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++){
             buttonMasks[i] = InputEvent.getMaskForButton(i+1);
-            System.out.println("TEST: "+buttonMasks[i]);
+            System.out.println("TEST: buttonMasks["+ i +"] = " + buttonMasks[i]);
         }
 
         for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++){
