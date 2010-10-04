@@ -3992,7 +3992,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (time < 0) { // don't wait
     return;
   }
-  else if (time == 0) {
+  else if (time == 0 && !isAbsolute) {
     time = INFINITE;
   }
   else if  (isAbsolute) {
