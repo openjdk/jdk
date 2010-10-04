@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4839,7 +4839,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Next, demultiplex/decode time arguments
   timespec absTime;
-  if (time < 0) { // don't wait at all
+  if (time < 0 || (isAbsolute && time == 0) ) { // don't wait at all
     return;
   }
   if (time > 0) {
