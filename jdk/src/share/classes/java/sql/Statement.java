@@ -1051,9 +1051,9 @@ public interface Statement extends Wrapper, AutoCloseable {
 
     /**
      * Returns a value indicating whether this {@code Statement} will be
-     * closed when all dependent objects such as resultsets are closed.
+     * closed when all its dependent result sets are closed.
      * @return {@code true} if the {@code Statement} will be closed when all
-     * of its dependent objects are closed; {@code false} otherwise
+     * of its dependent result sets are closed; {@code false} otherwise
      * @throws SQLException if this method is called on a closed
      * {@code Statement}
      * @since 1.7
