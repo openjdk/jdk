@@ -1563,13 +1563,13 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         nullVal = new Object[2];
         nullVal[0] = null;
-        nullVal[1] = new Integer(sqlType);
+        nullVal[1] = Integer.valueOf(sqlType);
 
        if (params == null){
             throw new SQLException("Set initParams() before setNull");
        }
 
-        params.put(new Integer(parameterIndex - 1), nullVal);
+        params.put(Integer.valueOf(parameterIndex - 1), nullVal);
     }
 
     /**
@@ -1644,14 +1644,14 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         nullVal = new Object[3];
         nullVal[0] = null;
-        nullVal[1] = new Integer(sqlType);
+        nullVal[1] = Integer.valueOf(sqlType);
         nullVal[2] = typeName;
 
        if(params == null){
             throw new SQLException("Set initParams() before setNull");
        }
 
-        params.put(new Integer(parameterIndex - 1), nullVal);
+        params.put(Integer.valueOf(parameterIndex - 1), nullVal);
     }
 
 
@@ -1686,7 +1686,7 @@ public static final int ASCII_STREAM_PARAM = 2;
             throw new SQLException("Set initParams() before setNull");
        }
 
-        params.put(new Integer(parameterIndex - 1), new Boolean(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Boolean.valueOf(x));
     }
 
     /**
@@ -1720,7 +1720,7 @@ public static final int ASCII_STREAM_PARAM = 2;
             throw new SQLException("Set initParams() before setByte");
        }
 
-        params.put(new Integer(parameterIndex - 1), new Byte(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Byte.valueOf(x));
     }
 
     /**
@@ -1754,7 +1754,7 @@ public static final int ASCII_STREAM_PARAM = 2;
              throw new SQLException("Set initParams() before setShort");
         }
 
-        params.put(new Integer(parameterIndex - 1), new Short(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Short.valueOf(x));
     }
 
     /**
@@ -1786,7 +1786,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setInt");
         }
-        params.put(new Integer(parameterIndex - 1), new Integer(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Integer.valueOf(x));
     }
 
     /**
@@ -1818,7 +1818,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setLong");
         }
-        params.put(new Integer(parameterIndex - 1), new Long(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Long.valueOf(x));
     }
 
     /**
@@ -1850,7 +1850,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setFloat");
         }
-        params.put(new Integer(parameterIndex - 1), new Float(x));
+        params.put(Integer.valueOf(parameterIndex - 1), new Float(x));
     }
 
     /**
@@ -1882,7 +1882,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setDouble");
         }
-        params.put(new Integer(parameterIndex - 1), new Double(x));
+        params.put(Integer.valueOf(parameterIndex - 1), new Double(x));
     }
 
     /**
@@ -1914,7 +1914,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setBigDecimal");
         }
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -1948,7 +1948,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setString");
         }
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -1982,7 +1982,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setBytes");
         }
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -2024,7 +2024,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setDate");
         }
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -2069,7 +2069,7 @@ public static final int ASCII_STREAM_PARAM = 2;
              throw new SQLException("Set initParams() before setTime");
         }
 
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -2112,7 +2112,7 @@ public static final int ASCII_STREAM_PARAM = 2;
              throw new SQLException("Set initParams() before setTimestamp");
         }
 
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -2185,14 +2185,14 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         asciiStream = new Object[3];
         asciiStream[0] = x;
-        asciiStream[1] = new Integer(length);
-        asciiStream[2] = new Integer(ASCII_STREAM_PARAM);
+        asciiStream[1] = Integer.valueOf(length);
+        asciiStream[2] = Integer.valueOf(ASCII_STREAM_PARAM);
 
         if(params == null){
              throw new SQLException("Set initParams() before setAsciiStream");
         }
 
-        params.put(new Integer(parameterIndex - 1), asciiStream);
+        params.put(Integer.valueOf(parameterIndex - 1), asciiStream);
     }
 
   /**
@@ -2290,13 +2290,13 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         binaryStream = new Object[3];
         binaryStream[0] = x;
-        binaryStream[1] = new Integer(length);
-        binaryStream[2] = new Integer(BINARY_STREAM_PARAM);
+        binaryStream[1] = Integer.valueOf(length);
+        binaryStream[2] = Integer.valueOf(BINARY_STREAM_PARAM);
         if(params == null){
              throw new SQLException("Set initParams() before setBinaryStream");
         }
 
-        params.put(new Integer(parameterIndex - 1), binaryStream);
+        params.put(Integer.valueOf(parameterIndex - 1), binaryStream);
     }
 
 
@@ -2396,12 +2396,12 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         unicodeStream = new Object[3];
         unicodeStream[0] = x;
-        unicodeStream[1] = new Integer(length);
-        unicodeStream[2] = new Integer(UNICODE_STREAM_PARAM);
+        unicodeStream[1] = Integer.valueOf(length);
+        unicodeStream[2] = Integer.valueOf(UNICODE_STREAM_PARAM);
         if(params == null){
              throw new SQLException("Set initParams() before setUnicodeStream");
         }
-        params.put(new Integer(parameterIndex - 1), unicodeStream);
+        params.put(Integer.valueOf(parameterIndex - 1), unicodeStream);
     }
 
     /**
@@ -2475,11 +2475,11 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         charStream = new Object[2];
         charStream[0] = reader;
-        charStream[1] = new Integer(length);
+        charStream[1] = Integer.valueOf(length);
         if(params == null){
              throw new SQLException("Set initParams() before setCharacterStream");
         }
-        params.put(new Integer(parameterIndex - 1), charStream);
+        params.put(Integer.valueOf(parameterIndex - 1), charStream);
     }
 
    /**
@@ -2591,12 +2591,12 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         obj = new Object[3];
         obj[0] = x;
-        obj[1] = new Integer(targetSqlType);
-        obj[2] = new Integer(scale);
+        obj[1] = Integer.valueOf(targetSqlType);
+        obj[2] = Integer.valueOf(scale);
         if(params == null){
              throw new SQLException("Set initParams() before setObject");
         }
-        params.put(new Integer(parameterIndex - 1), obj);
+        params.put(Integer.valueOf(parameterIndex - 1), obj);
     }
 
     /**
@@ -2654,11 +2654,11 @@ public static final int ASCII_STREAM_PARAM = 2;
 
         obj = new Object[2];
         obj[0] = x;
-        obj[1] = new Integer(targetSqlType);
+        obj[1] = Integer.valueOf(targetSqlType);
         if (params == null){
              throw new SQLException("Set initParams() before setObject");
         }
-        params.put(new Integer(parameterIndex - 1), obj);
+        params.put(Integer.valueOf(parameterIndex - 1), obj);
     }
 
     /**
@@ -2726,7 +2726,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if (params == null) {
              throw new SQLException("Set initParams() before setObject");
         }
-        params.put(new Integer(parameterIndex - 1), x);
+        params.put(Integer.valueOf(parameterIndex - 1), x);
     }
 
     /**
@@ -2773,7 +2773,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if (params == null) {
              throw new SQLException("Set initParams() before setRef");
         }
-        params.put(new Integer(parameterIndex - 1), new SerialRef(ref));
+        params.put(Integer.valueOf(parameterIndex - 1), new SerialRef(ref));
     }
 
     /**
@@ -2817,7 +2817,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setBlob");
         }
-        params.put(new Integer(parameterIndex - 1), new SerialBlob(x));
+        params.put(Integer.valueOf(parameterIndex - 1), new SerialBlob(x));
     }
 
     /**
@@ -2862,7 +2862,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setClob");
         }
-        params.put(new Integer(parameterIndex - 1), new SerialClob(x));
+        params.put(Integer.valueOf(parameterIndex - 1), new SerialClob(x));
     }
 
     /**
@@ -2910,7 +2910,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if (params == null){
              throw new SQLException("Set initParams() before setArray");
         }
-        params.put(new Integer(parameterIndex - 1), new SerialArray(array));
+        params.put(Integer.valueOf(parameterIndex - 1), new SerialArray(array));
     }
 
     /**
@@ -2975,7 +2975,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setDate");
         }
-        params.put(new Integer(parameterIndex - 1), date);
+        params.put(Integer.valueOf(parameterIndex - 1), date);
     }
 
     /**
@@ -3041,7 +3041,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setTime");
         }
-        params.put(new Integer(parameterIndex - 1), time);
+        params.put(Integer.valueOf(parameterIndex - 1), time);
     }
 
     /**
@@ -3107,7 +3107,7 @@ public static final int ASCII_STREAM_PARAM = 2;
         if(params == null){
              throw new SQLException("Set initParams() before setTimestamp");
         }
-        params.put(new Integer(parameterIndex - 1), timestamp);
+        params.put(Integer.valueOf(parameterIndex - 1), timestamp);
     }
 
     /**
@@ -3181,7 +3181,7 @@ public static final int ASCII_STREAM_PARAM = 2;
 
             Object[] paramsArray = new Object[params.size()];
             for (int i = 0; i < params.size(); i++) {
-               paramsArray[i] = params.get(new Integer(i));
+               paramsArray[i] = params.get(Integer.valueOf(i));
                if (paramsArray[i] == null) {
                  throw new SQLException("missing parameter: " + (i + 1));
                } //end if

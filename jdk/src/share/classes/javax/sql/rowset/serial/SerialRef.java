@@ -110,7 +110,7 @@ public class SerialRef implements Ref, Serializable, Cloneable {
         throws SerialException
     {
         map = new Hashtable(map);
-        if (!object.equals(null)) {
+        if (object != null) {
             return map.get(object);
         } else {
             throw new SerialException("The object is not set");
