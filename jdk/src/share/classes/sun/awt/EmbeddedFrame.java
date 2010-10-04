@@ -70,7 +70,10 @@ public abstract class EmbeddedFrame extends Frame
     // JDK 1.1 compatibility
     private static final long serialVersionUID = 2967042741780317130L;
 
-    // Use these in traverseOut method to determine directions
+    /*
+     * The constants define focus traversal directions.
+     * Use them in {@code traverseIn}, {@code traverseOut} methods.
+     */
     protected static final boolean FORWARD = true;
     protected static final boolean BACKWARD = false;
 
@@ -281,6 +284,41 @@ public abstract class EmbeddedFrame extends Frame
             }
         }
         return false;
+    }
+
+    /**
+     * This method is called by the embedder when we should receive focus as element
+     * of the traversal chain.  The method requests focus on:
+     * 1. the first Component of this EmbeddedFrame if user moves focus forward
+     *    in the focus traversal cycle.
+     * 2. the last Component of this EmbeddedFrame if user moves focus backward
+     *    in the focus traversal cycle.
+     *
+     * The direction parameter specifies which of the two mentioned cases is
+     * happening. Use FORWARD and BACKWARD constants defined in the EmbeddedFrame class
+     * to avoid confusing boolean values.
+     *
+     * A concrete implementation of this method is defined in the platform-dependent
+     * subclasses.
+     *
+     * @param direction FORWARD or BACKWARD
+     * @return true, if the EmbeddedFrame wants to get focus, false otherwise.
+     */
+    public boolean traverseIn(boolean direction) {
+        Component comp = null;
+
+        if (direction == FORWARD) {
+            comp = getFocusTraversalPolicy().getFirstComponent(this);
+        } else {
+            comp = getFocusTraversalPolicy().getLastComponent(this);
+        }
+        if (comp != null) {
+            // comp.requestFocus(); - Leads to a hung.
+
+            AWTAccessor.getKeyboardFocusManagerAccessor().setMostRecentFocusOwner(this, comp);
+            synthesizeWindowActivation(true);
+        }
+        return (null != comp);
     }
 
     /**
