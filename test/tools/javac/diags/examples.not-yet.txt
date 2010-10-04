@@ -3,7 +3,7 @@ compiler.err.already.defined.this.unit                  # seems to be masked by 
 compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
 compiler.err.assignment.from.super-bound                # DEAD
 compiler.err.assignment.to.extends-bound                # DEAD
-compiler.err.cant.apply.symbol.1
+compiler.err.cant.apply.symbol
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.illegal.char.for.encoding
@@ -43,7 +43,6 @@ compiler.err.undetermined.type
 compiler.err.unexpected.type
 compiler.err.unknown.enum.constant                      # in bad class file
 compiler.err.unsupported.cross.fp.lit                   # Scanner: host system dependent
-compiler.misc.arg.length.mismatch
 compiler.misc.assignment.from.super-bound
 compiler.misc.assignment.to.extends-bound
 compiler.misc.bad.class.file.header                     # bad class file
@@ -73,7 +72,6 @@ compiler.misc.kindname.static
 compiler.misc.kindname.type.variable
 compiler.misc.kindname.type.variable.bound
 compiler.misc.kindname.value
-compiler.misc.no.conforming.assignment.exists
 compiler.misc.non.denotable.type
 compiler.misc.no.unique.minimal.instance.exists
 compiler.misc.resume.abort                              # prompt for a response

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 6453386
  * @summary Test basic properties of javax.lang.element.Element
  * @author  Joseph D. Darcy
- * @build TestElement
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor TestElement
  * @compile -processor TestElement -proc:only TestElement.java
  */
 
@@ -43,8 +44,7 @@ import static javax.tools.StandardLocation.*;
 /**
  * Test basic workings of javax.lang.element.Element
  */
-@SupportedAnnotationTypes("*")
-public class TestElement extends AbstractProcessor {
+public class TestElement extends JavacTestingAbstractProcessor {
     /**
      * For now, just check that constructors have a simple name of
      * "<init>".
@@ -66,9 +66,4 @@ public class TestElement extends AbstractProcessor {
         }
         return true;
     }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
 }
