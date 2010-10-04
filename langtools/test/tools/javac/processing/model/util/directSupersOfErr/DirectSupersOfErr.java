@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug     6346973
  * @summary directSupertypes(t) should not return t
  * @author  Scott Seligman
- * @build   DirectSupersOfErr
+ * @library ../../../../lib
+ * @build   JavacTestingAbstractProcessor DirectSupersOfErr
  * @compile -processor DirectSupersOfErr -proc:only C1.java
  */
 
@@ -37,16 +38,7 @@ import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 
-@SupportedAnnotationTypes("*")
-public class DirectSupersOfErr extends AbstractProcessor {
-
-    Types types;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        types = penv.getTypeUtils();
-    }
-
+public class DirectSupersOfErr extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes,
                            RoundEnvironment round) {
         if (round.processingOver()) return true;

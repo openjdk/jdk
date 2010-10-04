@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6406212
  * @summary Test that annotation processor options with illegal syntax are rejected
  * @author  Joseph D. Darcy
+ * @library ../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile TestOptionSyntaxErrors.java
  * @compile/fail -A TestOptionSyntaxErrors.java
  * @compile/fail -A8adOption TestOptionSyntaxErrors.java
@@ -46,14 +48,9 @@ import static javax.tools.Diagnostic.Kind.*;
 /**
  * No-op processor; should not be run.
  */
-@SupportedAnnotationTypes("*")
-public class TestOptionSyntaxErrors extends AbstractProcessor {
+public class TestOptionSyntaxErrors extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
         return true;
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }
