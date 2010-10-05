@@ -979,7 +979,7 @@ int ciMethod::instructions_size(int comp_level) {
   GUARDED_VM_ENTRY(
     nmethod* code = get_methodOop()->code();
     if (code != NULL && (comp_level == CompLevel_any || comp_level == code->comp_level())) {
-      return code->code_end() - code->verified_entry_point();
+      return code->insts_end() - code->verified_entry_point();
     }
     return 0;
   )
