@@ -173,7 +173,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             }
         },
 
-        new Option(false, "-help", "--help", "-?") {
+        new Option(false, "-h", "-help", "--help", "-?") {
             void process(JavahTask task, String opt, String arg) {
                 task.help = true;
             }
