@@ -107,7 +107,7 @@ bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
     return false;
   }
   Constant* c = v->as_Constant();
-  if (c && c->state() == NULL) {
+  if (c && c->state_before() == NULL) {
     // constants of any type can be stored directly, except for
     // unloaded object constants.
     return true;
@@ -250,7 +250,7 @@ void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp)
 
 
 void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   bool needs_range_check = true;
   bool use_length = x->length() != NULL;
   bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
@@ -325,7 +325,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 
 
 void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   LIRItem obj(x->obj(), this);
   obj.load_item();
 
@@ -341,7 +341,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
-    info_for_exception = state_for(x, x->lock_stack_before());
+    info_for_exception = state_for(x);
   }
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
@@ -352,7 +352,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
 
 void LIRGenerator::do_MonitorExit(MonitorExit* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
 
   LIRItem obj(x->obj(), this);
   obj.dont_load_item();
@@ -984,9 +984,11 @@ void LIRGenerator::do_Convert(Convert* x) {
 
 
 void LIRGenerator::do_NewInstance(NewInstance* x) {
+#ifndef PRODUCT
   if (PrintNotLoaded && !x->klass()->is_loaded()) {
-    tty->print_cr("   ###class not loaded at new bci %d", x->bci());
+    tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
   }
+#endif
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr reg = result_register_for(x->type());
   LIR_Opr klass_reg = new_register(objectType);
@@ -1127,7 +1129,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   obj.load_item();
 
   // info for exceptions
-  CodeEmitInfo* info_for_exception = state_for(x, x->state()->copy_locks());
+  CodeEmitInfo* info_for_exception = state_for(x);
 
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
