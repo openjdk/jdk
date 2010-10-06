@@ -313,6 +313,11 @@ public abstract class SunToolkit extends Toolkit
      */
     public static AppContext createNewAppContext() {
         ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+        // Create appContext before initialization of EventQueue, so all
+        // the calls to AppContext.getAppContext() from EventQueue ctor
+        // return correct values
+        AppContext appContext = new AppContext(threadGroup);
+
         EventQueue eventQueue;
         String eqName = System.getProperty("AWT.EventQueueClass",
                                            "java.awt.EventQueue");
@@ -322,7 +327,6 @@ public abstract class SunToolkit extends Toolkit
             System.err.println("Failed loading " + eqName + ": " + e);
             eventQueue = new EventQueue();
         }
-        AppContext appContext = new AppContext(threadGroup);
         appContext.put(AppContext.EVENT_QUEUE_KEY, eventQueue);
 
         PostEventQueue postEventQueue = new PostEventQueue(eventQueue);
