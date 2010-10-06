@@ -680,7 +680,7 @@ class JavaThread: public Thread {
 
   intptr_t*      _must_deopt_id;                 // id of frame that needs to be deopted once we
                                                  // transition out of native
-
+  nmethod*       _deopt_nmethod;                 // nmethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Because deoptimization is lazy we must save jvmti requests to set locals
@@ -1097,6 +1097,9 @@ class JavaThread: public Thread {
   intptr_t* must_deopt_id()                      { return _must_deopt_id; }
   void     set_must_deopt_id(intptr_t* id)       { _must_deopt_id = id; }
   void     clear_must_deopt_id()                 { _must_deopt_id = NULL; }
+
+  void set_deopt_nmethod(nmethod* nm)            { _deopt_nmethod = nm;   }
+  nmethod* deopt_nmethod()                       { return _deopt_nmethod; }
 
   methodOop  callee_target() const               { return _callee_target; }
   void set_callee_target  (methodOop x)          { _callee_target   = x; }

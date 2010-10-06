@@ -32,6 +32,7 @@ RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
   : _throw_index_out_of_bounds_exception(throw_index_out_of_bounds_exception)
   , _index(index)
 {
+  assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
 

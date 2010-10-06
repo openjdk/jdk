@@ -346,7 +346,7 @@ void trace_method_handle_stub(const char* adaptername,
     if (stack_dump_count > 64)  stack_dump_count = 48;
     for (i = 0; i < stack_dump_count; i += 4) {
       printf(" dump at SP[%d] "INTPTR_FORMAT": "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT"\n",
-             i, &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
+             i, (intptr_t) &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
     }
     print_method_handle(mh);
   }
