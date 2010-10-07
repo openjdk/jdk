@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,9 +122,6 @@ public class CorbaClientRequestDispatcherImpl
     implements
         ClientRequestDispatcher
 {
-    // Used for locking
-    private Object lock = new Object();
-
     public OutputObject beginRequest(Object self, String opName,
                                      boolean isOneWay, ContactInfo contactInfo)
     {
@@ -151,7 +148,8 @@ public class CorbaClientRequestDispatcherImpl
 
         // This locking is done so that multiple connections are not created
         // for the same endpoint
-        synchronized (lock) {
+        //6929137 - Synchronized on contactInfo to avoid blocking across multiple endpoints
+        synchronized (contactInfo) {
             if (contactInfo.isConnectionBased()) {
                 if (contactInfo.shouldCacheConnection()) {
                     connection = (CorbaConnection)
@@ -256,7 +254,7 @@ public class CorbaClientRequestDispatcherImpl
         registerWaiter(messageMediator);
 
         // Do connection reclaim now
-        synchronized (lock) {
+        synchronized (contactInfo) {
             if (contactInfo.isConnectionBased()) {
                 if (contactInfo.shouldCacheConnection()) {
                     OutboundConnectionCache connectionCache =
