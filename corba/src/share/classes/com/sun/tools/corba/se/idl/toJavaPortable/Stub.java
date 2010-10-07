@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,17 +344,26 @@ public class Stub implements AuxGen
     stream.println ("     String str = s.readUTF ();");
     stream.println ("     String[] args = null;");
     stream.println ("     java.util.Properties props = null;");
-    stream.println ("     org.omg.CORBA.Object obj = org.omg.CORBA.ORB.init (args, props).string_to_object (str);");
-    stream.println ("     org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl) obj)._get_delegate ();");
+    stream.println ("     org.omg.CORBA.ORB orb = org.omg.CORBA.ORB.init (args, props);");
+    stream.println ("   try {");
+    stream.println ("     org.omg.CORBA.Object obj = orb.string_to_object (str);");
     stream.println ("     _set_delegate (delegate);");
+    stream.println ("   } finally {");
+    stream.println ("     orb.destroy() ;");
+    stream.println ("   }");
     stream.println ("  }");
     stream.println ();
     stream.println ("  private void writeObject (java.io.ObjectOutputStream s) throws java.io.IOException");
     stream.println ("  {");
     stream.println ("     String[] args = null;");
     stream.println ("     java.util.Properties props = null;");
-    stream.println ("     String str = org.omg.CORBA.ORB.init (args, props).object_to_string (this);");
+    stream.println ("     org.omg.CORBA.ORB orb = org.omg.CORBA.ORB.init (args, props);");
+    stream.println ("   try {");
+    stream.println ("     String str = orb.object_to_string (this);");
     stream.println ("     s.writeUTF (str);");
+    stream.println ("   } finally {");
+    stream.println ("     orb.destroy() ;");
+    stream.println ("   }");
     stream.println ("  }");
   }
 
