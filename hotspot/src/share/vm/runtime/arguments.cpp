@@ -1663,7 +1663,8 @@ bool Arguments::check_stack_pages()
   bool status = true;
   status = status && verify_min_value(StackYellowPages, 1, "StackYellowPages");
   status = status && verify_min_value(StackRedPages, 1, "StackRedPages");
-  status = status && verify_min_value(StackShadowPages, 1, "StackShadowPages");
+  // greater stack shadow pages can't generate instruction to bang stack
+  status = status && verify_interval(StackShadowPages, 1, 50, "StackShadowPages");
   return status;
 }
 
