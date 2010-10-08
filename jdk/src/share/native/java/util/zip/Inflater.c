@@ -116,13 +116,27 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
     jbyte *in_buf;
     jbyte *out_buf;
     int ret;
+    /*
+     * Avoid excess copying.
+     *   zlib stream usually has a few bytes of overhead for header info
+     *   (depends on the underlying data)
+     *
+     *   (a) 5 bytes per 16KB
+     *   (b) 6 bytes for entire stream
+     *   (c) 4 bytes for gzip header
+     *   (d) 2 bytes for crc
+     *
+     * Use 20 bytes as the "safe cutoff" number.
+     */
+    jint in_len = MIN(this_len, len + 20);
+    jint consumed;
 
-    in_buf = (jbyte *) malloc(this_len);
+    in_buf = (jbyte *) malloc(in_len);
     if (in_buf == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
     }
-    (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
+    (*env)->GetByteArrayRegion(env, this_buf, this_off, in_len, in_buf);
 
     out_buf = (jbyte *) malloc(len);
     if (out_buf == 0) {
@@ -133,7 +147,7 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
 
     strm->next_in  = (Bytef *) in_buf;
     strm->next_out = (Bytef *) out_buf;
-    strm->avail_in  = this_len;
+    strm->avail_in  = in_len;
     strm->avail_out = len;
     ret = inflate(strm, Z_PARTIAL_FLUSH);
 
@@ -148,16 +162,16 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
         (*env)->SetBooleanField(env, this, finishedID, JNI_TRUE);
         /* fall through */
     case Z_OK:
-        this_off += this_len - strm->avail_in;
-        (*env)->SetIntField(env, this, offID, this_off);
-        (*env)->SetIntField(env, this, lenID, strm->avail_in);
+        consumed = in_len - strm->avail_in;
+        (*env)->SetIntField(env, this, offID, this_off + consumed);
+        (*env)->SetIntField(env, this, lenID, this_len - consumed);
         return len - strm->avail_out;
     case Z_NEED_DICT:
         (*env)->SetBooleanField(env, this, needDictID, JNI_TRUE);
         /* Might have consumed some input here! */
-        this_off += this_len - strm->avail_in;
-        (*env)->SetIntField(env, this, offID, this_off);
-        (*env)->SetIntField(env, this, lenID, strm->avail_in);
+        consumed = in_len - strm->avail_in;
+        (*env)->SetIntField(env, this, offID, this_off + consumed);
+        (*env)->SetIntField(env, this, lenID, this_len - consumed);
         return 0;
     case Z_BUF_ERROR:
         return 0;
