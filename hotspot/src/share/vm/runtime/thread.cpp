@@ -1645,7 +1645,29 @@ void JavaThread::flush_barrier_queues() {
   satb_mark_queue().flush();
   dirty_card_queue().flush();
 }
-#endif
+
+void JavaThread::initialize_queues() {
+  assert(!SafepointSynchronize::is_at_safepoint(),
+         "we should not be at a safepoint");
+
+  ObjPtrQueue& satb_queue = satb_mark_queue();
+  SATBMarkQueueSet& satb_queue_set = satb_mark_queue_set();
+  // The SATB queue should have been constructed with its active
+  // field set to false.
+  assert(!satb_queue.is_active(), "SATB queue should not be active");
+  assert(satb_queue.is_empty(), "SATB queue should be empty");
+  // If we are creating the thread during a marking cycle, we should
+  // set the active field of the SATB queue to true.
+  if (satb_queue_set.is_active()) {
+    satb_queue.set_active(true);
+  }
+
+  DirtyCardQueue& dirty_queue = dirty_card_queue();
+  // The dirty card queue should have been constructed with its
+  // active field set to true.
+  assert(dirty_queue.is_active(), "dirty card queue should be active");
+}
+#endif // !SERIALGC
 
 void JavaThread::cleanup_failed_attach_current_thread() {
   if (get_thread_profiler() != NULL) {
@@ -3627,6 +3649,10 @@ jboolean Threads::is_supported_jni_version(jint version) {
 void Threads::add(JavaThread* p, bool force_daemon) {
   // The threads lock must be owned at this point
   assert_locked_or_safepoint(Threads_lock);
+
+  // See the comment for this method in thread.hpp for its purpose and
+  // why it is called here.
+  p->initialize_queues();
   p->set_next(_thread_list);
   _thread_list = p;
   _number_of_threads++;

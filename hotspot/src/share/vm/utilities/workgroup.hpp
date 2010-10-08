@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ class GangWorker;
 class YieldingFlexibleGangWorker;
 class YieldingFlexibleGangTask;
 class WorkData;
+class AbstractWorkGang;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
@@ -37,6 +38,13 @@ public:
   // The abstract work method.
   // The argument tells you which member of the gang you are.
   virtual void work(int i) = 0;
+
+  // This method configures the task for proper termination.
+  // Some tasks do not have any requirements on termination
+  // and may inherit this method that does nothing.  Some
+  // tasks do some coordination on termination and override
+  // this method to implement that coordination.
+  virtual void set_for_termination(int active_workers) {};
 
   // Debugging accessor for the name.
   const char* name() const PRODUCT_RETURN_(return NULL;);
@@ -64,6 +72,18 @@ protected:
   virtual ~AbstractGangTask() { }
 };
 
+class AbstractGangTaskWOopQueues : public AbstractGangTask {
+  OopTaskQueueSet*       _queues;
+  ParallelTaskTerminator _terminator;
+ public:
+  AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues) :
+    AbstractGangTask(name), _queues(queues), _terminator(0, _queues) {}
+  ParallelTaskTerminator* terminator() { return &_terminator; }
+  virtual void set_for_termination(int active_workers) {
+    terminator()->reset_for_reuse(active_workers);
+  }
+  OopTaskQueueSet* queues() { return _queues; }
+};
 
 // Class AbstractWorkGang:
 // An abstract class representing a gang of workers.
@@ -112,6 +132,9 @@ public:
     return _monitor;
   }
   int total_workers() const {
+    return _total_workers;
+  }
+  virtual int active_workers() const {
     return _total_workers;
   }
   bool terminate() const {
@@ -199,6 +222,13 @@ public:
            bool are_GC_task_threads, bool are_ConcurrentGC_threads);
   // Run a task, returns when the task is done (or terminated).
   virtual void run_task(AbstractGangTask* task);
+  void run_task(AbstractGangTask* task, uint no_of_parallel_workers);
+  // Allocate a worker and return a pointer to it.
+  virtual GangWorker* allocate_worker(int which);
+  // Initialize workers in the gang.  Return true if initialization
+  // succeeded. The type of the worker can be overridden in a derived
+  // class with the appropriate implementation of allocate_worker().
+  bool initialize_workers();
 };
 
 // Class GangWorker:
@@ -225,6 +255,34 @@ protected:
 public:
   AbstractWorkGang* gang() const { return _gang; }
 };
+
+class FlexibleWorkGang: public WorkGang {
+ protected:
+  int _active_workers;
+ public:
+  // Constructor and destructor.
+  FlexibleWorkGang(const char* name, int workers,
+                   bool are_GC_task_threads,
+                   bool  are_ConcurrentGC_threads) :
+    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads) {
+    _active_workers = ParallelGCThreads;
+  };
+  // Accessors for fields
+  virtual int active_workers() const { return _active_workers; }
+  void set_active_workers(int v) { _active_workers = v; }
+};
+
+// Work gangs in garbage collectors: 2009-06-10
+//
+// SharedHeap - work gang for stop-the-world parallel collection.
+//   Used by
+//     ParNewGeneration
+//     CMSParRemarkTask
+//     CMSRefProcTaskExecutor
+//     G1CollectedHeap
+//     G1ParFinalCountTask
+// ConcurrentMark
+// CMSCollector
 
 // A class that acts as a synchronisation barrier. Workers enter
 // the barrier and must wait until all other workers have entered
@@ -271,7 +329,7 @@ class SubTasksDone: public CHeapObj {
   int _n_threads;
   jint _threads_completed;
 #ifdef ASSERT
-  jint _claimed;
+  volatile jint _claimed;
 #endif
 
   // Set all tasks to unclaimed.
@@ -286,9 +344,10 @@ public:
   // True iff the object is in a valid state.
   bool valid();
 
-  // Set the number of parallel threads doing the tasks to "t".  Can only
+  // Get/set the number of parallel threads doing the tasks to "t".  Can only
   // be called before tasks start or after they are complete.
-  void set_par_threads(int t);
+  int n_threads() { return _n_threads; }
+  void set_n_threads(int t);
 
   // Returns "false" if the task "t" is unclaimed, and ensures that task is
   // claimed.  The task "t" is required to be within the range of "this".
@@ -315,13 +374,17 @@ class SequentialSubTasksDone : public StackObj {
 protected:
   jint _n_tasks;     // Total number of tasks available.
   jint _n_claimed;   // Number of tasks claimed.
+  // _n_threads is used to determine when a sub task is done.
+  // See comments on SubTasksDone::_n_threads
   jint _n_threads;   // Total number of parallel threads.
   jint _n_completed; // Number of completed threads.
 
   void clear();
 
 public:
-  SequentialSubTasksDone() { clear(); }
+  SequentialSubTasksDone() {
+    clear();
+  }
   ~SequentialSubTasksDone() {}
 
   // True iff the object is in a valid state.
@@ -330,11 +393,12 @@ public:
   // number of tasks
   jint n_tasks() const { return _n_tasks; }
 
-  // Set the number of parallel threads doing the tasks to t.
+  // Get/set the number of parallel threads doing the tasks to t.
   // Should be called before the task starts but it is safe
   // to call this once a task is running provided that all
   // threads agree on the number of threads.
-  void set_par_threads(int t) { _n_threads = t; }
+  int n_threads() { return _n_threads; }
+  void set_n_threads(int t) { _n_threads = t; }
 
   // Set the number of tasks to be claimed to t. As above,
   // should be called before the tasks start but it is safe
