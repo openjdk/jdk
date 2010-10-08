@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,14 @@ abstract class Handshaker {
     // the currently active protocol version during a renegotiation
     ProtocolVersion     activeProtocolVersion;
 
+    // security parameters for secure renegotiation.
+    boolean             secureRenegotiation;
+    byte[]              clientVerifyData;
+    byte[]              serverVerifyData;
+
+    // is it an initial negotiation  or a renegotiation?
+    boolean                     isInitialHandshake;
+
     // list of enabled protocols
     ProtocolList enabledProtocols;
 
@@ -128,31 +136,66 @@ abstract class Handshaker {
     static final Debug debug = Debug.getInstance("ssl");
 
     // By default, disable the unsafe legacy session renegotiation
-    static final boolean renegotiable = Debug.getBooleanProperty(
+    static final boolean allowUnsafeRenegotiation = Debug.getBooleanProperty(
                     "sun.security.ssl.allowUnsafeRenegotiation", false);
+
+    // For maximum interoperability and backward compatibility, RFC 5746
+    // allows server (or client) to accept ClientHello (or ServerHello)
+    // message without the secure renegotiation_info extension or SCSV.
+    //
+    // For maximum security, RFC 5746 also allows server (or client) to
+    // reject such message with a fatal "handshake_failure" alert.
+    //
+    // By default, allow such legacy hello messages.
+    static final boolean allowLegacyHelloMessages = Debug.getBooleanProperty(
+                    "sun.security.ssl.allowLegacyHelloMessages", true);
 
     // need to dispose the object when it is invalidated
     boolean invalidated;
 
     Handshaker(SSLSocketImpl c, SSLContextImpl context,
             ProtocolList enabledProtocols, boolean needCertVerify,
-            boolean isClient) {
+            boolean isClient, ProtocolVersion activeProtocolVersion,
+            boolean isInitialHandshake, boolean secureRenegotiation,
+            byte[] clientVerifyData, byte[] serverVerifyData) {
         this.conn = c;
-        init(context, enabledProtocols, needCertVerify, isClient);
+        init(context, enabledProtocols, needCertVerify, isClient,
+            activeProtocolVersion, isInitialHandshake, secureRenegotiation,
+            clientVerifyData, serverVerifyData);
     }
 
     Handshaker(SSLEngineImpl engine, SSLContextImpl context,
             ProtocolList enabledProtocols, boolean needCertVerify,
-            boolean isClient) {
+            boolean isClient, ProtocolVersion activeProtocolVersion,
+            boolean isInitialHandshake, boolean secureRenegotiation,
+            byte[] clientVerifyData, byte[] serverVerifyData) {
         this.engine = engine;
-        init(context, enabledProtocols, needCertVerify, isClient);
+        init(context, enabledProtocols, needCertVerify, isClient,
+            activeProtocolVersion, isInitialHandshake, secureRenegotiation,
+            clientVerifyData, serverVerifyData);
     }
 
     private void init(SSLContextImpl context, ProtocolList enabledProtocols,
-            boolean needCertVerify, boolean isClient) {
+            boolean needCertVerify, boolean isClient,
+            ProtocolVersion activeProtocolVersion,
+            boolean isInitialHandshake, boolean secureRenegotiation,
+            byte[] clientVerifyData, byte[] serverVerifyData) {
+
+        if (debug != null && Debug.isOn("handshake")) {
+            System.out.println(
+                "Allow unsafe renegotiation: " + allowUnsafeRenegotiation +
+                "\nAllow legacy hello messages: " + allowLegacyHelloMessages +
+                "\nIs initial handshake: " + isInitialHandshake +
+                "\nIs secure renegotiation: " + secureRenegotiation);
+        }
 
         this.sslContext = context;
         this.isClient = isClient;
+        this.activeProtocolVersion = activeProtocolVersion;
+        this.isInitialHandshake = isInitialHandshake;
+        this.secureRenegotiation = secureRenegotiation;
+        this.clientVerifyData = clientVerifyData;
+        this.serverVerifyData = serverVerifyData;
         enableNewSession = true;
         invalidated = false;
 
@@ -353,8 +396,8 @@ abstract class Handshaker {
      * changed due to change in JCE providers since it was enabled).
      * Does not check if the required server certificates are available.
      */
-    boolean isEnabled(CipherSuite s) {
-        return enabledCipherSuites.contains(s) && s.isAvailable();
+    boolean isNegotiable(CipherSuite s) {
+        return enabledCipherSuites.contains(s) && s.isNegotiable();
     }
 
     /**
@@ -456,6 +499,27 @@ abstract class Handshaker {
      */
     SSLSessionImpl getSession() {
         return session;
+    }
+
+    /*
+     * Returns true if renegotiation is in use for this connection.
+     */
+    boolean isSecureRenegotiation() {
+        return secureRenegotiation;
+    }
+
+    /*
+     * Returns the verify_data from the Finished message sent by the client.
+     */
+    byte[] getClientVerifyData() {
+        return clientVerifyData;
+    }
+
+    /*
+     * Returns the verify_data from the Finished message sent by the server.
+     */
+    byte[] getServerVerifyData() {
+        return serverVerifyData;
     }
 
     /*
