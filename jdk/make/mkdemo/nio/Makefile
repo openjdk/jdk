@@ -24,38 +24,16 @@
 #
 
 #
-# Makefile for building all the demos
+# Makefile for building the jfc demos
 #
 
-BUILDDIR = ..
+BUILDDIR = ../..
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS            = jni nio
-SUBDIRS_desktop    = applets jfc
-SUBDIRS_management = management
-SUBDIRS_misc       = scripting
-SUBDIRS_tools      = jpda jvmti
-
+SUBDIRS = zipfs
 include $(BUILDDIR)/common/Subdirs.gmk
 
-all build:: nbproject
+all build clean clobber::
 	$(SUBDIRS-loop)
-
-nbproject:
-	$(RM) -r $(DEMODIR)/nbproject
-	$(MKDIR) -p $(DEMODIR)
-	( $(CD) $(SHARE_SRC)/demo && $(TAR) -cf - \
-	  `$(FIND) nbproject $(SCM_DIRS_prune) -o -type f -print` ) | \
-	  ( $(CD) $(DEMODIR) && $(TAR) -xf - )
-ifndef OPENJDK
-	( $(CD) $(CLOSED_SHARE_SRC)/demo && $(TAR) -cf - \
-	  `$(FIND) nbproject $(SCM_DIRS_prune) -o -type f -print` ) | \
-	  ( $(CD) $(DEMODIR) && $(TAR) -xf - )
-endif
-
-clean clobber::
-	$(SUBDIRS-loop)
-	$(RM) -r $(DEMODIR)
-	$(RM) -r $(DEMOCLASSDIR)
 
