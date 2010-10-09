@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,21 @@
 #
 
 #
-# Makefile for building all the demos
+# Makefile to build the ZipFileSystem demo.
 #
 
-BUILDDIR = ..
-PRODUCT = demos
+BUILDDIR = ../../..
+PRODUCT = demo/zipfs
+DEMONAME = zipfs
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS            = jni nio
-SUBDIRS_desktop    = applets jfc
-SUBDIRS_management = management
-SUBDIRS_misc       = scripting
-SUBDIRS_tools      = jpda jvmti
+DEMO_ROOT       = $(SHARE_SRC)/demo/nio/$(DEMONAME)
+DEMO_TOPFILES   = ./README.txt
+DEMO_SRCDIR     = $(DEMO_ROOT)
+DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 
-include $(BUILDDIR)/common/Subdirs.gmk
-
-all build:: nbproject
-	$(SUBDIRS-loop)
-
-nbproject:
-	$(RM) -r $(DEMODIR)/nbproject
-	$(MKDIR) -p $(DEMODIR)
-	( $(CD) $(SHARE_SRC)/demo && $(TAR) -cf - \
-	  `$(FIND) nbproject $(SCM_DIRS_prune) -o -type f -print` ) | \
-	  ( $(CD) $(DEMODIR) && $(TAR) -xf - )
-ifndef OPENJDK
-	( $(CD) $(CLOSED_SHARE_SRC)/demo && $(TAR) -cf - \
-	  `$(FIND) nbproject $(SCM_DIRS_prune) -o -type f -print` ) | \
-	  ( $(CD) $(DEMODIR) && $(TAR) -xf - )
-endif
-
-clean clobber::
-	$(SUBDIRS-loop)
-	$(RM) -r $(DEMODIR)
-	$(RM) -r $(DEMOCLASSDIR)
+#
+# Demo jar building rules.
+#
+include $(BUILDDIR)/common/Demo.gmk
 
