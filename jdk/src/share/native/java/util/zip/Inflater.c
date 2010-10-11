@@ -38,6 +38,8 @@
 #include "zlib.h"
 #include "java_util_zip_Inflater.h"
 
+#define MIN2(x, y)  ((x) < (y) ? (x) : (y))
+
 #define ThrowDataFormatException(env, msg) \
         JNU_ThrowByName(env, "java/util/zip/DataFormatException", msg)
 
@@ -128,7 +130,7 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
      *
      * Use 20 bytes as the "safe cutoff" number.
      */
-    jint in_len = MIN(this_len, len + 20);
+    jint in_len = MIN2(this_len, len + 20);
     jint consumed;
 
     in_buf = (jbyte *) malloc(in_len);
