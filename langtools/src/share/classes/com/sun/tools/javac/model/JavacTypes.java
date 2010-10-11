@@ -37,7 +37,7 @@ import com.sun.tools.javac.util.*;
 /**
  * Utility methods for operating on types.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
@@ -103,7 +103,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public boolean contains(TypeMirror t1, TypeMirror t2) {
         validateTypeNotIn(t1, EXEC_OR_PKG);
         validateTypeNotIn(t2, EXEC_OR_PKG);
-        return ((Type) t1).contains((Type) t2);
+        return types.containsType((Type) t1, (Type) t2);
     }
 
     public boolean isSubsignature(ExecutableType m1, ExecutableType m2) {

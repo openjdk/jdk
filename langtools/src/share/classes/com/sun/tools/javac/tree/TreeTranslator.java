@@ -37,8 +37,8 @@ import com.sun.tools.javac.tree.JCTree.*;
  *  do some interesting work. The translator class itself takes care of all
  *  navigational aspects.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -212,6 +212,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitTry(JCTry tree) {
+        tree.resources = translate(tree.resources);
         tree.body = translate(tree.body);
         tree.catchers = translateCatchers(tree.catchers);
         tree.finalizer = translate(tree.finalizer);

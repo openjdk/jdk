@@ -31,18 +31,16 @@ import java.net.*;
 import java.io.*;
 
 public class Timeout {
-
-    public static ServerSocket sock;
-
     public static void main(String[] args) throws Exception {
         boolean success = false;
+        ServerSocket sock = new ServerSocket(0);
         try {
-            ServerSocket sock;
-            sock = new ServerSocket(2333);
             sock.setSoTimeout(2);
             sock.accept();
         } catch (InterruptedIOException e) {
             success = true;
+        } finally {
+            sock.close();
         }
         if (!success)
             throw new RuntimeException("Socket timeout failure.");

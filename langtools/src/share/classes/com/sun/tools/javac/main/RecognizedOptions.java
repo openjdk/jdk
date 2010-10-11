@@ -49,7 +49,7 @@ import static com.sun.tools.javac.main.OptionName.*;
 /**
  * TODO: describe com.sun.tools.javac.main.RecognizedOptions
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
@@ -160,6 +160,7 @@ public class RecognizedOptions {
         XMAXERRS,
         XMAXWARNS,
         XSTDOUT,
+        XPKGINFO,
         XPRINT,
         XPRINTROUNDS,
         XPRINTPROCESSORINFO,
@@ -217,6 +218,7 @@ public class RecognizedOptions {
         XMAXERRS,
         XMAXWARNS,
         // XSTDOUT,
+        XPKGINFO,
         XPRINT,
         XPRINTROUNDS,
         XPRINTPROCESSORINFO,
@@ -532,6 +534,9 @@ public class RecognizedOptions {
         new XOption(XPREFER,                                    "opt.prefer",
                 Option.ChoiceKind.ONEOF, "source", "newer"),
 
+        new XOption(XPKGINFO,                                   "opt.pkginfo",
+                Option.ChoiceKind.ONEOF, "always", "legacy", "nonempty"),
+
         /* -O is a no-op, accepted for backward compatibility. */
         new HiddenOption(O),
 
@@ -596,6 +601,16 @@ public class RecognizedOptions {
             }
         },
     };
+    }
+
+    public enum PkgInfo {
+        ALWAYS, LEGACY, NONEMPTY;
+        public static PkgInfo get(Options options) {
+            String v = options.get(XPKGINFO);
+            return (v == null
+                    ? PkgInfo.LEGACY
+                    : PkgInfo.valueOf(v.toUpperCase()));
+        }
     }
 
     private static Map<String,Boolean> getXLintChoices() {

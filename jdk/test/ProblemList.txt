@@ -165,6 +165,12 @@ java/awt/Mouse/MouseModifiersUnitTest/ExtraButtonDrag.java	generic-all
 #  very small tests and could greatly benefit from a samevm test run.
 #  So a large batch of beans tests are currently run with othervm mode.
 
+# Filed 6986807
+java/beans/Introspector/TestTypeResolver.java   		generic-all
+
+# Filed 6986813
+java/beans/Introspector/memory/Test4508780.java			generic-all
+
 # Linux, some kind of problems with X11 display
 java/beans/PropertyChangeSupport/Test4682386.java		generic-all
 java/beans/PropertyChangeSupport/TestSynchronization.java	generic-all
@@ -200,9 +206,6 @@ java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
 
 # Windows X64, RuntimeException: MyThread expected to have RUNNABLE but got WAITING
 java/lang/Thread/ThreadStateTest.java				generic-all
-
-# Timeout on windows 64bit 
-java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 ############################################################################
 
@@ -295,9 +298,6 @@ java/math/BigInteger/ModPow65537.java			 	generic-all
 
 # jdk_misc
 
-# On Windows com.sun.java.swing.plaf.gtk does not exist, always fails there
-com/sun/java/swing/plaf/gtk/Test6635110.java		 	windows-all
-
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
@@ -368,139 +368,6 @@ javax/print/attribute/MediaMappingsTest.java 			generic-all
 ############################################################################
 
 # jdk_net
-
-# Suspect many of these tests auffer from using fixed ports, no concrete 
-#   evidence.
-
-# Times out on Windows X64
-sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java generic-all
-
-# Dies on Solaris 10 sparc and sparcv9, Linux  -ea -esa with 
-#   Interrupted or IO exception, maybe writing to non-unique named file?
-com/sun/net/httpserver/bugs/B6373555.java			generic-all
-
-# Fails on OpenSolaris, times out
-java/net/MulticastSocket/SetOutgoingIf.java			generic-all
-
-# Timed out on Solaris 10 X86.
-com/sun/net/httpserver/Test3.java				generic-all
-
-# Exception in test on windows
-com/sun/net/httpserver/bugs/B6373555.java		 	windows-all
-
-# One of these pollutes the samevm on Linux, too many open files, kills jtreg
-com/sun/net/httpserver/bugs/B6339483.java			generic-all
-com/sun/net/httpserver/bugs/B6341616.java			generic-all
-
-# Suspects in cascading samevm problem, solaris 11 i586 (needs othervm?)
-#   Suspect use of setHttps*()?
-com/sun/net/httpserver/SelCacheTest.java			generic-all
-com/sun/net/httpserver/Test1.java				generic-all
-com/sun/net/httpserver/Test12.java				generic-all
-com/sun/net/httpserver/Test13.java				generic-all
-com/sun/net/httpserver/Test6a.java				generic-all
-com/sun/net/httpserver/Test7a.java				generic-all
-com/sun/net/httpserver/Test8a.java				generic-all
-com/sun/net/httpserver/Test9.java				generic-all
-com/sun/net/httpserver/Test9a.java				generic-all
-
-# 10,000 connections, fails on Linux and makes tests&jtreg fail with samevm
-com/sun/net/httpserver/bugs/B6361557.java			generic-all
-
-# Address already in use with samevm? Always? Solaris sparc, probably ports
-java/net/Authenticator/B4933582.sh				generic-all
-java/net/DatagramSocket/SendSize.java				generic-all
-
-# Solaris 11: exception wrong address???
-java/net/Inet6Address/B6558853.java				generic-all
-
-# Not closing stream on file i6a1, windows samevm problem
-java/net/Inet6Address/serialize/Serialize.java			generic-all
-
-# Linux x64 fails "network unreachable"?
-java/net/ipv6tests/TcpTest.java 			 	generic-all
-
-# Linux i586, fails with unexpected output
-java/net/MulticastSocket/NoLoopbackPackets.java 	 	linux-i586
-
-# Address already in use
-java/net/DatagramSocket/DatagramTimeout.java			generic-all
-
-# Fails on windows, takes too long and fails
-#   Solaris 10 sparcv9, samevm, java.lang.Exception: Takes too long. Dead lock
-java/net/Socket/DeadlockTest.java				generic-all
-
-# Linux i586 address already in use or connection error, samevm issues
-java/net/Socket/AccurateTimeout.java			 	generic-all
-java/net/Socket/asyncClose/BrokenPipe.java		 	generic-all
-java/net/Socket/CloseAvailable.java			 	generic-all
-
-# Linux X64 address already in use, samevm issues
-java/net/Socket/LingerTest.java 			 	generic-all
-java/net/Socket/LinkLocal.java				 	generic-all
-java/net/Socket/NullHost.java				 	generic-all
-java/net/Socket/ProxyCons.java				 	generic-all
-java/net/Socket/ReadTimeout.java			 	generic-all
-
-# Linux X64 address already in use, samevm issues
-java/net/Socket/SetReceiveBufferSize.java		 	generic-all
-
-# Linux i586 address already in use or connection error, samevm issues
-java/net/Socket/setReuseAddress/Basic.java		 	generic-all
-java/net/Socket/setReuseAddress/Restart.java		 	generic-all
-
-# Linux X64 address already in use, samevm issues
-java/net/Socket/SetSoLinger.java			 	generic-all
-
-# Address already in use, windows samevm
-java/net/Socket/Timeout.java					generic-all
-
-# Linux X64 address already in use, samevm issues
-java/net/Socket/ShutdownBoth.java			 	generic-all
-java/net/Socket/SoTimeout.java				 	generic-all
-java/net/Socket/TestClose.java				 	generic-all
-java/net/Socket/UrgentDataTest.java			 	generic-all
-java/net/SocketInputStream/SocketClosedException.java	 	generic-all
-java/net/SocketInputStream/SocketTimeout.java		 	generic-all
-
-# Linux i586, address already in use or timeout, samevm issues
-java/net/URLConnection/DisconnectAfterEOF.java		 	generic-all
-java/net/URLConnection/HandleContentTypeWithAttrs.java	 	generic-all
-java/net/URLConnection/Responses.java			 	generic-all
-java/net/URLConnection/TimeoutTest.java 		 	generic-all
-java/net/URLConnection/ZeroContentLength.java		 	generic-all
-
-# Solaris 11 i586 fails with samevm, not sure why
-java/net/ResponseCache/B6181108.java				generic-all
-java/net/ResponseCache/ResponseCacheTest.java			generic-all
-java/net/URL/GetContent.java					generic-all
-java/net/URLConnection/HttpContinueStackOverflow.java		generic-all
-java/net/URLConnection/Redirect307Test.java			generic-all
-java/net/URLConnection/RedirectLimit.java			generic-all
-java/net/URLConnection/ResendPostBody.java			generic-all
-java/net/URL/OpenStream.java					generic-all
-java/net/URLClassLoader/ClassLoad.java				generic-all
-java/net/URLConnection/SetIfModifiedSince.java			generic-all
-java/net/URLConnection/URLConnectionHeaders.java		generic-all
-
-# Linux i586 Connection refused or address already in use, samevm issues
-sun/net/ftp/B6427768.java				 	generic-all
-sun/net/ftp/FtpGetContent.java				 	generic-all
-sun/net/ftp/FtpURL.java 				 	generic-all
-
-# Failed on solaris 10 i586, Exception: should have gotten HttpRetryException?
-sun/net/www/http/ChunkedOutputStream/Test.java			generic-all
-
-# Trouble cleaning up threads in samevm mode on solaris 11 i586
-sun/net/www/http/HttpClient/ProxyTest.java			generic-all
-sun/net/www/http/ChunkedInputStream/ChunkedEncodingTest.java	generic-all
-sun/net/www/http/ChunkedInputStream/ChunkedEncodingWithProgressMonitorTest.java	generic-all
-sun/net/www/http/HttpClient/B6726695.java			generic-all
-sun/net/www/http/HttpClient/MultiThreadTest.java		generic-all
-sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java	generic-all
-
-# Connection refused, windows samevm
-sun/net/www/protocol/http/DigestTest.java			generic-all
 
 ############################################################################
 
@@ -631,6 +498,9 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 ############################################################################
 
 # jdk_security
+
+# Filed 6986868
+sun/security/tools/jarsigner/crl.sh				generic-all
 
 # Filed 6951285, not sure how often this fails, last was Linux 64bit Fedora 9
 sun/security/krb5/auto/MaxRetries.java				generic-all
@@ -811,9 +681,6 @@ sun/security/tools/keytool/selfissued.sh		 	solaris-all
 
 # jdk_swing (not using samevm)
 
-# Fails on solaris 10 sparc, throws RuntimeException that just says "failed"
-javax/swing/JLabel/6501991/bug6501991.java			generic-all
-
 # Fails on solaris 11 i586, with othervm
 javax/swing/JFileChooser/6570445/bug6570445.java		generic-all
 javax/swing/JFileChooser/6738668/bug6738668.java		generic-all
@@ -831,9 +698,21 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 
 # jdk_tools
 
+# Filed 6952105
+com/sun/jdi/SuspendThreadTest.java				generic-all
+
+# Filed 6986875
+sun/tools/jps/jps-Vvml.sh					generic-all
+
+# Filed 6979016
+sun/tools/jconsole/ResourceCheckTest.sh				generic-all
+
 ############################################################################
 
 # jdk_util
+
+# Filed 6933803
+java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all
 
 # Fails with assertion error on windows
 #   11 separate stacktraces created... file reuse problem?

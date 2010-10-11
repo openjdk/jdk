@@ -270,7 +270,7 @@ psParallelCompact.cpp			parallelScavengeHeap.inline.hpp
 psParallelCompact.cpp			pcTasks.hpp
 psParallelCompact.cpp			psMarkSweep.hpp
 psParallelCompact.cpp			psMarkSweepDecorator.hpp
-psParallelCompact.cpp			psCompactionManager.hpp
+psParallelCompact.cpp			psCompactionManager.inline.hpp
 psParallelCompact.cpp                   psPromotionManager.inline.hpp
 psParallelCompact.cpp			psOldGen.hpp
 psParallelCompact.cpp			psParallelCompact.hpp
@@ -330,7 +330,6 @@ psPromotionManager.cpp                  psPromotionManager.inline.hpp
 psPromotionManager.cpp                  psScavenge.inline.hpp
 
 psPromotionManager.hpp                  allocation.hpp
-psPromotionManager.hpp                  prefetchQueue.hpp
 psPromotionManager.hpp                  psPromotionLAB.hpp
 psPromotionManager.hpp                  taskqueue.hpp
 

@@ -83,6 +83,18 @@ IRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* thread, bool wide))
   }
 IRT_END
 
+IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::Code bytecode)) {
+  assert(bytecode == Bytecodes::_fast_aldc ||
+         bytecode == Bytecodes::_fast_aldc_w, "wrong bc");
+  ResourceMark rm(thread);
+  methodHandle m (thread, method(thread));
+  Bytecode_loadconstant* ldc = Bytecode_loadconstant_at(m, bci(thread));
+  oop result = ldc->resolve_constant(THREAD);
+  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc->cache_index()));
+  assert(result == cpce->f1(), "expected result for assembly code");
+}
+IRT_END
+
 
 //------------------------------------------------------------------------------------------------------------------------
 // Allocation
@@ -188,6 +200,7 @@ IRT_END
 void InterpreterRuntime::note_trap(JavaThread* thread, int reason, TRAPS) {
   assert(ProfileTraps, "call me only if profiling");
   methodHandle trap_method(thread, method(thread));
+
   if (trap_method.not_null()) {
     methodDataHandle trap_mdo(thread, trap_method->method_data());
     if (trap_mdo.is_null()) {
@@ -328,7 +341,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   typeArrayHandle    h_extable  (thread, h_method->exception_table());
   bool               should_repeat;
   int                handler_bci;
-  int                current_bci = bcp(thread) - h_method->code_base();
+  int                current_bci = bci(thread);
 
   // Need to do this check first since when _do_not_unlock_if_synchronized
   // is set, we don't want to trigger any classloading which may make calls
@@ -615,8 +628,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
-    int bci = m->bci_from(bcp(thread));
-    Bytecode_invoke* call = Bytecode_invoke_at(m, bci);
+    Bytecode_invoke* call = Bytecode_invoke_at(m, bci(thread));
     symbolHandle signature (thread, call->signature());
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
@@ -691,10 +703,6 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
 
   methodHandle caller_method(thread, method(thread));
 
-  // first find the bootstrap method
-  KlassHandle caller_klass(thread, caller_method->method_holder());
-  Handle bootm = SystemDictionary::find_bootstrap_method(caller_klass, CHECK);
-
   constantPoolHandle pool(thread, caller_method->constants());
   pool->set_invokedynamic();    // mark header to flag active call sites
 
@@ -715,7 +723,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     CallInfo info;
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  site_index, bytecode, CHECK);
-    // The main entry corresponds to a JVM_CONSTANT_NameAndType, and serves
+    // The main entry corresponds to a JVM_CONSTANT_InvokeDynamic, and serves
     // as a common reference point for all invokedynamic call sites with
     // that exact call descriptor.  We will link it in the CP cache exactly
     // as if it were an invokevirtual of MethodHandle.invoke.
@@ -723,22 +731,29 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
       bytecode,
       info.resolved_method(),
       info.vtable_index());
-    assert(pool->cache()->entry_at(main_index)->is_vfinal(), "f2 must be a methodOop");
   }
 
   // The method (f2 entry) of the main entry is the MH.invoke for the
   // invokedynamic target call signature.
-  intptr_t f2_value = pool->cache()->entry_at(main_index)->f2();
-  methodHandle signature_invoker(THREAD, (methodOop) f2_value);
+  oop f1_value = pool->cache()->entry_at(main_index)->f1();
+  methodHandle signature_invoker(THREAD, (methodOop) f1_value);
   assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
+
+  Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
+                                                         main_index, CHECK);
+  if (bootm.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
+              "no bootstrap method found for invokedynamic");
+  }
+
+  // Short circuit if CallSite has been bound already:
+  if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
+    return;
 
   symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
 
   Handle info;  // NYI: Other metadata from a new kind of CP entry.  (Annotations?)
-
-  // this is the index which gets stored on the CallSite object (as "callerPosition"):
-  int call_site_position = constantPoolCacheOopDesc::decode_secondary_index(site_index);
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,
@@ -763,43 +778,6 @@ IRT_END
 // Miscellaneous
 
 
-#ifndef PRODUCT
-static void trace_frequency_counter_overflow(methodHandle m, int branch_bci, int bci, address branch_bcp) {
-  if (TraceInvocationCounterOverflow) {
-    InvocationCounter* ic = m->invocation_counter();
-    InvocationCounter* bc = m->backedge_counter();
-    ResourceMark rm;
-    const char* msg =
-      branch_bcp == NULL
-      ? "comp-policy cntr ovfl @ %d in entry of "
-      : "comp-policy cntr ovfl @ %d in loop of ";
-    tty->print(msg, bci);
-    m->print_value();
-    tty->cr();
-    ic->print();
-    bc->print();
-    if (ProfileInterpreter) {
-      if (branch_bcp != NULL) {
-        methodDataOop mdo = m->method_data();
-        if (mdo != NULL) {
-          int count = mdo->bci_to_data(branch_bci)->as_JumpData()->taken();
-          tty->print_cr("back branch count = %d", count);
-        }
-      }
-    }
-  }
-}
-
-static void trace_osr_request(methodHandle method, nmethod* osr, int bci) {
-  if (TraceOnStackReplacement) {
-    ResourceMark rm;
-    tty->print(osr != NULL ? "Reused OSR entry for " : "Requesting OSR entry for ");
-    method->print_short_name(tty);
-    tty->print_cr(" at bci %d", bci);
-  }
-}
-#endif // !PRODUCT
-
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
   nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
   assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
@@ -812,7 +790,7 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
     frame fr = thread->last_frame();
     methodOop method =  fr.interpreter_frame_method();
     int bci = method->bci_from(fr.interpreter_frame_bcp());
-    nm = method->lookup_osr_nmethod_for(bci);
+    nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
   }
   return nm;
 }
@@ -826,74 +804,32 @@ IRT_ENTRY(nmethod*,
   frame fr = thread->last_frame();
   assert(fr.is_interpreted_frame(), "must come from interpreter");
   methodHandle method(thread, fr.interpreter_frame_method());
-  const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : 0;
-  const int bci = method->bci_from(fr.interpreter_frame_bcp());
-  NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci, branch_bcp);)
+  const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
+  const int bci = branch_bcp != NULL ? method->bci_from(fr.interpreter_frame_bcp()) : InvocationEntryBci;
 
-  if (JvmtiExport::can_post_interpreter_events()) {
-    if (thread->is_interp_only_mode()) {
-      // If certain JVMTI events (e.g. frame pop event) are requested then the
-      // thread is forced to remain in interpreted code. This is
-      // implemented partly by a check in the run_compiled_code
-      // section of the interpreter whether we should skip running
-      // compiled code, and partly by skipping OSR compiles for
-      // interpreted-only threads.
-      if (branch_bcp != NULL) {
-        CompilationPolicy::policy()->reset_counter_for_back_branch_event(method);
-        return NULL;
-      }
-    }
-  }
+  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, thread);
 
-  if (branch_bcp == NULL) {
-    // when code cache is full, compilation gets switched off, UseCompiler
-    // is set to false
-    if (!method->has_compiled_code() && UseCompiler) {
-      CompilationPolicy::policy()->method_invocation_event(method, CHECK_NULL);
-    } else {
-      // Force counter overflow on method entry, even if no compilation
-      // happened.  (The method_invocation_event call does this also.)
-      CompilationPolicy::policy()->reset_counter_for_invocation_event(method);
-    }
-    // compilation at an invocation overflow no longer goes and retries test for
-    // compiled method. We always run the loser of the race as interpreted.
-    // so return NULL
-    return NULL;
-  } else {
-    // counter overflow in a loop => try to do on-stack-replacement
-    nmethod* osr_nm = method->lookup_osr_nmethod_for(bci);
-    NOT_PRODUCT(trace_osr_request(method, osr_nm, bci);)
-    // when code cache is full, we should not compile any more...
-    if (osr_nm == NULL && UseCompiler) {
-      const int branch_bci = method->bci_from(branch_bcp);
-      CompilationPolicy::policy()->method_back_branch_event(method, branch_bci, bci, CHECK_NULL);
-      osr_nm = method->lookup_osr_nmethod_for(bci);
-    }
-    if (osr_nm == NULL) {
-      CompilationPolicy::policy()->reset_counter_for_back_branch_event(method);
-      return NULL;
-    } else {
-      // We may need to do on-stack replacement which requires that no
-      // monitors in the activation are biased because their
-      // BasicObjectLocks will need to migrate during OSR. Force
-      // unbiasing of all monitors in the activation now (even though
-      // the OSR nmethod might be invalidated) because we don't have a
-      // safepoint opportunity later once the migration begins.
-      if (UseBiasedLocking) {
-        ResourceMark rm;
-        GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-        for( BasicObjectLock *kptr = fr.interpreter_frame_monitor_end();
-             kptr < fr.interpreter_frame_monitor_begin();
-             kptr = fr.next_monitor_in_interpreter_frame(kptr) ) {
-          if( kptr->obj() != NULL ) {
-            objects_to_revoke->append(Handle(THREAD, kptr->obj()));
-          }
+  if (osr_nm != NULL) {
+    // We may need to do on-stack replacement which requires that no
+    // monitors in the activation are biased because their
+    // BasicObjectLocks will need to migrate during OSR. Force
+    // unbiasing of all monitors in the activation now (even though
+    // the OSR nmethod might be invalidated) because we don't have a
+    // safepoint opportunity later once the migration begins.
+    if (UseBiasedLocking) {
+      ResourceMark rm;
+      GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
+      for( BasicObjectLock *kptr = fr.interpreter_frame_monitor_end();
+           kptr < fr.interpreter_frame_monitor_begin();
+           kptr = fr.next_monitor_in_interpreter_frame(kptr) ) {
+        if( kptr->obj() != NULL ) {
+          objects_to_revoke->append(Handle(THREAD, kptr->obj()));
         }
-        BiasedLocking::revoke(objects_to_revoke);
       }
-      return osr_nm;
+      BiasedLocking::revoke(objects_to_revoke);
     }
   }
+  return osr_nm;
 IRT_END
 
 IRT_LEAF(jint, InterpreterRuntime::bcp_to_di(methodOopDesc* method, address cur_bcp))
@@ -1110,7 +1046,7 @@ address SignatureHandlerLibrary::set_handler_blob() {
   if (handler_blob == NULL) {
     return NULL;
   }
-  address handler = handler_blob->instructions_begin();
+  address handler = handler_blob->code_begin();
   _handler_blob = handler_blob;
   _handler = handler;
   return handler;
@@ -1126,7 +1062,7 @@ void SignatureHandlerLibrary::initialize() {
 
   BufferBlob* bb = BufferBlob::create("Signature Handler Temp Buffer",
                                       SignatureHandlerLibrary::buffer_size);
-  _buffer = bb->instructions_begin();
+  _buffer = bb->code_begin();
 
   _fingerprints = new(ResourceObj::C_HEAP)GrowableArray<uint64_t>(32, true);
   _handlers     = new(ResourceObj::C_HEAP)GrowableArray<address>(32, true);
@@ -1134,16 +1070,16 @@ void SignatureHandlerLibrary::initialize() {
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
   address handler   = _handler;
-  int     code_size = buffer->pure_code_size();
-  if (handler + code_size > _handler_blob->instructions_end()) {
+  int     insts_size = buffer->pure_insts_size();
+  if (handler + insts_size > _handler_blob->code_end()) {
     // get a new handler blob
     handler = set_handler_blob();
   }
   if (handler != NULL) {
-    memcpy(handler, buffer->code_begin(), code_size);
+    memcpy(handler, buffer->insts_begin(), insts_size);
     pd_set_handler(handler);
-    ICache::invalidate_range(handler, code_size);
-    _handler = handler + code_size;
+    ICache::invalidate_range(handler, insts_size);
+    _handler = handler + insts_size;
   }
   return handler;
 }
@@ -1182,8 +1118,8 @@ void SignatureHandlerLibrary::add(methodHandle method) {
                           (method->is_static() ? "static" : "receiver"),
                           method->name_and_sig_as_C_string(),
                           fingerprint,
-                          buffer.code_size());
-            Disassembler::decode(handler, handler + buffer.code_size());
+                          buffer.insts_size());
+            Disassembler::decode(handler, handler + buffer.insts_size());
 #ifndef PRODUCT
             tty->print_cr(" --- associated result handler ---");
             address rh_begin = Interpreter::result_handler(method()->result_type());
@@ -1257,7 +1193,7 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   Bytecode_invoke* invoke = Bytecode_invoke_at(mh, bci);
   ArgumentSizeComputer asc(invoke->signature());
   int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
-  Copy::conjoint_bytes(src_address, dest_address,
+  Copy::conjoint_jbytes(src_address, dest_address,
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
 #endif

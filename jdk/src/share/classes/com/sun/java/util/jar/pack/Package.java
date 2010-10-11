@@ -25,9 +25,9 @@
 
 package com.sun.java.util.jar.pack;
 
+import com.sun.java.util.jar.pack.Attribute.Layout;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.zip.*;
 import java.util.jar.*;
 import java.io.*;
 import com.sun.java.util.jar.pack.ConstantPool.*;
@@ -77,10 +77,11 @@ class Package implements Constants {
         cp = new ConstantPool.IndexGroup();
         classes.clear();
         files.clear();
+        BandStructure.nextSeqForDebug = 0;
     }
 
     int getPackageVersion() {
-        return (package_majver << 16) + (int)package_minver;
+        return (package_majver << 16) + package_minver;
     }
 
     // Special empty versions of Code and InnerClasses, used for markers.
@@ -89,7 +90,7 @@ class Package implements Constants {
     public static final Attribute.Layout attrSourceFileSpecial;
     public static final Map attrDefs;
     static {
-        HashMap ad = new HashMap(2);
+        HashMap<Layout, Attribute> ad = new HashMap<>(3);
         attrCodeEmpty = Attribute.define(ad, ATTR_CONTEXT_METHOD,
                                          "Code", "").layout();
         attrInnerClassesEmpty = Attribute.define(ad, ATTR_CONTEXT_CLASS,
@@ -159,9 +160,9 @@ class Package implements Constants {
         }
     }
 
-    ArrayList classes = new ArrayList();
+    ArrayList<Package.Class> classes = new ArrayList<>();
 
-    public List getClasses() {
+    public List<Package.Class> getClasses() {
         return classes;
     }
 
@@ -186,11 +187,11 @@ class Package implements Constants {
         ClassEntry[] interfaces;
 
         // Class parts
-        ArrayList fields;
-        ArrayList methods;
+        ArrayList<Field> fields;
+        ArrayList<Method> methods;
         //ArrayList attributes;  // in Attribute.Holder.this.attributes
         // Note that InnerClasses may be collected at the package level.
-        ArrayList innerClasses;
+        ArrayList<InnerClass> innerClasses;
 
         Class(int flags, ClassEntry thisClass, ClassEntry superClass, ClassEntry[] interfaces) {
             this.magic      = JAVA_MAGIC;
@@ -270,7 +271,7 @@ class Package implements Constants {
             if (a != olda) {
                 if (verbose > 2)
                     Utils.log.fine("recoding obvious SourceFile="+obvious);
-                List newAttrs = new ArrayList(getAttributes());
+                List<Attribute> newAttrs = new ArrayList<>(getAttributes());
                 int where = newAttrs.indexOf(olda);
                 newAttrs.set(where, a);
                 setAttributes(newAttrs);
@@ -295,12 +296,12 @@ class Package implements Constants {
         boolean hasInnerClasses() {
             return innerClasses != null;
         }
-        List getInnerClasses() {
+        List<InnerClass> getInnerClasses() {
             return innerClasses;
         }
 
-        public void setInnerClasses(Collection ics) {
-            innerClasses = (ics == null) ? null : new ArrayList(ics);
+        public void setInnerClasses(Collection<InnerClass> ics) {
+            innerClasses = (ics == null) ? null : new ArrayList<InnerClass>(ics);
             // Edit the attribute list, if necessary.
             Attribute a = getAttribute(attrInnerClassesEmpty);
             if (innerClasses != null && a == null)
@@ -318,19 +319,18 @@ class Package implements Constants {
          *  The order of the resulting list is consistent
          *  with that of Package.this.allInnerClasses.
          */
-        public List computeGloballyImpliedICs() {
-            HashSet cpRefs = new HashSet();
+        public List<InnerClass> computeGloballyImpliedICs() {
+            HashSet<Entry> cpRefs = new HashSet<>();
             {   // This block temporarily displaces this.innerClasses.
-                ArrayList innerClassesSaved = innerClasses;
+                ArrayList<InnerClass> innerClassesSaved = innerClasses;
                 innerClasses = null;  // ignore for the moment
                 visitRefs(VRM_CLASSIC, cpRefs);
                 innerClasses = innerClassesSaved;
             }
             ConstantPool.completeReferencesIn(cpRefs, true);
 
-            HashSet icRefs = new HashSet();
-            for (Iterator i = cpRefs.iterator(); i.hasNext(); ) {
-                Entry e = (Entry) i.next();
+            HashSet<Entry> icRefs = new HashSet<>();
+            for (Entry e : cpRefs) {
                 // Restrict cpRefs to InnerClasses entries only.
                 if (!(e instanceof ClassEntry))  continue;
                 // For every IC reference, add its outers also.
@@ -345,9 +345,8 @@ class Package implements Constants {
             // This loop is structured this way so as to accumulate
             // entries into impliedICs in an order which reflects
             // the order of allInnerClasses.
-            ArrayList impliedICs = new ArrayList();
-            for (Iterator i = allInnerClasses.iterator(); i.hasNext(); ) {
-                InnerClass ic = (InnerClass) i.next();
+            ArrayList<InnerClass> impliedICs = new ArrayList<>();
+            for (InnerClass ic : allInnerClasses) {
                 // This one is locally relevant if it describes
                 // a member of the current class, or if the current
                 // class uses it somehow.  In the particular case
@@ -366,10 +365,11 @@ class Package implements Constants {
 
         // Helper for both minimizing and expanding.
         // Computes a symmetric difference.
-        private List computeICdiff() {
-            List impliedICs = computeGloballyImpliedICs();
-            List actualICs  = getInnerClasses();
-            if (actualICs == null)  actualICs = Collections.EMPTY_LIST;
+        private List<InnerClass> computeICdiff() {
+            List<InnerClass> impliedICs = computeGloballyImpliedICs();
+            List<InnerClass> actualICs  = getInnerClasses();
+            if (actualICs == null)
+                actualICs = Collections.EMPTY_LIST;
 
             // Symmetric difference is calculated from I, A like this:
             //  diff = (I+A) - (I*A)
@@ -388,8 +388,8 @@ class Package implements Constants {
                 // Diff is A since I is empty.
             }
             // (I*A) is non-trivial
-            HashSet center = new HashSet(actualICs);
-            center.retainAll(new HashSet(impliedICs));
+            HashSet<InnerClass> center = new HashSet<>(actualICs);
+            center.retainAll(new HashSet<>(impliedICs));
             impliedICs.addAll(actualICs);
             impliedICs.removeAll(center);
             // Diff is now I^A = (I+A)-(I*A).
@@ -407,9 +407,9 @@ class Package implements Constants {
          *  to use the globally implied ICs changed.
          */
         void minimizeLocalICs() {
-            List diff = computeICdiff();
-            List actualICs = innerClasses;
-            List localICs;  // will be the diff, modulo edge cases
+            List<InnerClass> diff = computeICdiff();
+            List<InnerClass> actualICs = innerClasses;
+            List<InnerClass> localICs;  // will be the diff, modulo edge cases
             if (diff.isEmpty()) {
                 // No diff, so transmit no attribute.
                 localICs = null;
@@ -439,12 +439,12 @@ class Package implements Constants {
          *  Otherwise, return positive if any IC tuples were added.
          */
         int expandLocalICs() {
-            List localICs = innerClasses;
-            List actualICs;
+            List<InnerClass> localICs = innerClasses;
+            List<InnerClass> actualICs;
             int changed;
             if (localICs == null) {
                 // Diff was empty.  (Common case.)
-                List impliedICs = computeGloballyImpliedICs();
+                List<InnerClass> impliedICs = computeGloballyImpliedICs();
                 if (impliedICs.isEmpty()) {
                     actualICs = null;
                     changed = 0;
@@ -490,7 +490,7 @@ class Package implements Constants {
             protected Entry[] getCPMap() {
                 return cpMap;
             }
-            protected void visitRefs(int mode, Collection refs) {
+            protected void visitRefs(int mode, Collection<Entry> refs) {
                 if (verbose > 2)  Utils.log.fine("visitRefs "+this);
                 // Careful:  The descriptor is used by the package,
                 // but the classfile breaks it into component refs.
@@ -518,7 +518,7 @@ class Package implements Constants {
                 super(flags, descriptor);
                 assert(!descriptor.isMethod());
                 if (fields == null)
-                    fields = new ArrayList();
+                    fields = new ArrayList<>();
                 boolean added = fields.add(this);
                 assert(added);
                 order = fields.size();
@@ -543,7 +543,7 @@ class Package implements Constants {
                 super(flags, descriptor);
                 assert(descriptor.isMethod());
                 if (methods == null)
-                    methods = new ArrayList();
+                    methods = new ArrayList<>();
                 boolean added = methods.add(this);
                 assert(added);
             }
@@ -573,7 +573,7 @@ class Package implements Constants {
                     code.strip(attrName);
                 super.strip(attrName);
             }
-            protected void visitRefs(int mode, Collection refs) {
+            protected void visitRefs(int mode, Collection<Entry> refs) {
                 super.visitRefs(mode, refs);
                 if (code != null) {
                     if (mode == VRM_CLASSIC) {
@@ -614,7 +614,7 @@ class Package implements Constants {
             super.strip(attrName);
         }
 
-        protected void visitRefs(int mode, Collection refs) {
+        protected void visitRefs(int mode, Collection<Entry> refs) {
             if (verbose > 2)  Utils.log.fine("visitRefs "+this);
             refs.add(thisClass);
             refs.add(superClass);
@@ -641,7 +641,7 @@ class Package implements Constants {
             super.visitRefs(mode, refs);
         }
 
-        protected void visitInnerClassRefs(int mode, Collection refs) {
+        protected void visitInnerClassRefs(int mode, Collection<Entry> refs) {
             Package.visitInnerClassRefs(innerClasses, mode, refs);
         }
 
@@ -713,16 +713,15 @@ class Package implements Constants {
     }
 
     // What non-class files are in this unit?
-    ArrayList files = new ArrayList();
+    ArrayList<File> files = new ArrayList<>();
 
-    public List getFiles() {
+    public List<File> getFiles() {
         return files;
     }
 
-    public List getClassStubs() {
-        ArrayList classStubs = new ArrayList(classes.size());
-        for (Iterator i = classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+    public List<File> getClassStubs() {
+        ArrayList<File> classStubs = new ArrayList<>(classes.size());
+        for (Class cls : classes) {
             assert(cls.file.isClassStub());
             classStubs.add(cls.file);
         }
@@ -840,7 +839,7 @@ class Package implements Constants {
         public InputStream getInputStream() {
             InputStream in = new ByteArrayInputStream(append.toByteArray());
             if (prepend.size() == 0)  return in;
-            ArrayList isa = new ArrayList(prepend.size()+1);
+            ArrayList<InputStream> isa = new ArrayList<>(prepend.size()+1);
             for (Iterator i = prepend.iterator(); i.hasNext(); ) {
                 byte[] bytes = (byte[]) i.next();
                 isa.add(new ByteArrayInputStream(bytes));
@@ -849,7 +848,7 @@ class Package implements Constants {
             return new SequenceInputStream(Collections.enumeration(isa));
         }
 
-        protected void visitRefs(int mode, Collection refs) {
+        protected void visitRefs(int mode, Collection<Entry> refs) {
             assert(name != null);
             refs.add(name);
         }
@@ -877,8 +876,8 @@ class Package implements Constants {
     }
 
     // Is there a globally declared table of inner classes?
-    ArrayList allInnerClasses = new ArrayList();
-    HashMap   allInnerClassesByThis;
+    ArrayList<InnerClass> allInnerClasses = new ArrayList<>();
+    HashMap<ClassEntry, InnerClass>   allInnerClassesByThis;
 
     public
     List getAllInnerClasses() {
@@ -886,15 +885,14 @@ class Package implements Constants {
     }
 
     public
-    void setAllInnerClasses(Collection ics) {
+    void setAllInnerClasses(Collection<InnerClass> ics) {
         assert(ics != allInnerClasses);
         allInnerClasses.clear();
         allInnerClasses.addAll(ics);
 
         // Make an index:
-        allInnerClassesByThis = new HashMap(allInnerClasses.size());
-        for (Iterator i = allInnerClasses.iterator(); i.hasNext(); ) {
-            InnerClass ic = (InnerClass) i.next();
+        allInnerClassesByThis = new HashMap<>(allInnerClasses.size());
+        for (InnerClass ic : allInnerClasses) {
             Object pic = allInnerClassesByThis.put(ic.thisClass, ic);
             assert(pic == null);  // caller must ensure key uniqueness!
         }
@@ -904,7 +902,7 @@ class Package implements Constants {
     public
     InnerClass getGlobalInnerClass(Entry thisClass) {
         assert(thisClass instanceof ClassEntry);
-        return (InnerClass) allInnerClassesByThis.get(thisClass);
+        return allInnerClassesByThis.get(thisClass);
     }
 
     static
@@ -963,7 +961,7 @@ class Package implements Constants {
             return this.thisClass.compareTo(that.thisClass);
         }
 
-        protected void visitRefs(int mode, Collection refs) {
+        protected void visitRefs(int mode, Collection<Entry> refs) {
             refs.add(thisClass);
             if (mode == VRM_CLASSIC || !predictable) {
                 // If the name can be demangled, the package omits
@@ -980,7 +978,7 @@ class Package implements Constants {
 
     // Helper for building InnerClasses attributes.
     static private
-    void visitInnerClassRefs(Collection innerClasses, int mode, Collection refs) {
+    void visitInnerClassRefs(Collection innerClasses, int mode, Collection<Entry> refs) {
         if (innerClasses == null) {
             return;  // no attribute; nothing to do
         }
@@ -1165,9 +1163,8 @@ class Package implements Constants {
         }
     }
 
-    protected void visitRefs(int mode, Collection refs) {
-        for (Iterator i = classes.iterator(); i.hasNext(); ) {
-            Class c = (Class)i.next();
+    protected void visitRefs(int mode, Collection<Entry> refs) {
+        for ( Class c : classes) {
             c.visitRefs(mode, refs);
         }
         if (mode != VRM_CLASSIC) {
@@ -1259,7 +1256,7 @@ class Package implements Constants {
     }
 
     // Use this before writing the package file.
-    void buildGlobalConstantPool(Set requiredEntries) {
+    void buildGlobalConstantPool(Set<Entry> requiredEntries) {
         if (verbose > 1)
             Utils.log.fine("Checking for unused CP entries");
         requiredEntries.add(getRefString(""));  // uconditionally present
@@ -1291,9 +1288,8 @@ class Package implements Constants {
 
     // Use this before writing the class files.
     void ensureAllClassFiles() {
-        HashSet fileSet = new HashSet(files);
-        for (Iterator i = classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+        HashSet<File> fileSet = new HashSet<>(files);
+        for (Class cls : classes) {
             // Add to the end of ths list:
             if (!fileSet.contains(cls.file))
                 files.add(cls.file);

@@ -179,8 +179,6 @@ jint arrayKlass::jvmti_class_status() const {
   return JVMTI_CLASS_STATUS_ARRAY;
 }
 
-#ifndef PRODUCT
-
 // Printing
 
 void arrayKlass::oop_print_on(oop obj, outputStream* st) {
@@ -188,8 +186,6 @@ void arrayKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
   st->print_cr(" - length: %d", arrayOop(obj)->length());
 }
-
-#endif
 
 // Verification
 

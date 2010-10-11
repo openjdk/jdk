@@ -31,6 +31,12 @@
 #define __ gen()->lir()->
 #endif
 
+// TODO: ARM - Use some recognizable constant which still fits architectural constraints
+#ifdef ARM
+#define PATCHED_ADDR  (204)
+#else
+#define PATCHED_ADDR  (max_jint)
+#endif
 
 void PhiResolverState::reset(int max_vregs) {
   // Initialize array sizes
@@ -225,13 +231,13 @@ void LIRItem::load_for_store(BasicType type) {
 void LIRItem::load_item_force(LIR_Opr reg) {
   LIR_Opr r = result();
   if (r != reg) {
+#if !defined(ARM) && !defined(E500V2)
     if (r->type() != reg->type()) {
       // moves between different types need an intervening spill slot
-      LIR_Opr tmp = _gen->force_to_spill(r, reg->type());
-      __ move(tmp, reg);
-    } else {
-      __ move(r, reg);
+      r = _gen->force_to_spill(r, reg->type());
     }
+#endif
+    __ move(r, reg);
     _result = reg;
   }
 }
@@ -474,16 +480,6 @@ void LIRGenerator::nio_range_check(LIR_Opr buffer, LIR_Opr index, LIR_Opr result
 }
 
 
-// increment a counter returning the incremented value
-LIR_Opr LIRGenerator::increment_and_return_counter(LIR_Opr base, int offset, int increment) {
-  LIR_Address* counter = new LIR_Address(base, offset, T_INT);
-  LIR_Opr result = new_register(T_INT);
-  __ load(counter, result);
-  __ add(result, LIR_OprFact::intConst(increment), result);
-  __ store(result, counter);
-  return result;
-}
-
 
 void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp_op, CodeEmitInfo* info) {
   LIR_Opr result_op = result;
@@ -628,14 +624,14 @@ void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_
 }
 
 
-void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, int monitor_no) {
+void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, LIR_Opr scratch, int monitor_no) {
   if (!GenerateSynchronizationCode) return;
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
   CodeStub* slow_path = new MonitorExitStub(lock, UseFastLocking, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
-  __ unlock_object(hdr, object, lock, slow_path);
+  __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
 
 
@@ -815,7 +811,6 @@ LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
   return tmp;
 }
 
-
 void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
   if (if_instr->should_profile()) {
     ciMethod* method = if_instr->profiled_method();
@@ -830,23 +825,31 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     assert(data->is_BranchData(), "need BranchData for two-way branches");
     int taken_count_offset     = md->byte_offset_of_slot(data, BranchData::taken_offset());
     int not_taken_count_offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
+    if (if_instr->is_swapped()) {
+      int t = taken_count_offset;
+      taken_count_offset = not_taken_count_offset;
+      not_taken_count_offset = t;
+    }
+
     LIR_Opr md_reg = new_register(T_OBJECT);
-    __ move(LIR_OprFact::oopConst(md->constant_encoding()), md_reg);
-    LIR_Opr data_offset_reg = new_register(T_INT);
+    __ oop2reg(md->constant_encoding(), md_reg);
+
+    LIR_Opr data_offset_reg = new_pointer_register();
     __ cmove(lir_cond(cond),
-             LIR_OprFact::intConst(taken_count_offset),
-             LIR_OprFact::intConst(not_taken_count_offset),
+             LIR_OprFact::intptrConst(taken_count_offset),
+             LIR_OprFact::intptrConst(not_taken_count_offset),
              data_offset_reg);
-    LIR_Opr data_reg = new_register(T_INT);
-    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, T_INT);
+
+    // MDO cells are intptr_t, so the data_reg width is arch-dependent.
+    LIR_Opr data_reg = new_pointer_register();
+    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
     __ move(LIR_OprFact::address(data_addr), data_reg);
-    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     // Use leal instead of add to avoid destroying condition codes on x86
+    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
     __ move(data_reg, LIR_OprFact::address(data_addr));
   }
 }
-
 
 // Phi technique:
 // This is about passing live values from one basic block to the other.
@@ -1299,8 +1302,6 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patc
   LIR_Opr flag_val = new_register(T_INT);
   __ load(mark_active_flag_addr, flag_val);
 
-  LabelObj* start_store = new LabelObj();
-
   LIR_PatchCode pre_val_patch_code =
     patch ? lir_patch_normal : lir_patch_none;
 
@@ -1400,6 +1401,25 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
   }
   assert(addr->is_register(), "must be a register at this point");
 
+#ifdef ARM
+  // TODO: ARM - move to platform-dependent code
+  LIR_Opr tmp = FrameMap::R14_opr;
+  if (VM_Version::supports_movw()) {
+    __ move((LIR_Opr)card_table_base, tmp);
+  } else {
+    __ move(new LIR_Address(FrameMap::Rthread_opr, in_bytes(JavaThread::card_table_base_offset()), T_ADDRESS), tmp);
+  }
+
+  CardTableModRefBS* ct = (CardTableModRefBS*)_bs;
+  LIR_Address *card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTableModRefBS::card_shift, 0, T_BYTE);
+  if(((int)ct->byte_map_base & 0xff) == 0) {
+    __ move(tmp, card_addr);
+  } else {
+    LIR_Opr tmp_zero = new_register(T_INT);
+    __ move(LIR_OprFact::intConst(0), tmp_zero);
+    __ move(tmp_zero, card_addr);
+  }
+#else // ARM
   LIR_Opr tmp = new_pointer_register();
   if (TwoOperandLIRForm) {
     __ move(addr, tmp);
@@ -1415,6 +1435,7 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
               new LIR_Address(tmp, load_constant(card_table_base),
                               T_BYTE));
   }
+#endif // ARM
 }
 
 
@@ -1507,7 +1528,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
     // generate_address to try to be smart about emitting the -1.
     // Otherwise the patching code won't know how to find the
     // instruction to patch.
-    address = new LIR_Address(object.result(), max_jint, field_type);
+    address = new LIR_Address(object.result(), PATCHED_ADDR, field_type);
   } else {
     address = generate_address(object.result(), x->offset(), field_type);
   }
@@ -1584,7 +1605,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     // generate_address to try to be smart about emitting the -1.
     // Otherwise the patching code won't know how to find the
     // instruction to patch.
-    address = new LIR_Address(object.result(), max_jint, field_type);
+    address = new LIR_Address(object.result(), PATCHED_ADDR, field_type);
   } else {
     address = generate_address(object.result(), x->offset(), field_type);
   }
@@ -1731,7 +1752,7 @@ void LIRGenerator::do_Throw(Throw* x) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    increment_counter(Runtime1::throw_count_address());
+    increment_counter(Runtime1::throw_count_address(), T_INT);
   }
 #endif
 
@@ -1844,6 +1865,8 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
     }
 #endif
     addr = new LIR_Address(base_op, index_op, LIR_Address::Scale(log2_scale), 0, dst_type);
+#elif defined(ARM)
+    addr = generate_address(base_op, index_op, log2_scale, 0, dst_type);
 #else
     if (index_op->is_illegal() || log2_scale == 0) {
 #ifdef _LP64
@@ -1916,6 +1939,7 @@ void LIRGenerator::do_UnsafePutRaw(UnsafePutRaw* x) {
       __ convert(Bytecodes::_i2l, idx.result(), index_op);
     } else {
 #endif
+      // TODO: ARM also allows embedded shift in the address
       __ move(idx.result(), index_op);
 #ifdef _LP64
     }
@@ -2162,10 +2186,39 @@ void LIRGenerator::do_Goto(Goto* x) {
     ValueStack* state = x->state_before() ? x->state_before() : x->state();
 
     // increment backedge counter if needed
-    increment_backedge_counter(state_for(x, state));
-
+    CodeEmitInfo* info = state_for(x, state);
+    increment_backedge_counter(info, info->bci());
     CodeEmitInfo* safepoint_info = state_for(x, state);
     __ safepoint(safepoint_poll_register(), safepoint_info);
+  }
+
+  // Gotos can be folded Ifs, handle this case.
+  if (x->should_profile()) {
+    ciMethod* method = x->profiled_method();
+    assert(method != NULL, "method should be set if branch is profiled");
+    ciMethodData* md = method->method_data();
+    if (md == NULL) {
+      bailout("out of memory building methodDataOop");
+      return;
+    }
+    ciProfileData* data = md->bci_to_data(x->profiled_bci());
+    assert(data != NULL, "must have profiling data");
+    int offset;
+    if (x->direction() == Goto::taken) {
+      assert(data->is_BranchData(), "need BranchData for two-way branches");
+      offset = md->byte_offset_of_slot(data, BranchData::taken_offset());
+    } else if (x->direction() == Goto::not_taken) {
+      assert(data->is_BranchData(), "need BranchData for two-way branches");
+      offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
+    } else {
+      assert(data->is_JumpData(), "need JumpData for branches");
+      offset = md->byte_offset_of_slot(data, JumpData::taken_offset());
+    }
+    LIR_Opr md_reg = new_register(T_OBJECT);
+    __ oop2reg(md->constant_encoding(), md_reg);
+
+    increment_counter(new LIR_Address(md_reg, offset,
+                                      NOT_LP64(T_INT) LP64_ONLY(T_LONG)), DataLayout::counter_increment);
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -2204,7 +2257,10 @@ void LIRGenerator::do_Base(Base* x) {
     // Assign new location to Local instruction for this local
     Local* local = x->state()->local_at(java_index)->as_Local();
     assert(local != NULL, "Locals for incoming arguments must have been created");
+#ifndef __SOFTFP__
+    // The java calling convention passes double as long and float as int.
     assert(as_ValueType(t)->tag() == local->type()->tag(), "check");
+#endif // __SOFTFP__
     local->set_operand(dest);
     _instruction_for_operand.at_put_grow(dest->vreg_number(), local, NULL);
     java_index += type2size[t];
@@ -2247,7 +2303,10 @@ void LIRGenerator::do_Base(Base* x) {
   }
 
   // increment invocation counters if needed
-  increment_invocation_counter(new CodeEmitInfo(0, scope()->start()->state(), NULL));
+  if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
+    CodeEmitInfo* info = new CodeEmitInfo(InvocationEntryBci, scope()->start()->state(), NULL);
+    increment_invocation_counter(info);
+  }
 
   // all blocks with a successor must end with an unconditional jump
   // to the successor even if they are consecutive
@@ -2581,12 +2640,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 }
 
-
 void LIRGenerator::do_ProfileCall(ProfileCall* x) {
   // Need recv in a temporary register so it interferes with the other temporaries
   LIR_Opr recv = LIR_OprFact::illegalOpr;
   LIR_Opr mdo = new_register(T_OBJECT);
-  LIR_Opr tmp = new_register(T_INT);
+  // tmp is used to hold the counters on SPARC
+  LIR_Opr tmp = new_pointer_register();
   if (x->recv() != NULL) {
     LIRItem value(x->recv(), this);
     value.load_item();
@@ -2596,14 +2655,69 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
   __ profile_call(x->method(), x->bci_of_invoke(), mdo, recv, tmp, x->known_holder());
 }
 
-
-void LIRGenerator::do_ProfileCounter(ProfileCounter* x) {
-  LIRItem mdo(x->mdo(), this);
-  mdo.load_item();
-
-  increment_counter(new LIR_Address(mdo.result(), x->offset(), T_INT), x->increment());
+void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
+  // We can safely ignore accessors here, since c2 will inline them anyway,
+  // accessors are also always mature.
+  if (!x->inlinee()->is_accessor()) {
+    CodeEmitInfo* info = state_for(x, x->state(), true);
+    // Increment invocation counter, don't notify the runtime, because we don't inline loops,
+    increment_event_counter_impl(info, x->inlinee(), 0, InvocationEntryBci, false, false);
+  }
 }
 
+void LIRGenerator::increment_event_counter(CodeEmitInfo* info, int bci, bool backedge) {
+  int freq_log;
+  int level = compilation()->env()->comp_level();
+  if (level == CompLevel_limited_profile) {
+    freq_log = (backedge ? Tier2BackedgeNotifyFreqLog : Tier2InvokeNotifyFreqLog);
+  } else if (level == CompLevel_full_profile) {
+    freq_log = (backedge ? Tier3BackedgeNotifyFreqLog : Tier3InvokeNotifyFreqLog);
+  } else {
+    ShouldNotReachHere();
+  }
+  // Increment the appropriate invocation/backedge counter and notify the runtime.
+  increment_event_counter_impl(info, info->scope()->method(), (1 << freq_log) - 1, bci, backedge, true);
+}
+
+void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
+                                                ciMethod *method, int frequency,
+                                                int bci, bool backedge, bool notify) {
+  assert(frequency == 0 || is_power_of_2(frequency + 1), "Frequency must be x^2 - 1 or 0");
+  int level = _compilation->env()->comp_level();
+  assert(level > CompLevel_simple, "Shouldn't be here");
+
+  int offset = -1;
+  LIR_Opr counter_holder = new_register(T_OBJECT);
+  LIR_Opr meth;
+  if (level == CompLevel_limited_profile) {
+    offset = in_bytes(backedge ? methodOopDesc::backedge_counter_offset() :
+                                 methodOopDesc::invocation_counter_offset());
+    __ oop2reg(method->constant_encoding(), counter_holder);
+    meth = counter_holder;
+  } else if (level == CompLevel_full_profile) {
+    offset = in_bytes(backedge ? methodDataOopDesc::backedge_counter_offset() :
+                                 methodDataOopDesc::invocation_counter_offset());
+    __ oop2reg(method->method_data()->constant_encoding(), counter_holder);
+    meth = new_register(T_OBJECT);
+    __ oop2reg(method->constant_encoding(), meth);
+  } else {
+    ShouldNotReachHere();
+  }
+  LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
+  LIR_Opr result = new_register(T_INT);
+  __ load(counter, result);
+  __ add(result, LIR_OprFact::intConst(InvocationCounter::count_increment), result);
+  __ store(result, counter);
+  if (notify) {
+    LIR_Opr mask = load_immediate(frequency << InvocationCounter::count_shift, T_INT);
+    __ logical_and(result, mask, result);
+    __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+    // The bci for info can point to cmp for if's we want the if bci
+    CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
+    __ branch(lir_cond_equal, T_INT, overflow);
+    __ branch_destination(overflow->continuation());
+  }
+}
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);
@@ -2716,28 +2830,3 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIRItemList* args,
   return result;
 }
 
-
-
-void LIRGenerator::increment_invocation_counter(CodeEmitInfo* info, bool backedge) {
-#ifdef TIERED
-  if (_compilation->env()->comp_level() == CompLevel_fast_compile &&
-      (method()->code_size() >= Tier1BytecodeLimit || backedge)) {
-    int limit = InvocationCounter::Tier1InvocationLimit;
-    int offset = in_bytes(methodOopDesc::invocation_counter_offset() +
-                          InvocationCounter::counter_offset());
-    if (backedge) {
-      limit = InvocationCounter::Tier1BackEdgeLimit;
-      offset = in_bytes(methodOopDesc::backedge_counter_offset() +
-                        InvocationCounter::counter_offset());
-    }
-
-    LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->constant_encoding(), meth);
-    LIR_Opr result = increment_and_return_counter(meth, offset, InvocationCounter::count_increment);
-    __ cmp(lir_cond_aboveEqual, result, LIR_OprFact::intConst(limit));
-    CodeStub* overflow = new CounterOverflowStub(info, info->bci());
-    __ branch(lir_cond_aboveEqual, T_INT, overflow);
-    __ branch_destination(overflow->continuation());
-  }
-#endif
-}

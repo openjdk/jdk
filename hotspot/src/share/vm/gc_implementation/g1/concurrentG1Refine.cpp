@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,21 +271,16 @@ jbyte* ConcurrentG1Refine::add_card_count(jbyte* card_ptr, int* count, bool* def
     if (cas_res == prev_epoch_entry) {
       // We successfully updated the card num value in the epoch entry
       count_ptr->_count = 0; // initialize counter for new card num
+      jbyte* old_card_ptr = card_num_2_ptr(old_card_num);
 
       // Even though the region containg the card at old_card_num was not
       // in the young list when old_card_num was recorded in the epoch
       // cache it could have been added to the free list and subsequently
-      // added to the young list in the intervening time. If the evicted
-      // card is in a young region just return the card_ptr and the evicted
-      // card will not be cleaned. See CR 6817995.
-
-      jbyte* old_card_ptr = card_num_2_ptr(old_card_num);
-      if (is_young_card(old_card_ptr)) {
-        *count = 0;
-        // We can defer the processing of card_ptr
-        *defer = true;
-        return card_ptr;
-      }
+      // added to the young list in the intervening time. See CR 6817995.
+      // We do not deal with this case here - it will be handled in
+      // HeapRegion::oops_on_card_seq_iterate_careful after it has been
+      // determined that the region containing the card has been allocated
+      // to, and it's safe to check the young type of the region.
 
       // We do not want to defer processing of card_ptr in this case
       // (we need to refine old_card_ptr and card_ptr)
@@ -301,22 +296,22 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr, bool* defer) {
   jbyte* cached_ptr = add_card_count(card_ptr, &count, defer);
   assert(cached_ptr != NULL, "bad cached card ptr");
 
-  if (is_young_card(cached_ptr)) {
-    // The region containing cached_ptr has been freed during a clean up
-    // pause, reallocated, and tagged as young.
-    assert(cached_ptr != card_ptr, "shouldn't be");
+  // We've just inserted a card pointer into the card count cache
+  // and got back the card that we just inserted or (evicted) the
+  // previous contents of that count slot.
 
-    // We've just inserted a new old-gen card pointer into the card count
-    // cache and evicted the previous contents of that count slot.
-    // The evicted card pointer has been determined to be in a young region
-    // and so cannot be the newly inserted card pointer (that will be
-    // in an old region).
-    // The count for newly inserted card will be set to zero during the
-    // insertion, so we don't want to defer the cleaning of the newly
-    // inserted card pointer.
-    assert(*defer == false, "deferring non-hot card");
-    return NULL;
-  }
+  // The card we got back could be in a young region. When the
+  // returned card (if evicted) was originally inserted, we had
+  // determined that its containing region was not young. However
+  // it is possible for the region to be freed during a cleanup
+  // pause, then reallocated and tagged as young which will result
+  // in the returned card residing in a young region.
+  //
+  // We do not deal with this case here - the change from non-young
+  // to young could be observed at any time - it will be handled in
+  // HeapRegion::oops_on_card_seq_iterate_careful after it has been
+  // determined that the region containing the card has been allocated
+  // to.
 
   // The card pointer we obtained from card count cache is not hot
   // so do not store it in the cache; return it for immediate
@@ -325,7 +320,7 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr, bool* defer) {
     return cached_ptr;
   }
 
-  // Otherwise, the pointer we got from the _card_counts is hot.
+  // Otherwise, the pointer we got from the _card_counts cache is hot.
   jbyte* res = NULL;
   MutexLockerEx x(HotCardCache_lock, Mutex::_no_safepoint_check_flag);
   if (_n_hot == _hot_cache_size) {
@@ -338,22 +333,15 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr, bool* defer) {
   if (_hot_cache_idx == _hot_cache_size) _hot_cache_idx = 0;
   _n_hot++;
 
-  if (res != NULL) {
-    // Even though the region containg res was not in the young list
-    // when it was recorded in the hot cache it could have been added
-    // to the free list and subsequently added to the young list in
-    // the intervening time. If res is in a young region, return NULL
-    // so that res is not cleaned. See CR 6817995.
-
-    if (is_young_card(res)) {
-      res = NULL;
-    }
-  }
+  // The card obtained from the hot card cache could be in a young
+  // region. See above on how this can happen.
 
   return res;
 }
 
-void ConcurrentG1Refine::clean_up_cache(int worker_i, G1RemSet* g1rs) {
+void ConcurrentG1Refine::clean_up_cache(int worker_i,
+                                        G1RemSet* g1rs,
+                                        DirtyCardQueue* into_cset_dcq) {
   assert(!use_cache(), "cache should be disabled");
   int start_idx;
 
@@ -367,7 +355,19 @@ void ConcurrentG1Refine::clean_up_cache(int worker_i, G1RemSet* g1rs) {
       for (int i = start_idx; i < end_idx; i++) {
         jbyte* entry = _hot_cache[i];
         if (entry != NULL) {
-          g1rs->concurrentRefineOneCard(entry, worker_i);
+          if (g1rs->concurrentRefineOneCard(entry, worker_i, true)) {
+            // 'entry' contains references that point into the current
+            // collection set. We need to record 'entry' in the DCQS
+            // that's used for that purpose.
+            //
+            // The only time we care about recording cards that contain
+            // references that point into the collection set is during
+            // RSet updating while within an evacuation pause.
+            // In this case worker_i should be the id of a GC worker thread
+            assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
+            assert(worker_i < (int) DirtyCardQueueSet::num_par_ids(), "incorrect worker id");
+            into_cset_dcq->enqueue(entry);
+          }
         }
       }
     }

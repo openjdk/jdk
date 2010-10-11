@@ -33,11 +33,11 @@
  *
  * @compile TestAnnotation.java TestCore.java
  * @clean test.annotation.TestAnnotation
- * @compile/ref=test1.out -XDstdout -XDrawDiagnostics T6365854.java
+ * @compile/ref=test1.out -XDrawDiagnostics T6365854.java
  * @run main T6365854
- * @compile/ref=test2.out -XDstdout -XDrawDiagnostics evolve/TestAnnotation.java T6365854.java
+ * @compile/ref=test2.out -XDrawDiagnostics evolve/TestAnnotation.java T6365854.java
  * @run main T6365854
- * @compile/ref=test2.out -XDstdout -XDrawDiagnostics T6365854.java
+ * @compile/ref=test2.out -XDrawDiagnostics T6365854.java
  * @run main T6365854
  */
 

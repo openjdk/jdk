@@ -97,6 +97,15 @@ address StubRoutines::_checkcast_arraycopy               = NULL;
 address StubRoutines::_unsafe_arraycopy                  = NULL;
 address StubRoutines::_generic_arraycopy                 = NULL;
 
+
+address StubRoutines::_jbyte_fill;
+address StubRoutines::_jshort_fill;
+address StubRoutines::_jint_fill;
+address StubRoutines::_arrayof_jbyte_fill;
+address StubRoutines::_arrayof_jshort_fill;
+address StubRoutines::_arrayof_jint_fill;
+
+
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
 double (* StubRoutines::_intrinsic_exp   )(double) = NULL;
@@ -119,10 +128,9 @@ void StubRoutines::initialize1() {
     TraceTime timer("StubRoutines generation 1", TraceStartupTime);
     _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
     if (_code1 == NULL) {
-      vm_exit_out_of_memory(code_size1,
-                            "CodeCache: no room for StubRoutines (1)");
+      vm_exit_out_of_memory(code_size1, "CodeCache: no room for StubRoutines (1)");
     }
-    CodeBuffer buffer(_code1->instructions_begin(), _code1->instructions_size());
+    CodeBuffer buffer(_code1);
     StubGenerator_generate(&buffer, false);
   }
 }
@@ -135,28 +143,32 @@ typedef void (*arraycopy_fn)(address src, address dst, int count);
 static void test_arraycopy_func(address func, int alignment) {
   int v = 0xcc;
   int v2 = 0x11;
-  jlong lbuffer[2];
-  jlong lbuffer2[2];
-  address buffer  = (address) lbuffer;
-  address buffer2 = (address) lbuffer2;
+  jlong lbuffer[8];
+  jlong lbuffer2[8];
+  address fbuffer  = (address) lbuffer;
+  address fbuffer2 = (address) lbuffer2;
   unsigned int i;
   for (i = 0; i < sizeof(lbuffer); i++) {
-    buffer[i] = v; buffer2[i] = v2;
+    fbuffer[i] = v; fbuffer2[i] = v2;
   }
+  // C++ does not guarantee jlong[] array alignment to 8 bytes.
+  // Use middle of array to check that memory before it is not modified.
+  address buffer  = (address) round_to((intptr_t)&lbuffer[4], BytesPerLong);
+  address buffer2 = (address) round_to((intptr_t)&lbuffer2[4], BytesPerLong);
   // do an aligned copy
   ((arraycopy_fn)func)(buffer, buffer2, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(buffer[i] == v && buffer2[i] == v2, "shouldn't have copied anything");
+    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
   // adjust destination alignment
   ((arraycopy_fn)func)(buffer, buffer2 + alignment, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(buffer[i] == v && buffer2[i] == v2, "shouldn't have copied anything");
+    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
   // adjust source alignment
   ((arraycopy_fn)func)(buffer + alignment, buffer2, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(buffer[i] == v && buffer2[i] == v2, "shouldn't have copied anything");
+    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
 }
 #endif
@@ -168,10 +180,9 @@ void StubRoutines::initialize2() {
     TraceTime timer("StubRoutines generation 2", TraceStartupTime);
     _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
     if (_code2 == NULL) {
-      vm_exit_out_of_memory(code_size2,
-                            "CodeCache: no room for StubRoutines (2)");
+      vm_exit_out_of_memory(code_size2, "CodeCache: no room for StubRoutines (2)");
     }
-    CodeBuffer buffer(_code2->instructions_begin(), _code2->instructions_size());
+    CodeBuffer buffer(_code2);
     StubGenerator_generate(&buffer, true);
   }
 
@@ -183,13 +194,72 @@ void StubRoutines::initialize2() {
   test_arraycopy_func(arrayof_##type##_arraycopy(),          sizeof(HeapWord)); \
   test_arraycopy_func(arrayof_##type##_disjoint_arraycopy(), sizeof(HeapWord))
 
-  // Make sure all the arraycopy stubs properly handle zeros
+  // Make sure all the arraycopy stubs properly handle zero count
   TEST_ARRAYCOPY(jbyte);
   TEST_ARRAYCOPY(jshort);
   TEST_ARRAYCOPY(jint);
   TEST_ARRAYCOPY(jlong);
 
 #undef TEST_ARRAYCOPY
+
+#define TEST_FILL(type)                                                                      \
+  if (_##type##_fill != NULL) {                                                              \
+    union {                                                                                  \
+      double d;                                                                              \
+      type body[96];                                                                         \
+    } s;                                                                                     \
+                                                                                             \
+    int v = 32;                                                                              \
+    for (int offset = -2; offset <= 2; offset++) {                                           \
+      for (int i = 0; i < 96; i++) {                                                         \
+        s.body[i] = 1;                                                                       \
+      }                                                                                      \
+      type* start = s.body + 8 + offset;                                                     \
+      for (int aligned = 0; aligned < 2; aligned++) {                                        \
+        if (aligned) {                                                                       \
+          if (((intptr_t)start) % HeapWordSize == 0) {                                       \
+            ((void (*)(type*, int, int))StubRoutines::_arrayof_##type##_fill)(start, v, 80); \
+          } else {                                                                           \
+            continue;                                                                        \
+          }                                                                                  \
+        } else {                                                                             \
+          ((void (*)(type*, int, int))StubRoutines::_##type##_fill)(start, v, 80);           \
+        }                                                                                    \
+        for (int i = 0; i < 96; i++) {                                                       \
+          if (i < (8 + offset) || i >= (88 + offset)) {                                      \
+            assert(s.body[i] == 1, "what?");                                                 \
+          } else {                                                                           \
+            assert(s.body[i] == 32, "what?");                                                \
+          }                                                                                  \
+        }                                                                                    \
+      }                                                                                      \
+    }                                                                                        \
+  }                                                                                          \
+
+  TEST_FILL(jbyte);
+  TEST_FILL(jshort);
+  TEST_FILL(jint);
+
+#undef TEST_FILL
+
+#define TEST_COPYRTN(type) \
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::arrayof_conjoint_##type##s), (int)MAX2(sizeof(HeapWord), sizeof(type)))
+
+  // Make sure all the copy runtime routines properly handle zero count
+  TEST_COPYRTN(jbyte);
+  TEST_COPYRTN(jshort);
+  TEST_COPYRTN(jint);
+  TEST_COPYRTN(jlong);
+
+#undef TEST_COPYRTN
+
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_words), sizeof(HeapWord));
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words), sizeof(HeapWord));
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words_atomic), sizeof(HeapWord));
+  // Aligned to BytesPerLong
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
 
 #endif
 }
@@ -221,15 +291,13 @@ JRT_LEAF(void, StubRoutines::jbyte_copy(jbyte* src, jbyte* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  Copy::conjoint_bytes_atomic(src, dest, count);
+  Copy::conjoint_jbytes_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jshort_copy(jshort* src, jshort* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::conjoint_jshorts_atomic(src, dest, count);
 JRT_END
 
@@ -237,7 +305,6 @@ JRT_LEAF(void, StubRoutines::jint_copy(jint* src, jint* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::conjoint_jints_atomic(src, dest, count);
 JRT_END
 
@@ -245,7 +312,6 @@ JRT_LEAF(void, StubRoutines::jlong_copy(jlong* src, jlong* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;      // Slow-path long/double array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::conjoint_jlongs_atomic(src, dest, count);
 JRT_END
 
@@ -263,15 +329,13 @@ JRT_LEAF(void, StubRoutines::arrayof_jbyte_copy(HeapWord* src, HeapWord* dest, s
 #ifndef PRODUCT
   SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  Copy::arrayof_conjoint_bytes(src, dest, count);
+  Copy::arrayof_conjoint_jbytes(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jshort_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::arrayof_conjoint_jshorts(src, dest, count);
 JRT_END
 
@@ -279,7 +343,6 @@ JRT_LEAF(void, StubRoutines::arrayof_jint_copy(HeapWord* src, HeapWord* dest, si
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::arrayof_conjoint_jints(src, dest, count);
 JRT_END
 
@@ -287,7 +350,6 @@ JRT_LEAF(void, StubRoutines::arrayof_jlong_copy(HeapWord* src, HeapWord* dest, s
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::arrayof_conjoint_jlongs(src, dest, count);
 JRT_END
 
@@ -300,3 +362,39 @@ JRT_LEAF(void, StubRoutines::arrayof_oop_copy(HeapWord* src, HeapWord* dest, siz
   Copy::arrayof_conjoint_oops(src, dest, count);
   gen_arraycopy_barrier((oop *) dest, count);
 JRT_END
+
+
+address StubRoutines::select_fill_function(BasicType t, bool aligned, const char* &name) {
+#define RETURN_STUB(xxx_fill) { \
+  name = #xxx_fill; \
+  return StubRoutines::xxx_fill(); }
+
+  switch (t) {
+  case T_BYTE:
+  case T_BOOLEAN:
+    if (!aligned) RETURN_STUB(jbyte_fill);
+    RETURN_STUB(arrayof_jbyte_fill);
+  case T_CHAR:
+  case T_SHORT:
+    if (!aligned) RETURN_STUB(jshort_fill);
+    RETURN_STUB(arrayof_jshort_fill);
+  case T_INT:
+  case T_FLOAT:
+    if (!aligned) RETURN_STUB(jint_fill);
+    RETURN_STUB(arrayof_jint_fill);
+  case T_DOUBLE:
+  case T_LONG:
+  case T_ARRAY:
+  case T_OBJECT:
+  case T_NARROWOOP:
+  case T_ADDRESS:
+    // Currently unsupported
+    return NULL;
+
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+#undef RETURN_STUB
+}

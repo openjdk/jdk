@@ -39,7 +39,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   size += round_to(cb->total_relocation_size(), oopSize);
   // align the size to CodeEntryAlignment
   size = align_code_offset(size);
-  size += round_to(cb->total_code_size(), oopSize);
+  size += round_to(cb->total_content_size(), oopSize);
   size += round_to(cb->total_oop_size(), oopSize);
   return size;
 }
@@ -47,8 +47,8 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
 
 // Creates a simple CodeBlob. Sets up the size of the different regions.
 CodeBlob::CodeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size) {
-  assert(size == round_to(size, oopSize), "unaligned size");
-  assert(locs_size == round_to(locs_size, oopSize), "unaligned size");
+  assert(size        == round_to(size,        oopSize), "unaligned size");
+  assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
   assert(header_size == round_to(header_size, oopSize), "unaligned size");
   assert(!UseRelocIndex, "no space allocated for reloc index yet");
 
@@ -64,7 +64,8 @@ CodeBlob::CodeBlob(const char* name, int header_size, int size, int frame_comple
   _frame_complete_offset = frame_complete;
   _header_size           = header_size;
   _relocation_size       = locs_size;
-  _instructions_offset   = align_code_offset(header_size + locs_size);
+  _content_offset        = align_code_offset(header_size + _relocation_size);
+  _code_offset           = _content_offset;
   _data_offset           = size;
   _frame_size            =  0;
   set_oop_maps(NULL);
@@ -82,7 +83,7 @@ CodeBlob::CodeBlob(
   int         frame_size,
   OopMapSet*  oop_maps
 ) {
-  assert(size == round_to(size, oopSize), "unaligned size");
+  assert(size        == round_to(size,        oopSize), "unaligned size");
   assert(header_size == round_to(header_size, oopSize), "unaligned size");
 
   _name                  = name;
@@ -90,8 +91,9 @@ CodeBlob::CodeBlob(
   _frame_complete_offset = frame_complete;
   _header_size           = header_size;
   _relocation_size       = round_to(cb->total_relocation_size(), oopSize);
-  _instructions_offset   = align_code_offset(header_size + _relocation_size);
-  _data_offset           = _instructions_offset + round_to(cb->total_code_size(), oopSize);
+  _content_offset        = align_code_offset(header_size + _relocation_size);
+  _code_offset           = _content_offset + cb->total_offset_of(cb->insts());
+  _data_offset           = _content_offset + round_to(cb->total_content_size(), oopSize);
   assert(_data_offset <= size, "codeBlob is too small");
 
   cb->copy_code_and_locs_to(this);
@@ -127,9 +129,8 @@ void CodeBlob::flush() {
 
 
 OopMap* CodeBlob::oop_map_for_return_address(address return_address) {
-  address pc = return_address ;
-  assert (oop_maps() != NULL, "nope");
-  return oop_maps()->find_map_at_offset ((intptr_t) pc - (intptr_t) instructions_begin());
+  assert(oop_maps() != NULL, "nope");
+  return oop_maps()->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
 
@@ -201,6 +202,11 @@ void BufferBlob::free( BufferBlob *blob ) {
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
+
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
+  BufferBlob("I2C/C2I adapters", size, cb) {
+  CodeCache::commit(this);
+}
 
 AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
@@ -279,13 +285,12 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
     jio_snprintf(stub_id, sizeof(stub_id), "RuntimeStub - %s", stub_name);
     if (PrintStubCode) {
       tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, stub);
-      Disassembler::decode(stub->instructions_begin(), stub->instructions_end());
+      Disassembler::decode(stub->code_begin(), stub->code_end());
     }
-    VTune::register_stub(stub_id, stub->instructions_begin(), stub->instructions_end());
-    Forte::register_stub(stub_id, stub->instructions_begin(), stub->instructions_end());
+    Forte::register_stub(stub_id, stub->code_begin(), stub->code_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated(stub_name, stub->instructions_begin(), stub->instructions_end());
+      JvmtiExport::post_dynamic_code_generated(stub_name, stub->code_begin(), stub->code_end());
     }
   }
 
@@ -351,18 +356,15 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   // Do not hold the CodeCache lock during name formatting.
   if (blob != NULL) {
     char blob_id[256];
-    jio_snprintf(blob_id, sizeof(blob_id), "DeoptimizationBlob@" PTR_FORMAT, blob->instructions_begin());
+    jio_snprintf(blob_id, sizeof(blob_id), "DeoptimizationBlob@" PTR_FORMAT, blob->code_begin());
     if (PrintStubCode) {
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
-      Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
+      Disassembler::decode(blob->code_begin(), blob->code_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
-    Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
+    Forte::register_stub(blob_id, blob->code_begin(), blob->code_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated("DeoptimizationBlob",
-                                               blob->instructions_begin(),
-                                               blob->instructions_end());
+      JvmtiExport::post_dynamic_code_generated("DeoptimizationBlob", blob->code_begin(), blob->code_end());
     }
   }
 
@@ -409,18 +411,15 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   // Do not hold the CodeCache lock during name formatting.
   if (blob != NULL) {
     char blob_id[256];
-    jio_snprintf(blob_id, sizeof(blob_id), "UncommonTrapBlob@" PTR_FORMAT, blob->instructions_begin());
+    jio_snprintf(blob_id, sizeof(blob_id), "UncommonTrapBlob@" PTR_FORMAT, blob->code_begin());
     if (PrintStubCode) {
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
-      Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
+      Disassembler::decode(blob->code_begin(), blob->code_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
-    Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
+    Forte::register_stub(blob_id, blob->code_begin(), blob->code_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated("UncommonTrapBlob",
-                                               blob->instructions_begin(),
-                                               blob->instructions_end());
+      JvmtiExport::post_dynamic_code_generated("UncommonTrapBlob", blob->code_begin(), blob->code_end());
     }
   }
 
@@ -469,18 +468,15 @@ ExceptionBlob* ExceptionBlob::create(
   // We do not need to hold the CodeCache lock during name formatting
   if (blob != NULL) {
     char blob_id[256];
-    jio_snprintf(blob_id, sizeof(blob_id), "ExceptionBlob@" PTR_FORMAT, blob->instructions_begin());
+    jio_snprintf(blob_id, sizeof(blob_id), "ExceptionBlob@" PTR_FORMAT, blob->code_begin());
     if (PrintStubCode) {
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
-      Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
+      Disassembler::decode(blob->code_begin(), blob->code_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
-    Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
+    Forte::register_stub(blob_id, blob->code_begin(), blob->code_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated("ExceptionBlob",
-                                               blob->instructions_begin(),
-                                               blob->instructions_end());
+      JvmtiExport::post_dynamic_code_generated("ExceptionBlob", blob->code_begin(), blob->code_end());
     }
   }
 
@@ -528,18 +524,15 @@ SafepointBlob* SafepointBlob::create(
   // We do not need to hold the CodeCache lock during name formatting.
   if (blob != NULL) {
     char blob_id[256];
-    jio_snprintf(blob_id, sizeof(blob_id), "SafepointBlob@" PTR_FORMAT, blob->instructions_begin());
+    jio_snprintf(blob_id, sizeof(blob_id), "SafepointBlob@" PTR_FORMAT, blob->code_begin());
     if (PrintStubCode) {
       tty->print_cr("Decoding %s " INTPTR_FORMAT, blob_id, blob);
-      Disassembler::decode(blob->instructions_begin(), blob->instructions_end());
+      Disassembler::decode(blob->code_begin(), blob->code_end());
     }
-    VTune::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
-    Forte::register_stub(blob_id, blob->instructions_begin(), blob->instructions_end());
+    Forte::register_stub(blob_id, blob->code_begin(), blob->code_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated("SafepointBlob",
-                                               blob->instructions_begin(),
-                                               blob->instructions_end());
+      JvmtiExport::post_dynamic_code_generated("SafepointBlob", blob->code_begin(), blob->code_end());
     }
   }
 
@@ -564,71 +557,52 @@ void CodeBlob::verify() {
   ShouldNotReachHere();
 }
 
-#ifndef PRODUCT
-
-void CodeBlob::print() const {
-  tty->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", this);
-  tty->print_cr("Framesize: %d", _frame_size);
+void CodeBlob::print_on(outputStream* st) const {
+  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", this);
+  st->print_cr("Framesize: %d", _frame_size);
 }
-
 
 void CodeBlob::print_value_on(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
 
-#endif
-
 void BufferBlob::verify() {
   // unimplemented
 }
 
-#ifndef PRODUCT
-
-void BufferBlob::print() const {
-  CodeBlob::print();
-  print_value_on(tty);
+void BufferBlob::print_on(outputStream* st) const {
+  CodeBlob::print_on(st);
+  print_value_on(st);
 }
-
 
 void BufferBlob::print_value_on(outputStream* st) const {
   st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", this, name());
 }
 
-
-#endif
-
 void RuntimeStub::verify() {
   // unimplemented
 }
 
-#ifndef PRODUCT
-
-void RuntimeStub::print() const {
-  CodeBlob::print();
-  tty->print("Runtime Stub (" INTPTR_FORMAT "): ", this);
-  tty->print_cr(name());
-  Disassembler::decode((CodeBlob*)this);
+void RuntimeStub::print_on(outputStream* st) const {
+  CodeBlob::print_on(st);
+  st->print("Runtime Stub (" INTPTR_FORMAT "): ", this);
+  st->print_cr(name());
+  Disassembler::decode((CodeBlob*)this, st);
 }
-
 
 void RuntimeStub::print_value_on(outputStream* st) const {
   st->print("RuntimeStub (" INTPTR_FORMAT "): ", this); st->print(name());
 }
 
-#endif
-
 void SingletonBlob::verify() {
   // unimplemented
 }
 
-#ifndef PRODUCT
-
-void SingletonBlob::print() const {
-  CodeBlob::print();
-  tty->print_cr(name());
-  Disassembler::decode((CodeBlob*)this);
+void SingletonBlob::print_on(outputStream* st) const {
+  CodeBlob::print_on(st);
+  st->print_cr(name());
+  Disassembler::decode((CodeBlob*)this, st);
 }
-
 
 void SingletonBlob::print_value_on(outputStream* st) const {
   st->print_cr(name());
@@ -637,5 +611,3 @@ void SingletonBlob::print_value_on(outputStream* st) const {
 void DeoptimizationBlob::print_value_on(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
-
-#endif // PRODUCT

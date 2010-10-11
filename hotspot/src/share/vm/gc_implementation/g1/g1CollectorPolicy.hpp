@@ -63,8 +63,6 @@ class MainBodySummary: public CHeapObj {
     define_num_seq(mark_stack_scan)
     define_num_seq(update_rs)
     define_num_seq(scan_rs)
-    define_num_seq(scan_new_refs) // Only for temp use; added to
-                                  // in parallel case.
     define_num_seq(obj_copy)
     define_num_seq(termination) // parallel only
     define_num_seq(parallel_other) // parallel only
@@ -76,9 +74,6 @@ class Summary: public PauseSummary,
                public MainBodySummary {
 public:
   virtual MainBodySummary*    main_body_summary()    { return this; }
-};
-
-class AbandonedSummary: public PauseSummary {
 };
 
 class G1CollectorPolicy: public CollectorPolicy {
@@ -150,7 +145,6 @@ protected:
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
   Summary*           _summary;
-  AbandonedSummary*  _abandoned_summary;
 
   NumberSeq* _all_pause_times_ms;
   NumberSeq* _all_full_gc_times_ms;
@@ -171,16 +165,16 @@ protected:
   double*    _cur_aux_times_ms;
   bool*      _cur_aux_times_set;
 
+  double* _par_last_gc_worker_start_times_ms;
   double* _par_last_ext_root_scan_times_ms;
   double* _par_last_mark_stack_scan_times_ms;
-  double* _par_last_update_rs_start_times_ms;
   double* _par_last_update_rs_times_ms;
   double* _par_last_update_rs_processed_buffers;
-  double* _par_last_scan_rs_start_times_ms;
   double* _par_last_scan_rs_times_ms;
-  double* _par_last_scan_new_refs_times_ms;
   double* _par_last_obj_copy_times_ms;
   double* _par_last_termination_times_ms;
+  double* _par_last_termination_attempts;
+  double* _par_last_gc_worker_end_times_ms;
 
   // indicates that we are in young GC mode
   bool _in_young_gc_mode;
@@ -197,8 +191,6 @@ protected:
 
   size_t _young_cset_length;
   bool   _last_young_gc_full;
-
-  double _target_pause_time_ms;
 
   unsigned              _full_young_pause_num;
   unsigned              _partial_young_pause_num;
@@ -525,6 +517,10 @@ public:
     return _mmu_tracker;
   }
 
+  double max_pause_time_ms() {
+    return _mmu_tracker->max_gc_time() * 1000.0;
+  }
+
   double predict_init_time_ms() {
     return get_new_prediction(_concurrent_mark_init_times_ms);
   }
@@ -559,20 +555,20 @@ public:
   }
 
 protected:
-  void print_stats (int level, const char* str, double value);
-  void print_stats (int level, const char* str, int value);
-  void print_par_stats (int level, const char* str, double* data) {
+  void print_stats(int level, const char* str, double value);
+  void print_stats(int level, const char* str, int value);
+
+  void print_par_stats(int level, const char* str, double* data) {
     print_par_stats(level, str, data, true);
   }
-  void print_par_stats (int level, const char* str, double* data, bool summary);
-  void print_par_buffers (int level, const char* str, double* data, bool summary);
+  void print_par_stats(int level, const char* str, double* data, bool summary);
+  void print_par_sizes(int level, const char* str, double* data, bool summary);
 
   void check_other_times(int level,
                          NumberSeq* other_times_ms,
                          NumberSeq* calc_other_times_ms) const;
 
   void print_summary (PauseSummary* stats) const;
-  void print_abandoned_summary(PauseSummary* summary) const;
 
   void print_summary (int level, const char* str, NumberSeq* seq) const;
   void print_summary_sd (int level, const char* str, NumberSeq* seq) const;
@@ -885,11 +881,15 @@ public:
   virtual void record_collection_pause_end_CH_strong_roots();
   virtual void record_collection_pause_end_G1_strong_roots();
 
-  virtual void record_collection_pause_end(bool abandoned);
+  virtual void record_collection_pause_end();
 
   // Record the fact that a full collection occurred.
   virtual void record_full_collection_start();
   virtual void record_full_collection_end();
+
+  void record_gc_worker_start_time(int worker_i, double ms) {
+    _par_last_gc_worker_start_times_ms[worker_i] = ms;
+  }
 
   void record_ext_root_scan_time(int worker_i, double ms) {
     _par_last_ext_root_scan_times_ms[worker_i] = ms;
@@ -912,10 +912,6 @@ public:
     _all_mod_union_times_ms->add(ms);
   }
 
-  void record_update_rs_start_time(int thread, double ms) {
-    _par_last_update_rs_start_times_ms[thread] = ms;
-  }
-
   void record_update_rs_time(int thread, double ms) {
     _par_last_update_rs_times_ms[thread] = ms;
   }
@@ -925,20 +921,8 @@ public:
     _par_last_update_rs_processed_buffers[thread] = processed_buffers;
   }
 
-  void record_scan_rs_start_time(int thread, double ms) {
-    _par_last_scan_rs_start_times_ms[thread] = ms;
-  }
-
   void record_scan_rs_time(int thread, double ms) {
     _par_last_scan_rs_times_ms[thread] = ms;
-  }
-
-  void record_scan_new_refs_time(int thread, double ms) {
-    _par_last_scan_new_refs_times_ms[thread] = ms;
-  }
-
-  double get_scan_new_refs_time(int thread) {
-    return _par_last_scan_new_refs_times_ms[thread];
   }
 
   void reset_obj_copy_time(int thread) {
@@ -953,16 +937,13 @@ public:
     _par_last_obj_copy_times_ms[thread] += ms;
   }
 
-  void record_obj_copy_time(double ms) {
-    record_obj_copy_time(0, ms);
-  }
-
-  void record_termination_time(int thread, double ms) {
+  void record_termination(int thread, double ms, size_t attempts) {
     _par_last_termination_times_ms[thread] = ms;
+    _par_last_termination_attempts[thread] = (double) attempts;
   }
 
-  void record_termination_time(double ms) {
-    record_termination_time(0, ms);
+  void record_gc_worker_end_time(int worker_i, double ms) {
+    _par_last_gc_worker_end_times_ms[worker_i] = ms;
   }
 
   void record_pause_time_ms(double ms) {
@@ -1013,7 +994,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  virtual bool choose_collection_set() = 0;
+  virtual void choose_collection_set(double target_pause_time_ms) = 0;
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
@@ -1081,6 +1062,12 @@ public:
   bool during_initial_mark_pause()      { return _during_initial_mark_pause;  }
   void set_during_initial_mark_pause()  { _during_initial_mark_pause = true;  }
   void clear_during_initial_mark_pause(){ _during_initial_mark_pause = false; }
+
+  // This sets the initiate_conc_mark_if_possible() flag to start a
+  // new cycle, as long as we are not already in one. It's best if it
+  // is called during a safepoint when the test whether a cycle is in
+  // progress or not is stable.
+  bool force_initial_mark_if_outside_cycle();
 
   // This is called at the very beginning of an evacuation pause (it
   // has to be the first thing that the pause does). If
@@ -1264,7 +1251,7 @@ class G1CollectorPolicy_BestRegionsFirst: public G1CollectorPolicy {
   // If the estimated is less then desirable, resize if possible.
   void expand_if_possible(size_t numRegions);
 
-  virtual bool choose_collection_set();
+  virtual void choose_collection_set(double target_pause_time_ms);
   virtual void record_collection_pause_start(double start_time_sec,
                                              size_t start_used);
   virtual void record_concurrent_mark_cleanup_end(size_t freed_bytes,
@@ -1275,7 +1262,7 @@ public:
   G1CollectorPolicy_BestRegionsFirst() {
     _collectionSetChooser = new CollectionSetChooser();
   }
-  void record_collection_pause_end(bool abandoned);
+  void record_collection_pause_end();
   bool should_do_collection_pause(size_t word_size);
   // This is not needed any more, after the CSet choosing code was
   // changed to use the pause prediction work. But let's leave the

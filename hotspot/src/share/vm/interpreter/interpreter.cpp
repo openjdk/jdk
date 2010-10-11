@@ -41,20 +41,20 @@ void InterpreterCodelet::verify() {
 }
 
 
-void InterpreterCodelet::print() {
+void InterpreterCodelet::print_on(outputStream* st) const {
   if (PrintInterpreter) {
-    tty->cr();
-    tty->print_cr("----------------------------------------------------------------------");
+    st->cr();
+    st->print_cr("----------------------------------------------------------------------");
   }
 
-  if (description() != NULL) tty->print("%s  ", description());
-  if (bytecode()    >= 0   ) tty->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
-  tty->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
+  if (description() != NULL) st->print("%s  ", description());
+  if (bytecode()    >= 0   ) st->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
+  st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 code_begin(), code_end(), code_size());
 
   if (PrintInterpreter) {
-    tty->cr();
-    Disassembler::decode(code_begin(), code_end(), tty);
+    st->cr();
+    Disassembler::decode(code_begin(), code_end(), st);
   }
 }
 
@@ -99,11 +99,6 @@ void interpreter_init() {
 #endif // PRODUCT
   // need to hit every safepoint in order to call zapping routine
   // register the interpreter
-  VTune::register_stub(
-    "Interpreter",
-    AbstractInterpreter::code()->code_start(),
-    AbstractInterpreter::code()->code_end()
-  );
   Forte::register_stub(
     "Interpreter",
     AbstractInterpreter::code()->code_start(),
@@ -267,20 +262,6 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
 }
 #endif // PRODUCT
 
-static BasicType constant_pool_type(methodOop method, int index) {
-  constantTag tag = method->constants()->tag_at(index);
-       if (tag.is_int              ()) return T_INT;
-  else if (tag.is_float            ()) return T_FLOAT;
-  else if (tag.is_long             ()) return T_LONG;
-  else if (tag.is_double           ()) return T_DOUBLE;
-  else if (tag.is_string           ()) return T_OBJECT;
-  else if (tag.is_unresolved_string()) return T_OBJECT;
-  else if (tag.is_klass            ()) return T_OBJECT;
-  else if (tag.is_unresolved_klass ()) return T_OBJECT;
-  ShouldNotReachHere();
-  return T_ILLEGAL;
-}
-
 
 //------------------------------------------------------------------------------------------------------------------------
 // Deoptimization support
@@ -330,13 +311,15 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
     }
 
     case Bytecodes::_ldc   :
-      type = constant_pool_type( method, *(bcp+1) );
-      break;
-
     case Bytecodes::_ldc_w : // fall through
     case Bytecodes::_ldc2_w:
-      type = constant_pool_type( method, Bytes::get_Java_u2(bcp+1) );
-      break;
+      {
+        Thread *thread = Thread::current();
+        ResourceMark rm(thread);
+        methodHandle mh(thread, method);
+        type = Bytecode_loadconstant_at(mh, bci)->result_type();
+        break;
+      }
 
     default:
       type = Bytecodes::result_type(code);

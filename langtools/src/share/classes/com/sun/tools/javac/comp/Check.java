@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.source.tree.AssignmentTree;
 import java.util.*;
 import java.util.Set;
 
@@ -47,8 +48,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 
 /** Type checking helper class for the attribution phase.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -64,6 +65,7 @@ public class Check {
     private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
     private boolean warnOnSyntheticConflicts;
+    private boolean suppressAbortOnBadClassFile;
     private final TreeInfo treeinfo;
 
     // The set of lint options currently in effect. It is initialized
@@ -98,21 +100,25 @@ public class Check {
         complexInference = options.get("-complexinference") != null;
         skipAnnotations = options.get("skipAnnotations") != null;
         warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
+        suppressAbortOnBadClassFile = options.get("suppressAbortOnBadClassFile") != null;
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean verboseVarargs = lint.isEnabled(LintCategory.VARARGS);
         boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
         deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
-                enforceMandatoryWarnings, "deprecated");
+                enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
-                enforceMandatoryWarnings, "unchecked");
+                enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
+        unsafeVarargsHandler = new MandatoryWarningHandler(log, verboseVarargs,
+                enforceMandatoryWarnings, "varargs", LintCategory.VARARGS);
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
-                enforceMandatoryWarnings, "sunapi");
+                enforceMandatoryWarnings, "sunapi", null);
     }
 
     /** Switch: generics enabled?
@@ -148,7 +154,11 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
-    /** A handler for messages about using Sun proprietary API.
+    /** A handler for messages about unchecked or unsafe vararg method decl.
+     */
+    private MandatoryWarningHandler unsafeVarargsHandler;
+
+    /** A handler for messages about using proprietary API.
      */
     private MandatoryWarningHandler sunApiHandler;
 
@@ -180,7 +190,16 @@ public class Check {
             uncheckedHandler.report(pos, msg, args);
     }
 
-    /** Warn about using Sun proprietary API.
+    /** Warn about unsafe vararg method decl.
+     *  @param pos        Position to be used for error reporting.
+     *  @param sym        The deprecated symbol.
+     */
+    void warnUnsafeVararg(DiagnosticPosition pos, Type elemType) {
+        if (!lint.isSuppressed(LintCategory.VARARGS))
+            unsafeVarargsHandler.report(pos, "varargs.non.reifiable.type", elemType);
+    }
+
+    /** Warn about using proprietary API.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
      */
@@ -191,7 +210,7 @@ public class Check {
 
     public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
         if (lint.isEnabled(LintCategory.STATIC))
-            log.warning(pos, msg, args);
+            log.warning(LintCategory.STATIC, pos, msg, args);
     }
 
     /**
@@ -200,6 +219,7 @@ public class Check {
     public void reportDeferredDiagnostics() {
         deprecationHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
+        unsafeVarargsHandler.reportDeferredDiagnostic();
         sunApiHandler.reportDeferredDiagnostic();
     }
 
@@ -210,7 +230,8 @@ public class Check {
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
         log.error(pos, "cant.access", ex.sym, ex.getDetailValue());
-        if (ex instanceof ClassReader.BadClassFile) throw new Abort();
+        if (ex instanceof ClassReader.BadClassFile
+                && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
     }
 
@@ -309,7 +330,7 @@ public class Check {
             for (Scope.Entry e = s.next.lookup(c.name);
                  e.scope != null && e.sym.owner == c.owner;
                  e = e.next()) {
-                if (e.sym.kind == TYP &&
+                if (e.sym.kind == TYP && e.sym.type.tag != TYPEVAR &&
                     (e.sym.owner.kind & (VAR | MTH)) != 0 &&
                     c.name != names.error) {
                     duplicateError(pos, e.sym);
@@ -373,6 +394,10 @@ public class Check {
      *  @param req        The type that was required.
      */
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
+        return checkType(pos, found, req, "incompatible.types");
+    }
+
+    Type checkType(DiagnosticPosition pos, Type found, Type req, String errKey) {
         if (req.tag == ERROR)
             return req;
         if (found.tag == FORALL)
@@ -391,7 +416,7 @@ public class Check {
             log.error(pos, "assignment.to.extends-bound", req);
             return types.createErrorType(found);
         }
-        return typeError(pos, diags.fragment("incompatible.types"), found, req);
+        return typeError(pos, diags.fragment(errKey), found, req);
     }
 
     /** Instantiate polymorphic type to some prototype, unless
@@ -543,7 +568,7 @@ public class Check {
             while (args.nonEmpty()) {
                 if (args.head.tag == WILDCARD)
                     return typeTagError(pos,
-                                        Log.getLocalizedString("type.req.exact"),
+                                        diags.fragment("type.req.exact"),
                                         args.head);
                 args = args.tail;
             }
@@ -677,17 +702,33 @@ public class Check {
         }
     }
 
+    void checkVarargMethodDecl(JCMethodDecl tree) {
+        MethodSymbol m = tree.sym;
+        //check the element type of the vararg
+        if (m.isVarArgs()) {
+            Type varargElemType = types.elemtype(tree.params.last().type);
+            if (!types.isReifiable(varargElemType)) {
+                warnUnsafeVararg(tree.params.head.pos(), varargElemType);
+            }
+        }
+    }
+
     /**
      * Check that vararg method call is sound
      * @param pos Position to be used for error reporting.
      * @param argtypes Actual arguments supplied to vararg method.
      */
-    void checkVararg(DiagnosticPosition pos, List<Type> argtypes) {
+    void checkVararg(DiagnosticPosition pos, List<Type> argtypes, Symbol msym, Env<AttrContext> env) {
+        Env<AttrContext> calleeLintEnv = env;
+        while (calleeLintEnv.info.lint == null)
+            calleeLintEnv = calleeLintEnv.next;
+        Lint calleeLint = calleeLintEnv.info.lint.augment(msym.attributes_field, msym.flags());
         Type argtype = argtypes.last();
-        if (!types.isReifiable(argtype))
+        if (!types.isReifiable(argtype) && !calleeLint.isSuppressed(Lint.LintCategory.VARARGS)) {
             warnUnchecked(pos,
                               "unchecked.generic.array.creation",
                               argtype);
+        }
     }
 
     /** Check that given modifiers are legal for given symbol and
@@ -865,32 +906,15 @@ public class Check {
      *
      *  and we can't make sure that the bound is already attributed because
      *  of possible cycles.
-     */
-    private Validator validator = new Validator();
-
-    /** Visitor method: Validate a type expression, if it is not null, catching
+     *
+     * Visitor method: Validate a type expression, if it is not null, catching
      *  and reporting any completion failures.
      */
     void validate(JCTree tree, Env<AttrContext> env) {
-        try {
-            if (tree != null) {
-                validator.env = env;
-                tree.accept(validator);
-                checkRaw(tree, env);
-            }
-        } catch (CompletionFailure ex) {
-            completionError(tree.pos(), ex);
-        }
+        validate(tree, env, true);
     }
-    //where
-    void checkRaw(JCTree tree, Env<AttrContext> env) {
-        if (lint.isEnabled(Lint.LintCategory.RAW) &&
-            tree.type.tag == CLASS &&
-            !TreeInfo.isDiamond(tree) &&
-            !env.enclClass.name.isEmpty() &&  //anonymous or intersection
-            tree.type.isRaw()) {
-            log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
-        }
+    void validate(JCTree tree, Env<AttrContext> env, boolean checkRaw) {
+        new Validator(env).validateTree(tree, checkRaw, true);
     }
 
     /** Visitor method: Validate a list of type expressions.
@@ -904,9 +928,16 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        boolean isOuter;
+        Env<AttrContext> env;
+
+        Validator(Env<AttrContext> env) {
+            this.env = env;
+        }
+
         @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
-            validate(tree.elemtype, env);
+            tree.elemtype.accept(this);
         }
 
         @Override
@@ -918,10 +949,14 @@ public class Check {
                 List<Type> forms = tree.type.tsym.type.getTypeArguments();
                 ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
 
+                boolean is_java_lang_Class = tree.type.tsym.flatName() == names.java_lang_Class;
+
                 // For matching pairs of actual argument types `a' and
                 // formal type parameters with declared bound `b' ...
                 while (args.nonEmpty() && forms.nonEmpty()) {
-                    validate(args.head, env);
+                    validateTree(args.head,
+                            !(isOuter && is_java_lang_Class),
+                            false);
 
                     // exact type arguments needs to know their
                     // bounds (for upper and lower bound
@@ -973,14 +1008,14 @@ public class Check {
 
         @Override
         public void visitTypeParameter(JCTypeParameter tree) {
-            validate(tree.bounds, env);
+            validateTrees(tree.bounds, true, isOuter);
             checkClassBounds(tree.pos(), tree.type);
         }
 
         @Override
         public void visitWildcard(JCWildcard tree) {
             if (tree.inner != null)
-                validate(tree.inner, env);
+                validateTree(tree.inner, true, isOuter);
         }
 
         @Override
@@ -1018,7 +1053,34 @@ public class Check {
         public void visitTree(JCTree tree) {
         }
 
-        Env<AttrContext> env;
+        public void validateTree(JCTree tree, boolean checkRaw, boolean isOuter) {
+            try {
+                if (tree != null) {
+                    this.isOuter = isOuter;
+                    tree.accept(this);
+                    if (checkRaw)
+                        checkRaw(tree, env);
+                }
+            } catch (CompletionFailure ex) {
+                completionError(tree.pos(), ex);
+            }
+        }
+
+        public void validateTrees(List<? extends JCTree> trees, boolean checkRaw, boolean isOuter) {
+            for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
+                validateTree(l.head, checkRaw, isOuter);
+        }
+
+        void checkRaw(JCTree tree, Env<AttrContext> env) {
+            if (lint.isEnabled(Lint.LintCategory.RAW) &&
+                tree.type.tag == CLASS &&
+                !TreeInfo.isDiamond(tree) &&
+                !env.enclClass.name.isEmpty() &&  //anonymous or intersection
+                tree.type.isRaw()) {
+                log.warning(Lint.LintCategory.RAW,
+                        tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
+            }
+        }
     }
 
 /* *************************************************************************
@@ -1817,6 +1879,7 @@ public class Check {
                     types.isSameType(types.erasure(sym.type), types.erasure(e.sym.type)) &&
                     sym != e.sym &&
                     (sym.flags() & Flags.SYNTHETIC) != (e.sym.flags() & Flags.SYNTHETIC) &&
+                    (sym.flags() & IPROXY) == 0 && (e.sym.flags() & IPROXY) == 0 &&
                     (sym.flags() & BRIDGE) == 0 && (e.sym.flags() & BRIDGE) == 0) {
                     syntheticError(pos, (e.sym.flags() & SYNTHETIC) == 0 ? e.sym : sym);
                     return;
@@ -1887,6 +1950,20 @@ public class Check {
  * Check annotations
  **************************************************************************/
 
+    /**
+     * Recursively validate annotations values
+     */
+    void validateAnnotationTree(JCTree tree) {
+        class AnnotationValidator extends TreeScanner {
+            @Override
+            public void visitAnnotation(JCAnnotation tree) {
+                super.visitAnnotation(tree);
+                validateAnnotation(tree);
+            }
+        }
+        tree.accept(new AnnotationValidator());
+    }
+
     /** Annotation types are restricted to primitives, String, an
      *  enum, an annotation, Class, Class<?>, Class<? extends
      *  Anything>, arrays of the preceding.
@@ -1950,7 +2027,7 @@ public class Check {
     /** Check an annotation of a symbol.
      */
     public void validateAnnotation(JCAnnotation a, Symbol s) {
-        validateAnnotation(a);
+        validateAnnotationTree(a);
 
         if (!annotationApplicable(a, s))
             log.error(a.pos(), "annotation.type.not.applicable");
@@ -1964,7 +2041,7 @@ public class Check {
     public void validateTypeAnnotation(JCTypeAnnotation a, boolean isTypeParameter) {
         if (a.type == null)
             throw new AssertionError("annotation tree hasn't been attributed yet: " + a);
-        validateAnnotation(a);
+        validateAnnotationTree(a);
 
         if (!isTypeAnnotation(a, isTypeParameter))
             log.error(a.pos(), "annotation.type.not.applicable");
@@ -2061,8 +2138,12 @@ public class Check {
     public void validateAnnotation(JCAnnotation a) {
         if (a.type.isErroneous()) return;
 
-        // collect an inventory of the members
-        Set<MethodSymbol> members = new HashSet<MethodSymbol>();
+        // collect an inventory of the members (sorted alphabetically)
+        Set<MethodSymbol> members = new TreeSet<MethodSymbol>(new Comparator<Symbol>() {
+            public int compare(Symbol t, Symbol t1) {
+                return t.name.compareTo(t1.name);
+            }
+        });
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
              e != null;
              e = e.sibling)
@@ -2078,15 +2159,21 @@ public class Check {
             if (!members.remove(m))
                 log.error(assign.lhs.pos(), "duplicate.annotation.member.value",
                           m.name, a.type);
-            if (assign.rhs.getTag() == ANNOTATION)
-                validateAnnotation((JCAnnotation)assign.rhs);
         }
 
         // all the remaining ones better have default values
-        for (MethodSymbol m : members)
-            if (m.defaultValue == null && !m.type.isErroneous())
-                log.error(a.pos(), "annotation.missing.default.value",
-                          a.type, m.name);
+        ListBuffer<Name> missingDefaults = ListBuffer.lb();
+        for (MethodSymbol m : members) {
+            if (m.defaultValue == null && !m.type.isErroneous()) {
+                missingDefaults.append(m.name);
+            }
+        }
+        if (missingDefaults.nonEmpty()) {
+            String key = (missingDefaults.size() > 1)
+                    ? "annotation.missing.default.value.1"
+                    : "annotation.missing.default.value";
+            log.error(a.pos(), key, a.type, missingDefaults);
+        }
 
         // special case: java.lang.annotation.Target must not have
         // repeated values in its value member
@@ -2115,7 +2202,8 @@ public class Check {
             (s.flags() & DEPRECATED) != 0 &&
             !syms.deprecatedType.isErroneous() &&
             s.attribute(syms.deprecatedType.tsym) == null) {
-            log.warning(pos, "missing.deprecated.annotation");
+            log.warning(Lint.LintCategory.DEP_ANN,
+                    pos, "missing.deprecated.annotation");
         }
     }
 
@@ -2266,7 +2354,7 @@ public class Check {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                log.warning(pos, "div.zero");
+                log.warning(Lint.LintCategory.DIVZERO, pos, "div.zero");
             }
         }
     }
@@ -2276,7 +2364,7 @@ public class Check {
      */
     void checkEmptyIf(JCIf tree) {
         if (tree.thenpart.getTag() == JCTree.SKIP && tree.elsepart == null && lint.isEnabled(Lint.LintCategory.EMPTY))
-            log.warning(tree.thenpart.pos(), "empty.if");
+            log.warning(Lint.LintCategory.EMPTY, tree.thenpart.pos(), "empty.if");
     }
 
     /** Check that symbol is unique in given scope.

@@ -29,6 +29,8 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.*;
 
+import java.util.Locale;
+
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -110,7 +112,7 @@ final class P11RSACipher extends CipherSpi {
 
     protected void engineSetPadding(String padding)
             throws NoSuchPaddingException {
-        String lowerPadding = padding.toLowerCase();
+        String lowerPadding = padding.toLowerCase(Locale.ENGLISH);
         if (lowerPadding.equals("pkcs1Padding")) {
             // empty
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,7 +399,7 @@ class GTKPainter extends SynthPainter {
         }
 
         String detail = "arrow";
-        if (name == "ScrollBar.button") {
+        if ((name == "ScrollBar.button") || (name == "TabbedPane.button")) {
             if (arrowType == ArrowType.UP || arrowType == ArrowType.DOWN) {
                 detail = "vscrollbar";
             } else {
@@ -409,7 +409,7 @@ class GTKPainter extends SynthPainter {
                    name == "Spinner.previousButton") {
             detail = "spinbutton";
         } else if (name != "ComboBox.arrowButton") {
-            assert false;
+            assert false : "unexpected name: " + name;
         }
 
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
@@ -436,7 +436,7 @@ class GTKPainter extends SynthPainter {
         String name = button.getName();
         String detail = "button";
         int direction = SwingConstants.CENTER;
-        if (name == "ScrollBar.button") {
+        if ((name == "ScrollBar.button") || (name == "TabbedPane.button")) {
             Integer prop = (Integer)
                 button.getClientProperty("__arrow_direction__");
             direction = (prop != null) ?
@@ -457,7 +457,7 @@ class GTKPainter extends SynthPainter {
         } else if (name == "Spinner.nextButton") {
             detail = "spinbutton_up";
         } else if (name != "ComboBox.arrowButton") {
-            assert false;
+            assert false : "unexpected name: " + name;
         }
 
         int state = context.getComponentState();
@@ -1438,10 +1438,6 @@ class GTKPainter extends SynthPainter {
                             Region.TABLE, state, "", x, y, w, h);
                 }
             }
-        }
-
-        public Insets getBorderInsets(Component c) {
-            return getBorderInsets(c, null);
         }
 
         public Insets getBorderInsets(Component c, Insets i) {

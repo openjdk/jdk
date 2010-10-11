@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class DnsContextFactory implements InitialContextFactory {
             throw new ConfigurationException("DNS pseudo-URL required");
         }
 
-        List servers = new ArrayList();
+        List<String> servers = new ArrayList<>();
 
         for (int i = 0; i < urls.length; i++) {
             String server = urls[i].getHost();
@@ -145,7 +145,7 @@ public class DnsContextFactory implements InitialContextFactory {
                 // No server or port given, so look to underlying platform.
                 // ResolverConfiguration does some limited caching, so the
                 // following is reasonably efficient even if called rapid-fire.
-                List platformServers = filterNameServers(
+                List<String> platformServers = filterNameServers(
                     ResolverConfiguration.open().nameservers(), false);
                 if (!platformServers.isEmpty()) {
                     servers.addAll(platformServers);
@@ -160,8 +160,7 @@ public class DnsContextFactory implements InitialContextFactory {
                         ? server
                         : server + ":" + port);
         }
-        return (String[]) servers.toArray(
-                                        new String[servers.size()]);
+        return servers.toArray(new String[servers.size()]);
     }
 
     /*

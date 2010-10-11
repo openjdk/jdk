@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     for (uint i1 = 0; i1 < null_block->_nodes.size(); i1++) {
       Node* nn = null_block->_nodes[i1];
       if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() ==
-          SharedRuntime::uncommon_trap_blob()->instructions_begin()) {
+          nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
         if (trtype->isa_int() && trtype->is_int()->is_con()) {
           jint tr_con = trtype->is_int()->get_con();
@@ -113,7 +112,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
     was_store = false;
-    switch( mach->ideal_Opcode() ) {
+    int iop = mach->ideal_Opcode();
+    switch( iop ) {
     case Op_LoadB:
     case Op_LoadUS:
     case Op_LoadD:
@@ -155,6 +155,12 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     default:                    // Also check for embedded loads
       if( !mach->needs_anti_dependence_check() )
         continue;               // Not an memory op; skip it
+      if( must_clone[iop] ) {
+        // Do not move nodes which produce flags because
+        // RA will try to clone it to place near branch and
+        // it will cause recompilation, see clone_node().
+        continue;
+      }
       {
         // Check that value is used in memory address in
         // instructions with embedded load (CmpP val1,(val2+off)).
@@ -461,7 +467,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSe
       n_choice = 1;
     }
 
-    uint n_latency = cfg->_node_latency.at_grow(n->_idx);
+    uint n_latency = cfg->_node_latency->at_grow(n->_idx);
     uint n_score   = n->req();   // Many inputs get high score to break ties
 
     // Keep best latency found
@@ -738,7 +744,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
         Node     *n = _nodes[j];
         int     idx = n->_idx;
         tty->print("#   ready cnt:%3d  ", ready_cnt[idx]);
-        tty->print("latency:%3d  ", cfg->_node_latency.at_grow(idx));
+        tty->print("latency:%3d  ", cfg->_node_latency->at_grow(idx));
         tty->print("%4d: %s\n", idx, n->Name());
       }
     }
@@ -765,7 +771,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
 #ifndef PRODUCT
     if (cfg->trace_opto_pipelining()) {
       tty->print("#    select %d: %s", n->_idx, n->Name());
-      tty->print(", latency:%d", cfg->_node_latency.at_grow(n->_idx));
+      tty->print(", latency:%d", cfg->_node_latency->at_grow(n->_idx));
       n->dump();
       if (Verbose) {
         tty->print("#   ready list:");
@@ -957,6 +963,8 @@ void Block::call_catch_cleanup(Block_Array &bbs) {
     Block *sb = _succs[i];
     // Clone the entire area; ignoring the edge fixup for now.
     for( uint j = end; j > beg; j-- ) {
+      // It is safe here to clone a node with anti_dependence
+      // since clones dominate on each path.
       Node *clone = _nodes[j-1]->clone();
       sb->_nodes.insert( 1, clone );
       bbs.map(clone->_idx,sb);

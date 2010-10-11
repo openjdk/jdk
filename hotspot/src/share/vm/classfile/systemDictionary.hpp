@@ -471,8 +471,16 @@ public:
   // ask Java to compute a java.dyn.MethodType object for a given signature
   static Handle    find_method_handle_type(symbolHandle signature,
                                            KlassHandle accessing_klass,
+                                           bool for_invokeGeneric,
                                            bool& return_bcp_flag,
                                            TRAPS);
+  // ask Java to compute a java.dyn.MethodHandle object for a given CP entry
+  static Handle    link_method_handle_constant(KlassHandle caller,
+                                               int ref_kind, //e.g., JVM_REF_invokeVirtual
+                                               KlassHandle callee,
+                                               symbolHandle name,
+                                               symbolHandle signature,
+                                               TRAPS);
   // ask Java to create a dynamic call site, while linking an invokedynamic op
   static Handle    make_dynamic_call_site(Handle bootstrap_method,
                                           // Callee information:
@@ -485,7 +493,10 @@ public:
                                           TRAPS);
 
   // coordinate with Java about bootstrap methods
-  static Handle    find_bootstrap_method(KlassHandle caller, TRAPS);
+  static Handle    find_bootstrap_method(methodHandle caller_method,
+                                         int caller_bci,  // N.B. must be an invokedynamic
+                                         int cache_index, // must be corresponding main_entry
+                                         TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints
   static const char* loader_name(oop loader) {

@@ -626,8 +626,7 @@ public:
     _nodes.map( old_node->_idx, (Node*)((intptr_t)new_node + 1) );
   }
   void lazy_replace( Node *old_node, Node *new_node ) {
-    _igvn.hash_delete(old_node);
-    _igvn.subsume_node( old_node, new_node );
+    _igvn.replace_node( old_node, new_node );
     lazy_update( old_node, new_node );
   }
   void lazy_replace_proj( Node *old_node, Node *new_node ) {
@@ -937,6 +936,12 @@ public:
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
   void do_split_if( Node *iff );
+
+  // Conversion of fill/copy patterns into intrisic versions
+  bool do_intrinsify_fill();
+  bool intrinsify_fill(IdealLoopTree* lpt);
+  bool match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& store_value,
+                       Node*& shift, Node*& offset);
 
 private:
   // Return a type based on condition control flow

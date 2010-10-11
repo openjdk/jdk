@@ -465,12 +465,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
       break;
 
-#ifdef TIERED
     case counter_overflow_id:
-        // G4 contains bci
-      oop_maps = generate_stub_call(sasm, noreg, CAST_FROM_FN_PTR(address, counter_overflow), G4);
+        // G4 contains bci, G5 contains method
+      oop_maps = generate_stub_call(sasm, noreg, CAST_FROM_FN_PTR(address, counter_overflow), G4, G5);
       break;
-#endif // TIERED
 
     case new_type_array_id:
     case new_object_array_id:
@@ -1031,3 +1029,7 @@ void Runtime1::generate_handle_exception(StubAssembler* sasm, OopMapSet* oop_map
 #undef __
 
 #define __ masm->
+
+const char *Runtime1::pd_name_for_address(address entry) {
+  return "<unknown function>";
+}

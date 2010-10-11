@@ -38,7 +38,7 @@ import static java.lang.System.out;
 
 public class ChunkedEncodingTest{
     private static MessageDigest serverDigest, clientDigest;
-    private static byte[] serverMac, clientMac;
+    private static volatile byte[] serverMac, clientMac;
 
     static void client(String u) throws Exception {
         URL url = new URL(u);
@@ -106,7 +106,7 @@ public class ChunkedEncodingTest{
             while (is.read() != -1);
             is.close();
 
-            t.sendResponseHeaders (200, MESSAGE_LENGTH);
+            t.sendResponseHeaders (200, 0);
             OutputStream os = t.getResponseBody();
             DigestOutputStream dos = new DigestOutputStream(os, serverDigest);
 

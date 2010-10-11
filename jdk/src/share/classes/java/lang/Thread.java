@@ -260,10 +260,6 @@ class Thread implements Runnable {
     /* Remembered Throwable from stop before start */
     private Throwable throwableFromStop;
 
-    /* Whether or not the Thread has been completely constructed;
-     * init or clone method has successfully completed */
-    private volatile Thread me;    // null
-
     /**
      * Returns a reference to the currently executing thread object.
      *
@@ -415,45 +411,18 @@ class Thread implements Runnable {
 
         /* Set thread ID */
         tid = nextThreadID();
-
-        this.me = this;
     }
 
     /**
-     * Returns a clone if the class of this object is {@link Cloneable Cloneable}.
-     *
-     * @return  a clone if the class of this object is {@code Cloneable}
+     * Throws CloneNotSupportedException as a Thread can not be meaningfully
+     * cloned. Construct a new Thread instead.
      *
      * @throws  CloneNotSupportedException
-     *          if this method is invoked on a class that does not
-     *          support {@code Cloneable}
+     *          always
      */
     @Override
     protected Object clone() throws CloneNotSupportedException {
-        Thread t;
-        synchronized(this) {
-            t = (Thread) super.clone();
-
-            t.tid = nextThreadID();
-            t.parkBlocker = null;
-            t.blocker = null;
-            t.blockerLock = new Object();
-            t.threadLocals = null;
-
-            group.checkAccess();
-            if (threadStatus == 0) {
-                group.addUnstarted();
-            }
-            t.setPriority(priority);
-
-            final Thread current = Thread.currentThread();
-            if (current.inheritableThreadLocals != null)
-                t.inheritableThreadLocals =
-                    ThreadLocal.createInheritedMap(current.inheritableThreadLocals);
-        }
-
-        t.me = t;
-        return t;
+        throw new CloneNotSupportedException();
     }
 
     /**
@@ -715,7 +684,7 @@ class Thread implements Runnable {
          *
          * A zero status value corresponds to state "NEW".
          */
-        if (threadStatus != 0 || this != me)
+        if (threadStatus != 0)
             throw new IllegalThreadStateException();
 
         /* Notify the group that this thread is about to be started

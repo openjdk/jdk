@@ -42,7 +42,7 @@ import java.util.*;
  * -Xprint option; the included visitor class is used to implement
  * Elements.printElements.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
@@ -83,7 +83,7 @@ public class PrintingProcessor extends AbstractProcessor {
      * Used for the -Xprint option and called by Elements.printElements
      */
     public static class PrintingElementVisitor
-        extends SimpleElementVisitor6<PrintingElementVisitor, Boolean> {
+        extends SimpleElementVisitor7<PrintingElementVisitor, Boolean> {
         int indentation; // Indentation level;
         final PrintWriter writer;
         final Elements elementUtils;
@@ -117,7 +117,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     enclosing != null &&
                     NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
-                    (new SimpleElementVisitor6<NestingKind, Void>() {
+                    (new SimpleElementVisitor7<NestingKind, Void>() {
                         @Override
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();

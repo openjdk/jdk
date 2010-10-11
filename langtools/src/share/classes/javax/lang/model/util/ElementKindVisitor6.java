@@ -76,6 +76,8 @@ import javax.lang.model.SourceVersion;
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
+ *
+ * @see ElementKindVisitor7
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)

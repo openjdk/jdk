@@ -664,19 +664,14 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         return;
       }
 
-      // XXX use a global constant instead of 64!
-      typedef struct OopTaskQueuePadded {
-        OopTaskQueue work_queue;
-        char pad[64 - sizeof(OopTaskQueue)];  // prevent false sharing
-      } OopTaskQueuePadded;
-
+      typedef Padded<OopTaskQueue> PaddedOopTaskQueue;
       for (i = 0; i < num_queues; i++) {
-        OopTaskQueuePadded *q_padded = new OopTaskQueuePadded();
-        if (q_padded == NULL) {
+        PaddedOopTaskQueue *q = new PaddedOopTaskQueue();
+        if (q == NULL) {
           warning("work_queue allocation failure.");
           return;
         }
-        _task_queues->register_queue(i, &q_padded->work_queue);
+        _task_queues->register_queue(i, q);
       }
       for (i = 0; i < num_queues; i++) {
         _task_queues->queue(i)->initialize();
@@ -1024,7 +1019,7 @@ HeapWord* ConcurrentMarkSweepGeneration::allocate(size_t size,
 }
 
 HeapWord* ConcurrentMarkSweepGeneration::have_lock_and_allocate(size_t size,
-                                                  bool   tlab) {
+                                                  bool   tlab /* ignored */) {
   assert_lock_strong(freelistLock());
   size_t adjustedSize = CompactibleFreeListSpace::adjustObjectSize(size);
   HeapWord* res = cmsSpace()->allocate(adjustedSize);
@@ -1037,6 +1032,11 @@ HeapWord* ConcurrentMarkSweepGeneration::have_lock_and_allocate(size_t size,
   // allowing the object to be blackened (and its references scanned)
   // either during a preclean phase or at the final checkpoint.
   if (res != NULL) {
+    // We may block here with an uninitialized object with
+    // its mark-bit or P-bits not yet set. Such objects need
+    // to be safely navigable by block_start().
+    assert(oop(res)->klass_or_null() == NULL, "Object should be uninitialized here.");
+    assert(!((FreeChunk*)res)->isFree(), "Error, block will look free but show wrong size");
     collector()->direct_allocated(res, adjustedSize);
     _direct_allocated_words += adjustedSize;
     // allocation counters
@@ -1066,8 +1066,14 @@ void CMSCollector::direct_allocated(HeapWord* start, size_t size) {
     // [see comments preceding SweepClosure::do_blk() below for details]
     // 1. need to mark the object as live so it isn't collected
     // 2. need to mark the 2nd bit to indicate the object may be uninitialized
-    // 3. need to mark the end of the object so sweeper can skip over it
-    //    if it's uninitialized when the sweeper reaches it.
+    // 3. need to mark the end of the object so marking, precleaning or sweeping
+    //    can skip over uninitialized or unparsable objects. An allocated
+    //    object is considered uninitialized for our purposes as long as
+    //    its klass word is NULL. (Unparsable objects are those which are
+    //    initialized in the sense just described, but whose sizes can still
+    //    not be correctly determined. Note that the class of unparsable objects
+    //    can only occur in the perm gen. All old gen objects are parsable
+    //    as soon as they are initialized.)
     _markBitMap.mark(start);          // object is live
     _markBitMap.mark(start + 1);      // object is potentially uninitialized?
     _markBitMap.mark(start + size - 1);
@@ -1093,7 +1099,13 @@ void CMSCollector::promoted(bool par, HeapWord* start,
     // We don't need to mark the object as uninitialized (as
     // in direct_allocated above) because this is being done with the
     // world stopped and the object will be initialized by the
-    // time the sweeper gets to look at it.
+    // time the marking, precleaning or sweeping get to look at it.
+    // But see the code for copying objects into the CMS generation,
+    // where we need to ensure that concurrent readers of the
+    // block offset table are able to safely navigate a block that
+    // is in flux from being free to being allocated (and in
+    // transition while being copied into) and subsequently
+    // becoming a bona-fide object when the copy/promotion is complete.
     assert(SafepointSynchronize::is_at_safepoint(),
            "expect promotion only at safepoints");
 
@@ -1309,6 +1321,48 @@ ConcurrentMarkSweepGeneration::allocation_limit_reached(Space* space,
   return collector()->allocation_limit_reached(space, top, word_sz);
 }
 
+// IMPORTANT: Notes on object size recognition in CMS.
+// ---------------------------------------------------
+// A block of storage in the CMS generation is always in
+// one of three states. A free block (FREE), an allocated
+// object (OBJECT) whose size() method reports the correct size,
+// and an intermediate state (TRANSIENT) in which its size cannot
+// be accurately determined.
+// STATE IDENTIFICATION:   (32 bit and 64 bit w/o COOPS)
+// -----------------------------------------------------
+// FREE:      klass_word & 1 == 1; mark_word holds block size
+//
+// OBJECT:    klass_word installed; klass_word != 0 && klass_word & 1 == 0;
+//            obj->size() computes correct size
+//            [Perm Gen objects needs to be "parsable" before they can be navigated]
+//
+// TRANSIENT: klass_word == 0; size is indeterminate until we become an OBJECT
+//
+// STATE IDENTIFICATION: (64 bit+COOPS)
+// ------------------------------------
+// FREE:      mark_word & CMS_FREE_BIT == 1; mark_word & ~CMS_FREE_BIT gives block_size
+//
+// OBJECT:    klass_word installed; klass_word != 0;
+//            obj->size() computes correct size
+//            [Perm Gen comment above continues to hold]
+//
+// TRANSIENT: klass_word == 0; size is indeterminate until we become an OBJECT
+//
+//
+// STATE TRANSITION DIAGRAM
+//
+//        mut / parnew                     mut  /  parnew
+// FREE --------------------> TRANSIENT ---------------------> OBJECT --|
+//  ^                                                                   |
+//  |------------------------ DEAD <------------------------------------|
+//         sweep                            mut
+//
+// While a block is in TRANSIENT state its size cannot be determined
+// so readers will either need to come back later or stall until
+// the size can be determined. Note that for the case of direct
+// allocation, P-bits, when available, may be used to determine the
+// size of an object that may not yet have been initialized.
+
 // Things to support parallel young-gen collection.
 oop
 ConcurrentMarkSweepGeneration::par_promote(int thread_num,
@@ -1336,32 +1390,38 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
     }
   }
   assert(promoInfo->has_spooling_space(), "Control point invariant");
-  HeapWord* obj_ptr = ps->lab.alloc(word_sz);
+  const size_t alloc_sz = CompactibleFreeListSpace::adjustObjectSize(word_sz);
+  HeapWord* obj_ptr = ps->lab.alloc(alloc_sz);
   if (obj_ptr == NULL) {
-     obj_ptr = expand_and_par_lab_allocate(ps, word_sz);
+     obj_ptr = expand_and_par_lab_allocate(ps, alloc_sz);
      if (obj_ptr == NULL) {
        return NULL;
      }
   }
   oop obj = oop(obj_ptr);
+  OrderAccess::storestore();
   assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
+  assert(!((FreeChunk*)obj_ptr)->isFree(), "Error, block will look free but show wrong size");
+  // IMPORTANT: See note on object initialization for CMS above.
   // Otherwise, copy the object.  Here we must be careful to insert the
   // klass pointer last, since this marks the block as an allocated object.
   // Except with compressed oops it's the mark word.
   HeapWord* old_ptr = (HeapWord*)old;
+  // Restore the mark word copied above.
+  obj->set_mark(m);
+  assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
+  assert(!((FreeChunk*)obj_ptr)->isFree(), "Error, block will look free but show wrong size");
+  OrderAccess::storestore();
+
+  if (UseCompressedOops) {
+    // Copy gap missed by (aligned) header size calculation below
+    obj->set_klass_gap(old->klass_gap());
+  }
   if (word_sz > (size_t)oopDesc::header_size()) {
     Copy::aligned_disjoint_words(old_ptr + oopDesc::header_size(),
                                  obj_ptr + oopDesc::header_size(),
                                  word_sz - oopDesc::header_size());
   }
-
-  if (UseCompressedOops) {
-    // Copy gap missed by (aligned) header size calculation above
-    obj->set_klass_gap(old->klass_gap());
-  }
-
-  // Restore the mark word copied above.
-  obj->set_mark(m);
 
   // Now we can track the promoted object, if necessary.  We take care
   // to delay the transition from uninitialized to full object
@@ -1370,18 +1430,22 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   if (promoInfo->tracking()) {
     promoInfo->track((PromotedObject*)obj, old->klass());
   }
+  assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
+  assert(!((FreeChunk*)obj_ptr)->isFree(), "Error, block will look free but show wrong size");
+  assert(old->is_oop(), "Will use and dereference old klass ptr below");
 
   // Finally, install the klass pointer (this should be volatile).
+  OrderAccess::storestore();
   obj->set_klass(old->klass());
+  // We should now be able to calculate the right size for this object
+  assert(obj->is_oop() && obj->size() == (int)word_sz, "Error, incorrect size computed for promoted object");
 
-  assert(old->is_oop(), "Will dereference klass ptr below");
   collector()->promoted(true,          // parallel
                         obj_ptr, old->is_objArray(), word_sz);
 
   NOT_PRODUCT(
-    Atomic::inc(&_numObjectsPromoted);
-    Atomic::add((jint)CompactibleFreeListSpace::adjustObjectSize(obj->size()),
-                &_numWordsPromoted);
+    Atomic::inc_ptr(&_numObjectsPromoted);
+    Atomic::add_ptr(alloc_sz, &_numWordsPromoted);
   )
 
   return obj;
@@ -1970,6 +2034,9 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
                                             _intra_sweep_estimate.padded_average());
   }
 
+  {
+    TraceCMSMemoryManagerStats();
+  }
   GenMarkSweep::invoke_at_safepoint(_cmsGen->level(),
     ref_processor(), clear_all_soft_refs);
   #ifdef ASSERT
@@ -3420,6 +3487,7 @@ CMSPhaseAccounting::~CMSPhaseAccounting() {
 void CMSCollector::checkpointRootsInitial(bool asynch) {
   assert(_collectorState == InitialMarking, "Wrong collector state");
   check_correct_thread_executing();
+  TraceCMSMemoryManagerStats tms(_collectorState);
   ReferenceProcessor* rp = ref_processor();
   SpecializationStats::clear();
   assert(_restart_addr == NULL, "Control point invariant");
@@ -4753,6 +4821,7 @@ void CMSCollector::checkpointRootsFinal(bool asynch,
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
          "world should be stopped");
+  TraceCMSMemoryManagerStats tms(_collectorState);
   verify_work_stacks_empty();
   verify_overflow_empty();
 
@@ -5854,6 +5923,8 @@ void CMSCollector::sweep(bool asynch) {
   verify_work_stacks_empty();
   verify_overflow_empty();
   increment_sweep_count();
+  TraceCMSMemoryManagerStats tms(_collectorState);
+
   _inter_sweep_timer.stop();
   _inter_sweep_estimate.sample(_inter_sweep_timer.seconds());
   size_policy()->avg_cms_free_at_sweep()->sample(_cmsGen->free());
@@ -7866,14 +7937,20 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
   FreeChunk* fc = (FreeChunk*)addr;
   size_t res;
 
-  // check if we are done sweepinrg
-  if (addr == _limit) { // we have swept up to the limit, do nothing more
+  // Check if we are done sweeping. Below we check "addr >= _limit" rather
+  // than "addr == _limit" because although _limit was a block boundary when
+  // we started the sweep, it may no longer be one because heap expansion
+  // may have caused us to coalesce the block ending at the address _limit
+  // with a newly expanded chunk (this happens when _limit was set to the
+  // previous _end of the space), so we may have stepped past _limit; see CR 6977970.
+  if (addr >= _limit) { // we have swept up to or past the limit, do nothing more
     assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
            "sweep _limit out of bounds");
+    assert(addr < _sp->end(), "addr out of bounds");
     // help the closure application finish
-    return pointer_delta(_sp->end(), _limit);
+    return pointer_delta(_sp->end(), addr);
   }
-  assert(addr <= _limit, "sweep invariant");
+  assert(addr < _limit, "sweep invariant");
 
   // check if we should yield
   do_yield_check(addr);
@@ -9126,3 +9203,57 @@ size_t MarkDeadObjectsClosure::do_blk(HeapWord* addr) {
   }
   return res;
 }
+
+TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorState phase): TraceMemoryManagerStats() {
+
+  switch (phase) {
+    case CMSCollector::InitialMarking:
+      initialize(true  /* fullGC */ ,
+                 true  /* recordGCBeginTime */,
+                 true  /* recordPreGCUsage */,
+                 false /* recordPeakUsage */,
+                 false /* recordPostGCusage */,
+                 true  /* recordAccumulatedGCTime */,
+                 false /* recordGCEndTime */,
+                 false /* countCollection */  );
+      break;
+
+    case CMSCollector::FinalMarking:
+      initialize(true  /* fullGC */ ,
+                 false /* recordGCBeginTime */,
+                 false /* recordPreGCUsage */,
+                 false /* recordPeakUsage */,
+                 false /* recordPostGCusage */,
+                 true  /* recordAccumulatedGCTime */,
+                 false /* recordGCEndTime */,
+                 false /* countCollection */  );
+      break;
+
+    case CMSCollector::Sweeping:
+      initialize(true  /* fullGC */ ,
+                 false /* recordGCBeginTime */,
+                 false /* recordPreGCUsage */,
+                 true  /* recordPeakUsage */,
+                 true  /* recordPostGCusage */,
+                 false /* recordAccumulatedGCTime */,
+                 true  /* recordGCEndTime */,
+                 true  /* countCollection */  );
+      break;
+
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+// when bailing out of cms in concurrent mode failure
+TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(): TraceMemoryManagerStats() {
+  initialize(true /* fullGC */ ,
+             true /* recordGCBeginTime */,
+             true /* recordPreGCUsage */,
+             true /* recordPeakUsage */,
+             true /* recordPostGCusage */,
+             true /* recordAccumulatedGCTime */,
+             true /* recordGCEndTime */,
+             true /* countCollection */ );
+}
+

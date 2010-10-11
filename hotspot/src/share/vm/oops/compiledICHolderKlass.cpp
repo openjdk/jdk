@@ -120,10 +120,6 @@ int compiledICHolderKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void compiledICHolderKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_compiledICHolder(), "must be compiledICHolder");
-}
-
 void compiledICHolderKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_compiledICHolder(), "must be compiledICHolder");
 }
@@ -154,8 +150,6 @@ int compiledICHolderKlass::oop_update_pointers(ParCompactionManager* cm,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 // Printing
 
 void compiledICHolderKlass::oop_print_on(oop obj, outputStream* st) {
@@ -165,8 +159,6 @@ void compiledICHolderKlass::oop_print_on(oop obj, outputStream* st) {
   st->print(" - method: "); c->holder_method()->print_value_on(st); st->cr();
   st->print(" - klass:  "); c->holder_klass()->print_value_on(st); st->cr();
 }
-
-#endif //PRODUCT
 
 void compiledICHolderKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_compiledICHolder(), "must be compiledICHolder");

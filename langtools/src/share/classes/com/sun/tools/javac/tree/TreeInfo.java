@@ -38,8 +38,8 @@ import static com.sun.tools.javac.code.Flags.*;
 
 /** Utility class containing inspector methods for trees.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -501,6 +501,10 @@ public class TreeInfo {
                 if (that.sym == sym) result = that;
                 else super.visitVarDef(that);
             }
+            public void visitTypeParameter(JCTypeParameter that) {
+                if (that.type.tsym == sym) result = that;
+                else super.visitTypeParameter(that);
+            }
         }
         DeclScanner s = new DeclScanner();
         tree.accept(s);
@@ -630,6 +634,18 @@ public class TreeInfo {
             return ((JCVariableDecl) node).sym;
         default:
             return null;
+        }
+    }
+
+    public static boolean isDeclaration(JCTree node) {
+        node = skipParens(node);
+        switch (node.getTag()) {
+        case JCTree.CLASSDEF:
+        case JCTree.METHODDEF:
+        case JCTree.VARDEF:
+            return true;
+        default:
+            return false;
         }
     }
 

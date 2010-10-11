@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                      "Hora de verano de Europa Central", "CEST"};
         String CHAST[] = new String[] {"Hora est\u00e1ndar de Chatham", "CHAST",
                                        "Hora de verano de Chatham", "CHADT"};
+        String CHUT[] = new String[] {"Chuuk Time", "CHUT",
+                                      "Chuuk Summer Time", "CHUST"};
         String CIT[] = new String[] {"Hora de Indonesia Central", "CIT",
                                      "Hora de verano de Indonesia Central", "CIST"};
         String CLT[] = new String[] {"Hora de Chile", "CLT",
@@ -153,6 +155,8 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                           "Hora de verano de Pitcairn", "PDT"};
         String PKT[] = new String[] {"Hora de Pakist\u00e1n", "PKT",
                                      "Hora de verano de Pakist\u00e1n", "PKST"};
+        String PONT[] = new String[] {"Pohnpei Time", "PONT",
+                                      "Pohnpei Summer Time", "PONST"};
         String PST[] = new String[] {"Hora est\u00e1ndar del Pac\u00edfico", "PST",
                                      "Hora de verano del Pac\u00edfico", "PDT"};
         String RST[] = new String[] {"Hora est\u00e1ndar Oriental", "EST",
@@ -169,8 +173,6 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                           "Hora de verano del Este (Tasmania)", "EST"};
         String TMT[] = new String[] {"Hora de Turkmenist\u00e1n", "TMT",
                                      "Hora de verano de Turkmenist\u00e1n", "TMST"};
-        String TRUT[] =new String[] {"Hora de Truk", "TRUT",
-                                     "Hora de verano de Truk", "TRUST"};
         String ULAT[]= new String[] {"Hora de Ulan Bator", "ULAT",
                                      "Hora de verano de Ulan Bator", "ULAST"};
         String WART[] = new String[] {"Hora de Argentina Occidental", "WART",
@@ -309,6 +311,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"America/Atikokan", EST},
             {"America/Atka", HAST},
             {"America/Bahia", BRT},
+            {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
             {"America/Belem", BRT},
             {"America/Belize", CST},
@@ -446,10 +449,13 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
+            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"Hora de Davis", "DAVT",
                                                "Hora de verano de Davis", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"Hora de Dumont-d'Urville", "DDUT",
                                                         "Hora de verano de Dumont-d'Urville", "DDUST"}},
+            {"Antarctica/Macquarie", new String[] {"Macquarie Island Time", "MIST",
+                                                   "Macquarie Island Summer Time", "MIST"}},
             {"Antarctica/Mawson", new String[] {"Hora de Mawson", "MAWT",
                                                 "Hora de verano de Mawson", "MAWST"}},
             {"Antarctica/McMurdo", NZST},
@@ -533,7 +539,6 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                           "Hora de verano de Filipinas", "PHST"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
-
             {"Asia/Novokuznetsk", NOVT},
             {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Hora de Uralsk", "ORAT",
@@ -753,6 +758,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"Pacific/Apia", WST_SAMOA},
             {"Pacific/Auckland", NZST},
             {"Pacific/Chatham", CHAST},
+            {"Pacific/Chuuk", CHUT},
             {"Pacific/Easter", EASTER},
             {"Pacific/Efate", new String[] {"Hora de Vanuatu", "VUT",
                                             "Hora de verano de Vanuatu", "VUST"}},
@@ -791,8 +797,8 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"Pacific/Palau", new String[] {"Hora de Palau", "PWT",
                                             "Hora de verano de Palau", "PWST"}},
             {"Pacific/Pitcairn", PITCAIRN},
-            {"Pacific/Ponape", new String[] {"Hora de Ponape", "PONT",
-                                             "Hora de verano de Ponape", "PONST"}},
+            {"Pacific/Pohnpei", PONT},
+            {"Pacific/Ponape", PONT},
             {"Pacific/Port_Moresby", new String[] {"Hora de Pap\u00faa-Nueva Guinea", "PGT",
                                                    "Hora de verano de Pap\u00faa-Nueva Guinea", "PGST"}},
             {"Pacific/Rarotonga", new String[] {"Hora de las islas Cook", "CKT",
@@ -805,12 +811,12 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                              "Hora de verano de las islas Gilbert", "GILST"}},
             {"Pacific/Tongatapu", new String[] {"Hora de Tonga", "TOT",
                                                 "Hora de verano de Tonga", "TOST"}},
-            {"Pacific/Truk", TRUT},
+            {"Pacific/Truk", CHUT},
             {"Pacific/Wake", new String[] {"Hora de Wake", "WAKT",
                                            "Hora de verano de Wake", "WAKST"}},
             {"Pacific/Wallis", new String[] {"Hora de Wallis y Futuna", "WFT",
                                              "Hora de verano de Wallis y Futuna", "WFST"}},
-            {"Pacific/Yap", TRUT},
+            {"Pacific/Yap", CHUT},
             {"Poland", CET},
             {"PRC", CTT},
             {"PST8PDT", PST},

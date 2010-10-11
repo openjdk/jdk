@@ -124,7 +124,7 @@ static jfieldID ni_ia6ipaddressID;
 static int initialized = 0;
 
 /*
- * Find an internet address for a given hostname.  Not this this
+ * Find an internet address for a given hostname.  Note that this
  * code only works for addresses of type INET. The translation
  * of %d.%d.%d.%d to an address (int) occurs in java now, so the
  * String "host" shouldn't *ever* be a %d.%d.%d.%d string
@@ -200,7 +200,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
          */
         if (isspace((unsigned char)hostname[0])) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
-                            (char *)hostname);
+                            hostname);
             JNU_ReleaseStringPlatformChars(env, host, hostname);
             return NULL;
         }
@@ -210,8 +210,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
         if (error) {
             /* report error */
-            JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
-                            (char *)hostname);
+            ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
             JNU_ReleaseStringPlatformChars(env, host, hostname);
             return NULL;
         } else {
@@ -407,7 +406,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
             addr |= ((caddr[1] <<16) & 0xff0000);
             addr |= ((caddr[2] <<8) & 0xff00);
             addr |= (caddr[3] & 0xff);
-            memset((char *) &him4, 0, sizeof(him4));
+            memset((void *) &him4, 0, sizeof(him4));
             him4.sin_addr.s_addr = (uint32_t) htonl(addr);
             him4.sin_family = AF_INET;
             sa = (struct sockaddr *) &him4;
@@ -417,7 +416,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
              * For IPv6 address construct a sockaddr_in6 structure.
              */
             (*env)->GetByteArrayRegion(env, addrArray, 0, 16, caddr);
-            memset((char *) &him6, 0, sizeof(him6));
+            memset((void *) &him6, 0, sizeof(him6));
             memcpy((void *)&(him6.sin6_addr), caddr, sizeof(struct in6_addr) );
             him6.sin6_family = AF_INET6;
             sa = (struct sockaddr *) &him6 ;
@@ -579,8 +578,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                                          ifArray, ttl);
     }
 
-    memset((char *) caddr, 0, 16);
-    memset((char *) &him6, 0, sizeof(him6));
+    memset((void *) caddr, 0, 16);
+    memset((void *) &him6, 0, sizeof(him6));
     (*env)->GetByteArrayRegion(env, addrArray, 0, 16, caddr);
     memcpy((void *)&(him6.sin6_addr), caddr, sizeof(struct in6_addr) );
     him6.sin6_family = AF_INET6;
@@ -600,8 +599,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
      * for it.
      */
     if (!(IS_NULL(ifArray))) {
-      memset((char *) caddr, 0, 16);
-      memset((char *) &inf6, 0, sizeof(inf6));
+      memset((void *) caddr, 0, 16);
+      memset((void *) &inf6, 0, sizeof(inf6));
       (*env)->GetByteArrayRegion(env, ifArray, 0, 16, caddr);
       memcpy((void *)&(inf6.sin6_addr), caddr, sizeof(struct in6_addr) );
       inf6.sin6_family = AF_INET6;

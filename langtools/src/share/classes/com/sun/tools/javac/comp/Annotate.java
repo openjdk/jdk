@@ -35,8 +35,8 @@ import com.sun.tools.javac.tree.JCTree.*;
  *  which is processed at the top level of any set of recursive calls
  *  requesting it be processed.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -182,6 +182,7 @@ public class Annotate {
             if (!method.type.isErroneous())
                 buf.append(new Pair<MethodSymbol,Attribute>
                            ((MethodSymbol)method, value));
+            t.type = result;
         }
         return new Attribute.Compound(a.type, buf.toList());
     }
@@ -234,6 +235,7 @@ public class Annotate {
                                                l.head,
                                                env));
             }
+            na.type = expected;
             return new Attribute.
                 Array(expected, buf.toArray(new Attribute[buf.length()]));
         }

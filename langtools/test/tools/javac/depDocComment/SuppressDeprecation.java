@@ -4,7 +4,7 @@
  * @summary New rules for when deprecation messages are suppressed
  * @author gafter
  *
- * @compile/ref=SuppressDeprecation.out -XDstdout -Xlint:deprecation -XDrawDiagnostics SuppressDeprecation.java
+ * @compile/ref=SuppressDeprecation.out -Xlint:deprecation -XDrawDiagnostics SuppressDeprecation.java
  */
 
 /* Test for the contexts in which deprecations warnings should

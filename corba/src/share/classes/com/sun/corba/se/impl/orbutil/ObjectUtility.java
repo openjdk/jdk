@@ -350,7 +350,7 @@ public final class ObjectUtility {
 
         if (useToString) {
             try {
-                cls.getDeclaredMethod( "toString", null ) ;
+                cls.getDeclaredMethod( "toString", (Class[])null ) ;
                 return true ;
             } catch (Exception exc) {
                 return false ;

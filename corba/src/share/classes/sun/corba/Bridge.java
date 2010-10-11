@@ -187,7 +187,7 @@ public final class Bridge
         try {
             // Invoke the ObjectInputStream.latestUserDefinedLoader method
             return (ClassLoader)latestUserDefinedLoaderMethod.invoke(null,
-                                                                     NO_ARGS);
+                                                                     (Object[])NO_ARGS);
         } catch (InvocationTargetException ite) {
             Error err = new Error(
                 "sun.corba.Bridge.latestUserDefinedLoader: " + ite ) ;

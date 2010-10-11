@@ -157,10 +157,8 @@ void PSRefProcTaskExecutor::execute(ProcessTask& task)
     q->enqueue(new PSRefProcTaskProxy(task, i));
   }
   ParallelTaskTerminator terminator(
-    ParallelScavengeHeap::gc_task_manager()->workers(),
-    UseDepthFirstScavengeOrder ?
-        (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth()
-      : (TaskQueueSetSuper*) PSPromotionManager::stack_array_breadth());
+                 ParallelScavengeHeap::gc_task_manager()->workers(),
+                 (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
   if (task.marks_oops_alive() && ParallelGCThreads > 1) {
     for (uint j=0; j<ParallelGCThreads; j++) {
       q->enqueue(new StealTask(&terminator));
@@ -375,10 +373,8 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
       ParallelTaskTerminator terminator(
-        gc_task_manager()->workers(),
-        promotion_manager->depth_first() ?
-            (TaskQueueSetSuper*) promotion_manager->stack_array_depth()
-          : (TaskQueueSetSuper*) promotion_manager->stack_array_breadth());
+                  gc_task_manager()->workers(),
+                  (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
       if (ParallelGCThreads>1) {
         for (uint j=0; j<ParallelGCThreads; j++) {
           q->enqueue(new StealTask(&terminator));
@@ -414,7 +410,6 @@ bool PSScavenge::invoke_no_policy() {
     }
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
-    assert(promotion_manager->claimed_stack_empty(), "Sanity");
     PSPromotionManager::post_scavenge();
 
     promotion_failure_occurred = promotion_failed();

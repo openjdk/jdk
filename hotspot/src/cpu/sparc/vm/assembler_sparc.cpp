@@ -626,7 +626,7 @@ void MacroAssembler::jmp(Register r1, int offset, const char* file, int line ) {
 }
 
 // This code sequence is relocatable to any address, even on LP64.
-void MacroAssembler::jumpl(AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line) {
+void MacroAssembler::jumpl(const AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line) {
   assert_not_delayed();
   // Force fixed length sethi because NativeJump and NativeFarCall don't handle
   // variable length instruction streams.
@@ -672,7 +672,7 @@ void MacroAssembler::jumpl(AddressLiteral& addrlit, Register temp, Register d, i
   }
 }
 
-void MacroAssembler::jump(AddressLiteral& addrlit, Register temp, int offset, const char* file, int line) {
+void MacroAssembler::jump(const AddressLiteral& addrlit, Register temp, int offset, const char* file, int line) {
   jumpl(addrlit, temp, G0, offset, file, line);
 }
 
@@ -4192,7 +4192,7 @@ static void check_index(int ind) {
 
 static void generate_satb_log_enqueue(bool with_frame) {
   BufferBlob* bb = BufferBlob::create("enqueue_with_frame", EnqueueCodeSize);
-  CodeBuffer buf(bb->instructions_begin(), bb->instructions_size());
+  CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
   address start = masm.pc();
   Register pre_val;
@@ -4421,7 +4421,7 @@ static u_char* dirty_card_log_enqueue_end = 0;
 // This gets to assume that o0 contains the object address.
 static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   BufferBlob* bb = BufferBlob::create("dirty_card_enqueue", EnqueueCodeSize*2);
-  CodeBuffer buf(bb->instructions_begin(), bb->instructions_size());
+  CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
   address start = masm.pc();
 

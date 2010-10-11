@@ -225,7 +225,6 @@ arrayOop.cpp                            oop.inline.hpp
 arrayOop.cpp                            symbolOop.hpp
 
 arrayOop.hpp                            oop.hpp
-arrayOop.hpp                            universe.hpp
 arrayOop.hpp                            universe.inline.hpp
 
 assembler.cpp                           assembler.hpp
@@ -236,7 +235,6 @@ assembler.cpp                           icache.hpp
 assembler.cpp                           os.hpp
 
 assembler.hpp                           allocation.hpp
-assembler.hpp                           allocation.inline.hpp
 assembler.hpp                           debug.hpp
 assembler.hpp                           growableArray.hpp
 assembler.hpp                           oopRecorder.hpp
@@ -284,6 +282,7 @@ atomic.hpp                              allocation.hpp
 atomic_<os_arch>.inline.hpp             atomic.hpp
 atomic_<os_arch>.inline.hpp             os.hpp
 atomic_<os_arch>.inline.hpp             vm_version_<arch>.hpp
+atomic_<os_arch>.inline.hpp             orderAccess_<os_arch>.inline.hpp
 
 // attachListener is jck optional, put cpp deps in includeDB_features
 
@@ -300,20 +299,6 @@ barrierSet.hpp                          oopsHierarchy.hpp
 
 barrierSet.inline.hpp                   barrierSet.hpp
 barrierSet.inline.hpp                   cardTableModRefBS.hpp
-
-bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
-bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
-bcEscapeAnalyzer.cpp                    bytecode.hpp
-bcEscapeAnalyzer.cpp                    ciConstant.hpp
-bcEscapeAnalyzer.cpp                    ciField.hpp
-bcEscapeAnalyzer.cpp                    ciMethodBlocks.hpp
-bcEscapeAnalyzer.cpp                    ciStreams.hpp
-
-bcEscapeAnalyzer.hpp                    allocation.hpp
-bcEscapeAnalyzer.hpp                    ciMethod.hpp
-bcEscapeAnalyzer.hpp                    ciMethodData.hpp
-bcEscapeAnalyzer.hpp                    dependencies.hpp
-bcEscapeAnalyzer.hpp                    growableArray.hpp
 
 biasedLocking.cpp                       biasedLocking.hpp
 biasedLocking.cpp                       klass.inline.hpp
@@ -343,7 +328,7 @@ blockOffsetTable.cpp                    collectedHeap.inline.hpp
 blockOffsetTable.cpp                    iterator.hpp
 blockOffsetTable.cpp                    java.hpp
 blockOffsetTable.cpp                    oop.inline.hpp
-blockOffsetTable.cpp                    space.hpp
+blockOffsetTable.cpp                    space.inline.hpp
 blockOffsetTable.cpp                    universe.hpp
 
 blockOffsetTable.hpp                    globalDefinitions.hpp
@@ -351,6 +336,7 @@ blockOffsetTable.hpp                    memRegion.hpp
 blockOffsetTable.hpp                    virtualspace.hpp
 
 blockOffsetTable.inline.hpp             blockOffsetTable.hpp
+blockOffsetTable.inline.hpp             safepoint.hpp
 blockOffsetTable.inline.hpp             space.hpp
 
 bytecode.cpp                            bytecode.hpp
@@ -545,6 +531,7 @@ ciCPCache.cpp                           ciUtilities.hpp
 
 ciCPCache.hpp                           ciClassList.hpp
 ciCPCache.hpp                           ciObject.hpp
+ciCPCache.hpp                           cpCacheOop.hpp
 
 ciEnv.cpp                               allocation.inline.hpp
 ciEnv.cpp                               ciConstant.hpp
@@ -664,7 +651,6 @@ ciKlassKlass.hpp                        ciSymbol.hpp
 
 ciMethod.cpp                            abstractCompiler.hpp
 ciMethod.cpp                            allocation.inline.hpp
-ciMethod.cpp                            bcEscapeAnalyzer.hpp
 ciMethod.cpp                            bitMap.inline.hpp
 ciMethod.cpp                            ciCallProfile.hpp
 ciMethod.cpp                            ciExceptionHandler.hpp
@@ -823,6 +809,7 @@ ciSignature.hpp                         growableArray.hpp
 
 ciStreams.cpp                           ciCallSite.hpp
 ciStreams.cpp                           ciConstant.hpp
+ciStreams.cpp                           ciCPCache.hpp
 ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
 ciStreams.cpp                           ciUtilities.hpp
@@ -962,7 +949,6 @@ classLoader.cpp                         threadService.hpp
 classLoader.cpp                         timer.hpp
 classLoader.cpp                         universe.inline.hpp
 classLoader.cpp                         vmSymbols.hpp
-classLoader.cpp                         vtune.hpp
 
 classLoader.hpp                         classFileParser.hpp
 classLoader.hpp                         perfData.hpp
@@ -1002,7 +988,6 @@ codeBlob.cpp                            relocInfo.hpp
 codeBlob.cpp                            safepoint.hpp
 codeBlob.cpp                            sharedRuntime.hpp
 codeBlob.cpp                            vframe.hpp
-codeBlob.cpp                            vtune.hpp
 
 codeBlob.hpp                            codeBuffer.hpp
 codeBlob.hpp                            frame.hpp
@@ -1096,6 +1081,8 @@ compilationPolicy.cpp                   nativeLookup.hpp
 compilationPolicy.cpp                   nmethod.hpp
 compilationPolicy.cpp                   oop.inline.hpp
 compilationPolicy.cpp                   rframe.hpp
+compilationPolicy.cpp			scopeDesc.hpp
+compilationPolicy.cpp                   simpleThresholdPolicy.hpp
 compilationPolicy.cpp                   stubRoutines.hpp
 compilationPolicy.cpp                   thread.hpp
 compilationPolicy.cpp                   timer.hpp
@@ -1466,6 +1453,7 @@ defaultStream.hpp                       xmlstream.hpp
 deoptimization.cpp                      allocation.inline.hpp
 deoptimization.cpp                      biasedLocking.hpp
 deoptimization.cpp                      bytecode.hpp
+deoptimization.cpp			compilationPolicy.hpp
 deoptimization.cpp                      debugInfoRec.hpp
 deoptimization.cpp                      deoptimization.hpp
 deoptimization.cpp                      events.hpp
@@ -1749,6 +1737,7 @@ genCollectedHeap.cpp                    sharedHeap.hpp
 genCollectedHeap.cpp                    space.hpp
 genCollectedHeap.cpp                    symbolTable.hpp
 genCollectedHeap.cpp                    systemDictionary.hpp
+genCollectedHeap.cpp                    vmError.hpp
 genCollectedHeap.cpp                    vmGCOperations.hpp
 genCollectedHeap.cpp                    vmSymbols.hpp
 genCollectedHeap.cpp                    vmThread.hpp
@@ -1820,7 +1809,7 @@ generateOopMap.hpp                      signature.hpp
 generateOopMap.hpp                      universe.inline.hpp
 
 generation.cpp                          allocation.inline.hpp
-generation.cpp                          blockOffsetTable.hpp
+generation.cpp                          blockOffsetTable.inline.hpp
 generation.cpp                          cardTableRS.hpp
 generation.cpp                          collectedHeap.inline.hpp
 generation.cpp                          copy.hpp
@@ -2165,7 +2154,6 @@ interpreter.cpp                         sharedRuntime.hpp
 interpreter.cpp                         stubRoutines.hpp
 interpreter.cpp                         templateTable.hpp
 interpreter.cpp                         timer.hpp
-interpreter.cpp                         vtune.hpp
 
 interpreter.hpp                         cppInterpreter.hpp
 interpreter.hpp                         stubs.hpp
@@ -2187,6 +2175,7 @@ interpreterRT_<arch>.hpp                generate_platform_dependent_include
 
 interpreterRuntime.cpp                  biasedLocking.hpp
 interpreterRuntime.cpp                  collectedHeap.hpp
+interpreterRuntime.cpp                  compileBroker.hpp
 interpreterRuntime.cpp                  compilationPolicy.hpp
 interpreterRuntime.cpp                  constantPoolOop.hpp
 interpreterRuntime.cpp                  cpCacheOop.hpp
@@ -2321,7 +2310,6 @@ java.cpp                                universe.hpp
 java.cpp                                vmError.hpp
 java.cpp                                vm_operations.hpp
 java.cpp                                vm_version_<arch>.hpp
-java.cpp                                vtune.hpp
 
 java.hpp                                os.hpp
 
@@ -2845,6 +2833,7 @@ methodDataKlass.hpp                     klass.hpp
 
 methodDataOop.cpp                       bytecode.hpp
 methodDataOop.cpp                       bytecodeStream.hpp
+methodDataOop.cpp                       compilationPolicy.hpp
 methodDataOop.cpp                       deoptimization.hpp
 methodDataOop.cpp                       handles.inline.hpp
 methodDataOop.cpp                       linkResolver.hpp
@@ -2857,6 +2846,7 @@ methodDataOop.hpp                       bytecodes.hpp
 methodDataOop.hpp                       oop.hpp
 methodDataOop.hpp                       orderAccess.hpp
 methodDataOop.hpp                       universe.hpp
+methodDataOop.hpp                       methodOop.hpp
 
 methodHandleWalk.hpp                    methodHandles.hpp
 
@@ -2922,6 +2912,7 @@ methodOop.cpp                           bytecodeStream.hpp
 methodOop.cpp                           bytecodeTracer.hpp
 methodOop.cpp                           bytecodes.hpp
 methodOop.cpp                           collectedHeap.inline.hpp
+methodOop.cpp				compilationPolicy.hpp
 methodOop.cpp                           debugInfoRec.hpp
 methodOop.cpp                           frame.inline.hpp
 methodOop.cpp                           gcLocker.hpp
@@ -3048,7 +3039,6 @@ nmethod.cpp                             nmethod.hpp
 nmethod.cpp                             scopeDesc.hpp
 nmethod.cpp                             sharedRuntime.hpp
 nmethod.cpp                             sweeper.hpp
-nmethod.cpp                             vtune.hpp
 nmethod.cpp                             xmlstream.hpp
 
 nmethod.hpp                             codeBlob.hpp
@@ -3248,6 +3238,7 @@ os.cpp                                  defaultStream.hpp
 os.cpp                                  events.hpp
 os.cpp                                  frame.inline.hpp
 os.cpp                                  hpi.hpp
+os.cpp					icBuffer.hpp
 os.cpp                                  interfaceSupport.hpp
 os.cpp                                  interpreter.hpp
 os.cpp                                  java.hpp
@@ -3259,6 +3250,7 @@ os.cpp                                  mutexLocker.hpp
 os.cpp                                  oop.inline.hpp
 os.cpp                                  os.hpp
 os.cpp                                  os_<os_family>.inline.hpp
+os.cpp	                                privilegedStack.hpp
 os.cpp                                  stubRoutines.hpp
 os.cpp                                  systemDictionary.hpp
 os.cpp                                  threadService.hpp
@@ -3450,7 +3442,7 @@ perfMemory_<os_family>.cpp              perfMemory.hpp
 perfMemory_<os_family>.cpp              resourceArea.hpp
 perfMemory_<os_family>.cpp              vmSymbols.hpp
 
-permGen.cpp                             blockOffsetTable.hpp
+permGen.cpp                             blockOffsetTable.inline.hpp
 permGen.cpp                             cSpaceCounters.hpp
 permGen.cpp                             collectedHeap.inline.hpp
 permGen.cpp                             compactPermGen.hpp
@@ -3670,6 +3662,7 @@ runtimeService.hpp                      timer.hpp
 
 safepoint.cpp                           codeCache.hpp
 safepoint.cpp                           collectedHeap.hpp
+safepoint.cpp                           compilationPolicy.hpp
 safepoint.cpp                           deoptimization.hpp
 safepoint.cpp                           events.hpp
 safepoint.cpp                           frame.inline.hpp
@@ -3771,7 +3764,6 @@ sharedRuntime.cpp                       vframeArray.hpp
 sharedRuntime.cpp                       vmSymbols.hpp
 sharedRuntime.cpp                       vmreg_<arch>.inline.hpp
 sharedRuntime.cpp                       vtableStubs.hpp
-sharedRuntime.cpp                       vtune.hpp
 sharedRuntime.cpp                       xmlstream.hpp
 
 sharedRuntime.hpp                       allocation.hpp
@@ -3815,12 +3807,23 @@ signature.hpp                           allocation.hpp
 signature.hpp                           methodOop.hpp
 signature.hpp                           top.hpp
 
+simpleThresholdPolicy.cpp               arguments.hpp
+simpleThresholdPolicy.cpp               compileBroker.hpp
+simpleThresholdPolicy.cpp               resourceArea.hpp
+simpleThresholdPolicy.cpp               simpleThresholdPolicy.hpp
+simpleThresholdPolicy.cpp               simpleThresholdPolicy.inline.hpp
+
+simpleThresholdPolicy.hpp               compilationPolicy.hpp
+simpleThresholdPolicy.hpp               globalDefinitions.hpp
+simpleThresholdPolicy.hpp               methodDataOop.hpp
+simpleThresholdPolicy.hpp               nmethod.hpp
+
 sizes.cpp                               sizes.hpp
 
 sizes.hpp                               allocation.hpp
 sizes.hpp                               globalDefinitions.hpp
 
-space.cpp                               blockOffsetTable.hpp
+space.cpp                               blockOffsetTable.inline.hpp
 space.cpp                               copy.hpp
 space.cpp                               defNewGeneration.hpp
 space.cpp                               genCollectedHeap.hpp
@@ -3850,7 +3853,6 @@ space.hpp                               prefetch.hpp
 space.hpp                               watermark.hpp
 space.hpp                               workgroup.hpp
 
-space.inline.hpp                        blockOffsetTable.inline.hpp
 space.inline.hpp                        collectedHeap.hpp
 space.inline.hpp                        safepoint.hpp
 space.inline.hpp                        space.hpp
@@ -3935,7 +3937,6 @@ stubCodeGenerator.cpp                   disassembler.hpp
 stubCodeGenerator.cpp                   forte.hpp
 stubCodeGenerator.cpp                   oop.inline.hpp
 stubCodeGenerator.cpp                   stubCodeGenerator.hpp
-stubCodeGenerator.cpp                   vtune.hpp
 
 stubCodeGenerator.hpp                   allocation.hpp
 stubCodeGenerator.hpp                   assembler.hpp
@@ -3995,6 +3996,7 @@ stubs.hpp                               os_<os_family>.inline.hpp
 
 sweeper.cpp                             atomic.hpp
 sweeper.cpp                             codeCache.hpp
+sweeper.cpp				compilationPolicy.hpp
 sweeper.cpp                             compileBroker.hpp
 sweeper.cpp                             events.hpp
 sweeper.cpp                             methodOop.hpp
@@ -4456,7 +4458,6 @@ universe.cpp                            universe.hpp
 universe.cpp                            universe.inline.hpp
 universe.cpp                            vmSymbols.hpp
 universe.cpp                            vm_operations.hpp
-universe.cpp                            vtune.hpp
 
 universe.hpp                            growableArray.hpp
 universe.hpp                            handles.hpp
@@ -4719,7 +4720,6 @@ vtableStubs.cpp                         mutexLocker.hpp
 vtableStubs.cpp                         resourceArea.hpp
 vtableStubs.cpp                         sharedRuntime.hpp
 vtableStubs.cpp                         vtableStubs.hpp
-vtableStubs.cpp                         vtune.hpp
 
 vtableStubs.hpp                         allocation.hpp
 
@@ -4732,11 +4732,6 @@ vtableStubs_<arch_model>.cpp            resourceArea.hpp
 vtableStubs_<arch_model>.cpp            sharedRuntime.hpp
 vtableStubs_<arch_model>.cpp            vmreg_<arch>.inline.hpp
 vtableStubs_<arch_model>.cpp            vtableStubs.hpp
-
-vtune.hpp                               allocation.hpp
-
-vtune_<os_family>.cpp                   interpreter.hpp
-vtune_<os_family>.cpp                   vtune.hpp
 
 watermark.hpp                           allocation.hpp
 watermark.hpp                           globalDefinitions.hpp

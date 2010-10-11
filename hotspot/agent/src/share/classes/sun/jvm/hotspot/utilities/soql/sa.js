@@ -825,6 +825,8 @@ function jdis(method) {
    }
    writeln("");
    disAsm.decode(new sapkg.interpreter.BytecodeVisitor() {
+                    prologue: function(method) { },
+                    epilogue: function() { },
                     visit: function(bytecode) {
                        if (hasLines) {
                           var line = method.getLineNumberFromBCI(bci);

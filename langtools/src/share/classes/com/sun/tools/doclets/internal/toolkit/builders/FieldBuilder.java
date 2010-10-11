@@ -29,7 +29,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 /**
  * Builds documentation for a field.
@@ -117,22 +116,6 @@ public class FieldBuilder extends AbstractMemberBuilder {
         }
 
         /**
-         * {@inheritDoc}
-         */
-        public void invokeMethod(
-                String methodName,
-                Class<?>[] paramClasses,
-                Object[] params)
-                throws Exception {
-                if (DEBUG) {
-                        configuration.root.printError(
-                                "DEBUG: " + this.getClass().getName() + "." + methodName);
-                }
-                Method method = this.getClass().getMethod(methodName, paramClasses);
-                method.invoke(this, params);
-        }
-
-        /**
          * Returns a list of fields that will be documented for the given class.
          * This information can be used for doclet specific documentation
          * generation.
@@ -166,21 +149,21 @@ public class FieldBuilder extends AbstractMemberBuilder {
          * @param elements the XML elements that specify how to construct this
          *                documentation.
          */
-        public void buildFieldDoc(List<?> elements) {
+        public void buildFieldDoc(XMLNode node) {
                 if (writer == null) {
                         return;
                 }
                 for (currentFieldIndex = 0;
                         currentFieldIndex < fields.size();
                         currentFieldIndex++) {
-                        build(elements);
+                        buildChildren(node);
                 }
         }
 
         /**
          * Build the overall header.
          */
-        public void buildHeader() {
+        public void buildHeader(XMLNode node) {
                 writer.writeHeader(
                         classDoc,
                         configuration.getText("doclet.Field_Detail"));
@@ -189,7 +172,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
         /**
          * Build the header for the individual field.
          */
-        public void buildFieldHeader() {
+        public void buildFieldHeader(XMLNode node) {
                 writer.writeFieldHeader(
                         (FieldDoc) fields.get(currentFieldIndex),
                         currentFieldIndex == 0);
@@ -198,14 +181,14 @@ public class FieldBuilder extends AbstractMemberBuilder {
         /**
          * Build the signature.
          */
-        public void buildSignature() {
+        public void buildSignature(XMLNode node) {
                 writer.writeSignature((FieldDoc) fields.get(currentFieldIndex));
         }
 
         /**
          * Build the deprecation information.
          */
-        public void buildDeprecationInfo() {
+        public void buildDeprecationInfo(XMLNode node) {
                 writer.writeDeprecated((FieldDoc) fields.get(currentFieldIndex));
         }
 
@@ -213,7 +196,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
          * Build the comments for the field.  Do nothing if
          * {@link Configuration#nocomment} is set to true.
          */
-        public void buildFieldComments() {
+        public void buildFieldComments(XMLNode node) {
                 if (!configuration.nocomment) {
                         writer.writeComments((FieldDoc) fields.get(currentFieldIndex));
                 }
@@ -222,21 +205,21 @@ public class FieldBuilder extends AbstractMemberBuilder {
         /**
          * Build the tag information.
          */
-        public void buildTagInfo() {
+        public void buildTagInfo(XMLNode node) {
                 writer.writeTags((FieldDoc) fields.get(currentFieldIndex));
         }
 
         /**
          * Build the footer for the individual field.
          */
-        public void buildFieldFooter() {
+        public void buildFieldFooter(XMLNode node) {
                 writer.writeFieldFooter();
         }
 
         /**
          * Build the overall footer.
          */
-        public void buildFooter() {
+        public void buildFooter(XMLNode node) {
                 writer.writeFooter(classDoc);
         }
 

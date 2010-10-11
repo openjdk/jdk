@@ -33,8 +33,8 @@ import java.util.*;
 
 /** The source language version accepted.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -159,6 +159,9 @@ public enum Source {
     public boolean enforceMandatoryWarnings() {
         return compareTo(JDK1_5) >= 0;
     }
+    public boolean allowTryWithResources() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public boolean allowTypeAnnotations() {
         return compareTo(JDK1_7) >= 0;
     }
@@ -168,11 +171,10 @@ public enum Source {
     public boolean allowUnderscoresInLiterals() {
         return compareTo(JDK1_7) >= 0;
     }
-    public boolean allowStringsInSwitch() {
+    public boolean allowExoticIdentifiers() {
         return compareTo(JDK1_7) >= 0;
     }
-    // JSR 292: recognize @PolymorphicSignature on java/dyn names
-    public boolean allowPolymorphicSignature() {
+    public boolean allowStringsInSwitch() {
         return compareTo(JDK1_7) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

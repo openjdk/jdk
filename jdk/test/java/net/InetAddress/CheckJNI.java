@@ -56,6 +56,8 @@ public class CheckJNI {
 
         while (ifs.hasMoreElements()) {
             NetworkInterface nif = (NetworkInterface)ifs.nextElement();
+            if (!nif.isUp())
+                continue;
             Enumeration addrs = nif.getInetAddresses();
             while (addrs.hasMoreElements()) {
                 InetAddress addr = (InetAddress) addrs.nextElement();

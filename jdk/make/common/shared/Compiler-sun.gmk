@@ -61,6 +61,7 @@ endif
 # Get compiler version
 _CC_VER :=$(shell $(CC) -V 2>&1 | $(HEAD) -n 1)
 CC_VER  :=$(call GetVersion,"$(_CC_VER)")
+CC_MINORVER  :=$(call MinorVersion,$(CC_VER))
 
 # Name of compilers being used
 COMPILER_VERSION-5.7  = SS10
@@ -69,8 +70,10 @@ COMPILER_VERSION-5.8  = SS11
 COMPILER_NAME-5.8     = Sun Studio 11
 COMPILER_VERSION-5.9  = SS12
 COMPILER_NAME-5.9     = Sun Studio 12
-COMPILER_VERSION-5.10 = SS13
-COMPILER_NAME-5.10    = Sun Studio 13
+COMPILER_VERSION-5.10 = SS12u1
+COMPILER_NAME-5.10    = Sun Studio 12 Update 1
+COMPILER_VERSION-5.11 = OSS12u2
+COMPILER_NAME-5.11    = Oracle Solaris Studio 12 Update 2
 COMPILER_VERSION      = $(COMPILER_VERSION-$(CC_VER))
 COMPILER_NAME         = $(COMPILER_NAME-$(CC_VER))
 
@@ -112,8 +115,8 @@ ifeq ($(ARCH_FAMILY), i586)
   XARCH_OPTION_OLD/64      += -xarch=amd64
   LINT_XARCH_OPTION_OLD/64 += -Xarch=amd64
 endif
-# Pick the options we want based on the compiler being used.
-ifeq ($(shell expr $(CC_VER) \>= 5.9), 1)
+# Pick the options we want based on the compiler being used. (5.9 or newer)
+ifeq ($(shell expr $(CC_MINORVER) \>= 9), 1)
   XARCH_OPTION/32 = $(XARCH_OPTION_NEW/32)
   XARCH_OPTION/64 = $(XARCH_OPTION_NEW/64)
   LINT_XARCH_OPTION/32 = $(LINT_XARCH_OPTION_NEW/32)

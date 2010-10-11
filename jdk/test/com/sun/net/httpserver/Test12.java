@@ -24,17 +24,15 @@
 /**
  * @test
  * @bug 6270015
+ * @run main/othervm Test12
  * @summary  Light weight HTTP server
  */
 
 import com.sun.net.httpserver.*;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
-import java.security.*;
-import java.security.cert.*;
 import javax.net.ssl.*;
 
 /* basic http/s connectivity test

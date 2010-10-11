@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,78 @@
  * questions.
  *
  */
+
+// Simple TaskQueue stats that are collected by default in debug builds.
+
+#if !defined(TASKQUEUE_STATS) && defined(ASSERT)
+#define TASKQUEUE_STATS 1
+#elif !defined(TASKQUEUE_STATS)
+#define TASKQUEUE_STATS 0
+#endif
+
+#if TASKQUEUE_STATS
+#define TASKQUEUE_STATS_ONLY(code) code
+#else
+#define TASKQUEUE_STATS_ONLY(code)
+#endif // TASKQUEUE_STATS
+
+#if TASKQUEUE_STATS
+class TaskQueueStats {
+public:
+  enum StatId {
+    push,             // number of taskqueue pushes
+    pop,              // number of taskqueue pops
+    pop_slow,         // subset of taskqueue pops that were done slow-path
+    steal_attempt,    // number of taskqueue steal attempts
+    steal,            // number of taskqueue steals
+    overflow,         // number of overflow pushes
+    overflow_max_len, // max length of overflow stack
+    last_stat_id
+  };
+
+public:
+  inline TaskQueueStats()       { reset(); }
+
+  inline void record_push()     { ++_stats[push]; }
+  inline void record_pop()      { ++_stats[pop]; }
+  inline void record_pop_slow() { record_pop(); ++_stats[pop_slow]; }
+  inline void record_steal(bool success);
+  inline void record_overflow(size_t new_length);
+
+  TaskQueueStats & operator +=(const TaskQueueStats & addend);
+
+  inline size_t get(StatId id) const { return _stats[id]; }
+  inline const size_t* get() const   { return _stats; }
+
+  inline void reset();
+
+  // Print the specified line of the header (does not include a line separator).
+  static void print_header(unsigned int line, outputStream* const stream = tty,
+                           unsigned int width = 10);
+  // Print the statistics (does not include a line separator).
+  void print(outputStream* const stream = tty, unsigned int width = 10) const;
+
+  DEBUG_ONLY(void verify() const;)
+
+private:
+  size_t                    _stats[last_stat_id];
+  static const char * const _names[last_stat_id];
+};
+
+void TaskQueueStats::record_steal(bool success) {
+  ++_stats[steal_attempt];
+  if (success) ++_stats[steal];
+}
+
+void TaskQueueStats::record_overflow(size_t new_len) {
+  ++_stats[overflow];
+  if (new_len > _stats[overflow_max_len]) _stats[overflow_max_len] = new_len;
+}
+
+void TaskQueueStats::reset() {
+  memset(_stats, 0, sizeof(_stats));
+}
+#endif // TASKQUEUE_STATS
 
 template <unsigned int N>
 class TaskQueueSuper: public CHeapObj {
@@ -109,8 +181,9 @@ protected:
 public:
   TaskQueueSuper() : _bottom(0), _age() {}
 
-  // Return true if the TaskQueue contains any tasks.
-  bool peek() { return _bottom != _age.top(); }
+  // Return true if the TaskQueue contains/does not contain any tasks.
+  bool peek()     const { return _bottom != _age.top(); }
+  bool is_empty() const { return size() == 0; }
 
   // Return an estimate of the number of elements in the queue.
   // The "careful" version admits the possibility of pop_local/pop_global
@@ -134,6 +207,8 @@ public:
 
   // Total size of queue.
   static const uint total_size() { return N; }
+
+  TASKQUEUE_STATS_ONLY(TaskQueueStats stats;)
 };
 
 template<class E, unsigned int N = TASKQUEUE_SIZE>
@@ -151,6 +226,7 @@ protected:
 public:
   using TaskQueueSuper<N>::max_elems;
   using TaskQueueSuper<N>::size;
+  TASKQUEUE_STATS_ONLY(using TaskQueueSuper<N>::stats;)
 
 private:
   // Slow paths for push, pop_local.  (pop_global has no fast path.)
@@ -165,18 +241,16 @@ public:
 
   void initialize();
 
-  // Push the task "t" on the queue.  Returns "false" iff the queue is
-  // full.
+  // Push the task "t" on the queue.  Returns "false" iff the queue is full.
   inline bool push(E t);
 
-  // If succeeds in claiming a task (from the 'local' end, that is, the
-  // most recently pushed task), returns "true" and sets "t" to that task.
-  // Otherwise, the queue is empty and returns false.
+  // Attempts to claim a task from the "local" end of the queue (the most
+  // recently pushed).  If successful, returns true and sets t to the task;
+  // otherwise, returns false (the queue is empty).
   inline bool pop_local(E& t);
 
-  // If succeeds in claiming a task (from the 'global' end, that is, the
-  // least recently pushed task), returns "true" and sets "t" to that task.
-  // Otherwise, the queue is empty and returns false.
+  // Like pop_local(), but uses the "global" end of the queue (the least
+  // recently pushed).
   bool pop_global(E& t);
 
   // Delete any resource associated with the queue.
@@ -198,7 +272,6 @@ GenericTaskQueue<E, N>::GenericTaskQueue() {
 template<class E, unsigned int N>
 void GenericTaskQueue<E, N>::initialize() {
   _elems = NEW_C_HEAP_ARRAY(E, N);
-  guarantee(_elems != NULL, "Allocation failed.");
 }
 
 template<class E, unsigned int N>
@@ -226,14 +299,14 @@ bool GenericTaskQueue<E, N>::push_slow(E t, uint dirty_n_elems) {
     // g++ complains if the volatile result of the assignment is unused.
     const_cast<E&>(_elems[localBot] = t);
     OrderAccess::release_store(&_bottom, increment_index(localBot));
+    TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
   }
   return false;
 }
 
 template<class E, unsigned int N>
-bool GenericTaskQueue<E, N>::
-pop_local_slow(uint localBot, Age oldAge) {
+bool GenericTaskQueue<E, N>::pop_local_slow(uint localBot, Age oldAge) {
   // This queue was observed to contain exactly one element; either this
   // thread will claim it, or a competing "pop_global".  In either case,
   // the queue will be logically empty afterwards.  Create a new Age value
@@ -253,6 +326,7 @@ pop_local_slow(uint localBot, Age oldAge) {
     if (tempAge == oldAge) {
       // We win.
       assert(dirty_size(localBot, _age.top()) != N - 1, "sanity");
+      TASKQUEUE_STATS_ONLY(stats.record_pop_slow());
       return true;
     }
   }
@@ -289,7 +363,90 @@ GenericTaskQueue<E, N>::~GenericTaskQueue() {
   FREE_C_HEAP_ARRAY(E, _elems);
 }
 
-// Inherits the typedef of "Task" from above.
+// OverflowTaskQueue is a TaskQueue that also includes an overflow stack for
+// elements that do not fit in the TaskQueue.
+//
+// Three methods from super classes are overridden:
+//
+// initialize() - initialize the super classes and create the overflow stack
+// push() - push onto the task queue or, if that fails, onto the overflow stack
+// is_empty() - return true if both the TaskQueue and overflow stack are empty
+//
+// Note that size() is not overridden--it returns the number of elements in the
+// TaskQueue, and does not include the size of the overflow stack.  This
+// simplifies replacement of GenericTaskQueues with OverflowTaskQueues.
+template<class E, unsigned int N = TASKQUEUE_SIZE>
+class OverflowTaskQueue: public GenericTaskQueue<E, N>
+{
+public:
+  typedef GrowableArray<E>       overflow_t;
+  typedef GenericTaskQueue<E, N> taskqueue_t;
+
+  TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
+
+  OverflowTaskQueue();
+  ~OverflowTaskQueue();
+  void initialize();
+
+  inline overflow_t* overflow_stack() const { return _overflow_stack; }
+
+  // Push task t onto the queue or onto the overflow stack.  Return true.
+  inline bool push(E t);
+
+  // Attempt to pop from the overflow stack; return true if anything was popped.
+  inline bool pop_overflow(E& t);
+
+  inline bool taskqueue_empty() const { return taskqueue_t::is_empty(); }
+  inline bool overflow_empty()  const { return overflow_stack()->is_empty(); }
+  inline bool is_empty()        const {
+    return taskqueue_empty() && overflow_empty();
+  }
+
+private:
+  overflow_t* _overflow_stack;
+};
+
+template <class E, unsigned int N>
+OverflowTaskQueue<E, N>::OverflowTaskQueue()
+{
+  _overflow_stack = NULL;
+}
+
+template <class E, unsigned int N>
+OverflowTaskQueue<E, N>::~OverflowTaskQueue()
+{
+  if (_overflow_stack != NULL) {
+    delete _overflow_stack;
+    _overflow_stack = NULL;
+  }
+}
+
+template <class E, unsigned int N>
+void OverflowTaskQueue<E, N>::initialize()
+{
+  taskqueue_t::initialize();
+  assert(_overflow_stack == NULL, "memory leak");
+  _overflow_stack = new (ResourceObj::C_HEAP) GrowableArray<E>(10, true);
+}
+
+template <class E, unsigned int N>
+bool OverflowTaskQueue<E, N>::push(E t)
+{
+  if (!taskqueue_t::push(t)) {
+    overflow_stack()->push(t);
+    TASKQUEUE_STATS_ONLY(stats.record_overflow(overflow_stack()->length()));
+  }
+  return true;
+}
+
+template <class E, unsigned int N>
+bool OverflowTaskQueue<E, N>::pop_overflow(E& t)
+{
+  if (overflow_empty()) return false;
+  t = overflow_stack()->pop();
+  return true;
+}
+
 class TaskQueueSetSuper: public CHeapObj {
 protected:
   static int randomParkAndMiller(int* seed0);
@@ -323,11 +480,11 @@ public:
 
   T* queue(uint n);
 
-  // The thread with queue number "queue_num" (and whose random number seed
-  // is at "seed") is trying to steal a task from some other queue.  (It
-  // may try several queues, according to some configuration parameter.)
-  // If some steal succeeds, returns "true" and sets "t" the stolen task,
-  // otherwise returns false.
+  // The thread with queue number "queue_num" (and whose random number seed is
+  // at "seed") is trying to steal a task from some other queue.  (It may try
+  // several queues, according to some configuration parameter.)  If some steal
+  // succeeds, returns "true" and sets "t" to the stolen task, otherwise returns
+  // false.
   bool steal(uint queue_num, int* seed, E& t);
 
   bool peek();
@@ -346,9 +503,13 @@ GenericTaskQueueSet<T>::queue(uint i) {
 
 template<class T> bool
 GenericTaskQueueSet<T>::steal(uint queue_num, int* seed, E& t) {
-  for (uint i = 0; i < 2 * _n; i++)
-    if (steal_best_of_2(queue_num, seed, t))
+  for (uint i = 0; i < 2 * _n; i++) {
+    if (steal_best_of_2(queue_num, seed, t)) {
+      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal(true));
       return true;
+    }
+  }
+  TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal(false));
   return false;
 }
 
@@ -496,6 +657,7 @@ GenericTaskQueue<E, N>::push(E t) {
     // g++ complains if the volatile result of the assignment is unused.
     const_cast<E&>(_elems[localBot] = t);
     OrderAccess::release_store(&_bottom, increment_index(localBot));
+    TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
   } else {
     return push_slow(t, dirty_n_elems);
@@ -507,7 +669,7 @@ GenericTaskQueue<E, N>::pop_local(E& t) {
   uint localBot = _bottom;
   // This value cannot be N-1.  That can only occur as a result of
   // the assignment to bottom in this method.  If it does, this method
-  // resets the size( to 0 before the next call (which is sequential,
+  // resets the size to 0 before the next call (which is sequential,
   // since this is pop_local.)
   uint dirty_n_elems = dirty_size(localBot, _age.top());
   assert(dirty_n_elems != N - 1, "Shouldn't be possible...");
@@ -525,6 +687,7 @@ GenericTaskQueue<E, N>::pop_local(E& t) {
   idx_t tp = _age.top();    // XXX
   if (size(localBot, tp) > 0) {
     assert(dirty_size(localBot, tp) != N - 1, "sanity");
+    TASKQUEUE_STATS_ONLY(stats.record_pop());
     return true;
   } else {
     // Otherwise, the queue contained exactly one element; we take the slow
@@ -533,8 +696,7 @@ GenericTaskQueue<E, N>::pop_local(E& t) {
   }
 }
 
-typedef oop Task;
-typedef GenericTaskQueue<Task>            OopTaskQueue;
+typedef GenericTaskQueue<oop>             OopTaskQueue;
 typedef GenericTaskQueueSet<OopTaskQueue> OopTaskQueueSet;
 
 #ifdef _MSC_VER
@@ -615,35 +777,8 @@ private:
 #pragma warning(pop)
 #endif
 
-typedef GenericTaskQueue<StarTask>            OopStarTaskQueue;
+typedef OverflowTaskQueue<StarTask>           OopStarTaskQueue;
 typedef GenericTaskQueueSet<OopStarTaskQueue> OopStarTaskQueueSet;
 
-typedef size_t RegionTask;  // index for region
-typedef GenericTaskQueue<RegionTask>         RegionTaskQueue;
-typedef GenericTaskQueueSet<RegionTaskQueue> RegionTaskQueueSet;
-
-class RegionTaskQueueWithOverflow: public CHeapObj {
- protected:
-  RegionTaskQueue              _region_queue;
-  GrowableArray<RegionTask>*   _overflow_stack;
-
- public:
-  RegionTaskQueueWithOverflow() : _overflow_stack(NULL) {}
-  // Initialize both stealable queue and overflow
-  void initialize();
-  // Save first to stealable queue and then to overflow
-  void save(RegionTask t);
-  // Retrieve first from overflow and then from stealable queue
-  bool retrieve(RegionTask& region_index);
-  // Retrieve from stealable queue
-  bool retrieve_from_stealable_queue(RegionTask& region_index);
-  // Retrieve from overflow
-  bool retrieve_from_overflow(RegionTask& region_index);
-  bool is_empty();
-  bool stealable_is_empty();
-  bool overflow_is_empty();
-  uint stealable_size() { return _region_queue.size(); }
-  RegionTaskQueue* task_queue() { return &_region_queue; }
-};
-
-#define USE_RegionTaskQueueWithOverflow
+typedef OverflowTaskQueue<size_t>             RegionTaskQueue;
+typedef GenericTaskQueueSet<RegionTaskQueue>  RegionTaskQueueSet;

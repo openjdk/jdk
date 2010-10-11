@@ -892,6 +892,62 @@ bool Parse::seems_never_taken(float prob) {
   return prob < PROB_MIN;
 }
 
+// True if the comparison seems to be the kind that will not change its
+// statistics from true to false.  See comments in adjust_map_after_if.
+// This question is only asked along paths which are already
+// classifed as untaken (by seems_never_taken), so really,
+// if a path is never taken, its controlling comparison is
+// already acting in a stable fashion.  If the comparison
+// seems stable, we will put an expensive uncommon trap
+// on the untaken path.  To be conservative, and to allow
+// partially executed counted loops to be compiled fully,
+// we will plant uncommon traps only after pointer comparisons.
+bool Parse::seems_stable_comparison(BoolTest::mask btest, Node* cmp) {
+  for (int depth = 4; depth > 0; depth--) {
+    // The following switch can find CmpP here over half the time for
+    // dynamic language code rich with type tests.
+    // Code using counted loops or array manipulations (typical
+    // of benchmarks) will have many (>80%) CmpI instructions.
+    switch (cmp->Opcode()) {
+    case Op_CmpP:
+      // A never-taken null check looks like CmpP/BoolTest::eq.
+      // These certainly should be closed off as uncommon traps.
+      if (btest == BoolTest::eq)
+        return true;
+      // A never-failed type check looks like CmpP/BoolTest::ne.
+      // Let's put traps on those, too, so that we don't have to compile
+      // unused paths with indeterminate dynamic type information.
+      if (ProfileDynamicTypes)
+        return true;
+      return false;
+
+    case Op_CmpI:
+      // A small minority (< 10%) of CmpP are masked as CmpI,
+      // as if by boolean conversion ((p == q? 1: 0) != 0).
+      // Detect that here, even if it hasn't optimized away yet.
+      // Specifically, this covers the 'instanceof' operator.
+      if (btest == BoolTest::ne || btest == BoolTest::eq) {
+        if (_gvn.type(cmp->in(2))->singleton() &&
+            cmp->in(1)->is_Phi()) {
+          PhiNode* phi = cmp->in(1)->as_Phi();
+          int true_path = phi->is_diamond_phi();
+          if (true_path > 0 &&
+              _gvn.type(phi->in(1))->singleton() &&
+              _gvn.type(phi->in(2))->singleton()) {
+            // phi->region->if_proj->ifnode->bool->cmp
+            BoolNode* bol = phi->in(0)->in(1)->in(0)->in(1)->as_Bool();
+            btest = bol->_test._test;
+            cmp = bol->in(1);
+            continue;
+          }
+        }
+      }
+      return false;
+    }
+  }
+  return false;
+}
+
 //-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline int Parse::repush_if_args() {
@@ -1137,19 +1193,22 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
-  int cop = c->Opcode();
-  if (seems_never_taken(prob) && cop == Op_CmpP && btest == BoolTest::eq) {
-    // (An earlier version of do_if omitted '&& btest == BoolTest::eq'.)
-    //
+  if (seems_never_taken(prob) && seems_stable_comparison(btest, c)) {
     // If this might possibly turn into an implicit null check,
     // and the null has never yet been seen, we need to generate
     // an uncommon trap, so as to recompile instead of suffering
     // with very slow branches.  (We'll get the slow branches if
     // the program ever changes phase and starts seeing nulls here.)
     //
-    // The tests we worry about are of the form (p == null).
-    // We do not simply inspect for a null constant, since a node may
+    // We do not inspect for a null constant, since a node may
     // optimize to 'null' later on.
+    //
+    // Null checks, and other tests which expect inequality,
+    // show btest == BoolTest::eq along the non-taken branch.
+    // On the other hand, type tests, must-be-null tests,
+    // and other tests which expect pointer equality,
+    // show btest == BoolTest::ne along the non-taken branch.
+    // We prune both types of branches if they look unused.
     repush_if_args();
     // We need to mark this branch as taken so that if we recompile we will
     // see that it is possible. In the tiered system the interpreter doesn't
@@ -1324,33 +1383,21 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w:
     // If the constant is unresolved, run this BC once in the interpreter.
-    if (iter().is_unresolved_string()) {
-      uncommon_trap(Deoptimization::make_trap_request
-                    (Deoptimization::Reason_unloaded,
-                     Deoptimization::Action_reinterpret,
-                     iter().get_constant_index()),
-                    NULL, "unresolved_string");
-      break;
-    } else {
+    {
       ciConstant constant = iter().get_constant();
-      if (constant.basic_type() == T_OBJECT) {
-        ciObject* c = constant.as_object();
-        if (c->is_klass()) {
-          // The constant returned for a klass is the ciKlass for the
-          // entry.  We want the java_mirror so get it.
-          ciKlass* klass = c->as_klass();
-          if (klass->is_loaded()) {
-            constant = ciConstant(T_OBJECT, klass->java_mirror());
-          } else {
-            uncommon_trap(Deoptimization::make_trap_request
-                          (Deoptimization::Reason_unloaded,
-                           Deoptimization::Action_reinterpret,
-                           iter().get_constant_index()),
-                          NULL, "unresolved_klass");
-            break;
-          }
-        }
+      if (constant.basic_type() == T_OBJECT &&
+          !constant.as_object()->is_loaded()) {
+        int index = iter().get_constant_pool_index();
+        constantTag tag = iter().get_constant_pool_tag(index);
+        uncommon_trap(Deoptimization::make_trap_request
+                      (Deoptimization::Reason_unloaded,
+                       Deoptimization::Action_reinterpret,
+                       index),
+                      NULL, tag.internal_name());
+        break;
       }
+      assert(constant.basic_type() != T_OBJECT || !constant.as_object()->is_klass(),
+             "must be java_mirror of klass");
       bool pushed = push_constant(constant, true);
       guarantee(pushed, "must be possible to push this constant");
     }

@@ -531,7 +531,6 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
     SET_FD(this, -1, fid);
 
     if (CloseHandle(h) == 0) { /* Returns zero on failure */
-        SET_FD(this, fd, fid); // restore fd
         JNU_ThrowIOExceptionWithLastError(env, "close failed");
     }
     return 0;

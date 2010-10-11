@@ -38,8 +38,8 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
 /** The lexical analyzer maps an input stream consisting of
  *  ASCII characters and Unicode escapes into a token sequence.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -107,6 +107,10 @@ public class Scanner implements Lexer {
     /** Allow underscores in literals.
      */
     private boolean allowUnderscoresInLiterals;
+
+    /** Allow exotic identifiers.
+     */
+    private boolean allowExoticIdentifiers;
 
     /** The source language setting.
      */
@@ -181,6 +185,7 @@ public class Scanner implements Lexer {
         allowBinaryLiterals = source.allowBinaryLiterals();
         allowHexFloats = source.allowHexFloats();
         allowUnderscoresInLiterals = source.allowBinaryLiterals();
+        allowExoticIdentifiers = source.allowExoticIdentifiers();  // for invokedynamic
     }
 
     private static final boolean hexFloatsWork = hexFloatsWork();
@@ -419,7 +424,7 @@ public class Scanner implements Lexer {
                 putChar(ch);
             } else {
                 if (!allowUnderscoresInLiterals) {
-                    lexError("unsupported.underscore", source.name);
+                    lexError("unsupported.underscore.lit", source.name);
                     allowUnderscoresInLiterals = true;
                 }
             }
@@ -1010,6 +1015,10 @@ public class Scanner implements Lexer {
                 case '#':
                     scanChar();
                     if (ch == '\"') {
+                        if (!allowExoticIdentifiers) {
+                            lexError("unsupported.exotic.id", source.name);
+                            allowExoticIdentifiers = true;
+                        }
                         scanChar();
                         if (ch == '\"')
                             lexError(pos, "empty.bytecode.ident");

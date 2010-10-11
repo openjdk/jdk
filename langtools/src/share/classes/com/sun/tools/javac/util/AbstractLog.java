@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
@@ -37,8 +38,8 @@ import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
  *  A base class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -112,6 +113,16 @@ public abstract class AbstractLog {
         report(diags.warning(source, null, key, args));
     }
 
+    /** Report a lint warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param lc     The lint category for the diagnostic
+     *  @param key    The key for the localized warning message.
+     *  @param args   Fields of the warning message.
+     */
+    public void warning(LintCategory lc, String key, Object ... args) {
+        report(diags.warning(lc, key, args));
+    }
+
     /** Report a warning, unless suppressed by the  -nowarn option or the
      *  maximum number of warnings has been reached.
      *  @param pos    The source position at which to report the warning.
@@ -120,6 +131,17 @@ public abstract class AbstractLog {
      */
     public void warning(DiagnosticPosition pos, String key, Object ... args) {
         report(diags.warning(source, pos, key, args));
+    }
+
+    /** Report a lint warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param lc     The lint category for the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param key    The key for the localized warning message.
+     *  @param args   Fields of the warning message.
+     */
+    public void warning(LintCategory lc, DiagnosticPosition pos, String key, Object ... args) {
+        report(diags.warning(lc, source, pos, key, args));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
@@ -139,6 +161,16 @@ public abstract class AbstractLog {
      */
     public void mandatoryWarning(DiagnosticPosition pos, String key, Object ... args) {
         report(diags.mandatoryWarning(source, pos, key, args));
+    }
+
+    /** Report a warning.
+     *  @param lc     The lint category for the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param key    The key for the localized warning message.
+     *  @param args   Fields of the warning message.
+     */
+    public void mandatoryWarning(LintCategory lc, DiagnosticPosition pos, String key, Object ... args) {
+        report(diags.mandatoryWarning(lc, source, pos, key, args));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.

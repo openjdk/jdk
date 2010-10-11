@@ -1346,6 +1346,83 @@ Zone America/Montreal	-4:54:16 -	LMT	1884
 # entry since our cutoff date of 1970, so we can move
 # America/Coral_Harbour to the 'backward' file.
 
+# From Mark Brader (2010-03-06):
+#
+# Currently the database has:
+#
+# # Ontario
+#
+# # From Paul Eggert (2006-07-09):
+# # Shanks & Pottenger write that since 1970 most of Ontario has been like
+# # Toronto.
+# # Thunder Bay skipped DST in 1973.
+# # Many smaller locales did not observe peacetime DST until 1974;
+# # Nipigon (EST) and Rainy River (CST) are the largest that we know of.
+#
+# In the (Toronto) Globe and Mail for Saturday, 1955-09-24, in the bottom
+# right corner of page 1, it says that Toronto will return to standard
+# time at 2 am Sunday morning (which agrees with the database), and that:
+#
+#     The one-hour setback will go into effect throughout most of Ontario,
+#     except in areas like Windsor which remains on standard time all year.
+#
+# Windsor is, of course, a lot larger than Nipigon.
+#
+# I only came across this incidentally.  I don't know if Windsor began
+# observing DST when Detroit did, or in 1974, or on some other date.
+#
+# By the way, the article continues by noting that:
+#
+#     Some cities in the United States have pushed the deadline back
+#     three weeks and will change over from daylight saving in October.
+
+# From Arthur David Olson (2010-07-17):
+#
+# "Standard Time and Time Zones in Canada" appeared in
+# The Journal of The Royal Astronomical Society of Canada,
+# volume 26, number 2 (February 1932) and, as of 2010-07-17,
+# was available at
+# <a href="http://adsabs.harvard.edu/full/1932JRASC..26...49S">
+# http://adsabs.harvard.edu/full/1932JRASC..26...49S
+# </a>
+#
+# It includes the text below (starting on page 57):
+#
+#   A list of the places in Canada using daylight saving time would
+# require yearly revision. From information kindly furnished by
+# the provincial governments and by the postmasters in many cities
+# and towns, it is found that the following places used daylight sav-
+# ing in 1930. The information for the province of Quebec is definite,
+# for the other provinces only approximate:
+#
+# 	Province	Daylight saving time used
+# Prince Edward Island	Not used.
+# Nova Scotia		In Halifax only.
+# New Brunswick		In St. John only.
+# Quebec		In the following places:
+# 			Montreal	Lachine
+# 			Quebec		Mont-Royal
+# 			Levis		Iberville
+# 			St. Lambert	Cap de la Madeleine
+# 			Verdun		Loretteville
+# 			Westmount	Richmond
+# 			Outremont	St. Jerome
+# 			Longueuil	Greenfield Park
+# 			Arvida		Waterloo
+# 			Chambly-Canton	Beaulieu
+# 			Melbourne	La Tuque
+# 			St. Theophile	Buckingham
+# Ontario		Used generally in the cities and towns along
+# 			the southerly part of the province. Not
+# 			used in the northwesterlhy part.
+# Manitoba		Not used.
+# Saskatchewan		In Regina only.
+# Alberta		Not used.
+# British Columbia	Not used.
+#
+#   With some exceptions, the use of daylight saving may be said to be limited
+# to those cities and towns lying between Quebec city and Windsor, Ont.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Toronto	1919	only	-	Mar	30	23:30	1:00	D
 Rule	Toronto	1919	only	-	Oct	26	0:00	0	S
@@ -2111,7 +2188,44 @@ Zone America/Hermosillo	-7:23:52 -	LMT	1921 Dec 31 23:36:08
 			-8:00	-	PST	1970
 			-7:00	Mexico	M%sT	1999
 			-7:00	-	MST
+
+# From Alexander Krivenyshev (2010-04-21):
+# According to news, Bah&iacute;a de Banderas (Mexican state of Nayarit)
+# changed time zone UTC-7 to new time zone UTC-6 on April 4, 2010 (to
+# share the same time zone as nearby city Puerto Vallarta, Jalisco).
+#
+# (Spanish)
+# Bah&iacute;a de Banderas homologa su horario al del centro del
+# pa&iacute;s, a partir de este domingo
+# <a href="http://www.nayarit.gob.mx/notes.asp?id=20748">
+# http://www.nayarit.gob.mx/notes.asp?id=20748
+# </a>
+#
+# Bah&iacute;a de Banderas homologa su horario con el del Centro del
+# Pa&iacute;s
+# <a href="http://www.bahiadebanderas.gob.mx/principal/index.php?option=com_content&view=article&id=261:bahia-de-banderas-homologa-su-horario-con-el-del-centro-del-pais&catid=42:comunicacion-social&Itemid=50">
+# http://www.bahiadebanderas.gob.mx/principal/index.php?option=com_content&view=article&id=261:bahia-de-banderas-homologa-su-horario-con-el-del-centro-del-pais&catid=42:comunicacion-social&Itemid=50"
+# </a>
+#
+# (English)
+# Puerto Vallarta and Bah&iacute;a de Banderas: One Time Zone
+# <a href="http://virtualvallarta.com/puertovallarta/puertovallarta/localnews/2009-12-03-Puerto-Vallarta-and-Bahia-de-Banderas-One-Time-Zone.shtml">
+# http://virtualvallarta.com/puertovallarta/puertovallarta/localnews/2009-12-03-Puerto-Vallarta-and-Bahia-de-Banderas-One-Time-Zone.shtml
+# </a>
+#
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_mexico08.html">
+# http://www.worldtimezone.com/dst_news/dst_news_mexico08.html
+# </a>
+#
+# "Mexico's Senate approved the amendments to the Mexican Schedule System that
+# will allow Bah&iacute;a de Banderas and Puerto Vallarta to share the same time
+# zone ..."
 # Baja California Sur, Nayarit, Sinaloa
+
+# From Arthur David Olson (2010-05-01):
+# Use "Bahia_Banderas" to keep the name to fourteen characters.
+
 Zone America/Mazatlan	-7:05:40 -	LMT	1921 Dec 31 23:54:20
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
@@ -2122,6 +2236,19 @@ Zone America/Mazatlan	-7:05:40 -	LMT	1921 Dec 31 23:54:20
 			-7:00	-	MST	1949 Jan 14
 			-8:00	-	PST	1970
 			-7:00	Mexico	M%sT
+
+Zone America/Bahia_Banderas	-7:01:00 -	LMT	1921 Dec 31 23:59:00
+			-7:00	-	MST	1927 Jun 10 23:00
+			-6:00	-	CST	1930 Nov 15
+			-7:00	-	MST	1931 May  1 23:00
+			-6:00	-	CST	1931 Oct
+			-7:00	-	MST	1932 Apr  1
+			-6:00	-	CST	1942 Apr 24
+			-7:00	-	MST	1949 Jan 14
+			-8:00	-	PST	1970
+			-7:00	Mexico	M%sT	2010 Apr 4 2:00
+			-6:00	Mexico	C%sT
+
 # Baja California (near US border)
 Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 			-7:00	-	MST	1924

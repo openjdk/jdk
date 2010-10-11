@@ -62,8 +62,8 @@ import static com.sun.tools.javac.jvm.ClassFile.Version.*;
  *  for all other definitions in the classfile. Top-level Classes themselves
  *  appear as members of the scopes of PackageSymbols.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -1098,12 +1098,6 @@ public class ClassReader implements Completer {
                 }
             },
 
-            new AttributeReader(names.PolymorphicSignature, V45_3/*S.B.V51*/, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
-                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
-                }
-            },
-
 
             // The following attributes for a Code attribute are not currently handled
             // StackMapTable
@@ -1289,6 +1283,9 @@ public class ClassReader implements Completer {
                     sym.flags_field |= PROPRIETARY;
                 else
                     proxies.append(proxy);
+                if (majorVersion >= V51.major && proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
+                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
+                }
             }
             annotate.later(new AnnotationCompleter(sym, proxies.toList()));
         }
@@ -2628,7 +2625,7 @@ public class ClassReader implements Completer {
      *  @param arg An argument for substitution into the output string.
      */
     private void printVerbose(String key, CharSequence arg) {
-        Log.printLines(log.noticeWriter, Log.getLocalizedString("verbose." + key, arg));
+        log.printNoteLines("verbose." + key, arg);
     }
 
     /** Output for "-checkclassfile" option.
@@ -2636,7 +2633,7 @@ public class ClassReader implements Completer {
      *  @param arg An argument for substitution into the output string.
      */
     private void printCCF(String key, Object arg) {
-        Log.printLines(log.noticeWriter, Log.getLocalizedString(key, arg));
+        log.printNoteLines(key, arg);
     }
 
 

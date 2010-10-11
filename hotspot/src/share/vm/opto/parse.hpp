@@ -480,6 +480,7 @@ class Parse : public GraphKit {
   bool push_constant(ciConstant con, bool require_constant = false);
 
   // implementation of object creation bytecodes
+  void emit_guard_for_new(ciInstanceKlass* klass);
   void do_new();
   void do_newarray(BasicType elemtype);
   void do_anewarray();
@@ -493,6 +494,7 @@ class Parse : public GraphKit {
   float   dynamic_branch_prediction(float &cnt);
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci);
   bool    seems_never_taken(float prob);
+  bool    seems_stable_comparison(BoolTest::mask btest, Node* c);
 
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);

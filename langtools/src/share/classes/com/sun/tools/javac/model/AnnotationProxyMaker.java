@@ -50,8 +50,8 @@ import com.sun.tools.javac.code.Type.ArrayType;
  * <p> The "dynamic proxy return form" of an annotation element value is
  * the form used by sun.reflect.annotation.AnnotationInvocationHandler.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- * you write code that depends on this, you do so at your own risk.
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
@@ -181,16 +181,16 @@ public class AnnotationProxyMaker {
         }
 
         public void visitArray(Attribute.Array a) {
-            Name elemName = ((ArrayType) a.type).elemtype.tsym.name;
+            Name elemName = ((ArrayType) a.type).elemtype.tsym.getQualifiedName();
 
-            if (elemName == elemName.table.names.java_lang_Class) {   // Class[]
+            if (elemName.equals(elemName.table.names.java_lang_Class)) {   // Class[]
                 // Construct a proxy for a MirroredTypesException
-                List<TypeMirror> elems = List.nil();
+                ListBuffer<TypeMirror> elems = new ListBuffer<TypeMirror>();
                 for (Attribute value : a.values) {
                     Type elem = ((Attribute.Class) value).type;
-                    elems.add(elem);
+                    elems.append(elem);
                 }
-                value = new MirroredTypesExceptionProxy(elems);
+                value = new MirroredTypesExceptionProxy(elems.toList());
 
             } else {
                 int len = a.values.length;

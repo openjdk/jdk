@@ -658,7 +658,8 @@ HeapRegion::object_iterate_mem_careful(MemRegion mr,
 HeapWord*
 HeapRegion::
 oops_on_card_seq_iterate_careful(MemRegion mr,
-                                     FilterOutOfRegionClosure* cl) {
+                                 FilterOutOfRegionClosure* cl,
+                                 bool filter_young) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // If we're within a stop-world GC, then we might look at a card in a
@@ -671,6 +672,18 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   }
   if (mr.is_empty()) return NULL;
   // Otherwise, find the obj that extends onto mr.start().
+
+  // The intersection of the incoming mr (for the card) and the
+  // allocated part of the region is non-empty. This implies that
+  // we have actually allocated into this region. The code in
+  // G1CollectedHeap.cpp that allocates a new region sets the
+  // is_young tag on the region before allocating. Thus we
+  // safely know if this region is young.
+  if (is_young() && filter_young) {
+    return NULL;
+  }
+
+  assert(!is_young(), "check value of filter_young");
 
   // We used to use "block_start_careful" here.  But we're actually happy
   // to update the BOT while we do this...
@@ -777,8 +790,18 @@ void HeapRegion::verify(bool allow_dirty,
   int objs = 0;
   int blocks = 0;
   VerifyLiveClosure vl_cl(g1, use_prev_marking);
+  bool is_humongous = isHumongous();
+  size_t object_num = 0;
   while (p < top()) {
     size_t size = oop(p)->size();
+    if (is_humongous != g1->isHumongous(size)) {
+      gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
+                             SIZE_FORMAT" words) in a %shumongous region",
+                             p, g1->isHumongous(size) ? "" : "non-",
+                             size, is_humongous ? "" : "non-");
+       *failures = true;
+    }
+    object_num += 1;
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
       HeapWord* res = block_start_const(p + (size/2));
       if (p != res) {
@@ -842,6 +865,13 @@ void HeapRegion::verify(bool allow_dirty,
         *failures = true;
         return;
     }
+  }
+
+  if (is_humongous && object_num > 1) {
+    gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
+                           "but has "SIZE_FORMAT", objects",
+                           bottom(), end(), object_num);
+    *failures = true;
   }
 
   if (p != top()) {

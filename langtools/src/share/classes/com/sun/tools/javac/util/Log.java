@@ -27,8 +27,10 @@ package com.sun.tools.javac.util;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
@@ -41,8 +43,8 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -110,6 +112,12 @@ public class Log extends AbstractLog {
      */
     private JavacMessages messages;
 
+    /**
+     * Deferred diagnostics
+     */
+    public boolean deferDiagnostics;
+    public Queue<JCDiagnostic> deferredDiagnostics = new ListBuffer<JCDiagnostic>();
+
     /** Construct a log with given I/O redirections.
      */
     @Deprecated
@@ -125,8 +133,8 @@ public class Log extends AbstractLog {
         this.promptOnError = options.get("-prompt") != null;
         this.emitWarnings = options.get("-Xlint:none") == null;
         this.suppressNotes = options.get("suppressNotes") != null;
-        this.MaxErrors = getIntOption(options, "-Xmaxerrs", 100);
-        this.MaxWarnings = getIntOption(options, "-Xmaxwarns", 100);
+        this.MaxErrors = getIntOption(options, "-Xmaxerrs", getDefaultMaxErrors());
+        this.MaxWarnings = getIntOption(options, "-Xmaxwarns", getDefaultMaxWarnings());
 
         boolean rawDiagnostics = options.get("rawDiagnostics") != null;
         messages = JavacMessages.instance(context);
@@ -153,6 +161,18 @@ public class Log extends AbstractLog {
                 // silently ignore ill-formed numbers
             }
             return defaultValue;
+        }
+
+        /** Default value for -Xmaxerrs.
+         */
+        protected int getDefaultMaxErrors() {
+            return 100;
+        }
+
+        /** Default value for -Xmaxwarns.
+         */
+        protected int getDefaultMaxWarnings() {
+            return 100;
         }
 
     /** The default writer for diagnostics
@@ -191,12 +211,6 @@ public class Log extends AbstractLog {
     /** The number of warnings encountered so far.
      */
     public int nwarnings = 0;
-
-    /**
-     * Whether or not an unrecoverable error has been seen.
-     * Unrecoverable errors prevent subsequent annotation processing.
-     */
-    public boolean unrecoverableError;
 
     /** A set of all errors generated so far. This is used to avoid printing an
      *  error message more than once. For each error, a pair consisting of the
@@ -257,7 +271,7 @@ public class Log extends AbstractLog {
      */
     public void prompt() {
         if (promptOnError) {
-            System.err.println(getLocalizedString("resume.abort"));
+            System.err.println(localize("resume.abort"));
             char ch;
             try {
                 while (true) {
@@ -305,8 +319,23 @@ public class Log extends AbstractLog {
         if (msg.length() != 0) writer.println(msg);
     }
 
+    /** Print the text of a message to the errWriter stream,
+     *  translating newlines appropriately for the platform.
+     */
+    public void printErrLines(String key, Object... args) {
+        printLines(errWriter, localize(key, args));
+    }
+
+
+    /** Print the text of a message to the noticeWriter stream,
+     *  translating newlines appropriately for the platform.
+     */
+    public void printNoteLines(String key, Object... args) {
+        printLines(noticeWriter, localize(key, args));
+    }
+
     protected void directError(String key, Object... args) {
-        printLines(errWriter, getLocalizedString(key, args));
+        printErrLines(key, args);
         errWriter.flush();
     }
 
@@ -320,12 +349,32 @@ public class Log extends AbstractLog {
         nwarnings++;
     }
 
+    /** Report all deferred diagnostics, and clear the deferDiagnostics flag. */
+    public void reportDeferredDiagnostics() {
+        reportDeferredDiagnostics(EnumSet.allOf(JCDiagnostic.Kind.class));
+    }
+
+    /** Report selected deferred diagnostics, and clear the deferDiagnostics flag. */
+    public void reportDeferredDiagnostics(Set<JCDiagnostic.Kind> kinds) {
+        deferDiagnostics = false;
+        JCDiagnostic d;
+        while ((d = deferredDiagnostics.poll()) != null) {
+            if (kinds.contains(d.getKind()))
+                report(d);
+        }
+    }
+
     /**
      * Common diagnostic handling.
      * The diagnostic is counted, and depending on the options and how many diagnostics have been
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     public void report(JCDiagnostic diagnostic) {
+        if (deferDiagnostics) {
+            deferredDiagnostics.add(diagnostic);
+            return;
+        }
+
         if (expectDiagKeys != null)
             expectDiagKeys.remove(diagnostic.getCode());
 
@@ -414,11 +463,21 @@ public class Log extends AbstractLog {
     }
 
     /** Find a localized string in the resource bundle.
+     *  Because this method is static, it ignores the locale.
+     *  Use localize(key, args) when possible.
      *  @param key    The key for the localized string.
      *  @param args   Fields to substitute into the string.
      */
     public static String getLocalizedString(String key, Object ... args) {
         return JavacMessages.getDefaultLocalizedString("compiler.misc." + key, args);
+    }
+
+    /** Find a localized string in the resource bundle.
+     *  @param key    The key for the localized string.
+     *  @param args   Fields to substitute into the string.
+     */
+    public String localize(String key, Object... args) {
+        return messages.getLocalizedString("compiler.misc." + key, args);
     }
 
 /***************************************************************************

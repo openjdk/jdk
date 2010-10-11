@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
 address decode_env::decode_instructions(address start, address end) {
   _start = start; _end = end;
 
-  assert((((intptr_t)start | (intptr_t)end) % Disassembler::pd_instruction_alignment() == 0), "misaligned insn addr");
+  assert(((((intptr_t)start | (intptr_t)end) % Disassembler::pd_instruction_alignment()) == 0), "misaligned insn addr");
 
   const int show_bytes = false; // for disassembler debugging
 
@@ -407,7 +407,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   if (!load_library())  return;
   decode_env env(cb, st);
   env.output()->print_cr("Decoding CodeBlob " INTPTR_FORMAT, cb);
-  env.decode_instructions(cb->instructions_begin(), cb->instructions_end());
+  env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
 
@@ -423,8 +423,14 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   env.output()->print_cr("Decoding compiled method " INTPTR_FORMAT ":", nm);
   env.output()->print_cr("Code:");
 
-  unsigned char* p = nm->instructions_begin();
-  unsigned char* end = nm->instructions_end();
+#ifdef SHARK
+  SharkEntry* entry = (SharkEntry *) nm->code_begin();
+  unsigned char* p   = entry->code_start();
+  unsigned char* end = entry->code_limit();
+#else
+  unsigned char* p   = nm->code_begin();
+  unsigned char* end = nm->code_end();
+#endif // SHARK
 
   // If there has been profiling, print the buckets.
   if (FlatProfiler::bucket_start_for(p) != NULL) {

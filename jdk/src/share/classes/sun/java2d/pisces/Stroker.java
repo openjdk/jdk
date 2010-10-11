@@ -25,7 +25,7 @@
 
 package sun.java2d.pisces;
 
-public class Stroker extends LineSink {
+public class Stroker implements LineSink {
 
     private static final int MOVE_TO = 0;
     private static final int LINE_TO = 1;
@@ -61,19 +61,15 @@ public class Stroker extends LineSink {
      */
     public static final int CAP_SQUARE = 2;
 
-    LineSink output;
+    private final LineSink output;
 
-    int lineWidth;
-    int capStyle;
-    int joinStyle;
-    int miterLimit;
+    private final int capStyle;
+    private final int joinStyle;
 
-    Transform4 transform;
-    int m00, m01;
-    int m10, m11;
+    private final float m00, m01, m10, m11, det;
 
-    int lineWidth2;
-    long scaledLineWidth2;
+    private final float lineWidth2;
+    private final float scaledLineWidth2;
 
     // For any pen offset (pen_dx, pen_dy) that does not depend on
     // the line orientation, the pen should be transformed so that:
@@ -88,143 +84,86 @@ public class Stroker extends LineSink {
     //
     // pen_dx'(r, theta) = r*(m00*cos(theta) + m01*sin(theta))
     // pen_dy'(r, theta) = r*(m10*cos(theta) + m11*sin(theta))
-    int numPenSegments;
-    int[] pen_dx;
-    int[] pen_dy;
-    boolean[] penIncluded;
-    int[] join;
+    private int numPenSegments;
+    private final float[] pen_dx;
+    private final float[] pen_dy;
+    private boolean[] penIncluded;
+    private final float[] join;
 
-    int[] offset = new int[2];
-    int[] reverse = new int[100];
-    int[] miter = new int[2];
-    long miterLimitSq;
+    private final float[] offset = new float[2];
+    private float[] reverse = new float[100];
+    private final float[] miter = new float[2];
+    private final float miterLimitSq;
 
-    int prev;
-    int rindex;
-    boolean started;
-    boolean lineToOrigin;
-    boolean joinToOrigin;
+    private int prev;
+    private int rindex;
+    private boolean started;
+    private boolean lineToOrigin;
+    private boolean joinToOrigin;
 
-    int sx0, sy0, sx1, sy1, x0, y0, x1, y1;
-    int mx0, my0, mx1, my1, omx, omy;
-    int lx0, ly0, lx1, ly1, lx0p, ly0p, px0, py0;
+    private float sx0, sy0, sx1, sy1, x0, y0, px0, py0;
+    private float mx0, my0, omx, omy;
 
-    double m00_2_m01_2;
-    double m10_2_m11_2;
-    double m00_m10_m01_m11;
-
-    /**
-     * Empty constructor.  <code>setOutput</code> and
-     * <code>setParameters</code> must be called prior to calling any
-     * other methods.
-     */
-    public Stroker() {}
+    private float m00_2_m01_2;
+    private float m10_2_m11_2;
+    private float m00_m10_m01_m11;
 
     /**
      * Constructs a <code>Stroker</code>.
      *
      * @param output an output <code>LineSink</code>.
-     * @param lineWidth the desired line width in pixels, in S15.16
-     * format.
+     * @param lineWidth the desired line width in pixels
      * @param capStyle the desired end cap style, one of
      * <code>CAP_BUTT</code>, <code>CAP_ROUND</code> or
      * <code>CAP_SQUARE</code>.
      * @param joinStyle the desired line join style, one of
      * <code>JOIN_MITER</code>, <code>JOIN_ROUND</code> or
      * <code>JOIN_BEVEL</code>.
-     * @param miterLimit the desired miter limit, in S15.16 format.
+     * @param miterLimit the desired miter limit
      * @param transform a <code>Transform4</code> object indicating
      * the transform that has been previously applied to all incoming
      * coordinates.  This is required in order to produce consistently
      * shaped end caps and joins.
      */
     public Stroker(LineSink output,
-                   int lineWidth,
+                   float lineWidth,
                    int capStyle,
                    int joinStyle,
-                   int miterLimit,
-                   Transform4 transform) {
-        setOutput(output);
-        setParameters(lineWidth, capStyle, joinStyle, miterLimit, transform);
-    }
-
-    /**
-     * Sets the output <code>LineSink</code> of this
-     * <code>Stroker</code>.
-     *
-     * @param output an output <code>LineSink</code>.
-     */
-    public void setOutput(LineSink output) {
+                   float miterLimit,
+                   float m00, float m01, float m10, float m11) {
         this.output = output;
-    }
 
-    /**
-     * Sets the parameters of this <code>Stroker</code>.
-     * @param lineWidth the desired line width in pixels, in S15.16
-     * format.
-     * @param capStyle the desired end cap style, one of
-     * <code>CAP_BUTT</code>, <code>CAP_ROUND</code> or
-     * <code>CAP_SQUARE</code>.
-     * @param joinStyle the desired line join style, one of
-     * <code>JOIN_MITER</code>, <code>JOIN_ROUND</code> or
-     * <code>JOIN_BEVEL</code>.
-     * @param miterLimit the desired miter limit, in S15.16 format.
-     * @param transform a <code>Transform4</code> object indicating
-     * the transform that has been previously applied to all incoming
-     * coordinates.  This is required in order to produce consistently
-     * shaped end caps and joins.
-     */
-    public void setParameters(int lineWidth,
-                              int capStyle,
-                              int joinStyle,
-                              int miterLimit,
-                              Transform4 transform) {
-        this.lineWidth = lineWidth;
-        this.lineWidth2 = lineWidth >> 1;
-        this.scaledLineWidth2 = ((long)transform.m00*lineWidth2) >> 16;
+        this.lineWidth2 = lineWidth / 2;
+        this.scaledLineWidth2 = m00 * lineWidth2;
         this.capStyle = capStyle;
         this.joinStyle = joinStyle;
-        this.miterLimit = miterLimit;
 
-        this.transform = transform;
-        this.m00 = transform.m00;
-        this.m01 = transform.m01;
-        this.m10 = transform.m10;
-        this.m11 = transform.m11;
+        m00_2_m01_2 = m00*m00 + m01*m01;
+        m10_2_m11_2 = m10*m10 + m11*m11;
+        m00_m10_m01_m11 = m00*m10 + m01*m11;
 
-        this.m00_2_m01_2 = (double)m00*m00 + (double)m01*m01;
-        this.m10_2_m11_2 = (double)m10*m10 + (double)m11*m11;
-        this.m00_m10_m01_m11 = (double)m00*m10 + (double)m01*m11;
+        this.m00 = m00;
+        this.m01 = m01;
+        this.m10 = m10;
+        this.m11 = m11;
+        det = m00*m11 - m01*m10;
 
-        double dm00 = m00/65536.0;
-        double dm01 = m01/65536.0;
-        double dm10 = m10/65536.0;
-        double dm11 = m11/65536.0;
-        double determinant = dm00*dm11 - dm01*dm10;
+        float limit = miterLimit * lineWidth2 * det;
+        this.miterLimitSq = limit*limit;
 
-        if (joinStyle == JOIN_MITER) {
-            double limit =
-                (miterLimit/65536.0)*(lineWidth2/65536.0)*determinant;
-            double limitSq = limit*limit;
-            this.miterLimitSq = (long)(limitSq*65536.0*65536.0);
-        }
-
-        this.numPenSegments = (int)(3.14159f*lineWidth/65536.0f);
-        if (pen_dx == null || pen_dx.length < numPenSegments) {
-            this.pen_dx = new int[numPenSegments];
-            this.pen_dy = new int[numPenSegments];
-            this.penIncluded = new boolean[numPenSegments];
-            this.join = new int[2*numPenSegments];
-        }
+        this.numPenSegments = (int)(3.14159f * lineWidth);
+        this.pen_dx = new float[numPenSegments];
+        this.pen_dy = new float[numPenSegments];
+        this.penIncluded = new boolean[numPenSegments];
+        this.join = new float[2*numPenSegments];
 
         for (int i = 0; i < numPenSegments; i++) {
-            double r = lineWidth/2.0;
-            double theta = (double)i*2.0*Math.PI/numPenSegments;
+            double theta = (i * 2.0 * Math.PI)/numPenSegments;
 
             double cos = Math.cos(theta);
             double sin = Math.sin(theta);
-            pen_dx[i] = (int)(r*(dm00*cos + dm01*sin));
-            pen_dy[i] = (int)(r*(dm10*cos + dm11*sin));
+            pen_dx[i] = (float)(lineWidth2 * (m00*cos + m01*sin));
+            pen_dy[i] = (float)(lineWidth2 * (m10*cos + m11*sin));
         }
 
         prev = CLOSE;
@@ -233,32 +172,31 @@ public class Stroker extends LineSink {
         lineToOrigin = false;
     }
 
-    private void computeOffset(int x0, int y0, int x1, int y1, int[] m) {
-        long lx = (long)x1 - (long)x0;
-        long ly = (long)y1 - (long)y0;
+    private void computeOffset(float x0, float y0,
+                               float x1, float y1, float[] m) {
+        float lx = x1 - x0;
+        float ly = y1 - y0;
 
-        int dx, dy;
+        float dx, dy;
         if (m00 > 0 && m00 == m11 && m01 == 0 & m10 == 0) {
-            long ilen = PiscesMath.hypot(lx, ly);
+            float ilen = (float)Math.hypot(lx, ly);
             if (ilen == 0) {
                 dx = dy = 0;
             } else {
-                dx = (int)( (ly*scaledLineWidth2)/ilen);
-                dy = (int)(-(lx*scaledLineWidth2)/ilen);
+                dx = (ly * scaledLineWidth2)/ilen;
+                dy = -(lx * scaledLineWidth2)/ilen;
             }
         } else {
-            double dlx = x1 - x0;
-            double dly = y1 - y0;
-            double det = (double)m00*m11 - (double)m01*m10;
             int sdet = (det > 0) ? 1 : -1;
-            double a = dly*m00 - dlx*m10;
-            double b = dly*m01 - dlx*m11;
-            double dh = PiscesMath.hypot(a, b);
-            double div = sdet*lineWidth2/(65536.0*dh);
-            double ddx = dly*m00_2_m01_2 - dlx*m00_m10_m01_m11;
-            double ddy = dly*m00_m10_m01_m11 - dlx*m10_2_m11_2;
-            dx = (int)(ddx*div);
-            dy = (int)(ddy*div);
+            float a = ly * m00 - lx * m10;
+            float b = ly * m01 - lx * m11;
+            float dh = (float)Math.hypot(a, b);
+            float div = sdet * lineWidth2/dh;
+
+            float ddx = ly * m00_2_m01_2 - lx * m00_m10_m01_m11;
+            float ddy = ly * m00_m10_m01_m11 - lx * m10_2_m11_2;
+            dx = ddx*div;
+            dy = ddy*div;
         }
 
         m[0] = dx;
@@ -267,58 +205,43 @@ public class Stroker extends LineSink {
 
     private void ensureCapacity(int newrindex) {
         if (reverse.length < newrindex) {
-            int[] tmp = new int[Math.max(newrindex, 6*reverse.length/5)];
-            System.arraycopy(reverse, 0, tmp, 0, rindex);
-            this.reverse = tmp;
+            reverse = java.util.Arrays.copyOf(reverse, 6*reverse.length/5);
         }
     }
 
-    private boolean isCCW(int x0, int y0,
-                          int x1, int y1,
-                          int x2, int y2) {
-        int dx0 = x1 - x0;
-        int dy0 = y1 - y0;
-        int dx1 = x2 - x1;
-        int dy1 = y2 - y1;
-        return (long)dx0*dy1 < (long)dy0*dx1;
+    private boolean isCCW(float x0, float y0,
+                          float x1, float y1,
+                          float x2, float y2) {
+        return (x1 - x0) * (y2 - y1) < (y1 - y0) * (x2 - x1);
     }
 
-    private boolean side(int x, int y, int x0, int y0, int x1, int y1) {
-        long lx = x;
-        long ly = y;
-        long lx0 = x0;
-        long ly0 = y0;
-        long lx1 = x1;
-        long ly1 = y1;
-
-        return (ly0 - ly1)*lx + (lx1 - lx0)*ly + (lx0*ly1 - lx1*ly0) > 0;
+    private boolean side(float x,  float y,
+                         float x0, float y0,
+                         float x1, float y1) {
+        return (y0 - y1)*x + (x1 - x0)*y + (x0*y1 - x1*y0) > 0;
     }
 
-    private int computeRoundJoin(int cx, int cy,
-                                 int xa, int ya,
-                                 int xb, int yb,
+    private int computeRoundJoin(float cx, float cy,
+                                 float xa, float ya,
+                                 float xb, float yb,
                                  int side,
                                  boolean flip,
-                                 int[] join) {
-        int px, py;
+                                 float[] join) {
+        float px, py;
         int ncoords = 0;
 
         boolean centerSide;
         if (side == 0) {
             centerSide = side(cx, cy, xa, ya, xb, yb);
         } else {
-            centerSide = (side == 1) ? true : false;
+            centerSide = (side == 1);
         }
         for (int i = 0; i < numPenSegments; i++) {
             px = cx + pen_dx[i];
             py = cy + pen_dy[i];
 
             boolean penSide = side(px, py, xa, ya, xb, yb);
-            if (penSide != centerSide) {
-                penIncluded[i] = true;
-            } else {
-                penIncluded[i] = false;
-            }
+            penIncluded[i] = (penSide != centerSide);
         }
 
         int start = -1, end = -1;
@@ -338,10 +261,10 @@ public class Stroker extends LineSink {
         }
 
         if (start != -1 && end != -1) {
-            long dxa = cx + pen_dx[start] - xa;
-            long dya = cy + pen_dy[start] - ya;
-            long dxb = cx + pen_dx[start] - xb;
-            long dyb = cy + pen_dy[start] - yb;
+            float dxa = cx + pen_dx[start] - xa;
+            float dya = cy + pen_dy[start] - ya;
+            float dxb = cx + pen_dx[start] - xb;
+            float dyb = cy + pen_dy[start] - yb;
 
             boolean rev = (dxa*dxa + dya*dya > dxb*dxb + dyb*dyb);
             int i = rev ? end : start;
@@ -362,22 +285,25 @@ public class Stroker extends LineSink {
         return ncoords/2;
     }
 
-    private static final long ROUND_JOIN_THRESHOLD = 1000L;
-    private static final long ROUND_JOIN_INTERNAL_THRESHOLD = 1000000000L;
+    // pisces used to use fixed point arithmetic with 16 decimal digits. I
+    // didn't want to change the values of the constants below when I converted
+    // it to floating point, so that's why the divisions by 2^16 are there.
+    private static final float ROUND_JOIN_THRESHOLD = 1000/65536f;
+    private static final float ROUND_JOIN_INTERNAL_THRESHOLD = 1000000000/65536f;
 
-    private void drawRoundJoin(int x, int y,
-                               int omx, int omy, int mx, int my,
+    private void drawRoundJoin(float x, float y,
+                               float omx, float omy, float mx, float my,
                                int side,
                                boolean flip,
                                boolean rev,
-                               long threshold) {
+                               float threshold) {
         if ((omx == 0 && omy == 0) || (mx == 0 && my == 0)) {
             return;
         }
 
-        long domx = (long)omx - mx;
-        long domy = (long)omy - my;
-        long len = domx*domx + domy*domy;
+        float domx = omx - mx;
+        float domy = omy - my;
+        float len = domx*domx + domy*domy;
         if (len < threshold) {
             return;
         }
@@ -389,10 +315,10 @@ public class Stroker extends LineSink {
             my = -my;
         }
 
-        int bx0 = x + omx;
-        int by0 = y + omy;
-        int bx1 = x + mx;
-        int by1 = y + my;
+        float bx0 = x + omx;
+        float by0 = y + omy;
+        float bx1 = x + mx;
+        float by1 = y + my;
 
         int npoints = computeRoundJoin(x, y,
                                        bx0, by0, bx1, by1, side, flip,
@@ -404,40 +330,30 @@ public class Stroker extends LineSink {
 
     // Return the intersection point of the lines (ix0, iy0) -> (ix1, iy1)
     // and (ix0p, iy0p) -> (ix1p, iy1p) in m[0] and m[1]
-    private void computeMiter(int ix0, int iy0, int ix1, int iy1,
-                              int ix0p, int iy0p, int ix1p, int iy1p,
-                              int[] m) {
-        long x0 = ix0;
-        long y0 = iy0;
-        long x1 = ix1;
-        long y1 = iy1;
+    private void computeMiter(float x0, float y0, float x1, float y1,
+                              float x0p, float y0p, float x1p, float y1p,
+                              float[] m) {
+        float x10 = x1 - x0;
+        float y10 = y1 - y0;
+        float x10p = x1p - x0p;
+        float y10p = y1p - y0p;
 
-        long x0p = ix0p;
-        long y0p = iy0p;
-        long x1p = ix1p;
-        long y1p = iy1p;
-
-        long x10 = x1 - x0;
-        long y10 = y1 - y0;
-        long x10p = x1p - x0p;
-        long y10p = y1p - y0p;
-
-        long den = (x10*y10p - x10p*y10) >> 16;
+        float den = x10*y10p - x10p*y10;
         if (den == 0) {
-            m[0] = ix0;
-            m[1] = iy0;
+            m[0] = x0;
+            m[1] = y0;
             return;
         }
 
-        long t = (x1p*(y0 - y0p) - x0*y10p + x0p*(y1p - y0)) >> 16;
-        m[0] = (int)(x0 + (t*x10)/den);
-        m[1] = (int)(y0 + (t*y10)/den);
+        float t = x1p*(y0 - y0p) - x0*y10p + x0p*(y1p - y0);
+        m[0] = x0 + (t*x10)/den;
+        m[1] = y0 + (t*y10)/den;
     }
 
-    private void drawMiter(int px0, int py0,
-                           int x0, int y0,
-                           int x1, int y1,
-                           int omx, int omy, int mx, int my,
+    private void drawMiter(float px0, float py0,
+                           float x0, float y0,
+                           float x1, float y1,
+                           float omx, float omy, float mx, float my,
                            boolean rev) {
         if (mx == omx && my == omy) {
             return;
@@ -461,11 +377,11 @@ public class Stroker extends LineSink {
                      miter);
 
         // Compute miter length in untransformed coordinates
-        long dx = (long)miter[0] - x0;
-        long dy = (long)miter[1] - y0;
-        long a = (dy*m00 - dx*m10) >> 16;
-        long b = (dy*m01 - dx*m11) >> 16;
-        long lenSq = a*a + b*b;
+        float dx = miter[0] - x0;
+        float dy = miter[1] - y0;
+        float a = dy*m00 - dx*m10;
+        float b = dy*m01 - dx*m11;
+        float lenSq = a*a + b*b;
 
         if (lenSq < miterLimitSq) {
             emitLineTo(miter[0], miter[1], rev);
@@ -473,7 +389,7 @@ public class Stroker extends LineSink {
     }
 
 
-    public void moveTo(int x0, int y0) {
+    public void moveTo(float x0, float y0) {
         // System.out.println("Stroker.moveTo(" + x0/65536.0 + ", " + y0/65536.0 + ")");
 
         if (lineToOrigin) {
@@ -501,7 +417,7 @@ public class Stroker extends LineSink {
         this.joinSegment = true;
     }
 
-    public void lineTo(int x1, int y1) {
+    public void lineTo(float x1, float y1) {
         // System.out.println("Stroker.lineTo(" + x1/65536.0 + ", " + y1/65536.0 + ")");
 
         if (lineToOrigin) {
@@ -526,10 +442,10 @@ public class Stroker extends LineSink {
         joinSegment = false;
     }
 
-    private void lineToImpl(int x1, int y1, boolean joinSegment) {
+    private void lineToImpl(float x1, float y1, boolean joinSegment) {
         computeOffset(x0, y0, x1, y1, offset);
-        int mx = offset[0];
-        int my = offset[1];
+        float mx = offset[0];
+        float my = offset[1];
 
         if (!started) {
             emitMoveTo(x0 + mx, y0 + my);
@@ -567,10 +483,6 @@ public class Stroker extends LineSink {
         emitLineTo(x0 - mx, y0 - my, true);
         emitLineTo(x1 - mx, y1 - my, true);
 
-        lx0 = x1 + mx; ly0 = y1 + my;
-        lx0p = x1 - mx; ly0p = y1 - my;
-        lx1 = x1; ly1 = y1;
-
         this.omx = mx;
         this.omy = my;
         this.px0 = x0;
@@ -594,8 +506,8 @@ public class Stroker extends LineSink {
         }
 
         computeOffset(x0, y0, sx0, sy0, offset);
-        int mx = offset[0];
-        int my = offset[1];
+        float mx = offset[0];
+        float my = offset[1];
 
         // Draw penultimate join
         boolean ccw = isCCW(px0, py0, x0, y0, sx0, sy0);
@@ -678,12 +590,10 @@ public class Stroker extends LineSink {
         this.prev = MOVE_TO;
     }
 
-    long lineLength(long ldx, long ldy) {
-        long ldet = ((long)m00*m11 - (long)m01*m10) >> 16;
-        long la = ((long)ldy*m00 - (long)ldx*m10)/ldet;
-        long lb = ((long)ldy*m01 - (long)ldx*m11)/ldet;
-        long llen = (int)PiscesMath.hypot(la, lb);
-        return llen;
+    double userSpaceLineLength(double dx, double dy) {
+        double a = (dy*m00 - dx*m10)/det;
+        double b = (dy*m01 - dx*m11)/det;
+        return Math.hypot(a, b);
     }
 
     private void finish() {
@@ -692,13 +602,13 @@ public class Stroker extends LineSink {
                           omx, omy, -omx, -omy, 1, false, false,
                           ROUND_JOIN_THRESHOLD);
         } else if (capStyle == CAP_SQUARE) {
-            long ldx = (long)(px0 - x0);
-            long ldy = (long)(py0 - y0);
-            long llen = lineLength(ldx, ldy);
-            long s = (long)lineWidth2*65536/llen;
+            float dx = px0 - x0;
+            float dy = py0 - y0;
+            float len = (float)userSpaceLineLength(dx, dy);
+            float s = lineWidth2/len;
 
-            int capx = x0 - (int)(ldx*s >> 16);
-            int capy = y0 - (int)(ldy*s >> 16);
+            float capx = x0 - dx*s;
+            float capy = y0 - dy*s;
 
             emitLineTo(capx + omx, capy + omy);
             emitLineTo(capx - omx, capy - omy);
@@ -714,13 +624,13 @@ public class Stroker extends LineSink {
                           -mx0, -my0, mx0, my0, 1, false, false,
                           ROUND_JOIN_THRESHOLD);
         } else if (capStyle == CAP_SQUARE) {
-            long ldx = (long)(sx1 - sx0);
-            long ldy = (long)(sy1 - sy0);
-            long llen = lineLength(ldx, ldy);
-            long s = (long)lineWidth2*65536/llen;
+            float dx = sx1 - sx0;
+            float dy = sy1 - sy0;
+            float len = (float)userSpaceLineLength(dx, dy);
+            float s = lineWidth2/len;
 
-            int capx = sx0 - (int)(ldx*s >> 16);
-            int capy = sy0 - (int)(ldy*s >> 16);
+            float capx = sx0 - dx*s;
+            float capy = sy0 - dy*s;
 
             emitLineTo(capx - mx0, capy - my0);
             emitLineTo(capx + mx0, capy + my0);
@@ -730,17 +640,17 @@ public class Stroker extends LineSink {
         this.joinSegment = false;
     }
 
-    private void emitMoveTo(int x0, int y0) {
+    private void emitMoveTo(float x0, float y0) {
         // System.out.println("Stroker.emitMoveTo(" + x0/65536.0 + ", " + y0/65536.0 + ")");
         output.moveTo(x0, y0);
     }
 
-    private void emitLineTo(int x1, int y1) {
+    private void emitLineTo(float x1, float y1) {
         // System.out.println("Stroker.emitLineTo(" + x0/65536.0 + ", " + y0/65536.0 + ")");
         output.lineTo(x1, y1);
     }
 
-    private void emitLineTo(int x1, int y1, boolean rev) {
+    private void emitLineTo(float x1, float y1, boolean rev) {
         if (rev) {
             ensureCapacity(rindex + 2);
             reverse[rindex++] = x1;
@@ -755,3 +665,4 @@ public class Stroker extends LineSink {
         output.close();
     }
 }
+

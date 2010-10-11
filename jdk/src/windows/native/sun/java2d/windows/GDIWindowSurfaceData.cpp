@@ -363,6 +363,10 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIWindowSurfaceData_initOps");
     GDIWinSDOps *wsdo = (GDIWinSDOps *)SurfaceData_InitOps(env, wsd, sizeof(GDIWinSDOps));
+    if (wsdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
     wsdo->sdOps.Lock = GDIWinSD_Lock;
     wsdo->sdOps.GetRasInfo = GDIWinSD_GetRasInfo;
     wsdo->sdOps.Unlock = GDIWinSD_Unlock;

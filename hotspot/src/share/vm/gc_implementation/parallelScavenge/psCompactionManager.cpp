@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ ParCompactionManager::ObjArrayTaskQueueSet*
   ParCompactionManager::_objarray_queues = NULL;
 ObjectStartArray*    ParCompactionManager::_start_array = NULL;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = NULL;
-RegionTaskQueueSet*   ParCompactionManager::_region_array = NULL;
+RegionTaskQueueSet*  ParCompactionManager::_region_array = NULL;
 
 ParCompactionManager::ParCompactionManager() :
     _action(CopyAndUpdate) {
@@ -43,25 +43,9 @@ ParCompactionManager::ParCompactionManager() :
   _old_gen = heap->old_gen();
   _start_array = old_gen()->start_array();
 
-
   marking_stack()->initialize();
-
-  // We want the overflow stack to be permanent
-  _overflow_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(10, true);
-
-  _objarray_queue.initialize();
-  _objarray_overflow_stack =
-    new (ResourceObj::C_HEAP) ObjArrayOverflowStack(10, true);
-
-#ifdef USE_RegionTaskQueueWithOverflow
+  _objarray_stack.initialize();
   region_stack()->initialize();
-#else
-  region_stack()->initialize();
-
-  // We want the overflow stack to be permanent
-  _region_overflow_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<size_t>(10, true);
-#endif
 
   // Note that _revisit_klass_stack is allocated out of the
   // C heap (as opposed to out of ResourceArena).
@@ -71,12 +55,9 @@ ParCompactionManager::ParCompactionManager() :
   // From some experiments (#klass/k)^2 for k = 10 seems a better fit, but this will
   // have to do for now until we are able to investigate a more optimal setting.
   _revisit_mdo_stack = new (ResourceObj::C_HEAP) GrowableArray<DataLayout*>(size*2, true);
-
 }
 
 ParCompactionManager::~ParCompactionManager() {
-  delete _overflow_stack;
-  delete _objarray_overflow_stack;
   delete _revisit_klass_stack;
   delete _revisit_mdo_stack;
   // _manager_array and _stack_array are statics
@@ -108,12 +89,8 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
     _manager_array[i] = new ParCompactionManager();
     guarantee(_manager_array[i] != NULL, "Could not create ParCompactionManager");
     stack_array()->register_queue(i, _manager_array[i]->marking_stack());
-    _objarray_queues->register_queue(i, &_manager_array[i]->_objarray_queue);
-#ifdef USE_RegionTaskQueueWithOverflow
-    region_array()->register_queue(i, _manager_array[i]->region_stack()->task_queue());
-#else
+    _objarray_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
     region_array()->register_queue(i, _manager_array[i]->region_stack());
-#endif
   }
 
   // The VMThread gets its own ParCompactionManager, which is not available
@@ -149,57 +126,6 @@ bool ParCompactionManager::should_reset_only() {
   return action() == ParCompactionManager::ResetObjects;
 }
 
-// For now save on a stack
-void ParCompactionManager::save_for_scanning(oop m) {
-  stack_push(m);
-}
-
-void ParCompactionManager::stack_push(oop obj) {
-
-  if(!marking_stack()->push(obj)) {
-    overflow_stack()->push(obj);
-  }
-}
-
-oop ParCompactionManager::retrieve_for_scanning() {
-
-  // Should not be used in the parallel case
-  ShouldNotReachHere();
-  return NULL;
-}
-
-// Save region on a stack
-void ParCompactionManager::save_for_processing(size_t region_index) {
-#ifdef ASSERT
-  const ParallelCompactData& sd = PSParallelCompact::summary_data();
-  ParallelCompactData::RegionData* const region_ptr = sd.region(region_index);
-  assert(region_ptr->claimed(), "must be claimed");
-  assert(region_ptr->_pushed++ == 0, "should only be pushed once");
-#endif
-  region_stack_push(region_index);
-}
-
-void ParCompactionManager::region_stack_push(size_t region_index) {
-
-#ifdef USE_RegionTaskQueueWithOverflow
-  region_stack()->save(region_index);
-#else
-  if(!region_stack()->push(region_index)) {
-    region_overflow_stack()->push(region_index);
-  }
-#endif
-}
-
-bool ParCompactionManager::retrieve_for_processing(size_t& region_index) {
-#ifdef USE_RegionTaskQueueWithOverflow
-  return region_stack()->retrieve(region_index);
-#else
-  // Should not be used in the parallel case
-  ShouldNotReachHere();
-  return false;
-#endif
-}
-
 ParCompactionManager*
 ParCompactionManager::gc_thread_compaction_manager(int index) {
   assert(index >= 0 && index < (int)ParallelGCThreads, "index out of range");
@@ -218,8 +144,8 @@ void ParCompactionManager::follow_marking_stacks() {
   do {
     // Drain the overflow stack first, to allow stealing from the marking stack.
     oop obj;
-    while (!overflow_stack()->is_empty()) {
-      overflow_stack()->pop()->follow_contents(this);
+    while (marking_stack()->pop_overflow(obj)) {
+      obj->follow_contents(this);
     }
     while (marking_stack()->pop_local(obj)) {
       obj->follow_contents(this);
@@ -227,11 +153,10 @@ void ParCompactionManager::follow_marking_stacks() {
 
     // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    if (!_objarray_overflow_stack->is_empty()) {
-      task = _objarray_overflow_stack->pop();
+    if (_objarray_stack.pop_overflow(task)) {
       objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
       k->oop_follow_contents(this, task.obj(), task.index());
-    } else if (_objarray_queue.pop_local(task)) {
+    } else if (_objarray_stack.pop_local(task)) {
       objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
       k->oop_follow_contents(this, task.obj(), task.index());
     }
@@ -240,68 +165,18 @@ void ParCompactionManager::follow_marking_stacks() {
   assert(marking_stacks_empty(), "Sanity");
 }
 
-void ParCompactionManager::drain_region_overflow_stack() {
-  size_t region_index = (size_t) -1;
-  while(region_stack()->retrieve_from_overflow(region_index)) {
-    PSParallelCompact::fill_and_update_region(this, region_index);
-  }
-}
-
 void ParCompactionManager::drain_region_stacks() {
-#ifdef ASSERT
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-  MutableSpace* to_space = heap->young_gen()->to_space();
-  MutableSpace* old_space = heap->old_gen()->object_space();
-  MutableSpace* perm_space = heap->perm_gen()->object_space();
-#endif /* ASSERT */
-
-#if 1 // def DO_PARALLEL - the serial code hasn't been updated
   do {
-
-#ifdef USE_RegionTaskQueueWithOverflow
-    // Drain overflow stack first, so other threads can steal from
-    // claimed stack while we work.
-    size_t region_index = (size_t) -1;
-    while(region_stack()->retrieve_from_overflow(region_index)) {
+    // Drain overflow stack first so other threads can steal.
+    size_t region_index;
+    while (region_stack()->pop_overflow(region_index)) {
       PSParallelCompact::fill_and_update_region(this, region_index);
     }
 
-    while (region_stack()->retrieve_from_stealable_queue(region_index)) {
+    while (region_stack()->pop_local(region_index)) {
       PSParallelCompact::fill_and_update_region(this, region_index);
     }
   } while (!region_stack()->is_empty());
-#else
-    // Drain overflow stack first, so other threads can steal from
-    // claimed stack while we work.
-    while(!region_overflow_stack()->is_empty()) {
-      size_t region_index = region_overflow_stack()->pop();
-      PSParallelCompact::fill_and_update_region(this, region_index);
-    }
-
-    size_t region_index = -1;
-    // obj is a reference!!!
-    while (region_stack()->pop_local(region_index)) {
-      // It would be nice to assert about the type of objects we might
-      // pop, but they can come from anywhere, unfortunately.
-      PSParallelCompact::fill_and_update_region(this, region_index);
-    }
-  } while((region_stack()->size() != 0) ||
-          (region_overflow_stack()->length() != 0));
-#endif
-
-#ifdef USE_RegionTaskQueueWithOverflow
-  assert(region_stack()->is_empty(), "Sanity");
-#else
-  assert(region_stack()->size() == 0, "Sanity");
-  assert(region_overflow_stack()->length() == 0, "Sanity");
-#endif
-#else
-  oop obj;
-  while (obj = retrieve_for_scanning()) {
-    obj->follow_contents(this);
-  }
-#endif
 }
 
 #ifdef ASSERT

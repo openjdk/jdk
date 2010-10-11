@@ -712,10 +712,8 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
     ciObject* obj = con.as_object();
     if (obj->is_null_object()) {
       push_null();
-    } else if (obj->is_klass()) {
-      // The type of ldc <class> is java.lang.Class
-      push_object(outer()->env()->Class_klass());
     } else {
+      assert(!obj->is_klass(), "must be java_mirror of klass");
       push_object(obj->klass());
     }
   } else {
@@ -2593,7 +2591,7 @@ void ciTypeFlow::df_flow_types(Block* start,
                                StateVector* temp_vector,
                                JsrSet* temp_set) {
   int dft_len = 100;
-  GrowableArray<Block*> stk(arena(), dft_len, 0, NULL);
+  GrowableArray<Block*> stk(dft_len);
 
   ciBlock* dummy = _methodBlocks->make_dummy_block();
   JsrSet* root_set = new JsrSet(NULL, 0);

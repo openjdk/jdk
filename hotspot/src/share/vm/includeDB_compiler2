@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,21 @@ addnode.hpp                             type.hpp
 adlcVMDeps.hpp                          allocation.hpp
 
 allocation.hpp                          c2_globals.hpp
+
+bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
+bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
+bcEscapeAnalyzer.cpp                    bytecode.hpp
+bcEscapeAnalyzer.cpp                    ciConstant.hpp
+bcEscapeAnalyzer.cpp                    ciField.hpp
+bcEscapeAnalyzer.cpp                    ciMethodBlocks.hpp
+bcEscapeAnalyzer.cpp                    ciStreams.hpp
+
+bcEscapeAnalyzer.hpp                    allocation.hpp
+bcEscapeAnalyzer.hpp                    ciMethod.hpp
+bcEscapeAnalyzer.hpp                    ciMethodData.hpp
+bcEscapeAnalyzer.hpp                    dependencies.hpp
+bcEscapeAnalyzer.hpp                    growableArray.hpp
+bcEscapeAnalyzer.hpp                    vectset.hpp
 
 block.cpp                               allocation.inline.hpp
 block.cpp                               block.hpp
@@ -239,6 +254,7 @@ chaitin_<os_family>.cpp                 machnode.hpp
 ciEnv.cpp                               compileLog.hpp
 ciEnv.cpp                               runtime.hpp
 
+ciMethod.cpp                            bcEscapeAnalyzer.hpp
 ciMethod.cpp                            ciTypeFlow.hpp
 ciMethod.cpp                            methodOop.hpp
 
@@ -488,6 +504,7 @@ graphKit.hpp                            addnode.hpp
 graphKit.hpp                            callnode.hpp
 graphKit.hpp                            cfgnode.hpp
 graphKit.hpp                            ciEnv.hpp
+graphKit.hpp                            ciMethodData.hpp
 graphKit.hpp                            divnode.hpp
 graphKit.hpp                            compile.hpp
 graphKit.hpp                            deoptimization.hpp
@@ -608,6 +625,7 @@ loopTransform.cpp                       divnode.hpp
 loopTransform.cpp                       loopnode.hpp
 loopTransform.cpp                       mulnode.hpp
 loopTransform.cpp                       rootnode.hpp
+loopTransform.cpp                       runtime.hpp
 loopTransform.cpp                       subnode.hpp
 
 loopUnswitch.cpp                        allocation.inline.hpp
@@ -895,6 +913,7 @@ postaloc.cpp                            machnode.hpp
 reg_split.cpp                           addnode.hpp
 reg_split.cpp                           allocation.inline.hpp
 reg_split.cpp                           callnode.hpp
+reg_split.cpp                           c2compiler.hpp
 reg_split.cpp                           cfgnode.hpp
 reg_split.cpp                           chaitin.hpp
 reg_split.cpp                           loopnode.hpp

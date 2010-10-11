@@ -220,11 +220,13 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   code_offsets->set_value(CodeOffsets::Deopt, assembler->emit_deopt_handler());
   CHECK_BAILOUT();
 
-  // Generate code for MethodHandle deopt handler.  We can use the
-  // same code as for the normal deopt handler, we just need a
-  // different entry point address.
-  code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
-  CHECK_BAILOUT();
+  // Emit the MethodHandle deopt handler code (if required).
+  if (has_method_handle_invokes()) {
+    // We can use the same code as for the normal deopt handler, we
+    // just need a different entry point address.
+    code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
+    CHECK_BAILOUT();
+  }
 
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
@@ -242,10 +244,10 @@ void Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
   code->insts()->initialize_shared_locs((relocInfo*)locs_buffer,
                                         locs_buffer_size / sizeof(relocInfo));
   code->initialize_consts_size(Compilation::desired_max_constant_size());
-  // Call stubs + deopt/exception handler
+  // Call stubs + two deopt handlers (regular and MH) + exception handler
   code->initialize_stubs_size((call_stub_estimate * LIR_Assembler::call_stub_size) +
                               LIR_Assembler::exception_handler_size +
-                              LIR_Assembler::deopt_handler_size);
+                              2 * LIR_Assembler::deopt_handler_size);
 }
 
 
@@ -288,9 +290,13 @@ int Compilation::compile_java_method() {
 
   CHECK_BAILOUT_(no_frame_size);
 
+  if (is_profiling()) {
+    method()->build_method_data();
+  }
+
   {
     PhaseTraceTime timeit(_t_buildIR);
-  build_hir();
+    build_hir();
   }
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
@@ -445,26 +451,31 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _masm(NULL)
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
+, _would_profile(false)
 , _has_unsafe_access(false)
+, _has_method_handle_invokes(false)
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
 , _allocator(NULL)
 , _next_id(0)
 , _next_block_id(0)
-, _code(buffer_blob->instructions_begin(),
-        buffer_blob->instructions_size())
+, _code(buffer_blob)
 , _current_instruction(NULL)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
 #endif // PRODUCT
 {
   PhaseTraceTime timeit(_t_compile);
-
   _arena = Thread::current()->resource_area();
   _env->set_compiler_data(this);
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
   compile_method();
+  if (is_profiling() && _would_profile) {
+    ciMethodData *md = method->method_data();
+    assert (md != NULL, "Should have MDO");
+    md->set_would_profile(_would_profile);
+  }
 }
 
 Compilation::~Compilation() {

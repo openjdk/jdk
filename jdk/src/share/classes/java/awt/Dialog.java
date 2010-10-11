@@ -277,10 +277,8 @@ public class Dialog extends Window {
      */
     String title;
 
-    private transient volatile boolean keepBlockingEDT = false;
-    private transient volatile boolean keepBlockingCT = false;
-
     private transient ModalEventFilter modalFilter;
+    private transient volatile SecondaryLoop secondaryLoop;
 
     /*
      * Indicates that this dialog is being hidden. This flag is set to true at
@@ -1005,12 +1003,6 @@ public class Dialog extends Window {
         super.setVisible(b);
     }
 
-    /**
-    * Stores the app context on which event dispatch thread the dialog
-    * is being shown. Initialized in show(), used in hideAndDisposeHandler()
-    */
-    transient private AppContext showAppContext;
-
    /**
      * Makes the {@code Dialog} visible. If the dialog and/or its owner
      * are not yet displayable, both are made displayable.  The
@@ -1037,39 +1029,18 @@ public class Dialog extends Window {
         if (!isModal()) {
             conditionalShow(null, null);
         } else {
-            // Set this variable before calling conditionalShow(). That
-            // way, if the Dialog is hidden right after being shown, we
-            // won't mistakenly block this thread.
-            keepBlockingEDT = true;
-            keepBlockingCT = true;
-
-            // Store the app context on which this dialog is being shown.
-            // Event dispatch thread of this app context will be sleeping until
-            // we wake it by any event from hideAndDisposeHandler().
-            showAppContext = AppContext.getAppContext();
+            AppContext showAppContext = AppContext.getAppContext();
 
             AtomicLong time = new AtomicLong();
             Component predictedFocusOwner = null;
             try {
                 predictedFocusOwner = getMostRecentFocusOwner();
                 if (conditionalShow(predictedFocusOwner, time)) {
-                    // We have two mechanisms for blocking: 1. If we're on the
-                    // EventDispatchThread, start a new event pump. 2. If we're
-                    // on any other thread, call wait() on the treelock.
-
                     modalFilter = ModalEventFilter.createFilterForDialog(this);
-
-                    final Runnable pumpEventsForFilter = new Runnable() {
-                        public void run() {
-                            EventDispatchThread dispatchThread =
-                                (EventDispatchThread)Thread.currentThread();
-                            dispatchThread.pumpEventsForFilter(new Conditional() {
-                                public boolean evaluate() {
-                                    synchronized (getTreeLock()) {
-                                        return keepBlockingEDT && windowClosingException == null;
-                                    }
-                                }
-                            }, modalFilter);
+                    Conditional cond = new Conditional() {
+                        @Override
+                        public boolean evaluate() {
+                            return windowClosingException == null;
                         }
                     };
 
@@ -1096,44 +1067,10 @@ public class Dialog extends Window {
 
                     modalityPushed();
                     try {
-                        if (EventQueue.isDispatchThread()) {
-                            /*
-                             * dispose SequencedEvent we are dispatching on current
-                             * AppContext, to prevent us from hang.
-                             *
-                             */
-                            // BugId 4531693 (son@sparc.spb.su)
-                            SequencedEvent currentSequencedEvent = KeyboardFocusManager.
-                                getCurrentKeyboardFocusManager().getCurrentSequencedEvent();
-                            if (currentSequencedEvent != null) {
-                                currentSequencedEvent.dispose();
-                            }
-
-                            /*
-                             * Event processing is done inside doPrivileged block so that
-                             * it wouldn't matter even if user code is on the stack
-                             * Fix for BugId 6300270
-                             */
-
-                             AccessController.doPrivileged(new PrivilegedAction() {
-                                     public Object run() {
-                                        pumpEventsForFilter.run();
-                                        return null;
-                                     }
-                             });
-                        } else {
-                            synchronized (getTreeLock()) {
-                                Toolkit.getEventQueue().postEvent(new PeerEvent(this,
-                                                                                pumpEventsForFilter,
-                                                                                PeerEvent.PRIORITY_EVENT));
-                                while (keepBlockingCT && windowClosingException == null) {
-                                    try {
-                                        getTreeLock().wait();
-                                    } catch (InterruptedException e) {
-                                        break;
-                                    }
-                                }
-                            }
+                        EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+                        secondaryLoop = eventQueue.createSecondaryLoop(cond, modalFilter, 5000);
+                        if (!secondaryLoop.enter()) {
+                            secondaryLoop = null;
                         }
                     } finally {
                         modalityPopped();
@@ -1194,18 +1131,11 @@ public class Dialog extends Window {
             windowClosingException = null;
         }
     }
-    final class WakingRunnable implements Runnable {
-        public void run() {
-            synchronized (getTreeLock()) {
-                keepBlockingCT = false;
-                getTreeLock().notifyAll();
-            }
-        }
-    }
+
     private void hideAndDisposePreHandler() {
         isInHide = true;
         synchronized (getTreeLock()) {
-            if (keepBlockingEDT) {
+            if (secondaryLoop != null) {
                 modalHide();
                 // dialog can be shown and then disposed before its
                 // modal filter is created
@@ -1217,20 +1147,9 @@ public class Dialog extends Window {
         }
     }
     private void hideAndDisposeHandler() {
-        synchronized (getTreeLock()) {
-            if (keepBlockingEDT) {
-                keepBlockingEDT = false;
-                PeerEvent wakingEvent = new PeerEvent(getToolkit(), new WakingRunnable(), PeerEvent.PRIORITY_EVENT);
-                AppContext curAppContext = AppContext.getAppContext();
-                if (showAppContext != curAppContext) {
-                    // Wake up event dispatch thread on which the dialog was
-                    // initially shown
-                    SunToolkit.postEvent(showAppContext, wakingEvent);
-                    showAppContext = null;
-                } else {
-                    Toolkit.getEventQueue().postEvent(wakingEvent);
-                }
-            }
+        if (secondaryLoop != null) {
+            secondaryLoop.exit();
+            secondaryLoop = null;
         }
         isInHide = false;
     }

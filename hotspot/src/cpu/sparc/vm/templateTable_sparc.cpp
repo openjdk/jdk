@@ -318,6 +318,31 @@ void TemplateTable::ldc(bool wide) {
   __ bind(exit);
 }
 
+// Fast path for caching oop constants.
+// %%% We should use this to handle Class and String constants also.
+// %%% It will simplify the ldc/primitive path considerably.
+void TemplateTable::fast_aldc(bool wide) {
+  transition(vtos, atos);
+
+  if (!EnableMethodHandles) {
+    // We should not encounter this bytecode if !EnableMethodHandles.
+    // The verifier will stop it.  However, if we get past the verifier,
+    // this will stop the thread in a reasonable way, without crashing the JVM.
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_IncompatibleClassChangeError));
+    // the call_VM checks for exception, so we should never return here.
+    __ should_not_reach_here();
+    return;
+  }
+
+  Register Rcache = G3_scratch;
+  Register Rscratch = G4_scratch;
+
+  resolve_cache_and_index(f1_oop, Otos_i, Rcache, Rscratch, wide ? sizeof(u2) : sizeof(u1));
+
+  __ verify_oop(Otos_i);
+}
+
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
   Label retry, resolved, Long, exit;
@@ -1555,6 +1580,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   const Register O0_cur_bcp = O0;
   __ mov( Lbcp, O0_cur_bcp );
 
+
   bool increment_invocation_counter_for_backward_branches = UseCompiler && UseLoopCounter;
   if ( increment_invocation_counter_for_backward_branches ) {
     Label Lforward;
@@ -1563,17 +1589,84 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Bump bytecode pointer by displacement (take the branch)
     __ delayed()->add( O1_disp, Lbcp, Lbcp );     // add to bc addr
 
-    // Update Backedge branch separately from invocations
-    const Register G4_invoke_ctr = G4;
-    __ increment_backedge_counter(G4_invoke_ctr, G1_scratch);
-    if (ProfileInterpreter) {
-      __ test_invocation_counter_for_mdp(G4_invoke_ctr, Lbcp, G3_scratch, Lforward);
-      if (UseOnStackReplacement) {
-        __ test_backedge_count_for_osr(O2_bumped_count, O0_cur_bcp, G3_scratch);
+    if (TieredCompilation) {
+      Label Lno_mdo, Loverflow;
+      int increment = InvocationCounter::count_increment;
+      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
+      if (ProfileInterpreter) {
+        // If no method data exists, go to profile_continue.
+        __ ld_ptr(Lmethod, methodOopDesc::method_data_offset(), G4_scratch);
+        __ br_null(G4_scratch, false, Assembler::pn, Lno_mdo);
+        __ delayed()->nop();
+
+        // Increment backedge counter in the MDO
+        Address mdo_backedge_counter(G4_scratch, in_bytes(methodDataOopDesc::backedge_counter_offset()) +
+                                                 in_bytes(InvocationCounter::counter_offset()));
+        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, G3_scratch, Lscratch,
+                                   Assembler::notZero, &Lforward);
+        __ ba(false, Loverflow);
+        __ delayed()->nop();
       }
+
+      // If there's no MDO, increment counter in methodOop
+      __ bind(Lno_mdo);
+      Address backedge_counter(Lmethod, in_bytes(methodOopDesc::backedge_counter_offset()) +
+                                        in_bytes(InvocationCounter::counter_offset()));
+      __ increment_mask_and_jump(backedge_counter, increment, mask, G3_scratch, Lscratch,
+                                 Assembler::notZero, &Lforward);
+      __ bind(Loverflow);
+
+      // notify point for loop, pass branch bytecode
+      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), O0_cur_bcp);
+
+      // Was an OSR adapter generated?
+      // O0 = osr nmethod
+      __ br_null(O0, false, Assembler::pn, Lforward);
+      __ delayed()->nop();
+
+      // Has the nmethod been invalidated already?
+      __ ld(O0, nmethod::entry_bci_offset(), O2);
+      __ cmp(O2, InvalidOSREntryBci);
+      __ br(Assembler::equal, false, Assembler::pn, Lforward);
+      __ delayed()->nop();
+
+      // migrate the interpreter frame off of the stack
+
+      __ mov(G2_thread, L7);
+      // save nmethod
+      __ mov(O0, L6);
+      __ set_last_Java_frame(SP, noreg);
+      __ call_VM_leaf(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), L7);
+      __ reset_last_Java_frame();
+      __ mov(L7, G2_thread);
+
+      // move OSR nmethod to I1
+      __ mov(L6, I1);
+
+      // OSR buffer to I0
+      __ mov(O0, I0);
+
+      // remove the interpreter frame
+      __ restore(I5_savedSP, 0, SP);
+
+      // Jump to the osr code.
+      __ ld_ptr(O1, nmethod::osr_entry_point_offset(), O2);
+      __ jmp(O2, G0);
+      __ delayed()->nop();
+
     } else {
-      if (UseOnStackReplacement) {
-        __ test_backedge_count_for_osr(G4_invoke_ctr, O0_cur_bcp, G3_scratch);
+      // Update Backedge branch separately from invocations
+      const Register G4_invoke_ctr = G4;
+      __ increment_backedge_counter(G4_invoke_ctr, G1_scratch);
+      if (ProfileInterpreter) {
+        __ test_invocation_counter_for_mdp(G4_invoke_ctr, Lbcp, G3_scratch, Lforward);
+        if (UseOnStackReplacement) {
+          __ test_backedge_count_for_osr(O2_bumped_count, O0_cur_bcp, G3_scratch);
+        }
+      } else {
+        if (UseOnStackReplacement) {
+          __ test_backedge_count_for_osr(G4_invoke_ctr, O0_cur_bcp, G3_scratch);
+        }
       }
     }
 
@@ -1994,6 +2087,8 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
     case Bytecodes::_invokestatic   : // fall through
     case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
     case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic);  break;
+    case Bytecodes::_fast_aldc      : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
+    case Bytecodes::_fast_aldc_w    : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
     default                         : ShouldNotReachHere();                                 break;
   }
   // first time invocation - must resolve first
@@ -3209,12 +3304,14 @@ void TemplateTable::_new() {
   __ get_2_byte_integer_at_bcp(1, Rscratch, Roffset, InterpreterMacroAssembler::Unsigned);
   __ get_cpool_and_tags(Rscratch, G3_scratch);
   // make sure the class we're about to instantiate has been resolved
+  // This is done before loading instanceKlass to be consistent with the order
+  // how Constant Pool is updated (see constantPoolOopDesc::klass_at_put)
   __ add(G3_scratch, typeArrayOopDesc::header_size(T_BYTE) * wordSize, G3_scratch);
   __ ldub(G3_scratch, Roffset, G3_scratch);
   __ cmp(G3_scratch, JVM_CONSTANT_Class);
   __ br(Assembler::notEqual, false, Assembler::pn, slow_case);
   __ delayed()->sll(Roffset, LogBytesPerWord, Roffset);
-
+  // get instanceKlass
   //__ sll(Roffset, LogBytesPerWord, Roffset);        // executed in delay slot
   __ add(Roffset, sizeof(constantPoolOopDesc), Roffset);
   __ ld_ptr(Rscratch, Roffset, RinstanceKlass);

@@ -39,8 +39,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 
 /** Factory class for trees.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -269,7 +269,14 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCTry Try(JCBlock body, List<JCCatch> catchers, JCBlock finalizer) {
-        JCTry tree = new JCTry(body, catchers, finalizer);
+        return Try(List.<JCTree>nil(), body, catchers, finalizer);
+    }
+
+    public JCTry Try(List<JCTree> resources,
+                     JCBlock body,
+                     List<JCCatch> catchers,
+                     JCBlock finalizer) {
+        JCTry tree = new JCTry(resources, body, catchers, finalizer);
         tree.pos = pos;
         return tree;
     }
@@ -486,7 +493,7 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCModifiers Modifiers(long flags, List<JCAnnotation> annotations) {
         JCModifiers tree = new JCModifiers(flags, annotations);
-        boolean noFlags = (flags & Flags.ModifierFlags) == 0;
+        boolean noFlags = (flags & (Flags.ModifierFlags | Flags.ANNOTATION)) == 0;
         tree.pos = (noFlags && annotations.isEmpty()) ? Position.NOPOS : pos;
         return tree;
     }

@@ -19,7 +19,6 @@
 // Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 // or visit www.oracle.com if you need additional information or have any
 // questions.
-//  
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
@@ -252,6 +251,7 @@ c1_LIRGenerator.cpp                     ciCPCache.hpp
 c1_LIRGenerator.cpp                     ciInstance.hpp
 c1_LIRGenerator.cpp                     heapRegion.hpp
 c1_LIRGenerator.cpp                     sharedRuntime.hpp
+c1_LIRGenerator.cpp                     stubRoutines.hpp
 
 c1_LIRGenerator.hpp                     c1_Instruction.hpp
 c1_LIRGenerator.hpp                     c1_LIR.hpp
@@ -270,6 +270,8 @@ c1_LIRGenerator_<arch>.cpp             ciObjArrayKlass.hpp
 c1_LIRGenerator_<arch>.cpp             ciTypeArrayKlass.hpp
 c1_LIRGenerator_<arch>.cpp             sharedRuntime.hpp
 c1_LIRGenerator_<arch>.cpp             vmreg_<arch>.inline.hpp
+c1_LIRGenerator_<arch>.cpp             stubRoutines.hpp
+
 
 c1_LinearScan.cpp                       bitMap.inline.hpp
 c1_LinearScan.cpp                       c1_CFGPrinter.hpp
@@ -413,6 +415,7 @@ codeBlob.cpp                            c1_Runtime1.hpp
 compileBroker.cpp                       c1_Compiler.hpp
 
 frame_<arch>.cpp                        c1_Runtime1.hpp
+frame_<arch>.cpp                        vframeArray.hpp
 
 globals.cpp                             c1_globals.hpp
 

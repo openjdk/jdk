@@ -191,6 +191,121 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 JRT_END
 
+#ifdef __SOFTFP__
+JRT_LEAF(jfloat, SharedRuntime::fadd(jfloat x, jfloat y))
+  return x + y;
+JRT_END
+
+JRT_LEAF(jfloat, SharedRuntime::fsub(jfloat x, jfloat y))
+  return x - y;
+JRT_END
+
+JRT_LEAF(jfloat, SharedRuntime::fmul(jfloat x, jfloat y))
+  return x * y;
+JRT_END
+
+JRT_LEAF(jfloat, SharedRuntime::fdiv(jfloat x, jfloat y))
+  return x / y;
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::dadd(jdouble x, jdouble y))
+  return x + y;
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::dsub(jdouble x, jdouble y))
+  return x - y;
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::dmul(jdouble x, jdouble y))
+  return x * y;
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::ddiv(jdouble x, jdouble y))
+  return x / y;
+JRT_END
+
+JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
+  return (jfloat)x;
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::i2d(jint x))
+  return (jdouble)x;
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::f2d(jfloat x))
+  return (jdouble)x;
+JRT_END
+
+JRT_LEAF(int,  SharedRuntime::fcmpl(float x, float y))
+  return x>y ? 1 : (x==y ? 0 : -1);  /* x<y or is_nan*/
+JRT_END
+
+JRT_LEAF(int,  SharedRuntime::fcmpg(float x, float y))
+  return x<y ? -1 : (x==y ? 0 : 1);  /* x>y or is_nan */
+JRT_END
+
+JRT_LEAF(int,  SharedRuntime::dcmpl(double x, double y))
+  return x>y ? 1 : (x==y ? 0 : -1); /* x<y or is_nan */
+JRT_END
+
+JRT_LEAF(int,  SharedRuntime::dcmpg(double x, double y))
+  return x<y ? -1 : (x==y ? 0 : 1);  /* x>y or is_nan */
+JRT_END
+
+// Functions to return the opposite of the aeabi functions for nan.
+JRT_LEAF(int, SharedRuntime::unordered_fcmplt(float x, float y))
+  return (x < y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_dcmplt(double x, double y))
+  return (x < y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_fcmple(float x, float y))
+  return (x <= y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_dcmple(double x, double y))
+  return (x <= y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_fcmpge(float x, float y))
+  return (x >= y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_dcmpge(double x, double y))
+  return (x >= y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_fcmpgt(float x, float y))
+  return (x > y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+JRT_LEAF(int, SharedRuntime::unordered_dcmpgt(double x, double y))
+  return (x > y) ? 1 : ((g_isnan(x) || g_isnan(y)) ? 1 : 0);
+JRT_END
+
+// Intrinsics make gcc generate code for these.
+float  SharedRuntime::fneg(float f)   {
+  return -f;
+}
+
+double SharedRuntime::dneg(double f)  {
+  return -f;
+}
+
+#endif // __SOFTFP__
+
+#if defined(__SOFTFP__) || defined(E500V2)
+// Intrinsics make gcc generate code for these.
+double SharedRuntime::dabs(double f)  {
+  return (f <= (double)0.0) ? (double)0.0 - f : f;
+}
+
+double SharedRuntime::dsqrt(double f) {
+  return sqrt(f);
+}
+#endif
 
 JRT_LEAF(jint, SharedRuntime::f2i(jfloat  x))
   if (g_isnan(x))
@@ -340,11 +455,11 @@ address SharedRuntime::get_poll_stub(address pc) {
   if (at_poll_return) {
     assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
            "polling page return stub not created yet");
-    stub = SharedRuntime::polling_page_return_handler_blob()->instructions_begin();
+    stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
   } else {
     assert(SharedRuntime::polling_page_safepoint_handler_blob() != NULL,
            "polling page safepoint stub not created yet");
-    stub = SharedRuntime::polling_page_safepoint_handler_blob()->instructions_begin();
+    stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
 #ifndef PRODUCT
   if( TraceSafepoint ) {
@@ -459,7 +574,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   }
 
   // found handling method => lookup exception handler
-  int catch_pco = ret_pc - nm->instructions_begin();
+  int catch_pco = ret_pc - nm->code_begin();
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
@@ -492,7 +607,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     return NULL;
   }
 
-  return nm->instructions_begin() + t->pco();
+  return nm->code_begin() + t->pco();
 }
 
 JRT_ENTRY(void, SharedRuntime::throw_AbstractMethodError(JavaThread* thread))
@@ -779,7 +894,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
   // Find bytecode
   Bytecode_invoke* bytecode = Bytecode_invoke_at(caller, bci);
-  bc = bytecode->adjusted_invoke_code();
+  bc = bytecode->java_code();
   int bytecode_index = bytecode->index();
 
   // Find receiver for non-static call
@@ -1518,8 +1633,13 @@ char* SharedRuntime::generate_class_cast_message(
 char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
                                                         oopDesc* required,
                                                         oopDesc* actual) {
+  if (TraceMethodHandles) {
+    tty->print_cr("WrongMethodType thread="PTR_FORMAT" req="PTR_FORMAT" act="PTR_FORMAT"",
+                  thread, required, actual);
+  }
   assert(EnableMethodHandles, "");
   oop singleKlass = wrong_method_type_is_for_single_argument(thread, required);
+  char* message = NULL;
   if (singleKlass != NULL) {
     const char* objName = "argument or return value";
     if (actual != NULL) {
@@ -1532,7 +1652,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     Klass* targetKlass = Klass::cast(required->is_klass()
                                      ? (klassOop)required
                                      : java_lang_Class::as_klassOop(required));
-    return generate_class_cast_message(objName, targetKlass->external_name());
+    message = generate_class_cast_message(objName, targetKlass->external_name());
   } else {
     // %%% need to get the MethodType string, without messing around too much
     // Get a signature from the invoke instruction
@@ -1564,9 +1684,13 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
       if (mhName[0] == '$')
         mhName = actual_method->signature()->as_C_string();
     }
-    return generate_class_cast_message(mhName, targetType,
-                                       " cannot be called as ");
+    message = generate_class_cast_message(mhName, targetType,
+                                          " cannot be called as ");
   }
+  if (TraceMethodHandles) {
+    tty->print_cr("WrongMethodType => message=%s", message);
+  }
+  return message;
 }
 
 oop SharedRuntime::wrong_method_type_is_for_single_argument(JavaThread* thr,
@@ -2046,6 +2170,8 @@ int AdapterHandlerTable::_equals;
 int AdapterHandlerTable::_hits;
 int AdapterHandlerTable::_compact;
 
+#endif
+
 class AdapterHandlerTableIterator : public StackObj {
  private:
   AdapterHandlerTable* _table;
@@ -2081,7 +2207,6 @@ class AdapterHandlerTableIterator : public StackObj {
     }
   }
 };
-#endif
 
 
 // ---------------------------------------------------------------------------
@@ -2136,7 +2261,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 
   ResourceMark rm;
 
-  NOT_PRODUCT(int code_size);
+  NOT_PRODUCT(int insts_size);
   AdapterBlob* B = NULL;
   AdapterHandlerEntry* entry = NULL;
   AdapterFingerPrint* fingerprint = NULL;
@@ -2189,7 +2314,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 
     BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
-      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      CodeBuffer buffer(buf);
       short buffer_locs[20];
       buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
                                              sizeof(buffer_locs)/sizeof(relocInfo));
@@ -2205,19 +2330,19 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 #ifdef ASSERT
       if (VerifyAdapterSharing) {
         if (shared_entry != NULL) {
-          assert(shared_entry->compare_code(buf->instructions_begin(), buffer.code_size(), total_args_passed, sig_bt),
+          assert(shared_entry->compare_code(buf->code_begin(), buffer.insts_size(), total_args_passed, sig_bt),
                  "code must match");
           // Release the one just created and return the original
           _adapters->free_entry(entry);
           return shared_entry;
         } else  {
-          entry->save_code(buf->instructions_begin(), buffer.code_size(), total_args_passed, sig_bt);
+          entry->save_code(buf->code_begin(), buffer.insts_size(), total_args_passed, sig_bt);
         }
       }
 #endif
 
       B = AdapterBlob::create(&buffer);
-      NOT_PRODUCT(code_size = buffer.code_size());
+      NOT_PRODUCT(insts_size = buffer.insts_size());
     }
     if (B == NULL) {
       // CodeCache is full, disable compilation
@@ -2227,16 +2352,16 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       CompileBroker::handle_full_code_cache();
       return NULL; // Out of CodeCache space
     }
-    entry->relocate(B->instructions_begin());
+    entry->relocate(B->content_begin());
 #ifndef PRODUCT
     // debugging suppport
     if (PrintAdapterHandlers) {
       tty->cr();
       tty->print_cr("i2c argument handler #%d for: %s %s (fingerprint = %s, %d bytes generated)",
                     _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
-                    method->signature()->as_C_string(), fingerprint->as_string(), code_size );
+                    method->signature()->as_C_string(), fingerprint->as_string(), insts_size );
       tty->print_cr("c2i argument handler starts at %p",entry->get_c2i_entry());
-      Disassembler::decode(entry->get_i2c_entry(), entry->get_i2c_entry() + code_size);
+      Disassembler::decode(entry->get_i2c_entry(), entry->get_i2c_entry() + insts_size);
     }
 #endif
 
@@ -2250,14 +2375,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
                  "%s(%s)@" PTR_FORMAT,
                  B->name(),
                  fingerprint->as_string(),
-                 B->instructions_begin());
-    VTune::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
-    Forte::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
+                 B->content_begin());
+    Forte::register_stub(blob_id, B->content_begin(), B->content_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated(blob_id,
-                                               B->instructions_begin(),
-                                               B->instructions_end());
+      JvmtiExport::post_dynamic_code_generated(blob_id, B->content_begin(), B->content_end());
     }
   }
   return entry;
@@ -2341,7 +2463,7 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
 
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
-      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      CodeBuffer buffer(buf);
       double locs_buf[20];
       buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);
@@ -2378,15 +2500,13 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
   }
 
   // Must unlock before calling set_code
+
   // Install the generated code.
   if (nm != NULL) {
     method->set_code(method, nm);
     nm->post_compiled_method_load_event();
   } else {
     // CodeCache is full, disable compilation
-    // Ought to log this but compile log is only per compile thread
-    // and we're some non descript Java thread.
-    MutexUnlocker mu(AdapterHandlerLibrary_lock);
     CompileBroker::handle_full_code_cache();
   }
   return nm;
@@ -2427,7 +2547,7 @@ nmethod *AdapterHandlerLibrary::create_dtrace_nmethod(methodHandle method) {
 
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
-      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      CodeBuffer buffer(buf);
       // Need a few relocation entries
       double locs_buf[20];
       buffer.insts()->initialize_shared_locs(
@@ -2620,7 +2740,6 @@ JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
   FREE_C_HEAP_ARRAY(intptr_t,buf);
 JRT_END
 
-#ifndef PRODUCT
 bool AdapterHandlerLibrary::contains(CodeBlob* b) {
   AdapterHandlerTableIterator iter(_adapters);
   while (iter.has_next()) {
@@ -2630,20 +2749,23 @@ bool AdapterHandlerLibrary::contains(CodeBlob* b) {
   return false;
 }
 
-void AdapterHandlerLibrary::print_handler(CodeBlob* b) {
+void AdapterHandlerLibrary::print_handler_on(outputStream* st, CodeBlob* b) {
   AdapterHandlerTableIterator iter(_adapters);
   while (iter.has_next()) {
     AdapterHandlerEntry* a = iter.next();
     if ( b == CodeCache::find_blob(a->get_i2c_entry()) ) {
-      tty->print("Adapter for signature: ");
-      tty->print_cr("%s i2c: " INTPTR_FORMAT " c2i: " INTPTR_FORMAT " c2iUV: " INTPTR_FORMAT,
-                    a->fingerprint()->as_string(),
-                    a->get_i2c_entry(), a->get_c2i_entry(), a->get_c2i_unverified_entry());
+      st->print("Adapter for signature: ");
+      st->print_cr("%s i2c: " INTPTR_FORMAT " c2i: " INTPTR_FORMAT " c2iUV: " INTPTR_FORMAT,
+                   a->fingerprint()->as_string(),
+                   a->get_i2c_entry(), a->get_c2i_entry(), a->get_c2i_unverified_entry());
+
       return;
     }
   }
   assert(false, "Should have found handler");
 }
+
+#ifndef PRODUCT
 
 void AdapterHandlerLibrary::print_statistics() {
   _adapters->print_statistics();

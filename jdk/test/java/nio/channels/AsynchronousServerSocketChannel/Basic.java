@@ -29,7 +29,9 @@
 
 import java.nio.channels.*;
 import java.net.*;
+import static java.net.StandardSocketOption.*;
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,6 +41,7 @@ public class Basic {
     public static void main(String[] args) throws Exception {
         testBind();
         testAccept();
+        testSocketOptions();
     }
 
     static void testBind() throws Exception {
@@ -130,5 +133,40 @@ public class Basic {
         } catch (InterruptedException x) {
         }
 
+    }
+
+    static void testSocketOptions() throws Exception {
+        System.out.println("-- socket options --");
+        AsynchronousServerSocketChannel ch = AsynchronousServerSocketChannel.open();
+        try {
+            // check supported options
+            Set<SocketOption<?>> options = ch.supportedOptions();
+            if (!options.contains(SO_REUSEADDR))
+                throw new RuntimeException("SO_REUSEADDR should be supported");
+            if (!options.contains(SO_RCVBUF))
+                throw new RuntimeException("SO_RCVBUF should be supported");
+
+            // allowed to change when not bound
+            ch.setOption(SO_RCVBUF, 256*1024);     // can't check
+            int before = ch.getOption(SO_RCVBUF);
+            int after = ch.setOption(SO_RCVBUF, Integer.MAX_VALUE).getOption(SO_RCVBUF);
+            if (after < before)
+                 throw new RuntimeException("setOption caused SO_RCVBUF to decrease");
+            ch.setOption(SO_REUSEADDR, true);
+            checkOption(ch, SO_REUSEADDR, true);
+            ch.setOption(SO_REUSEADDR, false);
+            checkOption(ch, SO_REUSEADDR, false);
+        } finally {
+            ch.close();
+        }
+    }
+
+    static void checkOption(AsynchronousServerSocketChannel ch,
+                            SocketOption name, Object expectedValue)
+        throws IOException
+    {
+        Object value = ch.getOption(name);
+        if (!value.equals(expectedValue))
+            throw new RuntimeException("value not as expected");
     }
 }

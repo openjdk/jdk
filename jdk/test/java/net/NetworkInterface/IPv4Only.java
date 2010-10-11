@@ -23,7 +23,7 @@
 
 /* @test
  * @bug   6964714
- * @run main/othervm NetworkInterfaceV6List
+ * @run main/othervm IPv4Only
  * @summary Test the networkinterface listing with java.net.preferIPv4Stack=true.
  */
 
