@@ -103,6 +103,19 @@ class SocketChannelImpl
         this.state = ST_UNCONNECTED;
     }
 
+    SocketChannelImpl(SelectorProvider sp,
+                      FileDescriptor fd,
+                      boolean bound)
+        throws IOException
+    {
+        super(sp);
+        this.fd = fd;
+        this.fdVal = IOUtil.fdVal(fd);
+        this.state = ST_UNCONNECTED;
+        if (bound)
+            this.localAddress = Net.localAddress(fd);
+    }
+
     // Constructor for sockets obtained from server sockets
     //
     SocketChannelImpl(SelectorProvider sp,
@@ -385,9 +398,11 @@ class SocketChannelImpl
         }
     }
 
-    private long read0(ByteBuffer[] bufs) throws IOException {
-        if (bufs == null)
-            throw new NullPointerException();
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
+            throw new IndexOutOfBoundsException();
         synchronized (readLock) {
             if (!ensureReadOpen())
                 return -1;
@@ -401,7 +416,7 @@ class SocketChannelImpl
                 }
 
                 for (;;) {
-                    n = IOUtil.read(fd, bufs, nd);
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
                         continue;
                     return IOStatus.normalize(n);
@@ -416,15 +431,6 @@ class SocketChannelImpl
                 assert IOStatus.check(n);
             }
         }
-    }
-
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-            throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return read0(Util.subsequence(dsts, offset, length));
     }
 
     public int write(ByteBuffer buf) throws IOException {
@@ -458,9 +464,11 @@ class SocketChannelImpl
         }
     }
 
-    public long write0(ByteBuffer[] bufs) throws IOException {
-        if (bufs == null)
-            throw new NullPointerException();
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
+    {
+        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
+            throw new IndexOutOfBoundsException();
         synchronized (writeLock) {
             ensureWriteOpen();
             long n = 0;
@@ -472,7 +480,7 @@ class SocketChannelImpl
                     writerThread = NativeThread.current();
                 }
                 for (;;) {
-                    n = IOUtil.write(fd, bufs, nd);
+                    n = IOUtil.write(fd, srcs, offset, length, nd);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
                         continue;
                     return IOStatus.normalize(n);
@@ -489,13 +497,34 @@ class SocketChannelImpl
         }
     }
 
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-            throw new IndexOutOfBoundsException();
-        // ## Fix IOUtil.write so that we can avoid this array copy
-        return write0(Util.subsequence(srcs, offset, length));
+    // package-private
+    int sendOutOfBandData(byte b) throws IOException {
+        synchronized (writeLock) {
+            ensureWriteOpen();
+            int n = 0;
+            try {
+                begin();
+                synchronized (stateLock) {
+                    if (!isOpen())
+                        return 0;
+                    writerThread = NativeThread.current();
+                }
+                for (;;) {
+                    n = sendOutOfBandData(fd, b);
+                    if ((n == IOStatus.INTERRUPTED) && isOpen())
+                        continue;
+                    return IOStatus.normalize(n);
+                }
+            } finally {
+                writerCleanup();
+                end((n > 0) || (n == IOStatus.UNAVAILABLE));
+                synchronized (stateLock) {
+                    if ((n <= 0) && (!isOutputOpen))
+                        throw new AsynchronousCloseException();
+                }
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     protected void implConfigureBlocking(boolean block) throws IOException {
@@ -955,6 +984,9 @@ class SocketChannelImpl
 
     private static native int checkConnect(FileDescriptor fd,
                                            boolean block, boolean ready)
+        throws IOException;
+
+    private static native int sendOutOfBandData(FileDescriptor fd, byte data)
         throws IOException;
 
     static {

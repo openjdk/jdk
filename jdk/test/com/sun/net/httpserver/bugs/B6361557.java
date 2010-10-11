@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6361557
+ * @run main/othervm B6361557
  * @summary  Lightweight HTTP server quickly runs out of file descriptors on Linux
  */
 
@@ -35,12 +36,9 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
-import java.security.*;
-import java.security.cert.*;
-import javax.net.ssl.*;
 
 /**
- * The test simply opens 10,000 separate connections
+ * The test simply opens 1,000 separate connections
  * and invokes one http request on each. The client does
  * not close any sockets until after they are closed
  * by the server. This verifies the basic ability
@@ -49,6 +47,7 @@ import javax.net.ssl.*;
 public class B6361557 {
 
     public static boolean error = false;
+    static final int NUM = 1000;
 
     static class Handler implements HttpHandler {
         int invocation = 1;
@@ -65,6 +64,9 @@ public class B6361557 {
         }
     }
 
+    final static String request = "GET /test/foo.html HTTP/1.1\r\nContent-length: 0\r\n\r\n";
+    final static ByteBuffer requestBuf = ByteBuffer.allocate(64).put(request.getBytes());
+
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
         InetSocketAddress addr = new InetSocketAddress (0);
@@ -75,49 +77,72 @@ public class B6361557 {
         server.setExecutor (executor);
         server.start ();
 
-        final int NUM = 10000;
-        ByteBuffer buf = ByteBuffer.allocate (4096);
         InetSocketAddress destaddr = new InetSocketAddress (
                 "127.0.0.1", server.getAddress().getPort()
         );
         System.out.println ("destaddr " + destaddr);
 
         Selector selector = Selector.open ();
-        int i = 0;
+        int requests = 0;
+        int responses = 0;
         while (true) {
-            i ++;
             int selres = selector.select (1);
             Set<SelectionKey> selkeys = selector.selectedKeys();
             for (SelectionKey key : selkeys) {
                 if (key.isReadable()) {
                     SocketChannel chan = (SocketChannel)key.channel();
-                    buf.clear();
+                    ByteBuffer buf = (ByteBuffer)key.attachment();
                     try {
-                        int x = chan.read (buf);
-                        if (x == -1) {
+                        int x = chan.read(buf);
+                        if (x == -1 || responseComplete(buf)) {
+                            key.attach(null);
                             chan.close();
+                            responses++;
                         }
                     } catch (IOException e) {}
                 }
             }
-            if (i< NUM) {
-                SocketChannel schan = SocketChannel.open (destaddr);
-                String cmd = "GET /test/foo.html HTTP/1.1\r\nContent-length: 0\r\n\r\n";
-                buf.rewind ();
-                buf.put (cmd.getBytes());
-                buf.flip();
+            if (requests < NUM) {
+                SocketChannel schan = SocketChannel.open(destaddr);
+                requestBuf.rewind();
                 int c = 0;
-                while (buf.remaining() > 0) {
-                    c += schan.write (buf);
+                while (requestBuf.remaining() > 0) {
+                    c += schan.write(requestBuf);
                 }
-                schan.configureBlocking (false);
-                schan.register (selector, SelectionKey.OP_READ, null);
-            } else {
+                schan.configureBlocking(false);
+                schan.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(100));
+                requests++;
+            }
+            if (responses == NUM) {
                 System.out.println ("Finished clients");
-                server.stop (1);
-                executor.shutdown ();
-                return;
+                break;
             }
         }
+        server.stop (1);
+        selector.close();
+        executor.shutdown ();
+
+    }
+
+    /* Look for CR LF CR LF */
+    static boolean responseComplete(ByteBuffer buf) {
+        int pos = buf.position();
+        buf.flip();
+        byte[] lookingFor = new byte[] {'\r', '\n', '\r', '\n' };
+        int lookingForCount = 0;
+        while (buf.hasRemaining()) {
+            byte b = buf.get();
+            if (b == lookingFor[lookingForCount]) {
+                lookingForCount++;
+                if (lookingForCount == 4) {
+                    return true;
+                }
+            } else {
+                lookingForCount = 0;
+            }
+        }
+        buf.position(pos);
+        buf.limit(buf.capacity());
+        return false;
     }
 }

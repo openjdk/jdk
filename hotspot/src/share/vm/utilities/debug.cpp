@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ void report_java_out_of_memory(const char* message) {
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
-      HeapDumper::dump_heap();
+      HeapDumper::dump_heap_from_oome();
     }
 
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
@@ -552,140 +552,6 @@ static address same_page(address x, address y) {
   }
 }
 
-
-static void find(intptr_t x, bool print_pc) {
-  address addr = (address)x;
-
-  CodeBlob* b = CodeCache::find_blob_unsafe(addr);
-  if (b != NULL) {
-    if (b->is_buffer_blob()) {
-      // the interpreter is generated into a buffer blob
-      InterpreterCodelet* i = Interpreter::codelet_containing(addr);
-      if (i != NULL) {
-        i->print();
-        return;
-      }
-      if (Interpreter::contains(addr)) {
-        tty->print_cr(INTPTR_FORMAT " is pointing into interpreter code (not bytecode specific)", addr);
-        return;
-      }
-      //
-      if (AdapterHandlerLibrary::contains(b)) {
-        AdapterHandlerLibrary::print_handler(b);
-      }
-      // the stubroutines are generated into a buffer blob
-      StubCodeDesc* d = StubCodeDesc::desc_for(addr);
-      if (d != NULL) {
-        d->print();
-        if (print_pc) tty->cr();
-        return;
-      }
-      if (StubRoutines::contains(addr)) {
-        tty->print_cr(INTPTR_FORMAT " is pointing to an (unnamed) stub routine", addr);
-        return;
-      }
-      // the InlineCacheBuffer is using stubs generated into a buffer blob
-      if (InlineCacheBuffer::contains(addr)) {
-        tty->print_cr(INTPTR_FORMAT " is pointing into InlineCacheBuffer", addr);
-        return;
-      }
-      VtableStub* v = VtableStubs::stub_containing(addr);
-      if (v != NULL) {
-        v->print();
-        return;
-      }
-    }
-    if (print_pc && b->is_nmethod()) {
-      ResourceMark rm;
-      tty->print("%#p: Compiled ", addr);
-      ((nmethod*)b)->method()->print_value_on(tty);
-      tty->print("  = (CodeBlob*)" INTPTR_FORMAT, b);
-      tty->cr();
-      return;
-    }
-    if ( b->is_nmethod()) {
-      if (b->is_zombie()) {
-        tty->print_cr(INTPTR_FORMAT " is zombie nmethod", b);
-      } else if (b->is_not_entrant()) {
-        tty->print_cr(INTPTR_FORMAT " is non-entrant nmethod", b);
-      }
-    }
-    b->print();
-    return;
-  }
-
-  if (Universe::heap()->is_in(addr)) {
-    HeapWord* p = Universe::heap()->block_start(addr);
-    bool print = false;
-    // If we couldn't find it it just may mean that heap wasn't parseable
-    // See if we were just given an oop directly
-    if (p != NULL && Universe::heap()->block_is_obj(p)) {
-      print = true;
-    } else if (p == NULL && ((oopDesc*)addr)->is_oop()) {
-      p = (HeapWord*) addr;
-      print = true;
-    }
-    if (print) {
-      oop(p)->print();
-      if (p != (HeapWord*)x && oop(p)->is_constMethod() &&
-          constMethodOop(p)->contains(addr)) {
-        Thread *thread = Thread::current();
-        HandleMark hm(thread);
-        methodHandle mh (thread, constMethodOop(p)->method());
-        if (!mh->is_native()) {
-          tty->print_cr("bci_from(%p) = %d; print_codes():",
-                        addr, mh->bci_from(address(x)));
-          mh->print_codes();
-        }
-      }
-      return;
-    }
-  } else if (Universe::heap()->is_in_reserved(addr)) {
-    tty->print_cr(INTPTR_FORMAT " is an unallocated location in the heap", addr);
-    return;
-  }
-
-  if (JNIHandles::is_global_handle((jobject) addr)) {
-    tty->print_cr(INTPTR_FORMAT " is a global jni handle", addr);
-    return;
-  }
-  if (JNIHandles::is_weak_global_handle((jobject) addr)) {
-    tty->print_cr(INTPTR_FORMAT " is a weak global jni handle", addr);
-    return;
-  }
-  if (JNIHandleBlock::any_contains((jobject) addr)) {
-    tty->print_cr(INTPTR_FORMAT " is a local jni handle", addr);
-    return;
-  }
-
-  for(JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
-    // Check for privilege stack
-    if (thread->privileged_stack_top() != NULL && thread->privileged_stack_top()->contains(addr)) {
-      tty->print_cr(INTPTR_FORMAT " is pointing into the privilege stack for thread: " INTPTR_FORMAT, addr, thread);
-      return;
-    }
-    // If the addr is a java thread print information about that.
-    if (addr == (address)thread) {
-       thread->print();
-       return;
-    }
-  }
-
-  // Try an OS specific find
-  if (os::find(addr)) {
-    return;
-  }
-
-  if (print_pc) {
-    tty->print_cr(INTPTR_FORMAT ": probably in C++ code; check debugger", addr);
-    Disassembler::decode(same_page(addr-40,addr),same_page(addr+40,addr));
-    return;
-  }
-
-  tty->print_cr(INTPTR_FORMAT " is pointing to unknown location", addr);
-}
-
-
 class LookForRefInGenClosure : public OopsInGenClosure {
 public:
   oop target;
@@ -767,7 +633,7 @@ extern "C" void findclass(const char name[]) {
 // Can we someday rename the other find to hsfind?
 extern "C" void hsfind(intptr_t x) {
   Command c("hsfind");
-  find(x, false);
+  os::print_location(tty, x, false);
 }
 
 
@@ -778,13 +644,13 @@ extern "C" void hsfindref(intptr_t x) {
 
 extern "C" void find(intptr_t x) {
   Command c("find");
-  find(x, false);
+  os::print_location(tty, x, false);
 }
 
 
 extern "C" void findpc(intptr_t x) {
   Command c("findpc");
-  find(x, true);
+  os::print_location(tty, x, true);
 }
 
 

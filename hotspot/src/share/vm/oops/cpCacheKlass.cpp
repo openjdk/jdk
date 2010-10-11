@@ -166,29 +166,6 @@ bool constantPoolCacheKlass::oop_is_conc_safe(oop obj) const {
 }
 
 #ifndef SERIALGC
-void constantPoolCacheKlass::oop_copy_contents(PSPromotionManager* pm,
-                                               oop obj) {
-  assert(obj->is_constantPoolCache(), "should be constant pool");
-  if (EnableInvokeDynamic) {
-    constantPoolCacheOop cache = (constantPoolCacheOop)obj;
-    // during a scavenge, it is safe to inspect my pool, since it is perm
-    constantPoolOop pool = cache->constant_pool();
-    assert(pool->is_constantPool(), "should be constant pool");
-    if (pool->has_invokedynamic()) {
-      for (int i = 0; i < cache->length(); i++) {
-        ConstantPoolCacheEntry* e = cache->entry_at(i);
-        oop* p = (oop*)&e->_f1;
-        if (e->is_secondary_entry()) {
-          if (PSScavenge::should_scavenge(p))
-            pm->claim_or_forward_breadth(p);
-          assert(!(e->is_vfinal() && PSScavenge::should_scavenge((oop*)&e->_f2)),
-                 "no live oops here");
-        }
-      }
-    }
-  }
-}
-
 void constantPoolCacheKlass::oop_push_contents(PSPromotionManager* pm,
                                                oop obj) {
   assert(obj->is_constantPoolCache(), "should be constant pool");
@@ -248,8 +225,6 @@ constantPoolCacheKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 void constantPoolCacheKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constantPoolCache(), "obj must be constant pool cache");
   constantPoolCacheOop cache = (constantPoolCacheOop)obj;
@@ -258,8 +233,6 @@ void constantPoolCacheKlass::oop_print_on(oop obj, outputStream* st) {
   // print constant pool cache entries
   for (int i = 0; i < cache->length(); i++) cache->entry_at(i)->print(st, i);
 }
-
-#endif
 
 void constantPoolCacheKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_constantPoolCache(), "obj must be constant pool cache");

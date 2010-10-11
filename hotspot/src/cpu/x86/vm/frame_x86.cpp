@@ -141,12 +141,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // Could just be some random pointer within the codeBlob
-
-    if (!sender_blob->instructions_contains(sender_pc)) return false;
+    if (!sender_blob->code_contains(sender_pc)) {
+      return false;
+    }
 
     // We should never be able to see an adapter if the current frame is something from code cache
-
-    if ( sender_blob->is_adapter_blob()) {
+    if (sender_blob->is_adapter_blob()) {
       return false;
     }
 
@@ -340,7 +340,7 @@ void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool 
   fr._unextended_sp = unextended_sp;
 
   address original_pc = nm->get_original_pc(&fr);
-  assert(nm->code_contains(original_pc), "original PC must be in nmethod");
+  assert(nm->insts_contains(original_pc), "original PC must be in nmethod");
   assert(nm->is_method_handle_return(original_pc) == is_method_handle_return, "must be");
 }
 #endif
@@ -575,8 +575,8 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {
 #ifdef CC_INTERP
-  // Needed for JVMTI. The result should always be in the interpreterState object
-  assert(false, "NYI");
+  // Needed for JVMTI. The result should always be in the
+  // interpreterState object
   interpreterState istate = get_interpreterState();
 #endif // CC_INTERP
   assert(is_interpreted_frame(), "interpreted frame expected");

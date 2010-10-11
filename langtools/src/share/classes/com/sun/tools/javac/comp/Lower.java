@@ -29,6 +29,7 @@ import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -48,8 +49,8 @@ import static com.sun.tools.javac.jvm.ByteCodes.*;
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -82,6 +83,7 @@ public class Lower extends TreeTranslator {
     private final Name classDollar;
     private Types types;
     private boolean debugLower;
+    private PkgInfo pkginfoOpt;
 
     protected Lower(Context context) {
         context.put(lowerKey, this);
@@ -106,6 +108,7 @@ public class Lower extends TreeTranslator {
         types = Types.instance(context);
         Options options = Options.instance(context);
         debugLower = options.get("debuglower") != null;
+        pkginfoOpt = PkgInfo.get(options);
     }
 
     /** The currently enclosing class.
@@ -605,6 +608,23 @@ public class Lower extends TreeTranslator {
         s.enter(sym);
     }
 
+    /** Create a fresh synthetic name within a given scope - the unique name is
+     *  obtained by appending '$' chars at the end of the name until no match
+     *  is found.
+     *
+     * @param name base name
+     * @param s scope in which the name has to be unique
+     * @return fresh synthetic name
+     */
+    private Name makeSyntheticName(Name name, Scope s) {
+        do {
+            name = name.append(
+                    target.syntheticNameChar(),
+                    names.empty);
+        } while (lookupSynthetic(name, s) != null);
+        return name;
+    }
+
     /** Check whether synthetic symbols generated during lowering conflict
      *  with user-defined symbols.
      *
@@ -674,6 +694,40 @@ public class Lower extends TreeTranslator {
         return rs.resolveInternalField(pos, attrEnv, qual, name);
     }
 
+    /** Anon inner classes are used as access constructor tags.
+     * accessConstructorTag will use an existing anon class if one is available,
+     * and synthethise a class (with makeEmptyClass) if one is not available.
+     * However, there is a small possibility that an existing class will not
+     * be generated as expected if it is inside a conditional with a constant
+     * expression. If that is found to be the case, create an empty class here.
+     */
+    private void checkAccessConstructorTags() {
+        for (List<ClassSymbol> l = accessConstrTags; l.nonEmpty(); l = l.tail) {
+            ClassSymbol c = l.head;
+            if (isTranslatedClassAvailable(c))
+                continue;
+            // Create class definition tree.
+            JCClassDecl cdef = make.ClassDef(
+                make.Modifiers(STATIC | SYNTHETIC), names.empty,
+                List.<JCTypeParameter>nil(),
+                null, List.<JCExpression>nil(), List.<JCTree>nil());
+            cdef.sym = c;
+            cdef.type = c.type;
+            // add it to the list of classes to be generated
+            translated.append(cdef);
+        }
+    }
+    // where
+    private boolean isTranslatedClassAvailable(ClassSymbol c) {
+        for (JCTree tree: translated) {
+            if (tree.getTag() == JCTree.CLASSDEF
+                    && ((JCClassDecl) tree).sym == c) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 /**************************************************************************
  * Access methods
  *************************************************************************/
@@ -717,6 +771,10 @@ public class Lower extends TreeTranslator {
     /** A mapping from (constructor) symbols to access constructor symbols.
      */
     private Map<Symbol,MethodSymbol> accessConstrs;
+
+    /** A list of all class symbols used for access constructor tags.
+     */
+    private List<ClassSymbol> accessConstrTags;
 
     /** A queue for all accessed symbols.
      */
@@ -1138,6 +1196,8 @@ public class Lower extends TreeTranslator {
         ClassSymbol ctag = chk.compiled.get(flatname);
         if (ctag == null)
             ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass);
+        // keep a record of all tags, to verify that all are generated as required
+        accessConstrTags = accessConstrTags.prepend(ctag);
         return ctag;
     }
 
@@ -1259,6 +1319,11 @@ public class Lower extends TreeTranslator {
      */
     Scope proxies;
 
+    /** A scope containing all unnamed resource variables/saved
+     *  exception variables for translated TWR blocks
+     */
+    Scope twrVars;
+
     /** A stack containing the this$n field of the currently translated
      *  classes (if needed) in innermost first order.
      *  Inside a constructor, proxies and any this$n symbol are duplicated
@@ -1358,6 +1423,122 @@ public class Lower extends TreeTranslator {
             // need to go via this$n
             return makeOuterThis(pos, c);
         }
+    }
+
+    /** Optionally replace a try statement with an automatic resource
+     *  management (ARM) block.
+     * @param tree  The try statement to inspect.
+     * @return      An ARM block, or the original try block if there are no
+     *              resources to manage.
+     */
+    JCTree makeArmTry(JCTry tree) {
+        make_at(tree.pos());
+        twrVars = twrVars.dup();
+        JCBlock armBlock = makeArmBlock(tree.resources, tree.body, 0);
+        if (tree.catchers.isEmpty() && tree.finalizer == null)
+            result = translate(armBlock);
+        else
+            result = translate(make.Try(armBlock, tree.catchers, tree.finalizer));
+        twrVars = twrVars.leave();
+        return result;
+    }
+
+    private JCBlock makeArmBlock(List<JCTree> resources, JCBlock block, int depth) {
+        if (resources.isEmpty())
+            return block;
+
+        // Add resource declaration or expression to block statements
+        ListBuffer<JCStatement> stats = new ListBuffer<JCStatement>();
+        JCTree resource = resources.head;
+        JCExpression expr = null;
+        if (resource instanceof JCVariableDecl) {
+            JCVariableDecl var = (JCVariableDecl) resource;
+            expr = make.Ident(var.sym).setType(resource.type);
+            stats.add(var);
+        } else {
+            assert resource instanceof JCExpression;
+            VarSymbol syntheticTwrVar =
+            new VarSymbol(SYNTHETIC | FINAL,
+                          makeSyntheticName(names.fromString("twrVar" +
+                                           depth), twrVars),
+                          (resource.type.tag == TypeTags.BOT) ?
+                          syms.autoCloseableType : resource.type,
+                          currentMethodSym);
+            twrVars.enter(syntheticTwrVar);
+            JCVariableDecl syntheticTwrVarDecl =
+                make.VarDef(syntheticTwrVar, (JCExpression)resource);
+            expr = (JCExpression)make.Ident(syntheticTwrVar);
+            stats.add(syntheticTwrVarDecl);
+        }
+
+        // Add primaryException declaration
+        VarSymbol primaryException =
+            new VarSymbol(SYNTHETIC,
+                          makeSyntheticName(names.fromString("primaryException" +
+                          depth), twrVars),
+                          syms.throwableType,
+                          currentMethodSym);
+        twrVars.enter(primaryException);
+        JCVariableDecl primaryExceptionTreeDecl = make.VarDef(primaryException, makeNull());
+        stats.add(primaryExceptionTreeDecl);
+
+        // Create catch clause that saves exception and then rethrows it
+        VarSymbol param =
+            new VarSymbol(FINAL|SYNTHETIC,
+                          names.fromString("t" +
+                                           target.syntheticNameChar()),
+                          syms.throwableType,
+                          currentMethodSym);
+        JCVariableDecl paramTree = make.VarDef(param, null);
+        JCStatement assign = make.Assignment(primaryException, make.Ident(param));
+        JCStatement rethrowStat = make.Throw(make.Ident(param));
+        JCBlock catchBlock = make.Block(0L, List.<JCStatement>of(assign, rethrowStat));
+        JCCatch catchClause = make.Catch(paramTree, catchBlock);
+
+        int oldPos = make.pos;
+        make.at(TreeInfo.endPos(block));
+        JCBlock finallyClause = makeArmFinallyClause(primaryException, expr);
+        make.at(oldPos);
+        JCTry outerTry = make.Try(makeArmBlock(resources.tail, block, depth + 1),
+                                  List.<JCCatch>of(catchClause),
+                                  finallyClause);
+        stats.add(outerTry);
+        return make.Block(0L, stats.toList());
+    }
+
+    private JCBlock makeArmFinallyClause(Symbol primaryException, JCExpression resource) {
+        // primaryException.addSuppressedException(catchException);
+        VarSymbol catchException =
+            new VarSymbol(0, make.paramName(2),
+                          syms.throwableType,
+                          currentMethodSym);
+        JCStatement addSuppressionStatement =
+            make.Exec(makeCall(make.Ident(primaryException),
+                               names.fromString("addSuppressedException"),
+                               List.<JCExpression>of(make.Ident(catchException))));
+
+        // try { resource.close(); } catch (e) { primaryException.addSuppressedException(e); }
+        JCBlock tryBlock =
+            make.Block(0L, List.<JCStatement>of(makeResourceCloseInvocation(resource)));
+        JCVariableDecl catchExceptionDecl = make.VarDef(catchException, null);
+        JCBlock catchBlock = make.Block(0L, List.<JCStatement>of(addSuppressionStatement));
+        List<JCCatch> catchClauses = List.<JCCatch>of(make.Catch(catchExceptionDecl, catchBlock));
+        JCTry tryTree = make.Try(tryBlock, catchClauses, null);
+
+        // if (resource != null) resourceClose;
+        JCExpression nullCheck = makeBinary(JCTree.NE,
+                                            make.Ident(primaryException),
+                                            makeNull());
+        JCIf closeIfStatement = make.If(nullCheck,
+                                        tryTree,
+                                        makeResourceCloseInvocation(resource));
+        return make.Block(0L, List.<JCStatement>of(closeIfStatement));
+    }
+
+    private JCStatement makeResourceCloseInvocation(JCExpression resource) {
+        // create resource.close() method invocation
+        JCExpression resourceClose = makeCall(resource, names.close, List.<JCExpression>nil());
+        return make.Exec(resourceClose);
     }
 
     /** Construct a tree that represents the outer instance
@@ -1983,7 +2164,7 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitTopLevel(JCCompilationUnit tree) {
-        if (tree.packageAnnotations.nonEmpty()) {
+        if (needPackageInfoClass(tree)) {
             Name name = names.package_info;
             long flags = Flags.ABSTRACT | Flags.INTERFACE;
             if (target.isPackageInfoSynthetic())
@@ -2004,6 +2185,23 @@ public class Lower extends TreeTranslator {
 
             translated.append(packageAnnotationsClass);
         }
+    }
+    // where
+    private boolean needPackageInfoClass(JCCompilationUnit tree) {
+        switch (pkginfoOpt) {
+            case ALWAYS:
+                return true;
+            case LEGACY:
+                return tree.packageAnnotations.nonEmpty();
+            case NONEMPTY:
+                for (Attribute.Compound a: tree.packge.attributes_field) {
+                    Attribute.RetentionPolicy p = types.getRetention(a);
+                    if (p != Attribute.RetentionPolicy.SOURCE)
+                        return true;
+                }
+                return false;
+        }
+        throw new AssertionError();
     }
 
     public void visitClassDef(JCClassDecl tree) {
@@ -2691,8 +2889,17 @@ public class Lower extends TreeTranslator {
     /** Unbox an object to a primitive value. */
     JCExpression unbox(JCExpression tree, Type primitive) {
         Type unboxedType = types.unboxedType(tree.type);
-        // note: the "primitive" parameter is not used.  There muse be
-        // a conversion from unboxedType to primitive.
+        if (unboxedType.tag == NONE) {
+            unboxedType = primitive;
+            if (!unboxedType.isPrimitive())
+                throw new AssertionError(unboxedType);
+            make_at(tree.pos());
+            tree = make.TypeCast(types.boxedClass(unboxedType).type, tree);
+        } else {
+            // There must be a conversion from unboxedType to primitive.
+            if (!types.isSubtype(unboxedType, primitive))
+                throw new AssertionError(tree);
+        }
         make_at(tree.pos());
         Symbol valueSym = lookupMethod(tree.pos(),
                                        unboxedType.tsym.name.append(names.Value), // x.intValue()
@@ -3365,6 +3572,15 @@ public class Lower extends TreeTranslator {
         result = tree;
     }
 
+    @Override
+    public void visitTry(JCTry tree) {
+        if (tree.resources.isEmpty()) {
+            super.visitTry(tree);
+        } else {
+            result = makeArmTry(tree);
+        }
+    }
+
 /**************************************************************************
  * main method
  *************************************************************************/
@@ -3390,10 +3606,12 @@ public class Lower extends TreeTranslator {
             actualSymbols = new HashMap<Symbol,Symbol>();
             freevarCache = new HashMap<ClassSymbol,List<VarSymbol>>();
             proxies = new Scope(syms.noSymbol);
+            twrVars = new Scope(syms.noSymbol);
             outerThisStack = List.nil();
             accessNums = new HashMap<Symbol,Integer>();
             accessSyms = new HashMap<Symbol,MethodSymbol[]>();
             accessConstrs = new HashMap<Symbol,MethodSymbol>();
+            accessConstrTags = List.nil();
             accessed = new ListBuffer<Symbol>();
             translate(cdef, (JCExpression)null);
             for (List<Symbol> l = accessed.toList(); l.nonEmpty(); l = l.tail)
@@ -3401,6 +3619,7 @@ public class Lower extends TreeTranslator {
             for (EnumMapping map : enumSwitchMap.values())
                 map.translate();
             checkConflicts(this.translated.toList());
+            checkAccessConstructorTags();
             translated = this.translated;
         } finally {
             // note that recursive invocations of this method fail hard
@@ -3420,6 +3639,7 @@ public class Lower extends TreeTranslator {
             accessNums = null;
             accessSyms = null;
             accessConstrs = null;
+            accessConstrTags = null;
             accessed = null;
             enumSwitchMap.clear();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.net.dns;
 
 import java.util.List;
-import java.io.IOException;
 
 /**
  * The configuration of the client resolver.
@@ -68,7 +67,7 @@ public abstract class ResolverConfiguration {
      *
      * @return list of domain names
      */
-    public abstract List searchlist();
+    public abstract List<String> searchlist();
 
     /**
      * Returns a list of name servers used for host name lookup.
@@ -78,7 +77,7 @@ public abstract class ResolverConfiguration {
      *
      * @return list of the name servers
      */
-    public abstract List nameservers();
+    public abstract List<String> nameservers();
 
 
     /**

@@ -34,6 +34,7 @@ import javax.lang.model.element.Element;
 import java.util.*;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FilterOutputStream;
@@ -87,7 +88,7 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
  * class path can alter the behavior of the tool and any final
  * compile.
  *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
@@ -379,6 +380,15 @@ public class JavacFiler implements Filer, Closeable {
     }
 
     private JavaFileObject createSourceOrClassFile(boolean isSourceFile, String name) throws IOException {
+        if (lint) {
+            int periodIndex = name.lastIndexOf(".");
+            if (periodIndex != -1) {
+                String base = name.substring(periodIndex);
+                String extn = (isSourceFile ? ".java" : ".class");
+                if (base.equals(extn))
+                    log.warning("proc.suspicious.class.name", name, extn);
+            }
+        }
         checkNameAndExistence(name, isSourceFile);
         Location loc = (isSourceFile ? SOURCE_OUTPUT : CLASS_OUTPUT);
         JavaFileObject.Kind kind = (isSourceFile ?
@@ -441,10 +451,15 @@ public class JavacFiler implements Filer, Closeable {
         // TODO: Only support reading resources in selected output
         // locations?  Only allow reading of non-source, non-class
         // files from the supported input locations?
-        FileObject fileObject = fileManager.getFileForOutput(location,
-                                                             pkg.toString(),
-                                                             relativeName.toString(),
-                                                             null);
+        FileObject fileObject = fileManager.getFileForInput(location,
+                    pkg.toString(),
+                    relativeName.toString());
+        if (fileObject == null) {
+            String name = (pkg.length() == 0)
+                    ? relativeName.toString() : (pkg + "/" + relativeName);
+            throw new FileNotFoundException(name);
+        }
+
         // If the path was already opened for writing, throw an exception.
         checkFileReopening(fileObject, false);
         return new FilerInputFileObject(fileObject);
@@ -530,11 +545,14 @@ public class JavacFiler implements Filer, Closeable {
     /**
      * Update internal state for a new round.
      */
-    public void newRound(Context context, boolean lastRound) {
+    public void newRound(Context context) {
         this.context = context;
         this.log = Log.instance(context);
-        this.lastRound = lastRound;
         clearRoundState();
+    }
+
+    void setLastRound(boolean lastRound) {
+        this.lastRound = lastRound;
     }
 
     public void close() {

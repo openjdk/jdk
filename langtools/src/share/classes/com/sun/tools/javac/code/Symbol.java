@@ -49,8 +49,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
  *  types, packages. Each subclass is represented as a static inner class
  *  inside Symbol.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -212,6 +212,16 @@ public abstract class Symbol implements Element {
 
     public boolean isInterface() {
         return (flags() & INTERFACE) != 0;
+    }
+
+    /** Recognize if this symbol was marked @PolymorphicSignature in the source. */
+    public boolean isPolymorphicSignatureGeneric() {
+        return (flags() & (POLYMORPHIC_SIGNATURE | HYPOTHETICAL)) == POLYMORPHIC_SIGNATURE;
+    }
+
+    /** Recognize if this symbol was split from a @PolymorphicSignature symbol in the source. */
+    public boolean isPolymorphicSignatureInstance() {
+        return (flags() & (POLYMORPHIC_SIGNATURE | HYPOTHETICAL)) == (POLYMORPHIC_SIGNATURE | HYPOTHETICAL);
     }
 
     /** Is this symbol declared (directly or indirectly) local
@@ -579,6 +589,9 @@ public abstract class Symbol implements Element {
 
         public java.util.List<Symbol> getEnclosedElements() {
             List<Symbol> list = List.nil();
+            if (kind == TYP && type.tag == TYPEVAR) {
+                return list;
+            }
             for (Scope.Entry e = members().elems; e != null; e = e.sibling) {
                 if (e.sym != null && (e.sym.flags() & SYNTHETIC) == 0 && e.sym.owner == this)
                     list = list.prepend(e.sym);
@@ -993,12 +1006,17 @@ public abstract class Symbol implements Element {
             return data == ElementKind.EXCEPTION_PARAMETER;
         }
 
+        public boolean isResourceVariable() {
+            return data == ElementKind.RESOURCE_VARIABLE;
+        }
+
         public Object getConstValue() {
             // TODO: Consider if getConstValue and getConstantValue can be collapsed
-            if (data == ElementKind.EXCEPTION_PARAMETER) {
+            if (data == ElementKind.EXCEPTION_PARAMETER ||
+                data == ElementKind.RESOURCE_VARIABLE) {
                 return null;
             } else if (data instanceof Callable<?>) {
-                // In this case, this is final a variable, with an as
+                // In this case, this is a final variable, with an as
                 // yet unevaluated initializer.
                 Callable<?> eval = (Callable<?>)data;
                 data = null; // to make sure we don't evaluate this twice.
@@ -1209,7 +1227,18 @@ public abstract class Symbol implements Element {
          *  as possible implementations.
          */
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
-            MethodSymbol res = types.implementation(this, origin, types, checkResult);
+            return implementation(origin, types, checkResult, implementation_filter);
+        }
+        // where
+            private static final Filter<Symbol> implementation_filter = new Filter<Symbol>() {
+                public boolean accepts(Symbol s) {
+                    return s.kind == Kinds.MTH &&
+                            (s.flags() & SYNTHETIC) == 0;
+                }
+            };
+
+        public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
+            MethodSymbol res = types.implementation(this, origin, types, checkResult, implFilter);
             if (res != null)
                 return res;
             // if origin is derived from a raw type, we might have missed

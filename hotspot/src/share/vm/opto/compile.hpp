@@ -362,6 +362,7 @@ class Compile : public Phase {
   Node*         macro_node(int idx)             { return _macro_nodes->at(idx); }
   Node*         predicate_opaque1_node(int idx) { return _predicate_opaqs->at(idx);}
   ConnectionGraph* congraph()                   { return _congraph;}
+  void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
   void add_macro_node(Node * n) {
     //assert(n->is_macro(), "must be a macro node");
     assert(!_macro_nodes->contains(n), " duplicate entry in expand list");

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007 Red Hat, Inc.
+ * Copyright 2007, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,10 @@
  *
  */
 
-// The disassembler prints out zero code annotated
-// with Java specific information.
-
   static int pd_instruction_alignment() {
-    ShouldNotCallThis();
+    return 1;
   }
 
   static const char* pd_cpu_opts() {
-    ShouldNotCallThis();
+    return "";
   }

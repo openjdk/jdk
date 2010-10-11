@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,47 +42,36 @@ class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;
 
-#define PS_PM_STATS         0
-
 class PSPromotionManager : public CHeapObj {
   friend class PSScavenge;
   friend class PSRefProcTaskExecutor;
  private:
   static PSPromotionManager**         _manager_array;
   static OopStarTaskQueueSet*         _stack_array_depth;
-  static OopTaskQueueSet*             _stack_array_breadth;
   static PSOldGen*                    _old_gen;
   static MutableSpace*                _young_space;
 
-#if PS_PM_STATS
-  uint                                _total_pushes;
-  uint                                _masked_pushes;
+#if TASKQUEUE_STATS
+  size_t                              _masked_pushes;
+  size_t                              _masked_steals;
+  size_t                              _arrays_chunked;
+  size_t                              _array_chunks_processed;
 
-  uint                                _overflow_pushes;
-  uint                                _max_overflow_length;
-
-  uint                                _arrays_chunked;
-  uint                                _array_chunks_processed;
-
-  uint                                _total_steals;
-  uint                                _masked_steals;
-
-  void print_stats(uint i);
+  void print_taskqueue_stats(uint i) const;
+  void print_local_stats(uint i) const;
   static void print_stats();
-#endif // PS_PM_STATS
+
+  void reset_stats();
+#endif // TASKQUEUE_STATS
 
   PSYoungPromotionLAB                 _young_lab;
   PSOldPromotionLAB                   _old_lab;
   bool                                _young_gen_is_full;
   bool                                _old_gen_is_full;
-  PrefetchQueue                       _prefetch_queue;
 
   OopStarTaskQueue                    _claimed_stack_depth;
-  GrowableArray<StarTask>*            _overflow_stack_depth;
-  OopTaskQueue                        _claimed_stack_breadth;
-  GrowableArray<oop>*                 _overflow_stack_breadth;
+  OverflowTaskQueue<oop>              _claimed_stack_breadth;
 
-  bool                                _depth_first;
   bool                                _totally_drain;
   uint                                _target_stack_size;
 
@@ -95,10 +84,6 @@ class PSPromotionManager : public CHeapObj {
 
   inline static PSPromotionManager* manager_array(int index);
   template <class T> inline void claim_or_forward_internal_depth(T* p);
-  template <class T> inline void claim_or_forward_internal_breadth(T* p);
-
-  GrowableArray<StarTask>* overflow_stack_depth() { return _overflow_stack_depth; }
-  GrowableArray<oop>*  overflow_stack_breadth()   { return _overflow_stack_breadth; }
 
   // On the task queues we push reference locations as well as
   // partially-scanned arrays (in the latter case, we push an oop to
@@ -147,47 +132,11 @@ class PSPromotionManager : public CHeapObj {
   void process_array_chunk(oop old);
 
   template <class T> void push_depth(T* p) {
-    assert(depth_first(), "pre-condition");
-
-#if PS_PM_STATS
-    ++_total_pushes;
-#endif // PS_PM_STATS
-
-    if (!claimed_stack_depth()->push(p)) {
-      overflow_stack_depth()->push(p);
-#if PS_PM_STATS
-      ++_overflow_pushes;
-      uint stack_length = (uint) overflow_stack_depth()->length();
-      if (stack_length > _max_overflow_length) {
-        _max_overflow_length = stack_length;
-      }
-#endif // PS_PM_STATS
-    }
-  }
-
-  void push_breadth(oop o) {
-    assert(!depth_first(), "pre-condition");
-
-#if PS_PM_STATS
-    ++_total_pushes;
-#endif // PS_PM_STATS
-
-    if(!claimed_stack_breadth()->push(o)) {
-      overflow_stack_breadth()->push(o);
-#if PS_PM_STATS
-      ++_overflow_pushes;
-      uint stack_length = (uint) overflow_stack_breadth()->length();
-      if (stack_length > _max_overflow_length) {
-        _max_overflow_length = stack_length;
-      }
-#endif // PS_PM_STATS
-    }
+    claimed_stack_depth()->push(p);
   }
 
  protected:
   static OopStarTaskQueueSet* stack_array_depth()   { return _stack_array_depth; }
-  static OopTaskQueueSet*     stack_array_breadth() { return _stack_array_breadth; }
-
  public:
   // Static
   static void initialize();
@@ -199,13 +148,7 @@ class PSPromotionManager : public CHeapObj {
   static PSPromotionManager* vm_thread_promotion_manager();
 
   static bool steal_depth(int queue_num, int* seed, StarTask& t) {
-    assert(stack_array_depth() != NULL, "invariant");
     return stack_array_depth()->steal(queue_num, seed, t);
-  }
-
-  static bool steal_breadth(int queue_num, int* seed, Task& t) {
-    assert(stack_array_breadth() != NULL, "invariant");
-    return stack_array_breadth()->steal(queue_num, seed, t);
   }
 
   PSPromotionManager();
@@ -214,9 +157,6 @@ class PSPromotionManager : public CHeapObj {
   OopStarTaskQueue* claimed_stack_depth() {
     return &_claimed_stack_depth;
   }
-  OopTaskQueue* claimed_stack_breadth() {
-    return &_claimed_stack_breadth;
-  }
 
   bool young_gen_is_full()             { return _young_gen_is_full; }
 
@@ -224,18 +164,14 @@ class PSPromotionManager : public CHeapObj {
   void set_old_gen_is_full(bool state) { _old_gen_is_full = state; }
 
   // Promotion methods
-  oop copy_to_survivor_space(oop o, bool depth_first);
+  oop copy_to_survivor_space(oop o);
   oop oop_promotion_failed(oop obj, markOop obj_mark);
 
   void reset();
 
   void flush_labs();
   void drain_stacks(bool totally_drain) {
-    if (depth_first()) {
-      drain_stacks_depth(totally_drain);
-    } else {
-      drain_stacks_breadth(totally_drain);
-    }
+    drain_stacks_depth(totally_drain);
   }
  public:
   void drain_stacks_cond_depth() {
@@ -244,41 +180,14 @@ class PSPromotionManager : public CHeapObj {
     }
   }
   void drain_stacks_depth(bool totally_drain);
-  void drain_stacks_breadth(bool totally_drain);
 
-  bool claimed_stack_empty() {
-    if (depth_first()) {
-      return claimed_stack_depth()->size() <= 0;
-    } else {
-      return claimed_stack_breadth()->size() <= 0;
-    }
-  }
-  bool overflow_stack_empty() {
-    if (depth_first()) {
-      return overflow_stack_depth()->length() <= 0;
-    } else {
-      return overflow_stack_breadth()->length() <= 0;
-    }
-  }
   bool stacks_empty() {
-    return claimed_stack_empty() && overflow_stack_empty();
-  }
-  bool depth_first() {
-    return _depth_first;
+    return claimed_stack_depth()->is_empty();
   }
 
   inline void process_popped_location_depth(StarTask p);
 
-  inline void flush_prefetch_queue();
   template <class T> inline void claim_or_forward_depth(T* p);
-  template <class T> inline void claim_or_forward_breadth(T* p);
 
-#if PS_PM_STATS
-  void increment_steals(oop* p = NULL) {
-    _total_steals += 1;
-    if (p != NULL && is_oop_masked(p)) {
-      _masked_steals += 1;
-    }
-  }
-#endif // PS_PM_STATS
+  TASKQUEUE_STATS_ONLY(inline void record_steal(StarTask& p);)
 };

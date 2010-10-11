@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Type"
  content="text/html; charset=iso-8859-1">
 <!--
-Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ object provides a fully updatable and scrollable tabular
 data structure as defined in the JDBC 3.0 specification.
 <p>
 <li><a href="CachedRowSet.html">
-<b><code>CachedRowSet</code><sup><font size=-2>TM></font></sup</b></a> 
+<b><code>CachedRowSet</code>&trade;</b></a>
  - A <tt>CachedRowSet</tt> object is a JavaBeans<sup><font size=-2>TM</font></sup>
  component that is scrollable, updatable, serializable, and generally disconnected from
  the source of its data. A <tt>CachedRowSet</tt> object
@@ -148,7 +148,12 @@ href="spi/package-summary.html">javax.sql.rowset.spi</a> package for guidelines
 on <a href="spi/SyncProvider.html"><code>SyncProvider</code></a> implementations.
 <p>
 <ul>
-<li><b>3.1 Role of the <code>BaseRowSet</code> Class</b>
+<li><b>3.1 Constructor</b>
+<p>
+    All <code>RowSet</code> implementations <strong>must</strong> provide a
+no-argument constructor.
+</li>
+<li><b>3.2 Role of the <code>BaseRowSet</code> Class</b>
 <p>
 A compliant JDBC <code>RowSet</code> implementation <b>must</b> implement one or more 
 standard interfaces specified in this package and and <b>may</b> extend the 
@@ -215,7 +220,7 @@ by  compliant implementations.<br>
     </table>
     </blockquote>
 <p>
-<li><b>3.2 Connected RowSet Requirements</b> 
+<li><b>3.3 Connected RowSet Requirements</b>
 <p>
 The <code>JdbcRowSet</code> describes a <code>RowSet</code> object that <b>must</b> always
 be connected to the originating data source. Implementations of the <code>JdbcRowSet</code>
@@ -229,7 +234,7 @@ supply their needs by virtue of the presence of an underlying updatable and scro
 <p>
 
 <li>
-<b>3.3 Disconnected RowSet Requirements</b> 
+<b>3.4 Disconnected RowSet Requirements</b>
 <p> 
 A disconnected <code>RowSet</code> object, such as a <code>CachedRowSet</code> object, 
 <b>should</b> delegate  
@@ -244,7 +249,7 @@ synchronization is required. A disconnected <code>RowSet</code> object should
 therefore ensure that no 
 extraneous references remain on the <code>Connection</code> object.
 <p>
-<li><b>3.4 Role of RowSetMetaDataImpl</b>
+<li><b>3.5 Role of RowSetMetaDataImpl</b>
 <p>
 The <code>RowsetMetaDataImpl</code> class is a utility class that provides an implementation of the
 <a href="../RowSetMetaData.html">RowSetMetaData</a> interface, supplying standard setter
@@ -252,7 +257,7 @@ method implementations for metadata for both connected and disconnected
 <code>RowSet</code> objects. All implementations are free to use this standard
 implementation but are not required to do so.
 <p>
-<li><b>3.5 RowSetWarning Class</b>
+<li><b>3.6 RowSetWarning Class</b>
 <p>
 The <code>RowSetWarning</code> class provides warnings that can be set
 on <code>RowSet</code> implementations.
@@ -270,7 +275,7 @@ on it, and so on until there are no more warnings.
 
 
 <P>
-<li><b>3.6 The Joinable Interface</b>
+<li><b>3.7 The Joinable Interface</b>
 <P>
 The <code>Joinable</code> interface provides both connected and disconnected 
 <code>RowSet</code> objects with the capability to be added to a 
@@ -278,7 +283,14 @@ The <code>Joinable</code> interface provides both connected and disconnected
 A <code>RowSet</code> object that has  implemented the <code>Joinable</code> 
 interface can set a match column, retrieve a match column, or unset a match column.
 A <code>JoinRowSet</code> object can then use the <code>RowSet</code> object's
-match column as a basis for adding the <code>RowSet</code> object. 
+match column as a basis for adding the <code>RowSet</code> object.
+</li>
+
+<li><b>3.8 The RowSetFactory Interface</b>
+    <p>
+        A <code>RowSetFactory</code> implementation <strong>must</strong>
+        be provided.
+</li>
 </ul>
 
 <h3><a name="relspec">4.0 Related Specifications</a></h3>

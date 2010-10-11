@@ -157,10 +157,6 @@ int constMethodKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void constMethodKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_constMethod(), "should be constMethod");
-}
-
 void constMethodKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constMethod(), "should be constMethod");
 }
@@ -197,8 +193,6 @@ int constMethodKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 // Printing
 
 void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
@@ -215,8 +209,6 @@ void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   }
 }
-
-#endif //PRODUCT
 
 // Short version of printing constMethodOop - just print the name of the
 // method it belongs to.

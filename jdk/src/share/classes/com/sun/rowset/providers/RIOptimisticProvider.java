@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,14 +93,14 @@ public final class RIOptimisticProvider extends SyncProvider implements Serializ
     private CachedRowSetWriter writer;
 
     /**
-     * The unique provider indentifier.
+     * The unique provider identifier.
      */
     private String providerID = "com.sun.rowset.providers.RIOptimisticProvider";
 
     /**
      * The vendor name of this SyncProvider implementation
      */
-    private String vendorName = "Sun Microsystems Inc.";
+    private String vendorName = "Oracle Corporation";
 
     /**
      * The version number of this SyncProvider implementation
@@ -236,8 +236,8 @@ public final class RIOptimisticProvider extends SyncProvider implements Serializ
     }
 
     /**
-     * Returns the vendor name of the Reference Implemntation Optimistic
-     * Syncchronication Provider
+     * Returns the vendor name of the Reference Implementation Optimistic
+     * Synchronization Provider
      *
      * @return the <code>String</code> detailing the vendor name of this
      *      SyncProvider
@@ -245,4 +245,18 @@ public final class RIOptimisticProvider extends SyncProvider implements Serializ
     public String getVendor() {
         return this.vendorName;
     }
+
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        // Default state initialization happens here
+        ois.defaultReadObject();
+        // Initialization of transient Res Bundle happens here .
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+    }
+    static final long serialVersionUID =-3143367176751761936L;
+
 }

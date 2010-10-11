@@ -79,6 +79,10 @@
 #    define ARCH "i386"
 #  elif defined(__sparc)
 #    define ARCH "sparc"
+#  elif defined(arm)
+#    define ARCH "arm"
+#  elif defined(PPC)
+#    define ARCH "ppc"
 #  endif
 
 #endif /* _LP64 */

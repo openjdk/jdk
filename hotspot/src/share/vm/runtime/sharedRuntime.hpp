@@ -78,6 +78,18 @@ class SharedRuntime: AllStatic {
   static jfloat  frem(jfloat  x, jfloat  y);
   static jdouble drem(jdouble x, jdouble y);
 
+#ifdef __SOFTFP__
+  static jfloat  fadd(jfloat x, jfloat y);
+  static jfloat  fsub(jfloat x, jfloat y);
+  static jfloat  fmul(jfloat x, jfloat y);
+  static jfloat  fdiv(jfloat x, jfloat y);
+
+  static jdouble dadd(jdouble x, jdouble y);
+  static jdouble dsub(jdouble x, jdouble y);
+  static jdouble dmul(jdouble x, jdouble y);
+  static jdouble ddiv(jdouble x, jdouble y);
+#endif // __SOFTFP__
+
   // float conversion (needs to set appropriate rounding mode)
   static jint    f2i (jfloat  x);
   static jlong   f2l (jfloat  x);
@@ -87,6 +99,12 @@ class SharedRuntime: AllStatic {
   static jfloat  l2f (jlong   x);
   static jdouble l2d (jlong   x);
 
+#ifdef __SOFTFP__
+  static jfloat  i2f (jint    x);
+  static jdouble i2d (jint    x);
+  static jdouble f2d (jfloat  x);
+#endif // __SOFTFP__
+
   // double trigonometrics and transcendentals
   static jdouble dsin(jdouble x);
   static jdouble dcos(jdouble x);
@@ -95,6 +113,32 @@ class SharedRuntime: AllStatic {
   static jdouble dlog10(jdouble x);
   static jdouble dexp(jdouble x);
   static jdouble dpow(jdouble x, jdouble y);
+
+#if defined(__SOFTFP__) || defined(E500V2)
+  static double dabs(double f);
+  static double dsqrt(double f);
+#endif
+
+#ifdef __SOFTFP__
+  // C++ compiler generates soft float instructions as well as passing
+  // float and double in registers.
+  static int  fcmpl(float x, float y);
+  static int  fcmpg(float x, float y);
+  static int  dcmpl(double x, double y);
+  static int  dcmpg(double x, double y);
+
+  static int unordered_fcmplt(float x, float y);
+  static int unordered_dcmplt(double x, double y);
+  static int unordered_fcmple(float x, float y);
+  static int unordered_dcmple(double x, double y);
+  static int unordered_fcmpge(float x, float y);
+  static int unordered_dcmpge(double x, double y);
+  static int unordered_fcmpgt(float x, float y);
+  static int unordered_dcmpgt(double x, double y);
+
+  static float  fneg(float f);
+  static double dneg(double f);
+#endif
 
   // exception handling across interpreter/compiler boundaries
   static address raw_exception_handler_for_return_address(JavaThread* thread, address return_address);
@@ -129,12 +173,12 @@ class SharedRuntime: AllStatic {
 
   static address get_ic_miss_stub() {
     assert(_ic_miss_blob!= NULL, "oops");
-    return _ic_miss_blob->instructions_begin();
+    return _ic_miss_blob->entry_point();
   }
 
   static address get_handle_wrong_method_stub() {
     assert(_wrong_method_blob!= NULL, "oops");
-    return _wrong_method_blob->instructions_begin();
+    return _wrong_method_blob->entry_point();
   }
 
 #ifdef COMPILER2
@@ -144,15 +188,15 @@ class SharedRuntime: AllStatic {
 
   static address get_resolve_opt_virtual_call_stub(){
     assert(_resolve_opt_virtual_call_blob != NULL, "oops");
-    return _resolve_opt_virtual_call_blob->instructions_begin();
+    return _resolve_opt_virtual_call_blob->entry_point();
   }
   static address get_resolve_virtual_call_stub() {
     assert(_resolve_virtual_call_blob != NULL, "oops");
-    return _resolve_virtual_call_blob->instructions_begin();
+    return _resolve_virtual_call_blob->entry_point();
   }
   static address get_resolve_static_call_stub() {
     assert(_resolve_static_call_blob != NULL, "oops");
-    return _resolve_static_call_blob->instructions_begin();
+    return _resolve_static_call_blob->entry_point();
   }
 
   static SafepointBlob* polling_page_return_handler_blob()     { return _polling_page_return_handler_blob; }
@@ -504,16 +548,17 @@ class SharedRuntime: AllStatic {
 // This library manages argument marshaling adapters and native wrappers.
 // There are 2 flavors of adapters: I2C and C2I.
 //
-// The I2C flavor takes a stock interpreted call setup, marshals the arguments
-// for a Java-compiled call, and jumps to Rmethod-> code()->
-// instructions_begin().  It is broken to call it without an nmethod assigned.
-// The usual behavior is to lift any register arguments up out of the stack
-// and possibly re-pack the extra arguments to be contigious.  I2C adapters
-// will save what the interpreter's stack pointer will be after arguments are
-// popped, then adjust the interpreter's frame size to force alignment and
-// possibly to repack the arguments.  After re-packing, it jumps to the
-// compiled code start.  There are no safepoints in this adapter code and a GC
-// cannot happen while marshaling is in progress.
+// The I2C flavor takes a stock interpreted call setup, marshals the
+// arguments for a Java-compiled call, and jumps to Rmethod-> code()->
+// code_begin().  It is broken to call it without an nmethod assigned.
+// The usual behavior is to lift any register arguments up out of the
+// stack and possibly re-pack the extra arguments to be contigious.
+// I2C adapters will save what the interpreter's stack pointer will be
+// after arguments are popped, then adjust the interpreter's frame
+// size to force alignment and possibly to repack the arguments.
+// After re-packing, it jumps to the compiled code start.  There are
+// no safepoints in this adapter code and a GC cannot happen while
+// marshaling is in progress.
 //
 // The C2I flavor takes a stock compiled call setup plus the target method in
 // Rmethod, marshals the arguments for an interpreted call and jumps to
@@ -585,9 +630,7 @@ class AdapterHandlerEntry : public BasicHashtableEntry {
   bool compare_code(unsigned char* code, int length, int total_args_passed, BasicType* sig_bt);
 #endif
 
-#ifndef PRODUCT
   void print();
-#endif /* PRODUCT */
 };
 
 class AdapterHandlerLibrary: public AllStatic {
@@ -609,9 +652,10 @@ class AdapterHandlerLibrary: public AllStatic {
   static nmethod* create_dtrace_nmethod (methodHandle method);
 #endif // HAVE_DTRACE_H
 
-#ifndef PRODUCT
-  static void print_handler(CodeBlob* b);
+  static void print_handler(CodeBlob* b) { print_handler_on(tty, b); }
+  static void print_handler_on(outputStream* st, CodeBlob* b);
   static bool contains(CodeBlob* b);
+#ifndef PRODUCT
   static void print_statistics();
 #endif /* PRODUCT */
 

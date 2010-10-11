@@ -40,8 +40,8 @@ import com.sun.tools.classfile.Method;
 /*
  *  Write the contents of a Code attribute.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -239,7 +239,10 @@ class CodeWriter extends BasicWriter {
                 new ArrayList<InstructionDetailWriter>();
         if (options.details.contains(InstructionDetailWriter.Kind.SOURCE)) {
             sourceWriter.reset(classWriter.getClassFile(), attr);
-            detailWriters.add(sourceWriter);
+            if (sourceWriter.hasSource())
+                detailWriters.add(sourceWriter);
+            else
+                println("(Source code not available)");
         }
 
         if (options.details.contains(InstructionDetailWriter.Kind.LOCAL_VARS)) {

@@ -375,6 +375,32 @@ void TemplateTable::ldc(bool wide) {
   __ bind(Done);
 }
 
+// Fast path for caching oop constants.
+// %%% We should use this to handle Class and String constants also.
+// %%% It will simplify the ldc/primitive path considerably.
+void TemplateTable::fast_aldc(bool wide) {
+  transition(vtos, atos);
+
+  if (!EnableMethodHandles) {
+    // We should not encounter this bytecode if !EnableMethodHandles.
+    // The verifier will stop it.  However, if we get past the verifier,
+    // this will stop the thread in a reasonable way, without crashing the JVM.
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_IncompatibleClassChangeError));
+    // the call_VM checks for exception, so we should never return here.
+    __ should_not_reach_here();
+    return;
+  }
+
+  const Register cache = rcx;
+  const Register index = rdx;
+
+  resolve_cache_and_index(f1_oop, rax, cache, index, wide ? sizeof(u2) : sizeof(u1));
+  if (VerifyOops) {
+    __ verify_oop(rax);
+  }
+}
+
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
   Label Long, Done;
@@ -1532,47 +1558,68 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ testl(rdx, rdx);             // check if forward or backward branch
     __ jcc(Assembler::positive, dispatch); // count only if backward branch
 
-    // increment counter
-    __ movl(rax, Address(rcx, be_offset));        // load backedge counter
-    __ incrementl(rax, InvocationCounter::count_increment); // increment counter
-    __ movl(Address(rcx, be_offset), rax);        // store counter
-
-    __ movl(rax, Address(rcx, inv_offset));    // load invocation counter
-    __ andl(rax, InvocationCounter::count_mask_value);     // and the status bits
-    __ addl(rax, Address(rcx, be_offset));        // add both counters
-
-    if (ProfileInterpreter) {
-      // Test to see if we should create a method data oop
-      __ cmp32(rax,
-               ExternalAddress((address) &InvocationCounter::InterpreterProfileLimit));
-      __ jcc(Assembler::less, dispatch);
-
-      // if no method data exists, go to profile method
-      __ test_method_data_pointer(rax, profile_method);
-
-      if (UseOnStackReplacement) {
-        // check for overflow against rbx, which is the MDO taken count
-        __ cmp32(rbx,
-                 ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
-        __ jcc(Assembler::below, dispatch);
-
-        // When ProfileInterpreter is on, the backedge_count comes from the
-        // methodDataOop, which value does not get reset on the call to
-        // frequency_counter_overflow().  To avoid excessive calls to the overflow
-        // routine while the method is being compiled, add a second test to make
-        // sure the overflow function is called only once every overflow_frequency.
-        const int overflow_frequency = 1024;
-        __ andptr(rbx, overflow_frequency-1);
-        __ jcc(Assembler::zero, backedge_counter_overflow);
-
+    if (TieredCompilation) {
+      Label no_mdo;
+      int increment = InvocationCounter::count_increment;
+      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
+      if (ProfileInterpreter) {
+        // Are we profiling?
+        __ movptr(rbx, Address(rcx, in_bytes(methodOopDesc::method_data_offset())));
+        __ testptr(rbx, rbx);
+        __ jccb(Assembler::zero, no_mdo);
+        // Increment the MDO backedge counter
+        const Address mdo_backedge_counter(rbx, in_bytes(methodDataOopDesc::backedge_counter_offset()) +
+                                                in_bytes(InvocationCounter::counter_offset()));
+        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
+                                   rax, false, Assembler::zero, &backedge_counter_overflow);
+        __ jmp(dispatch);
       }
+      __ bind(no_mdo);
+      // Increment backedge counter in methodOop
+      __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
+                                 rax, false, Assembler::zero, &backedge_counter_overflow);
     } else {
-      if (UseOnStackReplacement) {
-        // check for overflow against rax, which is the sum of the counters
-        __ cmp32(rax,
-                 ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
-        __ jcc(Assembler::aboveEqual, backedge_counter_overflow);
+      // increment counter
+      __ movl(rax, Address(rcx, be_offset));        // load backedge counter
+      __ incrementl(rax, InvocationCounter::count_increment); // increment counter
+      __ movl(Address(rcx, be_offset), rax);        // store counter
 
+      __ movl(rax, Address(rcx, inv_offset));    // load invocation counter
+      __ andl(rax, InvocationCounter::count_mask_value);     // and the status bits
+      __ addl(rax, Address(rcx, be_offset));        // add both counters
+
+      if (ProfileInterpreter) {
+        // Test to see if we should create a method data oop
+        __ cmp32(rax,
+                 ExternalAddress((address) &InvocationCounter::InterpreterProfileLimit));
+        __ jcc(Assembler::less, dispatch);
+
+        // if no method data exists, go to profile method
+        __ test_method_data_pointer(rax, profile_method);
+
+        if (UseOnStackReplacement) {
+          // check for overflow against rbx, which is the MDO taken count
+          __ cmp32(rbx,
+                   ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
+          __ jcc(Assembler::below, dispatch);
+
+          // When ProfileInterpreter is on, the backedge_count comes from the
+          // methodDataOop, which value does not get reset on the call to
+          // frequency_counter_overflow().  To avoid excessive calls to the overflow
+          // routine while the method is being compiled, add a second test to make
+          // sure the overflow function is called only once every overflow_frequency.
+          const int overflow_frequency = 1024;
+          __ andptr(rbx, overflow_frequency-1);
+          __ jcc(Assembler::zero, backedge_counter_overflow);
+        }
+      } else {
+        if (UseOnStackReplacement) {
+          // check for overflow against rax, which is the sum of the counters
+          __ cmp32(rax,
+                   ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
+          __ jcc(Assembler::aboveEqual, backedge_counter_overflow);
+
+        }
       }
     }
     __ bind(dispatch);
@@ -2055,6 +2102,8 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
     case Bytecodes::_invokestatic   : // fall through
     case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
     case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic); break;
+    case Bytecodes::_fast_aldc      : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
+    case Bytecodes::_fast_aldc_w    : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
     default                         : ShouldNotReachHere();                                 break;
   }
   __ movl(temp, (int)bytecode());
@@ -3084,21 +3133,24 @@ void TemplateTable::_new() {
   transition(vtos, atos);
   __ get_unsigned_2_byte_index_at_bcp(rdx, 1);
   Label slow_case;
+  Label slow_case_no_pop;
   Label done;
   Label initialize_header;
   Label initialize_object;  // including clearing the fields
   Label allocate_shared;
 
   __ get_cpool_and_tags(rcx, rax);
+
+  // Make sure the class we're about to instantiate has been resolved.
+  // This is done before loading instanceKlass to be consistent with the order
+  // how Constant Pool is updated (see constantPoolOopDesc::klass_at_put)
+  const int tags_offset = typeArrayOopDesc::header_size(T_BYTE) * wordSize;
+  __ cmpb(Address(rax, rdx, Address::times_1, tags_offset), JVM_CONSTANT_Class);
+  __ jcc(Assembler::notEqual, slow_case_no_pop);
+
   // get instanceKlass
   __ movptr(rcx, Address(rcx, rdx, Address::times_ptr, sizeof(constantPoolOopDesc)));
   __ push(rcx);  // save the contexts of klass for initializing the header
-
-  // make sure the class we're about to instantiate has been resolved.
-  // Note: slow_case does a pop of stack, which is why we loaded class/pushed above
-  const int tags_offset = typeArrayOopDesc::header_size(T_BYTE) * wordSize;
-  __ cmpb(Address(rax, rdx, Address::times_1, tags_offset), JVM_CONSTANT_Class);
-  __ jcc(Assembler::notEqual, slow_case);
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
@@ -3227,6 +3279,7 @@ void TemplateTable::_new() {
   // slow case
   __ bind(slow_case);
   __ pop(rcx);   // restore stack pointer to what it was when we came in.
+  __ bind(slow_case_no_pop);
   __ get_constant_pool(rax);
   __ get_unsigned_2_byte_index_at_bcp(rdx, 1);
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), rax, rdx);

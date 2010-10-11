@@ -141,6 +141,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         r = scanAndReduce(node.getReceiverAnnotations(), p, r);
         r = scanAndReduce(node.getThrows(), p, r);
         r = scanAndReduce(node.getBody(), p, r);
+        r = scanAndReduce(node.getDefaultValue(), p, r);
         return r;
     }
 
@@ -209,7 +210,8 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     public R visitTry(TryTree node, P p) {
-        R r = scan(node.getBlock(), p);
+        R r = scan(node.getResources(), p);
+        r = scanAndReduce(node.getBlock(), p, r);
         r = scanAndReduce(node.getCatches(), p, r);
         r = scanAndReduce(node.getFinallyBlock(), p, r);
         return r;

@@ -3,7 +3,7 @@
  * @bug     6717241
  * @summary some diagnostic argument is prematurely converted into a String object
  * @author  Maurizio Cimadamore
- * @compile/fail/ref=T6717241b.out -XDstdout -XDrawDiagnostics T6717241b.java
+ * @compile/fail/ref=T6717241b.out -XDrawDiagnostics T6717241b.java
  */
 
 class T6717241b {

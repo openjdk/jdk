@@ -182,6 +182,8 @@ int Type::uhash( const Type *const t ) {
   return t->hash();
 }
 
+#define SMALLINT ((juint)3)  // a value too insignificant to consider widening
+
 //--------------------------Initialize_shared----------------------------------
 void Type::Initialize_shared(Compile* current) {
   // This method does not need to be locked because the first system
@@ -240,6 +242,7 @@ void Type::Initialize_shared(Compile* current) {
   assert( TypeInt::CC_GT == TypeInt::ONE,     "types must match for CmpL to work" );
   assert( TypeInt::CC_EQ == TypeInt::ZERO,    "types must match for CmpL to work" );
   assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
+  assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
 
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
@@ -311,7 +314,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegL] = TypeLong::LONG;
   mreg2type[Op_RegFlags] = TypeInt::CC;
 
-  TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), current->env()->Object_klass(), false, arrayOopDesc::length_offset_in_bytes());
+  TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), NULL /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());
 
   TypeAryPtr::NARROWOOPS = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeNarrowOop::BOTTOM, TypeInt::POS), NULL /*ciArrayKlass::make(o)*/,  false,  Type::OffsetBot);
 
@@ -1054,16 +1057,21 @@ const TypeInt *TypeInt::make( jint lo ) {
   return (TypeInt*)(new TypeInt(lo,lo,WidenMin))->hashcons();
 }
 
-#define SMALLINT ((juint)3)  // a value too insignificant to consider widening
-
-const TypeInt *TypeInt::make( jint lo, jint hi, int w ) {
+static int normalize_int_widen( jint lo, jint hi, int w ) {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALLINT' covers constants and also CC and its relatives.
-  assert(CC == NULL || (juint)(CC->_hi - CC->_lo) <= SMALLINT, "CC is truly small");
   if (lo <= hi) {
-    if ((juint)(hi - lo) <= SMALLINT)   w = Type::WidenMin;
-    if ((juint)(hi - lo) >= max_juint)  w = Type::WidenMax; // plain int
+    if ((juint)(hi - lo) <= SMALLINT)  w = Type::WidenMin;
+    if ((juint)(hi - lo) >= max_juint) w = Type::WidenMax; // TypeInt::INT
+  } else {
+    if ((juint)(lo - hi) <= SMALLINT)  w = Type::WidenMin;
+    if ((juint)(lo - hi) >= max_juint) w = Type::WidenMin; // dual TypeInt::INT
   }
+  return w;
+}
+
+const TypeInt *TypeInt::make( jint lo, jint hi, int w ) {
+  w = normalize_int_widen(lo, hi, w);
   return (TypeInt*)(new TypeInt(lo,hi,w))->hashcons();
 }
 
@@ -1103,14 +1111,14 @@ const Type *TypeInt::xmeet( const Type *t ) const {
 
   // Expand covered set
   const TypeInt *r = t->is_int();
-  // (Avoid TypeInt::make, to avoid the argument normalizations it enforces.)
-  return (new TypeInt( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) ))->hashcons();
+  return make( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) );
 }
 
 //------------------------------xdual------------------------------------------
 // Dual: reverse hi & lo; flip widen
 const Type *TypeInt::xdual() const {
-  return new TypeInt(_hi,_lo,WidenMax-_widen);
+  int w = normalize_int_widen(_hi,_lo, WidenMax-_widen);
+  return new TypeInt(_hi,_lo,w);
 }
 
 //------------------------------widen------------------------------------------
@@ -1202,7 +1210,7 @@ const Type *TypeInt::narrow( const Type *old ) const {
 //-----------------------------filter------------------------------------------
 const Type *TypeInt::filter( const Type *kills ) const {
   const TypeInt* ft = join(kills)->isa_int();
-  if (ft == NULL || ft->_lo > ft->_hi)
+  if (ft == NULL || ft->empty())
     return Type::TOP;           // Canonical empty value
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
@@ -1304,13 +1312,21 @@ const TypeLong *TypeLong::make( jlong lo ) {
   return (TypeLong*)(new TypeLong(lo,lo,WidenMin))->hashcons();
 }
 
-const TypeLong *TypeLong::make( jlong lo, jlong hi, int w ) {
+static int normalize_long_widen( jlong lo, jlong hi, int w ) {
   // Certain normalizations keep us sane when comparing types.
-  // The '1' covers constants.
+  // The 'SMALLINT' covers constants.
   if (lo <= hi) {
-    if ((julong)(hi - lo) <= SMALLINT)    w = Type::WidenMin;
-    if ((julong)(hi - lo) >= max_julong)  w = Type::WidenMax; // plain long
+    if ((julong)(hi - lo) <= SMALLINT)   w = Type::WidenMin;
+    if ((julong)(hi - lo) >= max_julong) w = Type::WidenMax; // TypeLong::LONG
+  } else {
+    if ((julong)(lo - hi) <= SMALLINT)   w = Type::WidenMin;
+    if ((julong)(lo - hi) >= max_julong) w = Type::WidenMin; // dual TypeLong::LONG
   }
+  return w;
+}
+
+const TypeLong *TypeLong::make( jlong lo, jlong hi, int w ) {
+  w = normalize_long_widen(lo, hi, w);
   return (TypeLong*)(new TypeLong(lo,hi,w))->hashcons();
 }
 
@@ -1351,14 +1367,14 @@ const Type *TypeLong::xmeet( const Type *t ) const {
 
   // Expand covered set
   const TypeLong *r = t->is_long(); // Turn into a TypeLong
-  // (Avoid TypeLong::make, to avoid the argument normalizations it enforces.)
-  return (new TypeLong( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) ))->hashcons();
+  return make( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) );
 }
 
 //------------------------------xdual------------------------------------------
 // Dual: reverse hi & lo; flip widen
 const Type *TypeLong::xdual() const {
-  return new TypeLong(_hi,_lo,WidenMax-_widen);
+  int w = normalize_long_widen(_hi,_lo, WidenMax-_widen);
+  return new TypeLong(_hi,_lo,w);
 }
 
 //------------------------------widen------------------------------------------
@@ -1453,7 +1469,7 @@ const Type *TypeLong::narrow( const Type *old ) const {
 //-----------------------------filter------------------------------------------
 const Type *TypeLong::filter( const Type *kills ) const {
   const TypeLong* ft = join(kills)->isa_long();
-  if (ft == NULL || ft->_lo > ft->_hi)
+  if (ft == NULL || ft->empty())
     return Type::TOP;           // Canonical empty value
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
@@ -3353,7 +3369,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         tary = TypeAry::make(Type::BOTTOM, tary->_size);
       }
     }
-    bool xk;
+    bool xk = false;
     switch (tap->ptr()) {
     case AnyNull:
     case TopPTR:
@@ -3375,9 +3391,10 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         o = tap->const_oop();
         xk = true;
       } else {
-        xk = this->_klass_is_exact;
+        // Only precise for identical arrays
+        xk = this->_klass_is_exact && (klass() == tap->klass());
       }
-      return TypeAryPtr::make( ptr, o, tary, tap->_klass, xk, off, instance_id );
+      return TypeAryPtr::make( ptr, o, tary, lazy_klass, xk, off, instance_id );
     }
     case NotNull:
     case BotPTR:
@@ -3667,12 +3684,10 @@ int TypeKlassPtr::hash(void) const {
 }
 
 
-//------------------------------klass------------------------------------------
-// Return the defining klass for this class
-ciKlass* TypeAryPtr::klass() const {
-  if( _klass ) return _klass;   // Return cached value, if possible
-
-  // Oops, need to compute _klass and cache it
+//----------------------compute_klass------------------------------------------
+// Compute the defining klass for this class
+ciKlass* TypeAryPtr::compute_klass(DEBUG_ONLY(bool verify)) const {
+  // Compute _klass based on element type.
   ciKlass* k_ary = NULL;
   const TypeInstPtr *tinst;
   const TypeAryPtr *tary;
@@ -3699,11 +3714,39 @@ ciKlass* TypeAryPtr::klass() const {
   } else {
     // Cannot compute array klass directly from basic type,
     // since subtypes of TypeInt all have basic type T_INT.
+#ifdef ASSERT
+    if (verify && el->isa_int()) {
+      // Check simple cases when verifying klass.
+      BasicType bt = T_ILLEGAL;
+      if (el == TypeInt::BYTE) {
+        bt = T_BYTE;
+      } else if (el == TypeInt::SHORT) {
+        bt = T_SHORT;
+      } else if (el == TypeInt::CHAR) {
+        bt = T_CHAR;
+      } else if (el == TypeInt::INT) {
+        bt = T_INT;
+      } else {
+        return _klass; // just return specified klass
+      }
+      return ciTypeArrayKlass::make(bt);
+    }
+#endif
     assert(!el->isa_int(),
            "integral arrays must be pre-equipped with a class");
     // Compute array klass directly from basic type
     k_ary = ciTypeArrayKlass::make(el->basic_type());
   }
+  return k_ary;
+}
+
+//------------------------------klass------------------------------------------
+// Return the defining klass for this class
+ciKlass* TypeAryPtr::klass() const {
+  if( _klass ) return _klass;   // Return cached value, if possible
+
+  // Oops, need to compute _klass and cache it
+  ciKlass* k_ary = compute_klass();
 
   if( this != TypeAryPtr::OOPS ) {
     // The _klass field acts as a cache of the underlying

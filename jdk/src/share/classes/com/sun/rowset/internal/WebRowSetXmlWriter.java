@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             String strProvider = strProviderInstance.substring(0, (caller.getSyncProvider()).toString().indexOf("@"));
 
             propString("sync-provider-name", strProvider);
-            propString("sync-provider-vendor", "Sun Microsystems Inc.");
+            propString("sync-provider-vendor", "Oracle Corporation");
             propString("sync-provider-version", "1.0");
             propInteger("sync-provider-grade", caller.getSyncProvider().getProviderGrade());
             propInteger("data-source-lock", caller.getSyncProvider().getDataSourceLock());
@@ -387,7 +387,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
                     if (caller.wasNull())
                         writeNull();
                     else
-                        writeInteger(caller.getInt(idx));
+                        writeInteger(i);
                     break;
                 case java.sql.Types.BIGINT:
                     long l = caller.getLong(idx);
@@ -574,7 +574,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     }
 
     private void writeBoolean(boolean b) throws java.io.IOException {
-        writer.write(new Boolean(b).toString());
+        writer.write(Boolean.valueOf(b).toString());
     }
 
     private void writeFloat(float f) throws java.io.IOException {
@@ -641,7 +641,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             return null;
         }
         char []charStr = s.toCharArray();
-        String specialStr = new String();
+        String specialStr = "";
 
         for(int i = 0; i < charStr.length; i++) {
             if(charStr[i] == '&') {
@@ -663,4 +663,23 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
         return s;
     }
 
+
+    /**
+     * This method re populates the resBundle
+     * during the deserialization process
+     *
+     */
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        // Default state initialization happens here
+        ois.defaultReadObject();
+        // Initialization of transient Res Bundle happens here .
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+    }
+
+    static final long serialVersionUID = 7163134986189677641L;
 }

@@ -36,6 +36,11 @@
       javac.debug          - true or false for debug classfiles
       javac.target         - classfile version target
       javac.source         - source version
+      drops.dir            - directory that holds source drop bundles
+      allow.download       - permit downloads from public url (default is false)
+                             (used if bundles not found in drops.dir)
+
+      Run 'make help' for help using the Makefile.
     </description>
 
     <!-- Mac is special, need to downgrade these before build.properties. -->
@@ -106,13 +111,17 @@
         <jar file="${dist.classes.jar}" basedir="${build.classes.dir}"/>
     </target>
 
-    <target name="-build-prep"
-	    depends="init, -init-src-dirs, -drop-build-prep">
+    <target name="-build-setup"
+	    depends="init, -init-src-dirs, -drop-build-setup">
     </target>
 
     <!-- Build (compilation) of sources to class files. -->
     <target name="build"
-	    depends="init, -init-src-dirs, -build-prep">
+	    depends="compile, -build-setup">
+    </target>
+    <target name="compile"
+	    depends="init, -init-src-dirs">
+        <mkdir dir="${build.classes.dir}"/>
         <javac 
 	     includeAntRuntime="false" 
 	     classpath="${build.classes.dir}:${tools.jar}"

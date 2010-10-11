@@ -79,7 +79,7 @@ BOOL useNativeConverter(JNIEnv *env) {
 }
 
 jstring nativeNewStringPlatform(JNIEnv *env, const char *str) {
-    static String_char_constructor = NULL;
+    static jmethodID String_char_constructor;
     if (useNativeConverter(env)) {
         // use native Unicode conversion so Kernel isn't required during
         // System.initProperties

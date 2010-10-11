@@ -333,8 +333,7 @@ MethodHandleWalker::walk(TRAPS) {
         ArgToken arglist[2];
         arglist[0] = arg;         // outgoing value
         arglist[1] = ArgToken();  // sentinel
-        assert(false, "I think the argument count must be 1 instead of 0");
-        arg = make_invoke(NULL, boxer, Bytecodes::_invokevirtual, false, 0, &arglist[0], CHECK_(empty));
+        arg = make_invoke(NULL, boxer, Bytecodes::_invokevirtual, false, 1, &arglist[0], CHECK_(empty));
         change_argument(src, arg_slot, T_OBJECT, arg);
         break;
       }
@@ -738,6 +737,12 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
 
   // bi
   case Bytecodes::_ldc:
+    assert(Bytecodes::format_bits(op, false) == (Bytecodes::_fmt_b|Bytecodes::_fmt_has_k), "wrong bytecode format");
+    assert((char) index == index, "index does not fit in 8-bit");
+    _bytecode.push(op);
+    _bytecode.push(index);
+    break;
+
   case Bytecodes::_iload:
   case Bytecodes::_lload:
   case Bytecodes::_fload:
@@ -754,7 +759,8 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
     _bytecode.push(index);
     break;
 
-  // bii
+  // bkk
+  case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w:
   case Bytecodes::_checkcast:
     assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bkk, "wrong bytecode format");
@@ -972,7 +978,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
 
   // Inline the method.
   InvocationCounter* ic = m->invocation_counter();
-  ic->set_carry();
+  ic->set_carry_flag();
 
   for (int i = 0; i < argc; i++) {
     ArgToken arg = argv[i];
@@ -1202,7 +1208,7 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   // Set the carry bit of the invocation counter to force inlining of
   // the adapter.
   InvocationCounter* ic = m->invocation_counter();
-  ic->set_carry();
+  ic->set_carry_flag();
 
   // Rewrite the method and set up the constant pool cache.
   objArrayOop m_array = oopFactory::new_system_objArray(1, CHECK_(nullHandle));
@@ -1391,7 +1397,9 @@ public:
 
 extern "C"
 void print_method_handle(oop mh) {
-  if (java_dyn_MethodHandle::is_instance(mh)) {
+  if (!mh->is_oop()) {
+    tty->print_cr("*** not a method handle: "INTPTR_FORMAT, (intptr_t)mh);
+  } else if (java_dyn_MethodHandle::is_instance(mh)) {
     //MethodHandlePrinter::print(mh);
   } else {
     tty->print("*** not a method handle: ");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,8 @@ class ParEvacuateFollowersClosure;
 // but they must be here to allow ParScanClosure::do_oop_work to be defined
 // in genOopClosures.inline.hpp.
 
-typedef OopTaskQueue       ObjToScanQueue;
-typedef OopTaskQueueSet    ObjToScanQueueSet;
-
-// Enable this to get push/pop/steal stats.
-const int PAR_STATS_ENABLED = 0;
+typedef Padded<OopTaskQueue> ObjToScanQueue;
+typedef GenericTaskQueueSet<ObjToScanQueue> ObjToScanQueueSet;
 
 class ParKeepAliveClosure: public DefNewGeneration::KeepAliveClosure {
  private:
@@ -94,8 +91,11 @@ class ParScanThreadState {
 
   bool _to_space_full;
 
-  int _pushes, _pops, _steals, _steal_attempts, _term_attempts;
-  int _overflow_pushes, _overflow_refills, _overflow_refill_objs;
+#if TASKQUEUE_STATS
+  size_t _term_attempts;
+  size_t _overflow_refills;
+  size_t _overflow_refill_objs;
+#endif // TASKQUEUE_STATS
 
   // Stats for promotion failure
   size_t _promotion_failure_size;
@@ -181,27 +181,20 @@ class ParScanThreadState {
   }
   void print_and_clear_promotion_failure_size();
 
-  int pushes() { return _pushes; }
-  int pops()   { return _pops; }
-  int steals() { return _steals; }
-  int steal_attempts() { return _steal_attempts; }
-  int term_attempts()  { return _term_attempts; }
-  int overflow_pushes() { return _overflow_pushes; }
-  int overflow_refills() { return _overflow_refills; }
-  int overflow_refill_objs() { return _overflow_refill_objs; }
+#if TASKQUEUE_STATS
+  TaskQueueStats & taskqueue_stats() const { return _work_queue->stats; }
 
-  void note_push()  { if (PAR_STATS_ENABLED) _pushes++; }
-  void note_pop()   { if (PAR_STATS_ENABLED) _pops++; }
-  void note_steal() { if (PAR_STATS_ENABLED) _steals++; }
-  void note_steal_attempt() { if (PAR_STATS_ENABLED) _steal_attempts++; }
-  void note_term_attempt()  { if (PAR_STATS_ENABLED) _term_attempts++; }
-  void note_overflow_push() { if (PAR_STATS_ENABLED) _overflow_pushes++; }
-  void note_overflow_refill(int objs) {
-    if (PAR_STATS_ENABLED) {
-      _overflow_refills++;
-      _overflow_refill_objs += objs;
-    }
+  size_t term_attempts() const             { return _term_attempts; }
+  size_t overflow_refills() const          { return _overflow_refills; }
+  size_t overflow_refill_objs() const      { return _overflow_refill_objs; }
+
+  void note_term_attempt()                 { ++_term_attempts; }
+  void note_overflow_refill(size_t objs)   {
+    ++_overflow_refills; _overflow_refill_objs += objs;
   }
+
+  void reset_stats();
+#endif // TASKQUEUE_STATS
 
   void start_strong_roots() {
     _start_strong_roots = os::elapsedTime();
@@ -209,17 +202,17 @@ class ParScanThreadState {
   void end_strong_roots() {
     _strong_roots_time += (os::elapsedTime() - _start_strong_roots);
   }
-  double strong_roots_time() { return _strong_roots_time; }
+  double strong_roots_time() const { return _strong_roots_time; }
   void start_term_time() {
-    note_term_attempt();
+    TASKQUEUE_STATS_ONLY(note_term_attempt());
     _start_term = os::elapsedTime();
   }
   void end_term_time() {
     _term_time += (os::elapsedTime() - _start_term);
   }
-  double term_time() { return _term_time; }
+  double term_time() const { return _term_time; }
 
-  double elapsed() {
+  double elapsed_time() const {
     return os::elapsedTime() - _start;
   }
 };
@@ -304,12 +297,6 @@ class ParNewGeneration: public DefNewGeneration {
   friend class ParEvacuateFollowersClosure;
 
  private:
-  // XXX use a global constant instead of 64!
-  struct ObjToScanQueuePadded {
-        ObjToScanQueue work_queue;
-        char pad[64 - sizeof(ObjToScanQueue)];  // prevent false sharing
-  };
-
   // The per-worker-thread work queues
   ObjToScanQueueSet* _task_queues;
 

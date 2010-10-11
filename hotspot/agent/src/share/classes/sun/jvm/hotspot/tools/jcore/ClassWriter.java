@@ -61,10 +61,12 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected short  _signatureIndex;
 
     protected static int extractHighShortFromInt(int val) {
+        // must stay in sync with constantPoolOopDesc::name_and_type_at_put, method_at_put, etc.
         return (val >> 16) & 0xFFFF;
     }
 
     protected static int extractLowShortFromInt(int val) {
+        // must stay in sync with constantPoolOopDesc::name_and_type_at_put, method_at_put, etc.
         return val & 0xFFFF;
     }
 
@@ -297,6 +299,37 @@ public class ClassWriter implements /* imports */ ClassConstants
                                         + ", type = " + signatureIndex);
                      break;
                 }
+
+                case JVM_CONSTANT_MethodHandle: {
+                     dos.writeByte(cpConstType);
+                     int value = cpool.getIntAt(ci);
+                     short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
+                     short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                     dos.writeShort(bootstrapMethodIndex);
+                     dos.writeShort(nameAndTypeIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " +
+                           bootstrapMethodIndex + ", N&T = " + nameAndTypeIndex);
+                     break;
+                }
+
+                case JVM_CONSTANT_MethodType: {
+                     dos.writeByte(cpConstType);
+                     int value = cpool.getIntAt(ci);
+                     short refIndex = (short) value;
+                     dos.writeShort(refIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = MT index = " + refIndex);
+                     break;
+                }
+
+                case JVM_CONSTANT_InvokeDynamic: {
+                     dos.writeByte(cpConstType);
+                     int value = cpool.getIntAt(ci);
+                     short refIndex = (short) value;
+                     dos.writeShort(refIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = MT index = " + refIndex);
+                     break;
+                }
+
                 default:
                   throw new InternalError("Unknown tag: " + cpConstType);
             } // switch

@@ -61,85 +61,43 @@ import sun.awt.EventQueueDelegate;
  * @since 1.1
  */
 class EventDispatchThread extends Thread {
+
     private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.EventDispatchThread");
 
     private EventQueue theQueue;
     private boolean doDispatch = true;
+    private boolean threadDeathCaught = false;
+
     private static final int ANY_EVENT = -1;
 
     private Vector<EventFilter> eventFilters = new Vector<EventFilter>();
-    // used in handleException
-    private int modalFiltersCount = 0;
 
     EventDispatchThread(ThreadGroup group, String name, EventQueue queue) {
         super(group, name);
-        theQueue = queue;
+        setEventQueue(queue);
     }
 
-    void stopDispatchingImpl(boolean wait) {
-        // Note: We stop dispatching via a flag rather than using
-        // Thread.interrupt() because we can't guarantee that the wait()
-        // we interrupt will be EventQueue.getNextEvent()'s.  -fredx 8-11-98
-
-        StopDispatchEvent stopEvent = new StopDispatchEvent();
-
-        // wait for the dispatcher to complete
-        if (Thread.currentThread() != this) {
-
-            // fix 4122683, 4128923
-            // Post an empty event to ensure getNextEvent is unblocked
-            //
-            // We have to use postEventPrivate instead of postEvent because
-            // EventQueue.pop calls EventDispatchThread.stopDispatching.
-            // Calling SunToolkit.flushPendingEvents in this case could
-            // lead to deadlock.
-            theQueue.postEventPrivate(stopEvent);
-
-            if (wait) {
-                try {
-                    join();
-                } catch(InterruptedException e) {
-                }
-            }
-        } else {
-            stopEvent.dispatch();
-        }
-
-        theQueue.detachDispatchThread(this, false);
-    }
-
+    /*
+     * Must be called on EDT only, that's why no synchronization
+     */
     public void stopDispatching() {
-        stopDispatchingImpl(true);
-    }
-
-    public void stopDispatchingLater() {
-        stopDispatchingImpl(false);
-    }
-
-    class StopDispatchEvent extends AWTEvent implements ActiveEvent {
-        /*
-         * serialVersionUID
-         */
-        static final long serialVersionUID = -3692158172100730735L;
-
-        public StopDispatchEvent() {
-            super(EventDispatchThread.this,0);
-        }
-
-        public void dispatch() {
-            doDispatch = false;
-        }
+        doDispatch = false;
     }
 
     public void run() {
-        try {
-            pumpEvents(new Conditional() {
-                public boolean evaluate() {
-                    return true;
+        while (true) {
+            try {
+                pumpEvents(new Conditional() {
+                    public boolean evaluate() {
+                        return true;
+                    }
+                });
+            } finally {
+                EventQueue eq = getEventQueue();
+                if (eq.detachDispatchThread(this) || threadDeathCaught) {
+                    break;
                 }
-            });
-        } finally {
-            theQueue.detachDispatchThread(this, true);
+            }
         }
     }
 
@@ -155,8 +113,7 @@ class EventDispatchThread extends Thread {
         pumpEventsForHierarchy(id, cond, null);
     }
 
-    void pumpEventsForHierarchy(int id, Conditional cond, Component modalComponent)
-    {
+    void pumpEventsForHierarchy(int id, Conditional cond, Component modalComponent) {
         pumpEventsForFilter(id, cond, new HierarchyEventFilter(modalComponent));
     }
 
@@ -166,6 +123,7 @@ class EventDispatchThread extends Thread {
 
     void pumpEventsForFilter(int id, Conditional cond, EventFilter filter) {
         addEventFilter(filter);
+        doDispatch = true;
         while (doDispatch && cond.evaluate()) {
             if (isInterrupted() || !pumpOneEventForFilters(id)) {
                 doDispatch = false;
@@ -175,6 +133,7 @@ class EventDispatchThread extends Thread {
     }
 
     void addEventFilter(EventFilter filter) {
+        eventLog.finest("adding the event filter: " + filter);
         synchronized (eventFilters) {
             if (!eventFilters.contains(filter)) {
                 if (filter instanceof ModalEventFilter) {
@@ -190,7 +149,6 @@ class EventDispatchThread extends Thread {
                         }
                     }
                     eventFilters.add(k, filter);
-                    modalFiltersCount++;
                 } else {
                     eventFilters.add(filter);
                 }
@@ -199,29 +157,27 @@ class EventDispatchThread extends Thread {
     }
 
     void removeEventFilter(EventFilter filter) {
+        eventLog.finest("removing the event filter: " + filter);
         synchronized (eventFilters) {
-            if (eventFilters.contains(filter)) {
-                if (filter instanceof ModalEventFilter) {
-                    modalFiltersCount--;
-                }
-                eventFilters.remove(filter);
-            }
+            eventFilters.remove(filter);
         }
     }
 
     boolean pumpOneEventForFilters(int id) {
+        AWTEvent event = null;
+        boolean eventOK = false;
         try {
-            AWTEvent event;
-            boolean eventOK;
-            EventQueueDelegate.Delegate delegate =
-                EventQueueDelegate.getDelegate();
+            EventQueue eq = null;
+            EventQueueDelegate.Delegate delegate = null;
             do {
+                // EventQueue may change during the dispatching
+                eq = getEventQueue();
+                delegate = EventQueueDelegate.getDelegate();
+
                 if (delegate != null && id == ANY_EVENT) {
-                    event = delegate.getNextEvent(theQueue);
+                    event = delegate.getNextEvent(eq);
                 } else {
-                    event = (id == ANY_EVENT)
-                        ? theQueue.getNextEvent()
-                        : theQueue.getNextEvent(id);
+                    event = (id == ANY_EVENT) ? eq.getNextEvent() : eq.getNextEvent(id);
                 }
 
                 eventOK = true;
@@ -252,13 +208,15 @@ class EventDispatchThread extends Thread {
             if (delegate != null) {
                 handle = delegate.beforeDispatch(event);
             }
-            theQueue.dispatchEvent(event);
+            eq.dispatchEvent(event);
             if (delegate != null) {
                 delegate.afterDispatch(event, handle);
             }
+
             return true;
         }
         catch (ThreadDeath death) {
+            threadDeathCaught = true;
             return false;
 
         }
@@ -267,12 +225,10 @@ class EventDispatchThread extends Thread {
                           // Threads in the AppContext
 
         }
-        // Can get and throw only unchecked exceptions
-        catch (RuntimeException e) {
-            processException(e);
-        } catch (Error e) {
+        catch (Throwable e) {
             processException(e);
         }
+
         return true;
     }
 
@@ -281,14 +237,14 @@ class EventDispatchThread extends Thread {
             eventLog.fine("Processing exception: " + e);
         }
         getUncaughtExceptionHandler().uncaughtException(this, e);
-        // don't rethrow the exception to avoid EDT recreation
     }
 
-    boolean isDispatching(EventQueue eq) {
-        return theQueue.equals(eq);
+    public synchronized EventQueue getEventQueue() {
+        return theQueue;
     }
-
-    EventQueue getEventQueue() { return theQueue; }
+    public synchronized void setEventQueue(EventQueue eq) {
+        theQueue = eq;
+    }
 
     private static class HierarchyEventFilter implements EventFilter {
         private Component modalComponent;

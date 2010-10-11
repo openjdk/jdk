@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,16 @@ GENERATED = ../generated
 # tools.jar is needed by the JDI - SA binding
 SA_CLASSPATH = $(BOOT_JAVA_HOME)/lib/tools.jar
 
+# TODO: if it's a modules image, check if SA module is installed.
+MODULELIB_PATH= $(BOOT_JAVA_HOME)/lib/modules
+
 # gnumake 3.78.1 does not accept the *s that
 # are in AGENT_FILES1 and AGENT_FILES2, so use the shell to expand them
 AGENT_FILES1 := $(shell /usr/bin/test -d $(AGENT_DIR) && /bin/ls $(AGENT_FILES1))
 AGENT_FILES2 := $(shell /usr/bin/test -d $(AGENT_DIR) && /bin/ls $(AGENT_FILES2))
+
+AGENT_FILES1_LIST := $(GENERATED)/agent1.classes.list
+AGENT_FILES2_LIST := $(GENERATED)/agent2.classes.list
 
 SA_CLASSDIR = $(GENERATED)/saclasses
 
@@ -59,7 +65,7 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 	   echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	   exit 1; \
 	fi
-	$(QUIETLY) if [ ! -f $(SA_CLASSPATH) ] ; then \
+	$(QUIETLY) if [ ! -f $(SA_CLASSPATH) -a ! -d $(MODULELIB_PATH) ] ; then \
 	  echo "Missing $(SA_CLASSPATH) file. Use 1.6.0 or later version of JDK";\
 	  echo ""; \
 	  exit 1; \
@@ -67,8 +73,23 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 	$(QUIETLY) if [ ! -d $(SA_CLASSDIR) ] ; then \
 	  mkdir -p $(SA_CLASSDIR);        \
 	fi
-	$(QUIETLY) $(COMPILE.JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) $(AGENT_FILES1)
-	$(QUIETLY) $(COMPILE.JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) $(AGENT_FILES2)
+	
+# Note: When indented, make tries to execute the '$(shell' comment.
+# In some environments, cmd processors have limited line length.
+# To prevent the javac invocation in the next block from using
+# a very long cmd line, we use javac's @file-list option. We
+# generate the file lists using make's built-in 'foreach' control
+# flow which also avoids cmd processor line length issues. Since
+# the 'foreach' is done as part of make's macro expansion phase,
+# the initialization of the lists is also done in the same phase
+# using '$(shell rm ...' instead of using the more traditional
+# 'rm ...' rule.
+	$(shell rm -rf $(AGENT_FILES1_LIST) $(AGENT_FILES2_LIST))
+	$(foreach file,$(AGENT_FILES1),$(shell echo $(file) >> $(AGENT_FILES1_LIST)))
+	$(foreach file,$(AGENT_FILES2),$(shell echo $(file) >> $(AGENT_FILES2_LIST)))
+	
+	$(QUIETLY) $(COMPILE.JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES1_LIST)
+	$(QUIETLY) $(COMPILE.JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES2_LIST)
 	
 	$(QUIETLY) $(COMPILE.RMIC)  -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	$(QUIETLY) echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
@@ -85,3 +106,4 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 clean:
 	rm -rf $(SA_CLASSDIR)
 	rm -rf $(GENERATED)/sa-jdi.jar
+	rm -rf $(AGENT_FILES1_LIST) $(AGENT_FILES2_LIST)

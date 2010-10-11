@@ -45,7 +45,7 @@ import java.io.IOException;
 /**
  * This class represents a relative distinguished name, or RDN, which is a
  * component of a distinguished name as specified by
- * <a href="http://ietf.org/rfc/rfc2253.txt">RFC 2253</a>.
+ * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>.
  * An example of an RDN is "OU=Sales+CN=J.Smith". In this example,
  * the RDN consist of multiple attribute type/value pairs. The
  * RDN is parsed as described in the class description for
@@ -117,7 +117,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * {@link javax.naming.directory.Attributes Attributes}.
      * <p>
      * The string attribute values are not interpretted as
-     * <a href="http://ietf.org/rfc/rfc2253.txt">RFC 2253</a>
+     * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * formatted RDN strings. That is, the values are used
      * literally (not parsed) and assumed to be unescaped.
      *
@@ -152,7 +152,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     /**
      * Constructs an Rdn from the given string.
      * This constructor takes a string formatted according to the rules
-     * defined in <a href="http://ietf.org//rfc/rfc2253.txt">RFC 2253</a>
+     * defined in <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * and described in the class description for
      * {@link javax.naming.ldap.LdapName}.
      *
@@ -180,7 +180,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * Constructs an Rdn from the given attribute type and
      * value.
      * The string attribute values are not interpretted as
-     * <a href="http://ietf.org/rfc/rfc2253.txt">RFC 2253</a>
+     * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * formatted RDN strings. That is, the values are used
      * literally (not parsed) and assumed to be unescaped.
      *
@@ -216,7 +216,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     /*
      * Adds the given attribute type and value to this Rdn.
      * The string attribute values are not interpretted as
-     * <a href="http://ietf.org/rfc/rfc2253.txt">RFC 2253</a>
+     * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * formatted RDN strings. That is the values are used
      * literally (not parsed) and assumed to be unescaped.
      *
@@ -280,7 +280,7 @@ public class Rdn implements Serializable, Comparable<Object> {
 
     /**
      * Returns this Rdn as a string represented in a format defined by
-     * <a href="http://ietf.org//rfc/rfc2253.txt">RFC 2253</a> and described
+     * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a> and described
      * in the class description for {@link javax.naming.ldap.LdapName LdapName}.
      *
      * @return The string representation of the Rdn.
@@ -503,7 +503,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     /**
      * Given the value of an attribute, returns a string escaped according
      * to the rules specified in
-     * <a href="http://ietf.org/rfc/rfc2253.txt">RFC 2253</a>.
+     * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>.
      * <p>
      * For example, if the val is "Sue, Grabbit and Runn", the escaped
      * value returned by this method is "Sue\, Grabbit and Runn".
@@ -582,7 +582,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     /**
      * Given an attribute value string formated according to the rules
      * specified in
-     * <a href="http://ietf.org//rfc/rfc2253.txt">RFC 2253</a>,
+     * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>,
      * returns the unformated value.  Escapes and quotes are
      * stripped away, and hex-encoded UTF-8 is converted to equivalent
      * UTF-16 characters. Returns a string value as a String, and a

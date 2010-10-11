@@ -110,6 +110,10 @@ Java_sun_awt_image_BufImgSurfaceData_initRaster(JNIEnv *env, jobject bisd,
 {
     BufImgSDOps *bisdo =
         (BufImgSDOps*)SurfaceData_InitOps(env, bisd, sizeof(BufImgSDOps));
+    if (bisdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
     bisdo->sdOps.Lock = BufImg_Lock;
     bisdo->sdOps.GetRasInfo = BufImg_GetRasInfo;
     bisdo->sdOps.Release = BufImg_Release;

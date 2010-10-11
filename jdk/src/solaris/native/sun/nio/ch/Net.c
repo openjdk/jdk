@@ -170,6 +170,22 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     if (fd < 0) {
         return handleSocketError(env, errno);
     }
+
+#ifdef AF_INET6
+    /* Disable IPV6_V6ONLY to ensure dual-socket support */
+    if (domain == AF_INET6) {
+        int arg = 0;
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
+                       sizeof(int)) < 0) {
+            JNU_ThrowByNameWithLastError(env,
+                                         JNU_JAVANETPKG "SocketException",
+                                         "sun.nio.ch.Net.setIntOption");
+            close(fd);
+            return -1;
+        }
+    }
+#endif
+
     if (reuse) {
         int arg = 1;
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
@@ -282,7 +298,8 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     struct linger linger;
     u_char carg;
     void *arg;
-    int arglen, n;
+    socklen_t arglen;
+    int n;
 
     /* Option value is an int except for a few specific cases */
 
@@ -301,7 +318,7 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     }
 
     if (mayNeedConversion) {
-        n = NET_GetSockOpt(fdval(env, fdo), level, opt, arg, &arglen);
+        n = NET_GetSockOpt(fdval(env, fdo), level, opt, arg, (int*)&arglen);
     } else {
         n = getsockopt(fdval(env, fdo), level, opt, arg, &arglen);
     }
@@ -511,7 +528,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_getInterface4(JNIEnv* env, jobject this, jobject fdo)
 {
     struct in_addr in;
-    int arglen = sizeof(struct in_addr);
+    socklen_t arglen = sizeof(struct in_addr);
     int n;
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF, (void*)&in, &arglen);
@@ -540,7 +557,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_getInterface6(JNIEnv* env, jobject this, jobject fdo)
 {
     int index;
-    int arglen = sizeof(index);
+    socklen_t arglen = sizeof(index);
     int n;
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF, (void*)&index, &arglen);

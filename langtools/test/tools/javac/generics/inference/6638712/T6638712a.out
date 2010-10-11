@@ -1,2 +1,2 @@
-T6638712a.java:16:41: compiler.err.invalid.inferred.types: T, (compiler.misc.inferred.do.not.conform.to.params: java.lang.Iterable<? extends java.util.Comparator<? super java.lang.String>>, java.util.List<java.util.Comparator<?>>)
+T6638712a.java:16:41: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.no.conforming.instance.exists: T, java.util.Comparator<T>, java.util.Comparator<java.lang.String>)), <T>java.util.Comparator<T>, java.util.Comparator<java.lang.String>
 1 error

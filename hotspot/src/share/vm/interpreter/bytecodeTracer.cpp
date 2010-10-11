@@ -49,6 +49,7 @@ class BytecodePrinter: public BytecodeClosure {
 
   int       get_index_u1()           { return *(address)_next_pc++; }
   int       get_index_u2()           { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
+  int       get_index_u1_cpcache()   { return get_index_u1() + constantPoolOopDesc::CPCACHE_INDEX_TAG; }
   int       get_index_u2_cpcache()   { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i + constantPoolOopDesc::CPCACHE_INDEX_TAG; }
   int       get_index_u4()           { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
   int       get_index_special()      { return (is_wide()) ? get_index_u2() : get_index_u1(); }
@@ -60,6 +61,7 @@ class BytecodePrinter: public BytecodeClosure {
   bool      check_index(int i, int& cp_index, outputStream* st = tty);
   void      print_constant(int i, outputStream* st = tty);
   void      print_field_or_method(int i, outputStream* st = tty);
+  void      print_field_or_method(int orig_i, int i, outputStream* st = tty);
   void      print_attributes(int bci, outputStream* st = tty);
   void      bytecode_epilog(int bci, outputStream* st = tty);
 
@@ -177,18 +179,29 @@ void BytecodeTracer::trace(methodHandle method, address bcp, outputStream* st) {
   _closure->trace(method, bcp, st);
 }
 
+void print_symbol(symbolOop sym, outputStream* st) {
+  char buf[40];
+  int len = sym->utf8_length();
+  if (len >= (int)sizeof(buf)) {
+    st->print_cr(" %s...[%d]", sym->as_C_string(buf, sizeof(buf)), len);
+  } else {
+    st->print(" ");
+    sym->print_on(st); st->cr();
+  }
+}
+
 void print_oop(oop value, outputStream* st) {
   if (value == NULL) {
     st->print_cr(" NULL");
-  } else {
+  } else if (java_lang_String::is_instance(value)) {
     EXCEPTION_MARK;
     Handle h_value (THREAD, value);
     symbolHandle sym = java_lang_String::as_symbol(h_value, CATCH);
-    if (sym->utf8_length() > 32) {
-      st->print_cr(" ....");
-    } else {
-      sym->print_on(st); st->cr();
-    }
+    print_symbol(sym(), st);
+  } else if (value->is_symbol()) {
+    print_symbol(symbolOop(value), st);
+  } else {
+    st->print_cr(" " PTR_FORMAT, (intptr_t) value);
   }
 }
 
@@ -279,16 +292,27 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   } else if (tag.is_double()) {
     st->print_cr(" %f", constants->double_at(i));
   } else if (tag.is_string()) {
-    oop string = constants->resolved_string_at(i);
+    oop string = constants->pseudo_string_at(i);
     print_oop(string, st);
   } else if (tag.is_unresolved_string()) {
-    st->print_cr(" <unresolved string at %d>", i);
+    const char* string = constants->string_at_noresolve(i);
+    st->print_cr(" %s", string);
   } else if (tag.is_klass()) {
     st->print_cr(" %s", constants->resolved_klass_at(i)->klass_part()->external_name());
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" <unresolved klass at %d>", i);
   } else if (tag.is_object()) {
-    st->print_cr(" " PTR_FORMAT, constants->object_at(i));
+    st->print(" <Object>");
+    print_oop(constants->object_at(i), st);
+  } else if (tag.is_method_type()) {
+    int i2 = constants->method_type_index_at(i);
+    st->print(" <MethodType> %d", i2);
+    print_oop(constants->symbol_at(i2), st);
+  } else if (tag.is_method_handle()) {
+    int kind = constants->method_handle_ref_kind_at(i);
+    int i2 = constants->method_handle_index_at(i);
+    st->print(" <MethodHandle of kind %d>", kind, i2);
+    print_field_or_method(-i, i2, st);
   } else {
     st->print_cr(" bad tag=%d at %d", tag.value(), i);
   }
@@ -297,17 +321,23 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
 void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
   int orig_i = i;
   if (!check_index(orig_i, i, st))  return;
+  print_field_or_method(orig_i, i, st);
+}
 
+void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st) {
   constantPoolOop constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
-  int nt_index = -1;
+  bool has_klass = true;
 
   switch (tag.value()) {
   case JVM_CONSTANT_InterfaceMethodref:
   case JVM_CONSTANT_Methodref:
   case JVM_CONSTANT_Fieldref:
+    break;
   case JVM_CONSTANT_NameAndType:
+  case JVM_CONSTANT_InvokeDynamic:
+    has_klass = false;
     break;
   default:
     st->print_cr(" bad tag=%d at %d", tag.value(), i);
@@ -316,7 +346,17 @@ void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
 
   symbolOop name = constants->uncached_name_ref_at(i);
   symbolOop signature = constants->uncached_signature_ref_at(i);
-  st->print_cr(" %d <%s> <%s> ", i, name->as_C_string(), signature->as_C_string());
+  const char* sep = (tag.is_field() ? "/" : "");
+  if (has_klass) {
+    symbolOop klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(i));
+    st->print_cr(" %d <%s.%s%s%s> ", i, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
+  } else {
+    if (tag.is_invoke_dynamic()) {
+      int bsm = constants->invoke_dynamic_bootstrap_method_ref_index_at(i);
+      st->print(" bsm=%d", bsm);
+    }
+    st->print_cr(" %d <%s%s%s>", i, name->as_C_string(), sep, signature->as_C_string());
+  }
 }
 
 
@@ -340,12 +380,20 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       st->print_cr(" " INT32_FORMAT, get_short());
       break;
     case Bytecodes::_ldc:
-      print_constant(get_index_u1(), st);
+      if (Bytecodes::uses_cp_cache(raw_code())) {
+        print_constant(get_index_u1_cpcache(), st);
+      } else {
+        print_constant(get_index_u1(), st);
+      }
       break;
 
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
-      print_constant(get_index_u2(), st);
+      if (Bytecodes::uses_cp_cache(raw_code())) {
+        print_constant(get_index_u2_cpcache(), st);
+      } else {
+        print_constant(get_index_u2(), st);
+      }
       break;
 
     case Bytecodes::_iload:

@@ -25,6 +25,7 @@
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
+class vframeArray;
 
 
 // A frame represents a physical stack frame (an activation).  Frames
@@ -173,7 +174,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   address  sender_pc() const;
 
   // Support for deoptimization
-  void deoptimize(JavaThread* thread, bool thread_is_known_safe = false);
+  void deoptimize(JavaThread* thread);
 
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.
@@ -296,6 +297,9 @@ class frame VALUE_OBJ_CLASS_SPEC {
   void interpreter_frame_set_method(methodOop method);
   methodOop* interpreter_frame_method_addr() const;
   constantPoolCacheOop* interpreter_frame_cache_addr() const;
+#ifdef PPC
+  oop* interpreter_frame_mirror_addr() const;
+#endif
 
  public:
   // Entry frames

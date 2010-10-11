@@ -1,4 +1,4 @@
-." Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,8 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jarsigner 1 "04 May 2009"
-." Generated from HTML by html2man (author: Eric Armstrong)
+.TH jarsigner 1 "02 Jun 2010"
 
 .LP
 .SH "Name"
@@ -246,12 +245,12 @@ o
 DSA (Digital Signature Algorithm) with the SHA\-1 digest algorithm, or 
 .TP 2
 o
-the RSA algorithm with the SHA\-1 digest algorithm. 
+the RSA algorithm with the SHA\-256 digest algorithm. 
 .RE
 
 .LP
 .LP
-That is, if the signer's public and private keys are DSA keys, \f3jarsigner\fP will sign the JAR file using the "SHA1withDSA" algorithm. If the signer's keys are RSA keys, \f3jarsigner\fP will attempt to sign the JAR file using the "SHA1withRSA" algorithm.
+That is, if the signer's public and private keys are DSA keys, \f3jarsigner\fP will sign the JAR file using the "SHA1withDSA" algorithm. If the signer's keys are RSA keys, \f3jarsigner\fP will attempt to sign the JAR file using the "SHA256withRSA" algorithm.
 .LP
 .LP
 These default signature algorithms can be overridden using the \f2\-sigalg\fP option.
@@ -541,7 +540,7 @@ See
 .na
 \f2Appendix A\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard signature algorithm names. This algorithm must be compatible with the private key used to sign the JAR file. If this option is not specified, SHA1withDSA or SHA1withRSA will be used depending on the type of private key. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed.
+http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard signature algorithm names. This algorithm must be compatible with the private key used to sign the JAR file. If this option is not specified, SHA1withDSA or SHA256withRSA will be used depending on the type of private key. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed.
 .LP
 .RE
 .TP 3
@@ -553,7 +552,7 @@ See
 .na
 \f2Appendix A\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard message digest algorithm names. If this option is not specified, SHA\-1 will be used. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed.
+http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard message digest algorithm names. If this option is not specified, SHA\-256 will be used. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed.
 .LP
 .RE
 .TP 3
@@ -1391,7 +1390,7 @@ Default privileges granted to all code plus privileges granted in policy file. (
 .nr 44 \n(83+(3*\n(38)
 .nr 84 +\n(44
 .nr TW \n(84
-.if t .if \n(TW>\n(.li .tm Table at line 1129 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 1128 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -1613,8 +1612,6 @@ http://java.sun.com/docs/books/tutorial/security/index.html trail of the
 .fi
 http://java.sun.com/docs/books/tutorial/index.html for examples of the use of the \f3jarsigner\fP tool 
 .RE
-
-.LP
 
 .LP
 .RE

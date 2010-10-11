@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,15 @@ void CallInfo::set_virtual(KlassHandle resolved_klass, KlassHandle selected_klas
   set_common(resolved_klass, selected_klass, resolved_method, selected_method, vtable_index, CHECK);
 }
 
+void CallInfo::set_dynamic(methodHandle resolved_method, TRAPS) {
+  assert(resolved_method->is_method_handle_invoke(), "");
+  KlassHandle resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
+  assert(resolved_klass == resolved_method->method_holder(), "");
+  int vtable_index = methodOopDesc::nonvirtual_vtable_index;
+  assert(resolved_method->vtable_index() == vtable_index, "");
+  set_common(resolved_klass, KlassHandle(), resolved_method, resolved_method, vtable_index, CHECK);
+}
+
 void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS) {
   assert(resolved_method->signature() == selected_method->signature(), "signatures must correspond");
   _resolved_klass  = resolved_klass;
@@ -74,12 +83,12 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
   _resolved_method = resolved_method;
   _selected_method = selected_method;
   _vtable_index    = vtable_index;
-  if (CompilationPolicy::mustBeCompiled(selected_method)) {
+  if (CompilationPolicy::must_be_compiled(selected_method)) {
     // This path is unusual, mostly used by the '-Xcomp' stress test mode.
 
-    // Note: with several active threads, the mustBeCompiled may be true
-    //       while canBeCompiled is false; remove assert
-    // assert(CompilationPolicy::canBeCompiled(selected_method), "cannot compile");
+    // Note: with several active threads, the must_be_compiled may be true
+    //       while can_be_compiled is false; remove assert
+    // assert(CompilationPolicy::can_be_compiled(selected_method), "cannot compile");
     if (THREAD->is_Compiler_thread()) {
       // don't force compilation, resolve was on behalf of compiler
       return;
@@ -95,7 +104,8 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
       return;
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
-                                  methodHandle(), 0, "mustBeCompiled", CHECK);
+                                  CompLevel_initial_compile,
+                                  methodHandle(), 0, "must_be_compiled", CHECK);
   }
 }
 
@@ -176,9 +186,20 @@ void LinkResolver::lookup_implicit_method(methodHandle& result,
                                           KlassHandle klass, symbolHandle name, symbolHandle signature,
                                           KlassHandle current_klass,
                                           TRAPS) {
-  if (EnableMethodHandles && MethodHandles::enabled() &&
+  if (EnableMethodHandles &&
       klass() == SystemDictionary::MethodHandle_klass() &&
       methodOopDesc::is_method_handle_invoke_name(name())) {
+    if (!MethodHandles::enabled()) {
+      // Make sure the Java part of the runtime has been booted up.
+      klassOop natives = SystemDictionary::MethodHandleNatives_klass();
+      if (natives == NULL || instanceKlass::cast(natives)->is_not_initialized()) {
+        SystemDictionary::resolve_or_fail(vmSymbolHandles::sun_dyn_MethodHandleNatives(),
+                                          Handle(),
+                                          Handle(),
+                                          true,
+                                          CHECK);
+      }
+    }
     methodOop result_oop = SystemDictionary::find_method_handle_invoke(name,
                                                                        signature,
                                                                        current_klass,
@@ -1065,7 +1086,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
   if (resolved_method.is_null()) {
     THROW(vmSymbols::java_lang_InternalError());
   }
-  result.set_virtual(resolved_klass, KlassHandle(), resolved_method, resolved_method, resolved_method->vtable_index(), CHECK);
+  result.set_dynamic(resolved_method, CHECK);
 }
 
 //------------------------------------------------------------------------------------------------------------------------

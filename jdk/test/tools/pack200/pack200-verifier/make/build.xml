@@ -1,0 +1,59 @@
+<project name="PackageVerify" default="dist" basedir="..">
+  <!-- Requires ant 1.6.1+ and JDK 1.6+-->
+
+  <!-- set global properties for this build -->
+  <property name="src"      value="${basedir}/src"/>
+  <property name="build"    value="${basedir}/build"/>
+  <property name="dist"     value="${basedir}/dist"/>
+  <property name="make"     value="${basedir}/make"/>
+  <property name="classes"  value="${build}/classes"/>
+  <property name="api"      value="${build}/api"/>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+    <mkdir dir="${dist}"/>
+    <mkdir dir="${classes}"/>
+    <mkdir dir="${api}"/>
+  </target>
+
+  <target name="compile" depends="init">
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac 
+	source="1.6"
+	srcdir="${src}"
+	destdir="${build}/classes"
+	verbose="no"
+	debug="on"
+    />
+  </target>
+
+  <target name="doc" depends="init, compile">
+      <javadoc
+        source="1.6"
+        sourcepath="${src}"
+        destdir="${api}"
+      />
+  </target>
+  <target name="dist" depends="compile, doc">
+    <!-- Put everything in jar file -->
+    <jar destfile="${dist}/pack200-verifier.jar">
+	<manifest>
+	   <attribute name="Main-Class" value="sun.tools.pack.verify.Main"/>
+	</manifest>
+	<fileset dir="${classes}"/>
+    </jar>
+    <zip destfile="dist/pack200-verifier-doc.zip">
+        <fileset dir="${api}"/>
+    </zip>
+  </target>
+
+  <target name="clean">
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+
+</project>

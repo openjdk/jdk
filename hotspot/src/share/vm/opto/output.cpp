@@ -382,6 +382,10 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
           if (min_offset_from_last_call == 0) {
             blk_size += nop_size;
           }
+        } else if (mach->ideal_Opcode() == Op_Jump) {
+          const_size += b->_num_succs; // Address table size
+          // The size is valid even for 64 bit since it is
+          // multiplied by 2*jintSize on this method exit.
         }
       }
       min_offset_from_last_call += inst_size;
@@ -1180,7 +1184,7 @@ void Compile::Fill_buffer() {
       MacroAssembler(cb).bind( blk_labels[b->_pre_order] );
 
     else
-      assert( blk_labels[b->_pre_order].loc_pos() == cb->code_size(),
+      assert( blk_labels[b->_pre_order].loc_pos() == cb->insts_size(),
               "label position does not match code offset" );
 
     uint last_inst = b->_nodes.size();
@@ -1221,7 +1225,7 @@ void Compile::Fill_buffer() {
         // If this requires all previous instructions be flushed, then do so
         if( is_sfn || is_mcall || mach->alignment_required() != 1) {
           cb->flush_bundle(true);
-          current_offset = cb->code_size();
+          current_offset = cb->insts_size();
         }
 
         // align the instruction if necessary
@@ -1242,7 +1246,7 @@ void Compile::Fill_buffer() {
           _cfg->_bbs.map( nop->_idx, b );
           nop->emit(*cb, _regalloc);
           cb->flush_bundle(true);
-          current_offset = cb->code_size();
+          current_offset = cb->insts_size();
         }
 
         // Remember the start of the last call in a basic block
@@ -1344,12 +1348,12 @@ void Compile::Fill_buffer() {
       // Save the offset for the listing
 #ifndef PRODUCT
       if( node_offsets && n->_idx < node_offset_limit )
-        node_offsets[n->_idx] = cb->code_size();
+        node_offsets[n->_idx] = cb->insts_size();
 #endif
 
       // "Normal" instruction case
       n->emit(*cb, _regalloc);
-      current_offset  = cb->code_size();
+      current_offset  = cb->insts_size();
       non_safepoints.observe_instruction(n, current_offset);
 
       // mcall is last "call" that can be a safepoint
@@ -1368,13 +1372,12 @@ void Compile::Fill_buffer() {
         assert(delay_slot != NULL, "expecting delay slot node");
 
         // Back up 1 instruction
-        cb->set_code_end(
-          cb->code_end()-Pipeline::instr_unit_size());
+        cb->set_insts_end(cb->insts_end() - Pipeline::instr_unit_size());
 
         // Save the offset for the listing
 #ifndef PRODUCT
         if( node_offsets && delay_slot->_idx < node_offset_limit )
-          node_offsets[delay_slot->_idx] = cb->code_size();
+          node_offsets[delay_slot->_idx] = cb->insts_size();
 #endif
 
         // Support a SafePoint in the delay slot
@@ -1416,7 +1419,7 @@ void Compile::Fill_buffer() {
         b->_nodes.insert( b->_nodes.size(), nop );
         _cfg->_bbs.map( nop->_idx, b );
         nop->emit(*cb, _regalloc);
-        current_offset = cb->code_size();
+        current_offset = cb->insts_size();
       }
     }
 
@@ -1433,13 +1436,13 @@ void Compile::Fill_buffer() {
   // Compute the size of the first block
   _first_block_size = blk_labels[1].loc_pos() - blk_labels[0].loc_pos();
 
-  assert(cb->code_size() < 500000, "method is unreasonably large");
+  assert(cb->insts_size() < 500000, "method is unreasonably large");
 
   // ------------------
 
 #ifndef PRODUCT
   // Information on the size of the method, without the extraneous code
-  Scheduling::increment_method_size(cb->code_size());
+  Scheduling::increment_method_size(cb->insts_size());
 #endif
 
   // ------------------

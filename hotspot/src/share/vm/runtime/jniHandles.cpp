@@ -66,6 +66,7 @@ jobject JNIHandles::make_local(JNIEnv* env, oop obj) {
 
 
 jobject JNIHandles::make_global(Handle obj) {
+  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   jobject res = NULL;
   if (!obj.is_null()) {
     // ignore null handles
@@ -81,6 +82,7 @@ jobject JNIHandles::make_global(Handle obj) {
 
 
 jobject JNIHandles::make_weak_global(Handle obj) {
+  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   jobject res = NULL;
   if (!obj.is_null()) {
     // ignore null handles

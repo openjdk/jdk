@@ -85,7 +85,7 @@ public class Copy {
         }
 
         @Override
-        public FileVisitResult preVisitDirectory(Path dir) {
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
             // before visiting entries in a directory we copy the directory
             // (okay if directory already exists).
             CopyOption[] options = (preserve) ?
@@ -104,19 +104,9 @@ public class Copy {
         }
 
         @Override
-        public FileVisitResult preVisitDirectoryFailed(Path dir, IOException exc) {
-            System.err.format("Unable to copy: %s: %s%n", dir, exc);
-            return CONTINUE;
-        }
-
-        @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-            if (attrs.isDirectory()) {
-                System.err.println("cycle detected: " + file);
-            } else {
-                copyFile(file, target.resolve(source.relativize(file)),
-                         prompt, preserve);
-            }
+            copyFile(file, target.resolve(source.relativize(file)),
+                     prompt, preserve);
             return CONTINUE;
         }
 
@@ -137,7 +127,11 @@ public class Copy {
 
         @Override
         public FileVisitResult visitFileFailed(Path file, IOException exc) {
-            System.err.format("Unable to copy: %s: %s%n", file, exc);
+            if (exc instanceof FileSystemLoopException) {
+                System.err.println("cycle detected: " + file);
+            } else {
+                System.err.format("Unable to copy: %s: %s%n", file, exc);
+            }
             return CONTINUE;
         }
     }

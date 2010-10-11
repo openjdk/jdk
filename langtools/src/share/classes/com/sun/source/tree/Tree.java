@@ -30,7 +30,7 @@ package com.sun.source.tree;
  *
  * <p><b>WARNING:</b> This interface and its sub-interfaces are
  * subject to change as the Java&trade; programming language evolves.
- * These interfaces are implemented by Sun's Java compiler (javac)
+ * These interfaces are implemented by the JDK Java compiler (javac)
  * and should not be implemented either directly or indirectly by
  * other applications.
  *
@@ -94,7 +94,7 @@ public interface Tree {
         CATCH(CatchTree.class),
 
         /**
-         * Used for instances of {@link ClassTree}.
+         * Used for instances of {@link ClassTree} representing classes.
          */
         CLASS(ClassTree.class),
 
@@ -556,6 +556,21 @@ public interface Tree {
          * Used for instances of {@link ErroneousTree}.
          */
         ERRONEOUS(ErroneousTree.class),
+
+        /**
+         * Used for instances of {@link ClassTree} representing interfaces.
+         */
+        INTERFACE(ClassTree.class),
+
+        /**
+         * Used for instances of {@link ClassTree} representing enums.
+         */
+        ENUM(ClassTree.class),
+
+        /**
+         * Used for instances of {@link ClassTree} representing annotation types.
+         */
+        ANNOTATION_TYPE(ClassTree.class),
 
         /**
          * An implementation-reserved node. This is the not the node

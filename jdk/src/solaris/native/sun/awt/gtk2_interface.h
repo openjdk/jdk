@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,7 +717,7 @@ void gtk2_paint_vline(WidgetType widget_type, GtkStateType state_type,
 void gtk_paint_background(WidgetType widget_type, GtkStateType state_type,
         gint x, gint y, gint width, gint height);
 
-void gtk2_init_painting(gint w, gint h);
+void gtk2_init_painting(JNIEnv *env, gint w, gint h);
 gint gtk2_copy_image(gint *dest, gint width, gint height);
 
 gint gtk2_get_xthickness(JNIEnv *env, WidgetType widget_type);

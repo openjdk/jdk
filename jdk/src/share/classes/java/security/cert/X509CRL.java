@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,7 +387,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
 
     /**
      * Gets the signature algorithm name for the CRL
-     * signature algorithm. An example is the string "SHA-1/DSA".
+     * signature algorithm. An example is the string "SHA256withRSA".
      * The ASN.1 definition for this is:
      * <pre>
      * signatureAlgorithm   AlgorithmIdentifier<p>

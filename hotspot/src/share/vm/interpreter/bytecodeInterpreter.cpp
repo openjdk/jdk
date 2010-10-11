@@ -339,7 +339,8 @@
 #define CHECK_NULL(obj_)                                                 \
     if ((obj_) == NULL) {                                                \
         VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "");  \
-    }
+    }                                                                    \
+    VERIFY_OOP(obj_)
 
 #define VMdoubleConstZero() 0.0
 #define VMdoubleConstOne() 1.0
@@ -420,7 +421,9 @@ BytecodeInterpreter::run(interpreterState istate) {
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(abs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-  IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
+#ifndef SHARK
+    IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
+#endif // !SHARK
   }
   // Verify linkages.
   interpreterState l = istate;
@@ -509,7 +512,7 @@ BytecodeInterpreter::run(interpreterState istate) {
 
 /* 0xB0 */ &&opc_areturn,     &&opc_return,         &&opc_getstatic,    &&opc_putstatic,
 /* 0xB4 */ &&opc_getfield,    &&opc_putfield,       &&opc_invokevirtual,&&opc_invokespecial,
-/* 0xB8 */ &&opc_invokestatic,&&opc_invokeinterface,NULL,               &&opc_new,
+/* 0xB8 */ &&opc_invokestatic,&&opc_invokeinterface,&&opc_default,      &&opc_new,
 /* 0xBC */ &&opc_newarray,    &&opc_anewarray,      &&opc_arraylength,  &&opc_athrow,
 
 /* 0xC0 */ &&opc_checkcast,   &&opc_instanceof,     &&opc_monitorenter, &&opc_monitorexit,
@@ -539,6 +542,7 @@ BytecodeInterpreter::run(interpreterState istate) {
   // this will trigger a VERIFY_OOP on entry
   if (istate->msg() != initialize && ! METHOD->is_static()) {
     oop rcvr = LOCALS_OBJECT(0);
+    VERIFY_OOP(rcvr);
   }
 #endif
 // #define HACK
@@ -547,7 +551,7 @@ BytecodeInterpreter::run(interpreterState istate) {
 #endif // HACK
 
   /* QQQ this should be a stack method so we don't know actual direction */
-  assert(istate->msg() == initialize ||
+  guarantee(istate->msg() == initialize ||
          topOfStack >= istate->stack_limit() &&
          topOfStack < istate->stack_base(),
          "Stack top out of range");
@@ -613,6 +617,7 @@ BytecodeInterpreter::run(interpreterState istate) {
             rcvr = METHOD->constants()->pool_holder()->klass_part()->java_mirror();
           } else {
             rcvr = LOCALS_OBJECT(0);
+            VERIFY_OOP(rcvr);
           }
           // The initial monitor is ours for the taking
           BasicObjectLock* mon = &istate->monitor_base()[-1];
@@ -735,6 +740,7 @@ BytecodeInterpreter::run(interpreterState istate) {
     case popping_frame: {
       // returned from a java call to pop the frame, restart the call
       // clear the message so we don't confuse ourselves later
+      ShouldNotReachHere();  // we don't return this.
       assert(THREAD->pop_frame_in_process(), "wrong frame pop state");
       istate->set_msg(no_request);
       THREAD->clr_pop_frame_in_process();
@@ -801,6 +807,7 @@ BytecodeInterpreter::run(interpreterState istate) {
       // continue locking now that we have a monitor to use
       // we expect to find newly allocated monitor at the "top" of the monitor stack.
       oop lockee = STACK_OBJECT(-1);
+      VERIFY_OOP(lockee);
       // derefing's lockee ought to provoke implicit null check
       // find a free monitor
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
@@ -911,6 +918,7 @@ run:
           /* load from local variable */
 
       CASE(_aload):
+          VERIFY_OOP(LOCALS_OBJECT(pc[1]));
           SET_STACK_OBJECT(LOCALS_OBJECT(pc[1]), 0);
           UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
 
@@ -930,6 +938,7 @@ run:
 #undef  OPC_LOAD_n
 #define OPC_LOAD_n(num)                                                 \
       CASE(_aload_##num):                                               \
+          VERIFY_OOP(LOCALS_OBJECT(num));                               \
           SET_STACK_OBJECT(LOCALS_OBJECT(num), 0);                      \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);                         \
                                                                         \
@@ -975,6 +984,7 @@ run:
           opcode = pc[1];
           switch(opcode) {
               case Bytecodes::_aload:
+                  VERIFY_OOP(LOCALS_OBJECT(reg));
                   SET_STACK_OBJECT(LOCALS_OBJECT(reg), 0);
                   UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
 
@@ -1099,7 +1109,7 @@ run:
       CASE(_i##opcname):                                                \
           if (test && (STACK_INT(-1) == 0)) {                           \
               VM_JAVA_ERROR(vmSymbols::java_lang_ArithmeticException(), \
-                            "/ by int zero");                           \
+                            "/ by zero");                               \
           }                                                             \
           SET_STACK_INT(VMint##opname(STACK_INT(-2),                    \
                                       STACK_INT(-1)),                   \
@@ -1277,7 +1287,12 @@ run:
           jfloat f;
           jdouble r;
           f = STACK_FLOAT(-1);
+#ifdef IA64
+          // IA64 gcc bug
+          r = ( f == 0.0f ) ? (jdouble) f : (jdouble) f + ia64_double_zero;
+#else
           r = (jdouble) f;
+#endif
           MORE_STACK(-1); // POP
           SET_STACK_DOUBLE(r, 1);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 2);
@@ -1471,6 +1486,7 @@ run:
       CASE(_return_register_finalizer): {
 
           oop rcvr = LOCALS_OBJECT(0);
+          VERIFY_OOP(rcvr);
           if (rcvr->klass()->klass_part()->has_finalizer()) {
             CALL_VM(InterpreterRuntime::register_finalizer(THREAD, rcvr), handle_exception);
           }
@@ -1561,6 +1577,7 @@ run:
        */
       CASE(_aastore): {
           oop rhsObject = STACK_OBJECT(-1);
+          VERIFY_OOP(rhsObject);
           ARRAY_INTRO( -3);
           // arrObj, index are set
           if (rhsObject != NULL) {
@@ -1703,6 +1720,7 @@ run:
                 obj = (oop)NULL;
               } else {
                 obj = (oop) STACK_OBJECT(-1);
+                VERIFY_OOP(obj);
               }
               CALL_VM(InterpreterRuntime::post_field_access(THREAD,
                                           obj,
@@ -1728,6 +1746,7 @@ run:
           int field_offset = cache->f2();
           if (cache->is_volatile()) {
             if (tos_type == atos) {
+              VERIFY_OOP(obj->obj_field_acquire(field_offset));
               SET_STACK_OBJECT(obj->obj_field_acquire(field_offset), -1);
             } else if (tos_type == itos) {
               SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
@@ -1748,6 +1767,7 @@ run:
             }
           } else {
             if (tos_type == atos) {
+              VERIFY_OOP(obj->obj_field(field_offset));
               SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
             } else if (tos_type == itos) {
               SET_STACK_INT(obj->int_field(field_offset), -1);
@@ -1799,6 +1819,7 @@ run:
                 } else {
                   obj = (oop) STACK_OBJECT(-2);
                 }
+                VERIFY_OOP(obj);
               }
 
               CALL_VM(InterpreterRuntime::post_field_modification(THREAD,
@@ -1837,6 +1858,7 @@ run:
             if (tos_type == itos) {
               obj->release_int_field_put(field_offset, STACK_INT(-1));
             } else if (tos_type == atos) {
+              VERIFY_OOP(STACK_OBJECT(-1));
               obj->release_obj_field_put(field_offset, STACK_OBJECT(-1));
               OrderAccess::release_store(&BYTE_MAP_BASE[(uintptr_t)obj >> CardTableModRefBS::card_shift], 0);
             } else if (tos_type == btos) {
@@ -1857,6 +1879,7 @@ run:
             if (tos_type == itos) {
               obj->int_field_put(field_offset, STACK_INT(-1));
             } else if (tos_type == atos) {
+              VERIFY_OOP(STACK_OBJECT(-1));
               obj->obj_field_put(field_offset, STACK_OBJECT(-1));
               OrderAccess::release_store(&BYTE_MAP_BASE[(uintptr_t)obj >> CardTableModRefBS::card_shift], 0);
             } else if (tos_type == btos) {
@@ -1961,6 +1984,7 @@ run:
       }
       CASE(_checkcast):
           if (STACK_OBJECT(-1) != NULL) {
+            VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
             if (ProfileInterpreter) {
               // needs Profile_checkcast QQQ
@@ -1999,6 +2023,7 @@ run:
           if (STACK_OBJECT(-1) == NULL) {
             SET_STACK_INT(0, -1);
           } else {
+            VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
             // Constant pool may have actual klass or unresolved klass. If it is
             // unresolved we must resolve it
@@ -2044,10 +2069,12 @@ run:
             break;
 
           case JVM_CONSTANT_String:
+            VERIFY_OOP(constants->resolved_string_at(index));
             SET_STACK_OBJECT(constants->resolved_string_at(index), 0);
             break;
 
           case JVM_CONSTANT_Class:
+            VERIFY_OOP(constants->resolved_klass_at(index)->klass_part()->java_mirror());
             SET_STACK_OBJECT(constants->resolved_klass_at(index)->klass_part()->java_mirror(), 0);
             break;
 
@@ -2058,17 +2085,6 @@ run:
             SET_STACK_OBJECT(THREAD->vm_result(), 0);
             THREAD->set_vm_result(NULL);
             break;
-
-#if 0
-          CASE(_fast_igetfield):
-          CASE(_fastagetfield):
-          CASE(_fast_aload_0):
-          CASE(_fast_iaccess_0):
-          CASE(__fast_aaccess_0):
-          CASE(_fast_linearswitch):
-          CASE(_fast_binaryswitch):
-            fatal("unsupported fast bytecode");
-#endif
 
           default:  ShouldNotReachHere();
           }
@@ -2122,6 +2138,7 @@ run:
             // get receiver
             int parms = cache->parameter_size();
             // Same comments as invokevirtual apply here
+            VERIFY_OOP(STACK_OBJECT(-parms));
             instanceKlass* rcvrKlass = (instanceKlass*)
                                  STACK_OBJECT(-parms)->klass()->klass_part();
             callee = (methodOop) rcvrKlass->start_of_vtable()[ cache->f2()];
@@ -2205,6 +2222,7 @@ run:
               // this fails with an assert
               // instanceKlass* rcvrKlass = instanceKlass::cast(STACK_OBJECT(-parms)->klass());
               // but this works
+              VERIFY_OOP(STACK_OBJECT(-parms));
               instanceKlass* rcvrKlass = (instanceKlass*) STACK_OBJECT(-parms)->klass()->klass_part();
               /*
                 Executing this code in java.lang.String:
@@ -2651,14 +2669,14 @@ handle_return:
                                 LOCALS_SLOT(METHOD->size_of_parameters() - 1));
         THREAD->set_popframe_condition_bit(JavaThread::popframe_force_deopt_reexecution_bit);
       }
-      UPDATE_PC_AND_RETURN(1);
-    } else {
-      // Normal return
-      // Advance the pc and return to frame manager
-      istate->set_msg(return_from_method);
-      istate->set_return_kind((Bytecodes::Code)opcode);
-      UPDATE_PC_AND_RETURN(1);
+      THREAD->clr_pop_frame_in_process();
     }
+
+    // Normal return
+    // Advance the pc and return to frame manager
+    istate->set_msg(return_from_method);
+    istate->set_return_kind((Bytecodes::Code)opcode);
+    UPDATE_PC_AND_RETURN(1);
   } /* handle_return: */
 
 // This is really a fatal error return

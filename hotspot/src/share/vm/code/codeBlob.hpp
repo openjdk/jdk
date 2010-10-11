@@ -35,7 +35,8 @@
 // Layout:
 //   - header
 //   - relocation
-//   - instruction space
+//   - content space
+//     - instruction space
 //   - data space
 class DeoptimizationBlob;
 
@@ -48,7 +49,8 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   int        _size;                              // total size of CodeBlob in bytes
   int        _header_size;                       // size of header (depends on subclass)
   int        _relocation_size;                   // size of relocation
-  int        _instructions_offset;               // offset to where instructions region begins
+  int        _content_offset;                    // offset to where content region begins (this includes consts, insts, stubs)
+  int        _code_offset;                       // offset to where instructions region begins (this includes insts, stubs)
   int        _frame_complete_offset;             // instruction offsets in [0.._frame_complete_offset) have
                                                  // not finished setting up their frame. Beware of pc's in
                                                  // that range. There is a similar range(s) on returns
@@ -106,31 +108,36 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   address    header_end() const                  { return ((address)   this) + _header_size; };
   relocInfo* relocation_begin() const            { return (relocInfo*) header_end(); };
   relocInfo* relocation_end() const              { return (relocInfo*)(header_end()   + _relocation_size); }
-  address    instructions_begin() const          { return (address)    header_begin() + _instructions_offset;  }
-  address    instructions_end() const            { return (address)    header_begin() + _data_offset; }
+  address    content_begin() const               { return (address)    header_begin() + _content_offset; }
+  address    content_end() const                 { return (address)    header_begin() + _data_offset; }
+  address    code_begin() const                  { return (address)    header_begin() + _code_offset; }
+  address    code_end() const                    { return (address)    header_begin() + _data_offset; }
   address    data_begin() const                  { return (address)    header_begin() + _data_offset; }
   address    data_end() const                    { return (address)    header_begin() + _size; }
 
   // Offsets
   int relocation_offset() const                  { return _header_size; }
-  int instructions_offset() const                { return _instructions_offset; }
+  int content_offset() const                     { return _content_offset; }
+  int code_offset() const                        { return _code_offset; }
   int data_offset() const                        { return _data_offset; }
 
   // Sizes
   int size() const                               { return _size; }
   int header_size() const                        { return _header_size; }
   int relocation_size() const                    { return (address) relocation_end() - (address) relocation_begin(); }
-  int instructions_size() const                  { return instructions_end() - instructions_begin();  }
-  int data_size() const                          { return data_end() - data_begin(); }
+  int content_size() const                       { return           content_end()    -           content_begin();    }
+  int code_size() const                          { return           code_end()       -           code_begin();       }
+  int data_size() const                          { return           data_end()       -           data_begin();       }
 
   // Containment
-  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end(); }
+  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end();       }
   bool relocation_contains(relocInfo* addr) const{ return relocation_begin()   <= addr && addr < relocation_end(); }
-  bool instructions_contains(address addr) const { return instructions_begin() <= addr && addr < instructions_end(); }
-  bool data_contains(address addr) const         { return data_begin()         <= addr && addr < data_end(); }
-  bool contains(address addr) const              { return instructions_contains(addr); }
-  bool is_frame_complete_at(address addr) const  { return instructions_contains(addr) &&
-                                                          addr >= instructions_begin() + _frame_complete_offset; }
+  bool content_contains(address addr) const      { return content_begin()      <= addr && addr < content_end();    }
+  bool code_contains(address addr) const         { return code_begin()         <= addr && addr < code_end();       }
+  bool data_contains(address addr) const         { return data_begin()         <= addr && addr < data_end();       }
+  bool contains(address addr) const              { return content_contains(addr); }
+  bool is_frame_complete_at(address addr) const  { return code_contains(addr) &&
+                                                          addr >= code_begin() + _frame_complete_offset; }
 
   // CodeCache support: really only used by the nmethods, but in order to get
   // asserts and certain bookkeeping to work in the CodeCache they are defined
@@ -163,12 +170,13 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   // Debugging
   virtual void verify();
-  virtual void print() const                     PRODUCT_RETURN;
-  virtual void print_value_on(outputStream* st) const PRODUCT_RETURN;
+  void print() const                             { print_on(tty); }
+  virtual void print_on(outputStream* st) const;
+  virtual void print_value_on(outputStream* st) const;
 
   // Print the comment associated with offset on stream, if there is one
   virtual void print_block_comment(outputStream* stream, address block_begin) {
-    intptr_t offset = (intptr_t)(block_begin - instructions_begin());
+    intptr_t offset = (intptr_t)(block_begin - code_begin());
     _comments.print_block_comment(stream, offset);
   }
 
@@ -209,8 +217,8 @@ class BufferBlob: public CodeBlob {
   bool is_alive() const                          { return true; }
 
   void verify();
-  void print() const                             PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const    PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
 };
 
 
@@ -219,8 +227,7 @@ class BufferBlob: public CodeBlob {
 
 class AdapterBlob: public BufferBlob {
 private:
-  AdapterBlob(int size)                 : BufferBlob("I2C/C2I adapters", size) {}
-  AdapterBlob(int size, CodeBuffer* cb) : BufferBlob("I2C/C2I adapters", size, cb) {}
+  AdapterBlob(int size, CodeBuffer* cb);
 
 public:
   // Creation
@@ -286,15 +293,15 @@ class RuntimeStub: public CodeBlob {
   // GC support
   bool caller_must_gc_arguments(JavaThread* thread) const { return _caller_must_gc_arguments; }
 
-  address entry_point()                          { return instructions_begin(); }
+  address entry_point()                          { return code_begin(); }
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)  { /* nothing to do */ }
   bool is_alive() const                          { return true; }
 
   void verify();
-  void print() const                             PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const    PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
 };
 
 
@@ -313,13 +320,15 @@ class SingletonBlob: public CodeBlob {
      OopMapSet*  oop_maps
    )
    : CodeBlob(name, cb, header_size, size, CodeOffsets::frame_never_safe, frame_size, oop_maps)
-   {};
+  {};
 
-   bool is_alive() const                         { return true; }
+  address entry_point()                          { return code_begin(); }
 
-   void verify(); // does nothing
-   void print() const                            PRODUCT_RETURN;
-   void print_value_on(outputStream* st) const   PRODUCT_RETURN;
+  bool is_alive() const                          { return true; }
+
+  void verify(); // does nothing
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
 };
 
 
@@ -374,11 +383,11 @@ class DeoptimizationBlob: public SingletonBlob {
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) { /* Nothing to do */ }
 
   // Printing
-  void print_value_on(outputStream* st) const PRODUCT_RETURN;
+  void print_value_on(outputStream* st) const;
 
-  address unpack() const                         { return instructions_begin() + _unpack_offset;           }
-  address unpack_with_exception() const          { return instructions_begin() + _unpack_with_exception;   }
-  address unpack_with_reexecution() const        { return instructions_begin() + _unpack_with_reexecution; }
+  address unpack() const                         { return code_begin() + _unpack_offset;           }
+  address unpack_with_exception() const          { return code_begin() + _unpack_with_exception;   }
+  address unpack_with_reexecution() const        { return code_begin() + _unpack_with_reexecution; }
 
   // Alternate entry point for C1 where the exception and issuing pc
   // are in JavaThread::_exception_oop and JavaThread::_exception_pc
@@ -387,9 +396,9 @@ class DeoptimizationBlob: public SingletonBlob {
   // there may be live values in those registers during deopt.
   void set_unpack_with_exception_in_tls_offset(int offset) {
     _unpack_with_exception_in_tls = offset;
-    assert(contains(instructions_begin() + _unpack_with_exception_in_tls), "must be PC inside codeblob");
+    assert(code_contains(code_begin() + _unpack_with_exception_in_tls), "must be PC inside codeblob");
   }
-  address unpack_with_exception_in_tls() const   { return instructions_begin() + _unpack_with_exception_in_tls;   }
+  address unpack_with_exception_in_tls() const   { return code_begin() + _unpack_with_exception_in_tls; }
 };
 
 

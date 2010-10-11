@@ -84,10 +84,12 @@ int getDefaultIPv6Interface(struct in6_addr *target_addr);
 
 /* needed from libsocket on Solaris 8 */
 
-typedef int (*getaddrinfo_f)(const char *nodename, const char  *servname,
-     const struct addrinfo *hints, struct addrinfo **res);
+typedef int (*getaddrinfo_f)(const char *nodename, const char *servname,
+    const struct addrinfo *hints, struct addrinfo **res);
 
 typedef void (*freeaddrinfo_f)(struct addrinfo *);
+
+typedef const char * (*gai_strerror_f)(int ecode);
 
 typedef int (*getnameinfo_f)(const struct sockaddr *, size_t,
     char *, size_t, char *, size_t, int);
@@ -95,6 +97,10 @@ typedef int (*getnameinfo_f)(const struct sockaddr *, size_t,
 extern getaddrinfo_f getaddrinfo_ptr;
 extern freeaddrinfo_f freeaddrinfo_ptr;
 extern getnameinfo_f getnameinfo_ptr;
+
+void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
+                                           const char* hostname,
+                                           int gai_error);
 
 /* do we have address translation support */
 

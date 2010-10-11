@@ -2586,9 +2586,6 @@ void ConcurrentMark::complete_marking_in_collection_set() {
   double end_time = os::elapsedTime();
   double elapsed_time_ms = (end_time - start) * 1000.0;
   g1h->g1_policy()->record_mark_closure_time(elapsed_time_ms);
-  if (PrintGCDetails) {
-    gclog_or_tty->print_cr("Mark closure took %5.2f ms.", elapsed_time_ms);
-  }
 
   ClearMarksInHRClosure clr(nextMarkBitMap());
   g1h->collection_set_iterate(&clr);

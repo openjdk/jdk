@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.io.*;
 import java.util.*;
 
 /**
@@ -40,20 +39,13 @@ class ConstantPool implements Constants {
         return Utils.currentPropMap().getInteger(Utils.DEBUG_VERBOSE);
     }
 
-    // Uniquification tables for factory methods:
-    private static final HashMap utf8Entries       = new HashMap();
-    private static final HashMap classEntries      = new HashMap();
-    private static final HashMap literalEntries    = new HashMap();
-    private static final HashMap signatureEntries  = new HashMap();
-    private static final HashMap descriptorEntries = new HashMap();
-    private static final HashMap memberEntries     = new HashMap();
-
     /** Factory for Utf8 string constants.
      *  Used for well-known strings like "SourceFile", "<init>", etc.
      *  Also used to back up more complex constant pool entries, like Class.
      */
     public static synchronized Utf8Entry getUtf8Entry(String value) {
-        Utf8Entry e = (Utf8Entry) utf8Entries.get(value);
+        Map<String, Utf8Entry> utf8Entries  = Utils.getUtf8Entries();
+        Utf8Entry e = utf8Entries.get(value);
         if (e == null) {
             e = new Utf8Entry(value);
             utf8Entries.put(e.stringValue(), e);
@@ -62,9 +54,10 @@ class ConstantPool implements Constants {
     }
     /** Factory for Class constants. */
     public static synchronized ClassEntry getClassEntry(String name) {
-        ClassEntry e = (ClassEntry) classEntries.get(name);
+        Map<String, ClassEntry> classEntries = Utils.getClassEntries();
+        ClassEntry e = classEntries.get(name);
         if (e == null) {
-            e = (ClassEntry) new ClassEntry(getUtf8Entry(name));
+            e = new ClassEntry(getUtf8Entry(name));
             assert(name.equals(e.stringValue()));
             classEntries.put(e.stringValue(), e);
         }
@@ -72,7 +65,8 @@ class ConstantPool implements Constants {
     }
     /** Factory for literal constants (String, Integer, etc.). */
     public static synchronized LiteralEntry getLiteralEntry(Comparable value) {
-        LiteralEntry e = (LiteralEntry) literalEntries.get(value);
+        Map<Object, LiteralEntry> literalEntries = Utils.getLiteralEntries();
+        LiteralEntry e = literalEntries.get(value);
         if (e == null) {
             if (value instanceof String)
                 e = new StringEntry(getUtf8Entry((String)value));
@@ -89,7 +83,8 @@ class ConstantPool implements Constants {
 
     /** Factory for signature (type) constants. */
     public static synchronized SignatureEntry getSignatureEntry(String type) {
-        SignatureEntry e = (SignatureEntry) signatureEntries.get(type);
+        Map<String, SignatureEntry> signatureEntries = Utils.getSignatureEntries();
+        SignatureEntry e = signatureEntries.get(type);
         if (e == null) {
             e = new SignatureEntry(type);
             assert(e.stringValue().equals(type));
@@ -104,8 +99,9 @@ class ConstantPool implements Constants {
 
     /** Factory for descriptor (name-and-type) constants. */
     public static synchronized DescriptorEntry getDescriptorEntry(Utf8Entry nameRef, SignatureEntry typeRef) {
+        Map<String, DescriptorEntry> descriptorEntries = Utils.getDescriptorEntries();
         String key = DescriptorEntry.stringValueOf(nameRef, typeRef);
-        DescriptorEntry e = (DescriptorEntry) descriptorEntries.get(key);
+        DescriptorEntry e = descriptorEntries.get(key);
         if (e == null) {
             e = new DescriptorEntry(nameRef, typeRef);
             assert(e.stringValue().equals(key))
@@ -121,8 +117,9 @@ class ConstantPool implements Constants {
 
     /** Factory for member reference constants. */
     public static synchronized MemberEntry getMemberEntry(byte tag, ClassEntry classRef, DescriptorEntry descRef) {
+        Map<String, MemberEntry> memberEntries = Utils.getMemberEntries();
         String key = MemberEntry.stringValueOf(tag, classRef, descRef);
-        MemberEntry e = (MemberEntry) memberEntries.get(key);
+        MemberEntry e = memberEntries.get(key);
         if (e == null) {
             e = new MemberEntry(tag, classRef, descRef);
             assert(e.stringValue().equals(key))
@@ -489,8 +486,9 @@ class ConstantPool implements Constants {
             String[] parts = structureSignature(value);
             formRef = getUtf8Entry(parts[0]);
             classRefs = new ClassEntry[parts.length-1];
-            for (int i = 1; i < parts.length; i++)
-                classRefs[i-1] = getClassEntry(parts[i]);
+            for (int i = 1; i < parts.length; i++) {
+                classRefs[i - 1] = getClassEntry(parts[i]);
+            }
             hashCode();  // force computation of valueHash
         }
         protected int computeValueHash() {
@@ -527,8 +525,9 @@ class ConstantPool implements Constants {
         String stringValueOf(Utf8Entry formRef, ClassEntry[] classRefs) {
             String[] parts = new String[1+classRefs.length];
             parts[0] = formRef.stringValue();
-            for (int i = 1; i < parts.length; i++)
-                parts[i] = classRefs[i-1].stringValue();
+            for (int i = 1; i < parts.length; i++) {
+                parts[i] = classRefs[i - 1].stringValue();
+            }
             return flattenSignature(parts).intern();
         }
 
@@ -543,19 +542,23 @@ class ConstantPool implements Constants {
             int size = 0;
             for (int i = min; i < max; i++) {
                 switch (form.charAt(i)) {
-                case 'D':
-                case 'J':
-                    if (countDoublesTwice) size++;
-                    break;
-                case '[':
-                    // Skip rest of array info.
-                    while (form.charAt(i) == '[') ++i;
-                    break;
-                case ';':
-                    continue;
-                default:
-                    assert(0 <= JAVA_SIGNATURE_CHARS.indexOf(form.charAt(i)));
-                    break;
+                    case 'D':
+                    case 'J':
+                        if (countDoublesTwice) {
+                            size++;
+                        }
+                        break;
+                    case '[':
+                        // Skip rest of array info.
+                        while (form.charAt(i) == '[') {
+                            ++i;
+                        }
+                        break;
+                    case ';':
+                        continue;
+                    default:
+                        assert (0 <= JAVA_SIGNATURE_CHARS.indexOf(form.charAt(i)));
+                        break;
                 }
                 size++;
             }
@@ -586,8 +589,9 @@ class ConstantPool implements Constants {
                 s = "/" + formRef.stringValue();
             }
             int i;
-            while ((i = s.indexOf(';')) >= 0)
-                s = s.substring(0,i) + s.substring(i+1);
+            while ((i = s.indexOf(';')) >= 0) {
+                s = s.substring(0, i) + s.substring(i + 1);
+            }
             return s;
         }
     }
@@ -732,11 +736,11 @@ class ConstantPool implements Constants {
             clearIndex();
             this.cpMap = cpMap;
         }
-        protected Index(String debugName, Collection cpMapList) {
+        protected Index(String debugName, Collection<Entry> cpMapList) {
             this(debugName);
             setMap(cpMapList);
         }
-        protected void setMap(Collection cpMapList) {
+        protected void setMap(Collection<Entry> cpMapList) {
             cpMap = new Entry[cpMapList.size()];
             cpMapList.toArray(cpMap);
             setMap(cpMap);
@@ -756,11 +760,13 @@ class ConstantPool implements Constants {
         //
         // As a special hack, if flattenSigs, signatures are
         // treated as equivalent entries of cpMap.  This is wrong
-        // fron a Collection point of view, because contains()
+        // from a Collection point of view, because contains()
         // reports true for signatures, but the iterator()
         // never produces them!
         private int findIndexOf(Entry e) {
-            if (indexKey == null)  initializeIndex();
+            if (indexKey == null) {
+                initializeIndex();
+            }
             int probe = findIndexLocation(e);
             if (indexKey[probe] != e) {
                 if (flattenSigs && e.tag == CONSTANT_Signature) {
@@ -832,7 +838,9 @@ class ConstantPool implements Constants {
                 System.out.println("initialize Index "+debugName+" ["+size()+"]");
             int hsize0 = (int)((cpMap.length + 10) * 1.5);
             int hsize = 1;
-            while (hsize < hsize0)  hsize <<= 1;
+            while (hsize < hsize0) {
+                hsize <<= 1;
+            }
             indexKey   = new Entry[hsize];
             indexValue = new int[hsize];
             for (int i = 0; i < cpMap.length; i++) {
@@ -855,7 +863,7 @@ class ConstantPool implements Constants {
             return toArray(new Entry[size()]);
         }
         public Object clone() {
-            return new Index(debugName, (Entry[]) cpMap.clone());
+            return new Index(debugName, cpMap.clone());
         }
         public String toString() {
             return "Index "+debugName+" ["+size()+"]";
@@ -901,22 +909,24 @@ class ConstantPool implements Constants {
     public static
     Index[] partition(Index ix, int[] keys) {
         // %%% Should move this into class Index.
-        ArrayList parts = new ArrayList();
+        ArrayList<List<Entry>> parts = new ArrayList<>();
         Entry[] cpMap = ix.cpMap;
         assert(keys.length == cpMap.length);
         for (int i = 0; i < keys.length; i++) {
             int key = keys[i];
             if (key < 0)  continue;
-            while (key >= parts.size())  parts.add(null);
-            ArrayList part = (ArrayList) parts.get(key);
+            while (key >= parts.size()) {
+                parts.add(null);
+            }
+            List<Entry> part = parts.get(key);
             if (part == null) {
-                parts.set(key, part = new ArrayList());
+                parts.set(key, part = new ArrayList<>());
             }
             part.add(cpMap[i]);
         }
         Index[] indexes = new Index[parts.size()];
         for (int key = 0; key < indexes.length; key++) {
-            ArrayList part = (ArrayList) parts.get(key);
+            List<Entry> part = parts.get(key);
             if (part == null)  continue;
             indexes[key] = new Index(ix.debugName+"/part#"+key, part);
             assert(indexes[key].indexOf(part.get(0)) == 0);
@@ -1048,9 +1058,10 @@ class ConstantPool implements Constants {
                     whichClasses[i] = whichClass;
                 }
                 perClassIndexes = partition(allMembers, whichClasses);
-                for (int i = 0; i < perClassIndexes.length; i++)
-                    assert(perClassIndexes[i]==null
-                            || perClassIndexes[i].assertIsSorted());
+                for (int i = 0; i < perClassIndexes.length; i++) {
+                    assert (perClassIndexes[i] == null ||
+                            perClassIndexes[i].assertIsSorted());
+                }
                 indexByTagAndClass[tag] = perClassIndexes;
             }
             int whichClass = allClasses.indexOf(classRef);
@@ -1113,7 +1124,7 @@ class ConstantPool implements Constants {
      *  Also, discard null from cpRefs.
      */
     public static
-    void completeReferencesIn(Set cpRefs, boolean flattenSigs) {
+    void completeReferencesIn(Set<Entry> cpRefs, boolean flattenSigs) {
         cpRefs.remove(null);
         for (ListIterator work =
                  new ArrayList(cpRefs).listIterator(cpRefs.size());

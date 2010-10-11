@@ -33,8 +33,8 @@ import com.sun.tools.javac.util.*;
 
 /** The classfile version target.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -257,6 +257,14 @@ public enum Target {
      */
     public boolean hasInvokedynamic() {
         return compareTo(JDK1_7) >= 0;
+    }
+
+    /** Does the VM support polymorphic method handle invocation?
+     *  Affects the linkage information output to the classfile.
+     *  An alias for {@code hasInvokedynamic}, since all the JSR 292 features appear together.
+     */
+    public boolean hasMethodHandles() {
+        return hasInvokedynamic();
     }
 
     /** Although we may not have support for class literals, should we

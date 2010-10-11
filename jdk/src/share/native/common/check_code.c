@@ -2730,7 +2730,10 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                                                                 operand);
             const char *result_signature;
             check_and_push(context, signature, VM_STRING_UTF);
-            result_signature = strchr(signature, JVM_SIGNATURE_ENDFUNC) + 1;
+            result_signature = strchr(signature, JVM_SIGNATURE_ENDFUNC);
+            if (result_signature++ == NULL) {
+                CCerror(context, "Illegal signature %s", signature);
+            }
             if (result_signature[0] == JVM_SIGNATURE_VOID) {
                 stack_results = "";
             } else {
@@ -2937,7 +2940,7 @@ merge_into_successors(context_type *context, unsigned int inumber,
     if (verify_verbose) {
         jio_fprintf(stdout, " [");
         for (i = handler_info_length; --i >= 0; handler_info++)
-            if (handler_info->start <= inumber && handler_info->end > inumber)
+            if (handler_info->start <= (int)inumber && handler_info->end > (int)inumber)
                 jio_fprintf(stdout, "%d* ", handler_info->handler);
         for (i = 0; i < successors_count; i++)
             jio_fprintf(stdout, "%d ", successors[i]);
@@ -3008,7 +3011,8 @@ merge_into_one_successor(context_type *context,
     instruction_data_type *this_idata = &idata[to_inumber];
     register_info_type old_reg_info;
     stack_info_type old_stack_info;
-    flag_type old_and_flags, old_or_flags;
+    flag_type old_and_flags = 0;
+    flag_type old_or_flags = 0;
 #endif
 
 #ifdef DEBUG
@@ -3654,14 +3658,13 @@ signature_to_fieldtype(context_type *context,
                        const char **signature_p, fullinfo_type *full_info_p)
 {
     const char *p = *signature_p;
-    fullinfo_type full_info = MAKE_FULLINFO(0, 0, 0);
+    fullinfo_type full_info = MAKE_FULLINFO(ITEM_Bogus, 0, 0);
     char result;
     int array_depth = 0;
 
     for (;;) {
         switch(*p++) {
             default:
-                full_info = MAKE_FULLINFO(ITEM_Bogus, 0, 0);
                 result = 0;
                 break;
 
@@ -3714,7 +3717,14 @@ signature_to_fieldtype(context_type *context,
                 char buffer_space[256];
                 char *buffer = buffer_space;
                 char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
-                int length = finish - p;
+                int length;
+                if (finish == NULL) {
+                    /* Signature must have ';' after the class name.
+                     * If it does not, return 0 and ITEM_Bogus in full_info. */
+                    result = 0;
+                    break;
+                }
+                length = finish - p;
                 if (length + 1 > (int)sizeof(buffer_space)) {
                     buffer = malloc(length + 1);
                     check_and_push(context, buffer, VM_MALLOC_BLK);

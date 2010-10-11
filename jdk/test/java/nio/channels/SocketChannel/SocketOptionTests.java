@@ -70,6 +70,15 @@ public class SocketOptionTests {
         checkOption(sc, SO_KEEPALIVE, false);
         sc.setOption(SO_SNDBUF, 128*1024);      // can't check
         sc.setOption(SO_RCVBUF, 256*1024);      // can't check
+        int before, after;
+        before = sc.getOption(SO_SNDBUF);
+        after = sc.setOption(SO_SNDBUF, Integer.MAX_VALUE).getOption(SO_SNDBUF);
+        if (after < before)
+            throw new RuntimeException("setOption caused SO_SNDBUF to decrease");
+        before = sc.getOption(SO_RCVBUF);
+        after = sc.setOption(SO_RCVBUF, Integer.MAX_VALUE).getOption(SO_RCVBUF);
+        if (after < before)
+            throw new RuntimeException("setOption caused SO_RCVBUF to decrease");
         sc.setOption(SO_REUSEADDR, true);
         checkOption(sc, SO_REUSEADDR, true);
         sc.setOption(SO_REUSEADDR, false);

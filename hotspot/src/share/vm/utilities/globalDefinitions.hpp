@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,6 +345,35 @@ inline intptr_t align_object_offset(intptr_t offset) {
   return align_size_up(offset, HeapWordsPerLong);
 }
 
+// The expected size in bytes of a cache line, used to pad data structures.
+#define DEFAULT_CACHE_LINE_SIZE 64
+
+// Bytes needed to pad type to avoid cache-line sharing; alignment should be the
+// expected cache line size (a power of two).  The first addend avoids sharing
+// when the start address is not a multiple of alignment; the second maintains
+// alignment of starting addresses that happen to be a multiple.
+#define PADDING_SIZE(type, alignment)                           \
+  ((alignment) + align_size_up_(sizeof(type), alignment))
+
+// Templates to create a subclass padded to avoid cache line sharing.  These are
+// effective only when applied to derived-most (leaf) classes.
+
+// When no args are passed to the base ctor.
+template <class T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class Padded: public T {
+private:
+  char _pad_buf_[PADDING_SIZE(T, alignment)];
+};
+
+// When either 0 or 1 args may be passed to the base ctor.
+template <class T, typename Arg1T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class Padded01: public T {
+public:
+  Padded01(): T() { }
+  Padded01(Arg1T arg1): T(arg1) { }
+private:
+  char _pad_buf_[PADDING_SIZE(T, alignment)];
+};
 
 //----------------------------------------------------------------------------------------------------
 // Utility macros for compilers
@@ -500,7 +529,7 @@ extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used
 #ifdef ASSERT
 extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
 #else
-inline int type2aelembytes(BasicType t) { return _type2aelembytes[t]; }
+inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
 #endif
 
 
@@ -681,24 +710,41 @@ enum MethodCompilation {
 
 // Enumeration to distinguish tiers of compilation
 enum CompLevel {
-  CompLevel_none              = 0,
-  CompLevel_fast_compile      = 1,
-  CompLevel_full_optimization = 2,
+  CompLevel_any               = -1,
+  CompLevel_all               = -1,
+  CompLevel_none              = 0,         // Interpreter
+  CompLevel_simple            = 1,         // C1
+  CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
+  CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
+  CompLevel_full_optimization = 4,         // C2
 
-  CompLevel_highest_tier      = CompLevel_full_optimization,
-#ifdef TIERED
-  CompLevel_initial_compile   = CompLevel_fast_compile
+#if defined(COMPILER2)
+  CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered
+#elif defined(COMPILER1)
+  CompLevel_highest_tier      = CompLevel_simple,             // pure C1
 #else
-  CompLevel_initial_compile   = CompLevel_full_optimization
-#endif // TIERED
+  CompLevel_highest_tier      = CompLevel_none,
+#endif
+
+#if defined(TIERED)
+  CompLevel_initial_compile   = CompLevel_full_profile        // tiered
+#elif defined(COMPILER1)
+  CompLevel_initial_compile   = CompLevel_simple              // pure C1
+#elif defined(COMPILER2)
+  CompLevel_initial_compile   = CompLevel_full_optimization   // pure C2
+#else
+  CompLevel_initial_compile   = CompLevel_none
+#endif
 };
 
-inline bool is_tier1_compile(int comp_level) {
-  return comp_level == CompLevel_fast_compile;
+inline bool is_c1_compile(int comp_level) {
+  return comp_level > CompLevel_none && comp_level < CompLevel_full_optimization;
 }
-inline bool is_tier2_compile(int comp_level) {
+
+inline bool is_c2_compile(int comp_level) {
   return comp_level == CompLevel_full_optimization;
 }
+
 inline bool is_highest_tier_compile(int comp_level) {
   return comp_level == CompLevel_highest_tier;
 }
@@ -988,22 +1034,22 @@ inline intx byte_size(void* from, void* to) {
 
 // This routine takes eight bytes:
 inline u8 build_u8_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  return  ( u8(c1) << 56 )  &  ( u8(0xff) << 56 )
-       |  ( u8(c2) << 48 )  &  ( u8(0xff) << 48 )
-       |  ( u8(c3) << 40 )  &  ( u8(0xff) << 40 )
-       |  ( u8(c4) << 32 )  &  ( u8(0xff) << 32 )
-       |  ( u8(c5) << 24 )  &  ( u8(0xff) << 24 )
-       |  ( u8(c6) << 16 )  &  ( u8(0xff) << 16 )
-       |  ( u8(c7) <<  8 )  &  ( u8(0xff) <<  8 )
-       |  ( u8(c8) <<  0 )  &  ( u8(0xff) <<  0 );
+  return  (( u8(c1) << 56 )  &  ( u8(0xff) << 56 ))
+       |  (( u8(c2) << 48 )  &  ( u8(0xff) << 48 ))
+       |  (( u8(c3) << 40 )  &  ( u8(0xff) << 40 ))
+       |  (( u8(c4) << 32 )  &  ( u8(0xff) << 32 ))
+       |  (( u8(c5) << 24 )  &  ( u8(0xff) << 24 ))
+       |  (( u8(c6) << 16 )  &  ( u8(0xff) << 16 ))
+       |  (( u8(c7) <<  8 )  &  ( u8(0xff) <<  8 ))
+       |  (( u8(c8) <<  0 )  &  ( u8(0xff) <<  0 ));
 }
 
 // This routine takes four bytes:
 inline u4 build_u4_from( u1 c1, u1 c2, u1 c3, u1 c4 ) {
-  return  ( u4(c1) << 24 )  &  0xff000000
-       |  ( u4(c2) << 16 )  &  0x00ff0000
-       |  ( u4(c3) <<  8 )  &  0x0000ff00
-       |  ( u4(c4) <<  0 )  &  0x000000ff;
+  return  (( u4(c1) << 24 )  &  0xff000000)
+       |  (( u4(c2) << 16 )  &  0x00ff0000)
+       |  (( u4(c3) <<  8 )  &  0x0000ff00)
+       |  (( u4(c4) <<  0 )  &  0x000000ff);
 }
 
 // And this one works if the four bytes are contiguous in memory:
@@ -1013,8 +1059,8 @@ inline u4 build_u4_from( u1* p ) {
 
 // Ditto for two-byte ints:
 inline u2 build_u2_from( u1 c1, u1 c2 ) {
-  return  u2(( u2(c1) <<  8 )  &  0xff00
-          |  ( u2(c2) <<  0 )  &  0x00ff);
+  return  u2((( u2(c1) <<  8 )  &  0xff00)
+          |  (( u2(c2) <<  0 )  &  0x00ff));
 }
 
 // And this one works if the two bytes are contiguous in memory:
@@ -1037,14 +1083,14 @@ inline jfloat build_float_from( u1* p ) {
 // now (64-bit) longs
 
 inline jlong build_long_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  return  ( jlong(c1) << 56 )  &  ( jlong(0xff) << 56 )
-       |  ( jlong(c2) << 48 )  &  ( jlong(0xff) << 48 )
-       |  ( jlong(c3) << 40 )  &  ( jlong(0xff) << 40 )
-       |  ( jlong(c4) << 32 )  &  ( jlong(0xff) << 32 )
-       |  ( jlong(c5) << 24 )  &  ( jlong(0xff) << 24 )
-       |  ( jlong(c6) << 16 )  &  ( jlong(0xff) << 16 )
-       |  ( jlong(c7) <<  8 )  &  ( jlong(0xff) <<  8 )
-       |  ( jlong(c8) <<  0 )  &  ( jlong(0xff) <<  0 );
+  return  (( jlong(c1) << 56 )  &  ( jlong(0xff) << 56 ))
+       |  (( jlong(c2) << 48 )  &  ( jlong(0xff) << 48 ))
+       |  (( jlong(c3) << 40 )  &  ( jlong(0xff) << 40 ))
+       |  (( jlong(c4) << 32 )  &  ( jlong(0xff) << 32 ))
+       |  (( jlong(c5) << 24 )  &  ( jlong(0xff) << 24 ))
+       |  (( jlong(c6) << 16 )  &  ( jlong(0xff) << 16 ))
+       |  (( jlong(c7) <<  8 )  &  ( jlong(0xff) <<  8 ))
+       |  (( jlong(c8) <<  0 )  &  ( jlong(0xff) <<  0 ));
 }
 
 inline jlong build_long_from( u1* p ) {

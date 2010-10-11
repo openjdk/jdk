@@ -113,8 +113,7 @@ void MethodHandles::generate_adapters() {
   _adapter_code = MethodHandlesAdapterBlob::create(_adapter_code_size);
   if (_adapter_code == NULL)
     vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
-  CodeBuffer code(_adapter_code->instructions_begin(), _adapter_code->instructions_size());
-
+  CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
 }
@@ -2475,6 +2474,10 @@ JVM_END
 
 JVM_ENTRY(void, MHI_registerBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh, jobject bsm_jh)) {
   instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
+  if (!AllowTransitionalJSR292) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "registerBootstrapMethod is only supported in JSR 292 EDR");
+  }
   ik->link_class(CHECK);
   if (!java_dyn_MethodHandle::is_instance(JNIHandles::resolve(bsm_jh))) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "method handle");

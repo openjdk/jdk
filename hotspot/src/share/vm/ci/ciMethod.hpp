@@ -48,7 +48,6 @@ class ciMethod : public ciObject {
   ciInstanceKlass* _holder;
   ciSignature*     _signature;
   ciMethodData*    _method_data;
-  BCEscapeAnalyzer* _bcea;
   ciMethodBlocks*   _method_blocks;
 
   // Code attributes.
@@ -62,7 +61,8 @@ class ciMethod : public ciObject {
 
   bool _uses_monitors;
   bool _balanced_monitors;
-  bool _is_compilable;
+  bool _is_c1_compilable;
+  bool _is_c2_compilable;
   bool _can_be_statically_bound;
 
   // Lazy fields, filled in on demand
@@ -71,8 +71,9 @@ class ciMethod : public ciObject {
 
   // Optional liveness analyzer.
   MethodLiveness* _liveness;
-#ifdef COMPILER2
-  ciTypeFlow*     _flow;
+#if defined(COMPILER2) || defined(SHARK)
+  ciTypeFlow*         _flow;
+  BCEscapeAnalyzer*   _bcea;
 #endif
 
   ciMethod(methodHandle h_m);
@@ -127,6 +128,8 @@ class ciMethod : public ciObject {
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
 
+  int comp_level();
+
   Bytecodes::Code java_code_at_bci(int bci) {
     address bcp = code() + bci;
     return Bytecodes::java_code_at(bcp);
@@ -141,6 +144,9 @@ class ciMethod : public ciObject {
 
   // Runtime information.
   int           vtable_index();
+#ifdef SHARK
+  int           itable_index();
+#endif // SHARK
   address       native_entry();
   address       interpreter_entry();
 
@@ -206,7 +212,7 @@ class ciMethod : public ciObject {
   bool can_be_osr_compiled(int entry_bci);
   void set_not_compilable();
   bool has_compiled_code();
-  int  instructions_size();
+  int  instructions_size(int comp_level = CompLevel_any);
   void log_nmethod_identity(xmlStream* log);
   bool is_not_reached(int bci);
   bool was_executed_more_than(int times);

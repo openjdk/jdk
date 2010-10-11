@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.sql.rowset.spi.*;
 
 import com.sun.rowset.*;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 /**
  * There will be two sets of data which will be maintained by the rowset at the
@@ -4837,4 +4838,23 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
                             throws SQLException {
           throw new UnsupportedOperationException("Operation not yet supported");
        }
+
+      /**
+       * This method re populates the resBundle
+       * during the deserialization process
+       *
+       */
+       private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+         // Default state initialization happens here
+         ois.defaultReadObject();
+         // Initialization of transient Res Bundle happens here .
+         try {
+            resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+         } catch(IOException ioe) {
+             throw new RuntimeException(ioe);
+         }
+
+       }
+
+       static final long serialVersionUID = -3345004441725080251L;
 } //end class

@@ -54,10 +54,9 @@ class PollSelectorImpl
      */
     PollSelectorImpl(SelectorProvider sp) {
         super(sp, 1, 1);
-        int[] fdes = new int[2];
-        IOUtil.initPipe(fdes, false);
-        fd0 = fdes[0];
-        fd1 = fdes[1];
+        long pipeFds = IOUtil.makePipe(false);
+        fd0 = (int) (pipeFds >>> 32);
+        fd1 = (int) pipeFds;
         pollWrapper = new PollArrayWrapper(INIT_CAP);
         pollWrapper.initInterrupt(fd0, fd1);
         channelArray = new SelectionKeyImpl[INIT_CAP];

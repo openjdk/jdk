@@ -110,6 +110,7 @@
 class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
   friend class constantPoolCacheKlass;
+  friend class constantPoolOopDesc;  //resolve_constant_at_impl => set_f1
 
  private:
   volatile intx     _indices;  // constant pool index & rewrite bytecodes
@@ -184,6 +185,10 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     methodHandle signature_invoker               // determines signature information
   );
 
+  // For JVM_CONSTANT_InvokeDynamic cache entries:
+  void initialize_bootstrap_method_index_in_cache(int bsm_cache_index);
+  int  bootstrap_method_index_in_cache();
+
   void set_parameter_size(int value) {
     assert(parameter_size() == 0 || parameter_size() == value,
            "size must not change");
@@ -206,6 +211,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
       case Bytecodes::_getfield        :    // fall through
       case Bytecodes::_invokespecial   :    // fall through
       case Bytecodes::_invokestatic    :    // fall through
+      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokeinterface : return 1;
       case Bytecodes::_putstatic       :    // fall through
       case Bytecodes::_putfield        :    // fall through
@@ -233,6 +239,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((_indices >> 16) & 0xFF); }
   Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((_indices >> 24) & 0xFF); }
   volatile oop  f1() const                       { return _f1; }
+  bool is_f1_null() const                        { return (oop)_f1 == NULL; }  // classifies a CPC entry as unbound
   intx f2() const                                { return _f2; }
   int  field_index() const;
   int  parameter_size() const                    { return _flags & 0xFF; }

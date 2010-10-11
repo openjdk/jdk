@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,15 +110,21 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
   }
   void linkNext(FreeChunk* ptr) { _next = ptr; }
   void linkPrev(FreeChunk* ptr) {
-     LP64_ONLY(if (UseCompressedOops) _prev = ptr; else)
-     _prev = (FreeChunk*)((intptr_t)ptr | 0x1);
+    LP64_ONLY(if (UseCompressedOops) _prev = ptr; else)
+    _prev = (FreeChunk*)((intptr_t)ptr | 0x1);
   }
   void clearPrev()              { _prev = NULL; }
   void clearNext()              { _next = NULL; }
   void markNotFree() {
-   LP64_ONLY(if (UseCompressedOops) set_mark(markOopDesc::prototype());)
-   // Also set _prev to null
-   _prev = NULL;
+    // Set _prev (klass) to null before (if) clearing the mark word below
+    _prev = NULL;
+#ifdef _LP64
+    if (UseCompressedOops) {
+      OrderAccess::storestore();
+      set_mark(markOopDesc::prototype());
+    }
+#endif
+    assert(!isFree(), "Error");
   }
 
   // Return the address past the end of this chunk

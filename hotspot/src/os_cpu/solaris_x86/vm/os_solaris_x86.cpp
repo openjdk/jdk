@@ -719,6 +719,11 @@ void os::print_context(outputStream *st, void *context) {
 
   ucontext_t *uc = (ucontext_t*)context;
   st->print_cr("Registers:");
+
+  // this is horrendously verbose but the layout of the registers in the
+  // context does not match how we defined our abstract Register set, so
+  // we can't just iterate through the gregs area
+
 #ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
   st->print(", RBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBX]);
@@ -742,6 +747,63 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "RIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RIP]);
   st->print(", RFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RFL]);
+
+  st->cr();
+  st->cr();
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+
+  st->print_cr("RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
+  st->cr();
+  st->print_cr("RBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBX]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
+  st->cr();
+  st->print_cr("RCX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RCX]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
+  st->cr();
+  st->print_cr("RDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDX]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
+  st->cr();
+  st->print_cr("RSP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSP]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
+  st->cr();
+  st->print_cr("RBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBP]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
+  st->cr();
+  st->print_cr("RSI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSI]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
+  st->cr();
+  st->print_cr("RDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDI]);
+  print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
+  st->cr();
+  st->print_cr("R8 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R8]);
+  st->cr();
+  st->print_cr("R9 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R9]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R9]);
+  st->cr();
+  st->print_cr("R10=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R10]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R10]);
+  st->cr();
+  st->print_cr("R11=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R11]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R11]);
+  st->cr();
+  st->print_cr("R12=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R12]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R12]);
+  st->cr();
+  st->print_cr("R13=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R13]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R13]);
+  st->cr();
+  st->print_cr("R14=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R14]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R14]);
+  st->cr();
+  st->print_cr("R15=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R15]);
+  print_location(st, uc->uc_mcontext.gregs[REG_R15]);
+
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EBX]);
@@ -755,6 +817,39 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "EIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EIP]);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EFL]);
+
+  st->cr();
+  st->cr();
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+
+  st->print_cr("EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EAX]);
+  print_location(st, uc->uc_mcontext.gregs[EAX]);
+  st->cr();
+  st->print_cr("EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EBX]);
+  print_location(st, uc->uc_mcontext.gregs[EBX]);
+  st->cr();
+  st->print_cr("ECX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[ECX]);
+  print_location(st, uc->uc_mcontext.gregs[ECX]);
+  st->cr();
+  st->print_cr("EDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EDX]);
+  print_location(st, uc->uc_mcontext.gregs[EDX]);
+  st->cr();
+  st->print_cr("ESP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[UESP]);
+  print_location(st, uc->uc_mcontext.gregs[UESP]);
+  st->cr();
+  st->print_cr("EBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EBP]);
+  print_location(st, uc->uc_mcontext.gregs[EBP]);
+  st->cr();
+  st->print_cr("ESI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[ESI]);
+  print_location(st, uc->uc_mcontext.gregs[ESI]);
+  st->cr();
+  st->print_cr("EDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EDI]);
+  print_location(st, uc->uc_mcontext.gregs[EDI]);
+
 #endif // AMD64
   st->cr();
   st->cr();
@@ -772,6 +867,7 @@ void os::print_context(outputStream *st, void *context) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
   print_hex_dump(st, pc - 16, pc + 16, sizeof(char));
 }
+
 
 #ifdef AMD64
 void os::Solaris::init_thread_fpu_state(void) {
@@ -861,7 +957,7 @@ cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap
 cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
 
-extern "C" _solaris_raw_setup_fpu(address ptr);
+extern "C" void _solaris_raw_setup_fpu(address ptr);
 void os::setup_fpu() {
   address fpu_cntrl = StubRoutines::addr_fpu_cntrl_wrd_std();
   _solaris_raw_setup_fpu(fpu_cntrl);

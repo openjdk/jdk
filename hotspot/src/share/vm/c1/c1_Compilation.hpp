@@ -69,6 +69,8 @@ class Compilation: public StackObj {
   bool               _has_exception_handlers;
   bool               _has_fpu_code;
   bool               _has_unsafe_access;
+  bool               _would_profile;
+  bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   const char*        _bailout_msg;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
@@ -142,10 +144,15 @@ class Compilation: public StackObj {
   void set_has_exception_handlers(bool f)        { _has_exception_handlers = f; }
   void set_has_fpu_code(bool f)                  { _has_fpu_code = f; }
   void set_has_unsafe_access(bool f)             { _has_unsafe_access = f; }
+  void set_would_profile(bool f)                 { _would_profile = f; }
   // Add a set of exception handlers covering the given PC offset
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
   void notice_inlined_method(ciMethod* method);
+
+  // JSR 292
+  bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
+  void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   DebugInformationRecorder* debug_info_recorder() const; // = _env->debug_info();
   Dependencies* dependency_recorder() const; // = _env->dependencies()
@@ -168,10 +175,19 @@ class Compilation: public StackObj {
   const char* bailout_msg() const                { return _bailout_msg; }
 
   static int desired_max_code_buffer_size() {
+#ifndef PPC
     return (int) NMethodSizeLimit;  // default 256K or 512K
+#else
+    // conditional branches on PPC are restricted to 16 bit signed
+    return MAX2((unsigned int)NMethodSizeLimit,32*K);
+#endif
   }
   static int desired_max_constant_size() {
+#ifndef PPC
     return (int) NMethodSizeLimit / 10;  // about 25K
+#else
+    return (MAX2((unsigned int)NMethodSizeLimit, 32*K)) / 10;
+#endif
   }
 
   static void setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
@@ -188,6 +204,30 @@ class Compilation: public StackObj {
   void compile_only_this_scope(outputStream* st, IRScope* scope);
   void exclude_this_method();
 #endif // PRODUCT
+
+  bool is_profiling() {
+    return env()->comp_level() == CompLevel_full_profile ||
+           env()->comp_level() == CompLevel_limited_profile;
+  }
+  bool count_invocations() { return is_profiling(); }
+  bool count_backedges()   { return is_profiling(); }
+
+  // Helpers for generation of profile information
+  bool profile_branches() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && C1ProfileBranches;
+  }
+  bool profile_calls() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && C1ProfileCalls;
+  }
+  bool profile_inlined_calls() {
+    return profile_calls() && C1ProfileInlinedCalls;
+  }
+  bool profile_checkcasts() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && C1ProfileCheckcasts;
+  }
 };
 
 

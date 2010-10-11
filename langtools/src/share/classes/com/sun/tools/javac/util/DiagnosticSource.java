@@ -40,8 +40,8 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  * A simple abstraction of a source file, as needed for use in a diagnostic message.
  * Provides access to the line and position in a line for any given character offset.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */

@@ -1714,6 +1714,9 @@ class MacroAssembler: public Assembler {
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
+
+  DEBUG_ONLY(void verify_heapbase(const char* msg);)
+
 #endif // _LP64
 
   // Int division/remainder for Java
@@ -2238,6 +2241,11 @@ public:
   void char_arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                           Register limit, Register result, Register chr,
                           XMMRegister vec1, XMMRegister vec2);
+
+  // Fill primitive arrays
+  void generate_fill(BasicType t, bool aligned,
+                     Register to, Register value, Register count,
+                     Register rtmp, XMMRegister xtmp);
 
 #undef VIRTUAL
 

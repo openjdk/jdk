@@ -108,10 +108,6 @@ int arrayKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
 }
 
 #ifndef SERIALGC
-void arrayKlassKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->blueprint()->oop_is_arrayKlass(),"must be an array klass");
-}
-
 void arrayKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->blueprint()->oop_is_arrayKlass(),"must be an array klass");
 }
@@ -151,15 +147,12 @@ arrayKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 // Printing
 
 void arrayKlassKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");
   klassKlass::oop_print_on(obj, st);
 }
-#endif //PRODUCT
 
 void arrayKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");

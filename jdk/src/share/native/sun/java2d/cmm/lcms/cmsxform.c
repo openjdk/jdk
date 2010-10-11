@@ -27,9 +27,10 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
+//---------------------------------------------------------------------------------
 //
-//  Little cms
-//  Copyright (C) 1998-2007 Marti Maria
+//  Little Color Management System
+//  Copyright (c) 1998-2010 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -48,1869 +49,436 @@
 // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//---------------------------------------------------------------------------------
+//
 
-
-#include "lcms.h"
-
+#include "lcms2_internal.h"
 
 // Transformations stuff
 // -----------------------------------------------------------------------
 
+// Alarm codes for 16-bit transformations, because the fixed range of containers there are
+// no values left to mark out of gamut. volatile is C99 per 6.2.5
+static volatile cmsUInt16Number Alarm[cmsMAXCHANNELS];
+static volatile cmsFloat64Number GlobalAdaptationState = 0;
 
-// Interface
-
-cmsHTRANSFORM LCMSEXPORT cmsCreateTransform(cmsHPROFILE Input,
-                                       DWORD InputFormat,
-                                       cmsHPROFILE Output,
-                                       DWORD OutputFormat,
-                                       int Intent,
-                                       DWORD dwFlags);
-
-cmsHTRANSFORM LCMSEXPORT cmsCreateProofingTransform(cmsHPROFILE Input,
-                                               DWORD InputFormat,
-                                               cmsHPROFILE Output,
-                                               DWORD OutputFormat,
-                                               cmsHPROFILE Proofing,
-                                               int Intent,
-                                               int ProofingIntent,
-                                               DWORD dwFlags);
-
-
-void         LCMSEXPORT cmsDeleteTransform(cmsHTRANSFORM hTransform);
-
-void         LCMSEXPORT cmsDoTransform(cmsHTRANSFORM Transform,
-                                  LPVOID InputBuffer,
-                                  LPVOID OutputBuffer, unsigned int Size);
-
-void         LCMSEXPORT cmsGetAlarmCodes(int *r, int *g, int *b);
-void         LCMSEXPORT cmsSetAlarmCodes(int r, int g, int b);
-LCMSBOOL     LCMSEXPORT cmsIsIntentSupported(cmsHPROFILE hProfile,
-                                                int Intent, int UsedDirection);
-
-// -------------------------------------------------------------------------
-
-
-// Alarm RGB codes
-
-static WORD AlarmR = 0x8fff, AlarmG = 0x8fff, AlarmB = 0x8fff;
-
-// Tag tables, soted by intents
-
-static icTagSignature Device2PCS[] = {icSigAToB0Tag,       // Perceptual
-                                      icSigAToB1Tag,       // Relative colorimetric
-                                      icSigAToB2Tag,       // Saturation
-                                      icSigAToB1Tag };     // Absolute colorimetric
-                                                           // (Relative/WhitePoint)
-
-static icTagSignature PCS2Device[] = {icSigBToA0Tag,       // Perceptual
-                                      icSigBToA1Tag,       // Relative colorimetric
-                                      icSigBToA2Tag,       // Saturation
-                                      icSigBToA1Tag };     // Absolute colorimetric
-                                                           // (Relative/WhitePoint)
-
-
-static icTagSignature Preview[]    = {icSigPreview0Tag,
-                                      icSigPreview1Tag,
-                                      icSigPreview2Tag,
-                                      icSigPreview1Tag };
-
-
-
-static volatile double GlobalAdaptationState = 0;
-
-// --------------------------------Stages--------------------------------------
-
-// Following routines does implement several kind of steps inside
-// transform. On building the transform, code chooses adequate.
-
-
-// From Shaper-Matrix to PCS
-
-static
-void ShaperMatrixToPCS(struct _cmstransform_struct *p,
-                     WORD In[3], WORD Out[3])
+// The adaptation state may be defaulted by this function. If you don't like it, use the extended transform routine
+cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsFloat64Number d)
 {
-       cmsEvalMatShaper(p -> InMatShaper, In, Out);
+    cmsFloat64Number OldVal = GlobalAdaptationState;
+
+    if (d >= 0)
+        GlobalAdaptationState = d;
+
+    return OldVal;
 }
 
-// From LUT to PCS
-
-static
-void LUTtoPCS(struct _cmstransform_struct *p,
-                     WORD In[], WORD Out[3])
+// Alarm codes are always global
+void CMSEXPORT cmsSetAlarmCodes(cmsUInt16Number NewAlarm[cmsMAXCHANNELS])
 {
-       cmsEvalLUT(p -> Device2PCS, In, Out);
+    int i;
+
+    _cmsAssert(NewAlarm != NULL);
+
+    for (i=0; i < cmsMAXCHANNELS; i++)
+        Alarm[i] = NewAlarm[i];
 }
 
-// From indexed named color to PCS
-
-static
-void NC2toPCS(struct _cmstransform_struct *p,
-                     WORD In[], WORD Out[3])
+// You can get the codes cas well
+void CMSEXPORT cmsGetAlarmCodes(cmsUInt16Number OldAlarm[cmsMAXCHANNELS])
 {
-    int index = In[0];
+    int i;
 
-    if (index >= p ->NamedColorList-> nColors)
-        cmsSignalError(LCMS_ERRC_WARNING, "Color %d out of range", index);
-    else
-        CopyMemory(Out, p ->NamedColorList->List[index].PCS, 3 * sizeof(WORD));
+    _cmsAssert(OldAlarm != NULL);
+
+    for (i=0; i < cmsMAXCHANNELS; i++)
+        OldAlarm[i] = Alarm[i];
 }
 
-// From PCS to Shaper-Matrix
-
-static
-void PCStoShaperMatrix(struct _cmstransform_struct *p,
-                     WORD In[3], WORD Out[3])
+// Get rid of transform resources
+void CMSEXPORT cmsDeleteTransform(cmsHTRANSFORM hTransform)
 {
-       cmsEvalMatShaper(p -> OutMatShaper, In, Out);
+    _cmsTRANSFORM* p = (_cmsTRANSFORM*) hTransform;
+
+    _cmsAssert(p != NULL);
+
+    if (p -> GamutCheck)
+        cmsPipelineFree(p -> GamutCheck);
+
+    if (p -> Lut)
+        cmsPipelineFree(p -> Lut);
+
+    if (p ->InputColorant)
+        cmsFreeNamedColorList(p ->InputColorant);
+
+    if (p -> OutputColorant)
+        cmsFreeNamedColorList(p ->OutputColorant);
+
+    if (p ->Sequence)
+        cmsFreeProfileSequenceDescription(p ->Sequence);
+
+    LCMS_FREE_LOCK(&p->rwlock);
+    _cmsFree(p ->ContextID, (void *) p);
 }
 
-// From PCS to LUT
+// Apply transform
+void CMSEXPORT cmsDoTransform(cmsHTRANSFORM  Transform,
+                              const void* InputBuffer,
+                              void* OutputBuffer,
+                              cmsUInt32Number Size)
 
-static
-void PCStoLUT(struct _cmstransform_struct *p,
-                     WORD In[3], WORD Out[])
 {
-       cmsEvalLUT(p -> PCS2Device, In, Out);
+    _cmsTRANSFORM* p = (_cmsTRANSFORM*) Transform;
+
+    p -> xform(p, InputBuffer, OutputBuffer, Size);
 }
 
 
+// Transform routines ----------------------------------------------------------------------------------------------------------
 
-
-// ----------------------- TRANSFORMATIONS --------------------------
-
-
-// Inlining some assignations
-
-#define COPY_3CHANS(to, from) { to[0]=from[0]; to[1]=from[1]; to[2]=from[2]; }
-
-
-// Null transformation, only hold channels
-
+// Float xform converts floats. Since there are no performance issues, one routine does all job, including gamut check.
+// Note that because extended range, we can use a -1.0 value for out of gamut in this case.
 static
-void NullXFORM(_LPcmsTRANSFORM p,
-                     LPVOID in,
-                     LPVOID out, unsigned int Size)
+void FloatXFORM(_cmsTRANSFORM* p,
+                const void* in,
+                void* out, cmsUInt32Number Size)
 {
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS];
-       register unsigned int i, n;
+    cmsUInt8Number* accum;
+    cmsUInt8Number* output;
+    cmsFloat32Number fIn[cmsMAXCHANNELS], fOut[cmsMAXCHANNELS];
+    cmsFloat32Number OutOfGamut;
+    cmsUInt32Number i, j;
 
+    accum  = (cmsUInt8Number*)  in;
+    output = (cmsUInt8Number*)  out;
 
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-       n = Size;                    // Buffer len
+    for (i=0; i < Size; i++) {
 
-       for (i=0; i < n; i++)
-       {
-       accum = p -> FromInput(p, wIn, accum);
-       output = p -> ToOutput(p, wIn, output);
-       }
+        accum = p -> FromInputFloat(p, fIn, accum, Size);
 
+        // Any gamut chack to do?
+        if (p ->GamutCheck != NULL) {
+
+            // Evaluate gamut marker.
+            cmsPipelineEvalFloat( fIn, &OutOfGamut, p ->GamutCheck);
+
+            // Is current color out of gamut?
+            if (OutOfGamut > 0.0) {
+
+                // Certainly, out of gamut
+                for (j=0; j < cmsMAXCHANNELS; j++)
+                    fOut[j] = -1.0;
+
+            }
+            else {
+                // No, proceed normally
+                cmsPipelineEvalFloat(fIn, fOut, p -> Lut);
+            }
+        }
+        else {
+
+            // No gamut check at all
+            cmsPipelineEvalFloat(fIn, fOut, p -> Lut);
+        }
+
+        // Back to asked representation
+        output = p -> ToOutputFloat(p, fOut, output, Size);
+    }
+}
+
+// 16 bit precision -----------------------------------------------------------------------------------------------------------
+
+// Null transformation, only applies formatters. No caché
+static
+void NullXFORM(_cmsTRANSFORM* p,
+               const void* in,
+               void* out, cmsUInt32Number Size)
+{
+    cmsUInt8Number* accum;
+    cmsUInt8Number* output;
+    cmsUInt16Number wIn[cmsMAXCHANNELS];
+    cmsUInt32Number i, n;
+
+    accum  = (cmsUInt8Number*)  in;
+    output = (cmsUInt8Number*)  out;
+    n = Size;                    // Buffer len
+
+    for (i=0; i < n; i++) {
+
+        accum  = p -> FromInput(p, wIn, accum, Size);
+        output = p -> ToOutput(p, wIn, output, Size);
+    }
 }
 
 
-// This is the "normal" proofing transform
-
+// No gamut check, no cache, 16 bits
 static
-void NormalXFORM(_LPcmsTRANSFORM p,
-                     LPVOID in,
-                     LPVOID out, unsigned int Size)
+void PrecalculatedXFORM(_cmsTRANSFORM* p,
+                        const void* in,
+                        void* out, cmsUInt32Number Size)
 {
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       WORD wStageABC[3], wPCS[3], wStageLMN[MAXCHANNELS];
-       WORD wGamut[1];
-       register unsigned int i, n;
+    register cmsUInt8Number* accum;
+    register cmsUInt8Number* output;
+    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
+    cmsUInt32Number i, n;
 
+    accum  = (cmsUInt8Number*)  in;
+    output = (cmsUInt8Number*)  out;
+    n = Size;
 
+    for (i=0; i < n; i++) {
 
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-       n = Size;                    // Buffer len
-
-       for (i=0; i < n; i++)
-       {
-
-       accum = p -> FromInput(p, wIn, accum);
-
-       p -> FromDevice(p, wIn, wStageABC);
-
-       if (p -> Stage1) {
-
-              p -> Stage1(wStageABC, wPCS, &p->m1, &p->of1);
-
-              if (wPCS[0] == 0xFFFF &&
-                  wPCS[1] == 0xFFFF &&
-                  wPCS[2] == 0xFFFF) {
-
-                     // White cutoff
-
-                     output = p -> ToOutput((_LPcmsTRANSFORM) p,
-                                   _cmsWhiteBySpace(cmsGetColorSpace(p -> OutputProfile)),
-                                   output);
-                     continue;
-                     }
-              }
-       else
-              COPY_3CHANS(wPCS, wStageABC);
-
-
-       if (p->Gamut) {
-
-       // Gamut check, enabled across CLUT
-
-       cmsEvalLUT(p -> Gamut, wPCS, wGamut);
-
-       if (wGamut[0] >= 1) {
-
-              wOut[0] = AlarmR;          // Gamut alarm
-              wOut[1] = AlarmG;
-              wOut[2] = AlarmB;
-              wOut[3] = 0;
-
-              output = p -> ToOutput((_LPcmsTRANSFORM)p, wOut, output);
-              continue;
-              }
-       }
-
-       if (p -> Preview)
-       {
-              WORD wPreview[3];    // PCS
-
-              cmsEvalLUT(p -> Preview, wPCS, wPreview);
-              COPY_3CHANS(wPCS, wPreview);
-       }
-
-       if (p -> Stage2) {
-
-              p -> Stage2(wPCS, wStageLMN, &p->m2, &p->of2);
-
-              if (wPCS[0] == 0xFFFF &&
-                  wPCS[1] == 0xFFFF &&
-                  wPCS[2] == 0xFFFF) {
-
-                     // White cutoff
-
-                     output = p -> ToOutput((_LPcmsTRANSFORM)p,
-                                   _cmsWhiteBySpace(cmsGetColorSpace(p -> OutputProfile)),
-                                   output);
-
-                     continue;
-                     }
-
-              }
-       else
-              COPY_3CHANS(wStageLMN, wPCS);
-
-       // Here wOut may come as MAXCHANNELS channels
-
-       p -> ToDevice(p, wStageLMN, wOut);
-
-       output = p -> ToOutput((_LPcmsTRANSFORM)p, wOut, output);
-       }
+        accum = p -> FromInput(p, wIn, accum, Size);
+        p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);
+        output = p -> ToOutput(p, wOut, output, Size);
+    }
 }
 
-// Using precalculated LUT
-
-static
-void PrecalculatedXFORM(_LPcmsTRANSFORM p,
-                     LPVOID in,
-                     LPVOID out, unsigned int Size)
-{
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       unsigned int i, n;
-
-
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-       n = Size;                    // Buffer len
-
-
-       for (i=0; i < n; i++) {
-
-         accum = p -> FromInput(p, wIn, accum);
-
-         // Try to speedup things on plain devicelinks
-
-         if (p ->DeviceLink ->wFlags == LUT_HAS3DGRID) {
-
-           p ->DeviceLink ->CLut16params.Interp3D(wIn, wOut,
-                                    p ->DeviceLink -> T,
-                                    &p ->DeviceLink -> CLut16params);
-         }
-         else
-            cmsEvalLUT(p -> DeviceLink, wIn, wOut);
-
-
-          output = p -> ToOutput(p, wOut, output);
-       }
-}
 
 // Auxiliar: Handle precalculated gamut check
-
 static
-void TransformOnePixelWithGamutCheck(_LPcmsTRANSFORM p, WORD wIn[], WORD wOut[])
+void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
+                                     const cmsUInt16Number wIn[],
+                                     cmsUInt16Number wOut[])
 {
-    WORD wOutOfGamut;
+    cmsUInt16Number wOutOfGamut;
 
-       cmsEvalLUT(p ->GamutCheck,  wIn, &wOutOfGamut);
+    p ->GamutCheck ->Eval16Fn(wIn, &wOutOfGamut, p ->GamutCheck ->Data);
+    if (wOutOfGamut >= 1) {
 
-       if (wOutOfGamut >= 1) {
+        cmsUInt16Number i;
 
-              ZeroMemory(wOut, sizeof(WORD) * MAXCHANNELS);
+        for (i=0; i < p ->Lut->OutputChannels; i++)
+            wOut[i] = Alarm[i];
+    }
+    else
+        p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);
+}
 
-              wOut[0] = AlarmR;
-              wOut[1] = AlarmG;
-              wOut[2] = AlarmB;
+// Gamut check, No caché, 16 bits.
+static
+void PrecalculatedXFORMGamutCheck(_cmsTRANSFORM* p,
+                                  const void* in,
+                                  void* out, cmsUInt32Number Size)
+{
+    cmsUInt8Number* accum;
+    cmsUInt8Number* output;
+    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
+    cmsUInt32Number i, n;
 
-       }
-       else
-            cmsEvalLUT(p -> DeviceLink, wIn, wOut);
+    accum  = (cmsUInt8Number*)  in;
+    output = (cmsUInt8Number*)  out;
+    n = Size;                    // Buffer len
 
+    for (i=0; i < n; i++) {
+
+        accum = p -> FromInput(p, wIn, accum, Size);
+        TransformOnePixelWithGamutCheck(p, wIn, wOut);
+        output = p -> ToOutput(p, wOut, output, Size);
+    }
 }
 
 
+// No gamut check, Caché, 16 bits,
 static
-void PrecalculatedXFORMGamutCheck(_LPcmsTRANSFORM p,
-                                  LPVOID in,
-                                  LPVOID out, unsigned int Size)
+void CachedXFORM(_cmsTRANSFORM* p,
+                 const void* in,
+                 void* out, cmsUInt32Number Size)
 {
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       register unsigned int i, n;
+    cmsUInt8Number* accum;
+    cmsUInt8Number* output;
+    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
+    cmsUInt32Number i, n;
+    cmsUInt16Number CacheIn[cmsMAXCHANNELS], CacheOut[cmsMAXCHANNELS];
+
+    accum  = (cmsUInt8Number*)  in;
+    output = (cmsUInt8Number*)  out;
+    n = Size;                    // Buffer len
+
+    // Empty buffers for quick memcmp
+    memset(wIn,  0, sizeof(wIn));
+    memset(wOut, 0, sizeof(wOut));
 
 
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-       n = Size;                    // Buffer len
+    LCMS_READ_LOCK(&p ->rwlock);
+    memmove(CacheIn,  p ->CacheIn, sizeof(CacheIn));
+    memmove(CacheOut, p ->CacheOut, sizeof(CacheOut));
+    LCMS_UNLOCK(&p ->rwlock);
 
-       for (i=0; i < n; i++) {
+    for (i=0; i < n; i++) {
 
-       accum = p -> FromInput(p, wIn, accum);
+        accum = p -> FromInput(p, wIn, accum, Size);
 
-       TransformOnePixelWithGamutCheck(p, wIn, wOut);
+        if (memcmp(wIn, CacheIn, sizeof(CacheIn)) == 0) {
 
-       output = p -> ToOutput(p, wOut, output);
-       }
+            memmove(wOut, CacheOut, sizeof(CacheOut));
+        }
+        else {
+
+            p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);
+
+            memmove(CacheIn,  wIn,  sizeof(CacheIn));
+            memmove(CacheOut, wOut, sizeof(CacheOut));
+        }
+
+        output = p -> ToOutput(p, wOut, output, Size);
+    }
+
+
+    LCMS_WRITE_LOCK(&p ->rwlock);
+    memmove(p->CacheIn,  CacheIn, sizeof(CacheIn));
+    memmove(p->CacheOut, CacheOut, sizeof(CacheOut));
+    LCMS_UNLOCK(&p ->rwlock);
 }
 
 
-
-// Using precalculated LUT + Cache
-
+// All those nice features together
 static
-void CachedXFORM(_LPcmsTRANSFORM p,
-                     LPVOID in,
-                     LPVOID out, unsigned int Size)
+void CachedXFORMGamutCheck(_cmsTRANSFORM* p,
+                           const void* in,
+                           void* out, cmsUInt32Number Size)
 {
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       register unsigned int i, n;
-       WORD CacheIn[MAXCHANNELS], CacheOut[MAXCHANNELS];
+       cmsUInt8Number* accum;
+       cmsUInt8Number* output;
+       cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
+       cmsUInt32Number i, n;
+       cmsUInt16Number CacheIn[cmsMAXCHANNELS], CacheOut[cmsMAXCHANNELS];
 
-
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-       n = Size;                    // Buffer len
-
-       // Empty buffers for quick memcmp
-
-       ZeroMemory(wIn,  sizeof(WORD) * MAXCHANNELS);
-       ZeroMemory(wOut, sizeof(WORD) * MAXCHANNELS);
-
-
-       LCMS_READ_LOCK(&p ->rwlock);
-           CopyMemory(CacheIn,  p ->CacheIn, sizeof(WORD) * MAXCHANNELS);
-           CopyMemory(CacheOut, p ->CacheOut, sizeof(WORD) * MAXCHANNELS);
-       LCMS_UNLOCK(&p ->rwlock);
-
-       for (i=0; i < n; i++) {
-
-       accum = p -> FromInput(p, wIn, accum);
-
-
-       if (memcmp(wIn, CacheIn, sizeof(WORD) * MAXCHANNELS) == 0) {
-
-            CopyMemory(wOut, CacheOut, sizeof(WORD) * MAXCHANNELS);
-       }
-       else {
-
-            // Try to speedup things on plain devicelinks
-
-             if (p ->DeviceLink ->wFlags == LUT_HAS3DGRID) {
-
-             p ->DeviceLink ->CLut16params.Interp3D(wIn, wOut,
-                                    p ->DeviceLink -> T,
-                                    &p ->DeviceLink -> CLut16params);
-             }
-             else
-                  cmsEvalLUT(p -> DeviceLink, wIn, wOut);
-
-
-            CopyMemory(CacheIn,  wIn,  sizeof(WORD) * MAXCHANNELS);
-            CopyMemory(CacheOut, wOut, sizeof(WORD) * MAXCHANNELS);
-       }
-
-       output = p -> ToOutput(p, wOut, output);
-       }
-
-
-       LCMS_WRITE_LOCK(&p ->rwlock);
-           CopyMemory(p->CacheIn,  CacheIn, sizeof(WORD) * MAXCHANNELS);
-           CopyMemory(p->CacheOut, CacheOut, sizeof(WORD) * MAXCHANNELS);
-       LCMS_UNLOCK(&p ->rwlock);
-
-}
-
-
-
-// Using precalculated LUT + Cache
-
-static
-void CachedXFORMGamutCheck(_LPcmsTRANSFORM p,
-                           LPVOID in,
-                           LPVOID out, unsigned int Size)
-{
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       register unsigned int i, n;
-       WORD CacheIn[MAXCHANNELS], CacheOut[MAXCHANNELS];
-
-
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
+       accum  = (cmsUInt8Number*)  in;
+       output = (cmsUInt8Number*)  out;
        n = Size;                    // Buffer len
 
        // Empty buffers for quick memcmp
-
-       ZeroMemory(wIn,  sizeof(WORD) * MAXCHANNELS);
-       ZeroMemory(wOut, sizeof(WORD) * MAXCHANNELS);
+       memset(wIn,  0, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+       memset(wOut, 0, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
 
        LCMS_READ_LOCK(&p ->rwlock);
-           CopyMemory(CacheIn,  p ->CacheIn, sizeof(WORD) * MAXCHANNELS);
-           CopyMemory(CacheOut, p ->CacheOut, sizeof(WORD) * MAXCHANNELS);
+           memmove(CacheIn,  p ->CacheIn, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+           memmove(CacheOut, p ->CacheOut, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
        LCMS_UNLOCK(&p ->rwlock);
 
 
        for (i=0; i < n; i++) {
 
-       accum = p -> FromInput(p, wIn, accum);
+            accum = p -> FromInput(p, wIn, accum, Size);
 
-       if (memcmp(wIn, CacheIn, sizeof(WORD) * MAXCHANNELS) == 0) {
+            if (memcmp(wIn, CacheIn, sizeof(cmsUInt16Number) * cmsMAXCHANNELS) == 0) {
+                    memmove(wOut, CacheOut, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+            }
+            else {
+                    TransformOnePixelWithGamutCheck(p, wIn, wOut);
+                    memmove(CacheIn, wIn, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+                    memmove(CacheOut, wOut, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+            }
 
-            CopyMemory(wOut, CacheOut, sizeof(WORD) * MAXCHANNELS);
-       }
-       else {
-
-            TransformOnePixelWithGamutCheck(p, wIn, wOut);
-
-            CopyMemory(CacheIn, wIn, sizeof(WORD) * MAXCHANNELS);
-            CopyMemory(CacheOut, wOut, sizeof(WORD) * MAXCHANNELS);
-       }
-
-       output = p -> ToOutput(p, wOut, output);
+            output = p -> ToOutput(p, wOut, output, Size);
        }
 
         LCMS_WRITE_LOCK(&p ->rwlock);
-           CopyMemory(p->CacheIn,  CacheIn, sizeof(WORD) * MAXCHANNELS);
-           CopyMemory(p->CacheOut, CacheOut, sizeof(WORD) * MAXCHANNELS);
+           memmove(p->CacheIn,  CacheIn, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+           memmove(p->CacheOut, CacheOut, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
         LCMS_UNLOCK(&p ->rwlock);
 }
 
 
-// Using smelted Matrix/Shaper
 
+
+// Allocate transform struct and set it to defaults
 static
-void MatrixShaperXFORM(_LPcmsTRANSFORM p,
-                     LPVOID in,
-                     LPVOID out, unsigned int Size)
-{
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       register unsigned int i, n;
-
-
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-       n = Size;                    // Buffer len
-
-       for (i=0; i < n; i++)
-       {
-       accum = p -> FromInput(p, wIn, accum);
-       cmsEvalMatShaper(p -> SmeltMatShaper, wIn, wOut);
-       output = p -> ToOutput(p, wOut, output);
-       }
-}
-
-
-// Using Named color input table
-
-static
-void NC2deviceXform(_LPcmsTRANSFORM p,
-                     LPVOID in,
-                     LPVOID out, unsigned int Size)
-{
-
-       register LPBYTE accum;
-       register LPBYTE output;
-       WORD wIn[MAXCHANNELS], wOut[MAXCHANNELS];
-       register unsigned int i;
-
-
-       accum  = (LPBYTE) in;
-       output = (LPBYTE) out;
-
-       for (i=0; i < Size; i++) {
-
-       accum = p -> FromInput(p, wIn, accum);
-       CopyMemory(wOut, p ->NamedColorList->List[wIn[0]].DeviceColorant, sizeof(WORD) * MAXCHANNELS);
-       output = p -> ToOutput(p, wOut, output);
-       }
-
-}
-
-
-
-// --------------------------------------------------------------------------
-// Build a LUT based on shape-matrix method.
-
-
-// Some non-conformant gray profiles are using kTCR as L*,
-// this function converts the curve to XYZ PCS.
-
-static
-void FromLstarToXYZ(LPGAMMATABLE g, LPGAMMATABLE gxyz[3])
-{
-    int i;
-    int nPoints = 4096;
-    cmsCIELab Lab;
-    cmsCIEXYZ XYZ;
-    L16PARAMS L16;
-
-    // Setup interpolation across origin
-    cmsCalcL16Params(g ->nEntries, &L16);
-
-    // Allocate curves
-    gxyz[0] = cmsAllocGamma(nPoints);
-    gxyz[1] = cmsAllocGamma(nPoints);
-    gxyz[2] = cmsAllocGamma(nPoints);
-
-    // Transport from Lab to XYZ
-
-    for (i=0; i < nPoints; i++) {
-
-        WORD val = _cmsQuantizeVal(i, nPoints);
-        WORD w   = cmsLinearInterpLUT16(val, g->GammaTable, &L16);
-
-        Lab.L = ((double) 100.0 * w ) / 65535.0;
-        Lab.a = Lab.b = 0;
-
-        cmsLab2XYZ(NULL, &XYZ, &Lab);
-
-        // Should be same curve
-        gxyz[0] ->GammaTable[i] = (WORD) floor((65535.0 * XYZ.X) / D50X + 0.5);
-        gxyz[1] ->GammaTable[i] = (WORD) floor((65535.0 * XYZ.Y) / D50Y + 0.5);
-        gxyz[2] ->GammaTable[i] = (WORD) floor((65535.0 * XYZ.Z) / D50Z + 0.5);
-    }
-}
-
-// Monochrome version
-
-static
-LPMATSHAPER cmsBuildGrayInputMatrixShaper(cmsHPROFILE hProfile)
-{
-       cmsCIEXYZ Illuminant;
-       LPGAMMATABLE GrayTRC, Shapes[3];
-       LPMATSHAPER MatShaper;
-       MAT3 Scale;
-
-       GrayTRC = cmsReadICCGamma(hProfile, icSigGrayTRCTag);        // Y
-       if (GrayTRC == NULL) return NULL;
-
-       cmsTakeIluminant(&Illuminant, hProfile);
-
-       if (cmsGetPCS(hProfile) == icSigLabData) {
-
-                // Fixup for Lab monochrome
-                FromLstarToXYZ(GrayTRC, Shapes);
-       }
-       else  {
-                Shapes[0] = cmsDupGamma(GrayTRC);
-                Shapes[1] = cmsDupGamma(GrayTRC);
-                Shapes[2] = cmsDupGamma(GrayTRC);
-       }
-
-       if (!Shapes[0] || !Shapes[1] || !Shapes[2])
-              return NULL;
-
-       cmsFreeGamma(GrayTRC);
-
-       // R=G=B as precondition
-
-       VEC3init(&Scale.v[0], Illuminant.X/3,  Illuminant.X/3,  Illuminant.X/3);
-       VEC3init(&Scale.v[1], Illuminant.Y/3,  Illuminant.Y/3,  Illuminant.Y/3);
-       VEC3init(&Scale.v[2], Illuminant.Z/3,  Illuminant.Z/3,  Illuminant.Z/3);
-
-
-       MatShaper = cmsAllocMatShaper(&Scale, Shapes, MATSHAPER_INPUT);
-       cmsFreeGammaTriple(Shapes);
-       return MatShaper;
-
-}
-
-
-// Monochrome as output
-
-static
-LPMATSHAPER cmsBuildGrayOutputMatrixShaper(cmsHPROFILE hProfile)
-{
-       cmsCIEXYZ Illuminant;
-       LPGAMMATABLE GrayTRC, Shapes[3];
-       LPMATSHAPER MatShaper;
-       MAT3 Scale;
-
-       cmsTakeIluminant(&Illuminant, hProfile);
-
-       // That is a special case for non-compliant profiles.
-
-       if (cmsGetPCS(hProfile) == icSigLabData) {
-
-                LPGAMMATABLE Shapes1[3];
-
-                GrayTRC = cmsReadICCGamma(hProfile, icSigGrayTRCTag);
-                if (!GrayTRC) {
-                    return NULL;
-                }
-                FromLstarToXYZ(GrayTRC, Shapes1);
-
-                // Reversing must be done after curve translation
-
-                Shapes[0] = cmsReverseGamma(Shapes1[0]->nEntries, Shapes1[0]);
-                Shapes[1] = cmsReverseGamma(Shapes1[1]->nEntries, Shapes1[1]);
-                Shapes[2] = cmsReverseGamma(Shapes1[2]->nEntries, Shapes1[2]);
-
-                cmsFreeGammaTriple(Shapes1);
-
-       }
-       else  {
-
-                // Normal case
-
-                GrayTRC = cmsReadICCGammaReversed(hProfile, icSigGrayTRCTag);   // Y
-                if (!GrayTRC) {
-                    return NULL;
-                }
-
-                Shapes[0] = cmsDupGamma(GrayTRC);
-                Shapes[1] = cmsDupGamma(GrayTRC);
-                Shapes[2] = cmsDupGamma(GrayTRC);
-       }
-
-       if (!Shapes[0] || !Shapes[1] || !Shapes[2])
-              return NULL;
-
-       cmsFreeGamma(GrayTRC);
-
-       VEC3init(&Scale.v[0], 0,  1.0/Illuminant.Y,  0);
-       VEC3init(&Scale.v[1], 0,  1.0/Illuminant.Y,  0);
-       VEC3init(&Scale.v[2], 0,  1.0/Illuminant.Y,  0);
-
-
-       MatShaper = cmsAllocMatShaper(&Scale, Shapes, MATSHAPER_OUTPUT);
-       cmsFreeGammaTriple(Shapes);
-       return MatShaper;
-
-}
-
-
-
-// Input matrix, only in XYZ
-
-LPMATSHAPER cmsBuildInputMatrixShaper(cmsHPROFILE InputProfile)
-{
-       MAT3 DoubleMat;
-       LPGAMMATABLE Shapes[3];
-       LPMATSHAPER InMatSh;
-
-       // Check if this is a grayscale profile. If so, build
-       // appropiate conversion tables. The tables are the PCS
-       // iluminant, scaled across GrayTRC
-
-       if (cmsGetColorSpace(InputProfile) == icSigGrayData)
-       {
-              return cmsBuildGrayInputMatrixShaper(InputProfile);
-       }
-
-       if (!cmsReadICCMatrixRGB2XYZ(&DoubleMat, InputProfile))
-                     return NULL;
-
-       Shapes[0] = cmsReadICCGamma(InputProfile, icSigRedTRCTag);
-       Shapes[1] = cmsReadICCGamma(InputProfile, icSigGreenTRCTag);
-       Shapes[2] = cmsReadICCGamma(InputProfile, icSigBlueTRCTag);
-
-       if (!Shapes[0] || !Shapes[1] || !Shapes[2])
-                     return NULL;
-
-       InMatSh = cmsAllocMatShaper(&DoubleMat, Shapes, MATSHAPER_INPUT);
-
-       cmsFreeGammaTriple(Shapes);
-
-       return InMatSh;
-}
-
-
-// Output style matrix-shaper
-
-
-LPMATSHAPER cmsBuildOutputMatrixShaper(cmsHPROFILE OutputProfile)
-{
-       MAT3 DoubleMat, DoubleInv;
-       LPGAMMATABLE InverseShapes[3];
-       LPMATSHAPER OutMatSh;
-
-
-
-       if (cmsGetColorSpace(OutputProfile) == icSigGrayData)
-       {
-              return cmsBuildGrayOutputMatrixShaper(OutputProfile);
-       }
-
-
-       if (!cmsReadICCMatrixRGB2XYZ(&DoubleMat, OutputProfile))
-                     return NULL;
-
-       if (MAT3inverse(&DoubleMat, &DoubleInv) < 0)
-              return NULL;
-
-
-       InverseShapes[0] = cmsReadICCGammaReversed(OutputProfile, icSigRedTRCTag);
-       InverseShapes[1] = cmsReadICCGammaReversed(OutputProfile, icSigGreenTRCTag);
-       InverseShapes[2] = cmsReadICCGammaReversed(OutputProfile, icSigBlueTRCTag);
-
-       if (InverseShapes[0] == NULL ||
-           InverseShapes[1] == NULL ||
-           InverseShapes[2] == NULL) return NULL;
-
-       OutMatSh = cmsAllocMatShaper(&DoubleInv, InverseShapes, MATSHAPER_OUTPUT);
-
-       cmsFreeGammaTriple(InverseShapes);
-
-       return OutMatSh;
-}
-
-
-
-// This function builds a transform matrix chaining parameters
-
-static
-LCMSBOOL cmsBuildSmeltMatShaper(_LPcmsTRANSFORM p)
-{
-       MAT3 From, To, ToInv, Transfer;
-       LPGAMMATABLE In[3], InverseOut[3];
-
-
-       if (!cmsReadICCMatrixRGB2XYZ(&From, p -> InputProfile))
-                     return FALSE;
-
-
-       if (!cmsReadICCMatrixRGB2XYZ(&To, p -> OutputProfile))
-                     return FALSE;
-
-       // invert dest
-
-       if (MAT3inverse(&To, &ToInv) < 0)
-                        return FALSE;
-
-       // Multiply
-        MAT3per(&Transfer, &ToInv, &From);
-
-
-        // Read gamma curves
-
-        In[0] = cmsReadICCGamma(p -> InputProfile, icSigRedTRCTag);
-        In[1] = cmsReadICCGamma(p -> InputProfile, icSigGreenTRCTag);
-        In[2] = cmsReadICCGamma(p -> InputProfile, icSigBlueTRCTag);
-
-        if (!In[0] || !In[1] || !In[2])
-                     return FALSE;
-
-
-        InverseOut[0] = cmsReadICCGammaReversed(p -> OutputProfile, icSigRedTRCTag);
-        InverseOut[1] = cmsReadICCGammaReversed(p -> OutputProfile, icSigGreenTRCTag);
-        InverseOut[2] = cmsReadICCGammaReversed(p -> OutputProfile, icSigBlueTRCTag);
-
-        if (!InverseOut[0] || !InverseOut[1] || !InverseOut[2]) {
-                     cmsFreeGammaTriple(In);
-                     return FALSE;
-        }
-
-        p -> SmeltMatShaper = cmsAllocMatShaper2(&Transfer, In, InverseOut, MATSHAPER_ALLSMELTED);
-
-        cmsFreeGammaTriple(In);
-        cmsFreeGammaTriple(InverseOut);
-
-        return (p -> SmeltMatShaper != NULL);
-}
-
-
-
-
-// Conversion between PCS ------------------------------------------
-
-// Identifies intent archieved by LUT
-
-static
-int GetPhase(cmsHPROFILE hProfile)
-{
-       switch (cmsGetPCS(hProfile)) {
-
-       case icSigXYZData: return XYZRel;
-
-       case icSigLabData: return LabRel;
-
-       default:  cmsSignalError(LCMS_ERRC_ABORTED, "Invalid PCS");
-       }
-
-       return XYZRel;
-}
-
-
-
-
-static
-void TakeConversionRoutines(_LPcmsTRANSFORM p, int DoBPC)
-{
-       cmsCIEXYZ BlackPointIn, WhitePointIn, IlluminantIn;
-       cmsCIEXYZ BlackPointOut, WhitePointOut, IlluminantOut;
-       cmsCIEXYZ BlackPointProof, WhitePointProof, IlluminantProof;
-       MAT3 ChromaticAdaptationMatrixIn, ChromaticAdaptationMatrixOut;
-       MAT3 ChromaticAdaptationMatrixProof;
-
-
-       cmsTakeIluminant(&IlluminantIn,        p -> InputProfile);
-       cmsTakeMediaWhitePoint(&WhitePointIn,  p -> InputProfile);
-       cmsTakeMediaBlackPoint(&BlackPointIn,  p -> InputProfile);
-       cmsReadChromaticAdaptationMatrix(&ChromaticAdaptationMatrixIn, p -> InputProfile);
-
-       cmsTakeIluminant(&IlluminantOut,        p -> OutputProfile);
-       cmsTakeMediaWhitePoint(&WhitePointOut,  p -> OutputProfile);
-       cmsTakeMediaBlackPoint(&BlackPointOut,  p -> OutputProfile);
-       cmsReadChromaticAdaptationMatrix(&ChromaticAdaptationMatrixOut, p -> OutputProfile);
-
-
-       if (p -> Preview == NULL && p ->Gamut == NULL)     // Non-proofing
-       {
-            if (p ->Intent == INTENT_PERCEPTUAL ||
-                p ->Intent == INTENT_SATURATION) {
-
-
-                    // For v4 profiles, Perceptual PCS has a reference black point
-                    // which v2 profiles should scale to.
-
-                    if ((cmsGetProfileICCversion(p ->InputProfile) >= 0x4000000) ||
-                        (cmsGetProfileICCversion(p ->OutputProfile) >= 0x4000000)) {
-
-                           DoBPC = TRUE;
-                    }
-            }
-
-            // Black point compensation does not apply to absolute intent
-
-            if (p ->Intent == INTENT_ABSOLUTE_COLORIMETRIC)
-                            DoBPC = FALSE;
-
-            // Black point compensation does not apply to devicelink profiles
-
-            if (cmsGetDeviceClass(p ->InputProfile) == icSigLinkClass)
-                            DoBPC = FALSE;
-
-            if (cmsGetDeviceClass(p ->OutputProfile) == icSigLinkClass)
-                            DoBPC = FALSE;
-
-            if (DoBPC) {
-
-                // Detect Black points
-
-                cmsDetectBlackPoint(&BlackPointIn,    p->InputProfile,   p->Intent, 0);
-                cmsDetectBlackPoint(&BlackPointOut,   p->OutputProfile,  p->Intent, 0);
-
-                // If equal black points, then do nothing. This often applies to BP=0
-
-                if (BlackPointIn.X == BlackPointOut.X &&
-                    BlackPointIn.Y == BlackPointOut.Y &&
-                    BlackPointIn.Z == BlackPointOut.Z)
-                                DoBPC = FALSE;
-
-
-            }
-
-            cmsChooseCnvrt(p -> Intent == INTENT_ABSOLUTE_COLORIMETRIC,
-
-                 p -> Phase1,
-                             &BlackPointIn,
-                             &WhitePointIn,
-                             &IlluminantIn,
-                             &ChromaticAdaptationMatrixIn,
-
-                 p -> Phase3,
-                             &BlackPointOut,
-                             &WhitePointOut,
-                             &IlluminantOut,
-                             &ChromaticAdaptationMatrixOut,
-
-                 DoBPC,
-                 p ->AdaptationState,
-                 &p->Stage1,
-                 &p->m1, &p->of1);
-
-       }
-       else // Proofing
-       {
-
-
-       cmsTakeIluminant(&IlluminantProof,        p -> PreviewProfile);
-       cmsTakeMediaWhitePoint(&WhitePointProof,  p -> PreviewProfile);
-       cmsTakeMediaBlackPoint(&BlackPointProof,  p -> PreviewProfile);
-       cmsReadChromaticAdaptationMatrix(&ChromaticAdaptationMatrixProof, p -> PreviewProfile);
-
-       if (DoBPC) {
-
-            cmsDetectBlackPoint(&BlackPointProof, p->PreviewProfile, p->Intent, 0);
-            cmsDetectBlackPoint(&BlackPointIn,    p->InputProfile,   p->Intent, 0);
-            cmsDetectBlackPoint(&BlackPointOut,   p->OutputProfile,  p->Intent, 0);
-
-            // Reality check
-
-            if (BlackPointIn.X == BlackPointProof.X &&
-                BlackPointIn.Y == BlackPointProof.Y &&
-                BlackPointIn.Z == BlackPointProof.Z)
-                                DoBPC = FALSE;
-
-
-       }
-
-
-
-       cmsChooseCnvrt(p -> Intent == INTENT_ABSOLUTE_COLORIMETRIC,
-
-                 p -> Phase1,
-                             &BlackPointIn,
-                             &WhitePointIn,
-                             &IlluminantIn,
-                             &ChromaticAdaptationMatrixIn,
-
-                 p -> Phase2,
-                             &BlackPointProof,
-                             &WhitePointProof,
-                             &IlluminantProof,
-                             &ChromaticAdaptationMatrixProof,
-                 DoBPC,
-                 p ->AdaptationState,
-                 &p->Stage1,
-                 &p->m1, &p->of1);
-
-       cmsChooseCnvrt(p -> ProofIntent == INTENT_ABSOLUTE_COLORIMETRIC,
-
-                 p -> Phase2,
-                             &BlackPointProof,
-                             &WhitePointProof,
-                             &IlluminantProof,
-                             &ChromaticAdaptationMatrixProof,
-
-                 p -> Phase3,
-                             &BlackPointOut,
-                             &WhitePointOut,
-                             &IlluminantOut,
-                             &ChromaticAdaptationMatrixOut,
-                 0,
-                 0.0,
-                 &p->Stage2,
-                 &p->m2, &p->of2);
-       }
-
-}
-
-
-// Check colorspace
-
-static
-LCMSBOOL IsProperColorSpace(cmsHPROFILE hProfile, DWORD dwFormat, LCMSBOOL lUsePCS)
-{
-       int Space = T_COLORSPACE(dwFormat);
-
-       if (Space == PT_ANY) return TRUE;
-
-       if (lUsePCS)
-           return (Space == _cmsLCMScolorSpace(cmsGetPCS(hProfile)));
-       else
-           return (Space == _cmsLCMScolorSpace(cmsGetColorSpace(hProfile)));
-}
-
-
-// Auxiliary: allocate transform struct and set to defaults
-
-static
-_LPcmsTRANSFORM AllocEmptyTransform(void)
+_cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsUInt32Number InputFormat, cmsUInt32Number OutputFormat, cmsUInt32Number dwFlags)
 {
     // Allocate needed memory
+    _cmsTRANSFORM* p = (_cmsTRANSFORM*) _cmsMallocZero(ContextID, sizeof(_cmsTRANSFORM));
+    if (!p) return NULL;
 
-    _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) _cmsMalloc(sizeof(_cmsTRANSFORM));
-    if (!p) {
+    // Check whatever this is a true floating point transform
+    if (_cmsFormatterIsFloat(InputFormat) && _cmsFormatterIsFloat(OutputFormat)) {
 
-          cmsSignalError(LCMS_ERRC_ABORTED, "cmsCreateTransform: _cmsMalloc() failed");
-          return NULL;
-    }
+        // Get formatter function always return a valid union, but the contents of this union may be NULL.
+        p ->FromInputFloat = _cmsGetFormatter(InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+        p ->ToOutputFloat  = _cmsGetFormatter(OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
 
-    ZeroMemory(p, sizeof(_cmsTRANSFORM));
+        if (p ->FromInputFloat == NULL || p ->ToOutputFloat == NULL) {
 
-    // Initialize default methods
-
-    p -> xform          = NULL;
-    p -> Intent         = INTENT_PERCEPTUAL;
-    p -> ProofIntent    = INTENT_ABSOLUTE_COLORIMETRIC;
-    p -> DoGamutCheck   = FALSE;
-    p -> InputProfile   = NULL;
-    p -> OutputProfile  = NULL;
-    p -> PreviewProfile = NULL;
-    p -> Preview        = NULL;
-    p -> Gamut          = NULL;
-    p -> DeviceLink     = NULL;
-    p -> InMatShaper    = NULL;
-    p -> OutMatShaper   = NULL;
-    p -> SmeltMatShaper = NULL;
-    p -> NamedColorList = NULL;
-    p -> EntryColorSpace = (icColorSpaceSignature) 0;
-    p -> ExitColorSpace  = (icColorSpaceSignature) 0;
-    p -> AdaptationState = GlobalAdaptationState;
-
-    LCMS_CREATE_LOCK(&p->rwlock);
-
-    return p;
-}
-
-
-// Identify whatever a transform is to be cached
-
-static
-void SetPrecalculatedTransform(_LPcmsTRANSFORM p)
-{
-    if ((p->dwOriginalFlags & cmsFLAGS_GAMUTCHECK) && p ->GamutCheck != NULL) {
-
-        p -> xform = PrecalculatedXFORMGamutCheck;
-
-        if (!(p->dwOriginalFlags & cmsFLAGS_NOTCACHE)) {
-
-            ZeroMemory(p ->CacheIn, sizeof(WORD) * MAXCHANNELS);
-            TransformOnePixelWithGamutCheck(p, p->CacheIn, p ->CacheOut);
-            p ->xform = CachedXFORMGamutCheck;
+            cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported raster format");
+            _cmsFree(ContextID, p);
+            return NULL;
         }
 
+        // Float transforms don't use caché, always are non-NULL
+        p ->xform = FloatXFORM;
     }
     else {
 
-        p -> xform = PrecalculatedXFORM;
+        p ->FromInput = _cmsGetFormatter(InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
+        p ->ToOutput  = _cmsGetFormatter(OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
 
-        if (!(p->dwOriginalFlags & cmsFLAGS_NOTCACHE)) {
+        if (p ->FromInput == NULL || p ->ToOutput == NULL) {
 
-            ZeroMemory(p ->CacheIn, sizeof(WORD) * MAXCHANNELS);
-            cmsEvalLUT(p ->DeviceLink, p->CacheIn, p ->CacheOut);
-            p ->xform = CachedXFORM;
-        }
-    }
-}
-
-
-// Transform is identified as device-link
-static
-cmsHPROFILE CreateDeviceLinkTransform(_LPcmsTRANSFORM p)
-{
-
-    if (!IsProperColorSpace(p->InputProfile, p->InputFormat, FALSE)) {
-        cmsSignalError(LCMS_ERRC_ABORTED, "Device link is operating on wrong colorspace on input");
-        return NULL;
-    }
-
-    if (!IsProperColorSpace(p->InputProfile, p->OutputFormat, TRUE)) {
-        cmsSignalError(LCMS_ERRC_ABORTED, "Device link is operating on wrong colorspace on output");
-        return NULL;
-    }
-
-    // Device link does only have AToB0Tag (ICC-Spec 1998/09)
-
-    p->DeviceLink = cmsReadICCLut(p->InputProfile, icSigAToB0Tag);
-
-    if (!p->DeviceLink) {
-
-         cmsSignalError(LCMS_ERRC_ABORTED, "Noncompliant device-link profile");
-         cmsDeleteTransform((cmsHTRANSFORM) p);
-         return NULL;
-         }
-
-    if (p ->PreviewProfile != NULL) {
-            cmsSignalError(LCMS_ERRC_WARNING, "Proofing not supported on device link transforms");
-    }
-
-    if (p ->OutputProfile != NULL) {
-            cmsSignalError(LCMS_ERRC_WARNING, "Output profile should be NULL, since this is a device-link transform");
-    }
-
-    p -> Phase1 = -1;
-    p -> Phase2 = -1;
-    p -> Phase3 = -1;
-
-    SetPrecalculatedTransform(p);
-
-    p -> EntryColorSpace = cmsGetColorSpace(p -> InputProfile);
-    p -> ExitColorSpace  = cmsGetPCS(p -> InputProfile);
-
-    if (p ->EntryColorSpace == icSigRgbData ||
-        p ->EntryColorSpace == icSigCmyData) {
-
-                    p->DeviceLink -> CLut16params.Interp3D = cmsTetrahedralInterp16;
-    }
-
-    // Precalculated device-link profile is ready
-    return (cmsHTRANSFORM) p;
-}
-
-
-// Transform that includes proofing
-static
-void CreateProof(_LPcmsTRANSFORM p, icTagSignature *ToTagPtr)
-
-{
-    icTagSignature ProofTag;
-
-    if (p -> dwOriginalFlags & cmsFLAGS_SOFTPROOFING) {
-
-      // Apr-15, 2002 - Too much profiles does have bogus content
-      // on preview tag, so I do compute it by my own.
-
-      p -> Preview = _cmsComputeSoftProofLUT(p ->PreviewProfile, p ->Intent);
-      p -> Phase2  = LabRel;
-
-      // That's a proofing transfor, so use second intent for output.
-
-      *ToTagPtr  = PCS2Device[p->ProofIntent];
-
-      if (p -> Preview == NULL) {
-
-        ProofTag = Preview[p -> Intent];
-
-        if (!cmsIsTag(p ->PreviewProfile,  ProofTag)) {
-
-            ProofTag = Preview[0];
-            if (!cmsIsTag(p ->PreviewProfile,  ProofTag))
-                            ProofTag = (icTagSignature)0;
+            cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported raster format");
+            _cmsFree(ContextID, p);
+            return NULL;
         }
 
-        if (ProofTag) {
+        if (dwFlags & cmsFLAGS_NULLTRANSFORM) {
 
-             p -> Preview = cmsReadICCLut(p ->PreviewProfile, ProofTag);
-             p -> Phase2 = GetPhase(p ->PreviewProfile);
-
-        }
-        else
-             {
-             p -> Preview = NULL;
-             p ->PreviewProfile = NULL;
-             cmsSignalError(LCMS_ERRC_WARNING, "Sorry, the proof profile has not previewing capabilities");
-             }
-      }
-
-    }
-
-
-    // Aug-31, 2001 - Too much profiles does have bogus content
-    // on gamut tag, so I do compute it by my own.
-
-    if ((p -> dwOriginalFlags & cmsFLAGS_GAMUTCHECK) && (p -> dwOriginalFlags & cmsFLAGS_NOTPRECALC)) {
-
-
-             p -> Gamut = _cmsComputeGamutLUT(p->PreviewProfile, p ->Intent);
-             p -> Phase2  = LabRel;
-
-             if (p -> Gamut == NULL) {
-
-                // Profile goes only in one direction... try to see
-                // if profile has the tag, and use it, no matter it
-                // could be bogus. This is the last chance!
-
-                if (cmsIsTag(p ->PreviewProfile, icSigGamutTag)) {
-
-                    p -> Gamut = cmsReadICCLut(p ->PreviewProfile, icSigGamutTag);
-
-                    }
-                    else   {
-
-                     // Nope, cannot be done.
-
-                     cmsSignalError(LCMS_ERRC_WARNING, "Sorry, the proof profile has not gamut checking capabilities");
-                     p -> Gamut = NULL;
-                    }
-             }
-
-      }
-
-}
-
-// Choose the adequate transform routine
-
-static
-_LPcmsTRANSFORM PickTransformRoutine(_LPcmsTRANSFORM p,
-                                    icTagSignature *FromTagPtr,
-                                    icTagSignature *ToTagPtr)
-{
-
-
-
-
-        // Is a named color profile?
-        if (cmsGetDeviceClass(p->InputProfile) == icSigNamedColorClass) {
-
-                  // Yes, and used as input
-                  p ->FromDevice = NC2toPCS;
+            p ->xform = NullXFORM;
         }
         else {
-                // Can we optimize matrix-shaper only transform?
+            if (dwFlags & cmsFLAGS_NOCACHE) {
 
-                   if ((*FromTagPtr == 0) &&
-                       (*ToTagPtr == 0) &&
-                       (!p->PreviewProfile) &&
-                       (p -> Intent != INTENT_ABSOLUTE_COLORIMETRIC) &&
-                       (p -> EntryColorSpace == icSigRgbData) &&
-                       (p -> ExitColorSpace == icSigRgbData)  &&
-                       !(p -> dwOriginalFlags & cmsFLAGS_BLACKPOINTCOMPENSATION)) {
-
-                          // Yes... try to smelt matrix-shapers
-                          p -> xform = MatrixShaperXFORM;
-                          p -> dwOriginalFlags |= cmsFLAGS_NOTPRECALC;
-
-                          if (!cmsBuildSmeltMatShaper(p))
-                          {
-                                 cmsSignalError(LCMS_ERRC_ABORTED, "unable to smelt shaper-matrix, required tags missing");
-                                 return NULL;
-                          }
-
-                          p -> Phase1 = p -> Phase3 = XYZRel;
-                          return p;
-
-                }
-
-                // No, is a transform involving LUT
-
-                if (*FromTagPtr != 0) {
-
-                     p -> FromDevice = LUTtoPCS;
-                     p -> Device2PCS = cmsReadICCLut(p -> InputProfile, *FromTagPtr);
-                     if (!p -> Device2PCS) {
-
-                            cmsSignalError(LCMS_ERRC_ABORTED, "profile is unsuitable for input");
-                            return NULL;
-                            }
-
-              }
-              else
-              {
-                     p -> FromDevice = ShaperMatrixToPCS;
-                     p -> InMatShaper = cmsBuildInputMatrixShaper(p -> InputProfile);
-
-                     if (!p ->InMatShaper) {
-                            cmsSignalError(LCMS_ERRC_ABORTED, "profile is unsuitable for input");
-                            return NULL;
-                            }
-
-                     p -> Phase1 = XYZRel;
-
-              }
-              }
-
-              if (*ToTagPtr != 0) {
-
-                     p -> ToDevice = PCStoLUT;
-                     p -> PCS2Device = cmsReadICCLut(p -> OutputProfile, *ToTagPtr);
-                     if (!p -> PCS2Device) {
-                            cmsSignalError(LCMS_ERRC_ABORTED, "profile is unsuitable for output");
-                            return NULL;
-                            }
-
-                     }
-              else
-              {
-                     p -> ToDevice = PCStoShaperMatrix;
-                     p -> OutMatShaper = cmsBuildOutputMatrixShaper(p->OutputProfile);
-
-                     if (!p -> OutMatShaper) {
-                            cmsSignalError(LCMS_ERRC_ABORTED, "profile is unsuitable for output");
-                            return NULL;
-                            }
-                     p -> Phase3 = XYZRel;
-
-              }
-
-
-       return p;
-}
-
-
-
-
-// Create a transform.
-
-cmsHTRANSFORM LCMSEXPORT cmsCreateProofingTransform(cmsHPROFILE InputProfile,
-                                               DWORD InputFormat,
-                                               cmsHPROFILE OutputProfile,
-                                               DWORD OutputFormat,
-                                               cmsHPROFILE ProofingProfile,
-                                               int nIntent,
-                                               int ProofingIntent,
-                                               DWORD dwFlags)
-
-{
-       _LPcmsTRANSFORM p;
-       icTagSignature FromTag;
-       icTagSignature ToTag;
-
-       if (nIntent < 0 || nIntent > 3 ||
-           ProofingIntent < 0 || ProofingIntent > 3) {
-
-            cmsSignalError(LCMS_ERRC_ABORTED, "cmsCreateTransform: intent mismatch");
-            return NULL;
-       }
-
-       p = AllocEmptyTransform();
-       if (p == NULL) return NULL;
-
-       p -> xform           = NormalXFORM;
-       p -> Intent          = nIntent;
-       p -> ProofIntent     = ProofingIntent;
-       p -> DoGamutCheck    = FALSE;
-       p -> InputProfile    = InputProfile;
-       p -> OutputProfile   = OutputProfile;
-       p -> PreviewProfile  = ProofingProfile;
-       p -> InputFormat     = InputFormat;
-       p -> OutputFormat    = OutputFormat;
-       p -> dwOriginalFlags = dwFlags;
-
-       p -> lInputV4Lab     = p ->lOutputV4Lab = FALSE;
-
-
-       p -> FromInput = _cmsIdentifyInputFormat(p, InputFormat);
-       p -> ToOutput  = _cmsIdentifyOutputFormat(p, OutputFormat);
-
-       // Null transform can be done without profiles
-       if ((p->dwOriginalFlags & cmsFLAGS_NULLTRANSFORM) ||
-                        ((InputProfile == NULL) &&
-                         (OutputProfile == NULL))) {
-
-            p -> xform = NullXFORM;
-            return (cmsHTRANSFORM) p;
-       }
-
-       // From here we need at least one input profile
-       if (InputProfile == NULL) {
-
-          cmsSignalError(LCMS_ERRC_ABORTED, "Input profile cannot be NULL!");
-          cmsDeleteTransform((cmsHTRANSFORM) p);
-          return NULL;
-       }
-
-
-       //  Device link are means to store precalculated transform grids.
-       if (cmsGetDeviceClass(InputProfile) == icSigLinkClass) {
-
-            return CreateDeviceLinkTransform(p);
-       }
-
-       if (!IsProperColorSpace(InputProfile, InputFormat, FALSE)) {
-
-              cmsSignalError(LCMS_ERRC_ABORTED, "Input profile is operating on wrong colorspace");
-              cmsDeleteTransform((cmsHTRANSFORM) p);
-              return NULL;
-       }
-
-       p ->EntryColorSpace = cmsGetColorSpace(InputProfile);
-
-       // Oct-21-2002: Added named color transforms
-       if (cmsGetDeviceClass(InputProfile) == icSigNamedColorClass) {
-
-        if (p ->NamedColorList == NULL)
-                p ->NamedColorList = cmsAllocNamedColorList(0);
-
-        cmsReadICCnamedColorList(p, InputProfile, icSigNamedColor2Tag);
-
-        // Special case. If output profile == NULL, then the transform gives
-        // device values from named colors.
-
-        if (OutputProfile == NULL) {
-
-            p ->ExitColorSpace = p -> EntryColorSpace;
-            p ->xform = NC2deviceXform;
-            return (cmsHTRANSFORM) p;
-        }
-
-        // Named color doesn't precalc anything
-        p -> dwOriginalFlags |= cmsFLAGS_NOTPRECALC;
-       }
-
-
-       // From here we need also output profile.
-      if (OutputProfile == NULL) {
-          cmsSignalError(LCMS_ERRC_ABORTED, "Output profile cannot be NULL!");
-          cmsDeleteTransform((cmsHTRANSFORM) p);
-          return NULL;
-       }
-
-
-       if (!IsProperColorSpace(OutputProfile, OutputFormat, FALSE)) {
-              cmsSignalError(LCMS_ERRC_ABORTED, "Output profile is operating on wrong colorspace");
-              cmsDeleteTransform((cmsHTRANSFORM) p);
-              return NULL;
-       }
-
-       p -> ExitColorSpace = cmsGetColorSpace(OutputProfile);
-
-       // Named color only on input
-       if (cmsGetDeviceClass(OutputProfile) == icSigNamedColorClass) {
-
-           cmsSignalError(LCMS_ERRC_ABORTED, "Named color profiles are not supported as output");
-           cmsDeleteTransform((cmsHTRANSFORM) p);
-           return NULL;
-       }
-
-       p -> Phase1 = GetPhase(InputProfile);
-       p -> Phase2 = -1;
-       p -> Phase3 = GetPhase(OutputProfile);
-
-       // Try to locate a LUT
-
-       FromTag  = Device2PCS[nIntent];
-       ToTag    = PCS2Device[nIntent];
-
-       if (!cmsIsTag(InputProfile, FromTag)) {
-
-              FromTag = Device2PCS[0];
-
-              if (!cmsIsTag(InputProfile,  FromTag)) {
-                            FromTag = (icTagSignature)0;
-              }
-       }
-
-       // If proofing is needed, add required tags/parameters
-       if (ProofingProfile)
-           CreateProof(p, &ToTag);
-
-
-       if (!cmsIsTag(OutputProfile,  ToTag)) {
-
-           ToTag = PCS2Device[0];
-
-           // 12-Dec-2003, Abstract profiles can be placed as output and still using AToB0
-           if (cmsGetDeviceClass(OutputProfile) == icSigAbstractClass) {
-
-                    if (!cmsIsTag(OutputProfile,  ToTag)) {
-                                ToTag = (icTagSignature) icSigAToB0Tag;
-                    }
-           }
-
-           if (!cmsIsTag(OutputProfile,  ToTag))
-                            ToTag = (icTagSignature)0;
-       }
-
-
-       if (p-> dwOriginalFlags & cmsFLAGS_MATRIXINPUT)
-              FromTag = (icTagSignature)0;
-
-       if (p -> dwOriginalFlags & cmsFLAGS_MATRIXOUTPUT)
-              ToTag = (icTagSignature)0;
-
-
-
-       if (PickTransformRoutine(p, &FromTag, &ToTag) == NULL) {
-
-          cmsDeleteTransform((cmsHTRANSFORM) p);
-          return NULL;
-
-       }
-
-       TakeConversionRoutines(p, dwFlags & cmsFLAGS_BLACKPOINTCOMPENSATION);
-
-       if (!(p -> dwOriginalFlags & cmsFLAGS_NOTPRECALC)) {
-
-               LPLUT DeviceLink;
-               LPLUT GamutCheck = NULL;
-
-
-               if (p ->EntryColorSpace == icSigCmykData &&
-                   p ->ExitColorSpace == icSigCmykData &&
-                   (dwFlags & cmsFLAGS_PRESERVEBLACK)) {
-
-                    DeviceLink = _cmsPrecalculateBlackPreservingDeviceLink((cmsHTRANSFORM) p, dwFlags);
-
-                    // Cannot be done at all?
-                    if (DeviceLink == NULL)
-                            DeviceLink = _cmsPrecalculateDeviceLink((cmsHTRANSFORM) p, dwFlags);
-
-               }
-               else {
-
-                    DeviceLink = _cmsPrecalculateDeviceLink((cmsHTRANSFORM) p, dwFlags);
-               }
-
-               // Allow to specify cmsFLAGS_GAMUTCHECK, even if no proofing profile is given
-               if ((p ->PreviewProfile != NULL) && (p -> dwOriginalFlags & cmsFLAGS_GAMUTCHECK)) {
-
-                   GamutCheck = _cmsPrecalculateGamutCheck((cmsHTRANSFORM) p);
-               }
-
-               // If input colorspace is Rgb, Cmy, then use tetrahedral interpolation
-               // for speed reasons (it only works well on spaces on Luma is diagonal, and
-               // not if luma is in separate channel)
-               if (p ->EntryColorSpace == icSigRgbData ||
-                   p ->EntryColorSpace == icSigCmyData) {
-
-
-                    cmsCalcCLUT16ParamsEx(DeviceLink->CLut16params.nSamples,
-                                          DeviceLink->CLut16params.nInputs,
-                                          DeviceLink->CLut16params.nOutputs,
-                                          TRUE, &DeviceLink->CLut16params);
-
-               }
-
-               // If this is a 8-bit transform, optimize LUT further.
-
-                if ((T_BYTES(InputFormat) == 1) && (T_CHANNELS(InputFormat) == 3)) {
-
-                    DeviceLink = _cmsBlessLUT8(DeviceLink);
-                    if (DeviceLink == NULL) return NULL;
-
-                }
-
-
-                p ->GamutCheck = GamutCheck;
-
-                if (DeviceLink) {
-
-                    p ->DeviceLink = DeviceLink;
-
-                    if ((nIntent != INTENT_ABSOLUTE_COLORIMETRIC) &&
-                        !(p -> dwOriginalFlags & cmsFLAGS_NOWHITEONWHITEFIXUP))
-
-                            _cmsFixWhiteMisalignment(p);
-
-                }
+                if (dwFlags & cmsFLAGS_GAMUTCHECK)
+                    p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no caché
                 else
-                {
+                    p ->xform = PrecalculatedXFORM;  // No caché, no gamut check
+            }
+            else {
 
-                     cmsSignalError(LCMS_ERRC_ABORTED,
-                                "Cannot precalculate %d->%d channels transform!",
-                                T_CHANNELS(InputFormat), T_CHANNELS(OutputFormat));
+                if (dwFlags & cmsFLAGS_GAMUTCHECK)
+                    p ->xform = CachedXFORMGamutCheck;    // Gamut check, caché
+                else
+                    p ->xform = CachedXFORM;  // No gamut check, caché
 
-                     cmsDeleteTransform(p);
-                     return NULL;
-                }
-
-
-              SetPrecalculatedTransform(p);
-
-
-       }
-
-       // Re-Identify formats
-       p -> FromInput = _cmsIdentifyInputFormat(p, InputFormat);
-       p -> ToOutput  = _cmsIdentifyOutputFormat(p, OutputFormat);
-
-
-       return p;
-}
-
-
-// Wrapper por simpler non-proofing transforms.
-
-cmsHTRANSFORM LCMSEXPORT cmsCreateTransform(cmsHPROFILE Input,
-                                       DWORD InputFormat,
-                                       cmsHPROFILE Output,
-                                       DWORD OutputFormat,
-                                       int Intent,
-                                       DWORD dwFlags)
-
-{
-       return cmsCreateProofingTransform(Input, InputFormat,
-                                         Output, OutputFormat,
-                                         NULL,
-                                         Intent, INTENT_ABSOLUTE_COLORIMETRIC,
-                                         dwFlags);
-}
-
-
-// Profiles are *NOT* closed
-
-void LCMSEXPORT cmsDeleteTransform(cmsHTRANSFORM hTransform)
-{
-       _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) (LPSTR) hTransform;
-
-       if (p -> Device2PCS)
-              cmsFreeLUT(p -> Device2PCS);
-       if (p -> PCS2Device)
-              cmsFreeLUT(p -> PCS2Device);
-       if (p -> Gamut)
-              cmsFreeLUT(p -> Gamut);
-       if (p -> Preview)
-              cmsFreeLUT(p -> Preview);
-       if (p -> DeviceLink)
-              cmsFreeLUT(p -> DeviceLink);
-       if (p -> InMatShaper)
-              cmsFreeMatShaper(p -> InMatShaper);
-       if (p -> OutMatShaper)
-              cmsFreeMatShaper(p -> OutMatShaper);
-       if (p -> SmeltMatShaper)
-              cmsFreeMatShaper(p -> SmeltMatShaper);
-       if (p ->NamedColorList)
-              cmsFreeNamedColorList(p ->NamedColorList);
-       if (p -> GamutCheck)
-            cmsFreeLUT(p -> GamutCheck);
-
-       LCMS_FREE_LOCK(&p->rwlock);
-
-       _cmsFree((void *) p);
-}
-
-
-// Apply transform code
-void LCMSEXPORT cmsDoTransform(cmsHTRANSFORM Transform,
-                    LPVOID InputBuffer,
-                    LPVOID OutputBuffer, unsigned int Size)
-
-{
-
-            _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) (LPSTR) Transform;
-
-            p -> StrideIn = p -> StrideOut = Size;
-
-            p -> xform(p, InputBuffer, OutputBuffer, Size);
-
-}
-
-
-void LCMSEXPORT cmsSetAlarmCodes(int r, int g, int b)
-{
-       AlarmR = RGB_8_TO_16(r);
-       AlarmG = RGB_8_TO_16(g);
-       AlarmB = RGB_8_TO_16(b);
-}
-
-void LCMSEXPORT cmsGetAlarmCodes(int *r, int *g, int *b)
-{
-       *r = RGB_16_TO_8(AlarmR);
-       *g = RGB_16_TO_8(AlarmG);
-       *b = RGB_16_TO_8(AlarmB);
-}
-
-// Returns TRUE if the profile is implemented as matrix-shaper
-
-LCMSBOOL LCMSEXPORT _cmsIsMatrixShaper(cmsHPROFILE hProfile)
-{
-    switch (cmsGetColorSpace(hProfile)) {
-
-    case icSigGrayData:
-
-        return cmsIsTag(hProfile, icSigGrayTRCTag);
-
-    case icSigRgbData:
-
-        return (cmsIsTag(hProfile, icSigRedColorantTag) &&
-                cmsIsTag(hProfile, icSigGreenColorantTag) &&
-                cmsIsTag(hProfile, icSigBlueColorantTag) &&
-                cmsIsTag(hProfile, icSigRedTRCTag) &&
-                cmsIsTag(hProfile, icSigGreenTRCTag) &&
-                cmsIsTag(hProfile, icSigBlueTRCTag));
-
-    default:
-
-        return FALSE;
+            }
+        }
     }
+
+
+    // Create a mutex for shared memory
+    LCMS_CREATE_LOCK(&p->rwlock);
+
+    p ->InputFormat     = InputFormat;
+    p ->OutputFormat    = OutputFormat;
+    p ->dwOriginalFlags = dwFlags;
+    p ->ContextID       = ContextID;
+    return p;
 }
 
-
-LCMSBOOL LCMSEXPORT cmsIsIntentSupported(cmsHPROFILE hProfile,
-                                                int Intent, int UsedDirection)
-{
-
-     icTagSignature* TagTable;
-
-     // Device link profiles only implements the intent in header
-
-     if (cmsGetDeviceClass(hProfile) != icSigLinkClass) {
-
-       switch (UsedDirection) {
-
-       case LCMS_USED_AS_INPUT: TagTable = Device2PCS; break;
-       case LCMS_USED_AS_OUTPUT:TagTable = PCS2Device; break;
-       case LCMS_USED_AS_PROOF: TagTable = Preview; break;
-
-       default:
-        cmsSignalError(LCMS_ERRC_ABORTED, "Unexpected direction (%d)", UsedDirection);
-        return FALSE;
-       }
-
-       if (cmsIsTag(hProfile, TagTable[Intent])) return TRUE;
-       return _cmsIsMatrixShaper(hProfile);
-     }
-
-     return (cmsTakeRenderingIntent(hProfile) == Intent);
-}
-
-// Multiple profile transform.
 static
-int MultiprofileSampler(register WORD In[], register WORD Out[], register LPVOID Cargo)
+cmsBool GetXFormColorSpaces(int nProfiles, cmsHPROFILE hProfiles[], cmsColorSpaceSignature* Input, cmsColorSpaceSignature* Output)
 {
-    cmsHTRANSFORM* Transforms = (cmsHTRANSFORM*) Cargo;
+    cmsColorSpaceSignature ColorSpaceIn, ColorSpaceOut;
+    cmsColorSpaceSignature PostColorSpace;
     int i;
 
-    cmsDoTransform(Transforms[0], In, Out, 1);
+    if (hProfiles[0] == NULL) return FALSE;
 
-    for (i=1; Transforms[i]; i++)
-        cmsDoTransform(Transforms[i], Out, Out, 1);
-
-
-
-    return TRUE;
-}
-
-
-static
-int IsAllowedInSingleXform(icProfileClassSignature aClass)
-{
-    return (aClass == icSigInputClass) ||
-           (aClass == icSigDisplayClass) ||
-           (aClass == icSigOutputClass) ||
-           (aClass == icSigColorSpaceClass);
-}
-
-
-// A multiprofile transform does chain several profiles into a single
-// devicelink. It couls also be used to merge named color profiles into
-// a single database.
-
-
-cmsHTRANSFORM LCMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
-                                                                int nProfiles,
-                                                                DWORD dwInput,
-                                                                DWORD dwOutput,
-                                                                int Intent,
-                                                                DWORD dwFlags)
-{
-    cmsHTRANSFORM Transforms[257];
-    DWORD dwPrecalcFlags = (dwFlags|cmsFLAGS_NOTPRECALC|cmsFLAGS_NOTCACHE);
-    DWORD FormatInput, FormatOutput;
-    cmsHPROFILE hLab, hXYZ, hProfile;
-    icColorSpaceSignature ColorSpace, CurrentColorSpace;
-    icColorSpaceSignature ColorSpaceIn, ColorSpaceOut;
-    LPLUT Grid;
-    int nGridPoints, ChannelsInput, ChannelsOutput = 3, i;
-    _LPcmsTRANSFORM p;
-    int nNamedColor;
-
-    if (nProfiles > 255) {
-        cmsSignalError(LCMS_ERRC_ABORTED, "What are you trying to do with more that 255 profiles?!?, of course aborted");
-        return NULL;
-    }
-
-    // There is a simple case with just two profiles, try to catch it in order of getting
-    // black preservation to work on this function, at least with two profiles.
-
-
-    if (nProfiles == 2) {
-
-        icProfileClassSignature Class1 = cmsGetDeviceClass(hProfiles[0]);
-        icProfileClassSignature Class2 = cmsGetDeviceClass(hProfiles[1]);
-
-        // Only input, output and display are allowed
-
-        if (IsAllowedInSingleXform(Class1) &&
-            IsAllowedInSingleXform(Class2))
-                   return cmsCreateTransform(hProfiles[0], dwInput, hProfiles[1], dwOutput, Intent, dwFlags);
-    }
-
-
-    // Creates a phantom transform for latter filling
-    p = (_LPcmsTRANSFORM) cmsCreateTransform(NULL, dwInput,
-                                             NULL, dwOutput, Intent, cmsFLAGS_NULLTRANSFORM);
-
-    // If user wants null one, give it
-    if (dwFlags & cmsFLAGS_NULLTRANSFORM) return (cmsHPROFILE) p;
-
-    // Is a bunch of named color profiles?
-    nNamedColor = 0;
-    for (i=0; i < nProfiles; i++) {
-        if (cmsGetDeviceClass(hProfiles[i]) == icSigNamedColorClass)
-                nNamedColor++;
-    }
-
-
-    if (nNamedColor == nProfiles) {
-
-            // Yes, only named color. Create a named color-device
-            // and append to named color table
-
-            cmsDeleteTransform((cmsHTRANSFORM) p);
-
-            p = (_LPcmsTRANSFORM) cmsCreateTransform(hProfiles[0], dwInput, NULL, dwOutput, Intent, dwFlags);
-            for (i=1; i < nProfiles; i++) {
-                    cmsReadICCnamedColorList(p, hProfiles[i], icSigNamedColor2Tag);
-            }
-
-            return p;   // Ok, done so far
-    }
-    else
-    if (nNamedColor > 0) {
-
-        cmsDeleteTransform((cmsHTRANSFORM) p);
-        cmsSignalError(LCMS_ERRC_ABORTED, "Could not mix named color profiles with other types in multiprofile transform");
-        return NULL;
-    }
-
-
-    // We will need a 3DCLUT for device link
-    Grid =  cmsAllocLUT();
-    if (!Grid) return NULL;
-
-    // This one is our PCS (Always Lab)
-    hLab  = cmsCreateLabProfile(NULL);
-    hXYZ  = cmsCreateXYZProfile();
-
-    if (!hLab || !hXYZ) goto ErrorCleanup;
-
-    // Take some info....
-
-    p ->EntryColorSpace = CurrentColorSpace = cmsGetColorSpace(hProfiles[0]);
-
+    *Input = PostColorSpace = cmsGetColorSpace(hProfiles[0]);
 
     for (i=0; i < nProfiles; i++) {
 
-        int lIsDeviceLink, lIsInput;
+        cmsHPROFILE hProfile = hProfiles[i];
 
-        // Check colorspace
+        int lIsInput = (PostColorSpace != cmsSigXYZData) &&
+                       (PostColorSpace != cmsSigLabData);
 
-        hProfile      = hProfiles[i];
-        lIsDeviceLink = (cmsGetDeviceClass(hProfile) == icSigLinkClass);
-        lIsInput      = (CurrentColorSpace != icSigXYZData) &&
-                        (CurrentColorSpace != icSigLabData);
+        if (hProfile == NULL) return FALSE;
 
         if (lIsInput) {
 
             ColorSpaceIn    = cmsGetColorSpace(hProfile);
             ColorSpaceOut   = cmsGetPCS(hProfile);
-
         }
         else {
 
@@ -1918,136 +486,302 @@ cmsHTRANSFORM LCMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
             ColorSpaceOut   = cmsGetColorSpace(hProfile);
         }
 
-        ChannelsInput  = _cmsChannelsOf(ColorSpaceIn);
-        ChannelsOutput = _cmsChannelsOf(ColorSpaceOut);
+        PostColorSpace = ColorSpaceOut;
+    }
 
-        FormatInput    = BYTES_SH(2)|CHANNELS_SH(ChannelsInput);
-        FormatOutput   = BYTES_SH(2)|CHANNELS_SH(ChannelsOutput);
+    *Output = PostColorSpace;
 
-        ColorSpace = ColorSpaceIn;
+    return TRUE;
+}
+
+// Check colorspace
+static
+cmsBool  IsProperColorSpace(cmsColorSpaceSignature Check, cmsUInt32Number dwFormat)
+{
+    int Space1 = T_COLORSPACE(dwFormat);
+    int Space2 = _cmsLCMScolorSpace(Check);
+
+    if (Space1 == PT_ANY) return TRUE;
+    if (Space1 == Space2) return TRUE;
+
+    if (Space1 == PT_LabV2 && Space2 == PT_Lab) return TRUE;
+    if (Space1 == PT_Lab   && Space2 == PT_LabV2) return TRUE;
+
+    return FALSE;
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// New to lcms 2.0 -- have all parameters available.
+cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
+                                                   cmsUInt32Number nProfiles, cmsHPROFILE hProfiles[],
+                                                   cmsBool  BPC[],
+                                                   cmsUInt32Number Intents[],
+                                                   cmsFloat64Number AdaptationStates[],
+                                                   cmsHPROFILE hGamutProfile,
+                                                   cmsUInt32Number nGamutPCSposition,
+                                                   cmsUInt32Number InputFormat,
+                                                   cmsUInt32Number OutputFormat,
+                                                   cmsUInt32Number dwFlags)
+{
+    _cmsTRANSFORM* xform;
+    cmsBool  FloatTransform;
+    cmsColorSpaceSignature EntryColorSpace;
+    cmsColorSpaceSignature ExitColorSpace;
+    cmsPipeline* Lut;
+    cmsUInt32Number LastIntent = Intents[nProfiles-1];
+
+    // If gamut check is requested, make sure we have a gamut profile
+    if (dwFlags & cmsFLAGS_GAMUTCHECK) {
+        if (hGamutProfile == NULL) dwFlags &= ~cmsFLAGS_GAMUTCHECK;
+    }
+
+    // On floating point transforms, inhibit optimizations
+    FloatTransform = (_cmsFormatterIsFloat(InputFormat) && _cmsFormatterIsFloat(OutputFormat));
+
+    if (_cmsFormatterIsFloat(InputFormat) || _cmsFormatterIsFloat(OutputFormat))
+        dwFlags |= cmsFLAGS_NOCACHE;
+
+    // Mark entry/exit spaces
+    if (!GetXFormColorSpaces(nProfiles, hProfiles, &EntryColorSpace, &ExitColorSpace)) {
+        cmsSignalError(ContextID, cmsERROR_NULL, "NULL input profiles on transform");
+        return NULL;
+    }
+
+    // Check if proper colorspaces
+    if (!IsProperColorSpace(EntryColorSpace, InputFormat)) {
+        cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "Wrong input color space on transform");
+        return NULL;
+    }
+
+    if (!IsProperColorSpace(ExitColorSpace, OutputFormat)) {
+        cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "Wrong output color space on transform");
+        return NULL;
+    }
+
+    // Create a pipeline with all transformations
+    Lut = _cmsLinkProfiles(ContextID, nProfiles, Intents, hProfiles, BPC, AdaptationStates, dwFlags);
+    if (Lut == NULL) {
+        cmsSignalError(ContextID, cmsERROR_NOT_SUITABLE, "Couldn't link the profiles");
+        return NULL;
+    }
+
+    // Optimize the LUT if possible
+    _cmsOptimizePipeline(&Lut, LastIntent, &InputFormat, &OutputFormat, &dwFlags);
 
 
-        if (ColorSpace == CurrentColorSpace) {
+    // All seems ok
+    xform = AllocEmptyTransform(ContextID, InputFormat, OutputFormat, dwFlags);
+    if (xform == NULL) {
+        cmsPipelineFree(Lut);
+        return NULL;
+    }
 
-            if (lIsDeviceLink) {
-
-                Transforms[i]  = cmsCreateTransform(hProfile, FormatInput,
-                                                    NULL,     FormatOutput,
-                                                    Intent,   dwPrecalcFlags);
-            }
-
-            else {
-
-                if (lIsInput) {
-
-                        Transforms[i]  = cmsCreateTransform(hProfile, FormatInput,
-                                                  (ColorSpaceOut == icSigLabData ? hLab : hXYZ), FormatOutput,
-                                                  Intent, dwPrecalcFlags);
-                }
-                else {
-                        Transforms[i]  = cmsCreateTransform((ColorSpaceIn == icSigLabData ? hLab : hXYZ), FormatInput,
-                                                  hProfile, FormatOutput,
-                                                  Intent, dwPrecalcFlags);
-
-                }
-            }
+    // Keep values
+    xform ->EntryColorSpace = EntryColorSpace;
+    xform ->ExitColorSpace  = ExitColorSpace;
+    xform ->Lut             = Lut;
 
 
+    // Create a gamut check LUT if requested
+    if (hGamutProfile != NULL && (dwFlags & cmsFLAGS_GAMUTCHECK))
+        xform ->GamutCheck  = _cmsCreateGamutCheckPipeline(ContextID, hProfiles,
+                                                        BPC, Intents,
+                                                        AdaptationStates,
+                                                        nGamutPCSposition,
+                                                        hGamutProfile);
+
+
+    // Try to read input and output colorant table
+    if (cmsIsTag(hProfiles[0], cmsSigColorantTableTag)) {
+
+        // Input table can only come in this way.
+        xform ->InputColorant = cmsDupNamedColorList((cmsNAMEDCOLORLIST*) cmsReadTag(hProfiles[0], cmsSigColorantTableTag));
+    }
+
+    // Output is a little bit more complex.
+    if (cmsGetDeviceClass(hProfiles[nProfiles-1]) == cmsSigLinkClass) {
+
+        // This tag may exist only on devicelink profiles.
+        if (cmsIsTag(hProfiles[nProfiles-1], cmsSigColorantTableOutTag)) {
+
+            // It may be NULL if error
+            xform ->OutputColorant = cmsDupNamedColorList((cmsNAMEDCOLORLIST*) cmsReadTag(hProfiles[nProfiles-1], cmsSigColorantTableOutTag));
         }
-        else  // Can come from pcs?
-        if (CurrentColorSpace == icSigXYZData) {
 
-            Transforms[i] = cmsCreateTransform(hXYZ, FormatInput,
-                                              hProfile, FormatOutput,
-                                              Intent, dwPrecalcFlags);
+    } else {
 
+        if (cmsIsTag(hProfiles[nProfiles-1], cmsSigColorantTableTag)) {
+
+            xform -> OutputColorant = cmsDupNamedColorList((cmsNAMEDCOLORLIST*) cmsReadTag(hProfiles[nProfiles-1], cmsSigColorantTableTag));
         }
-        else
-        if (CurrentColorSpace == icSigLabData) {
+    }
 
-            Transforms[i] = cmsCreateTransform(hLab, FormatInput,
-                                              hProfile, FormatOutput,
-                                              Intent, dwPrecalcFlags);
+    // Store the sequence of profiles
+    if (dwFlags & cmsFLAGS_KEEP_SEQUENCE) {
+        xform ->Sequence = _cmsCompileProfileSequence(ContextID, nProfiles, hProfiles);
+    }
+    else
+        xform ->Sequence = NULL;
 
+    // If this is a cached transform, init first value, which is zero (16 bits only)
+    if (!(dwFlags & cmsFLAGS_NOCACHE)) {
+
+        memset(&xform ->CacheIn, 0, sizeof(xform ->CacheIn));
+
+        if (xform ->GamutCheck != NULL) {
+            TransformOnePixelWithGamutCheck(xform, xform ->CacheIn, xform->CacheOut);
         }
         else {
-                cmsSignalError(LCMS_ERRC_ABORTED, "cmsCreateMultiprofileTransform: ColorSpace mismatch");
-                goto ErrorCleanup;
+
+            xform ->Lut ->Eval16Fn(xform ->CacheIn, xform->CacheOut, xform -> Lut->Data);
         }
 
-        if (Transforms[i] == NULL) {
-            cmsSignalError(LCMS_ERRC_ABORTED, "cmsCreateMultiprofileTransform: unable to create transform");
-            goto ErrorCleanup;
-        }
-        CurrentColorSpace = ColorSpaceOut;
-
     }
 
-    p ->ExitColorSpace = CurrentColorSpace;
-    Transforms[i] = NULL;   // End marker
+    return (cmsHTRANSFORM) xform;
+}
 
-    p ->InputProfile  = hProfiles[0];
-    p ->OutputProfile = hProfiles[nProfiles - 1];
+// Multiprofile transforms: Gamut check is not available here, as it is unclear from which profile the gamut comes.
 
-    nGridPoints = _cmsReasonableGridpointsByColorspace(p ->EntryColorSpace, dwFlags);
+cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransformTHR(cmsContext ContextID,
+                                                       cmsHPROFILE hProfiles[],
+                                                       cmsUInt32Number nProfiles,
+                                                       cmsUInt32Number InputFormat,
+                                                       cmsUInt32Number OutputFormat,
+                                                       cmsUInt32Number Intent,
+                                                       cmsUInt32Number dwFlags)
+{
+    cmsUInt32Number i;
+    cmsBool BPC[256];
+    cmsUInt32Number Intents[256];
+    cmsFloat64Number AdaptationStates[256];
 
-    ChannelsInput  = _cmsChannelsOf(cmsGetColorSpace(p ->InputProfile));
-
-    Grid = cmsAlloc3DGrid(Grid, nGridPoints, ChannelsInput, ChannelsOutput);
-
-    if (!(dwFlags & cmsFLAGS_NOPRELINEARIZATION))
-           _cmsComputePrelinearizationTablesFromXFORM(Transforms, nProfiles, Grid);
-
-    // Compute device link on 16-bit basis
-    if (!cmsSample3DGrid(Grid, MultiprofileSampler, (LPVOID) Transforms, Grid -> wFlags)) {
-
-                cmsFreeLUT(Grid);
-                goto ErrorCleanup;
+    if (nProfiles <= 0 || nProfiles > 255) {
+         cmsSignalError(ContextID, cmsERROR_RANGE, "Wrong number of profiles. 1..255 expected, %d found.", nProfiles);
+        return NULL;
     }
 
-    // All ok, store the newly created LUT
-    p -> DeviceLink   = Grid;
-
-    SetPrecalculatedTransform(p);
-
-    for (i=nProfiles-1; i >= 0; --i)
-        cmsDeleteTransform(Transforms[i]);
-
-
-    if (hLab) cmsCloseProfile(hLab);
-    if (hXYZ) cmsCloseProfile(hXYZ);
-
-
-    if (p ->EntryColorSpace == icSigRgbData ||
-        p ->EntryColorSpace == icSigCmyData) {
-
-                    p->DeviceLink -> CLut16params.Interp3D = cmsTetrahedralInterp16;
+    for (i=0; i < nProfiles; i++) {
+        BPC[i] = dwFlags & cmsFLAGS_BLACKPOINTCOMPENSATION ? TRUE : FALSE;
+        Intents[i] = Intent;
+        AdaptationStates[i] = GlobalAdaptationState;
     }
 
 
-    if ((Intent != INTENT_ABSOLUTE_COLORIMETRIC) &&
-        !(dwFlags & cmsFLAGS_NOWHITEONWHITEFIXUP))
-                            _cmsFixWhiteMisalignment(p);
-
-    return (cmsHTRANSFORM) p;
-
-
-ErrorCleanup:
-
-    if (hLab) cmsCloseProfile(hLab);
-    if (hXYZ) cmsCloseProfile(hXYZ);
-    return NULL;
+    return cmsCreateExtendedTransform(ContextID, nProfiles, hProfiles, BPC, Intents, AdaptationStates, NULL, 0, InputFormat, OutputFormat, dwFlags);
 }
 
 
 
-double LCMSEXPORT cmsSetAdaptationState(double d)
+cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
+                                                  cmsUInt32Number nProfiles,
+                                                  cmsUInt32Number InputFormat,
+                                                  cmsUInt32Number OutputFormat,
+                                                  cmsUInt32Number Intent,
+                                                  cmsUInt32Number dwFlags)
 {
-    double OldVal = GlobalAdaptationState;
 
-    if (d >= 0)
-            GlobalAdaptationState = d;
+    if (nProfiles <= 0 || nProfiles > 255) {
+         cmsSignalError(NULL, cmsERROR_RANGE, "Wrong number of profiles. 1..255 expected, %d found.", nProfiles);
+         return NULL;
+    }
 
-    return OldVal;
+    return cmsCreateMultiprofileTransformTHR(cmsGetProfileContextID(hProfiles[0]),
+                                                  hProfiles,
+                                                  nProfiles,
+                                                  InputFormat,
+                                                  OutputFormat,
+                                                  Intent,
+                                                  dwFlags);
+}
 
+cmsHTRANSFORM CMSEXPORT cmsCreateTransformTHR(cmsContext ContextID,
+                                              cmsHPROFILE Input,
+                                              cmsUInt32Number InputFormat,
+                                              cmsHPROFILE Output,
+                                              cmsUInt32Number OutputFormat,
+                                              cmsUInt32Number Intent,
+                                              cmsUInt32Number dwFlags)
+{
+
+    cmsHPROFILE hArray[2];
+
+    hArray[0] = Input;
+    hArray[1] = Output;
+
+    return cmsCreateMultiprofileTransformTHR(ContextID, hArray, Output == NULL ? 1 : 2, InputFormat, OutputFormat, Intent, dwFlags);
+}
+
+CMSAPI cmsHTRANSFORM CMSEXPORT cmsCreateTransform(cmsHPROFILE Input,
+                                                  cmsUInt32Number InputFormat,
+                                                  cmsHPROFILE Output,
+                                                  cmsUInt32Number OutputFormat,
+                                                  cmsUInt32Number Intent,
+                                                  cmsUInt32Number dwFlags)
+{
+    return cmsCreateTransformTHR(cmsGetProfileContextID(Input), Input, InputFormat, Output, OutputFormat, Intent, dwFlags);
+}
+
+
+cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransformTHR(cmsContext ContextID,
+                                                   cmsHPROFILE InputProfile,
+                                                   cmsUInt32Number InputFormat,
+                                                   cmsHPROFILE OutputProfile,
+                                                   cmsUInt32Number OutputFormat,
+                                                   cmsHPROFILE ProofingProfile,
+                                                   cmsUInt32Number nIntent,
+                                                   cmsUInt32Number ProofingIntent,
+                                                   cmsUInt32Number dwFlags)
+{
+    cmsHPROFILE hArray[4];
+    cmsUInt32Number Intents[4];
+    cmsBool  BPC[4];
+    cmsFloat64Number Adaptation[4];
+    cmsBool  DoBPC = (dwFlags & cmsFLAGS_BLACKPOINTCOMPENSATION) ? TRUE : FALSE;
+
+
+    hArray[0]  = InputProfile; hArray[1] = ProofingProfile; hArray[2]  = ProofingProfile;               hArray[3] = OutputProfile;
+    Intents[0] = nIntent;      Intents[1] = nIntent;        Intents[2] = INTENT_RELATIVE_COLORIMETRIC;  Intents[3] = ProofingIntent;
+    BPC[0]     = DoBPC;        BPC[1] = DoBPC;              BPC[2] = 0;                                 BPC[3] = 0;
+
+    Adaptation[0] = Adaptation[1] = Adaptation[2] = Adaptation[3] = GlobalAdaptationState;
+
+    if (!(dwFlags & (cmsFLAGS_SOFTPROOFING|cmsFLAGS_GAMUTCHECK)))
+        return cmsCreateTransformTHR(ContextID, InputProfile, InputFormat, OutputProfile, OutputFormat, nIntent, dwFlags);
+
+    return cmsCreateExtendedTransform(ContextID, 4, hArray, BPC, Intents, Adaptation,
+                                        ProofingProfile, 1, InputFormat, OutputFormat, dwFlags);
+
+}
+
+
+cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransform(cmsHPROFILE InputProfile,
+                                                   cmsUInt32Number InputFormat,
+                                                   cmsHPROFILE OutputProfile,
+                                                   cmsUInt32Number OutputFormat,
+                                                   cmsHPROFILE ProofingProfile,
+                                                   cmsUInt32Number nIntent,
+                                                   cmsUInt32Number ProofingIntent,
+                                                   cmsUInt32Number dwFlags)
+{
+    return cmsCreateProofingTransformTHR(cmsGetProfileContextID(InputProfile),
+                                                   InputProfile,
+                                                   InputFormat,
+                                                   OutputProfile,
+                                                   OutputFormat,
+                                                   ProofingProfile,
+                                                   nIntent,
+                                                   ProofingIntent,
+                                                   dwFlags);
+}
+
+
+// Grab the ContextID from an open transform. Returns NULL if a NULL transform is passed
+cmsContext CMSEXPORT cmsGetTransformContextID(cmsHTRANSFORM hTransform)
+{
+    _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
+
+    if (xform == NULL) return NULL;
+    return xform -> ContextID;
 }

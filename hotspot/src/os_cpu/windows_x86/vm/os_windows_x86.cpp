@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,8 @@ bool os::register_code_area(char *low, char *high) {
   // If we are using Vectored Exceptions we don't need this registration
   if (UseVectoredExceptions) return true;
 
-  BufferBlob* b = BufferBlob::create("CodeCache Exception Handler", sizeof (DynamicCodeData));
-  CodeBuffer cb(b->instructions_begin(), b->instructions_size());
+  BufferBlob* blob = BufferBlob::create("CodeCache Exception Handler", sizeof(DynamicCodeData));
+  CodeBuffer cb(blob);
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
@@ -377,18 +377,84 @@ void os::print_context(outputStream *st, void *context) {
 
   st->print_cr("Registers:");
 #ifdef AMD64
-  st->print(  "EAX=" INTPTR_FORMAT, uc->Rax);
-  st->print(", EBX=" INTPTR_FORMAT, uc->Rbx);
-  st->print(", ECX=" INTPTR_FORMAT, uc->Rcx);
-  st->print(", EDX=" INTPTR_FORMAT, uc->Rdx);
+  st->print(  "RAX=" INTPTR_FORMAT, uc->Rax);
+  st->print(", RBX=" INTPTR_FORMAT, uc->Rbx);
+  st->print(", RCX=" INTPTR_FORMAT, uc->Rcx);
+  st->print(", RDX=" INTPTR_FORMAT, uc->Rdx);
   st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, uc->Rsp);
-  st->print(", EBP=" INTPTR_FORMAT, uc->Rbp);
-  st->print(", ESI=" INTPTR_FORMAT, uc->Rsi);
-  st->print(", EDI=" INTPTR_FORMAT, uc->Rdi);
+  st->print(  "RSP=" INTPTR_FORMAT, uc->Rsp);
+  st->print(", RBP=" INTPTR_FORMAT, uc->Rbp);
+  st->print(", RSI=" INTPTR_FORMAT, uc->Rsi);
+  st->print(", RDI=" INTPTR_FORMAT, uc->Rdi);
   st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, uc->Rip);
+  st->print(  "R8=" INTPTR_FORMAT,  uc->R8);
+  st->print(", R9=" INTPTR_FORMAT,  uc->R9);
+  st->print(", R10=" INTPTR_FORMAT, uc->R10);
+  st->print(", R11=" INTPTR_FORMAT, uc->R11);
+  st->cr();
+  st->print(  "R12=" INTPTR_FORMAT, uc->R12);
+  st->print(", R13=" INTPTR_FORMAT, uc->R13);
+  st->print(", R14=" INTPTR_FORMAT, uc->R14);
+  st->print(", R15=" INTPTR_FORMAT, uc->R15);
+  st->cr();
+  st->print(  "RIP=" INTPTR_FORMAT, uc->Rip);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
+
+  st->cr();
+  st->cr();
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+
+  st->print_cr("RAX=" INTPTR_FORMAT, uc->Rax);
+  print_location(st, uc->Rax);
+  st->cr();
+  st->print_cr("RBX=" INTPTR_FORMAT, uc->Rbx);
+  print_location(st, uc->Rbx);
+  st->cr();
+  st->print_cr("RCX=" INTPTR_FORMAT, uc->Rcx);
+  print_location(st, uc->Rcx);
+  st->cr();
+  st->print_cr("RDX=" INTPTR_FORMAT, uc->Rdx);
+  print_location(st, uc->Rdx);
+  st->cr();
+  st->print_cr("RSP=" INTPTR_FORMAT, uc->Rsp);
+  print_location(st, uc->Rsp);
+  st->cr();
+  st->print_cr("RBP=" INTPTR_FORMAT, uc->Rbp);
+  print_location(st, uc->Rbp);
+  st->cr();
+  st->print_cr("RSI=" INTPTR_FORMAT, uc->Rsi);
+  print_location(st, uc->Rsi);
+  st->cr();
+  st->print_cr("RDI=" INTPTR_FORMAT, uc->Rdi);
+  print_location(st, uc->Rdi);
+  st->cr();
+  st->print_cr("R8 =" INTPTR_FORMAT, uc->R8);
+  print_location(st, uc->R8);
+  st->cr();
+  st->print_cr("R9 =" INTPTR_FORMAT, uc->R9);
+  print_location(st, uc->R9);
+  st->cr();
+  st->print_cr("R10=" INTPTR_FORMAT, uc->R10);
+  print_location(st, uc->R10);
+  st->cr();
+  st->print_cr("R11=" INTPTR_FORMAT, uc->R11);
+  print_location(st, uc->R11);
+  st->cr();
+  st->print_cr("R12=" INTPTR_FORMAT, uc->R12);
+  print_location(st, uc->R12);
+  st->cr();
+  st->print_cr("R13=" INTPTR_FORMAT, uc->R13);
+  print_location(st, uc->R13);
+  st->cr();
+  st->print_cr("R14=" INTPTR_FORMAT, uc->R14);
+  print_location(st, uc->R14);
+  st->cr();
+  st->print_cr("R15=" INTPTR_FORMAT, uc->R15);
+  print_location(st, uc->R15);
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->Eax);
   st->print(", EBX=" INTPTR_FORMAT, uc->Ebx);
@@ -402,6 +468,38 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "EIP=" INTPTR_FORMAT, uc->Eip);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
+
+  st->cr();
+  st->cr();
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+
+  st->print_cr("EAX=" INTPTR_FORMAT, uc->Eax);
+  print_location(st, uc->Eax);
+  st->cr();
+  st->print_cr("EBX=" INTPTR_FORMAT, uc->Ebx);
+  print_location(st, uc->Ebx);
+  st->cr();
+  st->print_cr("ECX=" INTPTR_FORMAT, uc->Ecx);
+  print_location(st, uc->Ecx);
+  st->cr();
+  st->print_cr("EDX=" INTPTR_FORMAT, uc->Edx);
+  print_location(st, uc->Edx);
+  st->cr();
+  st->print_cr("ESP=" INTPTR_FORMAT, uc->Esp);
+  print_location(st, uc->Esp);
+  st->cr();
+  st->print_cr("EBP=" INTPTR_FORMAT, uc->Ebp);
+  print_location(st, uc->Ebp);
+  st->cr();
+  st->print_cr("ESI=" INTPTR_FORMAT, uc->Esi);
+  print_location(st, uc->Esi);
+  st->cr();
+  st->print_cr("EDI=" INTPTR_FORMAT, uc->Edi);
+  print_location(st, uc->Edi);
 #endif // AMD64
   st->cr();
   st->cr();

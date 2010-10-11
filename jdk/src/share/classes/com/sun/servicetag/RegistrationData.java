@@ -80,12 +80,12 @@ import static com.sun.servicetag.RegistrationDocument.*;
  *       <tr>
  *          <td><tt>systemManufacturer</tt></td>
  *          <td>System manufacturer</td>
- *          <td> e.g. Sun Microsystems</td>
+ *          <td> e.g. Oracle Corporation</td>
  *       </tr>
  *       <tr>
  *          <td><tt>cpuManufacturer</tt></td>
  *          <td>CPU manufacturer</td>
- *          <td> e.g. Sun Microsystems</td>
+ *          <td> e.g. Oracle Corporation</td>
  *       </tr>
  *       <tr>
  *          <td><tt>serialNumber</tt></td>

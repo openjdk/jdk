@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
@@ -37,8 +39,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -138,23 +140,72 @@ public class Infer {
     /** A mapping that returns its type argument with every UndetVar replaced
      *  by its `inst' field. Throws a NoInstanceException
      *  if this not possible because an `inst' field is null.
+     *  Note: mutually referring undertvars will be left uninstantiated
+     *  (that is, they will be replaced by the underlying type-variable).
      */
+
     Mapping getInstFun = new Mapping("getInstFun") {
             public Type apply(Type t) {
                 switch (t.tag) {
-                case UNKNOWN:
-                    throw ambiguousNoInstanceException
-                        .setMessage("undetermined.type");
-                case UNDETVAR:
-                    UndetVar that = (UndetVar) t;
-                    if (that.inst == null)
+                    case UNKNOWN:
                         throw ambiguousNoInstanceException
-                            .setMessage("type.variable.has.undetermined.type",
-                                        that.qtype);
-                    return apply(that.inst);
-                default:
-                    return t.map(this);
+                            .setMessage("undetermined.type");
+                    case UNDETVAR:
+                        UndetVar that = (UndetVar) t;
+                        if (that.inst == null)
+                            throw ambiguousNoInstanceException
+                                .setMessage("type.variable.has.undetermined.type",
+                                            that.qtype);
+                        return isConstraintCyclic(that) ?
+                            that.qtype :
+                            apply(that.inst);
+                        default:
+                            return t.map(this);
                 }
+            }
+
+            private boolean isConstraintCyclic(UndetVar uv) {
+                Types.UnaryVisitor<Boolean> constraintScanner =
+                        new Types.UnaryVisitor<Boolean>() {
+
+                    List<Type> seen = List.nil();
+
+                    Boolean visit(List<Type> ts) {
+                        for (Type t : ts) {
+                            if (visit(t)) return true;
+                        }
+                        return false;
+                    }
+
+                    public Boolean visitType(Type t, Void ignored) {
+                        return false;
+                    }
+
+                    @Override
+                    public Boolean visitClassType(ClassType t, Void ignored) {
+                        if (t.isCompound()) {
+                            return visit(types.supertype(t)) ||
+                                    visit(types.interfaces(t));
+                        } else {
+                            return visit(t.getTypeArguments());
+                        }
+                    }
+                    @Override
+                    public Boolean visitWildcardType(WildcardType t, Void ignored) {
+                        return visit(t.type);
+                    }
+
+                    @Override
+                    public Boolean visitUndetVar(UndetVar t, Void ignored) {
+                        if (seen.contains(t)) {
+                            return true;
+                        } else {
+                            seen = seen.prepend(t);
+                            return visit(t.inst);
+                        }
+                    }
+                };
+                return constraintScanner.visit(uv);
             }
         };
 
@@ -256,11 +307,10 @@ public class Infer {
             UndetVar uv = (UndetVar) l.head;
             TypeVar tv = (TypeVar)uv.qtype;
             ListBuffer<Type> hibounds = new ListBuffer<Type>();
-            for (Type t : that.getConstraints(tv, ConstraintKind.EXTENDS).prependList(types.getBounds(tv))) {
-                if (!t.containsSome(that.tvars) && t.tag != BOT) {
-                    hibounds.append(t);
-                }
+            for (Type t : that.getConstraints(tv, ConstraintKind.EXTENDS)) {
+                hibounds.append(types.subst(t, that.tvars, undetvars));
             }
+
             List<Type> inst = that.getConstraints(tv, ConstraintKind.EQUAL);
             if (inst.nonEmpty() && inst.head.tag != BOT) {
                 uv.inst = inst.head;
@@ -279,9 +329,31 @@ public class Infer {
 
         // check bounds
         List<Type> targs = Type.map(undetvars, getInstFun);
-        targs = types.subst(targs, that.tvars, targs);
-        checkWithinBounds(that.tvars, targs, warn);
+        if (Type.containsAny(targs, that.tvars)) {
+            //replace uninferred type-vars
+            targs = types.subst(targs,
+                    that.tvars,
+                    instaniateAsUninferredVars(undetvars, that.tvars));
+        }
         return chk.checkType(warn.pos(), that.inst(targs, types), to);
+    }
+    //where
+    private List<Type> instaniateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
+        ListBuffer<Type> new_targs = ListBuffer.lb();
+        //step 1 - create syntethic captured vars
+        for (Type t : undetvars) {
+            UndetVar uv = (UndetVar)t;
+            Type newArg = new CapturedType(t.tsym.name, t.tsym, uv.inst, syms.botType, null);
+            new_targs = new_targs.append(newArg);
+        }
+        //step 2 - replace synthetic vars in their bounds
+        for (Type t : new_targs.toList()) {
+            CapturedType ct = (CapturedType)t;
+            ct.bound = types.subst(ct.bound, tvars, new_targs.toList());
+            WildcardType wt = new WildcardType(ct.bound, BoundKind.EXTENDS, syms.boundClass);
+            ct.wildcard = wt;
+        }
+        return new_targs.toList();
     }
 
     /** Instantiate method type `mt' by finding instantiations of
@@ -290,6 +362,7 @@ public class Infer {
     public Type instantiateMethod(final Env<AttrContext> env,
                                   List<Type> tvars,
                                   MethodType mt,
+                                  final Symbol msym,
                                   final List<Type> argtypes,
                                   final boolean allowBoxing,
                                   final boolean useVarargs,
@@ -397,7 +470,7 @@ public class Infer {
                         UndetVar uv = (UndetVar)t;
                         if (uv.qtype == tv) {
                             switch (ck) {
-                                case EXTENDS: return uv.hibounds;
+                                case EXTENDS: return uv.hibounds.appendList(types.subst(types.getBounds(tv), all_tvars, inferredTypes));
                                 case SUPER: return uv.lobounds;
                                 case EQUAL: return uv.inst != null ? List.of(uv.inst) : List.<Type>nil();
                             }
@@ -418,7 +491,7 @@ public class Infer {
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), formals);
+                        chk.checkVararg(env.tree.pos(), formals, msym, env);
                     }
                     return super.inst(inferred, types);
             }};
@@ -457,7 +530,7 @@ public class Infer {
 
     /** check that type parameters are within their bounds.
      */
-    private void checkWithinBounds(List<Type> tvars,
+    void checkWithinBounds(List<Type> tvars,
                                    List<Type> arguments,
                                    Warner warn)
         throws InvalidInstanceException {
@@ -472,4 +545,56 @@ public class Infer {
                                 args.head, bounds);
         }
     }
+
+    /**
+     * Compute a synthetic method type corresponding to the requested polymorphic
+     * method signature. If no explicit return type is supplied, a provisional
+     * return type is computed (just Object in case of non-transitional 292)
+     */
+    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
+                                            Name name,
+                                            MethodSymbol spMethod,  // sig. poly. method or null if none
+                                            List<Type> argtypes,
+                                            List<Type> typeargtypes) {
+        final Type restype;
+        if (rs.allowTransitionalJSR292 && typeargtypes.nonEmpty()) {
+            restype = typeargtypes.head;
+        } else {
+            //The return type for a polymorphic signature call is computed from
+            //the enclosing tree E, as follows: if E is a cast, then use the
+            //target type of the cast expression as a return type; if E is an
+            //expression statement, the return type is 'void' - otherwise the
+            //return type is simply 'Object'.
+            switch (env.outer.tree.getTag()) {
+                case JCTree.TYPECAST:
+                    restype = ((JCTypeCast)env.outer.tree).clazz.type; break;
+                case JCTree.EXEC:
+                    restype = syms.voidType; break;
+                default:
+                    restype = syms.objectType;
+            }
+        }
+
+        List<Type> paramtypes = Type.map(argtypes, implicitArgType);
+        List<Type> exType = spMethod != null ?
+            spMethod.getThrownTypes() :
+            List.of(syms.throwableType); // make it throw all exceptions
+
+        MethodType mtype = new MethodType(paramtypes,
+                                          restype,
+                                          exType,
+                                          syms.methodClass);
+        return mtype;
+    }
+    //where
+        Mapping implicitArgType = new Mapping ("implicitArgType") {
+                public Type apply(Type t) {
+                    t = types.erasure(t);
+                    if (t.tag == BOT)
+                        // nulls type as the marker type Null (which has no instances)
+                        // infer as java.lang.Void for now
+                        t = types.boxedClass(syms.voidType).type;
+                    return t;
+                }
+        };
 }

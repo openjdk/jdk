@@ -34,8 +34,8 @@ import com.sun.tools.javac.util.ListBuffer;
  * Creates a copy of a tree, using a given TreeMaker.
  * Names, literal values, etc are shared with the original.
  *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
@@ -332,10 +332,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     public JCTree visitTry(TryTree node, P p) {
         JCTry t = (JCTry) node;
+        List<JCTree> resources = copy(t.resources, p);
         JCBlock body = copy(t.body, p);
         List<JCCatch> catchers = copy(t.catchers, p);
         JCBlock finalizer = copy(t.finalizer, p);
-        return M.at(t.pos).Try(body, catchers, finalizer);
+        return M.at(t.pos).Try(resources, body, catchers, finalizer);
     }
 
     public JCTree visitParameterizedType(ParameterizedTypeTree node, P p) {
