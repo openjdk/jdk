@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6893932
+ * @bug 6893932 6990390
  * @summary javah help screen lists -h and -? but does not accept them
  */
 
@@ -68,6 +68,8 @@ public class TestHelpOpts {
         String flat = out.replaceAll("\\s+", " "); // canonicalize whitespace
         if (!flat.contains("Usage: javah [options] <classes> where [options] include:"))
             error("expected text not found");
+        if (flat.contains("main.opt"))
+            error("key not found in resource bundle: " + flat.replaceAll(".*(main.opt.[^ ]*).*", "$1"));
     }
 
     void error(String msg) {
