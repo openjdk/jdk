@@ -2103,6 +2103,7 @@ public:
   void load_heap_oop(const Address& s, Register d);
   void load_heap_oop(Register s1, Register s2, Register d);
   void load_heap_oop(Register s1, int simm13a, Register d);
+  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d);
   void store_heap_oop(Register d, Register s1, Register s2);
   void store_heap_oop(Register d, Register s1, int simm13a);
   void store_heap_oop(Register d, const Address& a, int offset = 0);
@@ -2225,7 +2226,7 @@ public:
   void stop(const char* msg);                          // prints msg, dumps registers and stops execution
   void warn(const char* msg);                          // prints msg, but don't stop
   void untested(const char* what = "");
-  void unimplemented(const char* what = "")              { char* b = new char[1024];  sprintf(b, "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
   void should_not_reach_here()                   { stop("should not reach here"); }
   void print_CPU_state();
 
