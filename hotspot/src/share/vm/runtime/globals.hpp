@@ -815,6 +815,9 @@ class CommandLineFlags {
   develop(bool, PrintJVMWarnings, false,                                    \
           "Prints warnings for unimplemented JVM functions")                \
                                                                             \
+  product(bool, PrintWarnings, true,                                        \
+          "Prints JVM warnings to output stream")                           \
+                                                                            \
   notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
           "Prints warnings for stalled SpinLocks")                          \
                                                                             \
