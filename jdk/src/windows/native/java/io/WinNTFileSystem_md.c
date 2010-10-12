@@ -815,7 +815,7 @@ Java_java_io_WinNTFileSystem_getDriveDirectory(JNIEnv *env, jobject this,
                                                jint drive)
 {
     jstring ret = NULL;
-    jchar *p = _wgetdcwd(drive, NULL, MAX_PATH);
+    jchar *p = currentDir(drive);
     jchar *pf = p;
     if (p == NULL) return NULL;
     if (iswalpha(*p) && (p[1] == L':')) p += 2;
