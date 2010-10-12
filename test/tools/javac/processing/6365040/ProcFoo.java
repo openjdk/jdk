@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,11 @@ import static javax.tools.Diagnostic.Kind.*;
 /**
  * First of several processors to run.
  */
-@SupportedAnnotationTypes("*")
-public class ProcFoo extends AbstractProcessor {
+public class ProcFoo extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
         if (!roundEnvironment.processingOver())
-            processingEnv.getMessager().printMessage(NOTE,
-                                                     "Hello from ProcFoo");
+            messager.printMessage(NOTE, "Hello from ProcFoo");
         return false;
     }
 }

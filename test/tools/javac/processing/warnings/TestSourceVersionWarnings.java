@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * This processor returns the supported source level as indicated by
- * the "SourceLevel" option.
+ * the "SourceLevel" option; therefore, don't use
+ * JavacTestingAbstractProcessor which returns the latest source level.
  */
 @SupportedAnnotationTypes("*")
 @SupportedOptions("SourceVersion")

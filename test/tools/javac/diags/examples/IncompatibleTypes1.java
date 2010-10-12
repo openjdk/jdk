@@ -22,7 +22,7 @@
  */
 
 // key: compiler.misc.incompatible.types.1
-// key: compiler.misc.no.conforming.instance.exists
+// key: compiler.misc.infer.no.conforming.instance.exists
 // key: compiler.err.prob.found.req
 
 class IncompatibleTypes1<V> {
