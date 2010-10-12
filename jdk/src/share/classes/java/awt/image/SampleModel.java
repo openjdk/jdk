@@ -937,14 +937,22 @@ public abstract class SampleModel
                             int iArray[], DataBuffer data) {
         int pixels[];
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x1 < x || x1 > width ||
+            y < 0 || y1 < y || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
 
         if (iArray != null)
             pixels = iArray;
         else
             pixels = new int[w * h];
 
-        for(int i=y; i<(h+y); i++) {
-            for (int j=x; j<(w+x); j++) {
+        for(int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 pixels[Offset++] = getSample(j, i, b, data);
             }
         }
@@ -978,14 +986,22 @@ public abstract class SampleModel
                               DataBuffer data) {
         float pixels[];
         int   Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x1 < x || x1 > width ||
+            y < 0 || y1 < y || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates");
+        }
 
         if (fArray != null)
             pixels = fArray;
         else
             pixels = new float[w * h];
 
-        for (int i=y; i<(h+y); i++) {
-            for (int j=x; j<(w+x); j++) {
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 pixels[Offset++] = getSampleFloat(j, i, b, data);
             }
         }
@@ -1019,14 +1035,22 @@ public abstract class SampleModel
                                DataBuffer data) {
         double pixels[];
         int    Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x1 < x || x1 > width ||
+            y < 0 || y1 < y || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates");
+        }
 
         if (dArray != null)
             pixels = dArray;
         else
             pixels = new double[w * h];
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 pixels[Offset++] = getSampleDouble(j, i, b, data);
             }
         }
