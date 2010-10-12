@@ -32,19 +32,16 @@ import javax.tools.Diagnostic.Kind;
  * @test
  * @bug 6499119
  * @summary Created package-info class file modeled improperly
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile ClassProcessor.java package-info.java
  * @compile/process -cp . -processor ClassProcessor -Akind=java  java.lang.Object
  * @compile/process -cp . -processor ClassProcessor -Akind=class java.lang.Object
  */
 
 @SupportedOptions({ "gen", "expect" })
-@SupportedAnnotationTypes({"*"})
-public class ClassProcessor extends AbstractProcessor {
+public class ClassProcessor extends JavacTestingAbstractProcessor {
     int round = 1;
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
 
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (round == 1) {
@@ -71,8 +68,6 @@ public class ClassProcessor extends AbstractProcessor {
     }
 
     private void createPackageFile() {
-        Filer filer = processingEnv.getFiler();
-
         String kind = processingEnv.getOptions().get("kind");
 
         File pkgInfo;
@@ -125,7 +120,6 @@ public class ClassProcessor extends AbstractProcessor {
     }
 
     private void error(String msg) {
-        Messager messager = processingEnv.getMessager();
         messager.printMessage(Kind.ERROR, msg);
     }
 }

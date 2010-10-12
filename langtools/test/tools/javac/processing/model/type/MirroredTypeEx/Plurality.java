@@ -25,6 +25,8 @@
  * @test
  * @bug     6519115
  * @summary Verify MirroredTypeException vs MirroredTypesException is thrown
+ * @library ../../../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile Plurality.java
  * @compile -processor Plurality -proc:only Plurality.java
  * @author  Joseph D. Darcy
@@ -38,24 +40,12 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-@SupportedAnnotationTypes("*")
 @P0
 @P1
 @P2
 @S1
-public class Plurality extends AbstractProcessor {
+public class Plurality extends JavacTestingAbstractProcessor {
     private boolean executed = false;
-
-    Elements elements;
-    Types types;
-
-    @Override
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        elements = penv.getElementUtils();
-        types =  penv.getTypeUtils();
-    }
-
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
@@ -163,11 +153,6 @@ public class Plurality extends AbstractProcessor {
                                            canonicalName + "\t" +
                                            toStringName);
         }
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }
 

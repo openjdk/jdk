@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug     6423972
  * @summary Tests TypeParameter.getBounds.
  * @author  Scott Seligman
- * @build   TypeParamBounds
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor TypeParamBounds
  * @compile -processor TypeParamBounds -proc:only TypeParamBounds.java
  */
 
@@ -40,28 +41,12 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-@SupportedAnnotationTypes("*")
-public class TypeParamBounds extends AbstractProcessor {
-
-    Elements elements;
-    Types types;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        elements = penv.getElementUtils();
-        types = penv.getTypeUtils();
-    }
-
+public class TypeParamBounds extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annoTypes,
                            RoundEnvironment round) {
         if (!round.processingOver())
             doit(annoTypes, round);
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 
     private void doit(Set<? extends TypeElement> annoTypes,
@@ -91,7 +76,6 @@ public class TypeParamBounds extends AbstractProcessor {
 
 
     // Fodder for the processor
-
     static class Gen<T, U extends Object, V extends Number, W extends U,
                      X extends Runnable, Y extends CharSequence & Runnable,
                      Z extends Object & Runnable> {
