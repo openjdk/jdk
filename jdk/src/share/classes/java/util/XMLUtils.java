@@ -141,14 +141,13 @@ class XMLUtils {
             comments.appendChild(doc.createTextNode(comment));
         }
 
-        Set keys = props.keySet();
-        Iterator i = keys.iterator();
-        while(i.hasNext()) {
-            String key = (String)i.next();
-            Element entry = (Element)properties.appendChild(
-                doc.createElement("entry"));
-            entry.setAttribute("key", key);
-            entry.appendChild(doc.createTextNode(props.getProperty(key)));
+        synchronized (props) {
+            for (String key : props.stringPropertyNames()) {
+                Element entry = (Element)properties.appendChild(
+                    doc.createElement("entry"));
+                entry.setAttribute("key", key);
+                entry.appendChild(doc.createTextNode(props.getProperty(key)));
+            }
         }
         emitDocument(doc, os, encoding);
     }
