@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 
-@SupportedAnnotationTypes("*")
-public class A extends AbstractProcessor {
+public class A extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {
-        Filer filer = processingEnv.getFiler();
         try {
             OutputStream out = filer.createClassFile(getClass().getName()+"_0").openOutputStream();
             out.close();
@@ -38,9 +36,5 @@ public class A extends AbstractProcessor {
             throw new Error(e);
         }
         return true;
-    }
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }
