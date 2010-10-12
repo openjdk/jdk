@@ -59,72 +59,76 @@ public class JNI extends Gen {
     }
 
     public void write(OutputStream o, TypeElement clazz) throws Util.Exit {
-        String cname = mangler.mangle(clazz.getQualifiedName(), Mangle.Type.CLASS);
-        PrintWriter pw = wrapWriter(o);
-        pw.println(guardBegin(cname));
-        pw.println(cppGuardBegin());
+        try {
+            String cname = mangler.mangle(clazz.getQualifiedName(), Mangle.Type.CLASS);
+            PrintWriter pw = wrapWriter(o);
+            pw.println(guardBegin(cname));
+            pw.println(cppGuardBegin());
 
-        /* Write statics. */
-        List<VariableElement> classfields = getAllFields(clazz);
+            /* Write statics. */
+            List<VariableElement> classfields = getAllFields(clazz);
 
-        for (VariableElement v: classfields) {
-            if (!v.getModifiers().contains(Modifier.STATIC))
-                continue;
-            String s = null;
-            s = defineForStatic(clazz, v);
-            if (s != null) {
-                pw.println(s);
+            for (VariableElement v: classfields) {
+                if (!v.getModifiers().contains(Modifier.STATIC))
+                    continue;
+                String s = null;
+                s = defineForStatic(clazz, v);
+                if (s != null) {
+                    pw.println(s);
+                }
             }
-        }
 
-        /* Write methods. */
-        List<ExecutableElement> classmethods = ElementFilter.methodsIn(clazz.getEnclosedElements());
-        for (ExecutableElement md: classmethods) {
-            if(md.getModifiers().contains(Modifier.NATIVE)){
-                TypeMirror mtr = types.erasure(md.getReturnType());
-                String sig = signature(md);
-                TypeSignature newtypesig = new TypeSignature(elems);
-                CharSequence methodName = md.getSimpleName();
-                boolean longName = false;
-                for (ExecutableElement md2: classmethods) {
-                    if ((md2 != md)
-                        && (methodName.equals(md2.getSimpleName()))
-                        && (md2.getModifiers().contains(Modifier.NATIVE)))
-                        longName = true;
+            /* Write methods. */
+            List<ExecutableElement> classmethods = ElementFilter.methodsIn(clazz.getEnclosedElements());
+            for (ExecutableElement md: classmethods) {
+                if(md.getModifiers().contains(Modifier.NATIVE)){
+                    TypeMirror mtr = types.erasure(md.getReturnType());
+                    String sig = signature(md);
+                    TypeSignature newtypesig = new TypeSignature(elems);
+                    CharSequence methodName = md.getSimpleName();
+                    boolean longName = false;
+                    for (ExecutableElement md2: classmethods) {
+                        if ((md2 != md)
+                            && (methodName.equals(md2.getSimpleName()))
+                            && (md2.getModifiers().contains(Modifier.NATIVE)))
+                            longName = true;
 
-                }
-                pw.println("/*");
-                pw.println(" * Class:     " + cname);
-                pw.println(" * Method:    " +
-                           mangler.mangle(methodName, Mangle.Type.FIELDSTUB));
-                pw.println(" * Signature: " + newtypesig.getTypeSignature(sig, mtr));
-                pw.println(" */");
-                pw.println("JNIEXPORT " + jniType(mtr) +
-                           " JNICALL " +
-                           mangler.mangleMethod(md, clazz,
-                                               (longName) ?
-                                               Mangle.Type.METHOD_JNI_LONG :
-                                               Mangle.Type.METHOD_JNI_SHORT));
-                pw.print("  (JNIEnv *, ");
-                List<? extends VariableElement> paramargs = md.getParameters();
-                List<TypeMirror> args = new ArrayList<TypeMirror>();
-                for (VariableElement p: paramargs) {
-                    args.add(types.erasure(p.asType()));
-                }
-                if (md.getModifiers().contains(Modifier.STATIC))
-                    pw.print("jclass");
-                else
-                    pw.print("jobject");
+                    }
+                    pw.println("/*");
+                    pw.println(" * Class:     " + cname);
+                    pw.println(" * Method:    " +
+                               mangler.mangle(methodName, Mangle.Type.FIELDSTUB));
+                    pw.println(" * Signature: " + newtypesig.getTypeSignature(sig, mtr));
+                    pw.println(" */");
+                    pw.println("JNIEXPORT " + jniType(mtr) +
+                               " JNICALL " +
+                               mangler.mangleMethod(md, clazz,
+                                                   (longName) ?
+                                                   Mangle.Type.METHOD_JNI_LONG :
+                                                   Mangle.Type.METHOD_JNI_SHORT));
+                    pw.print("  (JNIEnv *, ");
+                    List<? extends VariableElement> paramargs = md.getParameters();
+                    List<TypeMirror> args = new ArrayList<TypeMirror>();
+                    for (VariableElement p: paramargs) {
+                        args.add(types.erasure(p.asType()));
+                    }
+                    if (md.getModifiers().contains(Modifier.STATIC))
+                        pw.print("jclass");
+                    else
+                        pw.print("jobject");
 
-                for (TypeMirror arg: args) {
-                    pw.print(", ");
-                    pw.print(jniType(arg));
+                    for (TypeMirror arg: args) {
+                        pw.print(", ");
+                        pw.print(jniType(arg));
+                    }
+                    pw.println(");" + lineSep);
                 }
-                pw.println(");" + lineSep);
             }
+            pw.println(cppGuardEnd());
+            pw.println(guardEnd(cname));
+        } catch (TypeSignature.SignatureException e) {
+            util.error("jni.sigerror", e.getMessage());
         }
-        pw.println(cppGuardEnd());
-        pw.println(guardEnd(cname));
     }
 
 

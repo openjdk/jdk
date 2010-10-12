@@ -114,7 +114,7 @@ public class Mangle {
     }
 
     public String mangleMethod(ExecutableElement method, TypeElement clazz,
-                                      int mtype) {
+                                      int mtype) throws TypeSignature.SignatureException {
         StringBuffer result = new StringBuffer(100);
         result.append("Java_");
 
