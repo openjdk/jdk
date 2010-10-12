@@ -133,6 +133,8 @@ extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
 
 static LPCTSTR szAwtToolkitClassName = TEXT("SunAwtToolkit");
 
+static const int MOUSE_BUTTONS_WINDOWS_SUPPORTED = 5; //three standard buttons + XBUTTON1 + XBUTTON2.
+
 UINT AwtToolkit::GetMouseKeyState()
 {
     static BOOL mbSwapped = ::GetSystemMetrics(SM_SWAPBUTTON);
@@ -2310,5 +2312,9 @@ void AwtToolkit::setExtraMouseButtonsEnabled(BOOL enable) {
 
 JNIEXPORT jint JNICALL Java_sun_awt_windows_WToolkit_getNumberOfButtonsImpl
 (JNIEnv *, jobject self) {
-    return GetSystemMetrics(SM_CMOUSEBUTTONS);
+    return AwtToolkit::GetNumberOfButtons();
+}
+
+UINT AwtToolkit::GetNumberOfButtons() {
+    return MOUSE_BUTTONS_WINDOWS_SUPPORTED;
 }
