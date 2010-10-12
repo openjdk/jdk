@@ -791,7 +791,7 @@ class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   int                _worker_i;
 public:
   RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, int worker_i = 0) :
-    _cl(g1->g1_rem_set()->as_HRInto_G1RemSet(), worker_i),
+    _cl(g1->g1_rem_set(), worker_i),
     _worker_i(worker_i),
     _g1h(g1)
   { }
@@ -890,7 +890,7 @@ void G1CollectedHeap::do_collection(bool explicit_gc,
     abandon_cur_alloc_region();
     abandon_gc_alloc_regions();
     assert(_cur_alloc_region == NULL, "Invariant.");
-    g1_rem_set()->as_HRInto_G1RemSet()->cleanupHRRS();
+    g1_rem_set()->cleanupHRRS();
     tear_down_region_lists();
     set_used_regions_to_need_zero_fill();
 
@@ -1506,15 +1506,11 @@ jint G1CollectedHeap::initialize() {
   }
 
   // Also create a G1 rem set.
-  if (G1UseHRIntoRS) {
-    if (mr_bs()->is_a(BarrierSet::CardTableModRef)) {
-      _g1_rem_set = new HRInto_G1RemSet(this, (CardTableModRefBS*)mr_bs());
-    } else {
-      vm_exit_during_initialization("G1 requires a cardtable mod ref bs.");
-      return JNI_ENOMEM;
-    }
+  if (mr_bs()->is_a(BarrierSet::CardTableModRef)) {
+    _g1_rem_set = new G1RemSet(this, (CardTableModRefBS*)mr_bs());
   } else {
-    _g1_rem_set = new StupidG1RemSet(this);
+    vm_exit_during_initialization("G1 requires a cardtable mod ref bs.");
+    return JNI_ENOMEM;
   }
 
   // Carve out the G1 part of the heap.
@@ -2706,8 +2702,7 @@ size_t G1CollectedHeap::max_pending_card_num() {
 }
 
 size_t G1CollectedHeap::cards_scanned() {
-  HRInto_G1RemSet* g1_rset = (HRInto_G1RemSet*) g1_rem_set();
-  return g1_rset->cardsScanned();
+  return g1_rem_set()->cardsScanned();
 }
 
 void
