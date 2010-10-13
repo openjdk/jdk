@@ -425,8 +425,13 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   Register pre_val_reg = pre_val()->as_register();
 
   ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false);
-  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                    pre_val_reg, _continuation);
+  if (__ is_in_wdisp16_range(_continuation)) {
+    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                      pre_val_reg, _continuation);
+  } else {
+    __ cmp(pre_val_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pn, _continuation);
+  }
   __ delayed()->nop();
 
   __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_pre_barrier_slow_id));
@@ -452,8 +457,13 @@ void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
   assert(new_val()->is_register(), "Precondition.");
   Register addr_reg = addr()->as_pointer_register();
   Register new_val_reg = new_val()->as_register();
-  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                    new_val_reg, _continuation);
+  if (__ is_in_wdisp16_range(_continuation)) {
+    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                      new_val_reg, _continuation);
+  } else {
+    __ cmp(new_val_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pn, _continuation);
+  }
   __ delayed()->nop();
 
   __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_post_barrier_slow_id));
