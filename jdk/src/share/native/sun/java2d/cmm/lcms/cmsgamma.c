@@ -27,9 +27,10 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
+//---------------------------------------------------------------------------------
 //
-//  Little cms
-//  Copyright (C) 1998-2007 Marti Maria
+//  Little Color Management System
+//  Copyright (c) 1998-2010 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -48,447 +49,850 @@
 // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//---------------------------------------------------------------------------------
+//
+#include "lcms2_internal.h"
+
+// Tone curves are powerful constructs that can contain curves specified in diverse ways.
+// The curve is stored in segments, where each segment can be sampled or specified by parameters.
+// a 16.bit simplification of the *whole* curve is kept for optimization purposes. For float operation,
+// each segment is evaluated separately. Plug-ins may be used to define new parametric schemes,
+// each plug-in may define up to MAX_TYPES_IN_LCMS_PLUGIN functions types. For defining a function,
+// the plug-in should provide the type id, how many parameters each type has, and a pointer to
+// a procedure that evaluates the function. In the case of reverse evaluation, the evaluator will
+// be called with the type id as a negative value, and a sampled version of the reversed curve
+// will be built.
+
+// ----------------------------------------------------------------- Implementation
+// Maxim number of nodes
+#define MAX_NODES_IN_CURVE   4097
+#define MINUS_INF            (-1E22F)
+#define PLUS_INF             (+1E22F)
+
+// The list of supported parametric curves
+typedef struct _cmsParametricCurvesCollection_st {
+
+    int nFunctions;                                     // Number of supported functions in this chunk
+    int FunctionTypes[MAX_TYPES_IN_LCMS_PLUGIN];        // The identification types
+    int ParameterCount[MAX_TYPES_IN_LCMS_PLUGIN];       // Number of parameters for each function
+    cmsParametricCurveEvaluator    Evaluator;           // The evaluator
+
+    struct _cmsParametricCurvesCollection_st* Next; // Next in list
+
+} _cmsParametricCurvesCollection;
 
 
-#include "lcms.h"
+// This is the default (built-in) evaluator
+static cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Number Params[], cmsFloat64Number R);
 
-// Gamma handling.
+// The built-in list
+static _cmsParametricCurvesCollection DefaultCurves = {
+    9,                                  // # of curve types
+    { 1, 2, 3, 4, 5, 6, 7, 8, 108 },    // Parametric curve ID
+    { 1, 3, 4, 5, 7, 4, 5, 5, 1 },      // Parameters by type
+    DefaultEvalParametricFn,            // Evaluator
+    NULL                                // Next in chain
+};
 
-LPGAMMATABLE LCMSEXPORT cmsAllocGamma(int nEntries);
-void         LCMSEXPORT cmsFreeGamma(LPGAMMATABLE Gamma);
-void         LCMSEXPORT cmsFreeGammaTriple(LPGAMMATABLE Gamma[3]);
-LPGAMMATABLE LCMSEXPORT cmsBuildGamma(int nEntries, double Gamma);
-LPGAMMATABLE LCMSEXPORT cmsDupGamma(LPGAMMATABLE Src);
-LPGAMMATABLE LCMSEXPORT cmsReverseGamma(int nResultSamples, LPGAMMATABLE InGamma);
-LPGAMMATABLE LCMSEXPORT cmsBuildParametricGamma(int nEntries, int Type, double Params[]);
-LPGAMMATABLE LCMSEXPORT cmsJoinGamma(LPGAMMATABLE InGamma, LPGAMMATABLE OutGamma);
-LPGAMMATABLE LCMSEXPORT cmsJoinGammaEx(LPGAMMATABLE InGamma, LPGAMMATABLE OutGamma, int nPoints);
-LCMSBOOL         LCMSEXPORT cmsSmoothGamma(LPGAMMATABLE Tab, double lambda);
+// The linked list head
+static _cmsParametricCurvesCollection* ParametricCurves = &DefaultCurves;
 
-LCMSBOOL         cdecl _cmsSmoothEndpoints(LPWORD Table, int nPoints);
-
-
-// Sampled curves
-
-LPSAMPLEDCURVE cdecl cmsAllocSampledCurve(int nItems);
-void           cdecl cmsFreeSampledCurve(LPSAMPLEDCURVE p);
-void           cdecl cmsEndpointsOfSampledCurve(LPSAMPLEDCURVE p, double* Min, double* Max);
-void           cdecl cmsClampSampledCurve(LPSAMPLEDCURVE p, double Min, double Max);
-LCMSBOOL       cdecl cmsSmoothSampledCurve(LPSAMPLEDCURVE Tab, double SmoothingLambda);
-void           cdecl cmsRescaleSampledCurve(LPSAMPLEDCURVE p, double Min, double Max, int nPoints);
-
-LPSAMPLEDCURVE cdecl cmsJoinSampledCurves(LPSAMPLEDCURVE X, LPSAMPLEDCURVE Y, int nResultingPoints);
-
-double LCMSEXPORT cmsEstimateGamma(LPGAMMATABLE t);
-double LCMSEXPORT cmsEstimateGammaEx(LPWORD GammaTable, int nEntries, double Thereshold);
-
-// ----------------------------------------------------------------------------------------
-
-
-#define MAX_KNOTS   4096
-typedef float vec[MAX_KNOTS+1];
-
-
-// Ciclic-redundant-check for assuring table is a true representation of parametric curve
-
-// The usual polynomial, which is used for AAL5, FDDI, and probably Ethernet
-#define QUOTIENT 0x04c11db7
-
-static
-unsigned int Crc32(unsigned int result, LPVOID ptr, int len)
+// As a way to install new parametric curves
+cmsBool _cmsRegisterParametricCurvesPlugin(cmsPluginBase* Data)
 {
-    int          i,j;
-    BYTE         octet;
-    LPBYTE       data = (LPBYTE) ptr;
+    cmsPluginParametricCurves* Plugin = (cmsPluginParametricCurves*) Data;
+    _cmsParametricCurvesCollection* fl;
 
-    for (i=0; i < len; i++) {
+    if (Data == NULL) {
 
-        octet = *data++;
+          ParametricCurves =  &DefaultCurves;
+          return TRUE;
+    }
 
-        for (j=0; j < 8; j++) {
+    fl = (_cmsParametricCurvesCollection*) _cmsPluginMalloc(sizeof(_cmsParametricCurvesCollection));
+    if (fl == NULL) return FALSE;
 
-            if (result & 0x80000000) {
+    // Copy the parameters
+    fl ->Evaluator  = Plugin ->Evaluator;
+    fl ->nFunctions = Plugin ->nFunctions;
 
-                result = (result << 1) ^ QUOTIENT ^ (octet >> 7);
-            }
-            else
-            {
-                result = (result << 1) ^ (octet >> 7);
-            }
-            octet <<= 1;
+    // Make sure no mem overwrites
+    if (fl ->nFunctions > MAX_TYPES_IN_LCMS_PLUGIN)
+        fl ->nFunctions = MAX_TYPES_IN_LCMS_PLUGIN;
+
+    // Copy the data
+    memmove(fl->FunctionTypes,  Plugin ->FunctionTypes,   fl->nFunctions * sizeof(cmsUInt32Number));
+    memmove(fl->ParameterCount, Plugin ->ParameterCount,  fl->nFunctions * sizeof(cmsUInt32Number));
+
+    // Keep linked list
+    fl ->Next = ParametricCurves;
+    ParametricCurves = fl;
+
+    // All is ok
+    return TRUE;
+}
+
+
+// Search in type list, return position or -1 if not found
+static
+int IsInSet(int Type, _cmsParametricCurvesCollection* c)
+{
+    int i;
+
+    for (i=0; i < c ->nFunctions; i++)
+        if (abs(Type) == c ->FunctionTypes[i]) return i;
+
+    return -1;
+}
+
+
+// Search for the collection which contains a specific type
+static
+_cmsParametricCurvesCollection *GetParametricCurveByType(int Type, int* index)
+{
+    _cmsParametricCurvesCollection* c;
+    int Position;
+
+    for (c = ParametricCurves; c != NULL; c = c ->Next) {
+
+        Position = IsInSet(Type, c);
+
+        if (Position != -1) {
+            if (index != NULL)
+                *index = Position;
+            return c;
         }
     }
 
-    return result;
+    return NULL;
 }
 
-// Get CRC of gamma table
-
-unsigned int _cmsCrc32OfGammaTable(LPGAMMATABLE Table)
+// Low level allocate, which takes care of memory details. nEntries may be zero, and in this case
+// no optimation curve is computed. nSegments may also be zero in the inverse case, where only the
+// optimization curve is given. Both features simultaneously is an error
+static
+cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntries,
+                                      cmsInt32Number nSegments, const cmsCurveSegment* Segments,
+                                      const cmsUInt16Number* Values)
 {
-    unsigned int crc = ~0U;
+    cmsToneCurve* p;
+    int i;
 
-    crc = Crc32(crc, &Table -> Seed.Type,  sizeof(int));
-    crc = Crc32(crc, Table ->Seed.Params,  sizeof(double)*10);
-    crc = Crc32(crc, &Table ->nEntries,    sizeof(int));
-    crc = Crc32(crc, Table ->GammaTable,   sizeof(WORD) * Table -> nEntries);
+    // We allow huge tables, which are then restricted for smoothing operations
+    if (nEntries > 65530 || nEntries < 0) {
+        cmsSignalError(ContextID, cmsERROR_RANGE, "Couldn't create tone curve of more than 65530 entries");
+        return NULL;
+    }
 
-    return ~crc;
+    if (nEntries <= 0 && nSegments <= 0) {
+        cmsSignalError(ContextID, cmsERROR_RANGE, "Couldn't create tone curve with zero segments and no table");
+        return NULL;
+    }
 
+    // Allocate all required pointers, etc.
+    p = (cmsToneCurve*) _cmsMallocZero(ContextID, sizeof(cmsToneCurve));
+    if (!p) return NULL;
+
+    // In this case, there are no segments
+    if (nSegments <= 0) {
+        p ->Segments = NULL;
+        p ->Evals = NULL;
+    }
+    else {
+        p ->Segments = (cmsCurveSegment*) _cmsCalloc(ContextID, nSegments, sizeof(cmsCurveSegment));
+        if (p ->Segments == NULL) goto Error;
+
+        p ->Evals    = (cmsParametricCurveEvaluator*) _cmsCalloc(ContextID, nSegments, sizeof(cmsParametricCurveEvaluator));
+        if (p ->Evals == NULL) goto Error;
+    }
+
+    p -> nSegments = nSegments;
+
+    // This 16-bit table contains a limited precision representation of the whole curve and is kept for
+    // increasing xput on certain operations.
+    if (nEntries <= 0) {
+        p ->Table16 = NULL;
+    }
+    else {
+       p ->Table16 = (cmsUInt16Number*)  _cmsCalloc(ContextID, nEntries, sizeof(cmsUInt16Number));
+       if (p ->Table16 == NULL) goto Error;
+    }
+
+    p -> nEntries  = nEntries;
+
+    // Initialize members if requested
+    if (Values != NULL && (nEntries > 0)) {
+
+        for (i=0; i < nEntries; i++)
+            p ->Table16[i] = Values[i];
+    }
+
+    // Initialize the segments stuff. The evaluator for each segment is located and a pointer to it
+    // is placed in advance to maximize performance.
+    if (Segments != NULL && (nSegments > 0)) {
+
+        _cmsParametricCurvesCollection *c;
+
+        p ->SegInterp = (cmsInterpParams**) _cmsCalloc(ContextID, nSegments, sizeof(cmsInterpParams*));
+        if (p ->SegInterp == NULL) goto Error;
+
+        for (i=0; i< nSegments; i++) {
+
+            // Type 0 is a special marker for table-based curves
+            if (Segments[i].Type == 0)
+                p ->SegInterp[i] = _cmsComputeInterpParams(ContextID, Segments[i].nGridPoints, 1, 1, NULL, CMS_LERP_FLAGS_FLOAT);
+
+            memmove(&p ->Segments[i], &Segments[i], sizeof(cmsCurveSegment));
+
+            if (Segments[i].Type == 0 && Segments[i].SampledPoints != NULL)
+                p ->Segments[i].SampledPoints = (cmsFloat32Number*) _cmsDupMem(ContextID, Segments[i].SampledPoints, sizeof(cmsFloat32Number) * Segments[i].nGridPoints);
+            else
+                p ->Segments[i].SampledPoints = NULL;
+
+
+            c = GetParametricCurveByType(Segments[i].Type, NULL);
+            if (c != NULL)
+                    p ->Evals[i] = c ->Evaluator;
+        }
+    }
+
+    p ->InterpParams = _cmsComputeInterpParams(ContextID, p ->nEntries, 1, 1, p->Table16, CMS_LERP_FLAGS_16BITS);
+    return p;
+
+Error:
+    if (p -> Segments) _cmsFree(ContextID, p ->Segments);
+    if (p -> Evals) _cmsFree(ContextID, p -> Evals);
+    if (p ->Table16) _cmsFree(ContextID, p ->Table16);
+    _cmsFree(ContextID, p);
+    return NULL;
 }
 
 
-LPGAMMATABLE LCMSEXPORT cmsAllocGamma(int nEntries)
+// Parametric Fn using floating point
+static
+cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Number Params[], cmsFloat64Number R)
 {
-       LPGAMMATABLE p;
-       size_t size;
+    cmsFloat64Number e, Val, disc;
 
-       if (nEntries > 65530 || nEntries <= 0) {
-                cmsSignalError(LCMS_ERRC_ABORTED, "Couldn't create gammatable of more than 65530 entries");
-                return NULL;
-       }
+    switch (Type) {
 
-       size = sizeof(GAMMATABLE) + (sizeof(WORD) * (nEntries-1));
+    // X = Y ^ Gamma
+    case 1:
+        if (R < 0)
+            Val = 0;
+        else
+            Val = pow(R, Params[0]);
+        break;
 
-       p = (LPGAMMATABLE) _cmsMalloc(size);
-       if (!p) return NULL;
+    // Type 1 Reversed: X = Y ^1/gamma
+    case -1:
+        if (R < 0)
+            Val = 0;
+        else
+            Val = pow(R, 1/Params[0]);
+        break;
 
-       ZeroMemory(p, size);
+    // CIE 122-1966
+    // Y = (aX + b)^Gamma  | X >= -b/a
+    // Y = 0               | else
+    case 2:
+        disc = -Params[2] / Params[1];
 
-       p -> Seed.Type     = 0;
-       p -> nEntries = nEntries;
+        if (R >= disc ) {
 
-       return p;
+            e = Params[1]*R + Params[2];
+
+            if (e > 0)
+                Val = pow(e, Params[0]);
+            else
+                Val = 0;
+        }
+        else
+            Val = 0;
+        break;
+
+     // Type 2 Reversed
+     // X = (Y ^1/g  - b) / a
+     case -2:
+         if (R < 0)
+             Val = 0;
+         else
+             Val = (pow(R, 1.0/Params[0]) - Params[2]) / Params[1];
+
+         if (Val < 0)
+              Val = 0;
+         break;
+
+
+    // IEC 61966-3
+    // Y = (aX + b)^Gamma | X <= -b/a
+    // Y = c              | else
+    case 3:
+        disc = -Params[2] / Params[1];
+        if (disc < 0)
+            disc = 0;
+
+        if (R >= disc) {
+
+            e = Params[1]*R + Params[2];
+
+            if (e > 0)
+                Val = pow(e, Params[0]) + Params[3];
+            else
+                Val = 0;
+        }
+        else
+            Val = Params[3];
+        break;
+
+
+    // Type 3 reversed
+    // X=((Y-c)^1/g - b)/a      | (Y>=c)
+    // X=-b/a                   | (Y<c)
+    case -3:
+        if (R >= Params[3])  {
+
+            e = R - Params[3];
+
+            if (e > 0)
+                Val = (pow(e, 1/Params[0]) - Params[2]) / Params[1];
+            else
+                Val = 0;
+        }
+        else {
+            Val = -Params[2] / Params[1];
+        }
+        break;
+
+
+    // IEC 61966-2.1 (sRGB)
+    // Y = (aX + b)^Gamma | X >= d
+    // Y = cX             | X < d
+    case 4:
+        if (R >= Params[4]) {
+
+            e = Params[1]*R + Params[2];
+
+            if (e > 0)
+                Val = pow(e, Params[0]);
+            else
+                Val = 0;
+        }
+        else
+            Val = R * Params[3];
+        break;
+
+    // Type 4 reversed
+    // X=((Y^1/g-b)/a)    | Y >= (ad+b)^g
+    // X=Y/c              | Y< (ad+b)^g
+    case -4:
+        e = Params[1] * Params[4] + Params[2];
+        if (e < 0)
+            disc = 0;
+        else
+            disc = pow(e, Params[0]);
+
+        if (R >= disc) {
+
+            Val = (pow(R, 1.0/Params[0]) - Params[2]) / Params[1];
+        }
+        else {
+            Val = R / Params[3];
+        }
+        break;
+
+
+    // Y = (aX + b)^Gamma + e | X >= d
+    // Y = cX + f             | X < d
+    case 5:
+        if (R >= Params[4]) {
+
+            e = Params[1]*R + Params[2];
+
+            if (e > 0)
+                Val = pow(e, Params[0]) + Params[5];
+            else
+                Val = 0;
+        }
+        else
+            Val = R*Params[3] + Params[6];
+        break;
+
+
+    // Reversed type 5
+    // X=((Y-e)1/g-b)/a   | Y >=(ad+b)^g+e), cd+f
+    // X=(Y-f)/c          | else
+    case -5:
+
+        disc = Params[3] * Params[4] + Params[6];
+        if (R >= disc) {
+
+            e = R - Params[5];
+            if (e < 0)
+                Val = 0;
+            else
+                Val = (pow(e, 1.0/Params[0]) - Params[2]) / Params[1];
+        }
+        else {
+            Val = (R - Params[6]) / Params[3];
+        }
+        break;
+
+
+    // Types 6,7,8 comes from segmented curves as described in ICCSpecRevision_02_11_06_Float.pdf
+    // Type 6 is basically identical to type 5 without d
+
+    // Y = (a * X + b) ^ Gamma + c
+    case 6:
+        e = Params[1]*R + Params[2];
+
+        if (e < 0)
+            Val = 0;
+        else
+            Val = pow(e, Params[0]) + Params[3];
+        break;
+
+    // ((Y - c) ^1/Gamma - b) / a
+    case -6:
+        e = R - Params[3];
+        if (e < 0)
+            Val = 0;
+        else
+        Val = (pow(e, 1.0/Params[0]) - Params[2]) / Params[1];
+        break;
+
+
+    // Y = a * log (b * X^Gamma + c) + d
+    case 7:
+
+       e = Params[2] * pow(R, Params[0]) + Params[3];
+       if (e <= 0)
+           Val = 0;
+       else
+           Val = Params[1]*log10(e) + Params[4];
+       break;
+
+    // (Y - d) / a = log(b * X ^Gamma + c)
+    // pow(10, (Y-d) / a) = b * X ^Gamma + c
+    // pow((pow(10, (Y-d) / a) - c) / b, 1/g) = X
+    case -7:
+       Val = pow((pow(10.0, (R-Params[4]) / Params[1]) - Params[3]) / Params[2], 1.0 / Params[0]);
+       break;
+
+
+   //Y = a * b^(c*X+d) + e
+   case 8:
+       Val = (Params[0] * pow(Params[1], Params[2] * R + Params[3]) + Params[4]);
+       break;
+
+
+   // Y = (log((y-e) / a) / log(b) - d ) / c
+   // a=0, b=1, c=2, d=3, e=4,
+   case -8:
+
+       disc = R - Params[4];
+       if (disc < 0) Val = 0;
+       else
+           Val = (log(disc / Params[0]) / log(Params[1]) - Params[3]) / Params[2];
+       break;
+
+   // S-Shaped: (1 - (1-x)^1/g)^1/g
+   case 108:
+      Val = pow(1.0 - pow(1 - R, 1/Params[0]), 1/Params[0]);
+      break;
+
+    // y = (1 - (1-x)^1/g)^1/g
+    // y^g = (1 - (1-x)^1/g)
+    // 1 - y^g = (1-x)^1/g
+    // (1 - y^g)^g = 1 - x
+    // 1 - (1 - y^g)^g
+    case -108:
+        Val = 1 - pow(1 - pow(R, Params[0]), Params[0]);
+        break;
+
+    default:
+        // Unsupported parametric curve. Should never reach here
+        return 0;
+    }
+
+    return Val;
 }
 
-void LCMSEXPORT cmsFreeGamma(LPGAMMATABLE Gamma)
+// Evaluate a segmented funtion for a single value. Return -1 if no valid segment found .
+// If fn type is 0, perform an interpolation on the table
+static
+cmsFloat64Number EvalSegmentedFn(const cmsToneCurve *g, cmsFloat64Number R)
 {
-       if (Gamma)  _cmsFree(Gamma);
+    int i;
+
+    for (i = g ->nSegments-1; i >= 0 ; --i) {
+
+        // Check for domain
+        if ((R > g ->Segments[i].x0) && (R <= g ->Segments[i].x1)) {
+
+            // Type == 0 means segment is sampled
+            if (g ->Segments[i].Type == 0) {
+
+                cmsFloat32Number R1 = (cmsFloat32Number) (R - g ->Segments[i].x0);
+                cmsFloat32Number Out;
+
+                // Setup the table (TODO: clean that)
+                g ->SegInterp[i]-> Table = g ->Segments[i].SampledPoints;
+
+                g ->SegInterp[i] -> Interpolation.LerpFloat(&R1, &Out, g ->SegInterp[i]);
+
+                return Out;
+            }
+            else
+                return g ->Evals[i](g->Segments[i].Type, g ->Segments[i].Params, R);
+        }
+    }
+
+    return MINUS_INF;
 }
 
 
-
-void LCMSEXPORT cmsFreeGammaTriple(LPGAMMATABLE Gamma[3])
+// Create an empty gamma curve, by using tables. This specifies only the limited-precision part, and leaves the
+// floating point description empty.
+cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurve16(cmsContext ContextID, cmsInt32Number nEntries, const cmsUInt16Number Values[])
 {
-    cmsFreeGamma(Gamma[0]);
-    cmsFreeGamma(Gamma[1]);
-    cmsFreeGamma(Gamma[2]);
-    Gamma[0] = Gamma[1] = Gamma[2] = NULL;
+    return AllocateToneCurveStruct(ContextID, nEntries, 0, NULL, Values);
 }
 
-
-
-// Duplicate a gamma table
-
-LPGAMMATABLE  LCMSEXPORT cmsDupGamma(LPGAMMATABLE In)
+static
+int EntriesByGamma(cmsFloat64Number Gamma)
 {
-       LPGAMMATABLE Ptr;
-       size_t size;
-
-       Ptr = cmsAllocGamma(In -> nEntries);
-       if (Ptr == NULL) return NULL;
-
-       size = sizeof(GAMMATABLE) + (sizeof(WORD) * (In -> nEntries-1));
-
-       CopyMemory(Ptr, In, size);
-       return Ptr;
+    if (fabs(Gamma - 1.0) < 0.001) return 2;
+    return 4096;
 }
 
 
-// Handle gamma using interpolation tables. The resulting curves can become
-// very stange, but are pleasent to eye.
-
-LPGAMMATABLE LCMSEXPORT cmsJoinGamma(LPGAMMATABLE InGamma,
-                          LPGAMMATABLE OutGamma)
+// Create a segmented gamma, fill the table
+cmsToneCurve* CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID,
+                                                   cmsInt32Number nSegments, const cmsCurveSegment Segments[])
 {
-       register int i;
-       L16PARAMS L16In, L16Out;
-       LPWORD InPtr, OutPtr;
-       LPGAMMATABLE p;
+    int i;
+    cmsFloat64Number R, Val;
+    cmsToneCurve* g;
+    int nGridPoints = 4096;
 
-       p = cmsAllocGamma(256);
-       if (!p) return NULL;
+    _cmsAssert(Segments != NULL);
 
-       cmsCalcL16Params(InGamma -> nEntries, &L16In);
-       InPtr  = InGamma -> GammaTable;
+    // Optimizatin for identity curves.
+    if (nSegments == 1 && Segments[0].Type == 1) {
 
-       cmsCalcL16Params(OutGamma -> nEntries, &L16Out);
-       OutPtr = OutGamma-> GammaTable;
+        nGridPoints = EntriesByGamma(Segments[0].Params[0]);
+    }
 
-       for (i=0; i < 256; i++)
-       {
-              WORD wValIn, wValOut;
+    g = AllocateToneCurveStruct(ContextID, nGridPoints, nSegments, Segments, NULL);
+    if (g == NULL) return NULL;
 
-              wValIn  = cmsLinearInterpLUT16(RGB_8_TO_16(i), InPtr, &L16In);
-              wValOut = cmsReverseLinearInterpLUT16(wValIn, OutPtr, &L16Out);
+    // Once we have the floating point version, we can approximate a 16 bit table of 4096 entries
+    // for performance reasons. This table would normally not be used except on 8/16 bits transforms.
+    for (i=0; i < nGridPoints; i++) {
 
-              p -> GammaTable[i] = wValOut;
-       }
+        R   = (cmsFloat64Number) i / (nGridPoints-1);
 
-       return p;
+        Val = EvalSegmentedFn(g, R);
+
+        // Round and saturate
+        g ->Table16[i] = _cmsQuickSaturateWord(Val * 65535.0);
+    }
+
+    return g;
 }
 
-
-
-// New method, using smoothed parametric curves. This works FAR better.
-// We want to get
-//
-//      y = f(g^-1(x))      ; f = ingamma, g = outgamma
-//
-// And this can be parametrized as
-//
-//      y = f(t)
-//      x = g(t)
-
-
-LPGAMMATABLE LCMSEXPORT cmsJoinGammaEx(LPGAMMATABLE InGamma,
-                                       LPGAMMATABLE OutGamma, int nPoints)
+// Use a segmented curve to store the floating point table
+cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cmsUInt32Number nEntries, const cmsFloat32Number values[])
 {
+    cmsCurveSegment Seg[2];
 
-    LPSAMPLEDCURVE x, y, r;
-    LPGAMMATABLE res;
+    // Initialize segmented curve part up to 0
+    Seg[0].x0 = -1;
+    Seg[0].x1 = 0;
+    Seg[0].Type = 6;
 
-    x = cmsConvertGammaToSampledCurve(InGamma,  nPoints);
-    y = cmsConvertGammaToSampledCurve(OutGamma, nPoints);
-    r = cmsJoinSampledCurves(y, x, nPoints);
+    Seg[0].Params[0] = 1;
+    Seg[0].Params[1] = 0;
+    Seg[0].Params[2] = 0;
+    Seg[0].Params[3] = 0;
+    Seg[0].Params[4] = 0;
 
-    // Does clean "hair"
-    cmsSmoothSampledCurve(r, 0.001);
+    // From zero to any
+    Seg[1].x0 = 0;
+    Seg[1].x1 = 1.0;
+    Seg[1].Type = 0;
 
-    cmsClampSampledCurve(r, 0.0, 65535.0);
+    Seg[1].nGridPoints = nEntries;
+    Seg[1].SampledPoints = (cmsFloat32Number*) values;
 
-    cmsFreeSampledCurve(x);
-    cmsFreeSampledCurve(y);
-
-    res = cmsConvertSampledCurveToGamma(r, 65535.0);
-    cmsFreeSampledCurve(r);
-
-    return res;
+    return cmsBuildSegmentedToneCurve(ContextID, 2, Seg);
 }
-
-
-
-// Reverse a gamma table
-
-LPGAMMATABLE LCMSEXPORT cmsReverseGamma(int nResultSamples, LPGAMMATABLE InGamma)
-{
-       register int i;
-       L16PARAMS L16In;
-       LPWORD InPtr;
-       LPGAMMATABLE p;
-
-       // Try to reverse it analytically whatever possible
-       if (InGamma -> Seed.Type > 0 && InGamma -> Seed.Type <= 5 &&
-            _cmsCrc32OfGammaTable(InGamma) == InGamma -> Seed.Crc32) {
-
-                return cmsBuildParametricGamma(nResultSamples, -(InGamma -> Seed.Type), InGamma ->Seed.Params);
-       }
-
-
-       // Nope, reverse the table
-       p = cmsAllocGamma(nResultSamples);
-       if (!p) return NULL;
-
-       cmsCalcL16Params(InGamma -> nEntries, &L16In);
-       InPtr  = InGamma -> GammaTable;
-
-       for (i=0; i < nResultSamples; i++)
-       {
-              WORD wValIn, wValOut;
-
-              wValIn = _cmsQuantizeVal(i, nResultSamples);
-              wValOut = cmsReverseLinearInterpLUT16(wValIn, InPtr, &L16In);
-              p -> GammaTable[i] = wValOut;
-       }
-
-
-       return p;
-}
-
-
 
 // Parametric curves
 //
-// Parameters goes as: Gamma, a, b, c, d, e, f
+// Parameters goes as: Curve, a, b, c, d, e, f
 // Type is the ICC type +1
 // if type is negative, then the curve is analyticaly inverted
-
-LPGAMMATABLE LCMSEXPORT cmsBuildParametricGamma(int nEntries, int Type, double Params[])
+cmsToneCurve* CMSEXPORT cmsBuildParametricToneCurve(cmsContext ContextID, cmsInt32Number Type, const cmsFloat64Number Params[])
 {
-        LPGAMMATABLE Table;
-        double R, Val, dval, e;
-        int i;
-        int ParamsByType[] = { 0, 1, 3, 4, 5, 7 };
+    cmsCurveSegment Seg0;
+    int Pos = 0;
+    cmsUInt32Number size;
+    _cmsParametricCurvesCollection* c = GetParametricCurveByType(Type, &Pos);
 
-        Table = cmsAllocGamma(nEntries);
-        if (NULL == Table) return NULL;
+    _cmsAssert(Params != NULL);
 
-        Table -> Seed.Type = Type;
+    if (c == NULL) {
+         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Invalid parametric curve type %d", Type);
+        return NULL;
+    }
 
-        CopyMemory(Table ->Seed.Params, Params, ParamsByType[abs(Type)] * sizeof(double));
+    memset(&Seg0, 0, sizeof(Seg0));
 
+    Seg0.x0   = MINUS_INF;
+    Seg0.x1   = PLUS_INF;
+    Seg0.Type = Type;
 
-        for (i=0; i < nEntries; i++) {
+    size = c->ParameterCount[Pos] * sizeof(cmsFloat64Number);
+    memmove(Seg0.Params, Params, size);
 
-                R   = (double) i / (nEntries-1);
-
-                switch (Type) {
-
-                // X = Y ^ Gamma
-                case 1:
-                      Val = pow(R, Params[0]);
-                      break;
-
-                // Type 1 Reversed: X = Y ^1/gamma
-                case -1:
-                      Val = pow(R, 1/Params[0]);
-                      break;
-
-                // CIE 122-1966
-                // Y = (aX + b)^Gamma  | X >= -b/a
-                // Y = 0               | else
-                case 2:
-                    if (R >= -Params[2] / Params[1]) {
-
-                              e = Params[1]*R + Params[2];
-
-                              if (e > 0)
-                                Val = pow(e, Params[0]);
-                              else
-                                Val = 0;
-                    }
-                    else
-                              Val = 0;
-                      break;
-
-                // Type 2 Reversed
-                // X = (Y ^1/g  - b) / a
-                case -2:
-
-                    Val = (pow(R, 1.0/Params[0]) - Params[2]) / Params[1];
-                    if (Val < 0)
-                            Val = 0;
-                    break;
-
-
-                // IEC 61966-3
-                // Y = (aX + b)^Gamma | X <= -b/a
-                // Y = c              | else
-                case 3:
-                    if (R >= -Params[2] / Params[1]) {
-
-                      e = Params[1]*R + Params[2];
-                      Val = pow(e, Params[0]) + Params[3];
-                    }
-                    else
-                      Val = Params[3];
-                    break;
-
-
-                // Type 3 reversed
-                // X=((Y-c)^1/g - b)/a      | (Y>=c)
-                // X=-b/a                   | (Y<c)
-
-                case -3:
-                    if (R >= Params[3])  {
-                        e = R - Params[3];
-                        Val = (pow(e, 1/Params[0]) - Params[2]) / Params[1];
-                        if (Val < 0) Val = 0;
-                    }
-                    else {
-                        Val = -Params[2] / Params[1];
-                    }
-                    break;
-
-
-                // IEC 61966-2.1 (sRGB)
-                // Y = (aX + b)^Gamma | X >= d
-                // Y = cX             | X < d
-                case 4:
-                    if (R >= Params[4]) {
-
-                              e = Params[1]*R + Params[2];
-                              if (e > 0)
-                                Val = pow(e, Params[0]);
-                              else
-                                Val = 0;
-                    }
-                      else
-                              Val = R * Params[3];
-                      break;
-
-                // Type 4 reversed
-                // X=((Y^1/g-b)/a)    | Y >= (ad+b)^g
-                // X=Y/c              | Y< (ad+b)^g
-
-                case -4:
-                    if (R >= pow(Params[1] * Params[4] + Params[2], Params[0])) {
-
-                        Val = (pow(R, 1.0/Params[0]) - Params[2]) / Params[1];
-                    }
-                    else {
-                        Val = R / Params[3];
-                    }
-                    break;
-
-
-
-                // Y = (aX + b)^Gamma + e | X <= d
-                // Y = cX + f             | else
-                case 5:
-                    if (R >= Params[4]) {
-
-                        e = Params[1]*R + Params[2];
-                        Val = pow(e, Params[0]) + Params[5];
-                    }
-                    else
-                        Val = R*Params[3] + Params[6];
-                    break;
-
-
-                // Reversed type 5
-                // X=((Y-e)1/g-b)/a   | Y >=(ad+b)^g+e)
-                // X=(Y-f)/c          | else
-                case -5:
-
-                if (R >= pow(Params[1] * Params[4], Params[0]) + Params[5]) {
-
-                    Val = pow(R - Params[5], 1/Params[0]) - Params[2] / Params[1];
-                }
-                else {
-                    Val = (R - Params[6]) / Params[3];
-                }
-                break;
-
-                default:
-                        cmsSignalError(LCMS_ERRC_ABORTED, "Unsupported parametric curve type=%d", abs(Type)-1);
-                        cmsFreeGamma(Table);
-                        return NULL;
-                }
-
-
-        // Saturate
-
-        dval = Val * 65535.0 + .5;
-        if (dval > 65535.) dval = 65535.0;
-        if (dval < 0) dval = 0;
-
-        Table->GammaTable[i] = (WORD) floor(dval);
-        }
-
-        Table -> Seed.Crc32 = _cmsCrc32OfGammaTable(Table);
-
-        return Table;
+    return cmsBuildSegmentedToneCurve(ContextID, 1, &Seg0);
 }
+
+
 
 // Build a gamma table based on gamma constant
-
-LPGAMMATABLE LCMSEXPORT cmsBuildGamma(int nEntries, double Gamma)
+cmsToneCurve* CMSEXPORT cmsBuildGamma(cmsContext ContextID, cmsFloat64Number Gamma)
 {
-    return cmsBuildParametricGamma(nEntries, 1, &Gamma);
+    return cmsBuildParametricToneCurve(ContextID, 1, &Gamma);
 }
 
 
+// Free all memory taken by the gamma curve
+void CMSEXPORT cmsFreeToneCurve(cmsToneCurve* Curve)
+{
+    cmsContext ContextID;
+
+    if (Curve == NULL) return;
+
+    ContextID = Curve ->InterpParams->ContextID;
+
+    _cmsFreeInterpParams(Curve ->InterpParams);
+
+    if (Curve -> Table16)
+        _cmsFree(ContextID, Curve ->Table16);
+
+    if (Curve ->Segments) {
+
+        cmsUInt32Number i;
+
+        for (i=0; i < Curve ->nSegments; i++) {
+
+            if (Curve ->Segments[i].SampledPoints) {
+                _cmsFree(ContextID, Curve ->Segments[i].SampledPoints);
+            }
+
+            if (Curve ->SegInterp[i] != 0)
+                _cmsFreeInterpParams(Curve->SegInterp[i]);
+        }
+
+        _cmsFree(ContextID, Curve ->Segments);
+        _cmsFree(ContextID, Curve ->SegInterp);
+    }
+
+    if (Curve -> Evals)
+        _cmsFree(ContextID, Curve -> Evals);
+
+    if (Curve) _cmsFree(ContextID, Curve);
+}
+
+// Utility function, free 3 gamma tables
+void CMSEXPORT cmsFreeToneCurveTriple(cmsToneCurve* Curve[3])
+{
+
+    _cmsAssert(Curve != NULL);
+
+    if (Curve[0] != NULL) cmsFreeToneCurve(Curve[0]);
+    if (Curve[1] != NULL) cmsFreeToneCurve(Curve[1]);
+    if (Curve[2] != NULL) cmsFreeToneCurve(Curve[2]);
+
+    Curve[0] = Curve[1] = Curve[2] = NULL;
+}
+
+
+// Duplicate a gamma table
+cmsToneCurve* CMSEXPORT cmsDupToneCurve(const cmsToneCurve* In)
+{
+    if (In == NULL) return NULL;
+
+    return  AllocateToneCurveStruct(In ->InterpParams ->ContextID, In ->nEntries, In ->nSegments, In ->Segments, In ->Table16);
+}
+
+// Joins two curves for X and Y. Curves should be monotonic.
+// We want to get
+//
+//      y = Y^-1(X(t))
+//
+cmsToneCurve* CMSEXPORT cmsJoinToneCurve(cmsContext ContextID,
+                                      const cmsToneCurve* X,
+                                      const cmsToneCurve* Y, cmsUInt32Number nResultingPoints)
+{
+    cmsToneCurve* out = NULL;
+    cmsToneCurve* Yreversed = NULL;
+    cmsFloat32Number t, x;
+    cmsFloat32Number* Res = NULL;
+    cmsUInt32Number i;
+
+
+    _cmsAssert(X != NULL);
+    _cmsAssert(Y != NULL);
+
+    Yreversed = cmsReverseToneCurveEx(nResultingPoints, Y);
+    if (Yreversed == NULL) goto Error;
+
+    Res = (cmsFloat32Number*) _cmsCalloc(ContextID, nResultingPoints, sizeof(cmsFloat32Number));
+    if (Res == NULL) goto Error;
+
+    //Iterate
+    for (i=0; i <  nResultingPoints; i++) {
+
+        t = (cmsFloat32Number) i / (nResultingPoints-1);
+        x = cmsEvalToneCurveFloat(X,  t);
+        Res[i] = cmsEvalToneCurveFloat(Yreversed, x);
+    }
+
+    // Allocate space for output
+    out = cmsBuildTabulatedToneCurveFloat(ContextID, nResultingPoints, Res);
+
+Error:
+
+    if (Res != NULL) _cmsFree(ContextID, Res);
+    if (Yreversed != NULL) cmsFreeToneCurve(Yreversed);
+
+    return out;
+}
+
+
+
+// Get the surrounding nodes. This is tricky on non-monotonic tables
+static
+int GetInterval(cmsFloat64Number In, const cmsUInt16Number LutTable[], const struct _cms_interp_struc* p)
+{
+    int i;
+    int y0, y1;
+
+    // A 1 point table is not allowed
+    if (p -> Domain[0] < 1) return -1;
+
+    // Let's see if ascending or descending.
+    if (LutTable[0] < LutTable[p ->Domain[0]]) {
+
+        // Table is overall ascending
+        for (i=p->Domain[0]-1; i >=0; --i) {
+
+            y0 = LutTable[i];
+            y1 = LutTable[i+1];
+
+            if (y0 <= y1) { // Increasing
+                if (In >= y0 && In <= y1) return i;
+            }
+            else
+                if (y1 < y0) { // Decreasing
+                    if (In >= y1 && In <= y0) return i;
+                }
+        }
+    }
+    else {
+        // Table is overall descending
+        for (i=0; i < (int) p -> Domain[0]; i++) {
+
+            y0 = LutTable[i];
+            y1 = LutTable[i+1];
+
+            if (y0 <= y1) { // Increasing
+                if (In >= y0 && In <= y1) return i;
+            }
+            else
+                if (y1 < y0) { // Decreasing
+                    if (In >= y1 && In <= y0) return i;
+                }
+        }
+    }
+
+    return -1;
+}
+
+// Reverse a gamma table
+cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, const cmsToneCurve* InCurve)
+{
+    cmsToneCurve *out;
+    cmsFloat64Number a = 1, b = 0, y, x1, y1, x2, y2;
+    int i, j;
+    int Ascending;
+
+    _cmsAssert(InCurve != NULL);
+
+    // Try to reverse it analytically whatever possible
+    if (InCurve ->nSegments == 1 && InCurve ->Segments[0].Type > 0 && InCurve -> Segments[0].Type <= 5) {
+
+        return cmsBuildParametricToneCurve(InCurve ->InterpParams->ContextID,
+                                       -(InCurve -> Segments[0].Type),
+                                       InCurve -> Segments[0].Params);
+    }
+
+    // Nope, reverse the table.
+    out = cmsBuildTabulatedToneCurve16(InCurve ->InterpParams->ContextID, nResultSamples, NULL);
+    if (out == NULL)
+        return NULL;
+
+    // We want to know if this is an ascending or descending table
+    Ascending = !cmsIsToneCurveDescending(InCurve);
+
+    // Iterate across Y axis
+    for (i=0; i <  nResultSamples; i++) {
+
+        y = (cmsFloat64Number) i * 65535.0 / (nResultSamples - 1);
+
+        // Find interval in which y is within.
+        j = GetInterval(y, InCurve->Table16, InCurve->InterpParams);
+        if (j >= 0) {
+
+            // Get limits of interval
+            x1 = InCurve ->Table16[j];
+            x2 = InCurve ->Table16[j+1];
+
+            y1 = (cmsFloat64Number) (j * 65535.0) / (InCurve ->nEntries - 1);
+            y2 = (cmsFloat64Number) ((j+1) * 65535.0 ) / (InCurve ->nEntries - 1);
+
+            // If collapsed, then use any
+            if (x1 == x2) {
+
+                out ->Table16[i] = _cmsQuickSaturateWord(Ascending ? y2 : y1);
+                continue;
+
+            } else {
+
+                // Interpolate
+                a = (y2 - y1) / (x2 - x1);
+                b = y2 - a * x2;
+            }
+        }
+
+        out ->Table16[i] = _cmsQuickSaturateWord(a* y + b);
+    }
+
+    return out;
+}
+
+// Reverse a gamma table
+cmsToneCurve* CMSEXPORT cmsReverseToneCurve(const cmsToneCurve* InGamma)
+{
+    _cmsAssert(InGamma != NULL);
+
+    return cmsReverseToneCurveEx(InGamma -> nEntries, InGamma);
+}
 
 // From: Eilers, P.H.C. (1994) Smoothing and interpolation with finite
 // differences. in: Graphic Gems IV, Heckbert, P.S. (ed.), Academic press.
@@ -499,485 +903,264 @@ LPGAMMATABLE LCMSEXPORT cmsBuildGamma(int nEntries, double Gamma)
 //   Input:  smoothing parameter (lambda), length (m).
 //   Output: smoothed vector (z): vector from 1 to m.
 
-
 static
-void smooth2(vec w, vec y, vec z, float lambda, int m)
+cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[], cmsFloat32Number z[], cmsFloat32Number lambda, int m)
 {
-  int i, i1, i2;
-  vec c, d, e;
-  d[1] = w[1] + lambda;
-  c[1] = -2 * lambda / d[1];
-  e[1] = lambda /d[1];
-  z[1] = w[1] * y[1];
-  d[2] = w[2] + 5 * lambda - d[1] * c[1] *  c[1];
-  c[2] = (-4 * lambda - d[1] * c[1] * e[1]) / d[2];
-  e[2] = lambda / d[2];
-  z[2] = w[2] * y[2] - c[1] * z[1];
-  for (i = 3; i < m - 1; i++) {
-    i1 = i - 1; i2 = i - 2;
-    d[i]= w[i] + 6 * lambda - c[i1] * c[i1] * d[i1] - e[i2] * e[i2] * d[i2];
-    c[i] = (-4 * lambda -d[i1] * c[i1] * e[i1])/ d[i];
-    e[i] = lambda / d[i];
-    z[i] = w[i] * y[i] - c[i1] * z[i1] - e[i2] * z[i2];
-  }
-  i1 = m - 2; i2 = m - 3;
-  d[m - 1] = w[m - 1] + 5 * lambda -c[i1] * c[i1] * d[i1] - e[i2] * e[i2] * d[i2];
-  c[m - 1] = (-2 * lambda - d[i1] * c[i1] * e[i1]) / d[m - 1];
-  z[m - 1] = w[m - 1] * y[m - 1] - c[i1] * z[i1] - e[i2] * z[i2];
-  i1 = m - 1; i2 = m - 2;
-  d[m] = w[m] + lambda - c[i1] * c[i1] * d[i1] - e[i2] * e[i2] * d[i2];
-  z[m] = (w[m] * y[m] - c[i1] * z[i1] - e[i2] * z[i2]) / d[m];
-  z[m - 1] = z[m - 1] / d[m - 1] - c[m - 1] * z[m];
-  for (i = m - 2; 1<= i; i--)
-     z[i] = z[i] / d[i] - c[i] * z[i + 1] - e[i] * z[i + 2];
+    int i, i1, i2;
+    cmsFloat32Number *c, *d, *e;
+    cmsBool st;
+
+
+    c = (cmsFloat32Number*) _cmsCalloc(ContextID, MAX_NODES_IN_CURVE, sizeof(cmsFloat32Number));
+    d = (cmsFloat32Number*) _cmsCalloc(ContextID, MAX_NODES_IN_CURVE, sizeof(cmsFloat32Number));
+    e = (cmsFloat32Number*) _cmsCalloc(ContextID, MAX_NODES_IN_CURVE, sizeof(cmsFloat32Number));
+
+    if (c != NULL && d != NULL && e != NULL) {
+
+
+    d[1] = w[1] + lambda;
+    c[1] = -2 * lambda / d[1];
+    e[1] = lambda /d[1];
+    z[1] = w[1] * y[1];
+    d[2] = w[2] + 5 * lambda - d[1] * c[1] *  c[1];
+    c[2] = (-4 * lambda - d[1] * c[1] * e[1]) / d[2];
+    e[2] = lambda / d[2];
+    z[2] = w[2] * y[2] - c[1] * z[1];
+
+    for (i = 3; i < m - 1; i++) {
+        i1 = i - 1; i2 = i - 2;
+        d[i]= w[i] + 6 * lambda - c[i1] * c[i1] * d[i1] - e[i2] * e[i2] * d[i2];
+        c[i] = (-4 * lambda -d[i1] * c[i1] * e[i1])/ d[i];
+        e[i] = lambda / d[i];
+        z[i] = w[i] * y[i] - c[i1] * z[i1] - e[i2] * z[i2];
+    }
+
+    i1 = m - 2; i2 = m - 3;
+
+    d[m - 1] = w[m - 1] + 5 * lambda -c[i1] * c[i1] * d[i1] - e[i2] * e[i2] * d[i2];
+    c[m - 1] = (-2 * lambda - d[i1] * c[i1] * e[i1]) / d[m - 1];
+    z[m - 1] = w[m - 1] * y[m - 1] - c[i1] * z[i1] - e[i2] * z[i2];
+    i1 = m - 1; i2 = m - 2;
+
+    d[m] = w[m] + lambda - c[i1] * c[i1] * d[i1] - e[i2] * e[i2] * d[i2];
+    z[m] = (w[m] * y[m] - c[i1] * z[i1] - e[i2] * z[i2]) / d[m];
+    z[m - 1] = z[m - 1] / d[m - 1] - c[m - 1] * z[m];
+
+    for (i = m - 2; 1<= i; i--)
+        z[i] = z[i] / d[i] - c[i] * z[i + 1] - e[i] * z[i + 2];
+
+      st = TRUE;
+    }
+    else st = FALSE;
+
+    if (c != NULL) _cmsFree(ContextID, c);
+    if (d != NULL) _cmsFree(ContextID, d);
+    if (e != NULL) _cmsFree(ContextID, e);
+
+    return st;
 }
 
-
-
-// Smooths a curve sampled at regular intervals
-
-LCMSBOOL LCMSEXPORT cmsSmoothGamma(LPGAMMATABLE Tab, double lambda)
-
+// Smooths a curve sampled at regular intervals.
+cmsBool  CMSEXPORT cmsSmoothToneCurve(cmsToneCurve* Tab, cmsFloat64Number lambda)
 {
-    vec w, y, z;
+    cmsFloat32Number w[MAX_NODES_IN_CURVE], y[MAX_NODES_IN_CURVE], z[MAX_NODES_IN_CURVE];
     int i, nItems, Zeros, Poles;
 
+    if (Tab == NULL) return FALSE;
 
-    if (cmsIsLinear(Tab->GammaTable, Tab->nEntries)) return FALSE; // Nothing to do
+    if (cmsIsToneCurveLinear(Tab)) return FALSE; // Nothing to do
 
     nItems = Tab -> nEntries;
 
-    if (nItems > MAX_KNOTS) {
-                cmsSignalError(LCMS_ERRC_ABORTED, "cmsSmoothGamma: too many points.");
-                return FALSE;
-                }
+    if (nItems >= MAX_NODES_IN_CURVE) {
+        cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: too many points.");
+        return FALSE;
+    }
 
-    ZeroMemory(w, nItems * sizeof(float));
-    ZeroMemory(y, nItems * sizeof(float));
-    ZeroMemory(z, nItems * sizeof(float));
+    memset(w, 0, nItems * sizeof(cmsFloat32Number));
+    memset(y, 0, nItems * sizeof(cmsFloat32Number));
+    memset(z, 0, nItems * sizeof(cmsFloat32Number));
 
     for (i=0; i < nItems; i++)
     {
-        y[i+1] = (float) Tab -> GammaTable[i];
+        y[i+1] = (cmsFloat32Number) Tab -> Table16[i];
         w[i+1] = 1.0;
     }
 
-    smooth2(w, y, z, (float) lambda, nItems);
+    if (!smooth2(Tab ->InterpParams->ContextID, w, y, z, (cmsFloat32Number) lambda, nItems)) return FALSE;
 
     // Do some reality - checking...
     Zeros = Poles = 0;
     for (i=nItems; i > 1; --i) {
 
-            if (z[i] == 0.) Zeros++;
-            if (z[i] >= 65535.) Poles++;
-            if (z[i] < z[i-1]) return FALSE; // Non-Monotonic
+        if (z[i] == 0.) Zeros++;
+        if (z[i] >= 65535.) Poles++;
+        if (z[i] < z[i-1]) return FALSE; // Non-Monotonic
     }
 
     if (Zeros > (nItems / 3)) return FALSE;  // Degenerated, mostly zeros
     if (Poles > (nItems / 3)) return FALSE;  // Degenerated, mostly poles
 
     // Seems ok
-
     for (i=0; i < nItems; i++) {
 
-        // Clamp to WORD
-
-        float v = z[i+1];
-
-        if (v < 0) v = 0;
-        if (v > 65535.) v = 65535.;
-
-        Tab -> GammaTable[i] = (WORD) floor(v + .5);
-        }
+        // Clamp to cmsUInt16Number
+        Tab -> Table16[i] = _cmsQuickSaturateWord(z[i+1]);
+    }
 
     return TRUE;
 }
 
-
-// Check if curve is exponential, return gamma if so.
-
-double LCMSEXPORT cmsEstimateGammaEx(LPWORD GammaTable, int nEntries, double Thereshold)
+// Is a table linear? Do not use parametric since we cannot guarantee some weird parameters resulting
+// in a linear table. This way assures it is linear in 12 bits, which should be enought in most cases.
+cmsBool CMSEXPORT cmsIsToneCurveLinear(const cmsToneCurve* Curve)
 {
-    double gamma, sum, sum2;
-    double n, x, y, Std;
-    int i;
+    cmsUInt32Number i;
+    int diff;
+
+    _cmsAssert(Curve != NULL);
+
+    for (i=0; i < Curve ->nEntries; i++) {
+
+        diff = abs((int) Curve->Table16[i] - (int) _cmsQuantizeVal(i, Curve ->nEntries));
+        if (diff > 0x0f)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Same, but for monotonicity
+cmsBool  CMSEXPORT cmsIsToneCurveMonotonic(const cmsToneCurve* t)
+{
+    int n;
+    int i, last;
+
+    _cmsAssert(t != NULL);
+
+    n    = t ->nEntries;
+    last = t ->Table16[n-1];
+
+    for (i = n-2; i >= 0; --i) {
+
+        if (t ->Table16[i] > last)
+
+            return FALSE;
+        else
+            last = t ->Table16[i];
+
+    }
+
+    return TRUE;
+}
+
+// Same, but for descending tables
+cmsBool  CMSEXPORT cmsIsToneCurveDescending(const cmsToneCurve* t)
+{
+    _cmsAssert(t != NULL);
+
+    return t ->Table16[0] > t ->Table16[t ->nEntries-1];
+}
+
+
+// Another info fn: is out gamma table multisegment?
+cmsBool  CMSEXPORT cmsIsToneCurveMultisegment(const cmsToneCurve* t)
+{
+    _cmsAssert(t != NULL);
+
+    return t -> nSegments > 1;
+}
+
+cmsInt32Number  CMSEXPORT cmsGetToneCurveParametricType(const cmsToneCurve* t)
+{
+    _cmsAssert(t != NULL);
+
+    if (t -> nSegments != 1) return 0;
+    return t ->Segments[0].Type;
+}
+
+// We need accuracy this time
+cmsFloat32Number CMSEXPORT cmsEvalToneCurveFloat(const cmsToneCurve* Curve, cmsFloat32Number v)
+{
+    _cmsAssert(Curve != NULL);
+
+    // Check for 16 bits table. If so, this is a limited-precision tone curve
+    if (Curve ->nSegments == 0) {
+
+        cmsUInt16Number In, Out;
+
+        In = (cmsUInt16Number) _cmsQuickSaturateWord(v * 65535.0);
+        Out = cmsEvalToneCurve16(Curve, In);
+
+        return (cmsFloat32Number) (Out / 65535.0);
+    }
+
+    return (cmsFloat32Number) EvalSegmentedFn(Curve, v);
+}
+
+// We need xput over here
+cmsUInt16Number CMSEXPORT cmsEvalToneCurve16(const cmsToneCurve* Curve, cmsUInt16Number v)
+{
+    cmsUInt16Number out;
+
+    _cmsAssert(Curve != NULL);
+
+    Curve ->InterpParams ->Interpolation.Lerp16(&v, &out, Curve ->InterpParams);
+    return out;
+}
+
+
+// Least squares fitting.
+// A mathematical procedure for finding the best-fitting curve to a given set of points by
+// minimizing the sum of the squares of the offsets ("the residuals") of the points from the curve.
+// The sum of the squares of the offsets is used instead of the offset absolute values because
+// this allows the residuals to be treated as a continuous differentiable quantity.
+//
+// y = f(x) = x ^ g
+//
+// R  = (yi - (xi^g))
+// R2 = (yi - (xi^g))2
+// SUM R2 = SUM (yi - (xi^g))2
+//
+// dR2/dg = -2 SUM x^g log(x)(y - x^g)
+// solving for dR2/dg = 0
+//
+// g = 1/n * SUM(log(y) / log(x))
+
+cmsFloat64Number CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Number Precision)
+{
+    cmsFloat64Number gamma, sum, sum2;
+    cmsFloat64Number n, x, y, Std;
+    cmsUInt32Number i;
+
+    _cmsAssert(t != NULL);
 
     sum = sum2 = n = 0;
 
-    // Does exclude endpoints
-    for (i=1; i < nEntries - 1; i++) {
+    // Excluding endpoints
+    for (i=1; i < (MAX_NODES_IN_CURVE-1); i++) {
 
-            x = (double) i / (nEntries - 1);
-            y = (double) GammaTable[i] / 65535.;
+        x = (cmsFloat64Number) i / (MAX_NODES_IN_CURVE-1);
+        y = (cmsFloat64Number) cmsEvalToneCurveFloat(t, (cmsFloat32Number) x);
 
-            // Avoid 7% on lower part to prevent
-            // artifacts due to linear ramps
+        // Avoid 7% on lower part to prevent
+        // artifacts due to linear ramps
 
-            if (y > 0. && y < 1. && x > 0.07) {
+        if (y > 0. && y < 1. && x > 0.07) {
 
             gamma = log(y) / log(x);
             sum  += gamma;
             sum2 += gamma * gamma;
             n++;
-            }
-
+        }
     }
 
     // Take a look on SD to see if gamma isn't exponential at all
     Std = sqrt((n * sum2 - sum * sum) / (n*(n-1)));
 
-
-    if (Std > Thereshold)
+    if (Std > Precision)
         return -1.0;
 
     return (sum / n);   // The mean
 }
 
-
-double LCMSEXPORT cmsEstimateGamma(LPGAMMATABLE t)
-{
-        return cmsEstimateGammaEx(t->GammaTable, t->nEntries, 0.7);
-}
-
-
-// -----------------------------------------------------------------Sampled curves
-
-// Allocate a empty curve
-
-LPSAMPLEDCURVE cmsAllocSampledCurve(int nItems)
-{
-    LPSAMPLEDCURVE pOut;
-
-    pOut = (LPSAMPLEDCURVE) _cmsMalloc(sizeof(SAMPLEDCURVE));
-    if (pOut == NULL)
-            return NULL;
-
-    if((pOut->Values = (double *) _cmsMalloc(nItems * sizeof(double))) == NULL)
-    {
-         _cmsFree(pOut);
-        return NULL;
-    }
-
-    pOut->nItems = nItems;
-    ZeroMemory(pOut->Values, nItems * sizeof(double));
-
-    return pOut;
-}
-
-
-void cmsFreeSampledCurve(LPSAMPLEDCURVE p)
-{
-     _cmsFree((LPVOID) p -> Values);
-     _cmsFree((LPVOID) p);
-}
-
-
-
-// Does duplicate a sampled curve
-
-LPSAMPLEDCURVE cmsDupSampledCurve(LPSAMPLEDCURVE p)
-{
-    LPSAMPLEDCURVE out;
-
-    out = cmsAllocSampledCurve(p -> nItems);
-    if (!out) return NULL;
-
-    CopyMemory(out ->Values, p ->Values, p->nItems * sizeof(double));
-
-    return out;
-}
-
-
-// Take min, max of curve
-
-void cmsEndpointsOfSampledCurve(LPSAMPLEDCURVE p, double* Min, double* Max)
-{
-        int i;
-
-        *Min = 65536.;
-        *Max = 0.;
-
-        for (i=0; i < p -> nItems; i++) {
-
-                double v = p -> Values[i];
-
-                if (v < *Min)
-                        *Min = v;
-
-                if (v > *Max)
-                        *Max = v;
-        }
-
-        if (*Min < 0) *Min = 0;
-        if (*Max > 65535.0) *Max = 65535.0;
-}
-
-// Clamps to Min, Max
-
-void cmsClampSampledCurve(LPSAMPLEDCURVE p, double Min, double Max)
-{
-
-        int i;
-
-        for (i=0; i < p -> nItems; i++) {
-
-                double v = p -> Values[i];
-
-                if (v < Min)
-                        v = Min;
-
-                if (v > Max)
-                        v = Max;
-
-                p -> Values[i] = v;
-
-        }
-
-}
-
-
-
-// Smooths a curve sampled at regular intervals
-
-LCMSBOOL cmsSmoothSampledCurve(LPSAMPLEDCURVE Tab, double lambda)
-{
-    vec w, y, z;
-    int i, nItems;
-
-    nItems = Tab -> nItems;
-
-    if (nItems > MAX_KNOTS) {
-                cmsSignalError(LCMS_ERRC_ABORTED, "cmsSmoothSampledCurve: too many points.");
-                return FALSE;
-                }
-
-    ZeroMemory(w, nItems * sizeof(float));
-    ZeroMemory(y, nItems * sizeof(float));
-    ZeroMemory(z, nItems * sizeof(float));
-
-    for (i=0; i < nItems; i++)
-    {
-        float value = (float) Tab -> Values[i];
-
-        y[i+1] = value;
-        w[i+1] = (float) ((value < 0.0) ?  0 : 1);
-    }
-
-
-    smooth2(w, y, z, (float) lambda, nItems);
-
-    for (i=0; i < nItems; i++) {
-
-        Tab -> Values[i] = z[i+1];;
-     }
-
-    return TRUE;
-
-}
-
-
-// Scale a value v, within domain Min .. Max
-// to a domain 0..(nPoints-1)
-
-static
-double ScaleVal(double v, double Min, double Max, int nPoints)
-{
-
-        double a, b;
-
-        if (v <= Min) return 0;
-        if (v >= Max) return (nPoints-1);
-
-        a = (double) (nPoints - 1) / (Max - Min);
-        b = a * Min;
-
-        return (a * v) - b;
-
-}
-
-
-// Does rescale a sampled curve to fit in a 0..(nPoints-1) domain
-
-void cmsRescaleSampledCurve(LPSAMPLEDCURVE p, double Min, double Max, int nPoints)
-{
-
-        int i;
-
-        for (i=0; i < p -> nItems; i++) {
-
-                double v = p -> Values[i];
-
-                p -> Values[i] = ScaleVal(v, Min, Max, nPoints);
-        }
-
-}
-
-
-// Joins two sampled curves for X and Y. Curves should be sorted.
-
-LPSAMPLEDCURVE cmsJoinSampledCurves(LPSAMPLEDCURVE X, LPSAMPLEDCURVE Y, int nResultingPoints)
-{
-    int i, j;
-    LPSAMPLEDCURVE out;
-    double MinX, MinY, MaxX, MaxY;
-    double x, y, x1, y1, x2, y2, a, b;
-
-    out = cmsAllocSampledCurve(nResultingPoints);
-    if (out == NULL)
-        return NULL;
-
-    if (X -> nItems != Y -> nItems) {
-
-        cmsSignalError(LCMS_ERRC_ABORTED, "cmsJoinSampledCurves: invalid curve.");
-        cmsFreeSampledCurve(out);
-        return NULL;
-    }
-
-    // Get endpoints of sampled curves
-    cmsEndpointsOfSampledCurve(X, &MinX, &MaxX);
-    cmsEndpointsOfSampledCurve(Y, &MinY, &MaxY);
-
-
-    // Set our points
-    out ->Values[0] = MinY;
-    for (i=1; i < nResultingPoints; i++) {
-
-        // Scale t to x domain
-        x = (i * (MaxX - MinX) / (nResultingPoints-1)) + MinX;
-
-        // Find interval in which j is within (always up,
-        // since fn should be monotonic at all)
-
-        j = 1;
-        while ((j < X ->nItems - 1) && X ->Values[j] < x)
-            j++;
-
-        // Now x is within X[j-1], X[j]
-        x1 = X ->Values[j-1]; x2 = X ->Values[j];
-        y1 = Y ->Values[j-1]; y2 = Y ->Values[j];
-
-        // Interpolate  the value
-        a = (y1 - y2) / (x1 - x2);
-        b = y1 - a * x1;
-        y = a* x + b;
-
-        out ->Values[i] = y;
-    }
-
-
-    cmsClampSampledCurve(out, MinY, MaxY);
-    return out;
-}
-
-
-
-// Convert between curve types
-
-LPGAMMATABLE cmsConvertSampledCurveToGamma(LPSAMPLEDCURVE Sampled, double Max)
-{
-    LPGAMMATABLE Gamma;
-    int i, nPoints;
-
-
-    nPoints = Sampled ->nItems;
-
-    Gamma = cmsAllocGamma(nPoints);
-    for (i=0; i < nPoints; i++) {
-
-        Gamma->GammaTable[i] = (WORD) floor(ScaleVal(Sampled ->Values[i], 0, Max, 65536) + .5);
-    }
-
-    return Gamma;
-
-}
-
-// Inverse of anterior
-
-LPSAMPLEDCURVE cmsConvertGammaToSampledCurve(LPGAMMATABLE Gamma, int nPoints)
-{
-    LPSAMPLEDCURVE Sampled;
-    L16PARAMS L16;
-    int i;
-    WORD wQuant, wValIn;
-
-    if (nPoints > 4096) {
-
-        cmsSignalError(LCMS_ERRC_ABORTED, "cmsConvertGammaToSampledCurve: too many points (max=4096)");
-        return NULL;
-    }
-
-    cmsCalcL16Params(Gamma -> nEntries, &L16);
-
-    Sampled = cmsAllocSampledCurve(nPoints);
-    for (i=0; i < nPoints; i++) {
-            wQuant  = _cmsQuantizeVal(i, nPoints);
-            wValIn  = cmsLinearInterpLUT16(wQuant, Gamma ->GammaTable, &L16);
-            Sampled ->Values[i] = (float) wValIn;
-    }
-
-    return Sampled;
-}
-
-
-
-
-// Smooth endpoints (used in Black/White compensation)
-
-LCMSBOOL _cmsSmoothEndpoints(LPWORD Table, int nEntries)
-{
-    vec w, y, z;
-    int i, Zeros, Poles;
-
-
-
-    if (cmsIsLinear(Table, nEntries)) return FALSE; // Nothing to do
-
-
-    if (nEntries > MAX_KNOTS) {
-                cmsSignalError(LCMS_ERRC_ABORTED, "_cmsSmoothEndpoints: too many points.");
-                return FALSE;
-                }
-
-    ZeroMemory(w, nEntries * sizeof(float));
-    ZeroMemory(y, nEntries * sizeof(float));
-    ZeroMemory(z, nEntries * sizeof(float));
-
-    for (i=0; i < nEntries; i++)
-    {
-        y[i+1] = (float) Table[i];
-        w[i+1] = 1.0;
-    }
-
-    w[1]        = 65535.0;
-    w[nEntries] = 65535.0;
-
-    smooth2(w, y, z, (float) nEntries, nEntries);
-
-    // Do some reality - checking...
-    Zeros = Poles = 0;
-    for (i=nEntries; i > 1; --i) {
-
-            if (z[i] == 0.) Zeros++;
-            if (z[i] >= 65535.) Poles++;
-            if (z[i] < z[i-1]) return FALSE; // Non-Monotonic
-    }
-
-    if (Zeros > (nEntries / 3)) return FALSE;  // Degenerated, mostly zeros
-    if (Poles > (nEntries / 3)) return FALSE;    // Degenerated, mostly poles
-
-    // Seems ok
-
-    for (i=0; i < nEntries; i++) {
-
-        // Clamp to WORD
-
-        float v = z[i+1];
-
-        if (v < 0) v = 0;
-        if (v > 65535.) v = 65535.;
-
-        Table[i] = (WORD) floor(v + .5);
-        }
-
-    return TRUE;
-}

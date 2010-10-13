@@ -273,6 +273,10 @@ class CommandLineFlags {
 //    UnlockExperimentalVMOptions flag, which allows the control and
 //    modification of the experimental flags.
 //
+// Nota bene: neither diagnostic nor experimental options should be used casually,
+//    and they are not supported on production loads, except under explicit
+//    direction from support engineers.
+//
 // manageable flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
@@ -633,6 +637,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
+                                                                            \
+  notproduct(bool, ZapStackSegments, trueInDebug,                           \
+             "Zap allocated/freed Stack segments with 0xFADFADED")          \
                                                                             \
   develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space with 0xBAADBABE")                          \
@@ -1802,17 +1809,17 @@ class CommandLineFlags {
   develop(uintx, PromotionFailureALotInterval, 5,                           \
           "Total collections between promotion failures alot")              \
                                                                             \
-  develop(intx, WorkStealingSleepMillis, 1,                                 \
+  experimental(intx, WorkStealingSleepMillis, 1,                            \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
-  develop(uintx, WorkStealingYieldsBeforeSleep, 1000,                       \
+  experimental(uintx, WorkStealingYieldsBeforeSleep, 1000,                  \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
-  develop(uintx, WorkStealingHardSpins, 4096,                               \
+  experimental(uintx, WorkStealingHardSpins, 4096,                          \
           "Number of iterations in a spin loop between checks on "          \
           "time out of hard spin")                                          \
                                                                             \
-  develop(uintx, WorkStealingSpinToYieldRatio, 10,                          \
+  experimental(uintx, WorkStealingSpinToYieldRatio, 10,                     \
           "Ratio of hard spins to calls to yield")                          \
                                                                             \
   product(uintx, PreserveMarkStackSize, 1024,                               \

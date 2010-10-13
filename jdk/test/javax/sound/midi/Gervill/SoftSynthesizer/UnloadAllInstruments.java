@@ -55,9 +55,8 @@ public class UnloadAllInstruments {
         Soundbank defsbk = synth.getDefaultSoundbank();
         if(defsbk != null)
         {
-            assertTrue(synth.getLoadedInstruments().length == 0);
             synth.unloadAllInstruments(defsbk);
-            assertTrue(synth.getAvailableInstruments().length == 0);
+            assertTrue(synth.getLoadedInstruments().length == 0);
             synth.loadAllInstruments(defsbk);
             assertTrue(synth.getLoadedInstruments().length != 0);
             synth.unloadAllInstruments(defsbk);

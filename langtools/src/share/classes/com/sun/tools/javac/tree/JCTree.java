@@ -340,6 +340,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public abstract int getTag();
 
     /** Convert a tree to a pretty-printed string. */
+    @Override
     public String toString() {
         StringWriter s = new StringWriter();
         try {
@@ -375,6 +376,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /** Return a shallow copy of this tree.
      */
+    @Override
     public Object clone() {
         try {
             return super.clone();
@@ -587,7 +589,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitClassDef(this); }
 
-        public Kind getKind() { return Kind.CLASS; }
+        public Kind getKind() {
+            if ((mods.flags & Flags.ANNOTATION) != 0)
+                return Kind.ANNOTATION_TYPE;
+            else if ((mods.flags & Flags.INTERFACE) != 0)
+                return Kind.INTERFACE;
+            else if ((mods.flags & Flags.ENUM) != 0)
+                return Kind.ENUM;
+            else
+                return Kind.CLASS;
+        }
+
         public JCModifiers getModifiers() { return mods; }
         public Name getSimpleName() { return name; }
         public List<JCTypeParameter> getTypeParameters() {

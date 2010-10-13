@@ -1437,12 +1437,14 @@ defNewGeneration.cpp                    oop.inline.hpp
 defNewGeneration.cpp                    referencePolicy.hpp
 defNewGeneration.cpp                    space.inline.hpp
 defNewGeneration.cpp                    spaceDecorator.hpp
+defNewGeneration.cpp                    stack.inline.hpp
 defNewGeneration.cpp                    thread_<os_family>.inline.hpp
 
 defNewGeneration.hpp                    ageTable.hpp
 defNewGeneration.hpp                    cSpaceCounters.hpp
 defNewGeneration.hpp                    generation.inline.hpp
 defNewGeneration.hpp                    generationCounters.hpp
+defNewGeneration.hpp                    stack.hpp
 
 defNewGeneration.inline.hpp             cardTableRS.hpp
 defNewGeneration.inline.hpp             defNewGeneration.hpp
@@ -3462,6 +3464,7 @@ permGen.hpp                             gcCause.hpp
 permGen.hpp                             generation.hpp
 permGen.hpp                             handles.hpp
 permGen.hpp                             iterator.hpp
+permGen.hpp                             mutexLocker.hpp
 permGen.hpp                             virtualspace.hpp
 
 placeholders.cpp                        fieldType.hpp
@@ -3872,6 +3875,10 @@ specialized_oop_closures.cpp            specialized_oop_closures.hpp
 
 specialized_oop_closures.hpp            atomic.hpp
 
+stack.hpp                               allocation.inline.hpp
+
+stack.inline.hpp                        stack.hpp
+
 stackMapFrame.cpp                       globalDefinitions.hpp
 stackMapFrame.cpp                       handles.inline.hpp
 stackMapFrame.cpp                       oop.inline.hpp
@@ -4116,6 +4123,7 @@ task.hpp                                top.hpp
 taskqueue.cpp                           debug.hpp
 taskqueue.cpp				oop.inline.hpp
 taskqueue.cpp                           os.hpp
+taskqueue.cpp                           stack.inline.hpp
 taskqueue.cpp                           taskqueue.hpp
 taskqueue.cpp                           thread_<os_family>.inline.hpp
 
@@ -4123,6 +4131,7 @@ taskqueue.hpp                           allocation.hpp
 taskqueue.hpp                           allocation.inline.hpp
 taskqueue.hpp                           mutex.hpp
 taskqueue.hpp                           orderAccess_<os_arch>.inline.hpp
+taskqueue.hpp				stack.hpp
 
 templateInterpreter.cpp                 interpreter.hpp
 templateInterpreter.cpp                 interpreterGenerator.hpp
@@ -4742,6 +4751,7 @@ workgroup.cpp                           allocation.inline.hpp
 workgroup.cpp                           os.hpp
 workgroup.cpp                           workgroup.hpp
 
+workgroup.hpp                           taskqueue.hpp
 workgroup.hpp                           thread_<os_family>.inline.hpp
 
 xmlstream.cpp                           allocation.hpp

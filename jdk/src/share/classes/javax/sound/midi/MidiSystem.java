@@ -47,6 +47,8 @@ import javax.sound.midi.spi.MidiDeviceProvider;
 import com.sun.media.sound.JDK13Services;
 import com.sun.media.sound.ReferenceCountingDevice;
 import com.sun.media.sound.AutoConnectSequencer;
+import com.sun.media.sound.MidiDeviceReceiverEnvelope;
+import com.sun.media.sound.MidiDeviceTransmitterEnvelope;
 
 
 /**
@@ -225,6 +227,8 @@ public class MidiSystem {
     /**
      * Obtains a MIDI receiver from an external MIDI port
      * or other default device.
+     * The returned receiver always implements
+     * the {@code MidiDeviceReceiver} interface.
      *
      * <p>If the system property
      * <code>javax.sound.midi.Receiver</code>
@@ -261,6 +265,9 @@ public class MidiSystem {
         } else {
             receiver = device.getReceiver();
         }
+        if (!(receiver instanceof MidiDeviceReceiver)) {
+            receiver = new MidiDeviceReceiverEnvelope(device, receiver);
+        }
         return receiver;
     }
 
@@ -268,6 +275,8 @@ public class MidiSystem {
     /**
      * Obtains a MIDI transmitter from an external MIDI port
      * or other default source.
+     * The returned transmitter always implements
+     * the {@code MidiDeviceTransmitter} interface.
      *
      * <p>If the system property
      * <code>javax.sound.midi.Transmitter</code>
@@ -300,6 +309,9 @@ public class MidiSystem {
             transmitter = ((ReferenceCountingDevice) device).getTransmitterReferenceCounting();
         } else {
             transmitter = device.getTransmitter();
+        }
+        if (!(transmitter instanceof MidiDeviceReceiver)) {
+            transmitter = new MidiDeviceTransmitterEnvelope(device, transmitter);
         }
         return transmitter;
     }

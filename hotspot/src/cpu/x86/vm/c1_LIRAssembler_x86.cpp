@@ -488,7 +488,9 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
-    __ movoop(Address(rsp, 0), method()->constant_encoding());
+    __ get_thread(rax);
+    __ movptr(Address(rsp, 0), rax);
+    __ movoop(Address(rsp, sizeof(void*)), method()->constant_encoding());
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit)));
   }
 
@@ -1616,8 +1618,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv, Label* update_done) {
-  uint i;
-  for (i = 0; i < ReceiverTypeData::row_limit(); i++) {
+  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
     Label next_test;
     // See if the receiver is receiver[n].
     __ cmpptr(recv, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
@@ -1629,7 +1630,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   }
 
   // Didn't find receiver; find next empty slot and fill it in
-  for (i = 0; i < ReceiverTypeData::row_limit(); i++) {
+  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
     Label next_test;
     Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)));
     __ cmpptr(recv_addr, (intptr_t)NULL_WORD);

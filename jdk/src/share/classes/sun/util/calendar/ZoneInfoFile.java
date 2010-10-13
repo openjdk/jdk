@@ -30,6 +30,7 @@ import  java.io.FileInputStream;
 import  java.io.FileNotFoundException;
 import  java.io.IOException;
 import  java.lang.ref.SoftReference;
+import  java.nio.file.FileSystems;
 import  java.security.AccessController;
 import  java.security.PrivilegedAction;
 import  java.security.PrivilegedActionException;
@@ -472,17 +473,18 @@ public class ZoneInfoFile {
 
     private static Map<String, ZoneInfo> zoneInfoObjects = null;
 
-    private static final String ziDir;
-    static {
-        String zi = (String) AccessController.doPrivileged(
-                         new sun.security.action.GetPropertyAction("java.home"))
-                    + File.separator + "lib" + File.separator + "zi";
-        try {
-            zi = new File(zi).getCanonicalPath();
-        } catch (Exception e) {
-        }
-        ziDir = zi;
-    }
+    private static final String ziDir = AccessController.doPrivileged(
+        new PrivilegedAction<String>() {
+            public String run() {
+                String zi = System.getProperty("java.home") +
+                    File.separator + "lib" + File.separator + "zi";
+                try {
+                    zi = FileSystems.getDefault().getPath(zi).toRealPath(true).toString();
+                } catch(Exception e) {
+                }
+                return zi;
+            }
+        });
 
     /**
      * Converts the given time zone ID to a platform dependent path
