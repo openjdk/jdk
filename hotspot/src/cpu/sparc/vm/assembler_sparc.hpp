@@ -825,6 +825,12 @@ class Assembler : public AbstractAssembler  {
   // test if -4096 <= x <= 4095
   static bool is_simm13(int x) { return is_simm(x, 13); }
 
+  // test if label is in simm16 range in words (wdisp16).
+  bool is_in_wdisp16_range(Label& L) {
+    intptr_t d = intptr_t(pc()) - intptr_t(target(L));
+    return is_simm(d, 18);
+  }
+
   enum ASIs { // page 72, v9
     ASI_PRIMARY        = 0x80,
     ASI_PRIMARY_LITTLE = 0x88
