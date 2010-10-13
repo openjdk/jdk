@@ -664,7 +664,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   // Use temps to avoid kills
   LIR_Opr t1 = FrameMap::G1_opr;
   LIR_Opr t2 = FrameMap::G3_opr;
-  LIR_Opr addr = new_pointer_register();
+  LIR_Opr addr = (type == objectType) ? new_register(T_OBJECT) : new_pointer_register();
 
   // get address of field
   obj.load_item();
