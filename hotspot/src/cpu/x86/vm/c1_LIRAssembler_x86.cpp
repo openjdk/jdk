@@ -1941,8 +1941,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
       __ cmpxchgptr(newval, Address(addr, 0));
     } else if (op->code() == lir_cas_int) {
       __ cmpxchgl(newval, Address(addr, 0));
-    } else {
-      LP64_ONLY(__ cmpxchgq(newval, Address(addr, 0)));
     }
 #ifdef _LP64
   } else if (op->code() == lir_cas_long) {
