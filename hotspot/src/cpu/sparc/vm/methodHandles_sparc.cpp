@@ -27,6 +27,14 @@
 
 #define __ _masm->
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) __ block_comment(str)
+#endif
+
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+
 address MethodHandleEntry::start_compiled_entry(MacroAssembler* _masm,
                                                 address interpreted_entry) {
   // Just before the actual machine code entry point, allocate space
@@ -105,6 +113,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 static void verify_argslot(MacroAssembler* _masm, Register argslot_reg, Register temp_reg, const char* error_message) {
   // Verify that argslot lies within (Gargs, FP].
   Label L_ok, L_bad;
+  BLOCK_COMMENT("{ verify_argslot");
 #ifdef _LP64
   __ add(FP, STACK_BIAS, temp_reg);
   __ cmp(argslot_reg, temp_reg);
@@ -119,6 +128,7 @@ static void verify_argslot(MacroAssembler* _masm, Register argslot_reg, Register
   __ bind(L_bad);
   __ stop(error_message);
   __ bind(L_ok);
+  BLOCK_COMMENT("} verify_argslot");
 }
 #endif
 
@@ -175,6 +185,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
   //   for (temp = sp + size; temp < argslot; temp++)
   //     temp[-size] = temp[0]
   //   argslot -= size;
+  BLOCK_COMMENT("insert_arg_slots {");
   RegisterOrConstant offset = __ regcon_sll_ptr(arg_slots, LogBytesPerWord, temp3_reg);
 
   // Keep the stack pointer 2*wordSize aligned.
@@ -187,7 +198,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
 
   {
     Label loop;
-    __ bind(loop);
+    __ BIND(loop);
     // pull one word down each time through the loop
     __ ld_ptr(Address(temp_reg, 0), temp2_reg);
     __ st_ptr(temp2_reg, Address(temp_reg, offset));
@@ -199,6 +210,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
 
   // Now move the argslot down, to point to the opened-up space.
   __ add(argslot_reg, offset, argslot_reg);
+  BLOCK_COMMENT("} insert_arg_slots");
 }
 
 
@@ -235,6 +247,7 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
   }
 #endif // ASSERT
 
+  BLOCK_COMMENT("remove_arg_slots {");
   // Pull up everything shallower than argslot.
   // Then remove the excess space on the stack.
   // The stacked return address gets pulled up with everything else.
@@ -246,7 +259,7 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
   __ sub(argslot_reg, wordSize, temp_reg);  // source pointer for copy
   {
     Label loop;
-    __ bind(loop);
+    __ BIND(loop);
     // pull one word up each time through the loop
     __ ld_ptr(Address(temp_reg, 0), temp2_reg);
     __ st_ptr(temp2_reg, Address(temp_reg, offset));
@@ -265,28 +278,34 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
   const int TwoWordAlignmentMask = right_n_bits(LogBytesPerWord + 1);
   RegisterOrConstant masked_offset = __ regcon_andn_ptr(offset, TwoWordAlignmentMask, temp_reg);
   __ add(SP, masked_offset, SP);
+  BLOCK_COMMENT("} remove_arg_slots");
 }
 
 
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh) {
-#if 0
-                              intptr_t* entry_sp,
-                              intptr_t* saved_sp,
-                              intptr_t* saved_bp) {
-  // called as a leaf from native code: do not block the JVM!
-  intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
-  intptr_t* base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
-  printf("MH %s mh="INTPTR_FORMAT" sp=("INTPTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="INTPTR_FORMAT"\n",
-         adaptername, (intptr_t)mh, (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
-  if (last_sp != saved_sp)
-    printf("*** last_sp="INTPTR_FORMAT"\n", (intptr_t)last_sp);
-#endif
-
+                              oopDesc* mh) {
   printf("MH %s mh="INTPTR_FORMAT"\n", adaptername, (intptr_t) mh);
   print_method_handle(mh);
+}
+void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
+  if (!TraceMethodHandles)  return;
+  BLOCK_COMMENT("trace_method_handle {");
+  // save: Gargs, O5_savedSP
+  __ save_frame(16);
+  __ set((intptr_t) adaptername, O0);
+  __ mov(G3_method_handle, O1);
+  __ mov(G3_method_handle, L3);
+  __ mov(Gargs, L4);
+  __ mov(G5_method_type, L5);
+  __ call_VM_leaf(L7, CAST_FROM_FN_PTR(address, trace_method_handle_stub));
+
+  __ mov(L3, G3_method_handle);
+  __ mov(L4, Gargs);
+  __ mov(L5, G5_method_type);
+  __ restore();
+  BLOCK_COMMENT("} trace_method_handle");
 }
 #endif // PRODUCT
 
@@ -349,16 +368,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
   address interp_entry = __ pc();
 
-#ifndef PRODUCT
-  if (TraceMethodHandles) {
-    // save: Gargs, O5_savedSP
-    __ save(SP, -16*wordSize, SP);
-    __ set((intptr_t) entry_name(ek), O0);
-    __ mov(G3_method_handle, O1);
-    __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, trace_method_handle_stub));
-    __ restore(SP, 16*wordSize, SP);
-  }
-#endif // PRODUCT
+  trace_method_handle(_masm, entry_name(ek));
 
   switch ((int) ek) {
   case _raise_exception:
