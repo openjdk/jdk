@@ -179,9 +179,11 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
   // in which case bcp should point to the monitorenter since it is within the exception's range.
 
   assert(*bcp != Bytecodes::_monitorenter || is_top_frame, "a _monitorenter must be a top frame");
-  // TIERED Must know the compiler of the deoptee QQQ
-  COMPILER2_PRESENT(guarantee(*bcp != Bytecodes::_monitorenter || exec_mode != Deoptimization::Unpack_exception,
-                              "shouldn't get exception during monitorenter");)
+  assert(thread->deopt_nmethod() != NULL, "nmethod should be known");
+  guarantee(!(thread->deopt_nmethod()->is_compiled_by_c2() &&
+              *bcp == Bytecodes::_monitorenter             &&
+              exec_mode == Deoptimization::Unpack_exception),
+            "shouldn't get exception during monitorenter");
 
   int popframe_preserved_args_size_in_bytes = 0;
   int popframe_preserved_args_size_in_words = 0;

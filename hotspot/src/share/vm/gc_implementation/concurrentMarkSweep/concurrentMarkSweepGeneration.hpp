@@ -537,8 +537,8 @@ class CMSCollector: public CHeapObj {
   // The following array-pair keeps track of mark words
   // displaced for accomodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
-  GrowableArray<oop>*     _preserved_oop_stack;
-  GrowableArray<markOop>* _preserved_mark_stack;
+  Stack<oop>     _preserved_oop_stack;
+  Stack<markOop> _preserved_mark_stack;
 
   int*             _hash_seed;
 
@@ -729,7 +729,9 @@ class CMSCollector: public CHeapObj {
 
   // Support for marking stack overflow handling
   bool take_from_overflow_list(size_t num, CMSMarkStack* to_stack);
-  bool par_take_from_overflow_list(size_t num, OopTaskQueue* to_work_q);
+  bool par_take_from_overflow_list(size_t num,
+                                   OopTaskQueue* to_work_q,
+                                   int no_of_gc_threads);
   void push_on_overflow_list(oop p);
   void par_push_on_overflow_list(oop p);
   // the following is, obviously, not, in general, "MT-stable"
@@ -768,7 +770,7 @@ class CMSCollector: public CHeapObj {
   void abortable_preclean(); // Preclean while looking for possible abort
   void initialize_sequential_subtasks_for_young_gen_rescan(int i);
   // Helper function for above; merge-sorts the per-thread plab samples
-  void merge_survivor_plab_arrays(ContiguousSpace* surv);
+  void merge_survivor_plab_arrays(ContiguousSpace* surv, int no_of_gc_threads);
   // Resets (i.e. clears) the per-thread plab sample vectors
   void reset_survivor_plab_arrays();
 

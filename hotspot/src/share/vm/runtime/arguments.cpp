@@ -1266,12 +1266,30 @@ bool verify_object_alignment() {
   // Object alignment.
   if (!is_power_of_2(ObjectAlignmentInBytes)) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be power of 2", (int)ObjectAlignmentInBytes);
+                "error: ObjectAlignmentInBytes=%d must be power of 2\n",
+                (int)ObjectAlignmentInBytes);
     return false;
   }
   if ((int)ObjectAlignmentInBytes < BytesPerLong) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be greater or equal %d", (int)ObjectAlignmentInBytes, BytesPerLong);
+                "error: ObjectAlignmentInBytes=%d must be greater or equal %d\n",
+                (int)ObjectAlignmentInBytes, BytesPerLong);
+    return false;
+  }
+  // It does not make sense to have big object alignment
+  // since a space lost due to alignment will be greater
+  // then a saved space from compressed oops.
+  if ((int)ObjectAlignmentInBytes > 256) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must not be greater then 256\n",
+                (int)ObjectAlignmentInBytes);
+    return false;
+  }
+  // In case page size is very small.
+  if ((int)ObjectAlignmentInBytes >= os::vm_page_size()) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must be less then page size %d\n",
+                (int)ObjectAlignmentInBytes, os::vm_page_size());
     return false;
   }
   return true;

@@ -93,6 +93,10 @@ public class Symtab {
      */
     public final ClassSymbol errSymbol;
 
+    /** The unknown symbol.
+     */
+    public final ClassSymbol unknownSymbol;
+
     /** A value for the errType, with a originalType of noType */
     public final Type errType;
 
@@ -354,6 +358,7 @@ public class Symtab {
 
         // create the error symbols
         errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);
+        unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
         errType = new ErrorType(errSymbol, Type.noType);
 
         // initialize builtin types
@@ -368,7 +373,7 @@ public class Symtab {
         initType(voidType, "void", "Void");
         initType(botType, "<nulltype>");
         initType(errType, errSymbol);
-        initType(unknownType, "<any?>");
+        initType(unknownType, unknownSymbol);
 
         // the builtin class of all arrays
         arrayClass = new ClassSymbol(PUBLIC|ACYCLIC, names.Array, noSymbol);

@@ -50,9 +50,9 @@
  *           -Djava.security.debug=access can be used to verify file permissions.
  *
  * @run     main CachePermissionsTest true
- * @run     main/othervm/policy=w.policy CachePermissionsTest false
- * @run     main/othervm/policy=rw.policy CachePermissionsTest false
- * @run     main/othervm/policy=rwd.policy CachePermissionsTest true
+ * @run     main/othervm CachePermissionsTest false w.policy
+ * @run     main/othervm CachePermissionsTest false rw.policy
+ * @run     main/othervm CachePermissionsTest true rwd.policy
  */
 
 import java.io.File;
@@ -72,6 +72,17 @@ public class CachePermissionsTest {
         ImageIO.setUseCache(true);
 
         System.out.println("java.io.tmpdir is " + System.getProperty("java.io.tmpdir"));
+
+        if (args.length > 1) {
+            String testsrc = System.getProperty("test.src", ".");
+            String policy = testsrc + File.separator + args[1];
+
+            System.out.println("Policy file: " + policy);
+            System.setProperty("java.security.policy", policy);
+
+            System.out.println("Install security manager...");
+            System.setSecurityManager(new SecurityManager());
+        }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
