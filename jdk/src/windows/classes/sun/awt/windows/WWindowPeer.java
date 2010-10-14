@@ -487,13 +487,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             newDev.addDisplayChangedListener(this);
         }
 
-        SunToolkit.executeOnEventHandlerThread((Component)target,
-                new Runnable() {
-                    public void run() {
-                        AWTAccessor.getComponentAccessor().
+        AWTAccessor.getComponentAccessor().
             setGraphicsConfiguration((Component)target, winGraphicsConfig);
-                    }
-                });
     }
 
     /**
