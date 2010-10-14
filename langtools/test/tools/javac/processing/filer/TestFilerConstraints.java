@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6380018 6453386 6457283
  * @summary Test that the constraints guaranteed by the Filer and maintained
  * @author  Joseph D. Darcy
+ * @library ../../lib
  * @build TestFilerConstraints
  * @compile -encoding iso-8859-1 -processor TestFilerConstraints -proc:only TestFilerConstraints.java
  */
@@ -69,11 +70,8 @@ import java.nio.charset.Charset;
  *
  * </ul>
  */
-@SupportedAnnotationTypes("*")
-public class TestFilerConstraints extends AbstractProcessor {
+public class TestFilerConstraints extends JavacTestingAbstractProcessor {
     private int round = 0;
-    private Messager messager;
-    private Filer filer;
 
     private PrintWriter  pw_src1 = null;
     private PrintWriter  pw_src2 = null;
@@ -165,17 +163,6 @@ public class TestFilerConstraints extends AbstractProcessor {
         }
 
         return true;
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        messager = processingEnv.getMessager();
-        filer    = processingEnv.getFiler();
-
     }
 
     /**

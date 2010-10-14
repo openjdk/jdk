@@ -401,7 +401,7 @@ class Example implements Comparable<Example> {
                 }
             }
             for (JCDiagnostic sd: d.getSubdiagnostics())
-                scanForKeys(d, keys);
+                scanForKeys(sd, keys);
         }
     }
 
