@@ -21,16 +21,15 @@ public class MouseModifiersUnitTest_Extra extends Frame {
     static final int SHIFT = 1;
     static final int CTRL = 2;
     static final int ALT = 3;
-    static CheckingModifierAdapter adapterTest1;
-    static CheckingModifierAdapter adapterTest2;
-    static CheckingModifierAdapter adapterTest3;
-    static CheckingModifierAdapter adapterTest4;
+    static CheckingModifierAdapterExtra adapterTest1;
+    static CheckingModifierAdapterExtra adapterTest2;
+    static CheckingModifierAdapterExtra adapterTest3;
+    static CheckingModifierAdapterExtra adapterTest4;
 
     static boolean debug = true; //dump all errors (debug) or throw first(under jtreg) exception
     static boolean autorun = false; //use robot or manual run
     static int testModifier = NONE;
 
-    static int [] mouseButtons;
     static int [] mouseButtonDownMasks;
 
     //an arrays representing a modifiersEx of extra mouse buttons while using ALT/CTRL/SHIFT or none of them
@@ -39,7 +38,6 @@ public class MouseModifiersUnitTest_Extra extends Frame {
     static int [] modifiersExStandardCTRL;
     static int [] modifiersExStandardALT;
 
-    //    final static int [] mouseButtons = new int [] {MouseEvent.BUTTON1_MASK, MouseEvent.BUTTON2_MASK, MouseEvent.BUTTON3_MASK};
     // BUTTON1, 2, 3 press-release.
     final static int  modifiersStandard = 0; //InputEvent.BUTTON_DOWN_MASK;
 
@@ -56,7 +54,7 @@ public class MouseModifiersUnitTest_Extra extends Frame {
 
         if (modifiersEx != curStandardExModifiers[index]){
 //            System.out.println(">>>>>>>>>>>>>>> Pressed. modifiersEx "+modifiersEx +" : "+!= curStandardExModifiers");
-            MessageLogger.reportError("Test failed :  Pressed. modifiersEx != curStandardExModifiers");
+            MessageLogger.reportError("Test failed :  Pressed. modifiersEx != curStandardExModifiers. Got: " + modifiersEx + " , Expected: " + curStandardExModifiers[index]);
         }
 
      //check event.paramString() output
@@ -168,7 +166,7 @@ public class MouseModifiersUnitTest_Extra extends Frame {
         }
 
         if (modifiersEx != curStandardExModifiers[index]){
-            MessageLogger.reportError("Test failed :  Released. modifiersEx != curStandardExModifiers");
+            MessageLogger.reportError("Test failed :  Released. modifiersEx != curStandardExModifiers. Got: " + modifiersEx + " , Expected: " + curStandardExModifiers[index]);
         }
 
      //check event.paramString() output
@@ -191,7 +189,7 @@ public class MouseModifiersUnitTest_Extra extends Frame {
         }
 
         if (modifiersEx != curStandardExModifiers[index]){
-            MessageLogger.reportError("Test failed :  Clicked. modifiersEx != curStandardExModifiers");
+            MessageLogger.reportError("Test failed :  Clicked. modifiersEx != curStandardExModifiers. Got: " + modifiersEx + " , Expected: " + curStandardExModifiers[index]);
         }
 
      //check event.paramString() output
@@ -275,11 +273,11 @@ public class MouseModifiersUnitTest_Extra extends Frame {
         this.addMouseListener(adapterTest1);
         robot.delay(1000);
         robot.mouseMove(getLocationOnScreen().x + getWidth()/2, getLocationOnScreen().y + getHeight()/2);
-        for (int i = 3; i< mouseButtons.length; i++){
-            System.out.println("testNONE() => " +mouseButtons[i] );
-            robot.mousePress(mouseButtons[i]);
+        for (int i = 3; i< mouseButtonDownMasks.length; i++){
+            System.out.println("testNONE() => " +mouseButtonDownMasks[i] );
+            robot.mousePress(mouseButtonDownMasks[i]);
             robot.delay(100);
-            robot.mouseRelease(mouseButtons[i]);
+            robot.mouseRelease(mouseButtonDownMasks[i]);
         }
         robot.delay(1000);
         this.removeMouseListener(adapterTest1);
@@ -289,12 +287,12 @@ public class MouseModifiersUnitTest_Extra extends Frame {
         this.addMouseListener(adapterTest2);
         robot.delay(1000);
         robot.mouseMove(getLocationOnScreen().x + getWidth()/2, getLocationOnScreen().y + getHeight()/2);
-        for (int i = 3; i< mouseButtons.length; i++){
+        for (int i = 3; i< mouseButtonDownMasks.length; i++){
             robot.keyPress(KeyEvent.VK_SHIFT);
-            System.out.println("testSHIFT() => " +mouseButtons[i] );
-            robot.mousePress(mouseButtons[i]);
+            System.out.println("testSHIFT() => " +mouseButtonDownMasks[i] );
+            robot.mousePress(mouseButtonDownMasks[i]);
             robot.delay(100);
-            robot.mouseRelease(mouseButtons[i]);
+            robot.mouseRelease(mouseButtonDownMasks[i]);
             robot.keyRelease(KeyEvent.VK_SHIFT);
         }
         robot.delay(1000);
@@ -305,12 +303,12 @@ public class MouseModifiersUnitTest_Extra extends Frame {
         this.addMouseListener(adapterTest3);
         robot.delay(1000);
         robot.mouseMove(getLocationOnScreen().x + getWidth()/2, getLocationOnScreen().y + getHeight()/2);
-        for (int i = 3; i< mouseButtons.length; i++){
+        for (int i = 3; i< mouseButtonDownMasks.length; i++){
             robot.keyPress(KeyEvent.VK_CONTROL);
-            System.out.println("testCTRL() => " +mouseButtons[i] );
-            robot.mousePress(mouseButtons[i]);
+            System.out.println("testCTRL() => " +mouseButtonDownMasks[i] );
+            robot.mousePress(mouseButtonDownMasks[i]);
             robot.delay(100);
-            robot.mouseRelease(mouseButtons[i]);
+            robot.mouseRelease(mouseButtonDownMasks[i]);
             robot.keyRelease(KeyEvent.VK_CONTROL);
         }
         robot.delay(1000);
@@ -321,12 +319,12 @@ public class MouseModifiersUnitTest_Extra extends Frame {
         this.addMouseListener(adapterTest4);
         robot.delay(1000);
         robot.mouseMove(getLocationOnScreen().x + getWidth()/2, getLocationOnScreen().y + getHeight()/2);
-        for (int i = 3; i< mouseButtons.length; i++){
+        for (int i = 3; i< mouseButtonDownMasks.length; i++){
             robot.keyPress(KeyEvent.VK_ALT);
-            System.out.println("testALT() => " +mouseButtons[i] );
-            robot.mousePress(mouseButtons[i]);
+            System.out.println("testALT() => " +mouseButtonDownMasks[i] );
+            robot.mousePress(mouseButtonDownMasks[i]);
             robot.delay(100);
-            robot.mouseRelease(mouseButtons[i]);
+            robot.mouseRelease(mouseButtonDownMasks[i]);
             robot.keyRelease(KeyEvent.VK_ALT);
         }
         robot.delay(1000);
@@ -368,52 +366,52 @@ public class MouseModifiersUnitTest_Extra extends Frame {
     }
 
     public static void initAdapters(){
-        adapterTest1 = new CheckingModifierAdapter(NONE);
-        adapterTest2 = new CheckingModifierAdapter(SHIFT);
-        adapterTest3 = new CheckingModifierAdapter(CTRL);
-        adapterTest4 = new CheckingModifierAdapter(ALT);
+        adapterTest1 = new CheckingModifierAdapterExtra(NONE);
+        adapterTest2 = new CheckingModifierAdapterExtra(SHIFT);
+        adapterTest3 = new CheckingModifierAdapterExtra(CTRL);
+        adapterTest4 = new CheckingModifierAdapterExtra(ALT);
     }
 
     public static void initVars(){
-        int [] tmp = new int [MouseInfo.getNumberOfButtons()];
-        for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++){
-            tmp[i] = InputEvent.getMaskForButton(i+1);
-            //            System.out.println("TEST: "+tmp[i]);
+        //Init the array of the mouse button masks. It will be used for generating mouse events.
+        mouseButtonDownMasks = new int [MouseInfo.getNumberOfButtons()];
+        for (int i = 0; i < mouseButtonDownMasks.length; i++){
+            mouseButtonDownMasks[i] = InputEvent.getMaskForButton(i+1);
+            System.out.println("MouseArray [i] == "+mouseButtonDownMasks[i]);
         }
-
-        mouseButtons = Arrays.copyOf(tmp, tmp.length);
-
-        for (int i = 0; i < mouseButtons.length; i++){
-            System.out.println("MouseArray [i] == "+mouseButtons[i]);
-        }
-
-        mouseButtonDownMasks = Arrays.copyOf(tmp, tmp.length);
 
         // So we need to get the number of extra buttons on the mouse:  "MouseInfo.getNumberOfButtons() - 3"
         // and multyply on 3 because each button will generate three events : PRESS, RELEASE and CLICK.
-        tmp = new int [(MouseInfo.getNumberOfButtons()-3)*3];
-        Arrays.fill(tmp, 0);
+        int [] tmp = new int [(MouseInfo.getNumberOfButtons()-3)*3];
 
+        //Fill array of expected results for the case when mouse buttons are only used (no-modifier keys)
+        Arrays.fill(tmp, 0);
         for (int i = 0, j = 3; i < tmp.length; i = i + 3, j++){
             tmp[i] = mouseButtonDownMasks[j];
         }
         modifiersExStandard = Arrays.copyOf(tmp, tmp.length);
 
+        //Fill array of expected results for the case when mouse buttons are only used with SHIFT modifier key
         Arrays.fill(tmp, InputEvent.SHIFT_DOWN_MASK);
-        for (int i = 0, j = 3; i < MouseInfo.getNumberOfButtons(); i = i + 3, j++){
-            tmp[i] = tmp[j] | mouseButtonDownMasks[j];
+        for (int i = 0, j = 3; i < tmp.length; i = i + 3, j++){
+            System.out.println("modifiersExStandardSHIFT FILLING : " + tmp[i] + " + " + mouseButtonDownMasks[j]);
+            tmp[i] = tmp[i] | mouseButtonDownMasks[j];
         }
         modifiersExStandardSHIFT = Arrays.copyOf(tmp, tmp.length);
 
+        //Fill array of expected results for the case when mouse buttons are only used with CTRL modifier key
         Arrays.fill(tmp, InputEvent.CTRL_DOWN_MASK);
-        for (int i = 0, j = 3; i < MouseInfo.getNumberOfButtons(); i = i + 3, j++){
-            tmp[i] = tmp[j] | mouseButtonDownMasks[j];
+        for (int i = 0, j = 3; i < tmp.length; i = i + 3, j++){
+            System.out.println("modifiersExStandardCTRL FILLING : " + tmp[i] + " + " + mouseButtonDownMasks[j]);
+            tmp[i] = tmp[i] | mouseButtonDownMasks[j];
         }
         modifiersExStandardCTRL = Arrays.copyOf(tmp, tmp.length);
 
+        //Fill array of expected results for the case when mouse buttons are only used with ALT modifier key
         Arrays.fill(tmp, InputEvent.ALT_DOWN_MASK);
-        for (int i = 0, j = 3; i < MouseInfo.getNumberOfButtons(); i = i + 3, j++){
-            tmp[i] = tmp[j] | mouseButtonDownMasks[j];
+        for (int i = 0, j = 3; i < tmp.length; i = i + 3, j++){
+            System.out.println("modifiersExStandardALT FILLING : " + tmp[i] + " + " + mouseButtonDownMasks[j]);
+            tmp[i] = tmp[i] | mouseButtonDownMasks[j];
         }
         modifiersExStandardALT = Arrays.copyOf(tmp, tmp.length);
     }
@@ -436,9 +434,9 @@ public class MouseModifiersUnitTest_Extra extends Frame {
 /* A class that invoke appropriate verification
  * routine with current modifier.
  */
-class CheckingModifierAdapter extends MouseAdapter{
+class CheckingModifierAdapterExtra extends MouseAdapter{
     int modifier;
-    public CheckingModifierAdapter(int modifier){
+    public CheckingModifierAdapterExtra(int modifier){
         this.modifier = modifier;
     }
 

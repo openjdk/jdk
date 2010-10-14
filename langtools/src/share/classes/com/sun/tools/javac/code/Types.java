@@ -69,6 +69,7 @@ public class Types {
         new Context.Key<Types>();
 
     final Symtab syms;
+    final Scope.ScopeCounter scopeCounter;
     final JavacMessages messages;
     final Names names;
     final boolean allowBoxing;
@@ -89,6 +90,7 @@ public class Types {
     protected Types(Context context) {
         context.put(typesKey, this);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         names = Names.instance(context);
         allowBoxing = Source.instance(context).allowBoxing();
         reader = ClassReader.instance(context);
@@ -1984,22 +1986,26 @@ public class Types {
             final MethodSymbol cachedImpl;
             final Filter<Symbol> implFilter;
             final boolean checkResult;
+            final Scope.ScopeCounter scopeCounter;
 
             public Entry(MethodSymbol cachedImpl,
                     Filter<Symbol> scopeFilter,
-                    boolean checkResult) {
+                    boolean checkResult,
+                    Scope.ScopeCounter scopeCounter) {
                 this.cachedImpl = cachedImpl;
                 this.implFilter = scopeFilter;
                 this.checkResult = checkResult;
+                this.scopeCounter = scopeCounter;
             }
 
-            boolean matches(Filter<Symbol> scopeFilter, boolean checkResult) {
+            boolean matches(Filter<Symbol> scopeFilter, boolean checkResult, Scope.ScopeCounter scopeCounter) {
                 return this.implFilter == scopeFilter &&
-                        this.checkResult == checkResult;
+                        this.checkResult == checkResult &&
+                        this.scopeCounter.val() >= scopeCounter.val();
             }
         }
 
-        MethodSymbol get(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter) {
+        MethodSymbol get(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter, Scope.ScopeCounter scopeCounter) {
             SoftReference<Map<TypeSymbol, Entry>> ref_cache = _map.get(ms);
             Map<TypeSymbol, Entry> cache = ref_cache != null ? ref_cache.get() : null;
             if (cache == null) {
@@ -2008,9 +2014,9 @@ public class Types {
             }
             Entry e = cache.get(origin);
             if (e == null ||
-                    !e.matches(implFilter, checkResult)) {
+                    !e.matches(implFilter, checkResult, scopeCounter)) {
                 MethodSymbol impl = implementationInternal(ms, origin, Types.this, checkResult, implFilter);
-                cache.put(origin, new Entry(impl, implFilter, checkResult));
+                cache.put(origin, new Entry(impl, implFilter, checkResult, scopeCounter));
                 return impl;
             }
             else {
@@ -2038,7 +2044,7 @@ public class Types {
     private ImplementationCache implCache = new ImplementationCache();
 
     public MethodSymbol implementation(MethodSymbol ms, TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
-        return implCache.get(ms, origin, checkResult, implFilter);
+        return implCache.get(ms, origin, checkResult, implFilter, scopeCounter);
     }
     // </editor-fold>
 

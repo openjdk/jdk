@@ -119,10 +119,10 @@ public class Attr extends JCTree.Visitor {
         allowAnonOuterThis = source.allowAnonOuterThis();
         allowStringsInSwitch = source.allowStringsInSwitch();
         sourceName = source.name;
-        relax = (options.get("-retrofit") != null ||
-                 options.get("-relax") != null);
-        useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
-        enableSunApiLintControl = options.get("enableSunApiLintControl") != null;
+        relax = (options.isSet("-retrofit") ||
+                 options.isSet("-relax"));
+        useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        enableSunApiLintControl = options.isSet("enableSunApiLintControl");
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -1422,7 +1422,8 @@ public class Attr extends JCTree.Visitor {
 
             // Compute the result type.
             Type restype = mtype.getReturnType();
-            assert restype.tag != WILDCARD : mtype;
+            if (restype.tag == WILDCARD)
+                throw new AssertionError(mtype);
 
             // as a special case, array.clone() has a result that is
             // the same as static type of the array being cloned
