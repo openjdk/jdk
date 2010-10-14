@@ -401,6 +401,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (isPostedField == null) {
             isPostedField = SunToolkit.getField(AWTEvent.class, "isPosted");
         }
+        // The uses of this method imply that the incoming event is system-generated
+        SunToolkit.setSystemGenerated(e);
         PeerEvent pe = new PeerEvent(Toolkit.getDefaultToolkit(), new Runnable() {
                 public void run() {
                     try {
