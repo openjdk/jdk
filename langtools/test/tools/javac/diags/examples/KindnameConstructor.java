@@ -24,7 +24,9 @@
 // key: compiler.misc.kindname.constructor
 // key: compiler.misc.kindname.class
 // key: compiler.misc.no.args
-// key: compiler.err.cant.apply.symbol
+// key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.arg.length.mismatch
+// key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.count.error.plural
 // run: backdoor
 

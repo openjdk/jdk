@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @bug 6512707
  * @summary "incompatible types" after (unrelated) annotation processing
  * @author  Peter Runge
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile T6512707.java
- *
  * @compile -processor T6512707 TestAnnotation.java
  */
 
@@ -41,16 +42,10 @@ import javax.lang.model.util.*;
  * Dummy processor to force bug 6512707 to show - it does not matter what
  * the annotation processor does for this bug.
  */
-@SupportedAnnotationTypes("*")
-public class T6512707 extends AbstractProcessor {
+public class T6512707 extends JavacTestingAbstractProcessor {
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        return(false);
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
+        return false;
     }
 }

@@ -271,7 +271,7 @@ public class Names {
     }
 
     protected Name.Table createTable(Options options) {
-        boolean useUnsharedTable = options.get("useUnsharedTable") != null;
+        boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
             return new UnsharedNameTable(this);
         else

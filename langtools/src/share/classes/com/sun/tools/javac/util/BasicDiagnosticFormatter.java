@@ -65,8 +65,6 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  */
 public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
-    protected int currentIndentation = 0;
-
     /**
      * Create a basic formatter based on the supplied options.
      *
@@ -107,33 +105,28 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     public String formatMessage(JCDiagnostic d, Locale l) {
-        int prevIndentation = currentIndentation;
-        try {
-            StringBuilder buf = new StringBuilder();
-            Collection<String> args = formatArguments(d, l);
-            String msg = localize(l, d.getCode(), args.toArray());
-            String[] lines = msg.split("\n");
-            if (getConfiguration().getVisible().contains(DiagnosticPart.SUMMARY)) {
-                currentIndentation += getConfiguration().getIndentation(DiagnosticPart.SUMMARY);
-                buf.append(indent(lines[0], currentIndentation)); //summary
+        int currentIndentation = 0;
+        StringBuilder buf = new StringBuilder();
+        Collection<String> args = formatArguments(d, l);
+        String msg = localize(l, d.getCode(), args.toArray());
+        String[] lines = msg.split("\n");
+        if (getConfiguration().getVisible().contains(DiagnosticPart.SUMMARY)) {
+            currentIndentation += getConfiguration().getIndentation(DiagnosticPart.SUMMARY);
+            buf.append(indent(lines[0], currentIndentation)); //summary
+        }
+        if (lines.length > 1 && getConfiguration().getVisible().contains(DiagnosticPart.DETAILS)) {
+            currentIndentation += getConfiguration().getIndentation(DiagnosticPart.DETAILS);
+            for (int i = 1;i < lines.length; i++) {
+                buf.append("\n" + indent(lines[i], currentIndentation));
             }
-            if (lines.length > 1 && getConfiguration().getVisible().contains(DiagnosticPart.DETAILS)) {
-                currentIndentation += getConfiguration().getIndentation(DiagnosticPart.DETAILS);
-                for (int i = 1;i < lines.length; i++) {
-                    buf.append("\n" + indent(lines[i], currentIndentation));
-                }
-            }
-            if (d.isMultiline() && getConfiguration().getVisible().contains(DiagnosticPart.SUBDIAGNOSTICS)) {
-                currentIndentation += getConfiguration().getIndentation(DiagnosticPart.SUBDIAGNOSTICS);
+        }
+        if (d.isMultiline() && getConfiguration().getVisible().contains(DiagnosticPart.SUBDIAGNOSTICS)) {
+            currentIndentation += getConfiguration().getIndentation(DiagnosticPart.SUBDIAGNOSTICS);
                 for (String sub : formatSubdiagnostics(d, l)) {
-                    buf.append("\n" + sub);
-                }
+                    buf.append("\n" + indent(sub, currentIndentation));
             }
-            return buf.toString();
         }
-        finally {
-            currentIndentation = prevIndentation;
-        }
+        return buf.toString();
     }
 
     protected String addSourceLineIfNeeded(JCDiagnostic d, String msg) {
