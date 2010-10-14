@@ -156,9 +156,4 @@ class LinuxFileStore
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
         return super.supportsFileAttributeView(name);
     }
-
-    @Override
-    boolean isLoopback() {
-        return false;
-    }
 }

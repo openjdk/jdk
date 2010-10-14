@@ -1,5 +1,5 @@
-T6611449.java:18:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6611449, , int, kindname.class, T6611449<S>
-T6611449.java:19:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6611449, , int,int, kindname.class, T6611449<S>
-T6611449.java:20:9: compiler.err.cant.apply.symbol: kindname.method, m1, T, int, kindname.class, T6611449<S>, null
-T6611449.java:21:9: compiler.err.cant.apply.symbol: kindname.method, m2, T,T, int,int, kindname.class, T6611449<S>, null
+T6611449.java:18:9: compiler.err.cant.apply.symbols: kindname.constructor, T6611449, int,{(compiler.misc.inapplicable.method: kindname.constructor, T6611449, <T>T6611449(T,T), (compiler.misc.infer.arg.length.mismatch)),(compiler.misc.inapplicable.method: kindname.constructor, T6611449, <T>T6611449(T), (compiler.misc.inferred.do.not.conform.to.bounds: java.lang.Integer, S))}
+T6611449.java:19:9: compiler.err.cant.apply.symbols: kindname.constructor, T6611449, int,int,{(compiler.misc.inapplicable.method: kindname.constructor, T6611449, <T>T6611449(T,T), (compiler.misc.inferred.do.not.conform.to.bounds: java.lang.Integer, S)),(compiler.misc.inapplicable.method: kindname.constructor, T6611449, <T>T6611449(T), (compiler.misc.infer.arg.length.mismatch))}
+T6611449.java:20:9: compiler.err.cant.apply.symbol.1: kindname.method, m1, T, int, kindname.class, T6611449<S>, (compiler.misc.inferred.do.not.conform.to.bounds: java.lang.Integer, S)
+T6611449.java:21:9: compiler.err.cant.apply.symbol.1: kindname.method, m2, T,T, int,int, kindname.class, T6611449<S>, (compiler.misc.inferred.do.not.conform.to.bounds: java.lang.Integer, S)
 4 errors

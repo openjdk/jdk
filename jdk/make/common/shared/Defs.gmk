@@ -219,7 +219,7 @@ else
   PRODUCT_NAME = Java(TM)
   PRODUCT_SUFFIX = SE Runtime Environment
   JDK_RC_PLATFORM_NAME = Platform SE
-  COMPANY_NAME = Oracle
+  COMPANY_NAME = Oracle Corporation
 endif
 
 RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)
