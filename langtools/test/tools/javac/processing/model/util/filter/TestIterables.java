@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6406164
  * @summary Test that ElementFilter iterable methods behave properly.
  * @author  Joseph D. Darcy
+ * @library ../../../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile TestIterables.java
  * @compile -processor TestIterables -proc:only Foo1.java
  * @compile Foo1.java
@@ -51,9 +53,8 @@ import static javax.lang.model.util.ElementFilter.*;
  * results.
  */
 @SupportedAnnotationTypes("ExpectedElementCounts")
-@ExpectedElementCounts(methods=3)
-public class TestIterables extends AbstractProcessor {
-
+@ExpectedElementCounts(methods=2)
+public class TestIterables extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
@@ -118,10 +119,4 @@ public class TestIterables extends AbstractProcessor {
 
         return count1;
     }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
 }
