@@ -1941,7 +1941,7 @@ public final class Locale implements Cloneable, Serializable {
      * @serialField variant     String
      *      variant subtags separated by LOWLINE characters. (See <a href="java/util/Locale.html#getVariant()">getVariant()</a>)
      * @serialField hashcode    int
-     *      deprectated, for forward compatibility only
+     *      deprecated, for forward compatibility only
      * @serialField script      String
      *      script subtag in title case (See <a href="java/util/Locale.html#getScript()">getScript()</a>)
      * @serialField extensions  String
@@ -1979,7 +1979,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Deserialize this <code>Locale</code>.
+     * Deserializes this <code>Locale</code>.
      * @param in the <code>ObjectInputStream</code> to read
      * @throws IOException
      * @throws ClassNotFoundException
