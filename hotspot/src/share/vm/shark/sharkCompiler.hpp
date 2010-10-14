@@ -103,8 +103,7 @@ class SharkCompiler : public AbstractCompiler {
   // Global access
  public:
   static SharkCompiler* compiler() {
-    AbstractCompiler *compiler =
-      CompileBroker::compiler(CompLevel_fast_compile);
+    AbstractCompiler *compiler = CompileBroker::compiler(CompLevel_simple);
     assert(compiler->is_shark() && compiler->is_initialized(), "should be");
     return (SharkCompiler *) compiler;
   }
