@@ -591,6 +591,12 @@ public abstract class SunToolkit extends Toolkit
         if (event == null) {
             throw new NullPointerException();
         }
+        // All events posted via this method are system-generated.
+        // Placing the following call here reduces considerably the
+        // number of places throughout the toolkit that would
+        // otherwise have to be modified to precisely identify
+        // system-generated events.
+        setSystemGenerated(event);
         AppContext eventContext = targetToAppContext(event.getSource());
         if (eventContext != null && !eventContext.equals(appContext)) {
             log.fine("Event posted on wrong app context : " + event);
@@ -2093,6 +2099,25 @@ public abstract class SunToolkit extends Toolkit
         }
         return isInstanceOf(cls.getSuperclass(), type);
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // The following methods help set and identify whether a particular
+    // AWTEvent object was produced by the system or by user code. As of this
+    // writing the only consumer is the Java Plug-In, although this information
+    // could be useful to more clients and probably should be formalized in
+    // the public API.
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    public static void setSystemGenerated(AWTEvent e) {
+        AWTAccessor.getAWTEventAccessor().setSystemGenerated(e);
+    }
+
+    public static boolean isSystemGenerated(AWTEvent e) {
+        return AWTAccessor.getAWTEventAccessor().isSystemGenerated(e);
+    }
+
 } // class SunToolkit
 
 
