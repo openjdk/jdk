@@ -26,6 +26,8 @@
  * @bug 6634138
  * @author  Joseph D. Darcy
  * @summary Verify source files output after processing is over are compiled
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile T6634138.java
  * @compile -processor T6634138 Dummy.java
  * @run main ExerciseDependency
@@ -44,10 +46,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 
-@SupportedAnnotationTypes("*")
-public class T6634138 extends AbstractProcessor {
-    private Filer filer;
-
+public class T6634138 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
         // Write out files *after* processing is over.
@@ -76,16 +75,6 @@ public class T6634138 extends AbstractProcessor {
             }
         }
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        filer    = processingEnv.getFiler();
     }
 }
 

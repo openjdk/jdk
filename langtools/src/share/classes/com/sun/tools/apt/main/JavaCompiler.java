@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,9 +98,6 @@ public class JavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
 
     private static Context preRegister(Context context) {
         Bark.preRegister(context);
-
-        // force the use of the scanner that captures Javadoc comments
-        DocCommentScanner.Factory.preRegister(context);
 
         if (context.get(JavaFileManager.class) == null)
             JavacFileManager.preRegister(context);

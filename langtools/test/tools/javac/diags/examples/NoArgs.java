@@ -22,7 +22,8 @@
  */
 
 // key: compiler.misc.no.args
-// key: compiler.err.cant.apply.symbol
+// key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.arg.length.mismatch
 // run: simple
 
 class X {

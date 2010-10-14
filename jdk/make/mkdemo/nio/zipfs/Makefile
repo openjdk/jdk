@@ -1,10 +1,12 @@
 #
-# Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,42 +23,22 @@
 # questions.
 #
 
- # @test
- # @bug 6502503
- # @run shell/timeout=140 ChunkedCharEncoding.sh
- # @summary Http URL connection don't work when default encoding is Cp037: HTTP Transfer-Encoding:chunked
+#
+# Makefile to build the ZipFileSystem demo.
+#
 
-OS=`uname -s`
-case "$OS" in
-  SunOS | Linux )
-    PS=":"
-    FS="/"
-    ;;
-  CYGWIN* )
-    PS=";"
-    FS="/"
-    ;;
-  Windows* )
-    PS=";"
-    FS="\\"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
+BUILDDIR = ../../..
+PRODUCT = demo/zipfs
+DEMONAME = zipfs
+include $(BUILDDIR)/common/Defs.gmk
 
-# compile
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}TestAvailable.java
+DEMO_ROOT       = $(SHARE_SRC)/demo/nio/$(DEMONAME)
+DEMO_TOPFILES   = ./README.txt
+DEMO_SRCDIR     = $(DEMO_ROOT)
+DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 
-# run with CP037 encoding specified. 
-${TESTJAVA}${FS}bin${FS}java -Dfile.encoding=Cp037 TestAvailable 2>&1 
-
-result=$?
-if [ "$result" -ne "0" ]; then
-    exit 1
-fi
-
-# no failures, exit.
-exit 0
+#
+# Demo jar building rules.
+#
+include $(BUILDDIR)/common/Demo.gmk
 
