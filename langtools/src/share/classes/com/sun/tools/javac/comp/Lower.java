@@ -68,6 +68,7 @@ public class Lower extends TreeTranslator {
     private Names names;
     private Log log;
     private Symtab syms;
+    private Scope.ScopeCounter scopeCounter;
     private Resolve rs;
     private Check chk;
     private Attr attr;
@@ -90,6 +91,7 @@ public class Lower extends TreeTranslator {
         names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         rs = Resolve.instance(context);
         chk = Check.instance(context);
         attr = Attr.instance(context);
@@ -107,7 +109,7 @@ public class Lower extends TreeTranslator {
 
         types = Types.instance(context);
         Options options = Options.instance(context);
-        debugLower = options.get("debuglower") != null;
+        debugLower = options.isSet("debuglower");
         pkginfoOpt = PkgInfo.get(options);
     }
 
@@ -569,7 +571,7 @@ public class Lower extends TreeTranslator {
         c.flatname = chk.localClassName(c);
         c.sourcefile = owner.sourcefile;
         c.completer = null;
-        c.members_field = new Scope(c);
+        c.members_field = new Scope.ClassScope(c, scopeCounter);
         c.flags_field = flags;
         ClassType ctype = (ClassType) c.type;
         ctype.supertype_field = syms.objectType;
@@ -2677,7 +2679,8 @@ public class Lower extends TreeTranslator {
     }
 //where
         private JCTree convert(JCTree tree, Type pt) {
-            if (tree.type == pt) return tree;
+            if (tree.type == pt || tree.type.tag == TypeTags.BOT)
+                return tree;
             JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
             result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
                                                            : pt;

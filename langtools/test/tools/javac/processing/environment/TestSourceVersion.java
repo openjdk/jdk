@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6402506
  * @summary Test that getSourceVersion works properly
  * @author  Joseph D. Darcy
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile TestSourceVersion.java
  * @compile -processor TestSourceVersion -proc:only -source 1.2 -AExpectedVersion=RELEASE_2 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.3 -AExpectedVersion=RELEASE_3 HelloWorld.java
@@ -52,9 +54,8 @@ import static javax.tools.Diagnostic.Kind.*;
  * This processor checks that ProcessingEnvironment.getSourceVersion()
  * is consistent with the setting of the -source option.
  */
-@SupportedAnnotationTypes("*")
 @SupportedOptions("ExpectedVersion")
-public class TestSourceVersion extends AbstractProcessor {
+public class TestSourceVersion extends JavacTestingAbstractProcessor {
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
@@ -67,10 +68,5 @@ public class TestSourceVersion extends AbstractProcessor {
             throw new RuntimeException();
 
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }

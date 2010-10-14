@@ -93,14 +93,14 @@ public final class RIOptimisticProvider extends SyncProvider implements Serializ
     private CachedRowSetWriter writer;
 
     /**
-     * The unique provider indentifier.
+     * The unique provider identifier.
      */
     private String providerID = "com.sun.rowset.providers.RIOptimisticProvider";
 
     /**
      * The vendor name of this SyncProvider implementation
      */
-    private String vendorName = "Sun Microsystems Inc.";
+    private String vendorName = "Oracle Corporation";
 
     /**
      * The version number of this SyncProvider implementation
@@ -236,8 +236,8 @@ public final class RIOptimisticProvider extends SyncProvider implements Serializ
     }
 
     /**
-     * Returns the vendor name of the Reference Implemntation Optimistic
-     * Syncchronication Provider
+     * Returns the vendor name of the Reference Implementation Optimistic
+     * Synchronization Provider
      *
      * @return the <code>String</code> detailing the vendor name of this
      *      SyncProvider

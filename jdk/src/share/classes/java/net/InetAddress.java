@@ -677,19 +677,20 @@ class InetAddress implements java.io.Serializable {
 
     static InetAddressImpl  impl;
 
-    private static HashMap          lookupTable = new HashMap();
+    private static HashMap<String, InetAddress[]> lookupTable
+        = new HashMap<String, InetAddress[]>();
 
     /**
      * Represents a cache entry
      */
     static final class CacheEntry {
 
-        CacheEntry(Object address, long expiration) {
-            this.address = address;
+        CacheEntry(InetAddress[] addresses, long expiration) {
+            this.addresses = addresses;
             this.expiration = expiration;
         }
 
-        Object address;
+        InetAddress[] addresses;
         long expiration;
     }
 
@@ -698,7 +699,7 @@ class InetAddress implements java.io.Serializable {
      * at creation time.
      */
     static final class Cache {
-        private LinkedHashMap cache;
+        private LinkedHashMap<String, CacheEntry> cache;
         private Type type;
 
         enum Type {Positive, Negative};
@@ -708,7 +709,7 @@ class InetAddress implements java.io.Serializable {
          */
         public Cache(Type type) {
             this.type = type;
-            cache = new LinkedHashMap();
+            cache = new LinkedHashMap<String, CacheEntry>();
         }
 
         private int getPolicy() {
@@ -724,7 +725,7 @@ class InetAddress implements java.io.Serializable {
          * entry then for this host then the entry will be
          * replaced.
          */
-        public Cache put(String host, Object address) {
+        public Cache put(String host, InetAddress[] addresses) {
             int policy = getPolicy();
             if (policy == InetAddressCachePolicy.NEVER) {
                 return this;
@@ -736,12 +737,10 @@ class InetAddress implements java.io.Serializable {
 
                 // As we iterate in insertion order we can
                 // terminate when a non-expired entry is found.
-                LinkedList expired = new LinkedList();
-                Iterator i = cache.keySet().iterator();
+                LinkedList<String> expired = new LinkedList<String>();
                 long now = System.currentTimeMillis();
-                while (i.hasNext()) {
-                    String key = (String)i.next();
-                    CacheEntry entry = (CacheEntry)cache.get(key);
+                for (String key : cache.keySet()) {
+                    CacheEntry entry = cache.get(key);
 
                     if (entry.expiration >= 0 && entry.expiration < now) {
                         expired.add(key);
@@ -750,9 +749,8 @@ class InetAddress implements java.io.Serializable {
                     }
                 }
 
-                i = expired.iterator();
-                while (i.hasNext()) {
-                    cache.remove(i.next());
+                for (String key : expired) {
+                    cache.remove(key);
                 }
             }
 
@@ -766,7 +764,7 @@ class InetAddress implements java.io.Serializable {
             } else {
                 expiration = System.currentTimeMillis() + (policy * 1000);
             }
-            CacheEntry entry = new CacheEntry(address, expiration);
+            CacheEntry entry = new CacheEntry(addresses, expiration);
             cache.put(host, entry);
             return this;
         }
@@ -780,7 +778,7 @@ class InetAddress implements java.io.Serializable {
             if (policy == InetAddressCachePolicy.NEVER) {
                 return null;
             }
-            CacheEntry entry = (CacheEntry)cache.get(host);
+            CacheEntry entry = cache.get(host);
 
             // check if entry has expired
             if (entry != null && policy != InetAddressCachePolicy.FOREVER) {
@@ -814,42 +812,41 @@ class InetAddress implements java.io.Serializable {
     }
 
     /*
-     * Cache the given hostname and address.
+     * Cache the given hostname and addresses.
      */
-    private static void cacheAddress(String hostname, Object address,
-                                     boolean success) {
+    private static void cacheAddresses(String hostname,
+                                       InetAddress[] addresses,
+                                       boolean success) {
         hostname = hostname.toLowerCase();
         synchronized (addressCache) {
             cacheInitIfNeeded();
             if (success) {
-                addressCache.put(hostname, address);
+                addressCache.put(hostname, addresses);
             } else {
-                negativeCache.put(hostname, address);
+                negativeCache.put(hostname, addresses);
             }
         }
     }
 
     /*
      * Lookup hostname in cache (positive & negative cache). If
-     * found return address, null if not found.
+     * found return addresses, null if not found.
      */
-    private static Object getCachedAddress(String hostname) {
+    private static InetAddress[] getCachedAddresses(String hostname) {
         hostname = hostname.toLowerCase();
 
         // search both positive & negative caches
 
         synchronized (addressCache) {
-            CacheEntry entry;
-
             cacheInitIfNeeded();
 
-            entry = addressCache.get(hostname);
+            CacheEntry entry = addressCache.get(hostname);
             if (entry == null) {
                 entry = negativeCache.get(hostname);
             }
 
             if (entry != null) {
-                return entry.address;
+                return entry.addresses;
             }
         }
 
@@ -911,7 +908,7 @@ class InetAddress implements java.io.Serializable {
 
     static {
         // create the impl
-        impl = (new InetAddressImplFactory()).create();
+        impl = InetAddressImplFactory.create();
 
         // get name service if provided and requested
         String provider = null;;
@@ -931,7 +928,7 @@ class InetAddress implements java.io.Serializable {
         }
 
         // if not designate any name services provider,
-        // creat a default one
+        // create a default one
         if (nameServices.size() == 0) {
             NameService ns = createNSProvider("default");
             nameServices.add(ns);
@@ -939,7 +936,7 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Create an InetAddress based on the provided host name and IP address
+     * Creates an InetAddress based on the provided host name and IP address.
      * No name service is checked for the validity of the address.
      *
      * <p> The host name can either be a machine name, such as
@@ -1067,13 +1064,13 @@ class InetAddress implements java.io.Serializable {
 
         boolean ipv6Expected = false;
         if (host.charAt(0) == '[') {
-            // This is supposed to be an IPv6 litteral
+            // This is supposed to be an IPv6 literal
             if (host.length() > 2 && host.charAt(host.length()-1) == ']') {
                 host = host.substring(1, host.length() -1);
                 ipv6Expected = true;
             } else {
                 // This was supposed to be a IPv6 address, but it's not!
-                throw new UnknownHostException(host);
+                throw new UnknownHostException(host + ": invalid IPv6 address");
             }
         }
 
@@ -1180,8 +1177,6 @@ class InetAddress implements java.io.Serializable {
         throws UnknownHostException  {
         /* If it gets here it is presumed to be a hostname */
         /* Cache.get can return: null, unknownAddress, or InetAddress[] */
-        Object obj = null;
-        Object objcopy = null;
 
         /* make sure the connection to the host is allowed, before we
          * give out a hostname
@@ -1193,26 +1188,23 @@ class InetAddress implements java.io.Serializable {
             }
         }
 
-        obj = getCachedAddress(host);
+        InetAddress[] addresses = getCachedAddresses(host);
 
         /* If no entry in cache, then do the host lookup */
-        if (obj == null) {
-            obj = getAddressFromNameService(host);
+        if (addresses == null) {
+            addresses = getAddressesFromNameService(host);
         }
 
-        if (obj == unknown_array)
+        if (addresses == unknown_array)
             throw new UnknownHostException(host);
 
-        /* Make a copy of the InetAddress array */
-        objcopy = ((InetAddress [])obj).clone();
-
-        return (InetAddress [])objcopy;
+        return addresses.clone();
     }
 
-    private static Object getAddressFromNameService(String host)
+    private static InetAddress[] getAddressesFromNameService(String host)
         throws UnknownHostException
     {
-        Object obj = null;
+        InetAddress[] addresses = null;
         boolean success = false;
         UnknownHostException ex = null;
 
@@ -1226,16 +1218,16 @@ class InetAddress implements java.io.Serializable {
         //    would be blocked until the host is removed
         //    from the lookupTable. Then this thread
         //    should try to look up the addressCache.
-        //     i) if it found the address in the
+        //     i) if it found the addresses in the
         //        addressCache, checkLookupTable()  would
-        //        return the address.
-        //     ii) if it didn't find the address in the
+        //        return the addresses.
+        //     ii) if it didn't find the addresses in the
         //         addressCache for any reason,
         //         it should add the host in the
         //         lookupTable and return null so the
         //         following code would do  a lookup itself.
-        if ((obj = checkLookupTable(host)) == null) {
-            // This is the first thread which looks up the address
+        if ((addresses = checkLookupTable(host)) == null) {
+            // This is the first thread which looks up the addresses
             // this host or the cache entry for this host has been
             // expired so this thread should do the lookup.
             for (NameService nameService : nameServices) {
@@ -1246,26 +1238,26 @@ class InetAddress implements java.io.Serializable {
                      * allocating space when the lookup fails.
                      */
 
-                    obj = nameService.lookupAllHostAddr(host);
+                    addresses = nameService.lookupAllHostAddr(host);
                     success = true;
                     break;
                 } catch (UnknownHostException uhe) {
                     if (host.equalsIgnoreCase("localhost")) {
                         InetAddress[] local = new InetAddress[] { impl.loopbackAddress() };
-                        obj = local;
+                        addresses = local;
                         success = true;
                         break;
                     }
                     else {
-                        obj  = unknown_array;
+                        addresses = unknown_array;
                         success = false;
                         ex = uhe;
                     }
                 }
             }
 
-            // Cache the address.
-            cacheAddress(host, obj, success);
+            // Cache the addresses.
+            cacheAddresses(host, addresses, success);
             // Delete the host from the lookupTable, and
             // notify all threads waiting for the monitor
             // for lookupTable.
@@ -1274,13 +1266,13 @@ class InetAddress implements java.io.Serializable {
                 throw ex;
         }
 
-        return obj;
+        return addresses;
     }
 
 
-    private static Object checkLookupTable(String host) {
-        // make sure obj  is null.
-        Object obj = null;
+    private static InetAddress[] checkLookupTable(String host) {
+        // make sure addresses is null.
+        InetAddress[] addresses = null;
 
         synchronized (lookupTable) {
             // If the host isn't in the lookupTable, add it in the
@@ -1288,11 +1280,11 @@ class InetAddress implements java.io.Serializable {
             // the lookup.
             if (lookupTable.containsKey(host) == false) {
                 lookupTable.put(host, null);
-                return obj;
+                return addresses;
             }
 
             // If the host is in the lookupTable, it means that another
-            // thread is trying to look up the address of this host.
+            // thread is trying to look up the addresses of this host.
             // This thread should wait.
             while (lookupTable.containsKey(host)) {
                 try {
@@ -1302,18 +1294,18 @@ class InetAddress implements java.io.Serializable {
             }
         }
 
-        // The other thread has finished looking up the address of
-        // the host. This thread should retry to get the address
-        // from the addressCache. If it doesn't get the address from
-        // the cache,  it will try to look up the address itself.
-        obj = getCachedAddress(host);
-        if (obj == null) {
+        // The other thread has finished looking up the addresses of
+        // the host. This thread should retry to get the addresses
+        // from the addressCache. If it doesn't get the addresses from
+        // the cache, it will try to look up the addresses itself.
+        addresses = getCachedAddresses(host);
+        if (addresses == null) {
             synchronized (lookupTable) {
                 lookupTable.put(host, null);
             }
         }
 
-        return obj;
+        return addresses;
     }
 
     private static void updateLookupTable(String host) {
@@ -1396,15 +1388,20 @@ class InetAddress implements java.io.Serializable {
                         cachedLocalHost = null;
                 }
 
-                // we are calling getAddressFromNameService directly
+                // we are calling getAddressesFromNameService directly
                 // to avoid getting localHost from cache
                 if (ret == null) {
                     InetAddress[] localAddrs;
                     try {
                         localAddrs =
-                            (InetAddress[]) InetAddress.getAddressFromNameService(local);
+                            InetAddress.getAddressesFromNameService(local);
                     } catch (UnknownHostException uhe) {
-                        throw new UnknownHostException(local + ": " + uhe.getMessage());
+                        // Rethrow with a more informative error message.
+                        UnknownHostException uhe2 =
+                            new UnknownHostException(local + ": " +
+                                                     uhe.getMessage());
+                        uhe2.initCause(uhe);
+                        throw uhe2;
                     }
                     cachedLocalHost = localAddrs[0];
                     cacheTime = now;
@@ -1434,8 +1431,8 @@ class InetAddress implements java.io.Serializable {
     /*
      * Load and instantiate an underlying impl class
      */
-    static Object loadImpl(String implName) {
-        Object impl;
+    static InetAddressImpl loadImpl(String implName) {
+        Object impl = null;
 
         /*
          * Property "impl.prefix" will be prepended to the classname
@@ -1446,7 +1443,6 @@ class InetAddress implements java.io.Serializable {
          */
         String prefix = AccessController.doPrivileged(
                       new GetPropertyAction("impl.prefix", ""));
-        impl = null;
         try {
             impl = Class.forName("java.net." + prefix + implName).newInstance();
         } catch (ClassNotFoundException e) {
@@ -1471,7 +1467,7 @@ class InetAddress implements java.io.Serializable {
             }
         }
 
-        return impl;
+        return (InetAddressImpl) impl;
     }
 
     private void readObjectNoData (ObjectInputStream s) throws
@@ -1498,13 +1494,8 @@ class InetAddress implements java.io.Serializable {
 class InetAddressImplFactory {
 
     static InetAddressImpl create() {
-        Object o;
-        if (isIPv6Supported()) {
-            o = InetAddress.loadImpl("Inet6AddressImpl");
-        } else {
-            o = InetAddress.loadImpl("Inet4AddressImpl");
-        }
-        return (InetAddressImpl)o;
+        return InetAddress.loadImpl(isIPv6Supported() ?
+                                    "Inet6AddressImpl" : "Inet4AddressImpl");
     }
 
     static native boolean isIPv6Supported();

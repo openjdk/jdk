@@ -78,12 +78,10 @@ public class WatchDir {
         // register directory and sub-directories
         Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir) {
-                try {
-                    register(dir);
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                throws IOException
+            {
+                register(dir);
                 return FileVisitResult.CONTINUE;
             }
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ public class T6439826 extends AbstractProcessor {
         StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
         Iterable<? extends JavaFileObject> files =
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6439826.class.getName()+".java")));
-        Iterable<String> opts = Arrays.asList("-source","1.6",
-                                              "-proc:only",
+        Iterable<String> opts = Arrays.asList("-proc:only",
                                               "-processor", "T6439826",
                                               "-processorpath", testClasses);
         StringWriter out = new StringWriter();
