@@ -216,7 +216,9 @@ class Utils {
 
     // Returns the Max Version String of this implementation
     static String getVersionString() {
-        return "Pack200, Vendor: Sun Microsystems, Version: " +
+        return "Pack200, Vendor: " +
+            System.getProperty("java.vendor") +
+            ", Version: " +
             Constants.JAVA6_PACKAGE_MAJOR_VERSION + "." +
             Constants.JAVA6_PACKAGE_MINOR_VERSION;
     }
