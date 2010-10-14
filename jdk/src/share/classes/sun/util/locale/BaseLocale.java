@@ -64,12 +64,14 @@ public final class BaseLocale {
 
     public static BaseLocale getInstance(String language, String script, String region, String variant) {
         // JDK uses deprecated ISO639.1 language codes for he, yi and id
-        if (AsciiUtil.caseIgnoreMatch(language, "he")) {
-            language = "iw";
-        } else if (AsciiUtil.caseIgnoreMatch(language, "yi")) {
-            language = "ji";
-        } else if (AsciiUtil.caseIgnoreMatch(language, "id")) {
-            language = "in";
+        if (language != null) {
+            if (AsciiUtil.caseIgnoreMatch(language, "he")) {
+                language = "iw";
+            } else if (AsciiUtil.caseIgnoreMatch(language, "yi")) {
+                language = "ji";
+            } else if (AsciiUtil.caseIgnoreMatch(language, "id")) {
+                language = "in";
+            }
         }
 
         Key key = new Key(language, script, region, variant);

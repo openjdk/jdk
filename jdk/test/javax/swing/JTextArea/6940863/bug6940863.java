@@ -56,6 +56,7 @@ public class bug6940863 {
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
             System.out.println("The test is suitable only for Windows OS. Skipped");
+            return;
         }
 
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");

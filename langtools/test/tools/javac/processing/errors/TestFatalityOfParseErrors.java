@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 6403459
  * @summary Test that generating programs with syntax errors is a fatal condition
  * @author  Joseph D. Darcy
+ * @library ../../lib
+ * @build JavacTestingAbstractProcessor
+ * @compile TestReturnCode.java
  * @compile TestFatalityOfParseErrors.java
  * @compile/fail -XprintRounds -processor TestFatalityOfParseErrors -proc:only TestFatalityOfParseErrors.java
  */
@@ -45,11 +48,8 @@ import java.io.IOException;
  * Write out an incomplete source file and observe that the next round
  * is marked as an error.
  */
-@SupportedAnnotationTypes("*")
-public class TestFatalityOfParseErrors extends AbstractProcessor {
+public class TestFatalityOfParseErrors extends JavacTestingAbstractProcessor {
     int round = 0;
-    Messager messager;
-    Filer filer;
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
@@ -86,15 +86,5 @@ public class TestFatalityOfParseErrors extends AbstractProcessor {
             throw new RuntimeException(ioException);
         }
         return true;
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        messager = processingEnv.getMessager();
-        filer    = processingEnv.getFiler();
     }
 }

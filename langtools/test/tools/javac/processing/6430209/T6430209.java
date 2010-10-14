@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 6441871
  * @summary spurious compiler error elicited by packageElement.getEnclosedElements()
- * @build b6341534
+ * @library ../../lib
+ * @build JavacTestingAbstractProcessor b6341534
  * @run main T6430209
  */
 
@@ -54,7 +55,7 @@ public class T6430209 {
         // run annotation processor b6341534 so we can check diagnostics
         // -proc:only -processor b6341534 -cp . ./src/*.java
         String testSrc = System.getProperty("test.src", ".");
-        String testClasses = System.getProperty("test.classes");
+        String testClasses = System.getProperty("test.classes") + System.getProperty("path.separator") + "../../lib";
         JavacTool tool = JavacTool.create();
         MyDiagListener dl = new MyDiagListener();
         StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
