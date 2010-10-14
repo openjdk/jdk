@@ -26,6 +26,7 @@
 package sun.awt;
 
 import java.awt.*;
+import java.awt.event.InputEvent;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 
@@ -303,6 +304,13 @@ public final class AWTAccessor {
         void setPosted(AWTEvent ev);
     }
 
+    public interface InputEventAccessor {
+        /*
+         * Accessor for InputEvent.getButtonDownMasks()
+         */
+        int[] getButtonDownMasks();
+    }
+
     /*
      * An accessor for the java.awt.Frame class.
      */
@@ -436,6 +444,11 @@ public final class AWTAccessor {
     private static AWTEventAccessor awtEventAccessor;
 
     /*
+     * The java.awt.event.InputEvent class accessor object.
+     */
+    private static InputEventAccessor inputEventAccessor;
+
+    /*
      * The java.awt.Frame class accessor object.
      */
     private static FrameAccessor frameAccessor;
@@ -515,6 +528,23 @@ public final class AWTAccessor {
             unsafe.ensureClassInitialized(AWTEvent.class);
         }
         return awtEventAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.event.InputEvent class.
+     */
+    public static void setInputEventAccessor(InputEventAccessor iea) {
+        inputEventAccessor = iea;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.event.InputEvent class.
+     */
+    public static InputEventAccessor getInputEventAccessor() {
+        if (inputEventAccessor == null) {
+            unsafe.ensureClassInitialized(InputEvent.class);
+        }
+        return inputEventAccessor;
     }
 
     /*

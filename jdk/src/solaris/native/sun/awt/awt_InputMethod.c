@@ -46,8 +46,6 @@
 #ifdef XAWT
 #include <sun_awt_X11_XComponentPeer.h>
 #include <sun_awt_X11_XInputMethod.h>
-
-#define XtWindow(w)     (w)
 #else /* !XAWT */
 #include <sun_awt_motif_MComponentPeer.h>
 #include <sun_awt_motif_MInputMethod.h>
@@ -670,7 +668,8 @@ static StatusWindow *createStatusWindow(
     int  mccr = 0;
     char *dsr;
     Pixel bg, fg, light, dim;
-    int x, y, w, h, bw, depth, off_x, off_y, xx, yy;
+    int x, y, off_x, off_y, xx, yy;
+    unsigned int w, h, bw, depth;
     XGCValues values;
     unsigned long valuemask = 0;  /*ignore XGCvalue and use defaults*/
     int screen = 0;
@@ -709,7 +708,7 @@ static StatusWindow *createStatusWindow(
     light = adata->AwtColorMatch(195, 195, 195, adata);
     dim   = adata->AwtColorMatch(128, 128, 128, adata);
 
-    XGetWindowAttributes(dpy, XtWindow(parent), &xwa);
+    XGetWindowAttributes(dpy, parent, &xwa);
     bw = 2; /*xwa.border_width does not have the correct value*/
 
     /*compare the size difference between parent container
@@ -717,7 +716,7 @@ static StatusWindow *createStatusWindow(
       and title bar height (?)*/
 
     XQueryTree( dpy,
-                XtWindow(parent),
+                parent,
                 &rootWindow,
                 &containerWindow,
                 &ignoreWindowPtr,
@@ -731,7 +730,7 @@ static StatusWindow *createStatusWindow(
     XGetWindowAttributes(dpy, rootWindow, &xxwa);
 
     XTranslateCoordinates(dpy,
-                          XtWindow(parent), xwa.root,
+                          parent, xwa.root,
                           xwa.x, xwa.y,
                           &x, &y,
                           &child);
@@ -833,9 +832,9 @@ static void onoffStatusWindow(X11InputMethodData* pX11IMData,
     if (statusWindow->parent != parent){
         statusWindow->parent = parent;
     }
-    XGetWindowAttributes(dpy, XtWindow(parent), &xwa);
+    XGetWindowAttributes(dpy, parent, &xwa);
     XTranslateCoordinates(dpy,
-                          XtWindow(parent), xwa.root,
+                          parent, xwa.root,
                           xwa.x, xwa.y,
                           &x, &y,
                           &child);
@@ -966,9 +965,9 @@ void adjustStatusWindow(Widget shell){
         XWindowAttributes xwa;
         int x, y;
         Window child;
-        XGetWindowAttributes(dpy, XtWindow(shell), &xwa);
+        XGetWindowAttributes(dpy, shell, &xwa);
         XTranslateCoordinates(dpy,
-                              XtWindow(shell), xwa.root,
+                              shell, xwa.root,
                               xwa.x, xwa.y,
                               &x, &y,
                               &child);
@@ -1033,7 +1032,7 @@ createXIC(Widget w, X11InputMethodData *pX11IMData,
         return False;
     }
 #ifdef XAWT
-    if (w == NULL) {
+    if (!w) {
         return False;
     }
 #else /* !XAWT */
@@ -1148,8 +1147,8 @@ createXIC(Widget w, X11InputMethodData *pX11IMData,
                 goto err;
             pX11IMData->statusWindow = createStatusWindow(w);
             pX11IMData->ic_active = XCreateIC(X11im,
-                                              XNClientWindow, XtWindow(w),
-                                              XNFocusWindow, XtWindow(w),
+                                              XNClientWindow, w,
+                                              XNFocusWindow, w,
                                               XNInputStyle, active_styles,
                                               XNPreeditAttributes, preedit,
                                               XNStatusAttributes, status,
@@ -1166,8 +1165,8 @@ createXIC(Widget w, X11InputMethodData *pX11IMData,
                 goto err;
             pX11IMData->statusWidget = awt_util_getXICStatusAreaWindow(w);
             pX11IMData->ic_active = XCreateIC(X11im,
-                                              XNClientWindow, XtWindow(pX11IMData->statusWidget),
-                                              XNFocusWindow, XtWindow(w),
+                                              XNClientWindow, pX11IMData->statusWidget,
+                                              XNFocusWindow, w,
                                               XNInputStyle, active_styles,
                                               XNPreeditAttributes, preedit,
                                               XNStatusAttributes, status,
@@ -1176,8 +1175,8 @@ createXIC(Widget w, X11InputMethodData *pX11IMData,
         } else {
 #endif /* XAWT */
             pX11IMData->ic_active = XCreateIC(X11im,
-                                              XNClientWindow, XtWindow(w),
-                                              XNFocusWindow, XtWindow(w),
+                                              XNClientWindow, w,
+                                              XNFocusWindow, w,
                                               XNInputStyle, active_styles,
                                               XNPreeditAttributes, preedit,
                                               NULL);
@@ -1187,15 +1186,15 @@ createXIC(Widget w, X11InputMethodData *pX11IMData,
         XFree((void *)preedit);
 #endif /* __linux__ */
         pX11IMData->ic_passive = XCreateIC(X11im,
-                                           XNClientWindow, XtWindow(w),
-                                           XNFocusWindow, XtWindow(w),
+                                           XNClientWindow, w,
+                                           XNFocusWindow, w,
                                            XNInputStyle, passive_styles,
                                            NULL);
 
     } else {
         pX11IMData->ic_active = XCreateIC(X11im,
-                                          XNClientWindow, XtWindow(w),
-                                          XNFocusWindow, XtWindow(w),
+                                          XNClientWindow, w,
+                                          XNFocusWindow, w,
                                           XNInputStyle, active_styles,
                                           NULL);
         pX11IMData->ic_passive = pX11IMData->ic_active;
@@ -1213,7 +1212,7 @@ createXIC(Widget w, X11InputMethodData *pX11IMData,
     {
         XIMCallback cb;
         cb.client_data = (XPointer) pX11IMData->x11inputmethod;
-        cb.callback = CommitStringCallback;
+        cb.callback = (XIMProc) CommitStringCallback;
         XSetICValues (pX11IMData->ic_active, XNCommitStringCallback, &cb, NULL);
         if (pX11IMData->ic_active != pX11IMData->ic_passive) {
             XSetICValues (pX11IMData->ic_passive, XNCommitStringCallback, &cb, NULL);
@@ -1506,7 +1505,7 @@ Java_sun_awt_motif_MInputMethod_openXIMNative(JNIEnv *env,
     AWT_LOCK();
 
 #ifdef XAWT
-    dpy = (Display *)display;
+    dpy = (Display *)jlong_to_ptr(display);
 #else
     dpy = awt_display;
 #endif
@@ -1516,7 +1515,7 @@ Java_sun_awt_motif_MInputMethod_openXIMNative(JNIEnv *env,
 */
 #ifdef __linux__
     registered = XRegisterIMInstantiateCallback(dpy, NULL, NULL,
-                     NULL, (XIMProc)OpenXIMCallback, NULL);
+                     NULL, (XIDProc)OpenXIMCallback, NULL);
     if (!registered) {
         /* directly call openXIM callback */
 #endif
@@ -1551,7 +1550,7 @@ Java_sun_awt_motif_MInputMethod_createXICNative(JNIEnv *env,
     AWT_LOCK();
 
 #ifdef XAWT
-    if (window == NULL) {
+    if (!window) {
 #else /* !XAWT */
     if (JNU_IsNull(env, comp)) {
 #endif /* XAWT */
@@ -1660,7 +1659,7 @@ Java_sun_awt_motif_MInputMethod_reconfigureXICNative(JNIEnv *env,
              * On Solaris2.6, setXICWindowFocus() has to be invoked
              * before setting focus.
              */
-            setXICWindowFocus(pX11IMData->current_ic, XtWindow(cdata->widget));
+            setXICWindowFocus(pX11IMData->current_ic, cdata->widget);
             setXICFocus(pX11IMData->current_ic, True);
         } else {
             destroyX11InputMethodData((JNIEnv *) NULL, pX11IMData);
@@ -1701,7 +1700,7 @@ Java_sun_awt_X11_XInputMethod_setXICFocusNative(JNIEnv *env,
 
     if (req) {
 #ifdef XAWT
-        if (w == NULL) {
+        if (!w) {
             AWT_UNLOCK();
             return;
         }
@@ -1734,10 +1733,10 @@ Java_sun_awt_X11_XInputMethod_setXICFocusNative(JNIEnv *env,
 #ifndef XAWT
         w = cdata->widget;
 #endif /* XAWT */
-        setXICWindowFocus(pX11IMData->current_ic, XtWindow(w));
+        setXICWindowFocus(pX11IMData->current_ic, w);
         setXICFocus(pX11IMData->current_ic, req);
         currentX11InputMethodInstance = pX11IMData->x11inputmethod;
-        currentFocusWindow =  XtWindow(w);
+        currentFocusWindow =  w;
 #ifdef __linux__
         if (active && pX11IMData->statusWindow && pX11IMData->statusWindow->on)
             onoffStatusWindow(pX11IMData, w, True);
