@@ -20,12 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
 /*
  * @test
  * @bug 6982312
@@ -34,12 +33,11 @@ import java.util.List;
  * @run main AttributeTests
  * @author ksrini
  */
-
-
 public class AttributeTests {
 
     public static void main(String... args) throws Exception {
         test6982312();
+        test6746111();
     }
     /*
      * This is an interim test, which ensures pack200 handles JSR-292 related
@@ -71,5 +69,63 @@ public class AttributeTests {
         Utils.doCompareBitWise(dynJar.getAbsoluteFile(), testJar.getAbsoluteFile());
         testJar.delete();
         dynJar.delete();
+    }
+
+    /*
+     * this test checks to see if we get the expected strings for output
+     */
+    static void test6746111() throws Exception {
+        String pack200Cmd = Utils.getPack200Cmd();
+        File badAttrJar = new File(".", "badattr.jar");
+        Utils.copyFile(new File(Utils.TEST_SRC_DIR, "badattr.jar"), badAttrJar);
+        File testJar = new File(".", "test.jar");
+        List<String> cmds = new ArrayList<String>();
+        cmds.add(pack200Cmd);
+        cmds.add("--repack");
+        cmds.add("-v");
+        cmds.add(testJar.getAbsolutePath());
+        cmds.add(badAttrJar.getAbsolutePath());
+        List<String> output = Utils.runExec(cmds);
+        /*
+         * compare the repacked jar bit-wise, as all the files
+         * should be transmitted "as-is".
+         */
+        Utils.doCompareBitWise(badAttrJar.getAbsoluteFile(), testJar.getAbsoluteFile());
+        String[] expectedStrings = {
+            "WARNING: Passing class file uncompressed due to unrecognized" +
+                    " attribute: Foo.class",
+            "INFO: com.sun.java.util.jar.pack.Attribute$FormatException: " +
+                    "class attribute \"XourceFile\":  is unknown attribute " +
+                    "in class Foo",
+            "INFO: com.sun.java.util.jar.pack.ClassReader$ClassFormatException: " +
+                    "AnnotationDefault: attribute length cannot be zero, in Test.message()",
+            "WARNING: Passing class file uncompressed due to unknown class format: Test.class"
+        };
+        List<String> notfoundList = new ArrayList<String>();
+        notfoundList.addAll(Arrays.asList(expectedStrings));
+        // make sure the expected messages are emitted
+        for (String x : output) {
+            findString(x, notfoundList, expectedStrings);
+        }
+        if (!notfoundList.isEmpty()) {
+            System.out.println("Not found:");
+            for (String x : notfoundList) {
+                System.out.println(x);
+            }
+            throw new Exception("Test fails: " + notfoundList.size() +
+                    " expected strings not found");
+        }
+        testJar.delete();
+        badAttrJar.delete();
+    }
+
+    private static void findString(String outputStr, List<String> notfoundList,
+            String[] expectedStrings) {
+        for (String y : expectedStrings) {
+            if (outputStr.contains(y)) {
+                notfoundList.remove(y);
+                return;
+            }
+        }
     }
 }

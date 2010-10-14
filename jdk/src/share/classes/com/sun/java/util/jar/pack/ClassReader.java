@@ -30,6 +30,7 @@ import java.util.*;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.InnerClass;
 import com.sun.java.util.jar.pack.ConstantPool.*;
+import com.sun.tools.classfile.AttributeException;
 
 /**
  * Reader for a class file that is being incorporated into a package.
@@ -405,7 +406,7 @@ class ClassReader implements Constants {
                     skip(length, "unknown "+name+" attribute in "+h);
                     continue;
                 } else {
-                    String message = "unknown in "+h;
+                    String message = " is unknown attribute in class " + h;
                     throw new Attribute.FormatException(message, ctype, name,
                                                         unknownAttrCommand);
                 }
@@ -433,6 +434,10 @@ class ClassReader implements Constants {
                 byte[] bytes = new byte[length];
                 in.readFully(bytes);
                 a = a.addContent(bytes);
+            }
+            if (a.size() == 0 && !a.layout().isEmpty()) {
+                throw new ClassFormatException(name +
+                        ": attribute length cannot be zero, in " + h);
             }
             h.addAttribute(a);
             if (verbose > 2)
