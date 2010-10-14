@@ -55,10 +55,10 @@ import java.util.WeakHashMap;
  * start other subtasks.  As indicated by the name of this class,
  * many programs using {@code ForkJoinTask} employ only methods
  * {@link #fork} and {@link #join}, or derivatives such as {@link
- * #invokeAll}.  However, this class also provides a number of other
- * methods that can come into play in advanced usages, as well as
- * extension mechanics that allow support of new forms of fork/join
- * processing.
+ * #invokeAll(ForkJoinTask...) invokeAll}.  However, this class also
+ * provides a number of other methods that can come into play in
+ * advanced usages, as well as extension mechanics that allow
+ * support of new forms of fork/join processing.
  *
  * <p>A {@code ForkJoinTask} is a lightweight form of {@link Future}.
  * The efficiency of {@code ForkJoinTask}s stems from a set of
@@ -250,7 +250,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int s;         // the odd construction reduces lock bias effects
         while ((s = status) >= 0) {
             try {
-                synchronized(this) {
+                synchronized (this) {
                     if (UNSAFE.compareAndSwapInt(this, statusOffset, s,SIGNAL))
                         wait();
                 }
@@ -270,7 +270,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int s;
         if ((s = status) >= 0) {
             try {
-                synchronized(this) {
+                synchronized (this) {
                     if (UNSAFE.compareAndSwapInt(this, statusOffset, s,SIGNAL))
                         wait(millis, 0);
                 }
@@ -288,7 +288,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private void externalAwaitDone() {
         int s;
         while ((s = status) >= 0) {
-            synchronized(this) {
+            synchronized (this) {
                 if (UNSAFE.compareAndSwapInt(this, statusOffset, s, SIGNAL)){
                     boolean interrupted = false;
                     while (status >= 0) {
@@ -669,11 +669,34 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         setCompletion(NORMAL);
     }
 
+    /**
+     * Waits if necessary for the computation to complete, and then
+     * retrieves its result.
+     *
+     * @return the computed result
+     * @throws CancellationException if the computation was cancelled
+     * @throws ExecutionException if the computation threw an
+     * exception
+     * @throws InterruptedException if the current thread is not a
+     * member of a ForkJoinPool and was interrupted while waiting
+     */
     public final V get() throws InterruptedException, ExecutionException {
-        quietlyJoin();
-        if (Thread.interrupted())
-            throw new InterruptedException();
-        int s = status;
+        int s;
+        if (Thread.currentThread() instanceof ForkJoinWorkerThread) {
+            quietlyJoin();
+            s = status;
+        }
+        else {
+            while ((s = status) >= 0) {
+                synchronized (this) { // interruptible form of awaitDone
+                    if (UNSAFE.compareAndSwapInt(this, statusOffset,
+                                                 s, SIGNAL)) {
+                        while (status >= 0)
+                            wait();
+                    }
+                }
+            }
+        }
         if (s < NORMAL) {
             Throwable ex;
             if (s == CANCELLED)
@@ -684,6 +707,20 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         return getRawResult();
     }
 
+    /**
+     * Waits if necessary for at most the given time for the computation
+     * to complete, and then retrieves its result, if available.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @return the computed result
+     * @throws CancellationException if the computation was cancelled
+     * @throws ExecutionException if the computation threw an
+     * exception
+     * @throws InterruptedException if the current thread is not a
+     * member of a ForkJoinPool and was interrupted while waiting
+     * @throws TimeoutException if the wait timed out
+     */
     public final V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
         Thread t = Thread.currentThread();
@@ -725,7 +762,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                         long ms = nt / 1000000;
                         int ns = (int) (nt % 1000000);
                         try {
-                            synchronized(this) {
+                            synchronized (this) {
                                 if (status >= 0)
                                     wait(ms, ns);
                             }

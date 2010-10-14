@@ -90,7 +90,7 @@ public class Registry {
                 stclient = getWindowsStClientFile();
             } else {
                 if (isVerbose()) {
-                    System.out.println("Running on non-Sun JDK");
+                    System.out.println("Running on unsupported platform");
                 }
             }
             initialized = true;

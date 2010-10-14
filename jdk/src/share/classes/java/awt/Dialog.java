@@ -1068,7 +1068,7 @@ public class Dialog extends Window {
                     modalityPushed();
                     try {
                         EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
-                        secondaryLoop = eventQueue.createSecondaryLoop(cond, modalFilter, 5000);
+                        secondaryLoop = eventQueue.createSecondaryLoop(cond, modalFilter, 0);
                         if (!secondaryLoop.enter()) {
                             secondaryLoop = null;
                         }
