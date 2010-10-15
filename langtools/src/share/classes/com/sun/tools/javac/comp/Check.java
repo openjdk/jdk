@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.source.tree.AssignmentTree;
 import java.util.*;
 import java.util.Set;
 
@@ -46,6 +45,8 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 
+import static com.sun.tools.javac.main.OptionName.*;
+
 /** Type checking helper class for the attribution phase.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -60,6 +61,7 @@ public class Check {
     private final Names names;
     private final Log log;
     private final Symtab syms;
+    private final Enter enter;
     private final Infer infer;
     private final Types types;
     private final JCDiagnostic.Factory diags;
@@ -86,6 +88,7 @@ public class Check {
         names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
+        enter = Enter.instance(context);
         infer = Infer.instance(context);
         this.types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -97,10 +100,10 @@ public class Check {
         allowGenerics = source.allowGenerics();
         allowAnnotations = source.allowAnnotations();
         allowCovariantReturns = source.allowCovariantReturns();
-        complexInference = options.get("-complexinference") != null;
-        skipAnnotations = options.get("skipAnnotations") != null;
-        warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
-        suppressAbortOnBadClassFile = options.get("suppressAbortOnBadClassFile") != null;
+        complexInference = options.isSet(COMPLEXINFERENCE);
+        skipAnnotations = options.isSet("skipAnnotations");
+        warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
+        suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
@@ -1726,6 +1729,113 @@ public class Check {
             }
             return undef;
         }
+
+    void checkNonCyclicDecl(JCClassDecl tree) {
+        CycleChecker cc = new CycleChecker();
+        cc.scan(tree);
+        if (!cc.errorFound && !cc.partialCheck) {
+            tree.sym.flags_field |= ACYCLIC;
+        }
+    }
+
+    class CycleChecker extends TreeScanner {
+
+        List<Symbol> seenClasses = List.nil();
+        boolean errorFound = false;
+        boolean partialCheck = false;
+
+        private void checkSymbol(DiagnosticPosition pos, Symbol sym) {
+            if (sym != null && sym.kind == TYP) {
+                Env<AttrContext> classEnv = enter.getEnv((TypeSymbol)sym);
+                if (classEnv != null) {
+                    DiagnosticSource prevSource = log.currentSource();
+                    try {
+                        log.useSource(classEnv.toplevel.sourcefile);
+                        scan(classEnv.tree);
+                    }
+                    finally {
+                        log.useSource(prevSource.getFile());
+                    }
+                } else if (sym.kind == TYP) {
+                    checkClass(pos, sym, List.<JCTree>nil());
+                }
+            } else {
+                //not completed yet
+                partialCheck = true;
+            }
+        }
+
+        @Override
+        public void visitSelect(JCFieldAccess tree) {
+            super.visitSelect(tree);
+            checkSymbol(tree.pos(), tree.sym);
+        }
+
+        @Override
+        public void visitIdent(JCIdent tree) {
+            checkSymbol(tree.pos(), tree.sym);
+        }
+
+        @Override
+        public void visitTypeApply(JCTypeApply tree) {
+            scan(tree.clazz);
+        }
+
+        @Override
+        public void visitTypeArray(JCArrayTypeTree tree) {
+            scan(tree.elemtype);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            List<JCTree> supertypes = List.nil();
+            if (tree.getExtendsClause() != null) {
+                supertypes = supertypes.prepend(tree.getExtendsClause());
+            }
+            if (tree.getImplementsClause() != null) {
+                for (JCTree intf : tree.getImplementsClause()) {
+                    supertypes = supertypes.prepend(intf);
+                }
+            }
+            checkClass(tree.pos(), tree.sym, supertypes);
+        }
+
+        void checkClass(DiagnosticPosition pos, Symbol c, List<JCTree> supertypes) {
+            if ((c.flags_field & ACYCLIC) != 0)
+                return;
+            if (seenClasses.contains(c)) {
+                errorFound = true;
+                noteCyclic(pos, (ClassSymbol)c);
+            } else if (!c.type.isErroneous()) {
+                try {
+                    seenClasses = seenClasses.prepend(c);
+                    if (c.type.tag == CLASS) {
+                        if (supertypes.nonEmpty()) {
+                            scan(supertypes);
+                        }
+                        else {
+                            ClassType ct = (ClassType)c.type;
+                            if (ct.supertype_field == null ||
+                                    ct.interfaces_field == null) {
+                                //not completed yet
+                                partialCheck = true;
+                                return;
+                            }
+                            checkSymbol(pos, ct.supertype_field.tsym);
+                            for (Type intf : ct.interfaces_field) {
+                                checkSymbol(pos, intf.tsym);
+                            }
+                        }
+                        if (c.owner.kind == TYP) {
+                            checkSymbol(pos, c.owner);
+                        }
+                    }
+                } finally {
+                    seenClasses = seenClasses.tail;
+                }
+            }
+        }
+    }
 
     /** Check for cyclic references. Issue an error if the
      *  symbol of the type referred to has a LOCKED flag set.
