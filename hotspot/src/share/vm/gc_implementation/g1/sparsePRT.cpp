@@ -323,10 +323,7 @@ CardIdx_t /* RSHashTable:: */ RSHashTableIter::find_first_card_in_list() {
 }
 
 size_t /* RSHashTable:: */ RSHashTableIter::compute_card_ind(CardIdx_t ci) {
-  return
-    _heap_bot_card_ind
-    + (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion)
-    + ci;
+  return (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion) + ci;
 }
 
 bool /* RSHashTable:: */ RSHashTableIter::has_next(size_t& card_index) {
