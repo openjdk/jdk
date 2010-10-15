@@ -289,16 +289,17 @@ private:
 
 // One of the following macros must be used when allocating
 // an array or object from an arena
-#define NEW_ARENA_ARRAY(arena, type, size)\
-  (type*) arena->Amalloc((size) * sizeof(type))
+#define NEW_ARENA_ARRAY(arena, type, size) \
+  (type*) (arena)->Amalloc((size) * sizeof(type))
 
-#define REALLOC_ARENA_ARRAY(arena, type, old, old_size, new_size)\
-  (type*) arena->Arealloc((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type) )
+#define REALLOC_ARENA_ARRAY(arena, type, old, old_size, new_size)    \
+  (type*) (arena)->Arealloc((char*)(old), (old_size) * sizeof(type), \
+                            (new_size) * sizeof(type) )
 
-#define FREE_ARENA_ARRAY(arena, type, old, size)\
-  arena->Afree((char*)(old), (size) * sizeof(type))
+#define FREE_ARENA_ARRAY(arena, type, old, size) \
+  (arena)->Afree((char*)(old), (size) * sizeof(type))
 
-#define NEW_ARENA_OBJ(arena, type)\
+#define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)
 
 
