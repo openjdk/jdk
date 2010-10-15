@@ -303,9 +303,10 @@ void ConcurrentMarkThread::print_on(outputStream* st) const {
 }
 
 void ConcurrentMarkThread::sleepBeforeNextCycle() {
-  clear_in_progress();
   // We join here because we don't want to do the "shouldConcurrentMark()"
   // below while the world is otherwise stopped.
+  assert(!in_progress(), "should have been cleared");
+
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!started()) {
     CGC_lock->wait(Mutex::_no_safepoint_check_flag);
