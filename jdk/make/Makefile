@@ -75,7 +75,6 @@ import_product    -- copy in the product components \n\
 import_fastdebug  -- copy in the fastdebug components \n\
 import_debug      -- copy in the debug components \n\
 modules           -- build the jdk and jre module images (experimental) \n\
-sccs_get          -- make sure all SCCS files are up-to-date (need SCCS) \n\
 create_links      -- create softlinks in Solaris 32bit build to 64bit dirs \n\
 "
 
@@ -278,21 +277,6 @@ include $(BUILDDIR)/common/Sanity.gmk
 $(OUTPUTDIR) $(TEMPDIR):
 	$(MKDIR) -p $@
 
-# cleanup everything. If the workspace is not being built by the control
-# workspace, and if it is a Teamware workspace, then see if there are
-# any files which are not under SCCS control.
-clean clobber:: 
-ifndef EXTERNALSANITYCONTROL
-	@if [ -d $(TOPDIR)/Codemgr_wsdata ]; then \
-	  $(ECHO) '\nPerforming workspace scan for remnant files.\n' \
-		'  Any files listed below are not under SCCS control in the workspace\n' \
-		'  and you should review them and possibly remove them manually:' ; \
-	  $(FIND) $(TOPDIR)/make $(TOPDIR)/src -type f | \
-		$(SED) 's+SCCS/[ps]\.++' | $(SORT) | $(UNIQ) -c | $(NAWK) '$$1<2 {print $$2;}' ; \
-	  $(ECHO) 'End of workspace scan.' ; \
-	fi
-endif
-
 # this should be the last rule in this file:
 all::
 	@if [ -r $(WARNING_FILE) ]; then \
@@ -341,16 +325,70 @@ endif
 include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
 
 #
-# Get top level sccs_get rule
+# Test rule
 #
-include $(BUILDDIR)/common/Rules-SCCS.gmk
 
+.NOTPARALLEL: test_run
+
+test:
+	$(MAKE) test_run
+
+test_run: test_clean test_start test_summary
+
+test_start:
+	@$(ECHO) "Tests started at `$(DATE)`"
+
+test_clean:
+	$(RM) $(OUTPUTDIR)/test_failures.txt $(OUTPUTDIR)/test_log.txt
+
+test_summary: $(OUTPUTDIR)/test_failures.txt
+	@$(ECHO) "#################################################"
+	@$(ECHO) "Tests completed at `$(DATE)`"
+	@( $(EGREP) '^TEST STATS:' $(OUTPUTDIR)/test_log.txt \
+          || $(ECHO) "No TEST STATS seen in log" )
+	@$(ECHO) "For complete details see: $(OUTPUTDIR)/test_log.txt"
+	@$(ECHO) "#################################################"
+	@if [ -s $< ] ; then                                           \
+          $(ECHO) "ERROR: Test failure count: `$(CAT) $< | $(WC) -l`"; \
+          $(CAT) $<;                                                   \
+          exit 1;                                                      \
+        else                                                           \
+          $(ECHO) "Success! No failures detected";                     \
+        fi
+
+# Get failure list from log
+$(OUTPUTDIR)/test_failures.txt: $(OUTPUTDIR)/test_log.txt
+	@$(RM) $@
+	@( $(EGREP) '^FAILED:' $< || $(ECHO) "" ) | $(NAWK) 'length>0' > $@
+
+# Get log file of all tests run
+JDK_TO_TEST := $(shell 							\
+  if [ -d "$(ABS_OUTPUTDIR)/j2sdk-image" ] ; then 			\
+    $(ECHO) "$(ABS_OUTPUTDIR)/j2sdk-image"; 				\
+  elif [ -d "$(ABS_OUTPUTDIR)/bin" ] ; then 				\
+    $(ECHO) "$(ABS_OUTPUTDIR)"; 					\
+  elif [ "$(PRODUCT_HOME)" != "" -a -d "$(PRODUCT_HOME)/bin" ] ; then 	\
+    $(ECHO) "$(PRODUCT_HOME)"; 						\
+  fi 									\
+)
+
+TEST_TARGETS=jdk_all
+$(OUTPUTDIR)/test_log.txt:
+	$(RM) $@
+	( $(CD) ../test &&                                              \
+          $(MAKE) NO_STOPPING=- PRODUCT_HOME=$(JDK_TO_TEST) $(TEST_TARGETS) \
+        ) | tee $@
+
+#
 # JPRT rules
+#
+
 include jprt.gmk
 
 #
 # Phonies to avoid accidents.
 #
 .PHONY: all build clean clobber optimized debug fastdebug create_links \
-	import import_product import_fastdebug import_debug
+	import import_product import_fastdebug import_debug \
+	test test_run test_start test_clean test_summary
 

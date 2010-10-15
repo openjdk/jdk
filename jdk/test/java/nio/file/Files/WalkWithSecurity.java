@@ -116,7 +116,7 @@ public class WalkWithSecurity {
         }
 
         @Override
-        public FileVisitResult preVisitDirectory(Path dir) {
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
             System.out.println(dir);
             count++;
             return FileVisitResult.CONTINUE;

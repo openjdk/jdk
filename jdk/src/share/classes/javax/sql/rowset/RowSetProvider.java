@@ -29,7 +29,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.SQLException;
 import java.util.ServiceLoader;
-import javax.sql.rowset.RowSetFactory;
 
 /**
  * A factory API that enables applications to obtain a
@@ -82,15 +81,15 @@ public class RowSetProvider {
      * the <code>RowSetFactory</code> implementation class to load:</p>
      * <ul>
      * <li>
-     * The System property {@code javax.sql.rowset.RowsetFactory}.  For example:
+     * The System property {@code javax.sql.rowset.RowSetFactory}.  For example:
      * <ul>
      * <li>
-     * -Djavax.sql.rowset.RowsetFactory=com.sun.rowset.RowSetFactoryImpl
+     * -Djavax.sql.rowset.RowSetFactory=com.sun.rowset.RowSetFactoryImpl
      * </li>
      * </ul>
      * <li>
-     * The ServiceLocator API. The ServiceLocator API will look
-     * for a classname in the file
+     * The {@link ServiceLoader} API. The {@code ServiceLoader} API will look
+     * for a class name in the file
      * {@code META-INF/services/javax.sql.rowset.RowSetFactory}
      * in jars available to the runtime. For example, to have the the RowSetFactory
      * implementation {@code com.sun.rowset.RowSetFactoryImpl } loaded, the
@@ -271,7 +270,7 @@ public class RowSetProvider {
     /**
      * Returns the requested System Property.  If a {@code SecurityException}
      * occurs, just return NULL
-     * @param propName - System property to retreive
+     * @param propName - System property to retrieve
      * @return The System property value or NULL if the property does not exist
      * or a {@code SecurityException} occurs.
      */

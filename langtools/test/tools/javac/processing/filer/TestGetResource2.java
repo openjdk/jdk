@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 6929404
  * @summary Filer.getResource(SOURCE_PATH, ...) does not work when -sourcepath contains >1 entry
+ * @library ../../lib
  */
 
 import java.io.*;
@@ -114,8 +115,7 @@ public class TestGetResource2 {
             throw new Exception(errors + " errors occurred");
     }
 
-    @SupportedAnnotationTypes("*")
-    static class AnnoProc extends AbstractProcessor {
+    static class AnnoProc extends JavacTestingAbstractProcessor {
 
         public @Override boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             if (roundEnv.processingOver()) {
@@ -123,27 +123,23 @@ public class TestGetResource2 {
             }
 
             try {
-                FileObject resource = processingEnv.getFiler().getResource(StandardLocation.SOURCE_PATH, "resources", "file.txt");
+                FileObject resource = filer.getResource(StandardLocation.SOURCE_PATH, "resources", "file.txt");
                 try {
                     resource.openInputStream().close();
-                    processingEnv.getMessager().printMessage(Kind.NOTE, "found: " + resource.toUri());
+                    messager.printMessage(Kind.NOTE, "found: " + resource.toUri());
                     return true;
                 } catch (IOException x) {
-                    processingEnv.getMessager().printMessage(Kind.ERROR, "could not read: " + resource.toUri());
+                    messager.printMessage(Kind.ERROR, "could not read: " + resource.toUri());
                     x.printStackTrace();
                 }
             } catch (IOException x) {
-                processingEnv.getMessager().printMessage(Kind.ERROR, "did not find resource");
+                messager.printMessage(Kind.ERROR, "did not find resource");
                 x.printStackTrace();
             }
 
             return false;
         }
 
-        @Override
-        public SourceVersion getSupportedSourceVersion() {
-            return SourceVersion.latest();
-        }
     }
 
     private File write(File dir, String path, String contents) throws IOException {

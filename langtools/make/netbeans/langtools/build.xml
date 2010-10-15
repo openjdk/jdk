@@ -31,44 +31,44 @@
 -->
 
 <project name="langtools-netbeans" default="build" basedir="../../..">
-    
-    <property name="langtools.properties" 
+
+    <property name="langtools.properties"
         location="make/netbeans/langtools/nbproject/private/langtools.properties"/>
-    
-    <!-- 
+
+    <!--
         Instead of importing the main build file, we could call it when needed.
         That would reduce the list of Ant targets that get displayed for this
-        file, but it also complicates the interface between the project build 
+        file, but it also complicates the interface between the project build
         file and the main build file. For example, some imported targets
         would have to be reclared, properties would have to be restructured,
-        and it would be harder to run results (e.g. in properties) from nested 
+        and it would be harder to run results (e.g. in properties) from nested
         targets.
      -->
-    <import file="../../build.xml"/> 
-    
+    <import file="../../build.xml"/>
+
     <!-- Build project. (action: build; F11)
         If langtools.tool.name is set, then just build that tool; otherwise
         build all tools.
     -->
-    
-    <target name="build" depends="-get-tool-if-set,-build-tool,-build-all" 
+
+    <target name="build" depends="-get-tool-if-set,-build-tool,-build-all"
         description="Build one or all langtools tools"
         />
-        
+
     <target name="-build-tool" if="langtools.tool.name">
         <echo level="info" message="Building ${langtools.tool.name}"/>
         <echo level="verbose" message="(Unset langtools.tool.name to build all tools)"/>
         <antcall target="build-${langtools.tool.name}"/>
     </target>
-    
+
     <target name="-build-all" unless="langtools.tool.name">
         <echo level="info" message="Building all tools"/>
         <echo level="verbose" message="(Set langtools.tool.name to build a single tool)"/>
         <antcall target="build-all-tools"/>
     </target>
-    
+
     <!-- Compile a single file. (action: compile.single; F9) -->
-    
+
     <target name="compile-single" depends="build-bootstrap-javac">
         <fail unless="includes">Must set property 'includes'</fail>
         <javac fork="true" executable="${build.bootstrap.dir}/bin/javac"
@@ -78,38 +78,38 @@
                sourcepath=""
                includeAntRuntime="no"
                target="${javac.target}"
-               debug="${javac.debug}" 
+               debug="${javac.debug}"
                debuglevel="${javac.debuglevel}"/>
     </target>
-    
-    <!-- Run tool. (action: run; F6) 
+
+    <!-- Run tool. (action: run; F6)
         Use langtools.tool.name and langtools.tool.args properties if set; otherwise prompt
         the user.
     -->
-    
-    <target name="run" depends="-check-target.java.home,build,-def-run,-get-tool-and-args" 
+
+    <target name="run" depends="-check-target.java.home,build,-def-run,-get-tool-and-args"
             description="run tool">
         <echo level="info" message="Run ${langtools.tool.name} with args ${langtools.tool.args}"/>
         <run mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}"/>
     </target>
-    
+
     <!-- Run a selected class. (action: run.single;  shift-F6) -->
-    
+
     <target name="run-single" depends="-check-target.java.home,-def-run">
         <fail unless="run.classname">Must set property 'run.classname' </fail>
         <echo level="info" message="run ${run.classname}"/>
         <run mainclass="${run.classname}" args=""/>
     </target>
-    
+
     <!-- Test project, and display results if tests failed. (action: test; Alt-F6)
         If langtools.tool.name is set, then just test that tool; otherwise
         test all tools.
     -->
-    
-    <target name="jtreg" depends="-get-tool-if-set,-jtreg-tool,-jtreg-all" 
+
+    <target name="jtreg" depends="-get-tool-if-set,-jtreg-tool,-jtreg-all"
         description="Test one or all langtools tools"
         />
-    
+
     <target name="-jtreg-tool" if="langtools.tool.name">
         <echo level="info" message="Testing ${langtools.tool.name}"/>
         <echo level="verbose" message="(Unset langtools.tool.name to test all tools)"/>
@@ -118,7 +118,7 @@
             <target name="-show-jtreg"/>
         </antcall>
     </target>
-    
+
     <target name="-jtreg-all" unless="langtools.tool.name">
         <echo level="info" message="Testing all tools"/>
         <echo level="verbose" message="(Set langtools.tool.name to test a single tool)"/>
@@ -127,36 +127,36 @@
             <target name="-show-jtreg"/>
         </antcall>
     </target>
-    
+
     <target name="-show-jtreg" if="netbeans.home" unless="jtreg.passed">
         <nbbrowse file="${jtreg.report}/report.html"/>
         <fail>Some tests failed; see report for details.</fail>
     </target>
-    
+
     <!-- Debug tool in NetBeans. -->
-    
+
     <target name="debug" depends="-check-target.java.home,-def-run,-def-start-debugger,-get-tool-and-args,build" if="netbeans.home">
         <echo level="info" message="Debug ${langtools.tool.name} with args ${langtools.tool.args}"/>
         <start-debugger/>
         <run mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}" jpda.jvmargs="${jpda.jvmargs}"/>
     </target>
-    
+
     <!-- Debug a selected class . -->
     <target name="debug-single" depends="-check-target.java.home,-def-start-debugger,-def-run">
         <fail unless="debug.classname">Must set property 'debug.classname'</fail>
         <start-debugger/>
         <run mainclass="${debug.classname}" default.args="" jpda.jvmargs="${jpda.jvmargs}"/>
     </target>
-    
+
     <!-- Debug a jtreg test. -->
     <target name="debug-jtreg" depends="-check-target.java.home,-def-start-debugger,-def-jtreg">
         <fail unless="jtreg.tests">Must set property 'jtreg.tests'</fail>
         <start-debugger/>
         <jtreg-tool name="debug" samevm="false" tests="${jtreg.tests}" jpda.jvmargs="${jpda.jvmargs}"/>
     </target>
-    
+
     <!-- Update a class being debugged. -->
-    
+
     <target name="debug-fix" if="langtools.tool.name">
         <fail unless="class">Must set property 'class'
         </fail>
@@ -169,16 +169,16 @@
             </fileset>
         </nbjpdareload>
     </target>
-    
+
     <!-- Generate javadoc for one or all tools. (action: javadoc; Alt-F6)
         If langtools.tool.name is set, then just test that tool; otherwise
         test all tools.
     -->
-    
-    <target name="javadoc" depends="-javadoc-tool,-javadoc-all" 
+
+    <target name="javadoc" depends="-javadoc-tool,-javadoc-all"
         description="Generate javadoc for one or all langtools tools"
         />
-        
+
     <target name="-javadoc-tool" if="langtools.tool.name">
         <echo level="info" message="Generate javadoc for ${langtools.tool.name}"/>
         <echo level="verbose" message="(Unset langtools.tool.name to generate javadoc for all tools)"/>
@@ -187,7 +187,7 @@
             <target name="-show-javadoc"/>
         </antcall>
     </target>
-    
+
     <target name="-javadoc-all" unless="langtools.tool.name">
         <echo level="info" message="Generate javadoc for all tools"/>
         <echo level="verbose" message="(Set langtools.tool.name to generate javadoc for a single tool)"/>
@@ -196,26 +196,26 @@
             <target name="-show-javadoc"/>
         </antcall>
     </target>
-    
+
     <target name="-show-javadoc" if="netbeans.home">
         <!-- what if doing javadoc for all? -->
         <nbbrowse file="${build.javadoc.dir}/${langtools.tool.name}/index.html"/>
     </target>
-    
+
     <!-- Prompt for values. -->
-    
+
     <target name="-get-tool-if-set" depends="-def-select-tool">
-        <select-tool 
-            toolproperty="langtools.tool.name" 
+        <select-tool
+            toolproperty="langtools.tool.name"
             propertyfile="${langtools.properties}"
             askIfUnset="false"
             />
     </target>
-    
+
     <target name="-get-tool-and-args" depends="-def-select-tool">
-        <select-tool 
-            toolproperty="langtools.tool.name" 
-            argsproperty="langtools.tool.args" 
+        <select-tool
+            toolproperty="langtools.tool.name"
+            argsproperty="langtools.tool.args"
             propertyfile="${langtools.properties}"
             askIfUnset="true"
             />
@@ -236,7 +236,7 @@
             </sequential>
         </macrodef>
     </target>
-    
+
     <!-- Macro to start the debugger and set a property containg the args needed by the run task -->
     <target name="-def-start-debugger" if="netbeans.home">
         <macrodef name="start-debugger">
@@ -251,28 +251,29 @@
                         <pathelement location="${src.classes.dir}"/>
                     </sourcepath>
                 </nbjpdastart>
-                <property 
-                    name="@{jpda.jvmargs.property}" 
+                <property
+                    name="@{jpda.jvmargs.property}"
                     value="-Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,address=${jpda.address}"
                 />
             </sequential>
         </macrodef>
     </target>
-    
+
     <target name="-def-select-tool">
         <mkdir dir="${build.toolclasses.dir}"/>
         <javac srcdir="${make.tools.dir}/SelectTool"
                destdir="${build.toolclasses.dir}/"
-               classpath="${ant.home}/lib/ant.jar"
-               debug="${javac.debug}" 
+               classpath="${ant.core.lib}"
+               includeantruntime="false"
+               debug="${javac.debug}"
                debuglevel="${javac.debuglevel}">
                    <compilerarg line="-Xlint"/>
         </javac>
         <taskdef name="select-tool"
-                 classname="SelectToolTask" 
+                 classname="SelectToolTask"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
-        
+
     <target name="select-tool" depends="-def-select-tool">
         <select-tool propertyfile="${langtools.properties}"/>
     </target>

@@ -494,7 +494,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (logger.isLoggable(PlatformLogger.FINE)) {
             logger.fine(requests.toString());
         }
-        http.writeRequests(requests, poster);
+        http.writeRequests(requests, poster, streaming());
         if (ps.checkError()) {
             String proxyHost = http.getProxyHostUsed();
             int proxyPort = http.getProxyPortUsed();
@@ -2823,6 +2823,38 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 throw ioex;
             }
+        }
+
+        /* skip() calls read() in order to ensure that entire response gets
+         * cached. same implementation as InputStream.skip */
+
+        private byte[] skipBuffer;
+        private static final int SKIP_BUFFER_SIZE = 8096;
+
+        @Override
+        public long skip (long n) throws IOException {
+
+            long remaining = n;
+            int nr;
+            if (skipBuffer == null)
+                skipBuffer = new byte[SKIP_BUFFER_SIZE];
+
+            byte[] localSkipBuffer = skipBuffer;
+
+            if (n <= 0) {
+                return 0;
+            }
+
+            while (remaining > 0) {
+                nr = read(localSkipBuffer, 0,
+                          (int) Math.min(SKIP_BUFFER_SIZE, remaining));
+                if (nr < 0) {
+                    break;
+                }
+                remaining -= nr;
+            }
+
+            return n - remaining;
         }
 
         @Override
