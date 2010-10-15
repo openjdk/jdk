@@ -25,8 +25,6 @@
 class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
-class HRInto_G1RemSet;
-class G1RemSet;
 class ConcurrentMark;
 class DirtyCardToOopClosure;
 class CMBitMap;

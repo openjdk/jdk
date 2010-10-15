@@ -2684,7 +2684,14 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
                                                       fill_name, TypeAryPtr::get_array_body_type(t));
   call->init_req(TypeFunc::Parms+0, from);
   call->init_req(TypeFunc::Parms+1, store_value);
+#ifdef _LP64
+  len = new (C, 2) ConvI2LNode(len);
+  _igvn.register_new_node_with_optimizer(len);
+#endif
   call->init_req(TypeFunc::Parms+2, len);
+#ifdef _LP64
+  call->init_req(TypeFunc::Parms+3, C->top());
+#endif
   call->init_req( TypeFunc::Control, head->init_control());
   call->init_req( TypeFunc::I_O    , C->top() )        ;   // does no i/o
   call->init_req( TypeFunc::Memory ,  mem_phi->in(LoopNode::EntryControl) );
