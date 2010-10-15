@@ -791,7 +791,7 @@ class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   int                _worker_i;
 public:
   RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, int worker_i = 0) :
-    _cl(g1->g1_rem_set()->as_HRInto_G1RemSet(), worker_i),
+    _cl(g1->g1_rem_set(), worker_i),
     _worker_i(worker_i),
     _g1h(g1)
   { }
@@ -890,7 +890,7 @@ void G1CollectedHeap::do_collection(bool explicit_gc,
     abandon_cur_alloc_region();
     abandon_gc_alloc_regions();
     assert(_cur_alloc_region == NULL, "Invariant.");
-    g1_rem_set()->as_HRInto_G1RemSet()->cleanupHRRS();
+    g1_rem_set()->cleanupHRRS();
     tear_down_region_lists();
     set_used_regions_to_need_zero_fill();
 
@@ -1506,15 +1506,11 @@ jint G1CollectedHeap::initialize() {
   }
 
   // Also create a G1 rem set.
-  if (G1UseHRIntoRS) {
-    if (mr_bs()->is_a(BarrierSet::CardTableModRef)) {
-      _g1_rem_set = new HRInto_G1RemSet(this, (CardTableModRefBS*)mr_bs());
-    } else {
-      vm_exit_during_initialization("G1 requires a cardtable mod ref bs.");
-      return JNI_ENOMEM;
-    }
+  if (mr_bs()->is_a(BarrierSet::CardTableModRef)) {
+    _g1_rem_set = new G1RemSet(this, (CardTableModRefBS*)mr_bs());
   } else {
-    _g1_rem_set = new StupidG1RemSet(this);
+    vm_exit_during_initialization("G1 requires a cardtable mod ref bs.");
+    return JNI_ENOMEM;
   }
 
   // Carve out the G1 part of the heap.
@@ -2706,8 +2702,7 @@ size_t G1CollectedHeap::max_pending_card_num() {
 }
 
 size_t G1CollectedHeap::cards_scanned() {
-  HRInto_G1RemSet* g1_rset = (HRInto_G1RemSet*) g1_rem_set();
-  return g1_rset->cardsScanned();
+  return g1_rem_set()->cardsScanned();
 }
 
 void
@@ -3850,6 +3845,54 @@ G1ParScanThreadState::print_termination_stats(int i,
                undo_waste() * HeapWordSize / K);
 }
 
+#ifdef ASSERT
+bool G1ParScanThreadState::verify_ref(narrowOop* ref) const {
+  assert(ref != NULL, "invariant");
+  assert(UseCompressedOops, "sanity");
+  assert(!has_partial_array_mask(ref), err_msg("ref=" PTR_FORMAT, ref));
+  oop p = oopDesc::load_decode_heap_oop(ref);
+  assert(_g1h->is_in_g1_reserved(p),
+         err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+  return true;
+}
+
+bool G1ParScanThreadState::verify_ref(oop* ref) const {
+  assert(ref != NULL, "invariant");
+  if (has_partial_array_mask(ref)) {
+    // Must be in the collection set--it's already been copied.
+    oop p = clear_partial_array_mask(ref);
+    assert(_g1h->obj_in_cs(p),
+           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+  } else {
+    oop p = oopDesc::load_decode_heap_oop(ref);
+    assert(_g1h->is_in_g1_reserved(p),
+           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+  }
+  return true;
+}
+
+bool G1ParScanThreadState::verify_task(StarTask ref) const {
+  if (ref.is_narrow()) {
+    return verify_ref((narrowOop*) ref);
+  } else {
+    return verify_ref((oop*) ref);
+  }
+}
+#endif // ASSERT
+
+void G1ParScanThreadState::trim_queue() {
+  StarTask ref;
+  do {
+    // Drain the overflow stack first, so other threads can steal.
+    while (refs()->pop_overflow(ref)) {
+      deal_with_reference(ref);
+    }
+    while (refs()->pop_local(ref)) {
+      deal_with_reference(ref);
+    }
+  } while (!refs()->is_empty());
+}
+
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
   _g1(g1), _g1_rem(_g1->g1_rem_set()), _cm(_g1->concurrent_mark()),
   _par_scan_state(par_scan_state) { }
@@ -4052,38 +4095,39 @@ public:
     : _g1h(g1h), _par_scan_state(par_scan_state),
       _queues(queues), _terminator(terminator) {}
 
-  void do_void() {
-    G1ParScanThreadState* pss = par_scan_state();
-    while (true) {
-      pss->trim_queue();
+  void do_void();
 
-      StarTask stolen_task;
-      if (queues()->steal(pss->queue_num(), pss->hash_seed(), stolen_task)) {
-        // slightly paranoid tests; I'm trying to catch potential
-        // problems before we go into push_on_queue to know where the
-        // problem is coming from
-        assert((oop*)stolen_task != NULL, "Error");
-        if (stolen_task.is_narrow()) {
-          assert(UseCompressedOops, "Error");
-          narrowOop* p = (narrowOop*) stolen_task;
-          assert(has_partial_array_mask(p) ||
-                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "Error");
-          pss->push_on_queue(p);
-        } else {
-          oop* p = (oop*) stolen_task;
-          assert(has_partial_array_mask(p) || _g1h->is_in_g1_reserved(*p), "Error");
-          pss->push_on_queue(p);
-        }
-        continue;
-      }
-      pss->start_term_time();
-      if (terminator()->offer_termination()) break;
-      pss->end_term_time();
-    }
-    pss->end_term_time();
-    pss->retire_alloc_buffers();
-  }
+private:
+  inline bool offer_termination();
 };
+
+bool G1ParEvacuateFollowersClosure::offer_termination() {
+  G1ParScanThreadState* const pss = par_scan_state();
+  pss->start_term_time();
+  const bool res = terminator()->offer_termination();
+  pss->end_term_time();
+  return res;
+}
+
+void G1ParEvacuateFollowersClosure::do_void() {
+  StarTask stolen_task;
+  G1ParScanThreadState* const pss = par_scan_state();
+  pss->trim_queue();
+
+  do {
+    while (queues()->steal(pss->queue_num(), pss->hash_seed(), stolen_task)) {
+      assert(pss->verify_task(stolen_task), "sanity");
+      if (stolen_task.is_narrow()) {
+        pss->push_on_queue((narrowOop*) stolen_task);
+      } else {
+        pss->push_on_queue((oop*) stolen_task);
+      }
+      pss->trim_queue();
+    }
+  } while (!offer_termination());
+
+  pss->retire_alloc_buffers();
+}
 
 class G1ParTask : public AbstractGangTask {
 protected:
@@ -4182,8 +4226,7 @@ public:
       pss.print_termination_stats(i);
     }
 
-    assert(pss.refs_to_scan() == 0, "Task queue should be empty");
-    assert(pss.overflowed_refs_to_scan() == 0, "Overflow queue should be empty");
+    assert(pss.refs()->is_empty(), "should be empty");
     double end_time_ms = os::elapsedTime() * 1000.0;
     _g1h->g1_policy()->record_gc_worker_end_time(i, end_time_ms);
   }
