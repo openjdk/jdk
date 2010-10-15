@@ -169,7 +169,6 @@ class RSHashTableIter VALUE_OBJ_CLASS_SPEC {
   int _bl_ind;          // [-1, 0.._rsht->_capacity)
   short _card_ind;      // [0..SparsePRTEntry::cards_num())
   RSHashTable* _rsht;
-  size_t _heap_bot_card_ind;
 
   // If the bucket list pointed to by _bl_ind contains a card, sets
   // _bl_ind to the index of that entry, and returns the card.
@@ -183,13 +182,11 @@ class RSHashTableIter VALUE_OBJ_CLASS_SPEC {
   size_t compute_card_ind(CardIdx_t ci);
 
 public:
-  RSHashTableIter(size_t heap_bot_card_ind) :
+  RSHashTableIter() :
     _tbl_ind(RSHashTable::NullEntry),
     _bl_ind(RSHashTable::NullEntry),
     _card_ind((SparsePRTEntry::cards_num() - 1)),
-    _rsht(NULL),
-    _heap_bot_card_ind(heap_bot_card_ind)
-  {}
+    _rsht(NULL) {}
 
   void init(RSHashTable* rsht) {
     _rsht = rsht;
@@ -280,19 +277,12 @@ public:
   bool contains_card(RegionIdx_t region_id, CardIdx_t card_index) const {
     return _next->contains_card(region_id, card_index);
   }
-
-#if 0
-  void verify_is_cleared();
-  void print();
-#endif
 };
 
 
-class SparsePRTIter: public /* RSHashTable:: */RSHashTableIter {
+class SparsePRTIter: public RSHashTableIter {
 public:
-  SparsePRTIter(size_t heap_bot_card_ind) :
-    /* RSHashTable:: */RSHashTableIter(heap_bot_card_ind)
-  {}
+  SparsePRTIter() : RSHashTableIter() { }
 
   void init(const SparsePRT* sprt) {
     RSHashTableIter::init(sprt->cur());
