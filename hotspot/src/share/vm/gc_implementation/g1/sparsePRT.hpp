@@ -282,8 +282,6 @@ public:
 
 class SparsePRTIter: public RSHashTableIter {
 public:
-  SparsePRTIter() : RSHashTableIter() { }
-
   void init(const SparsePRT* sprt) {
     RSHashTableIter::init(sprt->cur());
   }
