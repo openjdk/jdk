@@ -1,3 +1,3 @@
 T6315770.java:16:42: compiler.err.undetermined.type.1: <T>T6315770<T>, (compiler.misc.no.unique.maximal.instance.exists: T, java.lang.String,java.lang.Integer,java.lang.Runnable)
-T6315770.java:17:40: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.no.conforming.instance.exists: T, T6315770<T>, T6315770<? super java.lang.String>)), <T>T6315770<T>, T6315770<? super java.lang.String>
+T6315770.java:17:40: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.infer.no.conforming.instance.exists: T, T6315770<T>, T6315770<? super java.lang.String>)), <T>T6315770<T>, T6315770<? super java.lang.String>
 2 errors
