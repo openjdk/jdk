@@ -129,6 +129,7 @@ public class ChorusLine {
         deqs.add(new ArrayDeque<Integer>());
         deqs.add(new LinkedList<Integer>());
         deqs.add(new LinkedBlockingDeque<Integer>());
+        deqs.add(new ConcurrentLinkedDeque<Integer>());
 
         equal(deqs);
 

@@ -83,8 +83,6 @@ fileClose(JNIEnv *env, jobject this, jfieldID fid)
             close(devnull);
         }
     } else if (JVM_Close(fd) == -1) {
-            SET_FD(this, fd, fid); // restore fd
-            printf("JVM_Close returned -1\n");
-            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+        JNU_ThrowIOExceptionWithLastError(env, "close failed");
     }
 }

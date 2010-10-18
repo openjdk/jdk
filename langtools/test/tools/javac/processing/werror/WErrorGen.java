@@ -24,6 +24,8 @@
 /*
  * @test 6403456
  * @summary -Werror should work with annotation processing
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile WErrorGen.java
  * @compile -proc:only -processor WErrorGen WErrorGen.java
  * @compile/fail/ref=WErrorGen.out -XDrawDiagnostics -Werror -Xlint:rawtypes -processor WErrorGen WErrorGen.java
@@ -36,12 +38,10 @@ import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
 
-@SupportedAnnotationTypes("*")
-public class WErrorGen extends AbstractProcessor {
+public class WErrorGen extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        Filer filer = processingEnv.getFiler();
         if (++round == 1) {
             try {
                 JavaFileObject fo = filer.createSourceFile("Gen");
@@ -52,11 +52,6 @@ public class WErrorGen extends AbstractProcessor {
             }
         }
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 
     int round = 0;

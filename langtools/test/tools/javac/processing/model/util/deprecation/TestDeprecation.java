@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6392818
  * @summary Tests Elements.isDeprecated(Element)
  * @author  Joseph D. Darcy
+ * @library ../../../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile TestDeprecation.java
  * @compile -processor TestDeprecation -proc:only Dep1.java
  * @compile Dep1.java
@@ -47,8 +49,7 @@ import java.io.Writer;
  * getElementsAnnotatedWith is consistent with the expected results
  * stored in an AnnotatedElementInfo annotation.
  */
-@SupportedAnnotationTypes("*")
-public class TestDeprecation extends AbstractProcessor {
+public class TestDeprecation extends JavacTestingAbstractProcessor {
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
@@ -97,10 +98,5 @@ public class TestDeprecation extends AbstractProcessor {
             super.scan(e, p);
             return failure;
         }
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }

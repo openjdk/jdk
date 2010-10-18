@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
         try {
 
         // get the type name
-        SQLTypeName = new String(in.getSQLTypeName());
+        SQLTypeName = in.getSQLTypeName();
         System.out.println("SQLTypeName: " + SQLTypeName);
 
         // get the attributes of the struct
@@ -137,7 +137,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
         try {
 
         //set the type name
-        SQLTypeName = new String(in.getSQLTypeName());
+        SQLTypeName = in.getSQLTypeName();
 
         Vector tmp = new Vector();
         in.writeSQL(new SQLOutputImpl(tmp, map));
@@ -247,7 +247,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
     }
 
     /**
-         * The identifier that assists in the serialization of this
+     * The identifier that assists in the serialization of this
      * <code>SerialStruct</code> object.
      */
     static final long serialVersionUID = -8322445504027483372L;

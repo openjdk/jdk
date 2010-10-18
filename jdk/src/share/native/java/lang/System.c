@@ -97,13 +97,19 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
     } else ((void) 0)
 
 #ifndef VENDOR /* Third party may overwrite this. */
-#define VENDOR "Sun Microsystems Inc."
-#define VENDOR_URL "http://java.sun.com/"
+#define VENDOR "Oracle Corporation"
+#define VENDOR_URL "http://java.oracle.com/"
 #define VENDOR_URL_BUG "http://java.sun.com/cgi-bin/bugreport.cgi"
 #endif
 
 #define JAVA_MAX_SUPPORTED_VERSION 51
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
+
+#ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */
+  #error "ERROR: No override of JAVA_SPECIFICATION_VENDOR is allowed"
+#else
+  #define JAVA_SPECIFICATION_VENDOR "Oracle Corporation"
+#endif
 
 static int fmtdefault; // boolean value
 jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
@@ -185,7 +191,8 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
             JDK_MAJOR_VERSION "." JDK_MINOR_VERSION);
     PUTPROP(props, "java.specification.name",
             "Java Platform API Specification");
-    PUTPROP(props, "java.specification.vendor", "Sun Microsystems Inc.");
+    PUTPROP(props, "java.specification.vendor",
+            JAVA_SPECIFICATION_VENDOR);
 
     PUTPROP(props, "java.version", RELEASE);
     PUTPROP(props, "java.vendor", VENDOR);
@@ -239,7 +246,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     /* Printing properties */
     /* Note: java.awt.printerjob is an implementation private property which
      * just happens to have a java.* name because it is referenced in
-     * a java.awt class. It is the mechanism by which the Sun implementation
+     * a java.awt class. It is the mechanism by which the implementation
      * finds the appropriate class in the JRE for the platform.
      * It is explicitly not designed to be overridden by clients as
      * a way of replacing the implementation class, and in any case
@@ -267,7 +274,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     /* Java2D properties */
     /* Note: java.awt.graphicsenv is an implementation private property which
      * just happens to have a java.* name because it is referenced in
-     * a java.awt class. It is the mechanism by which the Sun implementation
+     * a java.awt class. It is the mechanism by which the implementation
      * finds the appropriate class in the JRE for the platform.
      * It is explicitly not designed to be overridden by clients as
      * a way of replacing the implementation class, and in any case
