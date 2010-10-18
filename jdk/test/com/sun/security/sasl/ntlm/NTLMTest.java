@@ -31,8 +31,6 @@ import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 import java.util.*;
 
-import com.sun.security.ntlm.NTLMException;
-
 public class NTLMTest {
 
     private static final String MECH = "NTLM";
@@ -95,19 +93,13 @@ public class NTLMTest {
             checkVersion("LM/NTLM", "LMv2");
             throw new Exception("Should not succeed");
         } catch (SaslException se) {
-            NTLMException ne = (NTLMException)se.getCause();
-            if (ne.errorCode() != NTLMException.AUTH_FAILED) {
-                throw new Exception("Failed false");
-            }
+            // OK
         }
         try {
             checkVersion("LMv2/NTLMv2", "LM");
             throw new Exception("Should not succeed");
         } catch (SaslException se) {
-            NTLMException ne = (NTLMException)se.getCause();
-            if (ne.errorCode() != NTLMException.AUTH_FAILED) {
-                throw new Exception("Failed false");
-            }
+            // OK
         }
 
     }

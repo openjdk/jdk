@@ -124,8 +124,9 @@ public class JavaServiceTagTest {
             throw new RuntimeException("Unexpected platform_arch: " +
                 st.getPlatformArch());
         }
+        String vendor = System.getProperty("java.vendor");
         if (!st.getProductVendor().
-                equals("Sun Microsystems")) {
+                equals(vendor)) {
             throw new RuntimeException("Unexpected product_vendor: " +
                 st.getProductVendor());
         }

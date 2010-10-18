@@ -1,2 +1,2 @@
-T6638712c.java:16:9: compiler.err.cant.apply.symbol: kindname.method, sort, T[],java.util.Comparator<? super T>, java.lang.Enum[],java.util.Comparator<java.lang.Enum<?>>, kindname.class, T6638712c, null
+T6638712c.java:16:9: compiler.err.cant.apply.symbol.1: kindname.method, sort, T[],java.util.Comparator<? super T>, java.lang.Enum[],java.util.Comparator<java.lang.Enum<?>>, kindname.class, T6638712c, (compiler.misc.inferred.do.not.conform.to.params: java.lang.Enum[],java.util.Comparator<? super java.lang.Enum>, java.lang.Enum[],java.util.Comparator<java.lang.Enum<?>>)
 1 error

@@ -505,7 +505,8 @@ void AwtDesktopProperties::GetOtherParameters() {
     SetIntegerProperty(TEXT("win.drag.width"), cxdrag);
     SetIntegerProperty(TEXT("win.drag.height"), cydrag);
     SetIntegerProperty(TEXT("DnD.gestureMotionThreshold"), max(cxdrag, cydrag)/2);
-    SetIntegerProperty(TEXT("awt.mouse.numButtons"), GetSystemMetrics(SM_CMOUSEBUTTONS));
+    SetIntegerProperty(TEXT("awt.mouse.numButtons"), AwtToolkit::GetNumberOfButtons());
+
     SetIntegerProperty(TEXT("awt.multiClickInterval"), GetDoubleClickTime());
 
     // BEGIN cross-platform properties
