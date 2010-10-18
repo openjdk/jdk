@@ -630,9 +630,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       switch (ek) {
       case _adapter_opt_i2i:
-      case _adapter_opt_l2i:
-        __ unimplemented(entry_name(ek));
         value = vmarg;
+        break;
+      case _adapter_opt_l2i:
+        {
+          // just delete the extra slot
+          __ add(Gargs, __ argument_offset(O0_argslot), O0_argslot);
+          remove_arg_slots(_masm, -stack_move_unit(), O0_argslot, O1_scratch, O2_scratch, O3_scratch);
+          value = vmarg = Address(O0_argslot, 0);
+        }
         break;
       case _adapter_opt_unboxi:
         {
