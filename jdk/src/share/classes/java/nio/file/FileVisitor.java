@@ -40,33 +40,28 @@ import java.io.IOException;
  *     Path start = ...
  *     Files.walkFileTree(start, new SimpleFileVisitor&lt;Path&gt;() {
  *         &#64;Override
- *         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
- *             try {
- *                 file.delete();
- *             } catch (IOException exc) {
- *                 // failed to delete, do error handling here
- *             }
+ *         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+ *             throws IOException
+ *         {
+ *             file.delete();
  *             return FileVisitResult.CONTINUE;
  *         }
  *         &#64;Override
- *         public FileVisitResult postVisitDirectory(Path dir, IOException e) {
- *             if (e == null) {
- *                 try {
- *                     dir.delete();
- *                 } catch (IOException exc) {
- *                     // failed to delete, do error handling here
- *                 }
- *             } else {
+ *         public FileVisitResult postVisitDirectory(Path dir, IOException e)
+ *             throws IOException
+ *         {
+ *             if (e != null) {
  *                 // directory iteration failed
+ *                 throw e;
  *             }
+ *             dir.delete();
  *             return FileVisitResult.CONTINUE;
  *         }
  *     });
  * </pre>
- * <p> Furthermore, suppose we want to copy a file tree rooted at a source
- * directory to a target location. In that case, symbolic links should be
- * followed and the target directory should be created before the entries in
- * the directory are copied.
+ * <p> Furthermore, suppose we want to copy a file tree to a target location.
+ * In that case, symbolic links should be followed and the target directory
+ * should be created before the entries in the directory are copied.
  * <pre>
  *     final Path source = ...
  *     final Path target = ...
@@ -74,25 +69,21 @@ import java.io.IOException;
  *     Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
  *         new SimpleFileVisitor&lt;Path&gt;() {
  *             &#64;Override
- *             public FileVisitResult preVisitDirectory(Path dir) {
+ *             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+ *                 throws IOException
+ *             {
  *                 try {
  *                     dir.copyTo(target.resolve(source.relativize(dir)));
  *                 } catch (FileAlreadyExistsException e) {
  *                      // ignore
- *                 } catch (IOException e) {
- *                     // copy failed, do error handling here
- *                     // skip rest of directory and descendants
- *                     return SKIP_SUBTREE;
  *                 }
  *                 return CONTINUE;
  *             }
  *             &#64;Override
- *             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
- *                 try {
- *                     file.copyTo(target.resolve(source.relativize(file)));
- *                 } catch (IOException e) {
- *                     // copy failed, do error handling here
- *                 }
+ *             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+ *                 throws IOException
+ *             {
+ *                 file.copyTo(target.resolve(source.relativize(file)));
  *                 return CONTINUE;
  *             }
  *         });
@@ -114,22 +105,16 @@ public interface FileVisitor<T> {
      *
      * @param   dir
      *          a reference to the directory
+     * @param   attrs
+     *          the directory's basic attributes
      *
      * @return  the visit result
-     */
-    FileVisitResult preVisitDirectory(T dir);
-
-    /**
-     * Invoked for a directory that could not be opened.
      *
-     * @param   dir
-     *          a reference to the directory
-     * @param   exc
-     *          the I/O exception thrown from the attempt to open the directory
-     *
-     * @return  the visit result
+     * @throws  IOException
+     *          if an I/O error occurs
      */
-    FileVisitResult preVisitDirectoryFailed(T dir, IOException exc);
+    FileVisitResult preVisitDirectory(T dir, BasicFileAttributes attrs)
+        throws IOException;
 
     /**
      * Invoked for a file in a directory.
@@ -140,21 +125,30 @@ public interface FileVisitor<T> {
      *          the file's basic attributes
      *
      * @return  the visit result
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
      */
-    FileVisitResult visitFile(T file, BasicFileAttributes attrs);
+    FileVisitResult visitFile(T file, BasicFileAttributes attrs)
+        throws IOException;
 
     /**
-     * Invoked for a file when its basic file attributes could not be read.
+     * Invoked for a file that could not be visited. This method is invoked
+     * if the file's attributes could not be read, the file is a directory
+     * that could not be opened, and other reasons.
      *
      * @param   file
      *          a reference to the file
      * @param   exc
-     *          the I/O exception thrown from the attempt to read the file
-     *          attributes
+     *          the I/O exception that prevented the file from being visited
      *
      * @return  the visit result
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
      */
-    FileVisitResult visitFileFailed(T file, IOException exc);
+    FileVisitResult visitFileFailed(T file, IOException exc)
+        throws IOException;
 
     /**
      * Invoked for a directory after entries in the directory, and all of their
@@ -171,6 +165,10 @@ public interface FileVisitor<T> {
      *          of the directory to complete prematurely
      *
      * @return  the visit result
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
      */
-    FileVisitResult postVisitDirectory(T dir, IOException exc);
+    FileVisitResult postVisitDirectory(T dir, IOException exc)
+        throws IOException;
 }

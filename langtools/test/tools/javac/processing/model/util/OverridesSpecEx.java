@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     6453386
  * @summary Verify that example code in Elements.overrides works as spec'ed.
  * @author  Scott Seligman
+ * @library ../../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile -g OverridesSpecEx.java
  * @compile -processor OverridesSpecEx -proc:only OverridesSpecEx.java
  */
@@ -39,29 +41,12 @@ import javax.lang.model.util.*;
 
 import static javax.lang.model.util.ElementFilter.*;
 
-
-@SupportedAnnotationTypes("*")
-public class OverridesSpecEx extends AbstractProcessor {
-
-    Elements elements;
-    Types types;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        elements = penv.getElementUtils();
-        types =  penv.getTypeUtils();
-    }
-
+public class OverridesSpecEx extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annoTypes,
                            RoundEnvironment round) {
         if (!round.processingOver())
             doit(annoTypes, round);
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 
     private void doit(Set<? extends TypeElement> annoTypes,
@@ -113,9 +98,7 @@ public class OverridesSpecEx extends AbstractProcessor {
             throw new AssertionError("Bogus result");
     }
 
-
     // Fodder for the processor
-
     class A {
         public void m() {}
     }

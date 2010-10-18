@@ -36,8 +36,7 @@ import static javax.tools.Diagnostic.Kind.*;
  * Using the tree API, retrieve element representations of anonymous
  * classes and verify their names are as specified.
  */
-@SupportedAnnotationTypes("*")
-public class TestAnonSourceNames extends AbstractProcessor {
+public class TestAnonSourceNames extends JavacTestingAbstractProcessor {
 
    public boolean process(Set<? extends TypeElement> annotations,
                           RoundEnvironment roundEnv) {
@@ -83,10 +82,5 @@ public class TestAnonSourceNames extends AbstractProcessor {
            }
            return super.visitClass(node, cu);
        }
-   }
-
-   @Override
-   public SourceVersion getSupportedSourceVersion() {
-       return SourceVersion.latest();
    }
 }

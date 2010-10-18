@@ -690,6 +690,11 @@ public class LogManager {
      * Note that since untrusted code may create loggers with
      * arbitrary names this method should not be relied on to
      * find Loggers for security sensitive logging.
+     * It is also important to note that the Logger associated with the
+     * String {@code name} may be garbage collected at any time if there
+     * is no strong reference to the Logger. The caller of this method
+     * must check the return value for null in order to properly handle
+     * the case where the Logger has been garbage collected.
      * <p>
      * @param name name of the logger
      * @return  matching logger or null if none is found
@@ -713,6 +718,14 @@ public class LogManager {
      * <p>
      * Note:  Loggers may be added dynamically as new classes are loaded.
      * This method only reports on the loggers that are currently registered.
+     * It is also important to note that this method only returns the name
+     * of a Logger, not a strong reference to the Logger itself.
+     * The returned String does nothing to prevent the Logger from being
+     * garbage collected. In particular, if the returned name is passed
+     * to {@code LogManager.getLogger()}, then the caller must check the
+     * return value from {@code LogManager.getLogger()} for null to properly
+     * handle the case where the Logger has been garbage collected in the
+     * time since its name was returned by this method.
      * <p>
      * @return  enumeration of logger name strings
      */
