@@ -30,18 +30,7 @@
 # @build LimitDirectMemory
 # @run shell LimitDirectMemory.sh
 
-# set platform-dependent variable
-OS=`uname -s`
-case "$OS" in
-  SunOS | Linux ) TMP=/tmp ;;
-  Windows* ) TMP="c:/temp" ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
-
-TMP1=${TMP}/tmp1_$$
+TMP1=tmp_$$
 
 runTest() {
   echo "Testing: $*"
@@ -82,18 +71,21 @@ runTest -XX:MaxDirectMemorySize=65M -cp ${TESTCLASSES} \
 
 # Exactly the default amount of memory is available.
 runTest -cp ${TESTCLASSES} LimitDirectMemory false 10 1
-runTest -cp ${TESTCLASSES} LimitDirectMemory false 0 DEFAULT
-runTest -cp ${TESTCLASSES} LimitDirectMemory true 0 DEFAULT+1
+runTest -Xmx64m -cp ${TESTCLASSES} LimitDirectMemory false 0 DEFAULT
+runTest -Xmx64m -cp ${TESTCLASSES} LimitDirectMemory true 0 DEFAULT+1
 
 # We should be able to eliminate direct memory allocation entirely.
 runTest -XX:MaxDirectMemorySize=0 -cp ${TESTCLASSES} LimitDirectMemory true 0 1
 
 # Setting the system property should not work so we should be able to allocate
 # the default amount.
-runTest -Dsun.nio.MaxDirectMemorySize=1K -cp ${TESTCLASSES} \
+runTest -Dsun.nio.MaxDirectMemorySize=1K -Xmx64m -cp ${TESTCLASSES} \
   LimitDirectMemory false DEFAULT-1 DEFAULT/2
 
 # Various bad values fail to launch the VM.
 launchFail foo
 launchFail 10kmt
 launchFail -1
+
+# Clean-up
+rm ${TMP1}

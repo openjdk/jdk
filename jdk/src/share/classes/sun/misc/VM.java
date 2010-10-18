@@ -178,6 +178,17 @@ public class VM {
         return directMemory;
     }
 
+    // User-controllable flag that determines if direct buffers should be page
+    // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
+    // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
+    private static boolean pageAlignDirectMemory;
+
+    // Returns {@code true} if the direct buffers should be page aligned. This
+    // variable is initialized by saveAndRemoveProperties.
+    public static boolean isDirectMemoryPageAligned() {
+        return pageAlignDirectMemory;
+    }
+
     // A user-settable boolean to determine whether ClassLoader.loadClass should
     // accept array syntax.  This value may be changed during VM initialization
     // via the system property "sun.lang.ClassLoader.allowArraySyntax".
@@ -251,6 +262,11 @@ public class VM {
                     directMemory = l;
             }
         }
+
+        // Check if direct buffers should be page aligned
+        s = (String)props.remove("sun.nio.PageAlignDirectMemory");
+        if ("true".equals(s))
+            pageAlignDirectMemory = true;
 
         // Set a boolean to determine whether ClassLoader.loadClass accepts
         // array syntax.  This value is controlled by the system property
