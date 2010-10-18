@@ -144,7 +144,7 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
      */
     public int getBaseline(JComponent c, int width, int height) {
         int baseline;
-        if (MetalLookAndFeel.usingOcean()) {
+        if (MetalLookAndFeel.usingOcean() && height >= 4) {
             height -= 4;
             baseline = super.getBaseline(c, width, height);
             if (baseline >= 0) {

@@ -215,7 +215,8 @@ public class JDesktopPane extends JLayeredPane implements Accessible
 
     /**
      * Sets the <code>DesktopManger</code> that will handle
-     * desktop-specific UI actions.
+     * desktop-specific UI actions. This may be overridden by
+     * {@code LookAndFeel}.
      *
      * @param d the <code>DesktopManager</code> to use
      *

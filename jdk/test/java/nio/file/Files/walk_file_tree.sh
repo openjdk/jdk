@@ -22,9 +22,9 @@
 #
 
 # @test
-# @bug 4313887
+# @bug 4313887 6907737
 # @summary Unit test for walkFileTree method
-# @build CreateFileTree PrintFileTree SkipSiblings TerminateWalk
+# @build CreateFileTree PrintFileTree SkipSiblings TerminateWalk MaxDepth
 # @run shell walk_file_tree.sh
 
 # if TESTJAVA isn't set then we assume an interactive run.
@@ -82,6 +82,10 @@ if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # test TERMINATE
 $JAVA TerminateWalk "$ROOT"
+if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+
+# test maxDepth
+$JAVA MaxDepth "$ROOT"
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # clean-up

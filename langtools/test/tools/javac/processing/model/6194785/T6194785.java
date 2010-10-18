@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     6194785
  * @summary ParameterDeclaration.getSimpleName does not return actual name from class files
  * @author  Peter von der Ah\u00e9
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile -g T6194785.java T6194785a.java
  * @compile -processor T6194785 foo.T6194785a T6194785.java
  */
@@ -36,13 +38,10 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import static javax.tools.Diagnostic.Kind.*;
 
-@SupportedAnnotationTypes("*")
-public class T6194785 extends AbstractProcessor {
+public class T6194785 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment)
     {
-        final Messager log = processingEnv.getMessager();
-        final Elements elements = processingEnv.getElementUtils();
         class Scan extends ElementScanner7<Void,Void> {
             @Override
             public Void visitExecutable(ExecutableElement e, Void ignored) {
