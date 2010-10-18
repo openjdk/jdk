@@ -125,12 +125,12 @@ import javax.naming.*;
  *
  *   # Optimistic synchronization provider
  *   rowset.provider.classname.0=com.sun.rowset.providers.RIOptimisticProvider
- *   rowset.provider.vendor.0=Sun Microsystems Inc
+ *   rowset.provider.vendor.0=Oracle Corporation
  *   rowset.provider.version.0=1.0
  *
  *   # XML Provider using standard XML schema
  *   rowset.provider.classname.1=com.sun.rowset.providers.RIXMLProvider
- *   rowset.provider.vendor.1=Sun Microsystems Inc.
+ *   rowset.provider.vendor.1=Oracle Corporation
  *   rowset.provider.version.1=1.0
  * </PRE>
  * The <code>SyncFactory</code> checks this file and registers the
@@ -369,7 +369,7 @@ public class SyncFactory {
             try {
 
                 // check if user is supplying his Synchronisation Provider
-                // Implementation  if not use Sun's implementation.
+                // Implementation if not using Oracle's implementation.
                 // properties.load(new FileInputStream(ROWSET_PROPERTIES));
 
                 // The rowset.properties needs to be in jdk/jre/lib when

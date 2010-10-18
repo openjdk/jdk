@@ -4787,6 +4787,17 @@ public abstract class JComponent extends Container implements Serializable,
      * @see RepaintManager#addDirtyRegion
      */
     public void repaint(long tm, int x, int y, int width, int height) {
+        Container p = this;
+        while ((p = p.getParent()) instanceof JComponent) {
+            JComponent jp = (JComponent) p;
+            if (jp.isPaintingOrigin()) {
+                Rectangle rectangle = SwingUtilities.convertRectangle(
+                        this, new Rectangle(x, y, width, height), jp);
+                jp.repaint(tm,
+                        rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+                return;
+            }
+        }
         RepaintManager.currentManager(this).addDirtyRegion(this, x, y, width, height);
     }
 

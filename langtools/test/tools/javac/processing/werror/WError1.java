@@ -24,6 +24,8 @@
 /*
  * @test 6403456
  * @summary -Werror should work with annotation processing
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile WError1.java
  * @compile -proc:only -processor WError1 WError1.java
  * @compile/fail/ref=WError1.out -XDrawDiagnostics -Werror -proc:only -processor WError1 WError1.java
@@ -36,21 +38,14 @@ import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
 
-@SupportedAnnotationTypes("*")
-public class WError1 extends AbstractProcessor {
+public class WError1 extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        Messager messager = processingEnv.getMessager();
         if (++round == 1) {
             messager.printMessage(Diagnostic.Kind.WARNING, "round 1");
         }
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 
     int round = 0;

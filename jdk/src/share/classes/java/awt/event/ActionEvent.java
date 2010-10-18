@@ -51,7 +51,7 @@ import java.awt.Event;
  * in the range from {@code ACTION_FIRST} to {@code ACTION_LAST}.
  *
  * @see ActionListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/eventmodel.html">Tutorial: Java 1.1 Event Model</a>
+ * @see <a href="http://java.sun.com/docs/books/tutorial/uiswing/events/actionlistener.html">Tutorial: How to Write an Action Listener</a>
  *
  * @author Carl Quinn
  * @since 1.1

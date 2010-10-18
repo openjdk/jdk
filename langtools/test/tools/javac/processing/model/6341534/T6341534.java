@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary PackageElement.getEnclosedElements results in NullPointerException from parse(JavaCompiler.java:429)
  * @author  Steve Sides
  * @author  Peter von der Ahe
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile T6341534.java
  * @compile -proc:only -processor T6341534 dir/package-info.java
  * @compile -processor T6341534 dir/package-info.java
@@ -40,20 +42,11 @@ import java.util.*;
 import java.util.Set;
 import static javax.tools.Diagnostic.Kind.*;
 
-@SupportedAnnotationTypes("*")
-public class T6341534 extends AbstractProcessor {
-    Elements elements;
-    Messager messager;
-    public void init(ProcessingEnvironment penv)  {
-        super.init(penv);
-        elements = penv.getElementUtils();
-        messager = processingEnv.getMessager();
-    }
-
+public class T6341534 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv)  {
         messager.printMessage(NOTE,
-                              String.valueOf(elements.getPackageElement("no.such.package")));
-        PackageElement dir = elements.getPackageElement("dir");
+                              String.valueOf(eltUtils.getPackageElement("no.such.package")));
+        PackageElement dir = eltUtils.getPackageElement("dir");
         messager.printMessage(NOTE, dir.getQualifiedName().toString());
         for (Element e : dir.getEnclosedElements())
             messager.printMessage(NOTE, e.toString());
