@@ -1715,6 +1715,7 @@ public final class Locale implements Cloneable, Serializable {
         OpenListResourceBundle bundle = LocaleData.getLocaleNames(inLocale);
 
         String languageName = getDisplayLanguage(inLocale);
+        String scriptName = getDisplayScript(inLocale);
         String countryName = getDisplayCountry(inLocale);
         String[] variantNames = getDisplayVariantArray(bundle, inLocale);
 
@@ -1735,25 +1736,40 @@ public final class Locale implements Cloneable, Serializable {
         String   mainName       = null;
         String[] qualifierNames = null;
 
-        // The main name is the language, or if there is no language, the country.
-        // If there is neither language nor country (an anomalous situation) then
-        // the display name is simply the variant's display name.
-        if (languageName.length() != 0) {
-            mainName = languageName;
-            if (countryName.length() != 0) {
-                qualifierNames = new String[variantNames.length + 1];
-                System.arraycopy(variantNames, 0, qualifierNames, 1, variantNames.length);
-                qualifierNames[0] = countryName;
+        // The main name is the language, or if there is no language, the script,
+        // then if no script, the country. If there is no language/script/country
+        // (an anomalous situation) then the display name is simply the variant's
+        // display name.
+        if (languageName.length() == 0 && scriptName.length() == 0 && countryName.length() == 0) {
+            if (variantNames.length == 0) {
+                return "";
+            } else {
+                return formatList(variantNames, listPattern, listCompositionPattern);
             }
-            else qualifierNames = variantNames;
         }
-        else if (countryName.length() != 0) {
-            mainName = countryName;
-            qualifierNames = variantNames;
+        ArrayList<String> names = new ArrayList<String>(4);
+        if (languageName.length() != 0) {
+            names.add(languageName);
         }
-        else {
-            return formatList(variantNames, listPattern, listCompositionPattern);
+        if (scriptName.length() != 0) {
+            names.add(scriptName);
         }
+        if (countryName.length() != 0) {
+            names.add(countryName);
+        }
+        if (variantNames.length != 0) {
+            for (String var : variantNames) {
+                names.add(var);
+            }
+        }
+
+        // The first one in the main name
+        mainName = names.get(0);
+
+        // Others are qualifiers
+        int numNames = names.size();
+        qualifierNames = (numNames > 1) ?
+                names.subList(1, numNames).toArray(new String[numNames - 1]) : new String[0];
 
         // Create an array whose first element is the number of remaining
         // elements.  This serves as a selector into a ChoiceFormat pattern from
