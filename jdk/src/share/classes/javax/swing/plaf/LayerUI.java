@@ -600,104 +600,6 @@ public class LayerUI<V extends Component>
     }
 
     /**
-     * Returns the preferred size of the viewport for a view component.
-     *
-     * @param l the {@code JLayer} component where this UI delegate is being installed
-     * @return the preferred size of the viewport for a view component
-     * @see Scrollable#getPreferredScrollableViewportSize()
-     */
-    public Dimension getPreferredScrollableViewportSize(JLayer<? extends V> l) {
-        if (l.getView() instanceof Scrollable) {
-            return ((Scrollable)l.getView()).getPreferredScrollableViewportSize();
-        }
-        return l.getPreferredSize();
-    }
-
-    /**
-     * Returns a scroll increment, which is required for components
-     * that display logical rows or columns in order to completely expose
-     * one block of rows or columns, depending on the value of orientation.
-     *
-     * @param l the {@code JLayer} component where this UI delegate is being installed
-     * @param visibleRect The view area visible within the viewport
-     * @param orientation Either SwingConstants.VERTICAL or SwingConstants.HORIZONTAL.
-     * @param direction Less than zero to scroll up/left, greater than zero for down/right.
-     * @return the "block" increment for scrolling in the specified direction
-     * @see Scrollable#getScrollableBlockIncrement(Rectangle, int, int)
-     */
-     public int getScrollableBlockIncrement(JLayer<? extends V> l,
-                                           Rectangle visibleRect,
-                                           int orientation, int direction) {
-        if (l.getView() instanceof Scrollable) {
-            return ((Scrollable)l.getView()).getScrollableBlockIncrement(
-                    visibleRect,orientation, direction);
-        }
-        return (orientation == SwingConstants.VERTICAL) ? visibleRect.height :
-            visibleRect.width;
-    }
-
-    /**
-     * Returns {@code false} to indicate that the height of the viewport does not
-     * determine the height of the layer, unless the preferred height
-     * of the layer is smaller than the height of the viewport.
-     *
-     * @param l the {@code JLayer} component where this UI delegate is being installed
-     * @return whether the layer should track the height of the viewport
-     * @see Scrollable#getScrollableTracksViewportHeight()
-     */
-    public boolean getScrollableTracksViewportHeight(JLayer<? extends V> l) {
-        if (l.getView() instanceof Scrollable) {
-            return ((Scrollable)l.getView()).getScrollableTracksViewportHeight();
-        }
-        return false;
-    }
-
-    /**
-     * Returns {@code false} to indicate that the width of the viewport does not
-     * determine the width of the layer, unless the preferred width
-     * of the layer is smaller than the width of the viewport.
-     *
-     * @param l the {@code JLayer} component where this UI delegate is being installed
-     * @return whether the layer should track the width of the viewport
-     * @see Scrollable
-     * @see LayerUI#getScrollableTracksViewportWidth(JLayer)
-     */
-    public boolean getScrollableTracksViewportWidth(JLayer<? extends V> l) {
-        if (l.getView() instanceof Scrollable) {
-            return ((Scrollable)l.getView()).getScrollableTracksViewportWidth();
-        }
-        return false;
-    }
-
-    /**
-     * Returns a scroll increment, which is required for components
-     * that display logical rows or columns in order to completely expose
-     * one new row or column, depending on the value of orientation.
-     * Ideally, components should handle a partially exposed row or column
-     * by returning the distance required to completely expose the item.
-     * <p>
-     * Scrolling containers, like JScrollPane, will use this method
-     * each time the user requests a unit scroll.
-     *
-     * @param l the {@code JLayer} component where this UI delegate is being installed
-     * @param visibleRect The view area visible within the viewport
-     * @param orientation Either SwingConstants.VERTICAL or SwingConstants.HORIZONTAL.
-     * @param direction Less than zero to scroll up/left, greater than zero for down/right.
-     * @return The "unit" increment for scrolling in the specified direction.
-     *         This value should always be positive.
-     * @see Scrollable#getScrollableUnitIncrement(Rectangle, int, int)
-     */
-    public int getScrollableUnitIncrement(JLayer<? extends V> l,
-                                          Rectangle visibleRect,
-                                          int orientation, int direction) {
-        if (l.getView() instanceof Scrollable) {
-            return ((Scrollable)l.getView()).getScrollableUnitIncrement(
-                    visibleRect, orientation, direction);
-        }
-        return 1;
-    }
-
-    /**
      * If the {@code JLayer}'s view component is not {@code null},
      * this calls the view's {@code getBaseline()} method.
      * Otherwise, the default implementation is called.
@@ -718,7 +620,7 @@ public class LayerUI<V extends Component>
 
     /**
      * If the {@code JLayer}'s view component is not {@code null},
-     * this calls the view's {@code getBaselineResizeBehavior()} method.
+     * this returns the result of the view's {@code getBaselineResizeBehavior()} method.
      * Otherwise, the default implementation is called.
      *
      * @param c {@code JLayer} to return baseline resize behavior for
@@ -731,5 +633,91 @@ public class LayerUI<V extends Component>
             return l.getView().getBaselineResizeBehavior();
         }
         return super.getBaselineResizeBehavior(c);
+    }
+
+    /**
+     * Causes the passed instance of {@code JLayer} to lay out its components.
+     *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
+     */
+    public void doLayout(JLayer<? extends V> l) {
+        Component view = l.getView();
+        if (view != null) {
+            view.setBounds(0, 0, l.getWidth(), l.getHeight());
+        }
+        Component glassPane = l.getGlassPane();
+        if (glassPane != null) {
+            glassPane.setBounds(0, 0, l.getWidth(), l.getHeight());
+        }
+    }
+
+    /**
+     * If the {@code JLayer}'s view component is not {@code null},
+     * this returns the result of  the view's {@code getPreferredSize()} method.
+     * Otherwise, the default implementation is used.
+     *
+     * @param c {@code JLayer} to return preferred size for
+     * @return preferred size for the passed {@code JLayer}
+     */
+    public Dimension getPreferredSize(JComponent c) {
+        JLayer l = (JLayer) c;
+        Component view = l.getView();
+        if (view != null) {
+            return view.getPreferredSize();
+        }
+        return super.getPreferredSize(c);
+    }
+
+    /**
+     * If the {@code JLayer}'s view component is not {@code null},
+     * this returns the result of  the view's {@code getMinimalSize()} method.
+     * Otherwise, the default implementation is used.
+     *
+     * @param c {@code JLayer} to return preferred size for
+     * @return minimal size for the passed {@code JLayer}
+     */
+    public Dimension getMinimumSize(JComponent c) {
+        JLayer l = (JLayer) c;
+        Component view = l.getView();
+        if (view != null) {
+            return view.getMinimumSize();
+        }
+        return super.getMinimumSize(c);
+    }
+
+    /**
+     * If the {@code JLayer}'s view component is not {@code null},
+     * this returns the result of  the view's {@code getMaximumSize()} method.
+     * Otherwise, the default implementation is used.
+     *
+     * @param c {@code JLayer} to return preferred size for
+     * @return maximun size for the passed {@code JLayer}
+     */
+    public Dimension getMaximumSize(JComponent c) {
+        JLayer l = (JLayer) c;
+        Component view = l.getView();
+        if (view != null) {
+            return view.getMaximumSize();
+        }
+        return super.getMaximumSize(c);
+    }
+
+    /**
+     * Adds the specified region to the dirty region list if the component
+     * is showing.  The component will be repainted after all of the
+     * currently pending events have been dispatched.
+     * <p/>
+     * This method is to be overridden when the dirty region needs to be changed.
+     *
+     * @param tm  this parameter is not used
+     * @param x  the x value of the dirty region
+     * @param y  the y value of the dirty region
+     * @param width  the width of the dirty region
+     * @param height  the height of the dirty region
+     * @see java.awt.Component#isShowing
+     * @see RepaintManager#addDirtyRegion
+     */
+    public void repaint(long tm, int x, int y, int width, int height, JLayer<? extends V> l) {
+        RepaintManager.currentManager(l).addDirtyRegion(l, x, y, width, height);
     }
 }

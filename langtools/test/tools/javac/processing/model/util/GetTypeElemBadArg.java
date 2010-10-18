@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug     6346506 6408241
  * @summary getTypeElement should tolerate a type that can't be found
  * @author  Scott Seligman
- * @build   GetTypeElemBadArg
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor GetTypeElemBadArg
  * @compile -processor GetTypeElemBadArg -proc:only GetTypeElemBadArg.java
  */
 
@@ -37,16 +38,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-@SupportedAnnotationTypes("*")
-public class GetTypeElemBadArg extends AbstractProcessor {
-
-    Elements elements;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        elements = penv.getElementUtils();
-    }
-
+public class GetTypeElemBadArg extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes,
                            RoundEnvironment round) {
         if (round.processingOver()) return true;
@@ -61,12 +53,6 @@ public class GetTypeElemBadArg extends AbstractProcessor {
             throw new AssertionError();
         }
         return true;
-    }
-
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 
     private static void tellAbout(TypeElement t) {
