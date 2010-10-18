@@ -27,7 +27,7 @@ package java.nio.file;
 
 import java.nio.file.attribute.BasicFileAttributes;
 import java.io.IOException;
-import java.io.IOError;
+import java.util.Objects;
 
 /**
  * A simple visitor of files with default behavior to visit all files and to
@@ -48,40 +48,18 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
     }
 
     /**
-     * Throws NullPointerException if obj is null.
-     */
-    private static void checkNotNull(Object obj) {
-        if (obj == null)
-            throw new NullPointerException();
-    }
-
-    /**
      * Invoked for a directory before entries in the directory are visited.
      *
      * <p> Unless overridden, this method returns {@link FileVisitResult#CONTINUE
      * CONTINUE}.
      */
     @Override
-    public FileVisitResult preVisitDirectory(T dir) {
-        checkNotNull(dir);
+    public FileVisitResult preVisitDirectory(T dir, BasicFileAttributes attrs)
+        throws IOException
+    {
+        Objects.nonNull(dir);
+        Objects.nonNull(attrs);
         return FileVisitResult.CONTINUE;
-    }
-
-    /**
-     * Invoked for a directory that could not be opened.
-     *
-     * <p> Unless overridden, this method throws {@link IOError} with the I/O
-     * exception as cause.
-     *
-     * @throws  IOError
-     *          with the I/O exception thrown when the attempt to open the
-     *          directory failed
-     */
-    @Override
-    public FileVisitResult preVisitDirectoryFailed(T dir, IOException exc) {
-        checkNotNull(dir);
-        checkNotNull(exc);
-        throw new IOError(exc);
     }
 
     /**
@@ -91,27 +69,26 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      * CONTINUE}.
      */
     @Override
-    public FileVisitResult visitFile(T file, BasicFileAttributes attrs) {
-        checkNotNull(file);
-        checkNotNull(attrs);
+    public FileVisitResult visitFile(T file, BasicFileAttributes attrs)
+        throws IOException
+    {
+        Objects.nonNull(file);
+        Objects.nonNull(attrs);
         return FileVisitResult.CONTINUE;
     }
 
     /**
-     * Invoked for a file when its basic file attributes could not be read.
+     * Invoked for a file that could not be visited.
      *
-     * <p> Unless overridden, this method throws {@link IOError} with the I/O
-     * exception as cause.
-     *
-     * @throws  IOError
-     *          with the I/O exception thrown when the attempt to read the file
-     *          attributes failed
+     * <p> Unless overridden, this method re-throws the I/O exception that prevented
+     * the file from being visited.
      */
     @Override
-    public FileVisitResult visitFileFailed(T file, IOException exc) {
-        checkNotNull(file);
-        checkNotNull(exc);
-        throw new IOError(exc);
+    public FileVisitResult visitFileFailed(T file, IOException exc)
+        throws IOException
+    {
+        Objects.nonNull(file);
+        throw exc;
     }
 
     /**
@@ -120,18 +97,16 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      *
      * <p> Unless overridden, this method returns {@link FileVisitResult#CONTINUE
      * CONTINUE} if the directory iteration completes without an I/O exception;
-     * otherwise this method throws {@link IOError} with the I/O exception as
-     * cause.
-     *
-     * @throws  IOError
-     *          with the I/O exception thrown when iteration of the directory
-     *          completed prematurely due to an I/O error
+     * otherwise this method re-throws the I/O exception that caused the iteration
+     * of the directory to terminate prematurely.
      */
     @Override
-    public FileVisitResult postVisitDirectory(T dir, IOException exc) {
-        checkNotNull(dir);
+    public FileVisitResult postVisitDirectory(T dir, IOException exc)
+        throws IOException
+    {
+        Objects.nonNull(dir);
         if (exc != null)
-            throw new IOError(exc);
+            throw exc;
         return FileVisitResult.CONTINUE;
     }
 }

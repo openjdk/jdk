@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,9 +106,6 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // force the use of Messager as a Log
             messager = Messager.instance0(context);
-
-            // force the use of the scanner that captures Javadoc comments
-            DocCommentScanner.Factory.preRegister(context);
 
             return new JavadocTool(context);
         } catch (CompletionFailure ex) {
