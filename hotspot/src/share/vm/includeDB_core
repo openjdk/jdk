@@ -3231,6 +3231,7 @@ orderAccess.hpp                         allocation.hpp
 orderAccess.hpp                         os.hpp
 
 orderAccess_<os_arch>.inline.hpp        orderAccess.hpp
+orderAccess_<os_arch>.inline.hpp        vm_version_<arch>.hpp
 
 os.cpp                                  allocation.inline.hpp
 os.cpp                                  arguments.hpp
