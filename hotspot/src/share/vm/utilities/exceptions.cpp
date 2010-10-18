@@ -61,6 +61,18 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
    ShouldNotReachHere();
   }
 
+#ifdef ASSERT
+  // Check for trying to throw stack overflow before initialization is complete
+  // to prevent infinite recursion trying to initialize stack overflow without
+  // adequate stack space.
+  // This can happen with stress testing a large value of StackShadowPages
+  if (h_exception()->klass() == SystemDictionary::StackOverflowError_klass()) {
+    instanceKlass* ik = instanceKlass::cast(h_exception->klass());
+    assert(ik->is_initialized(),
+           "need to increase min_stack_allowed calculation");
+  }
+#endif // ASSERT
+
   if (thread->is_VM_thread()
       || thread->is_Compiler_thread() ) {
     // We do not care what kind of exception we get for the vm-thread or a thread which
@@ -91,7 +103,6 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, s
     thread->set_pending_exception(Universe::vm_exception(), file, line);
     return true;
   }
-
   return false;
 }
 
@@ -193,6 +204,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     klassOop k = SystemDictionary::StackOverflowError_klass();
     oop e = instanceKlass::cast(k)->allocate_instance(CHECK);
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
+    assert(instanceKlass::cast(k)->is_initialized(), "need to increase min_stack_allowed calculation");
     if (StackTraceInThrowable) {
       java_lang_Throwable::fill_in_stack_trace(exception);
     }

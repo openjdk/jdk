@@ -51,14 +51,16 @@
 
 
 void warning(const char* format, ...) {
-  // In case error happens before init or during shutdown
-  if (tty == NULL) ostream_init();
+  if (PrintWarnings) {
+    // In case error happens before init or during shutdown
+    if (tty == NULL) ostream_init();
 
-  tty->print("%s warning: ", VM_Version::vm_name());
-  va_list ap;
-  va_start(ap, format);
-  tty->vprint_cr(format, ap);
-  va_end(ap);
+    tty->print("%s warning: ", VM_Version::vm_name());
+    va_list ap;
+    va_start(ap, format);
+    tty->vprint_cr(format, ap);
+    va_end(ap);
+  }
   if (BreakAtWarning) BREAKPOINT;
 }
 
