@@ -850,6 +850,12 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
                                        String[] paramTypes, Set<ClassDocImpl> searched) {
         //### Note that this search is not necessarily what the compiler would do!
 
+        Names names = tsym.name.table.names;
+        // do not match constructors
+        if (names.init.contentEquals(methodName)) {
+            return null;
+        }
+
         ClassDocImpl cdi;
         MethodDocImpl mdi;
 
@@ -876,7 +882,6 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
          *---------------------------------*/
 
         // search current class
-        Names names = tsym.name.table.names;
         Scope.Entry e = tsym.members().lookup(names.fromString(methodName));
 
         //### Using modifier filter here isn't really correct,
