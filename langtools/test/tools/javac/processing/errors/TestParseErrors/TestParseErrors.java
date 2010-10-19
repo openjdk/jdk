@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,23 @@
  * questions.
  */
 
-@Deprecated
-class A extends Missing {
+/*
+ * @test
+ * @bug 6988407
+ * @summary javac crashes running processor on errant code; it used to print error message
+ * @library ../../../lib
+ * @build JavacTestingAbstractProcessor TestParseErrors
+ * @compile/fail/ref=TestParseErrors.out -XDrawDiagnostics -proc:only -processor TestParseErrors ParseErrors.java
+ */
+
+import java.util.*;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+
+public class TestParseErrors extends JavacTestingAbstractProcessor {
+
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnvironment) {
+        throw new Error("Should not be called");
+    }
 }
