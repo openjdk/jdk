@@ -1065,7 +1065,9 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, RegisterMap *map) 
 }
 
 
-void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
+void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id) {
+  assert(thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
+         "can only deoptimize other thread at a safepoint");
   // Compute frame and register map based on thread and sp.
   RegisterMap reg_map(thread, UseBiasedLocking);
   frame fr = thread->last_frame();
@@ -1073,6 +1075,16 @@ void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
     fr = fr.sender(&reg_map);
   }
   deoptimize(thread, fr, &reg_map);
+}
+
+
+void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
+  if (thread == Thread::current()) {
+    Deoptimization::deoptimize_frame_internal(thread, id);
+  } else {
+    VM_DeoptimizeFrame deopt(thread, id);
+    VMThread::execute(&deopt);
+  }
 }
 
 
