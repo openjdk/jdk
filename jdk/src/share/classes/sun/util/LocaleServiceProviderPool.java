@@ -84,7 +84,7 @@ public final class LocaleServiceProviderPool {
      * static.  This could be non-static later, so that they could have
      * different sets for each locale sensitive services.
      */
-    private static List<Locale> availableJRELocales = null;
+    private static volatile List<Locale> availableJRELocales = null;
 
     /**
      * Provider locales for this locale sensitive service.
@@ -252,12 +252,16 @@ public final class LocaleServiceProviderPool {
      *
      * @return list of the available JRE locales
      */
-    private synchronized List<Locale> getJRELocales() {
+    private List<Locale> getJRELocales() {
         if (availableJRELocales == null) {
-            Locale[] allLocales = LocaleData.getAvailableLocales();
-            availableJRELocales = new ArrayList<Locale>(allLocales.length);
-            for (Locale locale : allLocales) {
-                availableJRELocales.add(getLookupLocale(locale));
+            synchronized (LocaleServiceProviderPool.class) {
+                if (availableJRELocales == null) {
+                    Locale[] allLocales = LocaleData.getAvailableLocales();
+                    availableJRELocales = new ArrayList<Locale>(allLocales.length);
+                    for (Locale locale : allLocales) {
+                        availableJRELocales.add(getLookupLocale(locale));
+                    }
+                }
             }
         }
         return availableJRELocales;
