@@ -668,9 +668,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     public void visitTree(JCTree tree) {
     }
 
-
     public void visitErroneous(JCErroneous tree) {
-        memberEnter(tree.errs, env);
+        if (tree.errs != null)
+            memberEnter(tree.errs, env);
     }
 
     public Env<AttrContext> getMethodEnv(JCMethodDecl tree, Env<AttrContext> env) {
