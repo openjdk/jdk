@@ -57,7 +57,7 @@ package com.sun.source.tree;
  * @since 1.6
  */
 public interface TreeVisitor<R,P> {
-    R visitAnnotatedType(AnnotatedTypeTree node, P p);
+//308    R visitAnnotatedType(AnnotatedTypeTree node, P p);
     R visitAnnotation(AnnotationTree node, P p);
     R visitMethodInvocation(MethodInvocationTree node, P p);
     R visitAssert(AssertTree node, P p);
