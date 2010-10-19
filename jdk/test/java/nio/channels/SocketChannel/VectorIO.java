@@ -60,6 +60,7 @@ public class VectorIO {
 
     static void bufferTest(int port) throws Exception {
         ByteBuffer[] bufs = new ByteBuffer[testSize];
+        long total = 0L;
         for(int i=0; i<testSize; i++) {
             String source = "buffer" + i;
             if (generator.nextBoolean())
@@ -69,6 +70,7 @@ public class VectorIO {
 
             bufs[i].put(source.getBytes("8859_1"));
             bufs[i].flip();
+            total += bufs[i].remaining();
         }
 
         // Get a connection to the server
@@ -76,17 +78,20 @@ public class VectorIO {
         InetSocketAddress isa = new InetSocketAddress(lh, port);
         SocketChannel sc = SocketChannel.open();
         sc.connect(isa);
-        sc.configureBlocking(false);
+        sc.configureBlocking(generator.nextBoolean());
 
         // Write the data out
-        long bytesWritten = 0;
-        do {
-            bytesWritten = sc.write(bufs);
-        } while (bytesWritten > 0);
-
-        try {
-            Thread.currentThread().sleep(500);
-        } catch (InterruptedException ie) { }
+        long rem = total;
+        while (rem > 0L) {
+            long bytesWritten = sc.write(bufs);
+            if (bytesWritten == 0) {
+                if (sc.isBlocking())
+                    throw new RuntimeException("write did not block");
+                Thread.sleep(50);
+            } else {
+                rem -= bytesWritten;
+            }
+        }
 
         // Clean up
         sc.close();
@@ -115,6 +120,7 @@ public class VectorIO {
         }
 
         void bufferTest() throws Exception {
+            long total = 0L;
             ByteBuffer[] bufs = new ByteBuffer[testSize];
             for(int i=0; i<testSize; i++) {
                 String source = "buffer" + i;
@@ -122,6 +128,7 @@ public class VectorIO {
                     bufs[i] = ByteBuffer.allocateDirect(source.length());
                 else
                     bufs[i] = ByteBuffer.allocate(source.length());
+                total += bufs[i].capacity();
             }
 
             // Get a connection from client
@@ -138,11 +145,21 @@ public class VectorIO {
                     Thread.sleep(50);
                 }
 
+                sc.configureBlocking(generator.nextBoolean());
+
                 // Read data into multiple buffers
-                long bytesRead = 0;
-                do {
-                    bytesRead = sc.read(bufs);
-                } while (bytesRead > 0);
+                long avail = total;
+                while (avail > 0) {
+                    long bytesRead = sc.read(bufs);
+                    if (bytesRead < 0)
+                        break;
+                    if (bytesRead == 0) {
+                        if (sc.isBlocking())
+                            throw new RuntimeException("read did not block");
+                        Thread.sleep(50);
+                    }
+                    avail -= bytesRead;
+                }
 
                 // Check results
                 for(int i=0; i<testSize; i++) {

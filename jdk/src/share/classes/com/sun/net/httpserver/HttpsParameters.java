@@ -24,9 +24,7 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.net.InetSocketAddress;
 import javax.net.ssl.SSLParameters;
 
 /**
@@ -90,7 +88,7 @@ public abstract class HttpsParameters {
      * have been set.
      */
     public String[] getCipherSuites() {
-        return cipherSuites;
+        return cipherSuites != null ? cipherSuites.clone() : null;
     }
 
     /**
@@ -99,7 +97,7 @@ public abstract class HttpsParameters {
      * @param cipherSuites the array of ciphersuites (or null)
      */
     public void setCipherSuites(String[] cipherSuites) {
-        this.cipherSuites = cipherSuites;
+        this.cipherSuites = cipherSuites != null ? cipherSuites.clone() : null;
     }
 
     /**
@@ -110,7 +108,7 @@ public abstract class HttpsParameters {
      * have been set.
      */
     public String[] getProtocols() {
-        return protocols;
+        return protocols != null ? protocols.clone() : null;
     }
 
     /**
@@ -119,7 +117,7 @@ public abstract class HttpsParameters {
      * @param protocols the array of protocols (or null)
      */
     public void setProtocols(String[] protocols) {
-        this.protocols = protocols;
+        this.protocols = protocols != null ? protocols.clone() : null;
     }
 
     /**
