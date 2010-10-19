@@ -3545,7 +3545,7 @@ class CommandLineFlags {
   product(uintx, SharedDummyBlockSize, 512*M,                               \
           "Size of dummy block used to shift heap addresses (in bytes)")    \
                                                                             \
-  product(uintx, SharedReadWriteSize,  12*M,                                \
+  product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(13*M),      \
           "Size of read-write space in permanent generation (in bytes)")    \
                                                                             \
   product(uintx, SharedReadOnlySize,   10*M,                                \
