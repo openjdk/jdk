@@ -720,8 +720,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   // first resolve the signature to a MH.invoke methodOop
   if (!pool->cache()->entry_at(main_index)->is_resolved(bytecode)) {
     JvmtiHideSingleStepping jhss(thread);
-    CallInfo info;
-    LinkResolver::resolve_invoke(info, Handle(), pool,
+    CallInfo callinfo;
+    LinkResolver::resolve_invoke(callinfo, Handle(), pool,
                                  site_index, bytecode, CHECK);
     // The main entry corresponds to a JVM_CONSTANT_InvokeDynamic, and serves
     // as a common reference point for all invokedynamic call sites with
@@ -729,8 +729,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     // as if it were an invokevirtual of MethodHandle.invoke.
     pool->cache()->entry_at(main_index)->set_method(
       bytecode,
-      info.resolved_method(),
-      info.vtable_index());
+      callinfo.resolved_method(),
+      callinfo.vtable_index());
   }
 
   // The method (f2 entry) of the main entry is the MH.invoke for the

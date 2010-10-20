@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 # include "incls/_systemDictionary.cpp.incl"
 
 
-Dictionary*       SystemDictionary::_dictionary = NULL;
-PlaceholderTable* SystemDictionary::_placeholders = NULL;
-Dictionary*       SystemDictionary::_shared_dictionary = NULL;
-LoaderConstraintTable* SystemDictionary::_loader_constraints = NULL;
-ResolutionErrorTable* SystemDictionary::_resolution_errors = NULL;
-SymbolPropertyTable* SystemDictionary::_invoke_method_table = NULL;
+Dictionary*            SystemDictionary::_dictionary          = NULL;
+PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
+Dictionary*            SystemDictionary::_shared_dictionary   = NULL;
+LoaderConstraintTable* SystemDictionary::_loader_constraints  = NULL;
+ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
+SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 
 
 int         SystemDictionary::_number_of_modifications = 0;
@@ -1727,8 +1727,7 @@ void SystemDictionary::always_strong_classes_do(OopClosure* blk) {
   placeholders_do(blk);
 
   // Visit extra methods
-  if (invoke_method_table() != NULL)
-    invoke_method_table()->oops_do(blk);
+  invoke_method_table()->oops_do(blk);
 
   // Loader constraints. We must keep the symbolOop used in the name alive.
   constraints()->always_strong_classes_do(blk);
@@ -1766,8 +1765,7 @@ void SystemDictionary::oops_do(OopClosure* f) {
   dictionary()->oops_do(f);
 
   // Visit extra methods
-  if (invoke_method_table() != NULL)
-    invoke_method_table()->oops_do(f);
+  invoke_method_table()->oops_do(f);
 
   // Partially loaded classes
   placeholders()->oops_do(f);
@@ -1841,8 +1839,7 @@ void SystemDictionary::placeholders_do(void f(symbolOop, oop)) {
 
 void SystemDictionary::methods_do(void f(methodOop)) {
   dictionary()->methods_do(f);
-  if (invoke_method_table() != NULL)
-    invoke_method_table()->methods_do(f);
+  invoke_method_table()->methods_do(f);
 }
 
 // ----------------------------------------------------------------------------
@@ -1870,12 +1867,12 @@ void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   assert(dictionary() == NULL,
          "SystemDictionary should only be initialized once");
-  _dictionary = new Dictionary(_nof_buckets);
-  _placeholders = new PlaceholderTable(_nof_buckets);
+  _dictionary          = new Dictionary(_nof_buckets);
+  _placeholders        = new PlaceholderTable(_nof_buckets);
   _number_of_modifications = 0;
-  _loader_constraints = new LoaderConstraintTable(_loader_constraint_size);
-  _resolution_errors = new ResolutionErrorTable(_resolution_error_size);
-  // _invoke_method_table is allocated lazily in find_method_handle_invoke()
+  _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
+  _resolution_errors   = new ResolutionErrorTable(_resolution_error_size);
+  _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
 
   // Allocate private object used as system class loader lock
   _system_loader_lock_obj = oopFactory::new_system_objArray(0, CHECK);
@@ -2346,10 +2343,6 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
                                                       KlassHandle accessing_klass,
                                                       TRAPS) {
   if (!EnableMethodHandles)  return NULL;
-  if (invoke_method_table() == NULL) {
-    // create this side table lazily
-    _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
-  }
   vmSymbols::SID name_id = vmSymbols::find_sid(name());
   assert(name_id != vmSymbols::NO_SID, "must be a known name");
   unsigned int hash  = invoke_method_table()->compute_hash(signature, name_id);
