@@ -119,11 +119,8 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.version", "1.0", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
-        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
 
   // following are JVMTI agent writeable properties.
@@ -149,6 +146,14 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
+}
+
+
+  // Update/Initialize System properties after JDK version number is known
+void Arguments::init_version_specific_system_properties() {
+  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
+        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
+  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
 }
 
 /**
@@ -1676,7 +1681,8 @@ bool Arguments::check_stack_pages()
   bool status = true;
   status = status && verify_min_value(StackYellowPages, 1, "StackYellowPages");
   status = status && verify_min_value(StackRedPages, 1, "StackRedPages");
-  status = status && verify_min_value(StackShadowPages, 1, "StackShadowPages");
+  // greater stack shadow pages can't generate instruction to bang stack
+  status = status && verify_interval(StackShadowPages, 1, 50, "StackShadowPages");
   return status;
 }
 

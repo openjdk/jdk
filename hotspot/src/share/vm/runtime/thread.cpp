@@ -2922,6 +2922,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // So that JDK version can be used as a discrimintor when parsing arguments
   JDK_Version_init();
 
+  // Update/Initialize System properties after JDK version number is known
+  Arguments::init_version_specific_system_properties();
+
   // Parse arguments
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
