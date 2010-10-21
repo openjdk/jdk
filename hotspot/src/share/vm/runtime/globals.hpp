@@ -327,10 +327,10 @@ class CommandLineFlags {
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
-  product(bool, UseMembar, false,                                           \
+  product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
-  /* Temporary: See 6948537 */                                             \
+  /* Temporary: See 6948537 */                                              \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
                                                                             \
@@ -821,6 +821,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, PrintJVMWarnings, false,                                    \
           "Prints warnings for unimplemented JVM functions")                \
+                                                                            \
+  product(bool, PrintWarnings, true,                                        \
+          "Prints JVM warnings to output stream")                           \
                                                                             \
   notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
           "Prints warnings for stalled SpinLocks")                          \
@@ -3542,7 +3545,7 @@ class CommandLineFlags {
   product(uintx, SharedDummyBlockSize, 512*M,                               \
           "Size of dummy block used to shift heap addresses (in bytes)")    \
                                                                             \
-  product(uintx, SharedReadWriteSize,  12*M,                                \
+  product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(13*M),      \
           "Size of read-write space in permanent generation (in bytes)")    \
                                                                             \
   product(uintx, SharedReadOnlySize,   10*M,                                \
