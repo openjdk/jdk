@@ -3601,7 +3601,9 @@ relocInfo_<arch>.hpp                    generate_platform_dependent_include
 relocator.cpp                           bytecodes.hpp
 relocator.cpp                           handles.inline.hpp
 relocator.cpp                           oop.inline.hpp
+relocator.cpp                           oopFactory.hpp
 relocator.cpp                           relocator.hpp
+relocator.cpp                           stackMapTableFormat.hpp
 relocator.cpp                           universe.inline.hpp
 
 relocator.hpp                           bytecodes.hpp
@@ -3907,6 +3909,8 @@ stackMapTable.hpp                       constantPoolOop.hpp
 stackMapTable.hpp                       globalDefinitions.hpp
 stackMapTable.hpp                       methodOop.hpp
 stackMapTable.hpp                       stackMapFrame.hpp
+
+stackMapTableFormat.hpp                 verificationType.hpp
 
 stackValue.cpp                          debugInfo.hpp
 stackValue.cpp                          frame.inline.hpp
