@@ -484,6 +484,9 @@ class Arguments : AllStatic {
   // System properties
   static void init_system_properties();
 
+  // Update/Initialize System properties after JDK version number is known
+  static void init_version_specific_system_properties();
+
   // Property List manipulation
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, const char* k, char* v);
