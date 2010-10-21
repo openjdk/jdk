@@ -758,7 +758,7 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
 
   OrderAccess::storestore();
 #ifdef SHARK
-  mh->_from_interpreted_entry = code->instructions_begin();
+  mh->_from_interpreted_entry = code->insts_begin();
 #else
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();

@@ -35,7 +35,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
   append_patching_stub(patch);
 
 #ifdef ASSERT
-  Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->bci());
+  Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->stack()->bci());
   if (patch->id() == PatchingStub::access_field_id) {
     switch (code) {
       case Bytecodes::_putstatic:
@@ -221,7 +221,7 @@ void LIR_Assembler::emit_block(BlockBegin* block) {
 #ifndef PRODUCT
   if (CommentedAssembly) {
     stringStream st;
-    st.print_cr(" block B%d [%d, %d]", block->block_id(), block->bci(), block->end()->bci());
+    st.print_cr(" block B%d [%d, %d]", block->block_id(), block->bci(), block->end()->printable_bci());
     _masm->block_comment(st.as_string());
   }
 #endif
@@ -312,7 +312,7 @@ void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo) {
 static ValueStack* debug_info(Instruction* ins) {
   StateSplit* ss = ins->as_StateSplit();
   if (ss != NULL) return ss->state();
-  return ins->lock_stack();
+  return ins->state_before();
 }
 
 void LIR_Assembler::process_debug_info(LIR_Op* op) {
@@ -327,8 +327,7 @@ void LIR_Assembler::process_debug_info(LIR_Op* op) {
   if (vstack == NULL)  return;
   if (_pending_non_safepoint != NULL) {
     // Got some old debug info.  Get rid of it.
-    if (_pending_non_safepoint->bci() == src->bci() &&
-        debug_info(_pending_non_safepoint) == vstack) {
+    if (debug_info(_pending_non_safepoint) == vstack) {
       _pending_non_safepoint_offset = pc_offset;
       return;
     }
@@ -358,7 +357,7 @@ static ValueStack* nth_oldest(ValueStack* s, int n, int& bci_result) {
     ValueStack* tc = t->caller_state();
     if (tc == NULL)  return s;
     t = tc;
-    bci_result = s->scope()->caller_bci();
+    bci_result = tc->bci();
     s = s->caller_state();
   }
 }
@@ -366,7 +365,7 @@ static ValueStack* nth_oldest(ValueStack* s, int n, int& bci_result) {
 void LIR_Assembler::record_non_safepoint_debug_info() {
   int         pc_offset = _pending_non_safepoint_offset;
   ValueStack* vstack    = debug_info(_pending_non_safepoint);
-  int         bci       = _pending_non_safepoint->bci();
+  int         bci       = vstack->bci();
 
   DebugInformationRecorder* debug_info = compilation()->debug_info_recorder();
   assert(debug_info->recording_non_safepoints(), "sanity");
@@ -380,7 +379,7 @@ void LIR_Assembler::record_non_safepoint_debug_info() {
     if (s == NULL)  break;
     IRScope* scope = s->scope();
     //Always pass false for reexecute since these ScopeDescs are never used for deopt
-    debug_info->describe_scope(pc_offset, scope->method(), s_bci, false/*reexecute*/);
+    debug_info->describe_scope(pc_offset, scope->method(), s->bci(), false/*reexecute*/);
   }
 
   debug_info->end_non_safepoint(pc_offset);

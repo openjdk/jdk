@@ -448,3 +448,7 @@ thread.cpp                              c1_Compiler.hpp
 top.hpp                                 c1_globals.hpp
 
 vmStructs.hpp                           c1_Runtime1.hpp
+
+c1_Canonicalizer.cpp                    c1_ValueStack.hpp
+
+c1_LIR.cpp                              c1_ValueStack.hpp
