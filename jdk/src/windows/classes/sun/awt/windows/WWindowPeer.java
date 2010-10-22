@@ -605,6 +605,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     private native void setOpacity(int iOpacity);
+    private float opacity = 1.0f;
 
     public void setOpacity(float opacity) {
         if (!((SunToolkit)((Window)target).getToolkit()).
@@ -613,7 +614,21 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             return;
         }
 
-        replaceSurfaceDataRecursively((Component)getTarget());
+        if (opacity < 0.0f || opacity > 1.0f) {
+            throw new IllegalArgumentException(
+                "The value of opacity should be in the range [0.0f .. 1.0f].");
+        }
+
+        if (((this.opacity == 1.0f && opacity <  1.0f) ||
+             (this.opacity <  1.0f && opacity == 1.0f)) &&
+            !Win32GraphicsEnvironment.isVistaOS())
+        {
+            // non-Vista OS: only replace the surface data if opacity status
+            // changed (see WComponentPeer.isAccelCapable() for more)
+            replaceSurfaceDataRecursively((Component)getTarget());
+        }
+
+        this.opacity = opacity;
 
         final int maxOpacity = 0xff;
         int iOpacity = (int)(opacity * maxOpacity);
@@ -655,7 +670,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
         boolean isVistaOS = Win32GraphicsEnvironment.isVistaOS();
 
-        if (!isVistaOS) {
+        if (this.isOpaque != isOpaque && !isVistaOS) {
             // non-Vista OS: only replace the surface data if the opacity
             // status changed (see WComponentPeer.isAccelCapable() for more)
             replaceSurfaceDataRecursively(target);
