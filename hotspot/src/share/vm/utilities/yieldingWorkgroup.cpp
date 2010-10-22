@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,29 +32,13 @@ class WorkData;
 
 YieldingFlexibleWorkGang::YieldingFlexibleWorkGang(
   const char* name, int workers, bool are_GC_task_threads) :
-  AbstractWorkGang(name, are_GC_task_threads, false) {
-  // Save arguments.
-  _total_workers = workers;
-  assert(_total_workers > 0, "Must have more than 1 worker");
+  FlexibleWorkGang(name, workers, are_GC_task_threads, false),
+    _yielded_workers(0) {}
 
-  _yielded_workers = 0;
-
-  if (TraceWorkGang) {
-    tty->print_cr("Constructing work gang %s with %d threads", name, workers);
-  }
-  _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, workers);
-  assert(gang_workers() != NULL, "Failed to allocate gang workers");
-  for (int worker = 0; worker < total_workers(); worker += 1) {
-    YieldingFlexibleGangWorker* new_worker =
-      new YieldingFlexibleGangWorker(this, worker);
-    assert(new_worker != NULL, "Failed to allocate YieldingFlexibleGangWorker");
-    _gang_workers[worker] = new_worker;
-    if (new_worker == NULL || !os::create_thread(new_worker, os::pgc_thread))
-      vm_exit_out_of_memory(0, "Cannot create worker GC thread. Out of system resources.");
-    if (!DisableStartThread) {
-      os::start_thread(new_worker);
-    }
-  }
+GangWorker* YieldingFlexibleWorkGang::allocate_worker(int which) {
+  YieldingFlexibleGangWorker* new_member =
+      new YieldingFlexibleGangWorker(this, which);
+  return (YieldingFlexibleGangWorker*) new_member;
 }
 
 // Run a task; returns when the task is done, or the workers yield,
@@ -142,6 +126,7 @@ void YieldingFlexibleWorkGang::start_task(YieldingFlexibleGangTask* new_task) {
     _active_workers = total_workers();
   }
   new_task->set_actual_size(_active_workers);
+  new_task->set_for_termination(_active_workers);
 
   assert(_started_workers == 0, "Tabula rasa non");
   assert(_finished_workers == 0, "Tabula rasa non");
@@ -161,22 +146,22 @@ void YieldingFlexibleWorkGang::wait_for_gang() {
   for (Status status = yielding_task()->status();
        status != COMPLETED && status != YIELDED && status != ABORTED;
        status = yielding_task()->status()) {
-    assert(started_workers() <= active_workers(), "invariant");
-    assert(finished_workers() <= active_workers(), "invariant");
-    assert(yielded_workers() <= active_workers(), "invariant");
+    assert(started_workers() <= total_workers(), "invariant");
+    assert(finished_workers() <= total_workers(), "invariant");
+    assert(yielded_workers() <= total_workers(), "invariant");
     monitor()->wait(Mutex::_no_safepoint_check_flag);
   }
   switch (yielding_task()->status()) {
     case COMPLETED:
     case ABORTED: {
-      assert(finished_workers() == active_workers(), "Inconsistent status");
+      assert(finished_workers() == total_workers(), "Inconsistent status");
       assert(yielded_workers() == 0, "Invariant");
       reset();   // for next task; gang<->task binding released
       break;
     }
     case YIELDED: {
       assert(yielded_workers() > 0, "Invariant");
-      assert(yielded_workers() + finished_workers() == active_workers(),
+      assert(yielded_workers() + finished_workers() == total_workers(),
              "Inconsistent counts");
       break;
     }
@@ -208,7 +193,6 @@ void YieldingFlexibleWorkGang::continue_task(
 void YieldingFlexibleWorkGang::reset() {
   _started_workers  = 0;
   _finished_workers = 0;
-  _active_workers   = 0;
   yielding_task()->set_gang(NULL);
   _task = NULL;    // unbind gang from task
 }
@@ -216,7 +200,7 @@ void YieldingFlexibleWorkGang::reset() {
 void YieldingFlexibleWorkGang::yield() {
   assert(task() != NULL, "Inconsistency; should have task binding");
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
-  assert(yielded_workers() < active_workers(), "Consistency check");
+  assert(yielded_workers() < total_workers(), "Consistency check");
   if (yielding_task()->status() == ABORTING) {
     // Do not yield; we need to abort as soon as possible
     // XXX NOTE: This can cause a performance pathology in the
@@ -227,7 +211,7 @@ void YieldingFlexibleWorkGang::yield() {
     // us to return at each potential yield point.
     return;
   }
-  if (++_yielded_workers + finished_workers() == active_workers()) {
+  if (++_yielded_workers + finished_workers() == total_workers()) {
     yielding_task()->set_status(YIELDED);
     monitor()->notify_all();
   } else {

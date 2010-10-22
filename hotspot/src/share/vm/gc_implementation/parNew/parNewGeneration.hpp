@@ -52,7 +52,7 @@ class ParScanThreadState {
   friend class ParScanThreadStateSet;
  private:
   ObjToScanQueue *_work_queue;
-  GrowableArray<oop>* _overflow_stack;
+  Stack<oop>* const _overflow_stack;
 
   ParGCAllocBuffer _to_space_alloc_buffer;
 
@@ -120,7 +120,7 @@ class ParScanThreadState {
   ParScanThreadState(Space* to_space_, ParNewGeneration* gen_,
                      Generation* old_gen_, int thread_num_,
                      ObjToScanQueueSet* work_queue_set_,
-                     GrowableArray<oop>** overflow_stack_set_,
+                     Stack<oop>* overflow_stacks_,
                      size_t desired_plab_sz_,
                      ParallelTaskTerminator& term_);
 
@@ -144,7 +144,7 @@ class ParScanThreadState {
   void trim_queues(int max_size);
 
   // Private overflow stack usage
-  GrowableArray<oop>* overflow_stack() { return _overflow_stack; }
+  Stack<oop>* overflow_stack() { return _overflow_stack; }
   bool take_from_overflow_stack();
   void push_on_overflow_stack(oop p);
 
@@ -301,7 +301,7 @@ class ParNewGeneration: public DefNewGeneration {
   ObjToScanQueueSet* _task_queues;
 
   // Per-worker-thread local overflow stacks
-  GrowableArray<oop>** _overflow_stacks;
+  Stack<oop>* _overflow_stacks;
 
   // Desired size of survivor space plab's
   PLABStats _plab_stats;
@@ -349,6 +349,8 @@ class ParNewGeneration: public DefNewGeneration {
 
     delete _task_queues;
   }
+
+  static bool in_use();
 
   virtual void ref_processor_init();
   virtual Generation::Name kind()        { return Generation::ParNew; }
