@@ -51,7 +51,13 @@ import javax.lang.model.util.SimpleTypeVisitor7;
  * @author Sucheta Dambalkar
  */
 
-public class TypeSignature{
+public class TypeSignature {
+    static class SignatureException extends Exception {
+        private static final long serialVersionUID = 1L;
+        SignatureException(String reason) {
+            super(reason);
+        }
+    }
 
     Elements elems;
 
@@ -78,14 +84,15 @@ public class TypeSignature{
     /*
      * Returns the type signature of a field according to JVM specs
      */
-    public String getTypeSignature(String javasignature){
+    public String getTypeSignature(String javasignature) throws SignatureException {
         return getParamJVMSignature(javasignature);
     }
 
     /*
      * Returns the type signature of a method according to JVM specs
      */
-    public String getTypeSignature(String javasignature, TypeMirror returnType){
+    public String getTypeSignature(String javasignature, TypeMirror returnType)
+            throws SignatureException {
         String signature = null; //Java type signature.
         String typeSignature = null; //Internal type signature.
         List<String> params = new ArrayList<String>(); //List of parameters.
@@ -166,7 +173,7 @@ public class TypeSignature{
     /*
      * Returns internal signature of a parameter.
      */
-    private String getParamJVMSignature(String paramsig) {
+    private String getParamJVMSignature(String paramsig) throws SignatureException {
         String paramJVMSig = "";
         String componentType ="";
 
@@ -197,7 +204,7 @@ public class TypeSignature{
     /*
      * Returns internal signature of a component.
      */
-    private String getComponentType(String componentType){
+    private String getComponentType(String componentType) throws SignatureException {
 
         String JVMSig = "";
 
@@ -216,8 +223,7 @@ public class TypeSignature{
                     TypeElement classNameDoc = elems.getTypeElement(componentType);
 
                     if(classNameDoc == null){
-                        System.out.println("Invalid class type for " + componentType);
-                        new Exception().printStackTrace();
+                        throw new SignatureException(componentType);
                     }else {
                         String classname = classNameDoc.getQualifiedName().toString();
                         String newclassname = classname.replace('.', '/');

@@ -1843,9 +1843,11 @@ public class Basic {
                     public void run() {
                         try { stdout.read(); }
                         catch (IOException e) {
+                            // Check that reader failed because stream was
+                            // asynchronously closed.
                             // e.printStackTrace();
                             if (EnglishUnix.is() &&
-                                ! (e.getMessage().matches(".*Bad file descriptor.*")))
+                                ! (e.getMessage().matches(".*Bad file.*")))
                                 unexpected(e);
                         }
                         catch (Throwable t) { unexpected(t); }}};

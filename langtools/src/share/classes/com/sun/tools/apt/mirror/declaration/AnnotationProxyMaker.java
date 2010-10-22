@@ -250,9 +250,13 @@ class AnnotationProxyMaker {
         /**
          * Sets "value" to an ExceptionProxy indicating a type mismatch.
          */
-        private void typeMismatch(final Method method, final Attribute attr) {
-            value = new ExceptionProxy() {
+        private void typeMismatch(Method method, final Attribute attr) {
+            class AnnotationTypeMismatchExceptionProxy extends ExceptionProxy {
                 private static final long serialVersionUID = 8473323277815075163L;
+                transient final Method method;
+                AnnotationTypeMismatchExceptionProxy(Method method) {
+                    this.method = method;
+                }
                 public String toString() {
                     return "<error>";   // eg:  @Anno(value=<error>)
                 }
@@ -260,7 +264,8 @@ class AnnotationProxyMaker {
                     return new AnnotationTypeMismatchException(method,
                                 attr.type.toString());
                 }
-            };
+            }
+            value = new AnnotationTypeMismatchExceptionProxy(method);
         }
     }
 

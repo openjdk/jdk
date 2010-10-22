@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,26 @@ class Generation;
 class GenRemSet;
 class CSpaceCounters;
 
-// PermGen models the part of the heap
+// PermGen models the part of the heap used to allocate class meta-data.
 
 class PermGen : public CHeapObj {
   friend class VMStructs;
  protected:
   size_t _capacity_expansion_limit;  // maximum expansion allowed without a
                                      // full gc occurring
+  void set_capacity_expansion_limit(size_t limit) {
+    assert_locked_or_safepoint(Heap_lock);
+    _capacity_expansion_limit = limit;
+  }
 
   HeapWord* mem_allocate_in_gen(size_t size, Generation* gen);
+  // Along with mem_allocate_in_gen() above, implements policy for
+  // "scheduling" allocation/expansion/collection of the perm gen.
+  // The virtual method request_...() below can be overridden by
+  // subtypes that want to implement a different expansion/collection
+  // policy from the default provided.
+  virtual HeapWord* request_expand_and_allocate(Generation* gen, size_t size,
+                                                GCCause::Cause prev_cause);
 
  public:
   enum Name {

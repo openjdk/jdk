@@ -3094,11 +3094,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
-  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
   assert_different_registers(mtype_reg, mh_reg, temp_reg);
   // compare method type against that of the receiver
   RegisterOrConstant mhtype_offset = delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg);
-  ld_ptr(mh_reg, mhtype_offset, temp_reg);
+  load_heap_oop(mh_reg, mhtype_offset, temp_reg);
   cmp(temp_reg, mtype_reg);
   br(Assembler::notEqual, false, Assembler::pn, wrong_method_type);
   delayed()->nop();
@@ -3112,16 +3111,15 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
 void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
                                                 Register temp_reg) {
   assert_different_registers(vmslots_reg, mh_reg, temp_reg);
-  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
   // load mh.type.form.vmslots
   if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
     // hoist vmslots into every mh to avoid dependent load chain
-    ld(    Address(mh_reg,    delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)),   vmslots_reg);
+    ld(           Address(mh_reg,    delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)),   vmslots_reg);
   } else {
     Register temp2_reg = vmslots_reg;
-    ld_ptr(Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
-    ld_ptr(Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
-    ld(    Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
+    load_heap_oop(Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
+    load_heap_oop(Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
+    ld(           Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
   }
 }
 
@@ -3130,9 +3128,8 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
   assert(mh_reg == G3_method_handle, "caller must put MH object in G3");
   assert_different_registers(mh_reg, temp_reg);
 
-  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
-
   // pick out the interpreted side of the handler
+  // NOTE: vmentry is not an oop!
   ld_ptr(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg), temp_reg);
 
   // off we go...
@@ -4651,6 +4648,11 @@ void MacroAssembler::load_heap_oop(Register s1, int simm13a, Register d) {
   } else {
     ld_ptr(s1, simm13a, d);
   }
+}
+
+void MacroAssembler::load_heap_oop(Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_constant())  load_heap_oop(s1, s2.as_constant(), d);
+  else                   load_heap_oop(s1, s2.as_register(), d);
 }
 
 void MacroAssembler::store_heap_oop(Register d, Register s1, Register s2) {

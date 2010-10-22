@@ -2586,6 +2586,8 @@ class StubGenerator: public StubCodeGenerator {
     __ restore();
 #endif
 
+    assert_clean_int(O2_count, G1);     // Make sure 'count' is clean int.
+
 #ifdef ASSERT
     // caller guarantees that the arrays really are different
     // otherwise, we would have to make conjoint checks
@@ -2599,8 +2601,6 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(G4, O4);
     }
 #endif //ASSERT
-
-    assert_clean_int(O2_count, G1);     // Make sure 'count' is clean int.
 
     checkcast_copy_entry = __ pc();
     // caller can pass a 64-bit byte count here (from generic stub)
