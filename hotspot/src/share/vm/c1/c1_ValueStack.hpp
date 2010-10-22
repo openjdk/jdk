@@ -23,9 +23,23 @@
  */
 
 class ValueStack: public CompilationResourceObj {
+ public:
+  enum Kind {
+    Parsing,             // During abstract interpretation in GraphBuilder
+    CallerState,         // Caller state when inlining
+    StateBefore,         // Before before execution of instruction
+    StateAfter,          // After execution of instruction
+    ExceptionState,      // Exception handling of instruction
+    EmptyExceptionState, // Exception handling of instructions not covered by an xhandler
+    BlockBeginState      // State of BlockBegin instruction with phi functions of this block
+  };
+
  private:
   IRScope* _scope;                               // the enclosing scope
-  bool     _lock_stack;                          // indicates that this ValueStack is for an exception site
+  ValueStack* _caller_state;
+  int      _bci;
+  Kind     _kind;
+
   Values   _locals;                              // the locals
   Values   _stack;                               // the expression stack
   Values   _locks;                               // the monitor stack (holding the locked values)
@@ -36,100 +50,84 @@ class ValueStack: public CompilationResourceObj {
   }
 
   Value check(ValueTag tag, Value t, Value h) {
-    assert(h->as_HiWord()->lo_word() == t, "incorrect stack pair");
+    assert(h == NULL, "hi-word of doubleword value must be NULL");
     return check(tag, t);
   }
 
   // helper routine
   static void apply(Values list, ValueVisitor* f);
 
+  // for simplified copying
+  ValueStack(ValueStack* copy_from, Kind kind, int bci);
+
  public:
   // creation
-  ValueStack(IRScope* scope, int locals_size, int max_stack_size);
+  ValueStack(IRScope* scope, ValueStack* caller_state);
 
-  // merging
-  ValueStack* copy();                            // returns a copy of this w/ cleared locals
-  ValueStack* copy_locks();                      // returns a copy of this w/ cleared locals and stack
-                                                 // Note that when inlining of methods with exception
-                                                 // handlers is enabled, this stack may have a
-                                                 // non-empty expression stack (size defined by
-                                                 // scope()->lock_stack_size())
+  ValueStack* copy()                             { return new ValueStack(this, _kind, _bci); }
+  ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci); }
+  ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99); }
+
+  void set_caller_state(ValueStack* s)           {
+    assert(kind() == EmptyExceptionState ||
+           (Compilation::current()->env()->jvmti_can_access_local_variables() && kind() == ExceptionState),
+           "only EmptyExceptionStates can be modified");
+    _caller_state = s;
+  }
+
   bool is_same(ValueStack* s);                   // returns true if this & s's types match (w/o checking locals)
-  bool is_same_across_scopes(ValueStack* s);     // same as is_same but returns true even if stacks are in different scopes (used for block merging w/inlining)
 
   // accessors
   IRScope* scope() const                         { return _scope; }
-  bool is_lock_stack() const                     { return _lock_stack; }
+  ValueStack* caller_state() const               { return _caller_state; }
+  int bci() const                                { return _bci; }
+  Kind kind() const                              { return _kind; }
+
   int locals_size() const                        { return _locals.length(); }
   int stack_size() const                         { return _stack.length(); }
   int locks_size() const                         { return _locks.length(); }
-  int max_stack_size() const                     { return _stack.capacity(); }
   bool stack_is_empty() const                    { return _stack.is_empty(); }
   bool no_active_locks() const                   { return _locks.is_empty(); }
-  ValueStack* caller_state() const;
+  int total_locks_size() const;
 
   // locals access
   void clear_locals();                           // sets all locals to NULL;
 
-  // Kill local i.  Also kill local i+1 if i was a long or double.
   void invalidate_local(int i) {
-    Value x = _locals.at(i);
-    if (x != NULL && x->type()->is_double_word()) {
-      assert(_locals.at(i + 1)->as_HiWord()->lo_word() == x, "locals inconsistent");
-      _locals.at_put(i + 1, NULL);
-    }
+    assert(_locals.at(i)->type()->is_single_word() ||
+           _locals.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
     _locals.at_put(i, NULL);
   }
 
-
-  Value load_local(int i) const {
+  Value local_at(int i) const {
     Value x = _locals.at(i);
-    if (x != NULL && x->type()->is_illegal()) return NULL;
-    assert(x == NULL || x->as_HiWord() == NULL, "index points to hi word");
-    assert(x == NULL || x->type()->is_illegal() || x->type()->is_single_word() || x == _locals.at(i+1)->as_HiWord()->lo_word(), "locals inconsistent");
+    assert(x == NULL || x->type()->is_single_word() ||
+           _locals.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
     return x;
   }
 
-  Value local_at(int i) const { return _locals.at(i); }
-
-  // Store x into local i.
   void store_local(int i, Value x) {
-    // Kill the old value
-    invalidate_local(i);
-    _locals.at_put(i, x);
-
-    // Writing a double word can kill other locals
-    if (x != NULL && x->type()->is_double_word()) {
-      // If x + i was the start of a double word local then kill i + 2.
-      Value x2 = _locals.at(i + 1);
-      if (x2 != NULL && x2->type()->is_double_word()) {
-        _locals.at_put(i + 2, NULL);
-      }
-
-      // If x is a double word local, also update i + 1.
-#ifdef ASSERT
-      _locals.at_put(i + 1, x->hi_word());
-#else
-      _locals.at_put(i + 1, NULL);
-#endif
-    }
-    // If x - 1 was the start of a double word local then kill i - 1.
+    // When overwriting local i, check if i - 1 was the start of a
+    // double word local and kill it.
     if (i > 0) {
       Value prev = _locals.at(i - 1);
       if (prev != NULL && prev->type()->is_double_word()) {
         _locals.at_put(i - 1, NULL);
       }
     }
-  }
 
-  void replace_locals(ValueStack* with);
+    _locals.at_put(i, x);
+    if (x->type()->is_double_word()) {
+      // hi-word of doubleword value is always NULL
+      _locals.at_put(i + 1, NULL);
+    }
+  }
 
   // stack access
   Value stack_at(int i) const {
     Value x = _stack.at(i);
-    assert(x->as_HiWord() == NULL, "index points to hi word");
     assert(x->type()->is_single_word() ||
-           x->subst() == _stack.at(i+1)->as_HiWord()->lo_word(), "stack inconsistent");
+           _stack.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
     return x;
   }
 
@@ -146,7 +144,6 @@ class ValueStack: public CompilationResourceObj {
   void values_do(ValueVisitor* f);
 
   // untyped manipulation (for dup_x1, etc.)
-  void clear_stack()                             { _stack.clear(); }
   void truncate_stack(int size)                  { _stack.trunc_to(size); }
   void raw_push(Value t)                         { _stack.push(t); }
   Value raw_pop()                                { return _stack.pop(); }
@@ -156,15 +153,8 @@ class ValueStack: public CompilationResourceObj {
   void fpush(Value t)                            { _stack.push(check(floatTag  , t)); }
   void apush(Value t)                            { _stack.push(check(objectTag , t)); }
   void rpush(Value t)                            { _stack.push(check(addressTag, t)); }
-#ifdef ASSERT
-  // in debug mode, use HiWord for 2-word values
-  void lpush(Value t)                            { _stack.push(check(longTag   , t)); _stack.push(new HiWord(t)); }
-  void dpush(Value t)                            { _stack.push(check(doubleTag , t)); _stack.push(new HiWord(t)); }
-#else
-  // in optimized mode, use NULL for 2-word values
   void lpush(Value t)                            { _stack.push(check(longTag   , t)); _stack.push(NULL); }
   void dpush(Value t)                            { _stack.push(check(doubleTag , t)); _stack.push(NULL); }
-#endif // ASSERT
 
   void push(ValueType* type, Value t) {
     switch (type->tag()) {
@@ -182,15 +172,8 @@ class ValueStack: public CompilationResourceObj {
   Value fpop()                                   { return check(floatTag  , _stack.pop()); }
   Value apop()                                   { return check(objectTag , _stack.pop()); }
   Value rpop()                                   { return check(addressTag, _stack.pop()); }
-#ifdef ASSERT
-  // in debug mode, check for HiWord consistency
   Value lpop()                                   { Value h = _stack.pop(); return check(longTag  , _stack.pop(), h); }
   Value dpop()                                   { Value h = _stack.pop(); return check(doubleTag, _stack.pop(), h); }
-#else
-  // in optimized mode, ignore HiWord since it is NULL
-  Value lpop()                                   { _stack.pop(); return check(longTag  , _stack.pop()); }
-  Value dpop()                                   { _stack.pop(); return check(doubleTag, _stack.pop()); }
-#endif // ASSERT
 
   Value pop(ValueType* type) {
     switch (type->tag()) {
@@ -208,15 +191,9 @@ class ValueStack: public CompilationResourceObj {
   Values* pop_arguments(int argument_size);
 
   // locks access
-  int lock  (IRScope* scope, Value obj);
+  int lock  (Value obj);
   int unlock();
   Value lock_at(int i) const                     { return _locks.at(i); }
-
-  // Inlining support
-  ValueStack* push_scope(IRScope* scope);         // "Push" new scope, returning new resulting stack
-                                                  // Preserves stack and locks, destroys locals
-  ValueStack* pop_scope();                        // "Pop" topmost scope, returning new resulting stack
-                                                  // Preserves stack and locks, destroys locals
 
   // SSA form IR support
   void setup_phi_for_stack(BlockBegin* b, int index);
@@ -298,16 +275,18 @@ class ValueStack: public CompilationResourceObj {
 {                                                                                              \
   int cur_index;                                                                               \
   ValueStack* cur_state = v_state;                                                             \
-  Value v_value;                                                                                 \
-  {                                                                                            \
-    for_each_stack_value(cur_state, cur_index, v_value) {                                      \
-      v_code;                                                                                  \
-    }                                                                                          \
-  }                                                                                            \
+  Value v_value;                                                                               \
   for_each_state(cur_state) {                                                                  \
-    for_each_local_value(cur_state, cur_index, v_value) {                                      \
-      v_code;                                                                                  \
+    {                                                                                            \
+      for_each_local_value(cur_state, cur_index, v_value) {                                      \
+        v_code;                                                                                  \
+      }                                                                                          \
     }                                                                                          \
+    {                                                                                            \
+      for_each_stack_value(cur_state, cur_index, v_value) {                                      \
+        v_code;                                                                                  \
+      }                                                                                          \
+    }                                                                                            \
   }                                                                                            \
 }
 
