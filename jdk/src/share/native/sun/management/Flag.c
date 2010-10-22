@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <jni.h>
 #include "management.h"
 #include "sun_management_Flag.h"
@@ -80,8 +81,6 @@ JNIEXPORT jint JNICALL
 Java_sun_management_Flag_getFlags
   (JNIEnv *env, jclass cls, jobjectArray names, jobjectArray flags, jint count)
 {
-    char errmsg[128];
-
     jint num_flags, i, index;
     jmmVMGlobal* globals;
     size_t gsize;

@@ -2170,6 +2170,16 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     heap->update_counters();
   }
 
+#ifdef ASSERT
+  for (size_t i = 0; i < ParallelGCThreads + 1; ++i) {
+    ParCompactionManager* const cm =
+      ParCompactionManager::manager_array(int(i));
+    assert(cm->marking_stack()->is_empty(),       "should be empty");
+    assert(cm->region_stack()->is_empty(),        "should be empty");
+    assert(cm->revisit_klass_stack()->is_empty(), "should be empty");
+  }
+#endif // ASSERT
+
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
     gclog_or_tty->print(" VerifyAfterGC:");
@@ -2449,7 +2459,7 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
   const unsigned int task_count = MAX2(parallel_gc_threads, 1U);
   for (unsigned int j = 0; j < task_count; j++) {
-    q->enqueue(new DrainStacksCompactionTask());
+    q->enqueue(new DrainStacksCompactionTask(j));
   }
 
   // Find all regions that are available (can be filled immediately) and
@@ -2711,21 +2721,22 @@ PSParallelCompact::follow_weak_klass_links() {
   // All klasses on the revisit stack are marked at this point.
   // Update and follow all subklass, sibling and implementor links.
   if (PrintRevisitStats) {
-    gclog_or_tty->print_cr("#classes in system dictionary = %d", SystemDictionary::number_of_classes());
+    gclog_or_tty->print_cr("#classes in system dictionary = %d",
+                           SystemDictionary::number_of_classes());
   }
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     ParCompactionManager* cm = ParCompactionManager::manager_array(i);
     KeepAliveClosure keep_alive_closure(cm);
-    int length = cm->revisit_klass_stack()->length();
+    Stack<Klass*>* const rks = cm->revisit_klass_stack();
     if (PrintRevisitStats) {
-      gclog_or_tty->print_cr("Revisit klass stack[%d] length = %d", i, length);
+      gclog_or_tty->print_cr("Revisit klass stack[%u] length = " SIZE_FORMAT,
+                             i, rks->size());
     }
-    for (int j = 0; j < length; j++) {
-      cm->revisit_klass_stack()->at(j)->follow_weak_klass_links(
-        is_alive_closure(),
-        &keep_alive_closure);
+    while (!rks->is_empty()) {
+      Klass* const k = rks->pop();
+      k->follow_weak_klass_links(is_alive_closure(), &keep_alive_closure);
     }
-    // revisit_klass_stack is cleared in reset()
+
     cm->follow_marking_stacks();
   }
 }
@@ -2744,19 +2755,20 @@ void PSParallelCompact::follow_mdo_weak_refs() {
   // we can visit and clear any weak references from MDO's which
   // we memoized during the strong marking phase.
   if (PrintRevisitStats) {
-    gclog_or_tty->print_cr("#classes in system dictionary = %d", SystemDictionary::number_of_classes());
+    gclog_or_tty->print_cr("#classes in system dictionary = %d",
+                           SystemDictionary::number_of_classes());
   }
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     ParCompactionManager* cm = ParCompactionManager::manager_array(i);
-    GrowableArray<DataLayout*>* rms = cm->revisit_mdo_stack();
-    int length = rms->length();
+    Stack<DataLayout*>* rms = cm->revisit_mdo_stack();
     if (PrintRevisitStats) {
-      gclog_or_tty->print_cr("Revisit MDO stack[%d] length = %d", i, length);
+      gclog_or_tty->print_cr("Revisit MDO stack[%u] size = " SIZE_FORMAT,
+                             i, rms->size());
     }
-    for (int j = 0; j < length; j++) {
-      rms->at(j)->follow_weak_refs(is_alive_closure());
+    while (!rms->is_empty()) {
+      rms->pop()->follow_weak_refs(is_alive_closure());
     }
-    // revisit_mdo_stack is cleared in reset()
+
     cm->follow_marking_stacks();
   }
 }

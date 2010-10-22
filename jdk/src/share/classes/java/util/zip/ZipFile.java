@@ -85,8 +85,7 @@ class ZipFile implements ZipConstants, Closeable {
     static {
         // A system prpperty to disable mmap use to avoid vm crash when
         // in-use zip file is accidently overwritten by others.
-        String prop = AccessController.doPrivileged(
-            new GetPropertyAction("sun.zip.disableMemoryMapping"));
+        String prop = sun.misc.VM.getSavedProperty("sun.zip.disableMemoryMapping");
         usemmap = (prop == null ||
                    !(prop.length() == 0 || prop.equalsIgnoreCase("true")));
     }
