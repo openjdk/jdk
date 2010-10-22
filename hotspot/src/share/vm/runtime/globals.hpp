@@ -1585,7 +1585,7 @@ class CommandLineFlags {
           "(Temporary, subject to experimentation)"                         \
           "Nominal minimum work per abortable preclean iteration")          \
                                                                             \
-  product(intx, CMSAbortablePrecleanWaitMillis, 100,                        \
+  manageable(intx, CMSAbortablePrecleanWaitMillis, 100,                     \
           "(Temporary, subject to experimentation)"                         \
           " Time that we sleep between iterations when not given"           \
           " enough work per iteration")                                     \
@@ -1677,7 +1677,7 @@ class CommandLineFlags {
   product(uintx, CMSWorkQueueDrainThreshold, 10,                            \
           "Don't drain below this size per parallel worker/thief")          \
                                                                             \
-  product(intx, CMSWaitDuration, 2000,                                      \
+  manageable(intx, CMSWaitDuration, 2000,                                   \
           "Time in milliseconds that CMS thread waits for young GC")        \
                                                                             \
   product(bool, CMSYield, true,                                             \
