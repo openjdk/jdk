@@ -1786,10 +1786,6 @@ class CommandLineFlags {
   notproduct(bool, GCALotAtAllSafepoints, false,                            \
           "Enforce ScavengeALot/GCALot at all potential safepoints")        \
                                                                             \
-  product(bool, HandlePromotionFailure, true,                               \
-          "The youngest generation collection does not require "            \
-          "a guarantee of full promotion of all live objects.")             \
-                                                                            \
   product(bool, PrintPromotionFailure, false,                               \
           "Print additional diagnostic information following "              \
           " promotion failure")                                             \
@@ -3002,9 +2998,6 @@ class CommandLineFlags {
                                                                             \
   product(intx, NewRatio, 2,                                                \
           "Ratio of new/old generation sizes")                              \
-                                                                            \
-  product(uintx, MaxLiveObjectEvacuationRatio, 100,                         \
-          "Max percent of eden objects that will be live at scavenge")      \
                                                                             \
   product_pd(uintx, NewSizeThreadIncrease,                                  \
           "Additional size added to desired new generation size per "       \

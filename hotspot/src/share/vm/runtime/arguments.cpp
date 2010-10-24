@@ -185,6 +185,10 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
                            JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
   { "UseDepthFirstScavengeOrder",
                            JDK_Version::jdk_update(6,22), JDK_Version::jdk(7) },
+  { "HandlePromotionFailure",
+                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
+  { "MaxLiveObjectEvacuationRatio",
+                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1722,8 +1726,6 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  status = status && verify_percentage(MaxLiveObjectEvacuationRatio,
-                              "MaxLiveObjectEvacuationRatio");
   status = status && verify_percentage(AdaptiveSizePolicyWeight,
                               "AdaptiveSizePolicyWeight");
   status = status && verify_percentage(AdaptivePermSizeWeight, "AdaptivePermSizeWeight");
