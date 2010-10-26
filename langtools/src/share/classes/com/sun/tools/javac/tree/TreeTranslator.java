@@ -368,8 +368,8 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
-    public void visitTypeDisjoint(JCTypeDisjoint tree) {
-        tree.components = translate(tree.components);
+    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+        tree.alternatives = translate(tree.alternatives);
         result = tree;
     }
 
