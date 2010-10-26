@@ -119,7 +119,7 @@ public class TreeInfo {
     }
 
     public static boolean isMultiCatch(JCCatch catchClause) {
-        return catchClause.param.vartype.getTag() == JCTree.TYPEDISJOINT;
+        return catchClause.param.vartype.getTag() == JCTree.TYPEDISJUNCTION;
     }
 
     /** Is statement an initializer for a synthetic field?

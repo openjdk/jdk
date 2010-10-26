@@ -28,13 +28,13 @@ package com.sun.source.tree;
 import java.util.List;
 
 /**
- * A tree node for a disjoint type expression in a multicatch var declaration.
+ * A tree node for a disjunctive type expression in a multicatch var declaration.
  *
  *
  * @author Maurizio Cimadamore
  *
  * @since 1.7
  */
-public interface DisjointTypeTree extends Tree {
-    List<? extends Tree> getTypeComponents();
+public interface DisjunctiveTypeTree extends Tree {
+    List<? extends Tree> getTypeAlternatives();
 }

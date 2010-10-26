@@ -1827,7 +1827,7 @@ public class JavacParser implements Parser {
         JCModifiers mods = optFinal(Flags.PARAMETER);
         List<JCExpression> catchTypes = catchTypes();
         JCExpression paramType = catchTypes.size() > 1 ?
-                toP(F.at(catchTypes.head.getStartPosition()).TypeDisjoint(catchTypes)) :
+                toP(F.at(catchTypes.head.getStartPosition()).TypeDisjunction(catchTypes)) :
                 catchTypes.head;
         JCVariableDecl formal = variableDeclaratorId(mods, paramType);
         accept(RPAREN);
