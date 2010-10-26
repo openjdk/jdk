@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 6414633 6440109
  * @summary Only the first processor message at a source location is reported
- * @build A T6414633
+ * @library ../../lib
+ * @build    JavacTestingAbstractProcessor A T6414633
  * @run main T6414633
  */
 
@@ -55,8 +56,7 @@ public class T6414633 {
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, A.class.getName()+".java")));
         String[] opts = { "-proc:only",
                           "-processor", A.class.getName(),
-                          "-source", "1.6",
-                          "-classpath", testClasses };
+                          "-classpath", testClasses + System.getProperty("path.separator") + "../../lib" };
         JavacTask task = tool.getTask(null, fm, dl, Arrays.asList(opts), null, files);
         task.call();
 
