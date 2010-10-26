@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
 
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.source.util.AbstractTypeProcessor;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
@@ -78,6 +79,8 @@ import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
+import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 
 /**
  * Objects of this class hold and manage the state needed to support
@@ -159,15 +162,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         source = Source.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         options = Options.instance(context);
-        printProcessorInfo = options.get("-XprintProcessorInfo") != null;
-        printRounds = options.get("-XprintRounds") != null;
-        verbose = options.get("-verbose") != null;
-        lint = options.lint("processing");
-        procOnly = options.get("-proc:only") != null ||
-            options.get("-Xprint") != null;
-        fatalErrors = options.get("fatalEnterError") != null;
-        showResolveErrors = options.get("showResolveErrors") != null;
-        werror = options.get("-Werror") != null;
+        printProcessorInfo = options.isSet(XPRINTPROCESSORINFO);
+        printRounds = options.isSet(XPRINTROUNDS);
+        verbose = options.isSet(VERBOSE);
+        lint = Lint.instance(context).isEnabled(PROCESSING);
+        procOnly = options.isSet(PROC, "only") || options.isSet(XPRINT);
+        fatalErrors = options.isSet("fatalEnterError");
+        showResolveErrors = options.isSet("showResolveErrors");
+        werror = options.isSet(WERROR);
         platformAnnotations = initPlatformAnnotations();
         foundTypeProcessors = false;
 
@@ -199,7 +201,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         Log   log   = Log.instance(context);
         Iterator<? extends Processor> processorIterator;
 
-        if (options.get("-Xprint") != null) {
+        if (options.isSet(XPRINT)) {
             try {
                 Processor processor = PrintingProcessor.class.newInstance();
                 processorIterator = List.of(processor).iterator();
@@ -212,7 +214,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } else if (processors != null) {
             processorIterator = processors.iterator();
         } else {
-            String processorNames = options.get("-processor");
+            String processorNames = options.get(PROCESSOR);
             JavaFileManager fileManager = context.get(JavaFileManager.class);
             try {
                 // If processorpath is not explicitly set, use the classpath.
@@ -263,7 +265,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ? standardFileManager.getLocation(ANNOTATION_PROCESSOR_PATH)
                 : standardFileManager.getLocation(CLASS_PATH);
 
-            if (needClassLoader(options.get("-processor"), workingPath) )
+            if (needClassLoader(options.get(PROCESSOR), workingPath) )
                 handleException(key, e);
 
         } else {
@@ -744,7 +746,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         psi.runContributingProcs(renv);
 
         // Debugging
-        if (options.get("displayFilerState") != null)
+        if (options.isSet("displayFilerState"))
             filer.displayState();
     }
 
@@ -1102,6 +1104,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (task != null) {
                 next.put(JavacTaskImpl.class, task);
                 task.updateContext(next);
+            }
+
+            JavacTrees trees = context.get(JavacTrees.class);
+            if (trees != null) {
+                next.put(JavacTrees.class, trees);
+                trees.updateContext(next);
             }
 
             context.clear();

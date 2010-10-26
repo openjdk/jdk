@@ -20,7 +20,7 @@
 <product_parent_urn>urn:uuid:fdc90b21-018d-4cab-b866-612c7c119ed3</product_parent_urn>
 <product_parent>Java Platform Standard Edition 6 (Java SE 6)</product_parent>
 <product_defined_inst_id>id=1.6.0-internal-b00 sparc,dir=/myjdk/solaris-sparc</product_defined_inst_id>
-<product_vendor>Sun Microsystems</product_vendor>
+<product_vendor>Oracle Corporation</product_vendor>
 <platform_arch>sparc</platform_arch>
 <timestamp>2007-11-13 00:49:01 GMT</timestamp>
 <container>global</container>
