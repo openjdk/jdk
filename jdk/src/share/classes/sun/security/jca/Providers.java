@@ -159,15 +159,18 @@ public class Providers {
      * could not be loaded) removed. This is the list we need to
      * present to applications.
      */
-    public static synchronized ProviderList getFullProviderList() {
-        ProviderList list = getThreadProviderList();
-        if (list != null) {
-            ProviderList newList = list.removeInvalid();
-            if (newList != list) {
-                changeThreadProviderList(newList);
-                list = newList;
+    public static ProviderList getFullProviderList() {
+        ProviderList list;
+        synchronized (Providers.class) {
+            list = getThreadProviderList();
+            if (list != null) {
+                ProviderList newList = list.removeInvalid();
+                if (newList != list) {
+                    changeThreadProviderList(newList);
+                    list = newList;
+                }
+                return list;
             }
-            return list;
         }
         list = getSystemProviderList();
         ProviderList newList = list.removeInvalid();

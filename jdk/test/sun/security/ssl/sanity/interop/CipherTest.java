@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,10 +115,11 @@ public class CipherTest {
         }
 
         boolean isEnabled() {
-//          return cipherSuite.equals("SSL_RSA_WITH_RC4_128_MD5") &&
-//              (clientAuth != null);
-//      return cipherSuite.indexOf("_RSA_") != -1;
-//      return cipherSuite.indexOf("DH_anon") != -1;
+            // ignore SCSV
+            if (cipherSuite.equals("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+                return false;
+            }
+
             return true;
         }
 

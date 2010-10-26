@@ -652,7 +652,10 @@ public class SyncFactory {
      * required
      * @throws java.lang.SecurityException if a security manager exists and its
      *   {@code checkPermission} method denies calling {@code setLogger}
+     * @throws java.util.logging.LoggingPermission if a security manager exists and its
+     *   {@code checkPermission} method denies calling {@code setLevel}
      * @see SecurityManager#checkPermission
+     * @see LoggingPermission
      */
     public static void setLogger(Logger logger, Level level) {
         // singleton
