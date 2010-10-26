@@ -1053,7 +1053,7 @@ public class Attr extends JCTree.Visitor {
                 if ((c.param.sym.flags() & FINAL) == 0) {
                     log.error(c.param.pos(), "multicatch.param.must.be.final", c.param.sym);
                 }
-                c.param.sym.flags_field = c.param.sym.flags() | DISJOINT;
+                c.param.sym.flags_field = c.param.sym.flags() | DISJUNCTION;
             }
             if (c.param.sym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
@@ -2839,9 +2839,9 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, TYP, pkind, pt);
     }
 
-    public void visitTypeDisjoint(JCTypeDisjoint tree) {
-        List<Type> componentTypes = attribTypes(tree.components, env);
-        tree.type = result = check(tree, types.lub(componentTypes), TYP, pkind, pt);
+    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+        List<Type> alternatives = attribTypes(tree.alternatives, env);
+        tree.type = result = check(tree, types.lub(alternatives), TYP, pkind, pt);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {
