@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,22 @@
  * questions.
  */
 
-@Deprecated
-class A extends Missing {
+import java.util.List;
+import java.util.Vector;
+
+class test {
+
+    public String m(List<? extends String> v, String s ) {
+        return null;
+    }
+
+    public String m2(Vector<String> vs, String s) {
+        return null;
+    }
+
+    public void m3(testclass<String>,
+}
+
+class testclass<T> {
+    T t;
 }

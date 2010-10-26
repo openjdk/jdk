@@ -40,7 +40,7 @@ import java.util.*;
  *      compiler.properties bundle. A list of exceptions may be given in the
  *      not-yet.txt file. Entries on the not-yet.txt list should not be
  *      covered by examples.
- * When new keys are added to the resource buncle, it is strongly recommended
+ * When new keys are added to the resource bundle, it is strongly recommended
  * that corresponding new examples be added here, if at all practical, instead
  * of simply and lazily being added to the not-yet.txt list.
  */
