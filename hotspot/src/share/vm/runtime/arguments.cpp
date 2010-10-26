@@ -2979,6 +2979,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   UseCompressedOops = false;
 #endif
 
+#if defined(_LP64)
+  if ((DumpSharedSpaces || RequireSharedSpaces) && UseCompressedOops) {
+    // Disable compressed oops with shared spaces
+    UseCompressedOops = false;
+  }
+#endif
+
   // Set object alignment values.
   set_object_alignment();
 

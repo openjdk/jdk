@@ -56,29 +56,34 @@ public class PrintFileTree {
 
         final boolean reportCycles = printCycles;
         Files.walkFileTree(dir, options, Integer.MAX_VALUE, new FileVisitor<FileRef>() {
-            public FileVisitResult preVisitDirectory(FileRef dir) {
+            @Override
+            public FileVisitResult preVisitDirectory(FileRef dir, BasicFileAttributes attrs) {
                 System.out.println(dir);
                 return FileVisitResult.CONTINUE;
             }
-            public FileVisitResult preVisitDirectoryFailed(FileRef dir, IOException exc) {
-                exc.printStackTrace();
-                return FileVisitResult.CONTINUE;
-            }
+            @Override
             public FileVisitResult visitFile(FileRef file, BasicFileAttributes attrs) {
                 if (!attrs.isDirectory() || reportCycles)
                     System.out.println(file);
                 return FileVisitResult.CONTINUE;
             }
-            public FileVisitResult postVisitDirectory(FileRef dir, IOException exc) {
-                if (exc != null) {
-                    exc.printStackTrace();
-                    return FileVisitResult.TERMINATE;
-                }
+            @Override
+            public FileVisitResult postVisitDirectory(FileRef dir, IOException exc)
+                throws IOException
+            {
+                if (exc != null)
+                    throw exc;
                 return FileVisitResult.CONTINUE;
             }
-            public FileVisitResult visitFileFailed(FileRef file, IOException exc) {
-                exc.printStackTrace();
-                return FileVisitResult.TERMINATE;
+            @Override
+            public FileVisitResult visitFileFailed(FileRef file, IOException exc)
+                throws IOException
+            {
+                if (reportCycles && (exc instanceof FileSystemLoopException)) {
+                    System.out.println(file);
+                    return FileVisitResult.CONTINUE;
+                }
+                throw exc;
             }
         });
     }
