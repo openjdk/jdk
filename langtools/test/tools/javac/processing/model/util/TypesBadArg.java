@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug     6345812
  * @summary Validate argument kinds in Types utilities
  * @author  Scott Seligman
- * @build   TypesBadArg
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor TypesBadArg
  * @compile -processor TypesBadArg -proc:only TypesBadArg.java
  */
 
@@ -36,14 +37,8 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-@SupportedAnnotationTypes("*")
-public class TypesBadArg extends AbstractProcessor {
-
+public class TypesBadArg extends JavacTestingAbstractProcessor {
     boolean success = true;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-    }
 
     public boolean process(Set<? extends TypeElement> tes,
                            RoundEnvironment round) {

@@ -215,7 +215,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         iMatchColumns = new Vector(10);
         for(int i = 0; i < 10 ; i++) {
-           iMatchColumns.add(i,new Integer(-1));
+           iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
         strMatchColumns = new Vector(10);
@@ -288,7 +288,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         iMatchColumns = new Vector(10);
         for(int i = 0; i < 10 ; i++) {
-           iMatchColumns.add(i,new Integer(-1));
+           iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
         strMatchColumns = new Vector(10);
@@ -375,7 +375,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         iMatchColumns = new Vector(10);
         for(int i = 0; i < 10 ; i++) {
-           iMatchColumns.add(i,new Integer(-1));
+           iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
         strMatchColumns = new Vector(10);
@@ -465,7 +465,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         iMatchColumns = new Vector(10);
         for(int i = 0; i < 10 ; i++) {
-           iMatchColumns.add(i,new Integer(-1));
+           iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
         strMatchColumns = new Vector(10);
@@ -3754,7 +3754,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
          }
 
          for( int i = 0;i < columnIdxes.length ;i++) {
-            iMatchColumns.set(i,new Integer(-1));
+            iMatchColumns.set(i,Integer.valueOf(-1));
          }
     }
 
@@ -3863,7 +3863,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
            }
         }
         for(int i = 0 ;i < columnIdxes.length; i++) {
-           iMatchColumns.add(i,new Integer(columnIdxes[i]));
+           iMatchColumns.add(i,Integer.valueOf(columnIdxes[i]));
         }
     }
 
@@ -3918,7 +3918,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.matchcols1").toString());
         } else {
             // set iMatchColumn
-            iMatchColumns.set(0, new Integer(columnIdx));
+            iMatchColumns.set(0, Integer.valueOf(columnIdx));
             //strMatchColumn = null;
         }
     }
@@ -3940,7 +3940,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      */
     public void setMatchColumn(String columnName) throws SQLException {
         // validate, if col is ok to be set
-        if(columnName.equals(null) || ((columnName = columnName.trim()) == "" )) {
+        if(columnName == null || (columnName= columnName.trim()).equals("")) {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.matchcols2").toString());
         } else {
             // set strMatchColumn
@@ -3965,13 +3965,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      */
     public void unsetMatchColumn(int columnIdx) throws SQLException {
         // check if we are unsetting the SAME column
-        if(! iMatchColumns.get(0).equals(new Integer(columnIdx) )  ) {
+        if(! iMatchColumns.get(0).equals(Integer.valueOf(columnIdx) )  ) {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.unsetmatch").toString());
         } else if(strMatchColumns.get(0) != null) {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.usecolname").toString());
         } else {
                 // that is, we are unsetting it.
-               iMatchColumns.set(0, new Integer(-1));
+               iMatchColumns.set(0, Integer.valueOf(-1));
         }
     }
 

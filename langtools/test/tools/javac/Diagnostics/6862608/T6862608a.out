@@ -1,3 +1,3 @@
-T6862608a.java:19:41: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.no.conforming.instance.exists: T, java.util.Comparator<T>, java.util.Comparator<java.lang.String>)), <T>java.util.Comparator<T>, java.util.Comparator<java.lang.String>
+T6862608a.java:19:41: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.infer.no.conforming.instance.exists: T, java.util.Comparator<T>, java.util.Comparator<java.lang.String>)), <T>java.util.Comparator<T>, java.util.Comparator<java.lang.String>
 - compiler.misc.where.description.typevar: T,{(compiler.misc.where.typevar: T, java.lang.Object, kindname.method, <T>compound(java.lang.Iterable<? extends java.util.Comparator<? super T>>))}
 1 error

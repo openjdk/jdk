@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeBoolean(boolean x) throws SQLException {
-        attribs.add(new Boolean(x));
+        attribs.add(Boolean.valueOf(x));
     }
 
     /**
@@ -151,7 +151,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeByte(byte x) throws SQLException {
-        attribs.add(new Byte(x));
+        attribs.add(Byte.valueOf(x));
     }
 
     /**
@@ -165,7 +165,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeShort(short x) throws SQLException {
-        attribs.add(new Short(x));
+        attribs.add(Short.valueOf(x));
     }
 
     /**
@@ -179,7 +179,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeInt(int x) throws SQLException {
-        attribs.add(new Integer(x));
+        attribs.add(Integer.valueOf(x));
     }
 
     /**
@@ -193,7 +193,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeLong(long x) throws SQLException {
-        attribs.add(new Long(x));
+        attribs.add(Long.valueOf(x));
     }
 
     /**
