@@ -25,6 +25,7 @@
  * @test
  * @bug 6920317
  * @summary package-info.java file has to be specified on the javac cmdline, else it will not be avail
+ * @library ../lib
  */
 
 import java.io.*;
@@ -349,12 +350,7 @@ public class T6920317 {
     /** Annotation processor used to verify the expected value for the
         package annotations found by javac. */
     @SupportedOptions({ "gen", "expect" })
-    @SupportedAnnotationTypes({"*"})
-    public static class Processor extends AbstractProcessor {
-        public SourceVersion getSupportedSourceVersion() {
-            return SourceVersion.latest();
-        }
-
+    public static class Processor extends JavacTestingAbstractProcessor {
         public boolean process(Set<? extends TypeElement> annots, RoundEnvironment renv) {
             round++;
             System.err.println("Round " + round + " annots:" + annots + " rootElems:" + renv.getRootElements());

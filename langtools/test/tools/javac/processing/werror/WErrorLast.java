@@ -24,6 +24,8 @@
 /*
  * @test 6403456
  * @summary -Werror should work with annotation processing
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile WErrorLast.java
  * @compile -proc:only -processor WErrorLast WErrorLast.java
  * @compile/fail/ref=WErrorLast.out -XDrawDiagnostics -Werror -proc:only -processor WErrorLast WErrorLast.java
@@ -36,20 +38,13 @@ import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
 
-@SupportedAnnotationTypes("*")
-public class WErrorLast extends AbstractProcessor {
+public class WErrorLast extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        Messager messager = processingEnv.getMessager();
         if (roundEnv.processingOver()) {
             messager.printMessage(Diagnostic.Kind.WARNING, "last round");
         }
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     6418666 6423973 6453386
  * @summary Test the NoTypes: VOID, PACKAGE, NONE
  * @author  Scott Seligman
+ * @library ../../../lib
+ * @build JavacTestingAbstractProcessor
  * @compile -g NoTypes.java
  * @compile -processor NoTypes -proc:only NoTypes.java
  */
@@ -39,28 +41,12 @@ import javax.lang.model.util.*;
 
 import static javax.lang.model.type.TypeKind.*;
 
-@SupportedAnnotationTypes("*")
-public class NoTypes extends AbstractProcessor {
-
-    Elements elements;
-    Types types;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        elements = penv.getElementUtils();
-        types =  penv.getTypeUtils();
-    }
-
+public class NoTypes extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annoTypes,
                            RoundEnvironment round) {
         if (!round.processingOver())
             doit(annoTypes, round);
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 
     private void doit(Set<? extends TypeElement> annoTypes,

@@ -23,48 +23,6 @@
 # questions.
 #
 
-#
-# Only get these rules if SCCS is available
-#
-
-ifdef SCCS
-
-# SCCS command to extract out latest source
-SCCS_GET=$(SCCS) get -s
-
-#
-# Make sure all files in workspace are fresh
-#
-TEMP_ALL_FILES=$(JDK_TOPDIR)/temp_filelist
-$(TEMP_ALL_FILES): $(JDK_TOPDIR)/Codemgr_wsdata/nametable
-	$(prep-target)
-	@$(CUT) -d' ' -f1 $< \
-	    | $(GREP) -v '^VERSION' \
-	    | $(GREP) -v '^deleted_files' \
-	    | $(GREP) -v '^Codemgr_wsdata' > $@
-
-sccs_get: $(TEMP_ALL_FILES)
-	@$(PRINTF) "Workspace has %d files\n"  `$(CAT) $< | $(WC) -l`
-	@count=0; \
-	for i in `$(CAT) $<` ; do \
-	    f=$(JDK_TOPDIR)/$$i; \
-	    count=`$(EXPR) $$count '+' 1`; \
-	    if [ `$(EXPR) $$count '%' 100` = 0 ] ; then \
-		$(PRINTF) "\rChecked $$count files"; \
-	    fi; \
-	    if [ ! -f $$f ] ; then \
-		$(PRINTF) "\r$(SCCS_GET) $$f\n"; \
-		(cd `$(DIRNAME) $$f` && $(SCCS_GET) `$(BASENAME) $$f`); \
-	    elif /usr/bin/test $$f -ot `$(DIRNAME) $$f`/SCCS/s.`$(BASENAME) $$f` ; then \
-		$(PRINTF) "\r$(SCCS_GET) $$f\n"; \
-		(cd `$(DIRNAME) $$f` && $(SCCS_GET) `$(BASENAME) $$f`); \
-	    fi; \
-	done; \
-	$(PRINTF) "\rChecked $$count files\n"
-
-#
-# Phonies to avoid accidents.
-#
-.PHONY: sccs_get
-
-endif
+jdk=$(JDK_VERSION)
+full=$(FULL_VERSION)
+release=$(RELEASE)
