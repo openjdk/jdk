@@ -56,6 +56,10 @@ public class SocketOptionTests {
 
         // allowed to change when not bound
         ssc.setOption(SO_RCVBUF, 256*1024);     // can't check
+        int before = ssc.getOption(SO_RCVBUF);
+        int after = ssc.setOption(SO_RCVBUF, Integer.MAX_VALUE).getOption(SO_RCVBUF);
+        if (after < before)
+            throw new RuntimeException("setOption caused SO_RCVBUF to decrease");
         ssc.setOption(SO_REUSEADDR, true);
         checkOption(ssc, SO_REUSEADDR, true);
         ssc.setOption(SO_REUSEADDR, false);

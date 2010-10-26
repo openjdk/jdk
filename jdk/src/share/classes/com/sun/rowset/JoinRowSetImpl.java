@@ -33,6 +33,8 @@ import java.math.*;
 import java.util.*;
 
 import javax.sql.rowset.*;
+import javax.sql.rowset.spi.SyncProvider;
+import javax.sql.rowset.spi.SyncProviderException;
 
 /**
  * The standard implementation of the <code>JoinRowSet</code>
@@ -550,7 +552,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
                // This 'if' will be removed after all joins are implemented.
                throw new SQLException(resBundle.handleGetObject("joinrowsetimpl.notsupported").toString());
            } else {
-              Integer Intgr = new Integer(JoinRowSet.INNER_JOIN);
+              Integer Intgr = Integer.valueOf(JoinRowSet.INNER_JOIN);
               vecJoinType.add(Intgr);
            }
        } else {
@@ -874,8 +876,8 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
 
        String strWhereClause = "Select ";
        String whereClause;
-       String tabName= null;
-       String strTabName = null;
+       String tabName= "";
+       String strTabName = "";
        int sz,cols;
        int j;
        CachedRowSetImpl crs;
@@ -889,8 +891,6 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
        // tableNameX.(rowsetX.getMatchColumnName()) ==
        // tableNameZ.(rowsetZ.getMatchColumnName()));
 
-       tabName = new String();
-       strTabName  = new String();
        sz = vecRowSetsInJOIN.size();
        for(int i=0;i<sz; i++) {
           crs = (CachedRowSetImpl)vecRowSetsInJOIN.get(i);
@@ -4309,6 +4309,27 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      */
      public CachedRowSet createCopySchema() throws SQLException {
          return crsInternal.createCopySchema();
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public void setSyncProvider(String providerStr) throws SQLException {
+         crsInternal.setSyncProvider(providerStr);
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public void acceptChanges() throws SyncProviderException {
+         crsInternal.acceptChanges();
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public SyncProvider getSyncProvider() throws SQLException {
+        return crsInternal.getSyncProvider();
      }
 
     /**

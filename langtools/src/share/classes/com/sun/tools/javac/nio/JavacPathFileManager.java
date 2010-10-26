@@ -366,11 +366,11 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 //            }
 //        }
         int maxDepth = (recurse ? Integer.MAX_VALUE : 1);
-        Set<FileVisitOption> opts = EnumSet.of(DETECT_CYCLES, FOLLOW_LINKS);
+        Set<FileVisitOption> opts = EnumSet.of(FOLLOW_LINKS);
         Files.walkFileTree(packageDir, opts, maxDepth,
                 new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir) {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 if (SourceVersion.isIdentifier(dir.getName().toString())) // JSR 292?
                     return FileVisitResult.CONTINUE;
                 else
