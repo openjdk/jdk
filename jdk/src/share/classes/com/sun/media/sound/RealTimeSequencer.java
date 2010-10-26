@@ -1069,7 +1069,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     private static class RealTimeSequencerInfo extends MidiDevice.Info {
 
         private static final String name = "Real Time Sequencer";
-        private static final String vendor = "Sun Microsystems";
+        private static final String vendor = "Oracle Corporation";
         private static final String description = "Software sequencer";
         private static final String version = "Version 1.0";
 

@@ -223,7 +223,7 @@ Java_sun_nio_ch_WindowsSelectorImpl_discardUrgentData(JNIEnv* env, jobject this,
     jboolean discarded = JNI_FALSE;
     int n;
     do {
-        n = recv(s, &data, sizeof(data), MSG_OOB);
+        n = recv(s, (char*)&data, sizeof(data), MSG_OOB);
         if (n > 0) {
             discarded = JNI_TRUE;
         }

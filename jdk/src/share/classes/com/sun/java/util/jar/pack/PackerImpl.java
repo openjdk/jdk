@@ -496,15 +496,29 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             reader.unknownAttrCommand = unknownAttrCommand;
             try {
                 reader.read();
-            } catch (Attribute.FormatException ee) {
-                // He passed up the category to us in layout.
-                if (ee.layout.equals(Pack200.Packer.PASS)) {
-                    Utils.log.warning("Passing class file uncompressed due to unrecognized attribute: "+fname);
-                    Utils.log.info(ee.toString());
-                    return null;
+            } catch (IOException ioe) {
+                String message = "Passing class file uncompressed due to";
+                if (ioe instanceof Attribute.FormatException) {
+                    Attribute.FormatException ee = (Attribute.FormatException) ioe;
+                    // He passed up the category to us in layout.
+                    if (ee.layout.equals(Pack200.Packer.PASS)) {
+                        Utils.log.info(ee.toString());
+                        Utils.log.warning(message + " unrecognized attribute: " +
+                                fname);
+                        return null;
+                    }
+                } else if (ioe instanceof ClassReader.ClassFormatException) {
+                    ClassReader.ClassFormatException ce = (ClassReader.ClassFormatException) ioe;
+                    // %% TODO: Do we invent a new property for this or reuse %%
+                    if (unknownAttrCommand.equals(Pack200.Packer.PASS)) {
+                        Utils.log.info(ce.toString());
+                        Utils.log.warning(message + " unknown class format: " +
+                                fname);
+                        return null;
+                    }
                 }
                 // Otherwise, it must be an error.
-                throw ee;
+                throw ioe;
             }
             pkg.addClass(cls);
             return cls.file;
