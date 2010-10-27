@@ -82,8 +82,8 @@ Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
 
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jlong address,
-                                      jlong len)
+Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jobject fdo,
+                                      jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);
     int result = msync(a, (size_t)len, MS_SYNC);

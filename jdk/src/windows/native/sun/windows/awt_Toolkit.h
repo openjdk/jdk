@@ -185,6 +185,7 @@ public:
     BOOL IsDynamicLayoutActive();
     BOOL areExtraMouseButtonsEnabled();
     void setExtraMouseButtonsEnabled(BOOL enable);
+    static UINT GetNumberOfButtons();
 
     INLINE BOOL localPump() { return m_localPump; }
     INLINE BOOL VerifyComponents() { return FALSE; } // TODO: Use new DebugHelper class to set this flag

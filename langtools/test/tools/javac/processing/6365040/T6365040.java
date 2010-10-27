@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6365040 6358129
  * @summary Test -processor foo,bar,baz
  * @author  Joseph D. Darcy
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile ProcFoo.java
  * @compile ProcBar.java
  * @compile T6365040.java
@@ -43,13 +45,11 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
 import static javax.tools.Diagnostic.Kind.*;
 
-@SupportedAnnotationTypes("*")
-public class T6365040 extends AbstractProcessor {
+public class T6365040 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
         if (!roundEnvironment.processingOver())
-            processingEnv.getMessager().printMessage(NOTE,
-                                                     "Hello from T6365040");
+            messager.printMessage(NOTE, "Hello from T6365040");
         return true;
     }
 }

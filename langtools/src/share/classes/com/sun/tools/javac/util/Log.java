@@ -35,10 +35,13 @@ import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.api.DiagnosticFormatter;
+import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
+
+import static com.sun.tools.javac.main.OptionName.*;
 
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
@@ -129,14 +132,14 @@ public class Log extends AbstractLog {
         this.noticeWriter = noticeWriter;
 
         Options options = Options.instance(context);
-        this.dumpOnError = options.get("-doe") != null;
-        this.promptOnError = options.get("-prompt") != null;
-        this.emitWarnings = options.get("-Xlint:none") == null;
-        this.suppressNotes = options.get("suppressNotes") != null;
-        this.MaxErrors = getIntOption(options, "-Xmaxerrs", getDefaultMaxErrors());
-        this.MaxWarnings = getIntOption(options, "-Xmaxwarns", getDefaultMaxWarnings());
+        this.dumpOnError = options.isSet(DOE);
+        this.promptOnError = options.isSet(PROMPT);
+        this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
+        this.suppressNotes = options.isSet("suppressNotes");
+        this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
+        this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
 
-        boolean rawDiagnostics = options.get("rawDiagnostics") != null;
+        boolean rawDiagnostics = options.isSet("rawDiagnostics");
         messages = JavacMessages.instance(context);
         this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
                                               new BasicDiagnosticFormatter(options, messages);
@@ -150,7 +153,7 @@ public class Log extends AbstractLog {
             expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
     }
     // where
-        private int getIntOption(Options options, String optionName, int defaultValue) {
+        private int getIntOption(Options options, OptionName optionName, int defaultValue) {
             String s = options.get(optionName);
             try {
                 if (s != null) {

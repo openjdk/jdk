@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,48 +26,44 @@
 package com.sun.tools.javac.main;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.processing.Processor;
+import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
 
-import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.parser.*;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.jvm.*;
-
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.tree.JCTree.*;
-
 import com.sun.tools.javac.processing.*;
-import javax.annotation.processing.Processor;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static com.sun.tools.javac.main.OptionName.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
-// TEMP, until we have a more efficient way to save doc comment info
-import com.sun.tools.javac.parser.DocCommentScanner;
-
-import java.util.HashMap;
-import java.util.Queue;
-import javax.lang.model.SourceVersion;
 
 /** This class could be the main entry point for GJC when GJC is used as a
  *  component in a larger software system. It provides operations to
@@ -359,22 +355,22 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         Options options = Options.instance(context);
 
-        verbose       = options.get("-verbose")       != null;
-        sourceOutput  = options.get("-printsource")   != null; // used to be -s
-        stubOutput    = options.get("-stubs")         != null;
-        relax         = options.get("-relax")         != null;
-        printFlat     = options.get("-printflat")     != null;
-        attrParseOnly = options.get("-attrparseonly") != null;
-        encoding      = options.get("-encoding");
-        lineDebugInfo = options.get("-g:")            == null ||
-                        options.get("-g:lines")       != null;
-        genEndPos     = options.get("-Xjcov")         != null ||
+        verbose       = options.isSet(VERBOSE);
+        sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
+        stubOutput    = options.isSet("-stubs");
+        relax         = options.isSet("-relax");
+        printFlat     = options.isSet("-printflat");
+        attrParseOnly = options.isSet("-attrparseonly");
+        encoding      = options.get(ENCODING);
+        lineDebugInfo = options.isUnset(G_CUSTOM) ||
+                        options.isSet(G_CUSTOM, "lines");
+        genEndPos     = options.isSet(XJCOV) ||
                         context.get(DiagnosticListener.class) != null;
-        devVerbose    = options.get("dev") != null;
-        processPcks   = options.get("process.packages") != null;
-        werror        = options.get("-Werror")        != null;
+        devVerbose    = options.isSet("dev");
+        processPcks   = options.isSet("process.packages");
+        werror        = options.isSet(WERROR);
 
-        verboseCompilePolicy = options.get("verboseCompilePolicy") != null;
+        verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
         if (attrParseOnly)
             compilePolicy = CompilePolicy.ATTR_ONLY;
@@ -384,15 +380,15 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         implicitSourcePolicy = ImplicitSourcePolicy.decode(options.get("-implicit"));
 
         completionFailureName =
-            (options.get("failcomplete") != null)
+            options.isSet("failcomplete")
             ? names.fromString(options.get("failcomplete"))
             : null;
 
         shouldStopPolicy =
-            (options.get("shouldStopPolicy") != null)
+            options.isSet("shouldStopPolicy")
             ? CompileState.valueOf(options.get("shouldStopPolicy"))
             : null;
-        if (options.get("oldDiags") == null)
+        if (options.isUnset("oldDiags"))
             log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
     }
 
@@ -957,18 +953,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
         Options options = Options.instance(context);
-        if (options.get("-proc:none") != null) {
+        if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
             procEnvImpl = new JavacProcessingEnvironment(context, processors);
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {
-                if (context.get(Scanner.Factory.scannerFactoryKey) == null)
-                    DocCommentScanner.Factory.preRegister(context);
                 options.put("save-parameter-names", "save-parameter-names");
                 reader.saveParameterNames = true;
                 keepComments = true;
+                genEndPos = true;
                 if (taskListener != null)
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 log.deferDiagnostics = true;
@@ -1017,7 +1012,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             // annotation processing is to occur with compilation,
             // emit a warning.
             Options options = Options.instance(context);
-            if (options.get("-proc:only") != null) {
+            if (options.isSet(PROC, "only")) {
                 log.warning("proc.proc-only.requested.no.procs");
                 todo.clear();
             }
@@ -1105,10 +1100,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         Options options = Options.instance(context);
         return
             explicitAnnotationProcessingRequested ||
-            options.get("-processor") != null ||
-            options.get("-processorpath") != null ||
-            options.get("-proc:only") != null ||
-            options.get("-Xprint") != null;
+            options.isSet(PROCESSOR) ||
+            options.isSet(PROCESSORPATH) ||
+            options.isSet(PROC, "only") ||
+            options.isSet(XPRINT);
     }
 
     /**
@@ -1587,6 +1582,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     public void initRound(JavaCompiler prev) {
+        genEndPos = prev.genEndPos;
         keepComments = prev.keepComments;
         start_msec = prev.start_msec;
         hasBeenUsed = true;

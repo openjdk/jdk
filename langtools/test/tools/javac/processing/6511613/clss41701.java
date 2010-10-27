@@ -26,7 +26,8 @@
  * @bug 6511613
  * @summary javac unexpectedly doesn't fail in some cases if an annotation processor specified
  *
- * @build DummyProcessor
+ * @library ../../lib
+ * @build JavacTestingAbstractProcessor DummyProcessor
  * @compile/fail clss41701.java
  * @compile/fail -processor DummyProcessor clss41701.java
  */

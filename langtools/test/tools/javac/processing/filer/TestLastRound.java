@@ -24,6 +24,8 @@
 /*
  * @test 6966604
  * @summary JavacFiler not correctly notified of lastRound
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile TestLastRound.java
  * @compile/fail/ref=TestLastRound.out -XDrawDiagnostics -Werror -proc:only -processor TestLastRound TestLastRound.java
  */
@@ -35,12 +37,10 @@ import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
 
-@SupportedAnnotationTypes("*")
-public class TestLastRound extends AbstractProcessor {
+public class TestLastRound extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        Filer filer = processingEnv.getFiler();
         if (roundEnv.processingOver()) {
             try {
                 JavaFileObject fo = filer.createSourceFile("LastRound.java");
@@ -51,10 +51,5 @@ public class TestLastRound extends AbstractProcessor {
             }
         }
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }
