@@ -157,6 +157,8 @@ class ClassVerifier : public StackObj {
 
   bool name_in_supers(symbolOop ref_name, instanceKlassHandle current);
 
+  VerificationType object_type() const;
+
   instanceKlassHandle _klass;  // the class being verified
   methodHandle        _method; // current method being verified
   VerificationType    _this_type; // the verification type of the current class
