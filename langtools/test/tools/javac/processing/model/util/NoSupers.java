@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug     6346453
  * @summary directSupertypes should return empty list if arg has no supertypes
  * @author  Scott Seligman
- * @build   NoSupers
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor NoSupers
  * @compile -processor NoSupers -proc:only NoSupers.java
  */
 
@@ -36,16 +37,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-@SupportedAnnotationTypes("*")
-public class NoSupers extends AbstractProcessor {
-
-    Types types;
-
-    public void init(ProcessingEnvironment penv) {
-        super.init(penv);
-        types = penv.getTypeUtils();
-    }
-
+public class NoSupers extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes,
                            RoundEnvironment round) {
         if (round.processingOver()) return true;

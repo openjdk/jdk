@@ -434,7 +434,9 @@ Java_java_io_WinNTFileSystem_setPermission(JNIEnv *env, jobject this,
             a = GetFileAttributesW(pathbuf);
         }
     }
-    if (a != INVALID_FILE_ATTRIBUTES) {
+    if ((a != INVALID_FILE_ATTRIBUTES) &&
+        ((a & FILE_ATTRIBUTE_DIRECTORY) == 0))
+    {
         if (enable)
             a =  a & ~FILE_ATTRIBUTE_READONLY;
         else
@@ -796,9 +798,10 @@ Java_java_io_WinNTFileSystem_setReadOnly(JNIEnv *env, jobject this,
         }
     }
 
-    if (a != INVALID_FILE_ATTRIBUTES) {
+    if ((a != INVALID_FILE_ATTRIBUTES) &&
+        ((a & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
         if (SetFileAttributesW(pathbuf, a | FILE_ATTRIBUTE_READONLY))
-        rv = JNI_TRUE;
+            rv = JNI_TRUE;
     }
     free(pathbuf);
     return rv;
@@ -812,7 +815,7 @@ Java_java_io_WinNTFileSystem_getDriveDirectory(JNIEnv *env, jobject this,
                                                jint drive)
 {
     jstring ret = NULL;
-    jchar *p = _wgetdcwd(drive, NULL, MAX_PATH);
+    jchar *p = currentDir(drive);
     jchar *pf = p;
     if (p == NULL) return NULL;
     if (iswalpha(*p) && (p[1] == L':')) p += 2;

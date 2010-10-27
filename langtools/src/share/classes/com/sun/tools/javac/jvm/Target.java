@@ -31,6 +31,8 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.util.*;
 
+import static com.sun.tools.javac.main.OptionName.*;
+
 /** The classfile version target.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -73,7 +75,7 @@ public enum Target {
         Target instance = context.get(targetKey);
         if (instance == null) {
             Options options = Options.instance(context);
-            String targetString = options.get("-target");
+            String targetString = options.get(TARGET);
             if (targetString != null) instance = lookup(targetString);
             if (instance == null) instance = DEFAULT;
             context.put(targetKey, instance);
