@@ -247,6 +247,10 @@ ClassVerifier::ClassVerifier(
 ClassVerifier::~ClassVerifier() {
 }
 
+VerificationType ClassVerifier::object_type() const {
+  return VerificationType::reference_type(vmSymbols::java_lang_Object());
+}
+
 void ClassVerifier::verify_class(TRAPS) {
   if (_verify_verbose) {
     tty->print_cr("Verifying class %s with new format",
@@ -726,8 +730,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           }
           no_control_flow = false; break;
         case Bytecodes::_aastore :
-          type = current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+          type = current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           type2 = current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
           atype = current_frame.pop_stack(
@@ -1232,8 +1235,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         {
           index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
-          current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+          current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           VerificationType klass_type = cp_index_to_type(
             index, cp, CHECK_VERIFY(this));
           current_frame.push_stack(klass_type, CHECK_VERIFY(this));
@@ -1242,8 +1244,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         case Bytecodes::_instanceof : {
           index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
-          current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+          current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           current_frame.push_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
           no_control_flow = false; break;
@@ -1610,9 +1611,7 @@ void ClassVerifier::verify_ldc(
     verify_cp_type(index, cp, types, CHECK_VERIFY(this));
   }
   if (tag.is_string() && cp->is_pseudo_string_at(index)) {
-    current_frame->push_stack(
-      VerificationType::reference_type(
-        vmSymbols::java_lang_Object()), CHECK_VERIFY(this));
+    current_frame->push_stack(object_type(), CHECK_VERIFY(this));
   } else if (tag.is_string() || tag.is_unresolved_string()) {
     current_frame->push_stack(
       VerificationType::reference_type(
