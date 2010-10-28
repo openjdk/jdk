@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2516,18 +2516,6 @@ void ClassFileParser::java_lang_ref_Reference_fix_pre(typeArrayHandle* fields_pt
   // field.  If it is not present, artifically create a field for it.
   // This allows this VM to run on early JDK where the field is not
   // present.
-
-  //
-  // Increment fac.nonstatic_oop_count so that the start of the
-  // next type of non-static oops leaves room for the fake oop.
-  // Do not increment next_nonstatic_oop_offset so that the
-  // fake oop is place after the java.lang.ref.Reference oop
-  // fields.
-  //
-  // Check the fields in java.lang.ref.Reference for the "discovered"
-  // field.  If it is not present, artifically create a field for it.
-  // This allows this VM to run on early JDK where the field is not
-  // present.
   int reference_sig_index = 0;
   int reference_name_index = 0;
   int reference_index = 0;
@@ -2663,7 +2651,7 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
 // Force MethodHandle.vmentry to be an unmanaged pointer.
 // There is no way for a classfile to express this, so we must help it.
 void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
-                                                    typeArrayHandle* fields_ptr,
+                                                    typeArrayHandle fields,
                                                     FieldAllocationCount *fac_ptr,
                                                     TRAPS) {
   // Add fake fields for java.dyn.MethodHandle instances
@@ -2687,41 +2675,45 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing I or J signature (for vmentry) in java.dyn.MethodHandle");
 
+  // Find vmentry field and change the signature.
   bool found_vmentry = false;
-
-  const int n = (*fields_ptr)()->length();
-  for (int i = 0; i < n; i += instanceKlass::next_offset) {
-    int name_index = (*fields_ptr)->ushort_at(i + instanceKlass::name_index_offset);
-    int sig_index  = (*fields_ptr)->ushort_at(i + instanceKlass::signature_index_offset);
-    int acc_flags  = (*fields_ptr)->ushort_at(i + instanceKlass::access_flags_offset);
+  for (int i = 0; i < fields->length(); i += instanceKlass::next_offset) {
+    int name_index = fields->ushort_at(i + instanceKlass::name_index_offset);
+    int sig_index  = fields->ushort_at(i + instanceKlass::signature_index_offset);
+    int acc_flags  = fields->ushort_at(i + instanceKlass::access_flags_offset);
     symbolOop f_name = cp->symbol_at(name_index);
     symbolOop f_sig  = cp->symbol_at(sig_index);
-    if (f_sig == vmSymbols::byte_signature() &&
-        f_name == vmSymbols::vmentry_name() &&
-        (acc_flags & JVM_ACC_STATIC) == 0) {
-      // Adjust the field type from byte to an unmanaged pointer.
-      assert(fac_ptr->nonstatic_byte_count > 0, "");
-      fac_ptr->nonstatic_byte_count -= 1;
 
-      (*fields_ptr)->ushort_at_put(i + instanceKlass::signature_index_offset, word_sig_index);
-      assert(wordSize == longSize || wordSize == jintSize, "ILP32 or LP64");
-      if (wordSize == longSize)  fac_ptr->nonstatic_double_count += 1;
-      else                       fac_ptr->nonstatic_word_count   += 1;
+    if (f_name == vmSymbols::vmentry_name() && (acc_flags & JVM_ACC_STATIC) == 0) {
+      if (f_sig == vmSymbols::machine_word_signature()) {
+        // If the signature of vmentry is already changed, we're done.
+        found_vmentry = true;
+        break;
+      }
+      else if (f_sig == vmSymbols::byte_signature()) {
+        // Adjust the field type from byte to an unmanaged pointer.
+        assert(fac_ptr->nonstatic_byte_count > 0, "");
+        fac_ptr->nonstatic_byte_count -= 1;
 
-      FieldAllocationType atype = (FieldAllocationType) (*fields_ptr)->ushort_at(i + instanceKlass::low_offset);
-      assert(atype == NONSTATIC_BYTE, "");
-      FieldAllocationType new_atype = (wordSize == longSize) ? NONSTATIC_DOUBLE : NONSTATIC_WORD;
-      (*fields_ptr)->ushort_at_put(i + instanceKlass::low_offset, new_atype);
+        fields->ushort_at_put(i + instanceKlass::signature_index_offset, word_sig_index);
+        assert(wordSize == longSize || wordSize == jintSize, "ILP32 or LP64");
+        if (wordSize == longSize)  fac_ptr->nonstatic_double_count += 1;
+        else                       fac_ptr->nonstatic_word_count   += 1;
 
-      found_vmentry = true;
-      break;
+        FieldAllocationType atype = (FieldAllocationType) fields->ushort_at(i + instanceKlass::low_offset);
+        assert(atype == NONSTATIC_BYTE, "");
+        FieldAllocationType new_atype = (wordSize == longSize) ? NONSTATIC_DOUBLE : NONSTATIC_WORD;
+        fields->ushort_at_put(i + instanceKlass::low_offset, new_atype);
+
+        found_vmentry = true;
+        break;
+      }
     }
   }
 
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing vmentry byte field in java.dyn.MethodHandle");
-
 }
 
 
@@ -3082,7 +3074,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 
     // adjust the vmentry field declaration in java.dyn.MethodHandle
     if (EnableMethodHandles && class_name() == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
-      java_dyn_MethodHandle_fix_pre(cp, &fields, &fac, CHECK_(nullHandle));
+      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 
     // Add a fake "discovered" field if it is not present
