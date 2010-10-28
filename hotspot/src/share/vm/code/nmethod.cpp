@@ -1421,7 +1421,7 @@ void nmethod::flush() {
   }
 
 #ifdef SHARK
-  ((SharkCompiler *) compiler())->free_compiled_method(instructions_begin());
+  ((SharkCompiler *) compiler())->free_compiled_method(insts_begin());
 #endif // SHARK
 
   ((CodeBlob*)(this))->flush();

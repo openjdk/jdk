@@ -89,6 +89,10 @@ public:
     return _buf == NULL ? 0 : _sz - _index;
   }
 
+  bool is_empty() {
+    return _buf == NULL || _sz == _index;
+  }
+
   // Set the "active" property of the queue to "b".  An enqueue to an
   // inactive thread is a no-op.  Setting a queue to inactive resets its
   // log to the empty state.

@@ -47,32 +47,26 @@ public class JavacTypes implements javax.lang.model.util.Types {
     private Symtab syms;
     private Types types;
 
-    private static final Context.Key<JavacTypes> KEY =
-            new Context.Key<JavacTypes>();
-
     public static JavacTypes instance(Context context) {
-        JavacTypes instance = context.get(KEY);
-        if (instance == null) {
+        JavacTypes instance = context.get(JavacTypes.class);
+        if (instance == null)
             instance = new JavacTypes(context);
-            context.put(KEY, instance);
-        }
         return instance;
     }
 
     /**
      * Public for use only by JavacProcessingEnvironment
      */
-    // TODO JavacTypes constructor should be protected
-    public JavacTypes(Context context) {
+    protected JavacTypes(Context context) {
         setContext(context);
     }
 
     /**
      * Use a new context.  May be called from outside to update
      * internal state for a new annotation-processing round.
-     * This instance is *not* then registered with the new context.
      */
     public void setContext(Context context) {
+        context.put(JavacTypes.class, this);
         syms = Symtab.instance(context);
         types = Types.instance(context);
     }

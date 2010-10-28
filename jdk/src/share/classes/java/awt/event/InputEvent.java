@@ -294,7 +294,7 @@ public abstract class InputEvent extends ComponentEvent {
         AWTAccessor.setInputEventAccessor(
             new AWTAccessor.InputEventAccessor() {
                 public int[] getButtonDownMasks() {
-                    return getButtonDownMasks();
+                    return InputEvent.getButtonDownMasks();
                 }
             });
     }
