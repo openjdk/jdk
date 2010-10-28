@@ -809,13 +809,16 @@ bool DefNewGeneration::collection_attempt_is_safe() {
 }
 
 void DefNewGeneration::gc_epilogue(bool full) {
+  DEBUG_ONLY(static bool seen_incremental_collection_failed = false;)
+
+  assert(!GC_locker::is_active(), "We should not be executing here");
   // Check if the heap is approaching full after a collection has
   // been done.  Generally the young generation is empty at
   // a minimum at the end of a collection.  If it is not, then
   // the heap is approaching full.
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   if (full) {
-    assert(!GC_locker::is_active(), "We should not be executing here");
+    DEBUG_ONLY(seen_incremental_collection_failed = false;)
     if (!collection_attempt_is_safe()) {
       gch->set_incremental_collection_failed(); // Slight lie: a full gc left us in that state
       set_should_allocate_from_space(); // we seem to be running out of space
@@ -824,7 +827,21 @@ void DefNewGeneration::gc_epilogue(bool full) {
       clear_should_allocate_from_space(); // if set
     }
   } else {
-    assert(!gch->incremental_collection_failed(), "Error");
+#ifdef ASSERT
+    // It is possible that incremental_collection_failed() == true
+    // here, because an attempted scavenge did not succeed. The policy
+    // is normally expected to cause a full collection which should
+    // clear that condition, so we should not be here twice in a row
+    // with incremental_collection_failed() == true without having done
+    // a full collection in between.
+    if (!seen_incremental_collection_failed &&
+        gch->incremental_collection_failed()) {
+      seen_incremental_collection_failed = true;
+    } else if (seen_incremental_collection_failed) {
+      assert(!gch->incremental_collection_failed(), "Twice in a row");
+      seen_incremental_collection_failed = false;
+    }
+#endif // ASSERT
   }
 
   if (ZapUnusedHeapArea) {
