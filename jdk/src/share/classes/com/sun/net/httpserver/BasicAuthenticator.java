@@ -24,9 +24,6 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
 
 /**
  * BasicAuthenticator provides an implementation of HTTP Basic
@@ -57,7 +54,6 @@ public abstract class BasicAuthenticator extends Authenticator {
 
     public Result authenticate (HttpExchange t)
     {
-        HttpContext context = t.getHttpContext();
         Headers rmap = (Headers) t.getRequestHeaders();
         /*
          * look for auth token

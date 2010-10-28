@@ -144,6 +144,7 @@ void ParallelTaskTerminator::sleep(uint millis) {
 
 bool
 ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
+  assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
   Atomic::inc(&_offered_termination);
 
@@ -255,3 +256,9 @@ bool ObjArrayTask::is_valid() const {
     _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT
+
+void ParallelTaskTerminator::reset_for_reuse(int n_threads) {
+  reset_for_reuse();
+  _n_threads = n_threads;
+}
+

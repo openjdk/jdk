@@ -825,6 +825,12 @@ class Assembler : public AbstractAssembler  {
   // test if -4096 <= x <= 4095
   static bool is_simm13(int x) { return is_simm(x, 13); }
 
+  // test if label is in simm16 range in words (wdisp16).
+  bool is_in_wdisp16_range(Label& L) {
+    intptr_t d = intptr_t(pc()) - intptr_t(target(L));
+    return is_simm(d, 18);
+  }
+
   enum ASIs { // page 72, v9
     ASI_PRIMARY        = 0x80,
     ASI_PRIMARY_LITTLE = 0x88
@@ -2103,6 +2109,7 @@ public:
   void load_heap_oop(const Address& s, Register d);
   void load_heap_oop(Register s1, Register s2, Register d);
   void load_heap_oop(Register s1, int simm13a, Register d);
+  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d);
   void store_heap_oop(Register d, Register s1, Register s2);
   void store_heap_oop(Register d, Register s1, int simm13a);
   void store_heap_oop(Register d, const Address& a, int offset = 0);
@@ -2225,7 +2232,7 @@ public:
   void stop(const char* msg);                          // prints msg, dumps registers and stops execution
   void warn(const char* msg);                          // prints msg, but don't stop
   void untested(const char* what = "");
-  void unimplemented(const char* what = "")              { char* b = new char[1024];  sprintf(b, "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
   void should_not_reach_here()                   { stop("should not reach here"); }
   void print_CPU_state();
 
