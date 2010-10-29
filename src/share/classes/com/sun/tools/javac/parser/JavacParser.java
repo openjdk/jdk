@@ -30,6 +30,7 @@ import java.util.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
@@ -266,9 +267,9 @@ public class JavacParser implements Parser {
     private void reportSyntaxError(int pos, String key, Object... args) {
         if (pos > S.errPos() || pos == Position.NOPOS) {
             if (S.token() == EOF)
-                log.error(pos, "premature.eof");
+                error(pos, "premature.eof");
             else
-                log.error(pos, key, args);
+                error(pos, key, args);
         }
         S.errPos(pos);
         if (S.pos() == errorPos)
@@ -324,7 +325,7 @@ public class JavacParser implements Parser {
     void checkNoMods(long mods) {
         if (mods != 0) {
             long lowestMod = mods & -mods;
-            log.error(S.pos(), "mod.not.allowed.here",
+            error(S.pos(), "mod.not.allowed.here",
                       Flags.asFlagSet(lowestMod));
         }
     }
@@ -418,22 +419,22 @@ public class JavacParser implements Parser {
             return name;
         } else if (S.token() == ASSERT) {
             if (allowAsserts) {
-                log.error(S.pos(), "assert.as.identifier");
+                error(S.pos(), "assert.as.identifier");
                 S.nextToken();
                 return names.error;
             } else {
-                log.warning(S.pos(), "assert.as.identifier");
+                warning(S.pos(), "assert.as.identifier");
                 Name name = S.name();
                 S.nextToken();
                 return name;
             }
         } else if (S.token() == ENUM) {
             if (allowEnums) {
-                log.error(S.pos(), "enum.as.identifier");
+                error(S.pos(), "enum.as.identifier");
                 S.nextToken();
                 return names.error;
             } else {
-                log.warning(S.pos(), "enum.as.identifier");
+                warning(S.pos(), "enum.as.identifier");
                 Name name = S.name();
                 S.nextToken();
                 return name;
@@ -479,7 +480,7 @@ public class JavacParser implements Parser {
                     TypeTags.INT,
                     Convert.string2int(strval(prefix), S.radix()));
             } catch (NumberFormatException ex) {
-                log.error(S.pos(), "int.number.too.large", strval(prefix));
+                error(S.pos(), "int.number.too.large", strval(prefix));
             }
             break;
         case LONGLITERAL:
@@ -488,7 +489,7 @@ public class JavacParser implements Parser {
                     TypeTags.LONG,
                     new Long(Convert.string2long(strval(prefix), S.radix())));
             } catch (NumberFormatException ex) {
-                log.error(S.pos(), "int.number.too.large", strval(prefix));
+                error(S.pos(), "int.number.too.large", strval(prefix));
             }
             break;
         case FLOATLITERAL: {
@@ -501,9 +502,9 @@ public class JavacParser implements Parser {
                 n = Float.NaN;
             }
             if (n.floatValue() == 0.0f && !isZero(proper))
-                log.error(S.pos(), "fp.number.too.small");
+                error(S.pos(), "fp.number.too.small");
             else if (n.floatValue() == Float.POSITIVE_INFINITY)
-                log.error(S.pos(), "fp.number.too.large");
+                error(S.pos(), "fp.number.too.large");
             else
                 t = F.at(pos).Literal(TypeTags.FLOAT, n);
             break;
@@ -518,9 +519,9 @@ public class JavacParser implements Parser {
                 n = Double.NaN;
             }
             if (n.doubleValue() == 0.0d && !isZero(proper))
-                log.error(S.pos(), "fp.number.too.small");
+                error(S.pos(), "fp.number.too.small");
             else if (n.doubleValue() == Double.POSITIVE_INFINITY)
-                log.error(S.pos(), "fp.number.too.large");
+                error(S.pos(), "fp.number.too.large");
             else
                 t = F.at(pos).Literal(TypeTags.DOUBLE, n);
             break;
@@ -1581,7 +1582,7 @@ public class JavacParser implements Parser {
             case ENUM:
             case ASSERT:
                 if (allowEnums && S.token() == ENUM) {
-                    log.error(S.pos(), "local.enum");
+                    error(S.pos(), "local.enum");
                     stats.
                         append(classOrInterfaceOrEnumDeclaration(modifiersOpt(),
                                                                  S.docComment()));
@@ -1728,9 +1729,9 @@ public class JavacParser implements Parser {
             } else {
                 if (allowTWR) {
                     if (resources.isEmpty())
-                        log.error(pos, "try.without.catch.finally.or.resource.decls");
+                        error(pos, "try.without.catch.finally.or.resource.decls");
                 } else
-                    log.error(pos, "try.without.catch.or.finally");
+                    error(pos, "try.without.catch.or.finally");
             }
             return F.at(pos).Try(resources, body, catchers.toList(), finalizer);
         }
@@ -1985,7 +1986,7 @@ public class JavacParser implements Parser {
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
             default: break loop;
             }
-            if ((flags & flag) != 0) log.error(S.pos(), "repeated.modifier");
+            if ((flags & flag) != 0) error(S.pos(), "repeated.modifier");
             lastPos = S.pos();
             S.nextToken();
             if (flag == Flags.ANNOTATION) {
@@ -2331,7 +2332,7 @@ public class JavacParser implements Parser {
             }
         } else {
             if (S.token() == ENUM) {
-                log.error(S.pos(), "enums.not.supported.in.source", source.name);
+                error(S.pos(), "enums.not.supported.in.source", source.name);
                 allowEnums = true;
                 return enumDeclaration(mods, dc);
             }
@@ -2580,7 +2581,7 @@ public class JavacParser implements Parser {
                 }
                 if (S.token() == LPAREN && !isInterface && type.getTag() == JCTree.IDENT) {
                     if (isInterface || name != className)
-                        log.error(pos, "invalid.meth.decl.ret.type.req");
+                        error(pos, "invalid.meth.decl.ret.type.req");
                     return List.of(methodDeclaratorRest(
                         pos, mods, null, names.init, typarams,
                         isInterface, true, dc));
@@ -2759,6 +2760,14 @@ public class JavacParser implements Parser {
 
 /* ---------- auxiliary methods -------------- */
 
+    void error(int pos, String key, Object ... args) {
+        log.error(DiagnosticFlag.SYNTAX, pos, key, args);
+    }
+
+    void warning(int pos, String key, Object ... args) {
+        log.warning(pos, key, args);
+    }
+
     /** Check that given tree is a legal expression statement.
      */
     protected JCExpression checkExprStat(JCExpression t) {
@@ -2774,7 +2783,7 @@ public class JavacParser implements Parser {
         case JCTree.ERRONEOUS:
             return t;
         default:
-            log.error(t.pos, "not.stmt");
+            error(t.pos, "not.stmt");
             return F.at(t.pos).Erroneous(List.<JCTree>of(t));
         }
     }
@@ -2921,49 +2930,49 @@ public class JavacParser implements Parser {
 
     void checkGenerics() {
         if (!allowGenerics) {
-            log.error(S.pos(), "generics.not.supported.in.source", source.name);
+            error(S.pos(), "generics.not.supported.in.source", source.name);
             allowGenerics = true;
         }
     }
     void checkVarargs() {
         if (!allowVarargs) {
-            log.error(S.pos(), "varargs.not.supported.in.source", source.name);
+            error(S.pos(), "varargs.not.supported.in.source", source.name);
             allowVarargs = true;
         }
     }
     void checkForeach() {
         if (!allowForeach) {
-            log.error(S.pos(), "foreach.not.supported.in.source", source.name);
+            error(S.pos(), "foreach.not.supported.in.source", source.name);
             allowForeach = true;
         }
     }
     void checkStaticImports() {
         if (!allowStaticImport) {
-            log.error(S.pos(), "static.import.not.supported.in.source", source.name);
+            error(S.pos(), "static.import.not.supported.in.source", source.name);
             allowStaticImport = true;
         }
     }
     void checkAnnotations() {
         if (!allowAnnotations) {
-            log.error(S.pos(), "annotations.not.supported.in.source", source.name);
+            error(S.pos(), "annotations.not.supported.in.source", source.name);
             allowAnnotations = true;
         }
     }
     void checkDiamond() {
         if (!allowDiamond) {
-            log.error(S.pos(), "diamond.not.supported.in.source", source.name);
+            error(S.pos(), "diamond.not.supported.in.source", source.name);
             allowDiamond = true;
         }
     }
     void checkMulticatch() {
         if (!allowMulticatch) {
-            log.error(S.pos(), "multicatch.not.supported.in.source", source.name);
+            error(S.pos(), "multicatch.not.supported.in.source", source.name);
             allowMulticatch = true;
         }
     }
     void checkAutomaticResourceManagement() {
         if (!allowTWR) {
-            log.error(S.pos(), "automatic.resource.management.not.supported.in.source", source.name);
+            error(S.pos(), "automatic.resource.management.not.supported.in.source", source.name);
             allowTWR = true;
         }
     }

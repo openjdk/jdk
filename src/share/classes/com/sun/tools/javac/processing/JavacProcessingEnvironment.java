@@ -939,7 +939,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         break;
 
                     case ERROR:
-                        if (fatalErrors || !d.isFlagSet(RESOLVE_ERROR))
+                        if (fatalErrors || !d.isFlagSet(RECOVERABLE))
                             return true;
                         break;
                 }
