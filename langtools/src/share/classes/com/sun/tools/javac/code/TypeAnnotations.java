@@ -113,9 +113,10 @@ public class TypeAnnotations {
                     p.pos = frame.pos;
                     return p;
 
+                case ANNOTATION_TYPE:
                 case CLASS:
-                case INTERFACE:
                 case ENUM:
+                case INTERFACE:
                     p.pos = frame.pos;
                     if (((JCClassDecl)frame).extending == tree) {
                         p.type = TargetType.CLASS_EXTENDS;
