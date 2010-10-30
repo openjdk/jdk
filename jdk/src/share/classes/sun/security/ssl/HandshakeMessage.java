@@ -1167,8 +1167,13 @@ class CertificateRequest extends HandshakeMessage
             s.println();
 
             s.println("Cert Authorities:");
-            for (int i = 0; i < authorities.length; i++)
-                authorities[i].print(s);
+            if (authorities.length == 0) {
+                s.println("<Empty>");
+            } else {
+                for (int i = 0; i < authorities.length; i++) {
+                    authorities[i].print(s);
+                }
+            }
         }
     }
 }

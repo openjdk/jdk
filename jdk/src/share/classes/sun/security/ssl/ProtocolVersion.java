@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,12 @@ package sun.security.ssl;
  * @author  Andreas Sterbenz
  * @since   1.4.1
  */
-public final class ProtocolVersion {
+public final class ProtocolVersion implements Comparable<ProtocolVersion> {
 
-    // dummy protocol version value for invalid SSLSession
+    // The limit of maximum protocol version
+    final static int LIMIT_MAX_VALUE = 0xFFFF;
+
+    // Dummy protocol version value for invalid SSLSession
     final static ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
 
     // If enabled, send/ accept SSLv2 hello messages
@@ -61,22 +64,24 @@ public final class ProtocolVersion {
     final static ProtocolVersion TLS10 = new ProtocolVersion(0x0301, "TLSv1");
 
     // TLS 1.1
-    // not supported yet, but added for better readability of the debug trace
     final static ProtocolVersion TLS11 = new ProtocolVersion(0x0302, "TLSv1.1");
+
+    // TLS 1.2
+    final static ProtocolVersion TLS12 = new ProtocolVersion(0x0303, "TLSv1.2");
 
     private static final boolean FIPS = SunJSSE.isFIPS();
 
     // minimum version we implement (SSL 3.0)
     final static ProtocolVersion MIN = FIPS ? TLS10 : SSL30;
 
-    // maximum version we implement (TLS 1.0)
-    final static ProtocolVersion MAX = TLS10;
+    // maximum version we implement (TLS 1.1)
+    final static ProtocolVersion MAX = TLS11;
 
     // ProtocolVersion to use by default (TLS 1.0)
     final static ProtocolVersion DEFAULT = TLS10;
 
     // Default version for hello messages (SSLv2Hello)
-    final static ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL20Hello;
+    final static ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL30;
 
     // version in 16 bit MSB format as it appears in records and
     // messages, i.e. 0x0301 for TLS 1.0
@@ -104,6 +109,8 @@ public final class ProtocolVersion {
             return TLS10;
         } else if (v == TLS11.v) {
             return TLS11;
+        } else if (v == TLS12.v) {
+            return TLS12;
         } else if (v == SSL20Hello.v) {
             return SSL20Hello;
         } else {
@@ -134,18 +141,20 @@ public final class ProtocolVersion {
         if (name == null) {
             throw new IllegalArgumentException("Protocol cannot be null");
         }
-        if (FIPS) {
-            if (name.equals(TLS10.name)) {
-                return TLS10;
-            } else {
-                throw new IllegalArgumentException
-                    ("Only TLS 1.0 allowed in FIPS mode");
-            }
+
+        if (FIPS && (name.equals(SSL30.name) || name.equals(SSL20Hello.name))) {
+            throw new IllegalArgumentException
+                ("Only TLS 1.0 or later allowed in FIPS mode");
         }
+
         if (name.equals(SSL30.name)) {
             return SSL30;
         } else if (name.equals(TLS10.name)) {
             return TLS10;
+        } else if (name.equals(TLS11.name)) {
+            return TLS11;
+        } else if (name.equals(TLS12.name)) {
+            return TLS12;
         } else if (name.equals(SSL20Hello.name)) {
             return SSL20Hello;
         } else {
@@ -157,4 +166,10 @@ public final class ProtocolVersion {
         return name;
     }
 
+    /**
+     * Compares this object with the specified object for order.
+     */
+    public int compareTo(ProtocolVersion protocolVersion) {
+        return this.v - protocolVersion.v;
+    }
 }

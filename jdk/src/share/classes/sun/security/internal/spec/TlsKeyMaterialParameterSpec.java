@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,10 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
             throw new NullPointerException();
         }
         this.masterSecret = masterSecret;
-        this.majorVersion = TlsMasterSecretParameterSpec.checkVersion(majorVersion);
-        this.minorVersion = TlsMasterSecretParameterSpec.checkVersion(minorVersion);
+        this.majorVersion =
+            TlsMasterSecretParameterSpec.checkVersion(majorVersion);
+        this.minorVersion =
+            TlsMasterSecretParameterSpec.checkVersion(minorVersion);
         this.clientRandom = clientRandom.clone();
         this.serverRandom = serverRandom.clone();
         this.cipherAlgorithm = cipherAlgorithm;
@@ -172,20 +174,36 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Returns the length in bytes of the expanded encryption key to be generated.
+     * Returns the length in bytes of the expanded encryption key to be
+     * generated. Returns zero if the expanded encryption key is not
+     * supposed to be generated.
      *
-     * @return the length in bytes of the expanded encryption key to be generated.
+     * @return the length in bytes of the expanded encryption key to be
+     *     generated.
      */
     public int getExpandedCipherKeyLength() {
+        // TLS v1.1 disables the exportable weak cipher suites.
+        if (majorVersion >= 0x03 && minorVersion >= 0x02) {
+            return 0;
+        }
         return expandedCipherKeyLength;
     }
 
     /**
-     * Returns the length in bytes of the initialization vector to be generated.
+     * Returns the length in bytes of the initialization vector to be
+     * generated. Returns zero if the initialization vector is not
+     * supposed to be generated.
      *
-     * @return the length in bytes of the initialization vector to be generated.
+     * @return the length in bytes of the initialization vector to be
+     *     generated.
      */
     public int getIvLength() {
+        // TLS v1.1 or later uses an explicit IV to protect against
+        // the CBC attacks.
+        if (majorVersion >= 0x03 && minorVersion >= 0x02) {
+            return 0;
+        }
+
         return ivLength;
     }
 

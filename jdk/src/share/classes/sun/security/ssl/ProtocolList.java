@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,12 @@ import java.util.*;
 final class ProtocolList {
 
     private static final ProtocolList SUPPORTED;
+    private static final ProtocolList CLIENT_DEFAULT;
+    private static final ProtocolList SERVER_DEFAULT;
 
-    private final Collection<ProtocolVersion> protocols;
+    // the sorted protocol version list
+    private final ArrayList<ProtocolVersion> protocols;
+
     private String[] protocolNames;
 
     // the minimum and maximum ProtocolVersions in this list
@@ -49,30 +53,45 @@ final class ProtocolList {
     final ProtocolVersion helloVersion;
 
     ProtocolList(String[] names) {
+        this(convert(names));
+    }
+
+    ProtocolList(ArrayList<ProtocolVersion> versions) {
+        this.protocols = versions;
+
+        if ((protocols.size() == 1) &&
+                protocols.contains(ProtocolVersion.SSL20Hello)) {
+            throw new IllegalArgumentException("SSLv2Hello cannot be " +
+                "enabled unless at least one other supported version " +
+                "is also enabled.");
+        }
+
+        if (protocols.size() != 0) {
+            Collections.sort(protocols);
+            min = protocols.get(0);
+            max = protocols.get(protocols.size() - 1);
+            helloVersion = protocols.get(0);
+        } else {
+            min = ProtocolVersion.NONE;
+            max = ProtocolVersion.NONE;
+            helloVersion = ProtocolVersion.NONE;
+        }
+    }
+
+    private static ArrayList<ProtocolVersion> convert(String[] names) {
         if (names == null) {
             throw new IllegalArgumentException("Protocols may not be null");
         }
-        protocols = new ArrayList<ProtocolVersion>(3);
+
+        ArrayList<ProtocolVersion> versions = new ArrayList<ProtocolVersion>(3);
         for (int i = 0; i < names.length; i++ ) {
             ProtocolVersion version = ProtocolVersion.valueOf(names[i]);
-            if (protocols.contains(version) == false) {
-                protocols.add(version);
+            if (versions.contains(version) == false) {
+                versions.add(version);
             }
         }
-        if ((protocols.size() == 1)
-                && protocols.contains(ProtocolVersion.SSL20Hello)) {
-            throw new IllegalArgumentException("SSLv2Hello" +
-                  "cannot be enabled unless TLSv1 or SSLv3 is also enabled");
-        }
-        min = contains(ProtocolVersion.SSL30) ? ProtocolVersion.SSL30
-                                              : ProtocolVersion.TLS10;
-        max = contains(ProtocolVersion.TLS10) ? ProtocolVersion.TLS10
-                                              : ProtocolVersion.SSL30;
-        if (protocols.contains(ProtocolVersion.SSL20Hello)) {
-            helloVersion = ProtocolVersion.SSL20Hello;
-        } else {
-            helloVersion = min;
-        }
+
+        return versions;
     }
 
     /**
@@ -85,6 +104,37 @@ final class ProtocolList {
             return false;
         }
         return protocols.contains(protocolVersion);
+    }
+
+    /**
+     * Return a reference to the internal Collection of CipherSuites.
+     * The Collection MUST NOT be modified.
+     */
+    Collection<ProtocolVersion> collection() {
+        return protocols;
+    }
+
+    /**
+     * Select a protocol version from the list.
+     *
+     * Return the lower of the protocol version of that suggested by
+     * the <code>protocolVersion</code> and the highest version of this
+     * protocol list, or null if no protocol version is available.
+     *
+     * The method is used by TLS server to negotiated the protocol
+     * version between client suggested protocol version in the
+     * client hello and protocol versions supported by the server.
+     */
+    ProtocolVersion selectProtocolVersion(ProtocolVersion protocolVersion) {
+        ProtocolVersion selectedVersion = null;
+        for (ProtocolVersion pv : protocols) {
+            if (pv.v > protocolVersion.v) {
+                break;  // Safe to break here as this.protocols is sorted
+            }
+            selectedVersion = pv;
+        }
+
+        return selectedVersion;
     }
 
     /**
@@ -106,11 +156,18 @@ final class ProtocolList {
     }
 
     /**
-     * Return the list of default enabled protocols. Currently, this
-     * is identical to the supported protocols.
+     * Return the list of default enabled protocols.
      */
-    static ProtocolList getDefault() {
-        return SUPPORTED;
+    static ProtocolList getDefault(boolean isServer) {
+        return isServer ? SERVER_DEFAULT : CLIENT_DEFAULT;
+    }
+
+    /**
+     * Return whether a protocol list is the original default enabled
+     * protocols.  See: SSLSocket/SSLEngine.setEnabledProtocols()
+     */
+    static boolean isDefaultProtocolList(ProtocolList protocols) {
+        return protocols == CLIENT_DEFAULT || protocols == SERVER_DEFAULT;
     }
 
     /**
@@ -123,6 +180,12 @@ final class ProtocolList {
     static {
         if (SunJSSE.isFIPS()) {
             SUPPORTED = new ProtocolList(new String[] {
+                ProtocolVersion.TLS10.name,
+                ProtocolVersion.TLS11.name
+            });
+
+            SERVER_DEFAULT = SUPPORTED;
+            CLIENT_DEFAULT = new ProtocolList(new String[] {
                 ProtocolVersion.TLS10.name
             });
         } else {
@@ -130,6 +193,13 @@ final class ProtocolList {
                 ProtocolVersion.SSL20Hello.name,
                 ProtocolVersion.SSL30.name,
                 ProtocolVersion.TLS10.name,
+                ProtocolVersion.TLS11.name
+            });
+
+            SERVER_DEFAULT = SUPPORTED;
+            CLIENT_DEFAULT = new ProtocolList(new String[] {
+                ProtocolVersion.SSL30.name,
+                ProtocolVersion.TLS10.name
             });
         }
     }
