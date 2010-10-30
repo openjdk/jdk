@@ -56,6 +56,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   constantPoolHandle parse_constant_pool(TRAPS);
 
+  static int start_operand_group(GrowableArray<int>* &operands, int op_count, TRAPS);
+  static void store_operand_array(GrowableArray<int>* operands, constantPoolHandle cp, TRAPS);
+
   // Interface parsing
   objArrayHandle parse_interfaces(constantPoolHandle cp,
                                   int length,

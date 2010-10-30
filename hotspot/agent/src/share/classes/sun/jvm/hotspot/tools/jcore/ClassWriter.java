@@ -323,10 +323,11 @@ public class ClassWriter implements /* imports */ ClassConstants
 
                 case JVM_CONSTANT_InvokeDynamic: {
                      dos.writeByte(cpConstType);
-                     int value = cpool.getIntAt(ci);
-                     short refIndex = (short) value;
-                     dos.writeShort(refIndex);
-                     if (DEBUG) debugMessage("CP[" + ci + "] = MT index = " + refIndex);
+                     int[] values = cpool.getMultiOperandsAt(ci);
+                     for (int vn = 0; vn < values.length; vn++) {
+                         dos.writeShort(values[vn]);
+                     }
+                     if (DEBUG) debugMessage("CP[" + ci + "] = INDY indexes = " + Arrays.toString(values));
                      break;
                 }
 

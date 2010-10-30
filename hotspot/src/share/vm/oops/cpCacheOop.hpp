@@ -319,7 +319,9 @@ class constantPoolCacheOopDesc: public oopDesc {
 
   // Sizing
   debug_only(friend class ClassVerifier;)
+ public:
   int length() const                             { return _length; }
+ private:
   void set_length(int length)                    { _length = length; }
 
   static int header_size()                       { return sizeof(constantPoolCacheOopDesc) / HeapWordSize; }

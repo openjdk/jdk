@@ -1527,6 +1527,17 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_constant(symbolOopDesc::max_symbol_length)                      \
                                                                           \
+  /*************************************************/                     \
+  /* constantPoolOop layout enum for InvokeDynamic */                     \
+  /*************************************************/                     \
+                                                                          \
+  declare_constant(constantPoolOopDesc::_multi_operand_count_offset)      \
+  declare_constant(constantPoolOopDesc::_multi_operand_base_offset)       \
+  declare_constant(constantPoolOopDesc::_indy_bsm_offset)                 \
+  declare_constant(constantPoolOopDesc::_indy_nt_offset)                  \
+  declare_constant(constantPoolOopDesc::_indy_argc_offset)                \
+  declare_constant(constantPoolOopDesc::_indy_argv_offset)                \
+                                                                          \
   /*********************************************/                         \
   /* ConstantPoolCacheEntry FlagBitValues enum */                         \
   /*********************************************/                         \

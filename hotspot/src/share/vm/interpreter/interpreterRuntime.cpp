@@ -716,6 +716,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
   // there is a second CPC entries that is of interest; it caches signature info:
   int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();
+  int pool_index = pool->cache()->entry_at(main_index)->constant_pool_index();
 
   // first resolve the signature to a MH.invoke methodOop
   if (!pool->cache()->entry_at(main_index)->is_resolved(bytecode)) {
@@ -740,9 +741,10 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
 
+  Handle info;  // optional argument(s) in JVM_CONSTANT_InvokeDynamic
   Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
-                                                         main_index, CHECK);
-  if (bootm.is_null()) {
+                                                         main_index, info, CHECK);
+  if (!java_dyn_MethodHandle::is_instance(bootm())) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
               "no bootstrap method found for invokedynamic");
   }
@@ -752,8 +754,6 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     return;
 
   symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
-
-  Handle info;  // NYI: Other metadata from a new kind of CP entry.  (Annotations?)
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,
