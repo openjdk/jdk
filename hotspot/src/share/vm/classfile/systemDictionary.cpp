@@ -2555,7 +2555,9 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
 }
 
 Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int caller_bci,
-                                               int cache_index, TRAPS) {
+                                               int cache_index,
+                                               Handle& argument_info_result,
+                                               TRAPS) {
   Handle empty;
 
   constantPoolHandle pool;
@@ -2569,7 +2571,7 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
   constantTag tag = pool->tag_at(constant_pool_index);
 
   if (tag.is_invoke_dynamic()) {
-    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type]
+    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type], plus optional arguments
     // The bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
     int bsm_index = pool->invoke_dynamic_bootstrap_method_ref_index_at(constant_pool_index);
     if (bsm_index != 0) {
@@ -2585,9 +2587,38 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
         tty->print_cr("bootstrap method for "PTR_FORMAT" at %d retrieved as "PTR_FORMAT":",
                       (intptr_t) caller_method(), caller_bci, (intptr_t) bsm_oop);
       }
-      assert(bsm_oop->is_oop()
-             && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
-      return Handle(THREAD, bsm_oop);
+      assert(bsm_oop->is_oop(), "must be sane");
+      // caller must verify that it is of type MethodHandle
+      Handle bsm(THREAD, bsm_oop);
+      bsm_oop = NULL;  // safety
+
+      // Extract the optional static arguments.
+      Handle argument_info;  // either null, or one arg, or Object[]{arg...}
+      int argc = pool->invoke_dynamic_argument_count_at(constant_pool_index);
+      if (TraceInvokeDynamic) {
+        tty->print_cr("find_bootstrap_method: [%d/%d] CONSTANT_InvokeDynamic: %d[%d]",
+                      constant_pool_index, cache_index, bsm_index, argc);
+      }
+      if (argc > 0) {
+        objArrayHandle arg_array;
+        if (argc > 1) {
+          objArrayOop arg_array_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(), argc, CHECK_(empty));
+          arg_array = objArrayHandle(THREAD, arg_array_oop);
+          argument_info = arg_array;
+        }
+        for (int arg_i = 0; arg_i < argc; arg_i++) {
+          int arg_index = pool->invoke_dynamic_argument_index_at(constant_pool_index, arg_i);
+          oop arg_oop = pool->resolve_possibly_cached_constant_at(arg_index, CHECK_(empty));
+          if (arg_array.is_null()) {
+            argument_info = Handle(THREAD, arg_oop);
+          } else {
+            arg_array->obj_at_put(arg_i, arg_oop);
+          }
+        }
+      }
+
+      argument_info_result = argument_info;  // return argument_info to caller
+      return bsm;
     }
     // else null BSM; fall through
   } else if (tag.is_name_and_type()) {
@@ -2600,14 +2631,14 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
   // Fall through to pick up the per-class bootstrap method.
   // This mechanism may go away in the PFD.
   assert(AllowTransitionalJSR292, "else the verifier should have stopped us already");
+  argument_info_result = empty;  // return no argument_info to caller
   oop bsm_oop = instanceKlass::cast(caller_method->method_holder())->bootstrap_method();
   if (bsm_oop != NULL) {
     if (TraceMethodHandles) {
       tty->print_cr("bootstrap method for "PTR_FORMAT" registered as "PTR_FORMAT":",
                     (intptr_t) caller_method(), (intptr_t) bsm_oop);
     }
-    assert(bsm_oop->is_oop()
-           && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
+    assert(bsm_oop->is_oop(), "must be sane");
     return Handle(THREAD, bsm_oop);
   }
 

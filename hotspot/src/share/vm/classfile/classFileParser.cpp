@@ -73,6 +73,12 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
   unsigned int hashValues[SymbolTable::symbol_alloc_batch_size];
   int names_count = 0;
 
+  // Side buffer for operands of variable-sized (InvokeDynamic) entries.
+  GrowableArray<int>* operands = NULL;
+#ifdef ASSERT
+  GrowableArray<int>* indy_instructions = new GrowableArray<int>(THREAD, 10);
+#endif
+
   // parsing  Index 0 is unused
   for (int index = 1; index < length; index++) {
     // Each of the following case guarantees one more byte in the stream
@@ -141,6 +147,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           ShouldNotReachHere();
         }
         break;
+      case JVM_CONSTANT_InvokeDynamicTrans :  // this tag appears only in old classfiles
       case JVM_CONSTANT_InvokeDynamic :
         {
           if (!EnableInvokeDynamic ||
@@ -151,10 +158,36 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
                "Class file version does not support constant tag %u in class file %s"),
               tag, CHECK);
           }
-          cfs->guarantee_more(5, CHECK);  // bsm_index, name_and_type_index, tag/access_flags
+          if (!AllowTransitionalJSR292 && tag == JVM_CONSTANT_InvokeDynamicTrans) {
+            classfile_parse_error(
+                "This JVM does not support transitional InvokeDynamic tag %u in class file %s",
+                tag, CHECK);
+          }
+          bool trans_no_argc = AllowTransitionalJSR292 && (tag == JVM_CONSTANT_InvokeDynamicTrans);
+          cfs->guarantee_more(7, CHECK);  // bsm_index, nt, argc, ..., tag/access_flags
           u2 bootstrap_method_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
-          cp->invoke_dynamic_at_put(index, bootstrap_method_index, name_and_type_index);
+          int argument_count = trans_no_argc ? 0 : cfs->get_u2_fast();
+          cfs->guarantee_more(2*argument_count + 1, CHECK);  // argv[argc]..., tag/access_flags
+          int argv_offset = constantPoolOopDesc::_indy_argv_offset;
+          int op_count = argv_offset + argument_count;  // bsm, nt, argc, argv[]...
+          int op_base = start_operand_group(operands, op_count, CHECK);
+          assert(argv_offset == 3, "else adjust next 3 assignments");
+          operands->at_put(op_base + constantPoolOopDesc::_indy_bsm_offset, bootstrap_method_index);
+          operands->at_put(op_base + constantPoolOopDesc::_indy_nt_offset, name_and_type_index);
+          operands->at_put(op_base + constantPoolOopDesc::_indy_argc_offset, argument_count);
+          for (int arg_i = 0; arg_i < argument_count; arg_i++) {
+            int arg = cfs->get_u2_fast();
+            operands->at_put(op_base + constantPoolOopDesc::_indy_argv_offset + arg_i, arg);
+          }
+          cp->invoke_dynamic_at_put(index, op_base, op_count);
+#ifdef ASSERT
+          // Record the steps just taken for later checking.
+          indy_instructions->append(index);
+          indy_instructions->append(bootstrap_method_index);
+          indy_instructions->append(name_and_type_index);
+          indy_instructions->append(argument_count);
+#endif //ASSERT
         }
         break;
       case JVM_CONSTANT_Integer :
@@ -257,12 +290,64 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
     oopFactory::new_symbols(cp, names_count, names, lengths, indices, hashValues, CHECK);
   }
 
+  if (operands != NULL && operands->length() > 0) {
+    store_operand_array(operands, cp, CHECK);
+  }
+#ifdef ASSERT
+  // Re-assert the indy structures, now that assertion checking can work.
+  for (int indy_i = 0; indy_i < indy_instructions->length(); ) {
+    int index                  = indy_instructions->at(indy_i++);
+    int bootstrap_method_index = indy_instructions->at(indy_i++);
+    int name_and_type_index    = indy_instructions->at(indy_i++);
+    int argument_count         = indy_instructions->at(indy_i++);
+    assert(cp->check_invoke_dynamic_at(index,
+                                       bootstrap_method_index, name_and_type_index,
+                                       argument_count),
+           "indy structure is OK");
+  }
+#endif //ASSERT
+
   // Copy _current pointer of local copy back to stream().
 #ifdef ASSERT
   assert(cfs0->current() == old_current, "non-exclusive use of stream()");
 #endif
   cfs0->set_current(cfs1.current());
 }
+
+int ClassFileParser::start_operand_group(GrowableArray<int>* &operands, int op_count, TRAPS) {
+  if (operands == NULL) {
+    operands = new GrowableArray<int>(THREAD, 100);
+    int fillp_offset = constantPoolOopDesc::_multi_operand_buffer_fill_pointer_offset;
+    while (operands->length() <= fillp_offset)
+      operands->append(0);  // force op_base > 0, for an error check
+    DEBUG_ONLY(operands->at_put(fillp_offset, (int)badHeapWordVal));
+  }
+  int cnt_pos = operands->append(op_count);
+  int arg_pos = operands->length();
+  operands->at_grow(arg_pos + op_count - 1);  // grow to include the operands
+  assert(operands->length() == arg_pos + op_count, "");
+  int op_base = cnt_pos - constantPoolOopDesc::_multi_operand_count_offset;
+  return op_base;
+}
+
+void ClassFileParser::store_operand_array(GrowableArray<int>* operands, constantPoolHandle cp, TRAPS) {
+  // Collect the buffer of operands from variable-sized entries into a permanent array.
+  int arraylen = operands->length();
+  int fillp_offset = constantPoolOopDesc::_multi_operand_buffer_fill_pointer_offset;
+  assert(operands->at(fillp_offset) == (int)badHeapWordVal, "value unused so far");
+  operands->at_put(fillp_offset, arraylen);
+  cp->multi_operand_buffer_grow(arraylen, CHECK);
+  typeArrayOop operands_oop = cp->operands();
+  assert(operands_oop->length() == arraylen, "");
+  for (int i = 0; i < arraylen; i++) {
+    operands_oop->int_at_put(i, operands->at(i));
+  }
+  cp->set_operands(operands_oop);
+  // The fill_pointer is used only by constantPoolOop::copy_entry_to and friends,
+  // when constant pools need to be merged.  Make sure it is sane now.
+  assert(cp->multi_operand_buffer_fill_pointer() == arraylen, "");
+}
+
 
 bool inline valid_cp_range(int index, int length) { return (index > 0 && index < length); }
 
@@ -431,6 +516,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
               ref_index, CHECK_(nullHandle));
         }
         break;
+      case JVM_CONSTANT_InvokeDynamicTrans :
+        ShouldNotReachHere();  // this tag does not appear in the heap
       case JVM_CONSTANT_InvokeDynamic :
         {
           int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
@@ -438,7 +525,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
           check_property((bootstrap_method_ref_index == 0 && AllowTransitionalJSR292)
                          ||
                          (valid_cp_range(bootstrap_method_ref_index, length) &&
-                          cp->tag_at(bootstrap_method_ref_index).is_method_handle()),
+                          (cp->tag_at(bootstrap_method_ref_index).is_method_handle())),
                          "Invalid constant pool index %u in class file %s",
                          bootstrap_method_ref_index,
                          CHECK_(nullHandle));
@@ -447,6 +534,18 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
                          "Invalid constant pool index %u in class file %s",
                          name_and_type_ref_index,
                          CHECK_(nullHandle));
+          int argc = cp->invoke_dynamic_argument_count_at(index);
+          for (int arg_i = 0; arg_i < argc; arg_i++) {
+            int arg = cp->invoke_dynamic_argument_index_at(index, arg_i);
+            check_property(valid_cp_range(arg, length) &&
+                           cp->tag_at(arg).is_loadable_constant() ||
+                           // temporary early forms of string and class:
+                           cp->tag_at(arg).is_klass_index() ||
+                           cp->tag_at(arg).is_string_index(),
+                           "Invalid constant pool index %u in class file %s",
+                           arg,
+                           CHECK_(nullHandle));
+          }
           break;
         }
       default:

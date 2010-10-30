@@ -1265,6 +1265,7 @@ constantPoolOop.cpp                     javaClasses.hpp
 constantPoolOop.cpp                     linkResolver.hpp
 constantPoolOop.cpp                     objArrayKlass.hpp
 constantPoolOop.cpp                     oop.inline.hpp
+constantPoolOop.cpp                     oopFactory.hpp
 constantPoolOop.cpp                     signature.hpp
 constantPoolOop.cpp                     symbolTable.hpp
 constantPoolOop.cpp                     systemDictionary.hpp
