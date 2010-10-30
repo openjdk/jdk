@@ -265,8 +265,7 @@ int constantPoolOopDesc::impl_name_and_type_ref_index_at(int which, bool uncache
   int i = which;
   if (!uncached && cache() != NULL) {
     if (constantPoolCacheOopDesc::is_secondary_index(which)) {
-      // Invokedynamic indexes are always processed in native order
-      // so there is no question of reading a native u2 in Java order here.
+      // Invokedynamic index.
       int pool_index = cache()->main_entry_at(which)->constant_pool_index();
       if (tag_at(pool_index).is_invoke_dynamic())
         pool_index = invoke_dynamic_name_and_type_ref_index_at(pool_index);
