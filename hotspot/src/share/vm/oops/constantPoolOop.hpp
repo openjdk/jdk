@@ -414,13 +414,18 @@ class constantPoolOopDesc : public oopDesc {
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
   // name_and_type_ref_index_at) all expect to be passed indices obtained
-  // directly from the bytecode, and extracted according to java byte order.
+  // directly from the bytecode.
   // If the indices are meant to refer to fields or methods, they are
-  // actually potentially byte-swapped, rewritten constant pool cache indices.
+  // actually rewritten constant pool cache indices.
   // The routine remap_instruction_operand_from_cache manages the adjustment
   // of these values back to constant pool indices.
 
   // There are also "uncached" versions which do not adjust the operand index; see below.
+
+  // FIXME: Consider renaming these with a prefix "cached_" to make the distinction clear.
+  // In a few cases (the verifier) there are uses before a cpcache has been built,
+  // which are handled by a dynamic check in remap_instruction_operand_from_cache.
+  // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
   klassOop klass_ref_at(int which, TRAPS);
@@ -484,7 +489,7 @@ class constantPoolOopDesc : public oopDesc {
   static klassOop klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int which, TRAPS);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
-  // future by other Java code. These take constant pool indices rather than possibly-byte-swapped
+  // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
   symbolOop uncached_klass_ref_at_noresolve(int which);
   symbolOop uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
