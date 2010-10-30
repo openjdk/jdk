@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,8 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      *   negative or larger than 255
      */
     public TlsMasterSecretParameterSpec(SecretKey premasterSecret,
-            int majorVersion, int minorVersion, byte[] clientRandom, byte[] serverRandom) {
+            int majorVersion, int minorVersion,
+            byte[] clientRandom, byte[] serverRandom) {
         if (premasterSecret == null) {
             throw new NullPointerException("premasterSecret must not be null");
         }
@@ -80,7 +81,8 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
 
     static int checkVersion(int version) {
         if ((version < 0) || (version > 255)) {
-            throw new IllegalArgumentException("Version must be between 0 and 255");
+            throw new IllegalArgumentException(
+                        "Version must be between 0 and 255");
         }
         return version;
     }

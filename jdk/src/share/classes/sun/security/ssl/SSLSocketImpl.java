@@ -194,11 +194,13 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     private byte                doClientAuth;
     private boolean             roleIsServer;
-    private CipherSuiteList     enabledCipherSuites;
     private boolean             enableSessionCreation = true;
     private String              host;
     private boolean             autoClose = true;
     private AccessControlContext acc;
+
+    // The cipher suites enabled for use on this connection.
+    private CipherSuiteList     enabledCipherSuites;
 
     // hostname identification algorithm, the hostname identification is
     // disabled by default.
@@ -341,11 +343,11 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     private AppOutputStream     output;
 
     /*
-     * The protocols we support are SSL Version 3.0) and
-     * TLS (version 3.1).
-     * In addition we support a pseudo protocol called
-     * SSLv2Hello which when set will result in an SSL v2 Hello
-     * being sent with SSLv3 or TLSv1 version info.
+     * The protocol versions enabled for use on this connection.
+     *
+     * Note: we support a pseudo protocol called SSLv2Hello which when
+     * set will result in an SSL v2 Hello being sent with SSL (version 3.0)
+     * or TLS (version 3.1, 3.2, etc.) version info.
      */
     private ProtocolList enabledProtocols;
 
@@ -541,7 +543,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         serverVerifyData = new byte[0];
 
         enabledCipherSuites = CipherSuiteList.getDefault();
-        enabledProtocols = ProtocolList.getDefault();
+        enabledProtocols = ProtocolList.getDefault(roleIsServer);
         inrec = null;
 
         // save the acc
@@ -764,6 +766,21 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         r.addMAC(writeMAC);
         r.encrypt(writeCipher);
         r.write(sockOutput);
+
+        /*
+         * Check the sequence number state
+         *
+         * Note that in order to maintain the connection I/O
+         * properly, we check the sequence number after the last
+         * record writing process. As we request renegotiation
+         * or close the connection for wrapped sequence number
+         * when there is enough sequence number space left to
+         * handle a few more records, so the sequence number
+         * of the last record cannot be wrapped.
+         */
+        if (connectionState < cs_ERROR) {
+            checkSequenceNumber(writeMAC, r.contentType());
+        }
     }
 
 
@@ -883,6 +900,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                 }
             }
 
+
             // if (!r.decompress(c))
             //     fatal(Alerts.alert_decompression_failure,
             //         "decompression failure");
@@ -905,6 +923,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                      * in it.
                      */
                     initHandshaker();
+                    if (!handshaker.activated()) {
+                        // prior to handshaking, activate the handshake
+                        if (connectionState == cs_RENEGOTIATE) {
+                            // don't use SSLv2Hello when renegotiating
+                            handshaker.activate(protocolVersion);
+                        } else {
+                            handshaker.activate(null);
+                        }
+                    }
 
                     /*
                      * process the handshake record ... may contain just
@@ -949,9 +976,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
                     if (needAppData || connectionState != cs_DATA) {
                         continue;
-                    } else {
-                        return;
                     }
+                    break;
 
                 case Record.ct_application_data:
                     // Pass this right back up to the application.
@@ -971,7 +997,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                     }
 
                     r.setAppDataValid(true);
-                    return;
+                    break;
 
                 case Record.ct_alert:
                     recvAlert(r);
@@ -1010,6 +1036,23 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                     }
                     continue;
               } // switch
+
+              /*
+               * Check the sequence number state
+               *
+               * Note that in order to maintain the connection I/O
+               * properly, we check the sequence number after the last
+               * record reading process. As we request renegotiation
+               * or close the connection for wrapped sequence number
+               * when there is enough sequence number space left to
+               * handle a few more records, so the sequence number
+               * of the last record cannot be wrapped.
+               */
+              if (connectionState < cs_ERROR) {
+                  checkSequenceNumber(readMAC, r.contentType());
+              }
+
+              return;
             } // synchronized (this)
         }
 
@@ -1019,6 +1062,61 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         r.close();
         return;
       }  // synchronized (readLock)
+    }
+
+    /**
+     * Check the sequence number state
+     *
+     * RFC 4346 states that, "Sequence numbers are of type uint64 and
+     * may not exceed 2^64-1.  Sequence numbers do not wrap. If a TLS
+     * implementation would need to wrap a sequence number, it must
+     * renegotiate instead."
+     */
+    private void checkSequenceNumber(MAC mac, byte type)
+            throws IOException {
+
+        /*
+         * Don't bother to check the sequence number for error or
+         * closed connections, or NULL MAC.
+         */
+        if (connectionState >= cs_ERROR || mac == MAC.NULL) {
+            return;
+        }
+
+        /*
+         * Conservatively, close the connection immediately when the
+         * sequence number is close to overflow
+         */
+        if (mac.seqNumOverflow()) {
+            /*
+             * TLS protocols do not define a error alert for sequence
+             * number overflow. We use handshake_failure error alert
+             * for handshaking and bad_record_mac for other records.
+             */
+            if (debug != null && Debug.isOn("ssl")) {
+                System.out.println(threadName() +
+                    ", sequence number extremely close to overflow " +
+                    "(2^64-1 packets). Closing connection.");
+
+            }
+
+            fatal(Alerts.alert_handshake_failure, "sequence number overflow");
+        }
+
+        /*
+         * Ask for renegotiation when need to renew sequence number.
+         *
+         * Don't bother to kickstart the renegotiation when the local is
+         * asking for it.
+         */
+        if ((type != Record.ct_handshake) && mac.seqNumIsHuge()) {
+            if (debug != null && Debug.isOn("ssl")) {
+                System.out.println(threadName() + ", request renegotiation " +
+                        "to avoid sequence number overflow");
+            }
+
+            startHandshake();
+        }
     }
 
     //
@@ -1033,28 +1131,10 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     /**
-     * Initialize and get the server handshaker. Used by SSLServerSocketImpl
-     * for the ciphersuite availability test *only*.
+     * Return the AppOutputStream. For use by Handshaker only.
      */
-    ServerHandshaker getServerHandshaker() throws SSLException {
-        initHandshaker();
-
-         // The connection state would have been set to cs_HANDSHAKE during the
-         // handshaking initializing, however the caller may not have the
-         // the low level connection's established, which is not consistent with
-         // the HANDSHAKE state. As if it is unconnected, we need to reset the
-         // connection state to cs_START.
-         if (!isConnected()) {
-             connectionState = cs_START;
-         }
-
-         // Make sure that we get a ServerHandshaker.
-         // This should never happen.
-         if (!(handshaker instanceof ServerHandshaker)) {
-             throw new SSLProtocolException("unexpected handshaker instance");
-         }
-
-        return (ServerHandshaker)handshaker;
+    AppOutputStream getAppOutputStream() {
+        return output;
     }
 
     /**
@@ -1066,8 +1146,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *  . if the socket is already closed, throw an Exception (internal error)
      *
      *  . otherwise (cs_START or cs_DATA), create the appropriate handshaker
-     *    object, initialize it, and advance the connection state (to
-     *    cs_HANDSHAKE or cs_RENEGOTIATE, respectively).
+     *    object, and advance the connection state (to cs_HANDSHAKE or
+     *    cs_RENEGOTIATE, respectively).
      *
      * This method is called right after a new socket is created, when
      * starting renegotiation, or when changing client/ server mode of the
@@ -1115,12 +1195,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                     protocolVersion, connectionState == cs_HANDSHAKE,
                     secureRenegotiation, clientVerifyData, serverVerifyData);
         }
-        handshaker.enabledCipherSuites = enabledCipherSuites;
+        handshaker.setEnabledCipherSuites(enabledCipherSuites);
         handshaker.setEnableSessionCreation(enableSessionCreation);
-        if (connectionState == cs_RENEGOTIATE) {
-            // don't use SSLv2Hello when renegotiating
-            handshaker.output.r.setHelloVersion(protocolVersion);
-        }
     }
 
     /**
@@ -1135,6 +1211,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         // one thread performs the handshake
         synchronized (handshakeLock) {
             if (getConnectionState() == cs_HANDSHAKE) {
+                kickstartHandshake();
+
                 /*
                  * All initial handshaking goes through this
                  * InputRecord until we have a valid SSL connection.
@@ -1157,7 +1235,6 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                     inrec.enableFormatChecks();
                 }
 
-                kickstartHandshake();
                 readRecord(inrec, false);
                 inrec = null;
             }
@@ -1211,6 +1288,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *    on servers when renegotiating).
      */
     private synchronized void kickstartHandshake() throws IOException {
+
         switch (connectionState) {
 
         case cs_HANDSHAKE:
@@ -1257,7 +1335,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         // to its HandshakeOutStream, which calls back into
         // SSLSocketImpl.writeRecord() to send it.
         //
-        if (!handshaker.started()) {
+        if (!handshaker.activated()) {
+             // prior to handshaking, activate the handshake
+            if (connectionState == cs_RENEGOTIATE) {
+                // don't use SSLv2Hello when renegotiating
+                handshaker.activate(protocolVersion);
+            } else {
+                handshaker.activate(null);
+            }
+
             if (handshaker instanceof ClientHandshaker) {
                 // send client hello
                 handshaker.kickstart();
@@ -1752,7 +1838,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Emit alerts.  Caller must have synchronized with "this".
      */
     private void sendAlert(byte level, byte description) {
+        // the connectionState cannot be cs_START
         if (connectionState >= cs_SENT_CLOSE) {
+            return;
+        }
+
+        // For initial handshaking, don't send alert message to peer if
+        // handshaker has not started.
+        if (connectionState == cs_HANDSHAKE &&
+            (handshaker == null || !handshaker.started())) {
             return;
         }
 
@@ -1962,7 +2056,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     synchronized public void setEnableSessionCreation(boolean flag) {
         enableSessionCreation = flag;
 
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setEnableSessionCreation(enableSessionCreation);
         }
     }
@@ -1990,7 +2084,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
         if ((handshaker != null) &&
                 (handshaker instanceof ServerHandshaker) &&
-                !handshaker.started()) {
+                !handshaker.activated()) {
             ((ServerHandshaker) handshaker).setClientAuth(doClientAuth);
         }
     }
@@ -2013,7 +2107,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
         if ((handshaker != null) &&
                 (handshaker instanceof ServerHandshaker) &&
-                !handshaker.started()) {
+                !handshaker.activated()) {
             ((ServerHandshaker) handshaker).setClientAuth(doClientAuth);
         }
     }
@@ -2032,6 +2126,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         switch (connectionState) {
 
         case cs_START:
+            /*
+             * If we need to change the socket mode and the enabled
+             * protocols haven't specifically been set by the user,
+             * change them to the corresponding default ones.
+             */
+            if (roleIsServer != (!flag) &&
+                    ProtocolList.isDefaultProtocolList(enabledProtocols)) {
+                enabledProtocols = ProtocolList.getDefault(!flag);
+            }
             roleIsServer = !flag;
             break;
 
@@ -2044,7 +2147,16 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
              * have the streams.
              */
             assert(handshaker != null);
-            if (!handshaker.started()) {
+            if (!handshaker.activated()) {
+                /*
+                 * If we need to change the socket mode and the enabled
+                 * protocols haven't specifically been set by the user,
+                 * change them to the corresponding default ones.
+                 */
+                if (roleIsServer != (!flag) &&
+                        ProtocolList.isDefaultProtocolList(enabledProtocols)) {
+                    enabledProtocols = ProtocolList.getDefault(!flag);
+                }
                 roleIsServer = !flag;
                 connectionState = cs_START;
                 initHandshaker();
@@ -2095,8 +2207,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     synchronized public void setEnabledCipherSuites(String[] suites) {
         enabledCipherSuites = new CipherSuiteList(suites);
-        if ((handshaker != null) && !handshaker.started()) {
-            handshaker.enabledCipherSuites = enabledCipherSuites;
+        if ((handshaker != null) && !handshaker.activated()) {
+            handshaker.setEnabledCipherSuites(enabledCipherSuites);
         }
     }
 
@@ -2135,7 +2247,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     synchronized public void setEnabledProtocols(String[] protocols) {
         enabledProtocols = new ProtocolList(protocols);
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setEnabledProtocols(enabledProtocols);
         }
     }
