@@ -398,7 +398,7 @@ public class InvokeGenericTest {
             case 4:
                 junk = target.invokeGeneric(args[0], args[1], args[2], args[3]); break;
             default:
-                junk = MethodHandles.invokeVarargs(target, args); break;
+                junk = target.invokeWithArguments(args); break;
             }
         } catch (WrongMethodTypeException ex) {
             return;

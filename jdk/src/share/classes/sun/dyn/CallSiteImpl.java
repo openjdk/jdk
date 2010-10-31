@@ -41,25 +41,39 @@ public class CallSiteImpl {
                              Object info,
                              // Caller information:
                              MemberName callerMethod, int callerBCI) {
-        Class<?> caller = callerMethod.getDeclaringClass();
+        Class<?> callerClass = callerMethod.getDeclaringClass();
+        Object caller;
+        if (bootstrapMethod.type().parameterType(0) == Class.class)
+            caller = callerClass;  // remove for PFD
+        else
+            caller = MethodHandleImpl.IMPL_LOOKUP.in(callerClass);
         if (bootstrapMethod == null) {
             // If there is no bootstrap method, throw IncompatibleClassChangeError.
             // This is a valid generic error type for resolution (JLS 12.3.3).
             throw new IncompatibleClassChangeError
-                ("Class "+caller.getName()+" has not declared a bootstrap method for invokedynamic");
+                ("Class "+callerClass.getName()+" has not declared a bootstrap method for invokedynamic");
         }
         CallSite site;
         try {
             Object binding;
-            if (false)  // switch when invokeGeneric works
-                binding = bootstrapMethod.invokeGeneric(caller, name, type);
-            else
-                binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type });
+            if (info == null) {
+                if (false)  // switch when invokeGeneric works
+                    binding = bootstrapMethod.invokeGeneric(caller, name, type);
+                else
+                    binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type });
+            } else {
+                info = maybeReBox(info);
+                if (false)  // switch when invokeGeneric works
+                    binding = bootstrapMethod.invokeGeneric(caller, name, type, info);
+                else
+                    binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type, info });
+            }
             //System.out.println("BSM for "+name+type+" => "+binding);
             if (binding instanceof CallSite) {
                 site = (CallSite) binding;
-            } else if (binding instanceof MethodHandleProvider) {
-                MethodHandle target = ((MethodHandleProvider) binding).asMethodHandle();
+            } else if (binding instanceof MethodHandle) {
+                // Transitional!
+                MethodHandle target = (MethodHandle) binding;
                 site = new ConstantCallSite(target);
             } else {
                 throw new ClassCastException("bootstrap method failed to produce a MethodHandle or CallSite");
@@ -77,6 +91,24 @@ public class CallSiteImpl {
             throw bex;
         }
         return site;
+    }
+
+    private static Object maybeReBox(Object x) {
+        if (x instanceof Integer) {
+            int xi = (int) x;
+            if (xi == (byte) xi)
+                x = xi;  // must rebox; see JLS 5.1.7
+            return x;
+        } else if (x instanceof Object[]) {
+            Object[] xa = (Object[]) x;
+            for (int i = 0; i < xa.length; i++) {
+                if (xa[i] instanceof Integer)
+                    xa[i] = maybeReBox(xa[i]);
+            }
+            return xa;
+        } else {
+            return x;
+        }
     }
 
     // This method is private in CallSite because it touches private fields in CallSite.

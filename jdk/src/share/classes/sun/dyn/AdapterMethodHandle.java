@@ -487,7 +487,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     static class WithTypeHandler extends AdapterMethodHandle {
         final MethodHandle target, typeHandler;
         WithTypeHandler(MethodHandle target, MethodHandle typeHandler) {
-            super(target, target.type(), OP_RETYPE_ONLY);
+            super(target, target.type(), makeConv(OP_RETYPE_ONLY));
             this.target = target;
             this.typeHandler = typeHandler.asType(TYPE_HANDLER_TYPE);
         }

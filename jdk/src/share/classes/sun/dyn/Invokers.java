@@ -26,6 +26,7 @@
 package sun.dyn;
 
 import java.dyn.*;
+import sun.dyn.empty.Empty;
 
 /**
  * Construction and caching of often-used invokers.
@@ -47,6 +48,9 @@ public class Invokers {
 
     // generic (untyped) invoker for the outgoing call; accepts a single Object[]
     private final /*lazy*/ MethodHandle[] varargsInvokers;
+
+    // invoker for an unbound callsite
+    private /*lazy*/ MethodHandle uninitializedCallSite;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
@@ -105,6 +109,35 @@ public class Invokers {
         vaInvoker = MethodHandles.spreadArguments(gInvoker, invokerType(vaType));
         varargsInvokers[objectArgCount] = vaInvoker;
         return vaInvoker;
+    }
+
+    private static MethodHandle THROW_UCS = null;
+
+    public MethodHandle uninitializedCallSite() {
+        MethodHandle invoker = uninitializedCallSite;
+        if (invoker != null)  return invoker;
+        if (targetType.parameterCount() > 0) {
+            MethodType type0 = targetType.dropParameterTypes(0, targetType.parameterCount());
+            Invokers invokers0 = MethodTypeImpl.invokers(Access.TOKEN, type0);
+            invoker = MethodHandles.dropArguments(invokers0.uninitializedCallSite(),
+                                                  0, targetType.parameterList());
+            assert(invoker.type().equals(targetType));
+            uninitializedCallSite = invoker;
+            return invoker;
+        }
+        if (THROW_UCS == null) {
+            try {
+                THROW_UCS = MethodHandleImpl.IMPL_LOOKUP
+                    .findStatic(CallSite.class, "uninitializedCallSite",
+                                MethodType.methodType(Empty.class));
+            } catch (NoAccessException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        invoker = AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, targetType, THROW_UCS);
+        assert(invoker.type().equals(targetType));
+        uninitializedCallSite = invoker;
+        return invoker;
     }
 
     public String toString() {

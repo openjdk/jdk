@@ -323,7 +323,7 @@ class ToGeneric {
      * via another method handle {@code convert}, which is responsible for
      * converting the object result into the raw return value.
      */
-    static abstract class Adapter extends JavaMethodHandle {
+    static abstract class Adapter extends BoundMethodHandle {
         /*
          * class X<<R,A...>> extends Adapter {
          *   Object...=>Object target;
@@ -337,13 +337,13 @@ class ToGeneric {
 
         @Override
         public String toString() {
-            return target == null ? "prototype:"+convert : target.toString();
+            return target == null ? "prototype:"+convert : MethodHandleImpl.addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
         /* Prototype constructor. */
         protected Adapter(MethodHandle entryPoint) {
-            super(entryPoint);
+            super(Access.TOKEN, entryPoint);
             this.invoker = null;
             this.convert = entryPoint;
             this.target = null;
@@ -355,7 +355,7 @@ class ToGeneric {
         }
 
         protected Adapter(MethodHandle entryPoint, MethodHandle invoker, MethodHandle convert, MethodHandle target) {
-            super(entryPoint);
+            super(Access.TOKEN, entryPoint);
             this.invoker = invoker;
             this.convert = convert;
             this.target = target;
