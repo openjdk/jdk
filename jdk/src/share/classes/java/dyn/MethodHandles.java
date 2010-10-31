@@ -1068,10 +1068,14 @@ public class MethodHandles {
         MethodType oldType = target.type();
         if (oldType.equals(newType))
             return target;
-        MethodHandle res = MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
-                                                 newType, oldType, null);
+        MethodHandle res = null;
+        try {
+            res = MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
+                                                    newType, oldType, null);
+        } catch (IllegalArgumentException ex) {
+        }
         if (res == null)
-            throw newIllegalArgumentException("cannot convert to "+newType+": "+target);
+            throw new WrongMethodTypeException("cannot convert to "+newType+": "+target);
         return res;
     }
 
@@ -1392,6 +1396,20 @@ public class MethodHandles {
         return adapter;
     }
 
+    /** Apply the given filter function to the return value of the given target.
+     */
+    /*public*/ static
+    MethodHandle filterReturnValue(MethodHandle target, MethodHandle filter) {
+        MethodType targetType = target.type();
+        MethodType filterType = filter.type();
+        if (filterType.parameterCount() != 1
+            || filterType.parameterType(0) != targetType.returnType())
+            throw newIllegalArgumentException("target and filter types do not match");
+        // FIXME: Too many nodes here.
+        MethodHandle returner = dropArguments(filter, 0, targetType.parameterList());
+        return foldArguments(returner, exactInvoker(target.type()).bindTo(target));
+    }
+
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Adapt a target method handle {@code target} by pre-processing
@@ -1434,7 +1452,7 @@ public class MethodHandles {
      * @return method handle which incorporates the specified argument folding logic
      * @throws IllegalArgumentException if the first argument type of
      *          {@code target} is not the same as {@code combiner}'s return type,
-     *          or if the next {@code foldArgs} argument types of {@code target}
+     *          or if the following argument types of {@code target}
      *          are not identical with the argument types of {@code combiner}
      */
     public static
@@ -1443,11 +1461,38 @@ public class MethodHandles {
         MethodType combinerType = combiner.type();
         int foldArgs = combinerType.parameterCount();
         boolean ok = (targetType.parameterCount() >= 1 + foldArgs);
+        if (ok && !combinerType.parameterList().equals(targetType.parameterList().subList(1, foldArgs+1)))
+            ok = false;
+        if (ok && !combinerType.returnType().equals(targetType.parameterType(0)))
+            ok = false;
         if (!ok)
             throw misMatchedTypes("target and combiner types", targetType, combinerType);
         MethodType newType = targetType.dropParameterTypes(0, 1);
         return MethodHandleImpl.foldArguments(IMPL_TOKEN, target, newType, combiner);
     }
+
+    // /**
+    //  * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+    //  * Adapt a target method handle {@code target} by pre-processing
+    //  * some of its arguments to derive a new target method handle.
+    //  * Call the new target on the original arguments.
+    //  * @param combined method handle to call initially on the incoming arguments
+    //  * @return method handle which incorporates the specified dispatching logic
+    //  * @throws IllegalArgumentException if the first argument type of
+    //  *          {@code combiner}'s return type is not {@link MethodHandle},
+    //  *          or if the next argument types of {@code target}
+    //  *          are not identical with the argument types of {@code combiner}
+    //  */
+    // public static
+    // MethodHandle dispatchArguments(MethodType targetType, MethodHandle dispatcher) {
+    //     MethodType dispatcherType = dispatcher.type();
+    //     int foldArgs = dispatcherType.parameterCount();
+    //     boolean ok = (targetType.parameterCount() >= foldArgs);
+    //     if (!ok)
+    //         throw misMatchedTypes("target and dispatcher types", targetType, dispatcherType);
+    //     MethodHandle target = exactInvoker(targetType);
+    //     return MethodHandleImpl.foldArguments(IMPL_TOKEN, target, targetType, dispatcher);
+    // }
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
@@ -1690,5 +1735,10 @@ public class MethodHandles {
             }
         }
         return null;
+    }
+
+    /*non-public*/
+    static MethodHandle withTypeHandler(MethodHandle target, MethodHandle typeHandler) {
+        return MethodHandleImpl.withTypeHandler(IMPL_TOKEN, target, typeHandler);
     }
 }

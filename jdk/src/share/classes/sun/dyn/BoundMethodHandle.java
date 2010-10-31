@@ -103,7 +103,7 @@ public class BoundMethodHandle extends MethodHandle {
         super(Access.TOKEN, type);
         this.argument = argument;
         this.vmargslot = vmargslot;
-        assert(this.getClass() == AdapterMethodHandle.class);
+        assert(this instanceof AdapterMethodHandle);
     }
 
     /** Initialize the current object as a Java method handle, binding it

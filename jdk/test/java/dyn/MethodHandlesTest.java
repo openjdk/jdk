@@ -1472,7 +1472,7 @@ public class MethodHandlesTest {
         if (pos != 0)  return;  // can fold only at pos=0 for now
         countTest();
         MethodHandle target = ValueConversions.varargsList(1 + nargs);
-        MethodHandle combine = ValueConversions.varargsList(fold);
+        MethodHandle combine = ValueConversions.varargsList(fold).asType(MethodType.genericMethodType(fold));
         List<Object> argsToPass = Arrays.asList(randomArgs(nargs, Object.class));
         if (verbosity >= 3)
             System.out.println("fold "+target+" with "+combine);
