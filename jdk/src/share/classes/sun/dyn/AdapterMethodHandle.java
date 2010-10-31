@@ -478,6 +478,39 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return new AdapterMethodHandle(target, newType, makeConv(raw ? OP_RETYPE_RAW : OP_RETYPE_ONLY));
     }
 
+    static MethodHandle makeTypeHandler(Access token,
+                MethodHandle target, MethodHandle typeHandler) {
+        Access.check(token);
+        return new WithTypeHandler(target, typeHandler);
+    }
+
+    static class WithTypeHandler extends AdapterMethodHandle {
+        final MethodHandle target, typeHandler;
+        WithTypeHandler(MethodHandle target, MethodHandle typeHandler) {
+            super(target, target.type(), OP_RETYPE_ONLY);
+            this.target = target;
+            this.typeHandler = typeHandler.asType(TYPE_HANDLER_TYPE);
+        }
+
+        public MethodHandle asType(MethodType newType) {
+            if (this.type() == newType)
+                return this;
+            try {
+                MethodHandle retyped = (MethodHandle) typeHandler.<MethodHandle>invokeExact(target, newType);
+                // Contract:  Must return the desired type, or throw WMT
+                if (retyped.type() != newType)
+                    throw new WrongMethodTypeException(retyped.toString());
+                return retyped;
+            } catch (Throwable ex) {
+                if (ex instanceof Error)  throw (Error)ex;
+                if (ex instanceof RuntimeException)  throw (RuntimeException)ex;
+                throw new RuntimeException(ex);
+            }
+        }
+        private static final MethodType TYPE_HANDLER_TYPE
+            = MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class);
+    }
+
     /** Can a checkcast adapter validly convert the target to newType?
      *  The JVM supports all kind of reference casts, even silly ones.
      */

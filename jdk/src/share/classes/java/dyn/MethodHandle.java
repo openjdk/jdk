@@ -329,6 +329,7 @@ public abstract class MethodHandle
     public final Object invokeVarargs(Object... arguments) throws Throwable {
         int argc = arguments == null ? 0 : arguments.length;
         MethodType type = type();
+        if (type.parameterCount() != argc)  throw badParameterCount(type, argc);
         if (argc <= 10) {
             MethodHandle invoker = MethodHandles.invokers(type).genericInvoker();
             switch (argc) {
@@ -375,6 +376,10 @@ public abstract class MethodHandle
     /** Equivalent to {@code invokeVarargs(arguments.toArray())}. */
     public final Object invokeVarargs(java.util.List<?> arguments) throws Throwable {
         return invokeVarargs(arguments.toArray());
+    }
+
+    private static WrongMethodTypeException badParameterCount(MethodType type, int argc) {
+        return new WrongMethodTypeException(type+" does not take "+argc+" parameters");
     }
 
     /*  --- this is intentionally NOT a javadoc yet ---
@@ -446,7 +451,7 @@ public abstract class MethodHandle
      * @throws IllegalArgumentException if the conversion cannot be made
      * @see MethodHandles#convertArguments
      */
-    public final MethodHandle asType(MethodType newType) {
+    public MethodHandle asType(MethodType newType) {
         return MethodHandles.convertArguments(this, newType);
     }
 

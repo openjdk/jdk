@@ -560,7 +560,9 @@ public abstract class MethodHandleImpl {
     MethodHandle bindReceiver(Access token,
                               MethodHandle target, Object receiver) {
         Access.check(token);
-        if (target instanceof AdapterMethodHandle) {
+        if (target instanceof AdapterMethodHandle &&
+            ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
+            ) {
             Object info = MethodHandleNatives.getTargetInfo(target);
             if (info instanceof DirectMethodHandle) {
                 DirectMethodHandle dmh = (DirectMethodHandle) info;
@@ -1256,5 +1258,10 @@ public abstract class MethodHandleImpl {
     public static MethodHandle getBootstrap(Access token, Class<?> callerClass) {
         Access.check(token);
         return MethodHandleNatives.getBootstrap(callerClass);
+    }
+
+    public static MethodHandle withTypeHandler(Access token, MethodHandle target, MethodHandle typeHandler) {
+        Access.check(token);
+        return AdapterMethodHandle.makeTypeHandler(token, target, typeHandler);
     }
 }

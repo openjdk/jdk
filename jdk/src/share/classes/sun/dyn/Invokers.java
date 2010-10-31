@@ -38,6 +38,10 @@ public class Invokers {
     // exact invoker for the outgoing call
     private /*lazy*/ MethodHandle exactInvoker;
 
+    // erased (partially untyped but with primitives) invoker for the outgoing call
+    private /*lazy*/ MethodHandle erasedInvoker;
+    /*lazy*/ MethodHandle erasedInvokerWithDrops;  // for InvokeGeneric
+
     // generic (untyped) invoker for the outgoing call
     private /*lazy*/ MethodHandle genericInvoker;
 
@@ -77,6 +81,19 @@ public class Invokers {
         MethodType genericType = targetType.generic();
         invoker = MethodHandles.convertArguments(invoker1, invokerType(genericType));
         genericInvoker = invoker;
+        return invoker;
+    }
+
+    public MethodHandle erasedInvoker() {
+        MethodHandle invoker1 = exactInvoker();
+        MethodHandle invoker = erasedInvoker;
+        if (invoker != null)  return invoker;
+        MethodType erasedType = targetType.erase();
+        if (erasedType == targetType.generic())
+            invoker = genericInvoker();
+        else
+            invoker = MethodHandles.convertArguments(invoker1, invokerType(erasedType));
+        erasedInvoker = invoker;
         return invoker;
     }
 
