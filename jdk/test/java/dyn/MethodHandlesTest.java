@@ -62,7 +62,6 @@ public class MethodHandlesTest {
     // lookups, without exercising the actual method handle.
     static boolean DO_MORE_CALLS = true;
 
-
     @Test
     public void testFirst() throws Throwable {
         verbosity += 9; try {
@@ -458,7 +457,7 @@ public class MethodHandlesTest {
         Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
-            target = lookup.findStatic(defc, name, type);
+            target = lookup.in(defc).findStatic(defc, name, type);
         } catch (NoAccessException ex) {
             noAccess = ex;
         }
@@ -469,14 +468,20 @@ public class MethodHandlesTest {
         assertEquals(positive ? "positive test" : "negative test erroneously passed", positive, target != null);
         if (!positive)  return; // negative test failed as expected
         assertEquals(type, target.type());
-        assertTrue(target.toString().contains(name));  // rough check
+        assertNameStringContains(target, name);
         if (!DO_MORE_CALLS && lookup != PRIVATE)  return;
         Object[] args = randomArgs(params);
         printCalled(target, name, args);
-        target.invokeVarargs(args);
+        target.invokeWithArguments(args);
         assertCalled(name, args);
         if (verbosity >= 1)
             System.out.print(':');
+    }
+
+    // rough check of name string
+    static void assertNameStringContains(Object x, String s) {
+        if (x.toString().contains(s))  return;
+        assertEquals(s, x);
     }
 
     @Test
@@ -522,7 +527,7 @@ public class MethodHandlesTest {
         Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
-            target = lookup.findVirtual(defc, methodName, type);
+            target = lookup.in(defc).findVirtual(defc, methodName, type);
         } catch (NoAccessException ex) {
             noAccess = ex;
         }
@@ -535,12 +540,12 @@ public class MethodHandlesTest {
         Class<?>[] paramsWithSelf = cat(array(Class[].class, (Class)defc), params);
         MethodType typeWithSelf = MethodType.methodType(ret, paramsWithSelf);
         assertEquals(typeWithSelf, target.type());
-        assertTrue(target.toString().contains(methodName));  // rough check
+        assertNameStringContains(target, methodName);
         if (!DO_MORE_CALLS && lookup != PRIVATE)  return;
         Object[] argsWithSelf = randomArgs(paramsWithSelf);
         if (rcvc != defc)  argsWithSelf[0] = randomArg(rcvc);
         printCalled(target, name, argsWithSelf);
-        target.invokeVarargs(argsWithSelf);
+        target.invokeWithArguments(argsWithSelf);
         assertCalled(name, argsWithSelf);
         if (verbosity >= 1)
             System.out.print(':');
@@ -576,7 +581,8 @@ public class MethodHandlesTest {
         Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
-            target = lookup.findSpecial(defc, name, type, specialCaller);
+            if (verbosity >= 5)  System.out.println("  lookup => "+lookup.in(specialCaller));
+            target = lookup.in(specialCaller).findSpecial(defc, name, type, specialCaller);
         } catch (NoAccessException ex) {
             noAccess = ex;
         }
@@ -591,11 +597,11 @@ public class MethodHandlesTest {
         assertEquals(type,          target.type().dropParameterTypes(0,1));
         Class<?>[] paramsWithSelf = cat(array(Class[].class, (Class)specialCaller), params);
         MethodType typeWithSelf = MethodType.methodType(ret, paramsWithSelf);
-        assertTrue(target.toString().contains(name));  // rough check
+        assertNameStringContains(target, name);
         if (!DO_MORE_CALLS && lookup != PRIVATE && lookup != EXAMPLE)  return;
         Object[] args = randomArgs(paramsWithSelf);
         printCalled(target, name, args);
-        target.invokeVarargs(args);
+        target.invokeWithArguments(args);
         assertCalled(name, args);
     }
 
@@ -632,7 +638,7 @@ public class MethodHandlesTest {
         Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
-            target = lookup.bind(receiver, methodName, type);
+            target = lookup.in(defc).bind(receiver, methodName, type);
         } catch (NoAccessException ex) {
             noAccess = ex;
         }
@@ -645,7 +651,7 @@ public class MethodHandlesTest {
         assertEquals(type, target.type());
         Object[] args = randomArgs(params);
         printCalled(target, name, args);
-        target.invokeVarargs(args);
+        target.invokeWithArguments(args);
         Object[] argsWithReceiver = cat(array(Object[].class, receiver), args);
         assertCalled(name, argsWithReceiver);
         if (verbosity >= 1)
@@ -705,9 +711,9 @@ public class MethodHandlesTest {
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             if (isSpecial)
-                target = lookup.unreflectSpecial(rmethod, specialCaller);
+                target = lookup.in(specialCaller).unreflectSpecial(rmethod, specialCaller);
             else
-                target = lookup.unreflect(rmethod);
+                target = lookup.in(defc).unreflect(rmethod);
         } catch (NoAccessException ex) {
             noAccess = ex;
         }
@@ -737,7 +743,7 @@ public class MethodHandlesTest {
         }
         Object[] argsMaybeWithSelf = randomArgs(paramsMaybeWithSelf);
         printCalled(target, name, argsMaybeWithSelf);
-        target.invokeVarargs(argsMaybeWithSelf);
+        target.invokeWithArguments(argsMaybeWithSelf);
         assertCalled(name, argsMaybeWithSelf);
         if (verbosity >= 1)
             System.out.print(':');
@@ -875,7 +881,7 @@ public class MethodHandlesTest {
         if (isStatic)  expType = expType.dropParameterTypes(0, 1);
         MethodHandle mh = lookup.unreflectGetter(f);
         assertSame(mh.type(), expType);
-        assertEquals(mh.toString(), fname);
+        assertNameStringContains(mh, fname);
         HasFields fields = new HasFields();
         Object sawValue;
         Class<?> rtype = type;
@@ -947,7 +953,7 @@ public class MethodHandlesTest {
             mh = lookup.findStaticSetter(fclass, fname, ftype);
         else  throw new InternalError();
         assertSame(mh.type(), expType);
-        assertEquals(mh.toString(), fname);
+        assertNameStringContains(mh, fname);
         HasFields fields = new HasFields();
         Object sawValue;
         Class<?> vtype = type;
@@ -1102,6 +1108,18 @@ public class MethodHandlesTest {
         }
     }
 
+    static MethodHandle typeHandler2(MethodHandle target, MethodType newType) {
+        MethodType oldType = target.type();
+        int oldArity = oldType.parameterCount();
+        int newArity = newType.parameterCount();
+        if (newArity < oldArity)
+            return MethodHandles.insertArguments(target, oldArity, "OPTIONAL");
+        else if (newArity > oldArity)
+            return MethodHandles.dropArguments(target, oldArity-1, newType.parameterType(oldArity-1));
+        else
+            return target;  // attempt no further conversions
+    }
+
     @Test
     public void testConvertArguments() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
@@ -1115,10 +1133,29 @@ public class MethodHandlesTest {
     }
 
     void testConvert(MethodHandle id, Class<?> rtype, String name, Class<?>... params) throws Throwable {
-        testConvert(true, id, rtype, name, params);
+        testConvert(true, false, id, rtype, name, params);
+        testConvert(true, true,  id, rtype, name, params);
     }
 
-    void testConvert(boolean positive, MethodHandle id, Class<?> rtype, String name, Class<?>... params) throws Throwable {
+    @Test
+    public void testTypeHandler() throws Throwable {
+        MethodHandle id = Callee.ofType(1);
+        MethodHandle th2 = PRIVATE.findStatic(MethodHandlesTest.class, "typeHandler2",
+                               MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
+        MethodHandle id2 = id.withTypeHandler(th2);
+        testConvert(true,  false, id2, null, "id", Object.class);
+        testConvert(true,  true,  id2, null, "id", Object.class);
+        if (true)  return;  //FIXME
+        testConvert(true,  false, id2, null, "id", String.class);  // FIXME: throws WMT
+        testConvert(false, true,  id2, null, "id", String.class);  // FIXME: should not succeed
+        testConvert(false, false, id2, null, "id", Object.class, String.class); //FIXME: array[1] line 1164
+        testConvert(true,  true,  id2, null, "id", Object.class, String.class);
+        testConvert(false, false, id2, null, "id");
+        testConvert(true,  true,  id2, null, "id");
+    }
+
+    void testConvert(boolean positive, boolean useAsType,
+                     MethodHandle id, Class<?> rtype, String name, Class<?>... params) throws Throwable {
         countTest(positive);
         MethodType idType = id.type();
         if (rtype == null)  rtype = idType.returnType();
@@ -1135,7 +1172,7 @@ public class MethodHandlesTest {
             if (src != dst)
                 convArgs[i] = castToWrapper(convArgs[i], dst);
         }
-        Object convResult = id.invokeVarargs(convArgs);
+        Object convResult = id.invokeWithArguments(convArgs);
         {
             Class<?> dst = newType.returnType();
             Class<?> src = idType.returnType();
@@ -1145,7 +1182,10 @@ public class MethodHandlesTest {
         MethodHandle target = null;
         RuntimeException error = null;
         try {
-            target = MethodHandles.convertArguments(id, newType);
+            if (useAsType)
+                target = MethodHandles.convertArguments(id, newType);
+            else
+                target = id.asType(newType);
         } catch (RuntimeException ex) {
             error = ex;
         }
@@ -1157,7 +1197,7 @@ public class MethodHandlesTest {
         if (!positive)  return; // negative test failed as expected
         assertEquals(newType, target.type());
         printCalled(target, id.toString(), args);
-        Object result = target.invokeVarargs(args);
+        Object result = target.invokeWithArguments(args);
         assertCalled(name, convArgs);
         assertEquals(convResult, result);
         if (verbosity >= 1)
@@ -1279,7 +1319,7 @@ public class MethodHandlesTest {
         MethodType outType = MethodType.methodType(Object.class, permTypes);
         MethodHandle target = MethodHandles.convertArguments(ValueConversions.varargsList(outargs), outType);
         MethodHandle newTarget = MethodHandles.permuteArguments(target, inType, reorder);
-        Object result = newTarget.invokeVarargs(args);
+        Object result = newTarget.invokeWithArguments(args);
         Object expected = Arrays.asList(permArgs);
         assertEquals(expected, result);
     }
@@ -1311,7 +1351,7 @@ public class MethodHandlesTest {
         Object[] args = randomArgs(target2.type().parameterArray());
         // make sure the target does what we think it does:
         if (pos == 0 && nargs < 5) {
-            Object[] check = (Object[]) target.invokeVarargs(args);
+            Object[] check = (Object[]) target.invokeWithArguments(args);
             assertArrayEquals(args, check);
             switch (nargs) {
                 case 0:
@@ -1342,7 +1382,7 @@ public class MethodHandlesTest {
         } else {
             Object[] args1 = Arrays.copyOfRange(args, 0, pos+1);
             args1[pos] = Arrays.copyOfRange(args, pos, args.length);
-            returnValue = (Object[]) result.invokeVarargs(args1);
+            returnValue = (Object[]) result.invokeWithArguments(args1);
         }
         assertArrayEquals(args, returnValue);
     }
@@ -1379,7 +1419,7 @@ public class MethodHandlesTest {
         if (verbosity >= 3)
             System.out.println("collect from "+Arrays.asList(args)+" ["+pos+".."+nargs+"]");
         MethodHandle result = MethodHandles.collectArguments(target, newType);
-        Object[] returnValue = (Object[]) result.invokeVarargs(args);
+        Object[] returnValue = (Object[]) result.invokeWithArguments(args);
 //        assertTrue(returnValue.length == pos+1 && returnValue[pos] instanceof Object[]);
 //        returnValue[pos] = Arrays.asList((Object[]) returnValue[pos]);
 //        collectedArgs[pos] = Arrays.asList((Object[]) collectedArgs[pos]);
@@ -1412,7 +1452,7 @@ public class MethodHandlesTest {
         MethodHandle target2 = MethodHandles.insertArguments(target, pos,
                 (Object[]) argsToInsert.toArray());
         argsToInsert.clear();  // remove from argsToInsert
-        Object res2 = target2.invokeVarargs(argsToPass);
+        Object res2 = target2.invokeWithArguments(argsToPass);
         Object res2List = Arrays.asList((Object[])res2);
         if (verbosity >= 3)
             System.out.println("result: "+res2List);
@@ -1440,14 +1480,12 @@ public class MethodHandlesTest {
         Object[] argsToPass = randomArgs(nargs, Object.class);
         if (verbosity >= 3)
             System.out.println("filter "+target+" at "+pos+" with "+filter);
-        MethodHandle[] filters = new MethodHandle[pos*2+1];
-        filters[pos] = filter;
-        MethodHandle target2 = MethodHandles.filterArguments(target, filters);
+        MethodHandle target2 = MethodHandles.filterArguments(target, pos, filter);
         // Simulate expected effect of filter on arglist:
         Object[] filteredArgs = argsToPass.clone();
         filteredArgs[pos] = filter.invokeExact(filteredArgs[pos]);
         List<Object> expected = Arrays.asList(filteredArgs);
-        Object result = target2.invokeVarargs(argsToPass);
+        Object result = target2.invokeWithArguments(argsToPass);
         if (verbosity >= 3)
             System.out.println("result: "+result);
         if (!expected.equals(result))
@@ -1482,9 +1520,9 @@ public class MethodHandlesTest {
         List<Object> argsToFold = expected.subList(pos, pos + fold);
         if (verbosity >= 3)
             System.out.println("fold: "+argsToFold+" into "+target2);
-        Object foldedArgs = combine.invokeVarargs(argsToFold);
+        Object foldedArgs = combine.invokeWithArguments(argsToFold);
         argsToFold.add(0, foldedArgs);
-        Object result = target2.invokeVarargs(argsToPass);
+        Object result = target2.invokeWithArguments(argsToPass);
         if (verbosity >= 3)
             System.out.println("result: "+result);
         if (!expected.equals(result))
@@ -1516,7 +1554,7 @@ public class MethodHandlesTest {
         for (int i = drop; i > 0; i--) {
             argsToDrop.add(pos, "blort#"+i);
         }
-        Object res2 = target2.invokeVarargs(argsToDrop);
+        Object res2 = target2.invokeWithArguments(argsToDrop);
         Object res2List = Arrays.asList((Object[])res2);
         //if (!resList.equals(res2List))
         //    System.out.println("*** fail at n/p/d = "+nargs+"/"+pos+"/"+drop+": "+argsToDrop+" => "+res2List);
@@ -1572,7 +1610,7 @@ public class MethodHandlesTest {
         countTest();
         calledLog.clear();
         inv = MethodHandles.exactInvoker(type);
-        result = inv.invokeVarargs(targetPlusArgs);
+        result = inv.invokeWithArguments(targetPlusArgs);
         if (testRetCode)  assertEquals(code, result);
         assertCalled("invokee", args);
         // generic invoker
@@ -1598,7 +1636,7 @@ public class MethodHandlesTest {
             assertCalled("invokee", args);
         }
         calledLog.clear();
-        result = inv.invokeVarargs(targetPlusArgs);
+        result = inv.invokeWithArguments(targetPlusArgs);
         if (testRetCode)  assertEquals(code, result);
         assertCalled("invokee", args);
         // varargs invoker #0
@@ -1640,17 +1678,29 @@ public class MethodHandlesTest {
             List<Object> tailList = targetPlusVarArgs.subList(1+k, 1+nargs);
             Object[] tail = tailList.toArray();
             tailList.clear(); tailList.add(tail);
-            result = inv.invokeVarargs(targetPlusVarArgs);
+            result = inv.invokeWithArguments(targetPlusVarArgs);
             if (testRetCode)  assertEquals(code, result);
             assertCalled("invokee", args);
         }
+
         // dynamic invoker
         countTest();
-        CallSite site = new CallSite(MethodHandlesTest.class, "foo", type);
+        CallSite site = new CallSite(type);
         inv = MethodHandles.dynamicInvoker(site);
+
+        // see if we get the result of the original target:
+        try {
+            result = inv.invokeWithArguments(args);
+            assertTrue("should not reach here", false);
+        } catch (IllegalStateException ex) {
+            String msg = ex.getMessage();
+            assertTrue(msg, msg.contains("site"));
+        }
+
+        // set new target after invoker is created, to make sure we track target
         site.setTarget(target);
         calledLog.clear();
-        result = inv.invokeVarargs(args);
+        result = inv.invokeWithArguments(args);
         if (testRetCode)  assertEquals(code, result);
         assertCalled("invokee", args);
     }
@@ -1734,7 +1784,7 @@ public class MethodHandlesTest {
             String willCall = (equals ? "targetIfEquals" : "fallbackIfNotEquals");
             if (verbosity >= 3)
                 System.out.println(logEntry(willCall, argList));
-            Object result = mh.invokeVarargs(argList);
+            Object result = mh.invokeWithArguments(argList);
             assertCalled(willCall, argList);
         }
     }
@@ -1776,7 +1826,7 @@ public class MethodHandlesTest {
         //System.out.println("catching with "+target+" : "+throwOrReturn);
         Object[] args = randomArgs(nargs, Object.class);
         args[1] = (throwIt ? thrown : null);
-        Object returned = target.invokeVarargs(args);
+        Object returned = target.invokeWithArguments(args);
         //System.out.println("return from "+target+" : "+returned);
         if (!throwIt) {
             assertSame(args[0], returned);
@@ -1828,12 +1878,9 @@ public class MethodHandlesTest {
         testCastFailure("unbox/return", 11000);
     }
 
-    static class Surprise implements MethodHandleProvider {
+    static class Surprise {
         public MethodHandle asMethodHandle() {
             return VALUE.bindTo(this);
-        }
-        public MethodHandle asMethodHandle(MethodType type) {
-            return asMethodHandle().asType(type);
         }
         Object value(Object x) {
             trace("value", x);
@@ -1896,8 +1943,8 @@ public class MethodHandlesTest {
             }
             if (callee != null) {
                 callee = MethodHandles.convertArguments(callee, MethodType.genericMethodType(1));
-                surprise = MethodHandles.filterArguments(callee, surprise);
-                identity = MethodHandles.filterArguments(callee, identity);
+                surprise = MethodHandles.filterArguments(callee, 0, surprise);
+                identity = MethodHandles.filterArguments(callee, 0, identity);
             }
         }
         assertNotSame(mode, surprise, surprise0);
@@ -1949,7 +1996,7 @@ public class MethodHandlesTest {
         assertEquals(mt, mh.type());
         assertEquals(Example.class, mh.type().returnType());
         args = randomArgs(mh.type().parameterArray());
-        mh.invokeVarargs(args);
+        mh.invokeWithArguments(args);
         assertCalled(name, args);
 
         // Try a virtual method.
@@ -1959,7 +2006,7 @@ public class MethodHandlesTest {
         assertEquals(mt, mh.type().dropParameterTypes(0,1));
         assertTrue(mh.type().parameterList().contains(Example.class));
         args = randomArgs(mh.type().parameterArray());
-        mh.invokeVarargs(args);
+        mh.invokeWithArguments(args);
         assertCalled(name, args);
     }
 

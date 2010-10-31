@@ -208,7 +208,7 @@ class SpreadGeneric {
      * The invoker is kept separate from the target because it can be
      * generated once per type erasure family, and reused across adapters.
      */
-    static abstract class Adapter extends JavaMethodHandle {
+    static abstract class Adapter extends BoundMethodHandle {
         /*
          * class X<<R,int M,int N>> extends Adapter {
          *   (Object**N)=>R target;
@@ -221,21 +221,21 @@ class SpreadGeneric {
 
         @Override
         public String toString() {
-            return target.toString();
+            return MethodHandleImpl.addTypeString(target, this);
         }
 
         static final MethodHandle NO_ENTRY = ValueConversions.identity();
 
         protected boolean isPrototype() { return target == null; }
         protected Adapter(SpreadGeneric outer) {
-            super(NO_ENTRY);
+            super(Access.TOKEN, NO_ENTRY);
             this.outer = outer;
             this.target = null;
             assert(isPrototype());
         }
 
         protected Adapter(SpreadGeneric outer, MethodHandle target) {
-            super(outer.entryPoint);
+            super(Access.TOKEN, outer.entryPoint);
             this.outer = outer;
             this.target = target;
         }

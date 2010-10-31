@@ -119,7 +119,7 @@ class MethodType implements java.lang.reflect.Type {
         for (Class<?> ptype : ptypes) {
             ptype.equals(ptype);  // null check
             if (ptype == void.class)
-                throw newIllegalArgumentException("void parameter: "+this);
+                throw newIllegalArgumentException("parameter type cannot be void");
         }
     }
 
@@ -139,20 +139,12 @@ class MethodType implements java.lang.reflect.Type {
     MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
         return makeImpl(rtype, ptypes, false);
     }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, Class<?>[] ptypes) {
-        return methodType(rtype, ptypes);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}. */
     public static
     MethodType methodType(Class<?> rtype, List<? extends Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
         return makeImpl(rtype, ptypes.toArray(NO_PTYPES), notrust);
-    }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, List<? extends Class<?>> ptypes) {
-        return methodType(rtype, ptypes);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -165,10 +157,6 @@ class MethodType implements java.lang.reflect.Type {
         System.arraycopy(ptypes, 0, ptypes1, 1, ptypes.length);
         return makeImpl(rtype, ptypes1, true);
     }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
-        return methodType(rtype, ptype0, ptypes);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has no parameter types.
@@ -176,10 +164,6 @@ class MethodType implements java.lang.reflect.Type {
     public static
     MethodType methodType(Class<?> rtype) {
         return makeImpl(rtype, NO_PTYPES, true);
-    }
-    @Deprecated public static
-    MethodType make(Class<?> rtype) {
-        return methodType(rtype);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -189,10 +173,6 @@ class MethodType implements java.lang.reflect.Type {
     MethodType methodType(Class<?> rtype, Class<?> ptype0) {
         return makeImpl(rtype, new Class<?>[]{ ptype0 }, true);
     }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, Class<?> ptype0) {
-        return methodType(rtype, ptype0);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has the same parameter types as {@code ptypes},
@@ -201,10 +181,6 @@ class MethodType implements java.lang.reflect.Type {
     public static
     MethodType methodType(Class<?> rtype, MethodType ptypes) {
         return makeImpl(rtype, ptypes.ptypes, true);
-    }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, MethodType ptypes) {
-        return methodType(rtype, ptypes);
     }
 
     /**
@@ -275,10 +251,6 @@ class MethodType implements java.lang.reflect.Type {
         }
         return mt;
     }
-    @Deprecated public static
-    MethodType makeGeneric(int objectArgCount, boolean varargs) {
-        return genericMethodType(objectArgCount, varargs);
-    }
 
     /**
      * All parameters and the return type will be Object.
@@ -290,10 +262,6 @@ class MethodType implements java.lang.reflect.Type {
     MethodType genericMethodType(int objectArgCount) {
         return genericMethodType(objectArgCount, false);
     }
-    @Deprecated public static
-    MethodType makeGeneric(int objectArgCount) {
-        return genericMethodType(objectArgCount);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * @param num    the index (zero-based) of the parameter type to change
@@ -303,18 +271,6 @@ class MethodType implements java.lang.reflect.Type {
     public MethodType changeParameterType(int num, Class<?> nptype) {
         if (parameterType(num) == nptype)  return this;
         Class<?>[] nptypes = ptypes.clone();
-        nptypes[num] = nptype;
-        return makeImpl(rtype, nptypes, true);
-    }
-
-    /** Convenience method for {@link #insertParameterTypes}.
-     * @deprecated Use {@link #insertParameterTypes} instead.
-     */
-    @Deprecated
-    public MethodType insertParameterType(int num, Class<?> nptype) {
-        int len = ptypes.length;
-        Class<?>[] nptypes = Arrays.copyOfRange(ptypes, 0, len+1);
-        System.arraycopy(nptypes, num, nptypes, num+1, len-num);
         nptypes[num] = nptype;
         return makeImpl(rtype, nptypes, true);
     }
@@ -334,6 +290,14 @@ class MethodType implements java.lang.reflect.Type {
         System.arraycopy(nptypes, num, nptypes, num+ilen, len-num);
         System.arraycopy(ptypesToInsert, 0, nptypes, num, ilen);
         return makeImpl(rtype, nptypes, true);
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * @param ptypesToInsert zero or more a new parameter types to insert after the end of the parameter list
+     * @return the same type, except with the selected parameter(s) appended
+     */
+    public MethodType appendParameterTypes(Class<?>... ptypesToInsert) {
+        return insertParameterTypes(parameterCount(), ptypesToInsert);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -375,14 +339,6 @@ class MethodType implements java.lang.reflect.Type {
             }
         }
         return makeImpl(rtype, nptypes, true);
-    }
-
-    /** Convenience method for {@link #dropParameterTypes}.
-     * @deprecated Use {@link #dropParameterTypes} instead.
-     */
-    @Deprecated
-    public MethodType dropParameterType(int num) {
-        return dropParameterTypes(num, num+1);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -689,15 +645,5 @@ class MethodType implements java.lang.reflect.Type {
      */
     public String toMethodDescriptorString() {
         return BytecodeDescriptor.unparse(this);
-    }
-
-    /** Temporary alias for toMethodDescriptorString; delete after M3. */
-    public String toBytecodeString() {
-        return toMethodDescriptorString();
-    }
-    /** Temporary alias for fromMethodDescriptorString; delete after M3. */
-    public static MethodType fromBytecodeString(String descriptor, ClassLoader loader)
-        throws IllegalArgumentException, TypeNotPresentException {
-        return fromMethodDescriptorString(descriptor, loader);
     }
 }

@@ -115,7 +115,7 @@ class FilterGeneric {
 
     static MethodHandle make(Kind kind, int pos, MethodHandle filter, MethodHandle target) {
         FilterGeneric fgen = of(kind, pos, filter.type(), target.type());
-        return fgen.makeInstance(kind, pos, filter, target).asMethodHandle();
+        return fgen.makeInstance(kind, pos, filter, target);
     }
 
     /** Return the adapter information for this target and filter type. */
@@ -225,13 +225,13 @@ class FilterGeneric {
      * The invoker is kept separate from the target because it can be
      * generated once per type erasure family, and reused across adapters.
      */
-    static abstract class Adapter extends JavaMethodHandle {
+    static abstract class Adapter extends BoundMethodHandle {
         protected final MethodHandle filter; // transforms one or more arguments
         protected final MethodHandle target; // ultimate target
 
         @Override
         public String toString() {
-            return target.toString();
+            return MethodHandleImpl.addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
@@ -246,7 +246,7 @@ class FilterGeneric {
 
         protected Adapter(MethodHandle entryPoint,
                           MethodHandle filter, MethodHandle target) {
-            super(entryPoint);
+            super(Access.TOKEN, entryPoint);
             this.filter = filter;
             this.target = target;
         }

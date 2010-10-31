@@ -26,40 +26,34 @@
 package java.dyn;
 
 import sun.dyn.*;
+import sun.dyn.empty.Empty;
+import sun.misc.Unsafe;
 import java.util.Collection;
 
 /**
  * A {@code CallSite} is a holder for a variable {@link MethodHandle},
  * which is called its {@code target}.
- * Every call to a {@code CallSite} is delegated to the site's current target.
+ * An {@code invokedynamic} instruction linked to a {@code CallSite} delegates
+ * all calls to the site's current target.
  * <p>
- * A call site is initially created in an <em>unlinked</em> state,
- * which is distinguished by a null target variable.
- * Before the call site may be invoked (and before certain other
- * operations are attempted), the call site must be linked to
- * a non-null target.
+ * If a mutable target is not required, the {@code invokedynamic} instruction
+ * should be linked to a {@linkplain ConstantCallSite constant call site}.
+ * If a volatile target is required, because updates to the target must be
+ * reliably witnessed by other threads, the {@code invokedynamic} instruction
+ * should be linked to a {@linkplain VolatileCallSite volatile call site}.
  * <p>
  * A call site may be <em>relinked</em> by changing its target.
- * The new target must be non-null and must have the same
- * {@linkplain MethodHandle#type() type}
+ * The new target must have the same {@linkplain MethodHandle#type() type}
  * as the previous target.
  * Thus, though a call site can be relinked to a series of
  * successive targets, it cannot change its type.
  * <p>
- * Linkage happens once in the lifetime of any given {@code CallSite} object.
- * Because of call site invalidation, this linkage can be repeated for
- * a single {@code invokedynamic} instruction, with multiple {@code CallSite} objects.
- * When a {@code CallSite} is unlinked from an {@code invokedynamic} instruction,
- * the instruction is reset so that it is no longer associated with
- * the {@code CallSite} object, but the {@code CallSite} does not change
- * state.
- * <p>
  * Here is a sample use of call sites and bootstrap methods which links every
  * dynamic call site to print its arguments:
 <blockquote><pre><!-- see indy-demo/src/PrintArgsDemo.java -->
-&#064;BootstrapMethod(value=PrintArgsDemo.class, name="bootstrapDynamic")
 static void test() throws Throwable {
-    InvokeDynamic.baz("baz arg", 2, 3.14);
+    // THE FOLLOWING LINE IS PSEUDOCODE FOR A JVM INSTRUCTION
+    InvokeDynamic[#bootstrapDynamic].baz("baz arg", 2, 3.14);
 }
 private static void printArgs(Object... args) {
   System.out.println(java.util.Arrays.deepToString(args));
@@ -71,16 +65,14 @@ static {
   printArgs = lookup.findStatic(thisClass,
       "printArgs", MethodType.methodType(void.class, Object[].class));
 }
-private static CallSite bootstrapDynamic(Class caller, String name, MethodType type) {
+private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String name, MethodType type) {
   // ignore caller and name, but match the type:
-  return new CallSite(MethodHandles.collectArguments(printArgs, type));
+  return new ConstantCallSite(MethodHandles.collectArguments(printArgs, type));
 }
 </pre></blockquote>
  * @author John Rose, JSR 292 EG
  */
-public class CallSite
-    implements MethodHandleProvider
-{
+public class CallSite {
     private static final Access IMPL_TOKEN = Access.getToken();
 
     // Fields used only by the JVM.  Do not use or change.
@@ -88,61 +80,44 @@ public class CallSite
     private int        vmindex;  // supplied by the JVM (BCI within calling method)
 
     // The actual payload of this call site:
-    private MethodHandle target;
+    /*package-private*/
+    MethodHandle target;
 
     // Remove this field for PFD and delete deprecated methods:
     private MemberName calleeNameRemoveForPFD;
 
     /**
-     * Make a blank call site object.
-     * Before it is returned from a bootstrap method, this {@code CallSite} object
-     * must be provided with
-     * a target method via a call to {@link CallSite#setTarget(MethodHandle) setTarget},
-     * or by a subclass override of {@link CallSite#initialTarget(Class,String,MethodType) initialTarget}.
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Make a blank call site object with the given method type.
+     * An initial target method is supplied which will throw
+     * an {@link IllegalStateException} if called.
+     * <p>
+     * Before this {@code CallSite} object is returned from a bootstrap method,
+     * it is usually provided with a more useful target method,
+     * via a call to {@link CallSite#setTarget(MethodHandle) setTarget}.
      */
-    public CallSite() {
+    public CallSite(MethodType type) {
+        target = MethodHandles.invokers(type).uninitializedCallSite();
     }
 
     /**
      * Make a blank call site object, possibly equipped with an initial target method handle.
-     * The initial target reference may be null, in which case the {@code CallSite} object
-     * must be provided with a target method via a call to {@link CallSite#setTarget},
-     * or by a subclass override of {@link CallSite#initialTarget}.
-     * @param target the method handle which will be the initial target of the call site, or null if there is none yet
+     * @param target the method handle which will be the initial target of the call site
      */
     public CallSite(MethodHandle target) {
+        target.type();  // null check
         this.target = target;
     }
 
-    /** @deprecated transitional form defined in EDR but removed in PFD */
-    public CallSite(Class<?> caller, String name, MethodType type) {
-        this.calleeNameRemoveForPFD = new MemberName(caller, name, type);
-    }
-    /** @deprecated transitional form defined in EDR but removed in PFD */
-    public Class<?> callerClass() {
-        MemberName callee = this.calleeNameRemoveForPFD;
-        return callee == null ? null : callee.getDeclaringClass();
-    }
-    /** @deprecated transitional form defined in EDR but removed in PFD */
-    public String name() {
-        MemberName callee = this.calleeNameRemoveForPFD;
-        return callee == null ? null : callee.getName();
-    }
-    /** @deprecated transitional form defined in EDR but removed in PFD */
-    public MethodType type() {
-        MemberName callee = this.calleeNameRemoveForPFD;
-        return callee == null ? (target == null ? null : target.type()) : callee.getMethodType();
-    }
-    /** @deprecated transitional form defined in EDR but removed in PFD */
-    protected MethodHandle initialTarget() {
-        return initialTarget(callerClass(), name(), type());
-    }
-
-    /** Report if the JVM has linked this {@code CallSite} object to a dynamic call site instruction.
-     *  Once it is linked, it is never unlinked.
+    /**
+     * Report the type of this call site's target.
+     * Although targets may change, the call site's type can never change.
+     * The {@code setTarget} method enforces this invariant by refusing any new target that does
+     * not have the previous target's type.
+     * @return the type of the current target, which is also the type of any future target
      */
-    private boolean isLinked() {
-        return vmmethod != null;
+    public MethodType type() {
+        return target.type();
     }
 
     /** Called from JVM (or low-level Java code) after the BSM returns the newly created CallSite.
@@ -152,68 +127,66 @@ public class CallSite
                            MethodType type,
                            MemberName callerMethod,
                            int        callerBCI) {
-        if (this.isLinked()) {
+        if (this.vmmethod != null) {
+            // FIXME
             throw new InvokeDynamicBootstrapError("call site has already been linked to an invokedynamic instruction");
         }
-        MethodHandle target = this.target;
-        if (target == null) {
-            this.target = target = this.initialTarget(callerMethod.getDeclaringClass(), name, type);
-        }
-        if (!target.type().equals(type)) {
+        if (!this.type().equals(type)) {
             throw wrongTargetType(target, type);
         }
         this.vmindex  = callerBCI;
         this.vmmethod = callerMethod;
-        assert(this.isLinked());
     }
 
     /**
-     * Just after a call site is created by a bootstrap method handle,
-     * if the target has not been initialized by the factory method itself,
-     * the method {@code initialTarget} is called to produce an initial
-     * non-null target.  (Live call sites must never have null targets.)
+     * Report the current linkage state of the call site, a value which may change over time.
      * <p>
-     * The arguments are the same as those passed to the bootstrap method.
-     * Thus, a bootstrap method is free to ignore the arguments and simply
-     * create a "blank" {@code CallSite} object of an appropriate subclass.
+     * If a {@code CallSite} object is returned
+     * from the bootstrap method of the {@code invokedynamic} instruction,
+     * the {@code CallSite} is permanently bound to that instruction.
+     * When the {@code invokedynamic} instruction is executed, the target method
+     * of its associated call site object is invoked directly.
+     * It is as if the instruction calls {@code getTarget} and then
+     * calls {@link MethodHandle#invokeExact invokeExact} on the result.
      * <p>
-     * If the bootstrap method itself does not initialize the call site,
-     * this method must be overridden, because it just raises an
-     * {@code InvokeDynamicBootstrapError}, which in turn causes the
-     * linkage of the {@code invokedynamic} instruction to terminate
-     * abnormally.
-     * @deprecated transitional form defined in EDR but removed in PFD
-     */
-    protected MethodHandle initialTarget(Class<?> callerClass, String name, MethodType type) {
-        throw new InvokeDynamicBootstrapError("target must be initialized before call site is linked: "+name+type);
-    }
-
-    /**
-     * Report the current linkage state of the call site.  (This is mutable.)
-     * The value may not be null after the {@code CallSite} object is returned
-     * from the bootstrap method of the {@code invokedynamic} instruction.
-     * When an {@code invokedynamic} instruction is executed, the target method
-     * of its associated {@code call site} object is invoked directly,
-     * as if via {@link MethodHandle}{@code .invoke}.
-     * <p>
-     * The interactions of {@code getTarget} with memory are the same
+     * Unless specified differently by a subclass,
+     * the interactions of {@code getTarget} with memory are the same
      * as of a read from an ordinary variable, such as an array element or a
      * non-volatile, non-final field.
      * <p>
      * In particular, the current thread may choose to reuse the result
      * of a previous read of the target from memory, and may fail to see
      * a recent update to the target by another thread.
-     * @return the current linkage state of the call site
+     * <p>
+     * In a {@linkplain ConstantCallSite constant call site}, the {@code getTarget} method behaves
+     * like a read from a {@code final} field of the {@code CallSite}.
+     * <p>
+     * In a {@linkplain VolatileCallSite volatile call site}, the {@code getTarget} method behaves
+     * like a read from a {@code volatile} field of the {@code CallSite}.
+     * <p>
+     * This method may not be overridden by application code.
+     * @return the current linkage state of the call site, its target method handle
+     * @see ConstantCallSite
+     * @see VolatileCallSite
      * @see #setTarget
      */
-    public MethodHandle getTarget() {
+    public final MethodHandle getTarget() {
+        return getTarget0();
+    }
+
+    /**
+     * Privileged implementations can override this to force final or volatile semantics on getTarget.
+     */
+    /*package-private*/
+    MethodHandle getTarget0() {
         return target;
     }
 
     /**
      * Set the target method of this call site.
      * <p>
-     * The interactions of {@code setTarget} with memory are the same
+     * Unless a subclass of CallSite documents otherwise,
+     * the interactions of {@code setTarget} with memory are the same
      * as of a write to an ordinary variable, such as an array element or a
      * non-volatile, non-final field.
      * <p>
@@ -224,27 +197,23 @@ public class CallSite
      * at any given call site.
      * @param newTarget the new target
      * @throws NullPointerException if the proposed new target is null
-     * @throws WrongMethodTypeException if the call site is linked and the proposed new target
+     * @throws WrongMethodTypeException if the proposed new target
      *         has a method type that differs from the previous target
      */
     public void setTarget(MethodHandle newTarget) {
-        MethodType newType = newTarget.type();  // null check!
-        MethodHandle oldTarget = this.target;
-        if (oldTarget == null) {
-            // CallSite is not yet linked.
-            assert(!isLinked());
-            this.target = newTarget;  // might be null!
-            return;
-        }
+        checkTargetChange(this.target, newTarget);
+        setTargetNormal(newTarget);
+    }
+
+    void checkTargetChange(MethodHandle oldTarget, MethodHandle newTarget) {
         MethodType oldType = oldTarget.type();
-        if (!newTarget.type().equals(oldType))
+        MethodType newType = newTarget.type();  // null check!
+        if (!newType.equals(oldType))
             throw wrongTargetType(newTarget, oldType);
-        if (oldTarget != newTarget)
-            CallSiteImpl.setCallSiteTarget(IMPL_TOKEN, this, newTarget);
     }
 
     private static WrongMethodTypeException wrongTargetType(MethodHandle target, MethodType type) {
-        return new WrongMethodTypeException(String.valueOf(target)+target.type()+" should be of type "+type);
+        return new WrongMethodTypeException(String.valueOf(target)+" should be of type "+type);
     }
 
     /** Produce a printed representation that displays information about this call site
@@ -252,15 +221,14 @@ public class CallSite
      */
     @Override
     public String toString() {
-        return "CallSite"+(target == null ? "" : target.type());
+        return super.toString() + type();
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle equivalent to an invokedynamic instruction
      * which has been linked to this call site.
-     * <p>If this call site is a {@link ConstantCallSite}, this method
-     * simply returns the call site's target, since that will not change.
+     * <p>If this call site is a {@linkplain ConstantCallSite constant call site},
+     * this method simply returns the call site's target, since that will never change.
      * <p>Otherwise, this method is equivalent to the following code:
      * <p><blockquote><pre>
      * MethodHandle getTarget, invoker, result;
@@ -271,8 +239,9 @@ public class CallSite
      * @return a method handle which always invokes this call site's current target
      */
     public final MethodHandle dynamicInvoker() {
-        if (this instanceof ConstantCallSite)
-            return getTarget();  // will not change dynamically
+        if (this instanceof ConstantCallSite) {
+            return target;  // will not change dynamically
+        }
         MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, GET_TARGET, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
@@ -287,9 +256,34 @@ public class CallSite
         }
     }
 
-    /** Implementation of {@link MethodHandleProvider} which returns {@code this.dynamicInvoker()}. */
-    public final MethodHandle asMethodHandle() { return dynamicInvoker(); }
+    /** This guy is rolled into the default target if a MethodType is supplied to the constructor. */
+    /*package-private*/
+    static Empty uninitializedCallSite() {
+        throw new IllegalStateException("uninitialized call site");
+    }
 
-    /** Implementation of {@link MethodHandleProvider}, which returns {@code this.dynamicInvoker().asType(type)}. */
-    public final MethodHandle asMethodHandle(MethodType type) { return dynamicInvoker().asType(type); }
+    // unsafe stuff:
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final long TARGET_OFFSET;
+
+    static {
+        try {
+            TARGET_OFFSET = unsafe.objectFieldOffset(CallSite.class.getDeclaredField("target"));
+        } catch (Exception ex) { throw new Error(ex); }
+    }
+
+    /*package-private*/
+    void setTargetNormal(MethodHandle newTarget) {
+        target = newTarget;
+        //CallSiteImpl.setCallSiteTarget(IMPL_TOKEN, this, newTarget);
+    }
+    /*package-private*/
+    MethodHandle getTargetVolatile() {
+        return (MethodHandle) unsafe.getObjectVolatile(this, TARGET_OFFSET);
+    }
+    /*package-private*/
+    void setTargetVolatile(MethodHandle newTarget) {
+        unsafe.putObjectVolatile(this, TARGET_OFFSET, newTarget);
+        //CallSiteImpl.setCallSiteTarget(IMPL_TOKEN, this, newTarget);
+    }
 }

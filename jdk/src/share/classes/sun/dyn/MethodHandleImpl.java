@@ -199,7 +199,7 @@ public abstract class MethodHandleImpl {
         return allocator;
     }
 
-    static final class AllocateObject<C> extends JavaMethodHandle {
+    static final class AllocateObject<C> extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
 
         private final Class<C> allocateClass;
@@ -207,7 +207,7 @@ public abstract class MethodHandleImpl {
 
         private AllocateObject(MethodHandle invoker,
                                Class<C> allocateClass, MethodHandle rawConstructor) {
-            super(invoker);
+            super(Access.TOKEN, invoker);
             this.allocateClass = allocateClass;
             this.rawConstructor = rawConstructor;
         }
@@ -237,7 +237,7 @@ public abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            return allocateClass.getSimpleName();
+            return addTypeString(allocateClass.getSimpleName(), this);
         }
         @SuppressWarnings("unchecked")
         private C allocate() throws InstantiationException {
@@ -369,19 +369,19 @@ public abstract class MethodHandleImpl {
         return mhs[isSetter ? 1 : 0];
     }
 
-    static final class FieldAccessor<C,V> extends JavaMethodHandle {
+    static final class FieldAccessor<C,V> extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
         final Object base;  // for static refs only
         final long offset;
         final String name;
 
         public FieldAccessor(Access token, MemberName field, boolean isSetter) {
-            super(fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
+            super(Access.TOKEN, fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
             this.offset = (long) field.getVMIndex(token);
             this.name = field.getName();
             this.base = staticBase(field);
         }
-        public String toString() { return name; }
+        public String toString() { return addTypeString(name, this); }
 
         int getFieldI(C obj) { return unsafe.getInt(obj, offset); }
         void setFieldI(C obj, int x) { unsafe.putInt(obj, offset, x); }
@@ -910,11 +910,11 @@ public abstract class MethodHandleImpl {
         throw new UnsupportedOperationException("NYI");
     }
 
-    private static class GuardWithTest extends JavaMethodHandle {
+    private static class GuardWithTest extends BoundMethodHandle {
         private final MethodHandle test, target, fallback;
         private GuardWithTest(MethodHandle invoker,
                               MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            super(invoker);
+            super(Access.TOKEN, invoker);
             this.test = test;
             this.target = target;
             this.fallback = fallback;
@@ -948,7 +948,7 @@ public abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            return target.toString();
+            return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
             if (test.<boolean>invokeExact(av))
@@ -1038,7 +1038,7 @@ public abstract class MethodHandleImpl {
         return GuardWithTest.make(token, test, target, fallback);
     }
 
-    private static class GuardWithCatch extends JavaMethodHandle {
+    private static class GuardWithCatch extends BoundMethodHandle {
         private final MethodHandle target;
         private final Class<? extends Throwable> exType;
         private final MethodHandle catcher;
@@ -1047,14 +1047,14 @@ public abstract class MethodHandleImpl {
         }
         public GuardWithCatch(MethodHandle invoker,
                               MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
-            super(invoker);
+            super(Access.TOKEN, invoker);
             this.target = target;
             this.exType = exType;
             this.catcher = catcher;
         }
         @Override
         public String toString() {
-            return target.toString();
+            return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
             try {
@@ -1219,21 +1219,24 @@ public abstract class MethodHandleImpl {
         if (target != null)
             name = MethodHandleNatives.getMethodName(target);
         if (name == null)
-            return "<unknown>";
-        return name.getName();
+            return "invoke" + target.type();
+        return name.getName() + target.type();
     }
 
-    public static String addTypeString(MethodHandle target) {
-        if (target == null)  return "null";
-        return target.toString() + target.type();
+    static String addTypeString(Object obj, MethodHandle target) {
+        String str = String.valueOf(obj);
+        if (target == null)  return str;
+        int paren = str.indexOf('(');
+        if (paren >= 0) str = str.substring(0, paren);
+        return str + target.type();
     }
 
-    public static void checkSpreadArgument(Object av, int n) {
+    static void checkSpreadArgument(Object av, int n) {
         if (av == null ? n != 0 : ((Object[])av).length != n)
             throw newIllegalArgumentException("Array is not of length "+n);
     }
 
-    public static void raiseException(int code, Object actual, Object required) {
+    static void raiseException(int code, Object actual, Object required) {
         String message;
         // disregard the identity of the actual object, if it is not a class:
         if (!(actual instanceof Class) && !(actual instanceof MethodType))

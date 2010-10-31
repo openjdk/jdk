@@ -241,7 +241,7 @@ class FromGeneric {
      * The invoker is kept separate from the target because it can be
      * generated once per type erasure family, and reused across adapters.
      */
-    static abstract class Adapter extends JavaMethodHandle {
+    static abstract class Adapter extends BoundMethodHandle {
         /*
          * class X<<R,int N>> extends Adapter {
          *   (MH, Object**N)=>raw(R) invoker;
@@ -256,7 +256,7 @@ class FromGeneric {
 
         @Override
         public String toString() {
-            return target.toString();
+            return MethodHandleImpl.addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
@@ -271,7 +271,7 @@ class FromGeneric {
 
         protected Adapter(MethodHandle entryPoint,
                           MethodHandle invoker, MethodHandle convert, MethodHandle target) {
-            super(entryPoint);
+            super(Access.TOKEN, entryPoint);
             this.invoker = invoker;
             this.convert = convert;
             this.target  = target;

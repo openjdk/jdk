@@ -25,18 +25,18 @@
 
 /* @test
  * @summary example code used in javadoc for java.dyn API
- * @compile -XDallowTransitionalJSR292=no JavaDocExamples.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.dyn.JavaDocExamples
+ * @compile -XDallowTransitionalJSR292=no JavaDocExamplesTest.java
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.dyn.JavaDocExamplesTest
  */
 
 /*
 ---- To run outside jtreg:
 $ $JAVA7X_HOME/bin/javac -cp $JUNIT4_JAR -d /tmp/Classes \
-   $DAVINCI/sources/jdk/test/java/dyn/JavaDocExamples.java
+   $DAVINCI/sources/jdk/test/java/dyn/JavaDocExamplesTest.java
 $ $JAVA7X_HOME/bin/java   -cp $JUNIT4_JAR:/tmp/Classes \
    -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles \
-   -Dtest.java.dyn.JavaDocExamples.verbosity=1 \
-     test.java.dyn.JavaDocExamples
+   -Dtest.java.dyn.JavaDocExamplesTest.verbosity=1 \
+     test.java.dyn.JavaDocExamplesTest
 ----
 */
 
@@ -57,15 +57,15 @@ import static org.junit.Assume.*;
 /**
  * @author jrose
  */
-public class JavaDocExamples {
+public class JavaDocExamplesTest {
     /** Wrapper for running the JUnit tests in this module.
      *  Put JUnit on the classpath!
      */
     public static void main(String... ignore) {
-        org.junit.runner.JUnitCore.runClasses(JavaDocExamples.class);
+        org.junit.runner.JUnitCore.runClasses(JavaDocExamplesTest.class);
     }
     // How much output?
-    static int verbosity = Integer.getInteger("test.java.dyn.JavaDocExamples.verbosity", 0);
+    static int verbosity = Integer.getInteger("test.java.dyn.JavaDocExamplesTest.verbosity", 0);
 
 {}
 static final private Lookup LOOKUP = lookup();
@@ -120,9 +120,79 @@ assertEquals("xz", /*(String)*/ d12.invokeExact("x", 12, true, "z"));
             }}
     }
 
+    @Test public void testFilterArguments() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+cat = cat.asType(methodType(Object.class, String.class, String.class)); /*(String)*/
+MethodHandle upcase = lookup().findVirtual(String.class,
+  "toUpperCase", methodType(String.class));
+assertEquals("xy", /*(String)*/ cat.invokeExact("x", "y")); // xy
+MethodHandle f0 = filterArguments(cat, 0, upcase);
+assertEquals("Xy", /*(String)*/ f0.invokeExact("x", "y")); // Xy
+MethodHandle f1 = filterArguments(cat, 1, upcase);
+assertEquals("xY", /*(String)*/ f1.invokeExact("x", "y")); // xY
+MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
+assertEquals("XY", /*(String)*/ f2.invokeExact("x", "y")); // XY
+            }}
+    }
+
     static void assertEquals(Object exp, Object act) {
         if (verbosity > 0)
             System.out.println("result: "+act);
         Assert.assertEquals(exp, act);
     }
+
+    @Test public void testVolatileCallSite() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle strcat = MethodHandles.lookup()
+  .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
+MethodHandle trueCon  = MethodHandles.constant(boolean.class, true);
+MethodHandle falseCon = MethodHandles.constant(boolean.class, false);
+VolatileCallSite switcher = new VolatileCallSite(trueCon, falseCon);
+// following steps may be repeated to re-use the same switcher:
+MethodHandle worker1 = strcat;
+MethodHandle worker2 = MethodHandles.permuteArguments(strcat, strcat.type(), 1, 0);
+MethodHandle worker = MethodHandles.guardWithTest(switcher.dynamicInvoker(), worker1, worker2);
+System.out.println((String) worker.invokeExact("met", "hod"));  // method
+switcher.invalidate();
+System.out.println((String) worker.invokeExact("met", "hod"));  // hodmet
+            }}
+    }
+
+static MethodHandle asList;
+    @Test public void testWithTypeHandler() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle makeEmptyList = MethodHandles.constant(List.class, Arrays.asList());
+MethodHandle asList = lookup()
+  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class));
+
+JavaDocExamplesTest.asList = asList;
+/*
+static MethodHandle collectingTypeHandler(MethodHandle base, MethodType newType) {
+  return asList.asCollector(Object[].class, newType.parameterCount()).asType(newType);
+}
+*/
+
+MethodHandle collectingTypeHandler = lookup()
+  .findStatic(lookup().lookupClass(), "collectingTypeHandler",
+     methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
+MethodHandle makeAnyList = makeEmptyList.withTypeHandler(collectingTypeHandler);
+
+System.out.println(makeAnyList.invokeGeneric());
+System.out.println(makeAnyList.invokeGeneric(1));
+System.out.println(makeAnyList.invokeGeneric("two", "too"));
+            }}
+    }
+
+static MethodHandle collectingTypeHandler(MethodHandle base, MethodType newType) {
+    //System.out.println("Converting "+asList+" to "+newType);
+    MethodHandle conv = asList.asCollector(Object[].class, newType.parameterCount()).asType(newType);
+    //System.out.println(" =>"+conv);
+    return conv;
+}
+
 }

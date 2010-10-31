@@ -649,7 +649,9 @@ public class ValueConversions {
             return mh;
         }
         // slow path
-        MethodType type = MethodType.methodType(wrap.primitiveType(), wrap.primitiveType());
+        MethodType type = MethodType.methodType(wrap.primitiveType());
+        if (wrap != Wrapper.VOID)
+            type = type.appendParameterTypes(wrap.primitiveType());
         try {
             mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", type);
         } catch (NoAccessException ex) {
@@ -677,7 +679,7 @@ public class ValueConversions {
     }
 
     private static MethodHandle retype(MethodType type, MethodHandle mh) {
-        return AdapterMethodHandle.makeRetypeOnly(IMPL_TOKEN, type, mh);
+        return AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, type, mh);
     }
 
     private static final Object[] NO_ARGS_ARRAY = {};

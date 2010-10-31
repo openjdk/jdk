@@ -106,18 +106,17 @@ public class BoundMethodHandle extends MethodHandle {
         assert(this instanceof AdapterMethodHandle);
     }
 
-    /** Initialize the current object as a Java method handle, binding it
+    /** Initialize the current object as a self-bound method handle, binding it
      *  as the first argument of the method handle {@code entryPoint}.
      *  The invocation type of the resulting method handle will be the
      *  same as {@code entryPoint},  except that the first argument
      *  type will be dropped.
      */
-    protected BoundMethodHandle(MethodHandle entryPoint) {
-        super(Access.TOKEN, entryPoint.type().dropParameterTypes(0, 1));
+    protected BoundMethodHandle(Access token, MethodHandle entryPoint) {
+        super(token, entryPoint.type().dropParameterTypes(0, 1));
         this.argument = this; // kludge; get rid of
         this.vmargslot = this.type().parameterSlotDepth(0);
         initTarget(entryPoint, 0);
-        assert(this instanceof JavaMethodHandle);
     }
 
     /** Make sure the given {@code argument} can be used as {@code argnum}-th
@@ -173,6 +172,11 @@ public class BoundMethodHandle extends MethodHandle {
 
     @Override
     public String toString() {
+        return MethodHandleImpl.addTypeString(baseName(), this);
+    }
+
+    /** Component of toString() before the type string. */
+    protected String baseName() {
         MethodHandle mh = this;
         while (mh instanceof BoundMethodHandle) {
             Object info = MethodHandleNatives.getTargetInfo(mh);
@@ -185,12 +189,16 @@ public class BoundMethodHandle extends MethodHandle {
                 if (name != null)
                     return name;
                 else
-                    return super.toString(); // <unknown>, probably
+                    return noParens(super.toString()); // "invoke", probably
             }
             assert(mh != this);
-            if (mh instanceof JavaMethodHandle)
-                break;  // access JMH.toString(), not BMH.toString()
         }
-        return mh.toString();
+        return noParens(mh.toString());
+    }
+
+    private static String noParens(String str) {
+        int paren = str.indexOf('(');
+        if (paren >= 0) str = str.substring(0, paren);
+        return str;
     }
 }
