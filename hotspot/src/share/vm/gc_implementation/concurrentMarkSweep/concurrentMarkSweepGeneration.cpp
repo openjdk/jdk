@@ -354,12 +354,8 @@ void CMSStats::adjust_cms_free_adjustment_factor(bool fail, size_t free) {
 double CMSStats::time_until_cms_gen_full() const {
   size_t cms_free = _cms_gen->cmsSpace()->free();
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  size_t expected_promotion = gch->get_gen(0)->capacity();
-  if (HandlePromotionFailure) {
-    expected_promotion = MIN2(
-        (size_t) _cms_gen->gc_stats()->avg_promoted()->padded_average(),
-        expected_promotion);
-  }
+  size_t expected_promotion = MIN2(gch->get_gen(0)->capacity(),
+                                   (size_t) _cms_gen->gc_stats()->avg_promoted()->padded_average());
   if (cms_free > expected_promotion) {
     // Start a cms collection if there isn't enough space to promote
     // for the next minor collection.  Use the padded average as
@@ -865,57 +861,18 @@ size_t ConcurrentMarkSweepGeneration::max_available() const {
   return free() + _virtual_space.uncommitted_size();
 }
 
-bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(
-    size_t max_promotion_in_bytes,
-    bool younger_handles_promotion_failure) const {
-
-  // This is the most conservative test.  Full promotion is
-  // guaranteed if this is used. The multiplicative factor is to
-  // account for the worst case "dilatation".
-  double adjusted_max_promo_bytes = _dilatation_factor * max_promotion_in_bytes;
-  if (adjusted_max_promo_bytes > (double)max_uintx) { // larger than size_t
-    adjusted_max_promo_bytes = (double)max_uintx;
+bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
+  size_t available = max_available();
+  size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
+  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+  if (PrintGC && Verbose) {
+    gclog_or_tty->print_cr(
+      "CMS: promo attempt is%s safe: available("SIZE_FORMAT") %s av_promo("SIZE_FORMAT"),"
+      "max_promo("SIZE_FORMAT")",
+      res? "":" not", available, res? ">=":"<",
+      av_promo, max_promotion_in_bytes);
   }
-  bool result = (max_contiguous_available() >= (size_t)adjusted_max_promo_bytes);
-
-  if (younger_handles_promotion_failure && !result) {
-    // Full promotion is not guaranteed because fragmentation
-    // of the cms generation can prevent the full promotion.
-    result = (max_available() >= (size_t)adjusted_max_promo_bytes);
-
-    if (!result) {
-      // With promotion failure handling the test for the ability
-      // to support the promotion does not have to be guaranteed.
-      // Use an average of the amount promoted.
-      result = max_available() >= (size_t)
-        gc_stats()->avg_promoted()->padded_average();
-      if (PrintGC && Verbose && result) {
-        gclog_or_tty->print_cr(
-          "\nConcurrentMarkSweepGeneration::promotion_attempt_is_safe"
-          " max_available: " SIZE_FORMAT
-          " avg_promoted: " SIZE_FORMAT,
-          max_available(), (size_t)
-          gc_stats()->avg_promoted()->padded_average());
-      }
-    } else {
-      if (PrintGC && Verbose) {
-        gclog_or_tty->print_cr(
-          "\nConcurrentMarkSweepGeneration::promotion_attempt_is_safe"
-          " max_available: " SIZE_FORMAT
-          " adj_max_promo_bytes: " SIZE_FORMAT,
-          max_available(), (size_t)adjusted_max_promo_bytes);
-      }
-    }
-  } else {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr(
-        "\nConcurrentMarkSweepGeneration::promotion_attempt_is_safe"
-        " contiguous_available: " SIZE_FORMAT
-        " adj_max_promo_bytes: " SIZE_FORMAT,
-        max_contiguous_available(), (size_t)adjusted_max_promo_bytes);
-    }
-  }
-  return result;
+  return res;
 }
 
 // At a promotion failure dump information on block layout in heap
@@ -6091,23 +6048,14 @@ void CMSCollector::sweep(bool asynch) {
   assert(_collectorState == Resizing, "Change of collector state to"
     " Resizing must be done under the freelistLocks (plural)");
 
-  // Now that sweeping has been completed, if the GCH's
-  // incremental_collection_will_fail flag is set, clear it,
+  // Now that sweeping has been completed, we clear
+  // the incremental_collection_failed flag,
   // thus inviting a younger gen collection to promote into
   // this generation. If such a promotion may still fail,
   // the flag will be set again when a young collection is
   // attempted.
-  // I think the incremental_collection_will_fail flag's use
-  // is specific to a 2 generation collection policy, so i'll
-  // assert that that's the configuration we are operating within.
-  // The use of the flag can and should be generalized appropriately
-  // in the future to deal with a general n-generation system.
-
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->collector_policy()->is_two_generation_policy(),
-         "Resetting of incremental_collection_will_fail flag"
-         " may be incorrect otherwise");
-  gch->clear_incremental_collection_will_fail();
+  gch->clear_incremental_collection_failed();  // Worth retrying as fresh space may have been freed up
   gch->update_full_collections_completed(_collection_count_start);
 }
 
