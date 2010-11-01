@@ -34,7 +34,6 @@ com_sun_corba_se_impl_io_java = \
 	com/sun/corba/se/impl/io/ObjectStreamField.java \
 	com/sun/corba/se/impl/io/OptionalDataException.java \
 	com/sun/corba/se/impl/io/ValueHandlerImpl.java \
-	com/sun/corba/se/impl/io/IIOPInputStream.java \
 	com/sun/corba/se/impl/io/IIOPOutputStream.java \
 	com/sun/corba/se/impl/io/TypeMismatchException.java \
 	com/sun/corba/se/impl/io/InputStreamHook.java \
