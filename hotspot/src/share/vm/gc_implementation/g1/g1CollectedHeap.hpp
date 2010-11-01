@@ -1772,7 +1772,6 @@ public:
     }
   }
 
-private:
   template <class T> void deal_with_reference(T* ref_to_scan) {
     if (has_partial_array_mask(ref_to_scan)) {
       _partial_scan_cl->do_oop_nv(ref_to_scan);
