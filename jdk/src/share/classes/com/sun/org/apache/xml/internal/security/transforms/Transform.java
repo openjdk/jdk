@@ -210,6 +210,8 @@ public final class Transform extends SignatureElementProxy {
     public static void init() {
         if (!alreadyInitialized) {
             transformClassHash = new HashMap(10);
+            // make sure builtin algorithms are all registered first
+            com.sun.org.apache.xml.internal.security.Init.init();
             alreadyInitialized = true;
         }
     }
@@ -236,12 +238,7 @@ public final class Transform extends SignatureElementProxy {
                "algorithm.alreadyRegistered", exArgs);
         }
 
-        ClassLoader cl = (ClassLoader) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
-                    return Thread.currentThread().getContextClassLoader();
-                }
-            });
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
         try {
             transformClassHash.put
