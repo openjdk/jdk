@@ -31,11 +31,14 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
 
+import java.security.AlgorithmConstraints;
+
 import java.util.*;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLParameters;
 
 
 /**
@@ -82,6 +85,12 @@ class SSLServerSocketImpl extends SSLServerSocket
 
     /* could enabledCipherSuites ever complete handshaking? */
     private boolean             checkedEnabled = false;
+
+    // the endpoint identification protocol to use by default
+    private String              identificationProtocol = null;
+
+    // The cryptographic algorithm constraints
+    private AlgorithmConstraints    algorithmConstraints = null;
 
     /**
      * Create an SSL server socket on a port, using a non-default
@@ -273,6 +282,30 @@ class SSLServerSocketImpl extends SSLServerSocket
     }
 
     /**
+     * Returns the SSLParameters in effect for newly accepted connections.
+     */
+    synchronized public SSLParameters getSSLParameters() {
+        SSLParameters params = super.getSSLParameters();
+
+        // the super implementation does not handle the following parameters
+        params.setEndpointIdentificationAlgorithm(identificationProtocol);
+        params.setAlgorithmConstraints(algorithmConstraints);
+
+        return params;
+    }
+
+    /**
+     * Applies SSLParameters to newly accepted connections.
+     */
+    synchronized public void setSSLParameters(SSLParameters params) {
+        super.setSSLParameters(params);
+
+        // the super implementation does not handle the following parameters
+        identificationProtocol = params.getEndpointIdentificationAlgorithm();
+        algorithmConstraints = params.getAlgorithmConstraints();
+    }
+
+    /**
      * Accept a new SSL connection.  This server identifies itself with
      * information provided in the authentication context which was
      * presented during construction.
@@ -280,7 +313,7 @@ class SSLServerSocketImpl extends SSLServerSocket
     public Socket accept() throws IOException {
         SSLSocketImpl s = new SSLSocketImpl(sslContext, useServerMode,
             enabledCipherSuites, doClientAuth, enableSessionCreation,
-            enabledProtocols);
+            enabledProtocols, identificationProtocol, algorithmConstraints);
 
         implAccept(s);
         s.doneConnect();

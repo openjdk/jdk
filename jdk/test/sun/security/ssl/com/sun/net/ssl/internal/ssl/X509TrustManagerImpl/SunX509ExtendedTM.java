@@ -21,10 +21,11 @@
  * questions.
  */
 
-/* @test
- * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
- * @bug 6766775
- * @author Xuelei Fan
+/*
+ * @test
+ * @bug 6916074
+ * @run main/othervm -Djavax.net.debug=all SunX509ExtendedTM
+ * @summary Add support for TLS 1.2
  */
 
 import java.net.*;
@@ -39,7 +40,6 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
 
-import sun.security.ssl.SSLSocketImpl;
 
 /*
  * Certificates and key used in the test.
@@ -397,9 +397,7 @@ import sun.security.ssl.SSLSocketImpl;
  */
 
 
-public class IPAddressDNSIdentities {
-    static Map cookies;
-    ServerSocket ss;
+public class SunX509ExtendedTM {
 
     /*
      * =============================================================
@@ -412,7 +410,7 @@ public class IPAddressDNSIdentities {
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
-    static boolean separateServerThread = true;
+    static boolean separateServerThread = false;
 
     /*
      * Where do we find the keystores?
@@ -624,16 +622,9 @@ public class IPAddressDNSIdentities {
     volatile static boolean serverReady = false;
 
     /*
-     * Is the connection ready to close?
-     */
-    volatile static boolean closeReady = false;
-
-    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
-
-    private SSLServerSocket sslServerSocket = null;
 
     /*
      * Define the server side of the test.
@@ -646,9 +637,17 @@ public class IPAddressDNSIdentities {
             serverModulus, serverPrivateExponent, passphrase);
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
 
-        sslServerSocket =
+        SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
         serverPort = sslServerSocket.getLocalPort();
+
+
+        // enable endpoint identification
+        // ignore, we may test the feature when known how to parse client
+        // hostname
+        //SSLParameters params = sslServerSocket.getSSLParameters();
+        //params.setEndpointIdentificationAlgorithm("HTTPS");
+        //sslServerSocket.setSSLParameters(params);
 
         /*
          * Signal Client, we're ready for his connect.
@@ -658,29 +657,14 @@ public class IPAddressDNSIdentities {
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.setNeedClientAuth(true);
 
-        PrintStream out =
-                new PrintStream(sslSocket.getOutputStream());
+        InputStream sslIS = sslSocket.getInputStream();
+        OutputStream sslOS = sslSocket.getOutputStream();
 
-        try {
-            // ignore request data
+        sslIS.read();
+        sslOS.write(85);
+        sslOS.flush();
 
-            // send the response
-            out.print("HTTP/1.1 200 OK\r\n");
-            out.print("Content-Type: text/html; charset=iso-8859-1\r\n");
-            out.print("Content-Length: "+ 9 +"\r\n");
-            out.print("\r\n");
-            out.print("Testing\r\n");
-            out.flush();
-        } finally {
-            // close the socket
-            while (!closeReady) {
-                Thread.sleep(50);
-            }
-
-            System.out.println("Server closing socket");
-            sslSocket.close();
-            serverReady = false;
-        }
+        sslSocket.close();
 
     }
 
@@ -691,11 +675,6 @@ public class IPAddressDNSIdentities {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-        SSLContext context = getSSLContext(trusedCertStr, clientCertStr,
-            clientModulus, clientPrivateExponent, passphrase);
-
-        SSLContext.setDefault(context);
-
         /*
          * Wait for server to get started.
          */
@@ -703,32 +682,99 @@ public class IPAddressDNSIdentities {
             Thread.sleep(50);
         }
 
-        HttpsURLConnection http = null;
+        SSLContext context = getSSLContext(trusedCertStr, clientCertStr,
+            clientModulus, clientPrivateExponent, passphrase);
 
-        /* establish http connection to server */
-        URL url = new URL("https://127.0.0.1:" + serverPort+"/");
-        System.out.println("url is "+url.toString());
+        SSLSocketFactory sslsf = context.getSocketFactory();
+        SSLSocket sslSocket = (SSLSocket)
+            sslsf.createSocket("localhost", serverPort);
 
-        try {
-            http = (HttpsURLConnection)url.openConnection();
+        // enable endpoint identification
+        SSLParameters params = sslSocket.getSSLParameters();
+        params.setEndpointIdentificationAlgorithm("HTTPS");
+        sslSocket.setSSLParameters(params);
 
-            int respCode = http.getResponseCode();
-            System.out.println("respCode = " + respCode);
+        InputStream sslIS = sslSocket.getInputStream();
+        OutputStream sslOS = sslSocket.getOutputStream();
 
-            throw new Exception("Unexpectly found subject alternative name " +
-                                "matching IP address");
-        } catch (SSLHandshakeException sslhe) {
-            // no subject alternative names matching IP address 127.0.0.1 found
-            // that's the expected exception, ignore it.
-        } catch (IOException ioe) {
-            // HttpsClient may throw IOE during checking URL spoofing,
-            // that's the expected exception, ignore it.
-        } finally {
-            if (http != null) {
-                http.disconnect();
-            }
-            closeReady = true;
+        sslOS.write(280);
+        sslOS.flush();
+        sslIS.read();
+
+        sslSocket.close();
+
+    }
+
+    // get the ssl context
+    private static SSLContext getSSLContext(String trusedCertStr,
+            String keyCertStr, byte[] modulus,
+            byte[] privateExponent, char[] passphrase) throws Exception {
+
+        // generate certificate from cert string
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+
+        ByteArrayInputStream is =
+                    new ByteArrayInputStream(trusedCertStr.getBytes());
+        Certificate trusedCert = cf.generateCertificate(is);
+        is.close();
+
+        // create a key store
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+
+        // import the trused cert
+        ks.setCertificateEntry("RSA Export Signer", trusedCert);
+
+        if (keyCertStr != null) {
+            // generate the private key.
+            RSAPrivateKeySpec priKeySpec = new RSAPrivateKeySpec(
+                                            new BigInteger(modulus),
+                                            new BigInteger(privateExponent));
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            RSAPrivateKey priKey =
+                    (RSAPrivateKey)kf.generatePrivate(priKeySpec);
+
+            // generate certificate chain
+            is = new ByteArrayInputStream(keyCertStr.getBytes());
+            Certificate keyCert = cf.generateCertificate(is);
+            is.close();
+
+            Certificate[] chain = new Certificate[2];
+            chain[0] = keyCert;
+            chain[1] = trusedCert;
+
+            // import the key entry.
+            ks.setKeyEntry("Whatever", priKey, passphrase, chain);
         }
+
+        // create SSL context
+        TrustManagerFactory tmf =
+                TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+
+        TrustManager tms[] = tmf.getTrustManagers();
+        if (tms == null || tms.length == 0) {
+            throw new Exception("unexpected trust manager implementation");
+        } else {
+           if (!(tms[0] instanceof X509ExtendedTrustManager)) {
+            throw new Exception("unexpected trust manager implementation: "
+                                + tms[0].getClass().getCanonicalName());
+           }
+        }
+
+
+        SSLContext ctx = SSLContext.getInstance("TLS");
+
+        if (keyCertStr != null) {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, passphrase);
+
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        } else {
+            ctx.init(null, tmf.getTrustManagers(), null);
+        }
+
+        return ctx;
     }
 
     /*
@@ -749,7 +795,7 @@ public class IPAddressDNSIdentities {
         /*
          * Start the tests.
          */
-        new IPAddressDNSIdentities();
+        new SunX509ExtendedTM();
     }
 
     Thread clientThread = null;
@@ -759,7 +805,7 @@ public class IPAddressDNSIdentities {
      *
      * Fork off the other side, then do your work.
      */
-    IPAddressDNSIdentities() throws Exception {
+    SunX509ExtendedTM() throws Exception {
         if (separateServerThread) {
             startServer(true);
             startClient(false);
@@ -833,66 +879,6 @@ public class IPAddressDNSIdentities {
         } else {
             doClientSide();
         }
-    }
-
-    // get the ssl context
-    private static SSLContext getSSLContext(String trusedCertStr,
-            String keyCertStr, byte[] modulus,
-            byte[] privateExponent, char[] passphrase) throws Exception {
-
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trusedCert = cf.generateCertificate(is);
-        is.close();
-
-        // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-
-        // import the trused cert
-        ks.setCertificateEntry("RSA Export Signer", trusedCert);
-
-        if (keyCertStr != null) {
-            // generate the private key.
-            RSAPrivateKeySpec priKeySpec = new RSAPrivateKeySpec(
-                                            new BigInteger(modulus),
-                                            new BigInteger(privateExponent));
-            KeyFactory kf = KeyFactory.getInstance("RSA");
-            RSAPrivateKey priKey =
-                    (RSAPrivateKey)kf.generatePrivate(priKeySpec);
-
-            // generate certificate chain
-            is = new ByteArrayInputStream(keyCertStr.getBytes());
-            Certificate keyCert = cf.generateCertificate(is);
-            is.close();
-
-            Certificate[] chain = new Certificate[2];
-            chain[0] = keyCert;
-            chain[1] = trusedCert;
-
-            // import the key entry.
-            ks.setKeyEntry("Whatever", priKey, passphrase, chain);
-        }
-
-        // create SSL context
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-        tmf.init(ks);
-
-        SSLContext ctx = SSLContext.getInstance("TLS");
-
-        if (keyCertStr != null) {
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
-
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        } else {
-            ctx.init(null, tmf.getTrustManagers(), null);
-        }
-
-        return ctx;
     }
 
 }

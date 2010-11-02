@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,10 @@
 
 /*
  * @test
- * @bug 4717766
- * @summary 1.0.3 JsseX509TrustManager erroneously calls isClientTrusted()
- * @ignore JSSE supports algorithm constraints with CR 6916074,
- *     need to update this test case in JDK 7 soon
- * @author Brad Wetmore
+ * @bug 6916074
+ * @summary Add support for TLS 1.2
  *
- * This problem didn't exist in JSSE 1.4, only JSSE 1.0.3.  However,
- * this is a useful test, so I decided to include it in 1.4.2.
+ * Ensure that the SunJSSE provider enables the X509ExtendedTrustManager.
  */
 
 import java.io.*;
@@ -38,9 +34,8 @@ import java.net.*;
 import javax.net.ssl.*;
 import java.security.cert.*;
 import java.security.*;
-import com.sun.net.ssl.*;
 
-public class ClientServer {
+public class X509ExtendedTMEnabled {
 
     /*
      * =============================================================
@@ -62,6 +57,7 @@ public class ClientServer {
     static String keyStoreFile = "keystore";
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
+    private final static char[] cpasswd = "passphrase".toCharArray();
 
     /*
      * Is the server ready to serve?
@@ -89,10 +85,18 @@ public class ClientServer {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf = getDefaultServer();
+        SSLServerSocketFactory sslssf =
+                                getContext(true).getServerSocketFactory();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
         serverPort = sslServerSocket.getLocalPort();
+
+        // enable endpoint identification
+        // ignore, we may test the feature when known how to parse client
+        // hostname
+        //SSLParameters params = sslServerSocket.getSSLParameters();
+        //params.setEndpointIdentificationAlgorithm("HTTPS");
+        //sslServerSocket.setSSLParameters(params);
 
         /*
          * Signal Client, we're ready for his connect.
@@ -134,9 +138,14 @@ public class ClientServer {
             Thread.sleep(50);
         }
 
-        SSLSocketFactory sslsf = getDefaultClient();
+        SSLSocketFactory sslsf = getContext(false).getSocketFactory();
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
+
+        // enable endpoint identification
+        SSLParameters params = sslSocket.getSSLParameters();
+        params.setEndpointIdentificationAlgorithm("HTTPS");
+        sslSocket.setSSLParameters(params);
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -156,9 +165,10 @@ public class ClientServer {
         }
     }
 
-    private com.sun.net.ssl.SSLContext getDefault(MyX509TM tm)
-            throws Exception {
+    MyExtendedX509TM serverTM;
+    MyExtendedX509TM clientTM;
 
+    private SSLContext getContext(boolean server) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
@@ -166,64 +176,55 @@ public class ClientServer {
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
 
-        char[] passphrase = "passphrase".toCharArray();
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(keyFilename), passphrase);
+        ks.load(new FileInputStream(keyFilename), cpasswd);
+        kmf.init(ks, cpasswd);
 
-        com.sun.net.ssl.KeyManagerFactory kmf =
-            com.sun.net.ssl.KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        KeyStore ts = KeyStore.getInstance("JKS");
+        ts.load(new FileInputStream(trustFilename), cpasswd);
+        tmf.init(ts);
 
-        ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(trustFilename), passphrase);
-
-        com.sun.net.ssl.TrustManagerFactory tmf =
-            com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ks);
-
-        com.sun.net.ssl.TrustManager [] tms = tmf.getTrustManagers();
-
-        int i;
-        for (i = 0; i < tms.length; i++) {
-            if (tms[i] instanceof com.sun.net.ssl.X509TrustManager) {
-                break;
-            }
+        TrustManager tms[] = tmf.getTrustManagers();
+        if (tms == null || tms.length == 0) {
+            throw new Exception("unexpected trust manager implementation");
+        } else {
+           if (!(tms[0] instanceof X509TrustManager)) {
+            throw new Exception("unexpected trust manager implementation: "
+                                + tms[0].getClass().getCanonicalName());
+           }
         }
 
-        if (i >= tms.length) {
-            throw new Exception("Couldn't find X509TM");
+        if (server) {
+            serverTM = new MyExtendedX509TM((X509TrustManager)tms[0]);
+
+            tms = new TrustManager[] {serverTM};
+        } else {
+            clientTM = new MyExtendedX509TM((X509TrustManager)tms[0]);
+
+            tms = new TrustManager[] {clientTM};
         }
 
-        tm.init((com.sun.net.ssl.X509TrustManager)tms[i]);
-        tms = new MyX509TM [] { tm };
-
-        com.sun.net.ssl.SSLContext ctx =
-            com.sun.net.ssl.SSLContext.getInstance("TLS");
+        SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(kmf.getKeyManagers(), tms, null);
+
         return ctx;
     }
 
-    MyX509TM serverTM;
-    MyX509TM clientTM;
+    static class MyExtendedX509TM extends X509ExtendedTrustManager
+            implements X509TrustManager {
 
-    private SSLServerSocketFactory getDefaultServer() throws Exception {
-        serverTM = new MyX509TM();
-        return getDefault(serverTM).getServerSocketFactory();
-    }
+        X509TrustManager tm;
 
-    private SSLSocketFactory getDefaultClient() throws Exception {
-        clientTM = new MyX509TM();
-        return getDefault(clientTM).getSocketFactory();
-    }
-
-    static class MyX509TM implements com.sun.net.ssl.X509TrustManager {
-
-        com.sun.net.ssl.X509TrustManager tm;
         boolean clientChecked;
         boolean serverChecked;
 
-        void init(com.sun.net.ssl.X509TrustManager x509TM) {
-            tm = x509TM;
+        MyExtendedX509TM(X509TrustManager tm) {
+            clientChecked = false;
+            serverChecked = false;
+
+            this.tm = tm;
         }
 
         public boolean wasClientChecked() {
@@ -234,18 +235,43 @@ public class ClientServer {
             return serverChecked;
         }
 
-        public boolean isClientTrusted(X509Certificate[] chain) {
-            clientChecked = true;
-            return true;
+
+        public void checkClientTrusted(X509Certificate chain[], String authType)
+                throws CertificateException {
+            tm.checkClientTrusted(chain, authType);
         }
 
-        public boolean isServerTrusted(X509Certificate[] chain) {
-            serverChecked = true;
-            return true;
+        public void checkServerTrusted(X509Certificate chain[], String authType)
+                throws CertificateException {
+            tm.checkServerTrusted(chain, authType);
         }
 
         public X509Certificate[] getAcceptedIssuers() {
             return tm.getAcceptedIssuers();
+        }
+
+        public void checkClientTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+            clientChecked = true;
+            tm.checkClientTrusted(chain, authType);
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+            serverChecked = true;
+            tm.checkServerTrusted(chain, authType);
+        }
+
+        public void checkClientTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+            clientChecked = true;
+            tm.checkClientTrusted(chain, authType);
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+            serverChecked = true;
+            tm.checkServerTrusted(chain, authType);
         }
     }
 
@@ -268,7 +294,7 @@ public class ClientServer {
         /*
          * Start the tests.
          */
-        new ClientServer();
+        new X509ExtendedTMEnabled();
     }
 
     Thread clientThread = null;
@@ -279,7 +305,7 @@ public class ClientServer {
      *
      * Fork off the other side, then do your work.
      */
-    ClientServer() throws Exception {
+    X509ExtendedTMEnabled() throws Exception {
         if (separateServerThread) {
             startServer(true);
             startClient(false);
@@ -342,7 +368,7 @@ public class ClientServer {
                         doClientSide();
                     } catch (Exception e) {
                         /*
-                         * Our client thread just died.
+              * Our client thread just died.
                          */
                         System.err.println("Client died...");
                         clientException = e;
@@ -355,3 +381,4 @@ public class ClientServer {
         }
     }
 }
+
