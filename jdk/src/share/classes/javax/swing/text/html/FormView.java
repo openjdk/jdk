@@ -362,7 +362,7 @@ public class FormView extends ComponentView implements ActionListener {
      */
     public void actionPerformed(ActionEvent evt) {
         Element element = getElement();
-        StringBuffer dataBuffer = new StringBuffer();
+        StringBuilder dataBuffer = new StringBuilder();
         HTMLDocument doc = (HTMLDocument)getDocument();
         AttributeSet attr = element.getAttributes();
 
@@ -508,7 +508,7 @@ public class FormView extends ComponentView implements ActionListener {
      */
     protected void imageSubmit(String imageData) {
 
-        StringBuffer dataBuffer = new StringBuffer();
+        StringBuilder dataBuffer = new StringBuilder();
         Element elem = getElement();
         HTMLDocument hdoc = (HTMLDocument)elem.getDocument();
         getFormData(dataBuffer);
@@ -589,7 +589,7 @@ public class FormView extends ComponentView implements ActionListener {
      * @param targetElement the element that triggered the
      *                      form submission
      */
-    void getFormData(StringBuffer buffer) {
+    private void getFormData(StringBuilder buffer) {
         Element formE = getFormElement();
         if (formE != null) {
             ElementIterator it = new ElementIterator(formE);
@@ -623,7 +623,7 @@ public class FormView extends ComponentView implements ActionListener {
      * data is loaded in name/value pairs.
      *
      */
-    private void loadElementDataIntoBuffer(Element elem, StringBuffer buffer) {
+    private void loadElementDataIntoBuffer(Element elem, StringBuilder buffer) {
 
         AttributeSet attr = elem.getAttributes();
         String name = (String)attr.getAttribute(HTML.Attribute.NAME);
@@ -692,29 +692,6 @@ public class FormView extends ComponentView implements ActionListener {
             }
             if (path != null && path.length() > 0) {
                 value = path;
-/*
-
-                try {
-                    Reader reader = new BufferedReader(new FileReader(path));
-                    StringBuffer buffer = new StringBuffer();
-                    char[] cBuff = new char[1024];
-                    int read;
-
-                    try {
-                        while ((read = reader.read(cBuff)) != -1) {
-                            buffer.append(cBuff, 0, read);
-                        }
-                    } catch (IOException ioe) {
-                        buffer = null;
-                    }
-                    try {
-                        reader.close();
-                    } catch (IOException ioe) {}
-                    if (buffer != null) {
-                        value = buffer.toString();
-                    }
-                } catch (IOException ioe) {}
-*/
             }
         }
         return value;
@@ -740,7 +717,7 @@ public class FormView extends ComponentView implements ActionListener {
      * form element.  Basically, only items that are selected
      * and have their name attribute set are added to the buffer.
      */
-    private void loadSelectData(AttributeSet attr, StringBuffer buffer) {
+    private void loadSelectData(AttributeSet attr, StringBuilder buffer) {
 
         String name = (String)attr.getAttribute(HTML.Attribute.NAME);
         if (name == null) {
@@ -771,7 +748,7 @@ public class FormView extends ComponentView implements ActionListener {
      * URLEncoder.encode() method before being added to the
      * buffer.
      */
-    private void appendBuffer(StringBuffer buffer, String name, String value) {
+    private void appendBuffer(StringBuilder buffer, String name, String value) {
         if (buffer.length() > 0) {
             buffer.append('&');
         }
