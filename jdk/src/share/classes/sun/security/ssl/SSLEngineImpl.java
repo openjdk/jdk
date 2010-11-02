@@ -200,8 +200,10 @@ final public class SSLEngineImpl extends SSLEngine {
      * is associated with a session at the same time.  (TLS/IETF may
      * change that to add client authentication w/o new key exchg.)
      */
-    private SSLSessionImpl      sess;
-    private Handshaker          handshaker;
+    private Handshaker                  handshaker;
+    private SSLSessionImpl              sess;
+    private volatile SSLSessionImpl     handshakeSession;
+
 
     /*
      * Client authentication be off, requested, or required.
@@ -248,9 +250,11 @@ final public class SSLEngineImpl extends SSLEngine {
     // The cipher suites enabled for use on this connection.
     private CipherSuiteList             enabledCipherSuites;
 
-    // hostname identification algorithm, the hostname identification is
-    // disabled by default.
-    private String                      identificationAlg = null;
+    // the endpoint identification protocol
+    private String                      identificationProtocol = null;
+
+    // The cryptographic algorithm constraints
+    private AlgorithmConstraints        algorithmConstraints = null;
 
     // Have we been told whether we're client or server?
     private boolean                     serverModeSet = false;
@@ -344,6 +348,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
         sslContext = ctx;
         sess = SSLSessionImpl.nullSession;
+        handshakeSession = null;
 
         /*
          * State is cs_START until we initialize the handshaker.
@@ -1023,6 +1028,7 @@ final public class SSLEngineImpl extends SSLEngine {
                         serverVerifyData = handshaker.getServerVerifyData();
 
                         sess = handshaker.getSession();
+                        handshakeSession = null;
                         if (!writer.hasOutboundData()) {
                             hsStatus = HandshakeStatus.FINISHED;
                         }
@@ -1528,6 +1534,15 @@ final public class SSLEngineImpl extends SSLEngine {
         return sess;
     }
 
+    @Override
+    synchronized public SSLSession getHandshakeSession() {
+        return handshakeSession;
+    }
+
+    synchronized void setHandshakeSession(SSLSessionImpl session) {
+        handshakeSession = session;
+    }
+
     /**
      * Returns a delegated <code>Runnable</code> task for
      * this <code>SSLEngine</code>.
@@ -1629,6 +1644,9 @@ final public class SSLEngineImpl extends SSLEngine {
         inboundDone = true;
 
         sess.invalidate();
+        if (handshakeSession != null) {
+            handshakeSession.invalidate();
+        }
 
         /*
          * If we haven't even started handshaking yet, no need
@@ -1971,7 +1989,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /**
      * Returns the protocols that are supported by this implementation.
      * A subset of the supported protocols may be enabled for this connection
-     * @ returns an array of protocol names.
+     * @return an array of protocol names.
      */
     public String[] getSupportedProtocols() {
         return ProtocolList.getSupported().toStringArray();
@@ -1998,28 +2016,31 @@ final public class SSLEngineImpl extends SSLEngine {
     }
 
     /**
-     * Try to configure the endpoint identification algorithm of the engine.
-     *
-     * @param identificationAlgorithm the algorithm used to check the
-     *          endpoint identity.
-     * @return true if the identification algorithm configuration success.
+     * Returns the SSLParameters in effect for this SSLEngine.
      */
-    synchronized public boolean trySetHostnameVerification(
-        String identificationAlgorithm) {
-        if (sslContext.getX509TrustManager() instanceof
-                X509ExtendedTrustManager) {
-            this.identificationAlg = identificationAlgorithm;
-            return true;
-        } else {
-            return false;
-        }
+    synchronized public SSLParameters getSSLParameters() {
+        SSLParameters params = super.getSSLParameters();
+
+        // the super implementation does not handle the following parameters
+        params.setEndpointIdentificationAlgorithm(identificationProtocol);
+        params.setAlgorithmConstraints(algorithmConstraints);
+
+        return params;
     }
 
     /**
-     * Returns the endpoint identification algorithm of the engine.
+     * Applies SSLParameters to this engine.
      */
-    synchronized public String getHostnameVerification() {
-        return identificationAlg;
+    synchronized public void setSSLParameters(SSLParameters params) {
+        super.setSSLParameters(params);
+
+        // the super implementation does not handle the following parameters
+        identificationProtocol = params.getEndpointIdentificationAlgorithm();
+        algorithmConstraints = params.getAlgorithmConstraints();
+        if ((handshaker != null) && !handshaker.started()) {
+            handshaker.setIdentificationProtocol(identificationProtocol);
+            handshaker.setAlgorithmConstraints(algorithmConstraints);
+        }
     }
 
     /**

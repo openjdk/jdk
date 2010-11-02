@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,8 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
             ike.initCause(e);
             throw ike;
         } catch (IOException e) {
-            InvalidKeyException ike = new InvalidKeyException("Error parsing key encoding: " + e.getMessage());
+            InvalidKeyException ike = new InvalidKeyException(
+                "Error parsing key encoding: " + e.getMessage());
             ike.initCause(e);
             throw ike;
         }
@@ -300,7 +301,8 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
             DerInputStream in = new DerInputStream(this.key);
             this.x = in.getBigInteger();
         } catch (IOException e) {
-            InvalidKeyException ike = new InvalidKeyException("Error parsing key encoding: " + e.getMessage());
+            InvalidKeyException ike = new InvalidKeyException(
+                "Error parsing key encoding: " + e.getMessage());
             ike.initCause(e);
             throw ike;
         }

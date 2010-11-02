@@ -29,13 +29,12 @@ package sun.security.ssl;
 import java.io.*;
 import java.util.*;
 import java.security.*;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.AccessController;
+import java.security.AlgorithmConstraints;
 import java.security.AccessControlContext;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-import java.security.cert.X509Certificate;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -48,6 +47,8 @@ import sun.security.internal.interfaces.TlsMasterSecret;
 
 import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
+
+import static sun.security.ssl.CipherSuite.PRF.*;
 
 /**
  * Handshaker ... processes handshake records from an SSL V3.0
@@ -80,6 +81,20 @@ abstract class Handshaker {
     // List of enabled CipherSuites
     private CipherSuiteList     enabledCipherSuites;
 
+    // The endpoint identification protocol
+    String              identificationProtocol;
+
+    // The cryptographic algorithm constraints
+    private AlgorithmConstraints    algorithmConstraints = null;
+
+    // Local supported signature and algorithms
+    Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs;
+
+    // Peer supported signature and algorithms
+    Collection<SignatureAndHashAlgorithm> peerSupportedSignAlgs;
+
+    /*
+
     /*
      * List of active protocols
      *
@@ -98,6 +113,7 @@ abstract class Handshaker {
     private CipherSuiteList    activeCipherSuites;
 
     private boolean             isClient;
+    private boolean             needCertVerify;
 
     SSLSocketImpl               conn = null;
     SSLEngineImpl               engine = null;
@@ -109,10 +125,6 @@ abstract class Handshaker {
     SSLContextImpl              sslContext;
     RandomCookie                clnt_random, svr_random;
     SSLSessionImpl              session;
-
-    // Temporary MD5 and SHA message digests. Must always be left
-    // in reset state after use.
-    private MessageDigest md5Tmp, shaTmp;
 
     // current CipherSuite. Never null, initially SSL_NULL_WITH_NULL_NULL
     CipherSuite         cipherSuite;
@@ -208,6 +220,7 @@ abstract class Handshaker {
 
         this.sslContext = context;
         this.isClient = isClient;
+        this.needCertVerify = needCertVerify;
         this.activeProtocolVersion = activeProtocolVersion;
         this.isInitialHandshake = isInitialHandshake;
         this.secureRenegotiation = secureRenegotiation;
@@ -217,23 +230,12 @@ abstract class Handshaker {
         invalidated = false;
 
         setCipherSuite(CipherSuite.C_NULL);
-
-        md5Tmp = JsseJce.getMD5();
-        shaTmp = JsseJce.getSHA();
-
-        //
-        // We accumulate digests of the handshake messages so that
-        // we can read/write CertificateVerify and Finished messages,
-        // getting assurance against some particular active attacks.
-        //
-        handshakeHash = new HandshakeHash(needCertVerify);
-
         setEnabledProtocols(enabledProtocols);
 
         if (conn != null) {
-            conn.getAppInputStream().r.setHandshakeHash(handshakeHash);
+            algorithmConstraints = new SSLAlgorithmConstraints(conn, true);
         } else {        // engine != null
-            engine.inputRecord.setHandshakeHash(handshakeHash);
+            algorithmConstraints = new SSLAlgorithmConstraints(engine, true);
         }
 
 
@@ -285,6 +287,14 @@ abstract class Handshaker {
         }
     }
 
+    String getRawHostnameSE() {
+        if (conn != null) {
+            return conn.getRawHostname();
+        } else {
+            return engine.getPeerHost();
+        }
+    }
+
     String getHostSE() {
         if (conn != null) {
             return conn.getHost();
@@ -330,14 +340,6 @@ abstract class Handshaker {
         }
     }
 
-    String getHostnameVerificationSE() {
-        if (conn != null) {
-            return conn.getHostnameVerification();
-        } else {
-            return engine.getHostnameVerification();
-        }
-    }
-
     AccessControlContext getAccSE() {
         if (conn != null) {
             return conn.getAcc();
@@ -366,7 +368,6 @@ abstract class Handshaker {
         output.r.setVersion(protocolVersion);
     }
 
-
     /**
      * Set the enabled protocols. Called from the constructor or
      * SSLSocketImpl/SSLEngineImpl.setEnabledProtocols() (if the
@@ -390,6 +391,49 @@ abstract class Handshaker {
         this.enabledCipherSuites = enabledCipherSuites;
     }
 
+    /**
+     * Set the algorithm constraints. Called from the constructor or
+     * SSLSocketImpl/SSLEngineImpl.setAlgorithmConstraints() (if the
+     * handshake is not yet in progress).
+     */
+    void setAlgorithmConstraints(AlgorithmConstraints algorithmConstraints) {
+        activeCipherSuites = null;
+        activeProtocols = null;
+
+        this.algorithmConstraints =
+            new SSLAlgorithmConstraints(algorithmConstraints);
+        this.localSupportedSignAlgs = null;
+    }
+
+    Collection<SignatureAndHashAlgorithm> getLocalSupportedSignAlgs() {
+        if (localSupportedSignAlgs == null) {
+            localSupportedSignAlgs =
+                SignatureAndHashAlgorithm.getSupportedAlgorithms(
+                                                    algorithmConstraints);
+        }
+
+        return localSupportedSignAlgs;
+    }
+
+    void setPeerSupportedSignAlgs(
+            Collection<SignatureAndHashAlgorithm> algorithms) {
+        peerSupportedSignAlgs =
+            new ArrayList<SignatureAndHashAlgorithm>(algorithms);
+    }
+
+    Collection<SignatureAndHashAlgorithm> getPeerSupportedSignAlgs() {
+        return peerSupportedSignAlgs;
+    }
+
+
+    /**
+     * Set the identification protocol. Called from the constructor or
+     * SSLSocketImpl/SSLEngineImpl.setIdentificationProtocol() (if the
+     * handshake is not yet in progress).
+     */
+    void setIdentificationProtocol(String protocol) {
+        this.identificationProtocol = protocol;
+    }
 
     /**
      * Prior to handshaking, activate the handshake and initialize the version,
@@ -426,16 +470,27 @@ abstract class Handshaker {
             helloVersion = activeProtocols.helloVersion;
         }
 
-        input = new HandshakeInStream(handshakeHash);
+        // We accumulate digests of the handshake messages so that
+        // we can read/write CertificateVerify and Finished messages,
+        // getting assurance against some particular active attacks.
+        Set<String> localSupportedHashAlgorithms =
+            SignatureAndHashAlgorithm.getHashAlgorithmNames(
+                getLocalSupportedSignAlgs());
+        handshakeHash = new HandshakeHash(!isClient, needCertVerify,
+            localSupportedHashAlgorithms);
 
+        // Generate handshake input/output stream.
+        input = new HandshakeInStream(handshakeHash);
         if (conn != null) {
             output = new HandshakeOutStream(protocolVersion, helloVersion,
                                         handshakeHash, conn);
+            conn.getAppInputStream().r.setHandshakeHash(handshakeHash);
             conn.getAppInputStream().r.setHelloVersion(helloVersion);
             conn.getAppOutputStream().r.setHelloVersion(helloVersion);
         } else {
             output = new HandshakeOutStream(protocolVersion, helloVersion,
                                         handshakeHash, engine);
+            engine.inputRecord.setHandshakeHash(handshakeHash);
             engine.inputRecord.setHelloVersion(helloVersion);
             engine.outputRecord.setHelloVersion(helloVersion);
         }
@@ -501,7 +556,7 @@ abstract class Handshaker {
      *
      * Therefore, when the active protocols only include TLS 1.1 or later,
      * the client cannot request to negotiate those obsoleted cipher
-     * suites, that's, the obsoleted suites should not be included in the
+     * suites.  That is, the obsoleted suites should not be included in the
      * client hello. So we need to create a subset of the enabled cipher
      * suites, the active cipher suites, which does not contain obsoleted
      * cipher suites of the minimum active protocol.
@@ -518,11 +573,21 @@ abstract class Handshaker {
             if (!(activeProtocols.collection().isEmpty()) &&
                     activeProtocols.min.v != ProtocolVersion.NONE.v) {
                 for (CipherSuite suite : enabledCipherSuites.collection()) {
-                    if (suite.obsoleted > activeProtocols.min.v) {
-                        suites.add(suite);
-                    } else if (debug != null && Debug.isOn("handshake")) {
-                        System.out.println(
-                            "Ignoring obsoleted cipher suite: " + suite);
+                    if (suite.obsoleted > activeProtocols.min.v &&
+                            suite.supported <= activeProtocols.max.v) {
+                        if (algorithmConstraints.permits(
+                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                                suite.name, null)) {
+                            suites.add(suite);
+                        }
+                    } else if (debug != null && Debug.isOn("verbose")) {
+                        if (suite.obsoleted <= activeProtocols.min.v) {
+                            System.out.println(
+                                "Ignoring obsoleted cipher suite: " + suite);
+                        } else {
+                            System.out.println(
+                                "Ignoring unsupported cipher suite: " + suite);
+                        }
                     }
                 }
             }
@@ -550,14 +615,27 @@ abstract class Handshaker {
     ProtocolList getActiveProtocols() {
         if (activeProtocols == null) {
             ArrayList<ProtocolVersion> protocols =
-                                            new ArrayList<ProtocolVersion>(3);
+                                            new ArrayList<ProtocolVersion>(4);
             for (ProtocolVersion protocol : enabledProtocols.collection()) {
                 boolean found = false;
                 for (CipherSuite suite : enabledCipherSuites.collection()) {
-                    if (suite.isAvailable() && suite.obsoleted > protocol.v) {
-                        protocols.add(protocol);
-                        found = true;
-                        break;
+                    if (suite.isAvailable() && suite.obsoleted > protocol.v &&
+                                               suite.supported <= protocol.v) {
+                        if (algorithmConstraints.permits(
+                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                                suite.name, null)) {
+                            protocols.add(protocol);
+                            found = true;
+                            break;
+                        } else if (debug != null && Debug.isOn("verbose")) {
+                            System.out.println(
+                                "Ignoring disabled cipher suite: " + suite +
+                                 " for " + protocol);
+                        }
+                    } else if (debug != null && Debug.isOn("verbose")) {
+                        System.out.println(
+                            "Ignoring unsupported cipher suite: " + suite +
+                                 " for " + protocol);
                     }
                 }
                 if (!found && (debug != null) && Debug.isOn("handshake")) {
@@ -670,6 +748,17 @@ abstract class Handshaker {
      */
     SSLSessionImpl getSession() {
         return session;
+    }
+
+    /*
+     * Set the handshake session
+     */
+    void setHandshakeSessionSE(SSLSessionImpl handshakeSession) {
+        if (conn != null) {
+            conn.setHandshakeSession(handshakeSession);
+        } else {
+            engine.setHandshakeSession(handshakeSession);
+        }
     }
 
     /*
@@ -798,7 +887,7 @@ abstract class Handshaker {
      */
     boolean started() {
         return state >= 0;  // 0: HandshakeMessage.ht_hello_request
-                            // 1: HandshakeMessage.ht_hello_request
+                            // 1: HandshakeMessage.ht_client_hello
     }
 
 
@@ -926,10 +1015,6 @@ abstract class Handshaker {
     private SecretKey calculateMasterSecret(SecretKey preMasterSecret,
             ProtocolVersion requestedVersion) {
 
-        TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec
-                (preMasterSecret, protocolVersion.major, protocolVersion.minor,
-                clnt_random.random_bytes, svr_random.random_bytes);
-
         if (debug != null && Debug.isOn("keygen")) {
             HexDumpEncoder      dump = new HexDumpEncoder();
 
@@ -942,15 +1027,37 @@ abstract class Handshaker {
             // benefit to doing it twice
         }
 
+        // What algs/params do we need to use?
+        String masterAlg;
+        PRF prf;
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            masterAlg = "SunTls12MasterSecret";
+            prf = cipherSuite.prfAlg;
+        } else {
+            masterAlg = "SunTlsMasterSecret";
+            prf = P_NONE;
+        }
+
+        String prfHashAlg = prf.getPRFHashAlg();
+        int prfHashLength = prf.getPRFHashLength();
+        int prfBlockSize = prf.getPRFBlockSize();
+
+        TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec(
+                preMasterSecret, protocolVersion.major, protocolVersion.minor,
+                clnt_random.random_bytes, svr_random.random_bytes,
+                prfHashAlg, prfHashLength, prfBlockSize);
+
         SecretKey masterSecret;
         try {
-            KeyGenerator kg = JsseJce.getKeyGenerator("SunTlsMasterSecret");
+            KeyGenerator kg = JsseJce.getKeyGenerator(masterAlg);
             kg.init(spec);
             masterSecret = kg.generateKey();
         } catch (GeneralSecurityException e) {
             // For RSA premaster secrets, do not signal a protocol error
             // due to the Bleichenbacher attack. See comments further down.
-            if (!preMasterSecret.getAlgorithm().equals("TlsRsaPremasterSecret")) {
+            if (!preMasterSecret.getAlgorithm().equals(
+                    "TlsRsaPremasterSecret")) {
                 throw new ProviderException(e);
             }
 
@@ -1056,14 +1163,31 @@ abstract class Handshaker {
         BulkCipher cipher = cipherSuite.cipher;
         int expandedKeySize = is_exportable ? cipher.expandedKeySize : 0;
 
-        TlsKeyMaterialParameterSpec spec = new TlsKeyMaterialParameterSpec
-            (masterKey, protocolVersion.major, protocolVersion.minor,
+        // Which algs/params do we need to use?
+        String keyMaterialAlg;
+        PRF prf;
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            keyMaterialAlg = "SunTls12KeyMaterial";
+            prf = cipherSuite.prfAlg;
+        } else {
+            keyMaterialAlg = "SunTlsKeyMaterial";
+            prf = P_NONE;
+        }
+
+        String prfHashAlg = prf.getPRFHashAlg();
+        int prfHashLength = prf.getPRFHashLength();
+        int prfBlockSize = prf.getPRFBlockSize();
+
+        TlsKeyMaterialParameterSpec spec = new TlsKeyMaterialParameterSpec(
+            masterKey, protocolVersion.major, protocolVersion.minor,
             clnt_random.random_bytes, svr_random.random_bytes,
             cipher.algorithm, cipher.keySize, expandedKeySize,
-            cipher.ivSize, hashSize);
+            cipher.ivSize, hashSize,
+            prfHashAlg, prfHashLength, prfBlockSize);
 
         try {
-            KeyGenerator kg = JsseJce.getKeyGenerator("SunTlsKeyMaterial");
+            KeyGenerator kg = JsseJce.getKeyGenerator(keyMaterialAlg);
             kg.init(spec);
             TlsKeyMaterialSpec keySpec = (TlsKeyMaterialSpec)kg.generateKey();
 
