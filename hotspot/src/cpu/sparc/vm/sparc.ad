@@ -9516,16 +9516,16 @@ instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
     Register Rdst = $dst$$Register;
     Register Rsrc = $src$$Register;
     Register Rtmp = $tmp$$Register;
-    __ srl(Rsrc, 1, Rtmp);
-    __ srl(Rsrc, 0, Rdst);
+    __ srl(Rsrc, 1,    Rtmp);
+    __ srl(Rsrc, 0,    Rdst);
     __ or3(Rdst, Rtmp, Rdst);
-    __ srl(Rdst, 2, Rtmp);
+    __ srl(Rdst, 2,    Rtmp);
     __ or3(Rdst, Rtmp, Rdst);
-    __ srl(Rdst, 4, Rtmp);
+    __ srl(Rdst, 4,    Rtmp);
     __ or3(Rdst, Rtmp, Rdst);
-    __ srl(Rdst, 8, Rtmp);
+    __ srl(Rdst, 8,    Rtmp);
     __ or3(Rdst, Rtmp, Rdst);
-    __ srl(Rdst, 16, Rtmp);
+    __ srl(Rdst, 16,   Rtmp);
     __ or3(Rdst, Rtmp, Rdst);
     __ popc(Rdst, Rdst);
     __ mov(BitsPerInt, Rtmp);
@@ -9534,7 +9534,7 @@ instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
+instruct countLeadingZerosL(iRegIsafe dst, iRegL src, iRegL tmp, flagsReg cr) %{
   predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
   match(Set dst (CountLeadingZerosL src));
   effect(TEMP dst, TEMP tmp, KILL cr);
@@ -9565,18 +9565,18 @@ instruct countLeadingZerosL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
     Register Rdst = $dst$$Register;
     Register Rsrc = $src$$Register;
     Register Rtmp = $tmp$$Register;
-    __ srlx(Rsrc, 1, Rtmp);
-    __ or3(Rsrc, Rtmp, Rdst);
-    __ srlx(Rdst, 2, Rtmp);
-    __ or3(Rdst, Rtmp, Rdst);
-    __ srlx(Rdst, 4, Rtmp);
-    __ or3(Rdst, Rtmp, Rdst);
-    __ srlx(Rdst, 8, Rtmp);
-    __ or3(Rdst, Rtmp, Rdst);
-    __ srlx(Rdst, 16, Rtmp);
-    __ or3(Rdst, Rtmp, Rdst);
-    __ srlx(Rdst, 32, Rtmp);
-    __ or3(Rdst, Rtmp, Rdst);
+    __ srlx(Rsrc, 1,    Rtmp);
+    __ or3( Rsrc, Rtmp, Rdst);
+    __ srlx(Rdst, 2,    Rtmp);
+    __ or3( Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 4,    Rtmp);
+    __ or3( Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 8,    Rtmp);
+    __ or3( Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 16,   Rtmp);
+    __ or3( Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 32,   Rtmp);
+    __ or3( Rdst, Rtmp, Rdst);
     __ popc(Rdst, Rdst);
     __ mov(BitsPerLong, Rtmp);
     __ sub(Rtmp, Rdst, Rdst);
