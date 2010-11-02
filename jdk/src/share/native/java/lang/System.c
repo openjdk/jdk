@@ -219,11 +219,14 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 
     /*
      *  user.language
-     *  user.country, user.variant (if user's environment specifies them)
+     *  user.script, user.country, user.variant (if user's environment specifies them)
      *  file.encoding
      *  file.encoding.pkg
      */
     PUTPROP(props, "user.language", sprops->language);
+    if (sprops->script) {
+        PUTPROP(props, "user.script", sprops->script);
+    }
     if (sprops->country) {
         PUTPROP(props, "user.country", sprops->country);
     }
@@ -305,11 +308,12 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     }
 
     /*
-     * unset "user.language", "user.country", and "user.variant"
+     * unset "user.language", "user.script", "user.country", and "user.variant"
      * in order to tell whether the command line option "-DXXXX=YYYY" is
      * specified or not.  They will be reset in fillI18nProps() below.
      */
     REMOVEPROP(props, "user.language");
+    REMOVEPROP(props, "user.script");
     REMOVEPROP(props, "user.country");
     REMOVEPROP(props, "user.variant");
     REMOVEPROP(props, "file.encoding");
@@ -328,6 +332,8 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     /* reconstruct i18n related properties */
     fillI18nProps(env, props, "user.language", sprops->display_language,
         sprops->format_language, putID, getPropID);
+    fillI18nProps(env, props, "user.script",
+        sprops->display_script, sprops->format_script, putID, getPropID);
     fillI18nProps(env, props, "user.country",
         sprops->display_country, sprops->format_country, putID, getPropID);
     fillI18nProps(env, props, "user.variant",
