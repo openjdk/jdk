@@ -121,6 +121,8 @@ public class Attr extends JCTree.Visitor {
         sourceName = source.name;
         relax = (options.isSet("-retrofit") ||
                  options.isSet("-relax"));
+        findDiamonds = options.get("findDiamond") != null &&
+                 source.allowDiamond();
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
         enableSunApiLintControl = options.isSet("enableSunApiLintControl");
     }
@@ -153,6 +155,16 @@ public class Attr extends JCTree.Visitor {
      * objects during constructor call?
      */
     boolean allowAnonOuterThis;
+
+    /** Switch: generates a warning if diamond can be safely applied
+     *  to a given new expression
+     */
+    boolean findDiamonds;
+
+    /**
+     * Internally enables/disables diamond finder feature
+     */
+    static final boolean allowDiamondFinder = true;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1572,6 +1584,24 @@ public class Attr extends JCTree.Visitor {
         if (TreeInfo.isDiamond(tree)) {
             clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes);
             clazz.type = clazztype;
+        } else if (allowDiamondFinder &&
+                clazztype.getTypeArguments().nonEmpty() &&
+                findDiamonds) {
+            Type inferred = attribDiamond(localEnv,
+                    tree,
+                    clazztype,
+                    mapping,
+                    argtypes,
+                    typeargtypes);
+            if (!inferred.isErroneous() &&
+                    inferred.tag == CLASS &&
+                    types.isAssignable(inferred, pt.tag == NONE ? clazztype : pt, Warner.noWarnings) &&
+                    chk.checkDiamond((ClassType)inferred).isEmpty()) {
+                String key = types.isSameType(clazztype, inferred) ?
+                    "diamond.redundant.args" :
+                    "diamond.redundant.args.1";
+                log.warning(tree.clazz.pos(), key, clazztype, inferred);
+            }
         }
 
         // If we have made no mistakes in the class type...
