@@ -119,11 +119,6 @@ policy.ignoreIdentityScope=false
 keystore.type=jks
 
 #
-# Class to instantiate as the system scope:
-#
-system.scope=sun.security.provider.IdentityDatabase
-
-#
 # List of comma-separated packages that start with or equal this string
 # will cause a security exception to be thrown when
 # passed to checkPackageAccess unless the
@@ -379,4 +374,4 @@ jdk.certpath.disabledAlgorithms=MD2
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SHA1, DSA, RSA keySize < 2048
-
+i
