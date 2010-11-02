@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@ import java.util.Iterator;
 /** A scope represents an area of visibility in a Java program. The
  *  Scope class is a container for symbols which provides
  *  efficient access to symbols given their names. Scopes are implemented
- *  as hash tables with "open addressing" and "double hashing".
- *  Scopes can be nested; the next field of a scope points
+ *  as hash tables. Scopes can be nested; the next field of a scope points
  *  to its next outer scope. Nested scopes can share their hash tables.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -68,7 +67,6 @@ public class Scope {
     public Entry elems;
 
     /** The number of elements in this scope.
-     * This includes deleted elements, whose value is the sentinel.
      */
     public int nelems = 0;
 
@@ -111,8 +109,7 @@ public class Scope {
         }
     }
 
-    /** Use as a "not-found" result for lookup.
-     * Also used to mark deleted entries in the table.
+    /** Every hash bucket is a list of Entry's which ends in sentinel.
      */
     private static final Entry sentinel = new Entry(null, null, null, null);
 
@@ -133,13 +130,10 @@ public class Scope {
         this.owner = owner;
         this.table = table;
         this.hashMask = table.length - 1;
+        this.elems = null;
+        this.nelems = 0;
+        this.shared = 0;
         this.scopeCounter = scopeCounter;
-    }
-
-    /** Convenience constructor used for dup and dupUnshared. */
-    private Scope(Scope next, Symbol owner, Entry[] table) {
-        this(next, owner, table, next.scopeCounter);
-        this.nelems = next.nelems;
     }
 
     /** Construct a new scope, within scope next, with given owner,
@@ -151,6 +145,7 @@ public class Scope {
 
     protected Scope(Symbol owner, ScopeCounter scopeCounter) {
         this(null, owner, new Entry[INITIAL_SIZE], scopeCounter);
+        for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
 
     /** Construct a fresh scope within this scope, with same owner,
@@ -159,7 +154,11 @@ public class Scope {
      *  of fresh tables.
      */
     public Scope dup() {
-        return dup(this.owner);
+        Scope result = new Scope(this, this.owner, this.table, scopeCounter);
+        shared++;
+        // System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
+        // new Error().printStackTrace(System.out);
+        return result;
     }
 
     /** Construct a fresh scope within this scope, with new owner,
@@ -168,7 +167,7 @@ public class Scope {
      *  of fresh tables.
      */
     public Scope dup(Symbol newOwner) {
-        Scope result = new Scope(this, newOwner, this.table);
+        Scope result = new Scope(this, newOwner, this.table, scopeCounter);
         shared++;
         // System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
         // new Error().printStackTrace(System.out);
@@ -180,7 +179,7 @@ public class Scope {
      *  the table of its outer scope.
      */
     public Scope dupUnshared() {
-        return new Scope(this, this.owner, this.table.clone());
+        return new Scope(this, this.owner, this.table.clone(), scopeCounter);
     }
 
     /** Remove all entries of this scope from its table, if shared
@@ -190,7 +189,7 @@ public class Scope {
         assert shared == 0;
         if (table != next.table) return next;
         while (elems != null) {
-            int hash = getIndex(elems.sym.name);
+            int hash = elems.sym.name.hashCode() & hashMask;
             Entry e = table[hash];
             assert e == elems : elems.sym;
             table[hash] = elems.shadowed;
@@ -198,7 +197,6 @@ public class Scope {
         }
         assert next.shared > 0;
         next.shared--;
-        next.nelems = nelems;
         // System.out.println("====> leaving scope " + this.hashCode() + " owned by " + this.owner + " to " + next.hashCode());
         // new Error().printStackTrace(System.out);
         return next;
@@ -217,17 +215,19 @@ public class Scope {
                 s.hashMask = newtable.length - 1;
             }
         }
-        int n = 0;
-        for (int i = oldtable.length; --i >= 0; ) {
-            Entry e = oldtable[i];
-            if (e != null && e != sentinel) {
-                table[getIndex(e.sym.name)] = e;
-                n++;
-            }
+        for (int i = 0; i < newtable.length; i++) newtable[i] = sentinel;
+        for (int i = 0; i < oldtable.length; i++) copy(oldtable[i]);
+    }
+
+    /** Copy the given entry and all entries shadowed by it to table
+     */
+    private void copy(Entry e) {
+        if (e.sym != null) {
+            copy(e.shadowed);
+            int hash = e.sym.name.hashCode() & hashMask;
+            e.shadowed = table[hash];
+            table[hash] = e;
         }
-        // We don't need to update nelems for shared inherited scopes,
-        // since that gets handled by leave().
-        nelems = n;
     }
 
     /** Enter symbol sym in this scope.
@@ -248,17 +248,13 @@ public class Scope {
      */
     public void enter(Symbol sym, Scope s, Scope origin) {
         assert shared == 0;
-        if (nelems * 3 >= hashMask * 2)
-            dble();
-        int hash = getIndex(sym.name);
-        Entry old = table[hash];
-        if (old == null) {
-            old = sentinel;
-            nelems++;
-        }
-        Entry e = makeEntry(sym, old, elems, s, origin);
+        // Temporarily disabled (bug 6460352):
+        // if (nelems * 3 >= hashMask * 2) dble();
+        int hash = sym.name.hashCode() & hashMask;
+        Entry e = makeEntry(sym, table[hash], elems, s, origin);
         table[hash] = e;
         elems = e;
+        nelems++;
         scopeCounter.inc();
     }
 
@@ -272,15 +268,15 @@ public class Scope {
     public void remove(Symbol sym) {
         assert shared == 0;
         Entry e = lookup(sym.name);
+        while (e.scope == this && e.sym != sym) e = e.next();
         if (e.scope == null) return;
 
         scopeCounter.inc();
 
         // remove e from table and shadowed list;
-        int i = getIndex(sym.name);
-        Entry te = table[i];
+        Entry te = table[sym.name.hashCode() & hashMask];
         if (te == e)
-            table[i] = e.shadowed;
+            table[sym.name.hashCode() & hashMask] = e.shadowed;
         else while (true) {
             if (te.shadowed == e) {
                 te.shadowed = e.shadowed;
@@ -339,48 +335,10 @@ public class Scope {
         return lookup(name, noFilter);
     }
     public Entry lookup(Name name, Filter<Symbol> sf) {
-        Entry e = table[getIndex(name)];
-        if (e == null || e == sentinel)
-            return sentinel;
+        Entry e = table[name.hashCode() & hashMask];
         while (e.scope != null && (e.sym.name != name || !sf.accepts(e.sym)))
             e = e.shadowed;
         return e;
-    }
-
-    /*void dump (java.io.PrintStream out) {
-        out.println(this);
-        for (int l=0; l < table.length; l++) {
-            Entry le = table[l];
-            out.print("#"+l+": ");
-            if (le==sentinel) out.println("sentinel");
-            else if(le == null) out.println("null");
-            else out.println(""+le+" s:"+le.sym);
-        }
-    }*/
-
-    /** Look for slot in the table.
-     *  We use open addressing with double hashing.
-     */
-    int getIndex (Name name) {
-        int h = name.hashCode();
-        int i = h & hashMask;
-        // The expression below is always odd, so it is guaranteed
-        // be be mutually prime with table.length, a power of 2.
-        int x = hashMask - ((h + (h >> 16)) << 1);
-        int d = -1; // Index of a deleted item.
-        for (;;) {
-            Entry e = table[i];
-            if (e == null)
-                return d >= 0 ? d : i;
-            if (e == sentinel) {
-                // We have to keep searching even if we see a deleted item.
-                // However, remember the index in case we fail to find the name.
-                if (d < 0)
-                    d = i;
-            } else if (e.sym.name == name)
-                return i;
-            i = (i + x) & hashMask;
-        }
     }
 
     public Iterable<Symbol> getElements() {
@@ -512,11 +470,10 @@ public class Scope {
         }
 
         public Entry lookup(Name name) {
-            Entry e = table[getIndex(name)];
-            if (e == null)
-                return sentinel;
+            Entry e = table[name.hashCode() & hashMask];
             while (e.scope != null &&
-                   (/* Since an inner class will show up in package and
+                   (e.sym.name != name ||
+                    /* Since an inner class will show up in package and
                      * import scopes until its inner class attribute has
                      * been processed, we have to weed it out here.  This
                      * is done by comparing the owners of the entry's
