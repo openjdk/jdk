@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,51 @@ public abstract class SSLSocket extends Socket
      * @return the <code>SSLSession</code>
      */
     public abstract SSLSession getSession();
+
+
+    /**
+     * Returns the {@code SSLSession} being constructed during a SSL/TLS
+     * handshake.
+     * <p>
+     * TLS protocols may negotiate parameters that are needed when using
+     * an instance of this class, but before the {@code SSLSession} has
+     * been completely initialized and made available via {@code getSession}.
+     * For example, the list of valid signature algorithms may restrict
+     * the type of certificates that can used during TrustManager
+     * decisions, or the maximum TLS fragment packet sizes can be
+     * resized to better support the network environment.
+     * <p>
+     * This method provides early access to the {@code SSLSession} being
+     * constructed.  Depending on how far the handshake has progressed,
+     * some data may not yet be available for use.  For example, if a
+     * remote server will be sending a Certificate chain, but that chain
+     * has yet not been processed, the {@code getPeerCertificates}
+     * method of {@code SSLSession} will throw a
+     * SSLPeerUnverifiedException.  Once that chain has been processed,
+     * {@code getPeerCertificates} will return the proper value.
+     * <p>
+     * Unlike {@link #getSession()}, this method does not initiate the
+     * initial handshake and does not block until handshaking is
+     * complete.
+     *
+     * @see SSLEngine
+     * @see SSLSession
+     * @see ExtendedSSLSession
+     * @see X509ExtendedKeyManager
+     * @see X509ExtendedTrustManager
+     *
+     * @return null if this instance is not currently handshaking, or
+     *         if the current handshake has not progressed far enough to
+     *         create a basic SSLSession.  Otherwise, this method returns the
+     *         {@code SSLSession} currently being negotiated.
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     *
+     * @since 1.7
+     */
+    public SSLSession getHandshakeSession() {
+        throw new UnsupportedOperationException();
+    }
 
 
     /**

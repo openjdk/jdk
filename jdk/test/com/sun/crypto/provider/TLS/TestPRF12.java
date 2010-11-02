@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /**
  * @test
- * @bug 6316539 6345251
- * @summary Basic known-answer-test for TlsPrf
- * @author Andreas Sterbenz
- * @library ..
+ * @bug 6313661
+ * @summary Basic known-answer-test for TlsPrf 12
+ *
+ * Vector obtained from the IETF TLS working group mailing list:
+ *
+ *     http://www.ietf.org/mail-archive/web/tls/current/msg03416.html
  */
 
 import java.io.*;
@@ -42,21 +44,14 @@ import javax.crypto.spec.*;
 
 import sun.security.internal.spec.*;
 
-public class TestPRF extends PKCS11Test {
+public class TestPRF12 extends Utils {
 
     private static int PREFIX_LENGTH = "prf-output: ".length();
 
     public static void main(String[] args) throws Exception {
-        main(new TestPRF());
-    }
+        Provider provider = Security.getProvider("SunJCE");
 
-    public void main(Provider provider) throws Exception {
-        if (provider.getService("KeyGenerator", "SunTlsPrf") == null) {
-            System.out.println("Provider does not support algorithm, skipping");
-            return;
-        }
-
-        InputStream in = new FileInputStream(new File(BASE, "prfdata.txt"));
+        InputStream in = new FileInputStream(new File(BASE, "prf12data.txt"));
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
         int n = 0;
@@ -66,6 +61,9 @@ public class TestPRF extends PKCS11Test {
         String label = null;
         byte[] seed = null;
         int length = 0;
+        String prfAlg = null;
+        int prfHashLength = 0;
+        int prfBlockSize = 0;
         byte[] output = null;
 
         while (true) {
@@ -87,6 +85,28 @@ public class TestPRF extends PKCS11Test {
                 seed = parse(data);
             } else if (line.startsWith("prf-length:")) {
                 length = Integer.parseInt(data);
+            } else if (line.startsWith("prf-alg:")) {
+                prfAlg = data;
+                switch (prfAlg) {
+                case "SHA-224":
+                    prfHashLength = 28;
+                    prfBlockSize =  64;
+                    break;
+                case "SHA-256":
+                    prfHashLength = 32;
+                    prfBlockSize =  64;
+                    break;
+                case "SHA-384":
+                    prfHashLength = 48;
+                    prfBlockSize = 128;
+                    break;
+                case "SHA-512":
+                    prfHashLength = 64;
+                    prfBlockSize = 128;
+                    break;
+                default:
+                    throw new Exception("Unknown Alg in the data.");
+                }
             } else if (line.startsWith("prf-output:")) {
                 output = parse(data);
 
@@ -94,7 +114,7 @@ public class TestPRF extends PKCS11Test {
                 n++;
 
                 KeyGenerator kg =
-                    KeyGenerator.getInstance("SunTlsPrf", provider);
+                    KeyGenerator.getInstance("SunTls12Prf", provider);
                 SecretKey inKey;
                 if (secret == null) {
                     inKey = null;
@@ -103,28 +123,11 @@ public class TestPRF extends PKCS11Test {
                 }
                 TlsPrfParameterSpec spec =
                     new TlsPrfParameterSpec(inKey, label, seed, length,
-                        null, -1, -1);
-                SecretKey key;
-                try {
-                    kg.init(spec);
-                    key = kg.generateKey();
-                } catch (Exception e) {
-                    if (secret == null) {
-                        // This fails on Solaris, but since we never call this
-                        // API for this case in JSSE, ignore the failure.
-                        // (SunJSSE uses the CKM_TLS_KEY_AND_MAC_DERIVE
-                        // mechanism)
-                        System.out.print("X");
-                        continue;
-                    }
-                    System.out.println();
-                    throw new Exception("Error on line: " + lineNumber, e);
-                }
+                        prfAlg, prfHashLength, prfBlockSize);
+                kg.init(spec);
+                SecretKey key = kg.generateKey();
                 byte[] enc = key.getEncoded();
                 if (Arrays.equals(output, enc) == false) {
-                    System.out.println();
-                    System.out.println("expected: " + toString(output));
-                    System.out.println("actual:   " + toString(enc));
                     throw new Exception("mismatch line: " + lineNumber);
                 }
             } else {

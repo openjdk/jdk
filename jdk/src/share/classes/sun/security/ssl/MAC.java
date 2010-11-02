@@ -105,6 +105,10 @@ final class MAC {
             algorithm = tls ? "HmacMD5" : "SslMacMD5";
         } else if (macAlg == M_SHA) {
             algorithm = tls ? "HmacSHA1" : "SslMacSHA1";
+        } else if (macAlg == M_SHA256) {
+            algorithm = "HmacSHA256";    // TLS 1.2+
+        } else if (macAlg == M_SHA384) {
+            algorithm = "HmacSHA384";    // TLS 1.2+
         } else {
             throw new RuntimeException("Unknown Mac " + macAlg);
         }
@@ -204,7 +208,8 @@ final class MAC {
      * Compute based on either buffer type, either bb.position/limit
      * or buf/offset/len.
      */
-    private byte[] compute(byte type, ByteBuffer bb, byte[] buf, int offset, int len) {
+    private byte[] compute(byte type, ByteBuffer bb, byte[] buf,
+            int offset, int len) {
 
         if (macSize == 0) {
             return nullMAC;

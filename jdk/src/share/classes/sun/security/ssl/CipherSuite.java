@@ -38,6 +38,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
+import static sun.security.ssl.CipherSuite.PRF.*;
 import static sun.security.ssl.JsseJce.*;
 
 /**
@@ -102,12 +103,15 @@ final class CipherSuite implements Comparable {
     // by default
     final int priority;
 
-    // key exchange, bulk cipher, and mac algorithms. See those classes below.
+    // key exchange, bulk cipher, mac and prf algorithms. See those
+    // classes below.
     final KeyExchange keyExchange;
     final BulkCipher cipher;
     final MacAlg macAlg;
+    final PRF prfAlg;
 
     // whether a CipherSuite qualifies as exportable under 512/40 bit rules.
+    // TLS 1.1+ (RFC 4346) must not negotiate to these suites.
     final boolean exportable;
 
     // true iff implemented and enabled at compile time
@@ -116,9 +120,15 @@ final class CipherSuite implements Comparable {
     // obsoleted since protocol version
     final int obsoleted;
 
+    // supported since protocol version
+    final int supported;
+
+    /**
+     * Constructor for implemented CipherSuites.
+     */
     private CipherSuite(String name, int id, int priority,
             KeyExchange keyExchange, BulkCipher cipher,
-            boolean allowed, int obsoleted) {
+            boolean allowed, int obsoleted, int supported, PRF prfAlg) {
         this.name = name;
         this.id = id;
         this.priority = priority;
@@ -129,6 +139,10 @@ final class CipherSuite implements Comparable {
             macAlg = M_MD5;
         } else if (name.endsWith("_SHA")) {
             macAlg = M_SHA;
+        } else if (name.endsWith("_SHA256")) {
+            macAlg = M_SHA256;
+        } else if (name.endsWith("_SHA384")) {
+            macAlg = M_SHA384;
         } else if (name.endsWith("_NULL")) {
             macAlg = M_NULL;
         } else if (name.endsWith("_SCSV")) {
@@ -142,8 +156,13 @@ final class CipherSuite implements Comparable {
         allowed &= cipher.allowed;
         this.allowed = allowed;
         this.obsoleted = obsoleted;
+        this.supported = supported;
+        this.prfAlg = prfAlg;
     }
 
+    /**
+     * Constructor for unimplemented CipherSuites.
+     */
     private CipherSuite(String name, int id) {
         this.name = name;
         this.id = id;
@@ -155,6 +174,8 @@ final class CipherSuite implements Comparable {
         this.macAlg = null;
         this.exportable = false;
         this.obsoleted = ProtocolVersion.LIMIT_MAX_VALUE;
+        this.supported = ProtocolVersion.LIMIT_MIN_VALUE;
+        this.prfAlg = P_NONE;
     }
 
     /**
@@ -236,12 +257,17 @@ final class CipherSuite implements Comparable {
         return nameMap.values();
     }
 
+    /*
+     * Use this method when all of the values need to be specified.
+     * This is primarily used when defining a new ciphersuite for
+     * TLS 1.2+ that doesn't use the "default" PRF.
+     */
     private static void add(String name, int id, int priority,
             KeyExchange keyExchange, BulkCipher cipher,
-            boolean allowed, int obsoleted) {
+            boolean allowed, int obsoleted, int supported, PRF prf) {
 
         CipherSuite c = new CipherSuite(name, id, priority, keyExchange,
-                                        cipher, allowed, obsoleted);
+            cipher, allowed, obsoleted, supported, prf);
         if (idMap.put(id, c) != null) {
             throw new RuntimeException("Duplicate ciphersuite definition: "
                                         + id + ", " + name);
@@ -254,12 +280,41 @@ final class CipherSuite implements Comparable {
         }
     }
 
+    /*
+     * Use this method when there is no lower protocol limit where this
+     * suite can be used, and the PRF is P_SHA256.  That is, the
+     * existing ciphersuites.  From RFC 5246:
+     *
+     *     All cipher suites in this document use P_SHA256.
+     */
+    private static void add(String name, int id, int priority,
+            KeyExchange keyExchange, BulkCipher cipher,
+            boolean allowed, int obsoleted) {
+        // If this is an obsoleted suite, then don't let the TLS 1.2
+        // protocol have a valid PRF value.
+        PRF prf = P_SHA256;
+        if (obsoleted < ProtocolVersion.TLS12.v) {
+            prf = P_NONE;
+        }
+
+        add(name, id, priority, keyExchange, cipher, allowed, obsoleted,
+            ProtocolVersion.LIMIT_MIN_VALUE, prf);
+    }
+
+    /*
+     * Use this method when there is no upper protocol limit.  That is,
+     * suites which have not been obsoleted.
+     */
     private static void add(String name, int id, int priority,
             KeyExchange keyExchange, BulkCipher cipher, boolean allowed) {
         add(name, id, priority, keyExchange,
             cipher, allowed, ProtocolVersion.LIMIT_MAX_VALUE);
     }
 
+    /*
+     * Use this method to define an unimplemented suite.  This provides
+     * a number<->name mapping that can be used for debugging.
+     */
     private static void add(String name, int id) {
         CipherSuite c = new CipherSuite(name, id);
         if (idMap.put(id, c) != null) {
@@ -459,7 +514,7 @@ final class CipherSuite implements Comparable {
     /**
      * An SSL/TLS key MAC algorithm.
      *
-     * Also contains a factory method to obtain in initialized MAC
+     * Also contains a factory method to obtain an initialized MAC
      * for this algorithm.
      */
     final static class MacAlg {
@@ -519,6 +574,48 @@ final class CipherSuite implements Comparable {
     final static MacAlg M_NULL = new MacAlg("NULL", 0);
     final static MacAlg M_MD5  = new MacAlg("MD5", 16);
     final static MacAlg M_SHA  = new MacAlg("SHA", 20);
+    final static MacAlg M_SHA256  = new MacAlg("SHA256", 32);
+    final static MacAlg M_SHA384  = new MacAlg("SHA384", 48);
+
+    // PRFs (PseudoRandom Function) from TLS specifications.
+    //
+    // TLS 1.1- uses a single MD5/SHA1-based PRF algorithm for generating
+    // the necessary material.
+    //
+    // In TLS 1.2+, all existing/known CipherSuites use SHA256, however
+    // new Ciphersuites (e.g. RFC 5288) can define specific PRF hash
+    // algorithms.
+    static enum PRF {
+
+        // PRF algorithms
+        P_NONE(     "NONE",  0,   0),
+        P_SHA256("SHA-256", 32,  64),
+        P_SHA384("SHA-384", 48, 128),
+        P_SHA512("SHA-512", 64, 128);  // not currently used.
+
+        // PRF characteristics
+        private final String prfHashAlg;
+        private final int prfHashLength;
+        private final int prfBlockSize;
+
+        PRF(String prfHashAlg, int prfHashLength, int prfBlockSize) {
+            this.prfHashAlg = prfHashAlg;
+            this.prfHashLength = prfHashLength;
+            this.prfBlockSize = prfBlockSize;
+        }
+
+        String getPRFHashAlg() {
+            return prfHashAlg;
+        }
+
+        int getPRFHashLength() {
+            return prfHashLength;
+        }
+
+        int getPRFBlockSize() {
+            return prfBlockSize;
+        }
+    }
 
     static {
         idMap = new HashMap<Integer,CipherSuite>();
@@ -769,161 +866,199 @@ final class CipherSuite implements Comparable {
         // They are listed in preference order, most preferred first.
         int p = DEFAULT_SUITES_PRIORITY * 2;
 
+        // shorten names to fit the following table cleanly.
+        int max = ProtocolVersion.LIMIT_MAX_VALUE;
+        int tls11 = ProtocolVersion.TLS11.v;
+        int tls12 = ProtocolVersion.TLS12.v;
+
+        //  ID           Key Exchange   Cipher     A  obs  suprt  PRF
+        //  ======       ============   =========  =  ===  =====  ========
+        add("TLS_RSA_WITH_AES_128_CBC_SHA256",
+            0x003c, --p, K_RSA,         B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_RSA_WITH_AES_256_CBC_SHA256",
+            0x003d, --p, K_RSA,         B_AES_256, T, max, tls12, P_SHA256);
+        add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+            0x0040, --p, K_DHE_DSS,     B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+            0x0067, --p, K_DHE_RSA,     B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+            0x006a, --p, K_DHE_DSS,     B_AES_256, T, max, tls12, P_SHA256);
+        add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+            0x006b, --p, K_DHE_RSA,     B_AES_256, T, max, tls12, P_SHA256);
+
+        add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+            0xc023, --p, K_ECDHE_ECDSA, B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+            0xc024, --p, K_ECDHE_ECDSA, B_AES_256, T, max, tls12, P_SHA384);
+        add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+            0xc025, --p, K_ECDH_ECDSA,  B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+            0xc026, --p, K_ECDH_ECDSA,  B_AES_256, T, max, tls12, P_SHA384);
+        add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+            0xc027, --p, K_ECDHE_RSA,   B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+            0xc028, --p, K_ECDHE_RSA,   B_AES_256, T, max, tls12, P_SHA384);
+        add("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+            0xc029, --p, K_ECDH_RSA,    B_AES_128, T, max, tls12, P_SHA256);
+        add("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
+            0xc02a, --p, K_ECDH_RSA,    B_AES_256, T, max, tls12, P_SHA384);
+
         add("SSL_RSA_WITH_RC4_128_MD5",
-                              0x0004, --p, K_RSA,        B_RC4_128, N);
+            0x0004, --p, K_RSA,         B_RC4_128, N);
         add("SSL_RSA_WITH_RC4_128_SHA",
-                              0x0005, --p, K_RSA,        B_RC4_128, N);
+            0x0005, --p, K_RSA,         B_RC4_128, N);
         add("TLS_RSA_WITH_AES_128_CBC_SHA",
-                              0x002f, --p, K_RSA,        B_AES_128, T);
+            0x002f, --p, K_RSA,         B_AES_128, T);
         add("TLS_RSA_WITH_AES_256_CBC_SHA",
-                              0x0035, --p, K_RSA,        B_AES_256, T);
+            0x0035, --p, K_RSA,         B_AES_256, T);
 
         add("TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-                              0xC002, --p, K_ECDH_ECDSA, B_RC4_128, N);
+            0xC002, --p, K_ECDH_ECDSA,  B_RC4_128, N);
         add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-                              0xC004, --p, K_ECDH_ECDSA, B_AES_128, T);
+            0xC004, --p, K_ECDH_ECDSA,  B_AES_128, T);
         add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
-                              0xC005, --p, K_ECDH_ECDSA, B_AES_256, T);
+            0xC005, --p, K_ECDH_ECDSA,  B_AES_256, T);
         add("TLS_ECDH_RSA_WITH_RC4_128_SHA",
-                              0xC00C, --p, K_ECDH_RSA,   B_RC4_128, N);
+            0xC00C, --p, K_ECDH_RSA,    B_RC4_128, N);
         add("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
-                              0xC00E, --p, K_ECDH_RSA,   B_AES_128, T);
+            0xC00E, --p, K_ECDH_RSA,    B_AES_128, T);
         add("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
-                              0xC00F, --p, K_ECDH_RSA,   B_AES_256, T);
+            0xC00F, --p, K_ECDH_RSA,    B_AES_256, T);
 
         add("TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-                              0xC007, --p, K_ECDHE_ECDSA,B_RC4_128, N);
+            0xC007, --p, K_ECDHE_ECDSA, B_RC4_128, N);
         add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-                              0xC009, --p, K_ECDHE_ECDSA,B_AES_128, T);
+            0xC009, --p, K_ECDHE_ECDSA, B_AES_128, T);
         add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-                              0xC00A, --p, K_ECDHE_ECDSA,B_AES_256, T);
+            0xC00A, --p, K_ECDHE_ECDSA, B_AES_256, T);
         add("TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-                              0xC011, --p, K_ECDHE_RSA,  B_RC4_128, N);
+            0xC011, --p, K_ECDHE_RSA,   B_RC4_128, N);
         add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-                              0xC013, --p, K_ECDHE_RSA,  B_AES_128, T);
+            0xC013, --p, K_ECDHE_RSA,   B_AES_128, T);
         add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-                              0xC014, --p, K_ECDHE_RSA,  B_AES_256, T);
+            0xC014, --p, K_ECDHE_RSA,   B_AES_256, T);
 
         add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-                              0x0033, --p, K_DHE_RSA,    B_AES_128, T);
+            0x0033, --p, K_DHE_RSA,     B_AES_128, T);
         add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-                              0x0039, --p, K_DHE_RSA,    B_AES_256, T);
+            0x0039, --p, K_DHE_RSA,     B_AES_256, T);
         add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-                              0x0032, --p, K_DHE_DSS,    B_AES_128, T);
+            0x0032, --p, K_DHE_DSS,     B_AES_128, T);
         add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
-                              0x0038, --p, K_DHE_DSS,    B_AES_256, T);
+            0x0038, --p, K_DHE_DSS,     B_AES_256, T);
 
         add("SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-                              0x000a, --p, K_RSA,        B_3DES,    T);
+            0x000a, --p, K_RSA,         B_3DES,    T);
         add("TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
-                              0xC003, --p, K_ECDH_ECDSA, B_3DES,    T);
+            0xC003, --p, K_ECDH_ECDSA,  B_3DES,    T);
         add("TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
-                              0xC00D, --p, K_ECDH_RSA,   B_3DES,    T);
+            0xC00D, --p, K_ECDH_RSA,    B_3DES,    T);
         add("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
-                              0xC008, --p, K_ECDHE_ECDSA,B_3DES,    T);
+            0xC008, --p, K_ECDHE_ECDSA, B_3DES,    T);
         add("TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
-                              0xC012, --p, K_ECDHE_RSA,  B_3DES,    T);
+            0xC012, --p, K_ECDHE_RSA,   B_3DES,    T);
         add("SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-                              0x0016, --p, K_DHE_RSA,    B_3DES,    T);
+            0x0016, --p, K_DHE_RSA,     B_3DES,    T);
         add("SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-                              0x0013, --p, K_DHE_DSS,    B_3DES,    N);
-        add("SSL_RSA_WITH_DES_CBC_SHA",
-                              0x0009, --p, K_RSA,        B_DES,     N);
-        add("SSL_DHE_RSA_WITH_DES_CBC_SHA",
-                              0x0015, --p, K_DHE_RSA,    B_DES,     N);
-        add("SSL_DHE_DSS_WITH_DES_CBC_SHA",
-                              0x0012, --p, K_DHE_DSS,    B_DES,     N);
-        add("SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-                              0x0003, --p, K_RSA_EXPORT, B_RC4_40,  N,
-                              ProtocolVersion.TLS11.v);
-        add("SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                              0x0008, --p, K_RSA_EXPORT, B_DES_40,  N,
-                              ProtocolVersion.TLS11.v);
-        add("SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                              0x0014, --p, K_DHE_RSA,    B_DES_40,  N,
-                              ProtocolVersion.TLS11.v);
-        add("SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-                              0x0011, --p, K_DHE_DSS,    B_DES_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x0013, --p, K_DHE_DSS,     B_3DES,    N);
 
         // Renegotiation protection request Signalling Cipher Suite Value (SCSV)
         add("TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
-                              0x00ff, --p, K_SCSV,       B_NULL,    T);
+            0x00ff, --p, K_SCSV,        B_NULL,    T);
 
         // Definition of the CipherSuites that are supported but not enabled
         // by default.
         // They are listed in preference order, preferred first.
         p = DEFAULT_SUITES_PRIORITY;
 
+        // weak single-DES cipher suites
+        add("SSL_RSA_WITH_DES_CBC_SHA",
+            0x0009, --p, K_RSA,         B_DES,     N, tls12);
+        add("SSL_DHE_RSA_WITH_DES_CBC_SHA",
+            0x0015, --p, K_DHE_RSA,     B_DES,     N, tls12);
+        add("SSL_DHE_DSS_WITH_DES_CBC_SHA",
+            0x0012, --p, K_DHE_DSS,     B_DES,     N, tls12);
+
         // Anonymous key exchange and the NULL ciphers
         add("SSL_RSA_WITH_NULL_MD5",
-                              0x0001, --p, K_RSA,        B_NULL,    N);
+            0x0001, --p, K_RSA,         B_NULL,    N);
         add("SSL_RSA_WITH_NULL_SHA",
-                              0x0002, --p, K_RSA,        B_NULL,    N);
+            0x0002, --p, K_RSA,         B_NULL,    N);
+        add("TLS_RSA_WITH_NULL_SHA256",
+            0x003b, --p, K_RSA,         B_NULL,    N, max, tls12, P_SHA256);
+
         add("TLS_ECDH_ECDSA_WITH_NULL_SHA",
-                              0xC001, --p, K_ECDH_ECDSA, B_NULL,    N);
+            0xC001, --p, K_ECDH_ECDSA,  B_NULL,    N);
         add("TLS_ECDH_RSA_WITH_NULL_SHA",
-                              0xC00B, --p, K_ECDH_RSA,   B_NULL,    N);
+            0xC00B, --p, K_ECDH_RSA,    B_NULL,    N);
         add("TLS_ECDHE_ECDSA_WITH_NULL_SHA",
-                              0xC006, --p, K_ECDHE_ECDSA,B_NULL,    N);
+            0xC006, --p, K_ECDHE_ECDSA, B_NULL,    N);
         add("TLS_ECDHE_RSA_WITH_NULL_SHA",
-                              0xC010, --p, K_ECDHE_RSA,  B_NULL,    N);
+            0xC010, --p, K_ECDHE_RSA,   B_NULL,    N);
 
         add("SSL_DH_anon_WITH_RC4_128_MD5",
-                              0x0018, --p, K_DH_ANON,    B_RC4_128, N);
+            0x0018, --p, K_DH_ANON,     B_RC4_128, N);
         add("TLS_DH_anon_WITH_AES_128_CBC_SHA",
-                              0x0034, --p, K_DH_ANON,    B_AES_128, N);
+            0x0034, --p, K_DH_ANON,     B_AES_128, N);
         add("TLS_DH_anon_WITH_AES_256_CBC_SHA",
-                              0x003a, --p, K_DH_ANON,    B_AES_256, N);
+            0x003a, --p, K_DH_ANON,     B_AES_256, N);
         add("SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
-                              0x001b, --p, K_DH_ANON,    B_3DES,    N);
+            0x001b, --p, K_DH_ANON,     B_3DES,    N);
         add("SSL_DH_anon_WITH_DES_CBC_SHA",
-                              0x001a, --p, K_DH_ANON,    B_DES,     N);
+            0x001a, --p, K_DH_ANON,     B_DES,     N, tls12);
+
+        add("TLS_DH_anon_WITH_AES_128_CBC_SHA256",
+            0x006c, --p, K_DH_ANON,     B_AES_128, N, max, tls12, P_SHA256);
+        add("TLS_DH_anon_WITH_AES_256_CBC_SHA256",
+            0x006d, --p, K_DH_ANON,     B_AES_256, N, max, tls12, P_SHA256);
 
         add("TLS_ECDH_anon_WITH_RC4_128_SHA",
-                              0xC016, --p, K_ECDH_ANON,  B_RC4_128, N);
+            0xC016, --p, K_ECDH_ANON,   B_RC4_128, N);
         add("TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
-                              0xC018, --p, K_ECDH_ANON,  B_AES_128, T);
+            0xC018, --p, K_ECDH_ANON,   B_AES_128, T);
         add("TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
-                              0xC019, --p, K_ECDH_ANON,  B_AES_256, T);
+            0xC019, --p, K_ECDH_ANON,   B_AES_256, T);
         add("TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
-                              0xC017, --p, K_ECDH_ANON,  B_3DES,    T);
+            0xC017, --p, K_ECDH_ANON,   B_3DES,    T);
 
         add("SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-                              0x0017, --p, K_DH_ANON,    B_RC4_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x0017, --p, K_DH_ANON,     B_RC4_40,  N, tls11);
         add("SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-                              0x0019, --p, K_DH_ANON,    B_DES_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x0019, --p, K_DH_ANON,     B_DES_40,  N, tls11);
 
         add("TLS_ECDH_anon_WITH_NULL_SHA",
-                              0xC015, --p, K_ECDH_ANON,  B_NULL,    N);
+            0xC015, --p, K_ECDH_ANON,   B_NULL,    N);
+
+        add("SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+            0x0003, --p, K_RSA_EXPORT,  B_RC4_40,  N, tls11);
+        add("SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            0x0008, --p, K_RSA_EXPORT,  B_DES_40,  N, tls11);
+        add("SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            0x0014, --p, K_DHE_RSA,     B_DES_40,  N, tls11);
+        add("SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            0x0011, --p, K_DHE_DSS,     B_DES_40,  N, tls11);
 
         // Supported Kerberos ciphersuites from RFC2712
         add("TLS_KRB5_WITH_RC4_128_SHA",
-                              0x0020, --p, K_KRB5,        B_RC4_128, N);
+            0x0020, --p, K_KRB5,        B_RC4_128, N);
         add("TLS_KRB5_WITH_RC4_128_MD5",
-                              0x0024, --p, K_KRB5,        B_RC4_128, N);
+            0x0024, --p, K_KRB5,        B_RC4_128, N);
         add("TLS_KRB5_WITH_3DES_EDE_CBC_SHA",
-                              0x001f, --p, K_KRB5,        B_3DES,    N);
+            0x001f, --p, K_KRB5,        B_3DES,    N);
         add("TLS_KRB5_WITH_3DES_EDE_CBC_MD5",
-                              0x0023, --p, K_KRB5,        B_3DES,    N);
+            0x0023, --p, K_KRB5,        B_3DES,    N);
         add("TLS_KRB5_WITH_DES_CBC_SHA",
-                              0x001e, --p, K_KRB5,        B_DES,     N);
+            0x001e, --p, K_KRB5,        B_DES,     N, tls12);
         add("TLS_KRB5_WITH_DES_CBC_MD5",
-                              0x0022, --p, K_KRB5,        B_DES,     N);
+            0x0022, --p, K_KRB5,        B_DES,     N, tls12);
         add("TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
-                              0x0028, --p, K_KRB5_EXPORT, B_RC4_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x0028, --p, K_KRB5_EXPORT, B_RC4_40,  N, tls11);
         add("TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
-                              0x002b, --p, K_KRB5_EXPORT, B_RC4_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x002b, --p, K_KRB5_EXPORT, B_RC4_40,  N, tls11);
         add("TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
-                              0x0026, --p, K_KRB5_EXPORT, B_DES_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x0026, --p, K_KRB5_EXPORT, B_DES_40,  N, tls11);
         add("TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
-                              0x0029, --p, K_KRB5_EXPORT, B_DES_40,  N,
-                              ProtocolVersion.TLS11.v);
+            0x0029, --p, K_KRB5_EXPORT, B_DES_40,  N, tls11);
 
         /*
          * Other values from the TLS Cipher Suite Registry, as of August 2010.
@@ -1006,19 +1141,10 @@ final class CipherSuite implements Comparable {
         add("TLS_DH_RSA_WITH_AES_128_CBC_SHA",             0x0031);
         add("TLS_DH_DSS_WITH_AES_256_CBC_SHA",             0x0036);
         add("TLS_DH_RSA_WITH_AES_256_CBC_SHA",             0x0037);
-        add("TLS_RSA_WITH_NULL_SHA256",                    0x003b);
-        add("TLS_RSA_WITH_AES_128_CBC_SHA256",             0x003c);
-        add("TLS_RSA_WITH_AES_256_CBC_SHA256",             0x003d);
         add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256",          0x003e);
         add("TLS_DH_RSA_WITH_AES_128_CBC_SHA256",          0x003f);
-        add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",         0x0040);
-        add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",         0x0067);
         add("TLS_DH_DSS_WITH_AES_256_CBC_SHA256",          0x0068);
         add("TLS_DH_RSA_WITH_AES_256_CBC_SHA256",          0x0069);
-        add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",         0x006a);
-        add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",         0x006b);
-        add("TLS_DH_anon_WITH_AES_128_CBC_SHA256",         0x006c);
-        add("TLS_DH_anon_WITH_AES_256_CBC_SHA256",         0x006d);
 
         // Unsupported cipher suites from RFC 5288
         add("TLS_RSA_WITH_AES_128_GCM_SHA256",             0x009c);
@@ -1092,14 +1218,6 @@ final class CipherSuite implements Comparable {
         add("TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA",        0xc022);
 
         // Unsupported cipher suites from RFC 5289
-        add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",     0xc023);
-        add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",     0xc024);
-        add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",      0xc025);
-        add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",      0xc026);
-        add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",       0xc027);
-        add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",       0xc028);
-        add("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",        0xc029);
-        add("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",        0xc02a);
         add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",     0xc02b);
         add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",     0xc02c);
         add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",      0xc02d);

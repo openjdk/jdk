@@ -40,10 +40,9 @@ import javax.net.ssl.*;
 
 import javax.security.auth.Subject;
 
-import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
-
 import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
+import sun.security.ssl.SignatureAndHashAlgorithm.*;
 import static sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
@@ -91,6 +90,9 @@ final class ServerHandshaker extends Handshaker {
     private ProtocolVersion clientRequestedVersion;
 
     private SupportedEllipticCurvesExtension supportedCurves;
+
+    // the preferable signature algorithm used by ServerKeyExchange message
+    SignatureAndHashAlgorithm preferableSignatureAlgorithm;
 
     /*
      * Constructor ... use the keys found in the auth context.
@@ -233,11 +235,13 @@ final class ServerHandshaker extends Handshaker {
                 break;
 
             case HandshakeMessage.ht_certificate_verify:
-                this.clientCertificateVerify(new CertificateVerify(input));
+                this.clientCertificateVerify(new CertificateVerify(input,
+                            localSupportedSignAlgs, protocolVersion));
                 break;
 
             case HandshakeMessage.ht_finished:
-                this.clientFinished(new Finished(protocolVersion, input));
+                this.clientFinished(
+                    new Finished(protocolVersion, input, cipherSuite));
                 break;
 
             default:
@@ -419,6 +423,9 @@ final class ServerHandshaker extends Handshaker {
                 "Client requested protocol " + clientRequestedVersion +
                 " not enabled or not supported");
         }
+
+        handshakeHash.protocolDetermined(
+            selectedVersion.v >= ProtocolVersion.TLS12.v);
         setVersion(selectedVersion);
 
         m1.protocolVersion = protocolVersion;
@@ -562,14 +569,71 @@ final class ServerHandshaker extends Handshaker {
             if (!enableNewSession) {
                 throw new SSLException("Client did not resume a session");
             }
+
             supportedCurves = (SupportedEllipticCurvesExtension)
                         mesg.extensions.get(ExtensionType.EXT_ELLIPTIC_CURVES);
+
+            // We only need to handle the "signature_algorithm" extension
+            // for full handshakes and TLS 1.2 or later.
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                SignatureAlgorithmsExtension signAlgs =
+                    (SignatureAlgorithmsExtension)mesg.extensions.get(
+                                    ExtensionType.EXT_SIGNATURE_ALGORITHMS);
+                if (signAlgs != null) {
+                    Collection<SignatureAndHashAlgorithm> peerSignAlgs =
+                                            signAlgs.getSignAlgorithms();
+                    if (peerSignAlgs == null || peerSignAlgs.isEmpty()) {
+                        throw new SSLHandshakeException(
+                            "No peer supported signature algorithms");
+                    }
+
+                    Collection<SignatureAndHashAlgorithm>
+                        supportedPeerSignAlgs =
+                            SignatureAndHashAlgorithm.getSupportedAlgorithms(
+                                                            peerSignAlgs);
+                    if (supportedPeerSignAlgs.isEmpty()) {
+                        throw new SSLHandshakeException(
+                            "No supported signature and hash algorithm " +
+                            "in common");
+                    }
+
+                    setPeerSupportedSignAlgs(supportedPeerSignAlgs);
+                } // else, need to use peer implicit supported signature algs
+            }
+
+            session = new SSLSessionImpl(protocolVersion, CipherSuite.C_NULL,
+                        getLocalSupportedSignAlgs(),
+                        sslContext.getSecureRandom(),
+                        getHostAddressSE(), getPortSE());
+
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (peerSupportedSignAlgs != null) {
+                    session.setPeerSupportedSignatureAlgorithms(
+                            peerSupportedSignAlgs);
+                }   // else, we will set the implicit peer supported signature
+                    // algorithms in chooseCipherSuite()
+            }
+
+            // set the handshake session
+            setHandshakeSessionSE(session);
+
+            // choose cipher suite and corresponding private key
             chooseCipherSuite(mesg);
-            session = new SSLSessionImpl(protocolVersion, cipherSuite,
-                sslContext.getSecureRandom(),
-                getHostAddressSE(), getPortSE());
+
+            session.setSuite(cipherSuite);
             session.setLocalPrivateKey(privateKey);
+
             // chooseCompression(mesg);
+        } else {
+            // set the handshake session
+            setHandshakeSessionSE(session);
+        }
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (resumingSession) {
+                handshakeHash.setCertificateVerifyAlg(null);
+            }
+            handshakeHash.setFinishedAlg(cipherSuite.prfAlg.getPRFHashAlg());
         }
 
         m1.cipherSuite = cipherSuite;
@@ -689,14 +753,16 @@ final class ServerHandshaker extends Handshaker {
                     privateKey,
                     clnt_random.random_bytes,
                     svr_random.random_bytes,
-                    sslContext.getSecureRandom());
+                    sslContext.getSecureRandom(),
+                    preferableSignatureAlgorithm,
+                    protocolVersion);
             } catch (GeneralSecurityException e) {
                 throwSSLException("Error generating DH server key exchange", e);
                 m3 = null; // make compiler happy
             }
             break;
         case K_DH_ANON:
-            m3 = new DH_ServerKeyExchange(dh);
+            m3 = new DH_ServerKeyExchange(dh, protocolVersion);
             break;
         case K_ECDHE_RSA:
         case K_ECDHE_ECDSA:
@@ -706,9 +772,12 @@ final class ServerHandshaker extends Handshaker {
                     privateKey,
                     clnt_random.random_bytes,
                     svr_random.random_bytes,
-                    sslContext.getSecureRandom());
+                    sslContext.getSecureRandom(),
+                    preferableSignatureAlgorithm,
+                    protocolVersion);
             } catch (GeneralSecurityException e) {
-                throwSSLException("Error generating ECDH server key exchange", e);
+                throwSSLException(
+                    "Error generating ECDH server key exchange", e);
                 m3 = null; // make compiler happy
             }
             break;
@@ -737,21 +806,48 @@ final class ServerHandshaker extends Handshaker {
         // Needed only if server requires client to authenticate self.
         // Illegal for anonymous flavors, so we need to check that.
         //
-        if (keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
-            // CertificateRequest is omitted for Kerberos ciphers
+        // CertificateRequest is omitted for Kerberos ciphers
+        if (doClientAuth != SSLEngineImpl.clauth_none &&
+                keyExchange != K_DH_ANON && keyExchange != K_ECDH_ANON &&
+                keyExchange != K_KRB5 && keyExchange != K_KRB5_EXPORT) {
 
-        } else if (doClientAuth != SSLEngineImpl.clauth_none &&
-                keyExchange != K_DH_ANON && keyExchange != K_ECDH_ANON) {
             CertificateRequest m4;
             X509Certificate caCerts[];
 
+            Collection<SignatureAndHashAlgorithm> localSignAlgs = null;
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                // We currently use all local upported signature and hash
+                // algorithms. However, to minimize the computation cost
+                // of requested hash algorithms, we may use a restricted
+                // set of signature algorithms in the future.
+                localSignAlgs = getLocalSupportedSignAlgs();
+                if (localSignAlgs.isEmpty()) {
+                    throw new SSLHandshakeException(
+                            "No supported signature algorithm");
+                }
+
+                Set<String> localHashAlgs =
+                    SignatureAndHashAlgorithm.getHashAlgorithmNames(
+                        localSignAlgs);
+                if (localHashAlgs.isEmpty()) {
+                    throw new SSLHandshakeException(
+                            "No supported signature algorithm");
+                }
+                handshakeHash.restrictCertificateVerifyAlgs(localHashAlgs);
+            }
+
             caCerts = sslContext.getX509TrustManager().getAcceptedIssuers();
-            m4 = new CertificateRequest(caCerts, keyExchange);
+            m4 = new CertificateRequest(caCerts, keyExchange,
+                                            localSignAlgs, protocolVersion);
 
             if (debug != null && Debug.isOn("handshake")) {
                 m4.print(System.out);
             }
             m4.write(output);
+        } else {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                handshakeHash.setCertificateVerifyAlg(null);
+            }
         }
 
         /*
@@ -826,8 +922,13 @@ final class ServerHandshaker extends Handshaker {
             return false;
         }
 
-        // TLSv1.1 must not negotiate the exportable weak cipher suites.
+        // must not negotiate the obsoleted weak cipher suites.
         if (protocolVersion.v >= suite.obsoleted) {
+            return false;
+        }
+
+        // must not negotiate unsupported cipher suites.
+        if (protocolVersion.v < suite.supported) {
             return false;
         }
 
@@ -840,36 +941,136 @@ final class ServerHandshaker extends Handshaker {
         tempPrivateKey = null;
         tempPublicKey = null;
 
+        Collection<SignatureAndHashAlgorithm> supportedSignAlgs = null;
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (peerSupportedSignAlgs != null) {
+                supportedSignAlgs = peerSupportedSignAlgs;
+            } else {
+                SignatureAndHashAlgorithm algorithm = null;
+
+                // we may optimize the performance
+                switch (keyExchange) {
+                    // If the negotiated key exchange algorithm is one of
+                    // (RSA, DHE_RSA, DH_RSA, RSA_PSK, ECDH_RSA, ECDHE_RSA),
+                    // behave as if client had sent the value {sha1,rsa}.
+                    case K_RSA:
+                    case K_DHE_RSA:
+                    case K_DH_RSA:
+                    // case K_RSA_PSK:
+                    case K_ECDH_RSA:
+                    case K_ECDHE_RSA:
+                        algorithm = SignatureAndHashAlgorithm.valueOf(
+                                HashAlgorithm.SHA1.value,
+                                SignatureAlgorithm.RSA.value, 0);
+                        break;
+                    // If the negotiated key exchange algorithm is one of
+                    // (DHE_DSS, DH_DSS), behave as if the client had
+                    // sent the value {sha1,dsa}.
+                    case K_DHE_DSS:
+                    case K_DH_DSS:
+                        algorithm = SignatureAndHashAlgorithm.valueOf(
+                                HashAlgorithm.SHA1.value,
+                                SignatureAlgorithm.DSA.value, 0);
+                        break;
+                    // If the negotiated key exchange algorithm is one of
+                    // (ECDH_ECDSA, ECDHE_ECDSA), behave as if the client
+                    // had sent value {sha1,ecdsa}.
+                    case K_ECDH_ECDSA:
+                    case K_ECDHE_ECDSA:
+                        algorithm = SignatureAndHashAlgorithm.valueOf(
+                                HashAlgorithm.SHA1.value,
+                                SignatureAlgorithm.ECDSA.value, 0);
+                        break;
+                    default:
+                        // no peer supported signature algorithms
+                }
+
+                if (algorithm == null) {
+                    supportedSignAlgs =
+                        Collections.<SignatureAndHashAlgorithm>emptySet();
+                } else {
+                    supportedSignAlgs =
+                        new ArrayList<SignatureAndHashAlgorithm>(1);
+                    supportedSignAlgs.add(algorithm);
+                }
+
+                // Sets the peer supported signature algorithm to use in KM
+                // temporarily.
+                session.setPeerSupportedSignatureAlgorithms(supportedSignAlgs);
+            }
+        }
+
         switch (keyExchange) {
         case K_RSA:
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+            break;
         case K_RSA_EXPORT:
-        case K_DHE_RSA:
-        case K_ECDHE_RSA:
             // need RSA certs for authentication
             if (setupPrivateKeyAndChain("RSA") == false) {
                 return false;
             }
 
-            if (keyExchange == K_RSA_EXPORT) {
-                try {
-                   if (JsseJce.getRSAKeyLength(certs[0].getPublicKey()) > 512) {
-                        if (!setupEphemeralRSAKeys(suite.exportable)) {
-                            return false;
-                        }
-                   }
-                } catch (RuntimeException e) {
-                    // could not determine keylength, ignore key
+            try {
+               if (JsseJce.getRSAKeyLength(certs[0].getPublicKey()) > 512) {
+                    if (!setupEphemeralRSAKeys(suite.exportable)) {
+                        return false;
+                    }
+               }
+            } catch (RuntimeException e) {
+                // could not determine keylength, ignore key
+                return false;
+            }
+            break;
+        case K_DHE_RSA:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                                supportedSignAlgs, "RSA");
+                if (preferableSignatureAlgorithm == null) {
                     return false;
                 }
-            } else if (keyExchange == K_DHE_RSA) {
-                setupEphemeralDHKeys(suite.exportable);
-            } else if (keyExchange == K_ECDHE_RSA) {
-                if (setupEphemeralECDHKeys() == false) {
+            }
+
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+            setupEphemeralDHKeys(suite.exportable);
+            break;
+        case K_ECDHE_RSA:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                                supportedSignAlgs, "RSA");
+                if (preferableSignatureAlgorithm == null) {
                     return false;
                 }
-            } // else nothing more to do for K_RSA
+            }
+
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+            if (setupEphemeralECDHKeys() == false) {
+                return false;
+            }
             break;
         case K_DHE_DSS:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                                supportedSignAlgs, "DSA");
+                if (preferableSignatureAlgorithm == null) {
+                    return false;
+                }
+            }
+
             // need DSS certs for authentication
             if (setupPrivateKeyAndChain("DSA") == false) {
                 return false;
@@ -877,6 +1078,16 @@ final class ServerHandshaker extends Handshaker {
             setupEphemeralDHKeys(suite.exportable);
             break;
         case K_ECDHE_ECDSA:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                            supportedSignAlgs, "ECDSA");
+                if (preferableSignatureAlgorithm == null) {
+                    return false;
+                }
+            }
+
             // need EC cert signed using EC
             if (setupPrivateKeyAndChain("EC_EC") == false) {
                 return false;
@@ -921,6 +1132,14 @@ final class ServerHandshaker extends Handshaker {
             throw new RuntimeException("Unrecognized cipherSuite: " + suite);
         }
         setCipherSuite(suite);
+
+        // set the peer implicit supported signature algorithms
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (peerSupportedSignAlgs == null) {
+                setPeerSupportedSignAlgs(supportedSignAlgs);
+                // we had alreay update the session
+            }
+        }
         return true;
     }
 
@@ -1170,6 +1389,24 @@ final class ServerHandshaker extends Handshaker {
             mesg.print(System.out);
         }
 
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            SignatureAndHashAlgorithm signAlg =
+                mesg.getPreferableSignatureAlgorithm();
+            if (signAlg == null) {
+                throw new SSLHandshakeException(
+                        "Illegal CertificateVerify message");
+            }
+
+            String hashAlg =
+                SignatureAndHashAlgorithm.getHashAlgorithmName(signAlg);
+            if (hashAlg == null || hashAlg.length() == 0) {
+                throw new SSLHandshakeException(
+                        "No supported hash algorithm");
+            }
+
+            handshakeHash.setCertificateVerifyAlg(hashAlg);
+        }
+
         try {
             PublicKey publicKey =
                 session.getPeerCertificates()[0].getPublicKey();
@@ -1225,8 +1462,8 @@ final class ServerHandshaker extends Handshaker {
          * Verify the client's message with the "before" digest of messages,
          * and forget about continuing to use that digest.
          */
-        boolean verified = mesg.verify(protocolVersion, handshakeHash,
-                                Finished.CLIENT, session.getMasterSecret());
+        boolean verified = mesg.verify(handshakeHash, Finished.CLIENT,
+            session.getMasterSecret());
 
         if (!verified) {
             fatalSE(Alerts.alert_handshake_failure,
@@ -1281,7 +1518,7 @@ final class ServerHandshaker extends Handshaker {
         output.flush();
 
         Finished mesg = new Finished(protocolVersion, handshakeHash,
-                                Finished.SERVER, session.getMasterSecret());
+            Finished.SERVER, session.getMasterSecret(), cipherSuite);
 
         /*
          * Send the change_cipher_spec record; then our Finished handshake
@@ -1351,7 +1588,8 @@ final class ServerHandshaker extends Handshaker {
      * ServerKeyExchange) message that was sent to it by the server.  That's
      * decrypted using the private key before we get here.
      */
-    private SecretKey clientKeyExchange(RSAClientKeyExchange mesg) throws IOException {
+    private SecretKey clientKeyExchange(RSAClientKeyExchange mesg)
+            throws IOException {
 
         if (debug != null && Debug.isOn("handshake")) {
             mesg.print(System.out);
@@ -1379,6 +1617,11 @@ final class ServerHandshaker extends Handshaker {
              * not *REQUIRED*, this is an acceptable condition.)
              */
             if (doClientAuth == SSLEngineImpl.clauth_requested) {
+                // Smart (aka stupid) to forecast that no CertificateVerify
+                // message will be received.
+                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                    handshakeHash.setCertificateVerifyAlg(null);
+                }
                 return;
             } else {
                 fatalSE(Alerts.alert_bad_certificate,
@@ -1405,26 +1648,23 @@ final class ServerHandshaker extends Handshaker {
                 authType = "UNKNOWN";
             }
 
-            String identificator = getHostnameVerificationSE();
             if (tm instanceof X509ExtendedTrustManager) {
-                ((X509ExtendedTrustManager)tm).checkClientTrusted(
-                        (peerCerts != null ?
-                            peerCerts.clone() :
-                            null),
+                if (conn != null) {
+                    ((X509ExtendedTrustManager)tm).checkClientTrusted(
+                        peerCerts.clone(),
                         authType,
-                        getHostSE(),
-                        identificator);
-            } else {
-                if (identificator != null) {
-                    throw new RuntimeException(
-                        "trust manager does not support peer identification");
+                        conn);
+                } else {
+                    ((X509ExtendedTrustManager)tm).checkClientTrusted(
+                        peerCerts.clone(),
+                        authType,
+                        engine);
                 }
-
-                tm.checkClientTrusted(
-                    (peerCerts != null ?
-                        peerCerts.clone() :
-                        peerCerts),
-                    authType);
+            } else {
+                // Unlikely to happen, because we have wrapped the old
+                // X509TrustManager with the new X509ExtendedTrustManager.
+                throw new CertificateException(
+                    "Improper X509TrustManager implementation");
             }
         } catch (CertificateException e) {
             // This will throw an exception, so include the original error.

@@ -181,7 +181,8 @@ final class ProtocolList {
         if (SunJSSE.isFIPS()) {
             SUPPORTED = new ProtocolList(new String[] {
                 ProtocolVersion.TLS10.name,
-                ProtocolVersion.TLS11.name
+                ProtocolVersion.TLS11.name,
+                ProtocolVersion.TLS12.name
             });
 
             SERVER_DEFAULT = SUPPORTED;
@@ -193,10 +194,21 @@ final class ProtocolList {
                 ProtocolVersion.SSL20Hello.name,
                 ProtocolVersion.SSL30.name,
                 ProtocolVersion.TLS10.name,
-                ProtocolVersion.TLS11.name
+                ProtocolVersion.TLS11.name,
+                ProtocolVersion.TLS12.name
             });
 
             SERVER_DEFAULT = SUPPORTED;
+
+            /*
+             * RFC 5246 says that sending SSLv2 backward-compatible
+             * hello SHOULD NOT be done any longer.
+             *
+             * We are not enabling TLS 1.1/1.2 by default yet on clients
+             * out of concern for interop with existing
+             * SSLv3/TLS1.0-only servers.  When these versions of TLS
+             * gain more traction, we'll enable them.
+             */
             CLIENT_DEFAULT = new ProtocolList(new String[] {
                 ProtocolVersion.SSL30.name,
                 ProtocolVersion.TLS10.name

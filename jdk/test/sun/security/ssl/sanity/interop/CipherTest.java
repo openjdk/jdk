@@ -363,6 +363,12 @@ public class CipherTest {
                 }
             }
 
+            // ignore obsoleted cipher suite for the specified protocol
+            // TODO
+
+            // ignore unsupported cipher suite for the specified protocol
+            // TODO
+
             return true;
         }
     }

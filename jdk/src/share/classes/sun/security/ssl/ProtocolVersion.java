@@ -50,6 +50,9 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // The limit of maximum protocol version
     final static int LIMIT_MAX_VALUE = 0xFFFF;
 
+    // The limit of minimum protocol version
+    final static int LIMIT_MIN_VALUE = 0x0000;
+
     // Dummy protocol version value for invalid SSLSession
     final static ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
 
@@ -74,8 +77,8 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // minimum version we implement (SSL 3.0)
     final static ProtocolVersion MIN = FIPS ? TLS10 : SSL30;
 
-    // maximum version we implement (TLS 1.1)
-    final static ProtocolVersion MAX = TLS11;
+    // maximum version we implement (TLS 1.2)
+    final static ProtocolVersion MAX = TLS12;
 
     // ProtocolVersion to use by default (TLS 1.0)
     final static ProtocolVersion DEFAULT = TLS10;

@@ -39,7 +39,8 @@ import javax.crypto.SecretKey;
  *
  * @since   1.6
  * @author  Andreas Sterbenz
- * @deprecated Sun JDK internal use only --- WILL BE REMOVED in Dolphin (JDK 7)
+ * @deprecated Sun JDK internal use only --- WILL BE REMOVED in a future
+ * release.
  */
 @Deprecated
 public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
@@ -47,6 +48,9 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
     private final SecretKey premasterSecret;
     private final int majorVersion, minorVersion;
     private final byte[] clientRandom, serverRandom;
+    private final String prfHashAlg;
+    private final int prfHashLength;
+    private final int prfBlockSize;
 
     /**
      * Constructs a new TlsMasterSecretParameterSpec.
@@ -60,6 +64,12 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      * @param minorVersion the minor number of the protocol version
      * @param clientRandom the client's random value
      * @param serverRandom the server's random value
+     * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
+     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
+     * @param prfHashLength the output length of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
+     * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
      *
      * @throws NullPointerException if premasterSecret, clientRandom,
      *   or serverRandom are null
@@ -68,7 +78,8 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      */
     public TlsMasterSecretParameterSpec(SecretKey premasterSecret,
             int majorVersion, int minorVersion,
-            byte[] clientRandom, byte[] serverRandom) {
+            byte[] clientRandom, byte[] serverRandom,
+            String prfHashAlg, int prfHashLength, int prfBlockSize) {
         if (premasterSecret == null) {
             throw new NullPointerException("premasterSecret must not be null");
         }
@@ -77,6 +88,9 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
         this.minorVersion = checkVersion(minorVersion);
         this.clientRandom = clientRandom.clone();
         this.serverRandom = serverRandom.clone();
+        this.prfHashAlg = prfHashAlg;
+        this.prfHashLength = prfHashLength;
+        this.prfBlockSize = prfBlockSize;
     }
 
     static int checkVersion(int version) {
@@ -132,4 +146,30 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
         return serverRandom.clone();
     }
 
+    /**
+     * Obtains the PRF hash algorithm to use in the PRF calculation.
+     *
+     * @return the hash algorithm.
+     */
+    public String getPRFHashAlg() {
+        return prfHashAlg;
+    }
+
+    /**
+     * Obtains the length of the PRF hash algorithm.
+     *
+     * @return the hash algorithm length.
+     */
+    public int getPRFHashLength() {
+        return prfHashLength;
+    }
+
+    /**
+     * Obtains the block size of the PRF hash algorithm.
+     *
+     * @return the hash algorithm block size.
+     */
+    public int getPRFBlockSize() {
+        return prfBlockSize;
+    }
 }

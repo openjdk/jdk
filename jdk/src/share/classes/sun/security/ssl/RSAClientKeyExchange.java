@@ -100,8 +100,9 @@ final class RSAClientKeyExchange extends HandshakeMessage {
         }
 
         try {
-            KeyGenerator kg =
-                        JsseJce.getKeyGenerator("SunTlsRsaPremasterSecret");
+            String s = ((protocolVersion.v >= ProtocolVersion.TLS12.v) ?
+                "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret");
+            KeyGenerator kg = JsseJce.getKeyGenerator(s);
             kg.init(new TlsRsaPremasterSecretParameterSpec(major, minor));
             preMaster = kg.generateKey();
 
@@ -242,8 +243,9 @@ final class RSAClientKeyExchange extends HandshakeMessage {
     // generate a premaster secret with the specified version number
     static SecretKey generateDummySecret(ProtocolVersion version) {
         try {
-            KeyGenerator kg =
-                    JsseJce.getKeyGenerator("SunTlsRsaPremasterSecret");
+            String s = ((version.v >= ProtocolVersion.TLS12.v) ?
+                "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret");
+            KeyGenerator kg = JsseJce.getKeyGenerator(s);
             kg.init(new TlsRsaPremasterSecretParameterSpec
                     (version.major, version.minor));
             return kg.generateKey();
