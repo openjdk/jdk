@@ -1508,6 +1508,16 @@ bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
 }
 
+bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
+  // Use hardware integer DIV instruction when
+  // it is faster than a code which use multiply.
+  // Only when constant divisor fits into 32 bit
+  // (min_jint is excluded to get only correct
+  // positive 32 bit values from negative).
+  return VM_Version::has_fast_idiv() &&
+         (divisor == (int)divisor && divisor != min_jint);
+}
+
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
   return EAX_REG_mask;
@@ -1545,6 +1555,9 @@ bool is_operand_hi32_zero(Node* n) {
     if (o2->is_Con() && (o2->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
       return true;
     }
+  }
+  if (opc == Op_ConL && (n->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
+    return true;
   }
   return false;
 }
@@ -2309,9 +2322,11 @@ encode %{
   enc_class move_long_big_shift_sign( eRegL dst, immI_32_63 cnt ) %{
     emit_opcode( cbuf, 0x8B ); // Move
     emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
-    emit_d8(cbuf,$primary);
-    emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
-    emit_d8(cbuf,$cnt$$constant-32);
+    if( $cnt$$constant > 32 ) { // Shift, if not by zero
+      emit_d8(cbuf,$primary);
+      emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
+      emit_d8(cbuf,$cnt$$constant-32);
+    }
     emit_d8(cbuf,$primary);
     emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW($dst$$reg));
     emit_d8(cbuf,31);
@@ -8839,6 +8854,103 @@ instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI 
             "CALL   SharedRuntime::lrem\n\t"
             "ADD    ESP,16" %}
   ins_encode( long_mod(src1,src2) );
+  ins_pipe( pipe_slow );
+%}
+
+// Divide Register Long (no special case since divisor != -1)
+instruct divL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlagsReg cr ) %{
+  match(Set dst (DivL dst imm));
+  effect( TEMP tmp, TEMP tmp2, KILL cr );
+  ins_cost(1000);
+  format %{ "MOV    $tmp,abs($imm) # ldiv EDX:EAX,$imm\n\t"
+            "CMP    $tmp,EDX\n\t"
+            "JA,s   fast\n\t"
+            "MOV    $tmp2,EAX\n\t"
+            "MOV    EAX,EDX\n\t"
+            "SAR    EDX,31\n\t"
+            "IDIV   $tmp\n\t"
+            "XCHG   EAX,$tmp2 \n\t"
+            "IDIV   $tmp\n\t"
+            "CDQ\n\t"
+            "ADD    EDX,$tmp2\n\t"
+            "JMP,s  done\n"
+    "fast:\n\t"
+            "IDIV   $tmp\n\t"
+            "XOR    EDX,EDX\n"
+    "done:\n\t"
+            "NEG    EDX:EAX # if $imm < 0" %}
+  ins_encode %{
+    int con = (int)$imm$$constant;
+    assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
+    int pcon = (con > 0) ? con : -con;
+    Label Lfast, Ldone;
+
+    __ movl($tmp$$Register, pcon);
+    __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ jccb(Assembler::above, Lfast);
+
+    __ movl($tmp2$$Register, $dst$$Register); // save
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // src sign
+    __ idivl($tmp$$Register);
+    __ xchgl($dst$$Register, $tmp2$$Register);
+    __ idivl($tmp$$Register);
+    __ cdql();
+    __ addl(HIGH_FROM_LOW($dst$$Register),$tmp2$$Register);
+    __ jmpb(Ldone);
+
+    __ bind(Lfast);
+    // fast path: src is positive and result fits into 32 bit
+    __ idivl($tmp$$Register);
+    __ xorl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+
+    __ bind(Ldone);
+    if (con < 0) {
+      __ lneg(HIGH_FROM_LOW($dst$$Register), $dst$$Register);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Remainder Register Long (remainder fit into 32 bits)
+instruct modL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlagsReg cr ) %{
+  match(Set dst (ModL dst imm));
+  effect( TEMP tmp, TEMP tmp2, KILL cr );
+  ins_cost(1000);
+  format %{ "MOV    $tmp,abs($imm) # lrem EDX:EAX,$imm\n\t"
+            "CMP    $tmp,EDX\n\t"
+            "JA,s   fast\n\t"
+            "MOV    $tmp2,EAX\n\t"
+            "MOV    EAX,EDX\n\t"
+            "SAR    EDX,31\n\t"
+            "IDIV   $tmp\n\t"
+            "MOV    EAX,$tmp2\n"
+    "fast:\n\t"
+            "IDIV   $tmp\n\t"
+            "MOV    EAX,EDX\n\t"
+            "SAR    EDX,31\n\t" %}
+  ins_encode %{
+    int con = (int)$imm$$constant;
+    assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
+    int pcon = (con > 0) ? con : -con;
+    Label  Lfast;
+
+    __ movl($tmp$$Register, pcon);
+    __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ jccb(Assembler::above, Lfast); // src is positive and result fits into 32 bit
+
+    __ movl($tmp2$$Register, $dst$$Register); // save
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // src sign
+    __ idivl($tmp$$Register);
+    __ movl($dst$$Register, $tmp2$$Register);
+
+    __ bind(Lfast);
+    __ idivl($tmp$$Register);
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // result sign
+
+  %}
   ins_pipe( pipe_slow );
 %}
 

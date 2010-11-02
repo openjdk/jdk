@@ -1288,7 +1288,7 @@ void Assembler::imull(Register dst, Register src, int value) {
   if (is8bit(value)) {
     emit_byte(0x6B);
     emit_byte(0xC0 | encode);
-    emit_byte(value);
+    emit_byte(value & 0xFF);
   } else {
     emit_byte(0x69);
     emit_byte(0xC0 | encode);
@@ -3903,7 +3903,7 @@ void Assembler::imulq(Register dst, Register src, int value) {
   if (is8bit(value)) {
     emit_byte(0x6B);
     emit_byte(0xC0 | encode);
-    emit_byte(value);
+    emit_byte(value & 0xFF);
   } else {
     emit_byte(0x69);
     emit_byte(0xC0 | encode);
