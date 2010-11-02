@@ -1843,6 +1843,12 @@ bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
 }
 
+bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
+  // Use hardware SDIVX instruction when it is
+  // faster than a code which use multiply.
+  return VM_Version::has_fast_idiv();
+}
+
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
   ShouldNotReachHere();
