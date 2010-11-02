@@ -129,7 +129,8 @@ public abstract class SunJSSE extends java.security.Provider {
         return t;
     }
 
-    private SunJSSE(java.security.Provider cryptoProvider, String providerName) {
+    private SunJSSE(java.security.Provider cryptoProvider,
+            String providerName) {
         super("SunJSSE", 1.6d, fipsInfo + providerName + ")");
         subclassCheck();
         if (cryptoProvider == null) {
@@ -212,6 +213,8 @@ public abstract class SunJSSE extends java.security.Provider {
         put("SSLContext.TLSv1",
             "sun.security.ssl.SSLContextImpl");
         put("SSLContext.TLSv1.1",
+            "sun.security.ssl.SSLContextImpl");
+        put("SSLContext.TLSv1.2",
             "sun.security.ssl.SSLContextImpl");
         put("SSLContext.Default",
             "sun.security.ssl.DefaultSSLContextImpl");

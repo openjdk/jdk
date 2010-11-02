@@ -32,6 +32,7 @@ import java.security.GeneralSecurityException;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
+import java.security.AlgorithmConstraints;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -199,12 +200,22 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     private boolean             autoClose = true;
     private AccessControlContext acc;
 
+    /*
+     * We cannot use the hostname resolved from name services.  For
+     * virtual hosting, multiple hostnames may be bound to the same IP
+     * address, so the hostname resolved from name services is not
+     * reliable.
+     */
+    private String              rawHostname;
+
     // The cipher suites enabled for use on this connection.
     private CipherSuiteList     enabledCipherSuites;
 
-    // hostname identification algorithm, the hostname identification is
-    // disabled by default.
-    private String              identificationAlg = null;
+    // The endpoint identification protocol
+    private String              identificationProtocol = null;
+
+    // The cryptographic algorithm constraints
+    private AlgorithmConstraints    algorithmConstraints = null;
 
     /*
      * READ ME * READ ME * READ ME * READ ME * READ ME * READ ME *
@@ -314,8 +325,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * is associated with a session at the same time.  (TLS/IETF may
      * change that to add client authentication w/o new key exchg.)
      */
-    private SSLSessionImpl      sess;
-    private Handshaker          handshaker;
+    private Handshaker                  handshaker;
+    private SSLSessionImpl              sess;
+    private volatile SSLSessionImpl     handshakeSession;
 
 
     /*
@@ -376,6 +388,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             throws IOException, UnknownHostException {
         super();
         this.host = host;
+        this.rawHostname = host;
         init(context, false);
         SocketAddress socketAddress =
                host != null ? new InetSocketAddress(host, port) :
@@ -418,6 +431,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             throws IOException, UnknownHostException {
         super();
         this.host = host;
+        this.rawHostname = host;
         init(context, false);
         bind(new InetSocketAddress(localAddr, localPort));
         SocketAddress socketAddress =
@@ -457,11 +471,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     SSLSocketImpl(SSLContextImpl context, boolean serverMode,
             CipherSuiteList suites, byte clientAuth,
-            boolean sessionCreation, ProtocolList protocols)
-            throws IOException {
+            boolean sessionCreation, ProtocolList protocols,
+            String identificationProtocol,
+            AlgorithmConstraints algorithmConstraints) throws IOException {
+
         super();
         doClientAuth = clientAuth;
         enableSessionCreation = sessionCreation;
+        this.identificationProtocol = identificationProtocol;
+        this.algorithmConstraints = algorithmConstraints;
         init(context, serverMode);
 
         /*
@@ -508,6 +526,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             throw new SocketException("Underlying socket is not connected");
         }
         this.host = host;
+        this.rawHostname = host;
         init(context, false);
         this.autoClose = autoClose;
         doneConnect();
@@ -519,6 +538,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     private void init(SSLContextImpl context, boolean isServer) {
         sslContext = context;
         sess = SSLSessionImpl.nullSession;
+        handshakeSession = null;
 
         /*
          * role is as specified, state is START until after
@@ -957,6 +977,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                         serverVerifyData = handshaker.getServerVerifyData();
 
                         sess = handshaker.getSession();
+                        handshakeSession = null;
                         handshaker = null;
                         connectionState = cs_DATA;
 
@@ -1732,6 +1753,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             input.r.close();
         }
         sess.invalidate();
+        if (handshakeSession != null) {
+            handshakeSession.invalidate();
+        }
 
         int oldState = connectionState;
         connectionState = cs_ERROR;
@@ -1972,9 +1996,14 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         return host;
     }
 
+    synchronized String getRawHostname() {
+        return rawHostname;
+    }
+
     // ONLY used by HttpsClient to setup the URI specified hostname
     synchronized public void setHost(String host) {
         this.host = host;
+        this.rawHostname = host;
     }
 
     /**
@@ -2043,6 +2072,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         synchronized (this) {
             return sess;
         }
+    }
+
+    @Override
+    synchronized public SSLSession getHandshakeSession() {
+        return handshakeSession;
+    }
+
+    synchronized void setHandshakeSession(SSLSessionImpl session) {
+        handshakeSession = session;
     }
 
     /**
@@ -2230,7 +2268,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Returns the protocols that are supported by this implementation.
      * A subset of the supported protocols may be enabled for this connection
-     * @ returns an array of protocol names.
+     * @return an array of protocol names.
      */
     public String[] getSupportedProtocols() {
         return ProtocolList.getSupported().toStringArray();
@@ -2306,28 +2344,31 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     /**
-     * Try to configure the endpoint identification algorithm of the socket.
-     *
-     * @param identificationAlgorithm the algorithm used to check the
-     *        endpoint identity.
-     * @return true if the identification algorithm configuration success.
+     * Returns the SSLParameters in effect for this SSLSocket.
      */
-    synchronized public boolean trySetHostnameVerification(
-        String identificationAlgorithm) {
-        if (sslContext.getX509TrustManager() instanceof
-                X509ExtendedTrustManager) {
-            this.identificationAlg = identificationAlgorithm;
-            return true;
-        } else {
-            return false;
-        }
+    synchronized public SSLParameters getSSLParameters() {
+        SSLParameters params = super.getSSLParameters();
+
+        // the super implementation does not handle the following parameters
+        params.setEndpointIdentificationAlgorithm(identificationProtocol);
+        params.setAlgorithmConstraints(algorithmConstraints);
+
+        return params;
     }
 
     /**
-     * Returns the endpoint identification algorithm of the socket.
+     * Applies SSLParameters to this socket.
      */
-    synchronized public String getHostnameVerification() {
-        return identificationAlg;
+    synchronized public void setSSLParameters(SSLParameters params) {
+        super.setSSLParameters(params);
+
+        // the super implementation does not handle the following parameters
+        identificationProtocol = params.getEndpointIdentificationAlgorithm();
+        algorithmConstraints = params.getAlgorithmConstraints();
+        if ((handshaker != null) && !handshaker.started()) {
+            handshaker.setIdentificationProtocol(identificationProtocol);
+            handshaker.setAlgorithmConstraints(algorithmConstraints);
+        }
     }
 
     //
