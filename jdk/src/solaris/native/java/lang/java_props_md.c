@@ -46,7 +46,9 @@
 #include "java_props.h"
 
 #ifdef __linux__
-#define CODESET _NL_CTYPE_CODESET_NAME
+  #ifndef CODESET
+  #define CODESET _NL_CTYPE_CODESET_NAME
+  #endif
 #else
 #ifdef ALT_CODESET_KEY
 #define CODESET ALT_CODESET_KEY
@@ -305,7 +307,7 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
 java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
-    static java_props_t sprops = {0};
+    static java_props_t sprops;
     char *v; /* tmp var */
 
     if (sprops.user_dir) {

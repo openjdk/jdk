@@ -1050,7 +1050,7 @@ static LPTSTR GetPrinterPort(JNIEnv *env, LPTSTR printer) {
     return NULL;
   }
 
-  LPTSTR port = wcsdup(info2->pPortName);
+  LPTSTR port = _wcsdup(info2->pPortName);
   ::GlobalFree(info2);
   return port;
 }

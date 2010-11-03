@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <string.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
@@ -113,7 +115,6 @@ typedef void (JNICALL *GetJvmVersionInfo_fp)(JNIEnv*, jvm_version_info*, size_t)
 
 JNIEXPORT void JNICALL
 Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
-    char errmsg[128];
     GetJvmVersionInfo_fp func_p;
 
     if (!JDK_InitJvmHandle()) {
@@ -123,8 +124,6 @@ Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
 
     func_p = (GetJvmVersionInfo_fp) JDK_FindJvmEntry("JVM_GetVersionInfo");
      if (func_p != NULL) {
-        char errmsg[100];
-        jfieldID fid;
         jvm_version_info info;
 
         memset(&info, 0, sizeof(info));

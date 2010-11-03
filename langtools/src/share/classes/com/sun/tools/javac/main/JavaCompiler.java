@@ -511,7 +511,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     protected boolean shouldStop(CompileState cs) {
         if (shouldStopPolicy == null)
-            return (errorCount() > 0);
+            return (errorCount() > 0 || unrecoverableError());
         else
             return cs.ordinal() > shouldStopPolicy.ordinal();
     }
