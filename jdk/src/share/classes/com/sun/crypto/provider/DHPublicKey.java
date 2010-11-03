@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,8 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
             throw new InvalidKeyException("Private-value length too big");
 
         } catch (IOException e) {
-            throw new InvalidKeyException("Error parsing key encoding: " + e.toString());
+            throw new InvalidKeyException(
+                "Error parsing key encoding: " + e.toString());
         }
     }
 
@@ -281,7 +282,8 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
             DerInputStream in = new DerInputStream(this.key);
             this.y = in.getBigInteger();
         } catch (IOException e) {
-            throw new InvalidKeyException("Error parsing key encoding: " + e.toString());
+            throw new InvalidKeyException(
+                "Error parsing key encoding: " + e.toString());
         }
     }
 

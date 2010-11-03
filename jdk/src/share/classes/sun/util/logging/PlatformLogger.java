@@ -535,10 +535,6 @@ public class PlatformLogger {
         }
 
         void doLog(int level, String msg, Object... params) {
-            int paramsNumber = (params != null) ? params.length : 0;
-            for (int i = 0; i < paramsNumber; i++) {
-                params[i] = String.valueOf(params[i]);
-            }
             LoggingSupport.log(javaLogger, levelObjects.get(level), msg, params);
         }
 

@@ -318,7 +318,7 @@ EnsureJreInstallation(const char* jrepath)
     struct stat s;
 
     /* Make sure the jrepath contains something */
-    if (jrepath[0] == NULL) {
+    if ((void*)jrepath[0] == NULL) {
         return;
     }
     /* 32 bit windows only please */
@@ -650,7 +650,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         /* get the length of the string we need */
         int len = mlen =  _vscprintf(fmt, vl) + 1;
         if (freeit) {
-           mlen += JLI_StrLen(errtext);
+           mlen += (int)JLI_StrLen(errtext);
         }
 
         message = (char *)JLI_MemAlloc(mlen);
@@ -1107,7 +1107,6 @@ ExecJRE(char *jre, char **argv) {
 
         exit(exitCode);
     }
-
 }
 
 /*
