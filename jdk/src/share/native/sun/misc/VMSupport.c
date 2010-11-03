@@ -38,8 +38,6 @@ static INIT_AGENT_PROPERTIES_FN InitAgentProperties_fp = NULL;
 JNIEXPORT jobject JNICALL
 Java_sun_misc_VMSupport_initAgentProperties(JNIEnv *env, jclass cls, jobject props)
 {
-    char errmsg[128];
-
     if (InitAgentProperties_fp == NULL) {
         if (!JDK_InitJvmHandle()) {
             JNU_ThrowInternalError(env,

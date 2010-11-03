@@ -84,7 +84,6 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     jobject remote_ia;
     int remote_port;
     jobject isa;
-    jobject ia;
     int addrlen = sizeof(sa);
 
     memset((char *)&sa, 0, sizeof(sa));

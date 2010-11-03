@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,8 +307,9 @@ class SSLServerSocketImpl extends SSLServerSocket
             try {
                 ServerHandshaker handshaker = tmp.getServerHandshaker();
 
-                for (Iterator t = enabledCipherSuites.iterator(); t.hasNext(); ) {
-                    CipherSuite suite = (CipherSuite)t.next();
+                for (Iterator<CipherSuite> t = enabledCipherSuites.iterator();
+                        t.hasNext();) {
+                    CipherSuite suite = t.next();
                     if (handshaker.trySetCipherSuite(suite)) {
                         checkedEnabled = true;
                         return;
