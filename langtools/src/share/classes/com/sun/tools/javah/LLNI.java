@@ -74,16 +74,21 @@ public class LLNI extends Gen {
     }
 
     protected void write(OutputStream o, TypeElement clazz) throws Util.Exit {
-        String cname     = mangleClassName(clazz.getQualifiedName().toString());
-        PrintWriter pw   = wrapWriter(o);
-        fields = ElementFilter.fieldsIn(clazz.getEnclosedElements());
-        methods = ElementFilter.methodsIn(clazz.getEnclosedElements());
-        generateDeclsForClass(pw, clazz, cname);
-        // FIXME check if errors occurred on the PrintWriter and throw exception if so
+        try {
+            String cname     = mangleClassName(clazz.getQualifiedName().toString());
+            PrintWriter pw   = wrapWriter(o);
+            fields = ElementFilter.fieldsIn(clazz.getEnclosedElements());
+            methods = ElementFilter.methodsIn(clazz.getEnclosedElements());
+            generateDeclsForClass(pw, clazz, cname);
+            // FIXME check if errors occurred on the PrintWriter and throw exception if so
+        } catch (TypeSignature.SignatureException e) {
+            util.error("llni.sigerror", e.getMessage());
+        }
     }
 
     protected void generateDeclsForClass(PrintWriter pw,
-            TypeElement clazz, String cname) throws Util.Exit {
+            TypeElement clazz, String cname)
+            throws TypeSignature.SignatureException, Util.Exit {
         doneHandleTypes  = new HashSet<String>();
         /* The following handle types are predefined in "typedefs.h". Suppress
            inclusion in the output by generating them "into the blue" here. */
@@ -127,7 +132,8 @@ public class LLNI extends Gen {
             .replace(innerDelim, '_');
     }
 
-    protected void forwardDecls(PrintWriter pw, TypeElement clazz) {
+    protected void forwardDecls(PrintWriter pw, TypeElement clazz)
+            throws TypeSignature.SignatureException {
         TypeElement object = elems.getTypeElement("java.lang.Object");
         if (clazz.equals(object))
             return;
@@ -403,7 +409,7 @@ public class LLNI extends Gen {
 
     protected void methodSectionForClass(PrintWriter pw,
             TypeElement clazz, String cname)
-            throws Util.Exit {
+            throws TypeSignature.SignatureException, Util.Exit {
         String methods = methodDecls(clazz, cname);
 
         if (methods.length() != 0) {
@@ -418,7 +424,8 @@ public class LLNI extends Gen {
         }
     }
 
-    protected String methodDecls(TypeElement clazz, String cname) throws Util.Exit {
+    protected String methodDecls(TypeElement clazz, String cname)
+            throws TypeSignature.SignatureException, Util.Exit {
 
         String res = "";
         for (ExecutableElement method: methods) {
@@ -430,7 +437,7 @@ public class LLNI extends Gen {
 
     protected String methodDecl(ExecutableElement method,
                                 TypeElement clazz, String cname)
-    throws Util.Exit {
+            throws TypeSignature.SignatureException, Util.Exit {
         String res = null;
 
         TypeMirror retType = types.erasure(method.getReturnType());
@@ -474,7 +481,8 @@ public class LLNI extends Gen {
     }
 
     protected final String jniMethodName(ExecutableElement method, String cname,
-                                         boolean longName) {
+                                         boolean longName)
+                throws TypeSignature.SignatureException {
         String res = "Java_" + cname + "_" + method.getSimpleName();
 
         if (longName) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ void CardTableModRefBS::par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
 
     int n_strides = n_threads * StridesPerThread;
     SequentialSubTasksDone* pst = sp->par_seq_tasks();
-    pst->set_par_threads(n_threads);
+    pst->set_n_threads(n_threads);
     pst->set_n_tasks(n_strides);
 
     int stride = 0;
