@@ -29,6 +29,7 @@ import sun.awt.AWTAccessor;
 
 import javax.swing.plaf.LayerUI;
 import javax.swing.border.Border;
+import javax.accessibility.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -149,7 +150,7 @@ import java.security.PrivilegedAction;
  */
 public final class JLayer<V extends Component>
         extends JComponent
-        implements Scrollable, PropertyChangeListener {
+        implements Scrollable, PropertyChangeListener, Accessible {
     private V view;
     // this field is necessary because JComponent.ui is transient
     // when layerUI is serializable
@@ -663,6 +664,22 @@ public final class JLayer<V extends Component>
         if (getUI() != null) {
             getUI().doLayout(this);
         }
+    }
+
+    /**
+     * Gets the AccessibleContext associated with this {@code JLayer}.
+     *
+     * @return the AccessibleContext associated with this {@code JLayer}.
+     */
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleJComponent() {
+                public AccessibleRole getAccessibleRole() {
+                    return AccessibleRole.PANEL;
+                }
+            };
+        }
+        return accessibleContext;
     }
 
     /**

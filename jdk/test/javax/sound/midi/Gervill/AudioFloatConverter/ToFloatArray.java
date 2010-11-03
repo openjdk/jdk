@@ -47,7 +47,7 @@ public class ToFloatArray {
         for (int big = 0; big < 2; big+=1)
         for (int bits = 32; bits <= 64; bits+=32) {
             AudioFormat frm = new AudioFormat(
-                    AudioFloatConverter.PCM_FLOAT,
+                    AudioFormat.Encoding.PCM_FLOAT,
                     44100, bits, 1, bits/8,
                     44100, big==1);
             byte[] buff = new byte[testarray.length * frm.getFrameSize()];

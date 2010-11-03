@@ -28,12 +28,15 @@
 
 typedef int gboolean;
 
-gboolean (*gnome_url_show) (const char *url, void **error);
+typedef gboolean (GNOME_URL_SHOW_TYPE)(const char *, void **);
+typedef gboolean (GNOME_VFS_INIT_TYPE)(void);
+
+GNOME_URL_SHOW_TYPE *gnome_url_show;
+GNOME_VFS_INIT_TYPE *gnome_vfs_init;
 
 int init(){
     void *vfs_handle;
     void *gnome_handle;
-    gboolean (*gnome_vfs_init) (void);
     const char *errmsg;
 
     vfs_handle = dlopen("libgnomevfs-2.so.0", RTLD_LAZY);
@@ -44,7 +47,7 @@ int init(){
         return 0;
     }
     dlerror(); /* Clear errors */
-    gnome_vfs_init = dlsym(vfs_handle, "gnome_vfs_init");
+    gnome_vfs_init = (GNOME_VFS_INIT_TYPE*)dlsym(vfs_handle, "gnome_vfs_init");
     if ((errmsg = dlerror()) != NULL) {
 #ifdef INTERNAL_BUILD
         fprintf(stderr, "can not find symble gnome_vfs_init\n");
@@ -62,7 +65,7 @@ int init(){
         return 0;
     }
     dlerror(); /* Clear errors */
-    gnome_url_show = dlsym(gnome_handle, "gnome_url_show");
+    gnome_url_show = (GNOME_URL_SHOW_TYPE*)dlsym(gnome_handle, "gnome_url_show");
     if ((errmsg = dlerror()) != NULL) {
 #ifdef INTERNAL_BUILD
         fprintf(stderr, "can not find symble gnome_url_show\n");
@@ -94,14 +97,15 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XDesktopPeer_gnome_1url_1show
   (JNIEnv *env, jobject obj, jbyteArray url_j)
 {
     gboolean success;
+    const char* url_c;
 
-    const char* url_c = (*env)->GetByteArrayElements(env, url_j, NULL);
+    if (gnome_url_show == NULL) {
+        return JNI_FALSE;
+    }
 
-    if (gnome_url_show == NULL) return JNI_FALSE;
-
+    url_c = (char*)(*env)->GetByteArrayElements(env, url_j, NULL);
     // call gnome_url_show(const char* , GError**)
     success = (*gnome_url_show)(url_c, NULL);
-
     (*env)->ReleaseByteArrayElements(env, url_j, (signed char*)url_c, 0);
 
     return success ? JNI_TRUE : JNI_FALSE;

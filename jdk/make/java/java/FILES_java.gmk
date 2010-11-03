@@ -465,14 +465,11 @@ JAVA_JAVA_java = \
     java/security/ProtectionDomain.java \
     java/net/URLClassLoader.java \
     java/net/URLConnection.java \
+    sun/misc/BootClassLoaderHook.java \
     sun/misc/Launcher.java \
     sun/misc/MetaIndex.java \
     sun/misc/URLClassPath.java \
     sun/misc/Version.java \
-    sun/net/www/protocol/jar/Handler.java \
-    sun/net/www/protocol/jar/JarURLConnection.java \
-    sun/net/www/protocol/file/Handler.java \
-    sun/net/www/protocol/file/FileURLConnection.java \
     sun/misc/FileURLMapper.java \
     sun/misc/MessageUtils.java \
     sun/misc/GC.java \
@@ -482,6 +479,10 @@ JAVA_JAVA_java = \
     sun/misc/JavaIOFileDescriptorAccess.java \
     sun/misc/JavaNioAccess.java \
     sun/misc/Perf.java \
-    sun/misc/PerfCounter.java
+    sun/misc/PerfCounter.java \
+    sun/net/www/protocol/jar/Handler.java \
+    sun/net/www/protocol/jar/JarURLConnection.java \
+    sun/net/www/protocol/file/Handler.java \
+    sun/net/www/protocol/file/FileURLConnection.java
 
 FILES_java = $(JAVA_JAVA_java)

@@ -484,8 +484,8 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbLibraryVersion
 (JNIEnv *env, jclass clazz, jlong lib_major_in_out, jlong lib_minor_in_out)
 {
     AWT_CHECK_HAVE_LOCK();
-    *((int *)lib_major_in_out) =  XkbMajorVersion;
-    *((int *)lib_minor_in_out) =  XkbMinorVersion;
+    *((int *)jlong_to_ptr(lib_major_in_out)) =  XkbMajorVersion;
+    *((int *)jlong_to_ptr(lib_minor_in_out)) =  XkbMinorVersion;
     return  XkbLibraryVersion((int *)jlong_to_ptr(lib_major_in_out), (int *)jlong_to_ptr(lib_minor_in_out));
 }
 
@@ -1229,13 +1229,14 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsKanaKeyboard
 (JNIEnv *env, jclass clazz, jlong display)
 {
     int xx;
-    AWT_CHECK_HAVE_LOCK();
     static jboolean result = JNI_FALSE;
 
     int32_t minKeyCode, maxKeyCode, keySymsPerKeyCode;
     KeySym *keySyms, *keySymsStart, keySym;
     int32_t i;
     int32_t kanaCount = 0;
+
+    AWT_CHECK_HAVE_LOCK();
 
     // There's no direct way to determine whether the keyboard has
     // a kana lock key. From available keyboard mapping tables, it looks
@@ -1337,12 +1338,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_PrintXErrorEvent
 JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XInternAtoms
 (JNIEnv *env, jclass clazz, jlong display, jobjectArray names_arr, jboolean only_if_exists, jlong atoms)
 {
-
     int length = (*env)->GetArrayLength(env, names_arr);
     char ** names = (char**)malloc(length*sizeof(char*));
     jboolean copy;
     int index, name_index = 0;
     int status;
+
+    AWT_CHECK_HAVE_LOCK();
+
     for (index = 0; index < length; index++) {
         jstring str = (*env)->GetObjectArrayElement(env, names_arr, index);
         if (!JNU_IsNull(env, str)) {
@@ -1352,7 +1355,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XInternAtoms
             (*env)->DeleteLocalRef(env, str);
         }
     }
-    AWT_CHECK_HAVE_LOCK();
     status = XInternAtoms((Display*)jlong_to_ptr(display), names, name_index, only_if_exists, (Atom*) jlong_to_ptr(atoms));
     for (index = 0; index < length; index++) {
         free(names[index]);
@@ -2186,12 +2188,12 @@ JNIEXPORT void JNICALL
 Java_sun_awt_X11_XlibWrapper_SetZOrder
 (JNIEnv *env, jclass clazz, jlong display, jlong window, jlong above)
 {
-    AWT_CHECK_HAVE_LOCK();
+    unsigned int value_mask = CWStackMode;
 
     XWindowChanges wc;
     wc.sibling = (Window)jlong_to_ptr(above);
 
-    unsigned int value_mask = CWStackMode;
+    AWT_CHECK_HAVE_LOCK();
 
     if (above == 0) {
         wc.stack_mode = Above;
@@ -2219,6 +2221,7 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
     jboolean isCopy = JNI_FALSE;
     size_t worstBufferSize = (size_t)((width / 2 + 1) * height);
     RECT_T * pRect;
+    int numrects;
 
     AWT_CHECK_HAVE_LOCK();
 
@@ -2237,7 +2240,7 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
     /* Note: the values[0] and values[1] are supposed to contain the width
      * and height (see XIconInfo.getIntData() for details). So, we do +2.
      */
-    int numrects = BitmapToYXBandedRectangles(32, (int)width, (int)height,
+    numrects = BitmapToYXBandedRectangles(32, (int)width, (int)height,
             (unsigned char *)(values + 2), pRect);
 
     XShapeCombineRectangles((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
