@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,9 @@
  * questions.
  */
 
-package com.sun.source.tree;
+// key: compiler.warn.diamond.redundant.args.1
+// options: -XDfindDiamond
 
-import java.util.List;
-import javax.lang.model.element.Name;
-
-/**
- * A tree node for a type parameter.
- *
- * For example:
- * <pre>
- *   <em>name</em>
- *
- *   <em>name</em> extends <em>bounds</em>
- * </pre>
- *
- * @see "The Java Language Specification, 3rd ed, section 4.4"
- *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
- * @since 1.6
- */
-public interface TypeParameterTree extends Tree {
-    Name getName();
-    List<? extends Tree> getBounds();
-//308    List<? extends AnnotationTree> getAnnotations();
+class Foo<X> {
+   Foo<?> fs = new Foo<String>();
 }
