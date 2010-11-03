@@ -1456,7 +1456,7 @@ public class Gen extends JCTree.Visitor {
                       List<Integer> gaps) {
             if (startpc != endpc) {
                 List<JCExpression> subClauses = TreeInfo.isMultiCatch(tree) ?
-                        ((JCTypeDisjoint)tree.param.vartype).components :
+                        ((JCTypeDisjunction)tree.param.vartype).alternatives :
                         List.of(tree.param.vartype);
                 while (gaps.nonEmpty()) {
                     for (JCExpression subCatch : subClauses) {
