@@ -451,8 +451,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCTypeDisjoint TypeDisjoint(List<JCExpression> components) {
-        JCTypeDisjoint tree = new JCTypeDisjoint(components);
+    public JCTypeDisjunction TypeDisjunction(List<JCExpression> components) {
+        JCTypeDisjunction tree = new JCTypeDisjunction(components);
         tree.pos = pos;
         return tree;
     }

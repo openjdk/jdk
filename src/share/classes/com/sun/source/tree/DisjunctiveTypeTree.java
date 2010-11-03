@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,15 @@
 package com.sun.source.tree;
 
 import java.util.List;
-import javax.lang.model.element.Name;
 
 /**
- * A tree node for a type parameter.
+ * A tree node for a disjunctive type expression in a multicatch var declaration.
  *
- * For example:
- * <pre>
- *   <em>name</em>
  *
- *   <em>name</em> extends <em>bounds</em>
- * </pre>
+ * @author Maurizio Cimadamore
  *
- * @see "The Java Language Specification, 3rd ed, section 4.4"
- *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
- * @since 1.6
+ * @since 1.7
  */
-public interface TypeParameterTree extends Tree {
-    Name getName();
-    List<? extends Tree> getBounds();
-//308    List<? extends AnnotationTree> getAnnotations();
+public interface DisjunctiveTypeTree extends Tree {
+    List<? extends Tree> getTypeAlternatives();
 }
