@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,6 +655,25 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA512withRSA", P11Signature,
                 m(CKM_SHA512_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
 
+        /*
+         * TLS 1.2 uses a different hash algorithm than 1.0/1.1 for the
+         * PRF calculations.  As of 2010, there is no PKCS11-level
+         * support for TLS 1.2 PRF calculations, and no known OS's have
+         * an internal variant we could use.  Therefore for TLS 1.2, we
+         * are updating JSSE to request different provider algorithms
+         * (e.g. "SunTls12Prf"), and currently only SunJCE has these
+         * TLS 1.2 algorithms.
+         *
+         * If we reused the names such as "SunTlsPrf", the PKCS11
+         * providers would need be updated to fail correctly when
+         * presented with the wrong version number (via
+         * Provider.Service.supportsParameters()), and we would also
+         * need to add the appropriate supportsParamters() checks into
+         * KeyGenerators (not currently there).
+         *
+         * In the future, if PKCS11 support is added, we will restructure
+         * this.
+         */
         d(KG, "SunTlsRsaPremasterSecret",
                     "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
                 m(CKM_SSL3_PRE_MASTER_KEY_GEN, CKM_TLS_PRE_MASTER_KEY_GEN));
@@ -887,7 +906,8 @@ public final class SunPKCS11 extends AuthProvider {
             return (aliases == null) ? null : Arrays.asList(aliases);
         }
 
-        public Object newInstance(Object param) throws NoSuchAlgorithmException {
+        public Object newInstance(Object param)
+                throws NoSuchAlgorithmException {
             if (token.isValid() == false) {
                 throw new NoSuchAlgorithmException("Token has been removed");
             }

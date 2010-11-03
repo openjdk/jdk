@@ -176,13 +176,21 @@ final class KerberosPreMasterSecret {
         // check if the premaster secret version is ok
         // the specification says that it must be the maximum version supported
         // by the client from its ClientHello message. However, many
-        // implementations send the negotiated version, so accept both
+        // old implementations send the negotiated version, so accept both
+        // for SSL v3.0 and TLS v1.0.
         // NOTE that we may be comparing two unsupported version numbers in
         // the second case, which is why we cannot use object references
         // equality in this special case
-        boolean versionMismatch = (protocolVersion != currentVersion) &&
-                                  (protocolVersion.v != clientVersion.v);
+        boolean versionMismatch = (protocolVersion.v != clientVersion.v);
 
+        /*
+         * we never checked the client_version in server side
+         * for TLS v1.0 and SSL v3.0. For compatibility, we
+         * maintain this behavior.
+         */
+        if (versionMismatch && (clientVersion.v <= 0x0301)) {
+            versionMismatch = (protocolVersion.v != currentVersion.v);
+        }
 
         /*
          * Bogus decrypted ClientKeyExchange? If so, conjure a
@@ -203,8 +211,14 @@ final class KerberosPreMasterSecret {
                     Debug.println(System.out, "Invalid secret", preMaster);
                 }
             }
-            preMaster = generatePreMaster(generator, currentVersion);
-            protocolVersion = currentVersion;
+
+            /*
+             * Randomize the preMaster secret with the
+             * ClientHello.client_version, as will produce invalid master
+             * secret to prevent the attacks.
+             */
+            preMaster = generatePreMaster(generator, clientVersion);
+            protocolVersion = clientVersion;
         }
     }
 

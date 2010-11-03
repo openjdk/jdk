@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ import javax.crypto.spec.IvParameterSpec;
  *
  * @since   1.6
  * @author  Andreas Sterbenz
- * @deprecated Sun JDK internal use only --- WILL BE REMOVED in Dolphin (JDK 7)
+ * @deprecated Sun JDK internal use only --- WILL BE REMOVED in a future
+ * release.
  */
 @Deprecated
 public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
@@ -80,7 +81,8 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
      */
     public TlsKeyMaterialSpec(SecretKey clientMacKey, SecretKey serverMacKey,
             SecretKey clientCipherKey, SecretKey serverCipherKey) {
-        this(clientMacKey, serverMacKey, clientCipherKey, null, serverCipherKey, null);
+        this(clientMacKey, serverMacKey, clientCipherKey, null,
+            serverCipherKey, null);
     }
 
     /**
