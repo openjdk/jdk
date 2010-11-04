@@ -318,6 +318,12 @@ public final class SplashScreen {
             checkVisible();
             _close(splashPtr);
             image = null;
+            SplashScreen.markClosed();
+        }
+    }
+
+    static void markClosed() {
+        synchronized (SplashScreen.class) {
             wasClosed = true;
             theInstance = null;
         }

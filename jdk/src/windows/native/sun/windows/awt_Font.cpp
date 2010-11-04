@@ -1189,7 +1189,7 @@ LONG AwtFontCache::DecRefCount(Item* item){
 
 AwtFontCache::Item::Item(const WCHAR* s, HFONT f, AwtFontCache::Item* n )
 {
-    name = wcsdup(s);
+    name = _wcsdup(s);
     font = f;
     next = n;
     refCount = 1;
@@ -1237,7 +1237,7 @@ void CSegTableComponent::Create(LPCWSTR name)
         free(m_lpszFontName);
         m_lpszFontName = NULL;
     }
-    m_lpszFontName = wcsdup(name);
+    m_lpszFontName = _wcsdup(name);
     DASSERT(m_lpszFontName);
 }
 

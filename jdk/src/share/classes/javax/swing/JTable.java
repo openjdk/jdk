@@ -2491,7 +2491,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * The default value of this property is defined by the look
      * and feel implementation.
      * <p>
-     * This is a <a href="http://java.sun.com/docs/books/tutorial/javabeans/whatis/beanDefinition.html">JavaBeans</a> bound property.
+     * This is a <a href="http://java.sun.com/docs/books/tutorial/javabeans/properties/bound.html">JavaBeans</a> bound property.
      *
      * @param selectionForeground  the <code>Color</code> to use in the foreground
      *                             for selected list items
@@ -2529,7 +2529,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * The default value of this property is defined by the look
      * and feel implementation.
      * <p>
-     * This is a <a href="http://java.sun.com/docs/books/tutorial/javabeans/whatis/beanDefinition.html">JavaBeans</a> bound property.
+     * This is a <a href="http://java.sun.com/docs/books/tutorial/javabeans/properties/bound.html">JavaBeans</a> bound property.
      *
      * @param selectionBackground  the <code>Color</code> to use for the background
      *                             of selected cells

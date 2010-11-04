@@ -39,8 +39,11 @@ package java.dyn;
  * {@link Linkage#registerBootstrapMethod registerBootstrapMethod}.
  *
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public class InvokeDynamicBootstrapError extends LinkageError {
+    private static final long serialVersionUID = 292L;
+
     /**
      * Constructs an {@code InvokeDynamicBootstrapError} with no detail message.
      */
@@ -63,10 +66,9 @@ public class InvokeDynamicBootstrapError extends LinkageError {
      * detail message and cause.
      *
      * @param s the detail message.
-     * @param cause the cause.
+     * @param cause the cause, may be {@code null}.
      */
     public InvokeDynamicBootstrapError(String s, Throwable cause) {
-        super(s);
-        this.initCause(cause);
+        super(s, cause);
     }
 }

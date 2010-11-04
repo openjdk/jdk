@@ -68,7 +68,7 @@ static int create(JNIEnv* env)
      */
     if (ipv6_available()) {
         JNU_ThrowIOException(env, "IPv6 not supported");
-        return;
+        return -1;
     }
     s = socket(AF_INET_SDP, SOCK_STREAM, 0);
 #else
