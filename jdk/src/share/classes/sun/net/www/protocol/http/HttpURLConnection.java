@@ -51,6 +51,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.Iterator;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Set;
 import sun.net.*;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
@@ -140,6 +143,54 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     */
     private static int bufSize4ES = 0;
 
+    /*
+     * Restrict setting of request headers through the public api
+     * consistent with JavaScript XMLHttpRequest2 with a few
+     * exceptions. Disallowed headers are silently ignored for
+     * backwards compatibility reasons rather than throwing a
+     * SecurityException. For example, some applets set the
+     * Host header since old JREs did not implement HTTP 1.1.
+     * Additionally, any header starting with Sec- is
+     * disallowed.
+     *
+     * The following headers are allowed for historical reasons:
+     *
+     * Accept-Charset, Accept-Encoding, Cookie, Cookie2, Date,
+     * Referer, TE, User-Agent, headers beginning with Proxy-.
+     *
+     * The following headers are allowed in a limited form:
+     *
+     * Connection: close
+     *
+     * See http://www.w3.org/TR/XMLHttpRequest2.
+     */
+    private static final boolean allowRestrictedHeaders;
+    private static final Set<String> restrictedHeaderSet;
+    private static final String[] restrictedHeaders = {
+        /* Restricted by XMLHttpRequest2 */
+        //"Accept-Charset",
+        //"Accept-Encoding",
+        "Access-Control-Request-Headers",
+        "Access-Control-Request-Method",
+        "Connection", /* close is allowed */
+        "Content-Length",
+        //"Cookie",
+        //"Cookie2",
+        "Content-Transfer-Encoding",
+        //"Date",
+        //"Expect",
+        "Host",
+        "Keep-Alive",
+        "Origin",
+        // "Referer",
+        // "TE",
+        "Trailer",
+        "Transfer-Encoding",
+        "Upgrade",
+        //"User-Agent",
+        "Via"
+    };
+
     static {
         maxRedirects = java.security.AccessController.doPrivileged(
             new sun.security.action.GetIntegerAction(
@@ -178,7 +229,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             bufSize4ES = 4096; // use the default
         }
 
-
+        allowRestrictedHeaders = ((Boolean)java.security.AccessController.doPrivileged(
+                new sun.security.action.GetBooleanAction(
+                    "sun.net.http.allowRestrictedHeaders"))).booleanValue();
+        if (!allowRestrictedHeaders) {
+            restrictedHeaderSet = new HashSet<String>(restrictedHeaders.length);
+            for (int i=0; i < restrictedHeaders.length; i++) {
+                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
+            }
+        } else {
+            restrictedHeaderSet = null;
+        }
     }
 
     static final String httpVersion = "HTTP/1.1";
@@ -191,6 +252,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             "Proxy-Authorization",
             "Authorization"
     };
+
+    // also exclude system cookies when any might be set
+    private static final String[] EXCLUDE_HEADERS2= {
+            "Proxy-Authorization",
+            "Authorization",
+            "Cookie",
+            "Cookie2"
+    };
+
     protected HttpClient http;
     protected Handler handler;
     protected Proxy instProxy;
@@ -213,6 +283,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* User set Cookies */
     private boolean setUserCookies = true;
     private String userCookies = null;
+    private String userCookies2 = null;
 
     /* We only have a single static authenticator for now.
      * REMIND:  backwards compatibility with JDK 1.1.  Should be
@@ -327,6 +398,41 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     return pass;
                 }
             });
+    }
+
+    private boolean isRestrictedHeader(String key, String value) {
+        if (allowRestrictedHeaders) {
+            return false;
+        }
+
+        key = key.toLowerCase();
+        if (restrictedHeaderSet.contains(key)) {
+            /*
+             * Exceptions to restricted headers:
+             *
+             * Allow "Connection: close".
+             */
+            if (key.equals("connection") && value.equalsIgnoreCase("close")) {
+                return false;
+            }
+            return true;
+        } else if (key.startsWith("sec-")) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * Checks the validity of http message header and whether the header
+     * is restricted and throws IllegalArgumentException if invalid or
+     * restricted.
+     */
+    private boolean isExternalMessageHeaderAllowed(String key, String value) {
+        checkMessageHeader(key, value);
+        if (!isRestrictedHeader(key, value)) {
+            return true;
+        }
+        return false;
     }
 
     /* Logging support */
@@ -463,9 +569,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         "application/x-www-form-urlencoded");
             }
 
+            boolean chunked = false;
+
             if (streaming()) {
                 if (chunkLength != -1) {
                     requests.set ("Transfer-Encoding", "chunked");
+                    chunked = true;
                 } else { /* fixed content length */
                     if (fixedContentLengthLong != -1) {
                         requests.set ("Content-Length",
@@ -485,6 +594,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
             }
 
+            if (!chunked) {
+                if (requests.findValue("Transfer-Encoding") != null) {
+                    requests.remove("Transfer-Encoding");
+                    if (logger.isLoggable(PlatformLogger.WARNING)) {
+                        logger.warning(
+                            "use streaming mode for chunked encoding");
+                    }
+                }
+            }
+
             // get applicable cookies based on the uri and request headers
             // add them to the existing request headers
             setCookieHeader();
@@ -494,7 +613,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (logger.isLoggable(PlatformLogger.FINE)) {
             logger.fine(requests.toString());
         }
-        http.writeRequests(requests, poster);
+        http.writeRequests(requests, poster, streaming());
         if (ps.checkError()) {
             String proxyHost = http.getProxyHostUsed();
             int proxyPort = http.getProxyPortUsed();
@@ -1034,15 +1153,21 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             // we only want to capture the user defined Cookies once, as
             // they cannot be changed by user code after we are connected,
             // only internally.
-            if (setUserCookies) {
-                int k = requests.getKey("Cookie");
-                if ( k != -1)
-                    userCookies = requests.getValue(k);
-                setUserCookies = false;
+            synchronized (this) {
+                if (setUserCookies) {
+                    int k = requests.getKey("Cookie");
+                    if (k != -1)
+                        userCookies = requests.getValue(k);
+                    k = requests.getKey("Cookie2");
+                    if (k != -1)
+                        userCookies2 = requests.getValue(k);
+                    setUserCookies = false;
+                }
             }
 
             // remove old Cookie header before setting new one.
             requests.remove("Cookie");
+            requests.remove("Cookie2");
 
             URI uri = ParseUtil.toURI(url);
             if (uri != null) {
@@ -1087,6 +1212,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     requests.set("Cookie", requests.getValue(k) + ";" + userCookies);
                 else
                     requests.set("Cookie", userCookies);
+            }
+            if (userCookies2 != null) {
+                int k;
+                if ((k = requests.getKey("Cookie2")) != -1)
+                    requests.set("Cookie2", requests.getValue(k) + ";" + userCookies2);
+                else
+                    requests.set("Cookie2", userCookies2);
             }
 
         } // end of getting cookies
@@ -2530,8 +2662,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (key == null)
             throw new NullPointerException ("key is null");
 
-        checkMessageHeader(key, value);
-        requests.set(key, value);
+        if (isExternalMessageHeaderAllowed(key, value)) {
+            requests.set(key, value);
+        }
     }
 
     /**
@@ -2552,8 +2685,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (key == null)
             throw new NullPointerException ("key is null");
 
-        checkMessageHeader(key, value);
-        requests.add(key, value);
+        if (isExternalMessageHeaderAllowed(key, value)) {
+            requests.add(key, value);
+        }
     }
 
     //
@@ -2566,13 +2700,23 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     @Override
-    public String getRequestProperty (String key) {
+    public synchronized String getRequestProperty (String key) {
+        if (key == null) {
+            return null;
+        }
+
         // don't return headers containing security sensitive information
-        if (key != null) {
-            for (int i=0; i < EXCLUDE_HEADERS.length; i++) {
-                if (key.equalsIgnoreCase(EXCLUDE_HEADERS[i])) {
-                    return null;
-                }
+        for (int i=0; i < EXCLUDE_HEADERS.length; i++) {
+            if (key.equalsIgnoreCase(EXCLUDE_HEADERS[i])) {
+                return null;
+            }
+        }
+        if (!setUserCookies) {
+            if (key.equalsIgnoreCase("Cookie")) {
+                return userCookies;
+            }
+            if (key.equalsIgnoreCase("Cookie2")) {
+                return userCookies2;
             }
         }
         return requests.findValue(key);
@@ -2591,12 +2735,29 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @since 1.4
      */
     @Override
-    public Map<String, List<String>> getRequestProperties() {
+    public synchronized Map<String, List<String>> getRequestProperties() {
         if (connected)
             throw new IllegalStateException("Already connected");
 
         // exclude headers containing security-sensitive info
-        return requests.getHeaders(EXCLUDE_HEADERS);
+        if (setUserCookies) {
+            return requests.getHeaders(EXCLUDE_HEADERS);
+        }
+        /*
+         * The cookies in the requests message headers may have
+         * been modified. Use the saved user cookies instead.
+         */
+        Map userCookiesMap = null;
+        if (userCookies != null || userCookies2 != null) {
+            userCookiesMap = new HashMap();
+            if (userCookies != null) {
+                userCookiesMap.put("Cookie", userCookies);
+            }
+            if (userCookies2 != null) {
+                userCookiesMap.put("Cookie2", userCookies2);
+            }
+        }
+        return requests.filterAndAddHeaders(EXCLUDE_HEADERS2, userCookiesMap);
     }
 
     @Override
@@ -2823,6 +2984,38 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 throw ioex;
             }
+        }
+
+        /* skip() calls read() in order to ensure that entire response gets
+         * cached. same implementation as InputStream.skip */
+
+        private byte[] skipBuffer;
+        private static final int SKIP_BUFFER_SIZE = 8096;
+
+        @Override
+        public long skip (long n) throws IOException {
+
+            long remaining = n;
+            int nr;
+            if (skipBuffer == null)
+                skipBuffer = new byte[SKIP_BUFFER_SIZE];
+
+            byte[] localSkipBuffer = skipBuffer;
+
+            if (n <= 0) {
+                return 0;
+            }
+
+            while (remaining > 0) {
+                nr = read(localSkipBuffer, 0,
+                          (int) Math.min(SKIP_BUFFER_SIZE, remaining));
+                if (nr < 0) {
+                    break;
+                }
+                remaining -= nr;
+            }
+
+            return n - remaining;
         }
 
         @Override

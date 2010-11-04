@@ -906,7 +906,8 @@ bool LibraryCallKit::inline_string_equals() {
   const int count_offset = java_lang_String::count_offset_in_bytes();
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
-  _sp += 2;
+  int nargs = 2;
+  _sp += nargs;
   Node* argument = pop();  // pop non-receiver first:  it was pushed second
   Node* receiver = pop();
 
@@ -914,11 +915,11 @@ bool LibraryCallKit::inline_string_equals() {
   // null check technically happens in the wrong place, which can lead to
   // invalid stack traces when string compare is inlined into a method
   // which handles NullPointerExceptions.
-  _sp += 2;
+  _sp += nargs;
   receiver = do_null_check(receiver, T_OBJECT);
   //should not do null check for argument for String.equals(), because spec
   //allows to specify NULL as argument.
-  _sp -= 2;
+  _sp -= nargs;
 
   if (stopped()) {
     return true;
@@ -943,7 +944,9 @@ bool LibraryCallKit::inline_string_equals() {
   ciInstanceKlass* klass = env()->String_klass();
 
   if (!stopped()) {
+    _sp += nargs;          // gen_instanceof might do an uncommon trap
     Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
+    _sp -= nargs;
     Node* cmp  = _gvn.transform(new (C, 3) CmpINode(inst, intcon(1)));
     Node* bol  = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::ne));
 
@@ -2935,7 +2938,9 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_isInstance:
     // nothing is an instance of a primitive type
+    _sp += nargs;          // gen_instanceof might do an uncommon trap
     query_value = gen_instanceof(obj, kls);
+    _sp -= nargs;
     break;
 
   case vmIntrinsics::_getModifiers:
@@ -4756,7 +4761,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       Node* cv = generate_checkcast_arraycopy(adr_type,
                                               dest_elem_klass,
                                               src, src_offset, dest, dest_offset,
-                                              copy_length);
+                                              ConvI2X(copy_length));
       if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
       checked_control = control();
       checked_i_o     = i_o();
@@ -4957,8 +4962,7 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr,
       for (DUIterator_Fast jmax, j = not_ctl->fast_outs(jmax); j < jmax; j++) {
         Node* obs = not_ctl->fast_out(j);
         if (obs->in(0) == not_ctl && obs->is_Call() &&
-            (obs->as_Call()->entry_point() ==
-             SharedRuntime::uncommon_trap_blob()->instructions_begin())) {
+            (obs->as_Call()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
           found_trap = true; break;
         }
       }
@@ -5202,7 +5206,7 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
   int sco_offset = Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc);
   Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
   Node* n3 = new(C, 3) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr());
-  Node* check_offset = _gvn.transform(n3);
+  Node* check_offset = ConvI2X(_gvn.transform(n3));
   Node* check_value  = dest_elem_klass;
 
   Node* src_start  = array_element_address(src,  src_offset,  T_OBJECT);

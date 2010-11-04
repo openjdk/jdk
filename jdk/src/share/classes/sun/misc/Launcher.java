@@ -47,7 +47,6 @@ import java.security.Permissions;
 import java.security.Permission;
 import java.security.ProtectionDomain;
 import java.security.CodeSource;
-import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 import sun.net.www.ParseUtil;
 
@@ -57,6 +56,8 @@ Launcher */
 public class Launcher {
     private static URLStreamHandlerFactory factory = new Factory();
     private static Launcher launcher = new Launcher();
+    private static String bootClassPath =
+        System.getProperty("sun.boot.class.path");
 
     public static Launcher getLauncher() {
         return launcher;
@@ -227,7 +228,8 @@ public class Launcher {
                 File dir = new File(urls[i].getPath()).getParentFile();
                 if (dir != null && !dir.equals(prevDir)) {
                     // Look in architecture-specific subdirectory first
-                    String arch = System.getProperty("os.arch");
+                    // Read from the saved system properties to avoid deadlock
+                    String arch = VM.getSavedProperty("os.arch");
                     if (arch != null) {
                         File file = new File(new File(dir, arch), name);
                         if (file.exists()) {
@@ -377,19 +379,15 @@ public class Launcher {
         }
     }
 
-    private static URLClassPath bootstrapClassPath;
-
-    public static synchronized URLClassPath getBootstrapClassPath() {
-        if (bootstrapClassPath == null) {
-            String prop = AccessController.doPrivileged(
-                new GetPropertyAction("sun.boot.class.path"));
+    private static class BootClassPathHolder {
+        static final URLClassPath bcp;
+        static {
             URL[] urls;
-            if (prop != null) {
-                final String path = prop;
+            if (bootClassPath != null) {
                 urls = AccessController.doPrivileged(
                     new PrivilegedAction<URL[]>() {
                         public URL[] run() {
-                            File[] classPath = getClassPath(path);
+                            File[] classPath = getClassPath(bootClassPath);
                             int len = classPath.length;
                             Set<File> seenDirs = new HashSet<File>();
                             for (int i = 0; i < len; i++) {
@@ -410,25 +408,16 @@ public class Launcher {
             } else {
                 urls = new URL[0];
             }
-
-            bootstrapClassPath = new URLClassPath(urls, factory);
-            final File[] additionalBootStrapPaths =
-                BootClassLoaderHook.getBootstrapPaths();
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    for (int i=0; i<additionalBootStrapPaths.length; i++) {
-                        bootstrapClassPath.addURL(
-                            getFileURL(additionalBootStrapPaths[i]));
-                    }
-                    return null;
-                }
-            });
+            bcp = new URLClassPath(urls, factory);
         }
-        return bootstrapClassPath;
     }
 
-    public static synchronized void flushBootstrapClassPath() {
-        bootstrapClassPath = null;
+    public static URLClassPath getBootstrapClassPath() {
+        URLClassPath bcp = BootClassPathHolder.bcp;
+        // if DownloadManager is installed, return the bootstrap class path
+        // maintained by the Java kernel
+        BootClassLoaderHook hook = BootClassLoaderHook.getHook();
+        return hook == null ? bcp : hook.getBootstrapClassPath(bcp, factory);
     }
 
     private static URL[] pathToURLs(File[] path) {

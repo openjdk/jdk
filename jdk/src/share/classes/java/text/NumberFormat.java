@@ -381,7 +381,7 @@ public abstract class NumberFormat extends Format  {
      * {@link #getNumberInstance() getNumberInstance()}.
      */
     public final static NumberFormat getInstance() {
-        return getInstance(Locale.getDefault(), NUMBERSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
     }
 
     /**
@@ -397,7 +397,7 @@ public abstract class NumberFormat extends Format  {
      * Returns a general-purpose number format for the current default locale.
      */
     public final static NumberFormat getNumberInstance() {
-        return getInstance(Locale.getDefault(), NUMBERSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
     }
 
     /**
@@ -420,7 +420,7 @@ public abstract class NumberFormat extends Format  {
      * @since 1.4
      */
     public final static NumberFormat getIntegerInstance() {
-        return getInstance(Locale.getDefault(), INTEGERSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), INTEGERSTYLE);
     }
 
     /**
@@ -443,7 +443,7 @@ public abstract class NumberFormat extends Format  {
      * Returns a currency format for the current default locale.
      */
     public final static NumberFormat getCurrencyInstance() {
-        return getInstance(Locale.getDefault(), CURRENCYSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), CURRENCYSTYLE);
     }
 
     /**
@@ -457,7 +457,7 @@ public abstract class NumberFormat extends Format  {
      * Returns a percentage format for the current default locale.
      */
     public final static NumberFormat getPercentInstance() {
-        return getInstance(Locale.getDefault(), PERCENTSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), PERCENTSTYLE);
     }
 
     /**
@@ -471,7 +471,7 @@ public abstract class NumberFormat extends Format  {
      * Returns a scientific format for the current default locale.
      */
     /*public*/ final static NumberFormat getScientificInstance() {
-        return getInstance(Locale.getDefault(), SCIENTIFICSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), SCIENTIFICSTYLE);
     }
 
     /**

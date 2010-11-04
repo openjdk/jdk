@@ -1068,15 +1068,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
       break;
 
-#ifdef TIERED
     case counter_overflow_id:
       {
-        Register bci = rax;
+        Register bci = rax, method = rbx;
         __ enter();
-        OopMap* map = save_live_registers(sasm, 2);
+        OopMap* map = save_live_registers(sasm, 3);
         // Retrieve bci
         __ movl(bci, Address(rbp, 2*BytesPerWord));
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, counter_overflow), bci);
+        // And a pointer to the methodOop
+        __ movptr(method, Address(rbp, 3*BytesPerWord));
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, counter_overflow), bci, method);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm);
@@ -1084,7 +1085,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ ret(0);
       }
       break;
-#endif // TIERED
 
     case new_type_array_id:
     case new_object_array_id:

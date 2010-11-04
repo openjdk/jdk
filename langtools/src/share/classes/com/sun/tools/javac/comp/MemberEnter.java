@@ -67,6 +67,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Check chk;
     private final Attr attr;
     private final Symtab syms;
+    private final Scope.ScopeCounter scopeCounter;
     private final TreeMaker make;
     private final ClassReader reader;
     private final Todo todo;
@@ -92,6 +93,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         chk = Check.instance(context);
         attr = Attr.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         make = TreeMaker.instance(context);
         reader = ClassReader.instance(context);
         todo = Todo.instance(context);
@@ -100,7 +102,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         diags = JCDiagnostic.Factory.instance(context);
         target = Target.instance(context);
         Options options = Options.instance(context);
-        skipAnnotations = options.get("skipAnnotations") != null;
+        skipAnnotations = options.isSet("skipAnnotations");
     }
 
     /** A queue for classes whose members still need to be entered into the
@@ -666,9 +668,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     public void visitTree(JCTree tree) {
     }
 
-
     public void visitErroneous(JCErroneous tree) {
-        memberEnter(tree.errs, env);
+        if (tree.errs != null)
+            memberEnter(tree.errs, env);
     }
 
     public Env<AttrContext> getMethodEnv(JCMethodDecl tree, Env<AttrContext> env) {
@@ -769,9 +771,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 && types.isSameType(c.type, syms.deprecatedType))
                 s.flags_field |= Flags.DEPRECATED;
             // Internally to java.dyn, a @PolymorphicSignature annotation
-            // translates to a classfile attribute.
-            if (!c.type.isErroneous()
-                && types.isSameType(c.type, syms.polymorphicSignatureType)) {
+            // acts like a classfile attribute.
+            if (!c.type.isErroneous() &&
+                    types.isSameType(c.type, syms.polymorphicSignatureType)) {
+                if (!target.hasMethodHandles()) {
+                    // Somebody is compiling JDK7 source code to a JDK6 target.
+                    // Make it a strict warning, since it is unlikely but important.
+                    log.strictWarning(env.tree.pos(),
+                            "wrong.target.for.polymorphic.signature.definition",
+                            target.name);
+                }
+                // Pull the flag through for better diagnostics, even on a bad target.
                 s.flags_field |= Flags.POLYMORPHIC_SIGNATURE;
             }
             if (!annotated.add(a.type.tsym))
@@ -917,7 +927,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 tp.accept(new TypeAnnotate(baseEnv));
             tree.accept(new TypeAnnotate(env));
 
-            chk.checkNonCyclic(tree.pos(), c.type);
+            chk.checkNonCyclicDecl(tree);
 
             attr.attribTypeVariables(tree.typarams, baseEnv);
 
@@ -1079,14 +1089,21 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
 
     private Env<AttrContext> baseEnv(JCClassDecl tree, Env<AttrContext> env) {
-        Scope typaramScope = new Scope(tree.sym);
+        Scope baseScope = new Scope.ClassScope(tree.sym, scopeCounter);
+        //import already entered local classes into base scope
+        for (Scope.Entry e = env.outer.info.scope.elems ; e != null ; e = e.sibling) {
+            if (e.sym.isLocal()) {
+                baseScope.enter(e.sym);
+            }
+        }
+        //import current type-parameters into base scope
         if (tree.typarams != null)
             for (List<JCTypeParameter> typarams = tree.typarams;
                  typarams.nonEmpty();
                  typarams = typarams.tail)
-                typaramScope.enter(typarams.head.type.tsym);
+                baseScope.enter(typarams.head.type.tsym);
         Env<AttrContext> outer = env.outer; // the base clause can't see members of this class
-        Env<AttrContext> localEnv = outer.dup(tree, outer.info.dup(typaramScope));
+        Env<AttrContext> localEnv = outer.dup(tree, outer.info.dup(baseScope));
         localEnv.baseClause = true;
         localEnv.outer = outer;
         localEnv.info.isSelfCall = false;

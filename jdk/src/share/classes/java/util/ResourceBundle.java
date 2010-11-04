@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,16 +56,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 
+import sun.util.locale.BaseLocale;
+import sun.util.locale.LocaleExtensions;
+import sun.util.locale.LocaleObjectCache;
+
 
 /**
  *
- * Resource bundles contain locale-specific objects.
- * When your program needs a locale-specific resource,
- * a <code>String</code> for example, your program can load it
- * from the resource bundle that is appropriate for the
- * current user's locale. In this way, you can write
- * program code that is largely independent of the user's
- * locale isolating most, if not all, of the locale-specific
+ * Resource bundles contain locale-specific objects.  When your program needs a
+ * locale-specific resource, a <code>String</code> for example, your program can
+ * load it from the resource bundle that is appropriate for the current user's
+ * locale. In this way, you can write program code that is largely independent
+ * of the user's locale isolating most, if not all, of the locale-specific
  * information in resource bundles.
  *
  * <p>
@@ -289,16 +291,6 @@ public abstract class ResourceBundle {
      */
     private static final ConcurrentMap<CacheKey, BundleReference> cacheList
         = new ConcurrentHashMap<CacheKey, BundleReference>(INITIAL_CACHE_SIZE);
-
-    /**
-     * This ConcurrentMap is used to keep multiple threads from loading the
-     * same bundle concurrently.  The table entries are <CacheKey, Thread>
-     * where CacheKey is the key for the bundle that is under construction
-     * and Thread is the thread that is constructing the bundle.
-     * This list is manipulated in findBundleInCache and putBundleInCache.
-     */
-    private static final ConcurrentMap<CacheKey, Thread> underConstruction
-        = new ConcurrentHashMap<CacheKey, Thread>();
 
     /**
      * Queue for reference objects referring to class loaders or bundles.
@@ -854,87 +846,140 @@ public abstract class ResourceBundle {
     }
 
     /**
-     * Gets a resource bundle using the specified base name, locale, and class loader.
+     * Gets a resource bundle using the specified base name, locale, and class
+     * loader.
      *
-     * <p><a name="default_behavior"/>
-     * Conceptually, <code>getBundle</code> uses the following strategy for locating and instantiating
-     * resource bundles:
-     * <p>
-     * <code>getBundle</code> uses the base name, the specified locale, and the default
-     * locale (obtained from {@link java.util.Locale#getDefault() Locale.getDefault})
-     * to generate a sequence of <a name="candidates"><em>candidate bundle names</em></a>.
-     * If the specified locale's language, country, and variant are all empty
-     * strings, then the base name is the only candidate bundle name.
-     * Otherwise, the following sequence is generated from the attribute
-     * values of the specified locale (language1, country1, and variant1)
-     * and of the default locale (language2, country2, and variant2):
-     * <ul>
-     * <li> baseName + "_" + language1 + "_" + country1 + "_" + variant1
-     * <li> baseName + "_" + language1 + "_" + country1
-     * <li> baseName + "_" + language1
-     * <li> baseName + "_" + language2 + "_" + country2 + "_" + variant2
-     * <li> baseName + "_" + language2 + "_" + country2
-     * <li> baseName + "_" + language2
-     * <li> baseName
-     * </ul>
-     * <p>
-     * Candidate bundle names where the final component is an empty string are omitted.
-     * For example, if country1 is an empty string, the second candidate bundle name is omitted.
+     * <p><a name="default_behavior"/>This method behaves the same as calling
+     * {@link #getBundle(String, Locale, ClassLoader, Control)} passing a
+     * default instance of {@link Control}. The following describes this behavior.
      *
-     * <p>
-     * <code>getBundle</code> then iterates over the candidate bundle names to find the first
-     * one for which it can <em>instantiate</em> an actual resource bundle. For each candidate
-     * bundle name, it attempts to create a resource bundle:
-     * <ul>
-     * <li>
-     * First, it attempts to load a class using the candidate bundle name.
-     * If such a class can be found and loaded using the specified class loader, is assignment
-     * compatible with ResourceBundle, is accessible from ResourceBundle, and can be instantiated,
-     * <code>getBundle</code> creates a new instance of this class and uses it as the <em>result
-     * resource bundle</em>.
-     * <li>
-     * Otherwise, <code>getBundle</code> attempts to locate a property resource file.
-     * It generates a path name from the candidate bundle name by replacing all "." characters
-     * with "/" and appending the string ".properties".
-     * It attempts to find a "resource" with this name using
-     * {@link java.lang.ClassLoader#getResource(java.lang.String) ClassLoader.getResource}.
-     * (Note that a "resource" in the sense of <code>getResource</code> has nothing to do with
-     * the contents of a resource bundle, it is just a container of data, such as a file.)
-     * If it finds a "resource", it attempts to create a new
-     * {@link PropertyResourceBundle} instance from its contents.
-     * If successful, this instance becomes the <em>result resource bundle</em>.
-     * </ul>
+     * <p><code>getBundle</code> uses the base name, the specified locale, and
+     * the default locale (obtained from {@link java.util.Locale#getDefault()
+     * Locale.getDefault}) to generate a sequence of <a
+     * name="candidates"><em>candidate bundle names</em></a>.  If the specified
+     * locale's language, script, country, and variant are all empty strings,
+     * then the base name is the only candidate bundle name.  Otherwise, a list
+     * of candidate locales is generated from the attribute values of the
+     * specified locale (language, script, country and variant) and appended to
+     * the base name.  Typically, this will look like the following:
      *
-     * <p>
-     * If no result resource bundle has been found, a <code>MissingResourceException</code>
-     * is thrown.
+     * <pre>
+     *     baseName + "_" + language + "_" + script + "_" + country + "_" + variant
+     *     baseName + "_" + language + "_" + script + "_" + country
+     *     baseName + "_" + language + "_" + script
+     *     baseName + "_" + language + "_" + country + "_" + variant
+     *     baseName + "_" + language + "_" + country
+     *     baseName + "_" + language
+     * </pre>
      *
-     * <p><a name="parent_chain"/>
-     * Once a result resource bundle has been found, its <em>parent chain</em> is instantiated.
-     * <code>getBundle</code> iterates over the candidate bundle names that can be
-     * obtained by successively removing variant, country, and language
-     * (each time with the preceding "_") from the bundle name of the result resource bundle.
-     * As above, candidate bundle names where the final component is an empty string are omitted.
-     * With each of the candidate bundle names it attempts to instantiate a resource bundle, as
-     * described above.
-     * Whenever it succeeds, it calls the previously instantiated resource
+     * <p>Candidate bundle names where the final component is an empty string
+     * are omitted, along with the underscore.  For example, if country is an
+     * empty string, the second and the fifth candidate bundle names above
+     * would be omitted.  Also, if script is an empty string, the candidate names
+     * including script are omitted.  For example, a locale with language "de"
+     * and variant "JAVA" will produce candidate names with base name
+     * "MyResource" below.
+     *
+     * <pre>
+     *     MyResource_de__JAVA
+     *     MyResource_de
+     * </pre>
+     *
+     * In the case that the variant contains one or more underscores ('_'), a
+     * sequence of bundle names generated by truncating the last underscore and
+     * the part following it is inserted after a candidate bundle name with the
+     * original variant.  For example, for a locale with language "en", script
+     * "Latn, country "US" and variant "WINDOWS_VISTA", and bundle base name
+     * "MyResource", the list of candidate bundle names below is generated:
+     *
+     * <pre>
+     * MyResource_en_Latn_US_WINDOWS_VISTA
+     * MyResource_en_Latn_US_WINDOWS
+     * MyResource_en_Latn_US
+     * MyResource_en_Latn
+     * MyResource_en_US_WINDOWS_VISTA
+     * MyResource_en_US_WINDOWS
+     * MyResource_en_US
+     * MyResource_en
+     * </pre>
+     *
+     * <blockquote><b>Note:</b> For some <code>Locale</code>s, the list of
+     * candidate bundle names contains extra names, or the order of bundle names
+     * is slightly modified.  See the description of the default implementation
+     * of {@link Control#getCandidateLocales(String, Locale)
+     * getCandidateLocales} for details.</blockquote>
+     *
+     * <p><code>getBundle</code> then iterates over the candidate bundle names
+     * to find the first one for which it can <em>instantiate</em> an actual
+     * resource bundle. It uses the default controls' {@link Control#getFormats
+     * getFormats} method, which generates two bundle names for each generated
+     * name, the first a class name and the second a properties file name. For
+     * each candidate bundle name, it attempts to create a resource bundle:
+     *
+     * <ul><li>First, it attempts to load a class using the generated class name.
+     * If such a class can be found and loaded using the specified class
+     * loader, is assignment compatible with ResourceBundle, is accessible from
+     * ResourceBundle, and can be instantiated, <code>getBundle</code> creates a
+     * new instance of this class and uses it as the <em>result resource
+     * bundle</em>.
+     *
+     * <li>Otherwise, <code>getBundle</code> attempts to locate a property
+     * resource file using the generated properties file name.  It generates a
+     * path name from the candidate bundle name by replacing all "." characters
+     * with "/" and appending the string ".properties".  It attempts to find a
+     * "resource" with this name using {@link
+     * java.lang.ClassLoader#getResource(java.lang.String)
+     * ClassLoader.getResource}.  (Note that a "resource" in the sense of
+     * <code>getResource</code> has nothing to do with the contents of a
+     * resource bundle, it is just a container of data, such as a file.)  If it
+     * finds a "resource", it attempts to create a new {@link
+     * PropertyResourceBundle} instance from its contents.  If successful, this
+     * instance becomes the <em>result resource bundle</em>.  </ul>
+     *
+     * <p>This continues until a result resource bundle is instantiated or the
+     * list of candidate bundle names is exhausted.  If no matching resource
+     * bundle is found, the default control's {@link Control#getFallbackLocale
+     * getFallbackLocale} method is called, which returns the current default
+     * locale.  A new sequence of candidate locale names is generated using this
+     * locale and and searched again, as above.
+     *
+     * <p>If still no result bundle is found, the base name alone is looked up. If
+     * this still fails, a <code>MissingResourceException</code> is thrown.
+     *
+     * <p><a name="parent_chain"/> Once a result resource bundle has been found,
+     * its <em>parent chain</em> is instantiated.  If the result bundle already
+     * has a parent (perhaps because it was returned from a cache) the chain is
+     * complete.
+     *
+     * <p>Otherwise, <code>getBundle</code> examines the remainder of the
+     * candidate locale list that was used during the pass that generated the
+     * result resource bundle.  (As before, candidate bundle names where the
+     * final component is an empty string are omitted.)  When it comes to the
+     * end of the candidate list, it tries the plain bundle name.  With each of the
+     * candidate bundle names it attempts to instantiate a resource bundle (first
+     * looking for a class and then a properties file, as described above).
+     *
+     * <p>Whenever it succeeds, it calls the previously instantiated resource
      * bundle's {@link #setParent(java.util.ResourceBundle) setParent} method
-     * with the new resource bundle, unless the previously instantiated resource
-     * bundle already has a non-null parent.
+     * with the new resource bundle.  This continues until the list of names
+     * is exhausted or the current bundle already has a non-null parent.
      *
-     * <p>
-     * <code>getBundle</code> caches instantiated resource bundles and
-     * may return the same resource bundle instance multiple
-     * times.
+     * <p>Once the parent chain is complete, the bundle is returned.
      *
-     * <p>
-     * The <code>baseName</code> argument should be a fully qualified class name. However, for
-     * compatibility with earlier versions, Sun's Java SE Runtime Environments do not verify this,
-     * and so it is possible to access <code>PropertyResourceBundle</code>s by specifying a
-     * path name (using "/") instead of a fully qualified class name (using ".").
+     * <p><b>Note:</b> <code>getBundle</code> caches instantiated resource
+     * bundles and might return the same resource bundle instance multiple times.
+     *
+     * <p><b>Note:</b>The <code>baseName</code> argument should be a fully
+     * qualified class name. However, for compatibility with earlier versions,
+     * Sun's Java SE Runtime Environments do not verify this, and so it is
+     * possible to access <code>PropertyResourceBundle</code>s by specifying a
+     * path name (using "/") instead of a fully qualified class name (using
+     * ".").
      *
      * <p><a name="default_behavior_example"/>
-     * <strong>Example:</strong><br>The following class and property files are provided:
+     * <strong>Example:</strong>
+     * <p>
+     * The following class and property files are provided:
      * <pre>
      *     MyResources.class
      *     MyResources.properties
@@ -944,22 +989,26 @@ public abstract class ResourceBundle {
      *     MyResources_en.properties
      *     MyResources_es_ES.class
      * </pre>
-     * The contents of all files are valid (that is, public non-abstract subclasses of <code>ResourceBundle</code> for
-     * the ".class" files, syntactically correct ".properties" files).
-     * The default locale is <code>Locale("en", "GB")</code>.
-     * <p>
-     * Calling <code>getBundle</code> with the shown locale argument values instantiates
-     * resource bundles from the following sources:
-     * <ul>
-     * <li>Locale("fr", "CH"): result MyResources_fr_CH.class, parent MyResources_fr.properties, parent MyResources.class
-     * <li>Locale("fr", "FR"): result MyResources_fr.properties, parent MyResources.class
-     * <li>Locale("de", "DE"): result MyResources_en.properties, parent MyResources.class
-     * <li>Locale("en", "US"): result MyResources_en.properties, parent MyResources.class
-     * <li>Locale("es", "ES"): result MyResources_es_ES.class, parent MyResources.class
-     * </ul>
-     * <p>The file MyResources_fr_CH.properties is never used because it is hidden by
-     * MyResources_fr_CH.class. Likewise, MyResources.properties is also hidden by
-     * MyResources.class.
+     *
+     * The contents of all files are valid (that is, public non-abstract
+     * subclasses of <code>ResourceBundle</code> for the ".class" files,
+     * syntactically correct ".properties" files).  The default locale is
+     * <code>Locale("en", "GB")</code>.
+     *
+     * <p>Calling <code>getBundle</code> with the locale arguments below will
+     * instantiate resource bundles as follows:
+     *
+     * <table>
+     * <tr><td>Locale("fr", "CH")</td><td>MyResources_fr_CH.class, parent MyResources_fr.properties, parent MyResources.class</td></tr>
+     * <tr><td>Locale("fr", "FR")</td><td>MyResources_fr.properties, parent MyResources.class</td></tr>
+     * <tr><td>Locale("de", "DE")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
+     * <tr><td>Locale("en", "US")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
+     * <tr><td>Locale("es", "ES")</td><td>MyResources_es_ES.class, parent MyResources.class</td></tr>
+     * </table>
+     *
+     * <p>The file MyResources_fr_CH.properties is never used because it is
+     * hidden by the MyResources_fr_CH.class. Likewise, MyResources.properties
+     * is also hidden by MyResources.class.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @param locale the locale for which a resource bundle is desired
@@ -1095,8 +1144,6 @@ public abstract class ResourceBundle {
      * href="./ResourceBundle.html#parent_chain">parent chain</a> is
      * instantiated based on the list of candidate locales from which it was
      * found. Finally, the bundle is returned to the caller.</li>
-     *
-     *
      * </ol>
      *
      * <p>During the resource bundle loading process above, this factory
@@ -1119,7 +1166,6 @@ public abstract class ResourceBundle {
      * {@link Control#getTimeToLive(String,Locale)
      * control.getTimeToLive} for details.
      *
-     *
      * <p>The following is an example of the bundle loading process with the
      * default <code>ResourceBundle.Control</code> implementation.
      *
@@ -1131,7 +1177,6 @@ public abstract class ResourceBundle {
      * <li>Available resource bundles:
      * <code>foo/bar/Messages_fr.properties</code> and
      * <code>foo/bar/Messages.properties</code></li>
-     *
      * </ul>
      *
      * <p>First, <code>getBundle</code> tries loading a resource bundle in
@@ -1326,7 +1371,7 @@ public abstract class ResourceBundle {
         boolean expiredBundle = false;
 
         // First, look up the cache to see if it's in the cache, without
-        // declaring beginLoading.
+        // attempting to load bundle.
         cacheKey.setLocale(targetLocale);
         ResourceBundle bundle = findBundleInCache(cacheKey, control);
         if (isValidBundle(bundle)) {
@@ -1353,56 +1398,25 @@ public abstract class ResourceBundle {
             CacheKey constKey = (CacheKey) cacheKey.clone();
 
             try {
-                // Try declaring loading. If beginLoading() returns true,
-                // then we can proceed. Otherwise, we need to take a look
-                // at the cache again to see if someone else has loaded
-                // the bundle and put it in the cache while we've been
-                // waiting for other loading work to complete.
-                while (!beginLoading(constKey)) {
-                    bundle = findBundleInCache(cacheKey, control);
-                    if (bundle == null) {
-                        continue;
+                bundle = loadBundle(cacheKey, formats, control, expiredBundle);
+                if (bundle != null) {
+                    if (bundle.parent == null) {
+                        bundle.setParent(parent);
                     }
-                    if (bundle == NONEXISTENT_BUNDLE) {
-                        // If the bundle is NONEXISTENT_BUNDLE, the bundle doesn't exist.
-                        return parent;
-                    }
-                    expiredBundle = bundle.expired;
-                    if (!expiredBundle) {
-                        if (bundle.parent == parent) {
-                            return bundle;
-                        }
-                        BundleReference bundleRef = cacheList.get(cacheKey);
-                        if (bundleRef != null && bundleRef.get() == bundle) {
-                            cacheList.remove(cacheKey, bundleRef);
-                        }
-                    }
+                    bundle.locale = targetLocale;
+                    bundle = putBundleInCache(cacheKey, bundle, control);
+                    return bundle;
                 }
 
-                try {
-                    bundle = loadBundle(cacheKey, formats, control, expiredBundle);
-                    if (bundle != null) {
-                        if (bundle.parent == null) {
-                            bundle.setParent(parent);
-                        }
-                        bundle.locale = targetLocale;
-                        bundle = putBundleInCache(cacheKey, bundle, control);
-                        return bundle;
-                    }
-
-                    // Put NONEXISTENT_BUNDLE in the cache as a mark that there's no bundle
-                    // instance for the locale.
-                    putBundleInCache(cacheKey, NONEXISTENT_BUNDLE, control);
-                } finally {
-                    endLoading(constKey);
-                }
+                // Put NONEXISTENT_BUNDLE in the cache as a mark that there's no bundle
+                // instance for the locale.
+                putBundleInCache(cacheKey, NONEXISTENT_BUNDLE, control);
             } finally {
                 if (constKey.getCause() instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
             }
         }
-        assert underConstruction.get(cacheKey) != Thread.currentThread();
         return parent;
     }
 
@@ -1410,7 +1424,6 @@ public abstract class ResourceBundle {
                                                    List<String> formats,
                                                    Control control,
                                                    boolean reload) {
-        assert underConstruction.get(cacheKey) == Thread.currentThread();
 
         // Here we actually load the bundle in the order of formats
         // specified by the getFormats() value.
@@ -1443,7 +1456,6 @@ public abstract class ResourceBundle {
                 break;
             }
         }
-        assert underConstruction.get(cacheKey) == Thread.currentThread();
 
         return bundle;
     }
@@ -1472,57 +1484,6 @@ public abstract class ResourceBundle {
             bundle = bundle.parent;
         }
         return true;
-    }
-
-    /**
-     * Declares the beginning of actual resource bundle loading. This method
-     * returns true if the declaration is successful and the current thread has
-     * been put in underConstruction. If someone else has already begun
-     * loading, this method waits until that loading work is complete and
-     * returns false.
-     */
-    private static final boolean beginLoading(CacheKey constKey) {
-        Thread me = Thread.currentThread();
-        Thread worker;
-        // We need to declare by putting the current Thread (me) to
-        // underConstruction that we are working on loading the specified
-        // resource bundle. If we are already working the loading, it means
-        // that the resource loading requires a recursive call. In that case,
-        // we have to proceed. (4300693)
-        if (((worker = underConstruction.putIfAbsent(constKey, me)) == null)
-            || worker == me) {
-            return true;
-        }
-
-        // If someone else is working on the loading, wait until
-        // the Thread finishes the bundle loading.
-        synchronized (worker) {
-            while (underConstruction.get(constKey) == worker) {
-                try {
-                    worker.wait();
-                } catch (InterruptedException e) {
-                    // record the interruption
-                    constKey.setCause(e);
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Declares the end of the bundle loading. This method calls notifyAll
-     * for those who are waiting for this completion.
-     */
-    private static final void endLoading(CacheKey constKey) {
-        // Remove this Thread from the underConstruction map and wake up
-        // those who have been waiting for me to complete this bundle
-        // loading.
-        Thread me = Thread.currentThread();
-        assert (underConstruction.get(constKey) == me);
-        underConstruction.remove(constKey);
-        synchronized (me) {
-            me.notifyAll();
-        }
     }
 
     /**
@@ -1811,8 +1772,8 @@ public abstract class ResourceBundle {
      * handleGetObject} method returns <code>null</code>. Once the
      * <code>Set</code> has been created, the value is kept in this
      * <code>ResourceBundle</code> in order to avoid producing the
-     * same <code>Set</code> in the next calls.  Override this method
-     * in subclass implementations for faster handling.
+     * same <code>Set</code> in subsequent calls. Subclasses can
+     * override this method for faster handling.
      *
      * @return a <code>Set</code> of the keys contained only in this
      *        <code>ResourceBundle</code>
@@ -2177,23 +2138,132 @@ public abstract class ResourceBundle {
          * <code>ResourceBundle.getBundle</code> factory method loads only
          * the base bundle as the resulting resource bundle.
          *
-         * <p>It is not a requirement to return an immutable
-         * (unmodifiable) <code>List</code>. However, the returned
-         * <code>List</code> must not be mutated after it has been
-         * returned by <code>getCandidateLocales</code>.
+         * <p>It is not a requirement to return an immutable (unmodifiable)
+         * <code>List</code>. However, the returned <code>List</code> must not
+         * be mutated after it has been returned by
+         * <code>getCandidateLocales</code>.
          *
          * <p>The default implementation returns a <code>List</code> containing
-         * <code>Locale</code>s in the following sequence:
-         * <pre>
-         *     Locale(language, country, variant)
-         *     Locale(language, country)
-         *     Locale(language)
-         *     Locale.ROOT
-         * </pre>
-         * where <code>language</code>, <code>country</code> and
-         * <code>variant</code> are the language, country and variant values
-         * of the given <code>locale</code>, respectively. Locales where the
+         * <code>Locale</code>s using the rules described below.  In the
+         * description below, <em>L</em>, <em>S</em>, <em>C</em> and <em>V</em>
+         * respectively represent non-empty language, script, country, and
+         * variant.  For example, [<em>L</em>, <em>C</em>] represents a
+         * <code>Locale</code> that has non-empty values only for language and
+         * country.  The form <em>L</em>("xx") represents the (non-empty)
+         * language value is "xx".  For all cases, <code>Locale</code>s whose
          * final component values are empty strings are omitted.
+         *
+         * <ol><li>For an input <code>Locale</code> with an empty script value,
+         * append candidate <code>Locale</code>s by omitting the final component
+         * one by one as below:
+         *
+         * <ul>
+         * <li> [<em>L</em>, <em>C</em>, <em>V</em>]
+         * <li> [<em>L</em>, <em>C</em>]
+         * <li> [<em>L</em>]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * <li>For an input <code>Locale</code> with a non-empty script value,
+         * append candidate <code>Locale</code>s by omitting the final component
+         * up to language, then append candidates generated from the
+         * <code>Locale</code> with country and variant restored:
+         *
+         * <ul>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V</em>]
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>]
+         * <li> [<em>L</em>, <em>S</em>]
+         * <li> [<em>L</em>, <em>C</em>, <em>V</em>]
+         * <li> [<em>L</em>, <em>C</em>]
+         * <li> [<em>L</em>]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * <li>For an input <code>Locale</code> with a variant value consisting
+         * of multiple subtags separated by underscore, generate candidate
+         * <code>Locale</code>s by omitting the variant subtags one by one, then
+         * insert them after every occurence of <code> Locale</code>s with the
+         * full variant value in the original list.  For example, if the
+         * the variant consists of two subtags <em>V1</em> and <em>V2</em>:
+         *
+         * <ul>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V1</em>, <em>V2</em>]
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V1</em>]
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>]
+         * <li> [<em>L</em>, <em>S</em>]
+         * <li> [<em>L</em>, <em>C</em>, <em>V1</em>, <em>V2</em>]
+         * <li> [<em>L</em>, <em>C</em>, <em>V1</em>]
+         * <li> [<em>L</em>, <em>C</em>]
+         * <li> [<em>L</em>]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * <li>Special cases for Chinese.  When an input <code>Locale</code> has the
+         * language "zh" (Chinese) and an empty script value, either "Hans" (Simplified) or
+         * "Hant" (Traditional) might be supplied, depending on the country.
+         * When the country is "CN" (China) or "SG" (Singapore), "Hans" is supplied.
+         * When the country is "HK" (Hong Kong SAR China), "MO" (Macau SAR China),
+         * or "TW" (Taiwan), "Hant" is supplied.  For all other countries or when the country
+         * is empty, no script is supplied.  For example, for <code>Locale("zh", "CN")
+         * </code>, the candidate list will be:
+         * <ul>
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hans"), <em>C</em>("CN")]
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hans")]
+         * <li> [<em>L</em>("zh"), <em>C</em>("CN")]
+         * <li> [<em>L</em>("zh")]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * For <code>Locale("zh", "TW")</code>, the candidate list will be:
+         * <ul>
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hant"), <em>C</em>("TW")]
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hant")]
+         * <li> [<em>L</em>("zh"), <em>C</em>("TW")]
+         * <li> [<em>L</em>("zh")]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * <li>Special cases for Norwegian.  Both <code>Locale("no", "NO",
+         * "NY")</code> and <code>Locale("nn", "NO")</code> represent Norwegian
+         * Nynorsk.  When a locale's language is "nn", the standard candidate
+         * list is generated up to [<em>L</em>("nn")], and then the following
+         * candidates are added:
+         *
+         * <ul><li> [<em>L</em>("no"), <em>C</em>("NO"), <em>V</em>("NY")]
+         * <li> [<em>L</em>("no"), <em>C</em>("NO")]
+         * <li> [<em>L</em>("no")]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * If the locale is exactly <code>Locale("no", "NO", "NY")</code>, it is first
+         * converted to <code>Locale("nn", "NO")</code> and then the above procedure is
+         * followed.
+         *
+         * <p>Also, Java treats the language "no" as a synonym of Norwegian
+         * Bokm&#xE5;l "nb".  Except for the single case <code>Locale("no",
+         * "NO", "NY")</code> (handled above), when an input <code>Locale</code>
+         * has language "no" or "nb", candidate <code>Locale</code>s with
+         * language code "no" and "nb" are interleaved, first using the
+         * requested language, then using its synonym. For example,
+         * <code>Locale("nb", "NO", "POSIX")</code> generates the following
+         * candidate list:
+         *
+         * <ul>
+         * <li> [<em>L</em>("nb"), <em>C</em>("NO"), <em>V</em>("POSIX")]
+         * <li> [<em>L</em>("no"), <em>C</em>("NO"), <em>V</em>("POSIX")]
+         * <li> [<em>L</em>("nb"), <em>C</em>("NO")]
+         * <li> [<em>L</em>("no"), <em>C</em>("NO")]
+         * <li> [<em>L</em>("nb")]
+         * <li> [<em>L</em>("no")]
+         * <li> <code>Locale.ROOT</code>
+         * </ul>
+         *
+         * <code>Locale("no", "NO", "POSIX")</code> would generate the same list
+         * except that locales with "no" would appear before the corresponding
+         * locales with "nb".</li>
+         *
+         * </li>
+         * </ol>
          *
          * <p>The default implementation uses an {@link ArrayList} that
          * overriding implementations may modify before returning it to the
@@ -2231,24 +2301,119 @@ public abstract class ResourceBundle {
             if (baseName == null) {
                 throw new NullPointerException();
             }
-            String language = locale.getLanguage();
-            String country = locale.getCountry();
-            String variant = locale.getVariant();
+            return new ArrayList<Locale>(CANDIDATES_CACHE.get(locale.getBaseLocale()));
+        }
 
-            List<Locale> locales = new ArrayList<Locale>(4);
-            if (variant.length() > 0) {
-                locales.add(locale);
+        private static final CandidateListCache CANDIDATES_CACHE = new CandidateListCache();
+
+        private static class CandidateListCache extends LocaleObjectCache<BaseLocale, List<Locale>> {
+            protected List<Locale> createObject(BaseLocale base) {
+                String language = base.getLanguage();
+                String script = base.getScript();
+                String region = base.getRegion();
+                String variant = base.getVariant();
+
+                // Special handling for Norwegian
+                boolean isNorwegianBokmal = false;
+                boolean isNorwegianNynorsk = false;
+                if (language.equals("no")) {
+                    if (region.equals("NO") && variant.equals("NY")) {
+                        variant = "";
+                        isNorwegianNynorsk = true;
+                    } else {
+                        isNorwegianBokmal = true;
+                    }
+                }
+                if (language.equals("nb") || isNorwegianBokmal) {
+                    List<Locale> tmpList = getDefaultList("nb", script, region, variant);
+                    // Insert a locale replacing "nb" with "no" for every list entry
+                    List<Locale> bokmalList = new LinkedList<Locale>();
+                    for (Locale l : tmpList) {
+                        bokmalList.add(l);
+                        if (l.getLanguage().length() == 0) {
+                            break;
+                        }
+                        bokmalList.add(Locale.getInstance("no", l.getScript(), l.getCountry(),
+                                l.getVariant(), LocaleExtensions.EMPTY_EXTENSIONS));
+                    }
+                    return bokmalList;
+                } else if (language.equals("nn") || isNorwegianNynorsk) {
+                    // Insert no_NO_NY, no_NO, no after nn
+                    List<Locale> nynorskList = getDefaultList("nn", script, region, variant);
+                    int idx = nynorskList.size() - 1;
+                    nynorskList.add(idx++, Locale.getInstance("no", "NO", "NY"));
+                    nynorskList.add(idx++, Locale.getInstance("no", "NO", ""));
+                    nynorskList.add(idx++, Locale.getInstance("no", "", ""));
+                    return nynorskList;
+                }
+                // Special handling for Chinese
+                else if (language.equals("zh")) {
+                    if (script.length() == 0 && region.length() > 0) {
+                        // Supply script for users who want to use zh_Hans/zh_Hant
+                        // as bundle names (recommended for Java7+)
+                        if (region.equals("TW") || region.equals("HK") || region.equals("MO")) {
+                            script = "Hant";
+                        } else if (region.equals("CN") || region.equals("SG")) {
+                            script = "Hans";
+                        }
+                    } else if (script.length() > 0 && region.length() == 0) {
+                        // Supply region(country) for users who still package Chinese
+                        // bundles using old convension.
+                        if (script.equals("Hans")) {
+                            region = "CN";
+                        } else if (script.equals("Hant")) {
+                            region = "TW";
+                        }
+                    }
+                }
+
+                return getDefaultList(language, script, region, variant);
             }
-            if (country.length() > 0) {
-                locales.add((locales.size() == 0) ?
-                            locale : Locale.getInstance(language, country, ""));
+
+            private static List<Locale> getDefaultList(String language, String script, String region, String variant) {
+                List<String> variants = null;
+
+                if (variant.length() > 0) {
+                    variants = new LinkedList<String>();
+                    int idx = variant.length();
+                    while (idx != -1) {
+                        variants.add(variant.substring(0, idx));
+                        idx = variant.lastIndexOf('_', --idx);
+                    }
+                }
+
+                LinkedList<Locale> list = new LinkedList<Locale>();
+
+                if (variants != null) {
+                    for (String v : variants) {
+                        list.add(Locale.getInstance(language, script, region, v, LocaleExtensions.EMPTY_EXTENSIONS));
+                    }
+                }
+                if (region.length() > 0) {
+                    list.add(Locale.getInstance(language, script, region, "", LocaleExtensions.EMPTY_EXTENSIONS));
+                }
+                if (script.length() > 0) {
+                    list.add(Locale.getInstance(language, script, "", "", LocaleExtensions.EMPTY_EXTENSIONS));
+
+                    // With script, after truncating variant, region and script,
+                    // start over without script.
+                    if (variants != null) {
+                        for (String v : variants) {
+                            list.add(Locale.getInstance(language, "", region, v, LocaleExtensions.EMPTY_EXTENSIONS));
+                        }
+                    }
+                    if (region.length() > 0) {
+                        list.add(Locale.getInstance(language, "", region, "", LocaleExtensions.EMPTY_EXTENSIONS));
+                    }
+                }
+                if (language.length() > 0) {
+                    list.add(Locale.getInstance(language, "", "", "", LocaleExtensions.EMPTY_EXTENSIONS));
+                }
+                // Add root locale at the end
+                list.add(Locale.ROOT);
+
+                return list;
             }
-            if (language.length() > 0) {
-                locales.add((locales.size() == 0) ?
-                            locale : Locale.getInstance(language, "", ""));
-            }
-            locales.add(Locale.ROOT);
-            return locales;
         }
 
         /**
@@ -2606,13 +2771,14 @@ public abstract class ResourceBundle {
          *
          * <p>This implementation returns the following value:
          * <pre>
-         *     baseName + "_" + language + "_" + country + "_" + variant
+         *     baseName + "_" + language + "_" + script + "_" + country + "_" + variant
          * </pre>
-         * where <code>language</code>, <code>country</code> and
-         * <code>variant</code> are the language, country and variant values
-         * of <code>locale</code>, respectively. Final component values that
-         * are empty Strings are omitted along with the preceding '_'. If
-         * all of the values are empty strings, then <code>baseName</code>
+         * where <code>language</code>, <code>script</code>, <code>country</code>,
+         * and <code>variant</code> are the language, script, country, and variant
+         * values of <code>locale</code>, respectively. Final component values that
+         * are empty Strings are omitted along with the preceding '_'.  When the
+         * script is empty, the script value is ommitted along with the preceding '_'.
+         * If all of the values are empty strings, then <code>baseName</code>
          * is returned.
          *
          * <p>For example, if <code>baseName</code> is
@@ -2643,6 +2809,7 @@ public abstract class ResourceBundle {
             }
 
             String language = locale.getLanguage();
+            String script = locale.getScript();
             String country = locale.getCountry();
             String variant = locale.getVariant();
 
@@ -2652,12 +2819,22 @@ public abstract class ResourceBundle {
 
             StringBuilder sb = new StringBuilder(baseName);
             sb.append('_');
-            if (variant != "") {
-                sb.append(language).append('_').append(country).append('_').append(variant);
-            } else if (country != "") {
-                sb.append(language).append('_').append(country);
+            if (script != "") {
+                if (variant != "") {
+                    sb.append(language).append('_').append(script).append('_').append(country).append('_').append(variant);
+                } else if (country != "") {
+                    sb.append(language).append('_').append(script).append('_').append(country);
+                } else {
+                    sb.append(language).append('_').append(script);
+                }
             } else {
-                sb.append(language);
+                if (variant != "") {
+                    sb.append(language).append('_').append(country).append('_').append(variant);
+                } else if (country != "") {
+                    sb.append(language).append('_').append(country);
+                } else {
+                    sb.append(language);
+                }
             }
             return sb.toString();
 

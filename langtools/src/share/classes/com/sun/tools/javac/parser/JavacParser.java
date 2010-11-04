@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2473,6 +2473,11 @@ public class JavacParser implements Parser {
                 defs.append(importDeclaration());
             } else {
                 JCTree def = typeDeclaration(mods);
+                if (keepDocComments && dc != null && docComments.get(def) == dc) {
+                    // If the first type declaration has consumed the first doc
+                    // comment, then don't use it for the top level comment as well.
+                    dc = null;
+                }
                 if (def instanceof JCExpressionStatement)
                     def = ((JCExpressionStatement)def).expr;
                 defs.append(def);
@@ -2781,7 +2786,7 @@ public class JavacParser implements Parser {
     List<JCTree> classOrInterfaceBodyDeclaration(Name className, boolean isInterface) {
         if (S.token() == SEMI) {
             S.nextToken();
-            return List.<JCTree>of(F.at(Position.NOPOS).Block(0, List.<JCStatement>nil()));
+            return List.<JCTree>nil();
         } else {
             String dc = S.docComment();
             int pos = S.pos();

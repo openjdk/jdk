@@ -377,22 +377,22 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             init();
             XWM.init();
             SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
-            toolkitThread = new Thread(this, "AWT-XAWT");
-            toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
-            toolkitThread.setDaemon(true);
-            ThreadGroup mainTG = (ThreadGroup)AccessController.doPrivileged(
-                                                                            new PrivilegedAction() {
-                                                                                    public Object run() {
-                                                                                        ThreadGroup currentTG =
-                                                                                            Thread.currentThread().getThreadGroup();
-                                                                                        ThreadGroup parentTG = currentTG.getParent();
-                                                                                        while (parentTG != null) {
-                                                                                            currentTG = parentTG;
-                                                                                            parentTG = currentTG.getParent();
-                                                                                        }
-                                                                                        return currentTG;
-                                                                                    }
-                                                                                });
+
+            PrivilegedAction<Thread> action = new PrivilegedAction() {
+                public Thread run() {
+                    ThreadGroup currentTG = Thread.currentThread().getThreadGroup();
+                    ThreadGroup parentTG = currentTG.getParent();
+                    while (parentTG != null) {
+                        currentTG = parentTG;
+                        parentTG = currentTG.getParent();
+                    }
+                    Thread thread = new Thread(currentTG, XToolkit.this, "AWT-XAWT");
+                    thread.setPriority(Thread.NORM_PRIORITY + 1);
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            };
+            toolkitThread = AccessController.doPrivileged(action);
             toolkitThread.start();
         }
     }
@@ -1482,8 +1482,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         try {
             if (numberOfButtons == 0) {
                 numberOfButtons = getNumberOfButtonsImpl();
+                numberOfButtons = (numberOfButtons > MAX_BUTTONS_SUPPORTED)? MAX_BUTTONS_SUPPORTED : numberOfButtons;
+                //4th and 5th buttons are for wheel and shouldn't be reported as buttons.
+                //If we have more than 3 physical buttons and a wheel, we report N-2 buttons.
+                //If we have 3 physical buttons and a wheel, we report 3 buttons.
+                //If we have 1,2,3 physical buttons, we report it as is i.e. 1,2 or 3 respectively.
+                if (numberOfButtons >=5) {
+                    numberOfButtons -= 2;
+                } else if (numberOfButtons == 4 || numberOfButtons ==5){
+                    numberOfButtons = 3;
+                }
             }
-            return (numberOfButtons > MAX_BUTTONS_SUPPORTED)? MAX_BUTTONS_SUPPORTED : numberOfButtons;
+            //Assume don't have to re-query the number again and again.
+            return numberOfButtons;
         } finally {
             awtUnlock();
         }

@@ -432,7 +432,7 @@ public abstract class InfoWindow extends Window {
                     ActionEvent aev = new ActionEvent(target, ActionEvent.ACTION_PERFORMED,
                                                       liveArguments.getActionCommand(),
                                                       e.getWhen(), e.getModifiers());
-                    Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(aev);
+                    XToolkit.postEvent(XToolkit.targetToAppContext(aev.getSource()), aev);
                 }
             }
         }

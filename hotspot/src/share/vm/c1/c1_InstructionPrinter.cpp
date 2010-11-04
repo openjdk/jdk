@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,7 +316,7 @@ void InstructionPrinter::print_head() {
 void InstructionPrinter::print_line(Instruction* instr) {
   // print instruction data on one line
   if (instr->is_pinned()) output()->put('.');
-  fill_to(bci_pos  ); output()->print("%d", instr->bci());
+  fill_to(bci_pos  ); output()->print("%d", instr->printable_bci());
   fill_to(use_pos  ); output()->print("%d", instr->use_count());
   fill_to(temp_pos ); print_temp(instr);
   fill_to(instr_pos); print_instr(instr);
@@ -569,7 +569,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
   if (printed_flag) output()->print(") ");
 
   // print block bci range
-  output()->print("[%d, %d]", x->bci(), (end == NULL ? -1 : end->bci()));
+  output()->print("[%d, %d]", x->bci(), (end == NULL ? -1 : end->printable_bci()));
 
   // print block successors
   if (end != NULL && end->number_of_sux() > 0) {
@@ -819,7 +819,6 @@ void InstructionPrinter::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {
   output()->put(')');
 }
 
-
 void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->print("profile ");
   print_value(x->recv());
@@ -831,20 +830,11 @@ void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_ProfileInvoke(ProfileInvoke* x) {
+  output()->print("profile_invoke ");
+  output()->print(" %s.%s", x->inlinee()->holder()->name()->as_utf8(), x->inlinee()->name()->as_utf8());
+  output()->put(')');
 
-void InstructionPrinter::do_ProfileCounter(ProfileCounter* x) {
-
-  ObjectConstant* oc = x->mdo()->type()->as_ObjectConstant();
-  if (oc != NULL && oc->value()->is_method() &&
-      x->offset() == methodOopDesc::interpreter_invocation_counter_offset_in_bytes()) {
-    print_value(x->mdo());
-    output()->print(".interpreter_invocation_count += %d", x->increment());
-  } else {
-    output()->print("counter [");
-    print_value(x->mdo());
-    output()->print(" + %d] += %d", x->offset(), x->increment());
-  }
 }
-
 
 #endif // PRODUCT

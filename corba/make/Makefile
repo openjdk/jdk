@@ -61,7 +61,6 @@ ABS_OUTPUTDIR = $(call FullPath,$(OUTPUTDIR))
 CLASSES_DIR = $(BUILD_DIR)/classes
 GENSRC_DIR = $(BUILD_DIR)/gensrc
 
-BIN_DIR = $(DIST_DIR)/bin
 LIB_DIR = $(DIST_DIR)/lib
 
 #-----

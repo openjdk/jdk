@@ -42,11 +42,14 @@ public class AudioSynthesizerPropertyInfo {
      */
     public AudioSynthesizerPropertyInfo(String name, Object value) {
         this.name = name;
-        this.value = value;
         if (value instanceof Class)
             valueClass = (Class)value;
-        else if (value != null)
-            valueClass = value.getClass();
+        else
+        {
+            this.value = value;
+            if (value != null)
+                valueClass = value.getClass();
+        }
     }
     /**
      * The name of the property.

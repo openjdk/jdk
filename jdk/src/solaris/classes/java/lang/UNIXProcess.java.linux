@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.security.AccessController;
+import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -94,14 +95,13 @@ final class UNIXProcess extends Process {
         private final static ThreadGroup group = getRootThreadGroup();
 
         private static ThreadGroup getRootThreadGroup() {
-            return AccessController.doPrivileged
-            (new PrivilegedAction<ThreadGroup> () {
-            public ThreadGroup run() {
-                ThreadGroup root = Thread.currentThread().getThreadGroup();
-                while (root.getParent() != null)
-                    root = root.getParent();
-                return root;
-            }});
+            return doPrivileged(new PrivilegedAction<ThreadGroup> () {
+                public ThreadGroup run() {
+                    ThreadGroup root = Thread.currentThread().getThreadGroup();
+                    while (root.getParent() != null)
+                        root = root.getParent();
+                    return root;
+                }});
         }
 
         public Thread newThread(Runnable grimReaper) {
@@ -117,8 +117,12 @@ final class UNIXProcess extends Process {
     /**
      * The thread pool of "process reaper" daemon threads.
      */
-    private static final Executor processReaperExecutor
-        = Executors.newCachedThreadPool(new ProcessReaperThreadFactory());
+    private static final Executor processReaperExecutor =
+        doPrivileged(new PrivilegedAction<Executor>() {
+            public Executor run() {
+                return Executors.newCachedThreadPool
+                    (new ProcessReaperThreadFactory());
+            }});
 
     UNIXProcess(final byte[] prog,
                 final byte[] argBlock, final int argc,
@@ -136,8 +140,7 @@ final class UNIXProcess extends Process {
                           redirectErrorStream);
 
         try {
-            AccessController.doPrivileged
-            (new PrivilegedExceptionAction<Void>() {
+            doPrivileged(new PrivilegedExceptionAction<Void>() {
                 public Void run() throws IOException {
                     initStreams(fds);
                     return null;
@@ -173,7 +176,13 @@ final class UNIXProcess extends Process {
             }});
     }
 
-    synchronized void processExited(int exitcode) {
+    void processExited(int exitcode) {
+        synchronized (this) {
+            this.exitcode = exitcode;
+            hasExited = true;
+            notifyAll();
+        }
+
         if (stdout instanceof ProcessPipeInputStream)
             ((ProcessPipeInputStream) stdout).processExited();
 
@@ -182,10 +191,6 @@ final class UNIXProcess extends Process {
 
         if (stdin instanceof ProcessPipeOutputStream)
             ((ProcessPipeOutputStream) stdin).processExited();
-
-        this.exitcode = exitcode;
-        hasExited = true;
-        notifyAll();
     }
 
     public OutputStream getOutputStream() {

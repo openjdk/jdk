@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
@@ -71,6 +71,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+import static javax.tools.Diagnostic.Kind.*;
+
+import com.sun.tools.javac.code.Symbol.CompletionFailure;
 
 /**
  * Javah generates support files for native methods.
@@ -173,7 +176,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             }
         },
 
-        new Option(false, "-help", "--help", "-?") {
+        new Option(false, "-h", "-help", "--help", "-?") {
             void process(JavahTask task, String opt, String arg) {
                 task.help = true;
             }
@@ -231,6 +234,15 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             void process(JavahTask task, String opt, String arg) {
                 task.llni = true;
                 task.doubleAlign = true;
+            }
+        },
+
+        new HiddenOption(false) {
+            boolean matches(String opt) {
+                return opt.startsWith("-XD");
+            }
+            void process(JavahTask task, String opt, String arg) {
+                task.javac_extras.add(opt);
             }
         },
     };
@@ -326,6 +338,8 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         } catch (InternalError e) {
             diagnosticListener.report(createDiagnostic("err.internal.error", e.getMessage()));
             return 1;
+        } catch (Util.Exit e) {
+            return e.exitValue;
         } finally {
             log.flush();
         }
@@ -475,7 +489,9 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             ((JavahFileManager) fileManager).setIgnoreSymbolFile(true);
 
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        List<String> opts = Arrays.asList("-proc:only");
+        List<String> opts = new ArrayList<String>();
+        opts.add("-proc:only");
+        opts.addAll(javac_extras);
         CompilationTask t = c.getTask(log, fileManager, diagnosticListener, opts, internalize(classes), null);
         JavahProcessor p = new JavahProcessor(g);
         t.setProcessors(Collections.singleton(p));
@@ -526,15 +542,17 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     }
 
     private void showVersion(boolean full) {
-        log.println(version(full ? "full" : "release"));
+        log.println(version(full));
     }
 
     private static final String versionRBName = "com.sun.tools.javah.resources.version";
     private static ResourceBundle versionRB;
 
-    private String version(String key) {
-        // key=version:  mm.nn.oo[-milestone]
-        // key=full:     mm.mm.oo[-milestone]-build
+    private String version(boolean full) {
+        String msgKey = (full ? "javah.fullVersion" : "javah.version");
+        String versionKey = (full ? "full" : "release");
+        // versionKey=product:  mm.nn.oo[-milestone]
+        // versionKey=full:     mm.mm.oo[-milestone]-build
         if (versionRB == null) {
             try {
                 versionRB = ResourceBundle.getBundle(versionRBName);
@@ -543,7 +561,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             }
         }
         try {
-            return versionRB.getString(key);
+            return getMessage(msgKey, "javah", versionRB.getString(versionKey));
         }
         catch (MissingResourceException e) {
             return getMessage("version.unknown", System.getProperty("java.version"));
@@ -640,6 +658,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     boolean doubleAlign;
     boolean force;
     boolean old;
+    Set<String> javac_extras = new LinkedHashSet<String>();
 
     PrintWriter log;
     JavaFileManager fileManager;
@@ -650,30 +669,45 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     private static final String progname = "javah";
 
     @SupportedAnnotationTypes("*")
-    @SupportedSourceVersion(SourceVersion.RELEASE_7)
     class JavahProcessor extends AbstractProcessor {
+        private Messager messager;
+
         JavahProcessor(Gen g) {
             this.g = g;
         }
 
-        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-            Messager messager  = processingEnv.getMessager();
-            Set<TypeElement> classes = getAllClasses(ElementFilter.typesIn(roundEnv.getRootElements()));
-            if (classes.size() > 0) {
-                checkMethodParameters(classes);
-                g.setProcessingEnvironment(processingEnv);
-                g.setClasses(classes);
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            // since this is co-bundled with javac, we can assume it supports
+            // the latest source version
+            return SourceVersion.latest();
+        }
 
-                try {
+        @Override
+        public void init(ProcessingEnvironment pEnv) {
+            super.init(pEnv);
+            messager  = processingEnv.getMessager();
+        }
+
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            try {
+                Set<TypeElement> classes = getAllClasses(ElementFilter.typesIn(roundEnv.getRootElements()));
+                if (classes.size() > 0) {
+                    checkMethodParameters(classes);
+                    g.setProcessingEnvironment(processingEnv);
+                    g.setClasses(classes);
                     g.run();
-                } catch (ClassNotFoundException cnfe) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, getMessage("class.not.found", cnfe.getMessage()));
-                } catch (IOException ioe) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, getMessage("io.exception", ioe.getMessage()));
-                } catch (Util.Exit e) {
-                    exit = e;
                 }
+            } catch (CompletionFailure cf) {
+                messager.printMessage(ERROR, getMessage("class.not.found", cf.sym.getQualifiedName().toString()));
+            } catch (ClassNotFoundException cnfe) {
+                messager.printMessage(ERROR, getMessage("class.not.found", cnfe.getMessage()));
+            } catch (IOException ioe) {
+                messager.printMessage(ERROR, getMessage("io.exception", ioe.getMessage()));
+            } catch (Util.Exit e) {
+                exit = e;
             }
+
             return true;
         }
 

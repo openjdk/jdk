@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,20 @@ package sun.util;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.IllformedLocaleException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Locale.Builder;
 import java.util.Map;
+import java.util.ResourceBundle.Control;
 import java.util.ServiceLoader;
-import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleServiceProvider;
+
 import sun.util.logging.PlatformLogger;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
@@ -82,12 +84,22 @@ public final class LocaleServiceProviderPool {
      * static.  This could be non-static later, so that they could have
      * different sets for each locale sensitive services.
      */
-    private static List<Locale> availableJRELocales = null;
+    private static volatile List<Locale> availableJRELocales = null;
 
     /**
      * Provider locales for this locale sensitive service.
      */
     private Set<Locale> providerLocales = null;
+
+    /**
+     * Special locale for ja_JP with Japanese calendar
+     */
+    private static Locale locale_ja_JP_JP = new Locale("ja", "JP", "JP");
+
+    /**
+     * Special locale for th_TH with Thai numbering system
+     */
+    private static Locale locale_th_TH_TH = new Locale("th", "TH", "TH");
 
     /**
      * A factory method that returns a singleton instance
@@ -153,14 +165,20 @@ public final class LocaleServiceProviderPool {
                 java.util.spi.CurrencyNameProvider.class,
                 java.util.spi.LocaleNameProvider.class,
                 java.util.spi.TimeZoneNameProvider.class };
-            Set<Locale> all = new HashSet<Locale>(Arrays.asList(
-                    LocaleData.getAvailableLocales())
-            );
+
+            // Normalize locales for look up
+            Locale[] allLocales = LocaleData.getAvailableLocales();
+            Set<Locale> all = new HashSet<Locale>(allLocales.length);
+            for (Locale locale : allLocales) {
+                all.add(getLookupLocale(locale));
+            }
+
             for (Class providerClass : providerClasses) {
                 LocaleServiceProviderPool pool =
                     LocaleServiceProviderPool.getPool(providerClass);
                 all.addAll(pool.getProviderLocales());
             }
+
             allAvailableLocales = all.toArray(new Locale[0]);
         }
     }
@@ -196,7 +214,8 @@ public final class LocaleServiceProviderPool {
     }
 
     /**
-     * Returns an array of available locales from providers.
+     * Returns an array of available locales (already normalized
+     * for service lookup) from providers.
      * Note that this method does not return a defensive copy.
      *
      * @return list of the provider locales
@@ -208,7 +227,7 @@ public final class LocaleServiceProviderPool {
                 for (LocaleServiceProvider lsp : providers) {
                     Locale[] locales = lsp.getAvailableLocales();
                     for (Locale locale: locales) {
-                        providerLocales.add(locale);
+                        providerLocales.add(getLookupLocale(locale));
                     }
                 }
             }
@@ -227,15 +246,23 @@ public final class LocaleServiceProviderPool {
     }
 
     /**
-     * Returns an array of available locales supported by the JRE.
+     * Returns an array of available locales (already normalized for
+     * service lookup) supported by the JRE.
      * Note that this method does not return a defensive copy.
      *
      * @return list of the available JRE locales
      */
-    private synchronized List<Locale> getJRELocales() {
+    private List<Locale> getJRELocales() {
         if (availableJRELocales == null) {
-            availableJRELocales =
-                Arrays.asList(LocaleData.getAvailableLocales());
+            synchronized (LocaleServiceProviderPool.class) {
+                if (availableJRELocales == null) {
+                    Locale[] allLocales = LocaleData.getAvailableLocales();
+                    availableJRELocales = new ArrayList<Locale>(allLocales.length);
+                    for (Locale locale : allLocales) {
+                        availableJRELocales.add(getLookupLocale(locale));
+                    }
+                }
+            }
         }
         return availableJRELocales;
     }
@@ -249,7 +276,7 @@ public final class LocaleServiceProviderPool {
      */
     private boolean isJRESupported(Locale locale) {
         List<Locale> locales = getJRELocales();
-        return locales.contains(locale);
+        return locales.contains(getLookupLocale(locale));
     }
 
     /**
@@ -325,7 +352,7 @@ public final class LocaleServiceProviderPool {
                 bundleKey = key;
             }
             Locale bundleLocale = (bundle != null ? bundle.getLocale() : null);
-            Locale requested = locale;
+            List<Locale> lookupLocales = getLookupLocales(locale);
             P lsp;
             S providersObj = null;
 
@@ -333,21 +360,30 @@ public final class LocaleServiceProviderPool {
             // to the requested locale than the bundle we've found (for
             // localized names), or Java runtime's supported locale
             // (for localized objects)
-            while ((locale = findProviderLocale(locale, bundleLocale)) != null) {
-
-                lsp = (P)findProvider(locale);
-
-                if (lsp != null) {
-                    providersObj = getter.getObject(lsp, requested, key, params);
-                    if (providersObj != null) {
-                        return providersObj;
-                    } else if (isObjectProvider) {
-                        config(
-                            "A locale sensitive service provider returned null for a localized objects,  which should not happen.  provider: " + lsp + " locale: " + requested);
+            Set<Locale> provLoc = getProviderLocales();
+            for (int i = 0; i < lookupLocales.size(); i++) {
+                Locale current = lookupLocales.get(i);
+                if (bundleLocale != null) {
+                    if (current.equals(bundleLocale)) {
+                        break;
+                    }
+                } else {
+                    if (isJRESupported(current)) {
+                        break;
                     }
                 }
-
-                locale = getParentLocale(locale);
+                if (provLoc.contains(current)) {
+                    lsp = (P)findProvider(current);
+                    if (lsp != null) {
+                        providersObj = getter.getObject(lsp, locale, key, params);
+                        if (providersObj != null) {
+                            return providersObj;
+                        } else if (isObjectProvider) {
+                            config(
+                                "A locale sensitive service provider returned null for a localized objects,  which should not happen.  provider: " + lsp + " locale: " + locale);
+                        }
+                    }
+                }
             }
 
             // look up the JRE bundle and its parent chain.  Only
@@ -361,7 +397,7 @@ public final class LocaleServiceProviderPool {
                 } else {
                     lsp = (P)findProvider(bundleLocale);
                     if (lsp != null) {
-                        providersObj = getter.getObject(lsp, requested, key, params);
+                        providersObj = getter.getObject(lsp, locale, key, params);
                         if (providersObj != null) {
                             return providersObj;
                         }
@@ -399,6 +435,8 @@ public final class LocaleServiceProviderPool {
             for (LocaleServiceProvider lsp : providers) {
                 Locale[] locales = lsp.getAvailableLocales();
                 for (Locale available: locales) {
+                    // normalize
+                    available = getLookupLocale(available);
                     if (locale.equals(available)) {
                         LocaleServiceProvider providerInCache =
                             providersCache.put(locale, lsp);
@@ -414,66 +452,51 @@ public final class LocaleServiceProviderPool {
     }
 
     /**
-     * Returns the provider's locale that is the most appropriate
-     * within the range
-     *
-     * @param start the given locale that is used as the starting one
-     * @param end the given locale that is used as the end one (exclusive),
-     *     or null if it reaching any of the JRE supported locale should
-     *     terminate the look up.
-     * @return the most specific locale within the range, or null
-     *     if no provider locale found in that range.
+     * Returns a list of candidate locales for service look up.
+     * @param locale the input locale
+     * @return the list of candiate locales for the given locale
      */
-    private Locale findProviderLocale(Locale start, Locale end) {
-        Set<Locale> provLoc = getProviderLocales();
-        Locale current = start;
-
-        while (current != null) {
-            if (end != null) {
-                if (current.equals(end)) {
-                    current = null;
-                    break;
-                }
-            } else {
-                if (isJRESupported(current)) {
-                    current = null;
-                    break;
-                }
-            }
-
-            if (provLoc.contains(current)) {
-                break;
-            }
-
-            current = getParentLocale(current);
-        }
-
-        return current;
+    private static List<Locale> getLookupLocales(Locale locale) {
+        // Note: We currently use the default implementation of
+        // ResourceBundle.Control.getCandidateLocales. The result
+        // returned by getCandidateLocales are already normalized
+        // (no extensions) for service look up.
+        List<Locale> lookupLocales = new Control(){}.getCandidateLocales("", locale);
+        return lookupLocales;
     }
 
     /**
-     * Returns the parent locale.
+     * Returns an instance of Locale used for service look up.
+     * The result Locale has no extensions except for ja_JP_JP
+     * and th_TH_TH
      *
      * @param locale the locale
-     * @return the parent locale
+     * @return the locale used for service look up
      */
-    private static Locale getParentLocale(Locale locale) {
-        String variant = locale.getVariant();
-        if (variant != "") {
-            int underscoreIndex = variant.lastIndexOf('_');
-            if (underscoreIndex != (-1)) {
-                return new Locale(locale.getLanguage(), locale.getCountry(),
-                                  variant.substring(0, underscoreIndex));
-            } else {
-                return new Locale(locale.getLanguage(), locale.getCountry());
+    private static Locale getLookupLocale(Locale locale) {
+        Locale lookupLocale = locale;
+        Set<Character> extensions = locale.getExtensionKeys();
+        if (!extensions.isEmpty()
+                && !locale.equals(locale_ja_JP_JP)
+                && !locale.equals(locale_th_TH_TH)) {
+            // remove extensions
+            Builder locbld = new Builder();
+            try {
+                locbld.setLocale(locale);
+                locbld.clearExtensions();
+                lookupLocale = locbld.build();
+            } catch (IllformedLocaleException e) {
+                // A Locale with non-empty extensions
+                // should have well-formed fields except
+                // for ja_JP_JP and th_TH_TH. Therefore,
+                // it should never enter in this catch clause.
+                config("A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
+
+                // Fallback - script field will be lost.
+                lookupLocale = new Locale(locale.getLanguage(), locale.getCountry(), locale.getVariant());
             }
-        } else if (locale.getCountry() != "") {
-            return new Locale(locale.getLanguage());
-        } else if (locale.getLanguage() != "") {
-            return Locale.ROOT;
-        } else {
-            return null;
         }
+        return lookupLocale;
     }
 
     /**

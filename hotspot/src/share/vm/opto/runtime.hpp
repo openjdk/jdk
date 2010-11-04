@@ -260,6 +260,8 @@ private:
   static const TypeFunc* generic_arraycopy_Type();
   static const TypeFunc* slow_arraycopy_Type();   // the full routine
 
+  static const TypeFunc* array_fill_Type();
+
   // leaf on stack replacement interpreter accessor types
   static const TypeFunc* osr_end_Type();
 

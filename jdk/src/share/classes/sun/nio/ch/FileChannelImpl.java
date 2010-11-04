@@ -545,6 +545,8 @@ public class FileChannelImpl
                                          long position, long count)
         throws IOException
     {
+        if (!src.readable)
+            throw new NonReadableChannelException();
         synchronized (src.positionLock) {
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);

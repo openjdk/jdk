@@ -1,0 +1,3 @@
+T6857948.java:16:32: compiler.err.cant.resolve.location.args: kindname.method, nosuchfunction, , , kindname.class, Test
+T6857948.java:16:50: compiler.err.cant.apply.symbol.1: kindname.constructor, Foo, java.lang.String, compiler.misc.no.args, kindname.class, Foo, (compiler.misc.arg.length.mismatch)
+2 errors

@@ -705,7 +705,7 @@ class Properties extends Hashtable<Object,Object> {
      *             <code>Strings</code>.
      */
     @Deprecated
-    public synchronized void save(OutputStream out, String comments)  {
+    public void save(OutputStream out, String comments)  {
         try {
             store(out, comments);
         } catch (IOException e) {
@@ -890,7 +890,7 @@ class Properties extends Hashtable<Object,Object> {
      * @see    #loadFromXML(InputStream)
      * @since 1.5
      */
-    public synchronized void storeToXML(OutputStream os, String comment)
+    public void storeToXML(OutputStream os, String comment)
         throws IOException
     {
         if (os == null)
@@ -912,9 +912,13 @@ class Properties extends Hashtable<Object,Object> {
      *
      * <p>The specified stream remains open after this method returns.
      *
-     * @param os the output stream on which to emit the XML document.
-     * @param comment a description of the property list, or <code>null</code>
-     *        if no comment is desired.
+     * @param os        the output stream on which to emit the XML document.
+     * @param comment   a description of the property list, or <code>null</code>
+     *                  if no comment is desired.
+     * @param  encoding the name of a supported
+     *                  <a href="../lang/package-summary.html#charenc">
+     *                  character encoding</a>
+     *
      * @throws IOException if writing to the specified output stream
      *         results in an <tt>IOException</tt>.
      * @throws NullPointerException if <code>os</code> is <code>null</code>,
@@ -925,8 +929,7 @@ class Properties extends Hashtable<Object,Object> {
      * @see    #loadFromXML(InputStream)
      * @since 1.5
      */
-    public synchronized void storeToXML(OutputStream os, String comment,
-                                       String encoding)
+    public void storeToXML(OutputStream os, String comment, String encoding)
         throws IOException
     {
         if (os == null)

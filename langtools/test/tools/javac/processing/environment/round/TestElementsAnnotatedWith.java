@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6397298 6400986 6425592 6449798 6453386 6508401 6498938 6911854
  * @summary Tests that getElementsAnnotatedWith works properly.
  * @author  Joseph D. Darcy
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor
  * @compile TestElementsAnnotatedWith.java
  * @compile InheritedAnnotation.java
  * @compile -processor TestElementsAnnotatedWith -proc:only SurfaceAnnotations.java
@@ -57,16 +59,13 @@ import static javax.lang.model.util.ElementFilter.*;
  * getElementsAnnotatedWith is consistent with the expected results
  * stored in an AnnotatedElementInfo annotation.
  */
-@SupportedAnnotationTypes("*")
 @AnnotatedElementInfo(annotationName="java.lang.SuppressWarnings", expectedSize=0, names={})
-public class TestElementsAnnotatedWith extends AbstractProcessor {
+public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnvironment) {
-        Elements elementUtils = processingEnv.getElementUtils();
-
         TypeElement annotatedElementInfoElement =
-            elementUtils.getTypeElement("AnnotatedElementInfo");
+            elements.getTypeElement("AnnotatedElementInfo");
         Set<? extends Element> resultsMeta = Collections.emptySet();
         Set<? extends Element> resultsBase = Collections.emptySet();
 
@@ -93,9 +92,7 @@ public class TestElementsAnnotatedWith extends AbstractProcessor {
 
                 resultsMeta =
                     roundEnvironment.
-                    getElementsAnnotatedWith(elementUtils.
-                                             getTypeElement(annotatedElementInfo.
-                                                            annotationName())) ;
+                    getElementsAnnotatedWith(elements.getTypeElement(annotatedElementInfo.annotationName()));
 
                 System.err.println("Results: " + resultsMeta);
 
@@ -166,10 +163,5 @@ public class TestElementsAnnotatedWith extends AbstractProcessor {
                                                           getTypeElement("java.lang.Object") );
             throw new RuntimeException("Illegal argument exception not thrown");
         } catch(IllegalArgumentException iae) {}
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }

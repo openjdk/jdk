@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,16 +118,16 @@ public class SoftMixingMixer implements Mixer {
                         AudioSystem.NOT_SPECIFIED, bits, channels, channels
                                 * bits / 8, AudioSystem.NOT_SPECIFIED, true));
             }
-            formats.add(new AudioFormat(AudioFloatConverter.PCM_FLOAT,
+            formats.add(new AudioFormat(Encoding.PCM_FLOAT,
                     AudioSystem.NOT_SPECIFIED, 32, channels, channels * 4,
                     AudioSystem.NOT_SPECIFIED, false));
-            formats.add(new AudioFormat(AudioFloatConverter.PCM_FLOAT,
+            formats.add(new AudioFormat(Encoding.PCM_FLOAT,
                     AudioSystem.NOT_SPECIFIED, 32, channels, channels * 4,
                     AudioSystem.NOT_SPECIFIED, true));
-            formats.add(new AudioFormat(AudioFloatConverter.PCM_FLOAT,
+            formats.add(new AudioFormat(Encoding.PCM_FLOAT,
                     AudioSystem.NOT_SPECIFIED, 64, channels, channels * 8,
                     AudioSystem.NOT_SPECIFIED, false));
-            formats.add(new AudioFormat(AudioFloatConverter.PCM_FLOAT,
+            formats.add(new AudioFormat(Encoding.PCM_FLOAT,
                     AudioSystem.NOT_SPECIFIED, 64, channels, channels * 8,
                     AudioSystem.NOT_SPECIFIED, true));
         }

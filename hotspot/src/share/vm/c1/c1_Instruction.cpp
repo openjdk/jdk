@@ -29,13 +29,6 @@
 // Implementation of Instruction
 
 
-#ifdef ASSERT
-void Instruction::create_hi_word() {
-  assert(type()->is_double_word() && _hi_word == NULL, "only double word has high word");
-  _hi_word = new HiWord(this);
-}
-#endif
-
 Instruction::Condition Instruction::mirror(Condition cond) {
   switch (cond) {
     case eql: return eql;
@@ -63,6 +56,15 @@ Instruction::Condition Instruction::negate(Condition cond) {
   return eql;
 }
 
+void Instruction::update_exception_state(ValueStack* state) {
+  if (state != NULL && (state->kind() == ValueStack::EmptyExceptionState || state->kind() == ValueStack::ExceptionState)) {
+    assert(state->kind() == ValueStack::EmptyExceptionState || Compilation::current()->env()->jvmti_can_access_local_variables(), "unexpected state kind");
+    _exception_state = state;
+  } else {
+    _exception_state = NULL;
+  }
+}
+
 
 Instruction* Instruction::prev(BlockBegin* block) {
   Instruction* p = NULL;
@@ -75,7 +77,24 @@ Instruction* Instruction::prev(BlockBegin* block) {
 }
 
 
+void Instruction::state_values_do(ValueVisitor* f) {
+  if (state_before() != NULL) {
+    state_before()->values_do(f);
+  }
+  if (exception_state() != NULL){
+    exception_state()->values_do(f);
+  }
+}
+
+
 #ifndef PRODUCT
+void Instruction::check_state(ValueStack* state) {
+  if (state != NULL) {
+    state->verify();
+  }
+}
+
+
 void Instruction::print() {
   InstructionPrinter ip;
   print(ip);
@@ -190,35 +209,6 @@ ciType* CheckCast::exact_type() const {
   return NULL;
 }
 
-
-void ArithmeticOp::other_values_do(ValueVisitor* f) {
-  if (lock_stack() != NULL) lock_stack()->values_do(f);
-}
-
-void NullCheck::other_values_do(ValueVisitor* f) {
-  lock_stack()->values_do(f);
-}
-
-void AccessArray::other_values_do(ValueVisitor* f) {
-  if (lock_stack() != NULL) lock_stack()->values_do(f);
-}
-
-
-// Implementation of AccessField
-
-void AccessField::other_values_do(ValueVisitor* f) {
-  if (state_before() != NULL) state_before()->values_do(f);
-  if (lock_stack() != NULL) lock_stack()->values_do(f);
-}
-
-
-// Implementation of StoreIndexed
-
-IRScope* StoreIndexed::scope() const {
-  return lock_stack()->scope();
-}
-
-
 // Implementation of ArithmeticOp
 
 bool ArithmeticOp::is_commutative() const {
@@ -266,13 +256,6 @@ bool LogicOp::is_commutative() const {
 }
 
 
-// Implementation of CompareOp
-
-void CompareOp::other_values_do(ValueVisitor* f) {
-  if (state_before() != NULL) state_before()->values_do(f);
-}
-
-
 // Implementation of IfOp
 
 bool IfOp::is_commutative() const {
@@ -301,6 +284,7 @@ IRScope* StateSplit::scope() const {
 
 
 void StateSplit::state_values_do(ValueVisitor* f) {
+  Instruction::state_values_do(f);
   if (state() != NULL) state()->values_do(f);
 }
 
@@ -316,30 +300,17 @@ void BlockBegin::state_values_do(ValueVisitor* f) {
 }
 
 
-void MonitorEnter::state_values_do(ValueVisitor* f) {
-  StateSplit::state_values_do(f);
-  _lock_stack_before->values_do(f);
-}
-
-
-void Intrinsic::state_values_do(ValueVisitor* f) {
-  StateSplit::state_values_do(f);
-  if (lock_stack() != NULL) lock_stack()->values_do(f);
-}
-
-
 // Implementation of Invoke
 
 
 Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values* args,
                int vtable_index, ciMethod* target, ValueStack* state_before)
-  : StateSplit(result_type)
+  : StateSplit(result_type, state_before)
   , _code(code)
   , _recv(recv)
   , _args(args)
   , _vtable_index(vtable_index)
   , _target(target)
-  , _state_before(state_before)
 {
   set_flag(TargetIsLoadedFlag,   target->is_loaded());
   set_flag(TargetIsFinalFlag,    target_is_loaded() && target->is_final_method());
@@ -376,7 +347,7 @@ void Invoke::state_values_do(ValueVisitor* f) {
 
 // Implementation of Contant
 intx Constant::hash() const {
-  if (_state == NULL) {
+  if (state_before() == NULL) {
     switch (type()->tag()) {
     case intTag:
       return HASH2(name(), type()->as_IntConstant()->value());
@@ -499,25 +470,6 @@ BlockBegin* Constant::compare(Instruction::Condition cond, Value right,
 }
 
 
-void Constant::other_values_do(ValueVisitor* f) {
-  if (state() != NULL) state()->values_do(f);
-}
-
-
-// Implementation of NewArray
-
-void NewArray::other_values_do(ValueVisitor* f) {
-  if (state_before() != NULL) state_before()->values_do(f);
-}
-
-
-// Implementation of TypeCheck
-
-void TypeCheck::other_values_do(ValueVisitor* f) {
-  if (state_before() != NULL) state_before()->values_do(f);
-}
-
-
 // Implementation of BlockBegin
 
 void BlockBegin::set_end(BlockEnd* end) {
@@ -604,23 +556,14 @@ void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
 // of the inserted block, without recomputing the values of the other blocks
 // in the CFG. Therefore the value of "depth_first_number" in BlockBegin becomes meaningless.
 BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
-  // Try to make the bci close to a block with a single pred or sux,
-  // since this make the block layout algorithm work better.
-  int bci = -1;
-  if (sux->number_of_preds() == 1) {
-    bci = sux->bci();
-  } else {
-    bci = end()->bci();
-  }
-
-  BlockBegin* new_sux = new BlockBegin(bci);
+  BlockBegin* new_sux = new BlockBegin(-99);
 
   // mark this block (special treatment when block order is computed)
   new_sux->set(critical_edge_split_flag);
 
   // This goto is not a safepoint.
   Goto* e = new Goto(sux, false);
-  new_sux->set_next(e, bci);
+  new_sux->set_next(e, end()->state()->bci());
   new_sux->set_end(e);
   // setup states
   ValueStack* s = end()->state();
@@ -740,9 +683,9 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
 
 
 #ifndef PRODUCT
-  #define TRACE_PHI(code) if (PrintPhiFunctions) { code; }
+   #define TRACE_PHI(code) if (PrintPhiFunctions) { code; }
 #else
-  #define TRACE_PHI(coce)
+   #define TRACE_PHI(coce)
 #endif
 
 
@@ -763,7 +706,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
     }
 
     // copy state because it is altered
-    new_state = new_state->copy();
+    new_state = new_state->copy(ValueStack::BlockBeginState, bci());
 
     // Use method liveness to invalidate dead locals
     MethodLivenessResult liveness = new_state->scope()->method()->liveness_at_bci(bci());
@@ -800,18 +743,8 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
     // initialize state of block
     set_state(new_state);
 
-  } else if (existing_state->is_same_across_scopes(new_state)) {
+  } else if (existing_state->is_same(new_state)) {
     TRACE_PHI(tty->print_cr("exisiting state found"));
-
-    // Inlining may cause the local state not to match up, so walk up
-    // the new state until we get to the same scope as the
-    // existing and then start processing from there.
-    while (existing_state->scope() != new_state->scope()) {
-      new_state = new_state->caller_state();
-      assert(new_state != NULL, "could not match up scopes");
-
-      assert(false, "check if this is necessary");
-    }
 
     assert(existing_state->scope() == new_state->scope(), "not matching");
     assert(existing_state->locals_size() == new_state->locals_size(), "not matching");
@@ -969,11 +902,6 @@ void BlockEnd::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
 }
 
 
-void BlockEnd::other_values_do(ValueVisitor* f) {
-  if (state_before() != NULL) state_before()->values_do(f);
-}
-
-
 // Implementation of Phi
 
 // Normal phi functions take their operands from the last instruction of the
@@ -1006,8 +934,7 @@ int Phi::operand_count() const {
 }
 
 
-// Implementation of Throw
 
-void Throw::state_values_do(ValueVisitor* f) {
-  BlockEnd::state_values_do(f);
+void ProfileInvoke::state_values_do(ValueVisitor* f) {
+  if (state() != NULL) state()->values_do(f);
 }

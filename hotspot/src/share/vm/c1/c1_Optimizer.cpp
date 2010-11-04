@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,25 +140,27 @@ class CE_Eliminator: public BlockClosure {
     //    with an IfOp followed by a Goto
     // cut if_ away and get node before
     Instruction* cur_end = if_->prev(block);
-    int bci = if_->bci();
 
     // append constants of true- and false-block if necessary
     // clone constants because original block must not be destroyed
     assert((t_value != f_const && f_value != t_const) || t_const == f_const, "mismatch");
     if (t_value == t_const) {
       t_value = new Constant(t_const->type());
-      cur_end = cur_end->set_next(t_value, bci);
+      NOT_PRODUCT(t_value->set_printable_bci(if_->printable_bci()));
+      cur_end = cur_end->set_next(t_value);
     }
     if (f_value == f_const) {
       f_value = new Constant(f_const->type());
-      cur_end = cur_end->set_next(f_value, bci);
+      NOT_PRODUCT(f_value->set_printable_bci(if_->printable_bci()));
+      cur_end = cur_end->set_next(f_value);
     }
 
     // it is very unlikely that the condition can be statically decided
     // (this was checked previously by the Canonicalizer), so always
     // append IfOp
     Value result = new IfOp(if_->x(), if_->cond(), if_->y(), t_value, f_value);
-    cur_end = cur_end->set_next(result, bci);
+    NOT_PRODUCT(result->set_printable_bci(if_->printable_bci()));
+    cur_end = cur_end->set_next(result);
 
     // append Goto to successor
     ValueStack* state_before = if_->is_safepoint() ? if_->state_before() : NULL;
@@ -167,16 +169,15 @@ class CE_Eliminator: public BlockClosure {
     // prepare state for Goto
     ValueStack* goto_state = if_->state();
     while (sux_state->scope() != goto_state->scope()) {
-      goto_state = goto_state->pop_scope();
+      goto_state = goto_state->caller_state();
       assert(goto_state != NULL, "states do not match up");
     }
-    goto_state = goto_state->copy();
+    goto_state = goto_state->copy(ValueStack::StateAfter, goto_state->bci());
     goto_state->push(result->type(), result);
-    assert(goto_state->is_same_across_scopes(sux_state), "states must match now");
+    assert(goto_state->is_same(sux_state), "states must match now");
     goto_->set_state(goto_state);
 
-    // Steal the bci for the goto from the sux
-    cur_end = cur_end->set_next(goto_, sux->bci());
+    cur_end = cur_end->set_next(goto_, goto_state->bci());
 
     // Adjust control flow graph
     BlockBegin::disconnect_edge(block, t_block);
@@ -251,10 +252,8 @@ class BlockMerger: public BlockClosure {
         // no phi functions must be present at beginning of sux
         ValueStack* sux_state = sux->state();
         ValueStack* end_state = end->state();
-        while (end_state->scope() != sux_state->scope()) {
-          // match up inlining level
-          end_state = end_state->pop_scope();
-        }
+
+        assert(end_state->scope() == sux_state->scope(), "scopes must match");
         assert(end_state->stack_size() == sux_state->stack_size(), "stack not equal");
         assert(end_state->locals_size() == sux_state->locals_size(), "locals not equal");
 
@@ -273,7 +272,7 @@ class BlockMerger: public BlockClosure {
         Instruction* prev = end->prev(block);
         Instruction* next = sux->next();
         assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
-        prev->set_next(next, next->bci());
+        prev->set_next(next);
         sux->disconnect_from_graph();
         block->set_end(sux->end());
         // add exception handlers of deleted block, if any
@@ -337,7 +336,8 @@ class BlockMerger: public BlockClosure {
                   newif->set_state(if_->state()->copy());
 
                   assert(prev->next() == if_, "must be guaranteed by above search");
-                  prev->set_next(newif, if_->bci());
+                  NOT_PRODUCT(newif->set_printable_bci(if_->printable_bci()));
+                  prev->set_next(newif);
                   block->set_end(newif);
 
                   _merge_count++;
@@ -430,7 +430,7 @@ public:
   void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   void do_ProfileCall    (ProfileCall*     x);
-  void do_ProfileCounter (ProfileCounter*  x);
+  void do_ProfileInvoke  (ProfileInvoke*   x);
 };
 
 
@@ -598,7 +598,7 @@ void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
 void NullCheckVisitor::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check(); }
-void NullCheckVisitor::do_ProfileCounter (ProfileCounter*  x) {}
+void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
 
 
 void NullCheckEliminator::visit(Value* p) {
@@ -705,7 +705,7 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
     // visiting instructions which are references in other blocks or
     // visiting instructions more than once.
     mark_visitable(instr);
-    if (instr->is_root() || instr->can_trap() || (instr->as_NullCheck() != NULL)) {
+    if (instr->is_pinned() || instr->can_trap() || (instr->as_NullCheck() != NULL)) {
       mark_visited(instr);
       instr->input_values_do(this);
       instr->visit(&_visitor);

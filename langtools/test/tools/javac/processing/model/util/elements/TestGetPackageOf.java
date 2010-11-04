@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 6453386
  * @summary Test Elements.getPackageOf
  * @author  Joseph D. Darcy
- * @build TestGetPackageOf
+ * @library ../../../../lib
+ * @build   JavacTestingAbstractProcessor TestGetPackageOf
  * @compile -processor TestGetPackageOf -proc:only TestGetPackageOf.java
  */
 
@@ -43,10 +44,7 @@ import static javax.tools.StandardLocation.*;
 /**
  * Test basic workings of Elements.getPackageOf
  */
-@SupportedAnnotationTypes("*")
-public class TestGetPackageOf extends AbstractProcessor {
-    private Elements eltUtils;
-
+public class TestGetPackageOf extends JavacTestingAbstractProcessor {
     /**
      * Check expected behavior on classes and packages.
      */
@@ -68,14 +66,5 @@ public class TestGetPackageOf extends AbstractProcessor {
                 throw new RuntimeException("Unexpected package for unnamed pkg: " + pkg);
         }
         return true;
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        eltUtils = processingEnv.getElementUtils();
     }
 }

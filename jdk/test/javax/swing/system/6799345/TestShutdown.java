@@ -59,7 +59,7 @@ public class TestShutdown
 
         while (!appcontextInitDone)
         {
-            Thread.sleep(500);
+            Thread.sleep(1000);
         }
 
         targetAppContext.dispose();
@@ -146,7 +146,6 @@ public class TestShutdown
                     startGUI();
                 }
             });
-            stk.realSync();
 
             // start multiple SwingWorkers
             while (!Thread.interrupted())

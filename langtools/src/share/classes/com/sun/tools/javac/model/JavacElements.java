@@ -66,32 +66,26 @@ public class JavacElements implements Elements {
     private Types types;
     private Enter enter;
 
-    private static final Context.Key<JavacElements> KEY =
-            new Context.Key<JavacElements>();
-
     public static JavacElements instance(Context context) {
-        JavacElements instance = context.get(KEY);
-        if (instance == null) {
+        JavacElements instance = context.get(JavacElements.class);
+        if (instance == null)
             instance = new JavacElements(context);
-            context.put(KEY, instance);
-        }
         return instance;
     }
 
     /**
      * Public for use only by JavacProcessingEnvironment
      */
-    // TODO JavacElements constructor should be protected
-    public JavacElements(Context context) {
+    protected JavacElements(Context context) {
         setContext(context);
     }
 
     /**
      * Use a new context.  May be called from outside to update
      * internal state for a new annotation-processing round.
-     * This instance is *not* then registered with the new context.
      */
     public void setContext(Context context) {
+        context.put(JavacElements.class, this);
         javaCompiler = JavaCompiler.instance(context);
         syms = Symtab.instance(context);
         names = Names.instance(context);
