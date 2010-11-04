@@ -466,33 +466,16 @@ void PSMarkSweep::allocate_stacks() {
   _preserved_count_max  = pointer_delta(to_space->end(), to_space->top(), sizeof(jbyte));
   // Now divide by the size of a PreservedMark
   _preserved_count_max /= sizeof(PreservedMark);
-
-  _preserved_mark_stack = NULL;
-  _preserved_oop_stack = NULL;
-
-  _marking_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(4000, true);
-  _objarray_stack = new (ResourceObj::C_HEAP) GrowableArray<ObjArrayTask>(50, true);
-
-  int size = SystemDictionary::number_of_classes() * 2;
-  _revisit_klass_stack = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(size, true);
-  // (#klass/k)^2, for k ~ 10 appears a better setting, but this will have to do for
-  // now until we investigate a more optimal setting.
-  _revisit_mdo_stack   = new (ResourceObj::C_HEAP) GrowableArray<DataLayout*>(size*2, true);
 }
 
 
 void PSMarkSweep::deallocate_stacks() {
-  if (_preserved_oop_stack) {
-    delete _preserved_mark_stack;
-    _preserved_mark_stack = NULL;
-    delete _preserved_oop_stack;
-    _preserved_oop_stack = NULL;
-  }
-
-  delete _marking_stack;
-  delete _objarray_stack;
-  delete _revisit_klass_stack;
-  delete _revisit_mdo_stack;
+  _preserved_mark_stack.clear(true);
+  _preserved_oop_stack.clear(true);
+  _marking_stack.clear();
+  _objarray_stack.clear(true);
+  _revisit_klass_stack.clear(true);
+  _revisit_mdo_stack.clear(true);
 }
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
@@ -542,17 +525,17 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // Update subklass/sibling/implementor links of live klasses
   follow_weak_klass_links();
-  assert(_marking_stack->is_empty(), "just drained");
+  assert(_marking_stack.is_empty(), "just drained");
 
   // Visit memoized mdo's and clear unmarked weak refs
   follow_mdo_weak_refs();
-  assert(_marking_stack->is_empty(), "just drained");
+  assert(_marking_stack.is_empty(), "just drained");
 
   // Visit symbol and interned string tables and delete unmarked oops
   SymbolTable::unlink(is_alive_closure());
   StringTable::unlink(is_alive_closure());
 
-  assert(_marking_stack->is_empty(), "stack should be empty by now");
+  assert(_marking_stack.is_empty(), "stack should be empty by now");
 }
 
 
