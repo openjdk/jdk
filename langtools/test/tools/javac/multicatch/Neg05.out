@@ -1,0 +1,2 @@
+Neg05.java:30:31: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg02.Foo), (compiler.misc.diamond.invalid.arg: java.lang.Exception&Neg02.Base<? extends java.lang.Object&java.io.Serializable&java.lang.Comparable<? extends java.lang.Object&java.io.Serializable&java.lang.Comparable<?>>>, (compiler.misc.diamond: Neg02.Foo))
+1 error

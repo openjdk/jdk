@@ -256,6 +256,8 @@ public class Attr extends JCTree.Visitor {
             } else {
                 log.error(pos, "cant.assign.val.to.final.var", v);
             }
+        } else if ((v.flags() & EFFECTIVELY_FINAL) != 0) {
+            v.flags_field &= ~EFFECTIVELY_FINAL;
         }
     }
 
@@ -799,6 +801,7 @@ public class Attr extends JCTree.Visitor {
                 memberEnter.memberEnter(tree, env);
                 annotate.flush();
             }
+            tree.sym.flags_field |= EFFECTIVELY_FINAL;
         }
 
         VarSymbol v = tree.sym;
@@ -1061,11 +1064,8 @@ public class Attr extends JCTree.Visitor {
                 localEnv.dup(c, localEnv.info.dup(localEnv.info.scope.dup()));
             Type ctype = attribStat(c.param, catchEnv);
             if (TreeInfo.isMultiCatch(c)) {
-                //check that multi-catch parameter is marked as final
-                if ((c.param.sym.flags() & FINAL) == 0) {
-                    log.error(c.param.pos(), "multicatch.param.must.be.final", c.param.sym);
-                }
-                c.param.sym.flags_field = c.param.sym.flags() | DISJUNCTION;
+                //multi-catch parameter is implicitly marked as final
+                c.param.sym.flags_field |= FINAL | DISJUNCTION;
             }
             if (c.param.sym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
