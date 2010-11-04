@@ -70,17 +70,17 @@ MethodHandleEntry* MethodHandleEntry::finish_compiled_entry(MacroAssembler* _mas
 
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm) {
-  // I5_savedSP: sender SP (must preserve)
+  // I5_savedSP/O5_savedSP: sender SP (must preserve)
   // G4 (Gargs): incoming argument list (must preserve)
-  // G5_method:  invoke methodOop; becomes method type.
+  // G5_method:  invoke methodOop
   // G3_method_handle: receiver method handle (must load from sp[MethodTypeForm.vmslots])
-  // O0, O1: garbage temps, blown away
-  Register O0_argslot = O0;
+  // O0, O1, O2, O3, O4: garbage temps, blown away
+  Register O0_mtype   = O0;
   Register O1_scratch = O1;
   Register O2_scratch = O2;
   Register O3_scratch = O3;
+  Register O4_argslot = O4;
   Register O4_argbase = O4;
-  Register O5_mtype   = O5;
 
   // emit WrongMethodType path first, to enable back-branch from main path
   Label wrong_method_type;
@@ -91,7 +91,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   __ cmp(O1_scratch, (int) vmIntrinsics::_invokeExact);
   __ brx(Assembler::notEqual, false, Assembler::pt, invoke_generic_slow_path);
   __ delayed()->nop();
-  __ mov(O5_mtype, G5_method_type);  // required by throw_WrongMethodType
+  __ mov(O0_mtype, G5_method_type);  // required by throw_WrongMethodType
   // mov(G3_method_handle, G3_method_handle);  // already in this register
   __ jump_to(AddressLiteral(Interpreter::throw_WrongMethodType_entry()), O1_scratch);
   __ delayed()->nop();
@@ -104,21 +104,21 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   {
     Register tem = G5_method;
     for (jint* pchase = methodOopDesc::method_type_offsets_chain(); (*pchase) != -1; pchase++) {
-      __ ld_ptr(Address(tem, *pchase), O5_mtype);
-      tem = O5_mtype;          // in case there is another indirection
+      __ ld_ptr(Address(tem, *pchase), O0_mtype);
+      tem = O0_mtype;          // in case there is another indirection
     }
   }
 
   // given the MethodType, find out where the MH argument is buried
-  __ load_heap_oop(Address(O5_mtype,   __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, O1_scratch)),        O0_argslot);
-  __ ldsw(  Address(O0_argslot, __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, O1_scratch)), O0_argslot);
-  __ add(Gargs, __ argument_offset(O0_argslot, 1), O4_argbase);
+  __ load_heap_oop(Address(O0_mtype,   __ delayed_value(java_dyn_MethodType::form_offset_in_bytes,        O1_scratch)), O4_argslot);
+  __ ldsw(         Address(O4_argslot, __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, O1_scratch)), O4_argslot);
+  __ add(Gargs, __ argument_offset(O4_argslot, 1), O4_argbase);
   // Note: argument_address uses its input as a scratch register!
   __ ld_ptr(Address(O4_argbase, -Interpreter::stackElementSize), G3_method_handle);
 
   trace_method_handle(_masm, "invokeExact");
 
-  __ check_method_handle_type(O5_mtype, G3_method_handle, O1_scratch, wrong_method_type);
+  __ check_method_handle_type(O0_mtype, G3_method_handle, O1_scratch, wrong_method_type);
   __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
 
   // for invokeGeneric (only), apply argument and result conversions on the fly
@@ -135,15 +135,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 #endif //ASSERT
 
   // make room on the stack for another pointer:
-  insert_arg_slots(_masm, 2 * stack_move_unit(), _INSERT_REF_MASK,
-                   O4_argbase, O1_scratch, O2_scratch, O3_scratch);
+  insert_arg_slots(_masm, 2 * stack_move_unit(), _INSERT_REF_MASK, O4_argbase, O1_scratch, O2_scratch, O3_scratch);
   // load up an adapter from the calling type (Java weaves this)
   Register O2_form    = O2_scratch;
   Register O3_adapter = O3_scratch;
-  __ load_heap_oop(Address(O5_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, O1_scratch)), O2_form);
+  __ load_heap_oop(Address(O0_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes,               O1_scratch)), O2_form);
   // load_heap_oop(Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
   // deal with old JDK versions:
-  __ add(   Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
+  __ add(          Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
   __ cmp(O3_adapter, O2_form);
   Label sorry_no_invoke_generic;
   __ brx(Assembler::lessUnsigned, false, Assembler::pn, sorry_no_invoke_generic);
@@ -157,14 +156,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   // As a trusted first argument, pass the type being called, so the adapter knows
   // the actual types of the arguments and return values.
   // (Generic invokers are shared among form-families of method-type.)
-  __ st_ptr(O5_mtype,   Address(O4_argbase, 0 * Interpreter::stackElementSize));
+  __ st_ptr(O0_mtype,   Address(O4_argbase, 0 * Interpreter::stackElementSize));
   // FIXME: assert that O3_adapter is of the right method-type.
   __ mov(O3_adapter, G3_method_handle);
   trace_method_handle(_masm, "invokeGeneric");
   __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
 
   __ bind(sorry_no_invoke_generic); // no invokeGeneric implementation available!
-  __ mov(O5_mtype, G5_method_type);  // required by throw_WrongMethodType
+  __ mov(O0_mtype, G5_method_type);  // required by throw_WrongMethodType
   // mov(G3_method_handle, G3_method_handle);  // already in this register
   __ jump_to(AddressLiteral(Interpreter::throw_WrongMethodType_entry()), O1_scratch);
   __ delayed()->nop();
