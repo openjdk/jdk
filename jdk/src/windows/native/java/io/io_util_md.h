@@ -33,6 +33,7 @@
 WCHAR* pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE);
 WCHAR* fileToNTPath(JNIEnv *env, jobject file, jfieldID id);
 WCHAR* getPrefixed(const WCHAR* path, int pathlen);
+WCHAR* currentDir(int di);
 int currentDirLength(const WCHAR* path, int pathlen);
 void fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags);
 int handleAvailable(jlong fd, jlong *pbytes);

@@ -169,7 +169,7 @@ public class JPEG {
     public static final int ADOBE_YCCK = 2;
 
     // Spi initialization stuff
-    public static final String vendor = "Sun Microsystems, Inc.";
+    public static final String vendor = "Oracle Corporation";
     public static final String version = "0.5";
     // Names of the formats we can read or write
     public static final String [] names = {"JPEG", "jpeg", "JPG", "jpg"};

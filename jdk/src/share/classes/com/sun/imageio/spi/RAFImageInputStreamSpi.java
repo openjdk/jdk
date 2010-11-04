@@ -34,7 +34,7 @@ import javax.imageio.stream.FileImageInputStream;
 
 public class RAFImageInputStreamSpi extends ImageInputStreamSpi {
 
-    private static final String vendorName = "Sun Microsystems, Inc.";
+    private static final String vendorName = "Oracle Corporation";
 
     private static final String version = "1.0";
 
