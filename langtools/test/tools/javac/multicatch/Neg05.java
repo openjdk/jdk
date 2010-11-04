@@ -4,13 +4,19 @@
  *
  * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
  * @author mcimadamore
- * @compile/fail/ref=Neg02.out -XDrawDiagnostics Neg02.java
+ * @compile/fail/ref=Neg05.out -XDrawDiagnostics Neg05.java
  *
  */
 
 class Neg02 {
-    static class A extends Exception {}
-    static class B extends Exception {}
+
+    static class Foo<X> {
+       Foo(X x) {}
+    }
+
+    static interface Base<X> {}
+    static class A extends Exception implements Base<String> {}
+    static class B extends Exception implements Base<Integer> {}
 
     void m() {
         try {
@@ -20,8 +26,8 @@ class Neg02 {
             else {
                 throw new B();
             }
-        } catch (final A | B ex) {
-            ex = new B();
+        } catch (A | B ex) {
+            Foo<?> f = new Foo<>(ex);
         }
     }
 }

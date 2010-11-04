@@ -21,18 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.multicatch.param.must.be.final
-
-class MulticatchMustBeFinal {
-    void e1() throws NullPointerException { }
-    void e2() throws IllegalArgumentException { }
-
-    void m() {
-        try {
-            e1();
-            e2();
-        } catch (NullPointerException | IllegalArgumentException e) {
-            e.printStackTrace();
-        }
-    }
-}
+/**
+ * Annotation used by ModelChecker to mark the class whose model is to be checked
+ */
+@interface Check {}
