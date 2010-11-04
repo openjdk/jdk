@@ -471,7 +471,7 @@ int ciInstanceKlass::compute_nonstatic_fields() {
     ciField* field = fields->at(i);
     int offset = field->offset_in_bytes();
     int size   = (field->_type == NULL) ? heapOopSize : field->size_in_bytes();
-    assert(last_offset <= offset, "no field overlap");
+    assert(last_offset <= offset, err_msg("no field overlap: %d <= %d", last_offset, offset));
     if (last_offset > (int)sizeof(oopDesc))
       assert((offset - last_offset) < BytesPerLong, "no big holes");
     // Note:  Two consecutive T_BYTE fields will be separated by wordSize-1

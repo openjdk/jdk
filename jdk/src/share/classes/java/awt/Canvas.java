@@ -71,12 +71,13 @@ public class Canvas extends Component implements Accessible {
 
     @Override
     void setGraphicsConfiguration(GraphicsConfiguration gc) {
-        CanvasPeer peer = (CanvasPeer)getPeer();
-        if (peer != null) {
-            gc = peer.getAppropriateGraphicsConfiguration(gc);
+        synchronized(getTreeLock()) {
+            CanvasPeer peer = (CanvasPeer)getPeer();
+            if (peer != null) {
+                gc = peer.getAppropriateGraphicsConfiguration(gc);
+            }
+            super.setGraphicsConfiguration(gc);
         }
-
-        super.setGraphicsConfiguration(gc);
     }
 
     /**

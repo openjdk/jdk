@@ -238,7 +238,7 @@ void AwtDesktopProperties::GetNonClientParameters() {
     // when running on XP. However this can't be referenced at compile time
     // with the older SDK, so there use 'lfMessageFont' plus its size.
     if (!IS_WINVISTA) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1600) {
+#if defined(_MSC_VER) && (_MSC_VER >= 1600)
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS, iPaddedBorderWidth);
 #else
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS,lfMessageFont) + sizeof(LOGFONT);
