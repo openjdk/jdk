@@ -735,7 +735,11 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // Return true if the method is an instance of one of the two
 // signature-polymorphic MethodHandle methods, invokeExact or invokeGeneric.
 bool ciMethod::is_method_handle_invoke() const {
-  if (!is_loaded())  return false;
+  if (!is_loaded()) {
+    bool flag = (holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
+                 methodOopDesc::is_method_handle_invoke_name(name()->sid()));
+    return flag;
+  }
   VM_ENTRY_MARK;
   return get_methodOop()->is_method_handle_invoke();
 }
@@ -975,7 +979,7 @@ int ciMethod::instructions_size(int comp_level) {
   GUARDED_VM_ENTRY(
     nmethod* code = get_methodOop()->code();
     if (code != NULL && (comp_level == CompLevel_any || comp_level == code->comp_level())) {
-      return code->code_end() - code->verified_entry_point();
+      return code->insts_end() - code->verified_entry_point();
     }
     return 0;
   )

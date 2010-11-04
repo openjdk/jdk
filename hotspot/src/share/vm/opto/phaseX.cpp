@@ -844,10 +844,33 @@ void PhaseIterGVN::optimize() {
   }
 #endif
 
+#ifdef ASSERT
+  Node* prev = NULL;
+  uint rep_cnt = 0;
+#endif
+  uint loop_count = 0;
+
   // Pull from worklist; transform node;
   // If node has changed: update edge info and put uses on worklist.
   while( _worklist.size() ) {
     Node *n  = _worklist.pop();
+    if (++loop_count >= K * C->unique()) {
+      debug_only(n->dump(4);)
+      assert(false, "infinite loop in PhaseIterGVN::optimize");
+      C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
+      return;
+    }
+#ifdef ASSERT
+    if (n == prev) {
+      if (++rep_cnt > 3) {
+        n->dump(4);
+        assert(false, "loop in Ideal transformation");
+      }
+    } else {
+      rep_cnt = 0;
+    }
+    prev = n;
+#endif
     if (TraceIterativeGVN && Verbose) {
       tty->print("  Pop ");
       NOT_PRODUCT( n->dump(); )

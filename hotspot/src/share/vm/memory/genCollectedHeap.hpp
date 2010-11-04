@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public:
   // Data structure for claiming the (potentially) parallel tasks in
   // (gen-specific) strong roots processing.
   SubTasksDone* _gen_process_strong_tasks;
+  SubTasksDone* gen_process_strong_tasks() { return _gen_process_strong_tasks; }
 
   // In block contents verification, the number of header words to skip
   NOT_PRODUCT(static size_t _skip_header_HeapWords;)

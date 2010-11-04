@@ -102,8 +102,8 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
     char *clname;
     jclass cls = 0;
     char buf[128];
-    int len;
-    int unicode_len;
+    jsize len;
+    jsize unicode_len;
 
     if (classname == NULL) {
         JNU_ThrowNullPointerException(env, 0);
@@ -112,7 +112,7 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
 
     len = (*env)->GetStringUTFLength(env, classname);
     unicode_len = (*env)->GetStringLength(env, classname);
-    if (len >= sizeof(buf)) {
+    if (len >= (jsize)sizeof(buf)) {
         clname = malloc(len + 1);
         if (clname == NULL) {
             JNU_ThrowOutOfMemoryError(env, NULL);
