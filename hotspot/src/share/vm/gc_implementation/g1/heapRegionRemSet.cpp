@@ -1159,9 +1159,7 @@ HeapRegionRemSetIterator() :
   _hrrs(NULL),
   _g1h(G1CollectedHeap::heap()),
   _bosa(NULL),
-  _sparse_iter(size_t(G1CollectedHeap::heap()->reserved_region().start())
-               >> CardTableModRefBS::card_shift)
-{}
+  _sparse_iter() { }
 
 void HeapRegionRemSetIterator::initialize(const HeapRegionRemSet* hrrs) {
   _hrrs = hrrs;

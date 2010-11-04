@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,12 +272,16 @@ void ConcurrentMarkSweepThread::desynchronize(bool is_cms_thread) {
   }
 }
 
-// Wait until the next synchronous GC or a timeout, whichever is earlier.
-void ConcurrentMarkSweepThread::wait_on_cms_lock(long t) {
+// Wait until the next synchronous GC, a concurrent full gc request,
+// or a timeout, whichever is earlier.
+void ConcurrentMarkSweepThread::wait_on_cms_lock(long t_millis) {
   MutexLockerEx x(CGC_lock,
                   Mutex::_no_safepoint_check_flag);
+  if (_should_terminate || _collector->_full_gc_requested) {
+    return;
+  }
   set_CMS_flag(CMS_cms_wants_token);   // to provoke notifies
-  CGC_lock->wait(Mutex::_no_safepoint_check_flag, t);
+  CGC_lock->wait(Mutex::_no_safepoint_check_flag, t_millis);
   clear_CMS_flag(CMS_cms_wants_token);
   assert(!CMS_flag_is_set(CMS_cms_has_token | CMS_cms_wants_token),
          "Should not be set");
@@ -289,7 +293,8 @@ void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
       icms_wait();
       return;
     } else {
-      // Wait until the next synchronous GC or a timeout, whichever is earlier
+      // Wait until the next synchronous GC, a concurrent full gc
+      // request or a timeout, whichever is earlier.
       wait_on_cms_lock(CMSWaitDuration);
     }
     // Check if we should start a CMS collection cycle
