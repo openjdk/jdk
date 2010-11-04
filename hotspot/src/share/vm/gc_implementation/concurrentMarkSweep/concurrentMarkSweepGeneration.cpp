@@ -195,7 +195,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
            "Offset of FreeChunk::_prev within FreeChunk must match"
            "  that of OopDesc::_klass within OopDesc");
   )
-  if (ParallelGCThreads > 0) {
+  if (CollectedHeap::use_parallel_gc_threads()) {
     typedef CMSParGCThreadState* CMSParGCThreadStatePtr;
     _par_gc_thread_states =
       NEW_C_HEAP_ARRAY(CMSParGCThreadStatePtr, ParallelGCThreads);
@@ -540,8 +540,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _is_alive_closure(_span, &_markBitMap),
   _restart_addr(NULL),
   _overflow_list(NULL),
-  _preserved_oop_stack(NULL),
-  _preserved_mark_stack(NULL),
   _stats(cmsGen),
   _eden_chunk_array(NULL),     // may be set in ctor body
   _eden_chunk_capacity(0),     // -- ditto --
@@ -616,7 +614,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   }
 
   // Support for multi-threaded concurrent phases
-  if (ParallelGCThreads > 0 && CMSConcurrentMTEnabled) {
+  if (CollectedHeap::use_parallel_gc_threads() && CMSConcurrentMTEnabled) {
     if (FLAG_IS_DEFAULT(ConcGCThreads)) {
       // just for now
       FLAG_SET_DEFAULT(ConcGCThreads, (ParallelGCThreads + 3)/4);
@@ -628,6 +626,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         warning("GC/CMS: _conc_workers allocation failure: "
               "forcing -CMSConcurrentMTEnabled");
         CMSConcurrentMTEnabled = false;
+      } else {
+        _conc_workers->initialize_workers();
       }
     } else {
       CMSConcurrentMTEnabled = false;
@@ -936,7 +936,7 @@ void ConcurrentMarkSweepGeneration::reset_after_compaction() {
   // along with all the other pointers into the heap but
   // compaction is expected to be a rare event with
   // a heap using cms so don't do it without seeing the need.
-  if (ParallelGCThreads > 0) {
+  if (CollectedHeap::use_parallel_gc_threads()) {
     for (uint i = 0; i < ParallelGCThreads; i++) {
       _par_gc_thread_states[i]->promo.reset();
     }
@@ -2630,7 +2630,8 @@ void CMSCollector::gc_prologue(bool full) {
   // Should call gc_prologue_work() for all cms gens we are responsible for
   bool registerClosure =    _collectorState >= Marking
                          && _collectorState < Sweeping;
-  ModUnionClosure* muc = ParallelGCThreads > 0 ? &_modUnionClosurePar
+  ModUnionClosure* muc = CollectedHeap::use_parallel_gc_threads() ?
+                                               &_modUnionClosurePar
                                                : &_modUnionClosure;
   _cmsGen->gc_prologue_work(full, registerClosure, muc);
   _permGen->gc_prologue_work(full, registerClosure, muc);
@@ -2731,7 +2732,7 @@ void ConcurrentMarkSweepGeneration::gc_epilogue(bool full) {
   collector()->gc_epilogue(full);
 
   // Also reset promotion tracking in par gc thread states.
-  if (ParallelGCThreads > 0) {
+  if (CollectedHeap::use_parallel_gc_threads()) {
     for (uint i = 0; i < ParallelGCThreads; i++) {
       _par_gc_thread_states[i]->promo.stopTrackingPromotions(i);
     }
@@ -3263,6 +3264,7 @@ HeapWord*
 ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
                                                    bool   tlab,
                                                    bool   parallel) {
+  CMSSynchronousYieldRequest yr;
   assert(!tlab, "Can't deal with TLAB allocation");
   MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
   expand(word_size*HeapWordSize, MinHeapDeltaBytes,
@@ -3709,20 +3711,26 @@ class CMSConcMarkingTask;
 class CMSConcMarkingTerminator: public ParallelTaskTerminator {
   CMSCollector*       _collector;
   CMSConcMarkingTask* _task;
-  bool _yield;
- protected:
-  virtual void yield();
  public:
+  virtual void yield();
+
   // "n_threads" is the number of threads to be terminated.
   // "queue_set" is a set of work queues of other threads.
   // "collector" is the CMS collector associated with this task terminator.
   // "yield" indicates whether we need the gang as a whole to yield.
-  CMSConcMarkingTerminator(int n_threads, TaskQueueSetSuper* queue_set,
-                           CMSCollector* collector, bool yield) :
+  CMSConcMarkingTerminator(int n_threads, TaskQueueSetSuper* queue_set, CMSCollector* collector) :
     ParallelTaskTerminator(n_threads, queue_set),
-    _collector(collector),
-    _yield(yield) { }
+    _collector(collector) { }
 
+  void set_task(CMSConcMarkingTask* task) {
+    _task = task;
+  }
+};
+
+class CMSConcMarkingTerminatorTerminator: public TerminatorTerminator {
+  CMSConcMarkingTask* _task;
+ public:
+  bool should_exit_termination();
   void set_task(CMSConcMarkingTask* task) {
     _task = task;
   }
@@ -3731,13 +3739,14 @@ class CMSConcMarkingTerminator: public ParallelTaskTerminator {
 // MT Concurrent Marking Task
 class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   CMSCollector* _collector;
-  YieldingFlexibleWorkGang* _workers;        // the whole gang
   int           _n_workers;                  // requested/desired # workers
   bool          _asynch;
   bool          _result;
   CompactibleFreeListSpace*  _cms_space;
   CompactibleFreeListSpace* _perm_space;
-  HeapWord*     _global_finger;
+  char          _pad_front[64];   // padding to ...
+  HeapWord*     _global_finger;   // ... avoid sharing cache line
+  char          _pad_back[64];
   HeapWord*     _restart_addr;
 
   //  Exposed here for yielding support
@@ -3745,28 +3754,30 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
 
   // The per thread work queues, available here for stealing
   OopTaskQueueSet*  _task_queues;
+
+  // Termination (and yielding) support
   CMSConcMarkingTerminator _term;
+  CMSConcMarkingTerminatorTerminator _term_term;
 
  public:
   CMSConcMarkingTask(CMSCollector* collector,
                  CompactibleFreeListSpace* cms_space,
                  CompactibleFreeListSpace* perm_space,
-                 bool asynch, int n_workers,
+                 bool asynch,
                  YieldingFlexibleWorkGang* workers,
                  OopTaskQueueSet* task_queues):
     YieldingFlexibleGangTask("Concurrent marking done multi-threaded"),
     _collector(collector),
     _cms_space(cms_space),
     _perm_space(perm_space),
-    _asynch(asynch), _n_workers(n_workers), _result(true),
-    _workers(workers), _task_queues(task_queues),
-    _term(n_workers, task_queues, _collector, asynch),
+    _asynch(asynch), _n_workers(0), _result(true),
+    _task_queues(task_queues),
+    _term(_n_workers, task_queues, _collector),
     _bit_map_lock(collector->bitMapLock())
   {
-    assert(n_workers <= workers->total_workers(),
-           "Else termination won't work correctly today"); // XXX FIX ME!
-    _requested_size = n_workers;
+    _requested_size = _n_workers;
     _term.set_task(this);
+    _term_term.set_task(this);
     assert(_cms_space->bottom() < _perm_space->bottom(),
            "Finger incorrectly initialized below");
     _restart_addr = _global_finger = _cms_space->bottom();
@@ -3781,7 +3792,16 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
 
   CMSConcMarkingTerminator* terminator() { return &_term; }
 
+  virtual void set_for_termination(int active_workers) {
+    terminator()->reset_for_reuse(active_workers);
+  }
+
   void work(int i);
+  bool should_yield() {
+    return    ConcurrentMarkSweepThread::should_yield()
+           && !_collector->foregroundGCIsActive()
+           && _asynch;
+  }
 
   virtual void coordinator_yield();  // stuff done by coordinator
   bool result() { return _result; }
@@ -3803,10 +3823,17 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   void bump_global_finger(HeapWord* f);
 };
 
+bool CMSConcMarkingTerminatorTerminator::should_exit_termination() {
+  assert(_task != NULL, "Error");
+  return _task->yielding();
+  // Note that we do not need the disjunct || _task->should_yield() above
+  // because we want terminating threads to yield only if the task
+  // is already in the midst of yielding, which happens only after at least one
+  // thread has yielded.
+}
+
 void CMSConcMarkingTerminator::yield() {
-  if (ConcurrentMarkSweepThread::should_yield() &&
-      !_collector->foregroundGCIsActive() &&
-      _yield) {
+  if (_task->should_yield()) {
     _task->yield();
   } else {
     ParallelTaskTerminator::yield();
@@ -4031,6 +4058,7 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
 
 class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
  private:
+  CMSConcMarkingTask* _task;
   MemRegion     _span;
   CMSBitMap*    _bit_map;
   CMSMarkStack* _overflow_stack;
@@ -4038,11 +4066,12 @@ class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
  protected:
   DO_OOP_WORK_DEFN
  public:
-  Par_ConcMarkingClosure(CMSCollector* collector, OopTaskQueue* work_queue,
+  Par_ConcMarkingClosure(CMSCollector* collector, CMSConcMarkingTask* task, OopTaskQueue* work_queue,
                          CMSBitMap* bit_map, CMSMarkStack* overflow_stack,
                          CMSMarkStack* revisit_stack):
     Par_KlassRememberingOopClosure(collector, NULL, revisit_stack),
-    _span(_collector->_span),
+    _task(task),
+    _span(collector->_span),
     _work_queue(work_queue),
     _bit_map(bit_map),
     _overflow_stack(overflow_stack)
@@ -4051,6 +4080,11 @@ class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
   virtual void do_oop(narrowOop* p);
   void trim_queue(size_t max);
   void handle_stack_overflow(HeapWord* lost);
+  void do_yield_check() {
+    if (_task->should_yield()) {
+      _task->yield();
+    }
+  }
 };
 
 // Grey object scanning during work stealing phase --
@@ -4094,6 +4128,7 @@ void Par_ConcMarkingClosure::do_oop(oop obj) {
         handle_stack_overflow(addr);
       }
     } // Else, some other thread got there first
+    do_yield_check();
   }
 }
 
@@ -4109,6 +4144,7 @@ void Par_ConcMarkingClosure::trim_queue(size_t max) {
       assert(_span.contains((HeapWord*)new_oop), "Not in span");
       assert(new_oop->is_parsable(), "Should be parsable");
       new_oop->oop_iterate(this);  // do_oop() above
+      do_yield_check();
     }
   }
 }
@@ -4136,7 +4172,7 @@ void CMSConcMarkingTask::do_work_steal(int i) {
   CMSMarkStack* ovflw = &(_collector->_markStack);
   CMSMarkStack* revisit = &(_collector->_revisitStack);
   int* seed = _collector->hash_seed(i);
-  Par_ConcMarkingClosure cl(_collector, work_q, bm, ovflw, revisit);
+  Par_ConcMarkingClosure cl(_collector, this, work_q, bm, ovflw, revisit);
   while (true) {
     cl.trim_queue(0);
     assert(work_q->size() == 0, "Should have been emptied above");
@@ -4149,9 +4185,11 @@ void CMSConcMarkingTask::do_work_steal(int i) {
       assert(obj_to_scan->is_oop(), "Should be an oop");
       assert(bm->isMarked((HeapWord*)obj_to_scan), "Grey object");
       obj_to_scan->oop_iterate(&cl);
-    } else if (terminator()->offer_termination()) {
+    } else if (terminator()->offer_termination(&_term_term)) {
       assert(work_q->size() == 0, "Impossible!");
       break;
+    } else if (yielding() || should_yield()) {
+      yield();
     }
   }
 }
@@ -4220,9 +4258,12 @@ bool CMSCollector::do_marking_mt(bool asynch) {
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
   CompactibleFreeListSpace* perm_space = _permGen->cmsSpace();
 
-  CMSConcMarkingTask tsk(this, cms_space, perm_space,
-                         asynch, num_workers /* number requested XXX */,
-                         conc_workers(), task_queues());
+  CMSConcMarkingTask tsk(this,
+                         cms_space,
+                         perm_space,
+                         asynch,
+                         conc_workers(),
+                         task_queues());
 
   // Since the actual number of workers we get may be different
   // from the number we requested above, do we need to do anything different
@@ -4326,6 +4367,10 @@ void CMSCollector::preclean() {
   verify_overflow_empty();
   _abort_preclean = false;
   if (CMSPrecleaningEnabled) {
+    // Precleaning is currently not MT but the reference processor
+    // may be set for MT.  Disable it temporarily here.
+    ReferenceProcessor* rp = ref_processor();
+    ReferenceProcessorMTProcMutator z(rp, false);
     _eden_chunk_index = 0;
     size_t used = get_eden_used();
     size_t capacity = get_eden_capacity();
@@ -4918,7 +4963,7 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
       // dirtied since the first checkpoint in this GC cycle and prior to
       // the most recent young generation GC, minus those cleaned up by the
       // concurrent precleaning.
-      if (CMSParallelRemarkEnabled && ParallelGCThreads > 0) {
+      if (CMSParallelRemarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
         TraceTime t("Rescan (parallel) ", PrintGCDetails, false, gclog_or_tty);
         do_remark_parallel();
       } else {
@@ -5012,7 +5057,6 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
 // Parallel remark task
 class CMSParRemarkTask: public AbstractGangTask {
   CMSCollector* _collector;
-  WorkGang*     _workers;
   int           _n_workers;
   CompactibleFreeListSpace* _cms_space;
   CompactibleFreeListSpace* _perm_space;
@@ -5025,21 +5069,21 @@ class CMSParRemarkTask: public AbstractGangTask {
   CMSParRemarkTask(CMSCollector* collector,
                    CompactibleFreeListSpace* cms_space,
                    CompactibleFreeListSpace* perm_space,
-                   int n_workers, WorkGang* workers,
+                   int n_workers, FlexibleWorkGang* workers,
                    OopTaskQueueSet* task_queues):
     AbstractGangTask("Rescan roots and grey objects in parallel"),
     _collector(collector),
     _cms_space(cms_space), _perm_space(perm_space),
     _n_workers(n_workers),
-    _workers(workers),
     _task_queues(task_queues),
-    _term(workers->total_workers(), task_queues) { }
+    _term(n_workers, task_queues) { }
 
   OopTaskQueueSet* task_queues() { return _task_queues; }
 
   OopTaskQueue* work_queue(int i) { return task_queues()->queue(i); }
 
   ParallelTaskTerminator* terminator() { return &_term; }
+  int n_workers() { return _n_workers; }
 
   void work(int i);
 
@@ -5056,6 +5100,11 @@ class CMSParRemarkTask: public AbstractGangTask {
   // ... work stealing for the above
   void do_work_steal(int i, Par_MarkRefsIntoAndScanClosure* cl, int* seed);
 };
+
+// work_queue(i) is passed to the closure
+// Par_MarkRefsIntoAndScanClosure.  The "i" parameter
+// also is passed to do_dirty_card_rescan_tasks() and to
+// do_work_steal() to select the i-th task_queue.
 
 void CMSParRemarkTask::work(int i) {
   elapsedTimer _timer;
@@ -5128,6 +5177,7 @@ void CMSParRemarkTask::work(int i) {
 
   // Do the rescan tasks for each of the two spaces
   // (cms_space and perm_space) in turn.
+  // "i" is passed to select the "i-th" task_queue
   do_dirty_card_rescan_tasks(_cms_space, i, &par_mrias_cl);
   do_dirty_card_rescan_tasks(_perm_space, i, &par_mrias_cl);
   _timer.stop();
@@ -5150,6 +5200,7 @@ void CMSParRemarkTask::work(int i) {
   }
 }
 
+// Note that parameter "i" is not used.
 void
 CMSParRemarkTask::do_young_space_rescan(int i,
   Par_MarkRefsIntoAndScanClosure* cl, ContiguousSpace* space,
@@ -5309,8 +5360,13 @@ CMSParRemarkTask::do_work_steal(int i, Par_MarkRefsIntoAndScanClosure* cl,
     size_t num_from_overflow_list = MIN2((size_t)(work_q->max_elems() - work_q->size())/4,
                                          (size_t)ParGCDesiredObjsFromOverflowList);
     // Now check if there's any work in the overflow list
+    // Passing ParallelGCThreads as the third parameter, no_of_gc_threads,
+    // only affects the number of attempts made to get work from the
+    // overflow list and does not affect the number of workers.  Just
+    // pass ParallelGCThreads so this behavior is unchanged.
     if (_collector->par_take_from_overflow_list(num_from_overflow_list,
-                                                work_q)) {
+                                                work_q,
+                                                ParallelGCThreads)) {
       // found something in global overflow list;
       // not yet ready to go stealing work from others.
       // We'd like to assert(work_q->size() != 0, ...)
@@ -5367,11 +5423,12 @@ void CMSCollector::reset_survivor_plab_arrays() {
 // Merge the per-thread plab arrays into the global survivor chunk
 // array which will provide the partitioning of the survivor space
 // for CMS rescan.
-void CMSCollector::merge_survivor_plab_arrays(ContiguousSpace* surv) {
+void CMSCollector::merge_survivor_plab_arrays(ContiguousSpace* surv,
+                                              int no_of_gc_threads) {
   assert(_survivor_plab_array  != NULL, "Error");
   assert(_survivor_chunk_array != NULL, "Error");
   assert(_collectorState == FinalMarking, "Error");
-  for (uint j = 0; j < ParallelGCThreads; j++) {
+  for (int j = 0; j < no_of_gc_threads; j++) {
     _cursor[j] = 0;
   }
   HeapWord* top = surv->top();
@@ -5379,7 +5436,7 @@ void CMSCollector::merge_survivor_plab_arrays(ContiguousSpace* surv) {
   for (i = 0; i < _survivor_chunk_capacity; i++) {  // all sca entries
     HeapWord* min_val = top;          // Higher than any PLAB address
     uint      min_tid = 0;            // position of min_val this round
-    for (uint j = 0; j < ParallelGCThreads; j++) {
+    for (int j = 0; j < no_of_gc_threads; j++) {
       ChunkArray* cur_sca = &_survivor_plab_array[j];
       if (_cursor[j] == cur_sca->end()) {
         continue;
@@ -5413,7 +5470,7 @@ void CMSCollector::merge_survivor_plab_arrays(ContiguousSpace* surv) {
   // Verify that we used up all the recorded entries
   #ifdef ASSERT
     size_t total = 0;
-    for (uint j = 0; j < ParallelGCThreads; j++) {
+    for (int j = 0; j < no_of_gc_threads; j++) {
       assert(_cursor[j] == _survivor_plab_array[j].end(), "Ctl pt invariant");
       total += _cursor[j];
     }
@@ -5448,13 +5505,15 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
     // Each valid entry in [0, _eden_chunk_index) represents a task.
     size_t n_tasks = _eden_chunk_index + 1;
     assert(n_tasks == 1 || _eden_chunk_array != NULL, "Error");
-    pst->set_par_threads(n_threads);
+    // Sets the condition for completion of the subtask (how many threads
+    // need to finish in order to be done).
+    pst->set_n_threads(n_threads);
     pst->set_n_tasks((int)n_tasks);
   }
 
   // Merge the survivor plab arrays into _survivor_chunk_array
   if (_survivor_plab_array != NULL) {
-    merge_survivor_plab_arrays(dng->from());
+    merge_survivor_plab_arrays(dng->from(), n_threads);
   } else {
     assert(_survivor_chunk_index == 0, "Error");
   }
@@ -5463,7 +5522,9 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
   {
     SequentialSubTasksDone* pst = dng->to()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
-    pst->set_par_threads(n_threads);
+    // Sets the condition for completion of the subtask (how many threads
+    // need to finish in order to be done).
+    pst->set_n_threads(n_threads);
     pst->set_n_tasks(1);
     assert(pst->valid(), "Error");
   }
@@ -5474,7 +5535,9 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
     assert(!pst->valid(), "Clobbering existing data?");
     size_t n_tasks = _survivor_chunk_index + 1;
     assert(n_tasks == 1 || _survivor_chunk_array != NULL, "Error");
-    pst->set_par_threads(n_threads);
+    // Sets the condition for completion of the subtask (how many threads
+    // need to finish in order to be done).
+    pst->set_n_threads(n_threads);
     pst->set_n_tasks((int)n_tasks);
     assert(pst->valid(), "Error");
   }
@@ -5483,7 +5546,7 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
 // Parallel version of remark
 void CMSCollector::do_remark_parallel() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  WorkGang* workers = gch->workers();
+  FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   int n_workers = workers->total_workers();
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
@@ -5636,13 +5699,11 @@ void CMSCollector::do_remark_non_parallel() {
 ////////////////////////////////////////////////////////
 // Parallel Reference Processing Task Proxy Class
 ////////////////////////////////////////////////////////
-class CMSRefProcTaskProxy: public AbstractGangTask {
+class CMSRefProcTaskProxy: public AbstractGangTaskWOopQueues {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   CMSCollector*          _collector;
   CMSBitMap*             _mark_bit_map;
   const MemRegion        _span;
-  OopTaskQueueSet*       _task_queues;
-  ParallelTaskTerminator _term;
   ProcessTask&           _task;
 
 public:
@@ -5650,23 +5711,20 @@ public:
                       CMSCollector*    collector,
                       const MemRegion& span,
                       CMSBitMap*       mark_bit_map,
-                      int              total_workers,
+                      AbstractWorkGang* workers,
                       OopTaskQueueSet* task_queues):
-    AbstractGangTask("Process referents by policy in parallel"),
+    AbstractGangTaskWOopQueues("Process referents by policy in parallel",
+      task_queues),
     _task(task),
-    _collector(collector), _span(span), _mark_bit_map(mark_bit_map),
-    _task_queues(task_queues),
-    _term(total_workers, task_queues)
+    _collector(collector), _span(span), _mark_bit_map(mark_bit_map)
     {
       assert(_collector->_span.equals(_span) && !_span.is_empty(),
              "Inconsistency in _span");
     }
 
-  OopTaskQueueSet* task_queues() { return _task_queues; }
+  OopTaskQueueSet* task_queues() { return queues(); }
 
   OopTaskQueue* work_queue(int i) { return task_queues()->queue(i); }
-
-  ParallelTaskTerminator* terminator() { return &_term; }
 
   void do_work_steal(int i,
                      CMSParDrainMarkingStackClosure* drain,
@@ -5739,8 +5797,13 @@ void CMSRefProcTaskProxy::do_work_steal(int i,
     size_t num_from_overflow_list = MIN2((size_t)(work_q->max_elems() - work_q->size())/4,
                                          (size_t)ParGCDesiredObjsFromOverflowList);
     // Now check if there's any work in the overflow list
+    // Passing ParallelGCThreads as the third parameter, no_of_gc_threads,
+    // only affects the number of attempts made to get work from the
+    // overflow list and does not affect the number of workers.  Just
+    // pass ParallelGCThreads so this behavior is unchanged.
     if (_collector->par_take_from_overflow_list(num_from_overflow_list,
-                                                work_q)) {
+                                                work_q,
+                                                ParallelGCThreads)) {
       // Found something in global overflow list;
       // not yet ready to go stealing work from others.
       // We'd like to assert(work_q->size() != 0, ...)
@@ -5773,13 +5836,12 @@ void CMSRefProcTaskProxy::do_work_steal(int i,
 void CMSRefProcTaskExecutor::execute(ProcessTask& task)
 {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  WorkGang* workers = gch->workers();
+  FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
-  int n_workers = workers->total_workers();
   CMSRefProcTaskProxy rp_task(task, &_collector,
                               _collector.ref_processor()->span(),
                               _collector.markBitMap(),
-                              n_workers, _collector.task_queues());
+                              workers, _collector.task_queues());
   workers->run_task(&rp_task);
 }
 
@@ -5787,7 +5849,7 @@ void CMSRefProcTaskExecutor::execute(EnqueueTask& task)
 {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  WorkGang* workers = gch->workers();
+  FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   CMSRefEnqueueTaskProxy enq_task(task);
   workers->run_task(&enq_task);
@@ -5814,6 +5876,14 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   {
     TraceTime t("weak refs processing", PrintGCDetails, false, gclog_or_tty);
     if (rp->processing_is_mt()) {
+      // Set the degree of MT here.  If the discovery is done MT, there
+      // may have been a different number of threads doing the discovery
+      // and a different number of discovered lists may have Ref objects.
+      // That is OK as long as the Reference lists are balanced (see
+      // balance_all_queues() and balance_queues()).
+
+
+      rp->set_mt_degree(ParallelGCThreads);
       CMSRefProcTaskExecutor task_executor(*this);
       rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
@@ -5874,6 +5944,7 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
 
   rp->set_enqueuing_is_done(true);
   if (rp->processing_is_mt()) {
+    rp->balance_all_queues();
     CMSRefProcTaskExecutor task_executor(*this);
     rp->enqueue_discovered_references(&task_executor);
   } else {
@@ -8708,7 +8779,8 @@ bool CMSCollector::take_from_overflow_list(size_t num, CMSMarkStack* stack) {
 // similar changes might be needed.
 // CR 6797058 has been filed to consolidate the common code.
 bool CMSCollector::par_take_from_overflow_list(size_t num,
-                                               OopTaskQueue* work_q) {
+                                               OopTaskQueue* work_q,
+                                               int no_of_gc_threads) {
   assert(work_q->size() == 0, "First empty local work queue");
   assert(num < work_q->max_elems(), "Can't bite more than we can chew");
   if (_overflow_list == NULL) {
@@ -8717,7 +8789,9 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
   // Grab the entire list; we'll put back a suffix
   oop prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
   Thread* tid = Thread::current();
-  size_t CMSOverflowSpinCount = (size_t)ParallelGCThreads;
+  // Before "no_of_gc_threads" was introduced CMSOverflowSpinCount was
+  // set to ParallelGCThreads.
+  size_t CMSOverflowSpinCount = (size_t) no_of_gc_threads; // was ParallelGCThreads;
   size_t sleep_time_millis = MAX2((size_t)1, num/100);
   // If the list is busy, we spin for a short while,
   // sleeping between attempts to get the list.
@@ -8867,23 +8941,10 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
 // failures where possible, thus, incrementally hardening the VM
 // in such low resource situations.
 void CMSCollector::preserve_mark_work(oop p, markOop m) {
-  if (_preserved_oop_stack == NULL) {
-    assert(_preserved_mark_stack == NULL,
-           "bijection with preserved_oop_stack");
-    // Allocate the stacks
-    _preserved_oop_stack  = new (ResourceObj::C_HEAP)
-      GrowableArray<oop>(PreserveMarkStackSize, true);
-    _preserved_mark_stack = new (ResourceObj::C_HEAP)
-      GrowableArray<markOop>(PreserveMarkStackSize, true);
-    if (_preserved_oop_stack == NULL || _preserved_mark_stack == NULL) {
-      vm_exit_out_of_memory(2* PreserveMarkStackSize * sizeof(oop) /* punt */,
-                            "Preserved Mark/Oop Stack for CMS (C-heap)");
-    }
-  }
-  _preserved_oop_stack->push(p);
-  _preserved_mark_stack->push(m);
+  _preserved_oop_stack.push(p);
+  _preserved_mark_stack.push(m);
   assert(m == p->mark(), "Mark word changed");
-  assert(_preserved_oop_stack->length() == _preserved_mark_stack->length(),
+  assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
          "bijection");
 }
 
@@ -8925,42 +8986,30 @@ void CMSCollector::par_preserve_mark_if_necessary(oop p) {
 // effect on performance so great that this will
 // likely just be in the noise anyway.
 void CMSCollector::restore_preserved_marks_if_any() {
-  if (_preserved_oop_stack == NULL) {
-    assert(_preserved_mark_stack == NULL,
-           "bijection with preserved_oop_stack");
-    return;
-  }
-
   assert(SafepointSynchronize::is_at_safepoint(),
          "world should be stopped");
   assert(Thread::current()->is_ConcurrentGC_thread() ||
          Thread::current()->is_VM_thread(),
          "should be single-threaded");
+  assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
+         "bijection");
 
-  int length = _preserved_oop_stack->length();
-  assert(_preserved_mark_stack->length() == length, "bijection");
-  for (int i = 0; i < length; i++) {
-    oop p = _preserved_oop_stack->at(i);
+  while (!_preserved_oop_stack.is_empty()) {
+    oop p = _preserved_oop_stack.pop();
     assert(p->is_oop(), "Should be an oop");
     assert(_span.contains(p), "oop should be in _span");
     assert(p->mark() == markOopDesc::prototype(),
            "Set when taken from overflow list");
-    markOop m = _preserved_mark_stack->at(i);
+    markOop m = _preserved_mark_stack.pop();
     p->set_mark(m);
   }
-  _preserved_mark_stack->clear();
-  _preserved_oop_stack->clear();
-  assert(_preserved_mark_stack->is_empty() &&
-         _preserved_oop_stack->is_empty(),
+  assert(_preserved_mark_stack.is_empty() && _preserved_oop_stack.is_empty(),
          "stacks were cleared above");
 }
 
 #ifndef PRODUCT
 bool CMSCollector::no_preserved_marks() const {
-  return (   (   _preserved_mark_stack == NULL
-              && _preserved_oop_stack == NULL)
-          || (   _preserved_mark_stack->is_empty()
-              && _preserved_oop_stack->is_empty()));
+  return _preserved_mark_stack.is_empty() && _preserved_oop_stack.is_empty();
 }
 #endif
 
@@ -9256,4 +9305,3 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(): TraceMemoryManagerStat
              true /* recordGCEndTime */,
              true /* countCollection */ );
 }
-

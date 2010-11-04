@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4032066 4039597 4046914 4054511 4065189 4109131 4875229
+   @bug 4032066 4039597 4046914 4054511 4065189 4109131 4875229 6983520
    @summary General exhaustive test of win32 pathname handling
    @author Mark Reinhold
 

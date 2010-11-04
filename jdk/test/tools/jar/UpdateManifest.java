@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6434207 6442687
+ * @bug 6434207 6442687 6984046
  * @summary Ensure that jar ufm actually updates the
  * existing jar file's manifest with contents of the
  * manifest file.
@@ -87,7 +87,7 @@ public class UpdateManifest {
         if (!debug) manifestOrig.deleteOnExit();
         PrintWriter pw = new PrintWriter(manifestOrig);
         pw.println("Manifest-Version: 1.0");
-        pw.println("Created-By: 1.6.0-internal (Sun Microsystems Inc.)");
+        pw.println("Created-By: 1.7.0-internal (Oracle Corporation)");
         pw.println("");
         pw.println(animal);
         pw.println(specTitle);
@@ -109,7 +109,7 @@ public class UpdateManifest {
         if (!debug) manifestUpdate.deleteOnExit();
         pw = new PrintWriter(manifestUpdate);
         final String createdBy =
-            "Created-By: 1.5.0-special (Sun Microsystems Inc.)";
+            "Created-By: 1.7.0-special (Oracle Corporation)";
         final String specVersion =
             "Specification-Version: 1.0.0.0";
         pw.println(createdBy); // replaces line in the original

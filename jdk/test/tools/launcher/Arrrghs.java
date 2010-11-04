@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
+ *      6894719
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java TestHelper.java
  * @run main Arrrghs
@@ -326,20 +327,36 @@ public class Arrrghs {
         System.out.println(tr);
     }
 
+    static void test6894719() {
+        // test both arguments to ensure they exist
+        TestHelper.TestResult tr = null;
+        tr = TestHelper.doExec(TestHelper.javaCmd,
+                "-no-jre-restrict-search", "-version");
+        tr.checkPositive();
+        System.out.println(tr);
+
+        tr = TestHelper.doExec(TestHelper.javaCmd,
+                "-jre-restrict-search", "-version");
+        tr.checkPositive();
+        System.out.println(tr);
+    }
     /**
      * @param args the command line arguments
      * @throws java.io.FileNotFoundException
      */
     public static void main(String[] args) throws FileNotFoundException {
-        if (TestHelper.debug) System.out.println("Starting Arrrghs tests");
-            quoteParsingTests();
-            runBasicErrorMessageTests();
-            runMainMethodTests();
-            if (TestHelper.testExitValue > 0) {
-                System.out.println("Total of " + TestHelper.testExitValue + " failed");
-                System.exit(1);
-            } else {
-                System.out.println("All tests pass");
-            }
+        if (TestHelper.debug) {
+            System.out.println("Starting Arrrghs tests");
+        }
+        quoteParsingTests();
+        runBasicErrorMessageTests();
+        runMainMethodTests();
+        test6894719();
+        if (TestHelper.testExitValue > 0) {
+            System.out.println("Total of " + TestHelper.testExitValue + " failed");
+            System.exit(1);
+        } else {
+            System.out.println("All tests pass");
         }
     }
+}

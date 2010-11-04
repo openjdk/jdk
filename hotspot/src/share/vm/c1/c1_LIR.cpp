@@ -211,6 +211,7 @@ void LIR_OprDesc::validate_type() const {
     case T_BYTE:
     case T_SHORT:
     case T_INT:
+    case T_ADDRESS:
     case T_OBJECT:
     case T_ARRAY:
       assert((kind_field() == cpu_register || kind_field() == stack_value) &&
@@ -1519,7 +1520,7 @@ static void print_block(BlockBegin* x) {
   if (x->is_set(BlockBegin::linear_scan_loop_end_flag))    tty->print("le ");
 
   // print block bci range
-  tty->print("[%d, %d] ", x->bci(), (end == NULL ? -1 : end->bci()));
+  tty->print("[%d, %d] ", x->bci(), (end == NULL ? -1 : end->printable_bci()));
 
   // print predecessors and successors
   if (x->number_of_preds() > 0) {
@@ -1575,7 +1576,7 @@ void LIR_Op::print_on(outputStream* out) const {
   }
   out->print(name()); out->print(" ");
   print_instr(out);
-  if (info() != NULL) out->print(" [bci:%d]", info()->bci());
+  if (info() != NULL) out->print(" [bci:%d]", info()->stack()->bci());
 #ifdef ASSERT
   if (Verbose && _file != NULL) {
     out->print(" (%s:%d)", _file, _line);
@@ -1780,7 +1781,7 @@ void LIR_OpBranch::print_instr(outputStream* out) const {
     out->print("[");
     stub()->print_name(out);
     out->print(": 0x%x]", stub());
-    if (stub()->info() != NULL) out->print(" [bci:%d]", stub()->info()->bci());
+    if (stub()->info() != NULL) out->print(" [bci:%d]", stub()->info()->stack()->bci());
   } else {
     out->print("[label:0x%x] ", label());
   }
@@ -1895,7 +1896,7 @@ void LIR_OpTypeCheck::print_instr(outputStream* out) const {
   tmp2()->print(out);                    out->print(" ");
   tmp3()->print(out);                    out->print(" ");
   result_opr()->print(out);              out->print(" ");
-  if (info_for_exception() != NULL) out->print(" [bci:%d]", info_for_exception()->bci());
+  if (info_for_exception() != NULL) out->print(" [bci:%d]", info_for_exception()->stack()->bci());
 }
 
 

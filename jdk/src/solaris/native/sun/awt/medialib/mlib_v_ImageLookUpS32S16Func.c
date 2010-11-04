@@ -169,7 +169,8 @@ void mlib_v_ImageLookUp_S32_S16_1(const mlib_s32 * src,
 {
   mlib_s32 *sl;
   mlib_s16 *dl;
-  const mlib_s16 *tab = &table[0][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_s16 *tab = &table[0][shift];
   mlib_s32 j, i;
 
   sl = (void *)src;
@@ -209,6 +210,7 @@ void mlib_v_ImageLookUp_S32_S16_2(const mlib_s32 * src,
 {
   mlib_s32 *sl;
   mlib_s16 *dl;
+  mlib_u32 shift = 2147483648u;
   const mlib_s16 *tab;
   mlib_s32 j, i;
 
@@ -220,8 +222,8 @@ void mlib_v_ImageLookUp_S32_S16_2(const mlib_s32 * src,
     mlib_s32 *sp = sl;
     mlib_s16 *dp = dl;
     mlib_s32 off, size = xsize * 2;
-    const mlib_s16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-    const mlib_s16 *tab1 = &table[1][(mlib_u32) 2147483648u];
+    const mlib_s16 *tab0 = &table[0][shift];
+    const mlib_s16 *tab1 = &table[1][shift];
 
     off = (mlib_s32) (((8 - ((mlib_addr) dp & 7)) & 7) >> 1);
 
@@ -261,6 +263,7 @@ void mlib_v_ImageLookUp_S32_S16_4(const mlib_s32 * src,
 {
   mlib_s32 *sl;
   mlib_s16 *dl;
+  mlib_u32 shift = 2147483648u;
   const mlib_s16 *tab;
   mlib_s32 j;
 
@@ -271,10 +274,10 @@ void mlib_v_ImageLookUp_S32_S16_4(const mlib_s32 * src,
   for (j = 0; j < ysize; j++) {
     mlib_s32 *sp = sl;
     mlib_s16 *dp = dl;
-    const mlib_s16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-    const mlib_s16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-    const mlib_s16 *tab2 = &table[2][(mlib_u32) 2147483648u];
-    const mlib_s16 *tab3 = &table[3][(mlib_u32) 2147483648u];
+    const mlib_s16 *tab0 = &table[0][shift];
+    const mlib_s16 *tab1 = &table[1][shift];
+    const mlib_s16 *tab2 = &table[2][shift];
+    const mlib_s16 *tab3 = &table[3][shift];
     mlib_s32 off, size = xsize * 4;
 
     off = (mlib_s32) (((8 - ((mlib_addr) dp & 7)) & 7) >> 1);
@@ -453,6 +456,7 @@ void mlib_v_ImageLookUp_S32_S16_3(const mlib_s32 * src,
 {
   mlib_s32 *sl;
   mlib_s16 *dl;
+  mlib_u32 shift = 2147483648u;
   const mlib_s16 *tab;
   mlib_s32 j, i;
 
@@ -463,9 +467,9 @@ void mlib_v_ImageLookUp_S32_S16_3(const mlib_s32 * src,
   for (j = 0; j < ysize; j++) {
     mlib_s32 *sp = sl;
     mlib_s16 *dp = dl;
-    const mlib_s16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-    const mlib_s16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-    const mlib_s16 *tab2 = &table[2][(mlib_u32) 2147483648u];
+    const mlib_s16 *tab0 = &table[0][shift];
+    const mlib_s16 *tab1 = &table[1][shift];
+    const mlib_s16 *tab2 = &table[2][shift];
     mlib_s32 off, size = xsize * 3;
 
     off = (mlib_s32) (((8 - ((mlib_addr) dp & 7)) & 7) >> 1);
