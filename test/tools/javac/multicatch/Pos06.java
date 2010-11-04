@@ -1,14 +1,14 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6943289
+ * @bug 6993963
  *
- * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
+ * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
  * @author mcimadamore
- * @compile/fail/ref=Neg02.out -XDrawDiagnostics Neg02.java
+ * @compile Pos06.java
  *
  */
 
-class Neg02 {
+class Pos06 {
     static class A extends Exception {}
     static class B extends Exception {}
 
@@ -20,8 +20,8 @@ class Neg02 {
             else {
                 throw new B();
             }
-        } catch (final A | B ex) {
-            ex = new B();
+        } catch (A | B ex) {
+            System.out.println(ex);
         }
     }
 }

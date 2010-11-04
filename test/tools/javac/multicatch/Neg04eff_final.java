@@ -4,24 +4,28 @@
  *
  * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
  * @author mcimadamore
- * @compile/fail/ref=Neg02.out -XDrawDiagnostics Neg02.java
+ * @compile/fail/ref=Neg04eff_final.out -XDrawDiagnostics Neg04eff_final.java
  *
  */
 
-class Neg02 {
+class Neg04eff_final {
     static class A extends Exception {}
     static class B extends Exception {}
 
-    void m() {
+    void test() throws B {
         try {
             if (true) {
                 throw new A();
-            }
-            else {
+            } else if (false) {
                 throw new B();
+            } else {
+                throw (Throwable)new Exception();
             }
-        } catch (final A | B ex) {
-            ex = new B();
         }
+        catch (A e) {}
+        catch (Exception e) {
+            throw e;
+        }
+        catch (Throwable t) {}
     }
 }

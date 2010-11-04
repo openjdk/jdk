@@ -226,7 +226,7 @@ public class Flow extends TreeScanner {
      */
     Bits uninits;
 
-    HashMap<Symbol, List<Type>> multicatchTypes;
+    HashMap<Symbol, List<Type>> preciseRethrowTypes;
 
     /** The set of variables that are definitely unassigned everywhere
      *  in current try block. This variable is maintained lazily; it is
@@ -332,7 +332,7 @@ public class Flow extends TreeScanner {
         if (!chk.isUnchecked(tree.pos(), exc)) {
             if (!chk.isHandled(exc, caught))
                 pendingExits.append(new PendingExit(tree, exc));
-            thrown = chk.incl(exc, thrown);
+                thrown = chk.incl(exc, thrown);
         }
     }
 
@@ -1077,12 +1077,12 @@ public class Flow extends TreeScanner {
             scan(param);
             inits.incl(param.sym.adr);
             uninits.excl(param.sym.adr);
-            multicatchTypes.put(param.sym, chk.intersect(ctypes, rethrownTypes));
+            preciseRethrowTypes.put(param.sym, chk.intersect(ctypes, rethrownTypes));
             scanStat(l.head.body);
             initsEnd.andSet(inits);
             uninitsEnd.andSet(uninits);
             nextadr = nextadrCatch;
-            multicatchTypes.remove(param.sym);
+            preciseRethrowTypes.remove(param.sym);
             aliveEnd |= alive;
         }
         if (tree.finalizer != null) {
@@ -1215,10 +1215,10 @@ public class Flow extends TreeScanner {
         Symbol sym = TreeInfo.symbol(tree.expr);
         if (sym != null &&
             sym.kind == VAR &&
-            (sym.flags() & FINAL) != 0 &&
-            multicatchTypes.get(sym) != null &&
+            (sym.flags() & (FINAL | EFFECTIVELY_FINAL)) != 0 &&
+            preciseRethrowTypes.get(sym) != null &&
             allowRethrowAnalysis) {
-            for (Type t : multicatchTypes.get(sym)) {
+            for (Type t : preciseRethrowTypes.get(sym)) {
                 markThrown(tree, t);
             }
         }
@@ -1422,7 +1422,7 @@ public class Flow extends TreeScanner {
             firstadr = 0;
             nextadr = 0;
             pendingExits = new ListBuffer<PendingExit>();
-            multicatchTypes = new HashMap<Symbol, List<Type>>();
+            preciseRethrowTypes = new HashMap<Symbol, List<Type>>();
             alive = true;
             this.thrown = this.caught = null;
             this.classDef = null;
