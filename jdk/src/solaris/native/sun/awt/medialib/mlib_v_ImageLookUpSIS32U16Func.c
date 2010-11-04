@@ -81,8 +81,9 @@ void mlib_v_ImageLookUpSI_S32_U16_2_DstA8D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2;                 /* destination data */
   mlib_d64 t3, acc;                    /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
 
   sp = (void *)src;
   dl = dst;
@@ -145,8 +146,9 @@ void mlib_v_ImageLookUpSI_S32_U16_2_D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2;                 /* destination data */
   mlib_d64 t3, acc;                    /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
 
   sp = (void *)src;
   dl = dst;
@@ -220,8 +222,9 @@ void mlib_v_ImageLookUpSI_S32_U16_2(const mlib_s32 *src,
   mlib_s32 *sl;
   mlib_u16 *dl;
   mlib_s32 j;
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
 
   sl = (void *)src;
   dl = dst;
@@ -268,9 +271,10 @@ void mlib_v_ImageLookUpSI_S32_U16_3_D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2, t3;             /* destination data */
   mlib_d64 acc0, acc1, acc2;           /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
   mlib_s32 s00, s01, s02, s03;
 
   sp = (void *)src;
@@ -379,9 +383,10 @@ void mlib_v_ImageLookUpSI_S32_U16_3(const mlib_s32 *src,
   mlib_s32 *sl;
   mlib_u16 *dl;
   mlib_s32 i, j;
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
 
   sl = (void *)src;
   dl = dst;
@@ -425,10 +430,11 @@ void mlib_v_ImageLookUpSI_S32_U16_4_DstOff0_D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2, t3;             /* destination data */
   mlib_d64 acc;                        /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab3 = &table[3][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
+  const mlib_u16 *tab3 = &table[3][shift];
 
   sp = (void *)src;
   dl = dst;
@@ -479,10 +485,11 @@ void mlib_v_ImageLookUpSI_S32_U16_4_DstOff1_D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2, t3;             /* destination data */
   mlib_d64 acc;                        /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab3 = &table[3][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
+  const mlib_u16 *tab3 = &table[3][shift];
 
   sp = (void *)src;
   dl = dst;
@@ -543,10 +550,11 @@ void mlib_v_ImageLookUpSI_S32_U16_4_DstOff2_D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2, t3;             /* destination data */
   mlib_d64 acc;                        /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab3 = &table[3][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
+  const mlib_u16 *tab3 = &table[3][shift];
 
   sp = (void *)src;
   dl = dst;
@@ -606,10 +614,11 @@ void mlib_v_ImageLookUpSI_S32_U16_4_DstOff3_D1(const mlib_s32 *src,
   mlib_d64 t0, t1, t2, t3;             /* destination data */
   mlib_d64 acc;                        /* destination data */
   mlib_s32 i;                          /* loop variable */
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab3 = &table[3][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
+  const mlib_u16 *tab3 = &table[3][shift];
 
   sp = (void *)src;
   dl = dst;
@@ -667,9 +676,10 @@ void mlib_v_ImageLookUpSI_S32_U16_4(const mlib_s32 *src,
   mlib_s32 *sl;
   mlib_u16 *dl;
   mlib_s32 j;
-  const mlib_u16 *tab0 = &table[0][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab1 = &table[1][(mlib_u32) 2147483648u];
-  const mlib_u16 *tab2 = &table[2][(mlib_u32) 2147483648u];
+  mlib_u32 shift = 2147483648u;
+  const mlib_u16 *tab0 = &table[0][shift];
+  const mlib_u16 *tab1 = &table[1][shift];
+  const mlib_u16 *tab2 = &table[2][shift];
 
   sl = (void *)src;
   dl = dst;

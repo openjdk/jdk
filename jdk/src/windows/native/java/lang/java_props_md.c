@@ -489,7 +489,7 @@ GetJavaProperties(JNIEnv* env)
             break;
         }
         sprintf(buf, "%d.%d", ver.dwMajorVersion, ver.dwMinorVersion);
-        sprops.os_version = strdup(buf);
+        sprops.os_version = _strdup(buf);
 #if _M_IA64
         sprops.os_arch = "ia64";
 #elif _M_AMD64
@@ -500,7 +500,7 @@ GetJavaProperties(JNIEnv* env)
         sprops.os_arch = "unknown";
 #endif
 
-        sprops.patch_level = strdup(ver.szCSDVersion);
+        sprops.patch_level = _strdup(ver.szCSDVersion);
 
         sprops.desktop = "windows";
     }

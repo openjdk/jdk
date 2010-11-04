@@ -2447,6 +2447,13 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
     msg_node = store->in(MemNode::Address);
   }
 
+  if (msg == NULL &&
+      (!store->in(MemNode::Memory)->is_Phi() ||
+       store->in(MemNode::Memory)->in(LoopNode::LoopBackControl) != store)) {
+    msg = "store memory isn't proper phi";
+    msg_node = store->in(MemNode::Memory);
+  }
+
   // Make sure there is an appropriate fill routine
   BasicType t = store->as_Mem()->memory_type();
   const char* fill_name;
@@ -2570,7 +2577,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
     Node* n = lpt->_body.at(i);
     // These values can be replaced with other nodes if they are used
     // outside the loop.
-    if (n == store || n == head->loopexit() || n == head->incr()) continue;
+    if (n == store || n == head->loopexit() || n == head->incr() || n == store->in(MemNode::Memory)) continue;
     for (SimpleDUIterator iter(n); iter.has_next(); iter.next()) {
       Node* use = iter.get();
       if (!lpt->_body.contains(use)) {
@@ -2677,7 +2684,14 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
                                                       fill_name, TypeAryPtr::get_array_body_type(t));
   call->init_req(TypeFunc::Parms+0, from);
   call->init_req(TypeFunc::Parms+1, store_value);
+#ifdef _LP64
+  len = new (C, 2) ConvI2LNode(len);
+  _igvn.register_new_node_with_optimizer(len);
+#endif
   call->init_req(TypeFunc::Parms+2, len);
+#ifdef _LP64
+  call->init_req(TypeFunc::Parms+3, C->top());
+#endif
   call->init_req( TypeFunc::Control, head->init_control());
   call->init_req( TypeFunc::I_O    , C->top() )        ;   // does no i/o
   call->init_req( TypeFunc::Memory ,  mem_phi->in(LoopNode::EntryControl) );
@@ -2715,6 +2729,10 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // Redirect the old control and memory edges that are outside the loop.
   Node* exit = head->loopexit()->proj_out(0);
+  // Sometimes the memory phi of the head is used as the outgoing
+  // state of the loop.  It's safe in this case to replace it with the
+  // result_mem.
+  _igvn.replace_node(store->in(MemNode::Memory), result_mem);
   _igvn.replace_node(exit, result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.

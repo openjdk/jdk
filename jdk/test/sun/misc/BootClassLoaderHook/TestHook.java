@@ -24,7 +24,10 @@
 import java.io.File;
 import java.util.TreeSet;
 import java.util.Set;
+import java.net.URLStreamHandlerFactory;
 import sun.misc.BootClassLoaderHook;
+import sun.misc.URLClassPath;
+
 
 /* @test
  * @bug     6888802
@@ -68,10 +71,6 @@ public class TestHook extends BootClassLoaderHook {
         for (String s : copy) {
             System.out.println("  Loaded " + s);
         }
-
-        if (BootClassLoaderHook.getBootstrapPaths().length > 0) {
-           throw new RuntimeException("Unexpected returned value from getBootstrapPaths()");
-        }
     }
 
     private static void testHook() throws Exception {
@@ -98,8 +97,9 @@ public class TestHook extends BootClassLoaderHook {
         return false;
     }
 
-    public File[] getAdditionalBootstrapPaths() {
-        return new File[0];
+    public URLClassPath getBootstrapClassPath(URLClassPath bcp,
+            URLStreamHandlerFactory factory) {
+        return bcp;
     }
 
     public boolean isCurrentThreadPrefetching() {

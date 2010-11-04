@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,24 +123,44 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   // or given timeout, whichever is earlier.
   void    wait_on_cms_lock(long t); // milliseconds
 
-  // The CMS thread will yield during the work portion of it's cycle
+  // The CMS thread will yield during the work portion of its cycle
   // only when requested to.  Both synchronous and asychronous requests
-  // are provided.  A synchronous request is used for young gen
-  // collections and direct allocations.  The requesting thread increments
-  // pending_yields at the beginning of an operation, and decrements it when
-  // the operation is completed.  The CMS thread yields when pending_yields
-  // is positive.  An asynchronous request is used by iCMS in the stop_icms()
-  // operation. A single yield satisfies the outstanding asynch yield requests.
-  // The requesting thread increments both pending_yields and pending_decrements.
-  // After yielding, the CMS thread decrements both by the amount in
-  // pending_decrements.
+  // are provided:
+  // (1) A synchronous request is used for young gen collections and
+  //     for direct allocations.  The requesting thread increments
+  //     _pending_yields at the beginning of an operation, and decrements
+  //     _pending_yields when that operation is completed.
+  //     In turn, the CMS thread yields when _pending_yields is positive,
+  //     and continues to yield until the value reverts to 0.
+  // (2) An asynchronous request, on the other hand, is used by iCMS
+  //     for the stop_icms() operation. A single yield satisfies all of
+  //     the outstanding asynch yield requests, of which there may
+  //     occasionally be several in close succession. To accomplish
+  //     this, an asynch-requesting thread atomically increments both
+  //     _pending_yields and _pending_decrements. An asynchr requesting
+  //     thread does not wait and "acknowledge" completion of an operation
+  //     and deregister the request, like the synchronous version described
+  //     above does. In turn, after yielding, the CMS thread decrements both
+  //     _pending_yields and _pending_decrements by the value seen in
+  //     _pending_decrements before the decrement.
+  //  NOTE: The above scheme is isomorphic to having two request counters,
+  //  one for async requests and one for sync requests, and for the CMS thread
+  //  to check the sum of the two counters to decide whether it should yield
+  //  and to clear only the async counter when it yields. However, it turns out
+  //  to be more efficient for CMS code to just check a single counter
+  //  _pending_yields that holds the sum (of both sync and async requests), and
+  //  a second counter _pending_decrements that only holds the async requests,
+  //  for greater efficiency, since in a typical CMS run, there are many more
+  //  pontential (i.e. static) yield points than there are actual
+  //  (i.e. dynamic) yields because of requests, which are few and far between.
+  //
   // Note that, while "_pending_yields >= _pending_decrements" is an invariant,
   // we cannot easily test that invariant, since the counters are manipulated via
   // atomic instructions without explicit locking and we cannot read
   // the two counters atomically together: one suggestion is to
   // use (for example) 16-bit counters so as to be able to read the
   // two counters atomically even on 32-bit platforms. Notice that
-  // the second assert in acknowledge_yield_request() does indeed
+  // the second assert in acknowledge_yield_request() below does indeed
   // check a form of the above invariant, albeit indirectly.
 
   static void increment_pending_yields()   {
@@ -152,6 +172,7 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
     assert(_pending_yields >= 0, "can't be negative");
   }
   static void asynchronous_yield_request() {
+    assert(CMSIncrementalMode, "Currently only used w/iCMS");
     increment_pending_yields();
     Atomic::inc(&_pending_decrements);
     assert(_pending_decrements >= 0, "can't be negative");
@@ -159,6 +180,7 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   static void acknowledge_yield_request() {
     jint decrement = _pending_decrements;
     if (decrement > 0) {
+      assert(CMSIncrementalMode, "Currently only used w/iCMS");
       // Order important to preserve: _pending_yields >= _pending_decrements
       Atomic::add(-decrement, &_pending_decrements);
       Atomic::add(-decrement, &_pending_yields);
@@ -195,7 +217,7 @@ inline void ConcurrentMarkSweepThread::trace_state(const char* desc) {
   }
 }
 
-// For scoped increment/decrement of yield requests
+// For scoped increment/decrement of (synchronous) yield requests
 class CMSSynchronousYieldRequest: public StackObj {
  public:
   CMSSynchronousYieldRequest() {
