@@ -26,9 +26,9 @@
  * @bug 6449781
  * @summary Test that reported names of anonymous classes are non-null.
  * @author  Joseph D. Darcy
- * @build TestAnonSourceNames
- * @compile/fail -processor TestAnonSourceNames TestAnonClassNames.java
- * @build TestAnonClassNames
+ * @library ../../../lib
+ * @build   JavacTestingAbstractProcessor TestAnonSourceNames
+ * @compile -processor TestAnonSourceNames TestAnonClassNames.java
  * @run main TestAnonClassNames
  */
 
@@ -40,10 +40,6 @@
  *
  * Source files will be tested by the @compile line which runs
  * TestAnonSourceNames as an annotation processor over this file.
- * This compile line is expected to fail until 6930507 is fixed.  Once
- * bug 6930507 is fixed, the "@compile/fail -processor ..." and
- * following "@build..." steps can be replaced with a single "@compile
- * -processor ..." directive.
  *
  * Class files are tested by the @run command on this type.  This
  * class gets the names of classes with different nesting kinds,
@@ -146,8 +142,7 @@ public class TestAnonClassNames {
 /**
  * Probe at the various kinds of names of a type element.
  */
-@SupportedAnnotationTypes("*")
-class ClassNameProber extends AbstractProcessor {
+class ClassNameProber extends JavacTestingAbstractProcessor {
     public ClassNameProber(){super();}
 
     private boolean classesFound=false;
@@ -178,9 +173,5 @@ class ClassNameProber extends AbstractProcessor {
             throw new RuntimeException("Error: no classes processed.");
         }
         return true;
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }

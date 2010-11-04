@@ -55,6 +55,9 @@ public class HttpClient extends NetworkClient {
     // Http data we send with the headers
     PosterOutputStream poster = null;
 
+    // true if we are in streaming mode (fixed length or chunked)
+    boolean streaming;
+
     // if we've had one io error
     boolean failedOnce = false;
 
@@ -275,6 +278,10 @@ public class HttpClient extends NetworkClient {
                         ret.cachedHttpClient = true;
                         assert ret.inCache;
                         ret.inCache = false;
+                        PlatformLogger logger = HttpURLConnection.getHttpLogger();
+                        if (logger.isLoggable(PlatformLogger.FINEST)) {
+                            logger.finest("KeepAlive stream retrieved from the cache, " + ret);
+                        }
                     }
                 } else {
                     // We cannot return this connection to the cache as it's
@@ -545,6 +552,13 @@ public class HttpClient extends NetworkClient {
         serverOutput.flush();
     }
 
+    public void writeRequests(MessageHeader head,
+                              PosterOutputStream pos,
+                              boolean streaming) throws IOException {
+        this.streaming = streaming;
+        writeRequests(head, pos);
+    }
+
     /** Parse the first line of the HTTP request.  It usually looks
         something like: "HTTP/1.0 <number> comment\r\n". */
 
@@ -577,11 +591,11 @@ public class HttpClient extends NetworkClient {
             closeServer();
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
-                if (httpuc.getRequestMethod().equals("POST") && !retryPostProp) {
+                failedOnce = true;
+                if (httpuc.getRequestMethod().equals("POST") && (!retryPostProp || streaming)) {
                     // do not retry the request
                 }  else {
                     // try once more
-                    failedOnce = true;
                     openServer();
                     if (needsTunneling()) {
                         httpuc.doTunneling();
@@ -684,10 +698,10 @@ public class HttpClient extends NetworkClient {
                 }
             } else if (nread != 8) {
                 if (!failedOnce && requests != null) {
-                    if (httpuc.getRequestMethod().equals("POST") && !retryPostProp) {
+                    failedOnce = true;
+                    if (httpuc.getRequestMethod().equals("POST") && (!retryPostProp || streaming)) {
                         // do not retry the request
                     } else {
-                        failedOnce = true;
                         closeServer();
                         cachedHttpClient = false;
                         openServer();

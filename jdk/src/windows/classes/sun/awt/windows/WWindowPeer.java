@@ -487,13 +487,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             newDev.addDisplayChangedListener(this);
         }
 
-        SunToolkit.executeOnEventHandlerThread((Component)target,
-                new Runnable() {
-                    public void run() {
-                        AWTAccessor.getComponentAccessor().
+        AWTAccessor.getComponentAccessor().
             setGraphicsConfiguration((Component)target, winGraphicsConfig);
-                    }
-                });
     }
 
     /**
@@ -592,16 +587,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         synchronized (getStateLock()) {
             return isOpaque ? null : painter.getBackBuffer(false).getGraphics();
         }
-    }
-
-    @Override
-    public Graphics getGraphics() {
-        synchronized (getStateLock()) {
-            if (!isOpaque) {
-                return getTranslucentGraphics();
-            }
-        }
-        return super.getGraphics();
     }
 
     @Override

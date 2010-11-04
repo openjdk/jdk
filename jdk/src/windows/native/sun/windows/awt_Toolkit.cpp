@@ -23,15 +23,11 @@
  * questions.
  */
 
+#define _JNI_IMPLEMENTATION_
+
 #include "awt.h"
 #include <signal.h>
 #include <windowsx.h>
-
-//#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER >= 1000
-//#include <crtdbg.h>
-//#endif
-
-#define _JNI_IMPLEMENTATION_
 
 #include "awt_DrawingSurface.h"
 #include "awt_AWTEvent.h"
@@ -132,6 +128,8 @@ extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
 #define IDT_AWT_MOUSECHECK 0x101
 
 static LPCTSTR szAwtToolkitClassName = TEXT("SunAwtToolkit");
+
+static const int MOUSE_BUTTONS_WINDOWS_SUPPORTED = 5; //three standard buttons + XBUTTON1 + XBUTTON2.
 
 UINT AwtToolkit::GetMouseKeyState()
 {
@@ -2222,21 +2220,21 @@ Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
     WCHAR szVer[128];
 
     DWORD version = ::GetVersion();
-    swprintf(szVer, L"0x%x = %ld", version, version);
+    swprintf(szVer, 128, L"0x%x = %ld", version, version);
     int l = lstrlen(szVer);
 
     if (IS_WIN2000) {
         if (IS_WINXP) {
             if (IS_WINVISTA) {
-                swprintf(szVer + l, L" (Windows Vista)");
+                swprintf(szVer + l, 128, L" (Windows Vista)");
             } else {
-                swprintf(szVer + l, L" (Windows XP)");
+                swprintf(szVer + l, 128, L" (Windows XP)");
             }
         } else {
-            swprintf(szVer + l, L" (Windows 2000)");
+            swprintf(szVer + l, 128, L" (Windows 2000)");
         }
     } else {
-        swprintf(szVer + l, L" (Unknown)");
+        swprintf(szVer + l, 128, L" (Unknown)");
     }
 
     return JNU_NewStringPlatform(env, szVer);
@@ -2310,5 +2308,9 @@ void AwtToolkit::setExtraMouseButtonsEnabled(BOOL enable) {
 
 JNIEXPORT jint JNICALL Java_sun_awt_windows_WToolkit_getNumberOfButtonsImpl
 (JNIEnv *, jobject self) {
-    return GetSystemMetrics(SM_CMOUSEBUTTONS);
+    return AwtToolkit::GetNumberOfButtons();
+}
+
+UINT AwtToolkit::GetNumberOfButtons() {
+    return MOUSE_BUTTONS_WINDOWS_SUPPORTED;
 }

@@ -128,6 +128,12 @@ jint init_globals() {
     Universe::verify();   // make sure we're starting with a clean slate
   }
 
+  // All the flags that get adjusted by VM_Version_init and os::init_2
+  // have been set so dump the flags now.
+  if (PrintFlagsFinal) {
+    CommandLineFlags::printFlags();
+  }
+
   return JNI_OK;
 }
 

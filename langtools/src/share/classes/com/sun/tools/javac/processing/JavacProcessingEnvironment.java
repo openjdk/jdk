@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
 
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.source.util.AbstractTypeProcessor;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
@@ -67,6 +68,8 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.FatalError;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.JavacMessages;
@@ -75,6 +78,9 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
+import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 
 /**
  * Objects of this class hold and manage the state needed to support
@@ -95,6 +101,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean procOnly;
     private final boolean fatalErrors;
     private final boolean werror;
+    private final boolean showResolveErrors;
     private boolean foundTypeProcessors;
 
     private final JavacFiler filer;
@@ -131,6 +138,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     Log log;
 
+    /** Diagnostic factory.
+     */
+    JCDiagnostic.Factory diags;
+
     /**
      * Source level of the compile.
      */
@@ -146,27 +157,28 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private Context context;
 
     public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
-        options = Options.instance(context);
         this.context = context;
         log = Log.instance(context);
         source = Source.instance(context);
-        printProcessorInfo = options.get("-XprintProcessorInfo") != null;
-        printRounds = options.get("-XprintRounds") != null;
-        verbose = options.get("-verbose") != null;
-        lint = options.lint("processing");
-        procOnly = options.get("-proc:only") != null ||
-            options.get("-Xprint") != null;
-        fatalErrors = options.get("fatalEnterError") != null;
-        werror = options.get("-Werror") != null;
+        diags = JCDiagnostic.Factory.instance(context);
+        options = Options.instance(context);
+        printProcessorInfo = options.isSet(XPRINTPROCESSORINFO);
+        printRounds = options.isSet(XPRINTROUNDS);
+        verbose = options.isSet(VERBOSE);
+        lint = Lint.instance(context).isEnabled(PROCESSING);
+        procOnly = options.isSet(PROC, "only") || options.isSet(XPRINT);
+        fatalErrors = options.isSet("fatalEnterError");
+        showResolveErrors = options.isSet("showResolveErrors");
+        werror = options.isSet(WERROR);
         platformAnnotations = initPlatformAnnotations();
         foundTypeProcessors = false;
 
-        // Initialize services before any processors are initialzied
+        // Initialize services before any processors are initialized
         // in case processors use them.
         filer = new JavacFiler(context);
         messager = new JavacMessager(context, this);
-        elementUtils = new JavacElements(context);
-        typeUtils = new JavacTypes(context);
+        elementUtils = JavacElements.instance(context);
+        typeUtils = JavacTypes.instance(context);
         processorOptions = initProcessorOptions(context);
         unmatchedProcessorOptions = initUnmatchedProcessorOptions();
         messages = JavacMessages.instance(context);
@@ -189,7 +201,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         Log   log   = Log.instance(context);
         Iterator<? extends Processor> processorIterator;
 
-        if (options.get("-Xprint") != null) {
+        if (options.isSet(XPRINT)) {
             try {
                 Processor processor = PrintingProcessor.class.newInstance();
                 processorIterator = List.of(processor).iterator();
@@ -202,7 +214,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } else if (processors != null) {
             processorIterator = processors.iterator();
         } else {
-            String processorNames = options.get("-processor");
+            String processorNames = options.get(PROCESSOR);
             JavaFileManager fileManager = context.get(JavaFileManager.class);
             try {
                 // If processorpath is not explicitly set, use the classpath.
@@ -253,7 +265,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ? standardFileManager.getLocation(ANNOTATION_PROCESSOR_PATH)
                 : standardFileManager.getLocation(CLASS_PATH);
 
-            if (needClassLoader(options.get("-processor"), workingPath) )
+            if (needClassLoader(options.get(PROCESSOR), workingPath) )
                 handleException(key, e);
 
         } else {
@@ -734,7 +746,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         psi.runContributingProcs(renv);
 
         // Debugging
-        if (options.get("displayFilerState") != null)
+        if (options.isSet("displayFilerState"))
             filer.displayState();
     }
 
@@ -795,6 +807,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         final JavaCompiler compiler;
         /** The log for the round. */
         final Log log;
+        /** The number of warnings in the previous round. */
+        final int priorWarnings;
+
+        /** The ASTs to be compiled. */
+        List<JCCompilationUnit> roots;
+        /** The classes to be compiler that have were generated. */
+        Map<String, JavaFileObject> genClassFiles;
 
         /** The set of annotations to be processed this round. */
         Set<TypeElement> annotationsPresent;
@@ -803,26 +822,96 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** The set of package-info files to be processed this round. */
         List<PackageSymbol> packageInfoFiles;
 
-        /** Create a round. */
-        Round(Context context, int number) {
+        /** Create a round (common code). */
+        private Round(Context context, int number, int priorWarnings) {
             this.context = context;
             this.number = number;
+            this.priorWarnings = priorWarnings;
+
             compiler = JavaCompiler.instance(context);
             log = Log.instance(context);
+            log.deferDiagnostics = true;
 
             // the following is for the benefit of JavacProcessingEnvironment.getContext()
             JavacProcessingEnvironment.this.context = context;
 
             // the following will be populated as needed
-            annotationsPresent = new LinkedHashSet<TypeElement>();
             topLevelClasses  = List.nil();
             packageInfoFiles = List.nil();
         }
 
+        /** Create the first round. */
+        Round(Context context, List<JCCompilationUnit> roots, List<ClassSymbol> classSymbols) {
+            this(context, 1, 0);
+            this.roots = roots;
+            genClassFiles = new HashMap<String,JavaFileObject>();
+
+            compiler.todo.clear(); // free the compiler's resources
+
+            // The reverse() in the following line is to maintain behavioural
+            // compatibility with the previous revision of the code. Strictly speaking,
+            // it should not be necessary, but a javah golden file test fails without it.
+            topLevelClasses =
+                getTopLevelClasses(roots).prependList(classSymbols.reverse());
+
+            packageInfoFiles = getPackageInfoFiles(roots);
+
+            findAnnotationsPresent();
+        }
+
+        /** Create a new round. */
+        private Round(Round prev,
+                Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles) {
+            this(prev.nextContext(), prev.number+1, prev.compiler.log.nwarnings);
+            this.genClassFiles = prev.genClassFiles;
+
+            List<JCCompilationUnit> parsedFiles = compiler.parseFiles(newSourceFiles);
+            roots = cleanTrees(prev.roots).appendList(parsedFiles);
+
+            // Check for errors after parsing
+            if (unrecoverableError())
+                return;
+
+            enterClassFiles(genClassFiles);
+            List<ClassSymbol> newClasses = enterClassFiles(newClassFiles);
+            genClassFiles.putAll(newClassFiles);
+            enterTrees(roots);
+
+            if (unrecoverableError())
+                return;
+
+            topLevelClasses = join(
+                    getTopLevelClasses(parsedFiles),
+                    getTopLevelClassesFromClasses(newClasses));
+
+            packageInfoFiles = join(
+                    getPackageInfoFiles(parsedFiles),
+                    getPackageInfoFilesFromClasses(newClasses));
+
+            findAnnotationsPresent();
+        }
+
         /** Create the next round to be used. */
-        Round next() {
-            compiler.close(false);
-            return new Round(contextForNextRound(), number + 1);
+        Round next(Set<JavaFileObject> newSourceFiles, Map<String, JavaFileObject> newClassFiles) {
+            try {
+                return new Round(this, newSourceFiles, newClassFiles);
+            } finally {
+                compiler.close(false);
+            }
+        }
+
+        /** Create the compiler to be used for the final compilation. */
+        JavaCompiler finalCompiler(boolean errorStatus) {
+            try {
+                JavaCompiler c = JavaCompiler.instance(nextContext());
+                if (errorStatus) {
+                    c.log.nwarnings += priorWarnings + compiler.log.nwarnings;
+                    c.log.nerrors += compiler.log.nerrors;
+                }
+                return c;
+            } finally {
+                compiler.close(false);
+            }
         }
 
         /** Return the number of errors found so far in this round.
@@ -839,12 +928,30 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Return whether or not an unrecoverable error has occurred. */
         boolean unrecoverableError() {
-            return log.unrecoverableError;
+            if (messager.errorRaised())
+                return true;
+
+            for (JCDiagnostic d: log.deferredDiagnostics) {
+                switch (d.getKind()) {
+                    case WARNING:
+                        if (werror)
+                            return true;
+                        break;
+
+                    case ERROR:
+                        if (fatalErrors || !d.isFlagSet(RESOLVE_ERROR))
+                            return true;
+                        break;
+                }
+            }
+
+            return false;
         }
 
         /** Find the set of annotations present in the set of top level
-         * classes and package info files to be processed this round. */
-        void findAnnotationsPresent(ComputeAnnotationSet annotationComputer) {
+         *  classes and package info files to be processed this round. */
+        void findAnnotationsPresent() {
+            ComputeAnnotationSet annotationComputer = new ComputeAnnotationSet(elementUtils);
             // Use annotation processing to compute the set of annotations present
             annotationsPresent = new LinkedHashSet<TypeElement>();
             for (ClassSymbol classSym : topLevelClasses)
@@ -853,26 +960,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 annotationComputer.scan(pkgSym, annotationsPresent);
         }
 
-        /**
-         * Parse the latest set of generated source files created by the filer.
-         */
-        List<JCCompilationUnit> parseNewSourceFiles()
-            throws IOException {
-            List<JavaFileObject> fileObjects = List.nil();
-            for (JavaFileObject jfo : filer.getGeneratedSourceFileObjects() ) {
-                fileObjects = fileObjects.prepend(jfo);
-            }
-
-           return compiler.parseFiles(fileObjects);
-        }
-
-        /** Enter the latest set of generated class files created by the filer. */
-        List<ClassSymbol> enterNewClassFiles() {
+        /** Enter a set of generated class files. */
+        private List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
             ClassReader reader = ClassReader.instance(context);
             Names names = Names.instance(context);
             List<ClassSymbol> list = List.nil();
 
-            for (Map.Entry<String,JavaFileObject> entry : filer.getGeneratedClasses().entrySet()) {
+            for (Map.Entry<String,JavaFileObject> entry : classFiles.entrySet()) {
                 Name name = names.fromString(entry.getKey());
                 JavaFileObject file = entry.getValue();
                 if (file.getKind() != JavaFileObject.Kind.CLASS)
@@ -894,17 +988,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Enter a set of syntax trees. */
-        void enterTrees(List<JCCompilationUnit> roots) {
+        private void enterTrees(List<JCCompilationUnit> roots) {
             compiler.enterTrees(roots);
         }
 
         /** Run a processing round. */
         void run(boolean lastRound, boolean errorStatus) {
-//            assert lastRound
-//                ? (topLevelClasses.size() == 0 && annotationsPresent.size() == 0)
-//                : (errorStatus == false);
-//
-//            printRoundInfo(topLevelClasses, annotationsPresent, lastRound);
+            printRoundInfo(lastRound);
 
             TaskListener taskListener = context.get(TaskListener.class);
             if (taskListener != null)
@@ -912,7 +1002,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             try {
                 if (lastRound) {
-                    printRoundInfo(List.<ClassSymbol>nil(), Collections.<TypeElement>emptySet(), lastRound);
                     filer.setLastRound(true);
                     Set<Element> emptyRootElements = Collections.emptySet(); // immutable
                     RoundEnvironment renv = new JavacRoundEnvironment(true,
@@ -921,7 +1010,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                             JavacProcessingEnvironment.this);
                     discoveredProcs.iterator().runContributingProcs(renv);
                 } else {
-                    printRoundInfo(topLevelClasses, annotationsPresent, lastRound);
                     discoverAndRunProcs(context, annotationsPresent, topLevelClasses, packageInfoFiles);
                 }
             } finally {
@@ -930,28 +1018,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             }
         }
 
-        /** Update the processing state for the current context. */
-        // Question: should this not be part of next()?
-        // Note: Calling it from next() breaks some tests. There is an issue
-        // whether the annotationComputer is using elementUtils with the
-        // correct context.
-        void updateProcessingState() {
-            filer.newRound(context);
-            messager.newRound(context);
-
-            elementUtils.setContext(context);
-            typeUtils.setContext(context);
+        void showDiagnostics(boolean showAll) {
+            Set<JCDiagnostic.Kind> kinds = EnumSet.allOf(JCDiagnostic.Kind.class);
+            if (!showAll) {
+                // suppress errors, which are all presumed to be transient resolve errors
+                kinds.remove(JCDiagnostic.Kind.ERROR);
+            }
+            log.reportDeferredDiagnostics(kinds);
         }
 
         /** Print info about this round. */
-        private void printRoundInfo(List<ClassSymbol> topLevelClasses,
-                Set<TypeElement> annotationsPresent,
-                boolean lastRound) {
+        private void printRoundInfo(boolean lastRound) {
             if (printRounds || verbose) {
+                List<ClassSymbol> tlc = lastRound ? List.<ClassSymbol>nil() : topLevelClasses;
+                Set<TypeElement> ap = lastRound ? Collections.<TypeElement>emptySet() : annotationsPresent;
                 log.printNoteLines("x.print.rounds",
-                        (!lastRound ? number : number + 1),
-                        "{" + topLevelClasses.toString(", ") + "}",
-                        annotationsPresent,
+                        number,
+                        "{" + tlc.toString(", ") + "}",
+                        ap,
                         lastRound);
             }
         }
@@ -960,7 +1044,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
          * Important values are propogated from round to round;
          * other values are implicitly reset.
          */
-        private Context contextForNextRound() {
+        private Context nextContext() {
             Context next = new Context();
 
             Options options = Options.instance(context);
@@ -1005,10 +1089,21 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
             nextCompiler.initRound(oldCompiler);
 
+            filer.newRound(next);
+            messager.newRound(next);
+            elementUtils.setContext(next);
+            typeUtils.setContext(next);
+
             JavacTaskImpl task = context.get(JavacTaskImpl.class);
             if (task != null) {
                 next.put(JavacTaskImpl.class, task);
                 task.updateContext(next);
+            }
+
+            JavacTrees trees = context.get(JavacTrees.class);
+            if (trees != null) {
+                next.put(JavacTrees.class, trees);
+                trees.updateContext(next);
             }
 
             context.clear();
@@ -1022,141 +1117,95 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     public JavaCompiler doProcessing(Context context,
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
-                                     Iterable<? extends PackageSymbol> pckSymbols)
-        throws IOException {
+                                     Iterable<? extends PackageSymbol> pckSymbols) {
 
+        TaskListener taskListener = context.get(TaskListener.class);
         log = Log.instance(context);
-
-        Round round = new Round(context, 1);
-        round.compiler.todo.clear(); // free the compiler's resources
-
-        // The reverse() in the following line is to maintain behavioural
-        // compatibility with the previous revision of the code. Strictly speaking,
-        // it should not be necessary, but a javah golden file test fails without it.
-        round.topLevelClasses =
-                getTopLevelClasses(roots).prependList(classSymbols.reverse());
-
-        round.packageInfoFiles = getPackageInfoFiles(roots);
 
         Set<PackageSymbol> specifiedPackages = new LinkedHashSet<PackageSymbol>();
         for (PackageSymbol psym : pckSymbols)
             specifiedPackages.add(psym);
         this.specifiedPackages = Collections.unmodifiableSet(specifiedPackages);
 
-        ComputeAnnotationSet annotationComputer = new ComputeAnnotationSet(elementUtils);
-        round.findAnnotationsPresent(annotationComputer);
+        Round round = new Round(context, roots, classSymbols);
 
-        boolean errorStatus = false;
-
-        runAround:
-        while (true) {
-            if ((fatalErrors && round.errorCount() != 0)
-                    || (werror && round.warningCount() != 0)) {
-                errorStatus = true;
-                break runAround;
-            }
-
+        boolean errorStatus;
+        boolean moreToDo;
+        do {
+            // Run processors for round n
             round.run(false, false);
 
-            /*
-             * Processors for round n have run to completion.  Prepare
-             * for round (n+1) by checked for errors raised by
-             * annotation processors and then checking for syntax
-             * errors on any generated source files.
-             */
-            if (messager.errorRaised()) {
+            // Processors for round n have run to completion.
+            // Check for errors and whether there is more work to do.
+            errorStatus = round.unrecoverableError();
+            moreToDo = moreToDo();
+
+            round.showDiagnostics(errorStatus || showResolveErrors);
+
+            // Set up next round.
+            // Copy mutable collections returned from filer.
+            round = round.next(
+                    new LinkedHashSet<JavaFileObject>(filer.getGeneratedSourceFileObjects()),
+                    new LinkedHashMap<String,JavaFileObject>(filer.getGeneratedClasses()));
+
+             // Check for errors during setup.
+            if (round.unrecoverableError())
                 errorStatus = true;
-                break runAround;
-            }
 
-            if (!moreToDo())
-                break runAround; // No new files
-
-            round = round.next();
-
-            List<JCCompilationUnit> parsedFiles = round.parseNewSourceFiles();
-            roots = cleanTrees(roots).appendList(parsedFiles);
-
-            // Check for errors after parsing
-            if (round.unrecoverableError()) {
-                errorStatus = true;
-                break runAround;
-            }
-
-            List<ClassSymbol> newClasses = round.enterNewClassFiles();
-            round.enterTrees(roots);
-
-            round.topLevelClasses = join(
-                    getTopLevelClasses(parsedFiles),
-                    getTopLevelClassesFromClasses(newClasses));
-
-            round.packageInfoFiles = join(
-                    getPackageInfoFiles(parsedFiles),
-                    getPackageInfoFilesFromClasses(newClasses));
-
-            round.findAnnotationsPresent(annotationComputer);
-            round.updateProcessingState();
-        }
+        } while (moreToDo && !errorStatus);
 
         // run last round
         round.run(true, errorStatus);
-
-        // Add any sources generated during the last round to the set
-        // of files to be compiled.
-        if (moreToDo()) {
-            List<JCCompilationUnit> parsedFiles = round.parseNewSourceFiles();
-            roots = cleanTrees(roots).appendList(parsedFiles);
-        }
-
-        // Set error status for any files compiled and generated in
-        // the last round
-        if (round.unrecoverableError() || (werror && round.warningCount() != 0))
-            errorStatus = true;
-
-        round = round.next();
+        round.showDiagnostics(true);
 
         filer.warnIfUnclosedFiles();
         warnIfUnmatchedOptions();
 
-       /*
-        * If an annotation processor raises an error in a round,
-        * that round runs to completion and one last round occurs.
-        * The last round may also occur because no more source or
-        * class files have been generated.  Therefore, if an error
-        * was raised on either of the last *two* rounds, the compile
-        * should exit with a nonzero exit code.  The current value of
-        * errorStatus holds whether or not an error was raised on the
-        * second to last round; errorRaised() gives the error status
-        * of the last round.
-        */
-        errorStatus = errorStatus || messager.errorRaised();
+        /*
+         * If an annotation processor raises an error in a round,
+         * that round runs to completion and one last round occurs.
+         * The last round may also occur because no more source or
+         * class files have been generated.  Therefore, if an error
+         * was raised on either of the last *two* rounds, the compile
+         * should exit with a nonzero exit code.  The current value of
+         * errorStatus holds whether or not an error was raised on the
+         * second to last round; errorRaised() gives the error status
+         * of the last round.
+         */
+        if (messager.errorRaised()
+                || werror && round.warningCount() > 0 && round.errorCount() > 0)
+            errorStatus = true;
+
+        Set<JavaFileObject> newSourceFiles =
+                new LinkedHashSet<JavaFileObject>(filer.getGeneratedSourceFileObjects());
+        roots = cleanTrees(round.roots);
+
+        JavaCompiler compiler = round.finalCompiler(errorStatus);
+
+        if (newSourceFiles.size() > 0)
+            roots = roots.appendList(compiler.parseFiles(newSourceFiles));
+
+        errorStatus = errorStatus || (compiler.errorCount() > 0);
 
         // Free resources
         this.close();
 
-        TaskListener taskListener = this.context.get(TaskListener.class);
         if (taskListener != null)
             taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
 
-        JavaCompiler compiler;
-
         if (errorStatus) {
-            compiler = round.compiler;
-            compiler.log.nwarnings += messager.warningCount();
-            compiler.log.nerrors += messager.errorCount();
             if (compiler.errorCount() == 0)
                 compiler.log.nerrors++;
-        } else if (procOnly && !foundTypeProcessors) {
-            compiler = round.compiler;
+            return compiler;
+        }
+
+        if (procOnly && !foundTypeProcessors) {
             compiler.todo.clear();
-        } else { // Final compilation
-            round = round.next();
-            round.updateProcessingState();
-            compiler = round.compiler;
+        } else {
             if (procOnly && foundTypeProcessors)
                 compiler.shouldStopPolicy = CompileState.FLOW;
 
-            compiler.enterTrees(cleanTrees(roots));
+            compiler.enterTrees(roots);
         }
 
         return compiler;
@@ -1171,13 +1220,19 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     /**
      * Free resources related to annotation processing.
      */
-    public void close() throws IOException {
+    public void close() {
         filer.close();
         if (discoveredProcs != null) // Make calling close idempotent
             discoveredProcs.close();
         discoveredProcs = null;
-        if (processorClassLoader != null && processorClassLoader instanceof Closeable)
-            ((Closeable) processorClassLoader).close();
+        if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
+            try {
+                ((Closeable) processorClassLoader).close();
+            } catch (IOException e) {
+                JCDiagnostic msg = diags.fragment("fatal.err.cant.close.loader");
+                throw new FatalError(msg, e);
+            }
+        }
     }
 
     private List<ClassSymbol> getTopLevelClasses(List<? extends JCCompilationUnit> units) {
@@ -1185,7 +1240,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         for (JCCompilationUnit unit : units) {
             for (JCTree node : unit.defs) {
                 if (node.getTag() == JCTree.CLASSDEF) {
-                    classes = classes.prepend(((JCClassDecl) node).sym);
+                    ClassSymbol sym = ((JCClassDecl) node).sym;
+                    assert sym != null;
+                    classes = classes.prepend(sym);
                 }
             }
         }

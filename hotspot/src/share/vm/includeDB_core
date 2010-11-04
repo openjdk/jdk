@@ -225,7 +225,6 @@ arrayOop.cpp                            oop.inline.hpp
 arrayOop.cpp                            symbolOop.hpp
 
 arrayOop.hpp                            oop.hpp
-arrayOop.hpp                            universe.hpp
 arrayOop.hpp                            universe.inline.hpp
 
 assembler.cpp                           assembler.hpp
@@ -236,7 +235,6 @@ assembler.cpp                           icache.hpp
 assembler.cpp                           os.hpp
 
 assembler.hpp                           allocation.hpp
-assembler.hpp                           allocation.inline.hpp
 assembler.hpp                           debug.hpp
 assembler.hpp                           growableArray.hpp
 assembler.hpp                           oopRecorder.hpp
@@ -330,7 +328,7 @@ blockOffsetTable.cpp                    collectedHeap.inline.hpp
 blockOffsetTable.cpp                    iterator.hpp
 blockOffsetTable.cpp                    java.hpp
 blockOffsetTable.cpp                    oop.inline.hpp
-blockOffsetTable.cpp                    space.hpp
+blockOffsetTable.cpp                    space.inline.hpp
 blockOffsetTable.cpp                    universe.hpp
 
 blockOffsetTable.hpp                    globalDefinitions.hpp
@@ -338,6 +336,7 @@ blockOffsetTable.hpp                    memRegion.hpp
 blockOffsetTable.hpp                    virtualspace.hpp
 
 blockOffsetTable.inline.hpp             blockOffsetTable.hpp
+blockOffsetTable.inline.hpp             safepoint.hpp
 blockOffsetTable.inline.hpp             space.hpp
 
 bytecode.cpp                            bytecode.hpp
@@ -1082,6 +1081,8 @@ compilationPolicy.cpp                   nativeLookup.hpp
 compilationPolicy.cpp                   nmethod.hpp
 compilationPolicy.cpp                   oop.inline.hpp
 compilationPolicy.cpp                   rframe.hpp
+compilationPolicy.cpp			scopeDesc.hpp
+compilationPolicy.cpp                   simpleThresholdPolicy.hpp
 compilationPolicy.cpp                   stubRoutines.hpp
 compilationPolicy.cpp                   thread.hpp
 compilationPolicy.cpp                   timer.hpp
@@ -1436,12 +1437,14 @@ defNewGeneration.cpp                    oop.inline.hpp
 defNewGeneration.cpp                    referencePolicy.hpp
 defNewGeneration.cpp                    space.inline.hpp
 defNewGeneration.cpp                    spaceDecorator.hpp
+defNewGeneration.cpp                    stack.inline.hpp
 defNewGeneration.cpp                    thread_<os_family>.inline.hpp
 
 defNewGeneration.hpp                    ageTable.hpp
 defNewGeneration.hpp                    cSpaceCounters.hpp
 defNewGeneration.hpp                    generation.inline.hpp
 defNewGeneration.hpp                    generationCounters.hpp
+defNewGeneration.hpp                    stack.hpp
 
 defNewGeneration.inline.hpp             cardTableRS.hpp
 defNewGeneration.inline.hpp             defNewGeneration.hpp
@@ -1452,6 +1455,7 @@ defaultStream.hpp                       xmlstream.hpp
 deoptimization.cpp                      allocation.inline.hpp
 deoptimization.cpp                      biasedLocking.hpp
 deoptimization.cpp                      bytecode.hpp
+deoptimization.cpp			compilationPolicy.hpp
 deoptimization.cpp                      debugInfoRec.hpp
 deoptimization.cpp                      deoptimization.hpp
 deoptimization.cpp                      events.hpp
@@ -1807,7 +1811,7 @@ generateOopMap.hpp                      signature.hpp
 generateOopMap.hpp                      universe.inline.hpp
 
 generation.cpp                          allocation.inline.hpp
-generation.cpp                          blockOffsetTable.hpp
+generation.cpp                          blockOffsetTable.inline.hpp
 generation.cpp                          cardTableRS.hpp
 generation.cpp                          collectedHeap.inline.hpp
 generation.cpp                          copy.hpp
@@ -2173,6 +2177,7 @@ interpreterRT_<arch>.hpp                generate_platform_dependent_include
 
 interpreterRuntime.cpp                  biasedLocking.hpp
 interpreterRuntime.cpp                  collectedHeap.hpp
+interpreterRuntime.cpp                  compileBroker.hpp
 interpreterRuntime.cpp                  compilationPolicy.hpp
 interpreterRuntime.cpp                  constantPoolOop.hpp
 interpreterRuntime.cpp                  cpCacheOop.hpp
@@ -2830,6 +2835,7 @@ methodDataKlass.hpp                     klass.hpp
 
 methodDataOop.cpp                       bytecode.hpp
 methodDataOop.cpp                       bytecodeStream.hpp
+methodDataOop.cpp                       compilationPolicy.hpp
 methodDataOop.cpp                       deoptimization.hpp
 methodDataOop.cpp                       handles.inline.hpp
 methodDataOop.cpp                       linkResolver.hpp
@@ -2842,6 +2848,7 @@ methodDataOop.hpp                       bytecodes.hpp
 methodDataOop.hpp                       oop.hpp
 methodDataOop.hpp                       orderAccess.hpp
 methodDataOop.hpp                       universe.hpp
+methodDataOop.hpp                       methodOop.hpp
 
 methodHandleWalk.hpp                    methodHandles.hpp
 
@@ -2907,6 +2914,7 @@ methodOop.cpp                           bytecodeStream.hpp
 methodOop.cpp                           bytecodeTracer.hpp
 methodOop.cpp                           bytecodes.hpp
 methodOop.cpp                           collectedHeap.inline.hpp
+methodOop.cpp				compilationPolicy.hpp
 methodOop.cpp                           debugInfoRec.hpp
 methodOop.cpp                           frame.inline.hpp
 methodOop.cpp                           gcLocker.hpp
@@ -3436,7 +3444,7 @@ perfMemory_<os_family>.cpp              perfMemory.hpp
 perfMemory_<os_family>.cpp              resourceArea.hpp
 perfMemory_<os_family>.cpp              vmSymbols.hpp
 
-permGen.cpp                             blockOffsetTable.hpp
+permGen.cpp                             blockOffsetTable.inline.hpp
 permGen.cpp                             cSpaceCounters.hpp
 permGen.cpp                             collectedHeap.inline.hpp
 permGen.cpp                             compactPermGen.hpp
@@ -3455,6 +3463,7 @@ permGen.hpp                             gcCause.hpp
 permGen.hpp                             generation.hpp
 permGen.hpp                             handles.hpp
 permGen.hpp                             iterator.hpp
+permGen.hpp                             mutexLocker.hpp
 permGen.hpp                             virtualspace.hpp
 
 placeholders.cpp                        fieldType.hpp
@@ -3656,6 +3665,7 @@ runtimeService.hpp                      timer.hpp
 
 safepoint.cpp                           codeCache.hpp
 safepoint.cpp                           collectedHeap.hpp
+safepoint.cpp                           compilationPolicy.hpp
 safepoint.cpp                           deoptimization.hpp
 safepoint.cpp                           events.hpp
 safepoint.cpp                           frame.inline.hpp
@@ -3800,12 +3810,23 @@ signature.hpp                           allocation.hpp
 signature.hpp                           methodOop.hpp
 signature.hpp                           top.hpp
 
+simpleThresholdPolicy.cpp               arguments.hpp
+simpleThresholdPolicy.cpp               compileBroker.hpp
+simpleThresholdPolicy.cpp               resourceArea.hpp
+simpleThresholdPolicy.cpp               simpleThresholdPolicy.hpp
+simpleThresholdPolicy.cpp               simpleThresholdPolicy.inline.hpp
+
+simpleThresholdPolicy.hpp               compilationPolicy.hpp
+simpleThresholdPolicy.hpp               globalDefinitions.hpp
+simpleThresholdPolicy.hpp               methodDataOop.hpp
+simpleThresholdPolicy.hpp               nmethod.hpp
+
 sizes.cpp                               sizes.hpp
 
 sizes.hpp                               allocation.hpp
 sizes.hpp                               globalDefinitions.hpp
 
-space.cpp                               blockOffsetTable.hpp
+space.cpp                               blockOffsetTable.inline.hpp
 space.cpp                               copy.hpp
 space.cpp                               defNewGeneration.hpp
 space.cpp                               genCollectedHeap.hpp
@@ -3835,7 +3856,6 @@ space.hpp                               prefetch.hpp
 space.hpp                               watermark.hpp
 space.hpp                               workgroup.hpp
 
-space.inline.hpp                        blockOffsetTable.inline.hpp
 space.inline.hpp                        collectedHeap.hpp
 space.inline.hpp                        safepoint.hpp
 space.inline.hpp                        space.hpp
@@ -3853,6 +3873,10 @@ specialized_oop_closures.cpp            ostream.hpp
 specialized_oop_closures.cpp            specialized_oop_closures.hpp
 
 specialized_oop_closures.hpp            atomic.hpp
+
+stack.hpp                               allocation.inline.hpp
+
+stack.inline.hpp                        stack.hpp
 
 stackMapFrame.cpp                       globalDefinitions.hpp
 stackMapFrame.cpp                       handles.inline.hpp
@@ -3979,6 +4003,7 @@ stubs.hpp                               os_<os_family>.inline.hpp
 
 sweeper.cpp                             atomic.hpp
 sweeper.cpp                             codeCache.hpp
+sweeper.cpp				compilationPolicy.hpp
 sweeper.cpp                             compileBroker.hpp
 sweeper.cpp                             events.hpp
 sweeper.cpp                             methodOop.hpp
@@ -4097,6 +4122,7 @@ task.hpp                                top.hpp
 taskqueue.cpp                           debug.hpp
 taskqueue.cpp				oop.inline.hpp
 taskqueue.cpp                           os.hpp
+taskqueue.cpp                           stack.inline.hpp
 taskqueue.cpp                           taskqueue.hpp
 taskqueue.cpp                           thread_<os_family>.inline.hpp
 
@@ -4104,6 +4130,7 @@ taskqueue.hpp                           allocation.hpp
 taskqueue.hpp                           allocation.inline.hpp
 taskqueue.hpp                           mutex.hpp
 taskqueue.hpp                           orderAccess_<os_arch>.inline.hpp
+taskqueue.hpp				stack.hpp
 
 templateInterpreter.cpp                 interpreter.hpp
 templateInterpreter.cpp                 interpreterGenerator.hpp
@@ -4723,6 +4750,7 @@ workgroup.cpp                           allocation.inline.hpp
 workgroup.cpp                           os.hpp
 workgroup.cpp                           workgroup.hpp
 
+workgroup.hpp                           taskqueue.hpp
 workgroup.hpp                           thread_<os_family>.inline.hpp
 
 xmlstream.cpp                           allocation.hpp

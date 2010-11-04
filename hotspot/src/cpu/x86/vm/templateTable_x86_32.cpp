@@ -1558,47 +1558,68 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ testl(rdx, rdx);             // check if forward or backward branch
     __ jcc(Assembler::positive, dispatch); // count only if backward branch
 
-    // increment counter
-    __ movl(rax, Address(rcx, be_offset));        // load backedge counter
-    __ incrementl(rax, InvocationCounter::count_increment); // increment counter
-    __ movl(Address(rcx, be_offset), rax);        // store counter
-
-    __ movl(rax, Address(rcx, inv_offset));    // load invocation counter
-    __ andl(rax, InvocationCounter::count_mask_value);     // and the status bits
-    __ addl(rax, Address(rcx, be_offset));        // add both counters
-
-    if (ProfileInterpreter) {
-      // Test to see if we should create a method data oop
-      __ cmp32(rax,
-               ExternalAddress((address) &InvocationCounter::InterpreterProfileLimit));
-      __ jcc(Assembler::less, dispatch);
-
-      // if no method data exists, go to profile method
-      __ test_method_data_pointer(rax, profile_method);
-
-      if (UseOnStackReplacement) {
-        // check for overflow against rbx, which is the MDO taken count
-        __ cmp32(rbx,
-                 ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
-        __ jcc(Assembler::below, dispatch);
-
-        // When ProfileInterpreter is on, the backedge_count comes from the
-        // methodDataOop, which value does not get reset on the call to
-        // frequency_counter_overflow().  To avoid excessive calls to the overflow
-        // routine while the method is being compiled, add a second test to make
-        // sure the overflow function is called only once every overflow_frequency.
-        const int overflow_frequency = 1024;
-        __ andptr(rbx, overflow_frequency-1);
-        __ jcc(Assembler::zero, backedge_counter_overflow);
-
+    if (TieredCompilation) {
+      Label no_mdo;
+      int increment = InvocationCounter::count_increment;
+      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
+      if (ProfileInterpreter) {
+        // Are we profiling?
+        __ movptr(rbx, Address(rcx, in_bytes(methodOopDesc::method_data_offset())));
+        __ testptr(rbx, rbx);
+        __ jccb(Assembler::zero, no_mdo);
+        // Increment the MDO backedge counter
+        const Address mdo_backedge_counter(rbx, in_bytes(methodDataOopDesc::backedge_counter_offset()) +
+                                                in_bytes(InvocationCounter::counter_offset()));
+        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
+                                   rax, false, Assembler::zero, &backedge_counter_overflow);
+        __ jmp(dispatch);
       }
+      __ bind(no_mdo);
+      // Increment backedge counter in methodOop
+      __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
+                                 rax, false, Assembler::zero, &backedge_counter_overflow);
     } else {
-      if (UseOnStackReplacement) {
-        // check for overflow against rax, which is the sum of the counters
-        __ cmp32(rax,
-                 ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
-        __ jcc(Assembler::aboveEqual, backedge_counter_overflow);
+      // increment counter
+      __ movl(rax, Address(rcx, be_offset));        // load backedge counter
+      __ incrementl(rax, InvocationCounter::count_increment); // increment counter
+      __ movl(Address(rcx, be_offset), rax);        // store counter
 
+      __ movl(rax, Address(rcx, inv_offset));    // load invocation counter
+      __ andl(rax, InvocationCounter::count_mask_value);     // and the status bits
+      __ addl(rax, Address(rcx, be_offset));        // add both counters
+
+      if (ProfileInterpreter) {
+        // Test to see if we should create a method data oop
+        __ cmp32(rax,
+                 ExternalAddress((address) &InvocationCounter::InterpreterProfileLimit));
+        __ jcc(Assembler::less, dispatch);
+
+        // if no method data exists, go to profile method
+        __ test_method_data_pointer(rax, profile_method);
+
+        if (UseOnStackReplacement) {
+          // check for overflow against rbx, which is the MDO taken count
+          __ cmp32(rbx,
+                   ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
+          __ jcc(Assembler::below, dispatch);
+
+          // When ProfileInterpreter is on, the backedge_count comes from the
+          // methodDataOop, which value does not get reset on the call to
+          // frequency_counter_overflow().  To avoid excessive calls to the overflow
+          // routine while the method is being compiled, add a second test to make
+          // sure the overflow function is called only once every overflow_frequency.
+          const int overflow_frequency = 1024;
+          __ andptr(rbx, overflow_frequency-1);
+          __ jcc(Assembler::zero, backedge_counter_overflow);
+        }
+      } else {
+        if (UseOnStackReplacement) {
+          // check for overflow against rax, which is the sum of the counters
+          __ cmp32(rax,
+                   ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
+          __ jcc(Assembler::aboveEqual, backedge_counter_overflow);
+
+        }
       }
     }
     __ bind(dispatch);
@@ -3090,19 +3111,22 @@ void TemplateTable::invokedynamic(int byte_no) {
 
   // rax: CallSite object (f1)
   // rbx: unused (f2)
+  // rcx: receiver address
   // rdx: flags (unused)
 
+  Register rax_callsite      = rax;
+  Register rcx_method_handle = rcx;
+
   if (ProfileInterpreter) {
-    Label L;
     // %%% should make a type profile for any invokedynamic that takes a ref argument
     // profile this call
     __ profile_call(rsi);
   }
 
-  __ movptr(rcx, Address(rax, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
-  __ null_check(rcx);
+  __ movptr(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
+  __ null_check(rcx_method_handle);
   __ prepare_to_jump_from_interpreted();
-  __ jump_to_method_handle_entry(rcx, rdx);
+  __ jump_to_method_handle_entry(rcx_method_handle, rdx);
 }
 
 //----------------------------------------------------------------------------------------------------

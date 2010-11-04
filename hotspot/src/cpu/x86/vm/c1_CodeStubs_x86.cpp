@@ -68,26 +68,23 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
-#ifdef TIERED
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  ce->store_parameter(_method->as_register(), 1);
   ce->store_parameter(_bci, 0);
   __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::counter_overflow_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-
   __ jmp(_continuation);
 }
-#endif // TIERED
-
-
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
                                bool throw_index_out_of_bounds_exception)
   : _throw_index_out_of_bounds_exception(throw_index_out_of_bounds_exception)
   , _index(index)
 {
-  _info = info == NULL ? NULL : new CodeEmitInfo(info);
+  assert(info != NULL, "must have info");
+  _info = new CodeEmitInfo(info);
 }
 
 

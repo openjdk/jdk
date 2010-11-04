@@ -2431,3 +2431,20 @@ void InterpreterMacroAssembler::restore_return_value( TosState state, bool is_na
   }
 #endif // CC_INTERP
 }
+
+// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
+void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
+                                                        int increment, int mask,
+                                                        Register scratch1, Register scratch2,
+                                                        Condition cond, Label *where) {
+  ld(counter_addr, scratch1);
+  add(scratch1, increment, scratch1);
+  if (is_simm13(mask)) {
+    andcc(scratch1, mask, G0);
+  } else {
+    set(mask, scratch2);
+    andcc(scratch1, scratch2,  G0);
+  }
+  br(cond, false, Assembler::pn, *where);
+  delayed()->st(scratch1, counter_addr);
+}

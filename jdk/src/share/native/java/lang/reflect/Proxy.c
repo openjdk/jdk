@@ -82,9 +82,9 @@ Java_java_lang_reflect_Proxy_defineClass0(JNIEnv *env,
         goto free_body;
 
     if (name != NULL) {
-        int len = (*env)->GetStringUTFLength(env, name);
-        int unicode_len = (*env)->GetStringLength(env, name);
-        if (len >= sizeof(buf)) {
+        jsize len = (*env)->GetStringUTFLength(env, name);
+        jsize unicode_len = (*env)->GetStringLength(env, name);
+        if (len >= (jsize)sizeof(buf)) {
             utfName = malloc(len + 1);
             if (utfName == NULL) {
                 JNU_ThrowOutOfMemoryError(env, NULL);

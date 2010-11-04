@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,28 +227,36 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   }
 }
 
+LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+  LIR_Opr r;
+  if (type == T_LONG) {
+    r = LIR_OprFact::longConst(x);
+  } else if (type == T_INT) {
+    r = LIR_OprFact::intConst(x);
+  } else {
+    ShouldNotReachHere();
+  }
+  if (!Assembler::is_simm13(x)) {
+    LIR_Opr tmp = new_register(type);
+    __ move(r, tmp);
+    return tmp;
+  }
+  return r;
+}
 
-void LIRGenerator::increment_counter(address counter, int step) {
+void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
   LIR_Opr pointer = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, T_INT);
+  LIR_Address* addr = new LIR_Address(pointer, type);
   increment_counter(addr, step);
 }
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
-  LIR_Opr temp = new_register(T_INT);
+  LIR_Opr temp = new_register(addr->type());
   __ move(addr, temp);
-  LIR_Opr c = LIR_OprFact::intConst(step);
-  if (Assembler::is_simm13(step)) {
-    __ add(temp, c, temp);
-  } else {
-    LIR_Opr temp2 = new_register(T_INT);
-    __ move(c, temp2);
-    __ add(temp, temp2, temp);
-  }
+  __ add(temp, load_immediate(step, addr->type()), temp);
   __ move(temp, addr);
 }
-
 
 void LIRGenerator::cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info) {
   LIR_Opr o7opr = FrameMap::O7_opr;
@@ -303,7 +311,7 @@ void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp)
 
 
 void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   bool needs_range_check = true;
   bool use_length = x->length() != NULL;
   bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
@@ -378,7 +386,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 
 
 void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   LIRItem obj(x->obj(), this);
   obj.load_item();
 
@@ -390,7 +398,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
-    info_for_exception = state_for(x, x->lock_stack_before());
+    info_for_exception = state_for(x);
   }
 
   // this CodeEmitInfo must not have the xhandlers because here the
@@ -401,7 +409,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
 
 void LIRGenerator::do_MonitorExit(MonitorExit* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   LIRItem obj(x->obj(), this);
   obj.dont_load_item();
 
@@ -611,7 +619,6 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
   left.load_item();
   right.load_item();
   LIR_Opr reg = rlock_result(x);
-
   if (x->x()->type()->is_float_kind()) {
     Bytecodes::Code code = x->op();
     __ fcmp2int(left.result(), right.result(), reg, (code == Bytecodes::_fcmpl || code == Bytecodes::_dcmpl));
@@ -657,7 +664,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   // Use temps to avoid kills
   LIR_Opr t1 = FrameMap::G1_opr;
   LIR_Opr t2 = FrameMap::G3_opr;
-  LIR_Opr addr = new_pointer_register();
+  LIR_Opr addr = (type == objectType) ? new_register(T_OBJECT) : new_pointer_register();
 
   // get address of field
   obj.load_item();
@@ -864,10 +871,11 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   // This instruction can be deoptimized in the slow path : use
   // O0 as result register.
   const LIR_Opr reg = result_register_for(x->type());
-
+#ifndef PRODUCT
   if (PrintNotLoaded && !x->klass()->is_loaded()) {
-    tty->print_cr("   ###class not loaded at new bci %d", x->bci());
+    tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
   }
+#endif
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr tmp1 = FrameMap::G1_oop_opr;
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
@@ -1011,7 +1019,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   obj.load_item();
   LIR_Opr out_reg = rlock_result(x);
   CodeStub* stub;
-  CodeEmitInfo* info_for_exception = state_for(x, x->state()->copy_locks());
+  CodeEmitInfo* info_for_exception = state_for(x);
 
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == NULL, "can't patch this");
@@ -1040,7 +1048,9 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   LIR_Opr tmp1 = FrameMap::G1_oop_opr;
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
-  __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,  x->direct_compare(), patching_info);
+  __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
+                x->direct_compare(), patching_info,
+                x->profiled_method(), x->profiled_bci());
 }
 
 
@@ -1089,12 +1099,12 @@ void LIRGenerator::do_If(If* x) {
   // add safepoint before generating condition code so it can be recomputed
   if (x->is_safepoint()) {
     // increment backedge counter if needed
-    increment_backedge_counter(state_for(x, x->state_before()));
-
+    increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
     __ safepoint(new_register(T_INT), state_for(x, x->state_before()));
   }
 
   __ cmp(lir_cond(cond), left, right);
+  // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {

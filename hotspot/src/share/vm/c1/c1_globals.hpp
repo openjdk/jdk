@@ -25,12 +25,6 @@
 //
 // Defines all global flags used by the client compiler.
 //
-#ifndef TIERED
-  #define NOT_TIERED(x) x
-#else
-  #define NOT_TIERED(x)
-#endif
-
 #define C1_FLAGS(develop, develop_pd, product, product_pd, notproduct)      \
                                                                             \
   /* Printing */                                                            \
@@ -55,7 +49,7 @@
   notproduct(bool, PrintIRDuringConstruction, false,                        \
           "Print IR as it's being constructed (helpful for debugging frontend)")\
                                                                             \
-  notproduct(bool, PrintPhiFunctions, false,                                   \
+  notproduct(bool, PrintPhiFunctions, false,                                \
           "Print phi functions when they are created and simplified")       \
                                                                             \
   notproduct(bool, PrintIR, false,                                          \
@@ -222,9 +216,6 @@
   develop(bool, DeoptC1, true,                                              \
           "Use deoptimization in C1")                                       \
                                                                             \
-  develop(bool, DeoptOnAsyncException, true,                                \
-          "Deoptimize upon Thread.stop(); improves precision of IR")        \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
@@ -279,41 +270,29 @@
   product_pd(intx, SafepointPollOffset,                                     \
           "Offset added to polling address (Intel only)")                   \
                                                                             \
-  product(bool, UseNewFeature1, false,                                      \
-          "Enable new feature for testing.  This is a dummy flag.")         \
-                                                                            \
-  product(bool, UseNewFeature2, false,                                      \
-          "Enable new feature for testing.  This is a dummy flag.")         \
-                                                                            \
-  product(bool, UseNewFeature3, false,                                      \
-          "Enable new feature for testing.  This is a dummy flag.")         \
-                                                                            \
-  product(bool, UseNewFeature4, false,                                      \
-          "Enable new feature for testing.  This is a dummy flag.")         \
-                                                                            \
   develop(bool, ComputeExactFPURegisterUsage, true,                         \
           "Compute additional live set for fpu registers to simplify fpu stack merge (Intel only)") \
                                                                             \
-  product(bool, Tier1ProfileCalls, true,                                    \
+  product(bool, C1ProfileCalls, true,                                       \
           "Profile calls when generating code for updating MDOs")           \
                                                                             \
-  product(bool, Tier1ProfileVirtualCalls, true,                             \
+  product(bool, C1ProfileVirtualCalls, true,                                \
           "Profile virtual calls when generating code for updating MDOs")   \
                                                                             \
-  product(bool, Tier1ProfileInlinedCalls, true,                             \
+  product(bool, C1ProfileInlinedCalls, true,                                \
           "Profile inlined calls when generating code for updating MDOs")   \
                                                                             \
-  product(bool, Tier1ProfileBranches, true,                                 \
+  product(bool, C1ProfileBranches, true,                                    \
           "Profile branches when generating code for updating MDOs")        \
                                                                             \
-  product(bool, Tier1ProfileCheckcasts, true,                               \
+  product(bool, C1ProfileCheckcasts, true,                                  \
           "Profile checkcasts when generating code for updating MDOs")      \
                                                                             \
-  product(bool, Tier1OptimizeVirtualCallProfiling, true,                    \
-          "Use CHA and exact type results at call sites when updating MDOs") \
+  product(bool, C1OptimizeVirtualCallProfiling, true,                       \
+          "Use CHA and exact type results at call sites when updating MDOs")\
                                                                             \
-  develop(bool, Tier1CountOnly, false,                                      \
-          "Don't schedule tier 2 compiles. Enter VM only")                  \
+  product(bool, C1UpdateMethodData, trueInTiered,                           \
+          "Update methodDataOops in Tier1-generated code")                  \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
           "print control flow graph to a separate file during compilation") \

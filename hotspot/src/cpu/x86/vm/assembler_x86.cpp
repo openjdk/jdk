@@ -4993,19 +4993,22 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
       ttyLocker ttyl;
       tty->print_cr("eip = 0x%08x", eip);
 #ifndef PRODUCT
-      tty->cr();
-      findpc(eip);
-      tty->cr();
+      if ((WizardMode || Verbose) && PrintMiscellaneous) {
+        tty->cr();
+        findpc(eip);
+        tty->cr();
+      }
 #endif
-      tty->print_cr("rax, = 0x%08x", rax);
-      tty->print_cr("rbx, = 0x%08x", rbx);
+      tty->print_cr("rax = 0x%08x", rax);
+      tty->print_cr("rbx = 0x%08x", rbx);
       tty->print_cr("rcx = 0x%08x", rcx);
       tty->print_cr("rdx = 0x%08x", rdx);
       tty->print_cr("rdi = 0x%08x", rdi);
       tty->print_cr("rsi = 0x%08x", rsi);
-      tty->print_cr("rbp, = 0x%08x", rbp);
+      tty->print_cr("rbp = 0x%08x", rbp);
       tty->print_cr("rsp = 0x%08x", rsp);
       BREAKPOINT;
+      assert(false, "start up GDB");
     }
   } else {
     ttyLocker ttyl;
@@ -7677,11 +7680,19 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
   movptr(tmp, ExternalAddress((address) delayed_value_addr));
 
 #ifdef ASSERT
-  Label L;
-  testptr(tmp, tmp);
-  jccb(Assembler::notZero, L);
-  hlt();
-  bind(L);
+  { Label L;
+    testptr(tmp, tmp);
+    if (WizardMode) {
+      jcc(Assembler::notZero, L);
+      char* buf = new char[40];
+      sprintf(buf, "DelayedValue="INTPTR_FORMAT, delayed_value_addr[1]);
+      stop(buf);
+    } else {
+      jccb(Assembler::notZero, L);
+      hlt();
+    }
+    bind(L);
+  }
 #endif
 
   if (offset != 0)
@@ -7698,9 +7709,14 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
-  if (UseCompressedOops)  unimplemented();  // field accesses must decode
+  Address type_addr(mh_reg, delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg));
   // compare method type against that of the receiver
-  cmpptr(mtype_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
+  if (UseCompressedOops) {
+    load_heap_oop(temp_reg, type_addr);
+    cmpptr(mtype_reg, temp_reg);
+  } else {
+    cmpptr(mtype_reg, type_addr);
+  }
   jcc(Assembler::notEqual, wrong_method_type);
 }
 
@@ -7712,15 +7728,14 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
 void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
                                                 Register temp_reg) {
   assert_different_registers(vmslots_reg, mh_reg, temp_reg);
-  if (UseCompressedOops)  unimplemented();  // field accesses must decode
   // load mh.type.form.vmslots
   if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
     // hoist vmslots into every mh to avoid dependent load chain
     movl(vmslots_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)));
   } else {
     Register temp2_reg = vmslots_reg;
-    movptr(temp2_reg, Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
-    movptr(temp2_reg, Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)));
+    load_heap_oop(temp2_reg, Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
+    load_heap_oop(temp2_reg, Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)));
     movl(vmslots_reg, Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)));
   }
 }
@@ -7734,9 +7749,8 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
   assert(mh_reg == rcx, "caller must put MH object in rcx");
   assert_different_registers(mh_reg, temp_reg);
 
-  if (UseCompressedOops)  unimplemented();  // field accesses must decode
-
   // pick out the interpreted side of the handler
+  // NOTE: vmentry is not an oop!
   movptr(temp_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg)));
 
   // off we go...
@@ -8227,39 +8241,45 @@ void MacroAssembler::store_klass(Register dst, Register src) {
     movptr(Address(dst, oopDesc::klass_offset_in_bytes()), src);
 }
 
+void MacroAssembler::load_heap_oop(Register dst, Address src) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    movl(dst, src);
+    decode_heap_oop(dst);
+  } else
+#endif
+    movptr(dst, src);
+}
+
+void MacroAssembler::store_heap_oop(Address dst, Register src) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    assert(!dst.uses(src), "not enough registers");
+    encode_heap_oop(src);
+    movl(dst, src);
+  } else
+#endif
+    movptr(dst, src);
+}
+
+// Used for storing NULLs.
+void MacroAssembler::store_heap_oop_null(Address dst) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    movl(dst, (int32_t)NULL_WORD);
+  } else {
+    movslq(dst, (int32_t)NULL_WORD);
+  }
+#else
+  movl(dst, (int32_t)NULL_WORD);
+#endif
+}
+
 #ifdef _LP64
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
   if (UseCompressedOops) {
     // Store to klass gap in destination
     movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
-  }
-}
-
-void MacroAssembler::load_heap_oop(Register dst, Address src) {
-  if (UseCompressedOops) {
-    movl(dst, src);
-    decode_heap_oop(dst);
-  } else {
-    movq(dst, src);
-  }
-}
-
-void MacroAssembler::store_heap_oop(Address dst, Register src) {
-  if (UseCompressedOops) {
-    assert(!dst.uses(src), "not enough registers");
-    encode_heap_oop(src);
-    movl(dst, src);
-  } else {
-    movq(dst, src);
-  }
-}
-
-// Used for storing NULLs.
-void MacroAssembler::store_heap_oop_null(Address dst) {
-  if (UseCompressedOops) {
-    movl(dst, (int32_t)NULL_WORD);
-  } else {
-    movslq(dst, (int32_t)NULL_WORD);
   }
 }
 
@@ -8766,6 +8786,186 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
   // That's it
   bind(DONE);
 }
+
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) block_comment(str)
+#endif
+
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+void MacroAssembler::generate_fill(BasicType t, bool aligned,
+                                   Register to, Register value, Register count,
+                                   Register rtmp, XMMRegister xtmp) {
+  assert_different_registers(to, value, count, rtmp);
+  Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
+  Label L_fill_2_bytes, L_fill_4_bytes;
+
+  int shift = -1;
+  switch (t) {
+    case T_BYTE:
+      shift = 2;
+      break;
+    case T_SHORT:
+      shift = 1;
+      break;
+    case T_INT:
+      shift = 0;
+      break;
+    default: ShouldNotReachHere();
+  }
+
+  if (t == T_BYTE) {
+    andl(value, 0xff);
+    movl(rtmp, value);
+    shll(rtmp, 8);
+    orl(value, rtmp);
+  }
+  if (t == T_SHORT) {
+    andl(value, 0xffff);
+  }
+  if (t == T_BYTE || t == T_SHORT) {
+    movl(rtmp, value);
+    shll(rtmp, 16);
+    orl(value, rtmp);
+  }
+
+  cmpl(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
+  jcc(Assembler::below, L_fill_4_bytes); // use unsigned cmp
+  if (!UseUnalignedLoadStores && !aligned && (t == T_BYTE || t == T_SHORT)) {
+    // align source address at 4 bytes address boundary
+    if (t == T_BYTE) {
+      // One byte misalignment happens only for byte arrays
+      testptr(to, 1);
+      jccb(Assembler::zero, L_skip_align1);
+      movb(Address(to, 0), value);
+      increment(to);
+      decrement(count);
+      BIND(L_skip_align1);
+    }
+    // Two bytes misalignment happens only for byte and short (char) arrays
+    testptr(to, 2);
+    jccb(Assembler::zero, L_skip_align2);
+    movw(Address(to, 0), value);
+    addptr(to, 2);
+    subl(count, 1<<(shift-1));
+    BIND(L_skip_align2);
+  }
+  if (UseSSE < 2) {
+    Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
+    // Fill 32-byte chunks
+    subl(count, 8 << shift);
+    jcc(Assembler::less, L_check_fill_8_bytes);
+    align(16);
+
+    BIND(L_fill_32_bytes_loop);
+
+    for (int i = 0; i < 32; i += 4) {
+      movl(Address(to, i), value);
+    }
+
+    addptr(to, 32);
+    subl(count, 8 << shift);
+    jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
+    BIND(L_check_fill_8_bytes);
+    addl(count, 8 << shift);
+    jccb(Assembler::zero, L_exit);
+    jmpb(L_fill_8_bytes);
+
+    //
+    // length is too short, just fill qwords
+    //
+    BIND(L_fill_8_bytes_loop);
+    movl(Address(to, 0), value);
+    movl(Address(to, 4), value);
+    addptr(to, 8);
+    BIND(L_fill_8_bytes);
+    subl(count, 1 << (shift + 1));
+    jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
+    // fall through to fill 4 bytes
+  } else {
+    Label L_fill_32_bytes;
+    if (!UseUnalignedLoadStores) {
+      // align to 8 bytes, we know we are 4 byte aligned to start
+      testptr(to, 4);
+      jccb(Assembler::zero, L_fill_32_bytes);
+      movl(Address(to, 0), value);
+      addptr(to, 4);
+      subl(count, 1<<shift);
+    }
+    BIND(L_fill_32_bytes);
+    {
+      assert( UseSSE >= 2, "supported cpu only" );
+      Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
+      // Fill 32-byte chunks
+      movdl(xtmp, value);
+      pshufd(xtmp, xtmp, 0);
+
+      subl(count, 8 << shift);
+      jcc(Assembler::less, L_check_fill_8_bytes);
+      align(16);
+
+      BIND(L_fill_32_bytes_loop);
+
+      if (UseUnalignedLoadStores) {
+        movdqu(Address(to, 0), xtmp);
+        movdqu(Address(to, 16), xtmp);
+      } else {
+        movq(Address(to, 0), xtmp);
+        movq(Address(to, 8), xtmp);
+        movq(Address(to, 16), xtmp);
+        movq(Address(to, 24), xtmp);
+      }
+
+      addptr(to, 32);
+      subl(count, 8 << shift);
+      jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
+      BIND(L_check_fill_8_bytes);
+      addl(count, 8 << shift);
+      jccb(Assembler::zero, L_exit);
+      jmpb(L_fill_8_bytes);
+
+      //
+      // length is too short, just fill qwords
+      //
+      BIND(L_fill_8_bytes_loop);
+      movq(Address(to, 0), xtmp);
+      addptr(to, 8);
+      BIND(L_fill_8_bytes);
+      subl(count, 1 << (shift + 1));
+      jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
+    }
+  }
+  // fill trailing 4 bytes
+  BIND(L_fill_4_bytes);
+  testl(count, 1<<shift);
+  jccb(Assembler::zero, L_fill_2_bytes);
+  movl(Address(to, 0), value);
+  if (t == T_BYTE || t == T_SHORT) {
+    addptr(to, 4);
+    BIND(L_fill_2_bytes);
+    // fill trailing 2 bytes
+    testl(count, 1<<(shift-1));
+    jccb(Assembler::zero, L_fill_byte);
+    movw(Address(to, 0), value);
+    if (t == T_BYTE) {
+      addptr(to, 2);
+      BIND(L_fill_byte);
+      // fill trailing byte
+      testl(count, 1);
+      jccb(Assembler::zero, L_exit);
+      movb(Address(to, 0), value);
+    } else {
+      BIND(L_fill_byte);
+    }
+  } else {
+    BIND(L_fill_2_bytes);
+  }
+  BIND(L_exit);
+}
+#undef BIND
+#undef BLOCK_COMMENT
+
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
   switch (cond) {

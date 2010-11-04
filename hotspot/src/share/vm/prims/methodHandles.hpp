@@ -226,11 +226,20 @@ class MethodHandles: AllStatic {
   }
 
   enum { CONV_VMINFO_SIGN_FLAG = 0x80 };
-  static int adapter_subword_vminfo(BasicType dest) {
-    if (dest == T_BOOLEAN) return (BitsPerInt -  1);
-    if (dest == T_CHAR)    return (BitsPerInt - 16);
-    if (dest == T_BYTE)    return (BitsPerInt -  8) | CONV_VMINFO_SIGN_FLAG;
-    if (dest == T_SHORT)   return (BitsPerInt - 16) | CONV_VMINFO_SIGN_FLAG;
+  // Shift values for prim-to-prim conversions.
+  static int adapter_prim_to_prim_subword_vminfo(BasicType dest) {
+    if (dest == T_BOOLEAN) return (BitsPerInt - 1);  // boolean is 1 bit
+    if (dest == T_CHAR)    return (BitsPerInt - BitsPerShort);
+    if (dest == T_BYTE)    return (BitsPerInt - BitsPerByte ) | CONV_VMINFO_SIGN_FLAG;
+    if (dest == T_SHORT)   return (BitsPerInt - BitsPerShort) | CONV_VMINFO_SIGN_FLAG;
+    return 0;                   // case T_INT
+  }
+  // Shift values for unboxing a primitive.
+  static int adapter_unbox_subword_vminfo(BasicType dest) {
+    if (dest == T_BOOLEAN) return (BitsPerInt - BitsPerByte );  // implemented as 1 byte
+    if (dest == T_CHAR)    return (BitsPerInt - BitsPerShort);
+    if (dest == T_BYTE)    return (BitsPerInt - BitsPerByte ) | CONV_VMINFO_SIGN_FLAG;
+    if (dest == T_SHORT)   return (BitsPerInt - BitsPerShort) | CONV_VMINFO_SIGN_FLAG;
     return 0;                   // case T_INT
   }
   // Here is the transformation the i2i adapter must perform:
@@ -446,6 +455,8 @@ class MethodHandles: AllStatic {
                                RegisterOrConstant arg_slots,
                                Register argslot_reg,
                                Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
+
+  static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
 };
 
 

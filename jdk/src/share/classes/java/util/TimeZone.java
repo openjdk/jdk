@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,60 +302,94 @@ abstract public class TimeZone implements Serializable, Cloneable {
     }
 
     /**
-     * Returns a name of this time zone suitable for presentation to the user
-     * in the default locale.
-     * This method returns the long name, not including daylight savings.
-     * If the display name is not available for the locale,
-     * then this method returns a string in the
-     * <a href="#NormalizedCustomID">normalized custom ID format</a>.
+     * Returns a long standard time name of this {@code TimeZone} suitable for
+     * presentation to the user in the default locale.
+     *
+     * <p>This method is equivalent to:
+     * <pre><blockquote>
+     * getDisplayName(false, {@link #LONG},
+     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
+     * </blockquote></pre>
+     *
      * @return the human-readable name of this time zone in the default locale.
      * @since 1.2
+     * @see #getDisplayName(boolean, int, Locale)
+     * @see Locale#getDefault(Locale.Category)
+     * @see Locale.Category
      */
     public final String getDisplayName() {
-        return getDisplayName(false, LONG, Locale.getDefault());
+        return getDisplayName(false, LONG,
+                              Locale.getDefault(Locale.Category.DISPLAY));
     }
 
     /**
-     * Returns a name of this time zone suitable for presentation to the user
-     * in the specified locale.
-     * This method returns the long name, not including daylight savings.
-     * If the display name is not available for the locale,
-     * then this method returns a string in the
-     * <a href="#NormalizedCustomID">normalized custom ID format</a>.
+     * Returns a long standard time name of this {@code TimeZone} suitable for
+     * presentation to the user in the specified {@code locale}.
+     *
+     * <p>This method is equivalent to:
+     * <pre><blockquote>
+     * getDisplayName(false, {@link #LONG}, locale)
+     * </blockquote></pre>
+     *
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
+     * @exception NullPointerException if {@code locale} is {@code null}.
      * @since 1.2
+     * @see #getDisplayName(boolean, int, Locale)
      */
     public final String getDisplayName(Locale locale) {
         return getDisplayName(false, LONG, locale);
     }
 
     /**
-     * Returns a name of this time zone suitable for presentation to the user
-     * in the default locale.
-     * If the display name is not available for the locale, then this
-     * method returns a string in the
-     * <a href="#NormalizedCustomID">normalized custom ID format</a>.
-     * @param daylight if true, return the daylight savings name.
-     * @param style either <code>LONG</code> or <code>SHORT</code>
+     * Returns a name in the specified {@code style} of this {@code TimeZone}
+     * suitable for presentation to the user in the default locale. If the
+     * specified {@code daylight} is {@code true}, a daylight saving time name
+     * is returned. Otherwise, a standard time name is returned.
+     *
+     * <p>This method is equivalent to:
+     * <pre><blockquote>
+     * getDisplayName(daylight, style,
+     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
+     * </blockquote></pre>
+     *
+     * @param daylight if {@code true}, return the daylight saving time name.
+     * @param style either {@link #LONG} or {@link #SHORT}
      * @return the human-readable name of this time zone in the default locale.
+     * @exception IllegalArgumentException if {@code style} is invalid.
      * @since 1.2
+     * @see #getDisplayName(boolean, int, Locale)
+     * @see Locale#getDefault(Locale.Category)
+     * @see Locale.Category
      */
     public final String getDisplayName(boolean daylight, int style) {
-        return getDisplayName(daylight, style, Locale.getDefault());
+        return getDisplayName(daylight, style,
+                              Locale.getDefault(Locale.Category.DISPLAY));
     }
 
     /**
-     * Returns a name of this time zone suitable for presentation to the user
-     * in the specified locale.
-     * If the display name is not available for the locale,
-     * then this method returns a string in the
-     * <a href="#NormalizedCustomID">normalized custom ID format</a>.
-     * @param daylight if true, return the daylight savings name.
-     * @param style either <code>LONG</code> or <code>SHORT</code>
+     * Returns a name in the specified {@code style} of this {@code TimeZone}
+     * suitable for presentation to the user in the specified {@code
+     * locale}. If the specified {@code daylight} is {@code true}, a daylight
+     * saving time name is returned. Otherwise, a standard time name is
+     * returned.
+     *
+     * <p>When looking up a time zone name, the {@linkplain
+     * ResourceBundle.Control#getCandidateLocales(String,Locale) default
+     * <code>Locale</code> search path of <code>ResourceBundle</code>} derived
+     * from the specified {@code locale} is used. (No {@linkplain
+     * ResourceBundle.Control#getFallbackLocale(String,Locale) fallback
+     * <code>Locale</code>} search is performed.) If a time zone name in any
+     * {@code Locale} of the search path, including {@link Locale#ROOT}, is
+     * found, the name is returned. Otherwise, a string in the
+     * <a href="#NormalizedCustomID">normalized custom ID format</a> is returned.
+     *
+     * @param daylight if {@code true}, return the daylight saving time name.
+     * @param style either {@link #LONG} or {@link #SHORT}
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
-     * @exception IllegalArgumentException style is invalid.
+     * @exception IllegalArgumentException if {@code style} is invalid.
+     * @exception NullPointerException if {@code locale} is {@code null}.
      * @since 1.2
      */
     public String getDisplayName(boolean daylight, int style, Locale locale) {

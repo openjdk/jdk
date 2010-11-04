@@ -49,7 +49,7 @@ public class WBMPImageWriterSpi extends ImageWriterSpi {
     private boolean registered = false;
 
     public WBMPImageWriterSpi() {
-        super("Sun Microsystems, Inc.",
+        super("Oracle Corporation",
               "1.0",
               formatNames,
               entensions,

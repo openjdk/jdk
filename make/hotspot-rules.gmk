@@ -73,7 +73,11 @@ ifeq ($(DEBUG_NAME), fastdebug)
 endif
 
 ifeq ($(ZERO_BUILD), true)
-  HOTSPOT_TARGET := $(HOTSPOT_TARGET)zero
+  ifeq ($(SHARK_BUILD), true)
+    HOTSPOT_TARGET := $(HOTSPOT_TARGET)shark
+  else
+    HOTSPOT_TARGET := $(HOTSPOT_TARGET)zero
+  endif
 endif
 
 HOTSPOT_BUILD_ARGUMENTS += $(COMMON_BUILD_ARGUMENTS)

@@ -509,7 +509,10 @@ void MemoryService::track_memory_pool_usage(MemoryPool* pool) {
   }
 }
 
-void MemoryService::gc_begin(bool fullGC) {
+void MemoryService::gc_begin(bool fullGC, bool recordGCBeginTime,
+                             bool recordAccumulatedGCTime,
+                             bool recordPreGCUsage, bool recordPeakUsage) {
+
   GCMemoryManager* mgr;
   if (fullGC) {
     mgr = _major_gc_manager;
@@ -517,16 +520,21 @@ void MemoryService::gc_begin(bool fullGC) {
     mgr = _minor_gc_manager;
   }
   assert(mgr->is_gc_memory_manager(), "Sanity check");
-  mgr->gc_begin();
+  mgr->gc_begin(recordGCBeginTime, recordPreGCUsage, recordAccumulatedGCTime);
 
   // Track the peak memory usage when GC begins
-  for (int i = 0; i < _pools_list->length(); i++) {
-    MemoryPool* pool = _pools_list->at(i);
-    pool->record_peak_memory_usage();
+  if (recordPeakUsage) {
+    for (int i = 0; i < _pools_list->length(); i++) {
+      MemoryPool* pool = _pools_list->at(i);
+      pool->record_peak_memory_usage();
+    }
   }
 }
 
-void MemoryService::gc_end(bool fullGC) {
+void MemoryService::gc_end(bool fullGC, bool recordPostGCUsage,
+                           bool recordAccumulatedGCTime,
+                           bool recordGCEndTime, bool countCollection) {
+
   GCMemoryManager* mgr;
   if (fullGC) {
     mgr = (GCMemoryManager*) _major_gc_manager;
@@ -536,7 +544,8 @@ void MemoryService::gc_end(bool fullGC) {
   assert(mgr->is_gc_memory_manager(), "Sanity check");
 
   // register the GC end statistics and memory usage
-  mgr->gc_end();
+  mgr->gc_end(recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
+              countCollection);
 }
 
 void MemoryService::oops_do(OopClosure* f) {
@@ -585,12 +594,12 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
   return obj;
 }
 //
-// GC manager type depends on the type of Generation. Depending the space
-// availablity and vm option the gc uses major gc manager or minor gc
+// GC manager type depends on the type of Generation. Depending on the space
+// availablity and vm options the gc uses major gc manager or minor gc
 // manager or both. The type of gc manager depends on the generation kind.
-// For DefNew, ParNew and ASParNew generation doing scavange gc uses minor
-// gc manager (so _fullGC is set to false ) and for other generation kind
-// DOing mark-sweep-compact uses major gc manager (so _fullGC is set
+// For DefNew, ParNew and ASParNew generation doing scavenge gc uses minor
+// gc manager (so _fullGC is set to false ) and for other generation kinds
+// doing mark-sweep-compact uses major gc manager (so _fullGC is set
 // to true).
 TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind) {
   switch (kind) {
@@ -611,13 +620,48 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind) {
     default:
       assert(false, "Unrecognized gc generation kind.");
   }
-  MemoryService::gc_begin(_fullGC);
+  // this has to be called in a stop the world pause and represent
+  // an entire gc pause, start to finish:
+  initialize(_fullGC, true, true, true, true, true, true, true);
 }
-TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC) {
+TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC,
+                                                 bool recordGCBeginTime,
+                                                 bool recordPreGCUsage,
+                                                 bool recordPeakUsage,
+                                                 bool recordPostGCUsage,
+                                                 bool recordAccumulatedGCTime,
+                                                 bool recordGCEndTime,
+                                                 bool countCollection) {
+  initialize(fullGC, recordGCBeginTime, recordPreGCUsage, recordPeakUsage,
+             recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
+             countCollection);
+}
+
+// for a subclass to create then initialize an instance before invoking
+// the MemoryService
+void TraceMemoryManagerStats::initialize(bool fullGC,
+                                         bool recordGCBeginTime,
+                                         bool recordPreGCUsage,
+                                         bool recordPeakUsage,
+                                         bool recordPostGCUsage,
+                                         bool recordAccumulatedGCTime,
+                                         bool recordGCEndTime,
+                                         bool countCollection) {
   _fullGC = fullGC;
-  MemoryService::gc_begin(_fullGC);
+  _recordGCBeginTime = recordGCBeginTime;
+  _recordPreGCUsage = recordPreGCUsage;
+  _recordPeakUsage = recordPeakUsage;
+  _recordPostGCUsage = recordPostGCUsage;
+  _recordAccumulatedGCTime = recordAccumulatedGCTime;
+  _recordGCEndTime = recordGCEndTime;
+  _countCollection = countCollection;
+
+  MemoryService::gc_begin(_fullGC, _recordGCBeginTime, _recordAccumulatedGCTime,
+                          _recordPreGCUsage, _recordPeakUsage);
 }
 
 TraceMemoryManagerStats::~TraceMemoryManagerStats() {
-  MemoryService::gc_end(_fullGC);
+  MemoryService::gc_end(_fullGC, _recordPostGCUsage, _recordAccumulatedGCTime,
+                        _recordGCEndTime, _countCollection);
 }
+

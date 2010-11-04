@@ -55,10 +55,16 @@ import sun.java2d.cmm.lcms.*;
 
 public class LCMSTransform implements ColorTransform {
     long ID;
+    private int inFormatter;
+    private int outFormatter;
+
     ICC_Profile[] profiles;
     long [] profileIDs;
     int renderType;
     int transformType;
+
+    private int numInComponents = -1;
+    private int numOutComponents = -1;
 
     private Object disposerReferent = new Object();
 
@@ -80,6 +86,14 @@ public class LCMSTransform implements ColorTransform {
         this.renderType = (renderType == ColorTransform.Any)?
                               ICC_Profile.icPerceptual : renderType;
         this.transformType = transformType;
+
+        /* Note that ICC_Profile.getNumComponents() is quite expensive
+         * (it may results in a reading of the profile header).
+         * So, here we cache the number of components of input and
+         * output profiles for further usage.
+         */
+        numInComponents = profiles[0].getNumComponents();
+        numOutComponents = profiles[profiles.length - 1].getNumComponents();
     }
 
     public LCMSTransform (ColorTransform[] transforms) {
@@ -99,26 +113,51 @@ public class LCMSTransform implements ColorTransform {
             j += curTrans.profiles.length;
         }
         renderType = ((LCMSTransform)transforms[0]).renderType;
-        ID = LCMS.createNativeTransform(profileIDs, renderType,
-                                        disposerReferent);
+
+        /* Note that ICC_Profile.getNumComponents() is quite expensive
+         * (it may results in a reading of the profile header).
+         * So, here we cache the number of components of input and
+         * output profiles for further usage.
+         */
+        numInComponents = profiles[0].getNumComponents();
+        numOutComponents = profiles[profiles.length - 1].getNumComponents();
     }
 
     public int getNumInComponents() {
-        return profiles[0].getNumComponents();
+        return numInComponents;
     }
 
     public int getNumOutComponents() {
-        return profiles[profiles.length - 1].getNumComponents();
+        return numOutComponents;
+    }
+
+    private synchronized void doTransform(LCMSImageLayout in,
+                                          LCMSImageLayout out) {
+        // update native transfrom if needed
+        if (ID == 0L ||
+            inFormatter != in.pixelType ||
+            outFormatter != out.pixelType) {
+
+            if (ID != 0L) {
+                // Disposer will destroy forgotten transform
+                disposerReferent = new Object();
+            }
+            inFormatter = in.pixelType;
+            outFormatter = out.pixelType;
+
+            ID = LCMS.createNativeTransform(profileIDs, renderType,
+                                            inFormatter, outFormatter,
+                                            disposerReferent);
+        }
+
+        LCMS.colorConvert(this, in, out);
     }
 
     public void colorConvert(BufferedImage src, BufferedImage dst) {
         if (LCMSImageLayout.isSupported(src) &&
             LCMSImageLayout.isSupported(dst))
         {
-            synchronized(this) {
-                LCMS.colorConvert(this, new LCMSImageLayout(src),
-                                  new LCMSImageLayout(dst));
-            }
+            doTransform(new LCMSImageLayout(src), new LCMSImageLayout(dst));
             return;
         }
         LCMSImageLayout srcIL, dstIL;
@@ -204,9 +243,8 @@ public class LCMSTransform implements ColorTransform {
                     }
                 }
                 // color convert srcLine to dstLine
-                synchronized (this) {
-                    LCMS.colorConvert(this, srcIL, dstIL);
-                }
+                doTransform(srcIL, dstIL);
+
                 // convert dst scanline
                 pixel = null;
                 idx = 0;
@@ -263,9 +301,8 @@ public class LCMSTransform implements ColorTransform {
                     }
                 }
                 // color convert srcLine to dstLine
-                synchronized(this) {
-                    LCMS.colorConvert(this, srcIL, dstIL);
-                }
+                doTransform(srcIL, dstIL);
+
                 // convert dst scanline
                 pixel = null;
                 idx = 0;
@@ -377,9 +414,7 @@ public class LCMSTransform implements ColorTransform {
             }
 
             // color convert srcLine to dstLine
-            synchronized(this) {
-                LCMS.colorConvert(this, srcIL, dstIL);
-            }
+            doTransform(srcIL, dstIL);
 
             // store dst scanline
             xd = dst.getMinX();
@@ -470,9 +505,7 @@ public class LCMSTransform implements ColorTransform {
                 }
 
                 // color convert srcLine to dstLine
-                synchronized(this) {
-                    LCMS.colorConvert(this, srcIL, dstIL);
-                }
+                doTransform(srcIL, dstIL);
 
                 // store dst scanline
                 xd = dst.getMinX();
@@ -513,9 +546,8 @@ public class LCMSTransform implements ColorTransform {
                 }
 
                 // color convert srcLine to dstLine
-                synchronized(this) {
-                    LCMS.colorConvert(this, srcIL, dstIL);
-                }
+                doTransform(srcIL, dstIL);
+
                 // store dst scanline
                 xd = dst.getMinX();
                 idx = 0;
@@ -550,9 +582,7 @@ public class LCMSTransform implements ColorTransform {
             LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
             LCMSImageLayout.BYTES_SH(2), getNumOutComponents()*2);
 
-        synchronized(this) {
-            LCMS.colorConvert(this, srcIL, dstIL);
-        }
+        doTransform(srcIL, dstIL);
 
         return dst;
     }
@@ -572,9 +602,7 @@ public class LCMSTransform implements ColorTransform {
             LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
             LCMSImageLayout.BYTES_SH(1), getNumOutComponents());
 
-        synchronized(this) {
-            LCMS.colorConvert(this, srcIL, dstIL);
-        }
+        doTransform(srcIL, dstIL);
 
         return dst;
     }

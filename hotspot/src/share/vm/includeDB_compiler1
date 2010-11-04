@@ -19,7 +19,6 @@
 // Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 // or visit www.oracle.com if you need additional information or have any
 // questions.
-//  
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
@@ -449,3 +448,7 @@ thread.cpp                              c1_Compiler.hpp
 top.hpp                                 c1_globals.hpp
 
 vmStructs.hpp                           c1_Runtime1.hpp
+
+c1_Canonicalizer.cpp                    c1_ValueStack.hpp
+
+c1_LIR.cpp                              c1_ValueStack.hpp

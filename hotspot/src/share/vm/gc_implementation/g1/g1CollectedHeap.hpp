@@ -46,17 +46,7 @@ class ConcurrentMarkThread;
 class ConcurrentG1Refine;
 class ConcurrentZFThread;
 
-// If want to accumulate detailed statistics on work queues
-// turn this on.
-#define G1_DETAILED_STATS 0
-
-#if G1_DETAILED_STATS
-#  define IF_G1_DETAILED_STATS(code) code
-#else
-#  define IF_G1_DETAILED_STATS(code)
-#endif
-
-typedef GenericTaskQueue<StarTask>          RefToScanQueue;
+typedef OverflowTaskQueue<StarTask>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
@@ -471,6 +461,12 @@ protected:
   virtual void shrink(size_t expand_bytes);
   void shrink_helper(size_t expand_bytes);
 
+  #if TASKQUEUE_STATS
+  static void print_taskqueue_stats_hdr(outputStream* const st = gclog_or_tty);
+  void print_taskqueue_stats(outputStream* const st = gclog_or_tty) const;
+  void reset_taskqueue_stats();
+  #endif // TASKQUEUE_STATS
+
   // Do an incremental collection: identify a collection set, and evacuate
   // its live objects elsewhere.
   virtual void do_collection_pause();
@@ -504,6 +500,12 @@ protected:
 
   // A function to check the consistency of dirty card logs.
   void check_ct_logs_at_safepoint();
+
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
 
   // After a collection pause, make the regions in the CS into free
   // regions.
@@ -654,12 +656,22 @@ protected:
   bool _unclean_regions_coming;
 
 public:
+
+  SubTasksDone* process_strong_tasks() { return _process_strong_tasks; }
+
   void set_refine_cte_cl_concurrency(bool concurrent);
 
-  RefToScanQueue *task_queue(int i);
+  RefToScanQueue *task_queue(int i) const;
 
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
+
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet& into_cset_dirty_card_queue_set()
+        { return _into_cset_dirty_card_queue_set; }
 
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.
@@ -675,7 +687,7 @@ public:
 
   void set_par_threads(int t) {
     SharedHeap::set_par_threads(t);
-    _process_strong_tasks->set_par_threads(t);
+    _process_strong_tasks->set_n_threads(t);
   }
 
   virtual CollectedHeap::Name kind() const {
@@ -715,7 +727,9 @@ public:
     OrderAccess::fence();
   }
 
-  void iterate_dirty_card_closure(bool concurrent, int worker_i);
+  void iterate_dirty_card_closure(CardTableEntryClosure* cl,
+                                  DirtyCardQueue* into_cset_dcq,
+                                  bool concurrent, int worker_i);
 
   // The shared block offset table array.
   G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }
@@ -1021,7 +1035,7 @@ public:
   virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-  virtual HeapWord* allocate_new_tlab(size_t size);
+  virtual HeapWord* allocate_new_tlab(size_t word_size);
 
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
@@ -1564,9 +1578,6 @@ protected:
   CardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  typedef GrowableArray<StarTask> OverflowQueue;
-  OverflowQueue* _overflowed_refs;
-
   G1ParGCAllocBuffer  _surviving_alloc_buffer;
   G1ParGCAllocBuffer  _tenured_alloc_buffer;
   G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
@@ -1583,10 +1594,6 @@ protected:
   int _queue_num;
 
   size_t _term_attempts;
-#if G1_DETAILED_STATS
-  int _pushes, _pops, _steals, _steal_attempts;
-  int _overflow_pushes;
-#endif
 
   double _start;
   double _start_strong_roots;
@@ -1600,7 +1607,7 @@ protected:
   // this points into the array, as we use the first few entries for padding
   size_t* _surviving_young_words;
 
-#define PADDING_ELEM_NUM (64 / sizeof(size_t))
+#define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
   void   add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
 
@@ -1635,15 +1642,14 @@ public:
   }
 
   RefToScanQueue*   refs()            { return _refs;             }
-  OverflowQueue*    overflowed_refs() { return _overflowed_refs;  }
   ageTable*         age_table()       { return &_age_table;       }
 
   G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
     return _alloc_buffers[purpose];
   }
 
-  size_t alloc_buffer_waste()                    { return _alloc_buffer_waste; }
-  size_t undo_waste()                            { return _undo_waste; }
+  size_t alloc_buffer_waste() const              { return _alloc_buffer_waste; }
+  size_t undo_waste() const                      { return _undo_waste; }
 
   template <class T> void push_on_queue(T* ref) {
     assert(ref != NULL, "invariant");
@@ -1656,12 +1662,7 @@ public:
       assert(_g1h->obj_in_cs(p), "Should be in CS");
     }
 #endif
-    if (!refs()->push(ref)) {
-      overflowed_refs()->push(ref);
-      IF_G1_DETAILED_STATS(note_overflow_push());
-    } else {
-      IF_G1_DETAILED_STATS(note_push());
-    }
+    refs()->push(ref);
   }
 
   void pop_from_queue(StarTask& ref) {
@@ -1672,7 +1673,6 @@ public:
              _g1h->is_in_g1_reserved(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
                                                      : oopDesc::load_decode_heap_oop((oop*)ref)),
               "invariant");
-      IF_G1_DETAILED_STATS(note_pop());
     } else {
       StarTask null_task;
       ref = null_task;
@@ -1680,7 +1680,8 @@ public:
   }
 
   void pop_from_overflow_queue(StarTask& ref) {
-    StarTask new_ref = overflowed_refs()->pop();
+    StarTask new_ref;
+    refs()->pop_overflow(new_ref);
     assert((oop*)new_ref != NULL, "pop() from a local non-empty stack");
     assert(UseCompressedOops || !new_ref.is_narrow(), "Error");
     assert(has_partial_array_mask((oop*)new_ref) ||
@@ -1690,8 +1691,8 @@ public:
     ref = new_ref;
   }
 
-  int refs_to_scan()                             { return refs()->size();                 }
-  int overflowed_refs_to_scan()                  { return overflowed_refs()->length();    }
+  int refs_to_scan()            { return (int)refs()->size(); }
+  int overflowed_refs_to_scan() { return (int)refs()->overflow_stack()->size(); }
 
   template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
     if (G1DeferredRSUpdate) {
@@ -1760,22 +1761,8 @@ public:
   int* hash_seed() { return &_hash_seed; }
   int  queue_num() { return _queue_num; }
 
-  size_t term_attempts()   { return _term_attempts; }
+  size_t term_attempts() const  { return _term_attempts; }
   void note_term_attempt() { _term_attempts++; }
-
-#if G1_DETAILED_STATS
-  int pushes()          { return _pushes; }
-  int pops()            { return _pops; }
-  int steals()          { return _steals; }
-  int steal_attempts()  { return _steal_attempts; }
-  int overflow_pushes() { return _overflow_pushes; }
-
-  void note_push()          { _pushes++; }
-  void note_pop()           { _pops++; }
-  void note_steal()         { _steals++; }
-  void note_steal_attempt() { _steal_attempts++; }
-  void note_overflow_push() { _overflow_pushes++; }
-#endif
 
   void start_strong_roots() {
     _start_strong_roots = os::elapsedTime();
@@ -1783,7 +1770,7 @@ public:
   void end_strong_roots() {
     _strong_roots_time += (os::elapsedTime() - _start_strong_roots);
   }
-  double strong_roots_time() { return _strong_roots_time; }
+  double strong_roots_time() const { return _strong_roots_time; }
 
   void start_term_time() {
     note_term_attempt();
@@ -1792,11 +1779,16 @@ public:
   void end_term_time() {
     _term_time += (os::elapsedTime() - _start_term);
   }
-  double term_time() { return _term_time; }
+  double term_time() const { return _term_time; }
 
-  double elapsed() {
+  double elapsed_time() const {
     return os::elapsedTime() - _start;
   }
+
+  static void
+    print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
+  void
+    print_termination_stats(int i, outputStream* const st = gclog_or_tty) const;
 
   size_t* surviving_young_words() {
     // We add on to hide entry 0 which accumulates surviving words for

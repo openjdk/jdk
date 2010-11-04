@@ -44,6 +44,8 @@ ifeq ($(PLATFORM), windows)
     endif
     FILES_c += NTLMAuthSequence.c
     FILES_c += NetworkInterface_winXP.c
+else
+    FILES_c += SdpSupport.c
 endif
 
 FILES_export = \
@@ -84,7 +86,8 @@ endif
 #
 # Find platform specific native code
 #
-vpath %.c $(PLATFORM_SRC)/native/sun/net/dns $(PLATFORM_SRC)/native/sun/net/www/protocol/http/ntlm $(PLATFORM_SRC)/native/sun/net/spi
+vpath %.c $(PLATFORM_SRC)/native/sun/net/dns $(PLATFORM_SRC)/native/sun/net/www/protocol/http/ntlm \
+    $(PLATFORM_SRC)/native/sun/net/sdp $(PLATFORM_SRC)/native/sun/net/spi
 
 #
 # Include rules

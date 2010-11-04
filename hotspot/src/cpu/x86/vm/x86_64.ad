@@ -619,62 +619,48 @@ void MachBreakpointNode::format(PhaseRegAlloc*, outputStream* st) const
 #endif
 
 // EMIT_RM()
-void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3)
-{
+void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
   unsigned char c = (unsigned char) ((f1 << 6) | (f2 << 3) | f3);
-  *(cbuf.code_end()) = c;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+  cbuf.insts()->emit_int8(c);
 }
 
 // EMIT_CC()
-void emit_cc(CodeBuffer &cbuf, int f1, int f2)
-{
+void emit_cc(CodeBuffer &cbuf, int f1, int f2) {
   unsigned char c = (unsigned char) (f1 | f2);
-  *(cbuf.code_end()) = c;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+  cbuf.insts()->emit_int8(c);
 }
 
 // EMIT_OPCODE()
-void emit_opcode(CodeBuffer &cbuf, int code)
-{
-  *(cbuf.code_end()) = (unsigned char) code;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+void emit_opcode(CodeBuffer &cbuf, int code) {
+  cbuf.insts()->emit_int8((unsigned char) code);
 }
 
 // EMIT_OPCODE() w/ relocation information
 void emit_opcode(CodeBuffer &cbuf,
                  int code, relocInfo::relocType reloc, int offset, int format)
 {
-  cbuf.relocate(cbuf.inst_mark() + offset, reloc, format);
+  cbuf.relocate(cbuf.insts_mark() + offset, reloc, format);
   emit_opcode(cbuf, code);
 }
 
 // EMIT_D8()
-void emit_d8(CodeBuffer &cbuf, int d8)
-{
-  *(cbuf.code_end()) = (unsigned char) d8;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+void emit_d8(CodeBuffer &cbuf, int d8) {
+  cbuf.insts()->emit_int8((unsigned char) d8);
 }
 
 // EMIT_D16()
-void emit_d16(CodeBuffer &cbuf, int d16)
-{
-  *((short *)(cbuf.code_end())) = d16;
-  cbuf.set_code_end(cbuf.code_end() + 2);
+void emit_d16(CodeBuffer &cbuf, int d16) {
+  cbuf.insts()->emit_int16(d16);
 }
 
 // EMIT_D32()
-void emit_d32(CodeBuffer &cbuf, int d32)
-{
-  *((int *)(cbuf.code_end())) = d32;
-  cbuf.set_code_end(cbuf.code_end() + 4);
+void emit_d32(CodeBuffer &cbuf, int d32) {
+  cbuf.insts()->emit_int32(d32);
 }
 
 // EMIT_D64()
-void emit_d64(CodeBuffer &cbuf, int64_t d64)
-{
-  *((int64_t*) (cbuf.code_end())) = d64;
-  cbuf.set_code_end(cbuf.code_end() + 8);
+void emit_d64(CodeBuffer &cbuf, int64_t d64) {
+  cbuf.insts()->emit_int64(d64);
 }
 
 // emit 32 bit value and construct relocation entry from relocInfo::relocType
@@ -684,32 +670,24 @@ void emit_d32_reloc(CodeBuffer& cbuf,
                     int format)
 {
   assert(reloc != relocInfo::external_word_type, "use 2-arg emit_d32_reloc");
-  cbuf.relocate(cbuf.inst_mark(), reloc, format);
-
-  *((int*) (cbuf.code_end())) = d32;
-  cbuf.set_code_end(cbuf.code_end() + 4);
+  cbuf.relocate(cbuf.insts_mark(), reloc, format);
+  cbuf.insts()->emit_int32(d32);
 }
 
 // emit 32 bit value and construct relocation entry from RelocationHolder
-void emit_d32_reloc(CodeBuffer& cbuf,
-                    int d32,
-                    RelocationHolder const& rspec,
-                    int format)
-{
+void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
     assert(oop((intptr_t)d32)->is_oop() && (ScavengeRootsInCode || !oop((intptr_t)d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
-  cbuf.relocate(cbuf.inst_mark(), rspec, format);
-
-  *((int* )(cbuf.code_end())) = d32;
-  cbuf.set_code_end(cbuf.code_end() + 4);
+  cbuf.relocate(cbuf.insts_mark(), rspec, format);
+  cbuf.insts()->emit_int32(d32);
 }
 
 void emit_d32_reloc(CodeBuffer& cbuf, address addr) {
-  address next_ip = cbuf.code_end() + 4;
+  address next_ip = cbuf.insts_end() + 4;
   emit_d32_reloc(cbuf, (int) (addr - next_ip),
                  external_word_Relocation::spec(addr),
                  RELOC_DISP32);
@@ -717,23 +695,13 @@ void emit_d32_reloc(CodeBuffer& cbuf, address addr) {
 
 
 // emit 64 bit value and construct relocation entry from relocInfo::relocType
-void emit_d64_reloc(CodeBuffer& cbuf,
-                    int64_t d64,
-                    relocInfo::relocType reloc,
-                    int format)
-{
-  cbuf.relocate(cbuf.inst_mark(), reloc, format);
-
-  *((int64_t*) (cbuf.code_end())) = d64;
-  cbuf.set_code_end(cbuf.code_end() + 8);
+void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, relocInfo::relocType reloc, int format) {
+  cbuf.relocate(cbuf.insts_mark(), reloc, format);
+  cbuf.insts()->emit_int64(d64);
 }
 
 // emit 64 bit value and construct relocation entry from RelocationHolder
-void emit_d64_reloc(CodeBuffer& cbuf,
-                    int64_t d64,
-                    RelocationHolder const& rspec,
-                    int format)
-{
+void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec, int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
@@ -741,10 +709,8 @@ void emit_d64_reloc(CodeBuffer& cbuf,
            "cannot embed scavengable oops in code");
   }
 #endif
-  cbuf.relocate(cbuf.inst_mark(), rspec, format);
-
-  *((int64_t*) (cbuf.code_end())) = d64;
-  cbuf.set_code_end(cbuf.code_end() + 8);
+  cbuf.relocate(cbuf.insts_mark(), rspec, format);
+  cbuf.insts()->emit_int64(d64);
 }
 
 // Access stack slot for load or store
@@ -966,7 +932,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const
     }
   }
 
-  C->set_frame_complete(cbuf.code_end() - cbuf.code_begin());
+  C->set_frame_complete(cbuf.insts_size());
 
 #ifdef ASSERT
   if (VerifyStackAtCalls) {
@@ -1050,11 +1016,11 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   if (do_polling() && C->is_method_compilation()) {
     // testl %rax, off(%rip) // Opcode + ModRM + Disp32 == 6 bytes
     // XXX reg_mem doesn't support RIP-relative addressing yet
-    cbuf.set_inst_mark();
-    cbuf.relocate(cbuf.inst_mark(), relocInfo::poll_return_type, 0); // XXX
+    cbuf.set_insts_mark();
+    cbuf.relocate(cbuf.insts_mark(), relocInfo::poll_return_type, 0); // XXX
     emit_opcode(cbuf, 0x85); // testl
     emit_rm(cbuf, 0x0, RAX_enc, 0x5); // 00 rax 101 == 0x5
-    // cbuf.inst_mark() is beginning of instruction
+    // cbuf.insts_mark() is beginning of instruction
     emit_d32_reloc(cbuf, os::get_polling_page());
 //                    relocInfo::poll_return_type,
   }
@@ -1607,8 +1573,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           emit_opcode(*cbuf, 0x0F);
           emit_opcode(*cbuf, 0x7E);
           emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+                  Matcher::_regEncode[src_first] & 7,
+                  Matcher::_regEncode[dst_first] & 7);
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdq   %s, %s\t# spill",
@@ -1637,8 +1603,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           emit_opcode(*cbuf, 0x0F);
           emit_opcode(*cbuf, 0x7E);
           emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+                  Matcher::_regEncode[src_first] & 7,
+                  Matcher::_regEncode[dst_first] & 7);
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdl   %s, %s\t# spill",
@@ -1814,9 +1780,9 @@ void emit_java_to_interp(CodeBuffer& cbuf)
   // movq rbx, 0
   // jmp -5 # to self
 
-  address mark = cbuf.inst_mark();  // get mark within main instrs section
+  address mark = cbuf.insts_mark();  // get mark within main instrs section
 
-  // Note that the code buffer's inst_mark is always relative to insts.
+  // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a stub.
   MacroAssembler _masm(&cbuf);
 
@@ -1830,7 +1796,7 @@ void emit_java_to_interp(CodeBuffer& cbuf)
   // This is recognized as unresolved by relocs/nativeinst/ic code
   __ jump(RuntimeAddress(__ pc()));
 
-  // Update current stubs pointer and restore code_end.
+  // Update current stubs pointer and restore insts_end.
   __ end_a_stub();
 }
 
@@ -1868,7 +1834,7 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
-  uint code_size = cbuf.code_size();
+  uint insts_size = cbuf.insts_size();
   if (UseCompressedOops) {
     masm.load_klass(rscratch1, j_rarg0);
     masm.cmpptr(rax, rscratch1);
@@ -1880,7 +1846,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
   /* WARNING these NOPs are critical so that verified entry point is properly
      4 bytes aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 4 - ((cbuf.code_size() - code_size) & 0x3);
+  int nops_cnt = 4 - ((cbuf.insts_size() - insts_size) & 0x3);
   if (OptoBreakpoint) {
     // Leave space for int3
     nops_cnt -= 1;
@@ -1910,14 +1876,14 @@ uint size_exception_handler()
 int emit_exception_handler(CodeBuffer& cbuf)
 {
 
-  // Note that the code buffer's inst_mark is always relative to insts.
+  // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
   address base =
   __ start_a_stub(size_exception_handler());
   if (base == NULL)  return 0;  // CodeBuffer::expand failed
   int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->instructions_begin()));
+  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
   assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
   __ end_a_stub();
   return offset;
@@ -1933,7 +1899,7 @@ uint size_deopt_handler()
 int emit_deopt_handler(CodeBuffer& cbuf)
 {
 
-  // Note that the code buffer's inst_mark is always relative to insts.
+  // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
   address base =
@@ -1962,7 +1928,7 @@ static void emit_double_constant(CodeBuffer& cbuf, double x) {
   address double_address = __ double_constant(x);
   cbuf.insts()->set_mark_off(mark);  // preserve mark across masm shift
   emit_d32_reloc(cbuf,
-                 (int) (double_address - cbuf.code_end() - 4),
+                 (int) (double_address - cbuf.insts_end() - 4),
                  internal_word_Relocation::spec(double_address),
                  RELOC_DISP32);
 }
@@ -1973,7 +1939,7 @@ static void emit_float_constant(CodeBuffer& cbuf, float x) {
   address float_address = __ float_constant(x);
   cbuf.insts()->set_mark_off(mark);  // preserve mark across masm shift
   emit_d32_reloc(cbuf,
-                 (int) (float_address - cbuf.code_end() - 4),
+                 (int) (float_address - cbuf.insts_end() - 4),
                  internal_word_Relocation::spec(float_address),
                  RELOC_DISP32);
 }
@@ -2481,14 +2447,14 @@ encode %{
   %{
     // JMP, CALL
     Label* l = $labl$$label;
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0);
+    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0);
   %}
 
   enc_class LblShort(label labl)
   %{
     // JMP, CALL
     Label* l = $labl$$label;
-    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     emit_d8(cbuf, disp);
   %}
@@ -2517,7 +2483,7 @@ encode %{
     Label* l = $labl$$label;
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0);
+    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0);
   %}
 
   enc_class JccShort (cmpOp cop, label labl)
@@ -2525,7 +2491,7 @@ encode %{
   // JCC
     Label *l = $labl$$label;
     emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     emit_d8(cbuf, disp);
   %}
@@ -2609,22 +2575,22 @@ encode %{
   %{
     // CALL Java_To_Interpreter
     // This is the instruction starting address for relocation info.
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
     emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.code_end()) - 4),
+                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
   %}
 
   enc_class preserve_SP %{
-    debug_only(int off0 = cbuf.code_size());
+    debug_only(int off0 = cbuf.insts_size());
     MacroAssembler _masm(&cbuf);
     // RBP is preserved across all calls, even compiled calls.
     // Use it to preserve RSP in places where the callee might change the SP.
     __ movptr(rbp_mh_SP_save, rsp);
-    debug_only(int off1 = cbuf.code_size());
+    debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
   %}
 
@@ -2638,22 +2604,22 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
 
     if (!_method) {
       emit_d32_reloc(cbuf,
-                     (int) ($meth$$method - ((intptr_t) cbuf.code_end()) - 4),
+                     (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
     } else if (_optimized_virtual) {
       emit_d32_reloc(cbuf,
-                     (int) ($meth$$method - ((intptr_t) cbuf.code_end()) - 4),
+                     (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      opt_virtual_call_Relocation::spec(),
                      RELOC_DISP32);
     } else {
       emit_d32_reloc(cbuf,
-                     (int) ($meth$$method - ((intptr_t) cbuf.code_end()) - 4),
+                     (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      static_call_Relocation::spec(),
                      RELOC_DISP32);
     }
@@ -2669,7 +2635,7 @@ encode %{
     // !!!!!
     // Generate  "movq rax, -1", placeholder instruction to load oop-info
     // emit_call_dynamic_prologue( cbuf );
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
 
     // movq rax, -1
     emit_opcode(cbuf, Assembler::REX_W);
@@ -2677,13 +2643,13 @@ encode %{
     emit_d64_reloc(cbuf,
                    (int64_t) Universe::non_oop_word(),
                    oop_Relocation::spec_for_immediate(), RELOC_IMM64);
-    address virtual_call_oop_addr = cbuf.inst_mark();
+    address virtual_call_oop_addr = cbuf.insts_mark();
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.code_end()) - 4),
+                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                    virtual_call_Relocation::spec(virtual_call_oop_addr),
                    RELOC_DISP32);
   %}
@@ -2697,7 +2663,7 @@ encode %{
     // assert(-0x80 <= disp && disp < 0x80, "compiled_code_offset isn't small");
 
     // callq *disp(%rax)
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     if (disp < 0x80) {
       emit_rm(cbuf, 0x01, $secondary, RAX_enc); // R/M byte
@@ -3729,10 +3695,10 @@ encode %{
 
   enc_class enc_rethrow()
   %{
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE9); // jmp entry
     emit_d32_reloc(cbuf,
-                   (int) (OptoRuntime::rethrow_stub() - cbuf.code_end() - 4),
+                   (int) (OptoRuntime::rethrow_stub() - cbuf.insts_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
   %}
@@ -3742,7 +3708,7 @@ encode %{
     int dstenc = $dst$$reg;
     address signmask_address = (address) StubRoutines::x86::float_sign_mask();
 
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     if (dstenc >= 8) {
       emit_opcode(cbuf, Assembler::REX_R);
       dstenc -= 8;
@@ -3759,7 +3725,7 @@ encode %{
     int dstenc = $dst$$reg;
     address signmask_address = (address) StubRoutines::x86::double_sign_mask();
 
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0x66);
     if (dstenc >= 8) {
       emit_opcode(cbuf, Assembler::REX_R);
@@ -3777,7 +3743,7 @@ encode %{
     int dstenc = $dst$$reg;
     address signflip_address = (address) StubRoutines::x86::float_sign_flip();
 
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     if (dstenc >= 8) {
       emit_opcode(cbuf, Assembler::REX_R);
       dstenc -= 8;
@@ -3794,7 +3760,7 @@ encode %{
     int dstenc = $dst$$reg;
     address signflip_address = (address) StubRoutines::x86::double_sign_flip();
 
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0x66);
     if (dstenc >= 8) {
       emit_opcode(cbuf, Assembler::REX_R);
@@ -3846,11 +3812,11 @@ encode %{
     encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
 
     // call f2i_fixup
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::x86::f2i_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::f2i_fixup() - cbuf.insts_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -3870,7 +3836,7 @@ encode %{
     address const_address = (address) StubRoutines::x86::double_sign_flip();
 
     // cmpq $dst, [0x8000000000000000]
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, dstenc < 8 ? Assembler::REX_W : Assembler::REX_WR);
     emit_opcode(cbuf, 0x39);
     // XXX reg_mem doesn't support RIP-relative addressing yet
@@ -3904,11 +3870,11 @@ encode %{
     encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
 
     // call f2l_fixup
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::x86::f2l_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::f2l_fixup() - cbuf.insts_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -3960,11 +3926,11 @@ encode %{
     encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
 
     // call d2i_fixup
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::x86::d2i_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::d2i_fixup() - cbuf.insts_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -3984,7 +3950,7 @@ encode %{
     address const_address = (address) StubRoutines::x86::double_sign_flip();
 
     // cmpq $dst, [0x8000000000000000]
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, dstenc < 8 ? Assembler::REX_W : Assembler::REX_WR);
     emit_opcode(cbuf, 0x39);
     // XXX reg_mem doesn't support RIP-relative addressing yet
@@ -4018,11 +3984,11 @@ encode %{
     encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
 
     // call d2l_fixup
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::x86::d2l_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::d2l_fixup() - cbuf.insts_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -4042,11 +4008,11 @@ encode %{
   %{
     // testl %rax, off(%rip) // Opcode + ModRM + Disp32 == 6 bytes
     // XXX reg_mem doesn't support RIP-relative addressing yet
-    cbuf.set_inst_mark();
-    cbuf.relocate(cbuf.inst_mark(), relocInfo::poll_type, 0); // XXX
+    cbuf.set_insts_mark();
+    cbuf.relocate(cbuf.insts_mark(), relocInfo::poll_type, 0); // XXX
     emit_opcode(cbuf, 0x85); // testl
     emit_rm(cbuf, 0x0, RAX_enc, 0x5); // 00 rax 101 == 0x5
-    // cbuf.inst_mark() is beginning of instruction
+    // cbuf.insts_mark() is beginning of instruction
     emit_d32_reloc(cbuf, os::get_polling_page());
 //                    relocInfo::poll_type,
   %}
@@ -7382,43 +7348,6 @@ instruct bytes_reverse_short(rRegI dst) %{
   %}
   ins_pipe( ialu_reg );
 %}
-
-instruct loadI_reversed(rRegI dst, memory src) %{
-  match(Set dst (ReverseBytesI (LoadI src)));
-
-  format %{ "bswap_movl $dst, $src" %}
-  opcode(0x8B, 0x0F, 0xC8); /* Opcode 8B 0F C8 */
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src), REX_reg(dst), OpcS, opc3_reg(dst));
-  ins_pipe( ialu_reg_mem );
-%}
-
-instruct loadL_reversed(rRegL dst, memory src) %{
-  match(Set dst (ReverseBytesL (LoadL src)));
-
-  format %{ "bswap_movq $dst, $src" %}
-  opcode(0x8B, 0x0F, 0xC8); /* Opcode 8B 0F C8 */
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src), REX_reg_wide(dst), OpcS, opc3_reg(dst));
-  ins_pipe( ialu_reg_mem );
-%}
-
-instruct storeI_reversed(memory dst, rRegI src) %{
-  match(Set dst (StoreI dst (ReverseBytesI  src)));
-
-  format %{ "movl_bswap $dst, $src" %}
-  opcode(0x0F, 0xC8, 0x89); /* Opcode 0F C8 89 */
-  ins_encode( REX_reg(src), OpcP, opc2_reg(src), REX_reg_mem(src, dst), OpcT, reg_mem(src, dst) );
-  ins_pipe( ialu_mem_reg );
-%}
-
-instruct storeL_reversed(memory dst, rRegL src) %{
-  match(Set dst (StoreL dst (ReverseBytesL  src)));
-
-  format %{ "movq_bswap $dst, $src" %}
-  opcode(0x0F, 0xC8, 0x89); /* Opcode 0F C8 89 */
-  ins_encode( REX_reg_wide(src), OpcP, opc2_reg(src), REX_reg_mem_wide(src, dst), OpcT, reg_mem(src, dst) );
-  ins_pipe( ialu_mem_reg );
-%}
-
 
 //---------- Zeros Count Instructions ------------------------------------------
 
@@ -12304,7 +12233,7 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
     int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
        // the two jumps 6 bytes apart so the jump distances are too
-       parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+       parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
     } else if ($cop$$cmpcode == Assembler::equal) {
        parity_disp = 6;
     } else {
@@ -12313,7 +12242,7 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
     emit_d32(cbuf, parity_disp);
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
     emit_d32(cbuf, disp);
   %}
   ins_pipe(pipe_jcc);
@@ -12508,7 +12437,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
     emit_cc(cbuf, $primary, Assembler::parity);
     int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+      parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
     } else if ($cop$$cmpcode == Assembler::equal) {
       parity_disp = 2;
     } else {
@@ -12516,7 +12445,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
     }
     emit_d8(cbuf, parity_disp);
     emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
     emit_d8(cbuf, disp);
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");

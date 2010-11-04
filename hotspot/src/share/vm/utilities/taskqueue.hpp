@@ -59,14 +59,20 @@ public:
   inline void record_steal(bool success);
   inline void record_overflow(size_t new_length);
 
+  TaskQueueStats & operator +=(const TaskQueueStats & addend);
+
   inline size_t get(StatId id) const { return _stats[id]; }
   inline const size_t* get() const   { return _stats; }
 
   inline void reset();
 
+  // Print the specified line of the header (does not include a line separator).
   static void print_header(unsigned int line, outputStream* const stream = tty,
                            unsigned int width = 10);
+  // Print the statistics (does not include a line separator).
   void print(outputStream* const stream = tty, unsigned int width = 10) const;
+
+  DEBUG_ONLY(void verify() const;)
 
 private:
   size_t                    _stats[last_stat_id];
@@ -299,6 +305,12 @@ bool GenericTaskQueue<E, N>::push_slow(E t, uint dirty_n_elems) {
   return false;
 }
 
+// pop_local_slow() is done by the owning thread and is trying to
+// get the last task in the queue.  It will compete with pop_global()
+// that will be used by other threads.  The tag age is incremented
+// whenever the queue goes empty which it will do here if this thread
+// gets the last task or in pop_global() if the queue wraps (top == 0
+// and pop_global() succeeds, see pop_global()).
 template<class E, unsigned int N>
 bool GenericTaskQueue<E, N>::pop_local_slow(uint localBot, Age oldAge) {
   // This queue was observed to contain exactly one element; either this
@@ -360,29 +372,22 @@ GenericTaskQueue<E, N>::~GenericTaskQueue() {
 // OverflowTaskQueue is a TaskQueue that also includes an overflow stack for
 // elements that do not fit in the TaskQueue.
 //
-// Three methods from super classes are overridden:
+// This class hides two methods from super classes:
 //
-// initialize() - initialize the super classes and create the overflow stack
 // push() - push onto the task queue or, if that fails, onto the overflow stack
 // is_empty() - return true if both the TaskQueue and overflow stack are empty
 //
-// Note that size() is not overridden--it returns the number of elements in the
+// Note that size() is not hidden--it returns the number of elements in the
 // TaskQueue, and does not include the size of the overflow stack.  This
 // simplifies replacement of GenericTaskQueues with OverflowTaskQueues.
 template<class E, unsigned int N = TASKQUEUE_SIZE>
 class OverflowTaskQueue: public GenericTaskQueue<E, N>
 {
 public:
-  typedef GrowableArray<E>       overflow_t;
+  typedef Stack<E>               overflow_t;
   typedef GenericTaskQueue<E, N> taskqueue_t;
 
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
-
-  OverflowTaskQueue();
-  ~OverflowTaskQueue();
-  void initialize();
-
-  inline overflow_t* overflow_stack() const { return _overflow_stack; }
 
   // Push task t onto the queue or onto the overflow stack.  Return true.
   inline bool push(E t);
@@ -390,45 +395,24 @@ public:
   // Attempt to pop from the overflow stack; return true if anything was popped.
   inline bool pop_overflow(E& t);
 
+  inline overflow_t* overflow_stack() { return &_overflow_stack; }
+
   inline bool taskqueue_empty() const { return taskqueue_t::is_empty(); }
-  inline bool overflow_empty()  const { return overflow_stack()->is_empty(); }
+  inline bool overflow_empty()  const { return _overflow_stack.is_empty(); }
   inline bool is_empty()        const {
     return taskqueue_empty() && overflow_empty();
   }
 
 private:
-  overflow_t* _overflow_stack;
+  overflow_t _overflow_stack;
 };
-
-template <class E, unsigned int N>
-OverflowTaskQueue<E, N>::OverflowTaskQueue()
-{
-  _overflow_stack = NULL;
-}
-
-template <class E, unsigned int N>
-OverflowTaskQueue<E, N>::~OverflowTaskQueue()
-{
-  if (_overflow_stack != NULL) {
-    delete _overflow_stack;
-    _overflow_stack = NULL;
-  }
-}
-
-template <class E, unsigned int N>
-void OverflowTaskQueue<E, N>::initialize()
-{
-  taskqueue_t::initialize();
-  assert(_overflow_stack == NULL, "memory leak");
-  _overflow_stack = new (ResourceObj::C_HEAP) GrowableArray<E>(10, true);
-}
 
 template <class E, unsigned int N>
 bool OverflowTaskQueue<E, N>::push(E t)
 {
   if (!taskqueue_t::push(t)) {
     overflow_stack()->push(t);
-    TASKQUEUE_STATS_ONLY(stats.record_overflow(overflow_stack()->length()));
+    TASKQUEUE_STATS_ONLY(stats.record_overflow(overflow_stack()->size()));
   }
   return true;
 }
@@ -631,6 +615,9 @@ public:
   // in an MT-safe manner, once the previous round of use of
   // the terminator is finished.
   void reset_for_reuse();
+  // Same as above but the number of parallel threads is set to the
+  // given number.
+  void reset_for_reuse(int n_threads);
 
 #ifdef TRACESPINNING
   static uint total_yields() { return _total_yields; }
@@ -776,3 +763,4 @@ typedef GenericTaskQueueSet<OopStarTaskQueue> OopStarTaskQueueSet;
 
 typedef OverflowTaskQueue<size_t>             RegionTaskQueue;
 typedef GenericTaskQueueSet<RegionTaskQueue>  RegionTaskQueueSet;
+

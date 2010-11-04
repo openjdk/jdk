@@ -46,7 +46,9 @@
 #include "java_props.h"
 
 #ifdef __linux__
-#define CODESET _NL_CTYPE_CODESET_NAME
+  #ifndef CODESET
+  #define CODESET _NL_CTYPE_CODESET_NAME
+  #endif
 #else
 #ifdef ALT_CODESET_KEY
 #define CODESET ALT_CODESET_KEY
@@ -115,13 +117,181 @@ setPathEnvironment(char *envstring)
 #define P_tmpdir "/var/tmp"
 #endif
 
+static int ParseLocale(int cat, char ** std_language, char ** std_country, char ** std_variant, char ** std_encoding) {
+    char temp[64];
+    char *language = NULL, *country = NULL, *variant = NULL,
+         *encoding = NULL;
+    char *p, encoding_variant[64];
+    char *lc;
+
+    /* Query the locale set for the category */
+    lc = setlocale(cat, NULL);
+
+#ifndef __linux__
+    if (lc == NULL) {
+        return 0;
+    }
+
+    if (cat == LC_CTYPE) {
+        /*
+         * Workaround for Solaris bug 4201684: Xlib doesn't like @euro
+         * locales. Since we don't depend on the libc @euro behavior,
+         * we just remove the qualifier.
+         * On Linux, the bug doesn't occur; on the other hand, @euro
+         * is needed there because it's a shortcut that also determines
+         * the encoding - without it, we wouldn't get ISO-8859-15.
+         * Therefore, this code section is Solaris-specific.
+         */
+        lc = strdup(lc);    /* keep a copy, setlocale trashes original. */
+        strcpy(temp, lc);
+        p = strstr(temp, "@euro");
+        if (p != NULL) {
+            *p = '\0';
+            setlocale(LC_ALL, temp);
+        }
+    }
+#else
+    if (lc == NULL || !strcmp(lc, "C") || !strcmp(lc, "POSIX")) {
+        lc = "en_US";
+    }
+#endif
+
+    /*
+     * locale string format in Solaris is
+     * <language name>_<country name>.<encoding name>@<variant name>
+     * <country name>, <encoding name>, and <variant name> are optional.
+     */
+
+    strcpy(temp, lc);
+
+    /* Parse the language, country, encoding, and variant from the
+     * locale.  Any of the elements may be missing, but they must occur
+     * in the order language_country.encoding@variant, and must be
+     * preceded by their delimiter (except for language).
+     *
+     * If the locale name (without .encoding@variant, if any) matches
+     * any of the names in the locale_aliases list, map it to the
+     * corresponding full locale name.  Most of the entries in the
+     * locale_aliases list are locales that include a language name but
+     * no country name, and this facility is used to map each language
+     * to a default country if that's possible.  It's also used to map
+     * the Solaris locale aliases to their proper Java locale IDs.
+     */
+    if ((p = strchr(temp, '.')) != NULL) {
+        strcpy(encoding_variant, p); /* Copy the leading '.' */
+        *p = '\0';
+    } else if ((p = strchr(temp, '@')) != NULL) {
+         strcpy(encoding_variant, p); /* Copy the leading '@' */
+         *p = '\0';
+    } else {
+        *encoding_variant = '\0';
+    }
+
+    if (mapLookup(locale_aliases, temp, &p)) {
+        strcpy(temp, p);
+    }
+
+    language = temp;
+    if ((country = strchr(temp, '_')) != NULL) {
+        *country++ = '\0';
+    }
+
+    p = encoding_variant;
+    if ((encoding = strchr(p, '.')) != NULL) {
+        p[encoding++ - p] = '\0';
+        p = encoding;
+    }
+    if ((variant = strchr(p, '@')) != NULL) {
+        p[variant++ - p] = '\0';
+    }
+
+    /* Normalize the language name */
+    if (std_language != NULL) {
+        *std_language = "en";
+        if (language != NULL) {
+            mapLookup(language_names, language, std_language);
+        }
+    }
+
+    /* Normalize the country name */
+    if (std_country != NULL && country != NULL) {
+        *std_country = country;
+        mapLookup(country_names, country, std_country);
+    }
+
+    /* Normalize the variant name.  Note that we only use
+     * variants listed in the mapping array; others are ignored. */
+    if (std_variant != NULL && variant != NULL) {
+        mapLookup(variant_names, variant, std_variant);
+    }
+
+    /* Normalize the encoding name.  Note that we IGNORE the string
+     * 'encoding' extracted from the locale name above.  Instead, we use the
+     * more reliable method of calling nl_langinfo(CODESET).  This function
+     * returns an empty string if no encoding is set for the given locale
+     * (e.g., the C or POSIX locales); we use the default ISO 8859-1
+     * converter for such locales.
+     */
+    if (std_encoding != NULL) {
+        /* OK, not so reliable - nl_langinfo() gives wrong answers on
+         * Euro locales, in particular. */
+        if (strcmp(p, "ISO8859-15") == 0)
+            p = "ISO8859-15";
+        else
+            p = nl_langinfo(CODESET);
+
+        /* Convert the bare "646" used on Solaris to a proper IANA name */
+        if (strcmp(p, "646") == 0)
+            p = "ISO646-US";
+
+        /* return same result nl_langinfo would return for en_UK,
+         * in order to use optimizations. */
+        *std_encoding = (*p != '\0') ? p : "ISO8859-1";
+
+#ifdef __linux__
+        /*
+         * Remap the encoding string to a different value for japanese
+         * locales on linux so that customized converters are used instead
+         * of the default converter for "EUC-JP". The customized converters
+         * omit support for the JIS0212 encoding which is not supported by
+         * the variant of "EUC-JP" encoding used on linux
+         */
+        if (strcmp(p, "EUC-JP") == 0) {
+            *std_encoding = "EUC-JP-LINUX";
+        }
+#else
+        if (strcmp(p,"eucJP") == 0) {
+            /* For Solaris use customized vendor defined character
+             * customized EUC-JP converter
+             */
+            *std_encoding = "eucJP-open";
+        } else if (strcmp(p, "Big5") == 0 || strcmp(p, "BIG5") == 0) {
+            /*
+             * Remap the encoding string to Big5_Solaris which augments
+             * the default converter for Solaris Big5 locales to include
+             * seven additional ideographic characters beyond those included
+             * in the Java "Big5" converter.
+             */
+            *std_encoding = "Big5_Solaris";
+        } else if (strcmp(p, "Big5-HKSCS") == 0) {
+            /*
+             * Solaris uses HKSCS2001
+             */
+            *std_encoding = "Big5-HKSCS-2001";
+        }
+#endif
+    }
+
+    return 1;
+}
+
 /* This function gets called very early, before VM_CALLS are setup.
  * Do not use any of the VM_CALLS entries!!!
  */
 java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
-    static java_props_t sprops = {0};
+    static java_props_t sprops;
     char *v; /* tmp var */
 
     if (sprops.user_dir) {
@@ -185,182 +355,25 @@ GetJavaProperties(JNIEnv *env)
     /* Determine the language, country, variant, and encoding from the host,
      * and store these in the user.language, user.country, user.variant and
      * file.encoding system properties. */
-    {
-        char *lc;
-        lc = setlocale(LC_CTYPE, "");
-#ifndef __linux__
-        if (lc == NULL) {
-            /*
-             * 'lc == null' means system doesn't support user's environment
-             * variable's locale.
-             */
-          setlocale(LC_ALL, "C");
-          sprops.language = "en";
-          sprops.encoding = "ISO8859-1";
-          sprops.sun_jnu_encoding = sprops.encoding;
-        } else {
-#else
-        if (lc == NULL || !strcmp(lc, "C") || !strcmp(lc, "POSIX")) {
-            lc = "en_US";
-        }
-        {
-#endif
-
-            /*
-             * locale string format in Solaris is
-             * <language name>_<country name>.<encoding name>@<variant name>
-             * <country name>, <encoding name>, and <variant name> are optional.
-             */
-            char temp[64];
-            char *language = NULL, *country = NULL, *variant = NULL,
-                 *encoding = NULL;
-            char *std_language = NULL, *std_country = NULL, *std_variant = NULL,
-                 *std_encoding = NULL;
-            char *p, encoding_variant[64];
-            int i, found;
-
-#ifndef __linux__
-            /*
-             * Workaround for Solaris bug 4201684: Xlib doesn't like @euro
-             * locales. Since we don't depend on the libc @euro behavior,
-             * we just remove the qualifier.
-             * On Linux, the bug doesn't occur; on the other hand, @euro
-             * is needed there because it's a shortcut that also determines
-             * the encoding - without it, we wouldn't get ISO-8859-15.
-             * Therefore, this code section is Solaris-specific.
-             */
-            lc = strdup(lc);    /* keep a copy, setlocale trashes original. */
-            strcpy(temp, lc);
-            p = strstr(temp, "@euro");
-            if (p != NULL)
-                *p = '\0';
-            setlocale(LC_ALL, temp);
-#endif
-
-            strcpy(temp, lc);
-
-            /* Parse the language, country, encoding, and variant from the
-             * locale.  Any of the elements may be missing, but they must occur
-             * in the order language_country.encoding@variant, and must be
-             * preceded by their delimiter (except for language).
-             *
-             * If the locale name (without .encoding@variant, if any) matches
-             * any of the names in the locale_aliases list, map it to the
-             * corresponding full locale name.  Most of the entries in the
-             * locale_aliases list are locales that include a language name but
-             * no country name, and this facility is used to map each language
-             * to a default country if that's possible.  It's also used to map
-             * the Solaris locale aliases to their proper Java locale IDs.
-             */
-            if ((p = strchr(temp, '.')) != NULL) {
-                strcpy(encoding_variant, p); /* Copy the leading '.' */
-                *p = '\0';
-            } else if ((p = strchr(temp, '@')) != NULL) {
-                 strcpy(encoding_variant, p); /* Copy the leading '@' */
-                 *p = '\0';
-            } else {
-                *encoding_variant = '\0';
-            }
-
-            if (mapLookup(locale_aliases, temp, &p)) {
-                strcpy(temp, p);
-            }
-
-            language = temp;
-            if ((country = strchr(temp, '_')) != NULL) {
-                *country++ = '\0';
-            }
-
-            p = encoding_variant;
-            if ((encoding = strchr(p, '.')) != NULL) {
-                p[encoding++ - p] = '\0';
-                p = encoding;
-            }
-            if ((variant = strchr(p, '@')) != NULL) {
-                p[variant++ - p] = '\0';
-            }
-
-            /* Normalize the language name */
-            std_language = "en";
-            if (language != NULL) {
-                mapLookup(language_names, language, &std_language);
-            }
-            sprops.language = std_language;
-
-            /* Normalize the country name */
-            if (country != NULL) {
-                std_country = country;
-                mapLookup(country_names, country, &std_country);
-                sprops.country = strdup(std_country);
-            }
-
-            /* Normalize the variant name.  Note that we only use
-             * variants listed in the mapping array; others are ignored. */
-            if (variant != NULL) {
-                mapLookup(variant_names, variant, &std_variant);
-                sprops.variant = std_variant;
-            }
-
-            /* Normalize the encoding name.  Note that we IGNORE the string
-             * 'encoding' extracted from the locale name above.  Instead, we use the
-             * more reliable method of calling nl_langinfo(CODESET).  This function
-             * returns an empty string if no encoding is set for the given locale
-             * (e.g., the C or POSIX locales); we use the default ISO 8859-1
-             * converter for such locales.
-             */
-
-            /* OK, not so reliable - nl_langinfo() gives wrong answers on
-             * Euro locales, in particular. */
-            if (strcmp(p, "ISO8859-15") == 0)
-                p = "ISO8859-15";
-            else
-                p = nl_langinfo(CODESET);
-
-            /* Convert the bare "646" used on Solaris to a proper IANA name */
-            if (strcmp(p, "646") == 0)
-                p = "ISO646-US";
-
-            /* return same result nl_langinfo would return for en_UK,
-             * in order to use optimizations. */
-            std_encoding = (*p != '\0') ? p : "ISO8859-1";
-
-
-#ifdef __linux__
-            /*
-             * Remap the encoding string to a different value for japanese
-             * locales on linux so that customized converters are used instead
-             * of the default converter for "EUC-JP". The customized converters
-             * omit support for the JIS0212 encoding which is not supported by
-             * the variant of "EUC-JP" encoding used on linux
-             */
-            if (strcmp(p, "EUC-JP") == 0) {
-                std_encoding = "EUC-JP-LINUX";
-            }
-#else
-            if (strcmp(p,"eucJP") == 0) {
-                /* For Solaris use customized vendor defined character
-                 * customized EUC-JP converter
-                 */
-                std_encoding = "eucJP-open";
-            } else if (strcmp(p, "Big5") == 0 || strcmp(p, "BIG5") == 0) {
-                /*
-                 * Remap the encoding string to Big5_Solaris which augments
-                 * the default converter for Solaris Big5 locales to include
-                 * seven additional ideographic characters beyond those included
-                 * in the Java "Big5" converter.
-                 */
-                std_encoding = "Big5_Solaris";
-            } else if (strcmp(p, "Big5-HKSCS") == 0) {
-                /*
-                 * Solaris uses HKSCS2001
-                 */
-                std_encoding = "Big5-HKSCS-2001";
-            }
-#endif
-            sprops.encoding = std_encoding;
-            sprops.sun_jnu_encoding = sprops.encoding;
-        }
+    setlocale(LC_ALL, "");
+    if (ParseLocale(LC_CTYPE,
+                    &(sprops.format_language),
+                    &(sprops.format_country),
+                    &(sprops.format_variant),
+                    &(sprops.encoding))) {
+        ParseLocale(LC_MESSAGES,
+                    &(sprops.language),
+                    &(sprops.country),
+                    &(sprops.variant),
+                    NULL);
+    } else {
+        sprops.language = "en";
+        sprops.encoding = "ISO8859-1";
     }
+    sprops.display_language = sprops.language;
+    sprops.display_country = sprops.country;
+    sprops.display_variant = sprops.variant;
+    sprops.sun_jnu_encoding = sprops.encoding;
 
 #ifdef __linux__
 #if __BYTE_ORDER == __LITTLE_ENDIAN

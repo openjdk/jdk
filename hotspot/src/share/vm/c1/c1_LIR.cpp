@@ -211,6 +211,7 @@ void LIR_OprDesc::validate_type() const {
     case T_BYTE:
     case T_SHORT:
     case T_INT:
+    case T_ADDRESS:
     case T_OBJECT:
     case T_ARRAY:
       assert((kind_field() == cpu_register || kind_field() == stack_value) &&
@@ -345,9 +346,8 @@ void LIR_OpBranch::negate_cond() {
 LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, ciKlass* klass,
                                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
                                  bool fast_check, CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch,
-                                 CodeStub* stub,
-                                 ciMethod* profiled_method,
-                                 int profiled_bci)
+                                 CodeStub* stub)
+
   : LIR_Op(code, result, NULL)
   , _object(object)
   , _array(LIR_OprFact::illegalOpr)
@@ -359,8 +359,10 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
   , _stub(stub)
   , _info_for_patch(info_for_patch)
   , _info_for_exception(info_for_exception)
-  , _profiled_method(profiled_method)
-  , _profiled_bci(profiled_bci) {
+  , _profiled_method(NULL)
+  , _profiled_bci(-1)
+  , _should_profile(false)
+{
   if (code == lir_checkcast) {
     assert(info_for_exception != NULL, "checkcast throws exceptions");
   } else if (code == lir_instanceof) {
@@ -372,7 +374,7 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
 
 
 
-LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci)
+LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception)
   : LIR_Op(code, LIR_OprFact::illegalOpr, NULL)
   , _object(object)
   , _array(array)
@@ -384,8 +386,10 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   , _stub(NULL)
   , _info_for_patch(NULL)
   , _info_for_exception(info_for_exception)
-  , _profiled_method(profiled_method)
-  , _profiled_bci(profiled_bci) {
+  , _profiled_method(NULL)
+  , _profiled_bci(-1)
+  , _should_profile(false)
+{
   if (code == lir_store_check) {
     _stub = new ArrayStoreExceptionStub(info_for_exception);
     assert(info_for_exception != NULL, "store_check throws exceptions");
@@ -495,6 +499,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_monaddr:        // input and result always valid, info always invalid
     case lir_null_check:     // input and info always valid, result always invalid
     case lir_move:           // input and result always valid, may have info
+    case lir_pack64:         // input and result always valid
+    case lir_unpack64:       // input and result always valid
     case lir_prefetchr:      // input always valid, result and info always invalid
     case lir_prefetchw:      // input always valid, result and info always invalid
     {
@@ -903,7 +909,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opProfileCall->_tmp1->is_valid(), "used");  do_temp(opProfileCall->_tmp1);
       break;
     }
-
   default:
     ShouldNotReachHere();
   }
@@ -1041,11 +1046,9 @@ void LIR_OpDelay::emit_code(LIR_Assembler* masm) {
   masm->emit_delay(this);
 }
 
-
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_call(this);
 }
-
 
 // LIR_List
 LIR_List::LIR_List(Compilation* compilation, BlockBegin* block)
@@ -1364,19 +1367,29 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
                           LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
                           CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
                           ciMethod* profiled_method, int profiled_bci) {
-  append(new LIR_OpTypeCheck(lir_checkcast, result, object, klass,
-                             tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub,
-                             profiled_method, profiled_bci));
+  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_checkcast, result, object, klass,
+                                           tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub);
+  if (profiled_method != NULL) {
+    c->set_profiled_method(profiled_method);
+    c->set_profiled_bci(profiled_bci);
+    c->set_should_profile(true);
+  }
+  append(c);
 }
 
-
-void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch) {
-  append(new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, NULL, info_for_patch, NULL, NULL, 0));
+void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
+  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, NULL, info_for_patch, NULL);
+  if (profiled_method != NULL) {
+    c->set_profiled_method(profiled_method);
+    c->set_profiled_bci(profiled_bci);
+    c->set_should_profile(true);
+  }
+  append(c);
 }
 
 
 void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception) {
-  append(new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, info_for_exception, NULL, 0));
+  append(new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, info_for_exception));
 }
 
 
@@ -1507,7 +1520,7 @@ static void print_block(BlockBegin* x) {
   if (x->is_set(BlockBegin::linear_scan_loop_end_flag))    tty->print("le ");
 
   // print block bci range
-  tty->print("[%d, %d] ", x->bci(), (end == NULL ? -1 : end->bci()));
+  tty->print("[%d, %d] ", x->bci(), (end == NULL ? -1 : end->printable_bci()));
 
   // print predecessors and successors
   if (x->number_of_preds() > 0) {
@@ -1563,7 +1576,7 @@ void LIR_Op::print_on(outputStream* out) const {
   }
   out->print(name()); out->print(" ");
   print_instr(out);
-  if (info() != NULL) out->print(" [bci:%d]", info()->bci());
+  if (info() != NULL) out->print(" [bci:%d]", info()->stack()->bci());
 #ifdef ASSERT
   if (Verbose && _file != NULL) {
     out->print(" (%s:%d)", _file, _line);
@@ -1611,6 +1624,8 @@ const char * LIR_Op::name() const {
      case lir_convert:               s = "convert";       break;
      case lir_alloc_object:          s = "alloc_obj";     break;
      case lir_monaddr:               s = "mon_addr";      break;
+     case lir_pack64:                s = "pack64";        break;
+     case lir_unpack64:              s = "unpack64";      break;
      // LIR_Op2
      case lir_cmp:                   s = "cmp";           break;
      case lir_cmp_l2i:               s = "cmp_l2i";       break;
@@ -1664,7 +1679,6 @@ const char * LIR_Op::name() const {
      case lir_cas_int:               s = "cas_int";      break;
      // LIR_OpProfileCall
      case lir_profile_call:          s = "profile_call";  break;
-
      case lir_none:                  ShouldNotReachHere();break;
     default:                         s = "illegal_op";    break;
   }
@@ -1767,7 +1781,7 @@ void LIR_OpBranch::print_instr(outputStream* out) const {
     out->print("[");
     stub()->print_name(out);
     out->print(": 0x%x]", stub());
-    if (stub()->info() != NULL) out->print(" [bci:%d]", stub()->info()->bci());
+    if (stub()->info() != NULL) out->print(" [bci:%d]", stub()->info()->stack()->bci());
   } else {
     out->print("[label:0x%x] ", label());
   }
@@ -1882,7 +1896,7 @@ void LIR_OpTypeCheck::print_instr(outputStream* out) const {
   tmp2()->print(out);                    out->print(" ");
   tmp3()->print(out);                    out->print(" ");
   result_opr()->print(out);              out->print(" ");
-  if (info_for_exception() != NULL) out->print(" [bci:%d]", info_for_exception()->bci());
+  if (info_for_exception() != NULL) out->print(" [bci:%d]", info_for_exception()->stack()->bci());
 }
 
 
@@ -1921,7 +1935,6 @@ void LIR_OpProfileCall::print_instr(outputStream* out) const {
   recv()->print(out);          out->print(" ");
   tmp1()->print(out);          out->print(" ");
 }
-
 
 #endif // PRODUCT
 

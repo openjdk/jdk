@@ -1673,6 +1673,12 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
     _ltree_root->_child->loop_predication(this);
   }
 
+  if (OptimizeFill && UseLoopPredicate && C->has_loops() && !C->major_progress()) {
+    if (do_intrinsify_fill()) {
+      C->set_major_progress();
+    }
+  }
+
   // Perform iteration-splitting on inner loops.  Split iterations to avoid
   // range checks or one-shot null checks.
 

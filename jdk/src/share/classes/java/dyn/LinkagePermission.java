@@ -76,6 +76,8 @@ import java.util.StringTokenizer;
  */
 
 public final class LinkagePermission extends BasicPermission {
+    private static final long serialVersionUID = 292L;
+
     /**
      * Create a new LinkagePermission with the given name.
      * The name is the symbolic name of the LinkagePermission, such as
