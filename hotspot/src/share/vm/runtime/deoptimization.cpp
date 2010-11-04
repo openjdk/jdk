@@ -124,6 +124,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   RegisterMap dummy_map(thread, false);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
+  // Set the deoptee nmethod
+  assert(thread->deopt_nmethod() == NULL, "Pending deopt!");
+  thread->set_deopt_nmethod(deoptee.cb()->as_nmethod_or_null());
 
   // Create a growable array of VFrames where each VFrame represents an inlined
   // Java frame.  This storage is allocated with the usual system arena.
@@ -445,6 +448,7 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
 
   delete thread->deopt_mark();
   thread->set_deopt_mark(NULL);
+  thread->set_deopt_nmethod(NULL);
 
 
   if (JvmtiExport::can_pop_frame()) {

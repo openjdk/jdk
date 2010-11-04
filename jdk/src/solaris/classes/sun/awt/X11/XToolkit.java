@@ -377,22 +377,22 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             init();
             XWM.init();
             SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
-            toolkitThread = new Thread(this, "AWT-XAWT");
-            toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
-            toolkitThread.setDaemon(true);
-            ThreadGroup mainTG = (ThreadGroup)AccessController.doPrivileged(
-                                                                            new PrivilegedAction() {
-                                                                                    public Object run() {
-                                                                                        ThreadGroup currentTG =
-                                                                                            Thread.currentThread().getThreadGroup();
-                                                                                        ThreadGroup parentTG = currentTG.getParent();
-                                                                                        while (parentTG != null) {
-                                                                                            currentTG = parentTG;
-                                                                                            parentTG = currentTG.getParent();
-                                                                                        }
-                                                                                        return currentTG;
-                                                                                    }
-                                                                                });
+
+            PrivilegedAction<Thread> action = new PrivilegedAction() {
+                public Thread run() {
+                    ThreadGroup currentTG = Thread.currentThread().getThreadGroup();
+                    ThreadGroup parentTG = currentTG.getParent();
+                    while (parentTG != null) {
+                        currentTG = parentTG;
+                        parentTG = currentTG.getParent();
+                    }
+                    Thread thread = new Thread(currentTG, XToolkit.this, "AWT-XAWT");
+                    thread.setPriority(Thread.NORM_PRIORITY + 1);
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            };
+            toolkitThread = AccessController.doPrivileged(action);
             toolkitThread.start();
         }
     }

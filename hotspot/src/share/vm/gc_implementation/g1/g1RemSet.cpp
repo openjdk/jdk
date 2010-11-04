@@ -523,7 +523,7 @@ prepare_for_oops_into_collection_set_do() {
   assert(!_traversal_in_progress, "Invariant between iterations.");
   set_traversal(true);
   if (ParallelGCThreads > 0) {
-    _seq_task->set_par_threads((int)n_workers());
+    _seq_task->set_n_threads((int)n_workers());
   }
   guarantee( _cards_scanned == NULL, "invariant" );
   _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers());
