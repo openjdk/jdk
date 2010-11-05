@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import javax.management.InstanceNotFoundException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanPermission;
 import javax.management.MBeanServer;
+import javax.management.MBeanServerDelegate;
+import javax.management.MBeanServerNotification;
 import javax.management.Notification;
 import javax.management.NotificationBroadcaster;
 import javax.management.NotificationFilter;
@@ -272,6 +274,7 @@ public class ServerNotifForwarder {
             nr = notifBuffer.fetchNotifications(bufferFilter,
                 startSequenceNumber,
                 t, maxNotifications);
+            snoopOnUnregister(nr);
         } catch (InterruptedException ire) {
             nr = new NotificationResult(0L, 0L, new TargetedNotification[0]);
         }
@@ -281,6 +284,34 @@ public class ServerNotifForwarder {
         }
 
         return nr;
+    }
+
+    // The standard RMI connector client will register a listener on the MBeanServerDelegate
+    // in order to be told when MBeans are unregistered.  We snoop on fetched notifications
+    // so that we can know too, and remove the corresponding entry from the listenerMap.
+    // See 6957378.
+    private void snoopOnUnregister(NotificationResult nr) {
+        Set<IdAndFilter> delegateSet = listenerMap.get(MBeanServerDelegate.DELEGATE_NAME);
+        if (delegateSet == null || delegateSet.isEmpty()) {
+            return;
+        }
+        for (TargetedNotification tn : nr.getTargetedNotifications()) {
+            Integer id = tn.getListenerID();
+            for (IdAndFilter idaf : delegateSet) {
+                if (idaf.id == id) {
+                    // This is a notification from the MBeanServerDelegate.
+                    Notification n = tn.getNotification();
+                    if (n instanceof MBeanServerNotification &&
+                            n.getType().equals(MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
+                        MBeanServerNotification mbsn = (MBeanServerNotification) n;
+                        ObjectName gone = mbsn.getMBeanName();
+                        synchronized (listenerMap) {
+                            listenerMap.remove(gone);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void terminate() {
@@ -418,10 +449,12 @@ public class ServerNotifForwarder {
             return this.filter;
         }
 
+        @Override
         public int hashCode() {
             return id.hashCode();
         }
 
+        @Override
         public boolean equals(Object o) {
             return ((o instanceof IdAndFilter) &&
                     ((IdAndFilter) o).getId().equals(getId()));
