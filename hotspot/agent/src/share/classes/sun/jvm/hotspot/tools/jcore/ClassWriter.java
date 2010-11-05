@@ -303,12 +303,12 @@ public class ClassWriter implements /* imports */ ClassConstants
                 case JVM_CONSTANT_MethodHandle: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);
-                     short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
-                     short nameAndTypeIndex = (short) extractHighShortFromInt(value);
-                     dos.writeShort(bootstrapMethodIndex);
-                     dos.writeShort(nameAndTypeIndex);
-                     if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " +
-                           bootstrapMethodIndex + ", N&T = " + nameAndTypeIndex);
+                     byte refKind = (byte) extractLowShortFromInt(value);
+                     short memberIndex = (short) extractHighShortFromInt(value);
+                     dos.writeByte(refKind);
+                     dos.writeShort(memberIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = MH kind = " +
+                           refKind + ", mem = " + memberIndex);
                      break;
                 }
 
