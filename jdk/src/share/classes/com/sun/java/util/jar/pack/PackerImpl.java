@@ -614,10 +614,14 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
         List<InFile> scanJar(JarFile jf) throws IOException {
             // Collect jar entries, preserving order.
             List<InFile> inFiles = new ArrayList<>();
-            for (JarEntry je : Collections.list(jf.entries())) {
-                InFile inFile = new InFile(jf, je);
-                assert(je.isDirectory() == inFile.name.endsWith("/"));
-                inFiles.add(inFile);
+            try {
+                for (JarEntry je : Collections.list(jf.entries())) {
+                    InFile inFile = new InFile(jf, je);
+                    assert(je.isDirectory() == inFile.name.endsWith("/"));
+                    inFiles.add(inFile);
+                }
+            } catch (IllegalStateException ise) {
+                throw new IOException(ise.getLocalizedMessage(), ise);
             }
             return inFiles;
         }
