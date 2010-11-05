@@ -26,7 +26,6 @@
 package java.nio.channels.spi;
 
 import java.nio.channels.*;
-import java.net.ProtocolFamily;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
@@ -239,26 +238,4 @@ public abstract class AsynchronousChannelProvider {
      */
     public abstract AsynchronousSocketChannel openAsynchronousSocketChannel
         (AsynchronousChannelGroup group) throws IOException;
-
-    /**
-     * Opens an asynchronous datagram channel.
-     *
-     * @param   family
-     *          The protocol family, or {@code null} for the default protocol
-     *          family
-     * @param   group
-     *          The group to which the channel is bound, or {@code null} to
-     *          bind to the default group
-     *
-     * @return  The new channel
-     *
-     * @throws  IllegalChannelGroupException
-     *          If the provider that created the group differs from this provider
-     * @throws  ShutdownChannelGroupException
-     *          The group is shutdown
-     * @throws  IOException
-     *          If an I/O error occurs
-     */
-    public abstract AsynchronousDatagramChannel openAsynchronousDatagramChannel
-        (ProtocolFamily family, AsynchronousChannelGroup group) throws IOException;
 }

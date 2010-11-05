@@ -876,7 +876,8 @@ public class TransTypes extends TreeTranslator {
                 make.at(tree.pos);
                 if (addBridges) {
                     ListBuffer<JCTree> bridges = new ListBuffer<JCTree>();
-                    bridges.appendList(addOverrideBridgesIfNeeded(tree, c));
+                    if (false) //see CR: 6996415
+                        bridges.appendList(addOverrideBridgesIfNeeded(tree, c));
                     if ((tree.sym.flags() & INTERFACE) == 0)
                         addBridges(tree.pos(), tree.sym, bridges);
                     tree.defs = bridges.toList().prependList(tree.defs);

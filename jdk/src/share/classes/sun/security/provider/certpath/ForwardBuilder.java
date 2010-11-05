@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -718,11 +718,6 @@ class ForwardBuilder extends Builder {
 
         /* we don't perform any validation of the trusted cert */
         if (!isTrustedCert) {
-            /*
-             * check that the signature algorithm is not disabled.
-             */
-            AlgorithmChecker.check(cert);
-
             /*
              * Check CRITICAL private extensions for user checkers that
              * support forward checking (forwardCheckers) and remove

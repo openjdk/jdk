@@ -35,7 +35,7 @@ package java.dyn;
  * The target method is a property of the reified {@linkplain CallSite call site object}
  * which is linked to each active {@code invokedynamic} instruction.
  * The call site object is initially produced by a
- * {@linkplain java.dyn.Linkage#registerBootstrapMethod(Class, MethodHandle) bootstrap method}
+ * {@linkplain BootstrapMethod bootstrap method}
  * associated with the class whose bytecodes include the dynamic call site.
  * <p>
  * The type {@code InvokeDynamic} has no particular meaning as a
@@ -45,22 +45,31 @@ package java.dyn;
  * It may be imported for ease of use.
  * <p>
  * Here are some examples:
- * <p><blockquote><pre>
- * Object x; String s; int i;
- * x = InvokeDynamic.greet("world"); // greet(Ljava/lang/String;)Ljava/lang/Object;
- * s = InvokeDynamic.&lt;String&gt;hail(x); // hail(Ljava/lang/Object;)Ljava/lang/String;
- * InvokeDynamic.&lt;void&gt;cogito(); // cogito()V
- * i = InvokeDynamic.&lt;int&gt;#"op:+"(2, 3); // "op:+"(II)I
- * </pre></blockquote>
+<blockquote><pre><!-- see indy-demo/src/JavaDocExamples.java -->
+&#064;BootstrapMethod(value=Here.class, name="bootstrapDynamic")
+static void example() throws Throwable {
+    Object x; String s; int i;
+    x = InvokeDynamic.greet("world"); // greet(Ljava/lang/String;)Ljava/lang/Object;
+    s = (String) InvokeDynamic.hail(x); // hail(Ljava/lang/Object;)Ljava/lang/String;
+    InvokeDynamic.cogito(); // cogito()V
+    i = (int) InvokeDynamic.#"op:+"(2, 3); // "op:+"(II)I
+}
+static MethodHandle bootstrapDynamic(Class caller, String name, MethodType type) { ... }
+</pre></blockquote>
  * Each of the above calls generates a single invokedynamic instruction
  * with the name-and-type descriptors indicated in the comments.
+ * <p>
  * The argument types are taken directly from the actual arguments,
- * while the return type is taken from the type parameter.
- * (This type parameter may be a primtive, and it defaults to {@code Object}.)
+ * while the return type corresponds to the target of the assignment.
+ * (Currently, the return type must be given as a false type parameter.
+ * This type parameter is an irregular use of the generic type syntax,
+ * and is likely to change in favor of a convention based on target typing.)
+ * <p>
  * The final example uses a special syntax for uttering non-Java names.
  * Any name legal to the JVM may be given between the double quotes.
+ * <p>
  * None of these calls is complete without a bootstrap method,
- * which must be registered by the static initializer of the enclosing class.
+ * which must be declared for the enclosing class or method.
  * @author John Rose, JSR 292 EG
  */
 @MethodHandle.PolymorphicSignature

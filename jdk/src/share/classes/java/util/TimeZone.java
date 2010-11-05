@@ -160,11 +160,6 @@ abstract public class TimeZone implements Serializable, Cloneable {
     private static final int ONE_HOUR   = 60*ONE_MINUTE;
     private static final int ONE_DAY    = 24*ONE_HOUR;
 
-    /**
-     * Cache to hold the SimpleDateFormat objects for a Locale.
-     */
-    private static Hashtable cachedLocaleData = new Hashtable(3);
-
     // Proclaim serialization compatibility with JDK 1.1
     static final long serialVersionUID = 3581463369166924961L;
 
