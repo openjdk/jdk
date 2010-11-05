@@ -179,11 +179,14 @@ class ByteArrayInputStream extends InputStream {
         } else if (off < 0 || len < 0 || len > b.length - off) {
             throw new IndexOutOfBoundsException();
         }
+
         if (pos >= count) {
             return -1;
         }
-        if (pos + len > count) {
-            len = count - pos;
+
+        int avail = count - pos;
+        if (len > avail) {
+            len = avail;
         }
         if (len <= 0) {
             return 0;
@@ -206,14 +209,13 @@ class ByteArrayInputStream extends InputStream {
      * @return  the actual number of bytes skipped.
      */
     public synchronized long skip(long n) {
-        if (pos + n > count) {
-            n = count - pos;
+        long k = count - pos;
+        if (n < k) {
+            k = n < 0 ? 0 : n;
         }
-        if (n < 0) {
-            return 0;
-        }
-        pos += n;
-        return n;
+
+        pos += k;
+        return k;
     }
 
     /**
