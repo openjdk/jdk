@@ -116,7 +116,6 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
 
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.version", "1.0", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
@@ -151,9 +150,23 @@ void Arguments::init_system_properties() {
 
   // Update/Initialize System properties after JDK version number is known
 void Arguments::init_version_specific_system_properties() {
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
-        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
+  enum { bufsz = 16 };
+  char buffer[bufsz];
+  const char* spec_vendor = "Sun Microsystems Inc.";
+  uint32_t spec_version = 0;
+
+  if (JDK_Version::is_gte_jdk17x_version()) {
+    spec_vendor = "Oracle Corporation";
+    spec_version = JDK_Version::current().major_version();
+  }
+  jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
+
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.version", buffer, false));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
 }
 
 /**
