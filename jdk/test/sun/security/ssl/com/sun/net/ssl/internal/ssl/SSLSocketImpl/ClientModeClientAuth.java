@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4390659
+ * @run main/othervm -Djavax.net.debug=all ClientModeClientAuth
  * @summary setNeedClientAuth() isn't working after a handshaker is established
  * @author Brad Wetmore
  */

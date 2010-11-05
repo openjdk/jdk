@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ import javax.crypto.SecretKey;
  *
  * @since   1.6
  * @author  Andreas Sterbenz
- * @deprecated Sun JDK internal use only --- WILL BE REMOVED in Dolphin (JDK 7)
+ * @deprecated Sun JDK internal use only --- WILL BE REMOVED in a future
+ * release.
  */
 @Deprecated
 public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
@@ -50,6 +51,9 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
     private final String cipherAlgorithm;
     private final int cipherKeyLength, ivLength, macKeyLength;
     private final int expandedCipherKeyLength; // == 0 for domestic ciphersuites
+    private final String prfHashAlg;
+    private final int prfHashLength;
+    private final int prfBlockSize;
 
     /**
      * Constructs a new TlsKeyMaterialParameterSpec.
@@ -71,6 +75,12 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
      * @param ivLength the length in bytes of the initialization vector
      *    to be generated, or 0 if no initialization vector is required
      * @param macKeyLength the length in bytes of the MAC key to be generated
+     * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
+     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
+     * @param prfHashLength the output length of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
+     * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
      *
      * @throws NullPointerException if masterSecret, clientRandom,
      *   serverRandom, or cipherAlgorithm are null
@@ -82,7 +92,8 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
     public TlsKeyMaterialParameterSpec(SecretKey masterSecret,
             int majorVersion, int minorVersion, byte[] clientRandom,
             byte[] serverRandom, String cipherAlgorithm, int cipherKeyLength,
-            int expandedCipherKeyLength, int ivLength, int macKeyLength) {
+            int expandedCipherKeyLength, int ivLength, int macKeyLength,
+            String prfHashAlg, int prfHashLength, int prfBlockSize) {
         if (masterSecret.getAlgorithm().equals("TlsMasterSecret") == false) {
             throw new IllegalArgumentException("Not a TLS master secret");
         }
@@ -90,8 +101,10 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
             throw new NullPointerException();
         }
         this.masterSecret = masterSecret;
-        this.majorVersion = TlsMasterSecretParameterSpec.checkVersion(majorVersion);
-        this.minorVersion = TlsMasterSecretParameterSpec.checkVersion(minorVersion);
+        this.majorVersion =
+            TlsMasterSecretParameterSpec.checkVersion(majorVersion);
+        this.minorVersion =
+            TlsMasterSecretParameterSpec.checkVersion(minorVersion);
         this.clientRandom = clientRandom.clone();
         this.serverRandom = serverRandom.clone();
         this.cipherAlgorithm = cipherAlgorithm;
@@ -99,6 +112,9 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
         this.expandedCipherKeyLength = checkSign(expandedCipherKeyLength);
         this.ivLength = checkSign(ivLength);
         this.macKeyLength = checkSign(macKeyLength);
+        this.prfHashAlg = prfHashAlg;
+        this.prfHashLength = prfHashLength;
+        this.prfBlockSize = prfBlockSize;
     }
 
     private static int checkSign(int k) {
@@ -172,20 +188,36 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Returns the length in bytes of the expanded encryption key to be generated.
+     * Returns the length in bytes of the expanded encryption key to be
+     * generated. Returns zero if the expanded encryption key is not
+     * supposed to be generated.
      *
-     * @return the length in bytes of the expanded encryption key to be generated.
+     * @return the length in bytes of the expanded encryption key to be
+     *     generated.
      */
     public int getExpandedCipherKeyLength() {
+        // TLS v1.1 disables the exportable weak cipher suites.
+        if (majorVersion >= 0x03 && minorVersion >= 0x02) {
+            return 0;
+        }
         return expandedCipherKeyLength;
     }
 
     /**
-     * Returns the length in bytes of the initialization vector to be generated.
+     * Returns the length in bytes of the initialization vector to be
+     * generated. Returns zero if the initialization vector is not
+     * supposed to be generated.
      *
-     * @return the length in bytes of the initialization vector to be generated.
+     * @return the length in bytes of the initialization vector to be
+     *     generated.
      */
     public int getIvLength() {
+        // TLS v1.1 or later uses an explicit IV to protect against
+        // the CBC attacks.
+        if (majorVersion >= 0x03 && minorVersion >= 0x02) {
+            return 0;
+        }
+
         return ivLength;
     }
 
@@ -198,4 +230,30 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
         return macKeyLength;
     }
 
+    /**
+     * Obtains the PRF hash algorithm to use in the PRF calculation.
+     *
+     * @return the hash algorithm.
+     */
+    public String getPRFHashAlg() {
+        return prfHashAlg;
+    }
+
+    /**
+     * Obtains the length of the PRF hash algorithm.
+     *
+     * @return the hash algorithm length.
+     */
+    public int getPRFHashLength() {
+        return prfHashLength;
+    }
+
+    /**
+     * Obtains the block size of the PRF hash algorithm.
+     *
+     * @return the hash algorithm block size
+     */
+    public int getPRFBlockSize() {
+        return prfBlockSize;
+    }
 }

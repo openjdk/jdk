@@ -63,17 +63,23 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
         DiagnosticFormatter<JCDiagnostic> formatter;
         final String prefix;
+        final Set<DiagnosticFlag> defaultErrorFlags;
 
         /** Create a new diagnostic factory. */
         protected Factory(Context context) {
             this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
+
+            Options options = Options.instance(context);
+            if (options.isSet("onlySyntaxErrorsUnrecoverable"))
+                defaultErrorFlags.add(DiagnosticFlag.RECOVERABLE);
         }
 
         /** Create a new diagnostic factory. */
         public Factory(JavacMessages messages, String prefix) {
             this.prefix = prefix;
             this.formatter = new BasicDiagnosticFormatter(messages);
+            defaultErrorFlags = EnumSet.of(DiagnosticFlag.MANDATORY);
         }
 
         /**
@@ -85,7 +91,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic error(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return create(ERROR, null, EnumSet.of(DiagnosticFlag.MANDATORY), source, pos, key, args);
+            return create(ERROR, null, defaultErrorFlags, source, pos, key, args);
         }
 
         /**
@@ -331,7 +337,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
     public enum DiagnosticFlag {
         MANDATORY,
-        RESOLVE_ERROR
+        RESOLVE_ERROR,
+        SYNTAX,
+        RECOVERABLE
     }
 
     private final DiagnosticType type;
@@ -547,6 +555,17 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
     public void setFlag(DiagnosticFlag flag) {
         flags.add(flag);
+
+        if (type == DiagnosticType.ERROR) {
+            switch (flag) {
+                case SYNTAX:
+                    flags.remove(DiagnosticFlag.RECOVERABLE);
+                    break;
+                case RESOLVE_ERROR:
+                    flags.add(DiagnosticFlag.RECOVERABLE);
+                    break;
+            }
+        }
     }
 
     public boolean isFlagSet(DiagnosticFlag flag) {

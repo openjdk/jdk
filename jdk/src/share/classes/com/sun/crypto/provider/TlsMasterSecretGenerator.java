@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,14 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
         this.spec = (TlsMasterSecretParameterSpec)params;
         if ("RAW".equals(spec.getPremasterSecret().getFormat()) == false) {
-            throw new InvalidAlgorithmParameterException("Key format must be RAW");
+            throw new InvalidAlgorithmParameterException(
+                "Key format must be RAW");
         }
-        protocolVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
-        if ((protocolVersion < 0x0300) || (protocolVersion > 0x0302)) {
-            throw new InvalidAlgorithmParameterException
-                ("Only SSL 3.0, TLS 1.0, and TLS 1.1 supported");
+        protocolVersion = (spec.getMajorVersion() << 8)
+            | spec.getMinorVersion();
+        if ((protocolVersion < 0x0300) || (protocolVersion > 0x0303)) {
+            throw new InvalidAlgorithmParameterException(
+                "Only SSL 3.0, TLS 1.0/1.1/1.2 supported");
         }
     }
 
@@ -79,8 +81,8 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
 
     protected SecretKey engineGenerateKey() {
         if (spec == null) {
-            throw new IllegalStateException
-                ("TlsMasterSecretGenerator must be initialized");
+            throw new IllegalStateException(
+                "TlsMasterSecretGenerator must be initialized");
         }
         SecretKey premasterKey = spec.getPremasterSecret();
         byte[] premaster = premasterKey.getEncoded();
@@ -103,7 +105,11 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
 
             if (protocolVersion >= 0x0301) {
                 byte[] seed = concat(clientRandom, serverRandom);
-                master = doPRF(premaster, LABEL_MASTER_SECRET, seed, 48);
+                master = ((protocolVersion >= 0x0303) ?
+                    doTLS12PRF(premaster, LABEL_MASTER_SECRET, seed, 48,
+                        spec.getPRFHashAlg(), spec.getPRFHashLength(),
+                        spec.getPRFBlockSize()) :
+                    doTLS10PRF(premaster, LABEL_MASTER_SECRET, seed, 48));
             } else {
                 master = new byte[48];
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
@@ -124,7 +130,8 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
 
             }
 
-            return new TlsMasterSecretKey(master, premasterMajor, premasterMinor);
+            return new TlsMasterSecretKey(master, premasterMajor,
+                premasterMinor);
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         } catch (DigestException e) {
