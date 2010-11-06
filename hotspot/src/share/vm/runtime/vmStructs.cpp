@@ -86,6 +86,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(constantPoolOopDesc,         _tags,                                         typeArrayOop)                          \
   nonstatic_field(constantPoolOopDesc,         _cache,                                        constantPoolCacheOop)                  \
   nonstatic_field(constantPoolOopDesc,         _pool_holder,                                  klassOop)                              \
+  nonstatic_field(constantPoolOopDesc,         _operands,                                     typeArrayOop)                          \
   nonstatic_field(constantPoolOopDesc,         _length,                                       int)                                   \
   nonstatic_field(constantPoolCacheOopDesc,    _length,                                       int)                                   \
   nonstatic_field(constantPoolCacheOopDesc,    _constant_pool,                                constantPoolOop)                       \
