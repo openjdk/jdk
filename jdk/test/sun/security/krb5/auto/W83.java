@@ -56,7 +56,7 @@ public class W83 {
         KeyTab ktab = KeyTab.getInstance(OneKDC.KTAB);
         for (int etype: EType.getBuiltInDefaults()) {
             if (etype != EncryptedData.ETYPE_ARCFOUR_HMAC) {
-                ktab.deleteEntry(new PrincipalName(OneKDC.USER), etype);
+                ktab.deleteEntries(new PrincipalName(OneKDC.USER), etype, -1);
             }
         }
         ktab.save();
