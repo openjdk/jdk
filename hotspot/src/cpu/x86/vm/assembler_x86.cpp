@@ -1275,6 +1275,12 @@ void Assembler::idivl(Register src) {
   emit_byte(0xF8 | encode);
 }
 
+void Assembler::divl(Register src) { // Unsigned
+  int encode = prefix_and_encode(src->encoding());
+  emit_byte(0xF7);
+  emit_byte(0xF0 | encode);
+}
+
 void Assembler::imull(Register dst, Register src) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_byte(0x0F);

@@ -8863,48 +8863,64 @@ instruct divL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlag
   effect( TEMP tmp, TEMP tmp2, KILL cr );
   ins_cost(1000);
   format %{ "MOV    $tmp,abs($imm) # ldiv EDX:EAX,$imm\n\t"
+            "XOR    $tmp2,$tmp2\n\t"
             "CMP    $tmp,EDX\n\t"
             "JA,s   fast\n\t"
             "MOV    $tmp2,EAX\n\t"
             "MOV    EAX,EDX\n\t"
-            "SAR    EDX,31\n\t"
-            "IDIV   $tmp\n\t"
-            "XCHG   EAX,$tmp2 \n\t"
-            "IDIV   $tmp\n\t"
-            "CDQ\n\t"
-            "ADD    EDX,$tmp2\n\t"
+            "MOV    EDX,0\n\t"
+            "JLE,s  pos\n\t"
+            "LNEG   EAX : $tmp2\n\t"
+            "DIV    $tmp # unsigned division\n\t"
+            "XCHG   EAX,$tmp2\n\t"
+            "DIV    $tmp\n\t"
+            "LNEG   $tmp2 : EAX\n\t"
             "JMP,s  done\n"
+    "pos:\n\t"
+            "DIV    $tmp\n\t"
+            "XCHG   EAX,$tmp2\n"
     "fast:\n\t"
-            "IDIV   $tmp\n\t"
-            "XOR    EDX,EDX\n"
+            "DIV    $tmp\n"
     "done:\n\t"
+            "MOV    EDX,$tmp2\n\t"
             "NEG    EDX:EAX # if $imm < 0" %}
   ins_encode %{
     int con = (int)$imm$$constant;
     assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
     int pcon = (con > 0) ? con : -con;
-    Label Lfast, Ldone;
+    Label Lfast, Lpos, Ldone;
 
     __ movl($tmp$$Register, pcon);
+    __ xorl($tmp2$$Register,$tmp2$$Register);
     __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
-    __ jccb(Assembler::above, Lfast);
+    __ jccb(Assembler::above, Lfast); // result fits into 32 bit
 
     __ movl($tmp2$$Register, $dst$$Register); // save
     __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
-    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // src sign
-    __ idivl($tmp$$Register);
+    __ movl(HIGH_FROM_LOW($dst$$Register),0); // preserve flags
+    __ jccb(Assembler::lessEqual, Lpos); // result is positive
+
+    // Negative dividend.
+    // convert value to positive to use unsigned division
+    __ lneg($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
     __ xchgl($dst$$Register, $tmp2$$Register);
-    __ idivl($tmp$$Register);
-    __ cdql();
-    __ addl(HIGH_FROM_LOW($dst$$Register),$tmp2$$Register);
+    __ divl($tmp$$Register);
+    // revert result back to negative
+    __ lneg($tmp2$$Register, $dst$$Register);
     __ jmpb(Ldone);
 
+    __ bind(Lpos);
+    __ divl($tmp$$Register); // Use unsigned division
+    __ xchgl($dst$$Register, $tmp2$$Register);
+    // Fallthrow for final divide, tmp2 has 32 bit hi result
+
     __ bind(Lfast);
-    // fast path: src is positive and result fits into 32 bit
-    __ idivl($tmp$$Register);
-    __ xorl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+    // fast path: src is positive
+    __ divl($tmp$$Register); // Use unsigned division
 
     __ bind(Ldone);
+    __ movl(HIGH_FROM_LOW($dst$$Register),$tmp2$$Register);
     if (con < 0) {
       __ lneg(HIGH_FROM_LOW($dst$$Register), $dst$$Register);
     }
@@ -8922,18 +8938,27 @@ instruct modL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlag
             "JA,s   fast\n\t"
             "MOV    $tmp2,EAX\n\t"
             "MOV    EAX,EDX\n\t"
-            "SAR    EDX,31\n\t"
-            "IDIV   $tmp\n\t"
+            "MOV    EDX,0\n\t"
+            "JLE,s  pos\n\t"
+            "LNEG   EAX : $tmp2\n\t"
+            "DIV    $tmp # unsigned division\n\t"
+            "MOV    EAX,$tmp2\n\t"
+            "DIV    $tmp\n\t"
+            "NEG    EDX\n\t"
+            "JMP,s  done\n"
+    "pos:\n\t"
+            "DIV    $tmp\n\t"
             "MOV    EAX,$tmp2\n"
     "fast:\n\t"
-            "IDIV   $tmp\n\t"
+            "DIV    $tmp\n"
+    "done:\n\t"
             "MOV    EAX,EDX\n\t"
             "SAR    EDX,31\n\t" %}
   ins_encode %{
     int con = (int)$imm$$constant;
     assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
     int pcon = (con > 0) ? con : -con;
-    Label  Lfast;
+    Label  Lfast, Lpos, Ldone;
 
     __ movl($tmp$$Register, pcon);
     __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
@@ -8941,12 +8966,28 @@ instruct modL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlag
 
     __ movl($tmp2$$Register, $dst$$Register); // save
     __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
-    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // src sign
-    __ idivl($tmp$$Register);
+    __ movl(HIGH_FROM_LOW($dst$$Register),0); // preserve flags
+    __ jccb(Assembler::lessEqual, Lpos); // result is positive
+
+    // Negative dividend.
+    // convert value to positive to use unsigned division
+    __ lneg($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    __ movl($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    // revert remainder back to negative
+    __ negl(HIGH_FROM_LOW($dst$$Register));
+    __ jmpb(Ldone);
+
+    __ bind(Lpos);
+    __ divl($tmp$$Register);
     __ movl($dst$$Register, $tmp2$$Register);
 
     __ bind(Lfast);
-    __ idivl($tmp$$Register);
+    // fast path: src is positive
+    __ divl($tmp$$Register);
+
+    __ bind(Ldone);
     __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
     __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // result sign
 
