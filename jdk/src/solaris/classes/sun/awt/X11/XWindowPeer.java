@@ -604,7 +604,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void handleWindowFocusIn_Dispatch() {
         if (EventQueue.isDispatchThread()) {
             XKeyboardFocusManagerPeer.setCurrentNativeFocusedWindow((Window) target);
-            target.dispatchEvent(new WindowEvent((Window)target, WindowEvent.WINDOW_GAINED_FOCUS));
+            WindowEvent we = new WindowEvent((Window)target, WindowEvent.WINDOW_GAINED_FOCUS);
+            SunToolkit.setSystemGenerated(we);
+            target.dispatchEvent(we);
         }
     }
 

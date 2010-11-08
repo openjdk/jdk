@@ -61,6 +61,7 @@ import javax.swing.plaf.BorderUIResource;
 import java.awt.im.InputMethodRequests;
 import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
+import sun.awt.SunToolkit;
 
 
 class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
@@ -1318,13 +1319,18 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             Component source, Point point, MouseEvent template )
         {
             MouseEvent e = template;
-            return new MouseEvent(
+            MouseEvent nme = new MouseEvent(
                 source,
                 e.getID(), e.getWhen(),
                 e.getModifiersEx() | e.getModifiers(),
                 point.x, point.y,
                 e.getXOnScreen(), e.getYOnScreen(),
                 e.getClickCount(), e.isPopupTrigger(), e.getButton() );
+            // Because these MouseEvents are dispatched directly to
+            // their target, we need to mark them as being
+            // system-generated here
+            SunToolkit.setSystemGenerated(nme);
+            return nme;
         }
 
         private void setCursor() {

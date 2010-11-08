@@ -2255,7 +2255,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             {
                 struct in_addr in;
                 struct in_addr *inP = &in;
-                int len = sizeof(struct in_addr);
+                socklen_t len = sizeof(struct in_addr);
 
 #ifdef __linux__
                 struct ip_mreqn mreqn;

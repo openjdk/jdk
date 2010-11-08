@@ -36,7 +36,7 @@ import javax.imageio.stream.MemoryCacheImageOutputStream;
 
 public class OutputStreamImageOutputStreamSpi extends ImageOutputStreamSpi {
 
-    private static final String vendorName = "Sun Microsystems, Inc.";
+    private static final String vendorName = "Oracle Corporation";
 
     private static final String version = "1.0";
 

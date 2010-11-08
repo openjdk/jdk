@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package javax.swing.text.html;
+
+import sun.awt.AppContext;
 
 import java.lang.reflect.Method;
 import java.awt.*;
@@ -369,7 +371,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * if desired.
      */
     public void setStyleSheet(StyleSheet s) {
-        defaultStyles = s;
+        if (s == null) {
+            AppContext.getAppContext().remove(DEFAULT_STYLES_KEY);
+        } else {
+            AppContext.getAppContext().put(DEFAULT_STYLES_KEY, s);
+        }
     }
 
     /**
@@ -379,8 +385,12 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * instances.
      */
     public StyleSheet getStyleSheet() {
+        AppContext appContext = AppContext.getAppContext();
+        StyleSheet defaultStyles = (StyleSheet) appContext.get(DEFAULT_STYLES_KEY);
+
         if (defaultStyles == null) {
             defaultStyles = new StyleSheet();
+            appContext.put(DEFAULT_STYLES_KEY, defaultStyles);
             try {
                 InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
                 Reader r = new BufferedReader(
@@ -620,7 +630,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     private static final ViewFactory defaultFactory = new HTMLFactory();
 
     MutableAttributeSet input;
-    private static StyleSheet defaultStyles = null;
+    private static final Object DEFAULT_STYLES_KEY = new Object();
     private LinkController linkHandler = new LinkController();
     private static Parser defaultParser = null;
     private Cursor defaultCursor = DefaultCursor;
