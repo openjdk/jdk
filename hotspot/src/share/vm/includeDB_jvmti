@@ -89,6 +89,7 @@ jvmtiEnv.cpp                            vmThread.hpp
 jvmtiEnv.hpp                            jvmtiEnvBase.hpp
 
 jvmtiEnvBase.cpp                        biasedLocking.hpp
+jvmtiEnvBase.cpp                        deoptimization.hpp
 jvmtiEnvBase.cpp                        interfaceSupport.hpp
 jvmtiEnvBase.cpp                        jfieldIDWorkaround.hpp
 jvmtiEnvBase.cpp                        jvmtiEnv.hpp
