@@ -25,11 +25,7 @@
 
 package com.sun.net.httpserver;
 
-import java.net.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import sun.net.www.MessageHeader;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -56,12 +52,10 @@ public abstract class Filter {
         /* the last element in the chain must invoke the users
          * handler
          */
-        private List<Filter> filters;
         private ListIterator<Filter> iter;
         private HttpHandler handler;
 
         public Chain (List<Filter> filters, HttpHandler handler) {
-            this.filters = filters;
             iter = filters.listIterator();
             this.handler = handler;
         }

@@ -177,12 +177,14 @@ public class FileManager
         }
 
         void checkRead() throws IOException {
-            if (cantRead != null && cantRead.matcher(getName()).matches())
+            String canonName = getName().replace(File.separatorChar, '/');
+            if (cantRead != null && cantRead.matcher(canonName).matches())
                 throw new IOException("FileManager: Can't read");
         }
 
         void checkWrite() throws IOException {
-            if (cantWrite != null && cantWrite.matcher(getName()).matches())
+            String canonName = getName().replace(File.separatorChar, '/');
+            if (cantWrite != null && cantWrite.matcher(canonName).matches())
                 throw new IOException("FileManager: Can't write");
         }
 

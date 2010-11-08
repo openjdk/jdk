@@ -313,6 +313,11 @@ public abstract class SunToolkit extends Toolkit
      */
     public static AppContext createNewAppContext() {
         ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+        // Create appContext before initialization of EventQueue, so all
+        // the calls to AppContext.getAppContext() from EventQueue ctor
+        // return correct values
+        AppContext appContext = new AppContext(threadGroup);
+
         EventQueue eventQueue;
         String eqName = System.getProperty("AWT.EventQueueClass",
                                            "java.awt.EventQueue");
@@ -322,7 +327,6 @@ public abstract class SunToolkit extends Toolkit
             System.err.println("Failed loading " + eqName + ": " + e);
             eventQueue = new EventQueue();
         }
-        AppContext appContext = new AppContext(threadGroup);
         appContext.put(AppContext.EVENT_QUEUE_KEY, eventQueue);
 
         PostEventQueue postEventQueue = new PostEventQueue(eventQueue);
@@ -587,6 +591,12 @@ public abstract class SunToolkit extends Toolkit
         if (event == null) {
             throw new NullPointerException();
         }
+        // All events posted via this method are system-generated.
+        // Placing the following call here reduces considerably the
+        // number of places throughout the toolkit that would
+        // otherwise have to be modified to precisely identify
+        // system-generated events.
+        setSystemGenerated(event);
         AppContext eventContext = targetToAppContext(event.getSource());
         if (eventContext != null && !eventContext.equals(appContext)) {
             log.fine("Event posted on wrong app context : " + event);
@@ -2089,6 +2099,25 @@ public abstract class SunToolkit extends Toolkit
         }
         return isInstanceOf(cls.getSuperclass(), type);
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // The following methods help set and identify whether a particular
+    // AWTEvent object was produced by the system or by user code. As of this
+    // writing the only consumer is the Java Plug-In, although this information
+    // could be useful to more clients and probably should be formalized in
+    // the public API.
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    public static void setSystemGenerated(AWTEvent e) {
+        AWTAccessor.getAWTEventAccessor().setSystemGenerated(e);
+    }
+
+    public static boolean isSystemGenerated(AWTEvent e) {
+        return AWTAccessor.getAWTEventAccessor().isSystemGenerated(e);
+    }
+
 } // class SunToolkit
 
 

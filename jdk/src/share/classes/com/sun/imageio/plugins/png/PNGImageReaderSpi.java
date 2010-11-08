@@ -36,7 +36,7 @@ import javax.imageio.stream.ImageInputStream;
 
 public class PNGImageReaderSpi extends ImageReaderSpi {
 
-    private static final String vendorName = "Sun Microsystems, Inc.";
+    private static final String vendorName = "Oracle Corporation";
 
     private static final String version = "1.0";
 

@@ -173,12 +173,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         platformAnnotations = initPlatformAnnotations();
         foundTypeProcessors = false;
 
-        // Initialize services before any processors are initialzied
+        // Initialize services before any processors are initialized
         // in case processors use them.
         filer = new JavacFiler(context);
         messager = new JavacMessager(context, this);
-        elementUtils = new JavacElements(context);
-        typeUtils = new JavacTypes(context);
+        elementUtils = JavacElements.instance(context);
+        typeUtils = JavacTypes.instance(context);
         processorOptions = initProcessorOptions(context);
         unmatchedProcessorOptions = initUnmatchedProcessorOptions();
         messages = JavacMessages.instance(context);
@@ -865,8 +865,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             this(prev.nextContext(), prev.number+1, prev.compiler.log.nwarnings);
             this.genClassFiles = prev.genClassFiles;
 
-            updateProcessingState();
-
             List<JCCompilationUnit> parsedFiles = compiler.parseFiles(newSourceFiles);
             roots = cleanTrees(prev.roots).appendList(parsedFiles);
 
@@ -1029,15 +1027,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             log.reportDeferredDiagnostics(kinds);
         }
 
-        /** Update the processing state for the current context. */
-        private void updateProcessingState() {
-            filer.newRound(context);
-            messager.newRound(context);
-
-            elementUtils.setContext(context);
-            typeUtils.setContext(context);
-        }
-
         /** Print info about this round. */
         private void printRoundInfo(boolean lastRound) {
             if (printRounds || verbose) {
@@ -1099,6 +1088,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
             nextCompiler.initRound(oldCompiler);
+
+            filer.newRound(next);
+            messager.newRound(next);
+            elementUtils.setContext(next);
+            typeUtils.setContext(next);
 
             JavacTaskImpl task = context.get(JavacTaskImpl.class);
             if (task != null) {
