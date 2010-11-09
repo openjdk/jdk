@@ -2272,7 +2272,7 @@ void CompactibleFreeListSpace::split(size_t from, size_t to1) {
 }
 
 void CompactibleFreeListSpace::print() const {
-  Space::print_on(tty);
+  print_on(tty);
 }
 
 void CompactibleFreeListSpace::prepare_for_verify() {
