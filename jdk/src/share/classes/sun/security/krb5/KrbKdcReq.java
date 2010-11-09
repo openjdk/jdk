@@ -36,8 +36,7 @@ import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Locale;
 import sun.security.krb5.internal.Krb5;
-import sun.security.krb5.internal.UDPClient;
-import sun.security.krb5.internal.TCPClient;
+import sun.security.krb5.internal.NetClient;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.StringTokenizer;
@@ -349,12 +348,16 @@ public abstract class KrbKdcReq {
 
             byte[] ibuf = null;
 
-            if (useTCP) {
-                TCPClient kdcClient = new TCPClient(kdc, port);
+            for (int i=1; i <= retries; i++) {
+                String proto = useTCP?"TCP":"UDP";
+                NetClient kdcClient = NetClient.getInstance(
+                        proto, kdc, port, timeout);
                 if (DEBUG) {
                     System.out.println(">>> KDCCommunication: kdc=" + kdc
-                           + " TCP:"
-                           +  port
+                           + " " + proto + ":"
+                           +  port +  ", timeout="
+                           + timeout
+                           + ",Attempt =" + i
                            + ", #bytes=" + obuf.length);
                 }
                 try {
@@ -366,50 +369,18 @@ public abstract class KrbKdcReq {
                      * And get a response.
                      */
                     ibuf = kdcClient.receive();
+                    break;
+                } catch (SocketTimeoutException se) {
+                    if (DEBUG) {
+                        System.out.println ("SocketTimeOutException with " +
+                                            "attempt: " + i);
+                    }
+                    if (i == retries) {
+                        ibuf = null;
+                        throw se;
+                    }
                 } finally {
                     kdcClient.close();
-                }
-
-            } else {
-                // For each KDC we try defaultKdcRetryLimit times to
-                // get the response
-                for (int i=1; i <= retries; i++) {
-                    UDPClient kdcClient = new UDPClient(kdc, port, timeout);
-
-                    if (DEBUG) {
-                        System.out.println(">>> KDCCommunication: kdc=" + kdc
-                               + (useTCP ? " TCP:":" UDP:")
-                               +  port +  ", timeout="
-                               + timeout
-                               + ",Attempt =" + i
-                               + ", #bytes=" + obuf.length);
-                    }
-                    try {
-                        /*
-                         * Send the data to the kdc.
-                         */
-
-                        kdcClient.send(obuf);
-
-                        /*
-                         * And get a response.
-                         */
-                        try {
-                            ibuf = kdcClient.receive();
-                            break;
-                        } catch (SocketTimeoutException se) {
-                            if (DEBUG) {
-                                System.out.println ("SocketTimeOutException with " +
-                                                    "attempt: " + i);
-                            }
-                            if (i == retries) {
-                                ibuf = null;
-                                throw se;
-                            }
-                        }
-                    } finally {
-                        kdcClient.close();
-                    }
                 }
             }
             return ibuf;
