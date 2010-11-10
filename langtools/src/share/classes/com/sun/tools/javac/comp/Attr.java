@@ -1552,7 +1552,7 @@ public class Attr extends JCTree.Visitor {
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
         Type clazztype = attribType(clazz, env);
-        Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype);
+        Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype, cdef != null);
         if (!TreeInfo.isDiamond(tree)) {
             clazztype = chk.checkClassType(
                 tree.clazz.pos(), clazztype, true);
@@ -1849,7 +1849,7 @@ public class Attr extends JCTree.Visitor {
      *  inference. The inferred return type of the synthetic constructor IS
      *  the inferred type for the diamond operator.
      */
-    private Pair<Scope, Scope> getSyntheticScopeMapping(Type ctype) {
+    private Pair<Scope, Scope> getSyntheticScopeMapping(Type ctype, boolean overrideProtectedAccess) {
         if (ctype.tag != CLASS) {
             return erroneousMapping;
         }
@@ -1860,6 +1860,12 @@ public class Attr extends JCTree.Visitor {
                 e.scope != null;
                 e = e.next()) {
             MethodSymbol newConstr = (MethodSymbol) e.sym.clone(ctype.tsym);
+            if (overrideProtectedAccess && (newConstr.flags() & PROTECTED) != 0) {
+                //make protected constructor public (this is required for
+                //anonymous inner class creation expressions using diamond)
+                newConstr.flags_field |= PUBLIC;
+                newConstr.flags_field &= ~PROTECTED;
+            }
             newConstr.name = names.init;
             List<Type> oldTypeargs = List.nil();
             if (newConstr.type.tag == FORALL) {
