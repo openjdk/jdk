@@ -51,11 +51,11 @@ Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jlong address,
-                                      jlong len)
+Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jobject fdo,
+                                      jlong address, jlong len)
 {
     void *a = (void *) jlong_to_ptr(address);
-    int result;
+    BOOL result;
     int retry;
 
     /*
@@ -70,6 +70,30 @@ Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jlong address,
             break;
         retry++;
     } while (retry < 3);
+
+    /**
+     * FlushViewOfFile only initiates the writing of dirty pages to disk
+     * so we have to call FlushFileBuffers to and ensure they are written.
+     */
+    if (result != 0) {
+        // by right, the jfieldID initialization should be in a static
+        // initializer but we do it here instead to avoiding needing to
+        // load nio.dll during startup.
+        static jfieldID handle_fdID;
+        HANDLE h;
+        if (handle_fdID == NULL) {
+            jclass clazz = (*env)->FindClass(env, "java/io/FileDescriptor");
+            if (clazz == NULL)
+                return; // exception thrown
+            handle_fdID = (*env)->GetFieldID(env, clazz, "handle", "J");
+        }
+        h = jlong_to_ptr((*env)->GetLongField(env, fdo, handle_fdID));
+        result = FlushFileBuffers(h);
+        if (result == 0 && GetLastError() == ERROR_ACCESS_DENIED) {
+            // read-only mapping
+            result = 1;
+        }
+    }
 
     if (result == 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Flush failed");
