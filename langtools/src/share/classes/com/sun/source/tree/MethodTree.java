@@ -53,7 +53,7 @@ public interface MethodTree extends Tree {
     Tree getReturnType();
     List<? extends TypeParameterTree> getTypeParameters();
     List<? extends VariableTree> getParameters();
-    List<? extends AnnotationTree> getReceiverAnnotations();
+//308    List<? extends AnnotationTree> getReceiverAnnotations();
     List<? extends ExpressionTree> getThrows();
     BlockTree getBody();
     Tree getDefaultValue(); // for annotation types

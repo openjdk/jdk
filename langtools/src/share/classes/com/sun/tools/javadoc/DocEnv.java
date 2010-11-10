@@ -637,6 +637,7 @@ public class DocEnv {
      * Should be called only on symbols representing methods.
      */
     public MethodDocImpl getMethodDoc(MethodSymbol meth) {
+        assert !meth.isConstructor() : "not expecting a constructor symbol";
         MethodDocImpl result = (MethodDocImpl)methodMap.get(meth);
         if (result != null) return result;
         result = new MethodDocImpl(this, meth);
@@ -665,6 +666,7 @@ public class DocEnv {
      * Should be called only on symbols representing constructors.
      */
     public ConstructorDocImpl getConstructorDoc(MethodSymbol meth) {
+        assert meth.isConstructor() : "expecting a constructor symbol";
         ConstructorDocImpl result = (ConstructorDocImpl)methodMap.get(meth);
         if (result != null) return result;
         result = new ConstructorDocImpl(this, meth);
