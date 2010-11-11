@@ -22,53 +22,6 @@
  *
  */
 
-class BasicLock VALUE_OBJ_CLASS_SPEC {
-  friend class VMStructs;
- private:
-  volatile markOop _displaced_header;
- public:
-  markOop      displaced_header() const               { return _displaced_header; }
-  void         set_displaced_header(markOop header)   { _displaced_header = header; }
-
-  void print_on(outputStream* st) const;
-
-  // move a basic lock (used during deoptimization
-  void move_to(oop obj, BasicLock* dest);
-
-  static int displaced_header_offset_in_bytes()       { return offset_of(BasicLock, _displaced_header); }
-};
-
-// A BasicObjectLock associates a specific Java object with a BasicLock.
-// It is currently embedded in an interpreter frame.
-
-// Because some machines have alignment restrictions on the control stack,
-// the actual space allocated by the interpreter may include padding words
-// after the end of the BasicObjectLock.  Also, in order to guarantee
-// alignment of the embedded BasicLock objects on such machines, we
-// put the embedded BasicLock at the beginning of the struct.
-
-class BasicObjectLock VALUE_OBJ_CLASS_SPEC {
-  friend class VMStructs;
- private:
-  BasicLock _lock;                                    // the lock, must be double word aligned
-  oop       _obj;                                     // object holds the lock;
-
- public:
-  // Manipulation
-  oop      obj() const                                { return _obj;  }
-  void set_obj(oop obj)                               { _obj = obj; }
-  BasicLock* lock()                                   { return &_lock; }
-
-  // Note: Use frame::interpreter_frame_monitor_size() for the size of BasicObjectLocks
-  //       in interpreter activation frames since it includes machine-specific padding.
-  static int size()                                   { return sizeof(BasicObjectLock)/wordSize; }
-
-  // GC support
-  void oops_do(OopClosure* f) { f->do_oop(&_obj); }
-
-  static int obj_offset_in_bytes()                    { return offset_of(BasicObjectLock, _obj);  }
-  static int lock_offset_in_bytes()                   { return offset_of(BasicObjectLock, _lock); }
-};
 
 class ObjectMonitor;
 
@@ -163,36 +116,14 @@ class ObjectSynchronizer : AllStatic {
   static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
+  static void RegisterSpinCallback (int (*)(intptr_t, int), intptr_t) ;
+
  private:
   enum { _BLOCKSIZE = 128 };
   static ObjectMonitor* gBlockList;
   static ObjectMonitor * volatile gFreeList;
   static ObjectMonitor * volatile gOmInUseList; // for moribund thread, so monitors they inflated still get scanned
   static int gOmInUseCount;
-
- public:
-  static void Initialize () ;
-  static PerfCounter * _sync_ContendedLockAttempts ;
-  static PerfCounter * _sync_FutileWakeups ;
-  static PerfCounter * _sync_Parks ;
-  static PerfCounter * _sync_EmptyNotifications ;
-  static PerfCounter * _sync_Notifications ;
-  static PerfCounter * _sync_SlowEnter ;
-  static PerfCounter * _sync_SlowExit ;
-  static PerfCounter * _sync_SlowNotify ;
-  static PerfCounter * _sync_SlowNotifyAll ;
-  static PerfCounter * _sync_FailedSpins ;
-  static PerfCounter * _sync_SuccessfulSpins ;
-  static PerfCounter * _sync_PrivateA ;
-  static PerfCounter * _sync_PrivateB ;
-  static PerfCounter * _sync_MonInCirculation ;
-  static PerfCounter * _sync_MonScavenged ;
-  static PerfCounter * _sync_Inflations ;
-  static PerfCounter * _sync_Deflations ;
-  static PerfLongVariable * _sync_MonExtant ;
-
- public:
-  static void RegisterSpinCallback (int (*)(intptr_t, int), intptr_t) ;
 
 };
 
