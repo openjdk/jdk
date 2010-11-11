@@ -780,7 +780,7 @@ public class Krb5LoginModule implements LoginModule {
                 Callback[] callbacks = new Callback[1];
                 MessageFormat form = new MessageFormat(
                                        rb.getString(
-                                       "Kerberos username [[defUsername]]: "));
+                                       "Kerberos.username.defUsername."));
                 Object[] source =  {defUsername};
                 callbacks[0] = new NameCallback(form.format(source));
                 callbackHandler.handle(callbacks);
@@ -835,7 +835,7 @@ public class Krb5LoginModule implements LoginModule {
                 String userName = krb5PrincName.toString();
                 MessageFormat form = new MessageFormat(
                                          rb.getString(
-                                         "Kerberos password for [username]: "));
+                                         "Kerberos.password.for.username."));
                 Object[] source = {userName};
                 callbacks[0] = new PasswordCallback(
                                                     form.format(source),
