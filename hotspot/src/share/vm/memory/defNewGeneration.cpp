@@ -838,7 +838,9 @@ void DefNewGeneration::gc_epilogue(bool full) {
         gch->incremental_collection_failed()) {
       seen_incremental_collection_failed = true;
     } else if (seen_incremental_collection_failed) {
-      assert(!gch->incremental_collection_failed(), "Twice in a row");
+      assert(gch->gc_cause() == GCCause::_scavenge_alot || !gch->incremental_collection_failed(),
+             "Twice in a row");
+
       seen_incremental_collection_failed = false;
     }
 #endif // ASSERT
