@@ -765,7 +765,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
     ShouldNotReachHere();
   }
 
-  LIR_Opr addr = (type == objectType) ? new_register(T_OBJECT) : new_pointer_register();
+  LIR_Opr addr = new_pointer_register();
   LIR_Address* a;
   if(offset.result()->is_constant()) {
     a = new LIR_Address(obj.result(),

@@ -105,6 +105,7 @@ class Relocator : public ResourceObj {
   void adjust_exception_table(int bci, int delta);
   void adjust_line_no_table  (int bci, int delta);
   void adjust_local_var_table(int bci, int delta);
+  void adjust_stack_map_table(int bci, int delta);
   int  get_orig_switch_pad   (int bci, bool is_lookup_switch);
   int  rc_instr_len          (int bci);
   bool expand_code_array     (int delta);

@@ -173,15 +173,11 @@ class Generation: public CHeapObj {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Returns true if promotions of the specified amount can
-  // be attempted safely (without a vm failure).
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
   // Promotion of the full amount is not guaranteed but
-  // can be attempted.
-  //   younger_handles_promotion_failure
-  // is true if the younger generation handles a promotion
-  // failure.
-  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  // might be attempted in the worst case.
+  virtual bool promotion_attempt_is_safe(size_t max_promotion_in_bytes) const;
 
   // For a non-young generation, this interface can be used to inform a
   // generation that a promotion attempt into that generation failed.
@@ -356,6 +352,16 @@ class Generation: public CHeapObj {
                               size_t word_size,
                               bool   is_tlab) {
     return (full || should_allocate(word_size, is_tlab));
+  }
+
+  // Returns true if the collection is likely to be safely
+  // completed. Even if this method returns true, a collection
+  // may not be guaranteed to succeed, and the system should be
+  // able to safely unwind and recover from that failure, albeit
+  // at some additional cost.
+  virtual bool collection_attempt_is_safe() {
+    guarantee(false, "Are you sure you want to call this method?");
+    return true;
   }
 
   // Perform a garbage collection.
