@@ -28,15 +28,11 @@ package java.dyn;
 /**
  * Thrown to indicate that an {@code invokedynamic} instruction has
  * failed to find its
- * {@linkplain Linkage#registerBootstrapMethod(Class, MethodHandle) bootstrap method},
+ * {@linkplain BootstrapMethod bootstrap method},
  * or the bootstrap method has
  * failed to provide a
  * {@linkplain CallSite} call site with a non-null {@linkplain MethodHandle target}
  * of the correct {@linkplain MethodType method type}.
- * <p>
- * The bootstrap method must have been declared during a class's initialization
- * by a call to one of the overloadings of
- * {@link Linkage#registerBootstrapMethod registerBootstrapMethod}.
  *
  * @author John Rose, JSR 292 EG
  * @since 1.7
