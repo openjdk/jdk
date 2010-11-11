@@ -23,8 +23,9 @@
  * questions.
  */
 
-package java.dyn;
+package sun.dyn;
 
+import java.dyn.*;
 import sun.dyn.Access;
 
 /**
@@ -167,71 +168,5 @@ public abstract class JavaMethodHandle
      */
     protected JavaMethodHandle(MethodHandle entryPoint) {
         super(entryPoint);
-    }
-
-    /**
-     * Create a method handle whose entry point is a non-static method
-     * visible in the exact (most specific) class of
-     * the newly constructed object.
-     * <p>
-     * The method is specified by name and type, as if via this expression:
-     * {@code MethodHandles.lookup().findVirtual(this.getClass(), name, type)}.
-     * The class defining the method might be an anonymous inner class.
-     * <p>
-     * The method handle type of {@code this} (i.e, the fully constructed object)
-     * will be the given method handle type.
-     * A call to {@code this} will invoke the selected method.
-     * The receiver argument will be bound to {@code this} on every method
-     * handle invocation.
-     * <p>
-     * <i>Rationale:</i>
-     * Although this constructor may seem to be a mere luxury,
-     * it is not subsumed by the more general constructor which
-     * takes any {@code MethodHandle} as the entry point argument.
-     * In order to convert an entry point name to a method handle,
-     * the self-class of the object is required (in order to do
-     * the lookup).  The self-class, in turn, is generally not
-     * available at the time of the constructor invocation,
-     * due to the rules of Java and the JVM verifier.
-     * One cannot call {@code this.getClass()}, because
-     * the value of {@code this} is inaccessible at the point
-     * of the constructor call.  (Changing this would require
-     * change to the Java language, verifiers, and compilers.)
-     * In particular, this constructor allows {@code JavaMethodHandle}s
-     * to be created in combination with the anonymous inner class syntax.
-     * @param entryPointName the name of the entry point method
-     * @param type (optional) the desired type of the method handle
-     */
-    protected JavaMethodHandle(String entryPointName, MethodType type) {
-        super(entryPointName, type, true);
-
-    }
-
-    /**
-     * Create a method handle whose entry point is a non-static method
-     * visible in the exact (most specific) class of
-     * the newly constructed object.
-     * <p>
-     * The method is specified only by name.
-     * There must be exactly one method of that name visible in the object class,
-     * either inherited or locally declared.
-     * (That is, the method must not be overloaded.)
-     * <p>
-     * The method handle type of {@code this} (i.e, the fully constructed object)
-     * will be the same as the type of the selected non-static method.
-     * The receiver argument will be bound to {@code this} on every method
-     * handle invocation.
-     * <p>ISSUE: This signature wildcarding feature does not correspond to
-     * any MethodHandles.Lookup API element.  Can we eliminate it?
-     * Alternatively, it is useful for naming non-overloaded methods.
-     * Shall we make type arguments optional in the Lookup methods,
-     * throwing an error in cases of ambiguity?
-     * <p>
-     * For this method's rationale, see the documentation
-     * for {@link #JavaMethodHandle(String,MethodType)}.
-     * @param entryPointName the name of the entry point method
-     */
-    protected JavaMethodHandle(String entryPointName) {
-        super(entryPointName, (MethodType) null, false);
     }
 }
