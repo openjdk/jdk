@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # @test
-# @bug 4700857
+# @bug 4700857 6997928
 # @summary tests for Locale.getDefault(Locale.Category) and 
 #    Locale.setDefault(Locale.Category, Locale)
 # @build LocaleCategory

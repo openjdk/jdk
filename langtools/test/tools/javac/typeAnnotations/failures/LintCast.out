@@ -1,6 +1,0 @@
-LintCast.java:13:21: compiler.warn.redundant.cast: java.lang.String
-LintCast.java:19:27: compiler.warn.redundant.cast: java.util.List<java.lang.String>
-LintCast.java:25:20: compiler.warn.redundant.cast: int[]
-LintCast.java:37:24: compiler.warn.redundant.cast: java.lang.String
-LintCast.java:38:26: compiler.warn.redundant.cast: java.lang.String
-5 warnings

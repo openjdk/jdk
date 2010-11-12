@@ -40,6 +40,12 @@ import java.security.PrivilegedAction;
  * @author      Jonathan Payne
  */
 public class NetworkClient {
+    /* Default value of read timeout, if not specified (infinity) */
+    public static final int DEFAULT_READ_TIMEOUT = -1;
+
+    /* Default value of connect timeout, if not specified (infinity) */
+    public static final int DEFAULT_CONNECT_TIMEOUT = -1;
+
     protected Proxy     proxy = Proxy.NO_PROXY;
     /** Socket for communicating with server. */
     protected Socket    serverSocket = null;
@@ -53,8 +59,8 @@ public class NetworkClient {
     protected static int defaultSoTimeout;
     protected static int defaultConnectTimeout;
 
-    protected int readTimeout = -1;
-    protected int connectTimeout = -1;
+    protected int readTimeout = DEFAULT_READ_TIMEOUT;
+    protected int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     /* Name of encoding to use for output */
     protected static String encoding;
 
@@ -71,16 +77,12 @@ public class NetworkClient {
                         return null;
             }
         });
-        if (vals[0] == 0)
-            defaultSoTimeout = -1;
-        else
+        if (vals[0] != 0) {
             defaultSoTimeout = vals[0];
-
-        if (vals[1] == 0)
-            defaultConnectTimeout = -1;
-        else
+        }
+        if (vals[1] != 0) {
             defaultConnectTimeout = vals[1];
-
+        }
 
         encoding = encs[0];
         try {
@@ -232,7 +234,23 @@ public class NetworkClient {
         return connectTimeout;
     }
 
+    /**
+     * Sets the read timeout.
+     *
+     * Note: Public URLConnection (and protocol specific implementations)
+     * protect against negative timeout values being set. This implemenation,
+     * and protocol specific implementations, use -1 to represent the default
+     * read timeout.
+     *
+     * This method may be invoked with the default timeout value when the
+     * protocol handler is trying to reset the timeout after doing a
+     * potentially blocking internal operation, e.g. cleaning up unread
+     * response data, buffering error stream response data, etc
+     */
     public void setReadTimeout(int timeout) {
+        if (timeout == DEFAULT_READ_TIMEOUT)
+            timeout = defaultSoTimeout;
+
         if (serverSocket != null && timeout >= 0) {
             try {
                 serverSocket.setSoTimeout(timeout);

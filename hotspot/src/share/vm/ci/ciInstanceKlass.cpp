@@ -564,7 +564,7 @@ bool ciInstanceKlass::is_leaf_type() {
 // This is OK, since any dependencies we decide to assert
 // will be checked later under the Compile_lock.
 ciInstanceKlass* ciInstanceKlass::implementor(int n) {
-  if (n > implementors_limit) {
+  if (n >= implementors_limit) {
     return NULL;
   }
   ciInstanceKlass* impl = _implementors[n];

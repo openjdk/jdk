@@ -71,12 +71,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return lb.toList();
     }
 
-    public JCTree visitAnnotatedType(AnnotatedTypeTree node, P p) {
-        JCAnnotatedType t = (JCAnnotatedType) node;
-        List<JCTypeAnnotation> annotations = copy(t.annotations, p);
-        JCExpression underlyingType = copy(t.underlyingType, p);
-        return M.at(t.pos).AnnotatedType(annotations, underlyingType);
-    }
+//308    public JCTree visitAnnotatedType(AnnotatedTypeTree node, P p) {
+//308        JCAnnotatedType t = (JCAnnotatedType) node;
+//308        List<JCTypeAnnotation> annotations = copy(t.annotations, p);
+//308        JCExpression underlyingType = copy(t.underlyingType, p);
+//308        return M.at(t.pos).AnnotatedType(annotations, underlyingType);
+//308    }
 
     public JCTree visitAnnotation(AnnotationTree node, P p) {
         JCAnnotation t = (JCAnnotation) node;
@@ -346,10 +346,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeApply(clazz, arguments);
     }
 
-    public JCTree visitDisjointType(DisjointTypeTree node, P p) {
-        JCTypeDisjoint t = (JCTypeDisjoint) node;
-        List<JCExpression> components = copy(t.components, p);
-        return M.at(t.pos).TypeDisjoint(components);
+    public JCTree visitDisjunctiveType(DisjunctiveTypeTree node, P p) {
+        JCTypeDisjunction t = (JCTypeDisjunction) node;
+        List<JCExpression> components = copy(t.alternatives, p);
+        return M.at(t.pos).TypeDisjunction(components);
     }
 
     public JCTree visitArrayType(ArrayTypeTree node, P p) {

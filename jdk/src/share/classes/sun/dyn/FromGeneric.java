@@ -25,15 +25,9 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
-import java.dyn.MethodType;
-import java.dyn.NoAccessException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import sun.dyn.util.ValueConversions;
-import sun.dyn.util.Wrapper;
+import java.dyn.*;
+import java.lang.reflect.*;
+import sun.dyn.util.*;
 
 /**
  * Adapters which mediate between incoming calls which are generic
