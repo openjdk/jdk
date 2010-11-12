@@ -596,6 +596,7 @@ public class SyncFactory {
      * @param logger A Logger object instance
      * @throws java.lang.SecurityException if a security manager exists and its
      *   {@code checkPermission} method denies calling {@code setLogger}
+     * @throws NullPointerException if the logger is null
      * @see SecurityManager#checkPermission
      */
     public static void setLogger(Logger logger) {
@@ -633,6 +634,7 @@ public class SyncFactory {
      *   {@code checkPermission} method denies calling {@code setLogger}
      * @throws java.util.logging.LoggingPermission if a security manager exists and its
      *   {@code checkPermission} method denies calling {@code setLevel}
+     * @throws NullPointerException if the logger is null
      * @see SecurityManager#checkPermission
      * @see LoggingPermission
      */
