@@ -252,7 +252,7 @@ public class Attr extends JCTree.Visitor {
                (base.getTag() == JCTree.IDENT && TreeInfo.name(base) == names._this)) &&
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
-                log.error(pos, "twr.resource.may.not.be.assigned", v);
+                log.error(pos, "try.resource.may.not.be.assigned", v);
             } else {
                 log.error(pos, "cant.assign.val.to.final.var", v);
             }
@@ -1045,11 +1045,11 @@ public class Attr extends JCTree.Visitor {
         for (JCTree resource : tree.resources) {
             if (resource.getTag() == JCTree.VARDEF) {
                 attribStat(resource, tryEnv);
-                chk.checkType(resource, resource.type, syms.autoCloseableType, "twr.not.applicable.to.type");
+                chk.checkType(resource, resource.type, syms.autoCloseableType, "try.not.applicable.to.type");
                 VarSymbol var = (VarSymbol)TreeInfo.symbolFor(resource);
                 var.setData(ElementKind.RESOURCE_VARIABLE);
             } else {
-                attribExpr(resource, tryEnv, syms.autoCloseableType, "twr.not.applicable.to.type");
+                attribExpr(resource, tryEnv, syms.autoCloseableType, "try.not.applicable.to.type");
             }
         }
         // Attribute body
@@ -2258,8 +2258,8 @@ public class Attr extends JCTree.Visitor {
                 ((VarSymbol)sitesym).isResourceVariable() &&
                 sym.kind == MTH &&
                 sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true) &&
-                env.info.lint.isEnabled(Lint.LintCategory.ARM)) {
-            log.warning(tree, "twr.explicit.close.call");
+                env.info.lint.isEnabled(Lint.LintCategory.TRY)) {
+            log.warning(Lint.LintCategory.TRY, tree, "try.explicit.close.call");
         }
 
         // Disallow selecting a type from an expression

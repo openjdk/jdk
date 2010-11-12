@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.warn.automatic.resource.not.referenced
-// options: -Xlint:arm
+// key: compiler.warn.try.resource.not.referenced
+// options: -Xlint:try
 
 import java.io.*;
 
