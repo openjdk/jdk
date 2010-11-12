@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,8 @@ public final class ARCFOURCipher extends CipherSpi {
     }
 
     // core crypt code. OFB style, so works for both encryption and decryption
-    private void crypt(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
+    private void crypt(byte[] in, int inOfs, int inLen, byte[] out,
+            int outOfs) {
         if (is < 0) {
             // doFinal() was called, need to reset the cipher to initial state
             init(lastKey);

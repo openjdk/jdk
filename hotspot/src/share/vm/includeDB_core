@@ -300,10 +300,17 @@ barrierSet.hpp                          oopsHierarchy.hpp
 barrierSet.inline.hpp                   barrierSet.hpp
 barrierSet.inline.hpp                   cardTableModRefBS.hpp
 
+basicLock.cpp                           basicLock.hpp
+basicLock.cpp                           synchronizer.hpp
+
+basicLock.hpp                           handles.hpp
+basicLock.hpp                           markOop.hpp
+basicLock.hpp                           top.hpp
+
+biasedLocking.cpp                       basicLock.hpp
 biasedLocking.cpp                       biasedLocking.hpp
 biasedLocking.cpp                       klass.inline.hpp
 biasedLocking.cpp                       markOop.hpp
-biasedLocking.cpp                       synchronizer.hpp
 biasedLocking.cpp                       task.hpp
 biasedLocking.cpp                       vframe.hpp
 biasedLocking.cpp                       vmThread.hpp
@@ -404,13 +411,13 @@ bytecodeInterpreter_<arch>.cpp          vframeArray.hpp
 bytecodeInterpreterWithChecks.cpp       bytecodeInterpreter.cpp
 
 bytecodeInterpreter.hpp                 allocation.hpp
+bytecodeInterpreter.hpp                 basicLock.hpp
 bytecodeInterpreter.hpp                 bytes_<arch>.hpp
 bytecodeInterpreter.hpp                 frame.hpp
 bytecodeInterpreter.hpp                 globalDefinitions.hpp
 bytecodeInterpreter.hpp                 globals.hpp
 bytecodeInterpreter.hpp                 methodDataOop.hpp
 bytecodeInterpreter.hpp                 methodOop.hpp
-bytecodeInterpreter.hpp                 synchronizer.hpp
 
 bytecodeInterpreter.inline.hpp          bytecodeInterpreter.hpp
 bytecodeInterpreter.inline.hpp          stubRoutines.hpp
@@ -1265,6 +1272,7 @@ constantPoolOop.cpp                     javaClasses.hpp
 constantPoolOop.cpp                     linkResolver.hpp
 constantPoolOop.cpp                     objArrayKlass.hpp
 constantPoolOop.cpp                     oop.inline.hpp
+constantPoolOop.cpp                     oopFactory.hpp
 constantPoolOop.cpp                     signature.hpp
 constantPoolOop.cpp                     symbolTable.hpp
 constantPoolOop.cpp                     systemDictionary.hpp
@@ -1667,10 +1675,10 @@ frame.cpp                               stubRoutines.hpp
 frame.cpp                               universe.inline.hpp
 
 frame.hpp                               assembler.hpp
+frame.hpp                               basicLock.hpp
 frame.hpp                               methodOop.hpp
 frame.hpp                               monitorChunk.hpp
 frame.hpp                               registerMap.hpp
-frame.hpp                               synchronizer.hpp
 frame.hpp                               top.hpp
 
 frame.inline.hpp                        bytecodeInterpreter.hpp
@@ -2120,6 +2128,7 @@ interfaceSupport.hpp                    vmThread.hpp
 interfaceSupport_<os_family>.hpp        generate_platform_dependent_include
 
 interp_masm_<arch_model>.cpp            arrayOop.hpp
+interp_masm_<arch_model>.cpp            basicLock.hpp
 interp_masm_<arch_model>.cpp            biasedLocking.hpp
 interp_masm_<arch_model>.cpp            interp_masm_<arch_model>.hpp
 interp_masm_<arch_model>.cpp            interpreterRuntime.hpp
@@ -2131,7 +2140,6 @@ interp_masm_<arch_model>.cpp            markOop.hpp
 interp_masm_<arch_model>.cpp            methodDataOop.hpp
 interp_masm_<arch_model>.cpp            methodOop.hpp
 interp_masm_<arch_model>.cpp            sharedRuntime.hpp
-interp_masm_<arch_model>.cpp            synchronizer.hpp
 interp_masm_<arch_model>.cpp            thread_<os_family>.inline.hpp
 
 interp_masm_<arch_model>.hpp            assembler_<arch>.inline.hpp
@@ -3094,25 +3102,26 @@ objArrayOop.cpp                         oop.inline.hpp
 
 objArrayOop.hpp                         arrayOop.hpp
 
+objectMonitor.cpp                       dtrace.hpp
+objectMonitor.cpp                       handles.inline.hpp
+objectMonitor.cpp                       interfaceSupport.hpp
+objectMonitor.cpp                       markOop.hpp
+objectMonitor.cpp                       mutexLocker.hpp
+objectMonitor.cpp                       objectMonitor.hpp
+objectMonitor.cpp                       objectMonitor.inline.hpp
+objectMonitor.cpp                       oop.inline.hpp
+objectMonitor.cpp                       osThread.hpp
+objectMonitor.cpp                       os_<os_family>.inline.hpp
+objectMonitor.cpp                       preserveException.hpp
+objectMonitor.cpp                       resourceArea.hpp
+objectMonitor.cpp                       stubRoutines.hpp
+objectMonitor.cpp                       thread.hpp
+objectMonitor.cpp                       thread_<os_family>.inline.hpp
+objectMonitor.cpp                       threadService.hpp
+objectMonitor.cpp                       vmSymbols.hpp
+
 objectMonitor.hpp                       os.hpp
-
-objectMonitor_<os_family>.cpp           dtrace.hpp
-objectMonitor_<os_family>.cpp           interfaceSupport.hpp
-objectMonitor_<os_family>.cpp           objectMonitor.hpp
-objectMonitor_<os_family>.cpp           objectMonitor.inline.hpp
-objectMonitor_<os_family>.cpp           oop.inline.hpp
-objectMonitor_<os_family>.cpp           osThread.hpp
-objectMonitor_<os_family>.cpp           os_<os_family>.inline.hpp
-objectMonitor_<os_family>.cpp           threadService.hpp
-objectMonitor_<os_family>.cpp           thread_<os_family>.inline.hpp
-objectMonitor_<os_family>.cpp           vmSymbols.hpp
-
-objectMonitor_<os_family>.hpp           generate_platform_dependent_include
-objectMonitor_<os_family>.hpp           os_<os_family>.inline.hpp
-objectMonitor_<os_family>.hpp           thread_<os_family>.inline.hpp
-objectMonitor_<os_family>.hpp           top.hpp
-
-objectMonitor_<os_family>.inline.hpp    generate_platform_dependent_include
+objectMonitor.hpp                       perfData.hpp
 
 oop.cpp                                 copy.hpp
 oop.cpp                                 handles.inline.hpp
@@ -3231,6 +3240,7 @@ orderAccess.hpp                         allocation.hpp
 orderAccess.hpp                         os.hpp
 
 orderAccess_<os_arch>.inline.hpp        orderAccess.hpp
+orderAccess_<os_arch>.inline.hpp        vm_version_<arch>.hpp
 
 os.cpp                                  allocation.inline.hpp
 os.cpp                                  arguments.hpp
@@ -3328,7 +3338,6 @@ os_<os_family>.cpp                      mutex_<os_family>.inline.hpp
 os_<os_family>.cpp                      nativeInst_<arch>.hpp
 os_<os_family>.cpp                      no_precompiled_headers
 os_<os_family>.cpp                      objectMonitor.hpp
-os_<os_family>.cpp                      objectMonitor.inline.hpp
 os_<os_family>.cpp                      oop.inline.hpp
 os_<os_family>.cpp                      osThread.hpp
 os_<os_family>.cpp                      os_share_<os_family>.hpp
@@ -3387,6 +3396,12 @@ ostream.cpp                             xmlstream.hpp
 
 ostream.hpp                             allocation.hpp
 ostream.hpp                             timer.hpp
+
+// include thread.hpp to prevent cyclic includes
+park.cpp                                thread.hpp
+
+park.hpp                                debug.hpp
+park.hpp                                globalDefinitions.hpp
 
 pcDesc.cpp                              debugInfoRec.hpp
 pcDesc.cpp                              nmethod.hpp
@@ -3600,7 +3615,9 @@ relocInfo_<arch>.hpp                    generate_platform_dependent_include
 relocator.cpp                           bytecodes.hpp
 relocator.cpp                           handles.inline.hpp
 relocator.cpp                           oop.inline.hpp
+relocator.cpp                           oopFactory.hpp
 relocator.cpp                           relocator.hpp
+relocator.cpp                           stackMapTableFormat.hpp
 relocator.cpp                           universe.inline.hpp
 
 relocator.hpp                           bytecodes.hpp
@@ -3907,6 +3924,8 @@ stackMapTable.hpp                       globalDefinitions.hpp
 stackMapTable.hpp                       methodOop.hpp
 stackMapTable.hpp                       stackMapFrame.hpp
 
+stackMapTableFormat.hpp                 verificationType.hpp
+
 stackValue.cpp                          debugInfo.hpp
 stackValue.cpp                          frame.inline.hpp
 stackValue.cpp                          handles.inline.hpp
@@ -4062,10 +4081,10 @@ synchronizer.cpp                        preserveException.hpp
 synchronizer.cpp                        resourceArea.hpp
 synchronizer.cpp                        stubRoutines.hpp
 synchronizer.cpp                        synchronizer.hpp
-synchronizer.cpp                        threadService.hpp
 synchronizer.cpp                        thread_<os_family>.inline.hpp
 synchronizer.cpp                        vmSymbols.hpp
 
+synchronizer.hpp                        basicLock.hpp
 synchronizer.hpp                        handles.hpp
 synchronizer.hpp                        markOop.hpp
 synchronizer.hpp                        perfData.hpp
@@ -4237,7 +4256,6 @@ thread.cpp                              memprofiler.hpp
 thread.cpp                              mutexLocker.hpp
 thread.cpp                              objArrayOop.hpp
 thread.cpp                              objectMonitor.hpp
-thread.cpp                              objectMonitor.inline.hpp
 thread.cpp                              oop.inline.hpp
 thread.cpp                              oopFactory.hpp
 thread.cpp                              osThread.hpp
@@ -4275,6 +4293,7 @@ thread.hpp                              mutexLocker.hpp
 thread.hpp                              oop.hpp
 thread.hpp                              os.hpp
 thread.hpp                              osThread.hpp
+thread.hpp                              park.hpp
 thread.hpp                              safepoint.hpp
 thread.hpp                              stubRoutines.hpp
 thread.hpp                              threadLocalAllocBuffer.hpp
@@ -4586,6 +4605,7 @@ vframeArray.hpp                         frame.inline.hpp
 vframeArray.hpp                         growableArray.hpp
 vframeArray.hpp                         monitorChunk.hpp
 
+vframe_hp.cpp                           basicLock.hpp
 vframe_hp.cpp                           codeCache.hpp
 vframe_hp.cpp                           debugInfoRec.hpp
 vframe_hp.cpp                           handles.inline.hpp
@@ -4599,7 +4619,6 @@ vframe_hp.cpp                           pcDesc.hpp
 vframe_hp.cpp                           scopeDesc.hpp
 vframe_hp.cpp                           signature.hpp
 vframe_hp.cpp                           stubRoutines.hpp
-vframe_hp.cpp                           synchronizer.hpp
 vframe_hp.cpp                           vframeArray.hpp
 vframe_hp.cpp                           vframe_hp.hpp
 
@@ -4751,6 +4770,7 @@ workgroup.cpp                           os.hpp
 workgroup.cpp                           workgroup.hpp
 
 workgroup.hpp                           taskqueue.hpp
+
 workgroup.hpp                           thread_<os_family>.inline.hpp
 
 xmlstream.cpp                           allocation.hpp

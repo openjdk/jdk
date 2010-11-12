@@ -553,6 +553,13 @@ public abstract class ClassLoader {
      *          If either <tt>off</tt> or <tt>len</tt> is negative, or if
      *          <tt>off+len</tt> is greater than <tt>b.length</tt>.
      *
+     * @throws  SecurityException
+     *          If an attempt is made to add this class to a package that
+     *          contains classes that were signed by a different set of
+     *          certificates than this class, or if an attempt is made
+     *          to define a class in a package with a fully-qualified name
+     *          that starts with "{@code java.}".
+     *
      * @see  #loadClass(String, boolean)
      * @see  #resolveClass(Class)
      *

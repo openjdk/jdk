@@ -27,7 +27,7 @@
  * @bug 6843077
  * @summary random tests for new locations
  * @author Matt Papi
- * @compile -source 1.7 BasicTest.java
+ * @compile/fail/ref=BasicTest.out -XDrawDiagnostics BasicTest.java
  */
 
 import java.util.*;
@@ -37,6 +37,8 @@ import java.io.*;
 @interface B {}
 @interface C {}
 @interface D {}
+
+//308: Test inverted to verify that type annotations can not be parsed yet.
 
 /**
  * Tests basic JSR 308 parser functionality. We don't really care about what

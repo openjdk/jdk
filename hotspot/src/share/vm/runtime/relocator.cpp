@@ -435,6 +435,120 @@ void Relocator::adjust_local_var_table(int bci, int delta) {
   }
 }
 
+// Create a new array, copying the src array but adding a hole at
+// the specified location
+static typeArrayOop insert_hole_at(
+    size_t where, int hole_sz, typeArrayOop src) {
+  Thread* THREAD = Thread::current();
+  Handle src_hnd(THREAD, src);
+  typeArrayOop dst =
+      oopFactory::new_permanent_byteArray(src->length() + hole_sz, CHECK_NULL);
+  src = (typeArrayOop)src_hnd();
+
+  address src_addr = (address)src->byte_at_addr(0);
+  address dst_addr = (address)dst->byte_at_addr(0);
+
+  memcpy(dst_addr, src_addr, where);
+  memcpy(dst_addr + where + hole_sz,
+         src_addr + where, src->length() - where);
+  return dst;
+}
+
+// The width of instruction at "bci" is changing by "delta".  Adjust the stack
+// map frames.
+void Relocator::adjust_stack_map_table(int bci, int delta) {
+  if (method()->has_stackmap_table()) {
+    typeArrayOop data = method()->stackmap_data();
+    // The data in the array is a classfile representation of the stackmap
+    // table attribute, less the initial u2 tag and u4 attribute_length fields.
+    stack_map_table_attribute* attr = stack_map_table_attribute::at(
+        (address)data->byte_at_addr(0) - (sizeof(u2) + sizeof(u4)));
+
+    int count = attr->number_of_entries();
+    stack_map_frame* frame = attr->entries();
+    int bci_iter = -1;
+    bool offset_adjusted = false; // only need to adjust one offset
+
+    for (int i = 0; i < count; ++i) {
+      int offset_delta = frame->offset_delta();
+      bci_iter += offset_delta;
+
+      if (!offset_adjusted && bci_iter > bci) {
+        int new_offset_delta = offset_delta + delta;
+
+        if (frame->is_valid_offset(new_offset_delta)) {
+          frame->set_offset_delta(new_offset_delta);
+        } else {
+          assert(frame->is_same_frame() ||
+                 frame->is_same_frame_1_stack_item_frame(),
+                 "Frame must be one of the compressed forms");
+          // The new delta exceeds the capacity of the 'same_frame' or
+          // 'same_frame_1_stack_item_frame' frame types.  We need to
+          // convert these frames to the extended versions, but the extended
+          // version is bigger and requires more room.  So we allocate a
+          // new array and copy the data, being sure to leave u2-sized hole
+          // right after the 'frame_type' for the new offset field.
+          //
+          // We can safely ignore the reverse situation as a small delta
+          // can still be used in an extended version of the frame.
+
+          size_t frame_offset = (address)frame - (address)data->byte_at_addr(0);
+
+          data = insert_hole_at(frame_offset + 1, 2, data);
+          if (data == NULL) {
+            return; // out-of-memory?
+          }
+
+          address frame_addr = (address)(data->byte_at_addr(0) + frame_offset);
+          frame = stack_map_frame::at(frame_addr);
+
+
+          // Now convert the frames in place
+          if (frame->is_same_frame()) {
+            same_frame_extended::create_at(frame_addr, new_offset_delta);
+          } else {
+            same_frame_1_stack_item_extended::create_at(
+              frame_addr, new_offset_delta, NULL);
+            // the verification_info_type should already be at the right spot
+          }
+        }
+        offset_adjusted = true; // needs to be done only once, since subsequent
+                                // values are offsets from the current
+      }
+
+      // The stack map frame may contain verification types, if so we need to
+      // check and update any Uninitialized type's bci (no matter where it is).
+      int number_of_types = frame->number_of_types();
+      verification_type_info* types = frame->types();
+
+      for (int i = 0; i < number_of_types; ++i) {
+        if (types->is_uninitialized() && types->bci() > bci) {
+          types->set_bci(types->bci() + delta);
+        }
+        types = types->next();
+      }
+
+      // Full frame has stack values too
+      full_frame* ff = frame->as_full_frame();
+      if (ff != NULL) {
+        address eol = (address)types;
+        number_of_types = ff->stack_slots(eol);
+        types = ff->stack(eol);
+        for (int i = 0; i < number_of_types; ++i) {
+          if (types->is_uninitialized() && types->bci() > bci) {
+            types->set_bci(types->bci() + delta);
+          }
+          types = types->next();
+        }
+      }
+
+      frame = frame->next();
+    }
+
+    method()->set_stackmap_data(data); // in case it has changed
+  }
+}
+
 
 bool Relocator::expand_code_array(int delta) {
   int length = MAX2(code_length() + delta, code_length() * (100+code_slop_pct()) / 100);
@@ -498,6 +612,9 @@ bool Relocator::relocate_code(int bci, int ilen, int delta) {
   adjust_line_no_table(bci, delta);
   // And local variable table...
   adjust_local_var_table(bci, delta);
+
+  // Adjust stack maps
+  adjust_stack_map_table(bci, delta);
 
   // Relocate the pending change stack...
   for (int j = 0; j < _changes->length(); j++) {
@@ -641,6 +758,7 @@ bool Relocator::handle_switch_pad(int bci, int old_pad, bool is_lookup_switch) {
       memmove(addr_at(bci +1 + new_pad),
               addr_at(bci +1 + old_pad),
               len * 4);
+      memset(addr_at(bci + 1), 0, new_pad); // pad must be 0
     }
   }
   return true;
