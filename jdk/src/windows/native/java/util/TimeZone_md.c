@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "jvm.h"
 #include "TimeZone_md.h"
 
 #define VALUE_UNKNOWN           0
@@ -463,7 +464,7 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
                 /*
                  * Found the time zone in the mapping table.
                  */
-                javaTZName = strdup(items[TZ_JAVA_NAME]);
+                javaTZName = _strdup(items[TZ_JAVA_NAME]);
                 break;
             }
             /*
@@ -473,7 +474,7 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
                 strncpy(bestMatch, items[TZ_JAVA_NAME], MAX_ZONE_CHAR);
             } else if (country != NULL && strcmp(items[TZ_REGION], country) == 0) {
                 if (value_type == VALUE_MAPID) {
-                    javaTZName = strdup(items[TZ_JAVA_NAME]);
+                    javaTZName = _strdup(items[TZ_JAVA_NAME]);
                     break;
                 }
                 strncpy(bestMatch, items[TZ_JAVA_NAME], MAX_ZONE_CHAR);
@@ -490,7 +491,7 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
     fclose(fp);
 
     if (javaTZName == NULL && bestMatch[0] != '\0') {
-        javaTZName = strdup(bestMatch);
+        javaTZName = _strdup(bestMatch);
     }
     return javaTZName;
 
@@ -515,7 +516,7 @@ char *findJavaTZ_md(const char *java_home_dir, const char *country)
 
     if (result != VALUE_UNKNOWN) {
         if (result == VALUE_GMTOFFSET) {
-            std_timezone = strdup(winZoneName);
+            std_timezone = _strdup(winZoneName);
         } else {
             std_timezone = matchJavaTZ(java_home_dir, result,
                                        winZoneName, winMapID, country);

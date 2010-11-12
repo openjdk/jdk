@@ -4118,10 +4118,14 @@ void G1ParEvacuateFollowersClosure::do_void() {
     while (queues()->steal(pss->queue_num(), pss->hash_seed(), stolen_task)) {
       assert(pss->verify_task(stolen_task), "sanity");
       if (stolen_task.is_narrow()) {
-        pss->push_on_queue((narrowOop*) stolen_task);
+        pss->deal_with_reference((narrowOop*) stolen_task);
       } else {
-        pss->push_on_queue((oop*) stolen_task);
+        pss->deal_with_reference((oop*) stolen_task);
       }
+
+      // We've just processed a reference and we might have made
+      // available new entries on the queues. So we have to make sure
+      // we drain the queues as necessary.
       pss->trim_queue();
     }
   } while (!offer_termination());

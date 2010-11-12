@@ -291,6 +291,8 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
+  // Check compressed oops compatibility with other flags
+  static void check_compressed_oops_compat();
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();

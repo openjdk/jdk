@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ protected:
     v9_instructions    = 5,
     vis1_instructions  = 6,
     vis2_instructions  = 7,
-    sun4v_instructions = 8
+    sun4v_instructions = 8,
+    blk_init_instructions = 9,
+    fmaf_instructions  = 10
   };
 
   enum Feature_Flag_Set {
@@ -49,6 +51,8 @@ protected:
     vis1_instructions_m = 1 << vis1_instructions,
     vis2_instructions_m = 1 << vis2_instructions,
     sun4v_m             = 1 << sun4v_instructions,
+    blk_init_instructions_m = 1 << blk_init_instructions,
+    fmaf_instructions_m = 1 << fmaf_instructions,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -67,6 +71,7 @@ protected:
   static int  platform_features(int features);
 
   static bool is_niagara1(int features) { return (features & sun4v_m) != 0; }
+  static bool  is_sparc64(int features) { return (features & fmaf_instructions_m) != 0; }
 
   static int maximum_niagara1_processor_count() { return 32; }
   // Returns true if the platform is in the niagara line and
@@ -86,6 +91,7 @@ public:
   static bool has_hardware_popc()       { return (_features & hardware_popc_m) != 0; }
   static bool has_vis1()                { return (_features & vis1_instructions_m) != 0; }
   static bool has_vis2()                { return (_features & vis2_instructions_m) != 0; }
+  static bool has_blk_init()            { return (_features & blk_init_instructions_m) != 0; }
 
   static bool supports_compare_and_exchange()
                                         { return has_v9(); }
@@ -93,8 +99,10 @@ public:
   static bool is_ultra3()               { return (_features & ultra3_m) == ultra3_m; }
   static bool is_sun4v()                { return (_features & sun4v_m) != 0; }
   static bool is_niagara1()             { return is_niagara1(_features); }
+  static bool is_sparc64()              { return is_sparc64(_features); }
 
   static bool has_fast_fxtof()          { return has_v9() && !is_ultra3(); }
+  static bool has_fast_idiv()           { return is_niagara1_plus() || is_sparc64(); }
 
   static const char* cpu_features()     { return _features_str; }
 

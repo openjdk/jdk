@@ -4187,7 +4187,7 @@ public class Container extends Component {
             return true;
         }
 
-        for (Container cont = getContainer();
+        for (Container cont = this;
                 cont != null && cont.isLightweight();
                 cont = cont.getContainer())
         {

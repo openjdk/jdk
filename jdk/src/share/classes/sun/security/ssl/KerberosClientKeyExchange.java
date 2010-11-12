@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
     }
 
     public KerberosClientKeyExchange() {
+        // empty
     }
 
     public KerberosClientKeyExchange(String serverName, boolean isLoopback,
@@ -93,14 +94,17 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
         }
     }
 
+    @Override
     int messageType() {
         return ht_client_key_exchange;
     }
 
+    @Override
     public int  messageLength() {
         return impl.messageLength();
     }
 
+    @Override
     public void send(HandshakeOutStream s) throws IOException {
         impl.send(s);
     }

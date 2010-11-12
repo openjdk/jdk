@@ -805,7 +805,8 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
-    if (Debugging)  return NULL;  // called from find() in debug.cpp
+    // called from os::print_location by find or VMError
+    if (Debugging || VMError::fatal_error_in_progress())  return NULL;
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),

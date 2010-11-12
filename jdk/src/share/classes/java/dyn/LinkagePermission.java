@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 /**
+ * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
  * This class is for managing runtime permission checking for
  * operations performed by methods in the {@link Linkage} class.
  * Like a {@link RuntimePermission}, on which it is modeled,
@@ -52,13 +53,6 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>registerBootstrapMethod.{class name}</td>
- *   <td>Specifying a bootstrap method for {@code invokedynamic} instructions within a class of the given name</td>
- *   <td>An attacker could attempt to attach a bootstrap method to a class which
- *       has just been loaded, thus gaining control of its {@code invokedynamic} calls.</td>
- * </tr>
- *
- * <tr>
  *   <td>invalidateAll</td>
  *   <td>Force the relinking of invokedynamic call sites everywhere.</td>
  *   <td>This could allow an attacker to slow down the system,
@@ -73,18 +67,21 @@ import java.util.StringTokenizer;
  *   <td>See {@code invalidateAll}.</td>
  * </tr>
  * </table>
+ * <p>ISSUE: Is this still needed?
  *
- * @see java.security.RuntimePermission
+ * @see java.lang.RuntimePermission
  * @see java.lang.SecurityManager
  *
  * @author John Rose, JSR 292 EG
  */
 
 public final class LinkagePermission extends BasicPermission {
+    private static final long serialVersionUID = 292L;
+
     /**
      * Create a new LinkagePermission with the given name.
      * The name is the symbolic name of the LinkagePermission, such as
-     * "registerBootstrapMethod", "invalidateCallerClass.*", etc. An asterisk
+     * "invalidateCallerClass.*", etc. An asterisk
      * may appear at the end of the name, following a ".", or by itself, to
      * signify a wildcard match.
      *

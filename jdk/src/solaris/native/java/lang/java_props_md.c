@@ -46,7 +46,9 @@
 #include "java_props.h"
 
 #ifdef __linux__
-#define CODESET _NL_CTYPE_CODESET_NAME
+  #ifndef CODESET
+  #define CODESET _NL_CTYPE_CODESET_NAME
+  #endif
 #else
 #ifdef ALT_CODESET_KEY
 #define CODESET ALT_CODESET_KEY
@@ -115,7 +117,8 @@ setPathEnvironment(char *envstring)
 #define P_tmpdir "/var/tmp"
 #endif
 
-static int ParseLocale(int cat, char ** std_language, char ** std_country, char ** std_variant, char ** std_encoding) {
+static int ParseLocale(int cat, char ** std_language, char ** std_script,
+                       char ** std_country, char ** std_variant, char ** std_encoding) {
     char temp[64];
     char *language = NULL, *country = NULL, *variant = NULL,
          *encoding = NULL;
@@ -179,14 +182,22 @@ static int ParseLocale(int cat, char ** std_language, char ** std_country, char 
         strcpy(encoding_variant, p); /* Copy the leading '.' */
         *p = '\0';
     } else if ((p = strchr(temp, '@')) != NULL) {
-         strcpy(encoding_variant, p); /* Copy the leading '@' */
-         *p = '\0';
+        strcpy(encoding_variant, p); /* Copy the leading '@' */
+        *p = '\0';
     } else {
         *encoding_variant = '\0';
     }
 
     if (mapLookup(locale_aliases, temp, &p)) {
         strcpy(temp, p);
+        // check the "encoding_variant" again, if any.
+        if ((p = strchr(temp, '.')) != NULL) {
+            strcpy(encoding_variant, p); /* Copy the leading '.' */
+            *p = '\0';
+        } else if ((p = strchr(temp, '@')) != NULL) {
+            strcpy(encoding_variant, p); /* Copy the leading '@' */
+            *p = '\0';
+        }
     }
 
     language = temp;
@@ -217,10 +228,17 @@ static int ParseLocale(int cat, char ** std_language, char ** std_country, char 
         mapLookup(country_names, country, std_country);
     }
 
-    /* Normalize the variant name.  Note that we only use
-     * variants listed in the mapping array; others are ignored. */
-    if (std_variant != NULL && variant != NULL) {
-        mapLookup(variant_names, variant, std_variant);
+    /* Normalize the script and variant name.  Note that we only use
+     * variants listed in the mapping array; others are ignored.
+     */
+    if (variant != NULL) {
+        if (std_script != NULL) {
+            mapLookup(script_names, variant, std_script);
+        }
+
+        if (std_variant != NULL) {
+            mapLookup(variant_names, variant, std_variant);
+        }
     }
 
     /* Normalize the encoding name.  Note that we IGNORE the string
@@ -289,7 +307,7 @@ static int ParseLocale(int cat, char ** std_language, char ** std_country, char 
 java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
-    static java_props_t sprops = {0};
+    static java_props_t sprops;
     char *v; /* tmp var */
 
     if (sprops.user_dir) {
@@ -356,11 +374,13 @@ GetJavaProperties(JNIEnv *env)
     setlocale(LC_ALL, "");
     if (ParseLocale(LC_CTYPE,
                     &(sprops.format_language),
+                    &(sprops.format_script),
                     &(sprops.format_country),
                     &(sprops.format_variant),
                     &(sprops.encoding))) {
         ParseLocale(LC_MESSAGES,
                     &(sprops.language),
+                    &(sprops.script),
                     &(sprops.country),
                     &(sprops.variant),
                     NULL);
@@ -369,6 +389,7 @@ GetJavaProperties(JNIEnv *env)
         sprops.encoding = "ISO8859-1";
     }
     sprops.display_language = sprops.language;
+    sprops.display_script = sprops.script;
     sprops.display_country = sprops.country;
     sprops.display_variant = sprops.variant;
     sprops.sun_jnu_encoding = sprops.encoding;
