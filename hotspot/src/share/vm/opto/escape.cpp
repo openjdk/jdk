@@ -85,6 +85,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
   _nodes(C->comp_arena(), C->unique(), C->unique(), PointsToNode()),
   _processed(C->comp_arena()),
   _collecting(true),
+  _progress(false),
   _compile(C),
   _igvn(igvn),
   _node_map(C->comp_arena()) {
@@ -113,7 +114,7 @@ void ConnectionGraph::add_pointsto_edge(uint from_i, uint to_i) {
   assert(f->node_type() != PointsToNode::UnknownType && t->node_type() != PointsToNode::UnknownType, "node types must be set");
   assert(f->node_type() == PointsToNode::LocalVar || f->node_type() == PointsToNode::Field, "invalid source of PointsTo edge");
   assert(t->node_type() == PointsToNode::JavaObject, "invalid destination of PointsTo edge");
-  f->add_edge(to_i, PointsToNode::PointsToEdge);
+  add_edge(f, to_i, PointsToNode::PointsToEdge);
 }
 
 void ConnectionGraph::add_deferred_edge(uint from_i, uint to_i) {
@@ -126,7 +127,7 @@ void ConnectionGraph::add_deferred_edge(uint from_i, uint to_i) {
   // don't add a self-referential edge, this can occur during removal of
   // deferred edges
   if (from_i != to_i)
-    f->add_edge(to_i, PointsToNode::DeferredEdge);
+    add_edge(f, to_i, PointsToNode::DeferredEdge);
 }
 
 int ConnectionGraph::address_offset(Node* adr, PhaseTransform *phase) {
@@ -157,7 +158,7 @@ void ConnectionGraph::add_field_edge(uint from_i, uint to_i, int offset) {
   assert (t->offset() == -1 || t->offset() == offset, "conflicting field offsets");
   t->set_offset(offset);
 
-  f->add_edge(to_i, PointsToNode::FieldEdge);
+  add_edge(f, to_i, PointsToNode::FieldEdge);
 }
 
 void ConnectionGraph::set_escape_state(uint ni, PointsToNode::EscapeState es) {
@@ -995,7 +996,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
 
-  PhaseGVN  *igvn = _igvn;
+  PhaseIterGVN  *igvn = _igvn;
   uint new_index_start = (uint) _compile->num_alias_types();
   Arena* arena = Thread::current()->resource_area();
   VectorSet visited(arena);
@@ -1531,14 +1532,9 @@ bool ConnectionGraph::compute_escape() {
       has_allocations = true;
     }
     if(n->is_AddP()) {
-      // Collect address nodes which directly reference an allocation.
-      // Use them during stage 3 below to build initial connection graph
-      // field edges. Other field edges could be added after StoreP/LoadP
-      // nodes are processed during stage 4 below.
-      Node* base = get_addp_base(n);
-      if(base->is_Proj() && base->in(0)->is_Allocate()) {
-        cg_worklist.append(n->_idx);
-      }
+      // Collect address nodes. Use them during stage 3 below
+      // to build initial connection graph field edges.
+      cg_worklist.append(n->_idx);
     } else if (n->is_MergeMem()) {
       // Collect all MergeMem nodes to add memory slices for
       // scalar replaceable objects in split_unique_types().
@@ -1562,18 +1558,28 @@ bool ConnectionGraph::compute_escape() {
     build_connection_graph(n, igvn);
   }
 
-  // 3. Pass to create fields edges (Allocate -F-> AddP).
+  // 3. Pass to create initial fields edges (JavaObject -F-> AddP)
+  //    to reduce number of iterations during stage 4 below.
   uint cg_length = cg_worklist.length();
   for( uint next = 0; next < cg_length; ++next ) {
     int ni = cg_worklist.at(next);
-    build_connection_graph(ptnode_adr(ni)->_node, igvn);
+    Node* n = ptnode_adr(ni)->_node;
+    Node* base = get_addp_base(n);
+    if (base->is_Proj())
+      base = base->in(0);
+    PointsToNode::NodeType nt = ptnode_adr(base->_idx)->node_type();
+    if (nt == PointsToNode::JavaObject) {
+      build_connection_graph(n, igvn);
+    }
   }
 
   cg_worklist.clear();
   cg_worklist.append(_phantom_object);
+  GrowableArray<uint>  worklist;
 
   // 4. Build Connection Graph which need
   //    to walk the connection graph.
+  _progress = false;
   for (uint ni = 0; ni < nodes_size(); ni++) {
     PointsToNode* ptn = ptnode_adr(ni);
     Node *n = ptn->_node;
@@ -1581,13 +1587,52 @@ bool ConnectionGraph::compute_escape() {
       build_connection_graph(n, igvn);
       if (ptn->node_type() != PointsToNode::UnknownType)
         cg_worklist.append(n->_idx); // Collect CG nodes
+      if (!_processed.test(n->_idx))
+        worklist.append(n->_idx); // Collect C/A/L/S nodes
     }
   }
 
+  // After IGVN user nodes may have smaller _idx than
+  // their inputs so they will be processed first in
+  // previous loop. Because of that not all Graph
+  // edges will be created. Walk over interesting
+  // nodes again until no new edges are created.
+  //
+  // Normally only 1-3 passes needed to build
+  // Connection Graph depending on graph complexity.
+  // Set limit to 10 to catch situation when something
+  // did go wrong and recompile the method without EA.
+
+#define CG_BUILD_ITER_LIMIT 10
+
+  uint length = worklist.length();
+  int iterations = 0;
+  while(_progress && (iterations++ < CG_BUILD_ITER_LIMIT)) {
+    _progress = false;
+    for( uint next = 0; next < length; ++next ) {
+      int ni = worklist.at(next);
+      PointsToNode* ptn = ptnode_adr(ni);
+      Node* n = ptn->_node;
+      assert(n != NULL, "should be known node");
+      build_connection_graph(n, igvn);
+    }
+  }
+  if (iterations >= CG_BUILD_ITER_LIMIT) {
+    assert(iterations < CG_BUILD_ITER_LIMIT,
+           err_msg("infinite EA connection graph build with %d nodes and worklist size %d",
+           nodes_size(), length));
+    // Possible infinite build_connection_graph loop,
+    // retry compilation without escape analysis.
+    C->record_failure(C2Compiler::retry_no_escape_analysis());
+    _collecting = false;
+    return false;
+  }
+#undef CG_BUILD_ITER_LIMIT
+
   Arena* arena = Thread::current()->resource_area();
   VectorSet ptset(arena);
-  GrowableArray<uint>  deferred_edges;
   VectorSet visited(arena);
+  worklist.clear();
 
   // 5. Remove deferred edges from the graph and adjust
   //    escape state of nonescaping objects.
@@ -1597,7 +1642,7 @@ bool ConnectionGraph::compute_escape() {
     PointsToNode* ptn = ptnode_adr(ni);
     PointsToNode::NodeType nt = ptn->node_type();
     if (nt == PointsToNode::LocalVar || nt == PointsToNode::Field) {
-      remove_deferred(ni, &deferred_edges, &visited);
+      remove_deferred(ni, &worklist, &visited);
       Node *n = ptn->_node;
       if (n->is_AddP()) {
         // Search for objects which are not scalar replaceable
@@ -1608,7 +1653,7 @@ bool ConnectionGraph::compute_escape() {
   }
 
   // 6. Propagate escape states.
-  GrowableArray<int>  worklist;
+  worklist.clear();
   bool has_non_escaping_obj = false;
 
   // push all GlobalEscape nodes on the worklist
@@ -2444,13 +2489,14 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
 
   // Don't set processed bit for AddP, LoadP, StoreP since
   // they may need more then one pass to process.
+  // Also don't mark as processed Call nodes since their
+  // arguments may need more then one pass to process.
   if (_processed.test(n_idx))
     return; // No need to redefine node's state.
 
   if (n->is_Call()) {
     CallNode *call = n->as_Call();
     process_call_arguments(call, phase);
-    _processed.set(n_idx);
     return;
   }
 
