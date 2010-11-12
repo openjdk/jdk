@@ -104,7 +104,3 @@ inline void ObjectMonitor::set_owner(void* owner) {
   _count = 0;
 }
 
-
-// here are the platform-dependent bodies:
-
-# include "incls/_objectMonitor_pd.inline.hpp.incl"

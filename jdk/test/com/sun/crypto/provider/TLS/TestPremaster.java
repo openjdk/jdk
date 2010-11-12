@@ -60,7 +60,8 @@ public class TestPremaster {
         System.out.println("Done.");
     }
 
-    private static void test(KeyGenerator kg, int major, int minor) throws Exception {
+    private static void test(KeyGenerator kg, int major, int minor)
+            throws Exception {
 
         kg.init(new TlsRsaPremasterSecretParameterSpec(major, minor));
         SecretKey key = kg.generateKey();
@@ -69,7 +70,8 @@ public class TestPremaster {
             throw new Exception("length: " + encoded.length);
         }
         if ((encoded[0] != major) || (encoded[1] != minor)) {
-            throw new Exception("version mismatch: "  + encoded[0] + "." + encoded[1]);
+            throw new Exception("version mismatch: "  + encoded[0] +
+                "." + encoded[1]);
         }
         System.out.println("OK: " + major + "." + minor);
     }

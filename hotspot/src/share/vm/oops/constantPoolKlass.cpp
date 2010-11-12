@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS
   c->set_length(length);
   c->set_tags(NULL);
   c->set_cache(NULL);
+  c->set_operands(NULL);
   c->set_pool_holder(NULL);
   c->set_flags(0);
   // only set to non-zero if constant pool is merged by RedefineClasses
@@ -92,6 +93,7 @@ void constantPoolKlass::oop_follow_contents(oop obj) {
     // gc of constant pool instance variables
     MarkSweep::mark_and_push(cp->tags_addr());
     MarkSweep::mark_and_push(cp->cache_addr());
+    MarkSweep::mark_and_push(cp->operands_addr());
     MarkSweep::mark_and_push(cp->pool_holder_addr());
   }
 }
@@ -118,6 +120,7 @@ void constantPoolKlass::oop_follow_contents(ParCompactionManager* cm,
     // gc of constant pool instance variables
     PSParallelCompact::mark_and_push(cm, cp->tags_addr());
     PSParallelCompact::mark_and_push(cm, cp->cache_addr());
+    PSParallelCompact::mark_and_push(cm, cp->operands_addr());
     PSParallelCompact::mark_and_push(cm, cp->pool_holder_addr());
   }
 }
@@ -146,6 +149,7 @@ int constantPoolKlass::oop_adjust_pointers(oop obj) {
   }
   MarkSweep::adjust_pointer(cp->tags_addr());
   MarkSweep::adjust_pointer(cp->cache_addr());
+  MarkSweep::adjust_pointer(cp->operands_addr());
   MarkSweep::adjust_pointer(cp->pool_holder_addr());
   return size;
 }
@@ -173,6 +177,7 @@ int constantPoolKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   }
   blk->do_oop(cp->tags_addr());
   blk->do_oop(cp->cache_addr());
+  blk->do_oop(cp->operands_addr());
   blk->do_oop(cp->pool_holder_addr());
   return size;
 }
@@ -205,6 +210,8 @@ int constantPoolKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr)
   blk->do_oop(addr);
   addr = cp->cache_addr();
   blk->do_oop(addr);
+  addr = cp->operands_addr();
+  blk->do_oop(addr);
   addr = cp->pool_holder_addr();
   blk->do_oop(addr);
   return size;
@@ -232,6 +239,7 @@ int constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   }
   PSParallelCompact::adjust_pointer(cp->tags_addr());
   PSParallelCompact::adjust_pointer(cp->cache_addr());
+  PSParallelCompact::adjust_pointer(cp->operands_addr());
   PSParallelCompact::adjust_pointer(cp->pool_holder_addr());
   return cp->object_size();
 }
@@ -261,6 +269,8 @@ constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
   p = cp->tags_addr();
   PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
   p = cp->cache_addr();
+  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
+  p = cp->operands_addr();
   PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
   p = cp->pool_holder_addr();
   PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
@@ -363,8 +373,18 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
         st->print("signature_index=%d", cp->method_type_index_at(index));
         break;
       case JVM_CONSTANT_InvokeDynamic :
-        st->print("bootstrap_method_index=%d", cp->invoke_dynamic_bootstrap_method_ref_index_at(index));
-        st->print(" name_and_type_index=%d", cp->invoke_dynamic_name_and_type_ref_index_at(index));
+        {
+          st->print("bootstrap_method_index=%d", cp->invoke_dynamic_bootstrap_method_ref_index_at(index));
+          st->print(" name_and_type_index=%d", cp->invoke_dynamic_name_and_type_ref_index_at(index));
+          int argc = cp->invoke_dynamic_argument_count_at(index);
+          if (argc > 0) {
+            for (int arg_i = 0; arg_i < argc; arg_i++) {
+              int arg = cp->invoke_dynamic_argument_index_at(index, arg_i);
+              st->print((arg_i == 0 ? " arguments={%d" : ", %d"), arg);
+            }
+            st->print("}");
+          }
+        }
         break;
       default:
         ShouldNotReachHere();
@@ -381,6 +401,7 @@ void constantPoolKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("constant pool [%d]", cp->length());
   if (cp->has_pseudo_string()) st->print("/pseudo_string");
   if (cp->has_invokedynamic()) st->print("/invokedynamic");
+  if (cp->operands() != NULL)  st->print("/operands[%d]", cp->operands()->length());
   cp->print_address_on(st);
   st->print(" for ");
   cp->pool_holder()->print_value_on(st);
@@ -439,6 +460,10 @@ void constantPoolKlass::oop_verify_on(oop obj, outputStream* st) {
       // in temporary constant pools used during constant pool merging
       guarantee(cp->cache()->is_perm(),              "should be in permspace");
       guarantee(cp->cache()->is_constantPoolCache(), "should be constant pool cache");
+    }
+    if (cp->operands() != NULL) {
+      guarantee(cp->operands()->is_perm(),  "should be in permspace");
+      guarantee(cp->operands()->is_typeArray(), "should be type array");
     }
     if (cp->pool_holder() != NULL) {
       // Note: pool_holder() can be NULL in temporary constant pools

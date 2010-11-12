@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,15 @@ import sun.security.internal.spec.TlsPrfParameterSpec;
 
 /**
  * KeyGenerator implementation for the TLS PRF function.
+ * <p>
+ * This class duplicates the HMAC functionality (RFC 2104) with
+ * performance optimizations (e.g. XOR'ing keys with padding doesn't
+ * need to be redone for each HMAC operation).
  *
  * @author  Andreas Sterbenz
  * @since   1.6
  */
-public final class TlsPrfGenerator extends KeyGeneratorSpi {
+abstract class TlsPrfGenerator extends KeyGeneratorSpi {
 
     // magic constants and utility functions, also used by other files
     // in this package
@@ -69,8 +73,10 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
      * TLS HMAC "inner" and "outer" padding.  This isn't a function
      * of the digest algorithm.
      */
-    private static final byte[] HMAC_ipad = genPad((byte)0x36, 64);
-    private static final byte[] HMAC_opad = genPad((byte)0x5c, 64);
+    private static final byte[] HMAC_ipad64  = genPad((byte)0x36, 64);
+    private static final byte[] HMAC_ipad128 = genPad((byte)0x36, 128);
+    private static final byte[] HMAC_opad64  = genPad((byte)0x5c, 64);
+    private static final byte[] HMAC_opad128 = genPad((byte)0x5c, 128);
 
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
     final static byte[][] SSL3_CONST = genConst();
@@ -123,8 +129,8 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
         this.spec = (TlsPrfParameterSpec)params;
         SecretKey key = spec.getSecret();
         if ((key != null) && ("RAW".equals(key.getFormat()) == false)) {
-            throw new InvalidAlgorithmParameterException
-                ("Key encoding format must be RAW");
+            throw new InvalidAlgorithmParameterException(
+                "Key encoding format must be RAW");
         }
     }
 
@@ -132,17 +138,21 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
-    protected SecretKey engineGenerateKey() {
+    SecretKey engineGenerateKey0(boolean tls12) {
         if (spec == null) {
-            throw new IllegalStateException
-                ("TlsPrfGenerator must be initialized");
+            throw new IllegalStateException(
+                "TlsPrfGenerator must be initialized");
         }
         SecretKey key = spec.getSecret();
         byte[] secret = (key == null) ? null : key.getEncoded();
         try {
             byte[] labelBytes = spec.getLabel().getBytes("UTF8");
             int n = spec.getOutputLength();
-            byte[] prfBytes = doPRF(secret, labelBytes, spec.getSeed(), n);
+            byte[] prfBytes = (tls12 ?
+                doTLS12PRF(secret, labelBytes, spec.getSeed(), n,
+                    spec.getPRFHashAlg(), spec.getPRFHashLength(),
+                    spec.getPRFBlockSize()) :
+                doTLS10PRF(secret, labelBytes, spec.getSeed(), n));
             return new SecretKeySpec(prfBytes, "TlsPrf");
         } catch (GeneralSecurityException e) {
             throw new ProviderException("Could not generate PRF", e);
@@ -151,16 +161,67 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
         }
     }
 
-    static final byte[] doPRF(byte[] secret, byte[] labelBytes, byte[] seed,
-            int outputLength) throws NoSuchAlgorithmException, DigestException {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        MessageDigest sha = MessageDigest.getInstance("SHA1");
-        return doPRF(secret, labelBytes, seed, outputLength, md5, sha);
+    static byte[] doTLS12PRF(byte[] secret, byte[] labelBytes,
+            byte[] seed, int outputLength,
+            String prfHash, int prfHashLength, int prfBlockSize)
+            throws NoSuchAlgorithmException, DigestException {
+        if (prfHash == null) {
+            throw new NoSuchAlgorithmException("Unspecified PRF algorithm");
+        }
+        MessageDigest prfMD = MessageDigest.getInstance(prfHash);
+        return doTLS12PRF(secret, labelBytes, seed, outputLength,
+            prfMD, prfHashLength, prfBlockSize);
     }
 
-    static final byte[] doPRF(byte[] secret, byte[] labelBytes, byte[] seed,
-            int outputLength, MessageDigest md5, MessageDigest sha)
+    static byte[] doTLS12PRF(byte[] secret, byte[] labelBytes,
+            byte[] seed, int outputLength,
+            MessageDigest mdPRF, int mdPRFLen, int mdPRFBlockSize)
             throws DigestException {
+
+        if (secret == null) {
+            secret = B0;
+        }
+
+        // If we have a long secret, digest it first.
+        if (secret.length > mdPRFBlockSize) {
+            secret = mdPRF.digest(secret);
+        }
+
+        byte[] output = new byte[outputLength];
+        byte [] ipad;
+        byte [] opad;
+
+        switch (mdPRFBlockSize) {
+        case 64:
+            ipad = HMAC_ipad64.clone();
+            opad = HMAC_opad64.clone();
+            break;
+        case 128:
+            ipad = HMAC_ipad128.clone();
+            opad = HMAC_opad128.clone();
+            break;
+        default:
+            throw new DigestException("Unexpected block size.");
+        }
+
+        // P_HASH(Secret, label + seed)
+        expand(mdPRF, mdPRFLen, secret, 0, secret.length, labelBytes,
+            seed, output, ipad, opad);
+
+        return output;
+    }
+
+    static byte[] doTLS10PRF(byte[] secret, byte[] labelBytes,
+            byte[] seed, int outputLength) throws NoSuchAlgorithmException,
+            DigestException {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        MessageDigest sha = MessageDigest.getInstance("SHA1");
+        return doTLS10PRF(secret, labelBytes, seed, outputLength, md5, sha);
+    }
+
+    static byte[] doTLS10PRF(byte[] secret, byte[] labelBytes,
+            byte[] seed, int outputLength, MessageDigest md5,
+            MessageDigest sha) throws DigestException {
         /*
          * Split the secret into two halves S1 and S2 of same length.
          * S1 is taken from the first half of the secret, S2 from the
@@ -183,10 +244,12 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
         byte[] output = new byte[outputLength];
 
         // P_MD5(S1, label + seed)
-        expand(md5, 16, secret, 0, seclen, labelBytes, seed, output);
+        expand(md5, 16, secret, 0, seclen, labelBytes, seed, output,
+            HMAC_ipad64.clone(), HMAC_opad64.clone());
 
         // P_SHA-1(S2, label + seed)
-        expand(sha, 20, secret, off, seclen, labelBytes, seed, output);
+        expand(sha, 20, secret, off, seclen, labelBytes, seed, output,
+            HMAC_ipad64.clone(), HMAC_opad64.clone());
 
         return output;
     }
@@ -201,16 +264,13 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
      * @param seed the seed
      * @param output the output array
      */
-    private static final void expand(MessageDigest digest, int hmacSize,
+    private static void expand(MessageDigest digest, int hmacSize,
             byte[] secret, int secOff, int secLen, byte[] label, byte[] seed,
-            byte[] output) throws DigestException {
+            byte[] output, byte[] pad1, byte[] pad2) throws DigestException {
         /*
          * modify the padding used, by XORing the key into our copy of that
          * padding.  That's to avoid doing that for each HMAC computation.
          */
-        byte[] pad1 = HMAC_ipad.clone();
-        byte[] pad2 = HMAC_opad.clone();
-
         for (int i = 0; i < secLen; i++) {
             pad1[i] ^= secret[i + secOff];
             pad2[i] ^= secret[i + secOff];
@@ -275,7 +335,34 @@ public final class TlsPrfGenerator extends KeyGeneratorSpi {
             }
             remaining -= k;
         }
-
     }
 
+    /**
+     * A KeyGenerator implementation that supports TLS 1.2.
+     * <p>
+     * TLS 1.2 uses a different hash algorithm than 1.0/1.1 for the PRF
+     * calculations.  As of 2010, there is no PKCS11-level support for TLS
+     * 1.2 PRF calculations, and no known OS's have an internal variant
+     * we could use.  Therefore for TLS 1.2, we are updating JSSE to request
+     * a different provider algorithm:  "SunTls12Prf".  If we reused the
+     * name "SunTlsPrf", the PKCS11 provider would need be updated to
+     * fail correctly when presented with the wrong version number
+     * (via Provider.Service.supportsParameters()), and add the
+     * appropriate supportsParamters() checks into KeyGenerators (not
+     * currently there).
+     */
+    static public class V12 extends TlsPrfGenerator {
+        protected SecretKey engineGenerateKey() {
+            return engineGenerateKey0(true);
+        }
+    }
+
+    /**
+     * A KeyGenerator implementation that supports TLS 1.0/1.1.
+     */
+    static public class V10 extends TlsPrfGenerator {
+        protected SecretKey engineGenerateKey() {
+            return engineGenerateKey0(false);
+        }
+    }
 }
