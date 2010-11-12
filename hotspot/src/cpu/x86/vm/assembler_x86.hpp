@@ -1011,6 +1011,7 @@ private:
   void hlt();
 
   void idivl(Register src);
+  void divl(Register src); // Unsigned division
 
   void idivq(Register src);
 

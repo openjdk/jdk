@@ -25,6 +25,8 @@
  * @test
  * @bug 4750141 4895631
  * @summary Check enabled and supported ciphersuites are correct
+ * @ignore JSSE supported cipher suites are changed with CR 6916074,
+ *     need to update this test case in JDK 7 soon
  */
 
 import java.util.*;

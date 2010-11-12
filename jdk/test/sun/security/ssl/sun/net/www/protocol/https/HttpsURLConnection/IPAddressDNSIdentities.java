@@ -713,12 +713,15 @@ public class IPAddressDNSIdentities {
             http = (HttpsURLConnection)url.openConnection();
 
             int respCode = http.getResponseCode();
-            System.out.println("respCode = "+respCode);
+            System.out.println("respCode = " + respCode);
 
             throw new Exception("Unexpectly found subject alternative name " +
                                 "matching IP address");
         } catch (SSLHandshakeException sslhe) {
             // no subject alternative names matching IP address 127.0.0.1 found
+            // that's the expected exception, ignore it.
+        } catch (IOException ioe) {
+            // HttpsClient may throw IOE during checking URL spoofing,
             // that's the expected exception, ignore it.
         } finally {
             if (http != null) {

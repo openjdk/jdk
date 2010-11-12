@@ -499,7 +499,7 @@ void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
   Register new_val_reg = new_val()->as_register();
   __ cmpptr(new_val_reg, (int32_t) NULL_WORD);
   __ jcc(Assembler::equal, _continuation);
-  ce->store_parameter(addr()->as_register(), 0);
+  ce->store_parameter(addr()->as_pointer_register(), 0);
   __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::g1_post_barrier_slow_id)));
   __ jmp(_continuation);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,10 @@ final class HttpsClient extends HttpClient
 
     // HTTPS uses a different default port number than HTTP.
     private static final int    httpsPortNumber = 443;
+
+    // default HostnameVerifier class canonical name
+    private static final String defaultHVCanonicalName =
+            "javax.net.ssl.HttpsURLConnection.DefaultHostnameVerifier";
 
     /** Returns the default HTTPS port (443) */
     @Override
@@ -427,13 +431,93 @@ final class HttpsClient extends HttpClient
             }
             s.addHandshakeCompletedListener(this);
 
-            // if the HostnameVerifier is not set, try to enable endpoint
-            // identification during handshaking
-            boolean enabledIdentification = false;
-            if (hv instanceof DefaultHostnameVerifier &&
-                (s instanceof SSLSocketImpl) &&
-                ((SSLSocketImpl)s).trySetHostnameVerification("HTTPS")) {
-                enabledIdentification = true;
+            // We have two hostname verification approaches. One is in
+            // SSL/TLS socket layer, where the algorithm is configured with
+            // SSLParameters.setEndpointIdentificationAlgorithm(), and the
+            // hostname verification is done by X509ExtendedTrustManager when
+            // the algorithm is "HTTPS". The other one is in HTTPS layer,
+            // where the algorithm is customized by
+            // HttpsURLConnection.setHostnameVerifier(), and the hostname
+            // verification is done by HostnameVerifier when the default
+            // rules for hostname verification fail.
+            //
+            // The relationship between two hostname verification approaches
+            // likes the following:
+            //
+            //               |             EIA algorithm
+            //               +----------------------------------------------
+            //               |     null      |   HTTPS    |   LDAP/other   |
+            // -------------------------------------------------------------
+            //     |         |1              |2           |3               |
+            // HNV | default | Set HTTPS EIA | use EIA    | HTTPS          |
+            //     |--------------------------------------------------------
+            //     | non -   |4              |5           |6               |
+            //     | default | HTTPS/HNV     | use EIA    | HTTPS/HNV      |
+            // -------------------------------------------------------------
+            //
+            // Abbreviation:
+            //     EIA: the endpoint identification algorithm in SSL/TLS
+            //           socket layer
+            //     HNV: the hostname verification object in HTTPS layer
+            // Notes:
+            //     case 1. default HNV and EIA is null
+            //           Set EIA as HTTPS, hostname check done in SSL/TLS
+            //           layer.
+            //     case 2. default HNV and EIA is HTTPS
+            //           Use existing EIA, hostname check done in SSL/TLS
+            //           layer.
+            //     case 3. default HNV and EIA is other than HTTPS
+            //           Use existing EIA, EIA check done in SSL/TLS
+            //           layer, then do HTTPS check in HTTPS layer.
+            //     case 4. non-default HNV and EIA is null
+            //           No EIA, no EIA check done in SSL/TLS layer, then do
+            //           HTTPS check in HTTPS layer using HNV as override.
+            //     case 5. non-default HNV and EIA is HTTPS
+            //           Use existing EIA, hostname check done in SSL/TLS
+            //           layer. No HNV override possible. We will review this
+            //           decision and may update the architecture for JDK 7.
+            //     case 6. non-default HNV and EIA is other than HTTPS
+            //           Use existing EIA, EIA check done in SSL/TLS layer,
+            //           then do HTTPS check in HTTPS layer as override.
+            boolean needToCheckSpoofing = true;
+            String identification =
+                s.getSSLParameters().getEndpointIdentificationAlgorithm();
+            if (identification != null && identification.length() != 0) {
+                if (identification.equalsIgnoreCase("HTTPS")) {
+                    // Do not check server identity again out of SSLSocket,
+                    // the endpoint will be identified during TLS handshaking
+                    // in SSLSocket.
+                    needToCheckSpoofing = false;
+                }   // else, we don't understand the identification algorithm,
+                    // need to check URL spoofing here.
+            } else {
+                boolean isDefaultHostnameVerifier = false;
+
+                // We prefer to let the SSLSocket do the spoof checks, but if
+                // the application has specified a HostnameVerifier (HNV),
+                // we will always use that.
+                if (hv != null) {
+                    String canonicalName = hv.getClass().getCanonicalName();
+                    if (canonicalName != null &&
+                    canonicalName.equalsIgnoreCase(defaultHVCanonicalName)) {
+                        isDefaultHostnameVerifier = true;
+                    }
+                } else {
+                    // Unlikely to happen! As the behavior is the same as the
+                    // default hostname verifier, so we prefer to let the
+                    // SSLSocket do the spoof checks.
+                    isDefaultHostnameVerifier = true;
+                }
+
+                if (isDefaultHostnameVerifier) {
+                    // If the HNV is the default from HttpsURLConnection, we
+                    // will do the spoof checks in SSLSocket.
+                    SSLParameters paramaters = s.getSSLParameters();
+                    paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    s.setSSLParameters(paramaters);
+
+                    needToCheckSpoofing = false;
+                }
             }
 
             s.startHandshake();
@@ -449,7 +533,7 @@ final class HttpsClient extends HttpClient
             }
 
             // check URL spoofing if it has not been checked under handshaking
-            if (!enabledIdentification) {
+            if (needToCheckSpoofing) {
                 checkURLSpoofing(hv);
             }
         } else {
@@ -463,8 +547,7 @@ final class HttpsClient extends HttpClient
     // Server identity checking is done according to RFC 2818: HTTP over TLS
     // Section 3.1 Server Identity
     private void checkURLSpoofing(HostnameVerifier hostnameVerifier)
-            throws IOException
-    {
+            throws IOException {
         //
         // Get authenticated server name, if any
         //

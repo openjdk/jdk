@@ -496,6 +496,7 @@ public:
   static Handle    find_bootstrap_method(methodHandle caller_method,
                                          int caller_bci,  // N.B. must be an invokedynamic
                                          int cache_index, // must be corresponding main_entry
+                                         Handle &argument_info_result, // static BSM arguments, if any
                                          TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints

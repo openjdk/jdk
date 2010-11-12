@@ -24,7 +24,6 @@
 /* @test
  * @bug 4462336 6799037
  * @summary Simple MappedByteBuffer tests
- * @run main/othervm Basic
  */
 
 import java.io.*;
@@ -76,5 +75,10 @@ public class Basic {
             throw new RuntimeException("Incorrect isReadOnly");
         fc.close();
         raf.close();
+
+        // clean-up
+        mbb = null;
+        System.gc();
+        Thread.sleep(500);
     }
 }

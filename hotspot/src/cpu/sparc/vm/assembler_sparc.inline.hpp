@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,11 @@ inline void Assembler::ld(  Register s1, RegisterOrConstant s2, Register d) { ld
 inline void Assembler::ldd( Register s1, RegisterOrConstant s2, Register d) { ldd( Address(s1, s2), d); }
 
 // form effective addresses this way:
+inline void Assembler::add(const Address& a, Register d, int offset) {
+  if (a.has_index())   add(a.base(), a.index(),         d);
+  else               { add(a.base(), a.disp() + offset, d, a.rspec(offset)); offset = 0; }
+  if (offset != 0)     add(d,        offset,            d);
+}
 inline void Assembler::add(Register s1, RegisterOrConstant s2, Register d, int offset) {
   if (s2.is_register())  add(s1, s2.as_register(),          d);
   else                 { add(s1, s2.as_constant() + offset, d); offset = 0; }

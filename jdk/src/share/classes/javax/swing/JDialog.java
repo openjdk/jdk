@@ -303,10 +303,9 @@ public class JDialog extends Dialog implements WindowConstants,
      * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If {@code true}, the modality type property is set to
      *     {@code DEFAULT_MODALITY_TYPE}, otherwise the dialog is modeless.
-     * @param gc the {@code GraphicsConfiguration}
-     *     of the target screen device.  If {@code gc} is
-     *     {@code null}, the same
-     *     {@code GraphicsConfiguration} as the owning Frame is used.
+     * @param gc the {@code GraphicsConfiguration} of the target screen device;
+     *     if {@code null}, the default system {@code GraphicsConfiguration}
+     *     is assumed
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *     returns {@code true}.
      * @see java.awt.Dialog.ModalityType
@@ -441,10 +440,9 @@ public class JDialog extends Dialog implements WindowConstants,
      * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If {@code true}, the modality type property is set to
      *     {@code DEFAULT_MODALITY_TYPE}, otherwise the dialog is modeless
-     * @param gc the {@code GraphicsConfiguration}
-     *     of the target screen device.  If {@code gc} is
-     *     {@code null}, the same
-     *     {@code GraphicsConfiguration} as the owning Dialog is used.
+     * @param gc the {@code GraphicsConfiguration} of the target screen device;
+     *     if {@code null}, the default system {@code GraphicsConfiguration}
+     *     is assumed
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *     returns {@code true}.
      * @see java.awt.Dialog.ModalityType
@@ -612,10 +610,8 @@ public class JDialog extends Dialog implements WindowConstants,
      *     windows when shown. {@code null} value and unsupported modality
      *     types are equivalent to {@code MODELESS}
      * @param gc the {@code GraphicsConfiguration} of the target screen device;
-     *     if {@code null}, the {@code GraphicsConfiguration} from the owning
-     *     window is used; if {@code owner} is also {@code null}, the
-     *     system default {@code GraphicsConfiguration} is assumed
-     *
+     *     if {@code null}, the default system {@code GraphicsConfiguration}
+     *     is assumed
      * @throws IllegalArgumentException
      *     if the {@code owner} is not an instance of {@link java.awt.Dialog Dialog}
      *     or {@link java.awt.Frame Frame}
