@@ -222,8 +222,10 @@ public class Vector<E>
      * @param minCapacity the desired minimum capacity
      */
     public synchronized void ensureCapacity(int minCapacity) {
-        modCount++;
-        ensureCapacityHelper(minCapacity);
+        if (minCapacity > 0) {
+            modCount++;
+            ensureCapacityHelper(minCapacity);
+        }
     }
 
     /**

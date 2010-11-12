@@ -25,26 +25,6 @@
 # include "incls/_precompiled.incl"
 # include "incls/_jvmtiImpl.cpp.incl"
 
-GrowableArray<JvmtiRawMonitor*> *JvmtiPendingMonitors::_monitors = new (ResourceObj::C_HEAP) GrowableArray<JvmtiRawMonitor*>(1,true);
-
-void JvmtiPendingMonitors::transition_raw_monitors() {
-  assert((Threads::number_of_threads()==1),
-         "Java thread has not created yet or more than one java thread \
-is running. Raw monitor transition will not work");
-  JavaThread *current_java_thread = JavaThread::current();
-  assert(current_java_thread->thread_state() == _thread_in_vm, "Must be in vm");
-  {
-    ThreadBlockInVM __tbivm(current_java_thread);
-    for(int i=0; i< count(); i++) {
-      JvmtiRawMonitor *rmonitor = monitors()->at(i);
-      int r = rmonitor->raw_enter(current_java_thread);
-      assert(r == ObjectMonitor::OM_OK, "raw_enter should have worked");
-    }
-  }
-  // pending monitors are converted to real monitor so delete them all.
-  dispose();
-}
-
 //
 // class JvmtiAgentThread
 //
@@ -215,57 +195,6 @@ void GrowableCache::gc_epilogue() {
     _cache[i] = _elements->at(i)->getCacheValue();
   }
 }
-
-
-//
-// class JvmtiRawMonitor
-//
-
-JvmtiRawMonitor::JvmtiRawMonitor(const char *name) {
-#ifdef ASSERT
-  _name = strcpy(NEW_C_HEAP_ARRAY(char, strlen(name) + 1), name);
-#else
-  _name = NULL;
-#endif
-  _magic = JVMTI_RM_MAGIC;
-}
-
-JvmtiRawMonitor::~JvmtiRawMonitor() {
-#ifdef ASSERT
-  FreeHeap(_name);
-#endif
-  _magic = 0;
-}
-
-
-bool
-JvmtiRawMonitor::is_valid() {
-  int value = 0;
-
-  // This object might not be a JvmtiRawMonitor so we can't assume
-  // the _magic field is properly aligned. Get the value in a safe
-  // way and then check against JVMTI_RM_MAGIC.
-
-  switch (sizeof(_magic)) {
-  case 2:
-    value = Bytes::get_native_u2((address)&_magic);
-    break;
-
-  case 4:
-    value = Bytes::get_native_u4((address)&_magic);
-    break;
-
-  case 8:
-    value = Bytes::get_native_u8((address)&_magic);
-    break;
-
-  default:
-    guarantee(false, "_magic field is an unexpected size");
-  }
-
-  return value == JVMTI_RM_MAGIC;
-}
-
 
 //
 // class JvmtiBreakpoint
@@ -799,8 +728,7 @@ void VM_GetOrSetLocal::doit() {
 
       // Schedule deoptimization so that eventually the local
       // update will be written to an interpreter frame.
-      VM_DeoptimizeFrame deopt(_jvf->thread(), _jvf->fr().id());
-      VMThread::execute(&deopt);
+      Deoptimization::deoptimize_frame(_jvf->thread(), _jvf->fr().id());
 
       // Now store a new value for the local which will be applied
       // once deoptimization occurs. Note however that while this

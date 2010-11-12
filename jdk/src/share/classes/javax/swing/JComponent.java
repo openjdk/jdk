@@ -4783,21 +4783,11 @@ public abstract class JComponent extends Container implements Serializable,
      * @param y  the y value of the dirty region
      * @param width  the width of the dirty region
      * @param height  the height of the dirty region
+     * @see #isPaintingOrigin()
      * @see java.awt.Component#isShowing
      * @see RepaintManager#addDirtyRegion
      */
     public void repaint(long tm, int x, int y, int width, int height) {
-        Container p = this;
-        while ((p = p.getParent()) instanceof JComponent) {
-            JComponent jp = (JComponent) p;
-            if (jp.isPaintingOrigin()) {
-                Rectangle rectangle = SwingUtilities.convertRectangle(
-                        this, new Rectangle(x, y, width, height), jp);
-                jp.repaint(tm,
-                        rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-                return;
-            }
-        }
         RepaintManager.currentManager(this).addDirtyRegion(this, x, y, width, height);
     }
 
@@ -4808,6 +4798,7 @@ public abstract class JComponent extends Container implements Serializable,
      * currently pending events have been dispatched.
      *
      * @param  r a <code>Rectangle</code> containing the dirty region
+     * @see #isPaintingOrigin()
      * @see java.awt.Component#isShowing
      * @see RepaintManager#addDirtyRegion
      */
@@ -4912,13 +4903,19 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * Returns true if a paint triggered on a child component should cause
+     * Returns {@code true} if a paint triggered on a child component should cause
      * painting to originate from this Component, or one of its ancestors.
+     * <p/>
+     * Calling {@link JComponent#repaint} on a Swing component will be delegated to
+     * the first ancestor which {@code isPaintingOrigin()} returns {@true},
+     * if there are any.
+     * <p/>
+     * {@code JComponent} subclasses that need to be repainted when any of their
+     * children are repainted should override this method to return {@code true}.
      *
-     * @return true if painting should originate from this Component or
-     *         one of its ancestors.
+     * @return always returns {@code false}
      */
-    boolean isPaintingOrigin() {
+    protected boolean isPaintingOrigin() {
         return false;
     }
 

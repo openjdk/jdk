@@ -1651,48 +1651,16 @@ public:
   size_t alloc_buffer_waste() const              { return _alloc_buffer_waste; }
   size_t undo_waste() const                      { return _undo_waste; }
 
-  template <class T> void push_on_queue(T* ref) {
-    assert(ref != NULL, "invariant");
-    assert(has_partial_array_mask(ref) ||
-           _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(ref)), "invariant");
 #ifdef ASSERT
-    if (has_partial_array_mask(ref)) {
-      oop p = clear_partial_array_mask(ref);
-      // Verify that we point into the CS
-      assert(_g1h->obj_in_cs(p), "Should be in CS");
-    }
-#endif
+  bool verify_ref(narrowOop* ref) const;
+  bool verify_ref(oop* ref) const;
+  bool verify_task(StarTask ref) const;
+#endif // ASSERT
+
+  template <class T> void push_on_queue(T* ref) {
+    assert(verify_ref(ref), "sanity");
     refs()->push(ref);
   }
-
-  void pop_from_queue(StarTask& ref) {
-    if (refs()->pop_local(ref)) {
-      assert((oop*)ref != NULL, "pop_local() returned true");
-      assert(UseCompressedOops || !ref.is_narrow(), "Error");
-      assert(has_partial_array_mask((oop*)ref) ||
-             _g1h->is_in_g1_reserved(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
-                                                     : oopDesc::load_decode_heap_oop((oop*)ref)),
-              "invariant");
-    } else {
-      StarTask null_task;
-      ref = null_task;
-    }
-  }
-
-  void pop_from_overflow_queue(StarTask& ref) {
-    StarTask new_ref;
-    refs()->pop_overflow(new_ref);
-    assert((oop*)new_ref != NULL, "pop() from a local non-empty stack");
-    assert(UseCompressedOops || !new_ref.is_narrow(), "Error");
-    assert(has_partial_array_mask((oop*)new_ref) ||
-           _g1h->is_in_g1_reserved(new_ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)new_ref)
-                                                       : oopDesc::load_decode_heap_oop((oop*)new_ref)),
-           "invariant");
-    ref = new_ref;
-  }
-
-  int refs_to_scan()            { return (int)refs()->size(); }
-  int overflowed_refs_to_scan() { return (int)refs()->overflow_stack()->size(); }
 
   template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
     if (G1DeferredRSUpdate) {
@@ -1804,7 +1772,6 @@ public:
     }
   }
 
-private:
   template <class T> void deal_with_reference(T* ref_to_scan) {
     if (has_partial_array_mask(ref_to_scan)) {
       _partial_scan_cl->do_oop_nv(ref_to_scan);
@@ -1818,59 +1785,15 @@ private:
     }
   }
 
-public:
-  void trim_queue() {
-    // I've replicated the loop twice, first to drain the overflow
-    // queue, second to drain the task queue. This is better than
-    // having a single loop, which checks both conditions and, inside
-    // it, either pops the overflow queue or the task queue, as each
-    // loop is tighter. Also, the decision to drain the overflow queue
-    // first is not arbitrary, as the overflow queue is not visible
-    // to the other workers, whereas the task queue is. So, we want to
-    // drain the "invisible" entries first, while allowing the other
-    // workers to potentially steal the "visible" entries.
-
-    while (refs_to_scan() > 0 || overflowed_refs_to_scan() > 0) {
-      while (overflowed_refs_to_scan() > 0) {
-        StarTask ref_to_scan;
-        assert((oop*)ref_to_scan == NULL, "Constructed above");
-        pop_from_overflow_queue(ref_to_scan);
-        // We shouldn't have pushed it on the queue if it was not
-        // pointing into the CSet.
-        assert((oop*)ref_to_scan != NULL, "Follows from inner loop invariant");
-        if (ref_to_scan.is_narrow()) {
-          assert(UseCompressedOops, "Error");
-          narrowOop* p = (narrowOop*)ref_to_scan;
-          assert(!has_partial_array_mask(p) &&
-                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
-          deal_with_reference(p);
-        } else {
-          oop* p = (oop*)ref_to_scan;
-          assert((has_partial_array_mask(p) && _g1h->is_in_g1_reserved(clear_partial_array_mask(p))) ||
-                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
-          deal_with_reference(p);
-        }
-      }
-
-      while (refs_to_scan() > 0) {
-        StarTask ref_to_scan;
-        assert((oop*)ref_to_scan == NULL, "Constructed above");
-        pop_from_queue(ref_to_scan);
-        if ((oop*)ref_to_scan != NULL) {
-          if (ref_to_scan.is_narrow()) {
-            assert(UseCompressedOops, "Error");
-            narrowOop* p = (narrowOop*)ref_to_scan;
-            assert(!has_partial_array_mask(p) &&
-                    _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
-            deal_with_reference(p);
-          } else {
-            oop* p = (oop*)ref_to_scan;
-            assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
-                   _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
-            deal_with_reference(p);
-          }
-        }
-      }
+  void deal_with_reference(StarTask ref) {
+    assert(verify_task(ref), "sanity");
+    if (ref.is_narrow()) {
+      deal_with_reference((narrowOop*)ref);
+    } else {
+      deal_with_reference((oop*)ref);
     }
   }
+
+public:
+  void trim_queue();
 };

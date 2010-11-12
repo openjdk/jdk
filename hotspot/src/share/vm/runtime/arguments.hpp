@@ -291,6 +291,8 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
+  // Check compressed oops compatibility with other flags
+  static void check_compressed_oops_compat();
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();
@@ -483,6 +485,9 @@ class Arguments : AllStatic {
 
   // System properties
   static void init_system_properties();
+
+  // Update/Initialize System properties after JDK version number is known
+  static void init_version_specific_system_properties();
 
   // Property List manipulation
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);

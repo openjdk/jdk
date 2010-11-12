@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,16 +125,23 @@ public class TestKeyMaterial extends PKCS11Test {
                 System.out.print(".");
                 n++;
 
-                KeyGenerator kg = KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
-                SecretKey masterKey = new SecretKeySpec(master, "TlsMasterSecret");
-                TlsKeyMaterialParameterSpec spec = new TlsKeyMaterialParameterSpec
-                (masterKey, major, minor, clientRandom, serverRandom, cipherAlgorithm,
-                keyLength, expandedKeyLength, ivLength, macLength);
+                KeyGenerator kg =
+                    KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
+                SecretKey masterKey =
+                    new SecretKeySpec(master, "TlsMasterSecret");
+                TlsKeyMaterialParameterSpec spec =
+                    new TlsKeyMaterialParameterSpec(masterKey, major, minor,
+                    clientRandom, serverRandom, cipherAlgorithm,
+                    keyLength, expandedKeyLength, ivLength, macLength,
+                    null, -1, -1);
 
                 kg.init(spec);
-                TlsKeyMaterialSpec result = (TlsKeyMaterialSpec)kg.generateKey();
-                match(lineNumber, clientCipherBytes, result.getClientCipherKey(), cipherAlgorithm);
-                match(lineNumber, serverCipherBytes, result.getServerCipherKey(), cipherAlgorithm);
+                TlsKeyMaterialSpec result =
+                    (TlsKeyMaterialSpec)kg.generateKey();
+                match(lineNumber, clientCipherBytes,
+                    result.getClientCipherKey(), cipherAlgorithm);
+                match(lineNumber, serverCipherBytes,
+                    result.getServerCipherKey(), cipherAlgorithm);
                 match(lineNumber, clientIv, result.getClientIv(), "");
                 match(lineNumber, serverIv, result.getServerIv(), "");
                 match(lineNumber, clientMacBytes, result.getClientMacKey(), "");
@@ -158,7 +165,8 @@ public class TestKeyMaterial extends PKCS11Test {
         }
     }
 
-    private static void match(int lineNumber, byte[] out, Object res, String cipherAlgorithm) throws Exception {
+    private static void match(int lineNumber, byte[] out, Object res,
+            String cipherAlgorithm) throws Exception {
         if ((out == null) || (res == null)) {
             if (out != res) {
                 throw new Exception("null mismatch line " + lineNumber);
@@ -169,7 +177,8 @@ public class TestKeyMaterial extends PKCS11Test {
         byte[] b;
         if (res instanceof SecretKey) {
             b = ((SecretKey)res).getEncoded();
-            if (cipherAlgorithm.equalsIgnoreCase("DES") || cipherAlgorithm.equalsIgnoreCase("DESede")) {
+            if (cipherAlgorithm.equalsIgnoreCase("DES") ||
+                    cipherAlgorithm.equalsIgnoreCase("DESede")) {
                 // strip DES parity bits before comparision
                 stripParity(out);
                 stripParity(b);
