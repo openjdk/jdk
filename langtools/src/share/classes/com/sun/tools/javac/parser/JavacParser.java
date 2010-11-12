@@ -1712,7 +1712,7 @@ public class JavacParser implements Parser {
             S.nextToken();
             List<JCTree> resources = List.<JCTree>nil();
             if (S.token() == LPAREN) {
-                checkAutomaticResourceManagement();
+                checkTryWithResources();
                 S.nextToken();
                 resources = resources();
                 accept(RPAREN);
@@ -2970,9 +2970,9 @@ public class JavacParser implements Parser {
             allowMulticatch = true;
         }
     }
-    void checkAutomaticResourceManagement() {
+    void checkTryWithResources() {
         if (!allowTWR) {
-            error(S.pos(), "automatic.resource.management.not.supported.in.source", source.name);
+            error(S.pos(), "try.with.resources.not.supported.in.source", source.name);
             allowTWR = true;
         }
     }
