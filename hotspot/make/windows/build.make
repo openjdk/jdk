@@ -74,7 +74,9 @@ BUILDARCH=ia64
 
 !if "$(BUILDARCH)" != "ia64"
 !ifndef CC_INTERP
+!ifndef FORCE_TIERED
 FORCE_TIERED=1
+!endif
 !endif
 !endif
 
@@ -100,7 +102,7 @@ VARIANT_TEXT=Core
 !if "$(Variant)" == "compiler1"
 VARIANT_TEXT=Client
 !elseif "$(Variant)" == "compiler2"
-!ifdef FORCE_TIERED
+!if "$(FORCE_TIERED)" == "1"
 VARIANT_TEXT=Server
 realVariant=tiered
 !else
