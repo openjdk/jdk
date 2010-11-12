@@ -40,9 +40,6 @@
   develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \
                                                                             \
-  develop(bool, G1UseHRIntoRS, true,                                        \
-          "Determines whether the 'advanced' HR Into rem set is used.")     \
-                                                                            \
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
                                                                             \

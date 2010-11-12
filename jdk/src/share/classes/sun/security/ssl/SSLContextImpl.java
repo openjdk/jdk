@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,14 @@ package sun.security.ssl;
 
 import java.net.Socket;
 
+import java.util.*;
 import java.security.*;
 import java.security.cert.*;
+import java.security.cert.Certificate;
 
 import javax.net.ssl.*;
+
+import sun.security.provider.certpath.AlgorithmChecker;
 
 public class SSLContextImpl extends SSLContextSpi {
 
@@ -82,7 +86,8 @@ public class SSLContextImpl extends SSLContextSpi {
         if (sr == null) {
             secureRandom = JsseJce.getSecureRandom();
         } else {
-            if (SunJSSE.isFIPS() && (sr.getProvider() != SunJSSE.cryptoProvider)) {
+            if (SunJSSE.isFIPS() &&
+                        (sr.getProvider() != SunJSSE.cryptoProvider)) {
                 throw new KeyManagementException
                     ("FIPS mode: SecureRandom must be from provider "
                     + SunJSSE.cryptoProvider.getName());
@@ -111,11 +116,18 @@ public class SSLContextImpl extends SSLContextSpi {
         // We only use the first instance of X509TrustManager passed to us.
         for (int i = 0; tm != null && i < tm.length; i++) {
             if (tm[i] instanceof X509TrustManager) {
-                if (SunJSSE.isFIPS() && !(tm[i] instanceof X509TrustManagerImpl)) {
+                if (SunJSSE.isFIPS() &&
+                        !(tm[i] instanceof X509TrustManagerImpl)) {
                     throw new KeyManagementException
                         ("FIPS mode: only SunJSSE TrustManagers may be used");
                 }
-                return (X509TrustManager)tm[i];
+
+                if (tm[i] instanceof X509ExtendedTrustManager) {
+                    return (X509TrustManager)tm[i];
+                } else {
+                    return new AbstractTrustManagerWrapper(
+                                        (X509TrustManager)tm[i]);
+                }
             }
         }
 
@@ -153,7 +165,7 @@ public class SSLContextImpl extends SSLContextSpi {
                     "SSLContext.init():  need an " +
                     "X509ExtendedKeyManager for SSLEngine use");
             }
-            return new AbstractWrapper((X509KeyManager)km);
+            return new AbstractKeyManagerWrapper((X509KeyManager)km);
         }
 
         // nothing found, return a dummy X509ExtendedKeyManager
@@ -217,9 +229,179 @@ public class SSLContextImpl extends SSLContextSpi {
 
 }
 
+
+final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
+            implements X509TrustManager {
+
+    private final X509TrustManager tm;
+
+    AbstractTrustManagerWrapper(X509TrustManager tm) {
+        this.tm = tm;
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType)
+        throws CertificateException {
+        tm.checkClientTrusted(chain, authType);
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType)
+        throws CertificateException {
+        tm.checkServerTrusted(chain, authType);
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+        return tm.getAcceptedIssuers();
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+        tm.checkClientTrusted(chain, authType);
+        checkAdditionalTrust(chain, authType, socket, true);
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType,
+            Socket socket) throws CertificateException {
+        tm.checkServerTrusted(chain, authType);
+        checkAdditionalTrust(chain, authType, socket, false);
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+        tm.checkClientTrusted(chain, authType);
+        checkAdditionalTrust(chain, authType, engine, true);
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+        tm.checkServerTrusted(chain, authType);
+        checkAdditionalTrust(chain, authType, engine, false);
+    }
+
+    private void checkAdditionalTrust(X509Certificate[] chain, String authType,
+                Socket socket, boolean isClient) throws CertificateException {
+        if (socket != null && socket.isConnected() &&
+                                    socket instanceof SSLSocket) {
+
+            SSLSocket sslSocket = (SSLSocket)socket;
+            SSLSession session = sslSocket.getHandshakeSession();
+            if (session == null) {
+                throw new CertificateException("No handshake session");
+            }
+
+            // check endpoint identity
+            String identityAlg = sslSocket.getSSLParameters().
+                                        getEndpointIdentificationAlgorithm();
+            if (identityAlg != null && identityAlg.length() != 0) {
+                String hostname = session.getPeerHost();
+                X509TrustManagerImpl.checkIdentity(
+                                    hostname, chain[0], identityAlg);
+            }
+
+            // try the best to check the algorithm constraints
+            ProtocolVersion protocolVersion =
+                ProtocolVersion.valueOf(session.getProtocol());
+            AlgorithmConstraints constraints = null;
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (session instanceof ExtendedSSLSession) {
+                    ExtendedSSLSession extSession =
+                                    (ExtendedSSLSession)session;
+                    String[] peerSupportedSignAlgs =
+                            extSession.getLocalSupportedSignatureAlgorithms();
+
+                    constraints = new SSLAlgorithmConstraints(
+                                    sslSocket, peerSupportedSignAlgs, true);
+                } else {
+                    constraints =
+                            new SSLAlgorithmConstraints(sslSocket, true);
+                }
+            } else {
+                constraints = new SSLAlgorithmConstraints(sslSocket, true);
+            }
+
+            AlgorithmChecker checker = new AlgorithmChecker(constraints);
+            try {
+                checker.init(false);
+
+                // a forward checker, need to check from trust to target
+                for (int i = chain.length - 1; i >= 0; i--) {
+                    Certificate cert = chain[i];
+                    // We don't care about the unresolved critical extensions.
+                    checker.check(cert, Collections.<String>emptySet());
+                }
+            } catch (CertPathValidatorException cpve) {
+                throw new CertificateException(
+                    "Certificates does not conform to algorithm constraints");
+            }
+        }
+    }
+
+    private void checkAdditionalTrust(X509Certificate[] chain, String authType,
+            SSLEngine engine, boolean isClient) throws CertificateException {
+        if (engine != null) {
+            SSLSession session = engine.getHandshakeSession();
+            if (session == null) {
+                throw new CertificateException("No handshake session");
+            }
+
+            // check endpoint identity
+            String identityAlg = engine.getSSLParameters().
+                                        getEndpointIdentificationAlgorithm();
+            if (identityAlg != null && identityAlg.length() != 0) {
+                String hostname = session.getPeerHost();
+                X509TrustManagerImpl.checkIdentity(
+                                    hostname, chain[0], identityAlg);
+            }
+
+            // try the best to check the algorithm constraints
+            ProtocolVersion protocolVersion =
+                ProtocolVersion.valueOf(session.getProtocol());
+            AlgorithmConstraints constraints = null;
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (session instanceof ExtendedSSLSession) {
+                    ExtendedSSLSession extSession =
+                                    (ExtendedSSLSession)session;
+                    String[] peerSupportedSignAlgs =
+                            extSession.getLocalSupportedSignatureAlgorithms();
+
+                    constraints = new SSLAlgorithmConstraints(
+                                    engine, peerSupportedSignAlgs, true);
+                } else {
+                    constraints =
+                            new SSLAlgorithmConstraints(engine, true);
+                }
+            } else {
+                constraints = new SSLAlgorithmConstraints(engine, true);
+            }
+
+            AlgorithmChecker checker = new AlgorithmChecker(constraints);
+            try {
+                checker.init(false);
+
+                // A forward checker, need to check from trust to target
+                for (int i = chain.length - 1; i >= 0; i--) {
+                    Certificate cert = chain[i];
+                    // We don't care about the unresolved critical extensions.
+                    checker.check(cert, Collections.<String>emptySet());
+                }
+            } catch (CertPathValidatorException cpve) {
+                throw new CertificateException(
+                    "Certificates does not conform to algorithm constraints");
+            }
+        }
+    }
+}
+
 // Dummy X509TrustManager implementation, rejects all peer certificates.
 // Used if the application did not specify a proper X509TrustManager.
-final class DummyX509TrustManager implements X509TrustManager {
+final class DummyX509TrustManager extends X509ExtendedTrustManager
+            implements X509TrustManager {
 
     static final X509TrustManager INSTANCE = new DummyX509TrustManager();
 
@@ -234,6 +416,7 @@ final class DummyX509TrustManager implements X509TrustManager {
      * validated and is trusted for client SSL authentication.
      * If not, it throws an exception.
      */
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException {
         throw new CertificateException(
@@ -247,6 +430,7 @@ final class DummyX509TrustManager implements X509TrustManager {
      * validated and is trusted for server SSL authentication.
      * If not, it throws an exception.
      */
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType)
         throws CertificateException {
         throw new CertificateException(
@@ -257,19 +441,48 @@ final class DummyX509TrustManager implements X509TrustManager {
      * Return an array of issuer certificates which are trusted
      * for authenticating peers.
      */
+    @Override
     public X509Certificate[] getAcceptedIssuers() {
         return new X509Certificate[0];
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+        throw new CertificateException(
+            "No X509TrustManager implementation available");
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType,
+            Socket socket) throws CertificateException {
+        throw new CertificateException(
+            "No X509TrustManager implementation available");
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+        throw new CertificateException(
+            "No X509TrustManager implementation available");
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+        throw new CertificateException(
+            "No X509TrustManager implementation available");
     }
 }
 
 /*
  * A wrapper class to turn a X509KeyManager into an X509ExtendedKeyManager
  */
-final class AbstractWrapper extends X509ExtendedKeyManager {
+final class AbstractKeyManagerWrapper extends X509ExtendedKeyManager {
 
     private final X509KeyManager km;
 
-    AbstractWrapper(X509KeyManager km) {
+    AbstractKeyManagerWrapper(X509KeyManager km) {
         this.km = km;
     }
 

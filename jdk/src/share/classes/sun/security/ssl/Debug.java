@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.PrintStream;
 import java.security.AccessController;
+import java.util.Locale;
 
 import sun.security.action.GetPropertyAction;
 
@@ -44,7 +45,7 @@ public class Debug {
     static {
         args = java.security.AccessController.doPrivileged(
             new GetPropertyAction("javax.net.debug", ""));
-        args = args.toLowerCase();
+        args = args.toLowerCase(Locale.ENGLISH);
         if (args.equals("help")) {
             Help();
         }
@@ -114,7 +115,7 @@ public class Debug {
             return false;
         } else {
             int n = 0;
-            option = option.toLowerCase();
+            option = option.toLowerCase(Locale.ENGLISH);
 
             if (args.indexOf("all") != -1) {
                 return true;

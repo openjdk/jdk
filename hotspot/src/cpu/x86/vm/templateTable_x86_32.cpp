@@ -399,6 +399,23 @@ void TemplateTable::fast_aldc(bool wide) {
   if (VerifyOops) {
     __ verify_oop(rax);
   }
+
+  Label L_done, L_throw_exception;
+  const Register con_klass_temp = rcx;  // same as Rcache
+  __ movptr(con_klass_temp, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ cmpptr(con_klass_temp, ExternalAddress((address)Universe::systemObjArrayKlassObj_addr()));
+  __ jcc(Assembler::notEqual, L_done);
+  __ cmpl(Address(rax, arrayOopDesc::length_offset_in_bytes()), 0);
+  __ jcc(Assembler::notEqual, L_throw_exception);
+  __ xorptr(rax, rax);
+  __ jmp(L_done);
+
+  // Load the exception from the system-array which wraps it:
+  __ bind(L_throw_exception);
+  __ movptr(rax, Address(rax, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
+
+  __ bind(L_done);
 }
 
 void TemplateTable::ldc2_w() {
