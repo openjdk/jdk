@@ -1037,10 +1037,10 @@ public class Flow extends TreeScanner {
         int nextadrCatch = nextadr;
 
         if (!unrefdResources.isEmpty() &&
-                lint.isEnabled(Lint.LintCategory.ARM)) {
+                lint.isEnabled(Lint.LintCategory.TRY)) {
             for (Map.Entry<VarSymbol, JCVariableDecl> e : unrefdResources.entrySet()) {
-                log.warning(e.getValue().pos(),
-                            "automatic.resource.not.referenced", e.getKey());
+                log.warning(Lint.LintCategory.TRY, e.getValue().pos(),
+                            "try.resource.not.referenced", e.getKey());
             }
         }
 
