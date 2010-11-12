@@ -1371,11 +1371,24 @@ public class Flow extends TreeScanner {
         if (!tree.type.isErroneous()
             && lint.isEnabled(Lint.LintCategory.CAST)
             && types.isSameType(tree.expr.type, tree.clazz.type)
-            && !(ignoreAnnotatedCasts && containsTypeAnnotation(tree.clazz))) {
+            && !(ignoreAnnotatedCasts && containsTypeAnnotation(tree.clazz))
+            && !is292targetTypeCast(tree)) {
             log.warning(Lint.LintCategory.CAST,
                     tree.pos(), "redundant.cast", tree.expr.type);
         }
     }
+    //where
+        private boolean is292targetTypeCast(JCTypeCast tree) {
+            boolean is292targetTypeCast = false;
+            if (tree.expr.getTag() == JCTree.APPLY) {
+                JCMethodInvocation apply = (JCMethodInvocation)tree.expr;
+                Symbol sym = TreeInfo.symbol(apply.meth);
+                is292targetTypeCast = sym != null &&
+                    sym.kind == MTH &&
+                    (sym.flags() & POLYMORPHIC_SIGNATURE) != 0;
+            }
+            return is292targetTypeCast;
+        }
 
     public void visitTopLevel(JCCompilationUnit tree) {
         // Do nothing for TopLevel since each class is visited individually
