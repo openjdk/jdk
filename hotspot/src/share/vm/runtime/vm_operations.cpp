@@ -100,7 +100,7 @@ VM_DeoptimizeFrame::VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id) {
 
 
 void VM_DeoptimizeFrame::doit() {
-  Deoptimization::deoptimize_frame(_thread, _id);
+  Deoptimization::deoptimize_frame_internal(_thread, _id);
 }
 
 
