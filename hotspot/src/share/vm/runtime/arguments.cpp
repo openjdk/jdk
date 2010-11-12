@@ -1328,8 +1328,11 @@ bool verify_object_alignment() {
 }
 
 inline uintx max_heap_for_compressed_oops() {
-  // Heap should be above HeapBaseMinAddress to get zero based compressed oops.
-  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size() - HeapBaseMinAddress);
+  // Avoid sign flip.
+  if (OopEncodingHeapMax < MaxPermSize + os::vm_page_size()) {
+    return 0;
+  }
+  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1507,7 +1510,13 @@ void Arguments::set_heap_size() {
     }
     if (UseCompressedOops) {
       // Limit the heap size to the maximum possible when using compressed oops
-      reasonable_max = MIN2(reasonable_max, (julong)max_heap_for_compressed_oops());
+      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
+      if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
+        // Heap should be above HeapBaseMinAddress to get zero based compressed oops
+        // but it should be not less than default MaxHeapSize.
+        max_coop_heap -= HeapBaseMinAddress;
+      }
+      reasonable_max = MIN2(reasonable_max, max_coop_heap);
     }
     reasonable_max = os::allocatable_physical_memory(reasonable_max);
 
