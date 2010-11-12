@@ -23,15 +23,12 @@
  * questions.
  */
 
+#define _JNI_IMPLEMENTATION_
+
 #include "awt.h"
 #include <signal.h>
 #include <windowsx.h>
-
-//#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER >= 1000
-//#include <crtdbg.h>
-//#endif
-
-#define _JNI_IMPLEMENTATION_
+#include <process.h>
 
 #include "awt_DrawingSurface.h"
 #include "awt_AWTEvent.h"
@@ -92,7 +89,7 @@ extern void DWMResetCompositionEnabled();
 
 /* Initialize the Java VM instance variable when the library is
    first loaded */
-JavaVM *jvm;
+JavaVM *jvm = NULL;
 
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
@@ -362,6 +359,95 @@ HWND AwtToolkit::CreateToolkitWnd(LPCTSTR name)
     return hwnd;
 }
 
+
+struct ToolkitThreadProc_Data {
+    bool result;
+    HANDLE hCompleted;
+
+    jobject thread;
+};
+
+void ToolkitThreadProc(void *param)
+{
+    ToolkitThreadProc_Data *data = (ToolkitThreadProc_Data *)param;
+
+    bool bNotified = false;
+
+    JNIEnv *env;
+    JavaVMAttachArgs attachArgs;
+    attachArgs.version  = JNI_VERSION_1_2;
+    attachArgs.name     = "AWT-Windows";
+    attachArgs.group    = NULL;
+
+    jint res = jvm->AttachCurrentThreadAsDaemon((void **)&env, &attachArgs);
+    if (res < 0) {
+        return;
+    }
+
+    jobject thread = env->NewGlobalRef(data->thread);
+    if (thread != NULL) {
+        jclass cls = env->GetObjectClass(thread);
+        if (cls != NULL) {
+            jmethodID runId = env->GetMethodID(cls, "run", "()V");
+            if (runId != NULL) {
+                data->result = true;
+                ::SetEvent(data->hCompleted);
+                bNotified = true;
+
+                env->CallVoidMethod(thread, runId);
+
+                if (env->ExceptionCheck()) {
+                    env->ExceptionDescribe();
+                    env->ExceptionClear();
+                    // TODO: handle
+                }
+            }
+            env->DeleteLocalRef(cls);
+        }
+        env->DeleteGlobalRef(thread);
+    }
+    if (!bNotified) {
+        ::SetEvent(data->hCompleted);
+    }
+
+    jvm->DetachCurrentThread();
+}
+
+/*
+ * Class:     sun_awt_windows_WToolkit
+ * Method:    startToolkitThread
+ * Signature: (Ljava/lang/Runnable;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_awt_windows_WToolkit_startToolkitThread(JNIEnv *env, jclass cls, jobject thread)
+{
+    AwtToolkit& tk = AwtToolkit::GetInstance();
+
+    ToolkitThreadProc_Data data;
+    data.result = false;
+    data.thread = env->NewGlobalRef(thread);
+    if (data.thread == NULL) {
+        return JNI_FALSE;
+    }
+    data.hCompleted = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+
+    bool result = tk.GetPreloadThread()
+                    .InvokeAndTerminate(ToolkitThreadProc, &data);
+
+    if (result) {
+        ::WaitForSingleObject(data.hCompleted, INFINITE);
+        result = data.result;
+    } else {
+        // no awt preloading
+        // return back to the usual toolkit way
+    }
+    ::CloseHandle(data.hCompleted);
+
+    env->DeleteGlobalRef(data.thread);
+
+    return result ? JNI_TRUE : JNI_FALSE;
+}
+
 BOOL AwtToolkit::Initialize(BOOL localPump) {
     AwtToolkit& tk = AwtToolkit::GetInstance();
 
@@ -374,6 +460,11 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     // there led to the bug 6480630: there could be a situation when
     // ComCtl32Util was constructed but not disposed
     ComCtl32Util::GetInstance().InitLibraries();
+
+    if (!localPump) {
+        // if preload thread was run, terminate it
+        preloadThread.Terminate(true);
+    }
 
     /* Register this toolkit's helper window */
     VERIFY(tk.RegisterClass() != NULL);
@@ -443,7 +534,7 @@ BOOL AwtToolkit::Dispose() {
     // dispose Direct3D-related resources. This should be done
     // before AwtObjectList::Cleanup() as the d3d will attempt to
     // shutdown when the last of its windows is disposed of
-    D3DPipelineManager::DeleteInstance();
+    D3DInitializer::GetInstance().Clean();
 
     AwtObjectList::Cleanup();
     AwtFont::Cleanup();
@@ -1639,6 +1730,270 @@ void AwtToolkit::GetWindowRect(HWND hWnd, LPRECT lpRect)
     ::GetWindowRect(hWnd, lpRect);
 }
 
+
+/************************************************************************
+ * AWT preloading support
+ */
+bool AwtToolkit::PreloadAction::EnsureInited()
+{
+    DWORD _initThreadId = GetInitThreadID();
+    if (_initThreadId != 0) {
+        // already inited
+        // ensure the action is inited on correct thread
+        PreloadThread &preloadThread
+            = AwtToolkit::GetInstance().GetPreloadThread();
+        if (_initThreadId == preloadThread.GetThreadId()) {
+            if (!preloadThread.IsWrongThread()) {
+                return true;
+            }
+            // inited on preloadThread (wrongThread), not cleaned yet
+            // have to wait cleanup completion
+            preloadThread.Wait4Finish();
+        } else {
+            // inited on other thread (Toolkit thread?)
+            // consider as correctly inited
+            return true;
+        }
+    }
+
+    // init on Toolkit thread
+    AwtToolkit::GetInstance().InvokeFunction(InitWrapper, this);
+
+    return true;
+}
+
+DWORD AwtToolkit::PreloadAction::GetInitThreadID()
+{
+    CriticalSection::Lock lock(initLock);
+    return initThreadId;
+}
+
+bool AwtToolkit::PreloadAction::Clean()
+{
+    DWORD _initThreadId = GetInitThreadID();
+    if (_initThreadId == ::GetCurrentThreadId()) {
+        // inited on this thread
+        Clean(false);
+        return true;
+    }
+    return false;
+}
+
+/*static*/
+void AwtToolkit::PreloadAction::InitWrapper(void *param)
+{
+    PreloadAction *pThis = (PreloadAction *)param;
+    pThis->Init();
+}
+
+void AwtToolkit::PreloadAction::Init()
+{
+    CriticalSection::Lock lock(initLock);
+    if (initThreadId == 0) {
+        initThreadId = ::GetCurrentThreadId();
+        InitImpl();
+    }
+}
+
+void AwtToolkit::PreloadAction::Clean(bool reInit) {
+    CriticalSection::Lock lock(initLock);
+    if (initThreadId != 0) {
+        //ASSERT(initThreadId == ::GetCurrentThreadId());
+        CleanImpl(reInit);
+        initThreadId = 0;
+    }
+}
+
+// PreloadThread implementation
+AwtToolkit::PreloadThread::PreloadThread()
+    : status(None), wrongThread(false), threadId(0),
+    pActionChain(NULL), pLastProcessedAction(NULL),
+    execFunc(NULL), execParam(NULL)
+{
+    hFinished = ::CreateEvent(NULL, TRUE, FALSE, NULL);
+    hAwake = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+}
+
+AwtToolkit::PreloadThread::~PreloadThread()
+{
+    //Terminate(false);
+    ::CloseHandle(hFinished);
+    ::CloseHandle(hAwake);
+}
+
+bool AwtToolkit::PreloadThread::AddAction(AwtToolkit::PreloadAction *pAction)
+{
+    CriticalSection::Lock lock(threadLock);
+
+    if (status > Preloading) {
+        // too late - the thread already terminated or run as toolkit thread
+        return false;
+    }
+
+    if (pActionChain == NULL) {
+        // 1st action
+        pActionChain = pAction;
+    } else {
+        // add the action to the chain
+        PreloadAction *pChain = pActionChain;
+        while (true) {
+            PreloadAction *pNext = pChain->GetNext();
+            if (pNext == NULL) {
+                break;
+            }
+            pChain = pNext;
+        }
+        pChain->SetNext(pAction);
+    }
+
+    if (status > None) {
+        // the thread is already running (status == Preloading)
+        AwakeThread();
+        return true;
+    }
+
+    // need to start thread
+    ::ResetEvent(hAwake);
+    ::ResetEvent(hFinished);
+
+    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0x100000, StaticThreadProc,
+                                            this, 0, &threadId);
+
+    if (hThread == 0) {
+        threadId = 0;
+        return false;
+    }
+
+    status = Preloading;
+
+    ::CloseHandle(hThread);
+
+    return true;
+}
+
+bool AwtToolkit::PreloadThread::Terminate(bool wrongThread)
+{
+    CriticalSection::Lock lock(threadLock);
+
+    if (status != Preloading) {
+        return false;
+    }
+
+    execFunc = NULL;
+    execParam = NULL;
+    this->wrongThread = wrongThread;
+    status = Cleaning;
+    AwakeThread();
+
+    return true;
+}
+
+bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(_cdecl *fn)(void *), void *param)
+{
+    CriticalSection::Lock lock(threadLock);
+
+    if (status != Preloading) {
+        return false;
+    }
+
+    execFunc = fn;
+    execParam = param;
+    status = fn == NULL ? Cleaning : RunningToolkit;
+    AwakeThread();
+
+    return true;
+}
+
+/*static*/
+unsigned WINAPI AwtToolkit::PreloadThread::StaticThreadProc(void *param)
+{
+    AwtToolkit::PreloadThread *pThis = (AwtToolkit::PreloadThread *)param;
+    return pThis->ThreadProc();
+}
+
+unsigned AwtToolkit::PreloadThread::ThreadProc()
+{
+    void(_cdecl *_execFunc)(void *) = NULL;
+    void *_execParam = NULL;
+    bool _wrongThread = false;
+
+    // initialization
+    while (true) {
+        PreloadAction *pAction;
+        {
+            CriticalSection::Lock lock(threadLock);
+            if (status != Preloading) {
+                // get invoke parameters
+                _execFunc = execFunc;
+                _execParam = execParam;
+                _wrongThread = wrongThread;
+                break;
+            }
+            pAction = GetNextAction();
+        }
+        if (pAction != NULL) {
+            pAction->Init();
+        } else {
+            ::WaitForSingleObject(hAwake, INFINITE);
+        }
+    }
+
+    // call a function from InvokeAndTerminate
+    if (_execFunc != NULL) {
+        _execFunc(_execParam);
+    } else {
+        // time to terminate..
+    }
+
+    // cleanup
+    {
+        CriticalSection::Lock lock(threadLock);
+        pLastProcessedAction = NULL; // goto 1st action in the chain
+        status = Cleaning;
+    }
+    for (PreloadAction *pAction = GetNextAction(); pAction != NULL;
+            pAction = GetNextAction()) {
+        pAction->Clean(_wrongThread);
+    }
+
+    // don't clear threadId! it is used by PreloadAction::EnsureInited
+
+    {
+        CriticalSection::Lock lock(threadLock);
+        status = Finished;
+    }
+    ::SetEvent(hFinished);
+    return 0;
+}
+
+AwtToolkit::PreloadAction* AwtToolkit::PreloadThread::GetNextAction()
+{
+    CriticalSection::Lock lock(threadLock);
+    PreloadAction *pAction = (pLastProcessedAction == NULL)
+                                    ? pActionChain
+                                    : pLastProcessedAction->GetNext();
+    if (pAction != NULL) {
+        pLastProcessedAction = pAction;
+    }
+
+    return pAction;
+}
+
+
+extern "C" {
+
+/* Terminates preload thread (if it's still alive
+ * - it may occur if the application doesn't use AWT).
+ * The function is called from launcher after completion main java thread.
+ */
+__declspec(dllexport) void preloadStop()
+{
+    AwtToolkit::GetInstance().GetPreloadThread().Terminate(false);
+}
+
+}
+
+
 /************************************************************************
  * Toolkit native methods
  */
@@ -2224,21 +2579,21 @@ Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
     WCHAR szVer[128];
 
     DWORD version = ::GetVersion();
-    swprintf(szVer, L"0x%x = %ld", version, version);
+    swprintf(szVer, 128, L"0x%x = %ld", version, version);
     int l = lstrlen(szVer);
 
     if (IS_WIN2000) {
         if (IS_WINXP) {
             if (IS_WINVISTA) {
-                swprintf(szVer + l, L" (Windows Vista)");
+                swprintf(szVer + l, 128, L" (Windows Vista)");
             } else {
-                swprintf(szVer + l, L" (Windows XP)");
+                swprintf(szVer + l, 128, L" (Windows XP)");
             }
         } else {
-            swprintf(szVer + l, L" (Windows 2000)");
+            swprintf(szVer + l, 128, L" (Windows 2000)");
         }
     } else {
-        swprintf(szVer + l, L" (Unknown)");
+        swprintf(szVer + l, 128, L" (Unknown)");
     }
 
     return JNU_NewStringPlatform(env, szVer);

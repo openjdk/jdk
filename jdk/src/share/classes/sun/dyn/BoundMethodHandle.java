@@ -48,8 +48,6 @@ public class BoundMethodHandle extends MethodHandle {
     private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory(IMPL_TOKEN);
 
     // Constructors in this class *must* be package scoped or private.
-    // Exception:  JavaMethodHandle constructors are protected.
-    // (The link between JMH and BMH is temporary.)
 
     /** Bind a direct MH to its receiver (or first ref. argument).
      *  The JVM will pre-dispatch the MH if it is not already static.
@@ -120,55 +118,6 @@ public class BoundMethodHandle extends MethodHandle {
         this.vmargslot = this.type().parameterSlotDepth(0);
         initTarget(entryPoint, 0);
         assert(this instanceof JavaMethodHandle);
-    }
-
-    /** Initialize the current object as a Java method handle.
-     */
-    protected BoundMethodHandle(String entryPointName, MethodType type, boolean matchArity) {
-        super(Access.TOKEN, null);
-        MethodHandle entryPoint
-                = findJavaMethodHandleEntryPoint(this.getClass(),
-                                        entryPointName, type, matchArity);
-        MethodHandleImpl.initType(this, entryPoint.type().dropParameterTypes(0, 1));
-        this.argument = this; // kludge; get rid of
-        this.vmargslot = this.type().parameterSlotDepth(0);
-        initTarget(entryPoint, 0);
-        assert(this instanceof JavaMethodHandle);
-    }
-
-    private static
-    MethodHandle findJavaMethodHandleEntryPoint(Class<?> caller,
-                                                String name,
-                                                MethodType type,
-                                                boolean matchArity) {
-        if (matchArity)  type.getClass();  // elicit NPE
-        List<MemberName> methods = IMPL_NAMES.getMethods(caller, true, name, null, caller);
-        MethodType foundType = null;
-        MemberName foundMethod = null;
-        for (MemberName method : methods) {
-            if (method.getDeclaringClass() == MethodHandle.class)
-                continue;  // ignore methods inherited from MH class itself
-            MethodType mtype = method.getMethodType();
-            if (type != null && type.parameterCount() != mtype.parameterCount())
-                continue;
-            else if (foundType == null)
-                foundType = mtype;
-            else if (foundType != mtype)
-                throw newIllegalArgumentException("more than one method named "+name+" in "+caller.getName());
-            // discard overrides
-            if (foundMethod == null)
-                foundMethod = method;
-            else if (foundMethod.getDeclaringClass().isAssignableFrom(method.getDeclaringClass()))
-                foundMethod = method;
-        }
-        if (foundMethod == null)
-            throw newIllegalArgumentException("no method named "+name+" in "+caller.getName());
-        MethodHandle entryPoint = MethodHandleImpl.findMethod(IMPL_TOKEN, foundMethod, true, caller);
-        if (type != null) {
-            MethodType epType = type.insertParameterTypes(0, entryPoint.type().parameterType(0));
-            entryPoint = MethodHandles.convertArguments(entryPoint, epType);
-        }
-        return entryPoint;
     }
 
     /** Make sure the given {@code argument} can be used as {@code argnum}-th

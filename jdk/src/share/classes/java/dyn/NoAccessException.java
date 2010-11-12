@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,11 @@ package java.dyn;
  * on behalf of the method handle creator,
  * at the time of creation.
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
-public class NoAccessException extends RuntimeException {
+public class NoAccessException extends ReflectiveOperationException {
+    private static final long serialVersionUID = 292L;
+
     /**
      * Constructs a {@code NoAccessException} with no detail message.
      */

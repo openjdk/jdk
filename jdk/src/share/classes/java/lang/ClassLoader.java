@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,11 @@ import sun.security.util.SecurityConstants;
  * themselves at their class initialization time by invoking the
  * {@link
  * #registerAsParallelCapable <tt>ClassLoader.registerAsParallelCapable</tt>}
- * method. In environments in which the delegation model is not strictly
- * hierarchical, class loaders need to be parallel capable, otherise class
+ * method. Note that the <tt>ClassLoader</tt> class is registered as parallel
+ * capable by default. However, its subclasses still need to register themselves
+ * if they are parallel capable. <br>
+ * In environments in which the delegation model is not strictly
+ * hierarchical, class loaders need to be parallel capable, otherwise class
  * loading can lead to deadlocks because the loader lock is held for the
  * duration of the class loading process (see {@link #loadClass
  * <tt>loadClass</tt>} methods).
@@ -549,6 +552,13 @@ public abstract class ClassLoader {
      * @throws  IndexOutOfBoundsException
      *          If either <tt>off</tt> or <tt>len</tt> is negative, or if
      *          <tt>off+len</tt> is greater than <tt>b.length</tt>.
+     *
+     * @throws  SecurityException
+     *          If an attempt is made to add this class to a package that
+     *          contains classes that were signed by a different set of
+     *          certificates than this class, or if an attempt is made
+     *          to define a class in a package with a fully-qualified name
+     *          that starts with "{@code java.}".
      *
      * @see  #loadClass(String, boolean)
      * @see  #resolveClass(Class)
@@ -1218,14 +1228,14 @@ public abstract class ClassLoader {
     private static native Class<? extends ClassLoader> getCaller(int index);
 
     /**
-     * Registers the caller class loader as parallel capable.
-     * In order for the registration to succeed, all super classes
-     * of the caller class loader must also be registered as
-     * parallel capable when this method is called. </p>
-     * Note that once a class loader is registered as
-     * parallel capable, there is no way to change it back.
-     * In addition, registration should be done statically before
-     * any instance of the caller classloader being constructed. </p>
+     * Registers the caller as parallel capable.</p>
+     * The registration succeeds if and only if all of the following
+     * conditions are met: <br>
+     * 1. no instance of the caller has been created</p>
+     * 2. all of the super classes (except class Object) of the caller are
+     * registered as parallel capable</p>
+     * Note that once a class loader is registered as parallel capable, there
+     * is no way to change it back. </p>
      *
      * @return  true if the caller is successfully registered as
      *          parallel capable and false if otherwise.

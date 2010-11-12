@@ -1588,7 +1588,7 @@ class CommandLineFlags {
           "(Temporary, subject to experimentation)"                         \
           "Nominal minimum work per abortable preclean iteration")          \
                                                                             \
-  product(intx, CMSAbortablePrecleanWaitMillis, 100,                        \
+  manageable(intx, CMSAbortablePrecleanWaitMillis, 100,                     \
           "(Temporary, subject to experimentation)"                         \
           " Time that we sleep between iterations when not given"           \
           " enough work per iteration")                                     \
@@ -1680,7 +1680,7 @@ class CommandLineFlags {
   product(uintx, CMSWorkQueueDrainThreshold, 10,                            \
           "Don't drain below this size per parallel worker/thief")          \
                                                                             \
-  product(intx, CMSWaitDuration, 2000,                                      \
+  manageable(intx, CMSWaitDuration, 2000,                                   \
           "Time in milliseconds that CMS thread waits for young GC")        \
                                                                             \
   product(bool, CMSYield, true,                                             \
@@ -1788,10 +1788,6 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, GCALotAtAllSafepoints, false,                            \
           "Enforce ScavengeALot/GCALot at all potential safepoints")        \
-                                                                            \
-  product(bool, HandlePromotionFailure, true,                               \
-          "The youngest generation collection does not require "            \
-          "a guarantee of full promotion of all live objects.")             \
                                                                             \
   product(bool, PrintPromotionFailure, false,                               \
           "Print additional diagnostic information following "              \
@@ -3005,9 +3001,6 @@ class CommandLineFlags {
                                                                             \
   product(intx, NewRatio, 2,                                                \
           "Ratio of new/old generation sizes")                              \
-                                                                            \
-  product(uintx, MaxLiveObjectEvacuationRatio, 100,                         \
-          "Max percent of eden objects that will be live at scavenge")      \
                                                                             \
   product_pd(uintx, NewSizeThreadIncrease,                                  \
           "Additional size added to desired new generation size per "       \

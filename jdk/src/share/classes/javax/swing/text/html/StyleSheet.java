@@ -998,7 +998,7 @@ public class StyleSheet extends StyleContext {
     void addRule(String[] selector, AttributeSet declaration,
                  boolean isLinked) {
         int n = selector.length;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(selector[0]);
         for (int counter = 1; counter < n; counter++) {
             sb.append(' ');

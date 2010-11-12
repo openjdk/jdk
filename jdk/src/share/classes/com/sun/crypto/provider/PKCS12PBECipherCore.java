@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,8 @@ final class PKCS12PBECipherCore {
                 (algo.equalsIgnoreCase("RC2")?"RC2_40":algo), "SunJCE");
         } catch (GeneralSecurityException gse) {
             // should never happen
-            throw new RuntimeException("SunJCE provider is not configured properly");
+            throw new RuntimeException(
+                "SunJCE provider is not configured properly");
         }
         try {
             params.init(pbeSpec);
@@ -316,7 +317,8 @@ final class PKCS12PBECipherCore {
             try {
                 paramSpec = params.getParameterSpec(PBEParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {
-                throw new InvalidAlgorithmParameterException("requires PBE parameters");
+                throw new InvalidAlgorithmParameterException(
+                    "requires PBE parameters");
             }
         }
         implInit(opmode, key, paramSpec, random);
