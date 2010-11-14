@@ -115,10 +115,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         return new SynthTabbedPaneUI();
     }
 
-    private SynthTabbedPaneUI() {
-    }
-
-    private boolean scrollableTabLayoutEnabled() {
+     private boolean scrollableTabLayoutEnabled() {
         return (tabPane.getTabLayoutPolicy() == JTabbedPane.SCROLL_TAB_LAYOUT);
     }
 

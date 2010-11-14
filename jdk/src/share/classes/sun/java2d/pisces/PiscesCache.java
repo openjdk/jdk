@@ -25,6 +25,8 @@
 
 package sun.java2d.pisces;
 
+import java.util.Arrays;
+
 /**
  * An object used to cache pre-rendered complex paths.
  *
@@ -32,115 +34,153 @@ package sun.java2d.pisces;
  */
 public final class PiscesCache {
 
-    int bboxX0, bboxY0, bboxX1, bboxY1;
+    final int bboxX0, bboxY0, bboxX1, bboxY1;
 
-    byte[] rowAARLE;
-    int alphaRLELength;
+    // rowAARLE[i] holds the encoding of the pixel row with y = bboxY0+i.
+    // The format of each of the inner arrays is: rowAARLE[i][0,1] = (x0, n)
+    // where x0 is the first x in row i with nonzero alpha, and n is the
+    // number of RLE entries in this row. rowAARLE[i][j,j+1] for j>1 is
+    // (val,runlen)
+    final int[][] rowAARLE;
 
-    int[] rowOffsetsRLE;
-    int[] minTouched;
-    int alphaRows;
+    // RLE encodings are added in increasing y rows and then in increasing
+    // x inside those rows. Therefore, at any one time there is a well
+    // defined position (x,y) where a run length is about to be added (or
+    // the row terminated). x0,y0 is this (x,y)-(bboxX0,bboxY0). They
+    // are used to get indices into the current tile.
+    private int x0 = Integer.MIN_VALUE, y0 = Integer.MIN_VALUE;
 
-    private PiscesCache() {}
+    // touchedTile[i][j] is the sum of all the alphas in the tile with
+    // y=i*TILE_SIZE+bboxY0 and x=j*TILE_SIZE+bboxX0.
+    private final int[][] touchedTile;
 
-    public static PiscesCache createInstance() {
-        return new PiscesCache();
+    static final int TILE_SIZE_LG = 5;
+    static final int TILE_SIZE = 1 << TILE_SIZE_LG; // 32
+    private static final int INIT_ROW_SIZE = 8; // enough for 3 run lengths
+
+    PiscesCache(int minx, int miny, int maxx, int maxy) {
+        assert maxy >= miny && maxx >= minx;
+        bboxX0 = minx;
+        bboxY0 = miny;
+        bboxX1 = maxx + 1;
+        bboxY1 = maxy + 1;
+        // we could just leave the inner arrays as null and allocate them
+        // lazily (which would be beneficial for shapes with gaps), but we
+        // assume there won't be too many of those so we allocate everything
+        // up front (which is better for other cases)
+        rowAARLE = new int[bboxY1 - bboxY0 + 1][INIT_ROW_SIZE];
+        x0 = 0;
+        y0 = -1; // -1 makes the first assert in startRow succeed
+        // the ceiling of (maxy - miny + 1) / TILE_SIZE;
+        int nyTiles = (maxy - miny + TILE_SIZE) >> TILE_SIZE_LG;
+        int nxTiles = (maxx - minx + TILE_SIZE) >> TILE_SIZE_LG;
+
+        touchedTile = new int[nyTiles][nxTiles];
     }
 
-    private static final float ROWAA_RLE_FACTOR = 1.5f;
-    private static final float TOUCHED_FACTOR = 1.5f;
-    private static final int MIN_TOUCHED_LEN = 64;
-
-    private void reallocRowAARLE(int newLength) {
-        if (rowAARLE == null) {
-            rowAARLE = new byte[newLength];
-        } else if (rowAARLE.length < newLength) {
-            int len = Math.max(newLength,
-                               (int)(rowAARLE.length*ROWAA_RLE_FACTOR));
-            byte[] newRowAARLE = new byte[len];
-            System.arraycopy(rowAARLE, 0, newRowAARLE, 0, rowAARLE.length);
-            rowAARLE = newRowAARLE;
+    void addRLERun(int val, int runLen) {
+        if (runLen > 0) {
+            addTupleToRow(y0, val, runLen);
+            if (val != 0) {
+                // the x and y of the current row, minus bboxX0, bboxY0
+                int tx = x0 >> TILE_SIZE_LG;
+                int ty = y0 >> TILE_SIZE_LG;
+                int tx1 = (x0 + runLen - 1) >> TILE_SIZE_LG;
+                // while we forbid rows from starting before bboxx0, our users
+                // can still store rows that go beyond bboxx1 (although this
+                // shouldn't happen), so it's a good idea to check that i
+                // is not going out of bounds in touchedTile[ty]
+                if (tx1 >= touchedTile[ty].length) {
+                    tx1 = touchedTile[ty].length - 1;
+                }
+                if (tx <= tx1) {
+                    int nextTileXCoord = (tx + 1) << TILE_SIZE_LG;
+                    if (nextTileXCoord > x0+runLen) {
+                        touchedTile[ty][tx] += val * runLen;
+                    } else {
+                        touchedTile[ty][tx] += val * (nextTileXCoord - x0);
+                    }
+                    tx++;
+                }
+                // don't go all the way to tx1 - we need to handle the last
+                // tile as a special case (just like we did with the first
+                for (; tx < tx1; tx++) {
+//                    try {
+                    touchedTile[ty][tx] += (val << TILE_SIZE_LG);
+//                    } catch (RuntimeException e) {
+//                        System.out.println("x0, y0: " + x0 + ", " + y0);
+//                        System.out.printf("tx, ty, tx1: %d, %d, %d %n", tx, ty, tx1);
+//                        System.out.printf("bboxX/Y0/1: %d, %d, %d, %d %n",
+//                                bboxX0, bboxY0, bboxX1, bboxY1);
+//                        throw e;
+//                    }
+                }
+                // they will be equal unless x0>>TILE_SIZE_LG == tx1
+                if (tx == tx1) {
+                    int lastXCoord = Math.min(x0 + runLen, (tx + 1) << TILE_SIZE_LG);
+                    int txXCoord = tx << TILE_SIZE_LG;
+                    touchedTile[ty][tx] += val * (lastXCoord - txXCoord);
+                }
+            }
+            x0 += runLen;
         }
     }
 
-    private void reallocRowInfo(int newHeight) {
-        if (minTouched == null) {
-            int len = Math.max(newHeight, MIN_TOUCHED_LEN);
-            minTouched = new int[len];
-            rowOffsetsRLE = new int[len];
-        } else if (minTouched.length < newHeight) {
-            int len = Math.max(newHeight,
-                               (int)(minTouched.length*TOUCHED_FACTOR));
-            int[] newMinTouched = new int[len];
-            int[] newRowOffsetsRLE = new int[len];
-            System.arraycopy(minTouched, 0, newMinTouched, 0,
-                             alphaRows);
-            System.arraycopy(rowOffsetsRLE, 0, newRowOffsetsRLE, 0,
-                             alphaRows);
-            minTouched = newMinTouched;
-            rowOffsetsRLE = newRowOffsetsRLE;
-        }
+    void startRow(int y, int x) {
+        // rows are supposed to be added by increasing y.
+        assert y - bboxY0 > y0;
+        assert y <= bboxY1; // perhaps this should be < instead of <=
+
+        y0 = y - bboxY0;
+        // this should be a new, uninitialized row.
+        assert rowAARLE[y0][1] == 0;
+
+        x0 = x - bboxX0;
+        assert x0 >= 0 : "Input must not be to the left of bbox bounds";
+
+        // the way addTupleToRow is implemented it would work for this but it's
+        // not a good idea to use it because it is meant for adding
+        // RLE tuples, not the first tuple (which is special).
+        rowAARLE[y0][0] = x;
+        rowAARLE[y0][1] = 2;
     }
 
-    void addRLERun(byte val, int runLen) {
-        reallocRowAARLE(alphaRLELength + 2);
-        rowAARLE[alphaRLELength++] = val;
-        rowAARLE[alphaRLELength++] = (byte)runLen;
+    int alphaSumInTile(int x, int y) {
+        x -= bboxX0;
+        y -= bboxY0;
+        return touchedTile[y>>TILE_SIZE_LG][x>>TILE_SIZE_LG];
     }
 
-    void startRow(int y, int x0, int x1) {
-        if (alphaRows == 0) {
-            bboxY0 = y;
-            bboxY1 = y+1;
-            bboxX0 = x0;
-            bboxX1 = x1+1;
-        } else {
-            if (bboxX0 > x0) bboxX0 = x0;
-            if (bboxX1 < x1 + 1) bboxX1 = x1 + 1;
-            while (bboxY1++ < y) {
-                reallocRowInfo(alphaRows+1);
-                minTouched[alphaRows] = 0;
-                // Assuming last 2 entries in rowAARLE are 0,0
-                rowOffsetsRLE[alphaRows] = alphaRLELength-2;
-                alphaRows++;
+    int minTouched(int rowidx) {
+        return rowAARLE[rowidx][0];
+    }
+
+    int rowLength(int rowidx) {
+        return rowAARLE[rowidx][1];
+    }
+
+    private void addTupleToRow(int row, int a, int b) {
+        int end = rowAARLE[row][1];
+        rowAARLE[row] = Helpers.widenArray(rowAARLE[row], end, 2);
+        rowAARLE[row][end++] = a;
+        rowAARLE[row][end++] = b;
+        rowAARLE[row][1] = end;
+    }
+
+    @Override
+    public String toString() {
+        String ret = "bbox = ["+
+                      bboxX0+", "+bboxY0+" => "+
+                      bboxX1+", "+bboxY1+"]\n";
+        for (int[] row : rowAARLE) {
+            if (row != null) {
+                ret += ("minTouchedX=" + row[0] +
+                        "\tRLE Entries: " + Arrays.toString(
+                                Arrays.copyOfRange(row, 2, row[1])) + "\n");
+            } else {
+                ret += "[]\n";
             }
         }
-        reallocRowInfo(alphaRows+1);
-        minTouched[alphaRows] = x0;
-        rowOffsetsRLE[alphaRows] = alphaRLELength;
-        alphaRows++;
-    }
-
-    public synchronized void dispose() {
-        rowAARLE = null;
-        alphaRLELength = 0;
-
-        minTouched = null;
-        rowOffsetsRLE = null;
-        alphaRows = 0;
-
-        bboxX0 = bboxY0 = bboxX1 = bboxY1 = 0;
-    }
-
-    public void print(java.io.PrintStream out) {
-        synchronized (out) {
-        out.println("bbox = ["+
-                    bboxX0+", "+bboxY0+" => "+
-                    bboxX1+", "+bboxY1+"]");
-
-        out.println("alphRLELength = "+alphaRLELength);
-
-        for (int y = bboxY0; y < bboxY1; y++) {
-            int i = y-bboxY0;
-            out.println("row["+i+"] == {"+
-                        "minX = "+minTouched[i]+
-                        ", off = "+rowOffsetsRLE[i]+"}");
-        }
-
-        for (int i = 0; i < alphaRLELength; i += 2) {
-            out.println("rle["+i+"] = "+
-                        (rowAARLE[i+1]&0xff)+" of "+(rowAARLE[i]&0xff));
-        }
-    }
+        return ret;
     }
 }
