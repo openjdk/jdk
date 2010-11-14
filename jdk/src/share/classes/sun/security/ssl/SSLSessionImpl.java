@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.net.*;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.Arrays;
+import java.util.Collection;
 
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -47,6 +49,8 @@ import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLPermission;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.ExtendedSSLSession;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -71,7 +75,7 @@ import static sun.security.ssl.CipherSuite.KeyExchange.*;
  *
  * @author David Brownell
  */
-final class SSLSessionImpl implements SSLSession {
+final class SSLSessionImpl extends ExtendedSSLSession {
 
     /*
      * we only really need a single null session
@@ -89,7 +93,7 @@ final class SSLSessionImpl implements SSLSession {
     private final SessionId             sessionId;
     private X509Certificate[]   peerCerts;
     private byte                compressionMethod;
-    private final CipherSuite   cipherSuite;
+    private CipherSuite         cipherSuite;
     private SecretKey           masterSecret;
 
     /*
@@ -105,6 +109,8 @@ final class SSLSessionImpl implements SSLSession {
     private boolean             invalidated;
     private X509Certificate[]   localCerts;
     private PrivateKey          localPrivateKey;
+    private String[]            localSupportedSignAlgs;
+    private String[]            peerSupportedSignAlgs;
 
     // Principals for non-certificate based cipher suites
     private Principal peerPrincipal;
@@ -132,8 +138,8 @@ final class SSLSessionImpl implements SSLSession {
      * first opened and before handshaking begins.
      */
     private SSLSessionImpl() {
-        this(ProtocolVersion.NONE, CipherSuite.C_NULL,
-             new SessionId(false, null), null, -1);
+        this(ProtocolVersion.NONE, CipherSuite.C_NULL, null,
+            new SessionId(false, null), null, -1);
     }
 
     /*
@@ -142,8 +148,9 @@ final class SSLSessionImpl implements SSLSession {
      * is intended mostly for use by serves.
      */
     SSLSessionImpl(ProtocolVersion protocolVersion, CipherSuite cipherSuite,
+            Collection<SignatureAndHashAlgorithm> algorithms,
             SecureRandom generator, String host, int port) {
-        this(protocolVersion, cipherSuite,
+        this(protocolVersion, cipherSuite, algorithms,
              new SessionId(defaultRejoinable, generator), host, port);
     }
 
@@ -151,6 +158,7 @@ final class SSLSessionImpl implements SSLSession {
      * Record a new session, using a given cipher spec and session ID.
      */
     SSLSessionImpl(ProtocolVersion protocolVersion, CipherSuite cipherSuite,
+            Collection<SignatureAndHashAlgorithm> algorithms,
             SessionId id, String host, int port) {
         this.protocolVersion = protocolVersion;
         sessionId = id;
@@ -161,9 +169,11 @@ final class SSLSessionImpl implements SSLSession {
         this.host = host;
         this.port = port;
         sessionCount = ++counter;
+        localSupportedSignAlgs =
+            SignatureAndHashAlgorithm.getAlgorithmNames(algorithms);
 
         if (debug != null && Debug.isOn("session")) {
-            System.out.println("%% Created:  " + this);
+            System.out.println("%% Initialized:  " + this);
         }
     }
 
@@ -194,6 +204,12 @@ final class SSLSessionImpl implements SSLSession {
 
     void setLocalPrivateKey(PrivateKey privateKey) {
         localPrivateKey = privateKey;
+    }
+
+    void setPeerSupportedSignatureAlgorithms(
+            Collection<SignatureAndHashAlgorithm> algorithms) {
+        peerSupportedSignAlgs =
+            SignatureAndHashAlgorithm.getAlgorithmNames(algorithms);
     }
 
     /**
@@ -290,6 +306,17 @@ final class SSLSessionImpl implements SSLSession {
      */
     CipherSuite getSuite() {
         return cipherSuite;
+    }
+
+    /**
+     * Resets the cipher spec in use on this session
+     */
+    void setSuite(CipherSuite suite) {
+       cipherSuite = suite;
+
+       if (debug != null && Debug.isOn("session")) {
+           System.out.println("%% Negotiating:  " + this);
+       }
     }
 
     /**
@@ -716,6 +743,30 @@ final class SSLSessionImpl implements SSLSession {
      */
     public synchronized int getApplicationBufferSize() {
         return getPacketBufferSize() - Record.headerSize;
+    }
+
+    /**
+     * Gets an array of supported signature algorithms that the local side is
+     * willing to verify.
+     */
+    public String[] getLocalSupportedSignatureAlgorithms() {
+        if (localSupportedSignAlgs != null) {
+            return localSupportedSignAlgs.clone();
+        }
+
+        return new String[0];
+    }
+
+    /**
+     * Gets an array of supported signature algorithms that the peer is
+     * able to verify.
+     */
+    public String[] getPeerSupportedSignatureAlgorithms() {
+        if (peerSupportedSignAlgs != null) {
+            return peerSupportedSignAlgs.clone();
+        }
+
+        return new String[0];
     }
 
     /** Returns a string representation of this SSL session */

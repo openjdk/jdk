@@ -37,7 +37,7 @@ package java.dyn;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public class NoAccessException extends RuntimeException {
+public class NoAccessException extends ReflectiveOperationException {
     private static final long serialVersionUID = 292L;
 
     /**

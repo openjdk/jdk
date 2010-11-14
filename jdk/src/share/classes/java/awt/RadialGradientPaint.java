@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.ColorModel;
+import java.beans.ConstructorProperties;
 
 /**
  * The {@code RadialGradientPaint} class provides a way to fill a shape with
@@ -428,6 +429,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      * or a {@code fractions} value is less than 0.0 or greater than 1.0,
      * or the {@code fractions} are not provided in strictly increasing order
      */
+    @ConstructorProperties({ "centerPoint", "radius", "focusPoint", "fractions", "colors", "cycleMethod", "colorSpace", "transform" })
     public RadialGradientPaint(Point2D center,
                                float radius,
                                Point2D focus,

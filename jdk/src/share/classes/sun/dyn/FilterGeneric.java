@@ -25,12 +25,8 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodType;
-import java.dyn.NoAccessException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.dyn.*;
+import java.lang.reflect.*;
 import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
@@ -119,7 +115,7 @@ class FilterGeneric {
 
     static MethodHandle make(Kind kind, int pos, MethodHandle filter, MethodHandle target) {
         FilterGeneric fgen = of(kind, pos, filter.type(), target.type());
-        return fgen.makeInstance(kind, pos, filter, target);
+        return fgen.makeInstance(kind, pos, filter, target).asMethodHandle();
     }
 
     /** Return the adapter information for this target and filter type. */

@@ -362,6 +362,14 @@ public class BasicScrollPaneUI
      * @since 1.6
      */
     public int getBaseline(JComponent c, int width, int height) {
+        if (c == null) {
+            throw new NullPointerException("Component must be non-null");
+        }
+
+        if (width < 0 || height < 0) {
+            throw new IllegalArgumentException("Width and height must be >= 0");
+        }
+
         JViewport viewport = scrollpane.getViewport();
         Insets spInsets = scrollpane.getInsets();
         int y = spInsets.top;

@@ -357,7 +357,9 @@ public class TreePosTest {
                     check("encl.start <= start", encl, self, encl.start <= self.start);
                     check("start <= pos", encl, self, self.start <= self.pos);
                     if (!(self.tag == JCTree.TYPEARRAY
-                            && (encl.tag == JCTree.VARDEF || encl.tag == JCTree.TYPEARRAY))) {
+                            && (encl.tag == JCTree.VARDEF ||
+                                encl.tag == JCTree.METHODDEF ||
+                                encl.tag == JCTree.TYPEARRAY))) {
                         check("encl.pos <= start || end <= encl.pos",
                                 encl, self, encl.pos <= self.start || self.end <= encl.pos);
                     }
