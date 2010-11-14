@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,7 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
         int certPathLen = certList.size();
 
         basicChecker = new BasicChecker(anchor, testDate, sigProvider, false);
-        AlgorithmChecker algorithmChecker= AlgorithmChecker.getInstance();
+        AlgorithmChecker algorithmChecker = new AlgorithmChecker(anchor);
         KeyChecker keyChecker = new KeyChecker(certPathLen,
             pkixParam.getTargetCertConstraints());
         ConstraintsChecker constraintsChecker =
