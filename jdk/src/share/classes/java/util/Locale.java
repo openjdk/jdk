@@ -758,7 +758,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     private static void initDefault() {
-        String language, region, country, variant;
+        String language, region, script, country, variant;
         language = AccessController.doPrivileged(
             new GetPropertyAction("user.language", "en"));
         // for compatibility, check for old user.region property
@@ -774,43 +774,41 @@ public final class Locale implements Cloneable, Serializable {
                 country = region;
                 variant = "";
             }
+            script = "";
         } else {
+            script = AccessController.doPrivileged(
+                new GetPropertyAction("user.script", ""));
             country = AccessController.doPrivileged(
                 new GetPropertyAction("user.country", ""));
             variant = AccessController.doPrivileged(
                 new GetPropertyAction("user.variant", ""));
         }
-        defaultLocale = getInstance(language, country, variant);
+        defaultLocale = getInstance(language, script, country, variant, null);
     }
 
     private static void initDefault(Locale.Category category) {
-        String language, region, country, variant;
+        // make sure defaultLocale is initialized
+        if (defaultLocale == null) {
+            initDefault();
+        }
+
+        Locale defaultCategoryLocale = getInstance(
+            AccessController.doPrivileged(
+                new GetPropertyAction(category.languageKey, defaultLocale.getLanguage())),
+            AccessController.doPrivileged(
+                new GetPropertyAction(category.scriptKey, defaultLocale.getScript())),
+            AccessController.doPrivileged(
+                new GetPropertyAction(category.countryKey, defaultLocale.getCountry())),
+            AccessController.doPrivileged(
+                new GetPropertyAction(category.variantKey, defaultLocale.getVariant())),
+            null);
+
         switch (category) {
         case DISPLAY:
-            language = AccessController.doPrivileged(
-                new GetPropertyAction("user.language.display", ""));
-            if ("".equals(language)) {
-                defaultDisplayLocale = getDefault();
-            } else {
-                country = AccessController.doPrivileged(
-                    new GetPropertyAction("user.country.display", ""));
-                variant = AccessController.doPrivileged(
-                    new GetPropertyAction("user.variant.display", ""));
-                defaultDisplayLocale = getInstance(language, country, variant);
-            }
+            defaultDisplayLocale = defaultCategoryLocale;
             break;
         case FORMAT:
-            language = AccessController.doPrivileged(
-                new GetPropertyAction("user.language.format", ""));
-            if ("".equals(language)) {
-                defaultFormatLocale = getDefault();
-            } else {
-                country = AccessController.doPrivileged(
-                    new GetPropertyAction("user.country.format", ""));
-                variant = AccessController.doPrivileged(
-                    new GetPropertyAction("user.variant.format", ""));
-                defaultFormatLocale = getInstance(language, country, variant);
-            }
+            defaultFormatLocale = defaultCategoryLocale;
             break;
         }
     }
@@ -2124,13 +2122,31 @@ public final class Locale implements Cloneable, Serializable {
          * Category used to represent the default locale for
          * displaying user interfaces.
          */
-        DISPLAY,
+        DISPLAY("user.language.display",
+                "user.script.display",
+                "user.country.display",
+                "user.variant.display"),
 
         /**
          * Category used to represent the default locale for
          * formatting dates, numbers, and/or currencies.
          */
-        FORMAT,
+        FORMAT("user.language.format",
+               "user.script.format",
+               "user.country.format",
+               "user.variant.format");
+
+        Category(String languageKey, String scriptKey, String countryKey, String variantKey) {
+            this.languageKey = languageKey;
+            this.scriptKey = scriptKey;
+            this.countryKey = countryKey;
+            this.variantKey = variantKey;
+        }
+
+        final String languageKey;
+        final String scriptKey;
+        final String countryKey;
+        final String variantKey;
     }
 
     /**

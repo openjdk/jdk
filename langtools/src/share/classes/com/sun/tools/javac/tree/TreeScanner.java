@@ -276,8 +276,8 @@ public class TreeScanner extends Visitor {
         scan(tree.arguments);
     }
 
-    public void visitTypeDisjoint(JCTypeDisjoint tree) {
-        scan(tree.components);
+    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+        scan(tree.alternatives);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {

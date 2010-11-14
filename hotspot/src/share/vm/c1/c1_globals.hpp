@@ -75,6 +75,9 @@
   develop(bool, SelectivePhiFunctions, true,                                \
           "create phi functions at loop headers only when necessary")       \
                                                                             \
+  develop(bool, OptimizeIfOps, true,                                        \
+          "Optimize multiple IfOps")                                        \
+                                                                            \
   develop(bool, DoCEE, true,                                                \
           "Do Conditional Expression Elimination to simplify CFG")          \
                                                                             \

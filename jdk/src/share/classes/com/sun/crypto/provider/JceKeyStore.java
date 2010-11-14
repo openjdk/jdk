@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,7 +764,8 @@ public final class JceKeyStore extends KeyStoreSpi {
                                     cf = (CertificateFactory)cfs.get(certType);
                                 } else {
                                 // create new certificate factory
-                                    cf = CertificateFactory.getInstance(certType);
+                                    cf = CertificateFactory.getInstance(
+                                        certType);
                                 // store the certificate factory so we can
                                 // reuse it later
                                     cfs.put(certType, cf);
@@ -863,8 +864,9 @@ public final class JceKeyStore extends KeyStoreSpi {
                     dis.readFully(actual);
                     for (int i = 0; i < computed.length; i++) {
                         if (computed[i] != actual[i]) {
-                            throw new IOException("Keystore was tampered with, or "
-                                                  + "password was incorrect");
+                            throw new IOException(
+                                "Keystore was tampered with, or "
+                                + "password was incorrect");
                         }
                     }
                 }
