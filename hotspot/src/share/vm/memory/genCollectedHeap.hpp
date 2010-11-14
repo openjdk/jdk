@@ -62,11 +62,10 @@ public:
   // The generational collector policy.
   GenCollectorPolicy* _gen_policy;
 
-  // If a generation would bail out of an incremental collection,
-  // it sets this flag.  If the flag is set, satisfy_failed_allocation
-  // will attempt allocating in all generations before doing a full GC.
-  bool _incremental_collection_will_fail;
-  bool _last_incremental_collection_failed;
+  // Indicates that the most recent previous incremental collection failed.
+  // The flag is cleared when an action is taken that might clear the
+  // condition that caused that incremental collection to fail.
+  bool _incremental_collection_failed;
 
   // In support of ExplicitGCInvokesConcurrent functionality
   unsigned int _full_collections_completed;
@@ -469,26 +468,26 @@ public:
   // call to "save_marks".
   bool no_allocs_since_save_marks(int level);
 
-  // If a generation bails out of an incremental collection,
-  // it sets this flag.
+  // Returns true if an incremental collection is likely to fail.
   bool incremental_collection_will_fail() {
-    return _incremental_collection_will_fail;
-  }
-  void set_incremental_collection_will_fail() {
-    _incremental_collection_will_fail = true;
-  }
-  void clear_incremental_collection_will_fail() {
-    _incremental_collection_will_fail = false;
+    // Assumes a 2-generation system; the first disjunct remembers if an
+    // incremental collection failed, even when we thought (second disjunct)
+    // that it would not.
+    assert(heap()->collector_policy()->is_two_generation_policy(),
+           "the following definition may not be suitable for an n(>2)-generation system");
+    return incremental_collection_failed() || !get_gen(0)->collection_attempt_is_safe();
   }
 
-  bool last_incremental_collection_failed() const {
-    return _last_incremental_collection_failed;
+  // If a generation bails out of an incremental collection,
+  // it sets this flag.
+  bool incremental_collection_failed() const {
+    return _incremental_collection_failed;
   }
-  void set_last_incremental_collection_failed() {
-    _last_incremental_collection_failed = true;
+  void set_incremental_collection_failed() {
+    _incremental_collection_failed = true;
   }
-  void clear_last_incremental_collection_failed() {
-    _last_incremental_collection_failed = false;
+  void clear_incremental_collection_failed() {
+    _incremental_collection_failed = false;
   }
 
   // Promotion of obj into gen failed.  Try to promote obj to higher non-perm

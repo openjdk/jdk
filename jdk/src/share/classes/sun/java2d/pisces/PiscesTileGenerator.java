@@ -25,40 +25,54 @@
 
 package sun.java2d.pisces;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import sun.java2d.pipe.AATileGenerator;
 
-public class PiscesTileGenerator implements AATileGenerator {
-    public static final int TILE_SIZE = 32;
+public final class PiscesTileGenerator implements AATileGenerator {
+    public static final int TILE_SIZE = PiscesCache.TILE_SIZE;
+
+    // perhaps we should be using weak references here, but right now
+    // that's not necessary. The way the renderer is, this map will
+    // never contain more than one element - the one with key 64, since
+    // we only do 8x8 supersampling.
+    private static final Map<Integer, byte[]> alphaMapsCache = new
+                   ConcurrentHashMap<Integer, byte[]>();
 
     PiscesCache cache;
     int x, y;
-    int maxalpha;
+    final int maxalpha;
+    private final int maxTileAlphaSum;
+
+    // The alpha map used by this object (taken out of our map cache) to convert
+    // pixel coverage counts gotten from PiscesCache (which are in the range
+    // [0, maxalpha]) into alpha values, which are in [0,256).
     byte alphaMap[];
 
-    public PiscesTileGenerator(PiscesCache cache, int maxalpha) {
-        this.cache = cache;
+    public PiscesTileGenerator(Renderer r, int maxalpha) {
+        this.cache = r.getCache();
         this.x = cache.bboxX0;
         this.y = cache.bboxY0;
         this.alphaMap = getAlphaMap(maxalpha);
         this.maxalpha = maxalpha;
+        this.maxTileAlphaSum = TILE_SIZE*TILE_SIZE*maxalpha;
     }
 
-    static int prevMaxAlpha;
-    static byte prevAlphaMap[];
-
-    public synchronized static byte[] getAlphaMap(int maxalpha) {
-        if (maxalpha != prevMaxAlpha) {
-            prevAlphaMap = new byte[maxalpha+300];
-            int halfmaxalpha = maxalpha>>2;
-            for (int i = 0; i <= maxalpha; i++) {
-                prevAlphaMap[i] = (byte) ((i * 255 + halfmaxalpha) / maxalpha);
-            }
-            for (int i = maxalpha; i < prevAlphaMap.length; i++) {
-                prevAlphaMap[i] = (byte) 255;
-            }
-            prevMaxAlpha = maxalpha;
+    private static byte[] buildAlphaMap(int maxalpha) {
+        byte[] alMap = new byte[maxalpha+1];
+        int halfmaxalpha = maxalpha>>2;
+        for (int i = 0; i <= maxalpha; i++) {
+            alMap[i] = (byte) ((i * 255 + halfmaxalpha) / maxalpha);
         }
-        return prevAlphaMap;
+        return alMap;
+    }
+
+    public static byte[] getAlphaMap(int maxalpha) {
+        if (!alphaMapsCache.containsKey(maxalpha)) {
+            alphaMapsCache.put(maxalpha, buildAlphaMap(maxalpha));
+        }
+        return alphaMapsCache.get(maxalpha);
     }
 
     public void getBbox(int bbox[]) {
@@ -96,53 +110,24 @@ public class PiscesTileGenerator implements AATileGenerator {
      *         value for partial coverage of the tile
      */
     public int getTypicalAlpha() {
-        if (true) return 0x80;
-        // Decode run-length encoded alpha mask data
-        // The data for row j begins at cache.rowOffsetsRLE[j]
-        // and is encoded as a set of 2-byte pairs (val, runLen)
-        // terminated by a (0, 0) pair.
-
-        int x0 = this.x;
-        int x1 = x0 + TILE_SIZE;
-        int y0 = this.y;
-        int y1 = y0 + TILE_SIZE;
-        if (x1 > cache.bboxX1) x1 = cache.bboxX1;
-        if (y1 > cache.bboxY1) y1 = cache.bboxY1;
-        y0 -= cache.bboxY0;
-        y1 -= cache.bboxY0;
-
-        int ret = -1;
-        for (int cy = y0; cy < y1; cy++) {
-            int pos = cache.rowOffsetsRLE[cy];
-            int cx = cache.minTouched[cy];
-
-            if (cx > x0) {
-                if (ret > 0) return 0x80;
-                ret = 0x00;
-            }
-            while (cx < x1) {
-                int runLen = cache.rowAARLE[pos + 1] & 0xff;
-                if (runLen == 0) {
-                    if (ret > 0) return 0x80;
-                    ret = 0x00;
-                    break;
-                }
-                cx += runLen;
-                if (cx > x0) {
-                    int val = cache.rowAARLE[pos] & 0xff;
-                    if (ret != val) {
-                        if (ret < 0) {
-                            if (val != 0x00 && val != maxalpha) return 0x80;
-                            ret = val;
-                        } else {
-                            return 0x80;
-                        }
-                    }
-                }
-                pos += 2;
-            }
-        }
-        return ret;
+        int al = cache.alphaSumInTile(x, y);
+        // Note: if we have a filled rectangle that doesn't end on a tile
+        // border, we could still return 0xff, even though al!=maxTileAlphaSum
+        // This is because if we return 0xff, our users will fill a rectangle
+        // starting at x,y that has width = Math.min(TILE_SIZE, bboxX1-x),
+        // and height min(TILE_SIZE,bboxY1-y), which is what should happen.
+        // However, to support this, we would have to use 2 Math.min's
+        // and 2 multiplications per tile, instead of just 2 multiplications
+        // to compute maxTileAlphaSum. The savings offered would probably
+        // not be worth it, considering how rare this case is.
+        // Note: I have not tested this, so in the future if it is determined
+        // that it is worth it, it should be implemented. Perhaps this method's
+        // interface should be changed to take arguments the width and height
+        // of the current tile. This would eliminate the 2 Math.min calls that
+        // would be needed here, since our caller needs to compute these 2
+        // values anyway.
+        return (al == 0x00 ? 0x00 :
+            (al == maxTileAlphaSum ? 0xff : 0x80));
     }
 
     /**
@@ -179,22 +164,24 @@ public class PiscesTileGenerator implements AATileGenerator {
 
         int idx = offset;
         for (int cy = y0; cy < y1; cy++) {
-            int pos = cache.rowOffsetsRLE[cy];
-            int cx = cache.minTouched[cy];
+            int[] row = cache.rowAARLE[cy];
+            assert row != null;
+            int cx = cache.minTouched(cy);
             if (cx > x1) cx = x1;
 
-            if (cx > x0) {
-                //System.out.println("L["+(cx-x0)+"]");
-                for (int i = x0; i < cx; i++) {
-                    tile[idx++] = 0x00;
-                }
+            for (int i = x0; i < cx; i++) {
+                tile[idx++] = 0x00;
             }
-            while (cx < x1) {
+
+            int pos = 2;
+            while (cx < x1 && pos < row[1]) {
                 byte val;
                 int runLen = 0;
+                assert row[1] > 2;
                 try {
-                    val = alphaMap[cache.rowAARLE[pos] & 0xff];
-                    runLen = cache.rowAARLE[pos + 1] & 0xff;
+                    val = alphaMap[row[pos]];
+                    runLen = row[pos + 1];
+                    assert runLen > 0;
                 } catch (RuntimeException e0) {
                     System.out.println("maxalpha = "+maxalpha);
                     System.out.println("tile["+x0+", "+y0+
@@ -202,14 +189,12 @@ public class PiscesTileGenerator implements AATileGenerator {
                     System.out.println("cx = "+cx+", cy = "+cy);
                     System.out.println("idx = "+idx+", pos = "+pos);
                     System.out.println("len = "+runLen);
-                    cache.print(System.out);
+                    System.out.print(cache.toString());
                     e0.printStackTrace();
                     System.exit(1);
                     return;
                 }
-                if (runLen == 0) {
-                    break;
-                }
+
                 int rx0 = cx;
                 cx += runLen;
                 int rx1 = cx;
@@ -228,7 +213,7 @@ public class PiscesTileGenerator implements AATileGenerator {
                         System.out.println("idx = "+idx+", pos = "+pos);
                         System.out.println("rx0 = "+rx0+", rx1 = "+rx1);
                         System.out.println("len = "+runLen);
-                        cache.print(System.out);
+                        System.out.print(cache.toString());
                         e.printStackTrace();
                         System.exit(1);
                         return;

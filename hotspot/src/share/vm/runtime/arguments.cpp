@@ -119,11 +119,8 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.version", "1.0", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
-        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
 
   // following are JVMTI agent writeable properties.
@@ -149,6 +146,14 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
+}
+
+
+  // Update/Initialize System properties after JDK version number is known
+void Arguments::init_version_specific_system_properties() {
+  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
+        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
+  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
 }
 
 /**
@@ -185,6 +190,10 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
                            JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
   { "UseDepthFirstScavengeOrder",
                            JDK_Version::jdk_update(6,22), JDK_Version::jdk(7) },
+  { "HandlePromotionFailure",
+                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
+  { "MaxLiveObjectEvacuationRatio",
+                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -948,26 +957,54 @@ static void no_shared_spaces() {
   }
 }
 
+void Arguments::check_compressed_oops_compat() {
+#ifdef _LP64
+  assert(UseCompressedOops, "Precondition");
+#  if defined(COMPILER1) && !defined(TIERED)
+  // Until c1 supports compressed oops turn them off.
+  FLAG_SET_DEFAULT(UseCompressedOops, false);
+#  else
+  // Is it on by default or set on ergonomically
+  bool is_on_by_default = FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops);
+
+  // Tiered currently doesn't work with compressed oops
+  if (TieredCompilation) {
+    if (is_on_by_default) {
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
+      return;
+    } else {
+      vm_exit_during_initialization(
+        "Tiered compilation is not supported with compressed oops yet", NULL);
+    }
+  }
+
+  // If dumping an archive or forcing its use, disable compressed oops if possible
+  if (DumpSharedSpaces || RequireSharedSpaces) {
+    if (is_on_by_default) {
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
+      return;
+    } else {
+      vm_exit_during_initialization(
+        "Class Data Sharing is not supported with compressed oops yet", NULL);
+    }
+  } else if (UseSharedSpaces) {
+    // UseSharedSpaces is on by default. With compressed oops, we turn it off.
+    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+  }
+
+#  endif // defined(COMPILER1) && !defined(TIERED)
+#endif // _LP64
+}
+
 void Arguments::set_tiered_flags() {
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
     FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
   }
-
   if (CompilationPolicyChoice < 2) {
     vm_exit_during_initialization(
       "Incompatible compilation policy selected", NULL);
   }
-
-#ifdef _LP64
-  if (FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops)) {
-    UseCompressedOops = false;
-  }
-  if (UseCompressedOops) {
-    vm_exit_during_initialization(
-      "Tiered compilation is not supported with compressed oops yet", NULL);
-  }
-#endif
- // Increase the code cache size - tiered compiles a lot more.
+  // Increase the code cache size - tiered compiles a lot more.
   if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
     FLAG_SET_DEFAULT(ReservedCodeCacheSize, ReservedCodeCacheSize * 2);
   }
@@ -1676,7 +1713,8 @@ bool Arguments::check_stack_pages()
   bool status = true;
   status = status && verify_min_value(StackYellowPages, 1, "StackYellowPages");
   status = status && verify_min_value(StackRedPages, 1, "StackRedPages");
-  status = status && verify_min_value(StackShadowPages, 1, "StackShadowPages");
+  // greater stack shadow pages can't generate instruction to bang stack
+  status = status && verify_interval(StackShadowPages, 1, 50, "StackShadowPages");
   return status;
 }
 
@@ -1722,8 +1760,6 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  status = status && verify_percentage(MaxLiveObjectEvacuationRatio,
-                              "MaxLiveObjectEvacuationRatio");
   status = status && verify_percentage(AdaptiveSizePolicyWeight,
                               "AdaptiveSizePolicyWeight");
   status = status && verify_percentage(AdaptivePermSizeWeight, "AdaptivePermSizeWeight");
@@ -2827,6 +2863,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
   return JNI_OK;
 }
 
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* args) {
@@ -2969,10 +3006,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     PrintGC = true;
   }
 
-#if defined(_LP64) && defined(COMPILER1) && !defined(TIERED)
-  UseCompressedOops = false;
-#endif
-
   // Set object alignment values.
   set_object_alignment();
 
@@ -2987,13 +3020,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   set_ergonomics_flags();
 
 #ifdef _LP64
-  // XXX JSR 292 currently does not support compressed oops.
-  if (EnableMethodHandles && UseCompressedOops) {
-    if (FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops)) {
-      UseCompressedOops = false;
-    }
+  if (UseCompressedOops) {
+    check_compressed_oops_compat();
   }
-#endif // _LP64
+#endif
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

@@ -25,11 +25,8 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
+import java.dyn.*;
 import java.dyn.MethodHandles.Lookup;
-import java.dyn.MethodType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.dyn.util.VerifyType;
@@ -46,6 +43,7 @@ import sun.dyn.util.Wrapper;
 import sun.misc.Unsafe;
 import static sun.dyn.MemberName.newIllegalArgumentException;
 import static sun.dyn.MemberName.newNoAccessException;
+import static sun.dyn.MemberName.uncaughtException;
 
 /**
  * Base class for method handles, containing JVM-specific fields and logic.
@@ -173,7 +171,7 @@ public abstract class MethodHandleImpl {
      */
     public static
     MethodHandle findMethod(Access token, MemberName method,
-            boolean doDispatch, Class<?> lookupClass) {
+            boolean doDispatch, Class<?> lookupClass) throws NoAccessException {
         Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
         if (!method.isStatic()) {
@@ -320,7 +318,7 @@ public abstract class MethodHandleImpl {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "invoke_V", MethodType.genericMethodType(0, true));
             } catch (NoAccessException ex) {
-                throw new InternalError("");
+                throw uncaughtException(ex);
             }
         }
         // Corresponding generic constructor types:
@@ -416,9 +414,7 @@ public abstract class MethodHandleImpl {
                 f = c.getDeclaredField(field.getName());
                 return unsafe.staticFieldBase(f);
             } catch (Exception ee) {
-                Error e = new InternalError();
-                e.initCause(ee);
-                throw e;
+                throw uncaughtException(ee);
             }
         }
 
@@ -473,10 +469,8 @@ public abstract class MethodHandleImpl {
             MethodHandle mh;
             try {
                 mh = IMPL_LOOKUP.findVirtual(FieldAccessor.class, name, type);
-            } catch (NoAccessException ee) {
-                Error e = new InternalError("name,type="+name+type);
-                e.initCause(ee);
-                throw e;
+            } catch (NoAccessException ex) {
+                throw uncaughtException(ex);
             }
             if (evclass != vclass || (!isStatic && ecclass != cclass)) {
                 MethodType strongType = FieldAccessor.ftype(cclass, vclass, isSetter, isStatic);
@@ -543,10 +537,8 @@ public abstract class MethodHandleImpl {
             MethodHandle mh;
             try {
                 mh = IMPL_LOOKUP.findStatic(FieldAccessor.class, name, type);
-            } catch (NoAccessException ee) {
-                Error e = new InternalError("name,type="+name+type);
-                e.initCause(ee);
-                throw e;
+            } catch (NoAccessException ex) {
+                throw uncaughtException(ex);
             }
             if (caclass != null) {
                 MethodType strongType = FieldAccessor.atype(caclass, isSetter);
@@ -1031,7 +1023,7 @@ public abstract class MethodHandleImpl {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithTest.class, "invoke_V", MethodType.genericMethodType(0, true));
             } catch (NoAccessException ex) {
-                throw new InternalError("");
+                throw uncaughtException(ex);
             }
         }
     }
@@ -1167,7 +1159,7 @@ public abstract class MethodHandleImpl {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithCatch.class, "invoke_V", MethodType.genericMethodType(0, true));
             } catch (NoAccessException ex) {
-                throw new InternalError("");
+                throw uncaughtException(ex);
             }
         }
     }
@@ -1207,9 +1199,16 @@ public abstract class MethodHandleImpl {
         return AdapterMethodHandle.makeRetypeRaw(token, type, THROW_EXCEPTION);
     }
 
-    static final MethodHandle THROW_EXCEPTION
+    static final MethodHandle THROW_EXCEPTION;
+    static {
+        try {
+            THROW_EXCEPTION
             = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "throwException",
                     MethodType.methodType(Empty.class, Throwable.class));
+        } catch (NoAccessException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
     public static String getNameString(Access token, MethodHandle target) {

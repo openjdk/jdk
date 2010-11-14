@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,32 +32,22 @@
 package com.sun.corba.se.impl.io;
 
 import javax.rmi.CORBA.Util;
-import javax.rmi.PortableRemoteObject;
 
 import java.util.Hashtable;
-import java.util.Stack;
 import java.io.IOException;
-import java.util.EmptyStackException;
 
-import com.sun.corba.se.impl.util.Utility;
-import com.sun.corba.se.impl.io.IIOPInputStream;
-import com.sun.corba.se.impl.io.IIOPOutputStream;
 import com.sun.corba.se.impl.util.RepositoryId;
 import com.sun.corba.se.impl.util.Utility;
 
 import org.omg.CORBA.TCKind;
 
-import org.omg.CORBA.MARSHAL;
-import org.omg.CORBA.BAD_PARAM;
-import org.omg.CORBA.CompletionStatus;
 import org.omg.CORBA.portable.IndirectionException;
 import com.sun.org.omg.SendingContext.CodeBase;
 import com.sun.org.omg.SendingContext.CodeBaseHelper;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import com.sun.corba.se.impl.io.IIOPInputStream.ActiveRecursionManager;
+import java.security.PrivilegedExceptionAction;
 
 import com.sun.corba.se.spi.logging.CORBALogDomains;
 import com.sun.corba.se.impl.logging.OMGSystemException;
@@ -809,65 +799,163 @@ public class ValueHandlerImpl implements javax.rmi.CORBA.ValueHandlerMultiFormat
         return "com.sun.corba.se.impl.io.IIOPOutputStream";
     }
 
-    private com.sun.corba.se.impl.io.IIOPOutputStream createOutputStream() {
-        return (com.sun.corba.se.impl.io.IIOPOutputStream)AccessController.doPrivileged(
-            new StreamFactory(getOutputStreamClassName()));
+   private IIOPOutputStream createOutputStream() {
+        final String name = getOutputStreamClassName();
+        try {
+             IIOPOutputStream stream = createOutputStreamBuiltIn(name);
+             if (stream != null) {
+                 return stream;
+             }
+             return createCustom(IIOPOutputStream.class, name);
+        } catch (Throwable t) {
+            // Throw exception under the carpet.
+            InternalError ie = new InternalError(
+                "Error loading " + name
+            );
+                ie.initCause(t);
+                throw ie;
+        }
+    }
+
+    /**
+     * Construct a built in implementation with priveleges.
+     * Returning null indicates a non-built is specified.
+     */
+    private IIOPOutputStream createOutputStreamBuiltIn(
+        final String name
+    ) throws Throwable {
+        try {
+            return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<IIOPOutputStream>() {
+                    public IIOPOutputStream run() throws IOException {
+                        return createOutputStreamBuiltInNoPriv(name);
+                    }
+                }
+            );
+        } catch (java.security.PrivilegedActionException exc) {
+            throw exc.getCause();
+        }
+    }
+
+    /**
+     * Returning null indicates a non-built is specified.
+     */
+    private IIOPOutputStream createOutputStreamBuiltInNoPriv(
+        final String name
+    ) throws IOException {
+        return
+            name.equals(
+                IIOPOutputStream
+                    .class.getName()
+            ) ?
+            new IIOPOutputStream() :
+
+            name.equals(
+                com.sun.corba.se.impl.orbutil.IIOPOutputStream_1_3
+                    .class.getName()
+            ) ?
+            new com.sun.corba.se.impl.orbutil.IIOPOutputStream_1_3() :
+
+            name.equals(
+                com.sun.corba.se.impl.orbutil.IIOPOutputStream_1_3_1
+                    .class.getName()
+            ) ?
+            new com.sun.corba.se.impl.orbutil.IIOPOutputStream_1_3_1() :
+
+            null;
     }
 
     protected String getInputStreamClassName() {
         return "com.sun.corba.se.impl.io.IIOPInputStream";
     }
 
-    private com.sun.corba.se.impl.io.IIOPInputStream createInputStream() {
-        return (com.sun.corba.se.impl.io.IIOPInputStream)AccessController.doPrivileged(
-            new StreamFactory(getInputStreamClassName()));
+    private IIOPInputStream createInputStream() {
+        final String name = getInputStreamClassName();
+        try {
+             IIOPInputStream stream = createInputStreamBuiltIn(name);
+             if (stream != null) {
+                 return stream;
+             }
+             return createCustom(IIOPInputStream.class, name);
+        } catch (Throwable t) {
+            // Throw exception under the carpet.
+            InternalError ie = new InternalError(
+                "Error loading " + name
+            );
+                ie.initCause(t);
+                throw ie;
+        }
     }
 
     /**
-     * Instantiates a class of the given name using the system ClassLoader
-     * as part of a PrivilegedAction.
-     *
-     * It's private final so hopefully people can't grab it outside of
-     * this class.
-     *
-     * If you're worried that someone could subclass ValueHandlerImpl,
-     * install his own streams, and snoop what's on the wire:
-     * Someone can do that only if he's allowed to use the feature
-     * of installing his own javax.rmi.CORBA.Util delegate (via a
-     * JVM property or orb.properties file, read the first time the
-     * Util class is used).  If he can do that, he can snoop
-     * anything on the wire, anyway, without abusing the
-     * StreamFactory class.
+     * Construct a built in implementation with priveleges.
+     * Returning null indicates a non-built is specified.
      */
-    private static final class StreamFactory implements PrivilegedAction {
-        private String className;
+     private IIOPInputStream createInputStreamBuiltIn(
+         final String name
+     ) throws Throwable {
+         try {
+             return AccessController.doPrivileged(
+                 new PrivilegedExceptionAction<IIOPInputStream>() {
+                     public IIOPInputStream run() throws IOException {
+                         return createInputStreamBuiltInNoPriv(name);
+                     }
+                 }
+             );
+         } catch (java.security.PrivilegedActionException exc) {
+             throw exc.getCause();
+         }
+     }
 
-        public StreamFactory (String _className) {
-            className = _className;
-        }
+     /**
+      * Returning null indicates a non-built is specified.
+      */
+     private IIOPInputStream createInputStreamBuiltInNoPriv(
+         final String name
+     ) throws IOException {
+         return
+             name.equals(
+                 IIOPInputStream
+                     .class.getName()
+             ) ?
+             new IIOPInputStream() :
 
-        public Object run() {
-            try {
-                // Note: We must use the system ClassLoader here
-                // since we want to load classes outside of the
-                // core JDK when running J2EE Pure ORB and
-                // talking to Kestrel.
+             name.equals(
+                 com.sun.corba.se.impl.orbutil.IIOPInputStream_1_3
+                     .class.getName()
+             ) ?
+             new com.sun.corba.se.impl.orbutil.IIOPInputStream_1_3() :
+
+             name.equals(
+                 com.sun.corba.se.impl.orbutil.IIOPInputStream_1_3_1
+                     .class.getName()
+             ) ?
+             new com.sun.corba.se.impl.orbutil.IIOPInputStream_1_3_1() :
+
+             null;
+     }
+
+     /**
+      * Create a custom implementation without privileges.
+      */
+     private <T> T createCustom(
+         final Class<T> type, final String className
+     ) throws Throwable {
+           // Note: We use the thread context or system ClassLoader here
+           // since we want to load classes outside of the
+           // core JDK when running J2EE Pure ORB and
+           // talking to Kestrel.
                 ClassLoader cl = Thread.currentThread().getContextClassLoader();
                 if (cl == null)
                     cl = ClassLoader.getSystemClassLoader();
 
-                Class streamClass = cl.loadClass(className);
+                Class<?> clazz = cl.loadClass(className);
+                Class<? extends T> streamClass = clazz.asSubclass(type);
 
                 // Since the ClassLoader should cache the class, this isn't
                 // as expensive as it looks.
                 return streamClass.newInstance();
 
-            } catch(Throwable t) {
-                InternalError ie = new InternalError( "Error loading " + className ) ;
-                ie.initCause( t ) ;
-                throw ie ;
-            }
-        }
     }
 
     /**

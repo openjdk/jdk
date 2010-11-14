@@ -44,11 +44,12 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.spi.LocaleServiceProvider;
 import sun.util.LocaleServiceProviderPool;
 import sun.util.TimeZoneNameUtility;
@@ -321,20 +322,64 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance(Locale locale) {
+        DateFormatSymbols dfs = getProviderInstance(locale);
+        if (dfs != null) {
+            return dfs;
+        }
+        return (DateFormatSymbols) getCachedInstance(locale).clone();
+    }
+
+    /**
+     * Returns a DateFormatSymbols provided by a provider or found in
+     * the cache. Note that this method returns a cached instance,
+     * not its clone. Therefore, the instance should never be given to
+     * an application.
+     */
+    static final DateFormatSymbols getInstanceRef(Locale locale) {
+        DateFormatSymbols dfs = getProviderInstance(locale);
+        if (dfs != null) {
+            return dfs;
+        }
+        return getCachedInstance(locale);
+    }
+
+    private static DateFormatSymbols getProviderInstance(Locale locale) {
+        DateFormatSymbols providersInstance = null;
 
         // Check whether a provider can provide an implementation that's closer
         // to the requested locale than what the Java runtime itself can provide.
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(DateFormatSymbolsProvider.class);
         if (pool.hasProviders()) {
-            DateFormatSymbols providersInstance = pool.getLocalizedObject(
-                                DateFormatSymbolsGetter.INSTANCE, locale);
-            if (providersInstance != null) {
-                return providersInstance;
+            providersInstance = pool.getLocalizedObject(
+                                    DateFormatSymbolsGetter.INSTANCE, locale);
+        }
+        return providersInstance;
+    }
+
+    /**
+     * Returns a cached DateFormatSymbols if it's found in the
+     * cache. Otherwise, this method returns a newly cached instance
+     * for the given locale.
+     */
+    private static DateFormatSymbols getCachedInstance(Locale locale) {
+        SoftReference<DateFormatSymbols> ref = cachedInstances.get(locale);
+        DateFormatSymbols dfs = null;
+        if (ref == null || (dfs = ref.get()) == null) {
+            dfs = new DateFormatSymbols(locale);
+            ref = new SoftReference<DateFormatSymbols>(dfs);
+            SoftReference<DateFormatSymbols> x = cachedInstances.putIfAbsent(locale, ref);
+            if (x != null) {
+                DateFormatSymbols y = x.get();
+                if (y != null) {
+                    dfs = y;
+                } else {
+                    // Replace the empty SoftReference with ref.
+                    cachedInstances.put(locale, ref);
+                }
             }
         }
-
-        return new DateFormatSymbols(locale);
+        return dfs;
     }
 
     /**
@@ -597,56 +642,44 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     static final int millisPerHour = 60*60*1000;
 
     /**
-     * Cache to hold the FormatData and TimeZoneNames ResourceBundles
-     * of a Locale.
+     * Cache to hold DateFormatSymbols instances per Locale.
      */
-    private static Hashtable cachedLocaleData = new Hashtable(3);
-
-    /**
-     * Look up resource data for the desiredLocale in the cache; update the
-     * cache if necessary.
-     */
-    private static ResourceBundle cacheLookup(Locale desiredLocale) {
-        ResourceBundle rb;
-        SoftReference data
-            = (SoftReference)cachedLocaleData.get(desiredLocale);
-        if (data == null) {
-            rb = LocaleData.getDateFormatData(desiredLocale);
-            data = new SoftReference(rb);
-            cachedLocaleData.put(desiredLocale, data);
-        } else {
-            if ((rb = (ResourceBundle)data.get()) == null) {
-                rb = LocaleData.getDateFormatData(desiredLocale);
-                data = new SoftReference(rb);
-            }
-        }
-        return rb;
-    }
+    private static final ConcurrentMap<Locale, SoftReference<DateFormatSymbols>> cachedInstances
+        = new ConcurrentHashMap<Locale, SoftReference<DateFormatSymbols>>(3);
 
     private void initializeData(Locale desiredLocale) {
-        int i;
-        ResourceBundle resource = cacheLookup(desiredLocale);
+        locale = desiredLocale;
 
-        // FIXME: cache only ResourceBundle. Hence every time, will do
-        // getObject(). This won't be necessary if the Resource itself
-        // is cached.
-        eras = (String[])resource.getObject("Eras");
+        // Copy values of a cached instance if any.
+        SoftReference<DateFormatSymbols> ref = cachedInstances.get(locale);
+        DateFormatSymbols dfs;
+        if (ref != null && (dfs = ref.get()) != null) {
+            copyMembers(dfs, this);
+            return;
+        }
+
+        // Initialize the fields from the ResourceBundle for locale.
+        ResourceBundle resource = LocaleData.getDateFormatData(locale);
+
+        eras = resource.getStringArray("Eras");
         months = resource.getStringArray("MonthNames");
         shortMonths = resource.getStringArray("MonthAbbreviations");
-        String[] lWeekdays = resource.getStringArray("DayNames");
-        weekdays = new String[8];
-        weekdays[0] = "";  // 1-based
-        for (i=0; i<lWeekdays.length; i++)
-            weekdays[i+1] = lWeekdays[i];
-        String[] sWeekdays = resource.getStringArray("DayAbbreviations");
-        shortWeekdays = new String[8];
-        shortWeekdays[0] = "";  // 1-based
-        for (i=0; i<sWeekdays.length; i++)
-            shortWeekdays[i+1] = sWeekdays[i];
         ampms = resource.getStringArray("AmPmMarkers");
         localPatternChars = resource.getString("DateTimePatternChars");
 
-        locale = desiredLocale;
+        // Day of week names are stored in a 1-based array.
+        weekdays = toOneBasedArray(resource.getStringArray("DayNames"));
+        shortWeekdays = toOneBasedArray(resource.getStringArray("DayAbbreviations"));
+    }
+
+    private static String[] toOneBasedArray(String[] src) {
+        int len = src.length;
+        String[] dst = new String[len + 1];
+        dst[0] = "";
+        for (int i = 0; i < len; i++) {
+            dst[i + 1] = src[i];
+        }
+        return dst;
     }
 
     /**
