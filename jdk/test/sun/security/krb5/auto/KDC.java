@@ -245,7 +245,7 @@ public class KDC {
                         name.indexOf('/') < 0 ?
                             PrincipalName.KRB_NT_UNKNOWN :
                             PrincipalName.KRB_NT_SRV_HST),
-                            kdc.passwords.get(name));
+                            kdc.passwords.get(name), -1, true);
             }
         }
         ktab.save();

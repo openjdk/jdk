@@ -154,6 +154,7 @@ jvmtiExtensions.hpp                     allocation.hpp
 jvmtiExtensions.hpp                     jvmti.h
 jvmtiExtensions.hpp                     jvmtiEnv.hpp
 
+jvmtiImpl.cpp                           deoptimization.hpp
 jvmtiImpl.cpp                           exceptions.hpp
 jvmtiImpl.cpp                           handles.hpp
 jvmtiImpl.cpp                           handles.inline.hpp
@@ -183,6 +184,13 @@ jvmtiImpl.hpp                           objArrayOop.hpp
 jvmtiImpl.hpp                           stackValueCollection.hpp
 jvmtiImpl.hpp                           systemDictionary.hpp
 jvmtiImpl.hpp                           vm_operations.hpp
+
+jvmtiRawMonitor.cpp                     interfaceSupport.hpp
+jvmtiRawMonitor.cpp                     jvmtiRawMonitor.hpp
+jvmtiRawMonitor.cpp                     thread.hpp
+
+jvmtiRawMonitor.hpp                     growableArray.hpp
+jvmtiRawMonitor.hpp                     objectMonitor.hpp
 
 jvmtiTagMap.cpp                         biasedLocking.hpp
 jvmtiTagMap.cpp                         javaCalls.hpp

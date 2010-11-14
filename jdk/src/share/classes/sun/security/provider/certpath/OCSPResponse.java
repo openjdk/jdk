@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CRLReason;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
@@ -371,6 +372,13 @@ public final class OCSPResponse {
                         "OCSP responses", cpe);
                 }
 
+                // Check algorithm constraints specified in security property
+                // "jdk.certpath.disabledAlgorithms".
+                AlgorithmChecker algChecker = new AlgorithmChecker(
+                                    new TrustAnchor(responderCert, null));
+                algChecker.init(false);
+                algChecker.check(cert, Collections.<String>emptySet());
+
                 // check the validity
                 try {
                     if (dateCheckedAgainst == null) {
@@ -422,6 +430,10 @@ public final class OCSPResponse {
         // Confirm that the signed response was generated using the public
         // key from the trusted responder cert
         if (responderCert != null) {
+            // Check algorithm constraints specified in security property
+            // "jdk.certpath.disabledAlgorithms".
+            AlgorithmChecker.check(responderCert.getPublicKey(), sigAlgId);
+
             if (!verifyResponse(responseDataDer, responderCert,
                 sigAlgId, signature)) {
                 throw new CertPathValidatorException(

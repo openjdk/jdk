@@ -2065,6 +2065,13 @@ bool Matcher::is_spillable_arg(int reg)
   return can_be_java_arg(reg);
 }
 
+bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
+  // In 64 bit mode a code which use multiply when
+  // devisor is constant is faster than hardware
+  // DIV instruction (it uses MulHiL).
+  return false;
+}
+
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
   return INT_RAX_REG_mask;

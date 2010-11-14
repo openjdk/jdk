@@ -443,7 +443,7 @@ class Instruction: public CompilationResourceObj {
 
   // generic
   virtual Instruction*      as_Instruction()     { return this; } // to satisfy HASHING1 macro
-  virtual Phi*           as_Phi()          { return NULL; }
+  virtual Phi*              as_Phi()             { return NULL; }
   virtual Local*            as_Local()           { return NULL; }
   virtual Constant*         as_Constant()        { return NULL; }
   virtual AccessField*      as_AccessField()     { return NULL; }
@@ -650,8 +650,24 @@ LEAF(Constant, Instruction)
   virtual intx hash() const;
   virtual bool is_equal(Value v) const;
 
-  virtual BlockBegin* compare(Instruction::Condition condition, Value right,
-                              BlockBegin* true_sux, BlockBegin* false_sux);
+
+  enum CompareResult { not_comparable = -1, cond_false, cond_true };
+
+  virtual CompareResult compare(Instruction::Condition condition, Value right) const;
+  BlockBegin* compare(Instruction::Condition cond, Value right,
+                      BlockBegin* true_sux, BlockBegin* false_sux) const {
+    switch (compare(cond, right)) {
+    case not_comparable:
+      return NULL;
+    case cond_false:
+      return false_sux;
+    case cond_true:
+      return true_sux;
+    default:
+      ShouldNotReachHere();
+      return NULL;
+    }
+  }
 };
 
 
