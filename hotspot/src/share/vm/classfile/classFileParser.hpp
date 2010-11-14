@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS);
 
   constantPoolHandle parse_constant_pool(TRAPS);
+
+  static int start_operand_group(GrowableArray<int>* &operands, int op_count, TRAPS);
+  static void store_operand_array(GrowableArray<int>* operands, constantPoolHandle cp, TRAPS);
 
   // Interface parsing
   objArrayHandle parse_interfaces(constantPoolHandle cp,
@@ -151,7 +154,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // Adjust the field allocation counts for java.dyn.MethodHandle to add
   // a fake address (void*) field.
   void java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
-                                     typeArrayHandle* fields_ptr,
+                                     typeArrayHandle fields,
                                      FieldAllocationCount *fac_ptr, TRAPS);
 
   // Format checker methods

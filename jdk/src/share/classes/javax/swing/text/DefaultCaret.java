@@ -1334,13 +1334,13 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                     && component.getClientProperty("JPasswordField.cutCopyAllowed") !=
                     Boolean.TRUE) {
                     //fix for 4793761
-                    StringBuffer txt = null;
+                    StringBuilder txt = null;
                     char echoChar = ((JPasswordField)component).getEchoChar();
                     int p0 = Math.min(getDot(), getMark());
                     int p1 = Math.max(getDot(), getMark());
                     for (int i = p0; i < p1; i++) {
                         if (txt == null) {
-                            txt = new StringBuffer();
+                            txt = new StringBuilder();
                         }
                         txt.append(echoChar);
                     }
@@ -1675,7 +1675,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                 }
                 return;
             }
-            int adjust = 0;
             int offset = e.getOffset();
             int length = e.getLength();
             int newDot = dot;
@@ -1759,7 +1758,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
             }
             int offs0 = e.getOffset();
             int offs1 = offs0 + e.getLength();
-            int adjust = 0;
             int newDot = dot;
             boolean adjustDotBias = false;
             int newMark = mark;

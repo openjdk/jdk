@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,8 +121,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
     }
 
-    private static byte[] deriveKey(final Mac prf, final byte[] password, byte[] salt,
-                                    int iterCount, int keyLengthInBit) {
+    private static byte[] deriveKey(final Mac prf, final byte[] password,
+            byte[] salt, int iterCount, int keyLengthInBit) {
         int keyLength = keyLengthInBit/8;
         byte[] key = new byte[keyLength];
         try {
@@ -155,8 +155,9 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                     if (this == obj) return true;
                     if (this.getClass() != obj.getClass()) return false;
                     SecretKey sk = (SecretKey)obj;
-                    return prf.getAlgorithm().equalsIgnoreCase(sk.getAlgorithm()) &&
-                            Arrays.equals(password, sk.getEncoded());
+                    return prf.getAlgorithm().equalsIgnoreCase(
+                        sk.getAlgorithm()) &&
+                        Arrays.equals(password, sk.getEncoded());
                 }
             };
             prf.init(macKey);

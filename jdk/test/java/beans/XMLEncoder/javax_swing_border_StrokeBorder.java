@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,5 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
+/*
+ * @test
+ * @bug 4358979
+ * @summary Tests StrokeBorder encoding
+ * @author Sergey Malenkov
+ */
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import javax.swing.border.StrokeBorder;
+
+public final class javax_swing_border_StrokeBorder extends AbstractTest<StrokeBorder> {
+    public static void main(String[] args) {
+        new javax_swing_border_StrokeBorder().test(true);
+    }
+
+    protected StrokeBorder getObject() {
+        return new StrokeBorder(new BasicStroke(0), Color.WHITE);
+    }
+
+    protected StrokeBorder getAnotherObject() {
+        return null; // TODO: could not update property
+        //return new StrokeBorder(new BasicStroke(1));
+    }
+}
