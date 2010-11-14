@@ -5468,12 +5468,12 @@ LocaleNames/fr/GF=Guyane fran\u00e7aise
 LocaleNames/fr/GY=Guyana
 
 # bug 4225362
-FormatData/fr/DateTimePatternChars=GaMjkHmsSEDFwWahKzZ
-FormatData/fr_BE/DateTimePatternChars=GaMjkHmsSEDFwWahKzZ
-FormatData/fr_CA/DateTimePatternChars=GaMjkHmsSEDFwWahKzZ
-FormatData/fr_CH/DateTimePatternChars=GaMjkHmsSEDFwWahKzZ
-FormatData/fr_FR/DateTimePatternChars=GaMjkHmsSEDFwWahKzZ
-FormatData/fr_LU/DateTimePatternChars=GaMjkHmsSEDFwWahKzZ
+FormatData/fr/DateTimePatternChars=GaMjkHmsSEDFwWxhKzZ
+FormatData/fr_BE/DateTimePatternChars=GaMjkHmsSEDFwWxhKzZ
+FormatData/fr_CA/DateTimePatternChars=GaMjkHmsSEDFwWxhKzZ
+FormatData/fr_CH/DateTimePatternChars=GaMjkHmsSEDFwWxhKzZ
+FormatData/fr_FR/DateTimePatternChars=GaMjkHmsSEDFwWxhKzZ
+FormatData/fr_LU/DateTimePatternChars=GaMjkHmsSEDFwWxhKzZ
 
 # bug 6547501
 FormatData/fr/NumberPatterns/2=#,##0 %

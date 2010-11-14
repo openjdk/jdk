@@ -25,11 +25,7 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
-import java.dyn.MethodType;
-import java.dyn.NoAccessException;
+import java.dyn.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;

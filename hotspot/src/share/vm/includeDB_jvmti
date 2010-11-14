@@ -35,6 +35,7 @@ jvmtiClassFileReconstituter.hpp         jvmtiEnv.hpp
 // jvmtiCodeBlobEvents is jck optional, please put deps in includeDB_features
 
 jvmtiEnter.cpp                          jvmtiEnter.hpp
+jvmtiEnter.cpp                          jvmtiRawMonitor.hpp
 jvmtiEnter.cpp                          jvmtiUtil.hpp
 
 jvmtiEnter.hpp                          interfaceSupport.hpp
@@ -44,6 +45,7 @@ jvmtiEnter.hpp                          resourceArea.hpp
 jvmtiEnter.hpp                          systemDictionary.hpp
 
 jvmtiEnterTrace.cpp                     jvmtiEnter.hpp
+jvmtiEnterTrace.cpp                     jvmtiRawMonitor.hpp
 jvmtiEnterTrace.cpp                     jvmtiUtil.hpp
 
 jvmtiEnv.cpp                            arguments.hpp
@@ -66,11 +68,11 @@ jvmtiEnv.cpp                            jvmtiExtensions.hpp
 jvmtiEnv.cpp                            jvmtiGetLoadedClasses.hpp
 jvmtiEnv.cpp                            jvmtiImpl.hpp
 jvmtiEnv.cpp                            jvmtiManageCapabilities.hpp
+jvmtiEnv.cpp                            jvmtiRawMonitor.hpp
 jvmtiEnv.cpp                            jvmtiRedefineClasses.hpp
 jvmtiEnv.cpp                            jvmtiTagMap.hpp
 jvmtiEnv.cpp                            jvmtiThreadState.inline.hpp
 jvmtiEnv.cpp                            jvmtiUtil.hpp
-jvmtiEnv.cpp                            objectMonitor.inline.hpp
 jvmtiEnv.cpp                            osThread.hpp
 jvmtiEnv.cpp                            preserveException.hpp
 jvmtiEnv.cpp                            reflectionUtils.hpp
@@ -87,6 +89,7 @@ jvmtiEnv.cpp                            vmThread.hpp
 jvmtiEnv.hpp                            jvmtiEnvBase.hpp
 
 jvmtiEnvBase.cpp                        biasedLocking.hpp
+jvmtiEnvBase.cpp                        deoptimization.hpp
 jvmtiEnvBase.cpp                        interfaceSupport.hpp
 jvmtiEnvBase.cpp                        jfieldIDWorkaround.hpp
 jvmtiEnvBase.cpp                        jvmtiEnv.hpp
@@ -178,11 +181,13 @@ jvmtiExport.cpp                         jvmtiEventController.inline.hpp
 jvmtiExport.cpp                         jvmtiExport.hpp
 jvmtiExport.cpp                         jvmtiImpl.hpp
 jvmtiExport.cpp                         jvmtiManageCapabilities.hpp
+jvmtiExport.cpp                         jvmtiRawMonitor.hpp
 jvmtiExport.cpp                         jvmtiTagMap.hpp
 jvmtiExport.cpp                         jvmtiThreadState.inline.hpp
 jvmtiExport.cpp                         nmethod.hpp
 jvmtiExport.cpp                         objArrayKlass.hpp
 jvmtiExport.cpp                         objArrayOop.hpp
+jvmtiExport.cpp                         objectMonitor.hpp
 jvmtiExport.cpp                         objectMonitor.inline.hpp
 jvmtiExport.cpp                         pcDesc.hpp
 jvmtiExport.cpp                         resourceArea.hpp
@@ -209,6 +214,8 @@ jvmtiManageCapabilities.cpp             jvmtiManageCapabilities.hpp
  
 jvmtiManageCapabilities.hpp             allocation.hpp
 jvmtiManageCapabilities.hpp             jvmti.h
+
+// jvmtiRawMonitor is jck optional, please put deps in includeDB_features
 
 jvmtiRedefineClasses.cpp                bitMap.inline.hpp
 jvmtiRedefineClasses.cpp                codeCache.hpp

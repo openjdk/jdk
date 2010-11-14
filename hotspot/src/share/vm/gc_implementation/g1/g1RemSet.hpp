@@ -27,8 +27,11 @@
 
 class G1CollectedHeap;
 class CardTableModRefBarrierSet;
-class HRInto_G1RemSet;
 class ConcurrentG1Refine;
+
+// A G1RemSet in which each heap region has a rem set that records the
+// external heap references into it.  Uses a mod ref bs to track updates,
+// so that they can be used to update the individual region remsets.
 
 class G1RemSet: public CHeapObj {
 protected:
@@ -36,98 +39,6 @@ protected:
   unsigned _conc_refine_cards;
   size_t n_workers();
 
-public:
-  G1RemSet(G1CollectedHeap* g1) :
-    _g1(g1), _conc_refine_cards(0)
-  {}
-
-  // Invoke "blk->do_oop" on all pointers into the CS in object in regions
-  // outside the CS (having invoked "blk->set_region" to set the "from"
-  // region correctly beforehand.) The "worker_i" param is for the
-  // parallel case where the number of the worker thread calling this
-  // function can be helpful in partitioning the work to be done. It
-  // should be the same as the "i" passed to the calling thread's
-  // work(i) function. In the sequential case this param will be ingored.
-  virtual void oops_into_collection_set_do(OopsInHeapRegionClosure* blk,
-                                           int worker_i) = 0;
-
-  // Prepare for and cleanup after an oops_into_collection_set_do
-  // call.  Must call each of these once before and after (in sequential
-  // code) any threads call oops into collection set do.  (This offers an
-  // opportunity to sequential setup and teardown of structures needed by a
-  // parallel iteration over the CS's RS.)
-  virtual void prepare_for_oops_into_collection_set_do() = 0;
-  virtual void cleanup_after_oops_into_collection_set_do() = 0;
-
-  // If "this" is of the given subtype, return "this", else "NULL".
-  virtual HRInto_G1RemSet* as_HRInto_G1RemSet() { return NULL; }
-
-  // Record, if necessary, the fact that *p (where "p" is in region "from",
-  // and is, a fortiori, required to be non-NULL) has changed to its new value.
-  virtual void write_ref(HeapRegion* from, oop* p) = 0;
-  virtual void write_ref(HeapRegion* from, narrowOop* p) = 0;
-  virtual void par_write_ref(HeapRegion* from, oop* p, int tid) = 0;
-  virtual void par_write_ref(HeapRegion* from, narrowOop* p, int tid) = 0;
-
-  // Requires "region_bm" and "card_bm" to be bitmaps with 1 bit per region
-  // or card, respectively, such that a region or card with a corresponding
-  // 0 bit contains no part of any live object.  Eliminates any remembered
-  // set entries that correspond to dead heap ranges.
-  virtual void scrub(BitMap* region_bm, BitMap* card_bm) = 0;
-  // Like the above, but assumes is called in parallel: "worker_num" is the
-  // parallel thread id of the current thread, and "claim_val" is the
-  // value that should be used to claim heap regions.
-  virtual void scrub_par(BitMap* region_bm, BitMap* card_bm,
-                         int worker_num, int claim_val) = 0;
-
-  // Refine the card corresponding to "card_ptr".  If "sts" is non-NULL,
-  // join and leave around parts that must be atomic wrt GC.  (NULL means
-  // being done at a safepoint.)
-  // With some implementations of this routine, when check_for_refs_into_cset
-  // is true, a true result may be returned if the given card contains oops
-  // that have references into the current collection set.
-  virtual bool concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
-                                       bool check_for_refs_into_cset) {
-    return false;
-  }
-
-  // Print any relevant summary info.
-  virtual void print_summary_info() {}
-
-  // Prepare remebered set for verification.
-  virtual void prepare_for_verify() {};
-};
-
-
-// The simplest possible G1RemSet: iterates over all objects in non-CS
-// regions, searching for pointers into the CS.
-class StupidG1RemSet: public G1RemSet {
-public:
-  StupidG1RemSet(G1CollectedHeap* g1) : G1RemSet(g1) {}
-
-  void oops_into_collection_set_do(OopsInHeapRegionClosure* blk,
-                                   int worker_i);
-
-  void prepare_for_oops_into_collection_set_do() {}
-  void cleanup_after_oops_into_collection_set_do() {}
-
-  // Nothing is necessary in the version below.
-  void write_ref(HeapRegion* from, oop* p) {}
-  void write_ref(HeapRegion* from, narrowOop* p) {}
-  void par_write_ref(HeapRegion* from, oop* p, int tid) {}
-  void par_write_ref(HeapRegion* from, narrowOop* p, int tid) {}
-
-  void scrub(BitMap* region_bm, BitMap* card_bm) {}
-  void scrub_par(BitMap* region_bm, BitMap* card_bm,
-                 int worker_num, int claim_val) {}
-
-};
-
-// A G1RemSet in which each heap region has a rem set that records the
-// external heap references into it.  Uses a mod ref bs to track updates,
-// so that they can be used to update the individual region remsets.
-
-class HRInto_G1RemSet: public G1RemSet {
 protected:
   enum SomePrivateConstants {
     UpdateRStoMergeSync  = 0,
@@ -175,27 +86,31 @@ public:
   // scanned.
   void cleanupHRRS();
 
-  HRInto_G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs);
-  ~HRInto_G1RemSet();
+  G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs);
+  ~G1RemSet();
 
+  // Invoke "blk->do_oop" on all pointers into the CS in objects in regions
+  // outside the CS (having invoked "blk->set_region" to set the "from"
+  // region correctly beforehand.) The "worker_i" param is for the
+  // parallel case where the number of the worker thread calling this
+  // function can be helpful in partitioning the work to be done. It
+  // should be the same as the "i" passed to the calling thread's
+  // work(i) function. In the sequential case this param will be ingored.
   void oops_into_collection_set_do(OopsInHeapRegionClosure* blk,
                                    int worker_i);
 
+  // Prepare for and cleanup after an oops_into_collection_set_do
+  // call.  Must call each of these once before and after (in sequential
+  // code) any threads call oops_into_collection_set_do.  (This offers an
+  // opportunity to sequential setup and teardown of structures needed by a
+  // parallel iteration over the CS's RS.)
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
-  void scanRS(OopsInHeapRegionClosure* oc, int worker_i);
-  template <class T> void scanNewRefsRS_work(OopsInHeapRegionClosure* oc, int worker_i);
-  void scanNewRefsRS(OopsInHeapRegionClosure* oc, int worker_i) {
-    if (UseCompressedOops) {
-      scanNewRefsRS_work<narrowOop>(oc, worker_i);
-    } else {
-      scanNewRefsRS_work<oop>(oc, worker_i);
-    }
-  }
-  void updateRS(DirtyCardQueue* into_cset_dcq, int worker_i);
-  HeapRegion* calculateStartRegion(int i);
 
-  HRInto_G1RemSet* as_HRInto_G1RemSet() { return this; }
+  void scanRS(OopsInHeapRegionClosure* oc, int worker_i);
+  void updateRS(DirtyCardQueue* into_cset_dcq, int worker_i);
+
+  HeapRegion* calculateStartRegion(int i);
 
   CardTableModRefBS* ct_bs() { return _ct_bs; }
   size_t cardsScanned() { return _total_cards_scanned; }
@@ -219,17 +134,31 @@ public:
 
   bool self_forwarded(oop obj);
 
+  // Requires "region_bm" and "card_bm" to be bitmaps with 1 bit per region
+  // or card, respectively, such that a region or card with a corresponding
+  // 0 bit contains no part of any live object.  Eliminates any remembered
+  // set entries that correspond to dead heap ranges.
   void scrub(BitMap* region_bm, BitMap* card_bm);
+
+  // Like the above, but assumes is called in parallel: "worker_num" is the
+  // parallel thread id of the current thread, and "claim_val" is the
+  // value that should be used to claim heap regions.
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
                  int worker_num, int claim_val);
 
-  // If check_for_refs_into_cset is true then a true result is returned
-  // if the card contains oops that have references into the current
-  // collection set.
+  // Refine the card corresponding to "card_ptr".  If "sts" is non-NULL,
+  // join and leave around parts that must be atomic wrt GC.  (NULL means
+  // being done at a safepoint.)
+  // If check_for_refs_into_cset is true, a true result is returned
+  // if the given card contains oops that have references into the
+  // current collection set.
   virtual bool concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
                                        bool check_for_refs_into_cset);
 
+  // Print any relevant summary info.
   virtual void print_summary_info();
+
+  // Prepare remembered set for verification.
   virtual void prepare_for_verify();
 };
 
@@ -250,13 +179,13 @@ public:
 
 class UpdateRSOopClosure: public OopClosure {
   HeapRegion* _from;
-  HRInto_G1RemSet* _rs;
+  G1RemSet* _rs;
   int _worker_i;
 
   template <class T> void do_oop_work(T* p);
 
 public:
-  UpdateRSOopClosure(HRInto_G1RemSet* rs, int worker_i = 0) :
+  UpdateRSOopClosure(G1RemSet* rs, int worker_i = 0) :
     _from(NULL), _rs(rs), _worker_i(worker_i) {
     guarantee(_rs != NULL, "Requires an HRIntoG1RemSet");
   }
