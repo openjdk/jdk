@@ -1304,7 +1304,7 @@ public class Code {
         stackCount = 0;
         for (int i=0; i<state.stacksize; i++) {
             if (state.stack[i] != null) {
-                frame.stack[stackCount++] = state.stack[i];
+                frame.stack[stackCount++] = types.erasure(state.stack[i]);
             }
         }
 
