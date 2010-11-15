@@ -1510,14 +1510,7 @@ public class Check {
                                             Type t1,
                                             Type t2,
                                             Type site) {
-        Symbol sym = firstIncompatibility(t1, t2, site);
-        if (sym != null) {
-            log.error(pos, "types.incompatible.diff.ret",
-                      t1, t2, sym.name +
-                      "(" + types.memberType(t2, sym).getParameterTypes() + ")");
-            return false;
-        }
-        return true;
+        return firstIncompatibility(pos, t1, t2, site) == null;
     }
 
     /** Return the first method which is defined with same args
@@ -1528,7 +1521,7 @@ public class Check {
      *  @param site   The most derived type.
      *  @returns symbol from t2 that conflicts with one in t1.
      */
-    private Symbol firstIncompatibility(Type t1, Type t2, Type site) {
+    private Symbol firstIncompatibility(DiagnosticPosition pos, Type t1, Type t2, Type site) {
         Map<TypeSymbol,Type> interfaces1 = new HashMap<TypeSymbol,Type>();
         closure(t1, interfaces1);
         Map<TypeSymbol,Type> interfaces2;
@@ -1539,7 +1532,7 @@ public class Check {
 
         for (Type t3 : interfaces1.values()) {
             for (Type t4 : interfaces2.values()) {
-                Symbol s = firstDirectIncompatibility(t3, t4, site);
+                Symbol s = firstDirectIncompatibility(pos, t3, t4, site);
                 if (s != null) return s;
             }
         }
@@ -1568,7 +1561,7 @@ public class Check {
     }
 
     /** Return the first method in t2 that conflicts with a method from t1. */
-    private Symbol firstDirectIncompatibility(Type t1, Type t2, Type site) {
+    private Symbol firstDirectIncompatibility(DiagnosticPosition pos, Type t1, Type t2, Type site) {
         for (Scope.Entry e1 = t1.tsym.members().elems; e1 != null; e1 = e1.sibling) {
             Symbol s1 = e1.sym;
             Type st1 = null;
@@ -1592,7 +1585,18 @@ public class Check {
                         (types.covariantReturnType(rt1, rt2, Warner.noWarnings) ||
                          types.covariantReturnType(rt2, rt1, Warner.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
-                    if (!compat) return s2;
+                    if (!compat) {
+                        log.error(pos, "types.incompatible.diff.ret",
+                            t1, t2, s2.name +
+                            "(" + types.memberType(t2, s2).getParameterTypes() + ")");
+                        return s2;
+                    }
+                } else if (!checkNameClash((ClassSymbol)site.tsym, s1, s2)) {
+                    log.error(pos,
+                            "name.clash.same.erasure.no.override",
+                            s1, s1.location(),
+                            s2, s2.location());
+                    return s2;
                 }
             }
         }
@@ -1644,31 +1648,51 @@ public class Check {
                 log.error(tree.pos(), "enum.no.finalize");
                 return;
             }
-        for (Type t = types.supertype(origin.type); t.tag == CLASS;
+        for (Type t = origin.type; t.tag == CLASS;
              t = types.supertype(t)) {
-            TypeSymbol c = t.tsym;
-            Scope.Entry e = c.members().lookup(m.name);
-            while (e.scope != null) {
-                if (m.overrides(e.sym, origin, types, false))
-                    checkOverride(tree, m, (MethodSymbol)e.sym, origin);
-                else if (e.sym.kind == MTH &&
-                        e.sym.isInheritedIn(origin, types) &&
-                        (e.sym.flags() & SYNTHETIC) == 0 &&
-                        !m.isConstructor()) {
-                    Type er1 = m.erasure(types);
-                    Type er2 = e.sym.erasure(types);
-                    if (types.isSameTypes(er1.getParameterTypes(),
-                            er2.getParameterTypes())) {
-                            log.error(TreeInfo.diagnosticPositionFor(m, tree),
-                                    "name.clash.same.erasure.no.override",
-                                    m, m.location(),
-                                    e.sym, e.sym.location());
-                    }
-                }
-                e = e.next();
+            if (t != origin.type) {
+                checkOverride(tree, t, origin, m);
+            }
+            for (Type t2 : types.interfaces(t)) {
+                checkOverride(tree, t2, origin, m);
             }
         }
     }
+
+    void checkOverride(JCTree tree, Type site, ClassSymbol origin, MethodSymbol m) {
+        TypeSymbol c = site.tsym;
+        Scope.Entry e = c.members().lookup(m.name);
+        while (e.scope != null) {
+            if (m.overrides(e.sym, origin, types, false)) {
+                if ((e.sym.flags() & ABSTRACT) == 0) {
+                    checkOverride(tree, m, (MethodSymbol)e.sym, origin);
+                }
+            }
+            else if (!checkNameClash(origin, e.sym, m)) {
+                log.error(tree,
+                            "name.clash.same.erasure.no.override",
+                            m, m.location(),
+                            e.sym, e.sym.location());
+            }
+            e = e.next();
+        }
+    }
+
+    private boolean checkNameClash(ClassSymbol origin, Symbol s1, Symbol s2) {
+        if (s1.kind == MTH &&
+                    s1.isInheritedIn(origin, types) &&
+                    (s1.flags() & SYNTHETIC) == 0 &&
+                    !s2.isConstructor()) {
+            Type er1 = s2.erasure(types);
+            Type er2 = s1.erasure(types);
+            if (types.isSameTypes(er1.getParameterTypes(),
+                    er2.getParameterTypes())) {
+                    return false;
+            }
+        }
+        return true;
+    }
+
 
     /** Check that all abstract members of given class have definitions.
      *  @param pos          Position to be used for error reporting.
