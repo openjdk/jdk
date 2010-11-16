@@ -653,6 +653,10 @@ public class GroupLayout implements LayoutManager2 {
      */
     public ParallelGroup createParallelGroup(Alignment alignment,
             boolean resizable){
+        if (alignment == null) {
+            throw new IllegalArgumentException("alignment must be non null");
+        }
+
         if (alignment == Alignment.BASELINE) {
             return new BaselineGroup(resizable);
         }
