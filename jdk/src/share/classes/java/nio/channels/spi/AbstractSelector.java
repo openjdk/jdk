@@ -206,13 +206,14 @@ public abstract class AbstractSelector
     protected final void begin() {
         if (interruptor == null) {
             interruptor = new Interruptible() {
-                    public void interrupt() {
+                    public void interrupt(Thread ignore) {
                         AbstractSelector.this.wakeup();
                     }};
         }
         AbstractInterruptibleChannel.blockedOn(interruptor);
-        if (Thread.currentThread().isInterrupted())
-            interruptor.interrupt();
+        Thread me = Thread.currentThread();
+        if (me.isInterrupted())
+            interruptor.interrupt(me);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public final class PrivateCredentialPermission extends Permission {
 
         if (!"read".equalsIgnoreCase(actions))
             throw new IllegalArgumentException
-                (ResourcesMgr.getString("actions can only be 'read'"));
+                (ResourcesMgr.getString("actions.can.only.be.read."));
         init(name);
     }
 
@@ -344,12 +344,11 @@ public final class PrivateCredentialPermission extends Permission {
 
         if (tokenizer.hasMoreTokens() == false) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                ("permission name [name] syntax invalid: "));
+                ("permission.name.name.syntax.invalid."));
             Object[] source = {name};
             throw new IllegalArgumentException
                 (form.format(source) + ResourcesMgr.getString
-                        ("Credential Class not followed by a " +
-                        "Principal Class and Name"));
+                        ("Credential.Class.not.followed.by.a.Principal.Class.and.Name"));
         }
 
         while (tokenizer.hasMoreTokens()) {
@@ -364,11 +363,11 @@ public final class PrivateCredentialPermission extends Permission {
 
             if (tokenizer.hasMoreTokens() == false) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("permission name [name] syntax invalid: "));
+                        ("permission.name.name.syntax.invalid."));
                 Object[] source = {name};
                 throw new IllegalArgumentException
                         (form.format(source) + ResourcesMgr.getString
-                        ("Principal Class not followed by a Principal Name"));
+                        ("Principal.Class.not.followed.by.a.Principal.Name"));
             }
 
             // skip delimiter
@@ -379,11 +378,11 @@ public final class PrivateCredentialPermission extends Permission {
 
             if (!principalName.startsWith("\"")) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("permission name [name] syntax invalid: "));
+                        ("permission.name.name.syntax.invalid."));
                 Object[] source = {name};
                 throw new IllegalArgumentException
                         (form.format(source) + ResourcesMgr.getString
-                        ("Principal Name must be surrounded by quotes"));
+                        ("Principal.Name.must.be.surrounded.by.quotes"));
             }
 
             if (!principalName.endsWith("\"")) {
@@ -401,11 +400,11 @@ public final class PrivateCredentialPermission extends Permission {
                 if (!principalName.endsWith("\"")) {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("permission name [name] syntax invalid: "));
+                        ("permission.name.name.syntax.invalid."));
                     Object[] source = {name};
                     throw new IllegalArgumentException
                         (form.format(source) + ResourcesMgr.getString
-                                ("Principal Name missing end quote"));
+                                ("Principal.Name.missing.end.quote"));
                 }
             }
 
@@ -418,9 +417,7 @@ public final class PrivateCredentialPermission extends Permission {
             if (principalClass.equals("*") &&
                 !principalName.equals("*")) {
                     throw new IllegalArgumentException(ResourcesMgr.getString
-                        ("PrivateCredentialPermission Principal Class " +
-                        "can not be a wildcard (*) value if Principal Name " +
-                        "is not a wildcard (*) value"));
+                        ("PrivateCredentialPermission.Principal.Class.can.not.be.a.wildcard.value.if.Principal.Name.is.not.a.wildcard.value"));
             }
 
             if (testing)
@@ -556,8 +553,7 @@ public final class PrivateCredentialPermission extends Permission {
 
         public String toString() {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                ("CredOwner:\n\tPrincipal Class = class\n\t" +
-                        "Principal Name = name"));
+                ("CredOwner.Principal.Class.class.Principal.Name.name"));
             Object[] source = {principalClass, principalName};
             return (form.format(source));
         }
