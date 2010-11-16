@@ -176,11 +176,11 @@ void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, T
   if (level == CompLevel_none) {
     return;
   }
-  // Check if the method can be compiled, if not - try different levels.
+  // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
+  // in the interpreter and then compile with C2 (the transition function will request that,
+  // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
+  // pure C1.
   if (!can_be_compiled(mh, level)) {
-    if (level < CompLevel_full_optimization && can_be_compiled(mh, CompLevel_full_optimization)) {
-      compile(mh, bci, CompLevel_full_optimization, THREAD);
-    }
     if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
         compile(mh, bci, CompLevel_simple, THREAD);
     }
