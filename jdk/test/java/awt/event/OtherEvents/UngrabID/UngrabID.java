@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,26 @@
  * questions.
  */
 
-package sun.awt;
+/*
+  @test
+  @bug 6960516
+  @summary check if the ungrab event has the ID < AWTEvent.RESERVED_ID_MAX
+  @author Andrei Dmitriev : area=awt.event
+  @run main UngrabID
+*/
 
-import java.awt.AWTEvent;
-import java.awt.Component;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
 
-/**
- * Sent when one of the following events occur on the grabbed window: <ul>
- * <li> it looses focus, but not to one of the owned windows
- * <li> mouse click on the outside area happens (except for one of the owned windows)
- * <li> switch to another application or desktop happens
- * <li> click in the non-client area of the owning window or this window happens
- * </ul>
- *
- * <p>Notice that this event is not generated on mouse click inside of the window area.
- * <p>To listen for this event, install AWTEventListener with {@value sun.awt.SunToolkit#GRAB_EVENT_MASK}
- */
-public class UngrabEvent extends AWTEvent {
-    private final static int UNGRAB_EVENT_ID = 1998;
-
-    public UngrabEvent(Component source) {
-        super(source, UNGRAB_EVENT_ID);
-    }
-
-    public String toString() {
-        return "sun.awt.UngrabEvent[" + getSource() + "]";
-    }
+public class UngrabID {
+    public static void main(String[] args){
+        Frame f = new Frame("Dummy");
+        sun.awt.UngrabEvent event = new sun.awt.UngrabEvent(f);
+        if (event.getID() > AWTEvent.RESERVED_ID_MAX) {
+                System.out.println( " Event ID : "+event.getID() + " " + event.toString());
+                throw new RuntimeException(" Ungrab Event ID should be less than AWTEvent.RESERVED_ID_MAX ("+AWTEvent.RESERVED_ID_MAX+"). Actual value : "+event.getID() + " Event:" + event.toString());
+        }
+        System.out.println("Test passed. ");
+   }
 }
