@@ -945,6 +945,7 @@ void universe2_init() {
 extern void initialize_converter_functions();
 
 bool universe_post_init() {
+  assert(!is_init_completed(), "Error: initialization not yet completed!");
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
   { ResourceMark rm;
