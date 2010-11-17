@@ -53,8 +53,6 @@ class SSLStreams {
     EngineWrapper wrapper;
     OutputStream os;
     InputStream is;
-    static long readTimeout = ServerConfig.getReadTimeout();
-    static long writeTimeout = ServerConfig.getWriteTimeout();
 
     /* held by thread doing the hand-shake on this connection */
     Lock handshaking = new ReentrantLock();
@@ -77,10 +75,13 @@ class SSLStreams {
         if (cfg != null) {
             Parameters params = new Parameters (cfg, addr);
             cfg.configure (params);
+//BEGIN_TIGER_EXCLUDE
             SSLParameters sslParams = params.getSSLParameters();
             if (sslParams != null) {
                 engine.setSSLParameters (sslParams);
-            } else {
+            } else
+//END_TIGER_EXCLUDE
+            {
                 /* tiger compatibility */
                 if (params.getCipherSuites() != null) {
                     try {
@@ -104,7 +105,6 @@ class SSLStreams {
 
     class Parameters extends HttpsParameters {
         InetSocketAddress addr;
-        SSLParameters params;
         HttpsConfigurator cfg;
 
         Parameters (HttpsConfigurator cfg, InetSocketAddress addr) {
@@ -117,12 +117,15 @@ class SSLStreams {
         public HttpsConfigurator getHttpsConfigurator() {
             return cfg;
         }
+//BEGIN_TIGER_EXCLUDE
+        SSLParameters params;
         public void setSSLParameters (SSLParameters p) {
             params = p;
         }
         SSLParameters getSSLParameters () {
             return params;
         }
+//END_TIGER_EXCLUDE
     }
 
     /**
@@ -245,9 +248,6 @@ class SSLStreams {
 
         SocketChannel chan;
         SSLEngine engine;
-        SelectorCache sc;
-        Selector write_selector, read_selector;
-        SelectionKey wkey, rkey;
         Object wrapLock, unwrapLock;
         ByteBuffer unwrap_src, wrap_dst;
         boolean closed = false;
@@ -260,16 +260,9 @@ class SSLStreams {
             unwrapLock = new Object();
             unwrap_src = allocate(BufType.PACKET);
             wrap_dst = allocate(BufType.PACKET);
-            sc = SelectorCache.getSelectorCache();
-            write_selector = sc.getSelector();
-            wkey = chan.register (write_selector, SelectionKey.OP_WRITE);
-            read_selector = sc.getSelector();
-            wkey = chan.register (read_selector, SelectionKey.OP_READ);
         }
 
         void close () throws IOException {
-            sc.freeSelector (write_selector);
-            sc.freeSelector (read_selector);
         }
 
         /* try to wrap and send the data in src. Handles OVERFLOW.
@@ -304,15 +297,7 @@ class SSLStreams {
                     wrap_dst.flip();
                     int l = wrap_dst.remaining();
                     assert l == r.result.bytesProduced();
-                    long currtime = time.getTime();
-                    long maxtime = currtime + writeTimeout;
                     while (l>0) {
-                        write_selector.select(writeTimeout); // timeout
-                        currtime = time.getTime();
-                        if (currtime > maxtime) {
-                            throw new SocketTimeoutException ("write timed out");
-                        }
-                        write_selector.selectedKeys().clear();
                         l -= chan.write (wrap_dst);
                     }
                 }
@@ -342,20 +327,12 @@ class SSLStreams {
                 needData = true;
             }
             synchronized (unwrapLock) {
-                int x,y;
+                int x;
                 do {
                     if (needData) {
-                        long currTime = time.getTime();
-                        long maxtime = currTime + readTimeout;
                         do {
-                            if (currTime > maxtime) {
-                                throw new SocketTimeoutException ("read timedout");
-                            }
-                            y = read_selector.select (readTimeout);
-                            currTime = time.getTime();
-                        } while (y != 1);
-                        read_selector.selectedKeys().clear();
                         x = chan.read (unwrap_src);
+                        } while (x == 0);
                         if (x == -1) {
                             throw new IOException ("connection closed for reading");
                         }
