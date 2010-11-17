@@ -1093,7 +1093,8 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
 // perm_gen_verify_bit_map where we store the "deadness" information if
 // we did not sweep the perm gen in the most recent previous GC cycle.
 bool CompactibleFreeListSpace::obj_is_alive(const HeapWord* p) const {
-  assert (block_is_obj(p), "The address should point to an object");
+  assert(block_is_obj(p), "The address should point to an object");
+  assert(SafepointSynchronize::is_at_safepoint(), "Else races are possible");
 
   // If we're sweeping, we use object liveness information from the main bit map
   // for both perm gen and old gen.
@@ -1102,9 +1103,14 @@ bool CompactibleFreeListSpace::obj_is_alive(const HeapWord* p) const {
   // main marking bit map (live_map below) is locked,
   // OR we're in other phases and perm_gen_verify_bit_map (dead_map below)
   // is stable, because it's mutated only in the sweeping phase.
+  // NOTE: This method is also used by jmap where, if class unloading is
+  // off, the results can return "false" for legitimate perm objects,
+  // when we are not in the midst of a sweeping phase, which can result
+  // in jmap not reporting certain perm gen objects. This will be moot
+  // if/when the perm gen goes away in the future.
   if (_collector->abstract_state() == CMSCollector::Sweeping) {
     CMSBitMap* live_map = _collector->markBitMap();
-    return live_map->isMarked((HeapWord*) p);
+    return live_map->par_isMarked((HeapWord*) p);
   } else {
     // If we're not currently sweeping and we haven't swept the perm gen in
     // the previous concurrent cycle then we may have dead but unswept objects
@@ -2266,7 +2272,7 @@ void CompactibleFreeListSpace::split(size_t from, size_t to1) {
 }
 
 void CompactibleFreeListSpace::print() const {
-  Space::print_on(tty);
+  print_on(tty);
 }
 
 void CompactibleFreeListSpace::prepare_for_verify() {
