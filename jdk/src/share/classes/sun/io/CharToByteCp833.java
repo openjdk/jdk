@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +23,24 @@
  * questions.
  */
 
-import com.sun.net.httpserver.*;
-import java.util.logging.*;
+package sun.io;
 
-public class Test {
+import sun.nio.cs.ext.IBM833;
 
-    static Logger logger;
+public class CharToByteCp833 extends CharToByteSingleByte {
 
-    static void enableLogging() {
-        logger = Logger.getLogger("com.sun.net.httpserver");
-        Handler h = new ConsoleHandler();
-        h.setLevel(Level.ALL);
-        logger.setLevel(Level.ALL);
-        logger.addHandler(h);
+    private final static IBM833 nioCoder = new IBM833();
+
+    public String getCharacterEncoding() {
+        return "Cp833";
     }
 
-    static void delay () {
-        try {
-            Thread.sleep (1000);
-        } catch (Exception e) {}
+    public CharToByteCp833() {
+        super.mask1 = 0xFF00;
+        super.mask2 = 0x00FF;
+        super.shift = 8;
+        super.index1 = nioCoder.getEncoderIndex1();
+        super.index2 = nioCoder.getEncoderIndex2();
     }
 }
+
