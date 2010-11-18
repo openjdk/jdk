@@ -45,7 +45,7 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
     private boolean registered = false;
 
     public BMPImageReaderSpi() {
-        super("Sun Microsystems, Inc.",
+        super("Oracle Corporation",
               "1.0",
               formatNames,
               entensions,

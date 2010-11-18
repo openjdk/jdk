@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6488669 6595324
+ * @bug 6488669 6595324 6993490
  * @run main/othervm ChunkedErrorStream
  * @summary Chunked ErrorStream tests
  */
@@ -48,6 +48,18 @@ import com.sun.net.httpserver.*;
  * 2) Client sends request to server and tries to
  *    getErrorStream(). 4K + 10 bytes must be read from
  *    the errorStream.
+ *
+ * Part 3: 6993490
+ *    Reuse persistent connection from part 2, the error stream
+ *    buffering will have set a reduced timeout on the socket and
+ *    tried to reset it to the default, infinity. Client must not
+ *    throw a timeout exception. If it does, it indicates that the
+ *    default timeout was not reset correctly.
+ *    If no timeout exception is thrown, it does not guarantee that
+ *    the timeout was reset correctly, as there is a potential race
+ *    between the sleeping server and the client thread. Typically,
+ *    1000 millis has been enought to reliable reproduce this problem
+ *    since the error stream buffering sets the timeout to 60 millis.
  */
 
 public class ChunkedErrorStream
@@ -75,19 +87,18 @@ public class ChunkedErrorStream
         }  finally {
             httpServer.stop(1);
         }
-
     }
 
     void doClient() {
-        for (int times=0; times<2; times++) {
+        for (int times=0; times<3; times++) {
             HttpURLConnection uc = null;
             try {
                 InetSocketAddress address = httpServer.getAddress();
                 String URLStr = "http://localhost:" + address.getPort() + "/test/";
                 if (times == 0) {
-                    URLStr += 6488669;
+                    URLStr += "first";
                 } else {
-                    URLStr += 6595324;
+                    URLStr += "second";
                 }
 
                 System.out.println("Trying " + URLStr);
@@ -97,6 +108,11 @@ public class ChunkedErrorStream
 
                 throw new RuntimeException("Failed: getInputStream should throw and IOException");
             }  catch (IOException e) {
+                if (e instanceof SocketTimeoutException) {
+                    e.printStackTrace();
+                    throw new RuntimeException("Failed: SocketTimeoutException should not happen");
+                }
+
                 // This is what we expect to happen.
                 InputStream es = uc.getErrorStream();
                 byte[] ba = new byte[1024];
@@ -112,7 +128,7 @@ public class ChunkedErrorStream
                 if (count == 0)
                     throw new RuntimeException("Failed: ErrorStream returning 0 bytes");
 
-                if (times == 1 && count != (4096+10))
+                if (times >= 1 && count != (4096+10))
                     throw new RuntimeException("Failed: ErrorStream returning " + count +
                                                  " bytes. Expecting " + (4096+10));
 
@@ -128,13 +144,13 @@ public class ChunkedErrorStream
         httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
 
         // create HttpServer context
-        HttpContext ctx1 = httpServer.createContext("/test/6488669", new Handler6488669());
-        HttpContext ctx2 = httpServer.createContext("/test/6595324", new Handler6595324());
+        httpServer.createContext("/test/first", new FirstHandler());
+        httpServer.createContext("/test/second", new SecondHandler());
 
         httpServer.start();
     }
 
-    class Handler6488669 implements HttpHandler {
+    class FirstHandler implements HttpHandler {
         public void handle(HttpExchange t) throws IOException {
             InputStream is = t.getRequestBody();
             byte[] ba = new byte[1024];
@@ -156,12 +172,21 @@ public class ChunkedErrorStream
         }
     }
 
-    class Handler6595324 implements HttpHandler {
+    static class SecondHandler implements HttpHandler {
+        /* count greater than 0, slow response */
+        static int count = 0;
+
         public void handle(HttpExchange t) throws IOException {
             InputStream is = t.getRequestBody();
             byte[] ba = new byte[1024];
             while (is.read(ba) != -1);
             is.close();
+
+            if (count > 0) {
+                System.out.println("server sleeping...");
+                try { Thread.sleep(1000); } catch(InterruptedException e) {}
+            }
+            count++;
 
             t.sendResponseHeaders(404, 0);
             OutputStream os = t.getResponseBody();

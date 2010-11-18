@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,29 @@
 
 package javax.net.ssl;
 
+import java.security.AlgorithmConstraints;
+
 /**
  * Encapsulates parameters for an SSL/TLS connection. The parameters
  * are the list of ciphersuites to be accepted in an SSL/TLS handshake,
- * the list of protocols to be allowed, and whether SSL/TLS servers should
- * request or require client authentication.
- *
- * <p>SSLParameters can be created via the constructors in this class.
+ * the list of protocols to be allowed, the endpoint identification
+ * algorithm during SSL/TLS handshaking, the algorithm constraints and
+ * whether SSL/TLS servers should request or require client authentication.
+ * <p>
+ * SSLParameters can be created via the constructors in this class.
  * Objects can also be obtained using the <code>getSSLParameters()</code>
  * methods in
  * {@link SSLSocket#getSSLParameters SSLSocket} and
+ * {@link SSLServerSocket#getSSLParameters SSLServerSocket} and
  * {@link SSLEngine#getSSLParameters SSLEngine} or the
  * {@link SSLContext#getDefaultSSLParameters getDefaultSSLParameters()} and
  * {@link SSLContext#getSupportedSSLParameters getSupportedSSLParameters()}
  * methods in <code>SSLContext</code>.
- *
- * <P>SSLParameters can be applied to a connection via the methods
+ * <p>
+ * SSLParameters can be applied to a connection via the methods
  * {@link SSLSocket#setSSLParameters SSLSocket.setSSLParameters()} and
- * {@link SSLEngine#setSSLParameters SSLEngine.getSSLParameters()}.
+ * {@link SSLServerSocket#setSSLParameters SSLServerSocket.setSSLParameters()}
+ * and {@link SSLEngine#setSSLParameters SSLEngine.getSSLParameters()}.
  *
  * @see SSLSocket
  * @see SSLEngine
@@ -56,11 +61,13 @@ public class SSLParameters {
     private String[] protocols;
     private boolean wantClientAuth;
     private boolean needClientAuth;
+    private String identificationAlgorithm;
+    private AlgorithmConstraints algorithmConstraints;
 
     /**
      * Constructs SSLParameters.
-     *
-     * <p>The cipherSuites and protocols values are set to <code>null</code>,
+     * <p>
+     * The cipherSuites and protocols values are set to <code>null</code>,
      * wantClientAuth and needClientAuth are set to <code>false</code>.
      */
     public SSLParameters() {
@@ -69,6 +76,7 @@ public class SSLParameters {
 
     /**
      * Constructs SSLParameters from the specified array of ciphersuites.
+     * <p>
      * Calling this constructor is equivalent to calling the no-args
      * constructor followed by
      * <code>setCipherSuites(cipherSuites);</code>.
@@ -82,6 +90,7 @@ public class SSLParameters {
     /**
      * Constructs SSLParameters from the specified array of ciphersuites
      * and protocols.
+     * <p>
      * Calling this constructor is equivalent to calling the no-args
      * constructor followed by
      * <code>setCipherSuites(cipherSuites); setProtocols(protocols);</code>.
@@ -176,6 +185,73 @@ public class SSLParameters {
     public void setNeedClientAuth(boolean needClientAuth) {
         this.wantClientAuth = false;
         this.needClientAuth = needClientAuth;
+    }
+
+    /**
+     * Returns the cryptographic algorithm constraints.
+     *
+     * @return the cryptographic algorithm constraints, or null if the
+     *     constraints have not been set
+     *
+     * @see #setAlgorithmConstraints(AlgorithmConstraints)
+     *
+     * @since 1.7
+     */
+    public AlgorithmConstraints getAlgorithmConstraints() {
+        return algorithmConstraints;
+    }
+
+    /**
+     * Sets the cryptographic algorithm constraints, which will be used
+     * in addition to any configured by the runtime environment.
+     * <p>
+     * If the <code>constraints</code> parameter is non-null, every
+     * cryptographic algorithm, key and algorithm parameters used in the
+     * SSL/TLS handshake must be permitted by the constraints.
+     *
+     * @param constraints the algorithm constraints (or null)
+     *
+     * @since 1.7
+     */
+    public void setAlgorithmConstraints(AlgorithmConstraints constraints) {
+        // the constraints object is immutable
+        this.algorithmConstraints = constraints;
+    }
+
+    /**
+     * Gets the endpoint identification algorithm.
+     *
+     * @return the endpoint identification algorithm, or null if none
+     * has been set.
+     *
+     * @see X509ExtendedTrustManager
+     * @see #setEndpointIdentificationAlgorithm(String)
+     *
+     * @since 1.7
+     */
+    public String getEndpointIdentificationAlgorithm() {
+        return identificationAlgorithm;
+    }
+
+    /**
+     * Sets the endpoint identification algorithm.
+     * <p>
+     * If the <code>algorithm</code> parameter is non-null or non-empty, the
+     * endpoint identification/verification procedures must be handled during
+     * SSL/TLS handshaking.  This is to prevent man-in-the-middle attacks.
+     *
+     * @param algorithm The standard string name of the endpoint
+     *     identification algorithm (or null).  See Appendix A in the <a href=
+     *     "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
+     *     Java Cryptography Architecture API Specification &amp; Reference </a>
+     *     for information about standard algorithm names.
+     *
+     * @see X509ExtendedTrustManager
+     *
+     * @since 1.7
+     */
+    public void setEndpointIdentificationAlgorithm(String algorithm) {
+        this.identificationAlgorithm = algorithm;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class PrefixParserAction extends ParserActionBase {
                     throw wrapper.couldNotSetArray( thr,
                         getPropertyName(), new Integer(ctr),
                         componentType, new Integer(size),
-                        ObjectUtility.compactObjectToString( obj )) ;
+                        obj.toString() ) ;
                 }
                 ctr++ ;
             }

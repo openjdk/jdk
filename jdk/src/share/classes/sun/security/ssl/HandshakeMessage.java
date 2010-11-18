@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,12 @@ import javax.security.auth.x500.X500Principal;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import javax.net.ssl.*;
 
-import sun.security.action.GetPropertyAction;
-
 import sun.security.internal.spec.TlsPrfParameterSpec;
-
 import sun.security.ssl.CipherSuite.*;
+import static sun.security.ssl.CipherSuite.PRF.*;
 
 /**
  * Many data structures are involved in the handshake messages.  These
@@ -172,9 +169,7 @@ public abstract class HandshakeMessage {
  * Server can ask the client to initiate a new handshake, e.g. to change
  * session parameters after a connection has been (re)established.
  */
-static final
-class HelloRequest extends HandshakeMessage
-{
+static final class HelloRequest extends HandshakeMessage {
     int messageType() { return ht_hello_request; }
 
     HelloRequest() { }
@@ -210,10 +205,7 @@ class HelloRequest extends HandshakeMessage
  * Until we know how to parse it, we will just read what we know
  * about, and let our caller handle the jumps over unknown data.
  */
-static final
-class ClientHello extends HandshakeMessage
-{
-    int messageType() { return ht_client_hello; }
+static final class ClientHello extends HandshakeMessage {
 
     ProtocolVersion     protocolVersion;
     RandomCookie        clnt_random;
@@ -225,37 +217,20 @@ class ClientHello extends HandshakeMessage
 
     private final static byte[]  NULL_COMPRESSION = new byte[] {0};
 
-    ClientHello(SecureRandom generator, ProtocolVersion protocolVersion) {
+    ClientHello(SecureRandom generator, ProtocolVersion protocolVersion,
+            SessionId sessionId, CipherSuiteList cipherSuites) {
+
         this.protocolVersion = protocolVersion;
-        clnt_random = new RandomCookie(generator);
-        compression_methods = NULL_COMPRESSION;
-        // sessionId, cipher_suites TBS later
-    }
-
-    CipherSuiteList getCipherSuites() {
-        return cipherSuites;
-    }
-
-    // Set the ciphersuites.
-    // This method may only be called once.
-    void setCipherSuites(CipherSuiteList cipherSuites) {
+        this.sessionId = sessionId;
         this.cipherSuites = cipherSuites;
+
         if (cipherSuites.containsEC()) {
             extensions.add(SupportedEllipticCurvesExtension.DEFAULT);
             extensions.add(SupportedEllipticPointFormatsExtension.DEFAULT);
         }
-    }
 
-    int messageLength() {
-        /*
-         * Add fixed size parts of each field...
-         * version + random + session + cipher + compress
-         */
-        return (2 + 32 + 1 + 2 + 1
-            + sessionId.length()                /* ... + variable parts */
-            + (cipherSuites.size() * 2)
-            + compression_methods.length)
-            + extensions.length();
+        clnt_random = new RandomCookie(generator);
+        compression_methods = NULL_COMPRESSION;
     }
 
     ClientHello(HandshakeInStream s, int messageLength) throws IOException {
@@ -269,6 +244,55 @@ class ClientHello extends HandshakeMessage
         }
     }
 
+    CipherSuiteList getCipherSuites() {
+        return cipherSuites;
+    }
+
+    // add renegotiation_info extension
+    void addRenegotiationInfoExtension(byte[] clientVerifyData) {
+        HelloExtension renegotiationInfo = new RenegotiationInfoExtension(
+                    clientVerifyData, new byte[0]);
+        extensions.add(renegotiationInfo);
+    }
+
+    // add server_name extension
+    void addServerNameIndicationExtension(String hostname) {
+        // We would have checked that the hostname ia a FQDN.
+        ArrayList<String> hostnames = new ArrayList<String>(1);
+        hostnames.add(hostname);
+
+        try {
+            extensions.add(new ServerNameExtension(hostnames));
+        } catch (IOException ioe) {
+            // ignore the exception and return
+        }
+    }
+
+    // add signature_algorithm extension
+    void addSignatureAlgorithmsExtension(
+            Collection<SignatureAndHashAlgorithm> algorithms) {
+        HelloExtension signatureAlgorithm =
+                new SignatureAlgorithmsExtension(algorithms);
+        extensions.add(signatureAlgorithm);
+    }
+
+    @Override
+    int messageType() { return ht_client_hello; }
+
+    @Override
+    int messageLength() {
+        /*
+         * Add fixed size parts of each field...
+         * version + random + session + cipher + compress
+         */
+        return (2 + 32 + 1 + 2 + 1
+            + sessionId.length()                /* ... + variable parts */
+            + (cipherSuites.size() * 2)
+            + compression_methods.length)
+            + extensions.length();
+    }
+
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putInt8(protocolVersion.major);
         s.putInt8(protocolVersion.minor);
@@ -279,11 +303,13 @@ class ClientHello extends HandshakeMessage
         extensions.send(s);
     }
 
+    @Override
     void print(PrintStream s) throws IOException {
         s.println("*** ClientHello, " + protocolVersion);
 
         if (debug != null && Debug.isOn("verbose")) {
-            s.print   ("RandomCookie:  "); clnt_random.print(s);
+            s.print("RandomCookie:  ");
+            clnt_random.print(s);
 
             s.print("Session ID:  ");
             s.println(sessionId);
@@ -315,13 +341,13 @@ class ServerHello extends HandshakeMessage
     CipherSuite         cipherSuite;
     byte                compression_method;
     HelloExtensions extensions = new HelloExtensions();
-    int extensionLength;
 
     ServerHello() {
         // empty
     }
 
-    ServerHello(HandshakeInStream input, int messageLength) throws IOException {
+    ServerHello(HandshakeInStream input, int messageLength)
+            throws IOException {
         protocolVersion = ProtocolVersion.valueOf(input.getInt8(),
                                                   input.getInt8());
         svr_random = new RandomCookie(input);
@@ -361,7 +387,8 @@ class ServerHello extends HandshakeMessage
         s.println("*** ServerHello, " + protocolVersion);
 
         if (debug != null && Debug.isOn("verbose")) {
-            s.print   ("RandomCookie:  "); svr_random.print(s);
+            s.print("RandomCookie:  ");
+            svr_random.print(s);
 
             int i;
 
@@ -419,8 +446,8 @@ class CertificateMsg extends HandshakeMessage
                 }
                 v.add(cf.generateCertificate(new ByteArrayInputStream(cert)));
             } catch (CertificateException e) {
-                throw (SSLProtocolException)new SSLProtocolException
-                        (e.getMessage()).initCause(e);
+                throw (SSLProtocolException)new SSLProtocolException(
+                    e.getMessage()).initCause(e);
             }
         }
 
@@ -463,7 +490,7 @@ class CertificateMsg extends HandshakeMessage
     }
 
     X509Certificate[] getCertificateChain() {
-        return chain;
+        return chain.clone();
     }
 }
 
@@ -591,9 +618,9 @@ class RSA_ServerKeyExchange extends ServerKeyExchange
         try {
             KeyFactory kfac = JsseJce.getKeyFactory("RSA");
             // modulus and exponent are always positive
-            RSAPublicKeySpec kspec = new RSAPublicKeySpec
-                                         (new BigInteger(1, rsa_modulus),
-                                          new BigInteger(1, rsa_exponent));
+            RSAPublicKeySpec kspec = new RSAPublicKeySpec(
+                new BigInteger(1, rsa_modulus),
+                new BigInteger(1, rsa_exponent));
             return kfac.generatePublic(kspec);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -661,6 +688,12 @@ class DH_ServerKeyExchange extends ServerKeyExchange
 
     private byte                signature [];
 
+    // protocol version being established using this ServerKeyExchange message
+    ProtocolVersion protocolVersion;
+
+    // the preferable signature algorithm used by this ServerKeyExchange message
+    private SignatureAndHashAlgorithm preferableSignatureAlgorithm;
+
     /* Return the Diffie-Hellman modulus */
     BigInteger getModulus() {
         return new BigInteger(1, dh_p);
@@ -706,8 +739,11 @@ class DH_ServerKeyExchange extends ServerKeyExchange
      * Construct from initialized DH key object, for DH_anon
      * key exchange.
      */
-    DH_ServerKeyExchange(DHCrypt obj) {
-        getValues(obj);
+    DH_ServerKeyExchange(DHCrypt obj, ProtocolVersion protocolVersion) {
+        this.protocolVersion = protocolVersion;
+        this.preferableSignatureAlgorithm = null;
+
+        setValues(obj);
         signature = null;
     }
 
@@ -717,22 +753,33 @@ class DH_ServerKeyExchange extends ServerKeyExchange
      * key exchange.  (Constructor called by server.)
      */
     DH_ServerKeyExchange(DHCrypt obj, PrivateKey key, byte clntNonce[],
-            byte svrNonce[], SecureRandom sr) throws GeneralSecurityException {
+            byte svrNonce[], SecureRandom sr,
+            SignatureAndHashAlgorithm signAlgorithm,
+            ProtocolVersion protocolVersion) throws GeneralSecurityException {
 
-        getValues(obj);
+        this.protocolVersion = protocolVersion;
+
+        setValues(obj);
 
         Signature sig;
-        if (key.getAlgorithm().equals("DSA")) {
-            sig = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            this.preferableSignatureAlgorithm = signAlgorithm;
+            sig = JsseJce.getSignature(signAlgorithm.getAlgorithmName());
         } else {
-            sig = RSASignature.getInstance();
+            this.preferableSignatureAlgorithm = null;
+            if (key.getAlgorithm().equals("DSA")) {
+                sig = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
+            } else {
+                sig = RSASignature.getInstance();
+            }
         }
+
         sig.initSign(key, sr);
         updateSignature(sig, clntNonce, svrNonce);
         signature = sig.sign();
     }
 
-    private void getValues(DHCrypt obj) {
+    private void setValues(DHCrypt obj) {
         dh_p = toByteArray(obj.getModulus());
         dh_g = toByteArray(obj.getBase());
         dh_Ys = toByteArray(obj.getPublicKey());
@@ -743,7 +790,12 @@ class DH_ServerKeyExchange extends ServerKeyExchange
      * stream, as if sent from server to client for use with
      * DH_anon key exchange
      */
-    DH_ServerKeyExchange(HandshakeInStream input) throws IOException {
+    DH_ServerKeyExchange(HandshakeInStream input,
+            ProtocolVersion protocolVersion) throws IOException {
+
+        this.protocolVersion = protocolVersion;
+        this.preferableSignatureAlgorithm = null;
+
         dh_p = input.getBytes16();
         dh_g = input.getBytes16();
         dh_Ys = input.getBytes16();
@@ -756,13 +808,38 @@ class DH_ServerKeyExchange extends ServerKeyExchange
      * DHE_DSS or DHE_RSA key exchange.  (Called by client.)
      */
     DH_ServerKeyExchange(HandshakeInStream input, PublicKey publicKey,
-            byte clntNonce[], byte svrNonce[], int messageSize)
+            byte clntNonce[], byte svrNonce[], int messageSize,
+            Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs,
+            ProtocolVersion protocolVersion)
             throws IOException, GeneralSecurityException {
 
+        this.protocolVersion = protocolVersion;
+
+        // read params: ServerDHParams
         dh_p = input.getBytes16();
         dh_g = input.getBytes16();
         dh_Ys = input.getBytes16();
 
+        // read the signature and hash algorithm
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            int hash = input.getInt8();         // hash algorithm
+            int signature = input.getInt8();    // signature algorithm
+
+            preferableSignatureAlgorithm =
+                SignatureAndHashAlgorithm.valueOf(hash, signature, 0);
+
+            // Is it a local supported signature algorithm?
+            if (!localSupportedSignAlgs.contains(
+                    preferableSignatureAlgorithm)) {
+                throw new SSLHandshakeException(
+                        "Unsupported SignatureAndHashAlgorithm in " +
+                        "ServerKeyExchange message");
+            }
+        } else {
+            this.preferableSignatureAlgorithm = null;
+        }
+
+        // read the signature
         byte signature[];
         if (dhKeyExchangeFix) {
             signature = input.getBytes16();
@@ -777,12 +854,17 @@ class DH_ServerKeyExchange extends ServerKeyExchange
 
         Signature sig;
         String algorithm = publicKey.getAlgorithm();
-        if (algorithm.equals("DSA")) {
-            sig = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
-        } else if (algorithm.equals("RSA")) {
-            sig = RSASignature.getInstance();
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            sig = JsseJce.getSignature(
+                        preferableSignatureAlgorithm.getAlgorithmName());
         } else {
-            throw new SSLKeyException("neither an RSA or a DSA key");
+            if (algorithm.equals("DSA")) {
+                sig = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
+            } else if (algorithm.equals("RSA")) {
+                sig = RSASignature.getInstance();
+            } else {
+                throw new SSLKeyException("neither an RSA or a DSA key");
+            }
         }
 
         sig.initVerify(publicKey);
@@ -799,12 +881,18 @@ class DH_ServerKeyExchange extends ServerKeyExchange
         temp += dh_p.length;
         temp += dh_g.length;
         temp += dh_Ys.length;
+
         if (signature != null) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                temp += SignatureAndHashAlgorithm.sizeInRecord();
+            }
+
             temp += signature.length;
             if (dhKeyExchangeFix) {
                 temp += 2;
             }
         }
+
         return temp;
     }
 
@@ -812,7 +900,13 @@ class DH_ServerKeyExchange extends ServerKeyExchange
         s.putBytes16(dh_p);
         s.putBytes16(dh_g);
         s.putBytes16(dh_Ys);
+
         if (signature != null) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                s.putInt8(preferableSignatureAlgorithm.getHashValue());
+                s.putInt8(preferableSignatureAlgorithm.getSignatureValue());
+            }
+
             if (dhKeyExchangeFix) {
                 s.putBytes16(signature);
             } else {
@@ -832,6 +926,11 @@ class DH_ServerKeyExchange extends ServerKeyExchange
             if (signature == null) {
                 s.println("Anonymous");
             } else {
+                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                    s.println("Signature Algorithm " +
+                        preferableSignatureAlgorithm.getAlgorithmName());
+                }
+
                 s.println("Signed with a DSA or RSA public key");
             }
         }
@@ -865,9 +964,19 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
     // public key object encapsulated in this message
     private ECPublicKey publicKey;
 
+    // protocol version being established using this ServerKeyExchange message
+    ProtocolVersion protocolVersion;
+
+    // the preferable signature algorithm used by this ServerKeyExchange message
+    private SignatureAndHashAlgorithm preferableSignatureAlgorithm;
+
     ECDH_ServerKeyExchange(ECDHCrypt obj, PrivateKey privateKey,
-            byte[] clntNonce, byte[] svrNonce, SecureRandom sr)
-            throws GeneralSecurityException {
+            byte[] clntNonce, byte[] svrNonce, SecureRandom sr,
+            SignatureAndHashAlgorithm signAlgorithm,
+            ProtocolVersion protocolVersion) throws GeneralSecurityException {
+
+        this.protocolVersion = protocolVersion;
+
         publicKey = (ECPublicKey)obj.getPublicKey();
         ECParameterSpec params = publicKey.getParams();
         ECPoint point = publicKey.getW();
@@ -879,8 +988,14 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
             return;
         }
 
-        Signature sig = getSignature(privateKey.getAlgorithm());
-        sig.initSign(privateKey);
+        Signature sig;
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            this.preferableSignatureAlgorithm = signAlgorithm;
+            sig = JsseJce.getSignature(signAlgorithm.getAlgorithmName());
+        } else {
+            sig = getSignature(privateKey.getAlgorithm());
+        }
+        sig.initSign(privateKey);  // where is the SecureRandom?
 
         updateSignature(sig, clntNonce, svrNonce);
         signatureBytes = sig.sign();
@@ -890,49 +1005,87 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
      * Parse an ECDH server key exchange message.
      */
     ECDH_ServerKeyExchange(HandshakeInStream input, PublicKey signingKey,
-            byte[] clntNonce, byte[] svrNonce)
+            byte[] clntNonce, byte[] svrNonce,
+            Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs,
+            ProtocolVersion protocolVersion)
             throws IOException, GeneralSecurityException {
+
+        this.protocolVersion = protocolVersion;
+
+        // read params: ServerECDHParams
         int curveType = input.getInt8();
         ECParameterSpec parameters;
         // These parsing errors should never occur as we negotiated
         // the supported curves during the exchange of the Hello messages.
         if (curveType == CURVE_NAMED_CURVE) {
             curveId = input.getInt16();
-            if (SupportedEllipticCurvesExtension.isSupported(curveId) == false) {
-                throw new SSLHandshakeException("Unsupported curveId: " + curveId);
+            if (SupportedEllipticCurvesExtension.isSupported(curveId)
+                    == false) {
+                throw new SSLHandshakeException(
+                    "Unsupported curveId: " + curveId);
             }
-            String curveOid = SupportedEllipticCurvesExtension.getCurveOid(curveId);
+            String curveOid =
+                SupportedEllipticCurvesExtension.getCurveOid(curveId);
             if (curveOid == null) {
-                throw new SSLHandshakeException("Unknown named curve: " + curveId);
+                throw new SSLHandshakeException(
+                    "Unknown named curve: " + curveId);
             }
             parameters = JsseJce.getECParameterSpec(curveOid);
             if (parameters == null) {
-                throw new SSLHandshakeException("Unsupported curve: " + curveOid);
+                throw new SSLHandshakeException(
+                    "Unsupported curve: " + curveOid);
             }
         } else {
-            throw new SSLHandshakeException("Unsupported ECCurveType: " + curveType);
+            throw new SSLHandshakeException(
+                "Unsupported ECCurveType: " + curveType);
         }
         pointBytes = input.getBytes8();
 
         ECPoint point = JsseJce.decodePoint(pointBytes, parameters.getCurve());
         KeyFactory factory = JsseJce.getKeyFactory("EC");
-        publicKey = (ECPublicKey)factory.generatePublic(new ECPublicKeySpec(point, parameters));
+        publicKey = (ECPublicKey)factory.generatePublic(
+            new ECPublicKeySpec(point, parameters));
 
         if (signingKey == null) {
             // ECDH_anon
             return;
         }
 
-        // verify the signature
+        // read the signature and hash algorithm
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            int hash = input.getInt8();         // hash algorithm
+            int signature = input.getInt8();    // signature algorithm
+
+            preferableSignatureAlgorithm =
+                SignatureAndHashAlgorithm.valueOf(hash, signature, 0);
+
+            // Is it a local supported signature algorithm?
+            if (!localSupportedSignAlgs.contains(
+                    preferableSignatureAlgorithm)) {
+                throw new SSLHandshakeException(
+                        "Unsupported SignatureAndHashAlgorithm in " +
+                        "ServerKeyExchange message");
+            }
+        }
+
+        // read the signature
         signatureBytes = input.getBytes16();
-        Signature sig = getSignature(signingKey.getAlgorithm());
+
+        // verify the signature
+        Signature sig;
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            sig = JsseJce.getSignature(
+                        preferableSignatureAlgorithm.getAlgorithmName());
+        } else {
+            sig = getSignature(signingKey.getAlgorithm());
+        }
         sig.initVerify(signingKey);
 
         updateSignature(sig, clntNonce, svrNonce);
 
         if (sig.verify(signatureBytes) == false ) {
-            throw new SSLKeyException
-                ("Invalid signature on ECDH server key exchange message");
+            throw new SSLKeyException(
+                "Invalid signature on ECDH server key exchange message");
         }
     }
 
@@ -943,7 +1096,8 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
         return publicKey;
     }
 
-    private static Signature getSignature(String keyAlgorithm) throws NoSuchAlgorithmException {
+    private static Signature getSignature(String keyAlgorithm)
+            throws NoSuchAlgorithmException {
         if (keyAlgorithm.equals("EC")) {
             return JsseJce.getSignature(JsseJce.SIGNATURE_ECDSA);
         } else if (keyAlgorithm.equals("RSA")) {
@@ -967,6 +1121,11 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
 
     int messageLength() {
         int sigLen = (signatureBytes == null) ? 0 : 2 + signatureBytes.length;
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            sigLen += SignatureAndHashAlgorithm.sizeInRecord();
+        }
+
         return 4 + pointBytes.length + sigLen;
     }
 
@@ -974,6 +1133,11 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
         s.putInt8(CURVE_NAMED_CURVE);
         s.putInt16(curveId);
         s.putBytes8(pointBytes);
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            s.putInt8(preferableSignatureAlgorithm.getHashValue());
+            s.putInt8(preferableSignatureAlgorithm.getSignatureValue());
+        }
+
         if (signatureBytes != null) {
             s.putBytes16(signatureBytes);
         }
@@ -983,6 +1147,11 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
         s.println("*** ECDH ServerKeyExchange");
 
         if (debug != null && Debug.isOn("verbose")) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                s.println("Signature Algorithm " +
+                        preferableSignatureAlgorithm.getAlgorithmName());
+            }
+
             s.println("Server key: " + publicKey);
         }
     }
@@ -1008,8 +1177,8 @@ static final class DistinguishedName {
         try {
             return new X500Principal(name);
         } catch (IllegalArgumentException e) {
-            throw (SSLProtocolException)new SSLProtocolException
-                    (e.getMessage()).initCause(e);
+            throw (SSLProtocolException)new SSLProtocolException(
+                e.getMessage()).initCause(e);
         }
     }
 
@@ -1032,12 +1201,25 @@ static final class DistinguishedName {
  *
  * Authenticated servers may ask clients to authenticate themselves
  * in turn, using this message.
+ *
+ * Prior to TLS 1.2, the structure of the message is defined as:
+ *     struct {
+ *         ClientCertificateType certificate_types<1..2^8-1>;
+ *         DistinguishedName certificate_authorities<0..2^16-1>;
+ *     } CertificateRequest;
+ *
+ * In TLS 1.2, the structure is changed to:
+ *     struct {
+ *         ClientCertificateType certificate_types<1..2^8-1>;
+ *         SignatureAndHashAlgorithm
+ *           supported_signature_algorithms<2^16-1>;
+ *         DistinguishedName certificate_authorities<0..2^16-1>;
+ *     } CertificateRequest;
+ *
  */
 static final
 class CertificateRequest extends HandshakeMessage
 {
-    int messageType() { return ht_certificate_request; }
-
     // enum ClientCertificateType
     static final int   cct_rsa_sign = 1;
     static final int   cct_dss_sign = 2;
@@ -1062,8 +1244,21 @@ class CertificateRequest extends HandshakeMessage
     DistinguishedName   authorities [];         // 3 to 2^16 - 1
         // ... "3" because that's the smallest DER-encoded X500 DN
 
-    CertificateRequest(X509Certificate ca[], KeyExchange keyExchange)
-            throws IOException {
+    // protocol version being established using this CertificateRequest message
+    ProtocolVersion protocolVersion;
+
+    // supported_signature_algorithms for TLS 1.2 or later
+    private Collection<SignatureAndHashAlgorithm> algorithms;
+
+    // length of supported_signature_algorithms
+    private int algorithmsLen;
+
+    CertificateRequest(X509Certificate ca[], KeyExchange keyExchange,
+            Collection<SignatureAndHashAlgorithm> signAlgs,
+            ProtocolVersion protocolVersion) throws IOException {
+
+        this.protocolVersion = protocolVersion;
+
         // always use X500Principal
         authorities = new DistinguishedName[ca.length];
         for (int i = 0; i < ca.length; i++) {
@@ -1075,10 +1270,63 @@ class CertificateRequest extends HandshakeMessage
         // needs to be adapted to take keyExchange into account.
         // We only request ECDSA client auth if we have ECC crypto available.
         this.types = JsseJce.isEcAvailable() ? TYPES_ECC : TYPES_NO_ECC;
+
+        // Use supported_signature_algorithms for TLS 1.2 or later.
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (signAlgs == null || signAlgs.isEmpty()) {
+                throw new SSLProtocolException(
+                        "No supported signature algorithms");
+            }
+
+            algorithms = new ArrayList<SignatureAndHashAlgorithm>(signAlgs);
+            algorithmsLen =
+                SignatureAndHashAlgorithm.sizeInRecord() * algorithms.size();
+        } else {
+            algorithms = new ArrayList<SignatureAndHashAlgorithm>();
+            algorithmsLen = 0;
+        }
     }
 
-    CertificateRequest(HandshakeInStream input) throws IOException {
+    CertificateRequest(HandshakeInStream input,
+            ProtocolVersion protocolVersion) throws IOException {
+
+        this.protocolVersion = protocolVersion;
+
+        // Read the certificate_types.
         types = input.getBytes8();
+
+        // Read the supported_signature_algorithms for TLS 1.2 or later.
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            algorithmsLen = input.getInt16();
+            if (algorithmsLen < 2) {
+                throw new SSLProtocolException(
+                        "Invalid supported_signature_algorithms field");
+            }
+
+            algorithms = new ArrayList<SignatureAndHashAlgorithm>();
+            int remains = algorithmsLen;
+            int sequence = 0;
+            while (remains > 1) {    // needs at least two bytes
+                int hash = input.getInt8();         // hash algorithm
+                int signature = input.getInt8();    // signature algorithm
+
+                SignatureAndHashAlgorithm algorithm =
+                    SignatureAndHashAlgorithm.valueOf(hash, signature,
+                                                                ++sequence);
+                algorithms.add(algorithm);
+                remains -= 2;  // one byte for hash, one byte for signature
+            }
+
+            if (remains != 0) {
+                throw new SSLProtocolException(
+                        "Invalid supported_signature_algorithms field");
+            }
+        } else {
+            algorithms = new ArrayList<SignatureAndHashAlgorithm>();
+            algorithmsLen = 0;
+        }
+
+        // read the certificate_authorities
         int len = input.getInt16();
         ArrayList<DistinguishedName> v = new ArrayList<DistinguishedName>();
         while (len >= 3) {
@@ -1102,31 +1350,58 @@ class CertificateRequest extends HandshakeMessage
         return ret;
     }
 
-    int messageLength()
-    {
-        int len;
+    Collection<SignatureAndHashAlgorithm> getSignAlgorithms() {
+        return algorithms;
+    }
 
-        len = 1 + types.length + 2;
-        for (int i = 0; i < authorities.length; i++)
+    @Override
+    int messageType() {
+        return ht_certificate_request;
+    }
+
+    @Override
+    int messageLength() {
+        int len = 1 + types.length + 2;
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            len += algorithmsLen + 2;
+        }
+
+        for (int i = 0; i < authorities.length; i++) {
             len += authorities[i].length();
+        }
+
         return len;
     }
 
-    void send(HandshakeOutStream output) throws IOException
-    {
-        int     len = 0;
-
-        for (int i = 0; i < authorities.length; i++)
-            len += authorities[i].length();
-
+    @Override
+    void send(HandshakeOutStream output) throws IOException {
+        // put certificate_types
         output.putBytes8(types);
+
+        // put supported_signature_algorithms
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            output.putInt16(algorithmsLen);
+            for (SignatureAndHashAlgorithm algorithm : algorithms) {
+                output.putInt8(algorithm.getHashValue());      // hash
+                output.putInt8(algorithm.getSignatureValue()); // signature
+            }
+        }
+
+        // put certificate_authorities
+        int len = 0;
+        for (int i = 0; i < authorities.length; i++) {
+            len += authorities[i].length();
+        }
+
         output.putInt16(len);
-        for (int i = 0; i < authorities.length; i++)
+        for (int i = 0; i < authorities.length; i++) {
             authorities[i].send(output);
+        }
     }
 
-    void print(PrintStream s) throws IOException
-    {
+    @Override
+    void print(PrintStream s) throws IOException {
         s.println("*** CertificateRequest");
 
         if (debug != null && Debug.isOn("verbose")) {
@@ -1160,9 +1435,28 @@ class CertificateRequest extends HandshakeMessage
             }
             s.println();
 
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                StringBuffer buffer = new StringBuffer();
+                boolean opened = false;
+                for (SignatureAndHashAlgorithm signAlg : algorithms) {
+                    if (opened) {
+                        buffer.append(", " + signAlg.getAlgorithmName());
+                    } else {
+                        buffer.append(signAlg.getAlgorithmName());
+                        opened = true;
+                    }
+                }
+                s.println("Supported Signature Algorithms: " + buffer);
+            }
+
             s.println("Cert Authorities:");
-            for (int i = 0; i < authorities.length; i++)
-                authorities[i].print(s);
+            if (authorities.length == 0) {
+                s.println("<Empty>");
+            } else {
+                for (int i = 0; i < authorities.length; i++) {
+                    authorities[i].print(s);
+                }
+            }
         }
     }
 }
@@ -1213,18 +1507,34 @@ class ServerHelloDone extends HandshakeMessage
  */
 static final class CertificateVerify extends HandshakeMessage {
 
-    int messageType() { return ht_certificate_verify; }
-
+    // the signature bytes
     private byte[] signature;
+
+    // protocol version being established using this ServerKeyExchange message
+    ProtocolVersion protocolVersion;
+
+    // the preferable signature algorithm used by this CertificateVerify message
+    private SignatureAndHashAlgorithm preferableSignatureAlgorithm = null;
 
     /*
      * Create an RSA or DSA signed certificate verify message.
      */
-    CertificateVerify(ProtocolVersion protocolVersion, HandshakeHash
-            handshakeHash, PrivateKey privateKey, SecretKey masterSecret,
-            SecureRandom sr) throws GeneralSecurityException {
+    CertificateVerify(ProtocolVersion protocolVersion,
+            HandshakeHash handshakeHash, PrivateKey privateKey,
+            SecretKey masterSecret, SecureRandom sr,
+            SignatureAndHashAlgorithm signAlgorithm)
+            throws GeneralSecurityException {
+
+        this.protocolVersion = protocolVersion;
+
         String algorithm = privateKey.getAlgorithm();
-        Signature sig = getSignature(protocolVersion, algorithm);
+        Signature sig = null;
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            this.preferableSignatureAlgorithm = signAlgorithm;
+            sig = JsseJce.getSignature(signAlgorithm.getAlgorithmName());
+        } else {
+            sig = getSignature(protocolVersion, algorithm);
+        }
         sig.initSign(privateKey, sr);
         updateSignature(sig, protocolVersion, handshakeHash, algorithm,
                         masterSecret);
@@ -1234,8 +1544,38 @@ static final class CertificateVerify extends HandshakeMessage {
     //
     // Unmarshal the signed data from the input stream.
     //
-    CertificateVerify(HandshakeInStream input) throws IOException  {
+    CertificateVerify(HandshakeInStream input,
+            Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs,
+            ProtocolVersion protocolVersion) throws IOException  {
+
+        this.protocolVersion = protocolVersion;
+
+        // read the signature and hash algorithm
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            int hashAlg = input.getInt8();         // hash algorithm
+            int signAlg = input.getInt8();         // signature algorithm
+
+            preferableSignatureAlgorithm =
+                SignatureAndHashAlgorithm.valueOf(hashAlg, signAlg, 0);
+
+            // Is it a local supported signature algorithm?
+            if (!localSupportedSignAlgs.contains(
+                    preferableSignatureAlgorithm)) {
+                throw new SSLHandshakeException(
+                        "Unsupported SignatureAndHashAlgorithm in " +
+                        "ServerKeyExchange message");
+            }
+        }
+
+        // read the signature
         signature = input.getBytes16();
+    }
+
+    /*
+     * Get the preferable signature algorithm used by this message
+     */
+    SignatureAndHashAlgorithm getPreferableSignatureAlgorithm() {
+        return preferableSignatureAlgorithm;
     }
 
     /*
@@ -1246,7 +1586,13 @@ static final class CertificateVerify extends HandshakeMessage {
             HandshakeHash handshakeHash, PublicKey publicKey,
             SecretKey masterSecret) throws GeneralSecurityException {
         String algorithm = publicKey.getAlgorithm();
-        Signature sig = getSignature(protocolVersion, algorithm);
+        Signature sig = null;
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            sig = JsseJce.getSignature(
+                        preferableSignatureAlgorithm.getAlgorithmName());
+        } else {
+            sig = getSignature(protocolVersion, algorithm);
+        }
         sig.initVerify(publicKey);
         updateSignature(sig, protocolVersion, handshakeHash, algorithm,
                         masterSecret);
@@ -1280,25 +1626,35 @@ static final class CertificateVerify extends HandshakeMessage {
             ProtocolVersion protocolVersion,
             HandshakeHash handshakeHash, String algorithm, SecretKey masterKey)
             throws SignatureException {
-        MessageDigest md5Clone = handshakeHash.getMD5Clone();
-        MessageDigest shaClone = handshakeHash.getSHAClone();
-        boolean tls = protocolVersion.v >= ProtocolVersion.TLS10.v;
+
         if (algorithm.equals("RSA")) {
-            if (tls) {
-                // nothing to do
-            } else { // SSLv3
-                updateDigest(md5Clone, MD5_pad1, MD5_pad2, masterKey);
-                updateDigest(shaClone, SHA_pad1, SHA_pad2, masterKey);
+            if (protocolVersion.v < ProtocolVersion.TLS12.v) { // TLS1.1-
+                MessageDigest md5Clone = handshakeHash.getMD5Clone();
+                MessageDigest shaClone = handshakeHash.getSHAClone();
+
+                if (protocolVersion.v < ProtocolVersion.TLS10.v) { // SSLv3
+                    updateDigest(md5Clone, MD5_pad1, MD5_pad2, masterKey);
+                    updateDigest(shaClone, SHA_pad1, SHA_pad2, masterKey);
+                }
+
+                // The signature must be an instance of RSASignature, need
+                // to use these hashes directly.
+                RSASignature.setHashes(sig, md5Clone, shaClone);
+            } else {  // TLS1.2+
+                sig.update(handshakeHash.getAllHandshakeMessages());
             }
-            // need to use these hashes directly
-            RSASignature.setHashes(sig, md5Clone, shaClone);
         } else { // DSA, ECDSA
-            if (tls) {
-                // nothing to do
-            } else { // SSLv3
-                updateDigest(shaClone, SHA_pad1, SHA_pad2, masterKey);
+            if (protocolVersion.v < ProtocolVersion.TLS12.v) { // TLS1.1-
+                MessageDigest shaClone = handshakeHash.getSHAClone();
+
+                if (protocolVersion.v < ProtocolVersion.TLS10.v) { // SSLv3
+                    updateDigest(shaClone, SHA_pad1, SHA_pad2, masterKey);
+                }
+
+                sig.update(shaClone.digest());
+            } else {  // TLS1.2+
+                sig.update(handshakeHash.getAllHandshakeMessages());
             }
-            sig.update(shaClone.digest());
         }
     }
 
@@ -1308,7 +1664,8 @@ static final class CertificateVerify extends HandshakeMessage {
      * all preceding handshake messages.
      * Used by the Finished class as well.
      */
-    static void updateDigest(MessageDigest md, byte[] pad1, byte[] pad2,
+    private static void updateDigest(MessageDigest md,
+            byte[] pad1, byte[] pad2,
             SecretKey masterSecret) {
         // Digest the key bytes if available.
         // Otherwise (sensitive key), try digesting the key directly.
@@ -1384,26 +1741,54 @@ static final class CertificateVerify extends HandshakeMessage {
                 methodCache.put(clazz, r);
             }
             if (r == NULL_OBJECT) {
-                throw new Exception("Digest does not support implUpdate(SecretKey)");
+                throw new Exception(
+                    "Digest does not support implUpdate(SecretKey)");
             }
             Method update = (Method)r;
             update.invoke(spi, key);
         } catch (Exception e) {
-            throw new RuntimeException
-            ("Could not obtain encoded key and MessageDigest cannot digest key", e);
+            throw new RuntimeException(
+                "Could not obtain encoded key and "
+                + "MessageDigest cannot digest key", e);
         }
     }
 
-    int messageLength() {
-        return 2 + signature.length;
+    @Override
+    int messageType() {
+        return ht_certificate_verify;
     }
 
+    @Override
+    int messageLength() {
+        int temp = 2;
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            temp += SignatureAndHashAlgorithm.sizeInRecord();
+        }
+
+        return temp + signature.length;
+    }
+
+    @Override
     void send(HandshakeOutStream s) throws IOException {
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            s.putInt8(preferableSignatureAlgorithm.getHashValue());
+            s.putInt8(preferableSignatureAlgorithm.getSignatureValue());
+        }
+
         s.putBytes16(signature);
     }
 
+    @Override
     void print(PrintStream s) throws IOException {
         s.println("*** CertificateVerify");
+
+        if (debug != null && Debug.isOn("verbose")) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                s.println("Signature Algorithm " +
+                        preferableSignatureAlgorithm.getAlgorithmName());
+            }
+        }
     }
 }
 
@@ -1425,8 +1810,6 @@ static final class CertificateVerify extends HandshakeMessage {
  */
 static final class Finished extends HandshakeMessage {
 
-    int messageType() { return ht_finished; }
-
     // constant for a Finished message sent by the client
     final static int CLIENT = 1;
 
@@ -1444,19 +1827,29 @@ static final class Finished extends HandshakeMessage {
     private byte[] verifyData;
 
     /*
+     * Current cipher suite we are negotiating.  TLS 1.2 has
+     * ciphersuite-defined PRF algorithms.
+     */
+    private ProtocolVersion protocolVersion;
+    private CipherSuite cipherSuite;
+
+    /*
      * Create a finished message to send to the remote peer.
      */
     Finished(ProtocolVersion protocolVersion, HandshakeHash handshakeHash,
-            int sender, SecretKey master) {
-        verifyData = getFinished(protocolVersion, handshakeHash, sender,
-                                 master);
+            int sender, SecretKey master, CipherSuite cipherSuite) {
+        this.protocolVersion = protocolVersion;
+        this.cipherSuite = cipherSuite;
+        verifyData = getFinished(handshakeHash, sender, master);
     }
 
     /*
      * Constructor that reads FINISHED message from stream.
      */
-    Finished(ProtocolVersion protocolVersion, HandshakeInStream input)
-            throws IOException {
+    Finished(ProtocolVersion protocolVersion, HandshakeInStream input,
+            CipherSuite cipherSuite) throws IOException {
+        this.protocolVersion = protocolVersion;
+        this.cipherSuite = cipherSuite;
         int msgLen = (protocolVersion.v >= ProtocolVersion.TLS10.v) ? 12 : 36;
         verifyData = new byte[msgLen];
         input.read(verifyData);
@@ -1468,18 +1861,16 @@ static final class Finished extends HandshakeMessage {
      * both client and server are fully in sync, and that the handshake
      * computations have been successful.
      */
-     boolean verify(ProtocolVersion protocolVersion,
-             HandshakeHash handshakeHash, int sender, SecretKey master) {
-        byte[] myFinished = getFinished(protocolVersion, handshakeHash,
-                                        sender, master);
+    boolean verify(HandshakeHash handshakeHash, int sender, SecretKey master) {
+        byte[] myFinished = getFinished(handshakeHash, sender, master);
         return Arrays.equals(myFinished, verifyData);
     }
 
     /*
      * Perform the actual finished message calculation.
      */
-    private static byte[] getFinished(ProtocolVersion protocolVersion,
-            HandshakeHash handshakeHash, int sender, SecretKey masterKey) {
+    private byte[] getFinished(HandshakeHash handshakeHash,
+            int sender, SecretKey masterKey) {
         byte[] sslLabel;
         String tlsLabel;
         if (sender == CLIENT) {
@@ -1491,23 +1882,53 @@ static final class Finished extends HandshakeMessage {
         } else {
             throw new RuntimeException("Invalid sender: " + sender);
         }
-        MessageDigest md5Clone = handshakeHash.getMD5Clone();
-        MessageDigest shaClone = handshakeHash.getSHAClone();
-        if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
-            // TLS
-            try {
-                byte[] seed = new byte[36];
-                md5Clone.digest(seed, 0, 16);
-                shaClone.digest(seed, 16, 20);
 
-                TlsPrfParameterSpec spec = new TlsPrfParameterSpec
-                                                (masterKey, tlsLabel, seed, 12);
-                KeyGenerator prf = JsseJce.getKeyGenerator("SunTlsPrf");
-                prf.init(spec);
-                SecretKey prfKey = prf.generateKey();
+        if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
+            // TLS 1.0+
+            try {
+                byte [] seed;
+                String prfAlg;
+                PRF prf;
+
+                // Get the KeyGenerator alg and calculate the seed.
+                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                    // TLS 1.2
+                    seed = handshakeHash.getFinishedHash();
+
+                    prfAlg = "SunTls12Prf";
+                    prf = cipherSuite.prfAlg;
+                } else {
+                    // TLS 1.0/1.1
+                    MessageDigest md5Clone = handshakeHash.getMD5Clone();
+                    MessageDigest shaClone = handshakeHash.getSHAClone();
+                    seed = new byte[36];
+                    md5Clone.digest(seed, 0, 16);
+                    shaClone.digest(seed, 16, 20);
+
+                    prfAlg = "SunTlsPrf";
+                    prf = P_NONE;
+                }
+
+                String prfHashAlg = prf.getPRFHashAlg();
+                int prfHashLength = prf.getPRFHashLength();
+                int prfBlockSize = prf.getPRFBlockSize();
+
+                /*
+                 * RFC 5246/7.4.9 says that finished messages can
+                 * be ciphersuite-specific in both length/PRF hash
+                 * algorithm.  If we ever run across a different
+                 * length, this call will need to be updated.
+                 */
+                TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
+                    masterKey, tlsLabel, seed, 12,
+                    prfHashAlg, prfHashLength, prfBlockSize);
+
+                KeyGenerator kg = JsseJce.getKeyGenerator(prfAlg);
+                kg.init(spec);
+                SecretKey prfKey = kg.generateKey();
                 if ("RAW".equals(prfKey.getFormat()) == false) {
-                    throw new ProviderException
-                        ("Invalid PRF output, format must be RAW");
+                    throw new ProviderException(
+                        "Invalid PRF output, format must be RAW");
                 }
                 byte[] finished = prfKey.getEncoded();
                 return finished;
@@ -1516,6 +1937,8 @@ static final class Finished extends HandshakeMessage {
             }
         } else {
             // SSLv3
+            MessageDigest md5Clone = handshakeHash.getMD5Clone();
+            MessageDigest shaClone = handshakeHash.getSHAClone();
             updateDigest(md5Clone, sslLabel, MD5_pad1, MD5_pad2, masterKey);
             updateDigest(shaClone, sslLabel, SHA_pad1, SHA_pad2, masterKey);
             byte[] finished = new byte[36];
@@ -1542,14 +1965,25 @@ static final class Finished extends HandshakeMessage {
         CertificateVerify.updateDigest(md, pad1, pad2, masterSecret);
     }
 
+    // get the verify_data of the finished message
+    byte[] getVerifyData() {
+        return verifyData;
+    }
+
+    @Override
+    int messageType() { return ht_finished; }
+
+    @Override
     int messageLength() {
         return verifyData.length;
     }
 
+    @Override
     void send(HandshakeOutStream out) throws IOException {
         out.write(verifyData);
     }
 
+    @Override
     void print(PrintStream s) throws IOException {
         s.println("*** Finished");
         if (debug != null && Debug.isOn("verbose")) {
@@ -1557,7 +1991,6 @@ static final class Finished extends HandshakeMessage {
             s.println("***");
         }
     }
-
 }
 
 //

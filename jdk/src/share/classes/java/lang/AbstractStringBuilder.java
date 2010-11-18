@@ -100,7 +100,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param   minimumCapacity   the minimum desired capacity.
      */
     public void ensureCapacity(int minimumCapacity) {
-        ensureCapacityInternal(minimumCapacity);
+        if (minimumCapacity > 0)
+            ensureCapacityInternal(minimumCapacity);
     }
 
     /**
@@ -108,6 +109,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * never synchronized.
      */
     private void ensureCapacityInternal(int minimumCapacity) {
+        // overflow-conscious code
         if (minimumCapacity - value.length > 0)
             expandCapacity(minimumCapacity);
     }

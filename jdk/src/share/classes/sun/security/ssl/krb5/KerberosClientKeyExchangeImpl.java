@@ -244,7 +244,7 @@ public final class KerberosClientKeyExchangeImpl
                 clientVersion, rand, input, sessionKey);
         } else {
             // Generate bogus premaster secret
-            preMaster = new KerberosPreMasterSecret(protocolVersion, rand);
+            preMaster = new KerberosPreMasterSecret(clientVersion, rand);
         }
     }
 

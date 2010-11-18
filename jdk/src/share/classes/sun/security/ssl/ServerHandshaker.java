@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,9 @@ import javax.net.ssl.*;
 
 import javax.security.auth.Subject;
 
-import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
-
 import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
+import sun.security.ssl.SignatureAndHashAlgorithm.*;
 import static sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
@@ -69,9 +68,6 @@ final class ServerHandshaker extends Handshaker {
     // flag to check for clientCertificateVerify message
     private boolean             needClientVerify = false;
 
-    // indicate a renegotiation handshaking
-    private boolean             isRenegotiation = false;
-
     /*
      * For exportable ciphersuites using non-exportable key sizes, we use
      * ephemeral RSA keys. We could also do anonymous RSA in the same way
@@ -95,18 +91,23 @@ final class ServerHandshaker extends Handshaker {
 
     private SupportedEllipticCurvesExtension supportedCurves;
 
+    // the preferable signature algorithm used by ServerKeyExchange message
+    SignatureAndHashAlgorithm preferableSignatureAlgorithm;
+
     /*
      * Constructor ... use the keys found in the auth context.
      */
     ServerHandshaker(SSLSocketImpl socket, SSLContextImpl context,
             ProtocolList enabledProtocols, byte clientAuth,
-            boolean isRenegotiation, ProtocolVersion activeProtocolVersion) {
+            ProtocolVersion activeProtocolVersion, boolean isInitialHandshake,
+            boolean secureRenegotiation,
+            byte[] clientVerifyData, byte[] serverVerifyData) {
 
         super(socket, context, enabledProtocols,
-                        (clientAuth != SSLEngineImpl.clauth_none), false);
+                (clientAuth != SSLEngineImpl.clauth_none), false,
+                activeProtocolVersion, isInitialHandshake, secureRenegotiation,
+                clientVerifyData, serverVerifyData);
         doClientAuth = clientAuth;
-        this.isRenegotiation = isRenegotiation;
-        this.activeProtocolVersion = activeProtocolVersion;
     }
 
     /*
@@ -114,13 +115,15 @@ final class ServerHandshaker extends Handshaker {
      */
     ServerHandshaker(SSLEngineImpl engine, SSLContextImpl context,
             ProtocolList enabledProtocols, byte clientAuth,
-            boolean isRenegotiation, ProtocolVersion activeProtocolVersion) {
+            ProtocolVersion activeProtocolVersion,
+            boolean isInitialHandshake, boolean secureRenegotiation,
+            byte[] clientVerifyData, byte[] serverVerifyData) {
 
         super(engine, context, enabledProtocols,
-                        (clientAuth != SSLEngineImpl.clauth_none), false);
+                (clientAuth != SSLEngineImpl.clauth_none), false,
+                activeProtocolVersion, isInitialHandshake, secureRenegotiation,
+                clientVerifyData, serverVerifyData);
         doClientAuth = clientAuth;
-        this.isRenegotiation = isRenegotiation;
-        this.activeProtocolVersion = activeProtocolVersion;
     }
 
     /*
@@ -184,8 +187,10 @@ final class ServerHandshaker extends Handshaker {
                      * temporary one used for non-export or signing-only
                      * certificates/keys.
                      */
-                    RSAClientKeyExchange pms = new RSAClientKeyExchange
-                        (protocolVersion, input, message_len, privateKey);
+                    RSAClientKeyExchange pms = new RSAClientKeyExchange(
+                            protocolVersion, clientRequestedVersion,
+                            sslContext.getSecureRandom(), input,
+                            message_len, privateKey);
                     preMasterSecret = this.clientKeyExchange(pms);
                     break;
                 case K_KRB5:
@@ -230,11 +235,13 @@ final class ServerHandshaker extends Handshaker {
                 break;
 
             case HandshakeMessage.ht_certificate_verify:
-                this.clientCertificateVerify(new CertificateVerify(input));
+                this.clientCertificateVerify(new CertificateVerify(input,
+                            localSupportedSignAlgs, protocolVersion));
                 break;
 
             case HandshakeMessage.ht_finished:
-                this.clientFinished(new Finished(protocolVersion, input));
+                this.clientFinished(
+                    new Finished(protocolVersion, input, cipherSuite));
                 break;
 
             default:
@@ -269,41 +276,122 @@ final class ServerHandshaker extends Handshaker {
             mesg.print(System.out);
         }
 
-        // if it is a renegotiation request and renegotiation is not allowed
-        if (isRenegotiation && !renegotiable) {
-            if (activeProtocolVersion.v >= ProtocolVersion.TLS10.v) {
-                // response with a no_negotiation warning,
-                warningSE(Alerts.alert_no_negotiation);
+        // Does the message include security renegotiation indication?
+        boolean renegotiationIndicated = false;
 
-                // invalidate the handshake so that the caller can
-                // dispose this object.
-                invalidated = true;
+        // check the TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+        CipherSuiteList cipherSuites = mesg.getCipherSuites();
+        if (cipherSuites.contains(CipherSuite.C_SCSV)) {
+            renegotiationIndicated = true;
+            if (isInitialHandshake) {
+                secureRenegotiation = true;
+            } else {
+                // abort the handshake with a fatal handshake_failure alert
+                if (secureRenegotiation) {
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "The SCSV is present in a secure renegotiation");
+                } else {
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "The SCSV is present in a insecure renegotiation");
+                }
+            }
+        }
 
-                // If there is still unread block in the handshake
-                // input stream, it would be truncated with the disposal
-                // and the next handshake message will become incomplete.
-                //
-                // However, according to SSL/TLS specifications, no more
-                // handshake message could immediately follow ClientHello
-                // or HelloRequest. But in case of any improper messages,
-                // we'd better check to ensure there is no remaining bytes
-                // in the handshake input stream.
-                if (input.available() > 0) {
-                    fatalSE(Alerts.alert_unexpected_message,
-                        "ClientHello followed by an unexpected  " +
-                        "handshake message");
-
+        // check the "renegotiation_info" extension
+        RenegotiationInfoExtension clientHelloRI = (RenegotiationInfoExtension)
+                    mesg.extensions.get(ExtensionType.EXT_RENEGOTIATION_INFO);
+        if (clientHelloRI != null) {
+            renegotiationIndicated = true;
+            if (isInitialHandshake) {
+                // verify the length of the "renegotiated_connection" field
+                if (!clientHelloRI.isEmpty()) {
+                    // abort the handshake with a fatal handshake_failure alert
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "The renegotiation_info field is not empty");
                 }
 
-                return;
+                secureRenegotiation = true;
             } else {
-                // For SSLv3, send the handshake_failure fatal error.
-                // Note that SSLv3 does not define a no_negotiation alert
-                // like TLSv1. However we cannot ignore the message
-                // simply, otherwise the other side was waiting for a
-                // response that would never come.
-                fatalSE(Alerts.alert_handshake_failure,
-                    "renegotiation is not allowed");
+                if (!secureRenegotiation) {
+                    // unexpected RI extension for insecure renegotiation,
+                    // abort the handshake with a fatal handshake_failure alert
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "The renegotiation_info is present in a insecure " +
+                        "renegotiation");
+                }
+
+                // verify the client_verify_data value
+                if (!Arrays.equals(clientVerifyData,
+                                clientHelloRI.getRenegotiatedConnection())) {
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "Incorrect verify data in ClientHello " +
+                        "renegotiation_info message");
+                }
+            }
+        } else if (!isInitialHandshake && secureRenegotiation) {
+           // if the connection's "secure_renegotiation" flag is set to TRUE
+           // and the "renegotiation_info" extension is not present, abort
+           // the handshake.
+            fatalSE(Alerts.alert_handshake_failure,
+                        "Inconsistent secure renegotiation indication");
+        }
+
+        // if there is no security renegotiation indication or the previous
+        // handshake is insecure.
+        if (!renegotiationIndicated || !secureRenegotiation) {
+            if (isInitialHandshake) {
+                if (!allowLegacyHelloMessages) {
+                    // abort the handshake with a fatal handshake_failure alert
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "Failed to negotiate the use of secure renegotiation");
+                }
+
+                // continue with legacy ClientHello
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println("Warning: No renegotiation " +
+                        "indication in ClientHello, allow legacy ClientHello");
+                }
+            } else if (!allowUnsafeRenegotiation) {
+                // abort the handshake
+                if (activeProtocolVersion.v >= ProtocolVersion.TLS10.v) {
+                    // response with a no_renegotiation warning,
+                    warningSE(Alerts.alert_no_renegotiation);
+
+                    // invalidate the handshake so that the caller can
+                    // dispose this object.
+                    invalidated = true;
+
+                    // If there is still unread block in the handshake
+                    // input stream, it would be truncated with the disposal
+                    // and the next handshake message will become incomplete.
+                    //
+                    // However, according to SSL/TLS specifications, no more
+                    // handshake message could immediately follow ClientHello
+                    // or HelloRequest. But in case of any improper messages,
+                    // we'd better check to ensure there is no remaining bytes
+                    // in the handshake input stream.
+                    if (input.available() > 0) {
+                        fatalSE(Alerts.alert_unexpected_message,
+                            "ClientHello followed by an unexpected  " +
+                            "handshake message");
+                    }
+
+                    return;
+                } else {
+                    // For SSLv3, send the handshake_failure fatal error.
+                    // Note that SSLv3 does not define a no_renegotiation
+                    // alert like TLSv1. However we cannot ignore the message
+                    // simply, otherwise the other side was waiting for a
+                    // response that would never come.
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "Renegotiation is not allowed");
+                }
+            } else {   // !isInitialHandshake && allowUnsafeRenegotiation
+                // continue with unsafe renegotiation.
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println(
+                            "Warning: continue with insecure renegotiation");
+                }
             }
         }
 
@@ -326,21 +414,18 @@ final class ServerHandshaker extends Handshaker {
 
         clientRequestedVersion = mesg.protocolVersion;
 
-        // check if clientVersion is recent enough for us
-        if (clientRequestedVersion.v < enabledProtocols.min.v) {
+        // select a proper protocol version.
+        ProtocolVersion selectedVersion =
+               selectProtocolVersion(clientRequestedVersion);
+        if (selectedVersion == null ||
+                selectedVersion.v == ProtocolVersion.SSL20Hello.v) {
             fatalSE(Alerts.alert_handshake_failure,
                 "Client requested protocol " + clientRequestedVersion +
-                 " not enabled or not supported");
+                " not enabled or not supported");
         }
 
-        // now we know we have an acceptable version
-        // use the lower of our max and the client requested version
-        ProtocolVersion selectedVersion;
-        if (clientRequestedVersion.v <= enabledProtocols.max.v) {
-            selectedVersion = clientRequestedVersion;
-        } else {
-            selectedVersion = enabledProtocols.max;
-        }
+        handshakeHash.protocolDetermined(
+            selectedVersion.v >= ProtocolVersion.TLS12.v);
         setVersion(selectedVersion);
 
         m1.protocolVersion = protocolVersion;
@@ -454,7 +539,7 @@ final class ServerHandshaker extends Handshaker {
                     // verify that the ciphersuite from the cached session
                     // is in the list of client requested ciphersuites and
                     // we have it enabled
-                    if ((isEnabled(suite) == false) ||
+                    if ((isNegotiable(suite) == false) ||
                             (mesg.getCipherSuites().contains(suite) == false)) {
                         resumingSession = false;
                     } else {
@@ -484,19 +569,91 @@ final class ServerHandshaker extends Handshaker {
             if (!enableNewSession) {
                 throw new SSLException("Client did not resume a session");
             }
-            supportedCurves = (SupportedEllipticCurvesExtension)mesg.extensions.get
-                                        (ExtensionType.EXT_ELLIPTIC_CURVES);
+
+            supportedCurves = (SupportedEllipticCurvesExtension)
+                        mesg.extensions.get(ExtensionType.EXT_ELLIPTIC_CURVES);
+
+            // We only need to handle the "signature_algorithm" extension
+            // for full handshakes and TLS 1.2 or later.
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                SignatureAlgorithmsExtension signAlgs =
+                    (SignatureAlgorithmsExtension)mesg.extensions.get(
+                                    ExtensionType.EXT_SIGNATURE_ALGORITHMS);
+                if (signAlgs != null) {
+                    Collection<SignatureAndHashAlgorithm> peerSignAlgs =
+                                            signAlgs.getSignAlgorithms();
+                    if (peerSignAlgs == null || peerSignAlgs.isEmpty()) {
+                        throw new SSLHandshakeException(
+                            "No peer supported signature algorithms");
+                    }
+
+                    Collection<SignatureAndHashAlgorithm>
+                        supportedPeerSignAlgs =
+                            SignatureAndHashAlgorithm.getSupportedAlgorithms(
+                                                            peerSignAlgs);
+                    if (supportedPeerSignAlgs.isEmpty()) {
+                        throw new SSLHandshakeException(
+                            "No supported signature and hash algorithm " +
+                            "in common");
+                    }
+
+                    setPeerSupportedSignAlgs(supportedPeerSignAlgs);
+                } // else, need to use peer implicit supported signature algs
+            }
+
+            session = new SSLSessionImpl(protocolVersion, CipherSuite.C_NULL,
+                        getLocalSupportedSignAlgs(),
+                        sslContext.getSecureRandom(),
+                        getHostAddressSE(), getPortSE());
+
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (peerSupportedSignAlgs != null) {
+                    session.setPeerSupportedSignatureAlgorithms(
+                            peerSupportedSignAlgs);
+                }   // else, we will set the implicit peer supported signature
+                    // algorithms in chooseCipherSuite()
+            }
+
+            // set the handshake session
+            setHandshakeSessionSE(session);
+
+            // choose cipher suite and corresponding private key
             chooseCipherSuite(mesg);
-            session = new SSLSessionImpl(protocolVersion, cipherSuite,
-                sslContext.getSecureRandom(),
-                getHostAddressSE(), getPortSE());
+
+            session.setSuite(cipherSuite);
             session.setLocalPrivateKey(privateKey);
+
             // chooseCompression(mesg);
+        } else {
+            // set the handshake session
+            setHandshakeSessionSE(session);
+        }
+
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (resumingSession) {
+                handshakeHash.setCertificateVerifyAlg(null);
+            }
+            handshakeHash.setFinishedAlg(cipherSuite.prfAlg.getPRFHashAlg());
         }
 
         m1.cipherSuite = cipherSuite;
         m1.sessionId = session.getSessionId();
         m1.compression_method = session.getCompression();
+
+        if (secureRenegotiation) {
+            // For ServerHellos that are initial handshakes, then the
+            // "renegotiated_connection" field in "renegotiation_info"
+            // extension is of zero length.
+            //
+            // For ServerHellos that are renegotiating, this field contains
+            // the concatenation of client_verify_data and server_verify_data.
+            //
+            // Note that for initial handshakes, both the clientVerifyData
+            // variable and serverVerifyData variable are of zero length.
+            HelloExtension serverHelloRI = new RenegotiationInfoExtension(
+                                        clientVerifyData, serverVerifyData);
+            m1.extensions.add(serverHelloRI);
+        }
 
         if (debug != null && Debug.isOn("handshake")) {
             m1.print(System.out);
@@ -596,14 +753,16 @@ final class ServerHandshaker extends Handshaker {
                     privateKey,
                     clnt_random.random_bytes,
                     svr_random.random_bytes,
-                    sslContext.getSecureRandom());
+                    sslContext.getSecureRandom(),
+                    preferableSignatureAlgorithm,
+                    protocolVersion);
             } catch (GeneralSecurityException e) {
                 throwSSLException("Error generating DH server key exchange", e);
                 m3 = null; // make compiler happy
             }
             break;
         case K_DH_ANON:
-            m3 = new DH_ServerKeyExchange(dh);
+            m3 = new DH_ServerKeyExchange(dh, protocolVersion);
             break;
         case K_ECDHE_RSA:
         case K_ECDHE_ECDSA:
@@ -613,9 +772,12 @@ final class ServerHandshaker extends Handshaker {
                     privateKey,
                     clnt_random.random_bytes,
                     svr_random.random_bytes,
-                    sslContext.getSecureRandom());
+                    sslContext.getSecureRandom(),
+                    preferableSignatureAlgorithm,
+                    protocolVersion);
             } catch (GeneralSecurityException e) {
-                throwSSLException("Error generating ECDH server key exchange", e);
+                throwSSLException(
+                    "Error generating ECDH server key exchange", e);
                 m3 = null; // make compiler happy
             }
             break;
@@ -644,21 +806,48 @@ final class ServerHandshaker extends Handshaker {
         // Needed only if server requires client to authenticate self.
         // Illegal for anonymous flavors, so we need to check that.
         //
-        if (keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
-            // CertificateRequest is omitted for Kerberos ciphers
+        // CertificateRequest is omitted for Kerberos ciphers
+        if (doClientAuth != SSLEngineImpl.clauth_none &&
+                keyExchange != K_DH_ANON && keyExchange != K_ECDH_ANON &&
+                keyExchange != K_KRB5 && keyExchange != K_KRB5_EXPORT) {
 
-        } else if (doClientAuth != SSLEngineImpl.clauth_none &&
-                keyExchange != K_DH_ANON && keyExchange != K_ECDH_ANON) {
             CertificateRequest m4;
             X509Certificate caCerts[];
 
+            Collection<SignatureAndHashAlgorithm> localSignAlgs = null;
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                // We currently use all local upported signature and hash
+                // algorithms. However, to minimize the computation cost
+                // of requested hash algorithms, we may use a restricted
+                // set of signature algorithms in the future.
+                localSignAlgs = getLocalSupportedSignAlgs();
+                if (localSignAlgs.isEmpty()) {
+                    throw new SSLHandshakeException(
+                            "No supported signature algorithm");
+                }
+
+                Set<String> localHashAlgs =
+                    SignatureAndHashAlgorithm.getHashAlgorithmNames(
+                        localSignAlgs);
+                if (localHashAlgs.isEmpty()) {
+                    throw new SSLHandshakeException(
+                            "No supported signature algorithm");
+                }
+                handshakeHash.restrictCertificateVerifyAlgs(localHashAlgs);
+            }
+
             caCerts = sslContext.getX509TrustManager().getAcceptedIssuers();
-            m4 = new CertificateRequest(caCerts, keyExchange);
+            m4 = new CertificateRequest(caCerts, keyExchange,
+                                            localSignAlgs, protocolVersion);
 
             if (debug != null && Debug.isOn("handshake")) {
                 m4.print(System.out);
             }
             m4.write(output);
+        } else {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                handshakeHash.setCertificateVerifyAlg(null);
+            }
         }
 
         /*
@@ -686,11 +875,13 @@ final class ServerHandshaker extends Handshaker {
      */
     private void chooseCipherSuite(ClientHello mesg) throws IOException {
         for (CipherSuite suite : mesg.getCipherSuites().collection()) {
-            if (isEnabled(suite) == false) {
+            if (isNegotiable(suite) == false) {
                 continue;
             }
+
             if (doClientAuth == SSLEngineImpl.clauth_required) {
-                if ((suite.keyExchange == K_DH_ANON) || (suite.keyExchange == K_ECDH_ANON)) {
+                if ((suite.keyExchange == K_DH_ANON) ||
+                    (suite.keyExchange == K_ECDH_ANON)) {
                     continue;
                 }
             }
@@ -714,8 +905,7 @@ final class ServerHandshaker extends Handshaker {
      * method should only be called if you really want to use the
      * CipherSuite.
      *
-     * This method is called from chooseCipherSuite() in this class
-     * and SSLServerSocketImpl.checkEnabledSuites() (as a sanity check).
+     * This method is called from chooseCipherSuite() in this class.
      */
     boolean trySetCipherSuite(CipherSuite suite) {
         /*
@@ -728,7 +918,17 @@ final class ServerHandshaker extends Handshaker {
             return true;
         }
 
-        if (suite.isAvailable() == false) {
+        if (suite.isNegotiable() == false) {
+            return false;
+        }
+
+        // must not negotiate the obsoleted weak cipher suites.
+        if (protocolVersion.v >= suite.obsoleted) {
+            return false;
+        }
+
+        // must not negotiate unsupported cipher suites.
+        if (protocolVersion.v < suite.supported) {
             return false;
         }
 
@@ -741,36 +941,136 @@ final class ServerHandshaker extends Handshaker {
         tempPrivateKey = null;
         tempPublicKey = null;
 
+        Collection<SignatureAndHashAlgorithm> supportedSignAlgs = null;
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (peerSupportedSignAlgs != null) {
+                supportedSignAlgs = peerSupportedSignAlgs;
+            } else {
+                SignatureAndHashAlgorithm algorithm = null;
+
+                // we may optimize the performance
+                switch (keyExchange) {
+                    // If the negotiated key exchange algorithm is one of
+                    // (RSA, DHE_RSA, DH_RSA, RSA_PSK, ECDH_RSA, ECDHE_RSA),
+                    // behave as if client had sent the value {sha1,rsa}.
+                    case K_RSA:
+                    case K_DHE_RSA:
+                    case K_DH_RSA:
+                    // case K_RSA_PSK:
+                    case K_ECDH_RSA:
+                    case K_ECDHE_RSA:
+                        algorithm = SignatureAndHashAlgorithm.valueOf(
+                                HashAlgorithm.SHA1.value,
+                                SignatureAlgorithm.RSA.value, 0);
+                        break;
+                    // If the negotiated key exchange algorithm is one of
+                    // (DHE_DSS, DH_DSS), behave as if the client had
+                    // sent the value {sha1,dsa}.
+                    case K_DHE_DSS:
+                    case K_DH_DSS:
+                        algorithm = SignatureAndHashAlgorithm.valueOf(
+                                HashAlgorithm.SHA1.value,
+                                SignatureAlgorithm.DSA.value, 0);
+                        break;
+                    // If the negotiated key exchange algorithm is one of
+                    // (ECDH_ECDSA, ECDHE_ECDSA), behave as if the client
+                    // had sent value {sha1,ecdsa}.
+                    case K_ECDH_ECDSA:
+                    case K_ECDHE_ECDSA:
+                        algorithm = SignatureAndHashAlgorithm.valueOf(
+                                HashAlgorithm.SHA1.value,
+                                SignatureAlgorithm.ECDSA.value, 0);
+                        break;
+                    default:
+                        // no peer supported signature algorithms
+                }
+
+                if (algorithm == null) {
+                    supportedSignAlgs =
+                        Collections.<SignatureAndHashAlgorithm>emptySet();
+                } else {
+                    supportedSignAlgs =
+                        new ArrayList<SignatureAndHashAlgorithm>(1);
+                    supportedSignAlgs.add(algorithm);
+                }
+
+                // Sets the peer supported signature algorithm to use in KM
+                // temporarily.
+                session.setPeerSupportedSignatureAlgorithms(supportedSignAlgs);
+            }
+        }
+
         switch (keyExchange) {
         case K_RSA:
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+            break;
         case K_RSA_EXPORT:
-        case K_DHE_RSA:
-        case K_ECDHE_RSA:
             // need RSA certs for authentication
             if (setupPrivateKeyAndChain("RSA") == false) {
                 return false;
             }
 
-            if (keyExchange == K_RSA_EXPORT) {
-                try {
-                   if (JsseJce.getRSAKeyLength(certs[0].getPublicKey()) > 512) {
-                        if (!setupEphemeralRSAKeys(suite.exportable)) {
-                            return false;
-                        }
-                   }
-                } catch (RuntimeException e) {
-                    // could not determine keylength, ignore key
+            try {
+               if (JsseJce.getRSAKeyLength(certs[0].getPublicKey()) > 512) {
+                    if (!setupEphemeralRSAKeys(suite.exportable)) {
+                        return false;
+                    }
+               }
+            } catch (RuntimeException e) {
+                // could not determine keylength, ignore key
+                return false;
+            }
+            break;
+        case K_DHE_RSA:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                                supportedSignAlgs, "RSA");
+                if (preferableSignatureAlgorithm == null) {
                     return false;
                 }
-            } else if (keyExchange == K_DHE_RSA) {
-                setupEphemeralDHKeys(suite.exportable);
-            } else if (keyExchange == K_ECDHE_RSA) {
-                if (setupEphemeralECDHKeys() == false) {
+            }
+
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+            setupEphemeralDHKeys(suite.exportable);
+            break;
+        case K_ECDHE_RSA:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                                supportedSignAlgs, "RSA");
+                if (preferableSignatureAlgorithm == null) {
                     return false;
                 }
-            } // else nothing more to do for K_RSA
+            }
+
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+            if (setupEphemeralECDHKeys() == false) {
+                return false;
+            }
             break;
         case K_DHE_DSS:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                                supportedSignAlgs, "DSA");
+                if (preferableSignatureAlgorithm == null) {
+                    return false;
+                }
+            }
+
             // need DSS certs for authentication
             if (setupPrivateKeyAndChain("DSA") == false) {
                 return false;
@@ -778,6 +1078,16 @@ final class ServerHandshaker extends Handshaker {
             setupEphemeralDHKeys(suite.exportable);
             break;
         case K_ECDHE_ECDSA:
+            // get preferable peer signature algorithm for server key exchange
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                preferableSignatureAlgorithm =
+                    SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                                            supportedSignAlgs, "ECDSA");
+                if (preferableSignatureAlgorithm == null) {
+                    return false;
+                }
+            }
+
             // need EC cert signed using EC
             if (setupPrivateKeyAndChain("EC_EC") == false) {
                 return false;
@@ -822,6 +1132,14 @@ final class ServerHandshaker extends Handshaker {
             throw new RuntimeException("Unrecognized cipherSuite: " + suite);
         }
         setCipherSuite(suite);
+
+        // set the peer implicit supported signature algorithms
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (peerSupportedSignAlgs == null) {
+                setPeerSupportedSignAlgs(supportedSignAlgs);
+                // we had alreay update the session
+            }
+        }
         return true;
     }
 
@@ -1071,6 +1389,24 @@ final class ServerHandshaker extends Handshaker {
             mesg.print(System.out);
         }
 
+        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            SignatureAndHashAlgorithm signAlg =
+                mesg.getPreferableSignatureAlgorithm();
+            if (signAlg == null) {
+                throw new SSLHandshakeException(
+                        "Illegal CertificateVerify message");
+            }
+
+            String hashAlg =
+                SignatureAndHashAlgorithm.getHashAlgorithmName(signAlg);
+            if (hashAlg == null || hashAlg.length() == 0) {
+                throw new SSLHandshakeException(
+                        "No supported hash algorithm");
+            }
+
+            handshakeHash.setCertificateVerifyAlg(hashAlg);
+        }
+
         try {
             PublicKey publicKey =
                 session.getPeerCertificates()[0].getPublicKey();
@@ -1126,13 +1462,20 @@ final class ServerHandshaker extends Handshaker {
          * Verify the client's message with the "before" digest of messages,
          * and forget about continuing to use that digest.
          */
-        boolean verified = mesg.verify(protocolVersion, handshakeHash,
-                                Finished.CLIENT, session.getMasterSecret());
+        boolean verified = mesg.verify(handshakeHash, Finished.CLIENT,
+            session.getMasterSecret());
 
         if (!verified) {
             fatalSE(Alerts.alert_handshake_failure,
                         "client 'finished' message doesn't verify");
             // NOTREACHED
+        }
+
+        /*
+         * save client verify data for secure renegotiation
+         */
+        if (secureRenegotiation) {
+            clientVerifyData = mesg.getVerifyData();
         }
 
         /*
@@ -1175,7 +1518,7 @@ final class ServerHandshaker extends Handshaker {
         output.flush();
 
         Finished mesg = new Finished(protocolVersion, handshakeHash,
-                                Finished.SERVER, session.getMasterSecret());
+            Finished.SERVER, session.getMasterSecret(), cipherSuite);
 
         /*
          * Send the change_cipher_spec record; then our Finished handshake
@@ -1183,6 +1526,13 @@ final class ServerHandshaker extends Handshaker {
          * are ready for application data!!
          */
         sendChangeCipherSpec(mesg, finishedTag);
+
+        /*
+         * save server verify data for secure renegotiation
+         */
+        if (secureRenegotiation) {
+            serverVerifyData = mesg.getVerifyData();
+        }
 
         /*
          * Update state machine so client MUST send 'finished' next
@@ -1238,7 +1588,8 @@ final class ServerHandshaker extends Handshaker {
      * ServerKeyExchange) message that was sent to it by the server.  That's
      * decrypted using the private key before we get here.
      */
-    private SecretKey clientKeyExchange(RSAClientKeyExchange mesg) throws IOException {
+    private SecretKey clientKeyExchange(RSAClientKeyExchange mesg)
+            throws IOException {
 
         if (debug != null && Debug.isOn("handshake")) {
             mesg.print(System.out);
@@ -1266,6 +1617,11 @@ final class ServerHandshaker extends Handshaker {
              * not *REQUIRED*, this is an acceptable condition.)
              */
             if (doClientAuth == SSLEngineImpl.clauth_requested) {
+                // Smart (aka stupid) to forecast that no CertificateVerify
+                // message will be received.
+                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                    handshakeHash.setCertificateVerifyAlg(null);
+                }
                 return;
             } else {
                 fatalSE(Alerts.alert_bad_certificate,
@@ -1292,26 +1648,23 @@ final class ServerHandshaker extends Handshaker {
                 authType = "UNKNOWN";
             }
 
-            String identificator = getHostnameVerificationSE();
             if (tm instanceof X509ExtendedTrustManager) {
-                ((X509ExtendedTrustManager)tm).checkClientTrusted(
-                        (peerCerts != null ?
-                            peerCerts.clone() :
-                            null),
+                if (conn != null) {
+                    ((X509ExtendedTrustManager)tm).checkClientTrusted(
+                        peerCerts.clone(),
                         authType,
-                        getHostSE(),
-                        identificator);
-            } else {
-                if (identificator != null) {
-                    throw new RuntimeException(
-                        "trust manager does not support peer identification");
+                        conn);
+                } else {
+                    ((X509ExtendedTrustManager)tm).checkClientTrusted(
+                        peerCerts.clone(),
+                        authType,
+                        engine);
                 }
-
-                tm.checkClientTrusted(
-                    (peerCerts != null ?
-                        peerCerts.clone() :
-                        peerCerts),
-                    authType);
+            } else {
+                // Unlikely to happen, because we have wrapped the old
+                // X509TrustManager with the new X509ExtendedTrustManager.
+                throw new CertificateException(
+                    "Improper X509TrustManager implementation");
             }
         } catch (CertificateException e) {
             // This will throw an exception, so include the original error.
