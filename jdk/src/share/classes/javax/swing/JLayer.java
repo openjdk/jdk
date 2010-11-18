@@ -373,8 +373,12 @@ public final class JLayer<V extends Component>
      * {@inheritDoc}
      */
     public void removeAll() {
-        setView(null);
-        setGlassPane(null);
+        if (view != null) {
+            setView(null);
+        }
+        if (glassPane != null) {
+            setGlassPane(null);
+        }
     }
 
     /**
