@@ -1128,9 +1128,9 @@ format locale: ID: no_NO_NY, Name: Norwegian (Norway,Nynorsk)
 default charset: ISO-8859-1
 
 OS Locale:  no_NY
-default locale: ID: no_, Name: Norwegian ()
-display locale: ID: no_, Name: Norwegian ()
-format locale: ID: no_, Name: Norwegian ()
+default locale: ID: no_NO_NY, Name: Norwegian (Norway,Nynorsk)
+display locale: ID: no_NO_NY, Name: Norwegian (Norway,Nynorsk)
+format locale: ID: no_NO_NY, Name: Norwegian (Norway,Nynorsk)
 default charset: ISO-8859-1
 
 OS Locale:  nr
@@ -1332,9 +1332,9 @@ format locale: ID: sq_AL, Name: Albanian (Albania)
 default charset: ISO-8859-2
 
 OS Locale:  sr_SP
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_CS, Name: Serbian (Serbia and Montenegro)
+display locale: ID: sr_CS, Name: Serbian (Serbia and Montenegro)
+format locale: ID: sr_CS, Name: Serbian (Serbia and Montenegro)
 default charset: ISO-8859-5
 
 OS Locale:  sr_YU
@@ -1721,5 +1721,5 @@ default charset: UTF-8
 OS Locale (LC_CTYPE: C, LC_MESSAGES: zh_CN.UTF-8)
 default locale: ID: zh_CN, Name: Chinese (China)
 display locale: ID: zh_CN, Name: Chinese (China)
-format locale: ID: en, Name: English
+format locale: ID: en_CN, Name: English (China)
 default charset: US-ASCII

@@ -511,7 +511,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     protected boolean shouldStop(CompileState cs) {
         if (shouldStopPolicy == null)
-            return (errorCount() > 0);
+            return (errorCount() > 0 || unrecoverableError());
         else
             return cs.ordinal() > shouldStopPolicy.ordinal();
     }
@@ -1090,7 +1090,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     private boolean unrecoverableError() {
         for (JCDiagnostic d: log.deferredDiagnostics) {
-            if (d.getKind() == JCDiagnostic.Kind.ERROR && !d.isFlagSet(RESOLVE_ERROR))
+            if (d.getKind() == JCDiagnostic.Kind.ERROR && !d.isFlagSet(RECOVERABLE))
                 return true;
         }
         return false;

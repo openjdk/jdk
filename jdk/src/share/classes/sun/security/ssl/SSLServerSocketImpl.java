@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,14 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
 
+import java.security.AlgorithmConstraints;
+
 import java.util.*;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLParameters;
 
 
 /**
@@ -82,6 +85,12 @@ class SSLServerSocketImpl extends SSLServerSocket
 
     /* could enabledCipherSuites ever complete handshaking? */
     private boolean             checkedEnabled = false;
+
+    // the endpoint identification protocol to use by default
+    private String              identificationProtocol = null;
+
+    // The cryptographic algorithm constraints
+    private AlgorithmConstraints    algorithmConstraints = null;
 
     /**
      * Create an SSL server socket on a port, using a non-default
@@ -145,7 +154,7 @@ class SSLServerSocketImpl extends SSLServerSocket
         }
         sslContext = context;
         enabledCipherSuites = CipherSuiteList.getDefault();
-        enabledProtocols = ProtocolList.getDefault();
+        enabledProtocols = ProtocolList.getDefault(true);
     }
 
     /**
@@ -238,6 +247,16 @@ class SSLServerSocketImpl extends SSLServerSocket
      * rejoining the already-negotiated SSL connection.
      */
     public void setUseClientMode(boolean flag) {
+        /*
+         * If we need to change the socket mode and the enabled
+         * protocols haven't specifically been set by the user,
+         * change them to the corresponding default ones.
+         */
+        if (useServerMode != (!flag) &&
+                ProtocolList.isDefaultProtocolList(enabledProtocols)) {
+            enabledProtocols = ProtocolList.getDefault(!flag);
+        }
+
         useServerMode = !flag;
     }
 
@@ -262,6 +281,29 @@ class SSLServerSocketImpl extends SSLServerSocket
         return enableSessionCreation;
     }
 
+    /**
+     * Returns the SSLParameters in effect for newly accepted connections.
+     */
+    synchronized public SSLParameters getSSLParameters() {
+        SSLParameters params = super.getSSLParameters();
+
+        // the super implementation does not handle the following parameters
+        params.setEndpointIdentificationAlgorithm(identificationProtocol);
+        params.setAlgorithmConstraints(algorithmConstraints);
+
+        return params;
+    }
+
+    /**
+     * Applies SSLParameters to newly accepted connections.
+     */
+    synchronized public void setSSLParameters(SSLParameters params) {
+        super.setSSLParameters(params);
+
+        // the super implementation does not handle the following parameters
+        identificationProtocol = params.getEndpointIdentificationAlgorithm();
+        algorithmConstraints = params.getAlgorithmConstraints();
+    }
 
     /**
      * Accept a new SSL connection.  This server identifies itself with
@@ -269,65 +311,14 @@ class SSLServerSocketImpl extends SSLServerSocket
      * presented during construction.
      */
     public Socket accept() throws IOException {
-        checkEnabledSuites();
-
         SSLSocketImpl s = new SSLSocketImpl(sslContext, useServerMode,
             enabledCipherSuites, doClientAuth, enableSessionCreation,
-            enabledProtocols);
+            enabledProtocols, identificationProtocol, algorithmConstraints);
 
         implAccept(s);
         s.doneConnect();
         return s;
     }
-
-
-    /*
-     * This is a sometimes helpful diagnostic check that is performed
-     * once for each ServerSocket to verify that the initial set of
-     * enabled suites are capable of supporting a successful handshake.
-     */
-    private void checkEnabledSuites() throws IOException {
-        //
-        // We want to report an error if no cipher suites were actually
-        // enabled, since this is an error users are known to make.  Then
-        // they get vastly confused by having clients report an error!
-        //
-        synchronized (this) {
-            if (checkedEnabled) {
-                return;
-            }
-            if (useServerMode == false) {
-                return;
-            }
-
-            SSLSocketImpl tmp = new SSLSocketImpl(sslContext, useServerMode,
-                         enabledCipherSuites, doClientAuth,
-                         enableSessionCreation, enabledProtocols);
-
-            try {
-                ServerHandshaker handshaker = tmp.getServerHandshaker();
-
-                for (Iterator t = enabledCipherSuites.iterator(); t.hasNext(); ) {
-                    CipherSuite suite = (CipherSuite)t.next();
-                    if (handshaker.trySetCipherSuite(suite)) {
-                        checkedEnabled = true;
-                        return;
-                    }
-                }
-            } finally {
-                tmp.closeSocket();
-            }
-
-            //
-            // diagnostic text here is currently appropriate
-            // since it's only certificate unavailability that can
-            // cause such problems ... but that might change someday.
-            //
-            throw new SSLException("No available certificate or key corresponds"
-                + " to the SSL cipher suites which are enabled.");
-        }
-    }
-
 
     /**
      * Provides a brief description of this SSL socket.

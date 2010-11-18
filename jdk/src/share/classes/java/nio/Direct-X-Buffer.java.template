@@ -27,8 +27,10 @@
 
 package java.nio;
 
+import java.io.FileDescriptor;
 import sun.misc.Cleaner;
 import sun.misc.Unsafe;
+import sun.misc.VM;
 import sun.nio.ch.DirectBuffer;
 
 
@@ -113,9 +115,10 @@ class Direct$Type$Buffer$RW$$BO$
     //
     Direct$Type$Buffer$RW$(int cap) {                   // package-private
 #if[rw]
-        super(-1, 0, cap, cap, false);
+        super(-1, 0, cap, cap);
+        boolean pa = VM.isDirectMemoryPageAligned();
         int ps = Bits.pageSize();
-        int size = cap + ps;
+        long size = Math.max(1L, (long)cap + (pa ? ps : 0));
         Bits.reserveMemory(size, cap);
 
         long base = 0;
@@ -126,7 +129,7 @@ class Direct$Type$Buffer$RW$$BO$
             throw x;
         }
         unsafe.setMemory(base, size, (byte) 0);
-        if (base % ps != 0) {
+        if (pa && (base % ps != 0)) {
             // Round up to page boundary
             address = base + ps - (base & (ps - 1));
         } else {
@@ -143,7 +146,7 @@ class Direct$Type$Buffer$RW$$BO$
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
     //
     private Direct$Type$Buffer(long addr, int cap) {
-        super(-1, 0, cap, cap, false);
+        super(-1, 0, cap, cap);
         address = addr;
         cleaner = null;
     }
@@ -152,14 +155,17 @@ class Direct$Type$Buffer$RW$$BO$
 
     // For memory-mapped buffers -- invoked by FileChannelImpl via reflection
     //
-    protected Direct$Type$Buffer$RW$(int cap, long addr, Runnable unmapper) {
+    protected Direct$Type$Buffer$RW$(int cap, long addr,
+                                     FileDescriptor fd,
+                                     Runnable unmapper)
+    {
 #if[rw]
-        super(-1, 0, cap, cap, true);
+        super(-1, 0, cap, cap, fd);
         address = addr;
         viewedBuffer = null;
         cleaner = Cleaner.create(this, unmapper);
 #else[rw]
-        super(cap, addr, unmapper);
+        super(cap, addr, fd, unmapper);
 #end[rw]
     }
 

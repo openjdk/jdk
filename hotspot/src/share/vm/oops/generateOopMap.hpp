@@ -389,7 +389,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   void  pp                                  (CellTypeState *in, CellTypeState *out);
   void  pp_new_ref                          (CellTypeState *in, int bci);
   void  ppdupswap                           (int poplen, const char *out);
-  void  do_ldc                              (int idx, int bci);
+  void  do_ldc                              (int bci);
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
   void  do_field                            (int is_get, int is_static, int idx, int bci);

@@ -355,7 +355,6 @@ JavaMain(void * _args)
 
     JavaVM *vm = 0;
     JNIEnv *env = 0;
-    jstring mainClassName;
     jclass mainClass;
     jmethodID mainID;
     jobjectArray mainArgs;

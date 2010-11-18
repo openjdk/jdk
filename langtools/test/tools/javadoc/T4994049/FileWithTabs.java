@@ -22,5 +22,5 @@
  */
 
 public class FileWithTabs {
-        public void tabbedMethod() {}
+\tpublic void tabbedMethod() {}
 }

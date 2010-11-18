@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,14 +85,17 @@ public class TestPRF extends Utils {
                 System.out.print(".");
                 n++;
 
-                KeyGenerator kg = KeyGenerator.getInstance("SunTlsPrf", provider);
+                KeyGenerator kg =
+                    KeyGenerator.getInstance("SunTlsPrf", provider);
                 SecretKey inKey;
                 if (secret == null) {
                     inKey = null;
                 } else {
                     inKey = new SecretKeySpec(secret, "Generic");
                 }
-                TlsPrfParameterSpec spec = new TlsPrfParameterSpec(inKey, label, seed, length);
+                TlsPrfParameterSpec spec =
+                    new TlsPrfParameterSpec(inKey, label, seed, length,
+                        null, -1, -1);
                 kg.init(spec);
                 SecretKey key = kg.generateKey();
                 byte[] enc = key.getEncoded();

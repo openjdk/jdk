@@ -878,7 +878,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
 
 #endif /* CC_INTERP */
 
-#ifndef PPC
+#if !defined(PPC) || defined(ZERO)
   if (m->is_native()) {
 #ifdef CC_INTERP
     f->do_oop((oop*)&istate->_oop_temp);
