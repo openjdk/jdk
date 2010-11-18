@@ -1581,6 +1581,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     instance of the Java virtual machine.
  *
  * <tr><td valign="top">{@code 'Z'}
+ *     <td valign="top"> <tt>'&#92;u005a'</tt>
  *     <td> A string representing the abbreviation for the time zone.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
