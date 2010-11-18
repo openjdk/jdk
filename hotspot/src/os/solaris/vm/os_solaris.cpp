@@ -3375,7 +3375,12 @@ static int os_sleep(jlong millis, bool interruptible) {
     // INTERRUPTIBLE_NORESTART_VM_ALWAYS returns res == OS_INTRPT for
     // thread.Interrupt.
 
-    if((res == OS_ERR) && (errno == EINTR)) {
+    // See c/r 6751923. Poll can return 0 before time
+    // has elapsed if time is set via clock_settime (as NTP does).
+    // res == 0 if poll timed out (see man poll RETURN VALUES)
+    // using the logic below checks that we really did
+    // sleep at least "millis" if not we'll sleep again.
+    if( ( res == 0 ) || ((res == OS_ERR) && (errno == EINTR))) {
       newtime = getTimeMillis();
       assert(newtime >= prevtime, "time moving backwards");
     /* Doing prevtime and newtime in microseconds doesn't help precision,
