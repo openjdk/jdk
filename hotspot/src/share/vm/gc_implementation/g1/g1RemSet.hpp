@@ -59,11 +59,6 @@ protected:
   size_t*             _cards_scanned;
   size_t              _total_cards_scanned;
 
-  // _traversal_in_progress is "true" iff a traversal is in progress.
-
-  bool _traversal_in_progress;
-  void set_traversal(bool b) { _traversal_in_progress = b; }
-
   // Used for caching the closure that is responsible for scanning
   // references into the collection set.
   OopsInHeapRegionClosure** _cset_rs_update_cl;
@@ -75,10 +70,6 @@ protected:
   // collection set.
   bool concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
                                     bool check_for_refs_into_cset);
-
-protected:
-  template <class T> void write_ref_nv(HeapRegion* from, T* p);
-  template <class T> void par_write_ref_nv(HeapRegion* from, T* p, int tid);
 
 public:
   // This is called to reset dual hash tables after the gc pause
@@ -117,22 +108,8 @@ public:
 
   // Record, if necessary, the fact that *p (where "p" is in region "from",
   // which is required to be non-NULL) has changed to a new non-NULL value.
-  // [Below the virtual version calls a non-virtual protected
-  // workhorse that is templatified for narrow vs wide oop.]
-  inline void write_ref(HeapRegion* from, oop* p) {
-    write_ref_nv(from, p);
-  }
-  inline void write_ref(HeapRegion* from, narrowOop* p) {
-    write_ref_nv(from, p);
-  }
-  inline void par_write_ref(HeapRegion* from, oop* p, int tid) {
-    par_write_ref_nv(from, p, tid);
-  }
-  inline void par_write_ref(HeapRegion* from, narrowOop* p, int tid) {
-    par_write_ref_nv(from, p, tid);
-  }
-
-  bool self_forwarded(oop obj);
+  template <class T> void write_ref(HeapRegion* from, T* p);
+  template <class T> void par_write_ref(HeapRegion* from, T* p, int tid);
 
   // Requires "region_bm" and "card_bm" to be bitmaps with 1 bit per region
   // or card, respectively, such that a region or card with a corresponding
@@ -186,9 +163,8 @@ class UpdateRSOopClosure: public OopClosure {
 
 public:
   UpdateRSOopClosure(G1RemSet* rs, int worker_i = 0) :
-    _from(NULL), _rs(rs), _worker_i(worker_i) {
-    guarantee(_rs != NULL, "Requires an HRIntoG1RemSet");
-  }
+    _from(NULL), _rs(rs), _worker_i(worker_i)
+  {}
 
   void set_from(HeapRegion* from) {
     assert(from != NULL, "from region must be non-NULL");
@@ -215,3 +191,43 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
 };
+
+class UpdateRSOrPushRefOopClosure: public OopClosure {
+  G1CollectedHeap* _g1;
+  G1RemSet* _g1_rem_set;
+  HeapRegion* _from;
+  OopsInHeapRegionClosure* _push_ref_cl;
+  bool _record_refs_into_cset;
+  int _worker_i;
+
+  template <class T> void do_oop_work(T* p);
+
+public:
+  UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
+                              G1RemSet* rs,
+                              OopsInHeapRegionClosure* push_ref_cl,
+                              bool record_refs_into_cset,
+                              int worker_i = 0) :
+    _g1(g1h),
+    _g1_rem_set(rs),
+    _from(NULL),
+    _record_refs_into_cset(record_refs_into_cset),
+    _push_ref_cl(push_ref_cl),
+    _worker_i(worker_i) { }
+
+  void set_from(HeapRegion* from) {
+    assert(from != NULL, "from region must be non-NULL");
+    _from = from;
+  }
+
+  bool self_forwarded(oop obj) {
+    bool result = (obj->is_forwarded() && (obj->forwardee()== obj));
+    return result;
+  }
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+
+  bool apply_to_weak_ref_discovered_field() { return true; }
+};
+

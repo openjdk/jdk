@@ -795,6 +795,7 @@ public:
     _worker_i(worker_i),
     _g1h(g1)
   { }
+
   bool doHeapRegion(HeapRegion* r) {
     if (!r->continuesHumongous()) {
       _cl.set_from(r);

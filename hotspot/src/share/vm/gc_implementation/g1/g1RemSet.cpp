@@ -116,7 +116,6 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   : _g1(g1), _conc_refine_cards(0),
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
     _cg1r(g1->concurrent_g1_refine()),
-    _traversal_in_progress(false),
     _cset_rs_update_cl(NULL),
     _cards_scanned(NULL), _total_cards_scanned(0)
 {
@@ -512,8 +511,6 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
-  assert(!_traversal_in_progress, "Invariant between iterations.");
-  set_traversal(true);
   if (ParallelGCThreads > 0) {
     _seq_task->set_n_threads((int)n_workers());
   }
@@ -539,9 +536,6 @@ class cleanUpIteratorsClosure : public HeapRegionClosure {
 // through the oops which coincide with that card. It scans the reference
 // fields in each oop; when it finds an oop that points into the collection
 // set, the RSet for the region containing the referenced object is updated.
-// Note: _par_traversal_in_progress in the G1RemSet must be FALSE; otherwise
-// the UpdateRSetImmediate closure will cause cards to be enqueued on to
-// the DCQS that we're iterating over, causing an infinite loop.
 class UpdateRSetCardTableEntryIntoCSetClosure: public CardTableEntryClosure {
   G1CollectedHeap* _g1;
   CardTableModRefBS* _ct_bs;
@@ -611,8 +605,6 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   // Set all cards back to clean.
   _g1->cleanUpCardTable();
 
-  set_traversal(false);
-
   DirtyCardQueueSet& into_cset_dcqs = _g1->into_cset_dirty_card_queue_set();
   int into_cset_n_buffers = into_cset_dcqs.completed_buffers_num();
 
@@ -645,20 +637,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   assert(_g1->into_cset_dirty_card_queue_set().completed_buffers_num() == 0,
          "all buffers should be freed");
   _g1->into_cset_dirty_card_queue_set().clear_n_completed_buffers();
-
-  assert(!_traversal_in_progress, "Invariant between iterations.");
 }
-
-class UpdateRSObjectClosure: public ObjectClosure {
-  UpdateRSOopClosure* _update_rs_oop_cl;
-public:
-  UpdateRSObjectClosure(UpdateRSOopClosure* update_rs_oop_cl) :
-    _update_rs_oop_cl(update_rs_oop_cl) {}
-  void do_object(oop obj) {
-    obj->oop_iterate(_update_rs_oop_cl);
-  }
-
-};
 
 class ScrubRSClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
@@ -749,7 +728,12 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   ct_freq_note_card(_ct_bs->index_for(start));
 #endif
 
-  UpdateRSOopClosure update_rs_oop_cl(this, worker_i);
+  assert(!check_for_refs_into_cset || _cset_rs_update_cl[worker_i] != NULL, "sanity");
+  UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
+                                               _g1->g1_rem_set(),
+                                               _cset_rs_update_cl[worker_i],
+                                               check_for_refs_into_cset,
+                                               worker_i);
   update_rs_oop_cl.set_from(r);
 
   TriggerClosure trigger_cl;

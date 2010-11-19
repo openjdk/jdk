@@ -1093,8 +1093,9 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
 // perm_gen_verify_bit_map where we store the "deadness" information if
 // we did not sweep the perm gen in the most recent previous GC cycle.
 bool CompactibleFreeListSpace::obj_is_alive(const HeapWord* p) const {
+  assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
+         "Else races are possible");
   assert(block_is_obj(p), "The address should point to an object");
-  assert(SafepointSynchronize::is_at_safepoint(), "Else races are possible");
 
   // If we're sweeping, we use object liveness information from the main bit map
   // for both perm gen and old gen.
