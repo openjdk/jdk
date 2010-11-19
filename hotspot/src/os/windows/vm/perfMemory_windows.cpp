@@ -889,6 +889,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
   DWORD newACLsize = aclinfo.AclBytesInUse +
                         (sizeof(ACCESS_ALLOWED_ACE) - sizeof(DWORD)) * ace_count;
   for (int i = 0; i < ace_count; i++) {
+     assert(aces[i].pSid != 0, "pSid should not be 0");
      newACLsize += GetLengthSid(aces[i].pSid);
   }
 
@@ -1083,6 +1084,9 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
   // initialize the user ace data
   aces[0].pSid = get_user_sid(GetCurrentProcess());
   aces[0].mask = umask;
+
+  if (aces[0].pSid == 0)
+    return NULL;
 
   // get the well known SID for BUILTIN\Administrators
   PSID administratorsSid = NULL;
