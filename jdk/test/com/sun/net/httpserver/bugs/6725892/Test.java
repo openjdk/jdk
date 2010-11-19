@@ -65,13 +65,7 @@ public class Test {
     public static void main (String[] args) throws Exception {
 
         ExecutorService exec = Executors.newCachedThreadPool();
-        //Logger log = Logger.getLogger ("com.sun.net.httpserver");
-        //log.setLevel(Level.ALL);
-        //ConsoleHandler hg = new ConsoleHandler();
-        //hg.setLevel (Level.ALL);
-        //log.addHandler(hg);
 
-            sun.net.httpserver.HttpServerImpl x = null;
         try {
             InetSocketAddress addr = new InetSocketAddress (0);
             s1 = HttpServer.create (addr, 0);
@@ -82,11 +76,10 @@ public class Test {
 
             port = s1.getAddress().getPort();
             System.out.println ("Server on port " + port);
-            url = new URL ("http://rialto.ireland:"+port+"/foo");
+            url = new URL ("http://127.0.0.1:"+port+"/foo");
             test1();
             test2();
             test3();
-            x = (sun.net.httpserver.HttpServerImpl)s1;
             Thread.sleep (2000);
         } catch (Exception e) {
             e.printStackTrace();
