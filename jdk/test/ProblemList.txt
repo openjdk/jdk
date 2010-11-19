@@ -734,10 +734,6 @@ java/util/concurrent/FutureTask/BlockingTaskExecutor.java	generic-all
 # Problems on windows, jmap.exe hangs? (these run jmap), fails on Solaris 10 x86
 java/util/concurrent/locks/Lock/TimedAcquireLeak.java		generic-all
 
-# Solaris sparc client, some failures, "1 not equal to 3"?
-#   also Linux problems with samevm mode, -server linux i586? 1 not equal to 3?
-java/util/concurrent/Executors/AutoShutdown.java		generic-all
-
 # Fails on solaris-sparc -server (Set not equal to copy. 1)
 java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
 
