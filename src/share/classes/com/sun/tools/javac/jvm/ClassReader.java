@@ -2615,7 +2615,6 @@ public class ClassReader implements Completer {
                     String binaryName = fileManager.inferBinaryName(currentLoc, fo);
                     String simpleName = binaryName.substring(binaryName.lastIndexOf(".") + 1);
                     if (SourceVersion.isIdentifier(simpleName) ||
-                        fo.getKind() == JavaFileObject.Kind.CLASS ||
                         simpleName.equals("package-info"))
                         includeClassFile(p, fo);
                     break;
