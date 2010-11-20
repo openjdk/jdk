@@ -1535,7 +1535,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       //assert(false, "compiler should always document failure");
       // The compiler elected, without comment, not to register a result.
       // Do not attempt further compilations of this method.
-      ci_env.record_method_not_compilable("compile failed");
+      ci_env.record_method_not_compilable("compile failed", !TieredCompilation);
     }
 
     if (ci_env.failing()) {
@@ -1544,15 +1544,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       if (PrintCompilation) {
         const char* reason = ci_env.failure_reason();
         if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-          if (is_highest_tier_compile(ci_env.comp_level())) {
-            // Already at highest tier, promote to not compilable.
-            compilable = ciEnv::MethodCompilable_never;
-          } else {
             tty->print_cr("%3d   COMPILE SKIPPED: %s (retry at different tier)", compile_id, reason);
-          }
-        }
-
-        if (compilable == ciEnv::MethodCompilable_never) {
+        } else if (compilable == ciEnv::MethodCompilable_never) {
           tty->print_cr("%3d   COMPILE SKIPPED: %s (not retryable)", compile_id, reason);
         } else if (compilable == ciEnv::MethodCompilable) {
           tty->print_cr("%3d   COMPILE SKIPPED: %s", compile_id, reason);

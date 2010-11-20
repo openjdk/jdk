@@ -4454,6 +4454,7 @@ universe.cpp                            genRemSet.hpp
 universe.cpp                            generation.hpp
 universe.cpp                            handles.inline.hpp
 universe.cpp                            hashtable.inline.hpp
+universe.cpp                            init.hpp
 universe.cpp                            instanceKlass.hpp
 universe.cpp                            instanceKlassKlass.hpp
 universe.cpp                            instanceRefKlass.hpp
