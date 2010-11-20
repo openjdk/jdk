@@ -569,7 +569,8 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       const TypePtr* adr_typ = ex_con->add_offset(offset);
 
       Node *adr = basic_plus_adr(ex_node, ex_node, offset);
-      Node *store = store_oop_to_object(control(), ex_node, adr, adr_typ, null(), ex_con, T_OBJECT);
+      const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
+      Node *store = store_oop_to_object(control(), ex_node, adr, adr_typ, null(), val_type, T_OBJECT);
 
       add_exception_state(make_exception_state(ex_node));
       return;

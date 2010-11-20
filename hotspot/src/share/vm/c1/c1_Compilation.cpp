@@ -471,7 +471,14 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
   compile_method();
-  if (is_profiling() && _would_profile) {
+  if (bailed_out()) {
+    _env->record_method_not_compilable(bailout_msg(), !TieredCompilation);
+    if (is_profiling()) {
+      // Compilation failed, create MDO, which would signal the interpreter
+      // to start profiling on its own.
+      _method->build_method_data();
+    }
+  } else if (is_profiling() && _would_profile) {
     ciMethodData *md = method->method_data();
     assert (md != NULL, "Should have MDO");
     md->set_would_profile(_would_profile);
