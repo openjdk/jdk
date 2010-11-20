@@ -864,7 +864,8 @@ jint Universe::initialize_heap() {
     // compressed oops for pstack code.
     if (PrintCompressedOopsMode) {
       tty->cr();
-      tty->print("heap address: "PTR_FORMAT, Universe::heap()->base());
+      tty->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+                 Universe::heap()->base(), Universe::heap()->reserved_region().byte_size()/M);
     }
     if ((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax) {
       // Can't reserve heap below 32Gb.
@@ -945,6 +946,7 @@ void universe2_init() {
 extern void initialize_converter_functions();
 
 bool universe_post_init() {
+  assert(!is_init_completed(), "Error: initialization not yet completed!");
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
   { ResourceMark rm;
