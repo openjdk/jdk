@@ -26,7 +26,6 @@
 
 # @test
 # @bug 6440846
-# @ignore until 6203816 is dealt with.
 # @summary make sure we do not deadlock between ExtClassLoader and AppClassLoader
 # @author Valerie Peng
 # @run shell/timeout=20 Deadlock2.sh
@@ -71,11 +70,14 @@ esac
 
 # remove old class files
 cd ${TESTCLASSES}
-rm -f Deadlock2*.class
 if [ -d testlib ] ; then
     rm -rf testlib
 fi
-cp -r ${TESTJAVA}${FILESEP}lib${FILESEP}ext testlib
+if [ -d ${TESTJAVA}${FILESEP}lib${FILESEP}ext ] ; then
+    cp -r ${TESTJAVA}${FILESEP}lib${FILESEP}ext testlib
+else
+    cp -r ${TESTJAVA}${FILESEP}jre${FILESEP}lib${FILESEP}ext testlib
+fi
 
 # compile and package the test program
 ${TESTJAVA}${FILESEP}bin${FILESEP}javac \
