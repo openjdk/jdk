@@ -496,7 +496,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
             if (this.type() == newType)
                 return this;
             try {
-                MethodHandle retyped = (MethodHandle) typeHandler.<MethodHandle>invokeExact(target, newType);
+                MethodHandle retyped = (MethodHandle) typeHandler.invokeExact(target, newType);
                 // Contract:  Must return the desired type, or throw WMT
                 if (retyped.type() != newType)
                     throw new WrongMethodTypeException(retyped.toString());

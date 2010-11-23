@@ -25,7 +25,7 @@
 
 /* @test
  * @summary unit tests for java.dyn.MethodHandle.invokeGeneric
- * @compile -target 7 InvokeGenericTest.java
+ * @compile -XDallowTransitionalJSR292=no -target 7 InvokeGenericTest.java
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.dyn.InvokeGenericTest
  */
 
@@ -350,7 +350,7 @@ public class InvokeGenericTest {
         String[] args = { "one", "two" };
         MethodHandle mh = callable(Object.class, String.class);
         Object res; List resl;
-        res = resl = (List) mh.<List>invokeGeneric((String)args[0], (Object)args[1]);
+        res = resl = (List) mh.invokeGeneric((String)args[0], (Object)args[1]);
         //System.out.println(res);
         assertEquals(Arrays.asList(args), res);
     }
@@ -476,7 +476,7 @@ public class InvokeGenericTest {
         Integer[] args = { 1, 2 };
         MethodHandle mh = callable(Object.class, int.class);
         Object res; List resl;
-        res = resl = (List) mh.<List>invokeGeneric((int)args[0], (Object)args[1]);
+        res = resl = (List) mh.invokeGeneric((int)args[0], (Object)args[1]);
         //System.out.println(res);
         assertEquals(Arrays.asList(args), res);
     }

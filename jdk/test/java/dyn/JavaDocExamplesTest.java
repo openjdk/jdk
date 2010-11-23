@@ -95,11 +95,11 @@ MethodHandle CONCAT_3 = LOOKUP.findVirtual(String.class,
 MethodHandle HASHCODE_3 = LOOKUP.findVirtual(Object.class,
   "hashCode", methodType(int.class));
 //assertEquals("xy", (String) CONCAT_1.invokeExact("x", "y"));
-assertEquals("xy", (String) CONCAT_2.<String>invokeExact("x", "y"));
-assertEquals("xy", (String) CONCAT_3.<String>invokeExact("x", "y"));
-//assertEquals("xy".hashCode(), (int) HASHCODE_1.<int>invokeExact((Object)"xy"));
-assertEquals("xy".hashCode(), (int) HASHCODE_2.<int>invokeExact((Object)"xy"));
-assertEquals("xy".hashCode(), (int) HASHCODE_3.<int>invokeExact((Object)"xy"));
+assertEquals("xy", (String) CONCAT_2.invokeExact("x", "y"));
+assertEquals("xy", (String) CONCAT_3.invokeExact("x", "y"));
+//assertEquals("xy".hashCode(), (int) HASHCODE_1.invokeExact((Object)"xy"));
+assertEquals("xy".hashCode(), (int) HASHCODE_2.invokeExact((Object)"xy"));
+assertEquals("xy".hashCode(), (int) HASHCODE_3.invokeExact((Object)"xy"));
 {}
     }
     @Test public void testDropArguments() throws Throwable {

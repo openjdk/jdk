@@ -78,8 +78,8 @@ public class CallSiteImpl {
             } else {
                 throw new ClassCastException("bootstrap method failed to produce a MethodHandle or CallSite");
             }
-            PRIVATE_INITIALIZE_CALL_SITE.<void>invokeExact(site, name, type,
-                                                           callerMethod, callerBCI);
+            PRIVATE_INITIALIZE_CALL_SITE.invokeExact(site, name, type,
+                                                     callerMethod, callerBCI);
             assert(site.getTarget() != null);
             assert(site.getTarget().type().equals(type));
         } catch (Throwable ex) {

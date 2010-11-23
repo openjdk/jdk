@@ -277,12 +277,12 @@ class SpreadGeneric {
         protected xS2(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected xS2 makeInstance(SpreadGeneric outer, MethodHandle t) { return new xS2(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object av) throws Throwable { av = super.check(av,0);
-             return target.<Object>invokeExact(a0, a1)); }
+             return target.invokeExact(a0, a1)); }
         protected Object invoke_S1(Object a0, Object av) throws Throwable { av = super.check(av,1);
-             return target.<Object>invokeExact(a0,
+             return target.invokeExact(a0,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object av) throws Throwable { av = super.check(av,1);
-             return target.<Object>invokeExact(
+             return target.invokeExact(
                 super.select(av,0), super.select(av,1)); }
     }
     // */
@@ -300,10 +300,10 @@ class genclasses {
         "        protected @cat@(SpreadGeneric outer, MethodHandle t) { super(outer, t); }",
         "        protected @cat@ makeInstance(SpreadGeneric outer, MethodHandle t) { return new @cat@(outer, t); }",
         "        protected Object invoke_S0(@Tvav,@Object av) throws Throwable { av = super.check(av, 0);",
-        "            return target.<Object>invokeExact(@av@); }",
+        "            return target.invokeExact(@av@); }",
         "        //@each-S@",
         "        protected Object invoke_S@S@(@Tvav,@Object av) throws Throwable { av = super.check(av, @S@);",
-        "            return target.<Object>invokeExact(@av,@@sv@); }",
+        "            return target.invokeExact(@av,@@sv@); }",
         "        //@end-S@",
         "    }",
     } };
@@ -414,16 +414,16 @@ class genclasses {
         protected S0(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S0 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S0(outer, t); }
         protected Object invoke_S0(Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(); }
+            return target.invokeExact(); }
     }
     static class S1 extends Adapter {
         protected S1(SpreadGeneric outer) { super(outer); }  // to build prototype
         protected S1(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S1 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S1(outer, t); }
         protected Object invoke_S0(Object a0, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0); }
+            return target.invokeExact(a0); }
         protected Object invoke_S1(Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0)); }
     }
     static class S2 extends Adapter {
@@ -431,12 +431,12 @@ class genclasses {
         protected S2(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S2 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S2(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1); }
+            return target.invokeExact(a0, a1); }
         protected Object invoke_S1(Object a0, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0)); }
         protected Object invoke_S2(Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1)); }
     }
     static class S3 extends Adapter {
@@ -444,15 +444,15 @@ class genclasses {
         protected S3(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S3 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S3(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2); }
+            return target.invokeExact(a0, a1, a2); }
         protected Object invoke_S1(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
     }
     static class S4 extends Adapter {
@@ -460,18 +460,18 @@ class genclasses {
         protected S4(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S4 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S4(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3); }
+            return target.invokeExact(a0, a1, a2, a3); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
     }
     static class S5 extends Adapter {
@@ -479,21 +479,21 @@ class genclasses {
         protected S5(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S5 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S5(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object a4, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4); }
+            return target.invokeExact(a0, a1, a2, a3, a4); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2, a3,
+            return target.invokeExact(a0, a1, a2, a3,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object a0, Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
         protected Object invoke_S5(Object av) throws Throwable { av = super.check(av, 5);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4)); }
     }
@@ -502,25 +502,25 @@ class genclasses {
         protected S6(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S6 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S6(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5); }
+            return target.invokeExact(a0, a1, a2, a3, a4, a5); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object a3, Object a4, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4,
+            return target.invokeExact(a0, a1, a2, a3, a4,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1, a2, a3,
+            return target.invokeExact(a0, a1, a2, a3,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
         protected Object invoke_S5(Object a0, Object av) throws Throwable { av = super.check(av, 5);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4)); }
         protected Object invoke_S6(Object av) throws Throwable { av = super.check(av, 6);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5)); }
     }
@@ -529,29 +529,29 @@ class genclasses {
         protected S7(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S7 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S7(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6); }
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object a2, Object a3, Object a4, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4,
+            return target.invokeExact(a0, a1, a2, a3, a4,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0, a1, a2, a3,
+            return target.invokeExact(a0, a1, a2, a3,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
         protected Object invoke_S5(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 5);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4)); }
         protected Object invoke_S6(Object a0, Object av) throws Throwable { av = super.check(av, 6);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5)); }
         protected Object invoke_S7(Object av) throws Throwable { av = super.check(av, 7);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6)); }
     }
@@ -560,33 +560,33 @@ class genclasses {
         protected S8(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S8 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S8(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7); }
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object a1, Object a2, Object a3, Object a4, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4,
+            return target.invokeExact(a0, a1, a2, a3, a4,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(a0, a1, a2, a3,
+            return target.invokeExact(a0, a1, a2, a3,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
         protected Object invoke_S5(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 5);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4)); }
         protected Object invoke_S6(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 6);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5)); }
         protected Object invoke_S7(Object a0, Object av) throws Throwable { av = super.check(av, 7);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6)); }
         protected Object invoke_S8(Object av) throws Throwable { av = super.check(av, 8);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6), super.select(av,7)); }
     }
@@ -595,37 +595,37 @@ class genclasses {
         protected S9(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S9 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S9(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object a0, Object a1, Object a2, Object a3, Object a4, Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4,
+            return target.invokeExact(a0, a1, a2, a3, a4,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
         protected Object invoke_S5(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 5);
-            return target.<Object>invokeExact(a0, a1, a2, a3,
+            return target.invokeExact(a0, a1, a2, a3,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4)); }
         protected Object invoke_S6(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 6);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5)); }
         protected Object invoke_S7(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 7);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6)); }
         protected Object invoke_S8(Object a0, Object av) throws Throwable { av = super.check(av, 8);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6), super.select(av,7)); }
         protected Object invoke_S9(Object av) throws Throwable { av = super.check(av, 9);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6), super.select(av,7),
                 super.select(av,8)); }
@@ -635,42 +635,42 @@ class genclasses {
         protected S10(SpreadGeneric outer, MethodHandle t) { super(outer, t); }
         protected S10 makeInstance(SpreadGeneric outer, MethodHandle t) { return new S10(outer, t); }
         protected Object invoke_S0(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9, Object av) throws Throwable { av = super.check(av, 0);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
         protected Object invoke_S1(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object av) throws Throwable { av = super.check(av, 1);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7, a8,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7, a8,
                 super.select(av,0)); }
         protected Object invoke_S2(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object av) throws Throwable { av = super.check(av, 2);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7,
                 super.select(av,0), super.select(av,1)); }
         protected Object invoke_S3(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object av) throws Throwable { av = super.check(av, 3);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5, a6,
                 super.select(av,0), super.select(av,1), super.select(av,2)); }
         protected Object invoke_S4(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object av) throws Throwable { av = super.check(av, 4);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5,
+            return target.invokeExact(a0, a1, a2, a3, a4, a5,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3)); }
         protected Object invoke_S5(Object a0, Object a1, Object a2, Object a3, Object a4, Object av) throws Throwable { av = super.check(av, 5);
-            return target.<Object>invokeExact(a0, a1, a2, a3, a4,
+            return target.invokeExact(a0, a1, a2, a3, a4,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4)); }
         protected Object invoke_S6(Object a0, Object a1, Object a2, Object a3, Object av) throws Throwable { av = super.check(av, 6);
-            return target.<Object>invokeExact(a0, a1, a2, a3,
+            return target.invokeExact(a0, a1, a2, a3,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5)); }
         protected Object invoke_S7(Object a0, Object a1, Object a2, Object av) throws Throwable { av = super.check(av, 7);
-            return target.<Object>invokeExact(a0, a1, a2,
+            return target.invokeExact(a0, a1, a2,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6)); }
         protected Object invoke_S8(Object a0, Object a1, Object av) throws Throwable { av = super.check(av, 8);
-            return target.<Object>invokeExact(a0, a1,
+            return target.invokeExact(a0, a1,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6), super.select(av,7)); }
         protected Object invoke_S9(Object a0, Object av) throws Throwable { av = super.check(av, 9);
-            return target.<Object>invokeExact(a0,
+            return target.invokeExact(a0,
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6), super.select(av,7),
                 super.select(av,8)); }
         protected Object invoke_S10(Object av) throws Throwable { av = super.check(av, 10);
-            return target.<Object>invokeExact(
+            return target.invokeExact(
                 super.select(av,0), super.select(av,1), super.select(av,2), super.select(av,3),
                 super.select(av,4), super.select(av,5), super.select(av,6), super.select(av,7),
                 super.select(av,8), super.select(av,9)); }
