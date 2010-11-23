@@ -22,8 +22,25 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_relocInfo.cpp.incl"
+#include "precompiled.hpp"
+#include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "utilities/copy.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.inline.hpp"
+# include "nativeInst_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.inline.hpp"
+# include "nativeInst_zero.hpp"
+#endif
 
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none

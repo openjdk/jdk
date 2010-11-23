@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
+#define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
+
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "atomic_windows_x86.inline.hpp"
+# include "orderAccess_windows_x86.inline.hpp"
+#endif
 
 inline const char* os::file_separator()                { return "\\"; }
 inline const char* os::line_separator()                { return "\r\n"; }
@@ -72,3 +82,5 @@ inline void os::bang_stack_shadow_pages() {
 
 inline bool os::numa_has_static_binding()   { return true;   }
 inline bool os::numa_has_group_homing()     { return false;  }
+
+#endif // OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP

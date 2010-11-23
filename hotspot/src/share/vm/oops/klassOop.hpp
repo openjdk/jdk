@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_KLASSOOP_HPP
+#define SHARE_VM_OOPS_KLASSOOP_HPP
+
+#include "oops/oop.hpp"
+
 // A klassOop is the C++ equivalent of a Java class.
 // Part of a klassOopDesc is a Klass which handle the
 // dispatching for the C++ method calls.
@@ -42,3 +47,5 @@ class klassOopDesc : public oopDesc {
   // returns the Klass part containing dispatching behavior
   Klass* klass_part()                            { return (Klass*)((address)this + klass_part_offset_in_bytes()); }
 };
+
+#endif // SHARE_VM_OOPS_KLASSOOP_HPP

@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_C1_FRAMEMAP_SPARC_HPP
+#define CPU_SPARC_VM_C1_FRAMEMAP_SPARC_HPP
+
  public:
 
   enum {
@@ -151,3 +154,5 @@
 
   static bool is_caller_save_register (LIR_Opr  reg);
   static bool is_caller_save_register (Register r);
+
+#endif // CPU_SPARC_VM_C1_FRAMEMAP_SPARC_HPP

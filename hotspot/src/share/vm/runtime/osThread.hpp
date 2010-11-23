@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_OSTHREAD_HPP
+#define SHARE_VM_RUNTIME_OSTHREAD_HPP
+
+#include "runtime/frame.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/javaFrameAnchor.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "utilities/top.hpp"
 
 // The OSThread class holds OS-specific thread information.  It is equivalent
 // to the sys_thread_t structure of the classic JVM implementation.
@@ -91,7 +101,16 @@ class OSThread: public CHeapObj {
   static ByteSize interrupted_offset()            { return byte_offset_of(OSThread, _interrupted); }
 
   // Platform dependent stuff
-  #include "incls/_osThread_pd.hpp.incl"
+#ifdef TARGET_OS_FAMILY_linux
+# include "osThread_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "osThread_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "osThread_windows.hpp"
+#endif
+
 };
 
 
@@ -129,3 +148,5 @@ class OSThreadContendState : public StackObj {
     _osthread->set_state(_old_state);
   }
 };
+
+#endif // SHARE_VM_RUNTIME_OSTHREAD_HPP

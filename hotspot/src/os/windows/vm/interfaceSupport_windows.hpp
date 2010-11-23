@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_WINDOWS_VM_INTERFACESUPPORT_WINDOWS_HPP
+#define OS_WINDOWS_VM_INTERFACESUPPORT_WINDOWS_HPP
+
 // Contains inlined functions for class InterfaceSupport
 
 static inline void serialize_memory(JavaThread *thread) {
@@ -39,3 +42,5 @@ static inline void serialize_memory(JavaThread *thread) {
               serialize_fault_filter((_EXCEPTION_POINTERS*)_exception_info()))
     {}
 }
+
+#endif // OS_WINDOWS_VM_INTERFACESUPPORT_WINDOWS_HPP

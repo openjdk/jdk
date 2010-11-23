@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_DISASSEMBLER_X86_HPP
+#define CPU_X86_VM_DISASSEMBLER_X86_HPP
+
   static int pd_instruction_alignment() {
     return 1;
   }
@@ -29,3 +32,5 @@
   static const char* pd_cpu_opts() {
     return "";
   }
+
+#endif // CPU_X86_VM_DISASSEMBLER_X86_HPP

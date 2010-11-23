@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_loopnode.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciMethodData.hpp"
+#include "compiler/compileLog.hpp"
+#include "libadt/vectset.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/superword.hpp"
 
 //=============================================================================
 //------------------------------is_loop_iv-------------------------------------

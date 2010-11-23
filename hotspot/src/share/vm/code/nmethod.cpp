@@ -22,8 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_nmethod.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "compiler/disassembler.hpp"
+#include "interpreter/bytecode.hpp"
+#include "oops/methodDataOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/sweeper.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef SHARK
+#include "shark/sharkCompiler.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 

@@ -22,8 +22,152 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vmStructs.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/loaderConstraints.hpp"
+#include "classfile/placeholders.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeBlob.hpp"
+#include "code/codeCache.hpp"
+#include "code/compressedStream.hpp"
+#include "code/location.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/stubs.hpp"
+#include "code/vmreg.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
+#include "gc_implementation/shared/immutableSpace.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/compactPermGen.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/heap.hpp"
+#include "memory/permGen.hpp"
+#include "memory/space.hpp"
+#include "memory/tenuredGeneration.hpp"
+#include "memory/universe.hpp"
+#include "memory/watermark.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/arrayKlassKlass.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/compiledICHolderKlass.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "oops/constMethodKlass.hpp"
+#include "oops/constMethodOop.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/cpCacheKlass.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlassKlass.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodDataKlass.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodKlass.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/objArrayKlassKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolKlass.hpp"
+#include "oops/symbolOop.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "oops/typeArrayKlassKlass.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "prims/jvmtiAgentThread.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/perfMemory.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/virtualspace.hpp"
+#include "runtime/vmStructs.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/hashtable.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vmStructs_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmStructs_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmStructs_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "vmStructs_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "vmStructs_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "vmStructs_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "vmStructs_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "vmStructs_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "vmStructs_windows_x86.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/concurrentMarkSweep/vmStructs_cms.hpp"
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/parNew/vmStructs_parNew.hpp"
+#include "gc_implementation/parallelScavenge/asPSOldGen.hpp"
+#include "gc_implementation/parallelScavenge/asPSYoungGen.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psOldGen.hpp"
+#include "gc_implementation/parallelScavenge/psPermGen.hpp"
+#include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
+#include "gc_implementation/parallelScavenge/psYoungGen.hpp"
+#include "gc_implementation/parallelScavenge/vmStructs_parallelgc.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/matcher.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/adGlobals_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/adGlobals_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/adGlobals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/adGlobals_zero.hpp"
+#endif
+#endif
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.

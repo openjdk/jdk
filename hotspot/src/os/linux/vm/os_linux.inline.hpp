@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,24 @@
  * questions.
  *
  */
+
+#ifndef OS_LINUX_VM_OS_LINUX_INLINE_HPP
+#define OS_LINUX_VM_OS_LINUX_INLINE_HPP
+
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "atomic_linux_x86.inline.hpp"
+# include "orderAccess_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "atomic_linux_sparc.inline.hpp"
+# include "orderAccess_linux_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "atomic_linux_zero.inline.hpp"
+# include "orderAccess_linux_zero.inline.hpp"
+#endif
 
 inline void* os::thread_local_storage_at(int index) {
   return pthread_getspecific((pthread_key_t)index);
@@ -123,3 +141,5 @@ inline int os::closedir(DIR *dirp)
 
 inline bool os::numa_has_static_binding()   { return true; }
 inline bool os::numa_has_group_homing()     { return false;  }
+
+#endif // OS_LINUX_VM_OS_LINUX_INLINE_HPP

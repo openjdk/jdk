@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_LIR_HPP
+#define SHARE_VM_C1_C1_LIR_HPP
+
+#include "c1/c1_ValueType.hpp"
+
 class BlockBegin;
 class BlockList;
 class LIR_Assembler;
@@ -2282,3 +2287,5 @@ class LIR_OpVisitState: public StackObj {
 
 
 inline LIR_Opr LIR_OprDesc::illegalOpr()   { return LIR_OprFact::illegalOpr; };
+
+#endif // SHARE_VM_C1_C1_LIR_HPP

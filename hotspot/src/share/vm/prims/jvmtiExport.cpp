@@ -22,8 +22,37 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiExport.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "prims/jvmtiCodeBlobEvents.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiManageCapabilities.hpp"
+#include "prims/jvmtiRawMonitor.hpp"
+#include "prims/jvmtiTagMap.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vframe.hpp"
+#include "services/attachListener.hpp"
+#include "services/serviceUtil.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#endif
 
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; tty->print_cr out; }

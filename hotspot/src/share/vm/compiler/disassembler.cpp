@@ -22,8 +22,29 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_disassembler.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "code/codeCache.hpp"
+#include "compiler/disassembler.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifdef TARGET_ARCH_x86
+# include "depChecker_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "depChecker_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "depChecker_zero.hpp"
+#endif
+#ifdef SHARK
+#include "shark/sharkEntry.hpp"
+#endif
 
 void*       Disassembler::_library               = NULL;
 bool        Disassembler::_tried_to_load_library = false;

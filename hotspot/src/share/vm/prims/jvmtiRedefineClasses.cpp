@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,21 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiRedefineClasses.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verifier.hpp"
+#include "code/codeCache.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/klassVtable.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/methodComparator.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/relocator.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 objArrayOop VM_RedefineClasses::_old_methods = NULL;

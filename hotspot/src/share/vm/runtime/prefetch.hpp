@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_PREFETCH_HPP
+#define SHARE_VM_RUNTIME_PREFETCH_HPP
+
+#include "memory/allocation.hpp"
+
 // If calls to prefetch methods are in a loop, the loop should be cloned
 // such that if Prefetch{Scan,Copy}Interval and/or PrefetchFieldInterval
 // say not to do prefetching, these methods aren't called.  At the very
@@ -42,3 +47,5 @@ class Prefetch : AllStatic {
   // Prefetch anticipating write; must not fault, semantically a no-op
   static void write(void* loc, intx interval);
 };
+
+#endif // SHARE_VM_RUNTIME_PREFETCH_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,61 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_jvm.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaAssertions.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "prims/nativeLookup.hpp"
+#include "prims/privilegedStack.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/dtraceJSDT.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/attachListener.hpp"
+#include "services/management.hpp"
+#include "services/threadService.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/histogram.hpp"
+#include "utilities/top.hpp"
+#include "utilities/utf8.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "hpi_linux.hpp"
+# include "jvm_linux.h"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "hpi_solaris.hpp"
+# include "jvm_solaris.h"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "hpi_windows.hpp"
+# include "jvm_windows.h"
+#endif
+
 #include <errno.h>
 
 HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__begin, long long);

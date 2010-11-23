@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_REFERENCEPROCESSOR_HPP
+#define SHARE_VM_MEMORY_REFERENCEPROCESSOR_HPP
+
+#include "memory/referencePolicy.hpp"
+#include "oops/instanceRefKlass.hpp"
+
 // ReferenceProcessor class encapsulates the per-"collector" processing
 // of java.lang.Reference objects for GC. The interface is useful for supporting
 // a generational abstraction, in particular when there are multiple
@@ -542,3 +548,5 @@ protected:
   oop                 _sentinel_ref;
   int                 _n_queues;
 };
+
+#endif // SHARE_VM_MEMORY_REFERENCEPROCESSOR_HPP

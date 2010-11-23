@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_MACROS_HPP
+#define SHARE_VM_UTILITIES_MACROS_HPP
+
 // Use this to mark code that needs to be cleaned up (for development only)
 #define NEEDS_CLEANUP
 
@@ -234,3 +237,5 @@
 #endif
 
 #define define_pd_global(type, name, value) const type pd_##name = value;
+
+#endif // SHARE_VM_UTILITIES_MACROS_HPP

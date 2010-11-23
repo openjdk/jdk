@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_hpi.cpp.incl"
+#include "precompiled.hpp"
+#include "prims/jvm.h"
+#include "runtime/hpi.hpp"
 
 extern "C" {
   static void unimplemented_panic(const char *fmt, ...) {

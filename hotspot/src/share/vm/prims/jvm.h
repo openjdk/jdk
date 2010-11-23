@@ -22,6 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_JVM_H
+#define SHARE_VM_PRIMS_JVM_H
+
+#include "prims/jni.h"
+#include "runtime/reflectionCompat.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "jvm_linux.h"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "jvm_solaris.h"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "jvm_windows.h"
+#endif
+
 #ifndef _JAVASOFT_JVM_H_
 #define _JAVASOFT_JVM_H_
 
@@ -1705,3 +1721,5 @@ typedef struct JDK1_1InitArgs {
 #endif /* __cplusplus */
 
 #endif /* !_JAVASOFT_JVM_H_ */
+
+#endif // SHARE_VM_PRIMS_JVM_H

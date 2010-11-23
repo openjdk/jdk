@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_SOLARIS_VM_HPI_SOLARIS_HPP
+#define OS_SOLARIS_VM_HPI_SOLARIS_HPP
 
 //
 // Parts of the HPI interface for which the HotSparc does not use the
@@ -247,3 +250,5 @@ inline int hpi::set_sock_opt(int fd, int level, int optname,
 // 1.3 98/10/21 18:17:14 hpi_win32.hpp
 // 1.6 99/06/28 11:01:36 hpi_win32.hpp
 //End
+
+#endif // OS_SOLARIS_VM_HPI_SOLARIS_HPP

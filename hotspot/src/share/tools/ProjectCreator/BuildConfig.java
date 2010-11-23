@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ class BuildConfig {
         if (vars == null) vars = new Hashtable();
 
         String flavourBuild =  flavour + "_" + build;
+        System.out.println();
+        System.out.println(flavourBuild);
+
         put("Name", getCI().makeCfgName(flavourBuild));
         put("Flavour", flavour);
         put("Build", build);
@@ -71,7 +74,7 @@ class BuildConfig {
         initDefaultDefines(defines);
         initDefaultCompilerFlags(includes);
         initDefaultLinkerFlags();
-        handleDB((String)getFieldInContext("IncludeDB"));
+        handleDB();
     }
 
 
@@ -110,12 +113,12 @@ class BuildConfig {
     }
 
 
-    Vector getPreferredPaths(Database currentDB) {
+    Vector getPreferredPaths(MacroDefinitions macros) {
         Vector preferredPaths = new Vector();
         // In the case of multiple files with the same name in
         // different subdirectories, prefer the versions specified in
         // the platform file as the "os_family" and "arch" macros.
-        for (Iterator iter = currentDB.getMacros(); iter.hasNext(); ) {
+        for (Iterator iter = macros.getMacros(); iter.hasNext(); ) {
             Macro macro = (Macro) iter.next();
             if (macro.name.equals("os_family") ||
                 macro.name.equals("arch")) {
@@ -129,38 +132,35 @@ class BuildConfig {
     }
 
 
-    void handleDB(String dbFile) {
+    void handleDB() {
         WinGammaPlatform platform = (WinGammaPlatform)getField(null, "PlatformObject");
-        Database db = new Database(platform, platform.defaultGrandIncludeThreshold());
 
+        File incls = new File(get("OutputDir")+Util.sep+"incls");
+
+        incls.mkdirs();
+
+        MacroDefinitions macros = new MacroDefinitions();
         try {
-            File incls = new File(get("OutputDir")+Util.sep+"incls");
-            FileName oldInclTempl = platform.getInclFileTemplate();
-            FileName oldGITempl = platform.getGIFileTemplate();
-            FileName oldGDTempl = platform.getGDFileTemplate();
-
-            platform.setInclFileTemplate(new FileName(platform, incls.getPath()+Util.sep,
-                                                      "_", "", ".incl", "", ""));
-            platform.setGIFileTemplate(new FileName(platform, incls.getPath()+Util.sep,
-                                                    "",  "_precompiled", ".incl", "", ""));
-
-            incls.mkdirs();
-
-            db.get(getFieldString(null, "Platform"), dbFile);
-            db.compute();
-
-            db.put();
-
-            //platform.setInclFileTemplate(oldInclTempl);
-            //platform.setGIFileTemplate(oldInclTempl);
+            macros.readFrom(getFieldString(null, "Platform"), false);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("cannot do db: "+e);
+            throw new RuntimeException(e);
         }
 
-        putSpecificField("AllFilesHash", computeAllFiles(platform, db));
+        putSpecificField("AllFilesHash", computeAllFiles(platform, macros));
     }
 
+
+    private boolean matchesIgnoredPath(String prefixedName) {
+        Vector rv = new Vector();
+        collectRelevantVectors(rv, "IgnorePath");
+        for (Iterator i = rv.iterator(); i.hasNext(); ) {
+            String pathPart = (String) i.next();
+            if (prefixedName.contains(Util.normalize(pathPart)))  {
+                return true;
+            }
+        }
+        return false;
+    }
 
     void addAll(Iterator i, Hashtable hash,
                 WinGammaPlatform platform, DirectoryTree tree,
@@ -175,7 +175,10 @@ class BuildConfig {
                                                                       filesNotFound,
                                                                       filesDuplicate);
                 if (prefixedName != null) {
-                    addTo(hash, Util.normalize(prefixedName), fileName);
+                    prefixedName = Util.normalize(prefixedName);
+                    if (!matchesIgnoredPath(prefixedName)) {
+                        addTo(hash, prefixedName, fileName);
+                    }
                 }
             }
         }
@@ -185,23 +188,28 @@ class BuildConfig {
         ht.put(expandFormat(key), expandFormat(value));
     }
 
-    Hashtable computeAllFiles(WinGammaPlatform platform, Database db) {
+    Hashtable computeAllFiles(WinGammaPlatform platform, MacroDefinitions macros) {
         Hashtable rv = new Hashtable();
         DirectoryTree tree = getSourceTree(get("SourceBase"), getFieldString(null, "StartAt"));
-        Vector preferredPaths = getPreferredPaths(db);
+        Vector preferredPaths = getPreferredPaths(macros);
 
         // Hold errors until end
         Vector filesNotFound = new Vector();
         Vector filesDuplicate = new Vector();
 
+        Vector includedFiles = new Vector();
 
         // find all files
-        Vector dbFiles = new Vector();
-        for (Iterator i=db.getAllFiles().iterator(); i.hasNext(); ) {
-            FileList fl = (FileList) i.next();
-            dbFiles.add(fl.getName());
+        Vector dirs = getSourceIncludes();
+        for (Iterator i = dirs.iterator(); i.hasNext(); ) {
+            String dir = (String)i.next();
+            DirectoryTree subtree = getSourceTree(dir, null);
+            for (Iterator fi = subtree.getFileIterator(); fi.hasNext(); ) {
+                String name = ((File)fi.next()).getName();
+                includedFiles.add(name);
+            }
         }
-        addAll(dbFiles.iterator(), rv,
+        addAll(includedFiles.iterator(), rv,
                platform, tree,
                preferredPaths, filesNotFound, filesDuplicate);
 
@@ -356,11 +364,15 @@ class BuildConfig {
     Vector getIncludes() {
         Vector rv = new Vector();
 
-        // for generated includes
-        rv.add(get("OutputDir"));
-
         collectRelevantVectors(rv, "AbsoluteInclude");
 
+        rv.addAll(getSourceIncludes());
+
+        return rv;
+    }
+
+    private Vector getSourceIncludes() {
+        Vector rv = new Vector();
         Vector ri = new Vector();
         String sourceBase = getFieldString(null, "SourceBase");
         collectRelevantVectors(ri, "RelativeInclude");
@@ -368,7 +380,6 @@ class BuildConfig {
             String f = (String)i.next();
             rv.add(sourceBase + Util.sep + f);
         }
-
         return rv;
     }
 
@@ -381,12 +392,10 @@ class BuildConfig {
                  cfg.startsWith("compiler2")));
     }
 
-    // Filters out the IncludeDB statement, which is the only command-
-    // line argument we explicitly specialize for the tiered build
+    // Filters out the IgnoreFile and IgnorePaths since they are
+    // handled specially for tiered builds.
     static boolean appliesToTieredBuild(String cfg, String key) {
-        return (appliesToTieredBuild(cfg) &&
-                (key != null &&
-                 !key.equals("IncludeDB")));
+        return (appliesToTieredBuild(cfg))&& (key != null && !key.startsWith("Ignore"));
     }
 
     static String getTieredBuildCfg(String cfg) {
@@ -441,7 +450,7 @@ class BuildConfig {
 
     static void putFieldHash(String cfg, String field, String name, Object val) {
         putFieldHashImpl(cfg, field, name, val);
-        if (appliesToTieredBuild(cfg)) {
+        if (appliesToTieredBuild(cfg, field)) {
             putFieldHashImpl(getTieredBuildCfg(cfg), field, name, val);
         }
     }
@@ -459,7 +468,7 @@ class BuildConfig {
 
     static void addFieldVector(String cfg, String field, String element) {
         addFieldVectorImpl(cfg, field, element);
-        if (appliesToTieredBuild(cfg)) {
+        if (appliesToTieredBuild(cfg, field)) {
             addFieldVectorImpl(getTieredBuildCfg(cfg), field, element);
         }
     }

@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_GraphBuilder.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_Canonicalizer.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "ci/ciField.hpp"
+#include "ci/ciKlass.hpp"
+#include "interpreter/bytecode.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
  private:

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,24 +49,13 @@ ADLCFLAGS=-q -T -U_LP64
 CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE  
 
 CPP_INCLUDE_DIRS=\
-  /I "..\generated"                          \
-  /I "$(WorkSpace)\src\share\vm\compiler"    \
-  /I "$(WorkSpace)\src\share\vm\code"        \
-  /I "$(WorkSpace)\src\share\vm\interpreter" \
-  /I "$(WorkSpace)\src\share\vm\classfile"   \
-  /I "$(WorkSpace)\src\share\vm\asm"         \
-  /I "$(WorkSpace)\src\share\vm\memory"      \
-  /I "$(WorkSpace)\src\share\vm\oops"        \
-  /I "$(WorkSpace)\src\share\vm\prims"       \
-  /I "$(WorkSpace)\src\share\vm\runtime"     \
-  /I "$(WorkSpace)\src\share\vm\utilities"   \
-  /I "$(WorkSpace)\src\share\vm\libadt"      \
-  /I "$(WorkSpace)\src\share\vm\opto"        \
-  /I "$(WorkSpace)\src\os\windows\vm"          \
+  /I "..\generated" \
+  /I "$(WorkSpace)\src\share\vm" \
+  /I "$(WorkSpace)\src\os\windows\vm" \
   /I "$(WorkSpace)\src\cpu\$(Platform_arch)\vm"
 
-# NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_INCL
-# and MakeDepsIDEOptions in makedeps.make. 
+# NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_DIR
+# and ProjectCreatorIDEOptions in projectcreator.make. 
 GENERATED_NAMES=\
   ad_$(Platform_arch_model).cpp \
   ad_$(Platform_arch_model).hpp \
@@ -81,18 +70,18 @@ GENERATED_NAMES=\
   dfa_$(Platform_arch_model).cpp
 
 # NOTE! This must be kept in sync with GENERATED_NAMES
-GENERATED_NAMES_IN_INCL=\
-  incls/ad_$(Platform_arch_model).cpp \
-  incls/ad_$(Platform_arch_model).hpp \
-  incls/ad_$(Platform_arch_model)_clone.cpp \
-  incls/ad_$(Platform_arch_model)_expand.cpp \
-  incls/ad_$(Platform_arch_model)_format.cpp \
-  incls/ad_$(Platform_arch_model)_gen.cpp \
-  incls/ad_$(Platform_arch_model)_misc.cpp \
-  incls/ad_$(Platform_arch_model)_peephole.cpp \
-  incls/ad_$(Platform_arch_model)_pipeline.cpp \
-  incls/adGlobals_$(Platform_arch_model).hpp \
-  incls/dfa_$(Platform_arch_model).cpp
+GENERATED_NAMES_IN_DIR=\
+  $(AdlcOutDir)\ad_$(Platform_arch_model).cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model).hpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_clone.cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_expand.cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_format.cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_gen.cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_misc.cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_peephole.cpp \
+  $(AdlcOutDir)\ad_$(Platform_arch_model)_pipeline.cpp \
+  $(AdlcOutDir)\adGlobals_$(Platform_arch_model).hpp \
+  $(AdlcOutDir)\dfa_$(Platform_arch_model).cpp
 
 {$(WorkSpace)\src\share\vm\adlc}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(EXH_FLAGS) $(CPP_INCLUDE_DIRS) /c $<
@@ -110,10 +99,12 @@ adlc.exe: main.obj adlparse.obj archDesc.obj arena.obj dfa.obj dict2.obj filebuf
 	$(MT) /manifest $@.manifest /outputresource:$@;#1
 !endif
 
-$(GENERATED_NAMES_IN_INCL): $(Platform_arch_model).ad adlc.exe includeDB.current 
+$(GENERATED_NAMES_IN_DIR): $(Platform_arch_model).ad adlc.exe
 	rm -f $(GENERATED_NAMES)
+	if exist $(AdlcOutDir) rmdir /s /q $(AdlcOutDir)
+	mkdir $(AdlcOutDir)
 	$(ADLC) $(ADLCFLAGS) $(Platform_arch_model).ad
-	mv $(GENERATED_NAMES) incls/
+	mv $(GENERATED_NAMES) $(AdlcOutDir)/
 
 $(Platform_arch_model).ad: $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
 	rm -f $(Platform_arch_model).ad

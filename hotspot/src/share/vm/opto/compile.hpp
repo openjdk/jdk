@@ -22,6 +22,24 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_COMPILE_HPP
+#define SHARE_VM_OPTO_COMPILE_HPP
+
+#include "asm/codeBuffer.hpp"
+#include "ci/compilerInterface.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "libadt/dict.hpp"
+#include "libadt/port.hpp"
+#include "libadt/vectset.hpp"
+#include "memory/resourceArea.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/phase.hpp"
+#include "opto/regmask.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/vmThread.hpp"
+
 class Block;
 class Bundle;
 class C2Compiler;
@@ -777,3 +795,5 @@ class Compile : public Phase {
   // Definitions of pd methods
   static void pd_compiler2_init();
 };
+
+#endif // SHARE_VM_OPTO_COMPILE_HPP

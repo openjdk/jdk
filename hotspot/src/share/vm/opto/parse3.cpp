@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_parse3.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "opto/addnode.hpp"
+#include "opto/memnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/handles.inline.hpp"
 
 //=============================================================================
 // Helper methods for _get* and _put* bytecodes

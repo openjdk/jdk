@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  *
  */
 
-// Dictionaries - An Abstract Data Type
+#include "precompiled.hpp"
+#include "libadt/dict.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/thread.hpp"
 
-#include "incls/_precompiled.incl"
-#include "incls/_dict.cpp.incl"
+// Dictionaries - An Abstract Data Type
 
 // %%%%% includes not needed with AVM framework - Ungar
 

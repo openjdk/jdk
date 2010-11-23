@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-public class FileFormatException extends Exception {
-    public FileFormatException() {
-        super();
-    }
+public class WinGammaPlatformVC9 extends WinGammaPlatformVC8 {
 
-    public FileFormatException(String s) {
-        super(s);
-    }
+    String projectVersion() {return "9.00";};
+
+}
+
+class CompilerInterfaceVC9 extends CompilerInterfaceVC8 {
 }

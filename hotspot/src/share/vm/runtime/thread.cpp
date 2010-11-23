@@ -22,8 +22,84 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_thread.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/compileBroker.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvm_misc.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "prims/privilegedStack.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/memprofiler.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/task.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/attachListener.hpp"
+#include "services/management.hpp"
+#include "services/threadService.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/parallelScavenge/pcTasks.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 

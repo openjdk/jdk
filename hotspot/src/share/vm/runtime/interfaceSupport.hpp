@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,29 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_INTERFACESUPPORT_HPP
+#define SHARE_VM_RUNTIME_INTERFACESUPPORT_HPP
+
+#include "memory/gcLocker.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/preserveException.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 // Wrapper for all entry points to the virtual machine.
 // The HandleMarkCleaner is a faster version of HandleMark.
@@ -82,7 +105,16 @@ class InterfaceSupport: AllStatic {
 
  public:
   // OS dependent stuff
-  #include "incls/_interfaceSupport_pd.hpp.incl"
+#ifdef TARGET_OS_FAMILY_linux
+# include "interfaceSupport_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "interfaceSupport_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "interfaceSupport_windows.hpp"
+#endif
+
 };
 
 
@@ -566,3 +598,5 @@ extern "C" {                                                         \
 
 
 #define JVM_END } }
+
+#endif // SHARE_VM_RUNTIME_INTERFACESUPPORT_HPP

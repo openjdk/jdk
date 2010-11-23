@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
+#define SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
+
+#include "classfile/dictionary.hpp"
+#include "classfile/placeholders.hpp"
+#include "utilities/hashtable.hpp"
 
 class LoaderConstraintEntry;
 
@@ -130,3 +137,5 @@ public:
   void set_loader(int i, oop p) { _loaders[i] = p; }
 
 };
+
+#endif // SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP

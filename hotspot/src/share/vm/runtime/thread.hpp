@@ -22,6 +22,37 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_THREAD_HPP
+#define SHARE_VM_RUNTIME_THREAD_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/threadLocalAllocBuffer.hpp"
+#include "oops/oop.hpp"
+#include "prims/jni.h"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/javaFrameAnchor.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/park.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "runtime/unhandledOops.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/top.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/dirtyCardQueue.hpp"
+#include "gc_implementation/g1/satbQueue.hpp"
+#endif
+#ifdef ZERO
+#ifdef TARGET_ARCH_zero
+# include "stack_zero.hpp"
+#endif
+#endif
+
 class ThreadSafepointState;
 class ThreadProfiler;
 
@@ -1514,7 +1545,25 @@ public:
 #endif // !SERIALGC
 
   // Machine dependent stuff
-  #include "incls/_thread_pd.hpp.incl"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "thread_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "thread_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "thread_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "thread_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "thread_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "thread_windows_x86.hpp"
+#endif
+
 
  public:
   void set_blocked_on_compilation(bool value) {
@@ -1769,3 +1818,5 @@ public:
   }
 };
 
+
+#endif // SHARE_VM_RUNTIME_THREAD_HPP

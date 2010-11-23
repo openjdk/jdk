@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CIINSTANCEKLASS_HPP
+#define SHARE_VM_CI_CIINSTANCEKLASS_HPP
+
+#include "ci/ciConstantPoolCache.hpp"
+#include "ci/ciFlags.hpp"
+#include "ci/ciInstanceKlassKlass.hpp"
+#include "ci/ciKlass.hpp"
+#include "ci/ciSymbol.hpp"
+
 // ciInstanceKlass
 //
 // This class represents a klassOop in the HotSpot virtual machine
@@ -215,3 +224,5 @@ public:
   bool is_instance_klass() { return true; }
   bool is_java_klass()     { return true; }
 };
+
+#endif // SHARE_VM_CI_CIINSTANCEKLASS_HPP

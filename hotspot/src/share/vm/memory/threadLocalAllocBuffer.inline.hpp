@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_THREADLOCALALLOCBUFFER_INLINE_HPP
+#define SHARE_VM_MEMORY_THREADLOCALALLOCBUFFER_INLINE_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/threadLocalAllocBuffer.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/copy.hpp"
 
 inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   invariants();
@@ -93,3 +101,5 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
                         obj_size, free(), refill_waste_limit());
   }
 }
+
+#endif // SHARE_VM_MEMORY_THREADLOCALALLOCBUFFER_INLINE_HPP

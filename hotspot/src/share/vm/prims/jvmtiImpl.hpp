@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,21 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_PRIMS_JVMTIIMPL_HPP
+#define SHARE_VM_PRIMS_JVMTIIMPL_HPP
+
+#ifndef JVMTI_KERNEL
+#include "classfile/systemDictionary.hpp"
+#include "jvmtifiles/jvmti.h"
+#include "oops/objArrayOop.hpp"
+#include "prims/jvmtiEnvThreadState.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiTrace.hpp"
+#include "prims/jvmtiUtil.hpp"
+#include "runtime/stackValueCollection.hpp"
+#include "runtime/vm_operations.hpp"
+#endif
 
 //
 // Forward Declarations
@@ -404,3 +419,5 @@ public:
 
 // Utility macro that checks for NULL pointers:
 #define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
+
+#endif // SHARE_VM_PRIMS_JVMTIIMPL_HPP

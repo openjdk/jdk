@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_IR_HPP
+#define SHARE_VM_C1_C1_IR_HPP
+
+#include "c1/c1_Instruction.hpp"
+#include "ci/ciExceptionHandler.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciStreams.hpp"
+#include "memory/allocation.hpp"
+
 // An XHandler is a C1 internal description for an exception handler
 
 class XHandler: public CompilationResourceObj {
@@ -337,3 +346,5 @@ class SubstitutionResolver: public BlockClosure, ValueVisitor {
 
   virtual void block_do(BlockBegin* block);
 };
+
+#endif // SHARE_VM_C1_C1_IR_HPP

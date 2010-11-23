@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_VMGCOPERATIONS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_VMGCOPERATIONS_HPP
+
+#include "memory/heapInspection.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/vm_operations.hpp"
+
 // The following class hierarchy represents
 // a set of operations (VM_Operation) related to GC.
 //
@@ -199,3 +208,5 @@ class VM_GenCollectForPermanentAllocation: public VM_GC_Operation {
   virtual void doit();
   HeapWord* result() const       { return _res; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_VMGCOPERATIONS_HPP

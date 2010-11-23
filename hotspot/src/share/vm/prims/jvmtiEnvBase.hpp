@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-#ifndef _JAVA_JVMTIENVBASE_H_
-#define _JAVA_JVMTIENVBASE_H_
+#ifndef SHARE_VM_PRIMS_JVMTIENVBASE_HPP
+#define SHARE_VM_PRIMS_JVMTIENVBASE_HPP
+
+#include "classfile/classLoader.hpp"
+#include "prims/jvmtiEnvThreadState.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 // Forward Declarations
@@ -597,4 +608,4 @@ class JvmtiMonitorClosure: public MonitorClosure {
   jvmtiError error() { return _error;}
 };
 
-#endif   /* _JAVA_JVMTIENVBASE_H_ */
+#endif // SHARE_VM_PRIMS_JVMTIENVBASE_HPP

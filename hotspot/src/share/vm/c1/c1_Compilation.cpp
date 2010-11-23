@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Compilation.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_ValueMap.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "code/debugInfoRec.hpp"
 
 
 typedef enum {

@@ -22,8 +22,36 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_verifier.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileStream.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/stackMapTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "prims/jvm.h"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION 51
 

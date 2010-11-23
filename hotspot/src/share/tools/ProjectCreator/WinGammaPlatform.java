@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,40 +117,7 @@ class HsArgRule extends ArgRuleSpecific {
 
 }
 
-public abstract class WinGammaPlatform extends Platform {
-    public void setupFileTemplates() {
-        inclFileTemplate = new FileName(this,
-            "incls\\", "_", "",                      ".incl", "", ""
-        );
-        giFileTemplate = new FileName(this,
-            "incls\\", "",  "_precompiled", ".incl", "", ""
-        );
-        gdFileTemplate = new FileName(this,
-            "", "",  "Dependencies",         "",      "", ""
-        );
-    }
-
-    private static String[] suffixes = { ".cpp", ".c" };
-
-    public String[] outerSuffixes() {
-        return suffixes;
-    }
-
-    public String objFileSuffix() {
-        return ".obj";
-    }
-
-    public String asmFileSuffix() {
-        return ".i";
-    }
-
-    public String dependentPrefix() {
-        return "$(VM_PATH)";
-    }
-
-    public boolean includeGIInEachIncl() {
-        return false;
-    }
+public abstract class WinGammaPlatform {
 
     public boolean fileNameStringEquality(String s1, String s2) {
         return s1.equalsIgnoreCase(s2);
@@ -176,8 +143,7 @@ public abstract class WinGammaPlatform extends Platform {
                            "#define (flag) (value))>");
         System.err.println("    -startAt <subdir of sourceBase>");
         System.err.println("    -additionalFile <file not in database but " +
-                           "which should show up in project file, like " +
-                           "includeDB_core>");
+                           "which should show up in project file>");
         System.err.println("    -additionalGeneratedFile <absolute path to " +
                            "directory containing file; no trailing slash> " +
                            "<name of file generated later in the build process>");
@@ -301,27 +267,6 @@ public abstract class WinGammaPlatform extends Platform {
         return name;
     }
 
-    protected boolean databaseAllFilesEqual(Database previousDB,
-                                            Database currentDB) {
-        Iterator i1 = previousDB.getAllFiles().iterator();
-        Iterator i2 = currentDB.getAllFiles().iterator();
-
-        while (i1.hasNext() && i2.hasNext()) {
-            FileList fl1 = (FileList) i1.next();
-            FileList fl2 = (FileList) i2.next();
-            if (!fl1.getName().equals(fl2.getName())) {
-                return false;
-            }
-        }
-
-        if (i1.hasNext() != i2.hasNext()) {
-            // Different lengths
-            return false;
-        }
-
-        return true;
-    }
-
     protected String envVarPrefixedFileName(String fileName,
                                             int sourceBaseLen,
                                             DirectoryTree tree,
@@ -374,24 +319,13 @@ public abstract class WinGammaPlatform extends Platform {
 
     protected abstract String getProjectExt();
 
-    public void writePlatformSpecificFiles(Database previousDB,
-                                           Database currentDB, String[] args)
+    public void createVcproj(String[] args)
         throws IllegalArgumentException, IOException {
 
         parseArguments(args);
 
         String projectFileName = BuildConfig.getFieldString(null, "ProjectFileName");
         String ext = getProjectExt();
-
-        // Compare contents of allFiles of previousDB and includeDB.
-        // If these haven't changed, then skip writing the .vcproj file.
-        if (false && databaseAllFilesEqual(previousDB, currentDB) &&
-            new File(projectFileName).exists()) {
-            System.out.println(
-                               "    Databases unchanged; skipping overwrite of "+ext+" file."
-                               );
-            return;
-        }
 
         String projectName = getProjectName(projectFileName, ext);
 
@@ -404,15 +338,6 @@ public abstract class WinGammaPlatform extends Platform {
             System.err.print(args[i] + " ");
         }
         System.err.println();
-    }
-
-
-    void setInclFileTemplate(FileName val) {
-        this.inclFileTemplate = val;
-    }
-
-    void setGIFileTemplate(FileName val) {
-        this.giFileTemplate = val;
     }
 
 
@@ -551,6 +476,12 @@ public abstract class WinGammaPlatform extends Platform {
                                       HsArgHandler.HASH
                                       ),
 
+                new HsArgRule("-ignorePath",
+                              "IgnorePath",
+                              null,
+                              HsArgHandler.VECTOR
+                              ),
+
                 new HsArgRule("-additionalFile",
                               "AdditionalFile",
                               null,
@@ -565,9 +496,6 @@ public abstract class WinGammaPlatform extends Platform {
                                         String dir = it.get();
                                         if (nextNotKey(it)) {
                                             String fileName = it.get();
-                                            // we ignore files that we know are generated, so we coudn't
-                                            // find them in sources
-                                            BuildConfig.putFieldHash(cfg, "IgnoreFile",  fileName, "1");
                                             BuildConfig.putFieldHash(cfg, "AdditionalGeneratedFile",
                                                                      Util.normalize(dir + Util.sep + fileName),
                                                                      fileName);
@@ -579,12 +507,6 @@ public abstract class WinGammaPlatform extends Platform {
                                 }
                             }
                             ),
-
-                new HsArgRule("-includeDB",
-                              "IncludeDB",
-                              null,
-                              HsArgHandler.STRING
-                              ),
 
                 new ArgRule("-prelink",
                             new HsArgHandler() {

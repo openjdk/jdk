@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ CPP_FLAGS=$(CPP_FLAGS) $(FASTDEBUG_OPT_OPTION)
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make
 
-!include $(GENERATED)/Dependencies
-
 HS_BUILD_ID=$(HS_BUILD_VER)-fastdebug
 
 # Force resources to be rebuilt every time
@@ -56,7 +54,6 @@ $(AOUT): $(Res_Files) $(Obj_Files)
 # separately.  Use ";#2" for .dll and ";#1" for .exe:
 	$(MT) /manifest $@.manifest /outputresource:$@;#2
 !endif
-
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make

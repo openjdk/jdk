@@ -22,8 +22,45 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_os.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "prims/privilegedStack.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "services/attachListener.hpp"
+#include "services/threadService.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/events.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 # include <signal.h>
 

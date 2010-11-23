@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,6 @@ public class MacroDefinitions {
 
     public MacroDefinitions() {
         macros = new Vector();
-    }
-
-    private String lookup(String name) throws NoSuchElementException {
-        for (Iterator iter = macros.iterator(); iter.hasNext(); ) {
-            Macro macro = (Macro) iter.next();
-            if (macro.name.equals(name)) {
-                return macro.contents;
-            }
-        }
-        throw new NoSuchElementException(name);
     }
 
     public void addMacro(String name, String contents) {
@@ -155,102 +145,10 @@ public class MacroDefinitions {
         reader.close();
     }
 
-    /** Throws IllegalArgumentException if passed token is illegally
-        formatted */
-    public String expand(String token)
-        throws IllegalArgumentException {
-        // the token may contain one or more <macroName>'s
-
-        String out = "";
-
-        // emacs lingo
-        int mark = 0;
-        int point = 0;
-
-        int len = token.length();
-
-        if (len == 0)
-            return out;
-
-        do {
-            // Scan "point" forward until hitting either the end of
-            // the string or the beginning of a macro
-            if (token.charAt(point) == '<') {
-                // Append (point - mark) to out
-                if ((point - mark) != 0) {
-                    out += token.substring(mark, point);
-                }
-                mark = point + 1;
-                // Scan forward from point for right bracket
-                point++;
-                while ((point < len) &&
-                       (token.charAt(point) != '>')) {
-                    point++;
-                }
-                if (point == len) {
-                    throw new IllegalArgumentException(
-                        "Could not find right angle-bracket in token " + token
-                    );
-                }
-                String name = token.substring(mark, point);
-                if (name == null) {
-                    throw new IllegalArgumentException(
-                        "Empty macro in token " + token
-                    );
-                }
-                try {
-                    String contents = lookup(name);
-                    out += contents;
-                    point++;
-                    mark = point;
-                } catch (NoSuchElementException e) {
-                    throw new IllegalArgumentException(
-                        "Unknown macro " + name + " in token " + token
-                    );
-                }
-            } else {
-                point++;
-            }
-        } while (point != len);
-
-        if (mark != point) {
-            out += token.substring(mark, point);
-        }
-
-        return out;
-    }
-
-    public MacroDefinitions copy() {
-        MacroDefinitions ret = new MacroDefinitions();
-        for (Iterator iter = macros.iterator();
-             iter.hasNext(); ) {
-            Macro orig = (Macro) iter.next();
-            Macro macro = new Macro();
-            macro.name = orig.name;
-            macro.contents = orig.contents;
-            ret.macros.add(macro);
-        }
-        return ret;
-    }
-
-    public void setAllMacroBodiesTo(String s) {
-        for (Iterator iter = macros.iterator();
-             iter.hasNext(); ) {
-            Macro macro = (Macro) iter.next();
-            macro.contents = s;
-        }
-    }
-
     /** This returns an Iterator of Macros. You should not mutate the
         returned Macro objects or use the Iterator to remove
         macros. */
     public Iterator getMacros() {
         return macros.iterator();
-    }
-
-    private void error(String text) throws FileFormatException {
-        throw new FileFormatException(
-            "Expected \"macroname = value\", but found: " + text
-        );
     }
 }

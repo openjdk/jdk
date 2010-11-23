@@ -22,8 +22,46 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_debug.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
+#include "code/nmethod.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/disassembler.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/privilegedStack.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/java.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vframe.hpp"
+#include "services/heapDumper.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/events.hpp"
+#include "utilities/top.hpp"
+#include "utilities/vmError.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 #ifndef ASSERT
 #  ifdef _DEBUG

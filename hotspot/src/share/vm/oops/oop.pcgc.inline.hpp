@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
+#define SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#endif
 
 inline void oopDesc::update_contents(ParCompactionManager* cm) {
   // The klass field must be updated before anything else
@@ -133,3 +145,5 @@ inline void oopDesc::update_header(HeapWord* beg_addr, HeapWord* end_addr) {
     PSParallelCompact::adjust_pointer(klass_addr(), beg_addr, end_addr);
   }
 }
+
+#endif // SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP

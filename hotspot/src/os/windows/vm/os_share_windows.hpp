@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,4 +22,9 @@
  *
  */
 
+#ifndef OS_WINDOWS_VM_OS_SHARE_WINDOWS_HPP
+#define OS_WINDOWS_VM_OS_SHARE_WINDOWS_HPP
+
 // Defines the interfaces to Windows operating system that vary across platforms
+
+#endif // OS_WINDOWS_VM_OS_SHARE_WINDOWS_HPP

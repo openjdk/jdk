@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) \| \( \( $(CC_VER_MAJOR) = 3 \) \& \( $(CC_VER_MINOR) \>= 4 \) \))" "0"
 USE_PRECOMPILED_HEADER=1
 PRECOMPILED_HEADER_DIR=.
-PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/incls/_precompiled.incl.gch
+PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled.hpp
+PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/precompiled.hpp.gch
 endif
 
 
@@ -131,6 +132,12 @@ OPT_CFLAGS/bytecodeInterpreter.o += -fno-expensive-optimizations
 endif
 
 OPT_CFLAGS/NOOPT=-O0
+
+# Flags for generating make dependency flags.
+ifneq ("${CC_VER_MAJOR}", "2")
+DEPFLAGS = -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
+endif
+
 #------------------------------------------------------------------------
 # Linker flags
 

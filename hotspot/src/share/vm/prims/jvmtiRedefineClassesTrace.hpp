@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_PRIMS_JVMTIREDEFINECLASSESTRACE_HPP
+#define SHARE_VM_PRIMS_JVMTIREDEFINECLASSESTRACE_HPP
 
 // RedefineClasses tracing support via the TraceRedefineClasses
 // option. A bit is assigned to each group of trace messages.
@@ -121,3 +124,5 @@
   if (RC_TRACE_ENABLED(0x00000004)) { \
     t.stop(); \
   } while (0)
+
+#endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSESTRACE_HPP

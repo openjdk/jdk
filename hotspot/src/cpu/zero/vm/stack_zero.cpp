@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stack_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "stack_zero.hpp"
+#include "stack_zero.inline.hpp"
 
 int ZeroStack::suggest_size(Thread *thread) const {
   assert(needs_setup(), "already set up");

@@ -35,9 +35,10 @@ default: build
 # Defs
 
 GENERATED     = ../generated
+DEP_DIR       = $(GENERATED)/dependencies
 
-# read a generated file defining the set of .o's and the .o .h dependencies
-include $(GENERATED)/Dependencies
+# reads the generated files defining the set of .o's and the .o .h dependencies
+-include $(DEP_DIR)/*.d
 
 # read machine-specific adjustments (%%% should do this via buildtree.make?)
 ifeq ($(ZERO_BUILD), true)
@@ -47,16 +48,16 @@ else
 endif
 
 # set VPATH so make knows where to look for source files
-# Src_Dirs is everything in src/share/vm/*, plus the right os/*/vm and cpu/*/vm
-# The incls directory contains generated header file lists for inclusion.
+# Src_Dirs_V is everything in src/share/vm/*, plus the right os/*/vm and cpu/*/vm
 # The adfiles directory contains ad_<arch>.[ch]pp.
 # The jvmtifiles directory contains jvmti*.[ch]pp
-Src_Dirs_V = $(GENERATED)/adfiles $(GENERATED)/jvmtifiles ${Src_Dirs} $(GENERATED)/incls
-VPATH    += $(Src_Dirs_V:%=%:)
+Src_Dirs_V += $(GENERATED)/adfiles $(GENERATED)/jvmtifiles
+VPATH += $(Src_Dirs_V:%=%:)
 
-# set INCLUDES for C preprocessor
-Src_Dirs_I = $(PRECOMPILED_HEADER_DIR) $(GENERATED)/adfiles $(GENERATED)/jvmtifiles ${Src_Dirs} $(GENERATED)
-INCLUDES += $(Src_Dirs_I:%=-I%)
+# set INCLUDES for C preprocessor.
+Src_Dirs_I += $(GENERATED)
+# The order is important for the precompiled headers to work.
+INCLUDES += $(PRECOMPILED_HEADER_DIR:%=-I%) $(Src_Dirs_I:%=-I%)
 
 ifeq (${VERSION}, debug)
   SYMFLAG = -g
@@ -117,6 +118,62 @@ include $(MAKEFILES_DIR)/dtrace.make
 JVM      = jvm
 LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
+
+CORE_PATHS := $(shell find $(GAMMADIR)/src/share/vm/* -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \))
+CORE_PATHS += $(GAMMADIR)/src/os/$(Platform_os_family)/vm
+CORE_PATHS += $(GAMMADIR)/src/cpu/$(Platform_arch)/vm
+CORE_PATHS += $(GAMMADIR)/src/os_cpu/$(Platform_os_arch)/vm
+CORE_PATHS += $(GENERATED)/jvmtifiles
+
+COMPILER1_PATHS := $(GAMMADIR)/src/share/vm/c1
+
+COMPILER2_PATHS := $(GAMMADIR)/src/share/vm/opto
+COMPILER2_PATHS += $(GAMMADIR)/src/share/vm/libadt
+COMPILER2_PATHS +=  $(GENERATED)/adfiles
+
+# Include dirs per type.
+Src_Dirs/CORE      := $(CORE_PATHS)
+Src_Dirs/COMPILER1 := $(CORE_PATHS) $(COMPILER1_PATHS)
+Src_Dirs/COMPILER2 := $(CORE_PATHS) $(COMPILER2_PATHS)
+Src_Dirs/TIERED    := $(CORE_PATHS) $(COMPILER1_PATHS) $(COMPILER2_PATHS)
+Src_Dirs/ZERO      := $(CORE_PATHS)
+Src_Dirs/SHARK     := $(CORE_PATHS)
+Src_Dirs := $(Src_Dirs/$(TYPE))
+
+COMPILER2_SPECIFIC_FILES := opto libadt bcEscapeAnalyzer.cpp chaitin\* c2_\* runtime_\*
+COMPILER1_SPECIFIC_FILES := c1_\*
+SHARK_SPECIFIC_FILES     := shark
+ZERO_SPECIFIC_FILES      := zero
+
+# Always exclude these.
+Src_Files_EXCLUDE := jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp
+
+# Exclude per type.
+Src_Files_EXCLUDE/CORE      := $(COMPILER1_SPECIFIC_FILES) $(COMPILER2_SPECIFIC_FILES) $(ZERO_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES) ciTypeFlow.cpp
+Src_Files_EXCLUDE/COMPILER1 := $(COMPILER2_SPECIFIC_FILES) $(ZERO_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES) ciTypeFlow.cpp
+Src_Files_EXCLUDE/COMPILER2 := $(COMPILER1_SPECIFIC_FILES) $(ZERO_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES)
+Src_Files_EXCLUDE/TIERED    := $(ZERO_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES)
+Src_Files_EXCLUDE/ZERO      := $(COMPILER1_SPECIFIC_FILES) $(COMPILER2_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES) ciTypeFlow.cpp
+Src_Files_EXCLUDE/SHARK     := $(COMPILER1_SPECIFIC_FILES) $(COMPILER2_SPECIFIC_FILES) $(ZERO_SPECIFIC_FILES)
+
+Src_Files_EXCLUDE +=  $(Src_Files_EXCLUDE/$(TYPE))
+
+# Special handling of arch model.
+ifeq ($(Platform_arch_model), x86_32)
+Src_Files_EXCLUDE += \*x86_64\*
+endif
+ifeq ($(Platform_arch_model), x86_64)
+Src_Files_EXCLUDE += \*x86_32\*
+endif
+
+# Locate all source files in the given directory, excluding files in Src_Files_EXCLUDE.
+define findsrc
+	$(notdir $(shell find $(1) \( -name \*.c -o -name \*.cpp -o -name \*.s \) -a \! \( -name DUMMY $(addprefix -o -name ,$(Src_Files_EXCLUDE)) \) ))
+endef
+
+Src_Files := $(foreach e,$(Src_Dirs),$(call findsrc,$(e)))
+
+Obj_Files = $(addsuffix .o,$(basename $(Src_Files)))
 
 JVM_OBJ_FILES = $(Obj_Files)
 
@@ -180,10 +237,10 @@ endif
 LINK_VM = $(LINK_LIB.c)
 
 # rule for building precompiled header
-$(PRECOMPILED_HEADER): $(Precompiled_Files)
+$(PRECOMPILED_HEADER):
 	$(QUIETLY) echo Generating precompiled header $@
-	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)/incls
-	$(QUIETLY) $(COMPILE.CC) -x c++-header -c $(GENERATED)/incls/_precompiled.incl -o $@ $(COMPILE_DONE)
+	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
+	$(QUIETLY) $(COMPILE.CC) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
 
 # making the library:
 
@@ -252,7 +309,7 @@ include $(MAKEFILES_DIR)/saproc.make
 
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) checkAndBuildSA
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
 
 install: install_jvm install_jsig install_saproc
 

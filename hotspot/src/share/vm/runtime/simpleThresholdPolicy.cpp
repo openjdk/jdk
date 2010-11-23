@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_simpleThresholdPolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileBroker.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/simpleThresholdPolicy.hpp"
+#include "runtime/simpleThresholdPolicy.inline.hpp"
 
 // Print an event.
 void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodHandle imh,

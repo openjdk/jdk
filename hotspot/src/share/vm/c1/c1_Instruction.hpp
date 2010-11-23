@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_INSTRUCTION_HPP
+#define SHARE_VM_C1_C1_INSTRUCTION_HPP
+
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_ValueType.hpp"
+#include "ci/ciField.hpp"
+
 // Predefined classes
 class ciField;
 class ValueStack;
@@ -2303,3 +2311,5 @@ inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end ==
 inline void        BlockBegin::add_successor(BlockBegin* sux)   { assert(_end == NULL, "Would create mismatch with successors of BlockEnd");         _successors.append(sux); }
 
 #undef ASSERT_VALUES
+
+#endif // SHARE_VM_C1_C1_INSTRUCTION_HPP

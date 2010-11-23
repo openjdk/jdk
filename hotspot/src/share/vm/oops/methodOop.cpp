@@ -22,8 +22,34 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_methodOop.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/debugInfoRec.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/generation.hpp"
+#include "memory/oopFactory.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/methodHandleWalk.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/relocator.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "utilities/xmlstream.hpp"
 
 
 // Implementation of methodOopDesc

@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+
+#include "prims/jvm.h"
+#include "utilities/top.hpp"
+
 // constant tags in Java .class files
 
 
@@ -107,3 +113,5 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
 
   void print_on(outputStream* st) const PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_UTILITIES_CONSTANTTAG_HPP

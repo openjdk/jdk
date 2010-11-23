@@ -74,6 +74,11 @@ CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))
 OPT_CFLAGS+=-xO4
 OPT_CFLAGS/NOOPT=-xO0
 
+# Flags for creating the dependency files.
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+DEPFLAGS = -xMMD -xMF $(DEP_DIR)/$(@:%=%.d)
+endif
+
 #------------------------------------------------------------------------
 # Linker flags
 
