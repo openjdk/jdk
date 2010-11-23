@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_LINUX_VM_HPI_LINUX_HPP
+#define OS_LINUX_VM_HPI_LINUX_HPP
 
 //
 // Because the interruptible IO has been dropped for HotSpot/Linux,
@@ -222,3 +225,5 @@ inline int hpi::set_sock_opt(int fd, int level, int optname,
 // Reconciliation History
 // hpi_solaris.hpp      1.9 99/08/30 16:31:23
 // End
+
+#endif // OS_LINUX_VM_HPI_LINUX_HPP

@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP
+#define SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP
+
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "memory/generation.hpp"
+#include "memory/sharedHeap.hpp"
+
 class SubTasksDone;
 
 // A "GenCollectedHeap" is a SharedHeap that uses generational
@@ -535,3 +543,5 @@ protected:
 public:
   virtual void preload_and_dump(TRAPS) KERNEL_RETURN;
 };
+
+#endif // SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP

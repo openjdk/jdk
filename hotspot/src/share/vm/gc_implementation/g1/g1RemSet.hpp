@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_HPP
+
 // A G1RemSet provides ways of iterating over pointers into a selected
 // collection set.
 
@@ -231,3 +234,5 @@ public:
   bool apply_to_weak_ref_discovered_field() { return true; }
 };
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_HPP

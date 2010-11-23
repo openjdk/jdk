@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_g1CollectorPolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "utilities/debug.hpp"
 
 #define PREDICTIONS_VERBOSE 0
 

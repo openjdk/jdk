@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Runtime1_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "interpreter/interpreter.hpp"
+#include "nativeInst_x86.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "register_x86.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframeArray.hpp"
+#include "vmreg_x86.inline.hpp"
 
 
 // Implementation of StubAssembler

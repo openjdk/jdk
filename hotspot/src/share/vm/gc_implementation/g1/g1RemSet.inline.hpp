@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP
+
+#include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "oops/oop.inline.hpp"
+
 inline size_t G1RemSet::n_workers() {
   if (_g1->workers() != NULL) {
     return _g1->workers()->total_workers();
@@ -145,3 +152,5 @@ inline void UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
   }
 }
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP

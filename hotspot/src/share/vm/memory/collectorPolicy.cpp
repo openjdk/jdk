@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_collectorPolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/space.hpp"
+#include "memory/universe.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
+#endif
 
 // CollectorPolicy methods.
 

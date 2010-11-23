@@ -22,8 +22,20 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_LIRAssembler_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciArrayKlass.hpp"
+#include "ci/ciInstance.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "nativeInst_x86.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 
 // These masks are used to provide 128-bit aligned bitmasks to the XMM

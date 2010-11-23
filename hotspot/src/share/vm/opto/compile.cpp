@@ -22,8 +22,58 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compile.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "code/nmethod.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/oopMap.hpp"
+#include "opto/addnode.hpp"
+#include "opto/block.hpp"
+#include "opto/c2compiler.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/compile.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/escape.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/macro.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/output.hpp"
+#include "opto/parse.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/stringopts.hpp"
+#include "opto/type.hpp"
+#include "opto/vectornode.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/copy.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
 
 /// Support for intrinsics.
 

@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
+#define SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
+
+#include "oops/symbolOop.hpp"
+
 // The classes vmSymbols and vmSymbolHandles are a name spaces for fast lookup of
 // symbols commonly used in the VM. The first class return a symbolOop, while the
 // second class returns a SymbolHandle. The underlying data structure is shared
@@ -1112,3 +1117,5 @@ public:
   // Raw conversion:
   static ID for_raw_conversion(BasicType src, BasicType dest);
 };
+
+#endif // SHARE_VM_CLASSFILE_VMSYMBOLS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,10 @@
  * The files are included verbatim expect for local includes removed from hpi.h.
  */
 
-#ifndef _JAVASOFT_HPI_H_
-#define _JAVASOFT_HPI_H_
+#ifndef SHARE_VM_PRIMS_HPI_IMPORTED_H
+#define SHARE_VM_PRIMS_HPI_IMPORTED_H
+
+#include "jni.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -314,4 +316,4 @@ typedef struct vm_calls {
 }
 #endif
 
-#endif /* !_JAVASOFT_HPI_H_ */
+#endif // SHARE_VM_PRIMS_HPI_IMPORTED_H

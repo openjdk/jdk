@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ LINK_LAUNCHER/PRE_HOOK  = $(LINK_LIB.CC/PRE_HOOK)
 LINK_LAUNCHER/POST_HOOK = $(LINK_LIB.CC/POST_HOOK)
 
 launcher.o: launcher.c $(LAUNCHERDIR)/java.c $(LAUNCHERDIR)/java_md.c
-	$(CC) -g -c -o $@ launcher.c $(LAUNCHERFLAGS) $(CPPFLAGS)
+	$(CC) -g -c -o $@ launcher.c $(LAUNCHERFLAGS) $(CPPFLAGS) $(TARGET_DEFINES)
 
 launcher.c:
 	@echo Generating $@

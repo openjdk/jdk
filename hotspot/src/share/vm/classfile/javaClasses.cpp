@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,39 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_javaClasses.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/debugInfo.hpp"
+#include "code/pcDesc.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/symbolOop.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/vframe.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 static bool find_field(instanceKlass* ik,
                        symbolOop name_symbol, symbolOop signature_symbol,

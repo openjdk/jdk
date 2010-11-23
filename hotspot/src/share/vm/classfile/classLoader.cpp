@@ -22,8 +22,56 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_classLoader.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
+#include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/generation.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/timer.hpp"
+#include "services/management.hpp"
+#include "services/threadService.hpp"
+#include "utilities/events.hpp"
+#include "utilities/hashtable.hpp"
+#include "utilities/hashtable.inline.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "hpi_linux.hpp"
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "hpi_solaris.hpp"
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "hpi_windows.hpp"
+# include "os_windows.inline.hpp"
+#endif
 
 
 // Entry points in zip.dll for loading zip/jar file entries

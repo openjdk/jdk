@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_chaitin_windows.cpp.incl"
+#include "precompiled.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/machnode.hpp"
 
 // Disallow the use of the frame pointer (EBP) for implicit null exceptions
 // on win95/98.  If we do not do this, the OS gets confused and gives a stack

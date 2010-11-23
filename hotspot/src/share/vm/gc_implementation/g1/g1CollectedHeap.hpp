@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_HPP
+
+#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/sharedHeap.hpp"
+
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
 // It uses the "Garbage First" heap organization and algorithm, which
 // may combine concurrent marking with parallel, incremental compaction of
@@ -1797,3 +1808,5 @@ public:
 public:
   void trim_queue();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_HPP

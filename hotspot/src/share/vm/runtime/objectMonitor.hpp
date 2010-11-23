@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
+#define SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
+
+#include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
 
 
 // ObjectWaiter serves as a "proxy" or surrogate thread.
@@ -306,3 +312,5 @@ public:
 #undef  TEVENT
 #define TEVENT(nom) {;}
 
+
+#endif // SHARE_VM_RUNTIME_OBJECTMONITOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_LOCATION_HPP
+#define SHARE_VM_CODE_LOCATION_HPP
+
+#include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
+#include "memory/allocation.hpp"
 
 // A Location describes a concrete machine variable location
 // (such as integer or floating point register or a stack-held
@@ -113,3 +120,5 @@ class Location VALUE_OBJ_CLASS_SPEC {
   // check
   static bool legal_offset_in_bytes(int offset_in_bytes);
 };
+
+#endif // SHARE_VM_CODE_LOCATION_HPP

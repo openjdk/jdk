@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,32 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_instanceKlassKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/gcLocker.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlassKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/objArrayKlassKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "oops/symbolOop.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 klassOop instanceKlassKlass::create_klass(TRAPS) {
   instanceKlassKlass o;

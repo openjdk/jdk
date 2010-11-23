@@ -22,9 +22,44 @@
  *
  */
 
-// do not include  precompiled  header file
+// no precompiled headers
+#include "assembler_sparc.inline.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvm_linux.h"
+#include "memory/allocation.inline.hpp"
+#include "mutex_linux.inline.hpp"
+#include "nativeInst_sparc.hpp"
+#include "os_share_linux.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "thread_linux.inline.hpp"
+#include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
-#include "incls/_os_linux_sparc.cpp.incl"
 
 // Linux/Sparc has rather obscure naming of registers in sigcontext
 // different between 32 and 64 bits

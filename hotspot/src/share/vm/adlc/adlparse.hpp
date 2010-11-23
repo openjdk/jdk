@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ADLC_ADLPARSE_HPP
+#define SHARE_VM_ADLC_ADLPARSE_HPP
 
 // ADLPARSE.HPP - Definitions for Architecture Description Language Parser
 // Authors: Chris Vick and Mike Paleczny
@@ -277,3 +280,5 @@ public:
   static bool equivalent_expressions(const char* str1, const char* str2);
   static void trim(char* &token);  // trim leading & trailing spaces
 };
+
+#endif // SHARE_VM_ADLC_ADLPARSE_HPP

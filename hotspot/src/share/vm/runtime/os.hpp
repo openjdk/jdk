@@ -22,6 +22,24 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_OS_HPP
+#define SHARE_VM_RUNTIME_OS_HPP
+
+#include "jvmtifiles/jvmti.h"
+#include "runtime/atomic.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "jvm_linux.h"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "jvm_solaris.h"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "jvm_windows.h"
+#endif
+
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-
 // dependent code.
@@ -587,7 +605,34 @@ class os: AllStatic {
   static bool obsolete_option(const JavaVMOption *option);
 
   // Platform dependent stuff
-  #include "incls/_os_pd.hpp.incl"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "os_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "os_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "os_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "os_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "os_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "os_windows_x86.hpp"
+#endif
+
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
@@ -630,3 +675,5 @@ class os: AllStatic {
 extern "C" int SpinPause () ;
 extern "C" int SafeFetch32 (int * adr, int errValue) ;
 extern "C" intptr_t SafeFetchN (intptr_t * adr, intptr_t errValue) ;
+
+#endif // SHARE_VM_RUNTIME_OS_HPP

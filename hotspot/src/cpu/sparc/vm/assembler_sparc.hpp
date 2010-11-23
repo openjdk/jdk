@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_ASSEMBLER_SPARC_HPP
+#define CPU_SPARC_VM_ASSEMBLER_SPARC_HPP
+
 class BiasedLockingCounters;
 
 // <sys/trap.h> promises that the system will not use traps 16-31
@@ -2500,3 +2503,5 @@ class SkipIfEqual : public StackObj {
 // On RISC, there's no benefit to verifying instruction boundaries.
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
+
+#endif // CPU_SPARC_VM_ASSEMBLER_SPARC_HPP

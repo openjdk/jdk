@@ -22,8 +22,42 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_arguments.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaAssertions.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
+#include "services/management.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/taskqueue.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#endif
 
 #define DEFAULT_VENDOR_URL_BUG "http://java.sun.com/webapps/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"

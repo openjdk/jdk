@@ -22,8 +22,32 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_defNewGeneration.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/defNewGeneration.inline.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/iterator.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/space.inline.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/stack.inline.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 //
 // DefNewGeneration functions.

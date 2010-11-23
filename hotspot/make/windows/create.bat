@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+REM Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 REM DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 REM
 REM This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@ REM
 REM This is the interactive build setup script (as opposed to the batch
 REM build execution script). It creates $HotSpotBuildSpace if necessary,
 REM copies the appropriate files out of $HotSpotWorkSpace into it, and
-REM builds and runs MakeDeps in it. This has the side-effect of creating
+REM builds and runs ProjectCreator in it. This has the side-effect of creating
 REM the vm.vcproj file in the buildspace, which is then used in Visual C++.
-REM 
-REM The generated project file depends upon the include databases. If
-REM those are changed then MakeDeps is rerun.
 
 REM
 REM Since we don't have uname and we could be cross-compiling,
@@ -158,12 +155,30 @@ echo BUILDARCH=%BUILDARCH%                 >>    %HotSpotBuildSpace%\%%i\local.m
 echo Platform_arch=%Platform_arch%         >>    %HotSpotBuildSpace%\%%i\local.make
 echo Platform_arch_model=%Platform_arch_model% >>    %HotSpotBuildSpace%\%%i\local.make
 
-REM build config specific stuff
-
 pushd %HotSpotBuildSpace%\%%i
 nmake /nologo
 popd
+
 )
+
+pushd %HotSpotBuildSpace%
+
+echo # Generated file!                                                 >    local.make
+echo # Changing a variable below and then deleting %ProjectFile% will cause  >>    local.make
+echo # %ProjectFile% to be regenerated with the new values.  Changing the    >>    local.make
+echo # version requires rerunning create.bat.                         >>    local.make
+echo.                                      >>    local.make
+echo HOTSPOTWORKSPACE=%HotSpotWorkSpace%   >>    local.make
+echo HOTSPOTBUILDSPACE=%HotSpotBuildSpace% >>    local.make
+echo HOTSPOTJDKDIST=%HotSpotJDKDist%       >>    local.make
+echo ARCH=%ARCH%                           >>    local.make
+echo BUILDARCH=%BUILDARCH%                 >>    local.make
+echo Platform_arch=%Platform_arch%         >>    local.make
+echo Platform_arch_model=%Platform_arch_model% >>    local.make
+
+nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile %HotSpotBuildSpace%/%ProjectFile%
+
+popd
 
 goto end
 
@@ -173,13 +188,10 @@ echo.
 echo This is the interactive build setup script (as opposed to the batch
 echo build execution script). It creates HotSpotBuildSpace if necessary,
 echo copies the appropriate files out of HotSpotWorkSpace into it, and
-echo builds and runs MakeDeps in it. This has the side-effect of creating
+echo builds and runs ProjectCreator in it. This has the side-effect of creating
 echo the %ProjectFile% file in the build space, which is then used in Visual C++.
 echo The HotSpotJDKDist defines place where JVM binaries should be placed.
 echo Environment variable FORCE_MSC_VER allows to override MSVC version autodetection.
-echo.
-echo The generated project file depends upon the include databases. If
-echo those are changed then MakeDeps is rerun.
 echo.
 echo NOTE that it is now NOT safe to modify any of the files in the build
 echo space, since they may be overwritten whenever this script is run or

@@ -44,7 +44,8 @@ CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) \| \( \( $(CC_VER_MAJOR) = 3 \) \& \( $(CC_VER_MINOR) \>= 4 \) \))" "0"
 USE_PRECOMPILED_HEADER=1
 PRECOMPILED_HEADER_DIR=.
-PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/incls/_precompiled.incl.gch
+PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled.hpp
+PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/precompiled.hpp.gch
 endif
 
 
@@ -142,6 +143,11 @@ OPT_CFLAGS/NOOPT=-O0
 # 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation. 
 ifneq "$(shell expr \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) = 3 \) \))" "0"
 OPT_CFLAGS/mulnode.o += -O0
+endif
+
+# Flags for generating make dependency flags.
+ifneq ("${CC_VER_MAJOR}", "2")
+DEPFLAGS = -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
 endif
 
 #------------------------------------------------------------------------

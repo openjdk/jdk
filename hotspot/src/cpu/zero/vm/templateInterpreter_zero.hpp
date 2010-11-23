@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,4 +23,9 @@
  *
  */
 
+#ifndef CPU_ZERO_VM_TEMPLATEINTERPRETER_ZERO_HPP
+#define CPU_ZERO_VM_TEMPLATEINTERPRETER_ZERO_HPP
+
 // This file is intentionally empty
+
+#endif // CPU_ZERO_VM_TEMPLATEINTERPRETER_ZERO_HPP

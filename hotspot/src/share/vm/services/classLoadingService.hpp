@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_CLASSLOADINGSERVICE_HPP
+#define SHARE_VM_SERVICES_CLASSLOADINGSERVICE_HPP
+
+#include "runtime/handles.hpp"
+#include "runtime/perfData.hpp"
+#include "utilities/growableArray.hpp"
 
 class instanceKlass;
 
@@ -133,3 +140,5 @@ public:
     _loaded_classes->append(h);
   }
 };
+
+#endif // SHARE_VM_SERVICES_CLASSLOADINGSERVICE_HPP

@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_MacroAssembler_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label L;

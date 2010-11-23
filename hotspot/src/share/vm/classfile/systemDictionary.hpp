@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
+#define SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
+
+#include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/java.hpp"
+#include "runtime/reflectionUtils.hpp"
+#include "utilities/hashtable.hpp"
+
 // The system dictionary stores all loaded classes and maps:
 //
 //   [class name,class loader] -> class   i.e.  [symbolOop,oop] -> klassOop
@@ -672,3 +683,5 @@ public:
 
   static KlassHandle box_klass(BasicType t);
 };
+
+#endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP

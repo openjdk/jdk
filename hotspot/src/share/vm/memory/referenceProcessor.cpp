@@ -22,8 +22,16 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_referenceProcessor.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/jniHandles.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;

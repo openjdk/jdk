@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
+#define SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
+
+#include "runtime/handles.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 // This file provides more support for exception handling; see also exceptions.hpp
 class PreserveExceptionMark {
@@ -83,3 +97,5 @@ private:
 // use global exception mark when allowing pending exception to be set and
 // saving and restoring them
 #define PRESERVE_EXCEPTION_MARK                    Thread* THREAD; PreserveExceptionMark __em(THREAD);
+
+#endif // SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP

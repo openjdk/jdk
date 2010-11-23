@@ -22,8 +22,20 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vmError.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/top.hpp"
+#include "utilities/vmError.hpp"
 
 // List of environment variables that should be reported in error log file.
 const char *env_list[] = {

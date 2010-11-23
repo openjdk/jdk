@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,17 +47,47 @@ public class DirectoryTree {
         verbose = false;
     }
 
-    /** Takes an absolute path to the root directory of this
-        DirectoryTree. Throws IllegalArgumentException if the given
-        string represents a plain file or nonexistent directory. */
-
-    public DirectoryTree(String baseDirectory) {
-        this();
-        readDirectory(baseDirectory);
-    }
-
     public void addSubdirToIgnore(String subdir) {
         subdirsToIgnore.add(subdir);
+    }
+
+    private class FileIterator implements Iterator {
+        private Vector nodes = new Vector();
+
+        public FileIterator(Node rootNode) {
+            nodes.add(rootNode);
+            prune();
+        }
+        public boolean hasNext() {
+            return nodes.size() > 0;
+        }
+        public Object next() {
+            Node last = (Node)nodes.remove(nodes.size() - 1);
+            prune();
+            return new File(last.getName());
+        }
+
+        public void remove() {
+            throw new RuntimeException();
+        }
+
+        private void prune() {
+            while (nodes.size() > 0) {
+                Node last = (Node)nodes.get(nodes.size() - 1);
+
+                if (last.isDirectory()) {
+                    nodes.remove(nodes.size() - 1);
+                    nodes.addAll(last.children);
+                } else {
+                    // Is at file
+                    return;
+                }
+            }
+        }
+    }
+
+    public Iterator getFileIterator() {
+        return new FileIterator(rootNode);
     }
 
     /** Output "."'s to System.out as directories are read. Defaults
@@ -80,7 +110,7 @@ public class DirectoryTree {
 
     public void readDirectory(String baseDirectory)
         throws IllegalArgumentException {
-        File root = new File(baseDirectory);
+        File root = new File(Util.normalize(baseDirectory));
         if (!root.isDirectory()) {
             throw new IllegalArgumentException("baseDirectory \"" +
                                                baseDirectory +

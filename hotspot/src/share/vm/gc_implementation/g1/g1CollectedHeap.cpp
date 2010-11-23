@@ -22,8 +22,29 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_g1CollectedHeap.cpp.incl"
+#include "precompiled.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_implementation/g1/bufferingOopClosure.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/concurrentG1RefineThread.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/g1/concurrentZFThread.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1MarkSweep.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
+#include "gc_implementation/g1/g1RemSet.inline.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/vm_operations_g1.hpp"
+#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/generationSpec.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/vmThread.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 

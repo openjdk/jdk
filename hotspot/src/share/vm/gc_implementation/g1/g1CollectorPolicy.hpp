@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP
+
+#include "gc_implementation/g1/collectionSetChooser.hpp"
+#include "gc_implementation/g1/g1MMUTracker.hpp"
+#include "memory/collectorPolicy.hpp"
+
 // A G1CollectorPolicy makes policy decisions that determine the
 // characteristics of the collector.  Examples include:
 //   * choice of collection set.
@@ -1287,3 +1294,5 @@ inline double variance(int n, double sum_of_squares, double sum) {
 // Local Variables: ***
 // c-indentation-style: gnu ***
 // End: ***
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP

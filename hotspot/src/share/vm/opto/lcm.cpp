@@ -22,10 +22,28 @@
  *
  */
 
-// Optimization - Graph Style
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/block.hpp"
+#include "opto/c2compiler.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/runtime.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
 
-#include "incls/_precompiled.incl"
-#include "incls/_lcm.cpp.incl"
+// Optimization - Graph Style
 
 //------------------------------implicit_null_check----------------------------
 // Detect implicit-null-check opportunities.  Basically, find NULL checks

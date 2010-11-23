@@ -22,8 +22,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_constantPoolOop.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/fieldType.hpp"
+#include "runtime/init.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframe.hpp"
 
 void constantPoolOopDesc::set_flag_at(FlagBit fb) {
   const int MAX_STATE_CHANGES = 2;

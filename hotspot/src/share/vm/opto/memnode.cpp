@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,26 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/compileLog.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
+#include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-
-#include "incls/_precompiled.incl"
-#include "incls/_memnode.cpp.incl"
 
 static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const TypePtr *tp, const TypePtr *adr_check, outputStream *st);
 

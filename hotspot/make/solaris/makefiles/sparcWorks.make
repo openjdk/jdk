@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,12 @@ OPT_CFLAGS/SLOWER=-xO3
 OPT_CFLAGS/O2=-xO2
 OPT_CFLAGS/NOOPT=-xO1
 
-#################################################
+# Flags for creating the dependency files.
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+DEPFLAGS = -xMMD -xMF $(DEP_DIR)/$(@:%=%.d)
+endif
+
+################################################
 # Begin current (>=5.9) Forte compiler options #
 #################################################
 

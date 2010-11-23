@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_klassVtable.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/klassVtable.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/copy.hpp"
 
 inline instanceKlass* klassVtable::ik() const {
   Klass* k = _klass()->klass_part();

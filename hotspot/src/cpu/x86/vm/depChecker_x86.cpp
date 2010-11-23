@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_depChecker_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/disassembler.hpp"
+#include "depChecker_x86.hpp"
+#include "runtime/hpi.hpp"
 
 // Nothing to do on i486

@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CIMETHOD_HPP
+#define SHARE_VM_CI_CIMETHOD_HPP
+
+#include "ci/ciFlags.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciObject.hpp"
+#include "ci/ciSignature.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "prims/methodHandles.hpp"
+#include "utilities/bitMap.hpp"
+
 class ciMethodBlocks;
 class MethodLiveness;
 class BitMap;
@@ -269,3 +280,5 @@ class ciMethod : public ciObject {
     return MethodHandles::decode_method(get_oop(), receiver_limit_oop, flags);
   }
 };
+
+#endif // SHARE_VM_CI_CIMETHOD_HPP

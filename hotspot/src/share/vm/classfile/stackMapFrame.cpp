@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_stackMapFrame.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/stackMapFrame.hpp"
+#include "classfile/verifier.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
                       _offset(0), _locals_size(0), _stack_size(0), _flags(0),

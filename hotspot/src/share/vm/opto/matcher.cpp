@@ -22,8 +22,34 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_matcher.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/regmask.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/type.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
 
 OptoReg::Name OptoReg::c_frame_pointer;
 

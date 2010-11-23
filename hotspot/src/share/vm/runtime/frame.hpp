@@ -22,6 +22,35 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_FRAME_HPP
+#define SHARE_VM_RUNTIME_FRAME_HPP
+
+#include "asm/assembler.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/monitorChunk.hpp"
+#include "runtime/registerMap.hpp"
+#include "utilities/top.hpp"
+#ifdef COMPILER2
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/adGlobals_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/adGlobals_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/adGlobals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/adGlobals_zero.hpp"
+#endif
+#endif
+#ifdef ZERO
+#ifdef TARGET_ARCH_zero
+# include "stack_zero.hpp"
+#endif
+#endif
+
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
@@ -419,7 +448,16 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   int pd_oop_map_offset_adjustment() const;
 
-# include "incls/_frame_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "frame_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "frame_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "frame_zero.hpp"
+#endif
+
 };
 
 
@@ -451,3 +489,5 @@ class StackFrameStream : public StackObj {
   frame *current()                { return &_fr; }
   RegisterMap* register_map()     { return &_reg_map; }
 };
+
+#endif // SHARE_VM_RUNTIME_FRAME_HPP

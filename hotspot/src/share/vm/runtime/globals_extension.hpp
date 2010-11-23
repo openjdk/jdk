@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP
+#define SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP
+
+#include "runtime/globals.hpp"
+#include "utilities/top.hpp"
 
 // Construct enum of Flag_<cmdline-arg> constants.
 
@@ -213,3 +219,5 @@ class CommandLineFlagsEx : CommandLineFlags {
   static bool is_ergo(CommandLineFlag flag);
   static bool is_cmdline(CommandLineFlag flag);
 };
+
+#endif // SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP

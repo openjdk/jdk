@@ -22,8 +22,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_LIRGenerator.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciArrayKlass.hpp"
+#include "ci/ciCPCache.hpp"
+#include "ci/ciInstance.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/bitMap.inline.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/heapRegion.hpp"
+#endif
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->

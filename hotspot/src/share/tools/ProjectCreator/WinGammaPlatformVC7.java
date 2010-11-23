@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,25 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
     }
 
+    class SpecificPathFilter extends NameFilter {
+        String pats[];
+
+        SpecificPathFilter(String fname, String[] pats) {
+            this.fname = fname;
+            this.pats = pats;
+        }
+
+        boolean match(FileInfo fi) {
+            for (int i=0; i<pats.length; i++) {
+                if (fi.full.matches(pats[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+    }
+
     class ContainerFilter extends NameFilter {
         Vector children;
 
@@ -232,11 +251,7 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
         rv.add(new DirectoryFilter("C1", "share/vm/c1", sbase));
 
-        ContainerFilter c2 = new ContainerFilter("C2");
-        //c2.add(new DirectoryFilter("share/vm/adlc", sbase));
-        c2.add(new DirectoryFilter("share/vm/opto", sbase));
-        c2.add(new SpecificNameFilter("Generated", new String[] {"^ad_.+", "^dfa_.+", "^adGlobals.+"}));
-        rv.add(c2);
+        rv.add(new DirectoryFilter("C2", "share/vm/opto", sbase));
 
         ContainerFilter comp = new ContainerFilter("Compiler Common");
         comp.add(new DirectoryFilter("share/vm/asm", sbase));
@@ -250,10 +265,10 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
                                    sbase));
 
         ContainerFilter misc = new ContainerFilter("Misc");
-        //misc.add(new DirectoryFilter("share/vm/launch", sbase));
         misc.add(new DirectoryFilter("share/vm/libadt", sbase));
         misc.add(new DirectoryFilter("share/vm/services", sbase));
         misc.add(new DirectoryFilter("share/vm/utilities", sbase));
+        misc.add(new DirectoryFilter("share/vm/classfile", sbase));
         rv.add(misc);
 
         rv.add(new DirectoryFilter("os_cpu", sbase));
@@ -262,11 +277,32 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
         rv.add(new DirectoryFilter("os", sbase));
 
-        rv.add(new SpecificNameFilter("JVMTI Generated", new String[] {"^jvmti.+"}));
+        ContainerFilter generated = new ContainerFilter("Generated");
+        ContainerFilter c1Generated = new ContainerFilter("C1");
+        c1Generated.add(new SpecificPathFilter("C++ Interpreter Generated", new String[] {".*compiler1/generated/jvmtifiles/bytecodeInterpreterWithChecks.+"}));
+        c1Generated.add(new SpecificPathFilter("jvmtifiles", new String[] {".*compiler1/generated/jvmtifiles/.*"}));
+        generated.add(c1Generated);
+        ContainerFilter c2Generated = new ContainerFilter("C2");
+        c2Generated.add(new SpecificPathFilter("C++ Interpreter Generated", new String[] {".*compiler2/generated/jvmtifiles/bytecodeInterpreterWithChecks.+"}));
+        c2Generated.add(new SpecificPathFilter("adfiles", new String[] {".*compiler2/generated/adfiles/.*"}));
+        c2Generated.add(new SpecificPathFilter("jvmtifiles", new String[] {".*compiler2/generated/jvmtifiles/.*"}));
+        generated.add(c2Generated);
+        ContainerFilter coreGenerated = new ContainerFilter("Core");
+        coreGenerated.add(new SpecificPathFilter("C++ Interpreter Generated", new String[] {".*core/generated/jvmtifiles/bytecodeInterpreterWithChecks.+"}));
+        coreGenerated.add(new SpecificPathFilter("jvmtifiles", new String[] {".*core/generated/jvmtifiles/.*"}));
+        generated.add(coreGenerated);
+        ContainerFilter tieredGenerated = new ContainerFilter("Tiered");
+        tieredGenerated.add(new SpecificPathFilter("C++ Interpreter Generated", new String[] {".*tiered/generated/jvmtifiles/bytecodeInterpreterWithChecks.+"}));
+        tieredGenerated.add(new SpecificPathFilter("adfiles", new String[] {".*tiered/generated/adfiles/.*"}));
+        tieredGenerated.add(new SpecificPathFilter("jvmtifiles", new String[] {".*tiered/generated/jvmtifiles/.*"}));
+        generated.add(tieredGenerated);
+        ContainerFilter kernelGenerated = new ContainerFilter("Kernel");
+        kernelGenerated.add(new SpecificPathFilter("C++ Interpreter Generated", new String[] {".*kernel/generated/jvmtifiles/bytecodeInterpreterWithChecks.+"}));
+        kernelGenerated.add(new SpecificPathFilter("jvmtifiles", new String[] {".*kernel/generated/jvmtifiles/.*"}));
+        generated.add(kernelGenerated);
+        rv.add(generated);
 
-        rv.add(new SpecificNameFilter("C++ Interpreter Generated", new String[] {"^bytecodeInterpreterWithChecks.+"}));
-
-        rv.add(new SpecificNameFilter("Include DBs", new String[] {"^includeDB_.+"}));
+        rv.add(new SpecificNameFilter("Precompiled Header", new String[] {"precompiled.hpp"}));
 
         // this one is to catch files not caught by other filters
         //rv.add(new TypeFilter("Header Files", new String[] {"h", "hpp", "hxx", "hm", "inl", "fi", "fd"}));
@@ -489,7 +525,10 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
             printWriter.println();
             for (int i=0; i<attrs.length; i+=2) {
                 doIndent();
-                printWriter.println(" " + attrs[i]+"=\""+attrs[i+1]+"\"");
+                printWriter.print(" " + attrs[i]+"=\""+attrs[i+1]+"\"");
+                if (i < attrs.length - 2) {
+                    printWriter.println();
+                }
             }
         }
 
@@ -554,8 +593,7 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "AdditionalIncludeDirectories", Util.join(",", includes));
         addAttr(rv, "PreprocessorDefinitions",
                                 Util.join(";", defines).replace("\"","&quot;"));
-        addAttr(rv, "PrecompiledHeaderThrough",
-                                "incls"+Util.sep+"_precompiled.incl");
+        addAttr(rv, "PrecompiledHeaderThrough", "precompiled.hpp");
         addAttr(rv, "PrecompiledHeaderFile", outDir+Util.sep+"vm.pch");
         addAttr(rv, "AssemblerListingLocation", outDir);
         addAttr(rv, "ObjectFile", outDir+Util.sep);

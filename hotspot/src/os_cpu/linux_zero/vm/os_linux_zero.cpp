@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,43 @@
  *
  */
 
-// do not include precompiled header file
-#include "incls/_os_linux_zero.cpp.incl"
+// no precompiled headers
+#include "assembler_zero.inline.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvm_linux.h"
+#include "memory/allocation.inline.hpp"
+#include "mutex_linux.inline.hpp"
+#include "nativeInst_zero.hpp"
+#include "os_share_linux.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "thread_linux.inline.hpp"
+#include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;

@@ -27,8 +27,56 @@
 #define _WIN32_WINNT 0x500
 #endif
 
-// do not include precompiled header file
-# include "incls/_os_windows.cpp.incl"
+// no precompiled headers
+#include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/compileBroker.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvm_windows.h"
+#include "memory/allocation.inline.hpp"
+#include "memory/filemap.hpp"
+#include "mutex_windows.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "os_share_windows.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/hpi.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/perfMemory.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/timer.hpp"
+#include "services/attachListener.hpp"
+#include "services/runtimeService.hpp"
+#include "thread_windows.inline.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/events.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/vmError.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 #ifdef _DEBUG
 #include <crtdbg.h>

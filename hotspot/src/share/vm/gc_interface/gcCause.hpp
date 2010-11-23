@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_INTERFACE_GCCAUSE_HPP
+#define SHARE_VM_GC_INTERFACE_GCCAUSE_HPP
+
+#include "memory/allocation.hpp"
 
 //
 // This class exposes implementation details of the various
@@ -83,3 +88,5 @@ class GCCause : public AllStatic {
   // Return true if the GCCause is for a full collection.
   static bool is_for_full_collection(GCCause::Cause cause) PRODUCT_RETURN0;
 };
+
+#endif // SHARE_VM_GC_INTERFACE_GCCAUSE_HPP

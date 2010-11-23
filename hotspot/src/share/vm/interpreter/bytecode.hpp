@@ -22,6 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_BYTECODE_HPP
+#define SHARE_VM_INTERPRETER_BYTECODE_HPP
+
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.hpp"
+#include "oops/methodOop.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
+
 // Base class for different kinds of abstractions working
 // relative to an objects 'this' pointer.
 
@@ -431,3 +447,5 @@ inline Bytecode_loadconstant* Bytecode_loadconstant_at(methodHandle method, int 
   DEBUG_ONLY(b->verify());
   return b;
 }
+
+#endif // SHARE_VM_INTERPRETER_BYTECODE_HPP

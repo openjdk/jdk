@@ -22,8 +22,37 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compileBroker.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/sweeper.hpp"
+#include "utilities/dtrace.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
+#ifdef SHARK
+#include "shark/sharkCompiler.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 

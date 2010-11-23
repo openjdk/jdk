@@ -22,8 +22,34 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_classFileParser.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verificationType.hpp"
+#include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/allocation.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/klassVtable.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/timer.hpp"
+#include "services/classLoadingService.hpp"
+#include "services/threadService.hpp"
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A

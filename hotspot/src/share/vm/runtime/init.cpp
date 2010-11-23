@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_init.cpp.incl"
+#include "precompiled.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/universe.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/init.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 // Initialization done by VM thread in vm_init_globals()
 void check_ThreadShadow();

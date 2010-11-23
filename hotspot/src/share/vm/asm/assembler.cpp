@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "asm/assembler.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.inline.hpp"
+#endif
 
 
 // Implementation of AbstractAssembler

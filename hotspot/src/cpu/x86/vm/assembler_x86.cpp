@@ -22,8 +22,24 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_x86.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#endif
 
 // Implementation of AddressLiteral
 

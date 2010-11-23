@@ -22,12 +22,14 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/oopFactory.hpp"
+#include "prims/methodHandleWalk.hpp"
+
 /*
  * JSR 292 reference implementation: method handle structure analysis
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandleWalk.cpp.incl"
 
 
 // -----------------------------------------------------------------------------

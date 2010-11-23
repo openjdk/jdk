@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_C1_C1_VALUESET_HPP
+#define SHARE_VM_C1_C1_VALUESET_HPP
+
+#include "c1/c1_Instruction.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 // A ValueSet is a simple abstraction on top of a BitMap representing
 // a set of Instructions. Currently it assumes that the number of
@@ -93,3 +100,5 @@ inline void ValueSet::set_from(ValueSet* other) {
 inline bool ValueSet::equals(ValueSet* other) {
   return _map.is_same(other->_map);
 }
+
+#endif // SHARE_VM_C1_C1_VALUESET_HPP

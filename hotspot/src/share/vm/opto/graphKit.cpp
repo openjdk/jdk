@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_graphKit.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "opto/addnode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/idealKit.hpp"
+#include "opto/locknode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.

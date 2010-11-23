@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_SOLARIS_SPARC_VM_THREAD_SOLARIS_SPARC_HPP
+#define OS_CPU_SOLARIS_SPARC_VM_THREAD_SOLARIS_SPARC_HPP
 private:
 
   void pd_initialize() {
@@ -95,3 +98,5 @@ public:
   static bool register_stack_overflow() { return false; }
   static void enable_register_stack_guard() {}
   static void disable_register_stack_guard() {}
+
+#endif // OS_CPU_SOLARIS_SPARC_VM_THREAD_SOLARIS_SPARC_HPP

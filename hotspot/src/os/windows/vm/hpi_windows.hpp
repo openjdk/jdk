@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_WINDOWS_VM_HPI_WINDOWS_HPP
+#define OS_WINDOWS_VM_HPI_WINDOWS_HPP
 
 // Win32 delegates these to the HPI.  Solaris provides its own
 // implementation without using the HPI (for Interrupitble I/O).
@@ -168,3 +171,5 @@ HPIDECL(get_proto_by_name, "get_proto_by_name", _socket, GetProtoByName,
         ("name = %p",
          name),
         (name));
+
+#endif // OS_WINDOWS_VM_HPI_WINDOWS_HPP

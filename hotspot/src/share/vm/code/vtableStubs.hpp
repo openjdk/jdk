@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_VTABLESTUBS_HPP
+#define SHARE_VM_CODE_VTABLESTUBS_HPP
+
+#include "memory/allocation.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
 // There's a one-to-one relationship between a VtableStub and such a pair.
@@ -121,3 +126,5 @@ class VtableStubs : AllStatic {
   static int         number_of_vtable_stubs() { return _number_of_vtable_stubs; }
   static void        initialize();
 };
+
+#endif // SHARE_VM_CODE_VTABLESTUBS_HPP

@@ -22,8 +22,25 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_compactibleFreeListSpace.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsLockVerifier.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/shared/liveRange.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/copy.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //// CompactibleFreeListSpace

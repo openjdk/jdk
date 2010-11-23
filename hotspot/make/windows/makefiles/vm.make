@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 # Resource file containing VERSIONINFO
 Res_Files=.\version.res
+
+!include ..\generated\objfiles.make
 
 !ifdef RELEASE 
 !ifdef DEVELOP
@@ -77,6 +79,14 @@ CPP_FLAGS=$(CPP_FLAGS) /D "VM_LITTLE_ENDIAN"
 # Define that so jni.h is on correct side
 CPP_FLAGS=$(CPP_FLAGS) /D "_JNI_IMPLEMENTATION_"
 
+# Used for platform dispatching
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_FAMILY_windows
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_$(Platform_arch)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_MODEL_$(Platform_arch_model)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_windows_$(Platform_arch)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_COMPILER_visCPP
+
 !if "$(BUILDARCH)" == "ia64"
 STACK_SIZE="/STACK:1048576,262144"
 !else
@@ -111,37 +121,18 @@ LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JVM_InitAgentProperties
 
 CPP_INCLUDE_DIRS=\
-  /I "..\generated"                          \
-  /I "..\generated\jvmtifiles"               \
-  /I "$(WorkSpace)\src\share\vm\c1"          \
-  /I "$(WorkSpace)\src\share\vm\compiler"    \
-  /I "$(WorkSpace)\src\share\vm\code"        \
-  /I "$(WorkSpace)\src\share\vm\interpreter" \
-  /I "$(WorkSpace)\src\share\vm\ci"          \
-  /I "$(WorkSpace)\src\share\vm\classfile"   \
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\parallelScavenge"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\shared"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\parNew"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\concurrentMarkSweep"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\g1"\
-  /I "$(WorkSpace)\src\share\vm\gc_interface"\
-  /I "$(WorkSpace)\src\share\vm\asm"         \
-  /I "$(WorkSpace)\src\share\vm\memory"      \
-  /I "$(WorkSpace)\src\share\vm\oops"        \
-  /I "$(WorkSpace)\src\share\vm\prims"       \
-  /I "$(WorkSpace)\src\share\vm\runtime"     \
-  /I "$(WorkSpace)\src\share\vm\services"    \
-  /I "$(WorkSpace)\src\share\vm\utilities"   \
-  /I "$(WorkSpace)\src\share\vm\libadt"      \
-  /I "$(WorkSpace)\src\share\vm\opto"        \
-  /I "$(WorkSpace)\src\os\windows\vm"          \
+  /I "..\generated" \
+  /I "$(WorkSpace)\src\share\vm" \
+  /I "$(WorkSpace)\src\share\vm\prims" \
+  /I "$(WorkSpace)\src\os\windows\vm" \
   /I "$(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm" \
   /I "$(WorkSpace)\src\cpu\$(Platform_arch)\vm"
 
-CPP_USE_PCH=/Fp"vm.pch" /Yu"incls/_precompiled.incl"
+CPP_USE_PCH=/Fp"vm.pch" /Yu"precompiled.hpp"
 
 # Where to find the source code for the virtual machine
-VM_PATH=../generated/incls
+VM_PATH=../generated
+VM_PATH=$(VM_PATH);../generated/adfiles
 VM_PATH=$(VM_PATH);../generated/jvmtifiles
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/c1
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/compiler
@@ -280,11 +271,14 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {..\generated\incls}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
+{..\generated\adfiles}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
 {..\generated\jvmtifiles}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
 default::
 
 _build_pch_file.obj:
-        @echo #include "incls/_precompiled.incl" > ../generated/_build_pch_file.cpp
-        $(CPP) $(CPP_FLAGS) /Fp"vm.pch" /Yc"incls/_precompiled.incl" /c ../generated/_build_pch_file.cpp
+        @echo #include "precompiled.hpp" > ../generated/_build_pch_file.cpp
+        $(CPP) $(CPP_FLAGS) /Fp"vm.pch" /Yc"precompiled.hpp" /c ../generated/_build_pch_file.cpp

@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_METHODDATAOOP_HPP
+#define SHARE_VM_OOPS_METHODDATAOOP_HPP
+
+#include "interpreter/bytecodes.hpp"
+#include "memory/universe.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.hpp"
+#include "runtime/orderAccess.hpp"
+
 class BytecodeStream;
 
 // The MethodData object collects counts and other profile information
@@ -1490,3 +1499,5 @@ public:
   // verification
   void verify_data_on(outputStream* st);
 };
+
+#endif // SHARE_VM_OOPS_METHODDATAOOP_HPP

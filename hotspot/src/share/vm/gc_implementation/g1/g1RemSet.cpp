@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_g1RemSet.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/bufferingOopClosure.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/concurrentG1RefineThread.hpp"
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
+#include "gc_implementation/g1/g1RemSet.inline.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/intHisto.hpp"
 
 #define CARD_REPEAT_HISTO 0
 

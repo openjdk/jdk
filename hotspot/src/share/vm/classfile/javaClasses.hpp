@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_JAVACLASSES_HPP
+#define SHARE_VM_CLASSFILE_JAVACLASSES_HPP
+
+#include "classfile/systemDictionary.hpp"
+#include "jvmtifiles/jvmti.h"
+#include "oops/oop.hpp"
+#include "runtime/os.hpp"
+#include "utilities/utf8.hpp"
 
 // Interface for manipulating the basic Java classes.
 //
@@ -1271,3 +1280,5 @@ class JavaClasses : AllStatic {
   static void compute_offsets();
   static void check_offsets() PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_CLASSFILE_JAVACLASSES_HPP

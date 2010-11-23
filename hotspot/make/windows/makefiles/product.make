@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@ RC_FLAGS=$(RC_FLAGS) /D "NDEBUG"
 
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make
-
-!include $(GENERATED)/Dependencies
 
 HS_BUILD_ID=$(HS_BUILD_VER)
 

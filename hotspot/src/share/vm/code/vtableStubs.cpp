@@ -22,8 +22,22 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vtableStubs.cpp.incl"
+#include "precompiled.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/disassembler.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klassVtable.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/sharedRuntime.hpp"
+#ifdef COMPILER2
+#include "opto/matcher.hpp"
+#endif
 
 // -----------------------------------------------------------------------------------------
 // Implementation of VtableStub

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_rootnode.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
 
 //------------------------------Ideal------------------------------------------
 // Remove dead inputs

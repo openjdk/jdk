@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,80 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_universe.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
+#include "code/dependencies.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/filemap.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genRemSet.hpp"
+#include "memory/generation.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/permGen.hpp"
+#include "memory/space.hpp"
+#include "memory/universe.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/arrayKlassKlass.hpp"
+#include "oops/compiledICHolderKlass.hpp"
+#include "oops/constMethodKlass.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/cpCacheKlass.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlassKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/klassKlass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodDataKlass.hpp"
+#include "oops/methodKlass.hpp"
+#include "oops/objArrayKlassKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolKlass.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "oops/typeArrayKlassKlass.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/timer.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/events.hpp"
+#include "utilities/hashtable.inline.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#endif
 
 // Known objects
 klassOop Universe::_boolArrayKlassObj                 = NULL;
