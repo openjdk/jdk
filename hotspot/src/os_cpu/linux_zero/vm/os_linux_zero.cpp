@@ -370,6 +370,10 @@ void os::print_context(outputStream* st, void* context) {
   ShouldNotCallThis();
 }
 
+void os::print_register_info(outputStream *st, void *context) {
+  ShouldNotCallThis();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Stubs for things that would be in linux_zero.s if it existed.
 // You probably want to disassemble these monkeys to check they're ok.
