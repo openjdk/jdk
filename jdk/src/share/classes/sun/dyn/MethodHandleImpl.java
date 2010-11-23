@@ -245,52 +245,52 @@ public abstract class MethodHandleImpl {
         }
         private C invoke_V(Object... av) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, av);
+            rawConstructor.invokeExact((Object)obj, av);
             return obj;
         }
         private C invoke_L0() throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj);
+            rawConstructor.invokeExact((Object)obj);
             return obj;
         }
         private C invoke_L1(Object a0) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0);
+            rawConstructor.invokeExact((Object)obj, a0);
             return obj;
         }
         private C invoke_L2(Object a0, Object a1) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1);
+            rawConstructor.invokeExact((Object)obj, a0, a1);
             return obj;
         }
         private C invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2);
             return obj;
         }
         private C invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3);
             return obj;
         }
         private C invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4);
             return obj;
         }
         private C invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5);
             return obj;
         }
         private C invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6);
             return obj;
         }
         private C invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6, a7);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6, a7);
             return obj;
         }
         static MethodHandle[] makeInvokes() {
@@ -951,54 +951,54 @@ public abstract class MethodHandleImpl {
             return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
-            if (test.<boolean>invokeExact(av))
-                return target.<Object>invokeExact(av);
-            return fallback.<Object>invokeExact(av);
+            if ((boolean) test.invokeExact(av))
+                return target.invokeExact(av);
+            return fallback.invokeExact(av);
         }
         private Object invoke_L0() throws Throwable {
-            if (test.<boolean>invokeExact())
-                return target.<Object>invokeExact();
-            return fallback.<Object>invokeExact();
+            if ((boolean) test.invokeExact())
+                return target.invokeExact();
+            return fallback.invokeExact();
         }
         private Object invoke_L1(Object a0) throws Throwable {
-            if (test.<boolean>invokeExact(a0))
-                return target.<Object>invokeExact(a0);
-            return fallback.<Object>invokeExact(a0);
+            if ((boolean) test.invokeExact(a0))
+                return target.invokeExact(a0);
+            return fallback.invokeExact(a0);
         }
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1))
-                return target.<Object>invokeExact(a0, a1);
-            return fallback.<Object>invokeExact(a0, a1);
+            if ((boolean) test.invokeExact(a0, a1))
+                return target.invokeExact(a0, a1);
+            return fallback.invokeExact(a0, a1);
         }
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2))
-                return target.<Object>invokeExact(a0, a1, a2);
-            return fallback.<Object>invokeExact(a0, a1, a2);
+            if ((boolean) test.invokeExact(a0, a1, a2))
+                return target.invokeExact(a0, a1, a2);
+            return fallback.invokeExact(a0, a1, a2);
         }
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3))
-                return target.<Object>invokeExact(a0, a1, a2, a3);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3))
+                return target.invokeExact(a0, a1, a2, a3);
+            return fallback.invokeExact(a0, a1, a2, a3);
         }
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4))
+                return target.invokeExact(a0, a1, a2, a3, a4);
+            return fallback.invokeExact(a0, a1, a2, a3, a4);
         }
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5))
+                return target.invokeExact(a0, a1, a2, a3, a4, a5);
+            return fallback.invokeExact(a0, a1, a2, a3, a4, a5);
         }
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5, a6))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5, a6))
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
+            return fallback.invokeExact(a0, a1, a2, a3, a4, a5, a6);
         }
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7))
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+            return fallback.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
         }
         static MethodHandle[] makeInvokes() {
             ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
@@ -1058,82 +1058,82 @@ public abstract class MethodHandleImpl {
         }
         private Object invoke_V(Object... av) throws Throwable {
             try {
-                return target.<Object>invokeExact(av);
+                return target.invokeExact(av);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, av);
+                return catcher.invokeExact(t, av);
             }
         }
         private Object invoke_L0() throws Throwable {
             try {
-                return target.<Object>invokeExact();
+                return target.invokeExact();
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t);
+                return catcher.invokeExact(t);
             }
         }
         private Object invoke_L1(Object a0) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0);
+                return target.invokeExact(a0);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0);
+                return catcher.invokeExact(t, a0);
             }
         }
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1);
+                return target.invokeExact(a0, a1);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1);
+                return catcher.invokeExact(t, a0, a1);
             }
         }
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2);
+                return target.invokeExact(a0, a1, a2);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2);
+                return catcher.invokeExact(t, a0, a1, a2);
             }
         }
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3);
+                return target.invokeExact(a0, a1, a2, a3);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3);
+                return catcher.invokeExact(t, a0, a1, a2, a3);
             }
         }
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4);
+                return target.invokeExact(a0, a1, a2, a3, a4);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4);
             }
         }
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
+                return target.invokeExact(a0, a1, a2, a3, a4, a5);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5);
             }
         }
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
             }
         }
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5, a6, a7);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6, a7);
             }
         }
         static MethodHandle[] makeInvokes() {

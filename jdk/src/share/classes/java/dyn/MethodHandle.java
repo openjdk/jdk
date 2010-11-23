@@ -164,7 +164,7 @@ MethodHandles.Lookup lookup = MethodHandles.lookup();
 mt = MethodType.methodType(String.class, char.class, char.class);
 mh = lookup.findVirtual(String.class, "replace", mt);
 // (Ljava/lang/String;CC)Ljava/lang/String;
-s = mh.&lt;String&gt;invokeExact("daddy",'d','n');
+s = (String) mh.invokeExact("daddy",'d','n');
 assert(s.equals("nanny"));
 // weakly typed invocation (using MHs.invoke)
 s = (String) mh.invokeWithArguments("sappy", 'p', 'v');
@@ -183,7 +183,7 @@ assert(x.equals(java.util.Arrays.asList(1,2,3)));
 mt = MethodType.methodType(int.class);
 mh = lookup.findVirtual(java.util.List.class, "size", mt);
 // (Ljava/util/List;)I
-i = mh.&lt;int&gt;invokeExact(java.util.Arrays.asList(1,2,3));
+i = (int) mh.invokeExact(java.util.Arrays.asList(1,2,3));
 assert(i == 3);
  * </pre></blockquote>
  * Each of the above calls generates a single invokevirtual instruction
@@ -298,7 +298,7 @@ public abstract class MethodHandle
      * @throws WrongMethodTypeException if the target's type is not identical with the caller's type signature
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
-    public final native @PolymorphicSignature <R,A> R invokeExact(A... args) throws Throwable;
+    public final native @PolymorphicSignature Object invokeExact(Object... args) throws Throwable;
 
     /**
      * Invoke the method handle, allowing any caller signature,
@@ -327,7 +327,7 @@ public abstract class MethodHandle
      * @throws WrongMethodTypeException if the target's type cannot be adjusted to the caller's type signature
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
-    public final native @PolymorphicSignature <R,A> R invokeGeneric(A... args) throws Throwable;
+    public final native @PolymorphicSignature Object invokeGeneric(Object... args) throws Throwable;
 
     /**
      * Perform a varargs invocation, passing the arguments in the given array

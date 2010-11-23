@@ -25,8 +25,8 @@
 
 /* @test
  * @summary unit tests for java.dyn.MethodHandles
- * @compile -XDinvokedynamic MethodHandlesTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic test.java.dyn.MethodHandlesTest
+ * @compile -source 7 -target 7 -XDallowTransitionalJSR292=no MethodHandlesTest.java
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.dyn.MethodHandlesTest
  */
 
 package test.java.dyn;
@@ -891,12 +891,12 @@ public class MethodHandlesTest {
         for (int i = 0; i <= 1; i++) {
             if (isStatic) {
                 if (type == int.class)
-                    sawValue = mh.<int>invokeExact();  // do these exactly
+                    sawValue = (int) mh.invokeExact();  // do these exactly
                 else
                     sawValue = mh.invokeExact();
             } else {
                 if (type == int.class)
-                    sawValue = mh.<int>invokeExact((Object) fields);
+                    sawValue = (int) mh.invokeExact((Object) fields);
                 else
                     sawValue = mh.invokeExact((Object) fields);
             }
@@ -965,14 +965,14 @@ public class MethodHandlesTest {
             Object putValue = randomArg(type);
             if (isStatic) {
                 if (type == int.class)
-                    mh.<void>invokeExact((int)(Integer)putValue);  // do these exactly
+                    mh.invokeExact((int)putValue);  // do these exactly
                 else
-                    mh.<void>invokeExact(putValue);
+                    mh.invokeExact(putValue);
             } else {
                 if (type == int.class)
-                    mh.<void>invokeExact((Object) fields, (int)(Integer)putValue);
+                    mh.invokeExact((Object) fields, (int)putValue);
                 else
-                    mh.<void>invokeExact((Object) fields, putValue);
+                    mh.invokeExact((Object) fields, putValue);
             }
             assertEquals(f.get(fields), putValue);
         }
@@ -1038,11 +1038,11 @@ public class MethodHandlesTest {
             model.set(i, random);
             if (testSetter) {
                 if (elemType == int.class)
-                    mh.<void>invokeExact((int[]) array, i, (int)(Integer)random);
+                    mh.invokeExact((int[]) array, i, (int)random);
                 else if (elemType == boolean.class)
-                    mh.<void>invokeExact((boolean[]) array, i, (boolean)(Boolean)random);
+                    mh.invokeExact((boolean[]) array, i, (boolean)random);
                 else
-                    mh.<void>invokeExact(array, i, random);
+                    mh.invokeExact(array, i, random);
                 assertEquals(model, array2list(array));
             } else {
                 Array.set(array, i, random);
@@ -1058,9 +1058,9 @@ public class MethodHandlesTest {
             if (!testSetter) {
                 expValue = sawValue;
                 if (elemType == int.class)
-                    sawValue = mh.<int>invokeExact((int[]) array, i);
+                    sawValue = (int) mh.invokeExact((int[]) array, i);
                 else if (elemType == boolean.class)
-                    sawValue = mh.<boolean>invokeExact((boolean[]) array, i);
+                    sawValue = (boolean) mh.invokeExact((boolean[]) array, i);
                 else
                     sawValue = mh.invokeExact(array, i);
                 assertEquals(sawValue, expValue);
@@ -1355,15 +1355,15 @@ public class MethodHandlesTest {
             assertArrayEquals(args, check);
             switch (nargs) {
                 case 0:
-                    check = target.<Object[]>invokeExact();
+                    check = (Object[]) target.invokeExact();
                     assertArrayEquals(args, check);
                     break;
                 case 1:
-                    check = target.<Object[]>invokeExact(args[0]);
+                    check = (Object[]) target.invokeExact(args[0]);
                     assertArrayEquals(args, check);
                     break;
                 case 2:
-                    check = target.<Object[]>invokeExact(args[0], args[1]);
+                    check = (Object[]) target.invokeExact(args[0], args[1]);
                     assertArrayEquals(args, check);
                     break;
             }
@@ -1377,8 +1377,11 @@ public class MethodHandlesTest {
         MethodHandle result = MethodHandles.spreadArguments(target2, newType);
         Object[] returnValue;
         if (pos == 0) {
-            Object rawRetVal = result.invokeExact(args);
-            returnValue = (Object[]) rawRetVal;
+            // In the following line, the first cast implies
+            // normal Object return value for the MH call (Object[])->Object,
+            // while the second cast dynamically converts to an Object array.
+            // Such a double cast is typical of MH.invokeExact.
+            returnValue = (Object[]) (Object) result.invokeExact(args);
         } else {
             Object[] args1 = Arrays.copyOfRange(args, 0, pos+1);
             args1[pos] = Arrays.copyOfRange(args, pos, args.length);
