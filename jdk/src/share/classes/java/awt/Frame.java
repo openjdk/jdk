@@ -879,15 +879,32 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Disables or enables decorations for this frame.
-     * This method can only be called while the frame is not displayable.
-     * @param  undecorated <code>true</code> if no frame decorations are
-     *         to be enabled;
-     *         <code>false</code> if frame decorations are to be enabled.
-     * @throws <code>IllegalComponentStateException</code> if the frame
-     *         is displayable.
+     * <p>
+     * This method can only be called while the frame is not displayable. To
+     * make this frame decorated, it must be opaque and have the default shape,
+     * otherwise the {@code IllegalComponentStateException} will be thrown.
+     * Refer to {@link Window#setShape}, {@link Window#setOpacity} and {@link
+     * Window#setBackground} for details
+     *
+     * @param  undecorated {@code true} if no frame decorations are to be
+     *         enabled; {@code false} if frame decorations are to be enabled
+     *
+     * @throws IllegalComponentStateException if the frame is displayable
+     * @throws IllegalComponentStateException if {@code undecorated} is
+     *      {@code false}, and this frame does not have the default shape
+     * @throws IllegalComponentStateException if {@code undecorated} is
+     *      {@code false}, and this frame opacity is less than {@code 1.0f}
+     * @throws IllegalComponentStateException if {@code undecorated} is
+     *      {@code false}, and the alpha value of this frame background
+     *      color is less than {@code 1.0f}
+     *
      * @see    #isUndecorated
      * @see    Component#isDisplayable
+     * @see    Window#getShape
+     * @see    Window#getOpacity
+     * @see    Window#getBackground
      * @see    javax.swing.JFrame#setDefaultLookAndFeelDecorated(boolean)
+     *
      * @since 1.4
      */
     public void setUndecorated(boolean undecorated) {
@@ -895,6 +912,18 @@ public class Frame extends Window implements MenuContainer {
         synchronized (getTreeLock()) {
             if (isDisplayable()) {
                 throw new IllegalComponentStateException("The frame is displayable.");
+            }
+            if (!undecorated) {
+                if (getOpacity() < 1.0f) {
+                    throw new IllegalComponentStateException("The frame is not opaque");
+                }
+                if (getShape() != null) {
+                    throw new IllegalComponentStateException("The frame does not have a default shape");
+                }
+                Color bg = getBackground();
+                if ((bg != null) && (bg.getAlpha() < 255)) {
+                    throw new IllegalComponentStateException("The frame background color is not opaque");
+                }
             }
             this.undecorated = undecorated;
         }
@@ -910,6 +939,45 @@ public class Frame extends Window implements MenuContainer {
      */
     public boolean isUndecorated() {
         return undecorated;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOpacity(float opacity) {
+        synchronized (getTreeLock()) {
+            if ((opacity < 1.0f) && !isUndecorated()) {
+                throw new IllegalComponentStateException("The frame is decorated");
+            }
+            super.setOpacity(opacity);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setShape(Shape shape) {
+        synchronized (getTreeLock()) {
+            if ((shape != null) && !isUndecorated()) {
+                throw new IllegalComponentStateException("The frame is decorated");
+            }
+            super.setShape(shape);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBackground(Color bgColor) {
+        synchronized (getTreeLock()) {
+            if ((bgColor != null) && (bgColor.getAlpha() < 255) && !isUndecorated()) {
+                throw new IllegalComponentStateException("The frame is decorated");
+            }
+            super.setBackground(bgColor);
+        }
     }
 
     /**
