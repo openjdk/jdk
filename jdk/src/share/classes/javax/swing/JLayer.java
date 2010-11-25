@@ -322,7 +322,7 @@ public final class JLayer<V extends Component>
     }
 
     /**
-     * A non-{@code null] border, or non-zero insets, isn't supported, to prevent the geometry
+     * A non-{@code null} border, or non-zero insets, isn't supported, to prevent the geometry
      * of this component from becoming complex enough to inhibit
      * subclassing of {@code LayerUI} class.  To create a {@code JLayer} with a border,
      * add it to a {@code JPanel} that has a border.
