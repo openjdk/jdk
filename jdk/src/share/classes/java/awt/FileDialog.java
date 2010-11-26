@@ -99,7 +99,7 @@ public class FileDialog extends Dialog {
      * Contains the File instances for all the files that the user selects.
      *
      * @serial
-     * @see getFiles
+     * @see #getFiles
      * @since 1.7
      */
     private File[] files;
