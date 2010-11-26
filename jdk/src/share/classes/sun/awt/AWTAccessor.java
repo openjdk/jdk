@@ -224,6 +224,16 @@ public final class AWTAccessor {
     }
 
     /*
+     * An interface of accessor for the java.awt.Container class.
+     */
+    public interface ContainerAccessor {
+        /**
+         * Validates the container unconditionally.
+         */
+        void validateUnconditionally(Container cont);
+    }
+
+    /*
      * An interface of accessor for java.awt.Window class.
      */
     public interface WindowAccessor {
@@ -444,53 +454,19 @@ public final class AWTAccessor {
     }
 
     /*
-     * The java.awt.Component class accessor object.
+     * Accessor instances are initialized in the static initializers of
+     * corresponding AWT classes by using setters defined below.
      */
     private static ComponentAccessor componentAccessor;
-
-    /*
-     * The java.awt.Window class accessor object.
-     */
+    private static ContainerAccessor containerAccessor;
     private static WindowAccessor windowAccessor;
-
-    /*
-     * The java.awt.AWTEvent class accessor object.
-     */
     private static AWTEventAccessor awtEventAccessor;
-
-    /*
-     * The java.awt.event.InputEvent class accessor object.
-     */
     private static InputEventAccessor inputEventAccessor;
-
-    /*
-     * The java.awt.Frame class accessor object.
-     */
     private static FrameAccessor frameAccessor;
-
-    /*
-     * The java.awt.KeyboardFocusManager class accessor object.
-     */
     private static KeyboardFocusManagerAccessor kfmAccessor;
-
-    /*
-     * The java.awt.MenuComponent class accessor object.
-     */
     private static MenuComponentAccessor menuComponentAccessor;
-
-    /*
-     * The java.awt.EventQueue class accessor object.
-     */
     private static EventQueueAccessor eventQueueAccessor;
-
-    /*
-     * The java.awt.PopupMenu class accessor object.
-     */
     private static PopupMenuAccessor popupMenuAccessor;
-
-    /*
-     * The java.awt.FileDialog class accessor object.
-     */
     private static FileDialogAccessor fileDialogAccessor;
 
     /*
@@ -501,7 +477,7 @@ public final class AWTAccessor {
     }
 
     /*
-     * Retrieve the accessor object for the java.awt.Window class.
+     * Retrieve the accessor object for the java.awt.Component class.
      */
     public static ComponentAccessor getComponentAccessor() {
         if (componentAccessor == null) {
@@ -509,6 +485,24 @@ public final class AWTAccessor {
         }
 
         return componentAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.Container class.
+     */
+    public static void setContainerAccessor(ContainerAccessor ca) {
+        containerAccessor = ca;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.Container class.
+     */
+    public static ContainerAccessor getContainerAccessor() {
+        if (containerAccessor == null) {
+            unsafe.ensureClassInitialized(Container.class);
+        }
+
+        return containerAccessor;
     }
 
     /*
