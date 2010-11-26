@@ -828,6 +828,11 @@ public class Frame extends Window implements MenuContainer {
                         return frame.state;
                     }
                 }
+                public Rectangle getMaximizedBounds(Frame frame) {
+                    synchronized(frame.getObjectLock()) {
+                        return frame.maximizedBounds;
+                    }
+                }
             }
         );
     }
@@ -855,8 +860,10 @@ public class Frame extends Window implements MenuContainer {
      * @see #getMaximizedBounds()
      * @since 1.4
      */
-    public synchronized void setMaximizedBounds(Rectangle bounds) {
-        this.maximizedBounds = bounds;
+    public void setMaximizedBounds(Rectangle bounds) {
+        synchronized(getObjectLock()) {
+            this.maximizedBounds = bounds;
+        }
         FramePeer peer = (FramePeer)this.peer;
         if (peer != null) {
             peer.setMaximizedBounds(bounds);
@@ -873,7 +880,9 @@ public class Frame extends Window implements MenuContainer {
      * @since   1.4
      */
     public Rectangle getMaximizedBounds() {
-        return maximizedBounds;
+        synchronized(getObjectLock()) {
+            return maximizedBounds;
+        }
     }
 
 

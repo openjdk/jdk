@@ -334,6 +334,10 @@ public final class AWTAccessor {
          * Gets the state of this frame.
          */
        int getExtendedState(Frame frame);
+        /*
+         * Gets the maximized bounds of this frame.
+         */
+       Rectangle getMaximizedBounds(Frame frame);
     }
 
     /*
