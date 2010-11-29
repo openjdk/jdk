@@ -99,12 +99,16 @@ ifeq ($(PLATFORM), linux)
       echo "RedHat"; \
     elif [ -f /etc/SuSE-release ] ; then \
       echo "SuSE"; \
+    elif [ -f /etc/lsb-release ] ; then \
+      $(EGREP) DISTRIB_ID /etc/lsb-release | $(SED) -e 's@.*DISTRIB_ID=\(.*\)@\1@'; \
     else \
       echo "Unknown"; \
     fi)
   OS_VARIANT_VERSION := $(shell \
     if [ "$(OS_VARIANT_NAME)" = "Fedora" ] ; then \
       $(CAT) /etc/fedora-release | $(HEAD) -1 | $(NAWK) '{ print $$3; }' ; \
+    elif [ -f /etc/lsb-release ] ; then \
+      $(EGREP) DISTRIB_RELEASE /etc/lsb-release | $(SED) -e 's@.*DISTRIB_RELEASE=\(.*\)@\1@'; \
     fi)
   ALSA_INCLUDE=/usr/include/alsa/version.h
   ALSA_LIBRARY=/usr/lib/libasound.so
@@ -279,7 +283,7 @@ sane-arch_data_model:
 	fi
 
 ######################################################
-# Check the OS version (windows and linus have release name checks)
+# Check the OS version (windows and linux have release name checks)
 #   NOTE: OPENJDK explicitly does not check for OS release information.
 #         Unless we know for sure that it will not build somewhere, we cannot
 #         generate a fatal sanity error, and a warning about the official
@@ -1476,60 +1480,63 @@ ifeq ($(PLATFORM), windows)
 endif
 
 ######################################################
-# Check the Solaris GNU c++ compiler for solaris plugin
+# Check the GNU C++ compiler for OJI plugin
 ######################################################
 sane-gcc-compiler:
-ifeq ($(PLATFORM), solaris)
-  ifndef OPENJDK
-    @if [ -r $(GCC_COMPILER_PATH) ]; then \
-	  if [ ! "$(GCC_VER)" = $(REQUIRED_GCC_VERSION) ]; then \
-	    $(ECHO) "ERROR: The Solaris GCC compiler version must be $(REQUIRED_GCC_VERSION). \n" \
-	      "      You are using the following compiler version: $(GCC_VER) \n" \
-	      "      The compiler was obtained from the following location: \n" \
-	      "          $(GCC_COMPILER_PATH) \n" \
-	      "      Please change your compiler. \n" \
-	      "" >> $(ERROR_FILE) ; \
-    fi \
+ifndef OPENJDK
+  ifeq ($(PLATFORM), solaris)
+	@if [ -r $(GCC_COMPILER_PATH) ]; then \
+	if [ ! "$(GCC_VER)" = $(REQUIRED_GCC_VERSION) ]; then \
+	$(ECHO) "ERROR: The Solaris GCC compiler version must be $(REQUIRED_GCC_VERSION). \n" \
+	"      You are using the following compiler version: $(GCC_VER) \n" \
+	"      The compiler was obtained from the following location: \n" \
+	"          $(GCC_COMPILER_PATH) \n" \
+	"      Please change your compiler. \n" \
+	"" >> $(ERROR_FILE) ; \
+	fi \
 	else \
-	  $(ECHO) "ERROR: You do not have a valid GCC_COMPILER_PATH setting. \n" \
-	    "      Please check your access to \n" \
-	    "          $(GCC_COMPILER_PATH) \n" \
-	    "      and/or check your value of ALT_GCC_COMPILER_PATH. \n" \
-	    "      This will affect you if you build the plugin target. \n" \
-	    "" >> $(ERROR_FILE) ; \
+	$(ECHO) "ERROR: You do not have a valid GCC_COMPILER_PATH setting. \n" \
+	"      Please check your access to \n" \
+	"          $(GCC_COMPILER_PATH) \n" \
+	"      and/or check your value of ALT_GCC_COMPILER_PATH. \n" \
+	"      This will affect you if you build the plugin target. \n" \
+	"" >> $(ERROR_FILE) ; \
 	fi
   endif
 
   ifeq ($(PLATFORM), linux)
-    ifdef ALT_GCC29_COMPILER_PATH
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      ifdef ALT_GCC29_COMPILER_PATH
 	@if [ ! -x $(ALT_GCC29_COMPILER_PATH)/bin/gcc ]; then \
- 	    $(ECHO) "ERROR: You do not have a valid ALT_GCC29_COMPILER_PATH setting. \n" \
-	         "      Please check your access to \n" \
-	         "      $(ALT_GCC29_COMPILER_PATH)/bin/gcc \n" \
-	         "      This will affect you if you build the plugin target. \n" \
-	         "" >> $(ERROR_FILE) ; \
-    fi
-    endif
-    ifdef ALT_GCC29_PLUGIN_LIB_PATH
-	@if [ ! -r $(ALT_GCC29_PLUGIN_LIB_PATH)/libjavaplugin_oji.so ]; then \
+	  $(ECHO) "ERROR: You do not have a valid ALT_GCC29_COMPILER_PATH setting. \n" \
+	    "      Please check your access to \n" \
+	    "      $(ALT_GCC29_COMPILER_PATH)/bin/gcc \n" \
+	    "      This will affect you if you build the plugin target. \n" \
+	    "" >> $(ERROR_FILE) ; \
+	fi
+      else
+        ifdef ALT_GCC29_PLUGIN_LIB_PATH
+	  @if [ ! -r $(ALT_GCC29_PLUGIN_LIB_PATH)/libjavaplugin_oji.so ]; then \
 	    $(ECHO) "Error: You do not have a valid ALT_GCC29_PLUGIN_LIB_PATH setting. \n" \
-		        " Please check your access to \n" \
-		        " $(ALT_GCC29_PLUGIN_LIB_PATH)/libjavaplugin_oji.so \n" \
-		        " This will affect you if you build the plugin target, specifically for gcc 2.9 version of OJI plugin library. \n" \
-		        "" >> $(ERROR_FILE) ; \
-	fi
-    else
-	@if [ ! -r $(GCC29_COMPILER_PATH) ]; then \
+	      " Please check your access to \n" \
+	      " $(ALT_GCC29_PLUGIN_LIB_PATH)/libjavaplugin_oji.so \n" \
+	      " This will affect you if you build the plugin target, specifically for gcc 2.9 version of OJI plugin library. \n" \
+	      "" >> $(ERROR_FILE) ; \
+	  fi
+	else
+	  @if [ ! -r $(GCC29_COMPILER_PATH) ]; then \
 	    $(ECHO) "ERROR: You do not have a valid GCC29_COMPILER_PATH setting. \n" \
-	    	    " Please check your access to \n" \
-	    	    " $(GCC29_COMPILER_PATH) \n" \
-	    	    " and/or check your value of ALT_GCC29_COMPILER_PATH. \n" \
-	    	    " This will affect you if you build the plugin target. \n" \
-	    	    "" >> $(ERROR_FILE) ; \
-	fi
-    endif
-  endif
-endif
+	      " Please check your access to \n" \
+	      " $(GCC29_COMPILER_PATH) \n" \
+	      " and/or check your value of ALT_GCC29_COMPILER_PATH or ALT_GCC29_PLUGIN_LIB_PATH \n" \
+	      " This will affect you if you build the plugin target. \n" \
+	      "" >> $(ERROR_FILE) ; \
+	   fi
+        endif # ALT_GCC29_PLUGIN_LIB_PATH
+      endif # ALT_GCC29_COMPILER_PATH 
+    endif # ARCH_DATA_MODEL, 32
+  endif # LINUX
+endif  # OPEN_JDK
 
 
 ######################################################
