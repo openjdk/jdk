@@ -174,6 +174,11 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         }
     }
 
+    @Override
+    public boolean isDefaultBootClassPath() {
+        return paths.isDefaultBootClassPath();
+    }
+
     public JavaFileObject getFileForInput(String name) {
         return getRegularFile(new File(name));
     }
