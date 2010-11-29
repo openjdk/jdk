@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.unsupported.binary.lit
-// options: -source 6
+// options: -source 6 -Xlint:-options
 
 class UnsupportedBinaryLiteral {
     int i = 0b01000010;

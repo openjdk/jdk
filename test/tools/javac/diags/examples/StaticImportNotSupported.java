@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.static.import.not.supported.in.source
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 import static java.util.regex.Pattern.*;
 

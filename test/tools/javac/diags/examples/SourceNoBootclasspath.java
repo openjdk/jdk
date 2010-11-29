@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.expected2
-// options: -source 1.4 -Xlint:-options
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 6
 
-int Expected2;
+class SourceNoBootclasspath { }
