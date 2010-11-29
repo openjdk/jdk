@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.*;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.InnerClass;
 import com.sun.java.util.jar.pack.ConstantPool.*;
-import com.sun.tools.classfile.AttributeException;
 
 /**
  * Reader for a class file that is being incorporated into a package.
@@ -422,7 +421,7 @@ class ClassReader implements Constants {
                         readCode(m.code);
                     } catch (Instruction.FormatException iie) {
                         String message = iie.getMessage() + " in " + h;
-                        throw new ClassReader.ClassFormatException(message);
+                        throw new ClassReader.ClassFormatException(message, iie);
                     }
                 } else {
                     assert(h == cls);
@@ -477,9 +476,13 @@ class ClassReader implements Constants {
         // (Later, ics may be transferred to the pkg.)
     }
 
-    class ClassFormatException extends IOException {
+    static class ClassFormatException extends IOException {
         public ClassFormatException(String message) {
             super(message);
+        }
+
+        public ClassFormatException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

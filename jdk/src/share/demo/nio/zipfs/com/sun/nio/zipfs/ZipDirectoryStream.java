@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.io.IOException;
-import static com.sun.nio.zipfs.ZipUtils.*;
 
 /**
  *
@@ -77,7 +76,7 @@ public class ZipDirectoryStream implements DirectoryStream<Path> {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        return new Iterator<Path>() {
+        return new Iterator<>() {
             private Path next;
             @Override
             public boolean hasNext() {

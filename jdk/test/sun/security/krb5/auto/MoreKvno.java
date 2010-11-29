@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class MoreKvno {
         KeyTab ktab = KeyTab.create(OneKDC.KTAB);
         p = new PrincipalName(
             OneKDC.SERVER+"@"+OneKDC.REALM, PrincipalName.KRB_NT_SRV_HST);
-        ktab.addEntry(p, "pass1".toCharArray(), 1);
-        ktab.addEntry(p, "pass3".toCharArray(), 3);
-        ktab.addEntry(p, "pass2".toCharArray(), 2);
+        ktab.addEntry(p, "pass1".toCharArray(), 1, true);
+        ktab.addEntry(p, "pass3".toCharArray(), 3, true);
+        ktab.addEntry(p, "pass2".toCharArray(), 2, true);
         ktab.save();
 
         char[] pass = "pass2".toCharArray();
