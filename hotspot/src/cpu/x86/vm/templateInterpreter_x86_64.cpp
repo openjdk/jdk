@@ -1069,7 +1069,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     // runtime call by hand.
     //
     __ mov(c_rarg0, r15_thread);
-    __ mov(r12, rsp); // remember sp
+    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
@@ -1116,7 +1116,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ jcc(Assembler::notEqual, no_reguard);
 
     __ pusha(); // XXX only save smashed registers
-    __ mov(r12, rsp); // remember sp
+    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
@@ -1907,7 +1907,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
   assert(Interpreter::trace_code(t->tos_in()) != NULL,
          "entry must have been generated");
-  __ mov(r12, rsp); // remember sp
+  __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
   __ andptr(rsp, -16); // align stack as required by ABI
   __ call(RuntimeAddress(Interpreter::trace_code(t->tos_in())));
   __ mov(rsp, r12); // restore sp
