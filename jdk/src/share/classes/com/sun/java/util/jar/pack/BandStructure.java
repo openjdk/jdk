@@ -25,12 +25,28 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.io.*;
-import java.util.*;
-import java.util.jar.*;
-import com.sun.java.util.jar.pack.Package.Class;
-import com.sun.java.util.jar.pack.Package.InnerClass;
-import com.sun.java.util.jar.pack.ConstantPool.*;
+import com.sun.java.util.jar.pack.ConstantPool.Entry;
+import com.sun.java.util.jar.pack.ConstantPool.Index;
+import com.sun.java.util.jar.pack.Package.Class.Field;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.jar.Pack200;
 
 /**
  * Define the structure and ordering of "bands" in a packed file.
@@ -1629,7 +1645,7 @@ class BandStructure implements Constants {
         }
     }
 
-    protected void setConstantValueIndex(Class.Field f) {
+    protected void setConstantValueIndex(com.sun.java.util.jar.pack.Package.Class.Field f) {
         Index ix = null;
         if (f != null) {
             byte tag = f.getLiteralTag();
