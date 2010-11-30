@@ -314,7 +314,7 @@ findEND(jzfile *zip, void *endbuf)
         if (pos < 0) {
             /* Pretend there are some NUL bytes before start of file */
             off = -pos;
-            memset(buf, '\0', off);
+            memset(buf, '\0', (size_t)off);
         }
 
         if (readFullyAt(zfd, buf + off, sizeof(buf) - off,
@@ -426,7 +426,7 @@ static int
 isMetaName(const char *name, int length)
 {
     const char *s;
-    if (length < sizeof("META-INF/") - 1)
+    if (length < (int)sizeof("META-INF/") - 1)
         return 0;
     for (s = "META-INF/"; *s != '\0'; s++) {
         char c = *name++;
@@ -912,7 +912,7 @@ readCENHeader(jzfile *zip, jlong cenpos, jint bufsize)
     ZFILE zfd = zip->zfd;
     char *cen;
     if (bufsize > zip->len - cenpos)
-        bufsize = zip->len - cenpos;
+        bufsize = (jint)(zip->len - cenpos);
     if ((cen = malloc(bufsize)) == NULL)       goto Catch;
     if (readFullyAt(zfd, cen, bufsize, cenpos) == -1)     goto Catch;
     censize = CENSIZE(cen);
@@ -1256,6 +1256,9 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
  * file had been previously locked with ZIP_Lock(). Returns the
  * number of bytes read, or -1 if an error occurred. If zip->msg != 0
  * then a zip error occurred and zip->msg contains the error text.
+ *
+ * The current implementation does not support reading an entry that
+ * has the size bigger than 2**32 bytes in ONE invocation.
  */
 jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
@@ -1276,7 +1279,7 @@ ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
     if (len <= 0)
         return 0;
     if (len > entry_size - pos)
-        len = entry_size - pos;
+        len = (jint)(entry_size - pos);
 
     /* Get file offset to start reading data */
     start = ZIP_GetEntryDataOffset(zip, entry);
@@ -1306,6 +1309,9 @@ ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
  * from ZIP/JAR files specified in the class path. It is defined here
  * so that it can be dynamically loaded by the runtime if the zip library
  * is found.
+ *
+ * The current implementation does not support reading an entry that
+ * has the size bigger than 2**32 bytes in ONE invocation.
  */
 jboolean
 InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
@@ -1314,7 +1320,6 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
     char tmp[BUF_SIZE];
     jlong pos = 0;
     jlong count = entry->csize;
-    jboolean status;
 
     *msg = 0; /* Reset error message */
 
@@ -1330,10 +1335,10 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
     }
 
     strm.next_out = buf;
-    strm.avail_out = entry->size;
+    strm.avail_out = (uInt)entry->size;
 
     while (count > 0) {
-        jint n = count > (jlong)sizeof(tmp) ? (jint)sizeof(tmp) : count;
+        jint n = count > (jlong)sizeof(tmp) ? (jint)sizeof(tmp) : (jint)count;
         ZIP_Lock(zip);
         n = ZIP_Read(zip, entry, pos, tmp, n);
         ZIP_Unlock(zip);
@@ -1368,12 +1373,16 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
     return JNI_TRUE;
 }
 
+/*
+ * The current implementation does not support reading an entry that
+ * has the size bigger than 2**32 bytes in ONE invocation.
+ */
 jzentry * JNICALL
 ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
 {
     jzentry *entry = ZIP_GetEntry(zip, name, 0);
     if (entry) {
-        *sizeP = entry->size;
+        *sizeP = (jint)entry->size;
         *nameLenP = strlen(entry->name);
     }
     return entry;

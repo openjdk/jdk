@@ -25,6 +25,7 @@
  * @test
  * @bug 6270015
  * @run main/othervm Test1
+ * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
  * @summary  Light weight HTTP server
  */
 
