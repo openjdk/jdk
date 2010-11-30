@@ -252,10 +252,12 @@ public class Attr extends JCTree.Visitor {
                (base.getTag() == JCTree.IDENT && TreeInfo.name(base) == names._this)) &&
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
-                log.error(pos, "twr.resource.may.not.be.assigned", v);
+                log.error(pos, "try.resource.may.not.be.assigned", v);
             } else {
                 log.error(pos, "cant.assign.val.to.final.var", v);
             }
+        } else if ((v.flags() & EFFECTIVELY_FINAL) != 0) {
+            v.flags_field &= ~EFFECTIVELY_FINAL;
         }
     }
 
@@ -799,6 +801,7 @@ public class Attr extends JCTree.Visitor {
                 memberEnter.memberEnter(tree, env);
                 annotate.flush();
             }
+            tree.sym.flags_field |= EFFECTIVELY_FINAL;
         }
 
         VarSymbol v = tree.sym;
@@ -1042,11 +1045,11 @@ public class Attr extends JCTree.Visitor {
         for (JCTree resource : tree.resources) {
             if (resource.getTag() == JCTree.VARDEF) {
                 attribStat(resource, tryEnv);
-                chk.checkType(resource, resource.type, syms.autoCloseableType, "twr.not.applicable.to.type");
+                chk.checkType(resource, resource.type, syms.autoCloseableType, "try.not.applicable.to.type");
                 VarSymbol var = (VarSymbol)TreeInfo.symbolFor(resource);
                 var.setData(ElementKind.RESOURCE_VARIABLE);
             } else {
-                attribExpr(resource, tryEnv, syms.autoCloseableType, "twr.not.applicable.to.type");
+                attribExpr(resource, tryEnv, syms.autoCloseableType, "try.not.applicable.to.type");
             }
         }
         // Attribute body
@@ -1061,11 +1064,8 @@ public class Attr extends JCTree.Visitor {
                 localEnv.dup(c, localEnv.info.dup(localEnv.info.scope.dup()));
             Type ctype = attribStat(c.param, catchEnv);
             if (TreeInfo.isMultiCatch(c)) {
-                //check that multi-catch parameter is marked as final
-                if ((c.param.sym.flags() & FINAL) == 0) {
-                    log.error(c.param.pos(), "multicatch.param.must.be.final", c.param.sym);
-                }
-                c.param.sym.flags_field = c.param.sym.flags() | DISJUNCTION;
+                //multi-catch parameter is implicitly marked as final
+                c.param.sym.flags_field |= FINAL | DISJUNCTION;
             }
             if (c.param.sym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
@@ -1552,7 +1552,7 @@ public class Attr extends JCTree.Visitor {
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
         Type clazztype = attribType(clazz, env);
-        Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype);
+        Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype, cdef != null);
         if (!TreeInfo.isDiamond(tree)) {
             clazztype = chk.checkClassType(
                 tree.clazz.pos(), clazztype, true);
@@ -1849,7 +1849,7 @@ public class Attr extends JCTree.Visitor {
      *  inference. The inferred return type of the synthetic constructor IS
      *  the inferred type for the diamond operator.
      */
-    private Pair<Scope, Scope> getSyntheticScopeMapping(Type ctype) {
+    private Pair<Scope, Scope> getSyntheticScopeMapping(Type ctype, boolean overrideProtectedAccess) {
         if (ctype.tag != CLASS) {
             return erroneousMapping;
         }
@@ -1860,6 +1860,12 @@ public class Attr extends JCTree.Visitor {
                 e.scope != null;
                 e = e.next()) {
             MethodSymbol newConstr = (MethodSymbol) e.sym.clone(ctype.tsym);
+            if (overrideProtectedAccess && (newConstr.flags() & PROTECTED) != 0) {
+                //make protected constructor public (this is required for
+                //anonymous inner class creation expressions using diamond)
+                newConstr.flags_field |= PUBLIC;
+                newConstr.flags_field &= ~PROTECTED;
+            }
             newConstr.name = names.init;
             List<Type> oldTypeargs = List.nil();
             if (newConstr.type.tag == FORALL) {
@@ -2252,8 +2258,8 @@ public class Attr extends JCTree.Visitor {
                 ((VarSymbol)sitesym).isResourceVariable() &&
                 sym.kind == MTH &&
                 sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true) &&
-                env.info.lint.isEnabled(Lint.LintCategory.ARM)) {
-            log.warning(tree, "twr.explicit.close.call");
+                env.info.lint.isEnabled(Lint.LintCategory.TRY)) {
+            log.warning(Lint.LintCategory.TRY, tree, "try.explicit.close.call");
         }
 
         // Disallow selecting a type from an expression

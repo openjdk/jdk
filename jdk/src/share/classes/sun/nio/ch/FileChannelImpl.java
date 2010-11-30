@@ -460,6 +460,16 @@ public class FileChannelImpl
                 } finally {
                     unmap(dbb);
                 }
+            } catch (ClosedByInterruptException e) {
+                // target closed by interrupt as ClosedByInterruptException needs
+                // to be thrown after closing this channel.
+                assert !target.isOpen();
+                try {
+                    close();
+                } catch (IOException ignore) {
+                    // nothing we can do
+                }
+                throw e;
             } catch (IOException ioe) {
                 // Only throw exception if no bytes have been written
                 if (remaining == count)

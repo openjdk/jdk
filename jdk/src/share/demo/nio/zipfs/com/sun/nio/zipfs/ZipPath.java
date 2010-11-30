@@ -32,24 +32,19 @@
 package com.sun.nio.zipfs;
 
 import java.io.File;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.spi.FileSystemProvider;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
 
@@ -599,7 +594,7 @@ public class ZipPath extends Path {
     }
 
     private static final DirectoryStream.Filter<Path> acceptAllFilter =
-        new DirectoryStream.Filter<Path>() {
+        new DirectoryStream.Filter<>() {
             @Override public boolean accept(Path entry) { return true; }
         };
 
@@ -625,7 +620,7 @@ public class ZipPath extends Path {
 
         // create a matcher and return a filter that uses it.
         final PathMatcher matcher = getFileSystem().getPathMatcher("glob:" + glob);
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<>() {
             @Override
             public boolean accept(Path entry)  {
                 return matcher.matches(entry.getName());
@@ -758,7 +753,7 @@ public class ZipPath extends Path {
 
     @Override
     public Iterator<Path> iterator() {
-        return new Iterator<Path>() {
+        return new Iterator<>() {
             private int i = 0;
 
             @Override
@@ -803,7 +798,7 @@ public class ZipPath extends Path {
     @Override
     public SeekableByteChannel newByteChannel(OpenOption... options)
             throws IOException {
-        Set<OpenOption> set = new HashSet<OpenOption>(options.length);
+        Set<OpenOption> set = new HashSet<>(options.length);
         Collections.addAll(set, options);
         return newByteChannel(set);
     }
@@ -908,7 +903,7 @@ public class ZipPath extends Path {
             if (opt == REPLACE_EXISTING)
                 replaceExisting = true;
             else if (opt == COPY_ATTRIBUTES)
-                copyAttrs = false;
+                copyAttrs = true;
         }
         // attributes of source file
         ZipFileAttributes zfas = getAttributes();
@@ -951,7 +946,9 @@ public class ZipPath extends Path {
             BasicFileAttributeView view =
                 target.getFileAttributeView(BasicFileAttributeView.class);
             try {
-                view.setTimes(zfas.lastModifiedTime(), null, null);
+                view.setTimes(zfas.lastModifiedTime(),
+                              zfas.lastAccessTime(),
+                              zfas.creationTime());
             } catch (IOException x) {
                 // rollback?
                 try {

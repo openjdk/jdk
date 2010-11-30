@@ -21,18 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.multicatch.param.must.be.final
+/*
+ * @test
+ * @bug 6993963
+ * @summary Multicatch: crash while compiling simple code with a multicatch parameter
+ * @compile Pos08eff_final.java
+ */
 
-class MulticatchMustBeFinal {
-    void e1() throws NullPointerException { }
-    void e2() throws IllegalArgumentException { }
+class Pos08eff_final {
 
-    void m() {
+    interface Foo {}
+    static class X1 extends Exception implements Foo {}
+    static class X2 extends Exception implements Foo {}
+
+    void m(boolean cond) {
         try {
-            e1();
-            e2();
-        } catch (NullPointerException | IllegalArgumentException e) {
-            e.printStackTrace();
+            if (cond)
+                throw new X1();
+            else
+                throw new X2();
         }
+        catch (X1 | X2 ex) {}
     }
 }
