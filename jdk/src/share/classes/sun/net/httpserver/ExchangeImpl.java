@@ -38,6 +38,7 @@ class ExchangeImpl {
     Headers reqHdrs, rspHdrs;
     Request req;
     String method;
+    boolean writefinished;
     URI uri;
     HttpConnection connection;
     long reqContentLen;
