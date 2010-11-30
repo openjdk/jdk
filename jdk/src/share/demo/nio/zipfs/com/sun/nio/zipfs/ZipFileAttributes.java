@@ -56,7 +56,7 @@ public class ZipFileAttributes implements BasicFileAttributes
     @Override
     public FileTime creationTime() {
         if (e.ctime != -1)
-            return FileTime.fromMillis(dosToJavaTime(e.ctime));
+            return FileTime.fromMillis(e.ctime);
         return null;
     }
 
@@ -78,13 +78,13 @@ public class ZipFileAttributes implements BasicFileAttributes
     @Override
     public FileTime lastAccessTime() {
         if (e.atime != -1)
-            return FileTime.fromMillis(dosToJavaTime(e.atime));
+            return FileTime.fromMillis(e.atime);
         return null;
     }
 
     @Override
     public FileTime lastModifiedTime() {
-        return FileTime.fromMillis(dosToJavaTime(e.mtime));
+        return FileTime.fromMillis(e.mtime);
     }
 
     @Override
@@ -103,10 +103,6 @@ public class ZipFileAttributes implements BasicFileAttributes
     }
 
     ///////// zip entry attributes ///////////
-    public byte[] name() {
-        return Arrays.copyOf(e.name, e.name.length);
-    }
-
     public long compressedSize() {
         return e.csize;
     }
@@ -132,10 +128,13 @@ public class ZipFileAttributes implements BasicFileAttributes
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(1024);
         Formatter fm = new Formatter(sb);
-        fm.format("[/%s]%n", new String(e.name));  // TBD encoding
-        fm.format("    creationTime    : %s%n", creationTime());
+        if (creationTime() != null)
+            fm.format("    creationTime    : %tc%n", creationTime().toMillis());
+        else
+            fm.format("    creationTime    : null%n");
+
         if (lastAccessTime() != null)
             fm.format("    lastAccessTime  : %tc%n", lastAccessTime().toMillis());
         else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class NTNumericCredential {
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
                 (sun.security.util.ResourcesMgr.getString
-                        ("NTNumericCredential: name",
+                        ("NTNumericCredential.name",
                         "sun.security.util.AuthResources"));
         Object[] source = {Long.toString(impersonationToken)};
         return form.format(source);

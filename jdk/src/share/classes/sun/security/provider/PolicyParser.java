@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,7 @@ public class PolicyParser {
 
         if (keyStoreUrlString == null && storePassURL != null) {
             throw new ParsingException(ResourcesMgr.getString
-                ("keystorePasswordURL can not be specified without also " +
-                "specifying keystore"));
+                ("keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore"));
         }
     }
 
@@ -357,7 +356,7 @@ public class PolicyParser {
             keyStoreType = match("quoted string");
         } else {
             throw new ParsingException(st.lineno(),
-                        ResourcesMgr.getString("expected keystore type"));
+                        ResourcesMgr.getString("expected.keystore.type"));
         }
 
         // parse keystore provider
@@ -370,7 +369,7 @@ public class PolicyParser {
             keyStoreProvider = match("quoted string");
         } else {
             throw new ParsingException(st.lineno(),
-                        ResourcesMgr.getString("expected keystore provider"));
+                        ResourcesMgr.getString("expected.keystore.provider"));
         }
     }
 
@@ -421,7 +420,7 @@ public class PolicyParser {
                     throw new ParsingException(
                             st.lineno(),
                             ResourcesMgr.getString
-                                ("multiple Codebase expressions"));
+                                ("multiple.Codebase.expressions"));
                 e.codeBase = match("quoted string");
                 peekAndMatch(",");
             } else if (peekAndMatch("SignedBy")) {
@@ -429,7 +428,7 @@ public class PolicyParser {
                     throw new ParsingException(
                             st.lineno(),
                             ResourcesMgr.getString(
-                                "multiple SignedBy expressions"));
+                                "multiple.SignedBy.expressions"));
                 e.signedBy = match("quoted string");
 
                 // verify syntax of the aliases
@@ -448,7 +447,7 @@ public class PolicyParser {
                     throw new ParsingException(
                             st.lineno(),
                             ResourcesMgr.getString(
-                                "SignedBy has empty alias"));
+                                "SignedBy.has.empty.alias"));
 
                 peekAndMatch(",");
             } else if (peekAndMatch("Principal")) {
@@ -491,8 +490,7 @@ public class PolicyParser {
                         throw new ParsingException
                                 (st.lineno(),
                                  ResourcesMgr.getString
-                                    ("can not specify Principal with a " +
-                                     "wildcard class without a wildcard name"));
+                                    ("can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name"));
                     }
                 }
 
@@ -529,8 +527,7 @@ public class PolicyParser {
             } else {
                 throw new ParsingException(st.lineno(),
                                   ResourcesMgr.getString(
-                                      "expected codeBase or SignedBy or " +
-                                      "Principal"));
+                                      "expected.codeBase.or.SignedBy.or.Principal"));
             }
         }
 
@@ -554,7 +551,7 @@ public class PolicyParser {
                 throw new
                     ParsingException(st.lineno(),
                                      ResourcesMgr.getString(
-                                        "expected permission entry"));
+                                        "expected.permission.entry"));
             }
         }
         match("}");
@@ -727,12 +724,12 @@ public class PolicyParser {
         switch (lookahead) {
         case StreamTokenizer.TT_NUMBER:
             throw new ParsingException(st.lineno(), expect,
-                                       ResourcesMgr.getString("number ") +
+                                       ResourcesMgr.getString("number.") +
                                        String.valueOf(st.nval));
         case StreamTokenizer.TT_EOF:
             MessageFormat form = new MessageFormat(
                     ResourcesMgr.getString
-                            ("expected [expect], read [end of file]"));
+                            ("expected.expect.read.end.of.file."));
             Object[] source = {expect};
             throw new ParsingException(form.format(source));
         case StreamTokenizer.TT_WORD:
@@ -809,11 +806,11 @@ public class PolicyParser {
             switch (lookahead) {
             case StreamTokenizer.TT_NUMBER:
                 throw new ParsingException(st.lineno(), ";",
-                                          ResourcesMgr.getString("number ") +
+                                          ResourcesMgr.getString("number.") +
                                           String.valueOf(st.nval));
             case StreamTokenizer.TT_EOF:
                 throw new ParsingException(ResourcesMgr.getString
-                        ("expected [;], read [end of file]"));
+                        ("expected.read.end.of.file."));
             default:
                 lookahead = st.nextToken();
             }
@@ -973,7 +970,7 @@ public class PolicyParser {
         public PrincipalEntry(String principalClass, String principalName) {
             if (principalClass == null || principalName == null)
                 throw new NullPointerException(ResourcesMgr.getString(
-                                  "null principalClass or principalName"));
+                                  "null.principalClass.or.principalName"));
             this.principalClass = principalClass;
             this.principalName = principalName;
         }
@@ -1199,7 +1196,7 @@ public class PolicyParser {
         public ParsingException(int line, String msg) {
             super("line " + line + ": " + msg);
             MessageFormat form = new MessageFormat
-                (ResourcesMgr.getString("line number: msg"));
+                (ResourcesMgr.getString("line.number.msg"));
             Object[] source = {new Integer(line), msg};
             i18nMessage = form.format(source);
         }
@@ -1208,7 +1205,7 @@ public class PolicyParser {
             super("line " + line + ": expected [" + expect +
                 "], found [" + actual + "]");
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                ("line number: expected [expect], found [actual]"));
+                ("line.number.expected.expect.found.actual."));
             Object[] source = {new Integer(line), expect, actual};
             i18nMessage = form.format(source);
         }

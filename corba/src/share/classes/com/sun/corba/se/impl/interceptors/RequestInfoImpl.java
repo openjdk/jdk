@@ -187,7 +187,8 @@ public abstract class RequestInfoImpl
         startingPointCall = 0;
         intermediatePointCall = 0;
         endingPointCall = 0;
-        replyStatus = UNINITIALIZED;
+        // 6763340
+        setReplyStatus( UNINITIALIZED ) ;
         currentExecutionPoint = EXECUTION_POINT_STARTING;
         alreadyExecuted = false;
         connection = null;
