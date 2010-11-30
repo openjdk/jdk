@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,9 +490,9 @@ public class PolicyFile extends javax.security.auth.Policy {
             }
         } catch (PolicyParser.ParsingException pe) {
             System.err.println(AUTH_POLICY +
-                                rb.getString(": error parsing ") + policy);
+                                rb.getString(".error.parsing.") + policy);
             System.err.println(AUTH_POLICY +
-                                rb.getString(": ") +
+                                rb.getString("COLON") +
                                 pe.getMessage());
             if (debug != null)
                 pe.printStackTrace();
@@ -635,16 +635,16 @@ public class PolicyFile extends javax.security.auth.Policy {
                 } catch (java.lang.reflect.InvocationTargetException ite) {
                     System.err.println
                         (AUTH_POLICY +
-                        rb.getString(": error adding Permission ") +
+                        rb.getString(".error.adding.Permission.") +
                         pe.permission +
-                        rb.getString(" ") +
+                        rb.getString("SPACE") +
                         ite.getTargetException());
                 } catch (Exception e) {
                     System.err.println
                         (AUTH_POLICY +
-                        rb.getString(": error adding Permission ") +
+                        rb.getString(".error.adding.Permission.") +
                         pe.permission +
-                        rb.getString(" ") +
+                        rb.getString("SPACE") +
                         e);
                 }
             }
@@ -652,9 +652,9 @@ public class PolicyFile extends javax.security.auth.Policy {
         } catch (Exception e) {
             System.err.println
                 (AUTH_POLICY +
-                rb.getString(": error adding Entry ") +
+                rb.getString(".error.adding.Entry.") +
                 ge +
-                rb.getString(" ") +
+                rb.getString("SPACE") +
                 e);
         }
 
@@ -1373,18 +1373,18 @@ public class PolicyFile extends javax.security.auth.Policy {
 
         public String toString(){
             StringBuffer sb = new StringBuffer();
-            sb.append(rb.getString("("));
+            sb.append(rb.getString("LPARAM"));
             sb.append(getCodeSource());
             sb.append("\n");
             for (int j = 0; j < permissions.size(); j++) {
                 Permission p = permissions.elementAt(j);
-                sb.append(rb.getString(" "));
-                sb.append(rb.getString(" "));
+                sb.append(rb.getString("SPACE"));
+                sb.append(rb.getString("SPACE"));
                 sb.append(p);
-                sb.append(rb.getString("\n"));
+                sb.append(rb.getString("NEWLINE"));
             }
-            sb.append(rb.getString(")"));
-            sb.append(rb.getString("\n"));
+            sb.append(rb.getString("RPARAM"));
+            sb.append(rb.getString("NEWLINE"));
             return sb.toString();
         }
 
@@ -1415,7 +1415,7 @@ class PolicyPermissions extends PermissionCollection {
         if (isReadOnly())
             throw new SecurityException
             (PolicyFile.rb.getString
-            ("attempt to add a Permission to a readonly PermissionCollection"));
+            ("attempt.to.add.a.Permission.to.a.readonly.PermissionCollection"));
 
         if (perms == null) {
             if (additionalPerms == null)
