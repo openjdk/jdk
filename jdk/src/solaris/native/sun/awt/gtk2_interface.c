@@ -607,6 +607,7 @@ gboolean gtk2_load()
         fp_gtk_tree_view_new = dl_symbol("gtk_tree_view_new");
         fp_gtk_viewport_new = dl_symbol("gtk_viewport_new");
         fp_gtk_window_new = dl_symbol("gtk_window_new");
+        fp_gtk_window_present = dl_symbol("gtk_window_present");
         fp_gtk_dialog_new = dl_symbol("gtk_dialog_new");
         fp_gtk_frame_new = dl_symbol("gtk_frame_new");
 
