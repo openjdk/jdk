@@ -385,11 +385,15 @@ public class CorbaClientRequestDispatcherImpl
             boolean retry  =
                 getContactInfoListIterator(orb)
                     .reportException(messageMediator.getContactInfo(), e);
-            if (retry) {
-                // Must run interceptor end point before retrying.
-                Exception newException =
+
+            //Bug 6382377: must not lose exception in PI
+
+            // Must run interceptor end point before retrying.
+            Exception newException =
                     orb.getPIHandler().invokeClientPIEndingPoint(
-                        ReplyMessage.SYSTEM_EXCEPTION, e);
+                    ReplyMessage.SYSTEM_EXCEPTION, e);
+
+            if (retry) {
                 if (newException == e) {
                     continueOrThrowSystemOrRemarshal(messageMediator,
                                                      new RemarshalException());
@@ -398,6 +402,14 @@ public class CorbaClientRequestDispatcherImpl
                                                      newException);
                 }
             } else {
+                if (newException instanceof RuntimeException){
+                    throw (RuntimeException)newException;
+                }
+                else if (newException instanceof RemarshalException)
+                {
+                    throw (RemarshalException)newException;
+                }
+
                 // NOTE: Interceptor ending point will run in releaseReply.
                 throw e;
             }
