@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6842557 6943963
- * @summary confirm that shaping works as expected. (Mainly for new characters which were added in Unicode 5)
+ * @bug 6842557 6943963 6959267
+ * @summary confirm that shaping works as expected. (Mainly for new characters which were added in Unicode 5 and 6)
  * used where appropriate.
  */
 
@@ -39,6 +39,7 @@ public class ShapingTest {
     public static void main(String[] args) {
         test6842557();
         test6943963();
+        test6903266();
 
         if (err) {
             throw new RuntimeException("shape() returned unexpected value.");
@@ -107,6 +108,34 @@ public class ShapingTest {
 
         ns = getContextualShaper(EnumSet.of(Range.ARABIC, Range.EASTERN_ARABIC));
         checkResult("Range.ARABIC, Range.EASTERN_ARABIC", ns, given, expected_EASTERN_ARABIC);
+    }
+
+    private static void test6903266() {
+        NumericShaper ns = getContextualShaper(EnumSet.of(Range.TAI_THAM_HORA));
+        String given = "\u1a20 012";
+        String expected = "\u1a20 \u1a80\u1a81\u1a82";
+        checkResult("Range.TAI_THAM_HORA", ns, given, expected);
+
+        ns = getContextualShaper(EnumSet.of(Range.TAI_THAM_HORA,
+                                            Range.TAI_THAM_THAM));
+        given = "\u1a20 012";
+        expected = "\u1a20 \u1a90\u1a91\u1a92"; // Tham digits are prioritized.
+        checkResult("Range.TAI_THAM_HORA, Range.TAI_THAM_THAM", ns, given, expected);
+
+        ns = getContextualShaper(EnumSet.of(Range.JAVANESE));
+        given = "\ua984 012";
+        expected = "\ua984 \ua9d0\ua9d1\ua9d2";
+        checkResult("Range.JAVANESE", ns, given, expected);
+
+        ns = getContextualShaper(EnumSet.of(Range.TAI_THAM_THAM));
+        given = "\u1a20 012";
+        expected = "\u1a20 \u1a90\u1a91\u1a92";
+        checkResult("Range.TAI_THAM_THAM", ns, given, expected);
+
+        ns = getContextualShaper(EnumSet.of(Range.MEETEI_MAYEK));
+        given = "\uabc0 012";
+        expected = "\uabc0 \uabf0\uabf1\uabf2";
+        checkResult("Range.MEETEI_MAYEK", ns, given, expected);
     }
 
     private static void checkResult(String ranges, NumericShaper ns,
