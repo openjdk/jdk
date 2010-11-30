@@ -26,6 +26,8 @@
  * @bug 6932525 6951366 6959292
  * @summary kerberos login failure on win2008 with AD set to win2000 compat mode
  * and cannot login if session key and preauth does not use the same etype
+ * @run main/othervm -D6932525 W83
+ * @run main/othervm -D6959292 W83
  */
 import com.sun.security.auth.module.Krb5LoginModule;
 import java.io.File;
@@ -56,19 +58,21 @@ public class W83 {
         KeyTab ktab = KeyTab.getInstance(OneKDC.KTAB);
         for (int etype: EType.getBuiltInDefaults()) {
             if (etype != EncryptedData.ETYPE_ARCFOUR_HMAC) {
-                ktab.deleteEntry(new PrincipalName(OneKDC.USER), etype);
+                ktab.deleteEntries(new PrincipalName(OneKDC.USER), etype, -1);
             }
         }
         ktab.save();
 
-        // For 6932525 and 6951366, make sure the etypes sent in 2nd AS-REQ
-        // is not restricted to that of preauth
-        kdc.setOption(KDC.Option.ONLY_RC4_TGT, true);
-        x.go();
-
-        // For 6959292, make sure that when etype for enc-part in 2nd AS-REQ
-        // is different from that of preauth, client can still decrypt it
-        kdc.setOption(KDC.Option.ONLY_RC4_PREAUTH, true);
+        if (System.getProperty("6932525") != null) {
+            // For 6932525 and 6951366, make sure the etypes sent in 2nd AS-REQ
+            // is not restricted to that of preauth
+            kdc.setOption(KDC.Option.ONLY_RC4_TGT, true);
+        }
+        if (System.getProperty("6959292") != null) {
+            // For 6959292, make sure that when etype for enc-part in 2nd AS-REQ
+            // is different from that of preauth, client can still decrypt it
+            kdc.setOption(KDC.Option.RC4_FIRST_PREAUTH, true);
+        }
         x.go();
     }
 
@@ -78,11 +82,13 @@ public class W83 {
         try {
             Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
         } catch (Exception e) {
+            e.printStackTrace();
             error.append("Krb5LoginModule password login error\n");
         }
         try {
             Context.fromUserKtab(OneKDC.USER, OneKDC.KTAB, false);
         } catch (Exception e) {
+            e.printStackTrace();
             error.append("Krb5LoginModule keytab login error\n");
         }
         try {

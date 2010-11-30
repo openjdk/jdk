@@ -511,10 +511,6 @@ public class PrincipalName
         return salt;
     }
 
-    public void setSalt(String salt) {
-        this.salt = salt;
-    }
-
     public String toString() {
         StringBuffer str = new StringBuffer();
         for (int i = 0; i < nameStrings.length; i++) {
