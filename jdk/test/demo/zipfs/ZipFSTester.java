@@ -64,7 +64,6 @@ public class ZipFSTester {
         fs0.close();                // sync to file
 
         fs = newZipFileSystem(tmpfsPath, new HashMap<String, Object>());
-
         try {
             // prepare a src
             Path src = getTempPath();
@@ -145,13 +144,6 @@ public class ZipFSTester {
         Path fs1Path = getTempPath();
         Path fs2Path = getTempPath();
         Path fs3Path = getTempPath();
-
-        if (fs1Path.exists())
-            fs1Path.delete();
-        if (fs2Path.exists())
-            fs2Path.delete();
-        if (fs3Path.exists())
-            fs3Path.delete();
 
         // create a new filesystem, copy everything from fs
         Map<String, Object> env = new HashMap<String, Object>();
@@ -280,7 +272,6 @@ public class ZipFSTester {
         walk(fs4.getPath("/"));
         System.out.println("closing: fs4");
         fs4.close();
-
         System.out.printf("failed=%d%n", failed);
 
         fs1Path.delete();
@@ -426,6 +417,8 @@ public class ZipFSTester {
     }
 
     private static void mkdirs(Path path) throws IOException {
+        if (path.exists())
+            return;
         path = path.toAbsolutePath();
         Path parent = path.getParent();
         if (parent != null) {

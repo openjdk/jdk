@@ -1672,6 +1672,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     {
         StackImpl invocationInfoStack =
             (StackImpl)clientInvocationInfoStack.get();
+        int entryCount = -1;
         ClientInvocationInfo clientInvocationInfo = null;
         if (!invocationInfoStack.empty()) {
             clientInvocationInfo =
@@ -1680,8 +1681,12 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
             throw wrapper.invocationInfoStackEmpty() ;
         }
         clientInvocationInfo.decrementEntryCount();
+        entryCount = clientInvocationInfo.getEntryCount();
         if (clientInvocationInfo.getEntryCount() == 0) {
-            invocationInfoStack.pop();
+            // 6763340: don't pop if this is a retry!
+            if (!clientInvocationInfo.isRetryInvocation()) {
+                invocationInfoStack.pop();
+            }
             finishedDispatch();
         }
     }

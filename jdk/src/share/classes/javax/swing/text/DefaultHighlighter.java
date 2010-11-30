@@ -113,6 +113,14 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * @exception BadLocationException if the specified location is invalid
      */
     public Object addHighlight(int p0, int p1, Highlighter.HighlightPainter p) throws BadLocationException {
+        if (p0 < 0) {
+            throw new BadLocationException("Invalid start offset", p0);
+        }
+
+        if (p1 < p0) {
+            throw new BadLocationException("Invalid end offset", p1);
+        }
+
         Document doc = component.getDocument();
         HighlightInfo i = (getDrawsLayeredHighlights() &&
                            (p instanceof LayeredHighlighter.LayerPainter)) ?
@@ -217,6 +225,14 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * @exception BadLocationException if the specified location is invalid
      */
     public void changeHighlight(Object tag, int p0, int p1) throws BadLocationException {
+        if (p0 < 0) {
+            throw new BadLocationException("Invalid beginning of the range", p0);
+        }
+
+        if (p1 < p0) {
+            throw new BadLocationException("Invalid end of the range", p1);
+        }
+
         Document doc = component.getDocument();
         if (tag instanceof LayeredHighlightInfo) {
             LayeredHighlightInfo lhi = (LayeredHighlightInfo)tag;
