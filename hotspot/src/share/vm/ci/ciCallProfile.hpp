@@ -26,6 +26,7 @@
 #define SHARE_VM_CI_CICALLPROFILE_HPP
 
 #include "ci/ciClassList.hpp"
+#include "memory/allocation.hpp"
 
 // ciCallProfile
 //
