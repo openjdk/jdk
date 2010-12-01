@@ -29,15 +29,28 @@ public class LocaleCategory {
     private static String enc = null;
 
     public static void main(String[] args) {
-        base = new Locale(System.getProperty("user.language", ""),
-                          System.getProperty("user.country", ""),
-                          System.getProperty("user.variant", ""));
-        disp = new Locale(System.getProperty("user.language.display", ""),
-                          System.getProperty("user.country.display", ""),
-                          System.getProperty("user.variant.display", ""));
-        fmt  = new Locale(System.getProperty("user.language.format", ""),
-                          System.getProperty("user.country.format", ""),
-                          System.getProperty("user.variant.format", ""));
+        Locale.Builder builder = new Locale.Builder();
+
+        base = builder.setLanguage(System.getProperty("user.language", ""))
+                      .setScript(System.getProperty("user.script", ""))
+                      .setRegion(System.getProperty("user.country", ""))
+                      .setVariant(System.getProperty("user.variant", "")).build();
+        disp = builder.setLanguage(System.getProperty("user.language.display",
+                                                      Locale.getDefault().getLanguage()))
+                      .setScript(System.getProperty("user.script.display",
+                                                    Locale.getDefault().getScript()))
+                      .setRegion(System.getProperty("user.country.display",
+                                                    Locale.getDefault().getCountry()))
+                      .setVariant(System.getProperty("user.variant.display",
+                                                     Locale.getDefault().getVariant())).build();
+        fmt = builder.setLanguage(System.getProperty("user.language.format",
+                                                     Locale.getDefault().getLanguage()))
+                     .setScript(System.getProperty("user.script.format",
+                                                   Locale.getDefault().getScript()))
+                     .setRegion(System.getProperty("user.country.format",
+                                                   Locale.getDefault().getCountry()))
+                     .setVariant(System.getProperty("user.variant.format",
+                                                     Locale.getDefault().getVariant())).build();
         checkDefault();
         testGetSetDefault();
     }

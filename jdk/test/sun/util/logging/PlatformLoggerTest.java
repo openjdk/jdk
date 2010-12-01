@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6882376
+ * @bug     6882376 6985460
  * @summary Test if java.util.logging.Logger is created before and after
  *          logging is enabled.  Also validate some basic PlatformLogger
  *          operations.
@@ -43,6 +43,8 @@ public class PlatformLoggerTest {
         final String GOO_PLATFORM_LOGGER = "test.platformlogger.goo";
         final String BAR_LOGGER = "test.logger.bar";
         PlatformLogger goo = PlatformLogger.getLogger(GOO_PLATFORM_LOGGER);
+        // test the PlatformLogger methods
+        testLogMethods(goo);
 
         // Create a platform logger using the default
         PlatformLogger foo = PlatformLogger.getLogger(FOO_PLATFORM_LOGGER);
@@ -56,6 +58,10 @@ public class PlatformLoggerTest {
         PlatformLogger bar = PlatformLogger.getLogger(BAR_PLATFORM_LOGGER);
         checkPlatformLogger(bar, BAR_PLATFORM_LOGGER);
 
+        // test the PlatformLogger methods
+        testLogMethods(goo);
+        testLogMethods(bar);
+
         checkLogger(FOO_PLATFORM_LOGGER, Level.FINER);
         checkLogger(BAR_PLATFORM_LOGGER, Level.FINER);
 
@@ -64,6 +70,7 @@ public class PlatformLoggerTest {
 
         foo.setLevel(PlatformLogger.SEVERE);
         checkLogger(FOO_PLATFORM_LOGGER, Level.SEVERE);
+
     }
 
     private static void checkPlatformLogger(PlatformLogger logger, String name) {
@@ -108,4 +115,33 @@ public class PlatformLoggerTest {
                 logger.getName() + " " + logger.getLevel());
         }
     }
+
+    private static void testLogMethods(PlatformLogger logger) {
+        logger.severe("Test severe(String, Object...) {0} {1}", new Long(1), "string");
+        // test Object[]
+        logger.severe("Test severe(String, Object...) {0}", (Object[]) getPoints());
+        logger.warning("Test warning(String, Throwable)", new Throwable("Testing"));
+        logger.info("Test info(String)");
+    }
+
+    static Point[] getPoints() {
+        Point[] res = new Point[3];
+        res[0] = new Point(0,0);
+        res[1] = new Point(1,1);
+        res[2] = new Point(2,2);
+        return res;
+    }
+
+    static class Point {
+        final int x;
+        final int y;
+        public Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+        public String toString() {
+            return "{x="+x + ", y=" + y + "}";
+        }
+    }
+
 }

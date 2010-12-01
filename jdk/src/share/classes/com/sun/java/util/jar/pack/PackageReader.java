@@ -25,12 +25,18 @@
 
 package com.sun.java.util.jar.pack;
 
+import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
+import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
+import com.sun.java.util.jar.pack.ConstantPool.Entry;
+import com.sun.java.util.jar.pack.ConstantPool.Index;
+import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
+import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
+import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
 import java.io.*;
 import java.util.*;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.File;
 import com.sun.java.util.jar.pack.Package.InnerClass;
-import com.sun.java.util.jar.pack.ConstantPool.*;
 
 /**
  * Reader for a package file.

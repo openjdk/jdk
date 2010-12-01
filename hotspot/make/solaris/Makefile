@@ -53,7 +53,9 @@ endif
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/rules.make
 
 ifndef CC_INTERP
-FORCE_TIERED=1
+  ifndef FORCE_TIERED
+    FORCE_TIERED=1
+  endif
 endif
 
 ifdef LP64
@@ -210,7 +212,7 @@ $(SUBDIRS_TIERED): $(BUILDTREE_MAKE)
 	$(BUILDTREE) VARIANT=tiered
 
 $(SUBDIRS_C2): $(BUILDTREE_MAKE)
-ifdef FORCE_TIERED
+ifeq ($(FORCE_TIERED),1)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
 		$(BUILDTREE) VARIANT=tiered FORCE_TIERED=1
 else

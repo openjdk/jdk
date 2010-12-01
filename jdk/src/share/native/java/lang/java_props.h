@@ -55,6 +55,9 @@ typedef struct {
     char *language;
     char *format_language;
     char *display_language;
+    char *script;
+    char *format_script;
+    char *display_script;
     char *country;
     char *format_country;
     char *display_country;

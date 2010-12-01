@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,16 +117,23 @@ public class TestKeyMaterial extends Utils {
                 System.out.print(".");
                 n++;
 
-                KeyGenerator kg = KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
-                SecretKey masterKey = new SecretKeySpec(master, "TlsMasterSecret");
-                TlsKeyMaterialParameterSpec spec = new TlsKeyMaterialParameterSpec
-                (masterKey, major, minor, clientRandom, serverRandom, cipherAlgorithm,
-                keyLength, expandedKeyLength, ivLength, macLength);
+                KeyGenerator kg =
+                    KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
+                SecretKey masterKey =
+                    new SecretKeySpec(master, "TlsMasterSecret");
+                TlsKeyMaterialParameterSpec spec =
+                    new TlsKeyMaterialParameterSpec(masterKey, major, minor,
+                        clientRandom, serverRandom, cipherAlgorithm,
+                        keyLength, expandedKeyLength, ivLength, macLength,
+                        null, -1, -1);
 
                 kg.init(spec);
-                TlsKeyMaterialSpec result = (TlsKeyMaterialSpec)kg.generateKey();
-                match(lineNumber, clientCipherBytes, result.getClientCipherKey());
-                match(lineNumber, serverCipherBytes, result.getServerCipherKey());
+                TlsKeyMaterialSpec result =
+                    (TlsKeyMaterialSpec)kg.generateKey();
+                match(lineNumber, clientCipherBytes,
+                    result.getClientCipherKey());
+                match(lineNumber, serverCipherBytes,
+                    result.getServerCipherKey());
                 match(lineNumber, clientIv, result.getClientIv());
                 match(lineNumber, serverIv, result.getServerIv());
                 match(lineNumber, clientMacBytes, result.getClientMacKey());
@@ -144,7 +151,8 @@ public class TestKeyMaterial extends Utils {
         System.out.println("OK: " + n + " tests");
     }
 
-    private static void match(int lineNumber, byte[] out, Object res) throws Exception {
+    private static void match(int lineNumber, byte[] out, Object res)
+            throws Exception {
         if ((out == null) || (res == null)) {
             if (out != res) {
                 throw new Exception("null mismatch line " + lineNumber);

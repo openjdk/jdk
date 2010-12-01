@@ -1012,7 +1012,11 @@ public class IIOPInputStream
              * else,
              *  Handle it as a serializable class.
              */
-            if (currentClassDesc.isExternalizable()) {
+            if (Enum.class.isAssignableFrom( clz )) {
+                int ordinal = orbStream.read_long() ;
+                String value = (String)orbStream.read_value( String.class ) ;
+                return Enum.valueOf( clz, value ) ;
+            } else if (currentClassDesc.isExternalizable()) {
                 try {
                     currentObject = (currentClass == null) ?
                         null : currentClassDesc.newInstance();
@@ -2553,8 +2557,8 @@ public class IIOPInputStream
             bridge.putObject( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetObjectField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
-                ObjectUtility.compactObjectToString( v )) ;
+                o.toString(),
+                v.toString() ) ;
         }
     }
 
@@ -2566,7 +2570,7 @@ public class IIOPInputStream
             bridge.putBoolean( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetBooleanField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Boolean(v) ) ;
         }
     }
@@ -2579,7 +2583,7 @@ public class IIOPInputStream
             bridge.putByte( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetByteField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Byte(v) ) ;
         }
     }
@@ -2592,7 +2596,7 @@ public class IIOPInputStream
             bridge.putChar( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetCharField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Character(v) ) ;
         }
     }
@@ -2605,7 +2609,7 @@ public class IIOPInputStream
             bridge.putShort( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetShortField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Short(v) ) ;
         }
     }
@@ -2618,7 +2622,7 @@ public class IIOPInputStream
             bridge.putInt( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetIntField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Integer(v) ) ;
         }
     }
@@ -2631,7 +2635,7 @@ public class IIOPInputStream
             bridge.putLong( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetLongField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Long(v) ) ;
         }
     }
@@ -2644,7 +2648,7 @@ public class IIOPInputStream
             bridge.putFloat( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetFloatField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Float(v) ) ;
         }
     }
@@ -2657,7 +2661,7 @@ public class IIOPInputStream
             bridge.putDouble( o, key, v ) ;
         } catch (Exception e) {
             throw utilWrapper.errorSetDoubleField( e, fieldName,
-                ObjectUtility.compactObjectToString( o ),
+                o.toString(),
                 new Double(v) ) ;
         }
     }

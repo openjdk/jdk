@@ -26,6 +26,7 @@
 package com.sun.tools.javah;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -74,6 +75,7 @@ import javax.tools.ToolProvider;
 import static javax.tools.Diagnostic.Kind.*;
 
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.main.CommandLine;
 
 /**
  * Javah generates support files for native methods.
@@ -362,7 +364,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         if (fileManager == null)
             fileManager = getDefaultFileManager(diagnosticListener, log);
 
-        Iterator<String> iter = args.iterator();
+        Iterator<String> iter = expandAtArgs(args).iterator();
         noArgs = !iter.hasNext();
 
         while (iter.hasNext()) {
@@ -414,6 +416,18 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             return;
 
         throw new BadArgs("err.unknown.option", name).showUsage(true);
+    }
+
+    private Iterable<String> expandAtArgs(Iterable<String> args) throws BadArgs {
+        try {
+            List<String> l = new ArrayList<String>();
+            for (String arg: args) l.add(arg);
+            return Arrays.asList(CommandLine.parse(l.toArray(new String[l.size()])));
+        } catch (FileNotFoundException e) {
+            throw new BadArgs("at.args.file.not.found", e.getLocalizedMessage());
+        } catch (IOException e) {
+            throw new BadArgs("at.args.io.exception", e.getLocalizedMessage());
+        }
     }
 
     public Boolean call() {
@@ -607,8 +621,8 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             }
 
         };
-
     }
+
     private String getMessage(String key, Object... args) {
         return getMessage(task_locale, key, args);
     }

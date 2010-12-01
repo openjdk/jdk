@@ -82,12 +82,6 @@ protected:
   Stack<oop>     _objs_with_preserved_marks;
   Stack<markOop> _preserved_marks_of_objs;
 
-  // Returns true if the collection can be safely attempted.
-  // If this method returns false, a collection is not
-  // guaranteed to fail but the system may not be able
-  // to recover from the failure.
-  bool collection_attempt_is_safe();
-
   // Promotion failure handling
   OopClosure *_promo_failure_scan_stack_closure;
   void set_promo_failure_scan_stack_closure(OopClosure *scan_stack_closure) {
@@ -304,6 +298,14 @@ protected:
 
   // GC support
   virtual void compute_new_size();
+
+  // Returns true if the collection is likely to be safely
+  // completed. Even if this method returns true, a collection
+  // may not be guaranteed to succeed, and the system should be
+  // able to safely unwind and recover from that failure, albeit
+  // at some additional cost. Override superclass's implementation.
+  virtual bool collection_attempt_is_safe();
+
   virtual void collect(bool   full,
                        bool   clear_all_soft_refs,
                        size_t size,

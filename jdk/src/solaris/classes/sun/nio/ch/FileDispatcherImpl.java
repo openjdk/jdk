@@ -94,6 +94,12 @@ class FileDispatcherImpl extends FileDispatcher
         preClose0(fd);
     }
 
+    FileDescriptor duplicateForMapping(FileDescriptor fd) {
+        // file descriptor not required for mapping operations; okay
+        // to return invalid file descriptor.
+        return new FileDescriptor();
+    }
+
     // -- Native methods --
 
     static native int read0(FileDescriptor fd, long address, int len)

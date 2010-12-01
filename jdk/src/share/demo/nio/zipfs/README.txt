@@ -2,7 +2,7 @@ ZipFileSystem is a file system provider that treats the contents of a zip or
 JAR file as a java.nio.file.FileSystem.
 
 To deploy the provider you must copy zipfs.jar into your extensions
-directory or else add <JDK_HOME>/demo/nio/ZipFileSystem/zipfs.jar
+directory or else add <JDK_HOME>/demo/nio/zipfs/zipfs.jar
 to your class path.
 
 The factory methods defined by the java.nio.file.FileSystems class can be
@@ -10,8 +10,8 @@ used to create a FileSystem, eg:
 
    // use file type detection
    Map<String,?> env = Collections.emptyMap();
-   Path jarfile = Path.get("foo.jar");
-   FileSystem fs = FileSystems.newFileSystem(jarfile, env);
+   Path jarfile = Paths.get("foo.jar");
+   FileSystem fs = FileSystems.newFileSystem(jarfile, env, null);
 
 -or
 
