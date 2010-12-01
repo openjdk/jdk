@@ -26,10 +26,18 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.nio.*;
-import java.io.*;
-import java.util.jar.*;
-import java.util.zip.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Pack200;
+import java.util.zip.CRC32;
+import java.util.zip.Deflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 class NativeUnpack {
     // Pointer to the native unpacker obj

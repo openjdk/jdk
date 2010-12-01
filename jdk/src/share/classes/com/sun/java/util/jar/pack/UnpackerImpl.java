@@ -25,11 +25,25 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.util.*;
-import java.util.jar.*;
-import java.util.zip.*;
-import java.io.*;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.SortedMap;
+import java.util.TimeZone;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Pack200;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedOutputStream;
+import java.util.zip.ZipEntry;
 
 /*
  * Implementation of the Pack provider.
