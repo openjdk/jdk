@@ -30,15 +30,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/defaultStream.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "hpi_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "hpi_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "hpi_windows.hpp"
-#endif
 
 # include <sys/stat.h>
 # include <errno.h>
