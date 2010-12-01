@@ -874,6 +874,10 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
+
+  // Make all state_for calls early since they can emit code
+  CodeEmitInfo* info = state_for(x, x->state());
+
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
   LIRItem dst(x->argument_at(2), this);
@@ -916,7 +920,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   ciArrayKlass* expected_type;
   arraycopy_helper(x, &flags, &expected_type);
 
-  CodeEmitInfo* info = state_for(x, x->state()); // we may want to have stack (deoptimization?)
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp, expected_type, flags, info); // does add_safepoint
 }
 
