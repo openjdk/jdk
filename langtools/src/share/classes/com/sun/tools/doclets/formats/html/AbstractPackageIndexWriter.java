@@ -25,9 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Abstract class to generate the overview files in
@@ -56,105 +58,127 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
         packages = configuration.packages;
     }
 
-    protected abstract void printNavigationBarHeader();
-
-    protected abstract void printNavigationBarFooter();
-
-    protected abstract void printOverviewHeader();
-
-    protected abstract void printIndexHeader(String text, String tableSummary);
-
-    protected abstract void printIndexRow(PackageDoc pkg);
-
-    protected abstract void printIndexFooter();
+    /**
+     * Adds the navigation bar header to the documentation tree.
+     *
+     * @param body the document tree to which the navigation bar header will be added
+     */
+    protected abstract void addNavigationBarHeader(Content body);
 
     /**
-     * Generate the contants in the package index file. Call appropriate
+     * Adds the navigation bar footer to the documentation tree.
+     *
+     * @param body the document tree to which the navigation bar footer will be added
+     */
+    protected abstract void addNavigationBarFooter(Content body);
+
+    /**
+     * Adds the overview header to the documentation tree.
+     *
+     * @param body the document tree to which the overview header will be added
+     */
+    protected abstract void addOverviewHeader(Content body);
+
+    /**
+     * Adds the packages list to the documentation tree.
+     *
+     * @param packages an array of packagedoc objects
+     * @param text caption for the table
+     * @param tableSummary summary for the table
+     * @param body the document tree to which the packages list will be added
+     */
+    protected abstract void addPackagesList(PackageDoc[] packages, String text,
+            String tableSummary, Content body);
+
+    /**
+     * Generate and prints the contents in the package index file. Call appropriate
      * methods from the sub-class in order to generate Frame or Non
      * Frame format.
+     *
      * @param title the title of the window.
      * @param includeScript boolean set true if windowtitle script is to be included
      */
-    protected void generatePackageIndexFile(String title, boolean includeScript) throws IOException {
+    protected void buildPackageIndexFile(String title, boolean includeScript) throws IOException {
         String windowOverview = configuration.getText(title);
-        printHtmlHeader(windowOverview,
-            configuration.metakeywords.getOverviewMetaKeywords(title,
-                configuration.doctitle),
-            includeScript);
-        printNavigationBarHeader();
-        printOverviewHeader();
-
-        generateIndex();
-
-        printOverview();
-
-        printNavigationBarFooter();
-        printBodyHtmlEnd();
+        Content body = getBody(includeScript, getWindowTitle(windowOverview));
+        addNavigationBarHeader(body);
+        addOverviewHeader(body);
+        addIndex(body);
+        addOverview(body);
+        addNavigationBarFooter(body);
+        printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
+                configuration.doctitle), includeScript, body);
     }
 
     /**
-     * Default to no overview, overwrite to add overview.
+     * Default to no overview, override to add overview.
+     *
+     * @param body the document tree to which the overview will be added
      */
-    protected void printOverview() throws IOException {
+    protected void addOverview(Content body) throws IOException {
     }
 
     /**
-     * Generate the frame or non-frame package index.
+     * Adds the frame or non-frame package index to the documentation tree.
+     *
+     * @param body the document tree to which the index will be added
      */
-    protected void generateIndex() {
-        printIndexContents(packages, "doclet.Package_Summary",
+    protected void addIndex(Content body) {
+        addIndexContents(packages, "doclet.Package_Summary",
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Package_Summary"),
-                configuration.getText("doclet.packages")));
+                configuration.getText("doclet.packages")), body);
     }
 
     /**
-     * Generate code for package index contents. Call appropriate methods from
-     * the sub-classes.
+     * Adds package index contents. Call appropriate methods from
+     * the sub-classes. Adds it to the body HtmlTree
      *
-     * @param packages Array of packages to be documented.
-     * @param text     String which will be used as the heading.
+     * @param packages array of packages to be documented
+     * @param text string which will be used as the heading
+     * @param tableSummary summary for the table
+     * @param body the document tree to which the index contents will be added
      */
-    protected void printIndexContents(PackageDoc[] packages, String text, String tableSummary) {
+    protected void addIndexContents(PackageDoc[] packages, String text,
+            String tableSummary, Content body) {
         if (packages.length > 0) {
             Arrays.sort(packages);
-            printIndexHeader(text, tableSummary);
-            printAllClassesPackagesLink();
-            for(int i = 0; i < packages.length; i++) {
-                if (packages[i] != null) {
-                    printIndexRow(packages[i]);
-                }
-            }
-            printIndexFooter();
+            addAllClassesLink(body);
+            addPackagesList(packages, text, tableSummary, body);
         }
     }
 
     /**
-     * Print the doctitle, if it is specified on the command line.
+     * Adds the doctitle to the documentation tree, if it is specified on the command line.
+     *
+     * @param body the document tree to which the title will be added
      */
-    protected void printConfigurationTitle() {
+    protected void addConfigurationTitle(Content body) {
         if (configuration.doctitle.length() > 0) {
-            center();
-            h1(configuration.doctitle);
-            centerEnd();
+            Content title = new RawHtml(configuration.doctitle);
+            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
+                    HtmlStyle.title, title);
+            Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+            body.addContent(div);
         }
     }
 
     /**
-     * Highlight "Overview" in the strong format, in the navigation bar as this
-     * is the overview page.
+     * Returns highlighted "Overview", in the navigation bar as this is the
+     * overview page.
+     *
+     * @return a Content object to be added to the documentation tree
      */
-    protected void navLinkContents() {
-        navCellRevStart();
-        fontStyle("NavBarFont1Rev");
-        strongText("doclet.Overview");
-        fontEnd();
-        navCellEnd();
+    protected Content getNavLinkContents() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, overviewLabel);
+        return li;
     }
 
     /**
      * Do nothing. This will be overridden in PackageIndexFrameWriter.
+     *
+     * @param body the document tree to which the all classes link will be added
      */
-    protected void printAllClassesPackagesLink() {
+    protected void addAllClassesLink(Content body) {
     }
 }

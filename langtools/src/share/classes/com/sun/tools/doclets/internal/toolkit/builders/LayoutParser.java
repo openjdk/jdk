@@ -76,7 +76,7 @@ public class LayoutParser extends DefaultHandler {
     /**
      * Parse the XML specifying the layout of the documentation.
      *
-     * @return List the list of XML elements parsed.
+     * @return the list of XML elements parsed.
      */
     public XMLNode parseXML(String root) {
         if (xmlElementsMap.containsKey(root)) {

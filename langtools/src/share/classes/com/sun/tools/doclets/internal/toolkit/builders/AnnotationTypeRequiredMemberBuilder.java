@@ -25,11 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
-
+import java.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
-import java.util.*;
 
 /**
  * Builds documentation for required annotation type members.
@@ -39,6 +38,7 @@ import java.util.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
@@ -141,81 +141,86 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * Build the annotation type required member documentation.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
+     */
+    public void buildAnnotationTypeRequiredMember(XMLNode node, Content memberDetailsTree) {
+        buildAnnotationTypeMember(node, memberDetailsTree);
+    }
+
+    /**
      * Build the member documentation.
      *
-     * @param elements the XML elements that specify how to construct this
-     *                documentation.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeRequiredMember(XMLNode node) {
+    public void buildAnnotationTypeMember(XMLNode node, Content memberDetailsTree) {
         if (writer == null) {
             return;
         }
-        for (currentMemberIndex = 0; currentMemberIndex < members.size();
+        int size = members.size();
+        if (size > 0) {
+            writer.addAnnotationDetailsTreeHeader(
+                    classDoc, memberDetailsTree);
+            for (currentMemberIndex = 0; currentMemberIndex < size;
             currentMemberIndex++) {
-            buildChildren(node);
+                Content annotationDocTree = writer.getAnnotationDocTreeHeader(
+                        (MemberDoc) members.get(currentMemberIndex),
+                        memberDetailsTree);
+                buildChildren(node, annotationDocTree);
+                memberDetailsTree.addContent(writer.getAnnotationDoc(
+                        annotationDocTree, (currentMemberIndex == size - 1)));
+            }
         }
-    }
-
-    /**
-     * Build the overall header.
-     */
-    public void buildHeader(XMLNode node) {
-        writer.writeHeader(classDoc,
-            configuration.getText("doclet.Annotation_Type_Member_Detail"));
-    }
-
-    /**
-     * Build the header for the individual members.
-     */
-    public void buildMemberHeader(XMLNode node) {
-        writer.writeMemberHeader((MemberDoc) members.get(
-                currentMemberIndex),
-            currentMemberIndex == 0);
     }
 
     /**
      * Build the signature.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node) {
-        writer.writeSignature((MemberDoc) members.get(currentMemberIndex));
+    public void buildSignature(XMLNode node, Content annotationDocTree) {
+        annotationDocTree.addContent(
+                writer.getSignature((MemberDoc) members.get(currentMemberIndex)));
     }
 
     /**
      * Build the deprecation information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node) {
-        writer.writeDeprecated((MemberDoc) members.get(currentMemberIndex));
+    public void buildDeprecationInfo(XMLNode node, Content annotationDocTree) {
+        writer.addDeprecated((MemberDoc) members.get(currentMemberIndex),
+                annotationDocTree);
     }
 
     /**
      * Build the comments for the member.  Do nothing if
      * {@link Configuration#nocomment} is set to true.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildMemberComments(XMLNode node) {
+    public void buildMemberComments(XMLNode node, Content annotationDocTree) {
         if(! configuration.nocomment){
-            writer.writeComments((MemberDoc) members.get(currentMemberIndex));
+            writer.addComments((MemberDoc) members.get(currentMemberIndex),
+                    annotationDocTree);
         }
     }
 
     /**
      * Build the tag information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node) {
-        writer.writeTags((MemberDoc) members.get(currentMemberIndex));
-    }
-
-    /**
-     * Build the footer for the individual member.
-     */
-    public void buildMemberFooter(XMLNode node) {
-        writer.writeMemberFooter();
-    }
-
-    /**
-     * Build the overall footer.
-     */
-    public void buildFooter(XMLNode node) {
-        writer.writeFooter(classDoc);
+    public void buildTagInfo(XMLNode node, Content annotationDocTree) {
+        writer.addTags((MemberDoc) members.get(currentMemberIndex),
+                annotationDocTree);
     }
 
     /**

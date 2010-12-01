@@ -29,6 +29,8 @@ import java.io.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Generate Class Hierarchy page for all the Classes in this run.  Use
@@ -37,6 +39,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * current or the destination directory.
  *
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class TreeWriter extends AbstractTreeWriter {
 
@@ -90,86 +93,70 @@ public class TreeWriter extends AbstractTreeWriter {
     }
 
     /**
-     * Print the interface hierarchy and class hierarchy in the file.
+     * Generate the interface hierarchy and class hierarchy.
      */
     public void generateTreeFile() throws IOException {
-        printHtmlHeader(configuration.getText("doclet.Window_Class_Hierarchy"),
-            null, true);
-
-        printTreeHeader();
-
-        printPageHeading();
-
-        printPackageTreeLinks();
-
-        generateTree(classtree.baseclasses(), "doclet.Class_Hierarchy");
-        generateTree(classtree.baseinterfaces(), "doclet.Interface_Hierarchy");
-        generateTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy");
-        generateTree(classtree.baseEnums(), "doclet.Enum_Hierarchy");
-
-        printTreeFooter();
+        Content body = getTreeHeader();
+        Content headContent = getResource("doclet.Hierarchy_For_All_Packages");
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
+                HtmlStyle.title, headContent);
+        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        addPackageTreeLinks(div);
+        body.addContent(div);
+        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
+        divTree.addStyle(HtmlStyle.contentContainer);
+        addTree(classtree.baseclasses(), "doclet.Class_Hierarchy", divTree);
+        addTree(classtree.baseinterfaces(), "doclet.Interface_Hierarchy", divTree);
+        addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
+        addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree);
+        body.addContent(divTree);
+        addNavLinks(false, body);
+        addBottom(body);
+        printHtmlDocument(null, true, body);
     }
 
     /**
-     * Generate the links to all the package tree files.
+     * Add the links to all the package tree files.
+     *
+     * @param contentTree the content tree to which the links will be added
      */
-    protected void printPackageTreeLinks() {
+    protected void addPackageTreeLinks(Content contentTree) {
         //Do nothing if only unnamed package is used
         if (packages.length == 1 && packages[0].name().length() == 0) {
             return;
         }
         if (!classesonly) {
-            dl();
-            dt();
-            strongText("doclet.Package_Hierarchies");
-            dtEnd();
-            dd();
+            Content span = HtmlTree.SPAN(HtmlStyle.strong,
+                    getResource("doclet.Package_Hierarchies"));
+            contentTree.addContent(span);
+            HtmlTree ul = new HtmlTree(HtmlTag.UL);
+            ul.addStyle(HtmlStyle.horizontal);
             for (int i = 0; i < packages.length; i++) {
                 if (packages[i].name().length() == 0) {
                     continue;
                 }
-                String filename = pathString(packages[i], "package-tree.html");
-                printHyperLink(filename, "", packages[i].name());
+                String link = pathString(packages[i], "package-tree.html");
+                Content li = HtmlTree.LI(getHyperLink(
+                        link, "", new StringContent(packages[i].name())));
                 if (i < packages.length - 1) {
-                    print(", ");
+                    li.addContent(", ");
                 }
+                ul.addContent(li);
             }
-            ddEnd();
-            dlEnd();
-            hr();
+            contentTree.addContent(ul);
         }
     }
 
     /**
-     * Print the top text (from the -top option) and
-     * navigation bar at the top of page.
+     * Get the tree header.
+     *
+     * @return a content tree for the tree header
      */
-    protected void printTreeHeader() {
-        printTop();
-        navLinks(true);
-        hr();
-    }
-
-    /**
-     * Print the navigation bar and bottom text (from the -bottom option)
-     * at the bottom of page.
-     */
-    protected void printTreeFooter() {
-        hr();
-        navLinks(false);
-        printBottom();
-        printBodyHtmlEnd();
-    }
-
-    /**
-     * Print the page title "Hierarchy For All Packages" at the top of the tree
-     * page.
-     */
-    protected void printPageHeading() {
-        center();
-        h2();
-        printText("doclet.Hierarchy_For_All_Packages");
-        h2End();
-        centerEnd();
+    protected Content getTreeHeader() {
+        String title = configuration.getText("doclet.Window_Class_Hierarchy");
+        Content bodyTree = getBody(true, getWindowTitle(title));
+        addTop(bodyTree);
+        addNavLinks(true, bodyTree);
+        return bodyTree;
     }
 }

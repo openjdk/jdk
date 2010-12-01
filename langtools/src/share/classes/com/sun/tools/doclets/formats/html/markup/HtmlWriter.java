@@ -55,7 +55,7 @@ public class HtmlWriter extends PrintWriter {
      * URL file separator string("/").
      */
     public static final String fileseparator =
-         DirectoryManager.URL_FILE_SEPERATOR;
+         DirectoryManager.URL_FILE_SEPARATOR;
 
     /**
      * The configuration
@@ -81,6 +81,72 @@ public class HtmlWriter extends PrintWriter {
      * Column header for class docs displaying Modifier and Type header.
      */
     protected final String modifierTypeHeader;
+
+    public final Content overviewLabel;
+
+    public final Content defaultPackageLabel;
+
+    public final Content packageLabel;
+
+    public final Content useLabel;
+
+    public final Content prevLabel;
+
+    public final Content nextLabel;
+
+    public final Content prevclassLabel;
+
+    public final Content nextclassLabel;
+
+    public final Content summaryLabel;
+
+    public final Content detailLabel;
+
+    public final Content framesLabel;
+
+    public final Content noframesLabel;
+
+    public final Content treeLabel;
+
+    public final Content classLabel;
+
+    public final Content deprecatedLabel;
+
+    public final Content deprecatedPhrase;
+
+    public final Content allclassesLabel;
+
+    public final Content indexLabel;
+
+    public final Content helpLabel;
+
+    public final Content seeLabel;
+
+    public final Content descriptionLabel;
+
+    public final Content prevpackageLabel;
+
+    public final Content nextpackageLabel;
+
+    public final Content packagesLabel;
+
+    public final Content methodDetailsLabel;
+
+    public final Content annotationTypeDetailsLabel;
+
+    public final Content fieldDetailsLabel;
+
+    public final Content constructorDetailsLabel;
+
+    public final Content enumConstantsDetailsLabel;
+
+    public final Content specifiedByLabel;
+
+    public final Content overridesLabel;
+
+    public final Content descfrmClassLabel;
+
+    public final Content descfrmInterfaceLabel;
 
     /**
      * Constructor.
@@ -111,6 +177,73 @@ public class HtmlWriter extends PrintWriter {
         modifierTypeHeader = configuration.getText("doclet.0_and_1",
                 configuration.getText("doclet.Modifier"),
                 configuration.getText("doclet.Type"));
+        overviewLabel = getResource("doclet.Overview");
+        defaultPackageLabel = new RawHtml(
+                DocletConstants.DEFAULT_PACKAGE_NAME);
+        packageLabel = getResource("doclet.Package");
+        useLabel = getResource("doclet.navClassUse");
+        prevLabel = getResource("doclet.Prev");
+        nextLabel = getResource("doclet.Next");
+        prevclassLabel = getResource("doclet.Prev_Class");
+        nextclassLabel = getResource("doclet.Next_Class");
+        summaryLabel = getResource("doclet.Summary");
+        detailLabel = getResource("doclet.Detail");
+        framesLabel = getResource("doclet.FRAMES");
+        noframesLabel = getResource("doclet.NO_FRAMES");
+        treeLabel = getResource("doclet.Tree");
+        classLabel = getResource("doclet.Class");
+        deprecatedLabel = getResource("doclet.navDeprecated");
+        deprecatedPhrase = getResource("doclet.Deprecated");
+        allclassesLabel = getResource("doclet.All_Classes");
+        indexLabel = getResource("doclet.Index");
+        helpLabel = getResource("doclet.Help");
+        seeLabel = getResource("doclet.See");
+        descriptionLabel = getResource("doclet.Description");
+        prevpackageLabel = getResource("doclet.Prev_Package");
+        nextpackageLabel = getResource("doclet.Next_Package");
+        packagesLabel = getResource("doclet.Packages");
+        methodDetailsLabel = getResource("doclet.Method_Detail");
+        annotationTypeDetailsLabel = getResource("doclet.Annotation_Type_Member_Detail");
+        fieldDetailsLabel = getResource("doclet.Field_Detail");
+        constructorDetailsLabel = getResource("doclet.Constructor_Detail");
+        enumConstantsDetailsLabel = getResource("doclet.Enum_Constant_Detail");
+        specifiedByLabel = getResource("doclet.Specified_By");
+        overridesLabel = getResource("doclet.Overrides");
+        descfrmClassLabel = getResource("doclet.Description_From_Class");
+        descfrmInterfaceLabel = getResource("doclet.Description_From_Interface");
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @return a content tree for the text
+     */
+    public Content getResource(String key) {
+        return new StringContent(configuration.getText(key));
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param a1 string argument added to configuration text
+     * @return a content tree for the text
+     */
+    public Content getResource(String key, String a1) {
+        return new RawHtml(configuration.getText(key, a1));
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param a1 string argument added to configuration text
+     * @param a2 string argument added to configuration text
+     * @return a content tree for the text
+     */
+    public Content getResource(String key, String a1, String a2) {
+        return new RawHtml(configuration.getText(key, a1, a2));
     }
 
     /**
@@ -143,6 +276,48 @@ public class HtmlWriter extends PrintWriter {
             noScript();
             noScriptEnd();
         }
+    }
+
+    /**
+     * Returns an HtmlTree for the SCRIPT tag.
+     *
+     * @return an HtmlTree for the SCRIPT tag
+     */
+    protected HtmlTree getWinTitleScript(){
+        HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
+        if(winTitle != null && winTitle.length() > 0) {
+            script.addAttr(HtmlAttr.TYPE, "text/javascript");
+            String scriptCode = "<!--\n" +
+                    "    if (location.href.indexOf('is-external=true') == -1) {\n" +
+                    "        parent.document.title=\"" + winTitle + "\";\n" +
+                    "    }\n" +
+                    "//-->\n";
+            RawHtml scriptContent = new RawHtml(scriptCode);
+            script.addContent(scriptContent);
+        }
+        return script;
+    }
+
+    /**
+     * Returns a content tree for the SCRIPT tag for the main page(index.html).
+     *
+     * @return a content for the SCRIPT tag
+     */
+    protected Content getFramesetJavaScript(){
+        HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
+        script.addAttr(HtmlAttr.TYPE, "text/javascript");
+        String scriptCode = "\n    targetPage = \"\" + window.location.search;\n" +
+                "    if (targetPage != \"\" && targetPage != \"undefined\")\n" +
+                "        targetPage = targetPage.substring(1);\n" +
+                "    if (targetPage.indexOf(\":\") != -1)\n" +
+                "        targetPage = \"undefined\";\n" +
+                "    function loadFrames() {\n" +
+                "        if (targetPage != \"\" && targetPage != \"undefined\")\n" +
+                "             top.classFrame.location = top.targetPage;\n" +
+                "    }\n";
+        RawHtml scriptContent = new RawHtml(scriptCode);
+        script.addContent(scriptContent);
+        return script;
     }
 
     /**
@@ -204,6 +379,28 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
+     * Returns an HtmlTree for the BODY tag.
+     *
+     * @param includeScript  set true if printing windowtitle script
+     * @param title title for the window
+     * @return an HtmlTree for the BODY tag
+     */
+    public HtmlTree getBody(boolean includeScript, String title) {
+        HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        // Set window title string which is later printed
+        this.winTitle = title;
+        // Don't print windowtitle script for overview-frame, allclasses-frame
+        // and package-frame
+        if (includeScript) {
+            body.addContent(getWinTitleScript());
+            Content noScript = HtmlTree.NOSCRIPT(
+                    HtmlTree.DIV(getResource("doclet.No_Script_Message")));
+            body.addContent(noScript);
+        }
+        return body;
+    }
+
+    /**
      * Print &lt;/BODY&gt; tag. Add a newline character at the end.
      */
     public void bodyEnd() {
@@ -228,6 +425,15 @@ public class HtmlWriter extends PrintWriter {
         title();
     }
 
+    /**
+     * Returns an HtmlTree for the TITLE tag.
+     *
+     * @return an HtmlTree for the TITLE tag
+     */
+    public HtmlTree getTitle() {
+        HtmlTree title = HtmlTree.TITLE(new StringContent(winTitle));
+        return title;
+    }
 
     /**
      * Print &lt;/TITLE&gt; tag. Add a newline character at the end.
@@ -519,17 +725,17 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
-     * Return, text passed, with Italics &lt;I&gt; and &lt;/I&gt; tags, surrounding it.
-     * So if the text passed is "Hi", then string returned will be "&lt;I&gt;Hi&lt;/I&gt;".
+     * Return, text passed, with Italics &lt;i&gt; and &lt;/i&gt; tags, surrounding it.
+     * So if the text passed is "Hi", then string returned will be "&lt;i&gt;Hi&lt;/i&gt;".
      *
      * @param text String to be printed in between &lt;I&gt; and &lt;/I&gt; tags.
      */
     public String italicsText(String text) {
-        return "<I>" + text + "</I>";
+        return "<i>" + text + "</i>";
     }
 
     public String codeText(String text) {
-        return "<CODE>" + text + "</CODE>";
+        return "<code>" + text + "</code>";
     }
 
     /**
@@ -537,6 +743,13 @@ public class HtmlWriter extends PrintWriter {
      */
     public void space() {
         print("&nbsp;");
+    }
+
+    /**
+     * Return "&#38;nbsp;", non-breaking space.
+     */
+    public Content getSpace() {
+        return RawHtml.nbsp;
     }
 
     /**
@@ -1182,21 +1395,21 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
-     * Get the "&lt;CODE&gt;" string.
+     * Get the "&lt;code&gt;" string.
      *
-     * @return String Return String "&lt;CODE>";
+     * @return String Return String "&lt;code&gt;";
      */
     public String getCode() {
-        return "<CODE>";
+        return "<code>";
     }
 
     /**
-     * Get the "&lt;/CODE&gt;" string.
+     * Get the "&lt;/code&gt;" string.
      *
-     * @return String Return String "&lt;/CODE&gt;";
+     * @return String Return String "&lt;/code&gt;";
      */
     public String getCodeEnd() {
-        return "</CODE>";
+        return "</code>";
     }
 
     /**

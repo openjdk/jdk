@@ -48,35 +48,34 @@ public class TestIndex extends JavadocTester {
     private static final String[][] TEST = {
         //Make sure the horizontal scroll bar does not appear in class frame.
         {BUG_ID + FS + "index.html",
-            "<FRAME src=\"overview-summary.html\" name=\"classFrame\" " +
-            "title=\"Package, class and interface descriptions\" " +
-            "scrolling=\"yes\">"},
+            "<frame src=\"overview-summary.html\" name=\"classFrame\" title=\"" +
+            "Package, class and interface descriptions\" scrolling=\"yes\">"},
 
         //Test index-all.html
         {BUG_ID + FS + "index-all.html",
-            "<A HREF=\"./pkg/C.html\" title=\"class in pkg\"><STRONG>C</STRONG></A>" +
-            " - Class in <A HREF=\"./pkg/package-summary.html\">pkg</A>"},
+            "<a href=\"./pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">C</span></a>" +
+            " - Class in <a href=\"./pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
-            "<A HREF=\"./pkg/Interface.html\" title=\"interface in pkg\">" +
-            "<STRONG>Interface</STRONG></A> - Interface in " +
-            "<A HREF=\"./pkg/package-summary.html\">pkg</A>"},
+            "<a href=\"./pkg/Interface.html\" title=\"interface in pkg\">" +
+            "<span class=\"strong\">Interface</span></a> - Interface in " +
+            "<a href=\"./pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
-            "<A HREF=\"./pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-            "<STRONG>AnnotationType</STRONG></A> - Annotation Type in " +
-            "<A HREF=\"./pkg/package-summary.html\">pkg</A>"},
+            "<a href=\"./pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
+            "<span class=\"strong\">AnnotationType</span></a> - Annotation Type in " +
+            "<a href=\"./pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
-            "<A HREF=\"./pkg/Coin.html\" title=\"enum in pkg\">" +
-            "<STRONG>Coin</STRONG></A> - Enum in " +
-            "<A HREF=\"./pkg/package-summary.html\">pkg</A>"},
+            "<a href=\"./pkg/Coin.html\" title=\"enum in pkg\">" +
+            "<span class=\"strong\">Coin</span></a> - Enum in " +
+            "<a href=\"./pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
-            "Class in <A HREF=\"./package-summary.html\">&lt;Unnamed&gt;</A>"},
+            "Class in <a href=\"./package-summary.html\">&lt;Unnamed&gt;</a>"},
         {BUG_ID + FS + "index-all.html",
-            "<DT><A HREF=\"./pkg/C.html#Java\"><STRONG>Java</STRONG></A> - " + NL +
-            "Static variable in class pkg.<A HREF=\"./pkg/C.html\" title=\"class in pkg\">C</A>" + NL +
-            "</DT><DD>&nbsp;</DD>" + NL + NL +
-            "<DT><A HREF=\"./pkg/C.html#JDK\"><STRONG>JDK</STRONG></A> - " + NL +
-            "Static variable in class pkg.<A HREF=\"./pkg/C.html\" title=\"class in pkg\">C</A>" + NL +
-            "</DT><DD>&nbsp;</DD>"},
+            "<dl>" + NL + "<dt><span class=\"strong\"><a href=\"./pkg/C.html#Java\">" +
+            "Java</a></span> - Static variable in class pkg.<a href=\"./pkg/C.html\" " +
+            "title=\"class in pkg\">C</a></dt>" + NL + "<dd>&nbsp;</dd>" + NL +
+            "<dt><span class=\"strong\"><a href=\"./pkg/C.html#JDK\">JDK</a></span> " +
+            "- Static variable in class pkg.<a href=\"./pkg/C.html\" title=\"class in pkg\">" +
+            "C</a></dt>" + NL + "<dd>&nbsp;</dd>" + NL + "</dl>"},
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 
