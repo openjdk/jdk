@@ -64,7 +64,7 @@ public class TimedAcquireLeak {
         return outputOf(new InputStreamReader(is, "UTF-8"));
     }
 
-    final static ExecutorService drainers = Executors.newFixedThreadPool(12);
+    static final ExecutorService drainers = Executors.newFixedThreadPool(12);
     static Future<String> futureOutputOf(final InputStream is) {
         return drainers.submit(
             new Callable<String>() { public String call() throws IOException {
