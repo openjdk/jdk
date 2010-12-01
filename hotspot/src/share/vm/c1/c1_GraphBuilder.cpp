@@ -2795,7 +2795,7 @@ void GraphBuilder::setup_osr_entry_block() {
       get = append(new UnsafeGetRaw(as_BasicType(local->type()), e,
                                     append(new Constant(new IntConstant(offset))),
                                     0,
-                                    true));
+                                    true /*unaligned*/, true /*wide*/));
     }
     _state->store_local(index, get);
   }

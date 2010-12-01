@@ -1798,6 +1798,7 @@ class MacroAssembler: public Assembler {
   // branches that use right instruction for v8 vs. v9
   inline void br( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void br( Condition c, bool a, Predict p, Label& L );
+
   inline void fb( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fb( Condition c, bool a, Predict p, Label& L );
 

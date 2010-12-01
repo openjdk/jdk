@@ -2110,20 +2110,23 @@ BASE(UnsafeRawOp, UnsafeOp)
 
 LEAF(UnsafeGetRaw, UnsafeRawOp)
  private:
-  bool _may_be_unaligned;  // For OSREntry
+ bool _may_be_unaligned, _is_wide;  // For OSREntry
 
  public:
-  UnsafeGetRaw(BasicType basic_type, Value addr, bool may_be_unaligned)
+ UnsafeGetRaw(BasicType basic_type, Value addr, bool may_be_unaligned, bool is_wide = false)
   : UnsafeRawOp(basic_type, addr, false) {
     _may_be_unaligned = may_be_unaligned;
+    _is_wide = is_wide;
   }
 
-  UnsafeGetRaw(BasicType basic_type, Value base, Value index, int log2_scale, bool may_be_unaligned)
+ UnsafeGetRaw(BasicType basic_type, Value base, Value index, int log2_scale, bool may_be_unaligned, bool is_wide = false)
   : UnsafeRawOp(basic_type, base, index, log2_scale, false) {
     _may_be_unaligned = may_be_unaligned;
+    _is_wide = is_wide;
   }
 
-  bool may_be_unaligned()                               { return _may_be_unaligned; }
+  bool may_be_unaligned()                         { return _may_be_unaligned; }
+  bool is_wide()                                  { return _is_wide; }
 };
 
 
