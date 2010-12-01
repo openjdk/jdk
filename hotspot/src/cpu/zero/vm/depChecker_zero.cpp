@@ -26,6 +26,5 @@
 #include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
 #include "depChecker_zero.hpp"
-#include "runtime/hpi.hpp"
 
 // This file is intentionally empty

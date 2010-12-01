@@ -36,6 +36,16 @@
 # include "orderAccess_solaris_sparc.inline.hpp"
 #endif
 
+// System includes
+#include <sys/param.h>
+#include <dlfcn.h>
+#include <sys/socket.h>
+#include <sys/poll.h>
+#include <sys/filio.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <setjmp.h>
+
 inline const char* os::file_separator() { return "/"; }
 inline const char* os::line_separator() { return "\n"; }
 inline const char* os::path_separator() { return ":"; }
@@ -69,21 +79,19 @@ inline void os::split_reserved_memory(char *base, size_t size,
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::bang_stack_shadow_pages() {
 }
+inline void os::dll_unload(void *lib) { ::dlclose(lib); }
 
-inline DIR* os::opendir(const char* dirname)
-{
+inline DIR* os::opendir(const char* dirname) {
   assert(dirname != NULL, "just checking");
   return ::opendir(dirname);
 }
 
-inline int os::readdir_buf_size(const char *path)
-{
+inline int os::readdir_buf_size(const char *path) {
   int size = pathconf(path, _PC_NAME_MAX);
   return (size < 0 ? MAXPATHLEN : size) + sizeof(dirent) + 1;
 }
 
-inline struct dirent* os::readdir(DIR* dirp, dirent* dbuf)
-{
+inline struct dirent* os::readdir(DIR* dirp, dirent* dbuf) {
   assert(dirp != NULL, "just checking");
 #if defined(_LP64) || defined(_GNU_SOURCE)
   dirent* p;
@@ -99,9 +107,8 @@ inline struct dirent* os::readdir(DIR* dirp, dirent* dbuf)
 #endif // defined(_LP64) || defined(_GNU_SOURCE)
 }
 
-inline int os::closedir(DIR *dirp)
-{
-  assert(dirp != NULL, "just checking");
+inline int os::closedir(DIR *dirp) {
+  assert(dirp != NULL, "argument is NULL");
   return ::closedir(dirp);
 }
 
@@ -222,4 +229,38 @@ do { \
 inline bool os::numa_has_static_binding()   { return false; }
 inline bool os::numa_has_group_homing()     { return true;  }
 
+inline int    os::socket(int domain, int type, int protocol) {
+  return ::socket(domain, type, protocol);
+}
+
+inline int    os::listen(int fd, int count) {
+  if (fd < 0) return OS_ERR;
+
+  return ::listen(fd, count);
+}
+
+inline int os::socket_shutdown(int fd, int howto){
+  return ::shutdown(fd, howto);
+}
+
+inline int os::get_sock_name(int fd, struct sockaddr *him, int *len){
+  return ::getsockname(fd, him, (socklen_t*) len);
+}
+
+inline int os::get_host_name(char* name, int namelen){
+  return ::gethostname(name, namelen);
+}
+
+inline struct hostent*  os::get_host_by_name(char* name) {
+  return ::gethostbyname(name);
+}
+inline int os::get_sock_opt(int fd, int level, int optname,
+                             char *optval, int* optlen){
+  return ::getsockopt(fd, level, optname, optval, (socklen_t*) optlen);
+}
+
+inline int os::set_sock_opt(int fd, int level, int optname,
+                             const char *optval, int optlen){
+  return ::setsockopt(fd, level, optname, optval, optlen);
+}
 #endif // OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP

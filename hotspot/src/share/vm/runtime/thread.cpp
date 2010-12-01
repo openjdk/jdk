@@ -47,7 +47,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -3386,7 +3385,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     const char *msg = "Could not find agent library ";
 
     if (agent->is_absolute_path()) {
-      library = hpi::dll_load(name, ebuf, sizeof ebuf);
+      library = os::dll_load(name, ebuf, sizeof ebuf);
       if (library == NULL) {
         const char *sub_msg = " in absolute path, with error: ";
         size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
@@ -3398,8 +3397,8 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
       }
     } else {
       // Try to load the agent from the standard dll directory
-      hpi::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), name);
-      library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+      os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), name);
+      library = os::dll_load(buffer, ebuf, sizeof ebuf);
 #ifdef KERNEL
       // Download instrument dll
       if (library == NULL && strcmp(name, "instrument") == 0) {
@@ -3419,13 +3418,13 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
         }
         FREE_C_HEAP_ARRAY(char, cmd);
         // when this comes back the instrument.dll should be where it belongs.
-        library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+        library = os::dll_load(buffer, ebuf, sizeof ebuf);
       }
 #endif // KERNEL
       if (library == NULL) { // Try the local directory
         char ns[1] = {0};
-        hpi::dll_build_name(buffer, sizeof(buffer), ns, name);
-        library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+        os::dll_build_name(buffer, sizeof(buffer), ns, name);
+        library = os::dll_load(buffer, ebuf, sizeof ebuf);
         if (library == NULL) {
           const char *sub_msg = " on the library path, with error: ";
           size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
@@ -3442,7 +3441,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
 
   // Find the OnLoad function.
   for (size_t symbol_index = 0; symbol_index < num_symbol_entries; symbol_index++) {
-    on_load_entry = CAST_TO_FN_PTR(OnLoadEntry_t, hpi::dll_lookup(library, on_load_symbols[symbol_index]));
+    on_load_entry = CAST_TO_FN_PTR(OnLoadEntry_t, os::dll_lookup(library, on_load_symbols[symbol_index]));
     if (on_load_entry != NULL) break;
   }
   return on_load_entry;
@@ -3524,7 +3523,7 @@ void Threads::shutdown_vm_agents() {
     // Find the Agent_OnUnload function.
     for (uint symbol_index = 0; symbol_index < ARRAY_SIZE(on_unload_symbols); symbol_index++) {
       Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
-               hpi::dll_lookup(agent->os_lib(), on_unload_symbols[symbol_index]));
+               os::dll_lookup(agent->os_lib(), on_unload_symbols[symbol_index]));
 
       // Invoke the Agent_OnUnload function
       if (unload_entry != NULL) {
@@ -3693,7 +3692,6 @@ bool Threads::destroy_vm() {
 
 #ifndef PRODUCT
   // disable function tracing at JNI/JVM barriers
-  TraceHPI = false;
   TraceJNICalls = false;
   TraceJVMCalls = false;
   TraceRuntimeCalls = false;

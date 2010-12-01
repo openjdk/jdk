@@ -25,6 +25,5 @@
 #include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
 #include "depChecker_sparc.hpp"
-#include "runtime/hpi.hpp"
 
 // Nothing to do on Sparc

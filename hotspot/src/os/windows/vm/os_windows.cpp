@@ -47,7 +47,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1044,8 +1043,6 @@ os::closedir(DIR *dirp)
     return 0;
 }
 
-const char* os::dll_file_extension() { return ".dll"; }
-
 const char* os::get_temp_directory() {
   const char *prop = Arguments::get_property("java.io.tmpdir");
   if (prop != 0) return prop;
@@ -1067,7 +1064,6 @@ static bool file_exists(const char* filename) {
 
 void os::dll_build_name(char *buffer, size_t buflen,
                         const char* pname, const char* fname) {
-  // Copied from libhpi
   const size_t pnamelen = pname ? strlen(pname) : 0;
   const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
 
@@ -1376,10 +1372,6 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   if (offset)  *offset  = -1;
   if (buf) buf[0] = '\0';
   return false;
-}
-
-void* os::dll_lookup(void* handle, const char* name) {
-  return GetProcAddress((HMODULE)handle, name);
 }
 
 // save the start and end address of jvm.dll into param[0] and param[1]
@@ -1732,6 +1724,44 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 #ifndef _WIN64
   st->print("@%d", args_size  * sizeof(int));
 #endif
+}
+
+// This method is a copy of JDK's sysGetLastErrorString
+// from src/windows/hpi/src/system_md.c
+
+size_t os::lasterror(char *buf, size_t len) {
+  long errval;
+
+  if ((errval = GetLastError()) != 0) {
+      /* DOS error */
+    int n = (int)FormatMessage(
+          FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL,
+          errval,
+          0,
+          buf,
+          (DWORD)len,
+          NULL);
+    if (n > 3) {
+      /* Drop final '.', CR, LF */
+      if (buf[n - 1] == '\n') n--;
+      if (buf[n - 1] == '\r') n--;
+      if (buf[n - 1] == '.') n--;
+      buf[n] = '\0';
+    }
+    return n;
+  }
+
+  if (errno != 0) {
+    /* C runtime error that has no corresponding DOS error code */
+    const char *s = strerror(errno);
+    size_t n = strlen(s);
+    if (n >= len) n = len - 1;
+    strncpy(buf, s, n);
+    buf[n] = '\0';
+    return n;
+  }
+  return 0;
 }
 
 // sun.misc.Signal
@@ -2941,10 +2971,6 @@ void os::pd_start_thread(Thread* thread) {
   assert(ret != SYS_THREAD_ERROR, "StartThread failed"); // should propagate back
 }
 
-size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  return ::read(fd, buf, nBytes);
-}
-
 class HighResolutionInterval {
   // The default timer resolution seems to be 10 milliseconds.
   // (Where is this written down?)
@@ -3423,10 +3449,6 @@ jint os::init_2(void) {
 #endif
   }
 
-  // Initialize HPI.
-  jint hpi_result = hpi::initialize();
-  if (hpi_result != JNI_OK) { return hpi_result; }
-
   // If stack_commit_size is 0, windows will reserve the default size,
   // but only commit a small portion of it.
   size_t stack_commit_size = round_to(ThreadStackSize*K, os::vm_page_size());
@@ -3531,7 +3553,7 @@ int os::stat(const char *path, struct stat *sbuf) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  hpi::native_path(strcpy(pathbuf, path));
+  os::native_path(strcpy(pathbuf, path));
   int ret = ::stat(pathbuf, sbuf);
   if (sbuf != NULL && UseUTCFileTimestamp) {
     // Fix for 6539723.  st_mtime returned from stat() is dependent on
@@ -3675,6 +3697,20 @@ bool os::dont_yield() {
   return DontYieldALot;
 }
 
+// This method is a slightly reworked copy of JDK's sysOpen
+// from src/windows/hpi/src/sys_api_md.c
+
+int os::open(const char *path, int oflag, int mode) {
+  char pathbuf[MAX_PATH];
+
+  if (strlen(path) > MAX_PATH - 1) {
+    errno = ENAMETOOLONG;
+          return -1;
+  }
+  os::native_path(strcpy(pathbuf, path));
+  return ::open(pathbuf, oflag | O_BINARY | O_NOINHERIT, mode);
+}
+
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   WIN32_FIND_DATA fd;
@@ -3705,6 +3741,297 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::_lseeki64(fd, (__int64)offset, SEEK_SET);
 }
 
+
+jlong os::lseek(int fd, jlong offset, int whence) {
+  return (jlong) ::_lseeki64(fd, offset, whence);
+}
+
+// This method is a slightly reworked copy of JDK's sysNativePath
+// from src/windows/hpi/src/path_md.c
+
+/* Convert a pathname to native format.  On win32, this involves forcing all
+   separators to be '\\' rather than '/' (both are legal inputs, but Win95
+   sometimes rejects '/') and removing redundant separators.  The input path is
+   assumed to have been converted into the character encoding used by the local
+   system.  Because this might be a double-byte encoding, care is taken to
+   treat double-byte lead characters correctly.
+
+   This procedure modifies the given path in place, as the result is never
+   longer than the original.  There is no error return; this operation always
+   succeeds. */
+char * os::native_path(char *path) {
+  char *src = path, *dst = path, *end = path;
+  char *colon = NULL;           /* If a drive specifier is found, this will
+                                        point to the colon following the drive
+                                        letter */
+
+  /* Assumption: '/', '\\', ':', and drive letters are never lead bytes */
+  assert(((!::IsDBCSLeadByte('/'))
+    && (!::IsDBCSLeadByte('\\'))
+    && (!::IsDBCSLeadByte(':'))),
+    "Illegal lead byte");
+
+  /* Check for leading separators */
+#define isfilesep(c) ((c) == '/' || (c) == '\\')
+  while (isfilesep(*src)) {
+    src++;
+  }
+
+  if (::isalpha(*src) && !::IsDBCSLeadByte(*src) && src[1] == ':') {
+    /* Remove leading separators if followed by drive specifier.  This
+      hack is necessary to support file URLs containing drive
+      specifiers (e.g., "file://c:/path").  As a side effect,
+      "/c:/path" can be used as an alternative to "c:/path". */
+    *dst++ = *src++;
+    colon = dst;
+    *dst++ = ':';
+    src++;
+  } else {
+    src = path;
+    if (isfilesep(src[0]) && isfilesep(src[1])) {
+      /* UNC pathname: Retain first separator; leave src pointed at
+         second separator so that further separators will be collapsed
+         into the second separator.  The result will be a pathname
+         beginning with "\\\\" followed (most likely) by a host name. */
+      src = dst = path + 1;
+      path[0] = '\\';     /* Force first separator to '\\' */
+    }
+  }
+
+  end = dst;
+
+  /* Remove redundant separators from remainder of path, forcing all
+      separators to be '\\' rather than '/'. Also, single byte space
+      characters are removed from the end of the path because those
+      are not legal ending characters on this operating system.
+  */
+  while (*src != '\0') {
+    if (isfilesep(*src)) {
+      *dst++ = '\\'; src++;
+      while (isfilesep(*src)) src++;
+      if (*src == '\0') {
+        /* Check for trailing separator */
+        end = dst;
+        if (colon == dst - 2) break;                      /* "z:\\" */
+        if (dst == path + 1) break;                       /* "\\" */
+        if (dst == path + 2 && isfilesep(path[0])) {
+          /* "\\\\" is not collapsed to "\\" because "\\\\" marks the
+            beginning of a UNC pathname.  Even though it is not, by
+            itself, a valid UNC pathname, we leave it as is in order
+            to be consistent with the path canonicalizer as well
+            as the win32 APIs, which treat this case as an invalid
+            UNC pathname rather than as an alias for the root
+            directory of the current drive. */
+          break;
+        }
+        end = --dst;  /* Path does not denote a root directory, so
+                                    remove trailing separator */
+        break;
+      }
+      end = dst;
+    } else {
+      if (::IsDBCSLeadByte(*src)) { /* Copy a double-byte character */
+        *dst++ = *src++;
+        if (*src) *dst++ = *src++;
+        end = dst;
+      } else {         /* Copy a single-byte character */
+        char c = *src++;
+        *dst++ = c;
+        /* Space is not a legal ending character */
+        if (c != ' ') end = dst;
+      }
+    }
+  }
+
+  *end = '\0';
+
+  /* For "z:", add "." to work around a bug in the C runtime library */
+  if (colon == dst - 1) {
+          path[2] = '.';
+          path[3] = '\0';
+  }
+
+  #ifdef DEBUG
+    jio_fprintf(stderr, "sysNativePath: %s\n", path);
+  #endif DEBUG
+  return path;
+}
+
+// This code is a copy of JDK's sysSetLength
+// from src/windows/hpi/src/sys_api_md.c
+
+int os::ftruncate(int fd, jlong length) {
+  HANDLE h = (HANDLE)::_get_osfhandle(fd);
+  long high = (long)(length >> 32);
+  DWORD ret;
+
+  if (h == (HANDLE)(-1)) {
+    return -1;
+  }
+
+  ret = ::SetFilePointer(h, (long)(length), &high, FILE_BEGIN);
+  if ((ret == 0xFFFFFFFF) && (::GetLastError() != NO_ERROR)) {
+      return -1;
+  }
+
+  if (::SetEndOfFile(h) == FALSE) {
+    return -1;
+  }
+
+  return 0;
+}
+
+
+// This code is a copy of JDK's sysSync
+// from src/windows/hpi/src/sys_api_md.c
+// except for the legacy workaround for a bug in Win 98
+
+int os::fsync(int fd) {
+  HANDLE handle = (HANDLE)::_get_osfhandle(fd);
+
+  if ( (!::FlushFileBuffers(handle)) &&
+         (GetLastError() != ERROR_ACCESS_DENIED) ) {
+    /* from winerror.h */
+    return -1;
+  }
+  return 0;
+}
+
+static int nonSeekAvailable(int, long *);
+static int stdinAvailable(int, long *);
+
+#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
+#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
+
+// This code is a copy of JDK's sysAvailable
+// from src/windows/hpi/src/sys_api_md.c
+
+int os::available(int fd, jlong *bytes) {
+  jlong cur, end;
+  struct _stati64 stbuf64;
+
+  if (::_fstati64(fd, &stbuf64) >= 0) {
+    int mode = stbuf64.st_mode;
+    if (S_ISCHR(mode) || S_ISFIFO(mode)) {
+      int ret;
+      long lpbytes;
+      if (fd == 0) {
+        ret = stdinAvailable(fd, &lpbytes);
+      } else {
+        ret = nonSeekAvailable(fd, &lpbytes);
+      }
+      (*bytes) = (jlong)(lpbytes);
+      return ret;
+    }
+    if ((cur = ::_lseeki64(fd, 0L, SEEK_CUR)) == -1) {
+      return FALSE;
+    } else if ((end = ::_lseeki64(fd, 0L, SEEK_END)) == -1) {
+      return FALSE;
+    } else if (::_lseeki64(fd, cur, SEEK_SET) == -1) {
+      return FALSE;
+    }
+    *bytes = end - cur;
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+// This code is a copy of JDK's nonSeekAvailable
+// from src/windows/hpi/src/sys_api_md.c
+
+static int nonSeekAvailable(int fd, long *pbytes) {
+  /* This is used for available on non-seekable devices
+    * (like both named and anonymous pipes, such as pipes
+    *  connected to an exec'd process).
+    * Standard Input is a special case.
+    *
+    */
+  HANDLE han;
+
+  if ((han = (HANDLE) ::_get_osfhandle(fd)) == (HANDLE)(-1)) {
+    return FALSE;
+  }
+
+  if (! ::PeekNamedPipe(han, NULL, 0, NULL, (LPDWORD)pbytes, NULL)) {
+        /* PeekNamedPipe fails when at EOF.  In that case we
+         * simply make *pbytes = 0 which is consistent with the
+         * behavior we get on Solaris when an fd is at EOF.
+         * The only alternative is to raise an Exception,
+         * which isn't really warranted.
+         */
+    if (::GetLastError() != ERROR_BROKEN_PIPE) {
+      return FALSE;
+    }
+    *pbytes = 0;
+  }
+  return TRUE;
+}
+
+#define MAX_INPUT_EVENTS 2000
+
+// This code is a copy of JDK's stdinAvailable
+// from src/windows/hpi/src/sys_api_md.c
+
+static int stdinAvailable(int fd, long *pbytes) {
+  HANDLE han;
+  DWORD numEventsRead = 0;      /* Number of events read from buffer */
+  DWORD numEvents = 0;  /* Number of events in buffer */
+  DWORD i = 0;          /* Loop index */
+  DWORD curLength = 0;  /* Position marker */
+  DWORD actualLength = 0;       /* Number of bytes readable */
+  BOOL error = FALSE;         /* Error holder */
+  INPUT_RECORD *lpBuffer;     /* Pointer to records of input events */
+
+  if ((han = ::GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+        return FALSE;
+  }
+
+  /* Construct an array of input records in the console buffer */
+  error = ::GetNumberOfConsoleInputEvents(han, &numEvents);
+  if (error == 0) {
+    return nonSeekAvailable(fd, pbytes);
+  }
+
+  /* lpBuffer must fit into 64K or else PeekConsoleInput fails */
+  if (numEvents > MAX_INPUT_EVENTS) {
+    numEvents = MAX_INPUT_EVENTS;
+  }
+
+  lpBuffer = (INPUT_RECORD *)os::malloc(numEvents * sizeof(INPUT_RECORD));
+  if (lpBuffer == NULL) {
+    return FALSE;
+  }
+
+  error = ::PeekConsoleInput(han, lpBuffer, numEvents, &numEventsRead);
+  if (error == 0) {
+    os::free(lpBuffer);
+    return FALSE;
+  }
+
+  /* Examine input records for the number of bytes available */
+  for(i=0; i<numEvents; i++) {
+    if (lpBuffer[i].EventType == KEY_EVENT) {
+
+      KEY_EVENT_RECORD *keyRecord = (KEY_EVENT_RECORD *)
+                                      &(lpBuffer[i].Event);
+      if (keyRecord->bKeyDown == TRUE) {
+        CHAR *keyPressed = (CHAR *) &(keyRecord->uChar);
+        curLength++;
+        if (*keyPressed == '\r') {
+          actualLength = curLength;
+        }
+      }
+    }
+  }
+
+  if(lpBuffer != NULL) {
+    os::free(lpBuffer);
+  }
+
+  *pbytes = (long) actualLength;
+  return TRUE;
+}
 
 // Map a block of memory.
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
@@ -3871,7 +4198,7 @@ void os::pause() {
   int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
   if (fd != -1) {
     struct stat buf;
-    close(fd);
+    ::close(fd);
     while (::stat(filename, &buf) == 0) {
       Sleep(100);
     }
@@ -4232,3 +4559,164 @@ static int getLastErrorString(char *buf, size_t len)
 // We don't build a headless jre for Windows
 bool os::is_headless_jre() { return false; }
 
+// OS_SocketInterface
+// Not used on Windows
+
+// OS_SocketInterface
+typedef struct hostent * (PASCAL FAR *ws2_ifn_ptr_t)(...);
+ws2_ifn_ptr_t *get_host_by_name_fn = NULL;
+
+typedef CRITICAL_SECTION mutex_t;
+#define mutexInit(m)    InitializeCriticalSection(m)
+#define mutexDestroy(m) DeleteCriticalSection(m)
+#define mutexLock(m)    EnterCriticalSection(m)
+#define mutexUnlock(m)  LeaveCriticalSection(m)
+
+static bool sockfnptrs_initialized = FALSE;
+static mutex_t sockFnTableMutex;
+
+/* is Winsock2 loaded? better to be explicit than to rely on sockfnptrs */
+static bool winsock2Available = FALSE;
+
+
+static void initSockFnTable() {
+  int (PASCAL FAR* WSAStartupPtr)(WORD, LPWSADATA);
+  WSADATA wsadata;
+
+  ::mutexInit(&sockFnTableMutex);
+  ::mutexLock(&sockFnTableMutex);
+
+  if (sockfnptrs_initialized == FALSE) {
+        HMODULE hWinsock;
+
+          /* try to load Winsock2, and if that fails, load Winsock */
+    hWinsock = ::LoadLibrary("ws2_32.dll");
+
+    if (hWinsock == NULL) {
+      jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
+      ::GetLastError());
+      return;
+    }
+
+    /* If we loaded a DLL, then we might as well initialize it.  */
+    WSAStartupPtr = (int (PASCAL FAR *)(WORD, LPWSADATA))
+    ::GetProcAddress(hWinsock, "WSAStartup");
+
+    if (WSAStartupPtr(MAKEWORD(1,1), &wsadata) != 0) {
+        jio_fprintf(stderr, "Could not initialize Winsock\n");
+    }
+
+    get_host_by_name_fn
+        = (ws2_ifn_ptr_t*) GetProcAddress(hWinsock, "gethostbyname");
+  }
+
+  assert(get_host_by_name_fn != NULL,
+    "gethostbyname function not found");
+  sockfnptrs_initialized = TRUE;
+  ::mutexUnlock(&sockFnTableMutex);
+}
+
+struct hostent*  os::get_host_by_name(char* name) {
+  if (!sockfnptrs_initialized) {
+    initSockFnTable();
+  }
+
+  assert(sockfnptrs_initialized == TRUE && get_host_by_name_fn != NULL,
+    "sockfnptrs is not initialized or pointer to gethostbyname function is NULL");
+  return (*get_host_by_name_fn)(name);
+}
+
+
+int os::socket_close(int fd) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::socket_available(int fd, jint *pbytes) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::socket(int domain, int type, int protocol) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::listen(int fd, int count) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::connect(int fd, struct sockaddr *him, int len) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::accept(int fd, struct sockaddr *him, int *len) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::sendto(int fd, char *buf, int len, int flags,
+                        struct sockaddr *to, int tolen) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::recvfrom(int fd, char *buf, int nBytes, int flags,
+                         sockaddr *from, int *fromlen) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::recv(int fd, char *buf, int nBytes, int flags) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::send(int fd, char *buf, int nBytes, int flags) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::raw_send(int fd, char *buf, int nBytes, int flags) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::timeout(int fd, long timeout) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::get_host_name(char* name, int namelen) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::socket_shutdown(int fd, int howto) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::bind(int fd, struct sockaddr *him, int len) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::get_sock_name(int fd, struct sockaddr *him, int *len) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::get_sock_opt(int fd, int level, int optname,
+                             char *optval, int* optlen) {
+  ShouldNotReachHere();
+  return 0;
+}
+
+int os::set_sock_opt(int fd, int level, int optname,
+                             const char *optval, int optlen) {
+  ShouldNotReachHere();
+  return 0;
+}
