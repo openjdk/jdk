@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit;
 
 import java.io.*;
+import java.util.*;
 import com.sun.javadoc.*;
 
 /**
@@ -36,61 +37,77 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface MemberSummaryWriter {
 
     /**
-     * Write the member summary header for the given class.
+     * Get the member summary header for the given class.
      *
-     * @param classDoc the class the summary belongs to.
+     * @param classDoc the class the summary belongs to
+     * @param memberSummaryTree the content tree to which the member summary will be added
+     * @return a content tree for the member summary header
      */
-    public void writeMemberSummaryHeader(ClassDoc classDoc);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree);
 
     /**
-     * Write the member summary for the given class and member.
+     * Get the summary table for the given class.
      *
-     * @param classDoc the class the summary belongs to.
-     * @param member the member that I am summarizing.
-     * @param firstSentenceTags the tags for the sentence being documented.
-     * @param isFirst true if this is the first member in the list.
-     * @param isLast true if this the last member being documented.
+     * @param classDoc the class the summary table belongs to
+     * @return a content tree for the member summary table
      */
-    public void writeMemberSummary(ClassDoc classDoc, ProgramElementDoc member,
-        Tag[] firstSentenceTags, boolean isFirst, boolean isLast);
+    public Content getSummaryTableTree(ClassDoc classDoc);
 
     /**
-     * Write the member summary footer for the given class.
+     * Add the member summary for the given class and member.
      *
-     * @param classDoc the class the summary belongs to.
+     * @param classDoc the class the summary belongs to
+     * @param member the member that is documented
+     * @param firstSentenceTags the tags for the sentence being documented
+     * @param tableTree the content treeto which the information will be added
+     * @param counter the counter for determing style for the table row
      */
-    public void writeMemberSummaryFooter(ClassDoc classDoc);
+    public void addMemberSummary(ClassDoc classDoc, ProgramElementDoc member,
+        Tag[] firstSentenceTags, Content tableTree, int counter);
 
     /**
-     * Write the inherited member summary header for the given class.
+     * Get the inherited member summary header for the given class.
      *
-     * @param classDoc the class the summary belongs to.
+     * @param classDoc the class the summary belongs to
+     * @return a content tree containing the inherited summary header
      */
-    public void writeInheritedMemberSummaryHeader(ClassDoc classDoc);
+    public Content getInheritedSummaryHeader(ClassDoc classDoc);
 
     /**
-     * Write the inherited member summary for the given class and member.
+     * Add the inherited member summary for the given class and member.
      *
-     * @param classDoc the class the inherited member belongs to.
-     * @param member   the inherited member that I am summarizing.
-     * @param isFirst  true if this is the first member in the list.
-     * @param isLast   true if this is the last member in the list.
+     * @param classDoc the class the inherited member belongs to
+     * @param member the inherited member that is being documented
+     * @param isFirst true if this is the first member in the list
+     * @param isLast true if this is the last member in the list
+     * @param linksTree the content tree to which the links will be added
      */
-    public void writeInheritedMemberSummary(ClassDoc classDoc,
-        ProgramElementDoc member, boolean isFirst, boolean isLast);
+    public void addInheritedMemberSummary(ClassDoc classDoc,
+        ProgramElementDoc member, boolean isFirst, boolean isLast,
+        Content linksTree);
 
     /**
-     * Write the inherited member summary footer for the given class.
+     * Get inherited summary links.
      *
-     * @param classDoc the class the summary belongs to.
+     * @return a content tree conatining the inherited summary links
      */
-    public void writeInheritedMemberSummaryFooter(ClassDoc classDoc);
+    public Content getInheritedSummaryLinksTree();
+
+    /**
+     * Get the member tree.
+     *
+     * @param memberTree the content tree representating the member
+     * @return a content tree for the member
+     */
+    public Content getMemberTree(Content memberTree);
 
     /**
      * Close the writer.

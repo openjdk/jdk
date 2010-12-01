@@ -90,44 +90,34 @@ public class JavascriptWinTitle {
     private static final String[][] testArray = {
 
             // Test the javascript "type" attribute is present:
-            {  "<SCRIPT type=\"text/javascript\">",
+            {  "<script type=\"text/javascript\">",
+                     TMPDEST_DIR1 + "overview-summary.html"  },
+
+            // Test onload is absent:
+            {  "<body>",
                      TMPDEST_DIR1 + "overview-summary.html"  },
 
             // Test onload is present:
-            {  "onload=\"windowTitle();\"",
-                     TMPDEST_DIR1 + "overview-summary.html"  },
-
-            // Test onload is present:
-            {  "onload=\"windowTitle();\"",
+            {  "<body>",
                      TMPDEST_DIR1 + FS + "p1" + FS + "package-summary.html"  },
 
-            // Test onload is present:
-            {  "onload=\"windowTitle();\"",
-                     TMPDEST_DIR1 + FS + "p1" + FS + "C.html"  },
-
             // Test that "onload" is not present in BODY tag:
-            {   "<BODY BGCOLOR=\"white\">",
+            {   "<body>",
                      TMPDEST_DIR1 + "overview-frame.html"  },
 
             // Test that "onload" is not present in BODY tag:
-            {   "<BODY BGCOLOR=\"white\">",
+            {   "<body>",
                      TMPDEST_DIR1 + "allclasses-frame.html"  },
 
             // Test that "onload" is not present in BODY tag:
-            {   "<BODY BGCOLOR=\"white\">",
+            {   "<body>",
                      TMPDEST_DIR1 + FS + "p1" + FS + "package-frame.html"  },
 
             // Test that win title javascript is followed by NOSCRIPT code.
-            {"<SCRIPT type=\"text/javascript\">" + LS +
-                    "function windowTitle()" + LS +
-                    "{" + LS +
-                    "    if (location.href.indexOf('is-external=true') == -1) {" + LS +
-                    "        parent.document.title=\"C (Window Title)\";" + LS +
-                    "    }" + LS +
-                    "}" + LS +
-             "</SCRIPT>" + LS +
-             "<NOSCRIPT>" + LS +
-             "</NOSCRIPT>",
+            {"<script type=\"text/javascript\"><!--" + LS +
+                     "    if (location.href.indexOf('is-external=true') == -1) {" + LS +
+                     "        parent.document.title=\"C (Window Title)\";" + LS +
+                     "    }" + LS + "//-->" + LS + "</script>",
              TMPDEST_DIR1 + FS + "p1" + FS + "C.html"
             }
 
