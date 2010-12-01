@@ -25,11 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.javadoc.*;
 
 /**
  * Abstract class to print the class hierarchy page for all the Classes. This
@@ -45,6 +46,8 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * The class and interface tree built by using {@link ClassTree}
      */
     protected final ClassTree classtree;
+
+    private static final String LI_CIRCLE  = "circle";
 
     /**
      * Constructor initilises classtree variable. This constructor will be used
@@ -87,55 +90,64 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Generate each level of the class tree. For each sub-class or
+     * Add each level of the class tree. For each sub-class or
      * sub-interface indents the next level information.
-     * Recurses itself to generate subclasses info.
-     * To iterate is human, to recurse is divine - L. Peter Deutsch.
+     * Recurses itself to add subclasses info.
      *
-     * @param parent the superclass or superinterface of the list.
-     * @param list list of the sub-classes at this level.
-     * @param isEnum true if we are generating a tree for enums.
+     * @param parent the superclass or superinterface of the list
+     * @param list list of the sub-classes at this level
+     * @param isEnum true if we are generating a tree for enums
+     * @param contentTree the content tree to which the level information will be added
      */
-    protected void generateLevelInfo(ClassDoc parent, List<ClassDoc> list,
-            boolean isEnum) {
-        if (list.size() > 0) {
-            ul();
-            for (int i = 0; i < list.size(); i++) {
+    protected void addLevelInfo(ClassDoc parent, List<ClassDoc> list,
+            boolean isEnum, Content contentTree) {
+        int size = list.size();
+        if (size > 0) {
+            Content ul = new HtmlTree(HtmlTag.UL);
+            for (int i = 0; i < size; i++) {
                 ClassDoc local = list.get(i);
-                printPartialInfo(local);
-                printExtendsImplements(parent, local);
-                generateLevelInfo(local, classtree.subs(local, isEnum),
-                    isEnum);   // Recurse
+                HtmlTree li = new HtmlTree(HtmlTag.LI);
+                li.addAttr(HtmlAttr.TYPE, LI_CIRCLE);
+                addPartialInfo(local, li);
+                addExtendsImplements(parent, local, li);
+                addLevelInfo(local, classtree.subs(local, isEnum),
+                        isEnum, li);   // Recurse
+                ul.addContent(li);
             }
-            ulEnd();
+            contentTree.addContent(ul);
         }
     }
 
     /**
-     * Generate the heading for the tree depending upon tree type if it's a
-     * Class Tree or Interface tree and also print the tree.
+     * Add the heading for the tree depending upon tree type if it's a
+     * Class Tree or Interface tree.
      *
      * @param list List of classes which are at the most base level, all the
-     * other classes in this run will derive from these classes.
-     * @param heading Heading for the tree.
+     * other classes in this run will derive from these classes
+     * @param heading heading for the tree
+     * @param div the content tree to which the tree will be added
      */
-    protected void generateTree(List<ClassDoc> list, String heading) {
+    protected void addTree(List<ClassDoc> list, String heading, Content div) {
         if (list.size() > 0) {
             ClassDoc firstClassDoc = list.get(0);
-            printTreeHeading(heading);
-            generateLevelInfo(!firstClassDoc.isInterface()? firstClassDoc : null,
-                list,
-                list == classtree.baseEnums());
+            Content headingContent = getResource(heading);
+            div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
+                    headingContent));
+            addLevelInfo(!firstClassDoc.isInterface()? firstClassDoc : null,
+                    list, list == classtree.baseEnums(), div);
         }
     }
 
     /**
-     * Print the information regarding the classes which this class extends or
+     * Add information regarding the classes which this class extends or
      * implements.
      *
-     * @param cd The classdoc under consideration.
+     * @param parent the parent class of the class being documented
+     * @param cd the classdoc under consideration
+     * @param contentTree the content tree to which the information will be added
      */
-    protected void printExtendsImplements(ClassDoc parent, ClassDoc cd) {
+    protected void addExtendsImplements(ClassDoc parent, ClassDoc cd,
+            Content contentTree) {
         ClassDoc[] interfaces = cd.interfaces();
         if (interfaces.length > (cd.isInterface()? 1 : 0)) {
             Arrays.sort(interfaces);
@@ -148,53 +160,43 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                     }
                     if (counter == 0) {
                         if (cd.isInterface()) {
-                            print(" (" + configuration.getText("doclet.also") + " extends ");
+                            contentTree.addContent(" (");
+                            contentTree.addContent(getResource("doclet.also"));
+                            contentTree.addContent(" extends ");
                         } else {
-                            print(" (implements ");
+                            contentTree.addContent(" (implements ");
                         }
                     } else {
-                        print(", ");
+                        contentTree.addContent(", ");
                     }
-                    printPreQualifiedClassLink(LinkInfoImpl.CONTEXT_TREE,
-                        interfaces[i]);
+                    addPreQualifiedClassLink(LinkInfoImpl.CONTEXT_TREE,
+                            interfaces[i], contentTree);
                     counter++;
                 }
             }
             if (counter > 0) {
-                println(")");
+                contentTree.addContent(")");
             }
         }
     }
 
     /**
-     * Print information about the class kind, if it's a "class" or "interface".
+     * Add information about the class kind, if it's a "class" or "interface".
      *
-     * @param cd classdoc.
+     * @param cd the class being documented
+     * @param contentTree the content tree to which the information will be added
      */
-    protected void printPartialInfo(ClassDoc cd) {
-        li("circle");
-        printPreQualifiedStrongClassLink(LinkInfoImpl.CONTEXT_TREE, cd);
+    protected void addPartialInfo(ClassDoc cd, Content contentTree) {
+        addPreQualifiedStrongClassLink(LinkInfoImpl.CONTEXT_TREE, cd, contentTree);
     }
 
     /**
-     * Print the heading for the tree.
+     * Get the tree label for the navigation bar.
      *
-     * @param heading Heading for the tree.
+     * @return a content tree for the tree label
      */
-    protected void printTreeHeading(String heading) {
-        h2();
-        println(configuration.getText(heading));
-        h2End();
-    }
-
-    /**
-     * Highlight "Tree" word in the navigation bar, since this is the tree page.
-     */
-    protected void navLinkTree() {
-        navCellRevStart();
-        fontStyle("NavBarFont1Rev");
-        strongText("doclet.Tree");
-        fontEnd();
-        navCellEnd();
+    protected Content getNavLinkTree() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, treeLabel);
+        return li;
     }
 }

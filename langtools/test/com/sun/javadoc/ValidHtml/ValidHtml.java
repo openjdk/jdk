@@ -33,11 +33,9 @@
  * @run main ValidHtml
  */
 
-
 import com.sun.javadoc.*;
 import java.util.*;
 import java.io.*;
-
 
 /**
  * Runs javadoc and runs regression tests on the resulting HTML.
@@ -66,13 +64,14 @@ public class ValidHtml {
         String srcdir = System.getProperty("test.src", ".");
 
         // Test for all cases except the split index page
-        runJavadoc(new String[] {"-d", TMPDEST_DIR1,
-                                 "-doctitle", "Document Title",
-                                 "-windowtitle", "Window Title",
-                                 "-use",
-                                 "-overview", (srcdir + FS + "overview.html"),
-                                 "-sourcepath", srcdir,
-                                 "p1", "p2"});
+        runJavadoc(new String[]{"-d", TMPDEST_DIR1,
+                    "-doctitle", "Document Title",
+                    "-windowtitle", "Window Title",
+                    "-use",
+                    "-overview", (srcdir + FS + "overview.html"),
+                    "-sourcepath", srcdir,
+                    "p1", "p2"
+                });
         runTestsOnHTML(testArray);
 
         printSummary();
@@ -90,53 +89,52 @@ public class ValidHtml {
      * NOTE: The standard doclet uses the same separator "\n" for all OS's
      */
     private static final String[][] testArray = {
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"http://www.w3.org/TR/html4/frameset.dtd\">",
-                     TMPDEST_DIR1 + "index.html"  },
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                     TMPDEST_DIR1 + "overview-summary.html"  },
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                     TMPDEST_DIR1 + "p1" + FS + "package-summary.html"  },
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                     TMPDEST_DIR1 + "p1" + FS + "C.html"  },
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                     TMPDEST_DIR1 + "overview-frame.html"  },
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                     TMPDEST_DIR1 + "allclasses-frame.html"  },
-
-            // Test the proper DOCTYPE element is present:
-            {
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                     TMPDEST_DIR1 + "p1" + FS + "package-frame.html"  },
-
-            // Test that <NOFRAMES> is inside <FRAMESET> element:
-            {
-"</NOFRAMES>" + LS + "</FRAMESET>",
-                     TMPDEST_DIR1 + "index.html"  },
-
-            // Test the table elements are in the correct order:
-            {
-"</FONT></TD>" + LS + "</TR>",
-                     TMPDEST_DIR1 + FS + "p1" + FS + "package-use.html"  }
-
-        };
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"http://www.w3.org/TR/html4/frameset.dtd\">",
+            TMPDEST_DIR1 + "index.html"
+        },
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+            TMPDEST_DIR1 + "overview-summary.html"
+        },
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+            TMPDEST_DIR1 + "p1" + FS + "package-summary.html"
+        },
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+            TMPDEST_DIR1 + "p1" + FS + "C.html"
+        },
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+            TMPDEST_DIR1 + "overview-frame.html"
+        },
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+            TMPDEST_DIR1 + "allclasses-frame.html"
+        },
+        // Test the proper DOCTYPE element is present:
+        {
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+            TMPDEST_DIR1 + "p1" + FS + "package-frame.html"
+        },
+        // Test that <NOFRAMES> is inside <FRAMESET> element:
+        {
+            "</noframes>" + LS + "</frameset>",
+            TMPDEST_DIR1 + "index.html"
+        },
+        // Test the table elements are in the correct order:
+        {
+            "</td>" + LS + "</tr>",
+            TMPDEST_DIR1 + FS + "p1" + FS + "package-use.html"
+        }
+    };
 
     public static void runTestsOnHTML(String[][] testArray) {
 
@@ -152,10 +150,7 @@ public class ValidHtml {
 
             // Find string in file's contents
             if (findString(fileString, stringToFind) == -1) {
-                System.out.println("\nSub-test " + (subtestNum)
-                    + " for bug " + BUGID + " (" + BUGNAME + ") FAILED\n"
-                    + "when searching for:\n"
-                    + stringToFind);
+                System.out.println("\nSub-test " + (subtestNum) + " for bug " + BUGID + " (" + BUGNAME + ") FAILED\n" + "when searching for:\n" + stringToFind);
             } else {
                 numSubtestsPassed += 1;
                 System.out.println("\nSub-test " + (subtestNum) + " passed:\n" + stringToFind);
@@ -164,11 +159,10 @@ public class ValidHtml {
     }
 
     public static void printSummary() {
-        if ( numSubtestsPassed == subtestNum ) {
+        if (numSubtestsPassed == subtestNum) {
             System.out.println("\nAll " + numSubtestsPassed + " subtests passed");
         } else {
-            throw new Error("\n" + (subtestNum - numSubtestsPassed) + " of " + (subtestNum)
-                             + " subtests failed for bug " + BUGID + " (" + BUGNAME + ")\n");
+            throw new Error("\n" + (subtestNum - numSubtestsPassed) + " of " + (subtestNum) + " subtests failed for bug " + BUGID + " (" + BUGNAME + ")\n");
         }
     }
 
@@ -176,16 +170,16 @@ public class ValidHtml {
     public static String readFileToString(String filename) {
         try {
             File file = new File(filename);
-            if ( !file.exists() ) {
+            if (!file.exists()) {
                 System.out.println("\nFILE DOES NOT EXIST: " + filename);
             }
             BufferedReader in = new BufferedReader(new FileReader(file));
 
             // Create an array of characters the size of the file
-            char[] allChars = new char[(int)file.length()];
+            char[] allChars = new char[(int) file.length()];
 
             // Read the characters into the allChars array
-            in.read(allChars, 0, (int)file.length());
+            in.read(allChars, 0, (int) file.length());
             in.close();
 
             // Convert to a string

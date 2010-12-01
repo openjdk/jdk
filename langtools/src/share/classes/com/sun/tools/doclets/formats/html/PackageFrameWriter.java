@@ -25,18 +25,20 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
-
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+
 /**
  * Class to generate file for each package contents in the left-hand bottom
  * frame. This will list all the Class Kinds in the package. A click on any
  * class-kind will update the right-hand frame with the clicked class-kind page.
  *
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class PackageFrameWriter extends HtmlDocletWriter {
 
@@ -85,132 +87,107 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param packageDoc The package for which "pacakge-frame.html" is to be generated.
      */
     public static void generate(ConfigurationImpl configuration,
-                                PackageDoc packageDoc) {
+            PackageDoc packageDoc) {
         PackageFrameWriter packgen;
         try {
             packgen = new PackageFrameWriter(configuration, packageDoc);
             String pkgName = Util.getPackageName(packageDoc);
-            packgen.printHtmlHeader(pkgName, configuration.metakeywords.getMetaKeywords(packageDoc), false);
-            packgen.printPackageHeader(pkgName);
-            packgen.generateClassListing();
-            packgen.printBodyHtmlEnd();
+            Content body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
+            Content pkgNameContent = new StringContent(pkgName);
+            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
+                    packgen.getTargetPackageLink(packageDoc, "classFrame", pkgNameContent));
+            body.addContent(heading);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.indexContainer);
+            packgen.addClassListing(div);
+            body.addContent(div);
+            packgen.printHtmlDocument(
+                    configuration.metakeywords.getMetaKeywords(packageDoc), false, body);
             packgen.close();
         } catch (IOException exc) {
             configuration.standardmessage.error(
-                        "doclet.exception_encountered",
-                        exc.toString(), OUTPUT_FILE_NAME);
+                    "doclet.exception_encountered",
+                    exc.toString(), OUTPUT_FILE_NAME);
             throw new DocletAbortException();
         }
     }
 
     /**
-     * Generate class listing for all the classes in this package. Divide class
+     * Add class listing for all the classes in this package. Divide class
      * listing as per the class kind and generate separate listing for
      * Classes, Interfaces, Exceptions and Errors.
+     *
+     * @param contentTree the content tree to which the listing will be added
      */
-    protected void generateClassListing() {
+    protected void addClassListing(Content contentTree) {
         Configuration config = configuration();
         if (packageDoc.isIncluded()) {
-            generateClassKindListing(packageDoc.interfaces(),
-                configuration.getText("doclet.Interfaces"));
-            generateClassKindListing(packageDoc.ordinaryClasses(),
-                configuration.getText("doclet.Classes"));
-            generateClassKindListing(packageDoc.enums(),
-                configuration.getText("doclet.Enums"));
-            generateClassKindListing(packageDoc.exceptions(),
-                configuration.getText("doclet.Exceptions"));
-            generateClassKindListing(packageDoc.errors(),
-                configuration.getText("doclet.Errors"));
-            generateClassKindListing(packageDoc.annotationTypes(),
-                configuration.getText("doclet.AnnotationTypes"));
+            addClassKindListing(packageDoc.interfaces(),
+                getResource("doclet.Interfaces"), contentTree);
+            addClassKindListing(packageDoc.ordinaryClasses(),
+                getResource("doclet.Classes"), contentTree);
+            addClassKindListing(packageDoc.enums(),
+                getResource("doclet.Enums"), contentTree);
+            addClassKindListing(packageDoc.exceptions(),
+                getResource("doclet.Exceptions"), contentTree);
+            addClassKindListing(packageDoc.errors(),
+                getResource("doclet.Errors"), contentTree);
+            addClassKindListing(packageDoc.annotationTypes(),
+                getResource("doclet.AnnotationTypes"), contentTree);
         } else {
             String name = Util.getPackageName(packageDoc);
-            generateClassKindListing(config.classDocCatalog.interfaces(name),
-                configuration.getText("doclet.Interfaces"));
-            generateClassKindListing(config.classDocCatalog.ordinaryClasses(name),
-                configuration.getText("doclet.Classes"));
-            generateClassKindListing(config.classDocCatalog.enums(name),
-                configuration.getText("doclet.Enums"));
-            generateClassKindListing(config.classDocCatalog.exceptions(name),
-                configuration.getText("doclet.Exceptions"));
-            generateClassKindListing(config.classDocCatalog.errors(name),
-                configuration.getText("doclet.Errors"));
-            generateClassKindListing(config.classDocCatalog.annotationTypes(name),
-                configuration.getText("doclet.AnnotationTypes"));
+            addClassKindListing(config.classDocCatalog.interfaces(name),
+                getResource("doclet.Interfaces"), contentTree);
+            addClassKindListing(config.classDocCatalog.ordinaryClasses(name),
+                getResource("doclet.Classes"), contentTree);
+            addClassKindListing(config.classDocCatalog.enums(name),
+                getResource("doclet.Enums"), contentTree);
+            addClassKindListing(config.classDocCatalog.exceptions(name),
+                getResource("doclet.Exceptions"), contentTree);
+            addClassKindListing(config.classDocCatalog.errors(name),
+                getResource("doclet.Errors"), contentTree);
+            addClassKindListing(config.classDocCatalog.annotationTypes(name),
+                getResource("doclet.AnnotationTypes"), contentTree);
         }
     }
 
     /**
-     * Generate specific class kind listing. Also add label to the listing.
+     * Add specific class kind listing. Also add label to the listing.
      *
-     * @param arr Array of specific class kinds, namely Class or Interface or
-     * Exception or Error.
-     * @param label Label for the listing
+     * @param arr Array of specific class kinds, namely Class or Interface or Exception or Error
+     * @param labelContent content tree of the label to be added
+     * @param contentTree the content tree to which the class kind listing will be added
      */
-    protected void generateClassKindListing(ClassDoc[] arr, String label) {
+    protected void addClassKindListing(ClassDoc[] arr, Content labelContent,
+            Content contentTree) {
         if(arr.length > 0) {
             Arrays.sort(arr);
-            printPackageTableHeader();
-            fontSizeStyle("+1", "FrameHeadingFont");
             boolean printedHeader = false;
+            HtmlTree ul = new HtmlTree(HtmlTag.UL);
+            ul.addAttr(HtmlAttr.TITLE, labelContent.toString());
             for (int i = 0; i < arr.length; i++) {
                 if (documentedClasses != null &&
-                    !documentedClasses.contains(arr[i])) {
+                        !documentedClasses.contains(arr[i])) {
                     continue;
                 }
                 if (!Util.isCoreClass(arr[i]) || !
-                    configuration.isGeneratedDoc(arr[i])) {
+                        configuration.isGeneratedDoc(arr[i])) {
                     continue;
                 }
                 if (!printedHeader) {
-                    print(label);
-                    fontEnd();
-                    println("&nbsp;");
-                    fontStyle("FrameItemFont");
+                    Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                            true, labelContent);
+                    contentTree.addContent(heading);
                     printedHeader = true;
                 }
-                br();
-                printLink(new LinkInfoImpl(
-                    LinkInfoImpl.PACKAGE_FRAME,
-                    arr[i],
-                    (arr[i].isInterface() ?
-                        italicsText(arr[i].name()) :
-                        arr[i].name()),"classFrame")
-                );
+                Content link = new RawHtml (getLink(new LinkInfoImpl(
+                        LinkInfoImpl.PACKAGE_FRAME, arr[i],
+                        (arr[i].isInterface() ? italicsText(arr[i].name()) :
+                            arr[i].name()),"classFrame")));
+                Content li = HtmlTree.LI(link);
+                ul.addContent(li);
             }
-            fontEnd();
-            printPackageTableFooter();
-            println();
+            contentTree.addContent(ul);
         }
-    }
-
-    /**
-     * Print the package link at the top of the class kind listing. Clicking
-     * this link, package-summary page will appear in the right hand frame.
-     *
-     * @param heading Top Heading to be used for the class kind listing.
-     */
-    protected void printPackageHeader(String heading) {
-        fontSizeStyle("+1", "FrameTitleFont");
-        printTargetPackageLink(packageDoc, "classFrame", heading);
-        fontEnd();
-    }
-
-    /**
-     * The table for the class kind listing.
-     */
-    protected void printPackageTableHeader() {
-        table();
-        tr();
-        tdNowrap();
-    }
-
-    /**
-     * Closing Html tags for table of class kind listing.
-     */
-    protected void printPackageTableFooter() {
-        tdEnd();
-        trEnd();
-        tableEnd();
     }
 }

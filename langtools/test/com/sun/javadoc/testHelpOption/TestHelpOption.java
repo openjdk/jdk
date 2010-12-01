@@ -91,8 +91,7 @@ public class TestHelpOption extends JavadocTester {
 
     private static final String[][] TEST2 = {
         {BUG_ID + FS + "TestHelpOption.html",
-            "<A HREF=\"help-doc.html\"><FONT CLASS=\"NavBarFont1\">" +
-            "<STRONG>Help</STRONG></FONT></A>"
+            "<li><a href=\"help-doc.html\">Help</a></li>"
         },
     };
     private static final String[][] NEGATED_TEST2 = NO_TEST;
