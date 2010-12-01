@@ -909,10 +909,10 @@ void MacroAssembler::verify_thread() {
 #if defined(COMPILER2) && !defined(_LP64)
     // Save & restore possible 64-bit Long arguments in G-regs
     sllx(L0,32,G2);             // Move old high G1 bits high in G2
-    sllx(G1, 0,G1);             // Clear current high G1 bits
+    srl(G1, 0,G1);              // Clear current high G1 bits
     or3 (G1,G2,G1);             // Recover 64-bit G1
     sllx(L6,32,G2);             // Move old high G4 bits high in G2
-    sllx(G4, 0,G4);             // Clear current high G4 bits
+    srl(G4, 0,G4);              // Clear current high G4 bits
     or3 (G4,G2,G4);             // Recover 64-bit G4
 #endif
     restore(O0, 0, G2_thread);

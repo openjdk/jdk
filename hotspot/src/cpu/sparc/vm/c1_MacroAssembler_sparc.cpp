@@ -40,7 +40,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   const Register temp_reg = G3_scratch;
   // Note: needs more testing of out-of-line vs. inline slow case
   verify_oop(receiver);
-  ld_ptr(receiver, oopDesc::klass_offset_in_bytes(), temp_reg);
+  load_klass(receiver, temp_reg);
   cmp(temp_reg, iCache);
   brx(Assembler::equal, true, Assembler::pt, L);
   delayed()->nop();
@@ -185,9 +185,19 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   } else {
     set((intx)markOopDesc::prototype(), t1);
   }
-  st_ptr(t1  , obj, oopDesc::mark_offset_in_bytes       ());
-  st_ptr(klass, obj, oopDesc::klass_offset_in_bytes      ());
-  if (len->is_valid()) st(len  , obj, arrayOopDesc::length_offset_in_bytes());
+  st_ptr(t1, obj, oopDesc::mark_offset_in_bytes());
+  if (UseCompressedOops) {
+    // Save klass
+    mov(klass, t1);
+    encode_heap_oop_not_null(t1);
+    stw(t1, obj, oopDesc::klass_offset_in_bytes());
+  } else {
+    st_ptr(klass, obj, oopDesc::klass_offset_in_bytes());
+  }
+  if (len->is_valid()) st(len, obj, arrayOopDesc::length_offset_in_bytes());
+  else if (UseCompressedOops) {
+    store_klass_gap(G0, obj);
+  }
 }
 
 
@@ -235,7 +245,7 @@ void C1_MacroAssembler::initialize_object(
   Register t1,                         // temp register
   Register t2                          // temp register
   ) {
-  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   initialize_header(obj, klass, noreg, t1, t2);
 

@@ -483,7 +483,7 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
 
   Register pre_val_reg = pre_val()->as_register();
 
-  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false);
+  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
 
   __ cmpptr(pre_val_reg, (int32_t) NULL_WORD);
   __ jcc(Assembler::equal, _continuation);

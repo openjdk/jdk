@@ -864,11 +864,11 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     // MDO cells are intptr_t, so the data_reg width is arch-dependent.
     LIR_Opr data_reg = new_pointer_register();
     LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
-    __ move(LIR_OprFact::address(data_addr), data_reg);
+    __ move(data_addr, data_reg);
     // Use leal instead of add to avoid destroying condition codes on x86
     LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
-    __ move(data_reg, LIR_OprFact::address(data_addr));
+    __ move(data_reg, data_addr);
   }
 }
 
@@ -1009,12 +1009,12 @@ void LIRGenerator::do_ExceptionObject(ExceptionObject* x) {
                    operand_for_instruction(phi));
 
   LIR_Opr thread_reg = getThreadPointer();
-  __ move(new LIR_Address(thread_reg, in_bytes(JavaThread::exception_oop_offset()), T_OBJECT),
-          exceptionOopOpr());
-  __ move(LIR_OprFact::oopConst(NULL),
-          new LIR_Address(thread_reg, in_bytes(JavaThread::exception_oop_offset()), T_OBJECT));
-  __ move(LIR_OprFact::oopConst(NULL),
-          new LIR_Address(thread_reg, in_bytes(JavaThread::exception_pc_offset()), T_OBJECT));
+  __ move_wide(new LIR_Address(thread_reg, in_bytes(JavaThread::exception_oop_offset()), T_OBJECT),
+               exceptionOopOpr());
+  __ move_wide(LIR_OprFact::oopConst(NULL),
+               new LIR_Address(thread_reg, in_bytes(JavaThread::exception_oop_offset()), T_OBJECT));
+  __ move_wide(LIR_OprFact::oopConst(NULL),
+               new LIR_Address(thread_reg, in_bytes(JavaThread::exception_pc_offset()), T_OBJECT));
 
   LIR_Opr result = new_register(T_OBJECT);
   __ move(exceptionOopOpr(), result);
@@ -1085,7 +1085,7 @@ void LIRGenerator::do_IfInstanceOf(IfInstanceOf* x) {
 void LIRGenerator::do_Return(Return* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
-    signature.append(T_INT);    // thread
+    signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
     signature.append(T_OBJECT); // methodOop
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
@@ -1122,8 +1122,8 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
     info = state_for(x);
   }
   __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), result, info);
-  __ move(new LIR_Address(result, Klass::java_mirror_offset_in_bytes() +
-                          klassOopDesc::klass_part_offset_in_bytes(), T_OBJECT), result);
+  __ move_wide(new LIR_Address(result, Klass::java_mirror_offset_in_bytes() +
+                               klassOopDesc::klass_part_offset_in_bytes(), T_OBJECT), result);
 }
 
 
@@ -1131,7 +1131,7 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
 void LIRGenerator::do_currentThread(Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   LIR_Opr reg = rlock_result(x);
-  __ load(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_OBJECT), reg);
+  __ move_wide(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_OBJECT), reg);
 }
 
 
@@ -1908,7 +1908,11 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
   if (x->may_be_unaligned() && (dst_type == T_LONG || dst_type == T_DOUBLE)) {
     __ unaligned_move(addr, reg);
   } else {
-    __ move(addr, reg);
+    if (dst_type == T_OBJECT && x->is_wide()) {
+      __ move_wide(addr, reg);
+    } else {
+      __ move(addr, reg);
+    }
   }
 }
 
@@ -2287,7 +2291,7 @@ void LIRGenerator::do_Base(Base* x) {
 
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
-    signature.append(T_INT);    // thread
+    signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
     signature.append(T_OBJECT); // methodOop
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
@@ -2352,11 +2356,14 @@ void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR
     } else {
       LIR_Address* addr = loc->as_address_ptr();
       param->load_for_store(addr->type());
-      if (addr->type() == T_LONG || addr->type() == T_DOUBLE) {
-        __ unaligned_move(param->result(), addr);
-      } else {
-        __ move(param->result(), addr);
-      }
+      if (addr->type() == T_OBJECT) {
+        __ move_wide(param->result(), addr);
+      } else
+        if (addr->type() == T_LONG || addr->type() == T_DOUBLE) {
+          __ unaligned_move(param->result(), addr);
+        } else {
+          __ move(param->result(), addr);
+        }
     }
   }
 
@@ -2368,7 +2375,7 @@ void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR
     } else {
       assert(loc->is_address(), "just checking");
       receiver->load_for_store(T_OBJECT);
-      __ move(receiver->result(), loc);
+      __ move_wide(receiver->result(), loc->as_address_ptr());
     }
   }
 }
