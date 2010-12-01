@@ -100,6 +100,11 @@ bool LIR_Assembler::is_single_instruction(LIR_Op* op) {
         return false;
       }
 
+      if (UseCompressedOops) {
+        if (dst->is_address() && !dst->is_stack() && (dst->type() == T_OBJECT || dst->type() == T_ARRAY)) return false;
+        if (src->is_address() && !src->is_stack() && (src->type() == T_OBJECT || src->type() == T_ARRAY)) return false;
+      }
+
       if (dst->is_register()) {
         if (src->is_address() && Assembler::is_simm13(src->as_address_ptr()->disp())) {
           return !PatchALot;
@@ -253,7 +258,7 @@ void LIR_Assembler::emit_string_compare(LIR_Opr left, LIR_Opr right, LIR_Opr dst
     int offset_offset = java_lang_String::offset_offset_in_bytes(); // first character position
     int  count_offset = java_lang_String:: count_offset_in_bytes();
 
-    __ ld_ptr(str0, value_offset, tmp0);
+    __ load_heap_oop(str0, value_offset, tmp0);
     __ ld(str0, offset_offset, tmp2);
     __ add(tmp0, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp0);
     __ ld(str0, count_offset, str0);
@@ -262,7 +267,7 @@ void LIR_Assembler::emit_string_compare(LIR_Opr left, LIR_Opr right, LIR_Opr dst
     // str1 may be null
     add_debug_info_for_null_check_here(info);
 
-    __ ld_ptr(str1, value_offset, tmp1);
+    __ load_heap_oop(str1, value_offset, tmp1);
     __ add(tmp0, tmp2, tmp0);
 
     __ ld(str1, offset_offset, tmp2);
@@ -766,7 +771,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   add_debug_info_for_null_check_here(op->info());
-  __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_scratch);
+  __ load_klass(O0, G3_scratch);
   if (__ is_simm13(op->vtable_offset())) {
     __ ld_ptr(G3_scratch, op->vtable_offset(), G5_method);
   } else {
@@ -780,138 +785,17 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   // the peephole pass fills the delay slot
 }
 
-
-// load with 32-bit displacement
-int LIR_Assembler::load(Register s, int disp, Register d, BasicType ld_type, CodeEmitInfo *info) {
-  int load_offset = code_offset();
-  if (Assembler::is_simm13(disp)) {
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    switch(ld_type) {
-      case T_BOOLEAN: // fall through
-      case T_BYTE  : __ ldsb(s, disp, d); break;
-      case T_CHAR  : __ lduh(s, disp, d); break;
-      case T_SHORT : __ ldsh(s, disp, d); break;
-      case T_INT   : __ ld(s, disp, d); break;
-      case T_ADDRESS:// fall through
-      case T_ARRAY : // fall through
-      case T_OBJECT: __ ld_ptr(s, disp, d); break;
-      default      : ShouldNotReachHere();
-    }
-  } else {
-    __ set(disp, O7);
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    load_offset = code_offset();
-    switch(ld_type) {
-      case T_BOOLEAN: // fall through
-      case T_BYTE  : __ ldsb(s, O7, d); break;
-      case T_CHAR  : __ lduh(s, O7, d); break;
-      case T_SHORT : __ ldsh(s, O7, d); break;
-      case T_INT   : __ ld(s, O7, d); break;
-      case T_ADDRESS:// fall through
-      case T_ARRAY : // fall through
-      case T_OBJECT: __ ld_ptr(s, O7, d); break;
-      default      : ShouldNotReachHere();
-    }
-  }
-  if (ld_type == T_ARRAY || ld_type == T_OBJECT) __ verify_oop(d);
-  return load_offset;
-}
-
-
-// store with 32-bit displacement
-void LIR_Assembler::store(Register value, Register base, int offset, BasicType type, CodeEmitInfo *info) {
-  if (Assembler::is_simm13(offset)) {
-    if (info != NULL)  add_debug_info_for_null_check_here(info);
-    switch (type) {
-      case T_BOOLEAN: // fall through
-      case T_BYTE  : __ stb(value, base, offset); break;
-      case T_CHAR  : __ sth(value, base, offset); break;
-      case T_SHORT : __ sth(value, base, offset); break;
-      case T_INT   : __ stw(value, base, offset); break;
-      case T_ADDRESS:// fall through
-      case T_ARRAY : // fall through
-      case T_OBJECT: __ st_ptr(value, base, offset); break;
-      default      : ShouldNotReachHere();
-    }
-  } else {
-    __ set(offset, O7);
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    switch (type) {
-      case T_BOOLEAN: // fall through
-      case T_BYTE  : __ stb(value, base, O7); break;
-      case T_CHAR  : __ sth(value, base, O7); break;
-      case T_SHORT : __ sth(value, base, O7); break;
-      case T_INT   : __ stw(value, base, O7); break;
-      case T_ADDRESS:// fall through
-      case T_ARRAY : //fall through
-      case T_OBJECT: __ st_ptr(value, base, O7); break;
-      default      : ShouldNotReachHere();
-    }
-  }
-  // Note: Do the store before verification as the code might be patched!
-  if (type == T_ARRAY || type == T_OBJECT) __ verify_oop(value);
-}
-
-
-// load float with 32-bit displacement
-void LIR_Assembler::load(Register s, int disp, FloatRegister d, BasicType ld_type, CodeEmitInfo *info) {
-  FloatRegisterImpl::Width w;
-  switch(ld_type) {
-    case T_FLOAT : w = FloatRegisterImpl::S; break;
-    case T_DOUBLE: w = FloatRegisterImpl::D; break;
-    default      : ShouldNotReachHere();
-  }
-
-  if (Assembler::is_simm13(disp)) {
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    if (disp % BytesPerLong != 0 && w == FloatRegisterImpl::D) {
-      __ ldf(FloatRegisterImpl::S, s, disp + BytesPerWord, d->successor());
-      __ ldf(FloatRegisterImpl::S, s, disp               , d);
-    } else {
-      __ ldf(w, s, disp, d);
-    }
-  } else {
-    __ set(disp, O7);
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    __ ldf(w, s, O7, d);
-  }
-}
-
-
-// store float with 32-bit displacement
-void LIR_Assembler::store(FloatRegister value, Register base, int offset, BasicType type, CodeEmitInfo *info) {
-  FloatRegisterImpl::Width w;
-  switch(type) {
-    case T_FLOAT : w = FloatRegisterImpl::S; break;
-    case T_DOUBLE: w = FloatRegisterImpl::D; break;
-    default      : ShouldNotReachHere();
-  }
-
-  if (Assembler::is_simm13(offset)) {
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    if (w == FloatRegisterImpl::D && offset % BytesPerLong != 0) {
-      __ stf(FloatRegisterImpl::S, value->successor(), base, offset + BytesPerWord);
-      __ stf(FloatRegisterImpl::S, value             , base, offset);
-    } else {
-      __ stf(w, value, base, offset);
-    }
-  } else {
-    __ set(offset, O7);
-    if (info != NULL) add_debug_info_for_null_check_here(info);
-    __ stf(w, value, O7, base);
-  }
-}
-
-
-int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool unaligned) {
+int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide, bool unaligned) {
   int store_offset;
   if (!Assembler::is_simm13(offset + (type == T_LONG) ? wordSize : 0)) {
     assert(!unaligned, "can't handle this");
     // for offsets larger than a simm13 we setup the offset in O7
     __ set(offset, O7);
-    store_offset = store(from_reg, base, O7, type);
+    store_offset = store(from_reg, base, O7, type, wide);
   } else {
-    if (type == T_ARRAY || type == T_OBJECT) __ verify_oop(from_reg->as_register());
+    if (type == T_ARRAY || type == T_OBJECT) {
+      __ verify_oop(from_reg->as_register());
+    }
     store_offset = code_offset();
     switch (type) {
       case T_BOOLEAN: // fall through
@@ -934,9 +818,22 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
         __ stw(from_reg->as_register_hi(), base, offset + hi_word_offset_in_bytes);
 #endif
         break;
-      case T_ADDRESS:// fall through
+      case T_ADDRESS:
+        __ st_ptr(from_reg->as_register(), base, offset);
+        break;
       case T_ARRAY : // fall through
-      case T_OBJECT: __ st_ptr(from_reg->as_register(), base, offset); break;
+      case T_OBJECT:
+        {
+          if (UseCompressedOops && !wide) {
+            __ encode_heap_oop(from_reg->as_register(), G3_scratch);
+            store_offset = code_offset();
+            __ stw(G3_scratch, base, offset);
+          } else {
+            __ st_ptr(from_reg->as_register(), base, offset);
+          }
+          break;
+        }
+
       case T_FLOAT : __ stf(FloatRegisterImpl::S, from_reg->as_float_reg(), base, offset); break;
       case T_DOUBLE:
         {
@@ -958,8 +855,10 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
 }
 
 
-int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicType type) {
-  if (type == T_ARRAY || type == T_OBJECT) __ verify_oop(from_reg->as_register());
+int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicType type, bool wide) {
+  if (type == T_ARRAY || type == T_OBJECT) {
+    __ verify_oop(from_reg->as_register());
+  }
   int store_offset = code_offset();
   switch (type) {
     case T_BOOLEAN: // fall through
@@ -975,9 +874,21 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
       __ std(from_reg->as_register_hi(), base, disp);
 #endif
       break;
-    case T_ADDRESS:// fall through
+    case T_ADDRESS:
+      __ st_ptr(from_reg->as_register(), base, disp);
+      break;
     case T_ARRAY : // fall through
-    case T_OBJECT: __ st_ptr(from_reg->as_register(), base, disp); break;
+    case T_OBJECT:
+      {
+        if (UseCompressedOops && !wide) {
+          __ encode_heap_oop(from_reg->as_register(), G3_scratch);
+          store_offset = code_offset();
+          __ stw(G3_scratch, base, disp);
+        } else {
+          __ st_ptr(from_reg->as_register(), base, disp);
+        }
+        break;
+      }
     case T_FLOAT : __ stf(FloatRegisterImpl::S, from_reg->as_float_reg(), base, disp); break;
     case T_DOUBLE: __ stf(FloatRegisterImpl::D, from_reg->as_double_reg(), base, disp); break;
     default      : ShouldNotReachHere();
@@ -986,14 +897,14 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
 }
 
 
-int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool unaligned) {
+int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide, bool unaligned) {
   int load_offset;
   if (!Assembler::is_simm13(offset + (type == T_LONG) ? wordSize : 0)) {
     assert(base != O7, "destroying register");
     assert(!unaligned, "can't handle this");
     // for offsets larger than a simm13 we setup the offset in O7
     __ set(offset, O7);
-    load_offset = load(base, O7, to_reg, type);
+    load_offset = load(base, O7, to_reg, type, wide);
   } else {
     load_offset = code_offset();
     switch(type) {
@@ -1030,9 +941,18 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
 #endif
         }
         break;
-      case T_ADDRESS:// fall through
+      case T_ADDRESS:  __ ld_ptr(base, offset, to_reg->as_register()); break;
       case T_ARRAY : // fall through
-      case T_OBJECT: __ ld_ptr(base, offset, to_reg->as_register()); break;
+      case T_OBJECT:
+        {
+          if (UseCompressedOops && !wide) {
+            __ lduw(base, offset, to_reg->as_register());
+            __ decode_heap_oop(to_reg->as_register());
+          } else {
+            __ ld_ptr(base, offset, to_reg->as_register());
+          }
+          break;
+        }
       case T_FLOAT:  __ ldf(FloatRegisterImpl::S, base, offset, to_reg->as_float_reg()); break;
       case T_DOUBLE:
         {
@@ -1048,23 +968,34 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
         }
       default      : ShouldNotReachHere();
     }
-    if (type == T_ARRAY || type == T_OBJECT) __ verify_oop(to_reg->as_register());
+    if (type == T_ARRAY || type == T_OBJECT) {
+      __ verify_oop(to_reg->as_register());
+    }
   }
   return load_offset;
 }
 
 
-int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType type) {
+int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType type, bool wide) {
   int load_offset = code_offset();
   switch(type) {
     case T_BOOLEAN: // fall through
-    case T_BYTE  : __ ldsb(base, disp, to_reg->as_register()); break;
-    case T_CHAR  : __ lduh(base, disp, to_reg->as_register()); break;
-    case T_SHORT : __ ldsh(base, disp, to_reg->as_register()); break;
-    case T_INT   : __ ld(base, disp, to_reg->as_register()); break;
-    case T_ADDRESS:// fall through
+    case T_BYTE  :  __ ldsb(base, disp, to_reg->as_register()); break;
+    case T_CHAR  :  __ lduh(base, disp, to_reg->as_register()); break;
+    case T_SHORT :  __ ldsh(base, disp, to_reg->as_register()); break;
+    case T_INT   :  __ ld(base, disp, to_reg->as_register()); break;
+    case T_ADDRESS: __ ld_ptr(base, disp, to_reg->as_register()); break;
     case T_ARRAY : // fall through
-    case T_OBJECT: __ ld_ptr(base, disp, to_reg->as_register()); break;
+    case T_OBJECT:
+      {
+          if (UseCompressedOops && !wide) {
+            __ lduw(base, disp, to_reg->as_register());
+            __ decode_heap_oop(to_reg->as_register());
+          } else {
+            __ ld_ptr(base, disp, to_reg->as_register());
+          }
+          break;
+      }
     case T_FLOAT:  __ ldf(FloatRegisterImpl::S, base, disp, to_reg->as_float_reg()); break;
     case T_DOUBLE: __ ldf(FloatRegisterImpl::D, base, disp, to_reg->as_double_reg()); break;
     case T_LONG  :
@@ -1078,61 +1009,17 @@ int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType 
       break;
     default      : ShouldNotReachHere();
   }
-  if (type == T_ARRAY || type == T_OBJECT) __ verify_oop(to_reg->as_register());
+  if (type == T_ARRAY || type == T_OBJECT) {
+    __ verify_oop(to_reg->as_register());
+  }
   return load_offset;
 }
-
-
-// load/store with an Address
-void LIR_Assembler::load(const Address& a, Register d,  BasicType ld_type, CodeEmitInfo *info, int offset) {
-  load(a.base(), a.disp() + offset, d, ld_type, info);
-}
-
-
-void LIR_Assembler::store(Register value, const Address& dest, BasicType type, CodeEmitInfo *info, int offset) {
-  store(value, dest.base(), dest.disp() + offset, type, info);
-}
-
-
-// loadf/storef with an Address
-void LIR_Assembler::load(const Address& a, FloatRegister d, BasicType ld_type, CodeEmitInfo *info, int offset) {
-  load(a.base(), a.disp() + offset, d, ld_type, info);
-}
-
-
-void LIR_Assembler::store(FloatRegister value, const Address& dest, BasicType type, CodeEmitInfo *info, int offset) {
-  store(value, dest.base(), dest.disp() + offset, type, info);
-}
-
-
-// load/store with an Address
-void LIR_Assembler::load(LIR_Address* a, Register d,  BasicType ld_type, CodeEmitInfo *info) {
-  load(as_Address(a), d, ld_type, info);
-}
-
-
-void LIR_Assembler::store(Register value, LIR_Address* dest, BasicType type, CodeEmitInfo *info) {
-  store(value, as_Address(dest), type, info);
-}
-
-
-// loadf/storef with an Address
-void LIR_Assembler::load(LIR_Address* a, FloatRegister d, BasicType ld_type, CodeEmitInfo *info) {
-  load(as_Address(a), d, ld_type, info);
-}
-
-
-void LIR_Assembler::store(FloatRegister value, LIR_Address* dest, BasicType type, CodeEmitInfo *info) {
-  store(value, as_Address(dest), type, info);
-}
-
 
 void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   LIR_Const* c = src->as_constant_ptr();
   switch (c->type()) {
     case T_INT:
-    case T_FLOAT:
-    case T_ADDRESS: {
+    case T_FLOAT: {
       Register src_reg = O7;
       int value = c->as_jint_bits();
       if (value == 0) {
@@ -1142,6 +1029,18 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
       }
       Address addr = frame_map()->address_for_slot(dest->single_stack_ix());
       __ stw(src_reg, addr.base(), addr.disp());
+      break;
+    }
+    case T_ADDRESS: {
+      Register src_reg = O7;
+      int value = c->as_jint_bits();
+      if (value == 0) {
+        src_reg = G0;
+      } else {
+        __ set(value, O7);
+      }
+      Address addr = frame_map()->address_for_slot(dest->single_stack_ix());
+      __ st_ptr(src_reg, addr.base(), addr.disp());
       break;
     }
     case T_OBJECT: {
@@ -1178,14 +1077,12 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
 }
 
 
-void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info ) {
+void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide) {
   LIR_Const* c = src->as_constant_ptr();
   LIR_Address* addr     = dest->as_address_ptr();
   Register base = addr->base()->as_pointer_register();
+  int offset = -1;
 
-  if (info != NULL) {
-    add_debug_info_for_null_check_here(info);
-  }
   switch (c->type()) {
     case T_INT:
     case T_FLOAT:
@@ -1199,10 +1096,10 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       }
       if (addr->index()->is_valid()) {
         assert(addr->disp() == 0, "must be zero");
-        store(tmp, base, addr->index()->as_pointer_register(), type);
+        offset = store(tmp, base, addr->index()->as_pointer_register(), type, wide);
       } else {
         assert(Assembler::is_simm13(addr->disp()), "can't handle larger addresses");
-        store(tmp, base, addr->disp(), type);
+        offset = store(tmp, base, addr->disp(), type, wide, false);
       }
       break;
     }
@@ -1212,21 +1109,21 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       assert(Assembler::is_simm13(addr->disp()) &&
              Assembler::is_simm13(addr->disp() + 4), "can't handle larger addresses");
 
-      Register tmp = O7;
+      LIR_Opr tmp = FrameMap::O7_opr;
       int value_lo = c->as_jint_lo_bits();
       if (value_lo == 0) {
-        tmp = G0;
+        tmp = FrameMap::G0_opr;
       } else {
         __ set(value_lo, O7);
       }
-      store(tmp, base, addr->disp() + lo_word_offset_in_bytes, T_INT);
+      offset = store(tmp, base, addr->disp() + lo_word_offset_in_bytes, T_INT, wide, false);
       int value_hi = c->as_jint_hi_bits();
       if (value_hi == 0) {
-        tmp = G0;
+        tmp = FrameMap::G0_opr;
       } else {
         __ set(value_hi, O7);
       }
-      store(tmp, base, addr->disp() + hi_word_offset_in_bytes, T_INT);
+      offset = store(tmp, base, addr->disp() + hi_word_offset_in_bytes, T_INT, wide, false);
       break;
     }
     case T_OBJECT: {
@@ -1241,16 +1138,20 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       // handle either reg+reg or reg+disp address
       if (addr->index()->is_valid()) {
         assert(addr->disp() == 0, "must be zero");
-        store(tmp, base, addr->index()->as_pointer_register(), type);
+        offset = store(tmp, base, addr->index()->as_pointer_register(), type, wide);
       } else {
         assert(Assembler::is_simm13(addr->disp()), "can't handle larger addresses");
-        store(tmp, base, addr->disp(), type);
+        offset = store(tmp, base, addr->disp(), type, wide, false);
       }
 
       break;
     }
     default:
       Unimplemented();
+  }
+  if (info != NULL) {
+    assert(offset != -1, "offset should've been set");
+    add_debug_info_for_null_check(offset, info);
   }
 }
 
@@ -1336,7 +1237,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           assert(to_reg->is_single_cpu(), "Must be a cpu register.");
 
           __ set(const_addrlit, O7);
-          load(O7, 0, to_reg->as_register(), T_INT);
+          __ ld(O7, 0, to_reg->as_register());
         }
       }
       break;
@@ -1429,7 +1330,7 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
 
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool unaligned) {
+                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool unaligned) {
 
   LIR_Address* addr = src_opr->as_address_ptr();
   LIR_Opr to_reg = dest;
@@ -1475,16 +1376,15 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
 
   assert(disp_reg != noreg || Assembler::is_simm13(disp_value), "should have set this up");
   if (disp_reg == noreg) {
-    offset = load(src, disp_value, to_reg, type, unaligned);
+    offset = load(src, disp_value, to_reg, type, wide, unaligned);
   } else {
     assert(!unaligned, "can't handle this");
-    offset = load(src, disp_reg, to_reg, type);
+    offset = load(src, disp_reg, to_reg, type, wide);
   }
 
   if (patch != NULL) {
     patching_epilog(patch, patch_code, src, info);
   }
-
   if (info != NULL) add_debug_info_for_null_check(offset, info);
 }
 
@@ -1518,7 +1418,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
   }
 
   bool unaligned = (addr.disp() - STACK_BIAS) % 8 != 0;
-  load(addr.base(), addr.disp(), dest, dest->type(), unaligned);
+  load(addr.base(), addr.disp(), dest, dest->type(), true /*wide*/, unaligned);
 }
 
 
@@ -1530,7 +1430,7 @@ void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type, bo
     addr = frame_map()->address_for_slot(dest->double_stack_ix());
   }
   bool unaligned = (addr.disp() - STACK_BIAS) % 8 != 0;
-  store(from_reg, addr.base(), addr.disp(), from_reg->type(), unaligned);
+  store(from_reg, addr.base(), addr.disp(), from_reg->type(), true /*wide*/, unaligned);
 }
 
 
@@ -1578,7 +1478,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
-                            bool unaligned) {
+                            bool wide, bool unaligned) {
   LIR_Address* addr = dest->as_address_ptr();
 
   Register src = addr->base()->as_pointer_register();
@@ -1622,10 +1522,10 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
   assert(disp_reg != noreg || Assembler::is_simm13(disp_value), "should have set this up");
   if (disp_reg == noreg) {
-    offset = store(from_reg, src, disp_value, type, unaligned);
+    offset = store(from_reg, src, disp_value, type, wide, unaligned);
   } else {
     assert(!unaligned, "can't handle this");
-    offset = store(from_reg, src, disp_reg, type);
+    offset = store(from_reg, src, disp_reg, type, wide);
   }
 
   if (patch != NULL) {
@@ -2184,13 +2084,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   // make sure src and dst are non-null and load array length
   if (flags & LIR_OpArrayCopy::src_null_check) {
     __ tst(src);
-    __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
+    __ brx(Assembler::equal, false, Assembler::pn, *stub->entry());
     __ delayed()->nop();
   }
 
   if (flags & LIR_OpArrayCopy::dst_null_check) {
     __ tst(dst);
-    __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
+    __ brx(Assembler::equal, false, Assembler::pn, *stub->entry());
     __ delayed()->nop();
   }
 
@@ -2232,10 +2132,18 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   if (flags & LIR_OpArrayCopy::type_check) {
-    __ ld_ptr(src, oopDesc::klass_offset_in_bytes(), tmp);
-    __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
-    __ cmp(tmp, tmp2);
-    __ br(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+    if (UseCompressedOops) {
+      // We don't need decode because we just need to compare
+      __ lduw(src, oopDesc::klass_offset_in_bytes(), tmp);
+      __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
+      __ cmp(tmp, tmp2);
+      __ br(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+    } else {
+      __ ld_ptr(src, oopDesc::klass_offset_in_bytes(), tmp);
+      __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
+      __ cmp(tmp, tmp2);
+      __ brx(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+    }
     __ delayed()->nop();
   }
 
@@ -2250,20 +2158,44 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     jobject2reg(op->expected_type()->constant_encoding(), tmp);
-    __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
-    if (basic_type != T_OBJECT) {
-      __ cmp(tmp, tmp2);
-      __ br(Assembler::notEqual, false, Assembler::pn, halt);
-      __ delayed()->ld_ptr(src, oopDesc::klass_offset_in_bytes(), tmp2);
-      __ cmp(tmp, tmp2);
-      __ br(Assembler::equal, false, Assembler::pn, known_ok);
-      __ delayed()->nop();
+    if (UseCompressedOops) {
+      // tmp holds the default type. It currently comes uncompressed after the
+      // load of a constant, so encode it.
+      __ encode_heap_oop(tmp);
+      // load the raw value of the dst klass, since we will be comparing
+      // uncompressed values directly.
+      __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
+      if (basic_type != T_OBJECT) {
+        __ cmp(tmp, tmp2);
+        __ br(Assembler::notEqual, false, Assembler::pn, halt);
+        // load the raw value of the src klass.
+        __ delayed()->lduw(src, oopDesc::klass_offset_in_bytes(), tmp2);
+        __ cmp(tmp, tmp2);
+        __ br(Assembler::equal, false, Assembler::pn, known_ok);
+        __ delayed()->nop();
+      } else {
+        __ cmp(tmp, tmp2);
+        __ br(Assembler::equal, false, Assembler::pn, known_ok);
+        __ delayed()->cmp(src, dst);
+        __ brx(Assembler::equal, false, Assembler::pn, known_ok);
+        __ delayed()->nop();
+      }
     } else {
-      __ cmp(tmp, tmp2);
-      __ br(Assembler::equal, false, Assembler::pn, known_ok);
-      __ delayed()->cmp(src, dst);
-      __ br(Assembler::equal, false, Assembler::pn, known_ok);
-      __ delayed()->nop();
+      __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
+      if (basic_type != T_OBJECT) {
+        __ cmp(tmp, tmp2);
+        __ brx(Assembler::notEqual, false, Assembler::pn, halt);
+        __ delayed()->ld_ptr(src, oopDesc::klass_offset_in_bytes(), tmp2);
+        __ cmp(tmp, tmp2);
+        __ brx(Assembler::equal, false, Assembler::pn, known_ok);
+        __ delayed()->nop();
+      } else {
+        __ cmp(tmp, tmp2);
+        __ brx(Assembler::equal, false, Assembler::pn, known_ok);
+        __ delayed()->cmp(src, dst);
+        __ brx(Assembler::equal, false, Assembler::pn, known_ok);
+        __ delayed()->nop();
+      }
     }
     __ bind(halt);
     __ stop("incorrect type information in arraycopy");
@@ -2471,7 +2403,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, int mdo_offset_bias,
     Label next_test;
     Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) -
                       mdo_offset_bias);
-    load(recv_addr, tmp1, T_OBJECT);
+    __ ld_ptr(recv_addr, tmp1);
     __ br_notnull(tmp1, false, Assembler::pt, next_test);
     __ delayed()->nop();
     __ st_ptr(recv, recv_addr);
@@ -2563,7 +2495,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   // get object class
   // not a safepoint as obj null check happens earlier
-  load(obj, oopDesc::klass_offset_in_bytes(), klass_RInfo, T_OBJECT, NULL);
+  __ load_klass(obj, klass_RInfo);
   if (op->fast_check()) {
     assert_different_registers(klass_RInfo, k_RInfo);
     __ cmp(k_RInfo, klass_RInfo);
@@ -2605,7 +2537,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ set(mdo_offset_bias, tmp1);
       __ add(mdo, tmp1, mdo);
     }
-    load(Address(obj, oopDesc::klass_offset_in_bytes()), recv, T_OBJECT);
+    __ load_klass(obj, recv);
     type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1, success);
     // Jump over the failure case
     __ ba(false, *success);
@@ -2674,11 +2606,12 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ br_null(value, false, Assembler::pn, done);
       __ delayed()->nop();
     }
-    load(array, oopDesc::klass_offset_in_bytes(), k_RInfo, T_OBJECT, op->info_for_exception());
-    load(value, oopDesc::klass_offset_in_bytes(), klass_RInfo, T_OBJECT, NULL);
+    add_debug_info_for_null_check_here(op->info_for_exception());
+    __ load_klass(array, k_RInfo);
+    __ load_klass(value, klass_RInfo);
 
     // get instance klass
-    load(k_RInfo, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc), k_RInfo, T_OBJECT, NULL);
+    __ ld_ptr(Address(k_RInfo, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)), k_RInfo);
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7, success_target, failure_target, NULL);
 
@@ -2700,7 +2633,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ set(mdo_offset_bias, tmp1);
         __ add(mdo, tmp1, mdo);
       }
-      load(Address(value, oopDesc::klass_offset_in_bytes()), recv, T_OBJECT);
+      __ load_klass(value, recv);
       type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1, &done);
       __ ba(false, done);
       __ delayed()->nop();
@@ -2781,14 +2714,17 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     Register t2 = op->tmp2()->as_register();
     __ mov(cmp_value, t1);
     __ mov(new_value, t2);
-#ifdef _LP64
     if (op->code() == lir_cas_obj) {
-      __ casx(addr, t1, t2);
-    } else
-#endif
-      {
+      if (UseCompressedOops) {
+        __ encode_heap_oop(t1);
+        __ encode_heap_oop(t2);
         __ cas(addr, t1, t2);
+      } else {
+        __ casx(addr, t1, t2);
       }
+    } else {
+      __ cas(addr, t1, t2);
+    }
     __ cmp(t1, t2);
   } else {
     Unimplemented();
@@ -2966,7 +2902,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         }
       }
     } else {
-      load(Address(recv, oopDesc::klass_offset_in_bytes()), recv, T_OBJECT);
+      __ load_klass(recv, recv);
       Label update_done;
       type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
@@ -3160,7 +3096,7 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
   } else {
     // use normal move for all other volatiles since they don't need
     // special handling to remain atomic.
-    move_op(src, dest, type, lir_patch_none, info, false, false);
+    move_op(src, dest, type, lir_patch_none, info, false, false, false);
   }
 }
 

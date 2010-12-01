@@ -61,8 +61,8 @@ enum {
   pd_nof_xmm_regs_linearscan = pd_nof_xmm_regs_frame_map, // number of registers visible to linear scan
   pd_first_cpu_reg = 0,
   pd_last_cpu_reg = NOT_LP64(5) LP64_ONLY(11),
-  pd_first_byte_reg = 2,
-  pd_last_byte_reg = 5,
+  pd_first_byte_reg = NOT_LP64(2) LP64_ONLY(0),
+  pd_last_byte_reg = NOT_LP64(5) LP64_ONLY(11),
   pd_first_fpu_reg = pd_nof_cpu_regs_frame_map,
   pd_last_fpu_reg =  pd_first_fpu_reg + 7,
   pd_first_xmm_reg = pd_nof_cpu_regs_frame_map + pd_nof_fpu_regs_frame_map,
