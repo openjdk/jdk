@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CODE_VTABLESTUBS_HPP
 #define SHARE_VM_CODE_VTABLESTUBS_HPP
 
+#include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables

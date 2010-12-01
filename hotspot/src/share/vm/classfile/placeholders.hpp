@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_PLACEHOLDERS_HPP
 #define SHARE_VM_CLASSFILE_PLACEHOLDERS_HPP
 
+#include "runtime/thread.hpp"
 #include "utilities/hashtable.hpp"
 
 class PlaceholderEntry;

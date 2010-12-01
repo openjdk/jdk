@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CI_CIMETHODHANDLE_HPP
 #define SHARE_VM_CI_CIMETHODHANDLE_HPP
 
+#include "ci/ciInstance.hpp"
 #include "prims/methodHandles.hpp"
 
 // ciMethodHandle
