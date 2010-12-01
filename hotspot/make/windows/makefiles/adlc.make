@@ -46,7 +46,15 @@ ADLCFLAGS=-q -T -D_LP64
 ADLCFLAGS=-q -T -U_LP64
 !endif
 
-CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE  
+CPP_FLAGS=$(CPP_FLAGS) \
+  /D TARGET_OS_FAMILY_windows \
+  /D TARGET_ARCH_$(Platform_arch) \
+  /D TARGET_ARCH_MODEL_$(Platform_arch_model) \
+  /D TARGET_OS_ARCH_windows_$(Platform_arch) \
+  /D TARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model) \
+  /D TARGET_COMPILER_visCPP
+
+CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE
 
 CPP_INCLUDE_DIRS=\
   /I "..\generated" \
