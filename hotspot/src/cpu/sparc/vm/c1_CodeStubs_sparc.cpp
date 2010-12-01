@@ -434,7 +434,7 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
 
   Register pre_val_reg = pre_val()->as_register();
 
-  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false);
+  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
   if (__ is_in_wdisp16_range(_continuation)) {
     __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
                       pre_val_reg, _continuation);

@@ -1174,7 +1174,7 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
     memmove(dst_addr, src_addr, length << l2es);
     return ac_ok;
   } else if (src->is_objArray() && dst->is_objArray()) {
-    if (UseCompressedOops) {  // will need for tiered
+    if (UseCompressedOops) {
       narrowOop *src_addr  = objArrayOop(src)->obj_at_addr<narrowOop>(src_pos);
       narrowOop *dst_addr  = objArrayOop(dst)->obj_at_addr<narrowOop>(dst_pos);
       return obj_arraycopy_work(src, src_addr, dst, dst_addr, length);
@@ -1210,10 +1210,11 @@ JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
   assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
   if (UseCompressedOops) {
     bs->write_ref_array_pre((narrowOop*)dst, num);
+    Copy::conjoint_oops_atomic((narrowOop*) src, (narrowOop*) dst, num);
   } else {
     bs->write_ref_array_pre((oop*)dst, num);
+    Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   }
-  Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   bs->write_ref_array(dst, num);
 JRT_END
 

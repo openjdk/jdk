@@ -135,6 +135,7 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 // Using noreg ensures if the dead code is incorrectly live and executed it
 // will cause an assertion failure
 #define rscratch1 noreg
+#define rscratch2 noreg
 
 #endif // _LP64
 
