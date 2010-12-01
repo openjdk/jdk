@@ -75,10 +75,10 @@ public class FlakyMutex implements Lock {
                             catch (Throwable t) { checkThrowable(t); }
                         }
 
-                        try { check (! m.tryLock()); }
+                        try { check(! m.tryLock()); }
                         catch (Throwable t) { checkThrowable(t); }
 
-                        try { check (! m.tryLock(1, TimeUnit.MICROSECONDS)); }
+                        try { check(! m.tryLock(1, TimeUnit.MICROSECONDS)); }
                         catch (Throwable t) { checkThrowable(t); }
 
                         m.unlock();
