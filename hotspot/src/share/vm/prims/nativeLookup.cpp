@@ -37,7 +37,6 @@
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -154,7 +153,7 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
   if (loader.is_null()) {
     entry = lookup_special_native(jni_name);
     if (entry == NULL) {
-       entry = (address) hpi::dll_lookup(os::native_java_library(), jni_name);
+       entry = (address) os::dll_lookup(os::native_java_library(), jni_name);
     }
     if (entry != NULL) {
       in_base_library = true;
@@ -181,7 +180,7 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
     // findNative didn't find it, if there are any agent libraries look in them
     AgentLibrary* agent;
     for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
-      entry = (address) hpi::dll_lookup(agent->os_lib(), jni_name);
+      entry = (address) os::dll_lookup(agent->os_lib(), jni_name);
       if (entry != NULL) {
         return entry;
       }

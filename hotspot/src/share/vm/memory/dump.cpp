@@ -1365,7 +1365,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
   ResourceMark rm;
 
   // Preload classes to be shared.
-  // Should use some hpi:: method rather than fopen() here. aB.
+  // Should use some os:: method rather than fopen() here. aB.
   // Construct the path to the class list (in jre/lib)
   // Walk up two directories from the location of the VM and
   // optionally tack on "lib" (depending on platform)
@@ -1504,7 +1504,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
 
   } else {
     char errmsg[JVM_MAXPATHLEN];
-    hpi::lasterror(errmsg, JVM_MAXPATHLEN);
+    os::lasterror(errmsg, JVM_MAXPATHLEN);
     tty->print_cr("Loading classlist failed: %s", errmsg);
     exit(1);
   }
