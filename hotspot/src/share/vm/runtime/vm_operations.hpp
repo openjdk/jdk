@@ -231,12 +231,18 @@ class VM_Deoptimize: public VM_Operation {
   bool allow_nested_vm_operations() const        { return true; }
 };
 
+
+// Deopt helper that can deoptimize frames in threads other than the
+// current thread.  Only used through Deoptimization::deoptimize_frame.
 class VM_DeoptimizeFrame: public VM_Operation {
+  friend class Deoptimization;
+
  private:
   JavaThread* _thread;
   intptr_t*   _id;
- public:
   VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id);
+
+ public:
   VMOp_Type type() const                         { return VMOp_DeoptimizeFrame; }
   void doit();
   bool allow_nested_vm_operations() const        { return true;  }

@@ -395,13 +395,11 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Causes the current region to represent a humongous object spanning "n"
   // regions.
-  virtual void set_startsHumongous();
+  void set_startsHumongous(HeapWord* new_end);
 
   // The regions that continue a humongous sequence should be added using
   // this method, in increasing address order.
   void set_continuesHumongous(HeapRegion* start);
-
-  void add_continuingHumongousRegion(HeapRegion* cont);
 
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
@@ -732,13 +730,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   oops_on_card_seq_iterate_careful(MemRegion mr,
                                    FilterOutOfRegionClosure* cl,
                                    bool filter_young);
-
-  // The region "mr" is entirely in "this", and starts and ends at block
-  // boundaries. The caller declares that all the contained blocks are
-  // coalesced into one.
-  void declare_filled_region_to_BOT(MemRegion mr) {
-    _offsets.single_block(mr.start(), mr.end());
-  }
 
   // A version of block start that is guaranteed to find *some* block
   // boundary at or before "p", but does not object iteration, and may

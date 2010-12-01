@@ -89,10 +89,9 @@ public class Basic {
             }
             // create channel that is bound to group
             AsynchronousChannel ch;
-            switch (rand.nextInt(3)) {
+            switch (rand.nextInt(2)) {
                 case 0 : ch = AsynchronousSocketChannel.open(group); break;
                 case 1 : ch = AsynchronousServerSocketChannel.open(group); break;
-                case 2 : ch = AsynchronousDatagramChannel.open(null, group); break;
                 default : throw new AssertionError();
             }
             group.shutdown();
@@ -128,18 +127,9 @@ public class Basic {
             }
 
             // I/O in progress
-            AsynchronousChannel ch;
-            if (rand.nextBoolean()) {
-                AsynchronousServerSocketChannel listener = AsynchronousServerSocketChannel
-                    .open(group).bind(new InetSocketAddress(0));
-                listener.accept();
-                ch = listener;
-            } else {
-                AsynchronousDatagramChannel adc =
-                    AsynchronousDatagramChannel.open(null, group);
-                adc.receive(ByteBuffer.allocate(100));
-                ch = adc;
-            }
+            AsynchronousServerSocketChannel ch = AsynchronousServerSocketChannel
+                .open(group).bind(new InetSocketAddress(0));
+            ch.accept();
 
             // forceful shutdown
             group.shutdownNow();

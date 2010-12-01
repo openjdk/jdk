@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,15 +423,31 @@ public final class SunJCE extends Provider {
 
                 /*
                  * SSL/TLS mechanisms
+                 *
+                 * These are strictly internal implementations and may
+                 * be changed at any time.  These names were chosen
+                 * because PKCS11/SunPKCS11 does not yet have TLS1.2
+                 * mechanisms, and it will cause calls to come here.
                  */
                 put("KeyGenerator.SunTlsPrf",
-                        "com.sun.crypto.provider.TlsPrfGenerator");
-                put("KeyGenerator.SunTlsRsaPremasterSecret",
-                        "com.sun.crypto.provider.TlsRsaPremasterSecretGenerator");
+                        "com.sun.crypto.provider.TlsPrfGenerator$V10");
+                put("KeyGenerator.SunTls12Prf",
+                        "com.sun.crypto.provider.TlsPrfGenerator$V12");
+
                 put("KeyGenerator.SunTlsMasterSecret",
-                        "com.sun.crypto.provider.TlsMasterSecretGenerator");
+                    "com.sun.crypto.provider.TlsMasterSecretGenerator");
+                put("Alg.Alias.KeyGenerator.SunTls12MasterSecret",
+                    "SunTlsMasterSecret");
+
                 put("KeyGenerator.SunTlsKeyMaterial",
-                        "com.sun.crypto.provider.TlsKeyMaterialGenerator");
+                    "com.sun.crypto.provider.TlsKeyMaterialGenerator");
+                put("Alg.Alias.KeyGenerator.SunTls12KeyMaterial",
+                    "SunTlsKeyMaterial");
+
+                put("KeyGenerator.SunTlsRsaPremasterSecret",
+                    "com.sun.crypto.provider.TlsRsaPremasterSecretGenerator");
+                put("Alg.Alias.KeyGenerator.SunTls12RsaPremasterSecret",
+                    "SunTlsRsaPremasterSecret");
 
                 return null;
             }

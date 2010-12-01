@@ -460,6 +460,16 @@ public class FileChannelImpl
                 } finally {
                     unmap(dbb);
                 }
+            } catch (ClosedByInterruptException e) {
+                // target closed by interrupt as ClosedByInterruptException needs
+                // to be thrown after closing this channel.
+                assert !target.isOpen();
+                try {
+                    close();
+                } catch (IOException ignore) {
+                    // nothing we can do
+                }
+                throw e;
             } catch (IOException ioe) {
                 // Only throw exception if no bytes have been written
                 if (remaining == count)
@@ -699,15 +709,19 @@ public class FileChannelImpl
         static volatile long totalSize;
         static volatile long totalCapacity;
 
-        private long address;
-        private long size;
-        private int cap;
+        private volatile long address;
+        private final long size;
+        private final int cap;
+        private final FileDescriptor fd;
 
-        private Unmapper(long address, long size, int cap) {
+        private Unmapper(long address, long size, int cap,
+                         FileDescriptor fd)
+        {
             assert (address != 0);
             this.address = address;
             this.size = size;
             this.cap = cap;
+            this.fd = fd;
 
             synchronized (Unmapper.class) {
                 count++;
@@ -721,6 +735,15 @@ public class FileChannelImpl
                 return;
             unmap0(address, size);
             address = 0;
+
+            // if this mapping has a valid file descriptor then we close it
+            if (fd.valid()) {
+                try {
+                    nd.close(fd);
+                } catch (IOException ignore) {
+                    // nothing we can do
+                }
+            }
 
             synchronized (Unmapper.class) {
                 count--;
@@ -784,10 +807,12 @@ public class FileChannelImpl
             }
             if (size == 0) {
                 addr = 0;
+                // a valid file descriptor is not required
+                FileDescriptor dummy = new FileDescriptor();
                 if ((!writable) || (imode == MAP_RO))
-                    return Util.newMappedByteBufferR(0, 0, null);
+                    return Util.newMappedByteBufferR(0, 0, dummy, null);
                 else
-                    return Util.newMappedByteBuffer(0, 0, null);
+                    return Util.newMappedByteBuffer(0, 0, dummy, null);
             }
 
             int pagePosition = (int)(position % allocationGranularity);
@@ -813,14 +838,31 @@ public class FileChannelImpl
                 }
             }
 
+            // On Windows, and potentially other platforms, we need an open
+            // file descriptor for some mapping operations.
+            FileDescriptor mfd;
+            try {
+                mfd = nd.duplicateForMapping(fd);
+            } catch (IOException ioe) {
+                unmap0(addr, mapSize);
+                throw ioe;
+            }
+
             assert (IOStatus.checkAll(addr));
             assert (addr % allocationGranularity == 0);
             int isize = (int)size;
-            Unmapper um = new Unmapper(addr, size + pagePosition, isize);
-            if ((!writable) || (imode == MAP_RO))
-                return Util.newMappedByteBufferR(isize, addr + pagePosition, um);
-            else
-                return Util.newMappedByteBuffer(isize, addr + pagePosition, um);
+            Unmapper um = new Unmapper(addr, mapSize, isize, mfd);
+            if ((!writable) || (imode == MAP_RO)) {
+                return Util.newMappedByteBufferR(isize,
+                                                 addr + pagePosition,
+                                                 mfd,
+                                                 um);
+            } else {
+                return Util.newMappedByteBuffer(isize,
+                                                addr + pagePosition,
+                                                mfd,
+                                                um);
+            }
         } finally {
             threads.remove(ti);
             end(IOStatus.checkAll(addr));

@@ -70,6 +70,7 @@ import com.sun.corba.se.spi.orbutil.closure.ClosureFactory;
 import com.sun.corba.se.spi.protocol.CorbaMessageMediator;
 import com.sun.corba.se.spi.protocol.ForwardException;
 import com.sun.corba.se.spi.protocol.PIHandler;
+import com.sun.corba.se.spi.protocol.RetryType;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
 
 import com.sun.corba.se.impl.logging.InterceptorsSystemException;
@@ -372,9 +373,24 @@ public class PIHandlerImpl implements PIHandler
         }
     }
 
-    public Exception invokeClientPIEndingPoint(
-        int replyStatus, Exception exception )
-    {
+    // Needed when an error forces a retry AFTER initiateClientPIRequest
+    // but BEFORE invokeClientPIStartingPoint.
+    public Exception makeCompletedClientRequest( int replyStatus,
+        Exception exception ) {
+
+        // 6763340
+        return handleClientPIEndingPoint( replyStatus, exception, false ) ;
+    }
+
+    public Exception invokeClientPIEndingPoint( int replyStatus,
+        Exception exception ) {
+
+        // 6763340
+        return handleClientPIEndingPoint( replyStatus, exception, true ) ;
+    }
+
+    public Exception handleClientPIEndingPoint(
+        int replyStatus, Exception exception, boolean invokeEndingPoint ) {
         if( !hasClientInterceptors ) return exception;
         if( !isClientPIEnabledForThisThread() ) return exception;
 
@@ -388,24 +404,31 @@ public class PIHandlerImpl implements PIHandler
         ClientRequestInfoImpl info = peekClientRequestInfoImplStack();
         info.setReplyStatus( piReplyStatus );
         info.setException( exception );
-        interceptorInvoker.invokeClientInterceptorEndingPoint( info );
-        piReplyStatus = info.getReplyStatus();
+
+        if (invokeEndingPoint) {
+            // 6763340
+            interceptorInvoker.invokeClientInterceptorEndingPoint( info );
+            piReplyStatus = info.getReplyStatus();
+        }
 
         // Check reply status:
         if( (piReplyStatus == LOCATION_FORWARD.value) ||
-            (piReplyStatus == TRANSPORT_RETRY.value) )
-        {
+            (piReplyStatus == TRANSPORT_RETRY.value) ) {
             // If this is a forward or a retry, reset and reuse
             // info object:
             info.reset();
-            info.setRetryRequest( true );
+
+            // fix for 6763340:
+            if (invokeEndingPoint) {
+                info.setRetryRequest( RetryType.AFTER_RESPONSE ) ;
+            } else {
+                info.setRetryRequest( RetryType.BEFORE_RESPONSE ) ;
+            }
 
             // ... and return a RemarshalException so the orb internals know
             exception = new RemarshalException();
-        }
-        else if( (piReplyStatus == SYSTEM_EXCEPTION.value) ||
-                 (piReplyStatus == USER_EXCEPTION.value) )
-        {
+        } else if( (piReplyStatus == SYSTEM_EXCEPTION.value) ||
+                 (piReplyStatus == USER_EXCEPTION.value) ) {
             exception = info.getException();
         }
 
@@ -421,18 +444,21 @@ public class PIHandlerImpl implements PIHandler
         RequestInfoStack infoStack =
             (RequestInfoStack)threadLocalClientRequestInfoStack.get();
         ClientRequestInfoImpl info = null;
-        if( !infoStack.empty() ) info =
-            (ClientRequestInfoImpl)infoStack.peek();
 
-        if( !diiRequest && (info != null) && info.isDIIInitiate() ) {
+        if (!infoStack.empty() ) {
+            info = (ClientRequestInfoImpl)infoStack.peek();
+        }
+
+        if (!diiRequest && (info != null) && info.isDIIInitiate() ) {
             // In RequestImpl.doInvocation we already called
             // initiateClientPIRequest( true ), so ignore this initiate.
             info.setDIIInitiate( false );
-        }
-        else {
+        } else {
             // If there is no info object or if we are not retrying a request,
             // push a new ClientRequestInfoImpl on the stack:
-            if( (info == null) || !info.getRetryRequest() ) {
+
+            // 6763340: don't push unless this is not a retry
+            if( (info == null) || !info.getRetryRequest().isRetry() ) {
                 info = new ClientRequestInfoImpl( orb );
                 infoStack.push( info );
                 printPush();
@@ -442,8 +468,14 @@ public class PIHandlerImpl implements PIHandler
             // Reset the retry request flag so that recursive calls will
             // push a new info object, and bump up entry count so we know
             // when to pop this info object:
-            info.setRetryRequest( false );
+            info.setRetryRequest( RetryType.NONE );
             info.incrementEntryCount();
+
+            // KMC 6763340: I don't know why this wasn't set earlier,
+            // but we do not want a retry to pick up the previous
+            // reply status, so clear it here.  Most likely a new
+            // info was pushed before, so that this was not a problem.
+            info.setReplyStatus( RequestInfoImpl.UNINITIALIZED ) ;
 
             // If this is a DII request, make sure we ignore the next initiate.
             if( diiRequest ) {
@@ -457,25 +489,34 @@ public class PIHandlerImpl implements PIHandler
         if( !isClientPIEnabledForThisThread() ) return;
 
         ClientRequestInfoImpl info = peekClientRequestInfoImplStack();
+        RetryType rt = info.getRetryRequest() ;
 
-        // If the replyStatus has not yet been set, this is an indication
-        // that the ORB threw an exception before we had a chance to
-        // invoke the client interceptor ending points.
-        //
-        // _REVISIT_ We cannot handle any exceptions or ForwardRequests
-        // flagged by the ending points here because there is no way
-        // to gracefully handle this in any of the calling code.
-        // This is a rare corner case, so we will ignore this for now.
-        short replyStatus = info.getReplyStatus();
-        if( replyStatus == info.UNINITIALIZED ) {
-            invokeClientPIEndingPoint( ReplyMessage.SYSTEM_EXCEPTION,
-                wrapper.unknownRequestInvoke(
-                    CompletionStatus.COMPLETED_MAYBE ) ) ;
+        // fix for 6763340
+        if (!rt.equals( RetryType.BEFORE_RESPONSE )) {
+
+            // If the replyStatus has not yet been set, this is an indication
+            // that the ORB threw an exception before we had a chance to
+            // invoke the client interceptor ending points.
+            //
+            // _REVISIT_ We cannot handle any exceptions or ForwardRequests
+            // flagged by the ending points here because there is no way
+            // to gracefully handle this in any of the calling code.
+            // This is a rare corner case, so we will ignore this for now.
+            short replyStatus = info.getReplyStatus();
+            if (replyStatus == info.UNINITIALIZED ) {
+                invokeClientPIEndingPoint( ReplyMessage.SYSTEM_EXCEPTION,
+                    wrapper.unknownRequestInvoke(
+                        CompletionStatus.COMPLETED_MAYBE ) ) ;
+            }
         }
 
         // Decrement entry count, and if it is zero, pop it from the stack.
         info.decrementEntryCount();
-        if( info.getEntryCount() == 0 ) {
+
+        // fix for 6763340, and probably other cases (non-recursive retry)
+        if (info.getEntryCount() == 0 && !info.getRetryRequest().isRetry()) {
+            // RequestInfoStack<ClientRequestInfoImpl> infoStack =
+            //     threadLocalClientRequestInfoStack.get();
             RequestInfoStack infoStack =
                 (RequestInfoStack)threadLocalClientRequestInfoStack.get();
             infoStack.pop();

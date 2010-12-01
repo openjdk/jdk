@@ -26,7 +26,7 @@ import java.util.*;
 
 /*
  * @test
- * @bug     6911258 6962571 6963622
+ * @bug     6911258 6962571 6963622 6991528
  * @summary Basic tests of suppressed exceptions
  * @author  Joseph D. Darcy
  */
@@ -39,12 +39,21 @@ public class SuppressedExceptions {
         basicSupressionTest();
         serializationTest();
         selfReference();
+        noModification();
     }
 
     private static void noSelfSuppression() {
         Throwable throwable = new Throwable();
         try {
-            throwable.addSuppressedException(throwable);
+            throwable.addSuppressed(throwable);
+            throw new RuntimeException("IllegalArgumentException for self-suppresion not thrown.");
+        } catch (IllegalArgumentException iae) {
+            ; // Expected
+        }
+
+        throwable.addSuppressed(null); // Immutable suppression list
+        try {
+            throwable.addSuppressed(throwable);
             throw new RuntimeException("IllegalArgumentException for self-suppresion not thrown.");
         } catch (IllegalArgumentException iae) {
             ; // Expected
@@ -56,21 +65,21 @@ public class SuppressedExceptions {
         RuntimeException suppressed = new RuntimeException("A suppressed exception.");
         AssertionError repressed  = new AssertionError("A repressed error.");
 
-        Throwable[] t0 = throwable.getSuppressedExceptions();
+        Throwable[] t0 = throwable.getSuppressed();
         if (t0.length != 0) {
             throw new RuntimeException(message);
         }
         throwable.printStackTrace();
 
-        throwable.addSuppressedException(suppressed);
-        Throwable[] t1 = throwable.getSuppressedExceptions();
+        throwable.addSuppressed(suppressed);
+        Throwable[] t1 = throwable.getSuppressed();
         if (t1.length != 1 ||
             t1[0] != suppressed) {throw new RuntimeException(message);
         }
         throwable.printStackTrace();
 
-        throwable.addSuppressedException(repressed);
-        Throwable[] t2 = throwable.getSuppressedExceptions();
+        throwable.addSuppressed(repressed);
+        Throwable[] t2 = throwable.getSuppressed();
         if (t2.length != 2 ||
             t2[0] != suppressed ||
             t2[1] != repressed) {
@@ -152,7 +161,7 @@ public class SuppressedExceptions {
 
         System.err.println("TESTING SERIALIZED EXCEPTION");
 
-        Throwable[] t0 = throwable.getSuppressedExceptions();
+        Throwable[] t0 = throwable.getSuppressed();
         if (t0.length != 0) { // Will fail if t0 is null.
             throw new RuntimeException(message);
         }
@@ -167,9 +176,25 @@ public class SuppressedExceptions {
 
         throwable1.printStackTrace();
 
-        throwable1.addSuppressedException(throwable2);
-        throwable2.addSuppressedException(throwable1);
+        throwable1.addSuppressed(throwable2);
+        throwable2.addSuppressed(throwable1);
 
         throwable1.printStackTrace();
+    }
+
+    private static void noModification() {
+        Throwable t = new Throwable();
+        t.addSuppressed(null);
+
+        Throwable[] t0 = t.getSuppressed();
+        if (t0.length != 0)
+            throw new RuntimeException("Bad nonzero length of suppressed exceptions.");
+
+        t.addSuppressed(new ArithmeticException());
+
+        // Make sure a suppressed exception did *not* get added.
+        t0 = t.getSuppressed();
+        if (t0.length != 0)
+            throw new RuntimeException("Bad nonzero length of suppressed exceptions.");
     }
 }

@@ -34,7 +34,6 @@ package sun.security.krb5.internal.ktab;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
-import java.util.Vector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.io.IOException;
@@ -42,7 +41,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.File;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.Vector;
 
 /**
  * This class represents key table. The key table functions deal with storing
@@ -239,23 +241,22 @@ public class KeyTab implements KeyTabConstants {
         EncryptionKey key;
         int size = entries.size();
         ArrayList<EncryptionKey> keys = new ArrayList<EncryptionKey> (size);
-        if (entries != null) {
-            for (int i = size-1; i >= 0; i--) {
-                entry = entries.elementAt(i);
-                if (entry.service.match(service)) {
-                    if (EType.isSupported(entry.keyType)) {
-                        key = new EncryptionKey(entry.keyblock,
-                                            entry.keyType,
-                                            new Integer(entry.keyVersion));
-                        keys.add(key);
-                        if (DEBUG) {
-                            System.out.println("Added key: " + entry.keyType +
-                                "version: " + entry.keyVersion);
-                        }
-                    } else if (DEBUG) {
-                        System.out.println("Found unsupported keytype (" +
-                            entry.keyType + ") for " + service);
+
+        for (int i = size-1; i >= 0; i--) {
+            entry = entries.elementAt(i);
+            if (entry.service.match(service)) {
+                if (EType.isSupported(entry.keyType)) {
+                    key = new EncryptionKey(entry.keyblock,
+                                        entry.keyType,
+                                        new Integer(entry.keyVersion));
+                    keys.add(key);
+                    if (DEBUG) {
+                        System.out.println("Added key: " + entry.keyType +
+                            "version: " + entry.keyVersion);
                     }
+                } else if (DEBUG) {
+                    System.out.println("Found unsupported keytype (" +
+                        entry.keyType + ") for " + service);
                 }
             }
         }
@@ -313,16 +314,14 @@ public class KeyTab implements KeyTabConstants {
      */
     public boolean findServiceEntry(PrincipalName service) {
         KeyTabEntry entry;
-        if (entries != null) {
-            for (int i = 0; i < entries.size(); i++) {
-                entry = entries.elementAt(i);
-                if (entry.service.match(service)) {
-                    if (EType.isSupported(entry.keyType)) {
-                        return true;
-                    } else if (DEBUG) {
-                        System.out.println("Found unsupported keytype (" +
-                            entry.keyType + ") for " + service);
-                    }
+        for (int i = 0; i < entries.size(); i++) {
+            entry = entries.elementAt(i);
+            if (entry.service.match(service)) {
+                if (EType.isSupported(entry.keyType)) {
+                    return true;
+                } else if (DEBUG) {
+                    System.out.println("Found unsupported keytype (" +
+                        entry.keyType + ") for " + service);
                 }
             }
         }
@@ -337,78 +336,45 @@ public class KeyTab implements KeyTabConstants {
      * Adds a new entry in the key table.
      * @param service the service which will have a new entry in the key table.
      * @param psswd the password which generates the key.
+     * @param kvno the kvno to use, -1 means automatic increasing
+     * @param append false if entries with old kvno would be removed.
+     * Note: if kvno is not -1, entries with the same kvno are always removed
      */
-    public void addEntry(PrincipalName service, char[] psswd)
-         throws KrbException {
+    public void addEntry(PrincipalName service, char[] psswd,
+            int kvno, boolean append) throws KrbException {
 
         EncryptionKey[] encKeys = EncryptionKey.acquireSecretKeys(
             psswd, service.getSalt());
 
-        for (int i = 0; encKeys != null && i < encKeys.length; i++) {
-            int keyType = encKeys[i].getEType();
-            byte[] keyValue = encKeys[i].getBytes();
-            int result = retrieveEntry(service, keyType);
-            int kvno = 1;
-            if (result != -1) {
-                KeyTabEntry oldEntry = entries.elementAt(result);
-                kvno = oldEntry.keyVersion;
-                entries.removeElementAt(result);
-                kvno += 1;
-            } else
-                kvno = 1;
+        // There should be only one maximum KVNO value for all etypes, so that
+        // all added keys can have the same KVNO.
 
-            KeyTabEntry newEntry = new KeyTabEntry(service,
-                            service.getRealm(),
-                            new KerberosTime(System.currentTimeMillis()),
-                                               kvno, keyType, keyValue);
-            if (entries == null)
-                entries = new Vector<KeyTabEntry> ();
-            entries.addElement(newEntry);
-        }
-    }
-
-    /**
-     * Only used by KDC test. This method can specify kvno and does not
-     * remove any old keys.
-     */
-    public void addEntry(PrincipalName service, char[] psswd, int kvno)
-         throws KrbException {
-
-        EncryptionKey[] encKeys = EncryptionKey.acquireSecretKeys(
-            psswd, service.getSalt());
-
-        for (int i = 0; encKeys != null && i < encKeys.length; i++) {
-            int keyType = encKeys[i].getEType();
-            byte[] keyValue = encKeys[i].getBytes();
-            KeyTabEntry newEntry = new KeyTabEntry(service,
-                            service.getRealm(),
-                            new KerberosTime(System.currentTimeMillis()),
-                                               kvno, keyType, keyValue);
-            if (entries == null)
-                entries = new Vector<KeyTabEntry> ();
-            entries.addElement(newEntry);
-        }
-    }
-
-    /**
-     * Retrieves the key table entry with the specified service name.
-     * @param service the service which may have an entry in the key table.
-     * @param keyType the etype to match, returns the 1st one if -1 provided
-     * @return -1 if the entry is not found, else return the entry index
-     * in the list.
-     */
-    private int retrieveEntry(PrincipalName service, int keyType) {
-        KeyTabEntry e;
-        if (entries != null) {
-            for (int i = 0; i < entries.size(); i++) {
-                e = entries.elementAt(i);
-                if (service.match(e.getService()) &&
-                    (keyType == -1 || e.keyType == keyType)) {
-                    return i;
+        int maxKvno = 0;    // only useful when kvno == -1
+        for (int i = entries.size()-1; i >= 0; i--) {
+            KeyTabEntry e = entries.get(i);
+            if (e.service.match(service)) {
+                if (e.keyVersion > maxKvno) {
+                    maxKvno = e.keyVersion;
+                }
+                if (!append || e.keyVersion == kvno) {
+                    entries.removeElementAt(i);
                 }
             }
         }
-        return -1;
+        if (kvno == -1) {
+            kvno = maxKvno + 1;
+        }
+
+        for (int i = 0; encKeys != null && i < encKeys.length; i++) {
+            int keyType = encKeys[i].getEType();
+            byte[] keyValue = encKeys[i].getBytes();
+
+            KeyTabEntry newEntry = new KeyTabEntry(service,
+                            service.getRealm(),
+                            new KerberosTime(System.currentTimeMillis()),
+                                               kvno, keyType, keyValue);
+            entries.addElement(newEntry);
+        }
     }
 
     /**
@@ -416,15 +382,11 @@ public class KeyTab implements KeyTabConstants {
      * @return array of <code>KeyTabEntry</code>.
      */
     public KeyTabEntry[] getEntries() {
-        if (entries != null) {
-            KeyTabEntry[] kentries = new KeyTabEntry[entries.size()];
-            for (int i = 0; i < kentries.length; i++) {
-                kentries[i] = entries.elementAt(i);
-            }
-            return kentries;
-        } else {
-            return null;
+        KeyTabEntry[] kentries = new KeyTabEntry[entries.size()];
+        for (int i = 0; i < kentries.length; i++) {
+            kentries[i] = entries.elementAt(i);
         }
+        return kentries;
     }
 
     /**
@@ -464,29 +426,55 @@ public class KeyTab implements KeyTabConstants {
     }
 
     /**
-     * Removes an entry from the key table.
+     * Removes entries from the key table.
      * @param service the service <code>PrincipalName</code>.
-     * @param etype the etype to match, first one if -1 provided
-     * @return 1 if removed successfully, 0 otherwise
+     * @param etype the etype to match, remove all if -1
+     * @param kvno what kvno to remove, -1 for all, -2 for old
+     * @return the number of entries deleted
      */
-    public int deleteEntry(PrincipalName service, int etype) {
-        int result = retrieveEntry(service, etype);
-        if (result != -1) {
-            entries.removeElementAt(result);
-            return 1;
-        }
-        return 0;
-    }
-
-    /**
-     * Removes an entry from the key table.
-     * @param service the service <code>PrincipalName</code>.
-     * @return number of entries removed
-     */
-    public int deleteEntry(PrincipalName service) {
+    public int deleteEntries(PrincipalName service, int etype, int kvno) {
         int count = 0;
-        while (deleteEntry(service, -1) > 0) {
-            count++;
+
+        // Remember the highest KVNO for each etype. Used for kvno == -2
+        Map<Integer,Integer> highest = new HashMap<>();
+
+        for (int i = entries.size()-1; i >= 0; i--) {
+            KeyTabEntry e = entries.get(i);
+            if (service.match(e.getService())) {
+                if (etype == -1 || e.keyType == etype) {
+                    if (kvno == -2) {
+                        // Two rounds for kvno == -2. In the first round (here),
+                        // only find out highest KVNO for each etype
+                        if (highest.containsKey(e.keyType)) {
+                            int n = highest.get(e.keyType);
+                            if (e.keyVersion > n) {
+                                highest.put(e.keyType, e.keyVersion);
+                            }
+                        } else {
+                            highest.put(e.keyType, e.keyVersion);
+                        }
+                    } else if (kvno == -1 || e.keyVersion == kvno) {
+                        entries.removeElementAt(i);
+                        count++;
+                    }
+                }
+            }
+        }
+
+        // Second round for kvno == -2, remove old entries
+        if (kvno == -2) {
+            for (int i = entries.size()-1; i >= 0; i--) {
+                KeyTabEntry e = entries.get(i);
+                if (service.match(e.getService())) {
+                    if (etype == -1 || e.keyType == etype) {
+                        int n = highest.get(e.keyType);
+                        if (e.keyVersion != n) {
+                            entries.removeElementAt(i);
+                            count++;
+                        }
+                    }
+                }
+            }
         }
         return count;
     }
