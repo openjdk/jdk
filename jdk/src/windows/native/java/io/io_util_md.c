@@ -300,7 +300,6 @@ handleStdinAvailable(jlong, long *);
 
 int
 handleAvailable(jlong fd, jlong *pbytes) {
-    jlong current, end;
     HANDLE h = (HANDLE)fd;
     DWORD type = 0;
 
@@ -320,18 +319,17 @@ handleAvailable(jlong fd, jlong *pbytes) {
     }
     /* Handle is for regular file */
     if (type == FILE_TYPE_DISK) {
-        long highPos = 0;
-        DWORD sizeLow = 0;
-        DWORD sizeHigh = 0;
-        DWORD lowPos = SetFilePointer(h, 0, &highPos, FILE_CURRENT);
-        if (lowPos == ((DWORD)-1)) {
+        jlong current, end;
+
+        LARGE_INTEGER filesize;
+        current = handleLseek(fd, 0, SEEK_CUR);
+        if (current < 0) {
             return FALSE;
         }
-        current = (((jlong)highPos) << 32) | lowPos;
-        end = GetFileSize(h, &sizeHigh);
-        if (sizeLow == ((DWORD)-1)) {
+        if (GetFileSizeEx(h, &filesize) == 0) {
             return FALSE;
         }
+        end = long_to_jlong(filesize.QuadPart);
         *pbytes = end - current;
         return TRUE;
     }
@@ -569,6 +567,7 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
 jlong
 handleLseek(jlong fd, jlong offset, jint whence)
 {
+    LARGE_INTEGER pos, distance;
     DWORD lowPos = 0;
     long highPos = 0;
     DWORD op = FILE_CURRENT;
@@ -584,13 +583,9 @@ handleLseek(jlong fd, jlong offset, jint whence)
         op = FILE_BEGIN;
     }
 
-    lowPos = (DWORD)offset;
-    highPos = (long)(offset >> 32);
-    lowPos = SetFilePointer(h, lowPos, &highPos, op);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            return -1;
-        }
+    distance.QuadPart = offset;
+    if (SetFilePointerEx(h, distance, &pos, op) == 0) {
+        return -1;
     }
-    return (((jlong)highPos) << 32) | lowPos;
+    return long_to_jlong(pos.QuadPart);
 }
