@@ -38,7 +38,6 @@
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"

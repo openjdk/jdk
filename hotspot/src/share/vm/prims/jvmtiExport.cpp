@@ -2298,16 +2298,16 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   // load it from the standard dll directory.
 
   if (is_absolute_path) {
-    library = hpi::dll_load(agent, ebuf, sizeof ebuf);
+    library = os::dll_load(agent, ebuf, sizeof ebuf);
   } else {
     // Try to load the agent from the standard dll directory
-    hpi::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), agent);
-    library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+    os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), agent);
+    library = os::dll_load(buffer, ebuf, sizeof ebuf);
     if (library == NULL) {
       // not found - try local path
       char ns[1] = {0};
-      hpi::dll_build_name(buffer, sizeof(buffer), ns, agent);
-      library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+      os::dll_build_name(buffer, sizeof(buffer), ns, agent);
+      library = os::dll_load(buffer, ebuf, sizeof ebuf);
     }
   }
 
@@ -2320,13 +2320,13 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
     const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
     for (uint symbol_index = 0; symbol_index < ARRAY_SIZE(on_attach_symbols); symbol_index++) {
       on_attach_entry =
-        CAST_TO_FN_PTR(OnAttachEntry_t, hpi::dll_lookup(library, on_attach_symbols[symbol_index]));
+        CAST_TO_FN_PTR(OnAttachEntry_t, os::dll_lookup(library, on_attach_symbols[symbol_index]));
       if (on_attach_entry != NULL) break;
     }
 
     if (on_attach_entry == NULL) {
       // Agent_OnAttach missing - unload library
-      hpi::dll_unload(library);
+      os::dll_unload(library);
     } else {
       // Invoke the Agent_OnAttach function
       JavaThread* THREAD = JavaThread::current();

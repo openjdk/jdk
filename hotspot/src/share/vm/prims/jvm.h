@@ -1405,23 +1405,6 @@ JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen);
 JNIEXPORT jint JNICALL
 JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen);
 
-/*
- * These routines are only reentrant on Windows
- */
-
-#ifdef _WINDOWS
-
-JNIEXPORT struct protoent * JNICALL
-JVM_GetProtoByName(char* name);
-
-JNIEXPORT struct hostent* JNICALL
-JVM_GetHostByAddr(const char* name, int len, int type);
-
-JNIEXPORT struct hostent* JNICALL
-JVM_GetHostByName(char* name);
-
-#endif /* _WINDOWS */
-
 JNIEXPORT int JNICALL
 JVM_GetHostName(char* name, int namelen);
 

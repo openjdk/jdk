@@ -41,7 +41,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -289,17 +288,17 @@ static int threadgetstate(thread_t tid, int *flags, lwpid_t *lwp, stack_t *ss, g
   if (*flags == TRS_LWPID) {
     sprintf(lwpstatusfile, "/proc/%d/lwp/%d/lwpstatus", getpid(),
             *lwp);
-    if ((lwpfd = open(lwpstatusfile, O_RDONLY)) < 0) {
+    if ((lwpfd = ::open(lwpstatusfile, O_RDONLY)) < 0) {
       perror("thr_mutator_status: open lwpstatus");
       return (EINVAL);
     }
     if (pread(lwpfd, lwpstatus, sizeof (lwpstatus_t), (off_t)0) !=
         sizeof (lwpstatus_t)) {
       perror("thr_mutator_status: read lwpstatus");
-      (void) close(lwpfd);
+      (void) ::close(lwpfd);
       return (EINVAL);
     }
-    (void) close(lwpfd);
+    (void) ::close(lwpfd);
   }
   return (0);
 }

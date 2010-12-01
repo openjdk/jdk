@@ -360,9 +360,6 @@ class os: AllStatic {
   // thread id on Linux/64bit is 64bit, on Windows and Solaris, it's 32bit
   static intx current_thread_id();
   static int current_process_id();
-  // hpi::read for calls from non native state
-  // For performance, hpi::read is only callable from _thread_in_native
-  static size_t read(int fd, void *buf, unsigned int nBytes);
   static int sleep(Thread* thread, jlong ms, bool interruptable);
   static int naked_sleep();
   static void infinite_sleep(); // never returns, use with CAUTION
@@ -418,6 +415,22 @@ class os: AllStatic {
   // Die immediately, no exit hook, no abort hook, no cleanup.
   static void die();
 
+  // File i/o operations
+  static const int default_file_open_flags();
+  static int open(const char *path, int oflag, int mode);
+  static int close(int fd);
+  static jlong lseek(int fd, jlong offset, int whence);
+  static char* native_path(char *path);
+  static int ftruncate(int fd, jlong length);
+  static int fsync(int fd);
+  static int available(int fd, jlong *bytes);
+
+  //File i/o operations
+
+  static size_t read(int fd, void *buf, unsigned int nBytes);
+  static size_t restartable_read(int fd, void *buf, unsigned int nBytes);
+  static size_t write(int fd, const void *buf, unsigned int nBytes);
+
   // Reading directories.
   static DIR*           opendir(const char* dirname);
   static int            readdir_buf_size(const char *path);
@@ -460,6 +473,9 @@ class os: AllStatic {
   // lookup symbol in a shared library
   static void* dll_lookup(void* handle, const char* name);
 
+  // Unload library
+  static void  dll_unload(void *lib);
+
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.
   static void print_os_info(outputStream* st);
@@ -474,6 +490,7 @@ class os: AllStatic {
   static void print_date_and_time(outputStream* st);
 
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
+  static size_t lasterror(char *buf, size_t len);
 
   // The following two functions are used by fatal error handler to trace
   // native (C) frames. They are not part of frame.hpp/frame.cpp because
@@ -501,7 +518,7 @@ class os: AllStatic {
   // Returns native Java library, loads if necessary
   static void*    native_java_library();
 
-  // Fills in path to jvm.dll/libjvm.so (this info used to find hpi).
+  // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
 
   // Returns true if we are running in a headless jre.
@@ -546,6 +563,33 @@ class os: AllStatic {
   static size_t  alloc_bytes;         // # of bytes allocated
   static int  num_frees;              // # of calls to free
 #endif
+
+  // SocketInterface (ex HPI SocketInterface )
+  static int socket(int domain, int type, int protocol);
+  static int socket_close(int fd);
+  static int socket_shutdown(int fd, int howto);
+  static int recv(int fd, char *buf, int nBytes, int flags);
+  static int send(int fd, char *buf, int nBytes, int flags);
+  static int raw_send(int fd, char *buf, int nBytes, int flags);
+  static int timeout(int fd, long timeout);
+  static int listen(int fd, int count);
+  static int connect(int fd, struct sockaddr *him, int len);
+  static int bind(int fd, struct sockaddr *him, int len);
+  static int accept(int fd, struct sockaddr *him, int *len);
+  static int recvfrom(int fd, char *buf, int nbytes, int flags,
+                             struct sockaddr *from, int *fromlen);
+  static int get_sock_name(int fd, struct sockaddr *him, int *len);
+  static int sendto(int fd, char *buf, int len, int flags,
+                           struct sockaddr *to, int tolen);
+  static int socket_available(int fd, jint *pbytes);
+
+  static int get_sock_opt(int fd, int level, int optname,
+                           char *optval, int* optlen);
+  static int set_sock_opt(int fd, int level, int optname,
+                           const char *optval, int optlen);
+  static int get_host_name(char* name, int namelen);
+
+  static struct hostent*  get_host_by_name(char* name);
 
   // Printing 64 bit integers
   static const char* jlong_format_specifier();

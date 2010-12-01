@@ -3258,7 +3258,6 @@ struct JavaVM_ main_vm = {&jni_InvokeInterface};
 
 
 #define JAVASTACKSIZE (400 * 1024)    /* Default size of a thread java stack */
-#define PROCSTACKSIZE 0               /* 0 means default size in HPI */
 enum { VERIFY_NONE, VERIFY_REMOTE, VERIFY_ALL };
 
 HS_DTRACE_PROBE_DECL1(hotspot_jni, GetDefaultJavaVMInitArgs__entry, void*);
