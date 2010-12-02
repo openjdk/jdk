@@ -58,13 +58,13 @@
  * The final two bytes are reserved for future use and required to be zero.
  * The constant pool reference of an {@code invokedynamic} instruction is to a entry
  * with tag {@code CONSTANT_InvokeDynamic} (decimal 18).  See below for its format.
- * (The tag value 17 is also allowed.  See below.)
+ * (The tag value 17 is also temporarily allowed.  See below.)
  * The entry specifies the following information:
  * <ul>
  * <li>a bootstrap method (a {@link java.dyn.MethodHandle MethodHandle} constant)</li>
  * <li>the dynamic invocation name (a UTF8 string)</li>
  * <li>the argument and return types of the call (encoded as a signature in a UTF8 string)</li>
- * <li>optionally, a sequence of additional <em>static arguments</em> to the bootstrap method (constants loadable via {@code ldc})</li>
+ * <li>optionally, a sequence of additional <em>static arguments</em> to the bootstrap method ({@code ldc}-type constants)</li>
  * </ul>
  * <p>
  * Each instance of an {@code invokedynamic} instruction is called a <em>dynamic call site</em>.
@@ -76,39 +76,38 @@
  * no target method for the call site to invoke.
  * A dynamic call site is linked by means of a bootstrap method,
  * as <a href="#bsm">described below</a>.
- * <p>
- * <em>(Historic Note: Some older JVMs may allow the index of a {@code CONSTANT_NameAndType}
+ *
+ * <p style="font-size:smaller;">
+ * (Historic Note: Some older JVMs may allow the index of a {@code CONSTANT_NameAndType}
  * instead of a {@code CONSTANT_InvokeDynamic}.  In earlier, obsolete versions of this API, the
- * bootstrap method was specified dynamically, in a per-class basis, during class initialization.)</em>
+ * bootstrap method was specified dynamically, in a per-class basis, during class initialization.)
  *
  * <h3>constant pool entries for {@code invokedynamic} instructions</h3>
- * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
  * If a constant pool entry has the tag {@code CONSTANT_InvokeDynamic} (decimal 18),
- * it must contain at least six more bytes after the tag.
- * All of these bytes are grouped in pairs,
- * and each pair is interpreted as a 16-bit index (in the usual {@code u2} format).
- * The first pair of bytes after the tag must be an index to a {@code CONSTANT_MethodHandle}
- * entry, and the second pair of bytes must be an index to a {@code CONSTANT_NameAndType}.
- * The third pair of bytes specifies a count <em>N</em> of remaining byte pairs.
- * After the tag and required bytes, there must be exactly <em>2N</em> remaining bytes
- * in the constant pool entry, each pair providing the index of a constant pool entry.
+ * it must contain exactly four more bytes after the tag.
+ * These bytes are interpreted as two 16-bit indexes, in the usual {@code u2} format.
+ * The first pair of bytes after the tag must be an index into a side table called the
+ * <em>bootstrap method table</em>, which is stored in the {@code BootstrapMethods}
+ * attribute as <a href="#bsmattr">described below</a>.
+ * The second pair of bytes must be an index to a {@code CONSTANT_NameAndType}.
+ * This table is not part of the constant pool.  Instead, it is stored
+ * in a class attribute named {@code BootstrapMethods}, described below.
  * <p>
  * The first index specifies a bootstrap method used by the associated dynamic call sites.
  * The second index specifies the method name, argument types, and return type of the dynamic call site.
  * The structure of such an entry is therefore analogous to a {@code CONSTANT_Methodref},
- * except that the bootstrap method reference replaces
+ * except that the bootstrap method specifier reference replaces
  * the {@code CONSTANT_Class} reference of a {@code CONSTANT_Methodref} entry.
- * The remaining indexes (if there is a non-zero count) specify
- * <a href="#args">additional static arguments</a> for the bootstrap method.
  * <p>
  * Some older JVMs may allow an older constant pool entry tag of decimal 17.
  * The format and behavior of a constant pool entry with this tag is identical to
- * an entry with a tag of decimal 18, except that the constant pool entry must not
- * contain extra static arguments or a static argument count.
- * The fixed size of such an entry is therefore four bytes after the tag.
- * The value of the missing static argument count is taken to be zero.
- * <em>(Note: The Proposed Final Draft of this specification is not likely to support
- * both of these formats.)</em>
+ * an entry with a tag of decimal 18, except that the first index refers directly
+ * to a {@code CONSTANT_MethodHandle} to use as the bootstrap method.
+ * This format does not require the bootstrap method table.
+ *
+ * <p style="font-size:smaller;">
+ * <em>(Note: The Proposed Final Draft of this specification is likely to support
+ * only the tag 18, not the tag 17.)</em>
  *
  * <h3>constant pool entries for {@linkplain java.dyn.MethodType method types}</h3>
  * If a constant pool entry has the tag {@code CONSTANT_MethodType} (decimal 16),
@@ -240,7 +239,7 @@
  * a simple {@code Class} reference.  (This is a change from earlier
  * versions of this specification.  If the caller class is needed,
  * it is easy to {@linkplain java.dyn.MethodHandles.Lookup#lookupClass() extract it}
- * from the {@code Lookup} object.
+ * from the {@code Lookup} object.)
  * <p>
  * After resolution, the linkage process may fail in a variety of ways.
  * All failures are reported by an {@link java.dyn.InvokeDynamicBootstrapError InvokeDynamicBootstrapError},
@@ -248,7 +247,12 @@
  * site execution.
  * The following circumstances will cause this:
  * <ul>
+ * <li>the index to the bootstrap method specifier is out of range </li>
  * <li>the bootstrap method cannot be resolved </li>
+ * <li>the {@code MethodType} to pass to the bootstrap method cannot be resolved </li>
+ * <li>a static argument to the bootstrap method cannot be resolved
+ *     (i.e., a {@code CONSTANT_Class}, {@code CONSTANT_MethodType},
+ *     or {@code CONSTANT_MethodHandle} argument cannot be linked) </li>
  * <li>the bootstrap method has the wrong arity,
  *     causing {@code invokeGeneric} to throw {@code WrongMethodTypeException} </li>
  * <li>the bootstrap method has a wrong argument or return type </li>
@@ -258,6 +262,7 @@
  * <li>the target of the {@code CallSite} does not have a target of
  *     the expected {@code MethodType} </li>
  * </ul>
+ *
  * <h3>timing of linkage</h3>
  * A dynamic call site is linked just before its first execution.
  * The bootstrap method call implementing the linkage occurs within
@@ -283,15 +288,38 @@
  * all threads.  Any other bootstrap method calls are allowed to complete, but their
  * results are ignored, and their dynamic call site invocations proceed with the originally
  * chosen target object.
- * <p>
- * <em>Note: Unlike some previous versions of this specification,
+ *
+ * <p style="font-size:smaller;">
+ * (Historic Note: Unlike some previous versions of this specification,
  * these rules do not enable the JVM to duplicate dynamic call sites,
  * or to issue &ldquo;causeless&rdquo; bootstrap method calls.
  * Every dynamic call site transitions at most once from unlinked to linked,
- * just before its first invocation.</em>
+ * just before its first invocation.)
+ *
+ * <h3><a name="bsmattr">the {@code BootstrapMethods} attribute </h3>
+ * Each {@code CONSTANT_InvokeDynamic} entry contains an index which references
+ * a bootstrap method specifier; all such specifiers are contained in a separate array.
+ * This array is defined by a class attribute named {@code BootstrapMethods}.
+ * The body of this attribute consists of a sequence of byte pairs, all interpreted as
+ * as 16-bit counts or constant pool indexes, in the {@code u2} format.
+ * The attribute body starts with a count of bootstrap method specifiers,
+ * which is immediately followed by the sequence of specifiers.
+ * <p>
+ * Each bootstrap method specifier contains an index to a
+ * {@code CONSTANT_MethodHandle} constant, which is the bootstrap
+ * method itself.
+ * This is followed by a count, and then a sequence (perhaps empty) of
+ * indexes to <a href="#args">additional static arguments</a>
+ * for the bootstrap method.
+ * <p>
+ * During class loading, the verifier must check the structure of the
+ * {@code BootstrapMethods} attribute.  In particular, each constant
+ * pool index must be of the correct type.  A bootstrap method index
+ * must refer to a {@code CONSTANT_MethodHandle} (tag 15).
+ * Every other index must refer to a valid operand of an
+ * {@code ldc_w} or {@code ldc2_w} instruction (tag 3..8 or 15..16).
  *
  * <h3><a name="args">static arguments to the bootstrap method</h3>
- * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
  * An {@code invokedynamic} instruction specifies at least three arguments
  * to pass to its bootstrap method:
  * The caller class (expressed as a {@link java.dyn.MethodHandles.Lookup Lookup object},
@@ -307,12 +335,9 @@
  * Static arguments are used to communicate application-specific meta-data
  * to the bootstrap method.
  * Drawn from the constant pool, they may include references to classes, method handles,
- * or numeric data that may be relevant to the task of linking that particular call site.
+ * strings, or numeric data that may be relevant to the task of linking that particular call site.
  * <p>
- * The third byte pair in a {@code CONSTANT_InvokeDynamic} entry, if it is not zero,
- * counts up to 65535 additional constant pool indexes which contribute to a static argument.
- * Each of these indexes must refer to one of a type of constant entry which is compatible with
- * the {@code ldc} instruction.
+ * Static arguments are specified constant pool indexes stored in the {@code BootstrapMethods} attribute.
  * Before the bootstrap method is invoked, each index is used to compute an {@code Object}
  * reference to the indexed value in the constant pool.
  * If the value is a primitive type, it is converted to a reference by boxing conversion.
@@ -371,10 +396,58 @@
  * In principle, the name and extra arguments are redundant,
  * since each call site could be given its own unique bootstrap method.
  * Such a practice is likely to produce large class files and constant pools.
+ *
+ * <p style="font-size:smaller;">
+ * (Usage Note: There is no mechanism for specifying five or more positional arguments to the bootstrap method.
+ * If there are two or more arguments, the Java code of the bootstrap method is required to extract them from
+ * a varargs-style object array.
+ * This design uses varargs because it anticipates some use cases where bootstrap arguments
+ * contribute components of variable-length structures, such as virtual function tables
+ * or interpreter token streams.
+ * Such parameters would be awkward or impossible to manage if represented
+ * as normal positional method arguments,
+ * since there would need to be one Java method per length.
+ * On balance, leaving out the varargs feature would cause more trouble to users than keeping it.
+ * Also, this design allows bootstrap methods to be called in a limited JVM stack depth.
+ * At both the user and JVM level, the difference between varargs and non-varargs
+ * calling sequences can easily be bridged via the
+ * {@link java.dyn.MethodHandle#asSpreader asSpreader}
+ * and {@link java.dyn.MethodHandle#asSpreader asCollector} methods.)
+ *
+ * <h2>Structure Summary</h2>
+ * <blockquote><pre>// summary of constant and attribute structures
+struct CONSTANT_MethodHandle_info {
+  u1 tag = 15;
+  u1 reference_kind;       // 1..8 (one of REF_invokeVirtual, etc.)
+  u2 reference_index;      // index to CONSTANT_Fieldref or *Methodref
+}
+struct CONSTANT_MethodType_info {
+  u1 tag = 16;
+  u2 descriptor_index;    // index to CONSTANT_Utf8, as in NameAndType
+}
+struct CONSTANT_InvokeDynamic_17_info {
+  u1 tag = 17;
+  u2 bootstrap_method_index;   // index to CONSTANT_MethodHandle
+  u2 name_and_type_index;      // same as for CONSTANT_Methodref, etc.
+}
+struct CONSTANT_InvokeDynamic_info {
+  u1 tag = 18;
+  u2 bootstrap_method_attr_index;  // index into BootstrapMethods_attr
+  u2 name_and_type_index;          // index to CONSTANT_NameAndType, as in Methodref
+}
+struct BootstrapMethods_attr {
+ u2 name;  // CONSTANT_Utf8 = "BootstrapMethods"
+ u4 size;
+ u2 bootstrap_method_count;
+ struct bootstrap_method_specifier {
+   u2 bootstrap_method_ref;  // index to CONSTANT_MethodHandle
+   u2 bootstrap_argument_count;
+   u2 bootstrap_arguments[bootstrap_argument_count];  // constant pool indexes
+ } bootstrap_methods[bootstrap_method_count];
+}
+ * </pre></blockquote>
  * <p>
- * <em>The Proposed Final Draft of JSR 292 may remove extra static arguments,
- * with the associated constant tag of 18, leaving the constant tag 17.
- * If the constant tag of 18 is retained, the constant tag 17 may be removed
+ * <em>Note: The Proposed Final Draft of JSR 292 may remove the constant tag 17,
  * for the sake of simplicity.</em>
  *
  * @author John Rose, JSR 292 EG
