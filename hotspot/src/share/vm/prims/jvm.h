@@ -27,7 +27,6 @@
 
 #include "prims/jni.h"
 #include "runtime/reflectionCompat.hpp"
-#include "utilities/globalDefinitions.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
 #endif

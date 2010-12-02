@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,6 @@
  *
  */
 
-/*
- * Gamma (Hotspot internal engineering test) launcher based on 1.6.0-b28 JDK,
- * search "GAMMA" for gamma specific changes.
- */
 
 #ifndef _JAVA_H_
 #define _JAVA_H_
@@ -35,6 +31,7 @@
  */
 #include "jni.h"
 #include "java_md.h"
+#include "jli_util.h"
 
 /*
  * Pointers to the needed JNI invocation API, initialized by LoadJavaVM.
@@ -89,27 +86,26 @@ void ReportExceptionDescription(JNIEnv * env);
 jboolean RemovableMachineDependentOption(char * option);
 void PrintMachineDependentOptions();
 
+const char *jlong_format_specifier();
+/*
+ * Block current thread and continue execution in new thread
+ */
+int ContinueInNewThread(int (JNICALL *continuation)(void *),
+                        jlong stack_size, void * args);
+
+/* sun.java.launcher.* platform properties. */
+void SetJavaLauncherPlatformProps(void);
+
 /*
  * Functions defined in java.c and used in java_md.c.
  */
 jint ReadKnownVMs(const char *jrepath, char * arch, jboolean speculative);
 char *CheckJvmType(int *argc, char ***argv, jboolean speculative);
-void* MemAlloc(size_t size);
+void AddOption(char *str, void *info);
 
 /*
  * Make launcher spit debug output.
  */
 extern jboolean _launcher_debug;
-
-/*
- * This allows for finding classes from the VM's bootstrap class loader
- * directly, FindClass uses the application class loader internally, this will
- * cause unnecessary searching of the classpath for the required classes.
- */
-typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
-                                                const char *name,
-                                                jboolean throwError));
-
-jclass FindBootStrapClass(JNIEnv *env, const char *classname);
 
 #endif /* _JAVA_H_ */
