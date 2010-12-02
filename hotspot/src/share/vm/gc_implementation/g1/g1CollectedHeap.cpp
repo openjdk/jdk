@@ -1251,6 +1251,9 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       g1_policy()->set_full_young_gcs(true);
     }
 
+    // See the comment in G1CollectedHeap::ref_processing_init() about
+    // how reference processing currently works in G1.
+
     // Temporarily make reference _discovery_ single threaded (non-MT).
     ReferenceProcessorMTMutator rp_disc_ser(ref_processor(), false);
 
@@ -2012,6 +2015,24 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::ref_processing_init() {
+  // Reference processing in G1 currently works as follows:
+  //
+  // * There is only one reference processor instance that
+  //   'spans' the entire heap. It is created by the code
+  //   below.
+  // * Reference discovery is not enabled during an incremental
+  //   pause (see 6484982).
+  // * Discoverered refs are not enqueued nor are they processed
+  //   during an incremental pause (see 6484982).
+  // * Reference discovery is enabled at initial marking.
+  // * Reference discovery is disabled and the discovered
+  //   references processed etc during remarking.
+  // * Reference discovery is MT (see below).
+  // * Reference discovery requires a barrier (see below).
+  // * Reference processing is currently not MT (see 6608385).
+  // * A full GC enables (non-MT) reference discovery and
+  //   processes any discovered references.
+
   SharedHeap::ref_processing_init();
   MemRegion mr = reserved_region();
   _ref_processor = ReferenceProcessor::create_ref_processor(
@@ -3231,6 +3252,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
 
+      // Please see comment in G1CollectedHeap::ref_processing_init()
+      // to see how reference processing currently works in G1.
+      //
       // We want to turn off ref discovery, if necessary, and turn it back on
       // on again later if we do. XXX Dubious: why is discovery disabled?
       bool was_enabled = ref_processor()->discovery_enabled();
@@ -3660,6 +3684,7 @@ void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
   // untag the GC alloc regions and tear down the GC alloc region
   // list. It's desirable that no regions are tagged as GC alloc
   // outside GCs.
+
   forget_alloc_region_list();
 
   // The current alloc regions contain objs that have survived
@@ -4665,6 +4690,10 @@ g1_process_strong_roots(bool collecting_perm_gen,
   }
   // Finish with the ref_processor roots.
   if (!_process_strong_tasks->is_task_claimed(G1H_PS_refProcessor_oops_do)) {
+    // We need to treat the discovered reference lists as roots and
+    // keep entries (which are added by the marking threads) on them
+    // live until they can be processed at the end of marking.
+    ref_processor()->weak_oops_do(scan_non_heap_roots);
     ref_processor()->oops_do(scan_non_heap_roots);
   }
   g1_policy()->record_collection_pause_end_G1_strong_roots();
@@ -4730,6 +4759,11 @@ void G1CollectedHeap::evacuate_collection_set() {
   // on individual heap regions when we allocate from
   // them in parallel, so this seems like the correct place for this.
   retire_all_alloc_regions();
+
+  // Weak root processing.
+  // Note: when JSR 292 is enabled and code blobs can contain
+  // non-perm oops then we will need to process the code blobs
+  // here too.
   {
     G1IsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);

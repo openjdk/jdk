@@ -1051,6 +1051,7 @@ public:
   void work(int worker_i) {
     assert(Thread::current()->is_ConcurrentGC_thread(),
            "this should only be done by a conc GC thread");
+    ResourceMark rm;
 
     double start_vtime = os::elapsedVTime();
 
@@ -1887,6 +1888,9 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   HandleMark   hm;
   G1CollectedHeap* g1h   = G1CollectedHeap::heap();
   ReferenceProcessor* rp = g1h->ref_processor();
+
+  // See the comment in G1CollectedHeap::ref_processing_init()
+  // about how reference processing currently works in G1.
 
   // Process weak references.
   rp->setup_policy(clear_all_soft_refs);
@@ -2918,7 +2922,11 @@ public:
   CMOopClosure(G1CollectedHeap* g1h,
                ConcurrentMark* cm,
                CMTask* task)
-    : _g1h(g1h), _cm(cm), _task(task) { }
+    : _g1h(g1h), _cm(cm), _task(task)
+  {
+    _ref_processor = g1h->ref_processor();
+    assert(_ref_processor != NULL, "should not be NULL");
+  }
 };
 
 void CMTask::setup_for_region(HeapRegion* hr) {
