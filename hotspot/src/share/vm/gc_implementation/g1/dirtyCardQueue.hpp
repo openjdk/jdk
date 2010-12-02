@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,10 @@ public:
 class DirtyCardQueue: public PtrQueue {
 public:
   DirtyCardQueue(PtrQueueSet* qset_, bool perm = false) :
-    PtrQueue(qset_, perm)
-  {
-    // Dirty card queues are always active.
-    _active = true;
-  }
+    // Dirty card queues are always active, so we create them with their
+    // active field set to true.
+    PtrQueue(qset_, perm, true /* active */) { }
+
   // Apply the closure to all elements, and reset the index to make the
   // buffer empty.  If a closure application returns "false", return
   // "false" immediately, halting the iteration.  If "consume" is true,
@@ -123,7 +122,21 @@ public:
                                          int stop_at = 0,
                                          bool during_pause = false);
 
-  bool apply_closure_to_completed_buffer_helper(int worker_i,
+  // If there exists some completed buffer, pop it, then apply the
+  // specified closure to all its elements, nulling out those elements
+  // processed.  If all elements are processed, returns "true".  If no
+  // completed buffers exist, returns false.  If a completed buffer exists,
+  // but is only partially completed before a "yield" happens, the
+  // partially completed buffer (with its processed elements set to NULL)
+  // is returned to the completed buffer set, and this call returns false.
+  bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
+                                         int worker_i = 0,
+                                         int stop_at = 0,
+                                         bool during_pause = false);
+
+  // Helper routine for the above.
+  bool apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
+                                                int worker_i,
                                                 BufferNode* nd);
 
   BufferNode* get_completed_buffer(int stop_at);
@@ -135,6 +148,9 @@ public:
   DirtyCardQueue* shared_dirty_card_queue() {
     return &_shared_dirty_card_queue;
   }
+
+  // Deallocate any completed log buffers
+  void clear();
 
   // If a full collection is happening, reset partial logs, and ignore
   // completed ones: the full collection will make them all irrelevant.

@@ -70,6 +70,45 @@ public class Scope {
      */
     public int nelems = 0;
 
+    /** A timestamp - useful to quickly check whether a scope has changed or not
+     */
+    public ScopeCounter scopeCounter;
+
+    static ScopeCounter dummyCounter = new ScopeCounter() {
+        @Override
+        public void inc() {
+            //do nothing
+        }
+    };
+
+    public static class ScopeCounter {
+        protected static final Context.Key<ScopeCounter> scopeCounterKey =
+            new Context.Key<ScopeCounter>();
+
+        public static ScopeCounter instance(Context context) {
+            ScopeCounter instance = context.get(scopeCounterKey);
+            if (instance == null)
+                instance = new ScopeCounter(context);
+            return instance;
+        }
+
+        protected ScopeCounter(Context context) {
+            context.put(scopeCounterKey, this);
+        }
+
+        private ScopeCounter() {};
+
+        private long val = 0;
+
+        public void inc() {
+            val++;
+        }
+
+        public long val() {
+            return val;
+        }
+    }
+
     /** Every hash bucket is a list of Entry's which ends in sentinel.
      */
     private static final Entry sentinel = new Entry(null, null, null, null);
@@ -80,12 +119,12 @@ public class Scope {
 
     /** A value for the empty scope.
      */
-    public static final Scope emptyScope = new Scope(null, null, new Entry[]{});
+    public static final Scope emptyScope = new Scope(null, null, new Entry[]{}, dummyCounter);
 
     /** Construct a new scope, within scope next, with given owner, using
      *  given table. The table's length must be an exponent of 2.
      */
-    Scope(Scope next, Symbol owner, Entry[] table) {
+    private Scope(Scope next, Symbol owner, Entry[] table, ScopeCounter scopeCounter) {
         this.next = next;
         assert emptyScope == null || owner != null;
         this.owner = owner;
@@ -94,13 +133,18 @@ public class Scope {
         this.elems = null;
         this.nelems = 0;
         this.shared = 0;
+        this.scopeCounter = scopeCounter;
     }
 
     /** Construct a new scope, within scope next, with given owner,
      *  using a fresh table of length INITIAL_SIZE.
      */
     public Scope(Symbol owner) {
-        this(null, owner, new Entry[INITIAL_SIZE]);
+        this(owner, dummyCounter);
+    }
+
+    protected Scope(Symbol owner, ScopeCounter scopeCounter) {
+        this(null, owner, new Entry[INITIAL_SIZE], scopeCounter);
         for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
 
@@ -110,7 +154,7 @@ public class Scope {
      *  of fresh tables.
      */
     public Scope dup() {
-        Scope result = new Scope(this, this.owner, this.table);
+        Scope result = new Scope(this, this.owner, this.table, scopeCounter);
         shared++;
         // System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
         // new Error().printStackTrace(System.out);
@@ -123,7 +167,7 @@ public class Scope {
      *  of fresh tables.
      */
     public Scope dup(Symbol newOwner) {
-        Scope result = new Scope(this, newOwner, this.table);
+        Scope result = new Scope(this, newOwner, this.table, scopeCounter);
         shared++;
         // System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
         // new Error().printStackTrace(System.out);
@@ -135,7 +179,7 @@ public class Scope {
      *  the table of its outer scope.
      */
     public Scope dupUnshared() {
-        return new Scope(this, this.owner, this.table.clone());
+        return new Scope(this, this.owner, this.table.clone(), scopeCounter);
     }
 
     /** Remove all entries of this scope from its table, if shared
@@ -211,6 +255,7 @@ public class Scope {
         table[hash] = e;
         elems = e;
         nelems++;
+        scopeCounter.inc();
     }
 
     Entry makeEntry(Symbol sym, Entry shadowed, Entry sibling, Scope scope, Scope origin) {
@@ -225,6 +270,8 @@ public class Scope {
         Entry e = lookup(sym.name);
         while (e.scope == this && e.sym != sym) e = e.next();
         if (e.scope == null) return;
+
+        scopeCounter.inc();
 
         // remove e from table and shadowed list;
         Entry te = table[sym.name.hashCode() & hashMask];
@@ -272,6 +319,12 @@ public class Scope {
         return false;
     }
 
+    static final Filter<Symbol> noFilter = new Filter<Symbol>() {
+        public boolean accepts(Symbol s) {
+            return true;
+        }
+    };
+
     /** Return the entry associated with given name, starting in
      *  this scope and proceeding outwards. If no entry was found,
      *  return the sentinel, which is characterized by having a null in
@@ -279,13 +332,20 @@ public class Scope {
      *  for regular entries.
      */
     public Entry lookup(Name name) {
+        return lookup(name, noFilter);
+    }
+    public Entry lookup(Name name, Filter<Symbol> sf) {
         Entry e = table[name.hashCode() & hashMask];
-        while (e.scope != null && e.sym.name != name)
+        while (e.scope != null && (e.sym.name != name || !sf.accepts(e.sym)))
             e = e.shadowed;
         return e;
     }
 
     public Iterable<Symbol> getElements() {
+        return getElements(noFilter);
+    }
+
+    public Iterable<Symbol> getElements(final Filter<Symbol> sf) {
         return new Iterable<Symbol>() {
             public Iterator<Symbol> iterator() {
                 return new Iterator<Symbol>() {
@@ -301,7 +361,9 @@ public class Scope {
 
                     public Symbol next() {
                         Symbol sym = (currEntry == null ? null : currEntry.sym);
-                        currEntry = currEntry.sibling;
+                        if (currEntry != null) {
+                            currEntry = currEntry.sibling;
+                        }
                         update();
                         return sym;
                     }
@@ -311,9 +373,17 @@ public class Scope {
                     }
 
                     private void update() {
+                        skipToNextMatchingEntry();
                         while (currEntry == null && currScope.next != null) {
                             currScope = currScope.next;
                             currEntry = currScope.elems;
+                            skipToNextMatchingEntry();
+                        }
+                    }
+
+                    void skipToNextMatchingEntry() {
+                        while (currEntry != null && !sf.accepts(currEntry.sym)) {
+                            currEntry = currEntry.sibling;
                         }
                     }
                 };
@@ -449,7 +519,7 @@ public class Scope {
         public static final Entry[] emptyTable = new Entry[0];
 
         public DelegatedScope(Scope outer) {
-            super(outer, outer.owner, emptyTable);
+            super(outer, outer.owner, emptyTable, outer.scopeCounter);
             delegatee = outer;
         }
         public Scope dup() {
@@ -475,10 +545,22 @@ public class Scope {
         }
     }
 
+    /** A class scope, for which a scope counter should be provided */
+    public static class ClassScope extends Scope {
+
+        ClassScope(Scope next, Symbol owner, Entry[] table, ScopeCounter scopeCounter) {
+            super(next, owner, table, scopeCounter);
+        }
+
+        public ClassScope(Symbol owner, ScopeCounter scopeCounter) {
+            super(owner, scopeCounter);
+        }
+    }
+
     /** An error scope, for which the owner should be an error symbol. */
     public static class ErrorScope extends Scope {
         ErrorScope(Scope next, Symbol errSymbol, Entry[] table) {
-            super(next, /*owner=*/errSymbol, table);
+            super(next, /*owner=*/errSymbol, table, dummyCounter);
         }
         public ErrorScope(Symbol errSymbol) {
             super(errSymbol);

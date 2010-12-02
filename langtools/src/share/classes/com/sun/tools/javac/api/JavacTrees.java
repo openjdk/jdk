@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol;
@@ -55,7 +56,6 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.model.JavacElements;
-import com.sun.tools.javac.processing.JavacMessager;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree;
@@ -80,14 +80,15 @@ import com.sun.tools.javac.util.Pair;
  */
 public class JavacTrees extends Trees {
 
-    private final Resolve resolve;
-    private final Enter enter;
-    private final Log log;
-    private final MemberEnter memberEnter;
-    private final Attr attr;
-    private final TreeMaker treeMaker;
-    private final JavacElements elements;
-    private final JavacTaskImpl javacTaskImpl;
+    // in a world of a single context per compilation, these would all be final
+    private Resolve resolve;
+    private Enter enter;
+    private Log log;
+    private MemberEnter memberEnter;
+    private Attr attr;
+    private TreeMaker treeMaker;
+    private JavacElements elements;
+    private JavacTaskImpl javacTaskImpl;
 
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
         if (!(task instanceof JavacTaskImpl))
@@ -110,6 +111,14 @@ public class JavacTrees extends Trees {
 
     private JavacTrees(Context context) {
         context.put(JavacTrees.class, this);
+        init(context);
+    }
+
+    public void updateContext(Context context) {
+        init(context);
+    }
+
+    private void init(Context context) {
         attr = Attr.instance(context);
         enter = Enter.instance(context);
         elements = JavacElements.instance(context);
@@ -189,8 +198,24 @@ public class JavacTrees extends Trees {
     }
 
     public Element getElement(TreePath path) {
-        Tree t = path.getLeaf();
-        return TreeInfo.symbolFor((JCTree) t);
+        JCTree tree = (JCTree) path.getLeaf();
+        Symbol sym = TreeInfo.symbolFor(tree);
+        if (sym == null && TreeInfo.isDeclaration(tree)) {
+            for (TreePath p = path; p != null; p = p.getParentPath()) {
+                JCTree t = (JCTree) p.getLeaf();
+                if (t.getTag() == JCTree.CLASSDEF) {
+                    JCClassDecl ct = (JCClassDecl) t;
+                    if (ct.sym != null) {
+                        if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {
+                            attr.attribClass(ct.pos(), ct.sym);
+                            sym = TreeInfo.symbolFor(tree);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return sym;
     }
 
     public TypeMirror getTypeMirror(TreePath path) {
@@ -257,7 +282,10 @@ public class JavacTrees extends Trees {
 //                    System.err.println("COMP: " + ((JCCompilationUnit)tree).sourcefile);
                     env = enter.getTopLevelEnv((JCCompilationUnit)tree);
                     break;
+                case ANNOTATION_TYPE:
                 case CLASS:
+                case ENUM:
+                case INTERFACE:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
                     break;
@@ -318,6 +346,7 @@ public class JavacTrees extends Trees {
             super(M);
         }
 
+        @Override
         public <T extends JCTree> T copy(T t, JCTree leaf) {
             T t2 = super.copy(t, leaf);
             if (t == leaf)

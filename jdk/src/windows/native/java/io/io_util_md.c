@@ -66,6 +66,25 @@ fileToNTPath(JNIEnv *env, jobject file, jfieldID id) {
     return pathToNTPath(env, path, JNI_FALSE);
 }
 
+/* Returns the working directory for the given drive, or NULL */
+WCHAR*
+currentDir(int di) {
+    UINT dt;
+    WCHAR root[4];
+    // verify drive is valid as _wgetdcwd in the VC++ 2010 runtime
+    // library does not handle invalid drives.
+    root[0] = L'A' + (WCHAR)(di - 1);
+    root[1] = L':';
+    root[2] = L'\\';
+    root[3] = L'\0';
+    dt = GetDriveTypeW(root);
+    if (dt == DRIVE_UNKNOWN || dt == DRIVE_NO_ROOT_DIR) {
+        return NULL;
+    } else {
+        return _wgetdcwd(di, NULL, MAX_PATH);
+    }
+}
+
 /* We cache the length of current working dir here to avoid
    calling _wgetcwd() every time we need to resolve a relative
    path. This piece of code needs to be revisited if chdir
@@ -83,7 +102,7 @@ currentDirLength(const WCHAR* ps, int pathlen) {
         if ((d >= L'a') && (d <= L'z')) di = d - L'a' + 1;
         else if ((d >= L'A') && (d <= L'Z')) di = d - L'A' + 1;
         else return 0; /* invalid drive name. */
-        dir = _wgetdcwd(di, NULL, MAX_PATH);
+        dir = currentDir(di);
         if (dir != NULL){
             dirlen = wcslen(dir);
             free(dir);
@@ -531,7 +550,6 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
     SET_FD(this, -1, fid);
 
     if (CloseHandle(h) == 0) { /* Returns zero on failure */
-        SET_FD(this, fd, fid); // restore fd
         JNU_ThrowIOExceptionWithLastError(env, "close failed");
     }
     return 0;

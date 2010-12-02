@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.rowset;
 
 import java.io.*;
 import java.util.*;
-import java.lang.*;
 
 /**
  * This class is used to help in localization of resources,
@@ -42,28 +41,28 @@ public class JdbcRowSetResourceBundle implements Serializable {
      * This <code>String</code> variable stores the location
      * of the resource bundle location.
      */
-    static String fileName;
+    private static String fileName;
 
     /**
      * This variable will hold the <code>PropertyResourceBundle</code>
      * of the text to be internationalized.
      */
-    transient PropertyResourceBundle propResBundle;
+    private transient PropertyResourceBundle propResBundle;
 
     /**
      * The constructor initializes to this object
      *
      */
-    static JdbcRowSetResourceBundle jpResBundle;
+    private static volatile JdbcRowSetResourceBundle jpResBundle;
 
     /**
-     * The varible which will represent the properties
+     * The variable which will represent the properties
      * the suffix or extension of the resource bundle.
      **/
     private static final String PROPERTIES = "properties";
 
     /**
-     * The varibale to represent underscore
+     * The variable to represent underscore
      **/
     private static final String UNDERSCORE = "_";
 
@@ -153,4 +152,5 @@ public class JdbcRowSetResourceBundle implements Serializable {
        return propResBundle.handleGetObject(key);
     }
 
+    static final long serialVersionUID = 436199386225359954L;
 }

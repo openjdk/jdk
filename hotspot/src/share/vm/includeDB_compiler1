@@ -19,7 +19,6 @@
 // Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 // or visit www.oracle.com if you need additional information or have any
 // questions.
-//  
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
@@ -302,6 +301,7 @@ c1_MacroAssembler.hpp                   assembler.hpp
 c1_MacroAssembler.hpp                   assembler_<arch>.inline.hpp
 
 c1_MacroAssembler_<arch>.cpp            arrayOop.hpp
+c1_MacroAssembler_<arch>.cpp            basicLock.hpp
 c1_MacroAssembler_<arch>.cpp            biasedLocking.hpp
 c1_MacroAssembler_<arch>.cpp            c1_MacroAssembler.hpp
 c1_MacroAssembler_<arch>.cpp            c1_Runtime1.hpp
@@ -310,7 +310,6 @@ c1_MacroAssembler_<arch>.cpp            interpreter.hpp
 c1_MacroAssembler_<arch>.cpp            markOop.hpp
 c1_MacroAssembler_<arch>.cpp            os.hpp
 c1_MacroAssembler_<arch>.cpp            stubRoutines.hpp
-c1_MacroAssembler_<arch>.cpp            synchronizer.hpp
 c1_MacroAssembler_<arch>.cpp            systemDictionary.hpp
 
 c1_MacroAssembler_<arch>.hpp            generate_platform_dependent_include
@@ -449,3 +448,7 @@ thread.cpp                              c1_Compiler.hpp
 top.hpp                                 c1_globals.hpp
 
 vmStructs.hpp                           c1_Runtime1.hpp
+
+c1_Canonicalizer.cpp                    c1_ValueStack.hpp
+
+c1_LIR.cpp                              c1_ValueStack.hpp

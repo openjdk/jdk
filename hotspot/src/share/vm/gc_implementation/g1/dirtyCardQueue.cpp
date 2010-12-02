@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,13 +178,14 @@ DirtyCardQueueSet::get_completed_buffer(int stop_at) {
 }
 
 bool DirtyCardQueueSet::
-apply_closure_to_completed_buffer_helper(int worker_i,
+apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
+                                         int worker_i,
                                          BufferNode* nd) {
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
     size_t index = nd->index();
     bool b =
-      DirtyCardQueue::apply_closure_to_buffer(_closure, buf,
+      DirtyCardQueue::apply_closure_to_buffer(cl, buf,
                                               index, _sz,
                                               true, worker_i);
     if (b) {
@@ -199,15 +200,22 @@ apply_closure_to_completed_buffer_helper(int worker_i,
   }
 }
 
-bool DirtyCardQueueSet::apply_closure_to_completed_buffer(int worker_i,
+bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
+                                                          int worker_i,
                                                           int stop_at,
-                                                          bool during_pause)
-{
+                                                          bool during_pause) {
   assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
   BufferNode* nd = get_completed_buffer(stop_at);
-  bool res = apply_closure_to_completed_buffer_helper(worker_i, nd);
+  bool res = apply_closure_to_completed_buffer_helper(cl, worker_i, nd);
   if (res) Atomic::inc(&_processed_buffers_rs_thread);
   return res;
+}
+
+bool DirtyCardQueueSet::apply_closure_to_completed_buffer(int worker_i,
+                                                          int stop_at,
+                                                          bool during_pause) {
+  return apply_closure_to_completed_buffer(_closure, worker_i,
+                                           stop_at, during_pause);
 }
 
 void DirtyCardQueueSet::apply_closure_to_all_completed_buffers() {
@@ -222,8 +230,8 @@ void DirtyCardQueueSet::apply_closure_to_all_completed_buffers() {
   }
 }
 
-void DirtyCardQueueSet::abandon_logs() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+// Deallocates any completed log buffers
+void DirtyCardQueueSet::clear() {
   BufferNode* buffers_to_delete = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
@@ -242,6 +250,12 @@ void DirtyCardQueueSet::abandon_logs() {
     buffers_to_delete = nd->next();
     deallocate_buffer(BufferNode::make_buffer_from_node(nd));
   }
+
+}
+
+void DirtyCardQueueSet::abandon_logs() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+  clear();
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
   for (JavaThread* t = Threads::first(); t; t = t->next()) {

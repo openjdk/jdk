@@ -46,7 +46,7 @@ public interface Tree {
      */
     public enum Kind {
 
-        ANNOTATED_TYPE(AnnotatedTypeTree.class),
+//308        ANNOTATED_TYPE(AnnotatedTypeTree.class),
 
         /**
          * Used for instances of {@link AnnotationTree}.
@@ -94,7 +94,7 @@ public interface Tree {
         CATCH(CatchTree.class),
 
         /**
-         * Used for instances of {@link ClassTree}.
+         * Used for instances of {@link ClassTree} representing classes.
          */
         CLASS(ClassTree.class),
 
@@ -234,9 +234,9 @@ public interface Tree {
         PARAMETERIZED_TYPE(ParameterizedTypeTree.class),
 
         /**
-         * Used for instances of {@link DisjointTypeTree}.
+         * Used for instances of {@link DisjunctiveTypeTree}.
          */
-        DISJOINT_TYPE(DisjointTypeTree.class),
+        DISJUNCTIVE_TYPE(DisjunctiveTypeTree.class),
 
         /**
          * Used for instances of {@link TypeCastTree}.
@@ -556,6 +556,21 @@ public interface Tree {
          * Used for instances of {@link ErroneousTree}.
          */
         ERRONEOUS(ErroneousTree.class),
+
+        /**
+         * Used for instances of {@link ClassTree} representing interfaces.
+         */
+        INTERFACE(ClassTree.class),
+
+        /**
+         * Used for instances of {@link ClassTree} representing enums.
+         */
+        ENUM(ClassTree.class),
+
+        /**
+         * Used for instances of {@link ClassTree} representing annotation types.
+         */
+        ANNOTATION_TYPE(ClassTree.class),
 
         /**
          * An implementation-reserved node. This is the not the node

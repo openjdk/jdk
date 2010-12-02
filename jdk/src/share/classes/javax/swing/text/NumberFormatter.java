@@ -27,7 +27,6 @@ package javax.swing.text;
 import java.lang.reflect.*;
 import java.text.*;
 import java.util.*;
-import javax.swing.text.*;
 
 /**
  * <code>NumberFormatter</code> subclasses <code>InternationalFormatter</code>
@@ -132,7 +131,7 @@ public class NumberFormatter extends InternationalFormatter {
         DecimalFormatSymbols dfs = getDecimalFormatSymbols();
 
         if (dfs != null) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             sb.append(dfs.getCurrencySymbol());
             sb.append(dfs.getDecimalSeparator());
@@ -238,13 +237,6 @@ public class NumberFormatter extends InternationalFormatter {
         }
         return null;
     }
-
-    /**
-     */
-    private boolean isValidInsertionCharacter(char aChar) {
-        return (Character.isDigit(aChar) || specialChars.indexOf(aChar) != -1);
-    }
-
 
     /**
      * Subclassed to return false if <code>text</code> contains in an invalid
@@ -397,28 +389,6 @@ public class NumberFormatter extends InternationalFormatter {
                 }
             } catch (ParseException pe) {
                 invalidEdit();
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if the range offset to length identifies the only
-     * integer field.
-     */
-    private boolean isOnlyIntegerField(int offset, int length) {
-        if (isValidMask()) {
-            int start = getAttributeStart(NumberFormat.Field.INTEGER);
-
-            if (start != -1) {
-                AttributedCharacterIterator iterator = getIterator();
-
-                iterator.setIndex(start);
-                if (offset > start || iterator.getRunLimit(
-                    NumberFormat.Field.INTEGER) > (offset + length)) {
-                    return false;
-                }
-                return true;
             }
         }
         return false;

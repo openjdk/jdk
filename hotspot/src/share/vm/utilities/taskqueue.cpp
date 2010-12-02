@@ -36,6 +36,14 @@ const char * const TaskQueueStats::_names[last_stat_id] = {
   "qpush", "qpop", "qpop-s", "qattempt", "qsteal", "opush", "omax"
 };
 
+TaskQueueStats & TaskQueueStats::operator +=(const TaskQueueStats & addend)
+{
+  for (unsigned int i = 0; i < last_stat_id; ++i) {
+    _stats[i] += addend._stats[i];
+  }
+  return *this;
+}
+
 void TaskQueueStats::print_header(unsigned int line, outputStream* const stream,
                                   unsigned int width)
 {
@@ -71,6 +79,29 @@ void TaskQueueStats::print(outputStream* stream, unsigned int width) const
   }
   #undef FMT
 }
+
+#ifdef ASSERT
+// Invariants which should hold after a TaskQueue has been emptied and is
+// quiescent; they do not hold at arbitrary times.
+void TaskQueueStats::verify() const
+{
+  assert(get(push) == get(pop) + get(steal),
+         err_msg("push=" SIZE_FORMAT " pop=" SIZE_FORMAT " steal=" SIZE_FORMAT,
+                 get(push), get(pop), get(steal)));
+  assert(get(pop_slow) <= get(pop),
+         err_msg("pop_slow=" SIZE_FORMAT " pop=" SIZE_FORMAT,
+                 get(pop_slow), get(pop)));
+  assert(get(steal) <= get(steal_attempt),
+         err_msg("steal=" SIZE_FORMAT " steal_attempt=" SIZE_FORMAT,
+                 get(steal), get(steal_attempt)));
+  assert(get(overflow) == 0 || get(push) != 0,
+         err_msg("overflow=" SIZE_FORMAT " push=" SIZE_FORMAT,
+                 get(overflow), get(push)));
+  assert(get(overflow_max_len) == 0 || get(overflow) != 0,
+         err_msg("overflow_max_len=" SIZE_FORMAT " overflow=" SIZE_FORMAT,
+                 get(overflow_max_len), get(overflow)));
+}
+#endif // ASSERT
 #endif // TASKQUEUE_STATS
 
 int TaskQueueSetSuper::randomParkAndMiller(int *seed0) {
@@ -113,6 +144,7 @@ void ParallelTaskTerminator::sleep(uint millis) {
 
 bool
 ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
+  assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
   Atomic::inc(&_offered_termination);
 
@@ -224,3 +256,9 @@ bool ObjArrayTask::is_valid() const {
     _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT
+
+void ParallelTaskTerminator::reset_for_reuse(int n_threads) {
+  reset_for_reuse();
+  _n_threads = n_threads;
+}
+

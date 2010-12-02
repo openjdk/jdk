@@ -87,11 +87,15 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     void postInit(XCreateWindowParams params) {
+        // The size hints must be set BEFORE mapping the window (see 6895647)
+        updateSizeHints(dimensions);
+
+        // The super method maps the window if it's visible on the shared level
         super.postInit(params);
+
         // The lines that follow need to be in a postInit, so they
         // happen after the X window is created.
         initResizability();
-        updateSizeHints(dimensions);
         XWM.requestWMExtents(getWindow());
 
         content = XContentWindow.createContent(this);
@@ -763,12 +767,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     private void checkShellRectSize(Rectangle shellRect) {
-        if (shellRect.width < 0) {
-            shellRect.width = 1;
-        }
-        if (shellRect.height < 0) {
-            shellRect.height = 1;
-        }
+        shellRect.width = Math.max(MIN_SIZE, shellRect.width);
+        shellRect.height = Math.max(MIN_SIZE, shellRect.height);
     }
 
     private void checkShellRectPos(Rectangle shellRect) {

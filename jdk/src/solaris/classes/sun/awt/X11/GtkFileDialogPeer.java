@@ -42,9 +42,17 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
 
     private FileDialog fd;
 
+    // A pointer to the native GTK FileChooser widget
+    private volatile long widget = 0L;
+
     public GtkFileDialogPeer(FileDialog fd) {
         super((Dialog) fd);
         this.fd = fd;
+    }
+
+    private static native void initIDs();
+    static {
+        initIDs();
     }
 
     private native void run(String title, int mode, String dir, String file,
@@ -64,7 +72,10 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
             accessor.setFile(fd, null);
             accessor.setFiles(fd, null, null);
         } else {
-            accessor.setDirectory(fd, directory);
+            // Fix 6987233: add the trailing slash if it's absent
+            accessor.setDirectory(fd, directory +
+                    (directory.endsWith(File.separator) ?
+                     "" : File.separator));
             accessor.setFile(fd, filenames[0]);
             accessor.setFiles(fd, directory, filenames);
         }

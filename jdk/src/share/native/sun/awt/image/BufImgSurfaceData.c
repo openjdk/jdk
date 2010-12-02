@@ -48,9 +48,12 @@ static ColorData *BufImg_SetupICM(JNIEnv *env, BufImgSDOps *bisdo);
 
 static jfieldID         rgbID;
 static jfieldID         mapSizeID;
-static jfieldID         CMpDataID;
+static jfieldID         colorDataID;
+static jfieldID         pDataID;
 static jfieldID         allGrayID;
 
+static jclass           clsICMCD;
+static jmethodID        initICMCDmID;
 /*
  * Class:     sun_awt_image_BufImgSurfaceData
  * Method:    initIDs
@@ -58,18 +61,23 @@ static jfieldID         allGrayID;
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_image_BufImgSurfaceData_initIDs
-    (JNIEnv *env, jclass bisd, jclass icm)
+(JNIEnv *env, jclass bisd, jclass icm, jclass cd)
 {
     if (sizeof(BufImgRIPrivate) > SD_RASINFO_PRIVATE_SIZE) {
         JNU_ThrowInternalError(env, "Private RasInfo structure too large!");
         return;
     }
 
+    clsICMCD = (*env)->NewWeakGlobalRef(env, cd);
+    initICMCDmID = (*env)->GetMethodID(env, cd, "<init>", "(J)V");
+    pDataID = (*env)->GetFieldID(env, cd, "pData", "J");
+
     rgbID = (*env)->GetFieldID(env, icm, "rgb", "[I");
     allGrayID = (*env)->GetFieldID(env, icm, "allgrayopaque", "Z");
     mapSizeID = (*env)->GetFieldID(env, icm, "map_size", "I");
-    CMpDataID = (*env)->GetFieldID(env, icm, "pData", "J");
-    if (allGrayID == 0 || rgbID == 0 || mapSizeID == 0 || CMpDataID == 0) {
+    colorDataID = (*env)->GetFieldID(env, icm, "colorData",
+        "Lsun/awt/image/BufImgSurfaceData$ICMColorData;");
+    if (allGrayID == 0 || rgbID == 0 || mapSizeID == 0 || pDataID == 0|| colorDataID == 0 || initICMCDmID == 0) {
         JNU_ThrowInternalError(env, "Could not get field IDs");
     }
 }
@@ -81,18 +89,9 @@ Java_sun_awt_image_BufImgSurfaceData_initIDs
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_image_BufImgSurfaceData_freeNativeICMData
-    (JNIEnv *env, jclass sd, jobject icm)
+    (JNIEnv *env, jclass sd, jlong pData)
 {
-    jlong pData;
-    ColorData *cdata;
-
-    if (JNU_IsNull(env, icm)) {
-        JNU_ThrowNullPointerException(env, "IndexColorModel cannot be null");
-        return;
-    }
-
-    pData = (*env)->GetLongField (env, icm, CMpDataID);
-    cdata = (ColorData *)pData;
+    ColorData *cdata = (ColorData*)jlong_to_ptr(pData);
     freeICMColorData(cdata);
 }
 
@@ -263,32 +262,48 @@ static void BufImg_Release(JNIEnv *env,
 static ColorData *BufImg_SetupICM(JNIEnv *env,
                                   BufImgSDOps *bisdo)
 {
-    ColorData *cData;
+    ColorData *cData = NULL;
+    jobject colorData;
 
     if (JNU_IsNull(env, bisdo->icm)) {
         return (ColorData *) NULL;
     }
 
-    cData = (ColorData *) JNU_GetLongFieldAsPtr(env, bisdo->icm, CMpDataID);
+    colorData = (*env)->GetObjectField(env, bisdo->icm, colorDataID);
 
-    if (cData == NULL) {
-        cData = (ColorData*)calloc(1, sizeof(ColorData));
+    if (JNU_IsNull(env, colorData)) {
+        if (JNU_IsNull(env, clsICMCD)) {
+            // we are unable to create a wrapper object
+            return (ColorData*)NULL;
+        }
+    } else {
+        cData = (ColorData*)JNU_GetLongFieldAsPtr(env, colorData, pDataID);
+    }
 
-        if (cData != NULL) {
-            jboolean allGray
-                = (*env)->GetBooleanField(env, bisdo->icm, allGrayID);
-            int *pRgb = (int *)
-                ((*env)->GetPrimitiveArrayCritical(env, bisdo->lutarray, NULL));
-            cData->img_clr_tbl = initCubemap(pRgb, bisdo->lutsize, 32);
-            if (allGray == JNI_TRUE) {
-                initInverseGrayLut(pRgb, bisdo->lutsize, cData);
-            }
-            (*env)->ReleasePrimitiveArrayCritical(env, bisdo->lutarray, pRgb,
-                                                  JNI_ABORT);
+    if (cData != NULL) {
+        return cData;
+    }
 
-            initDitherTables(cData);
+    cData = (ColorData*)calloc(1, sizeof(ColorData));
 
-            JNU_SetLongFieldFromPtr(env, bisdo->icm, CMpDataID, cData);
+    if (cData != NULL) {
+        jboolean allGray
+            = (*env)->GetBooleanField(env, bisdo->icm, allGrayID);
+        int *pRgb = (int *)
+            ((*env)->GetPrimitiveArrayCritical(env, bisdo->lutarray, NULL));
+        cData->img_clr_tbl = initCubemap(pRgb, bisdo->lutsize, 32);
+        if (allGray == JNI_TRUE) {
+            initInverseGrayLut(pRgb, bisdo->lutsize, cData);
+        }
+        (*env)->ReleasePrimitiveArrayCritical(env, bisdo->lutarray, pRgb,
+                                              JNI_ABORT);
+
+        initDitherTables(cData);
+
+        if (JNU_IsNull(env, colorData)) {
+            jlong pData = ptr_to_jlong(cData);
+            colorData = (*env)->NewObjectA(env, clsICMCD, initICMCDmID, (jvalue *)&pData);
+            (*env)->SetObjectField(env, bisdo->icm, colorDataID, colorData);
         }
     }
 

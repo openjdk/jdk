@@ -185,7 +185,7 @@ SurrogateLockerThread* SurrogateLockerThread::make(TRAPS) {
   instanceKlassHandle klass (THREAD, k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_NULL);
 
-  const char thread_name[] = "Surrogate Locker Thread (CMS)";
+  const char thread_name[] = "Surrogate Locker Thread (Concurrent GC)";
   Handle string = java_lang_String::create_from_str(thread_name, CHECK_NULL);
 
   // Initialize thread_oop to put it into the system threadGroup

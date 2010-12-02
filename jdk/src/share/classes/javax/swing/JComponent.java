@@ -4734,6 +4734,8 @@ public abstract class JComponent extends Container implements Serializable,
      * Notifies this component that it now has a parent component.
      * When this method is invoked, the chain of parent components is
      * set up with <code>KeyboardAction</code> event listeners.
+     * This method is called by the toolkit internally and should
+     * not be called directly by programs.
      *
      * @see #registerKeyboardAction
      */
@@ -4750,6 +4752,8 @@ public abstract class JComponent extends Container implements Serializable,
      * Notifies this component that it no longer has a parent component.
      * When this method is invoked, any <code>KeyboardAction</code>s
      * set up in the the chain of parent components are removed.
+     * This method is called by the toolkit internally and should
+     * not be called directly by programs.
      *
      * @see #registerKeyboardAction
      */
@@ -4783,6 +4787,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param y  the y value of the dirty region
      * @param width  the width of the dirty region
      * @param height  the height of the dirty region
+     * @see #isPaintingOrigin()
      * @see java.awt.Component#isShowing
      * @see RepaintManager#addDirtyRegion
      */
@@ -4797,6 +4802,7 @@ public abstract class JComponent extends Container implements Serializable,
      * currently pending events have been dispatched.
      *
      * @param  r a <code>Rectangle</code> containing the dirty region
+     * @see #isPaintingOrigin()
      * @see java.awt.Component#isShowing
      * @see RepaintManager#addDirtyRegion
      */
@@ -4901,13 +4907,19 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * Returns true if a paint triggered on a child component should cause
+     * Returns {@code true} if a paint triggered on a child component should cause
      * painting to originate from this Component, or one of its ancestors.
+     * <p/>
+     * Calling {@link JComponent#repaint} on a Swing component will be delegated to
+     * the first ancestor which {@code isPaintingOrigin()} returns {@true},
+     * if there are any.
+     * <p/>
+     * {@code JComponent} subclasses that need to be repainted when any of their
+     * children are repainted should override this method to return {@code true}.
      *
-     * @return true if painting should originate from this Component or
-     *         one of its ancestors.
+     * @return always returns {@code false}
      */
-    boolean isPaintingOrigin() {
+    protected boolean isPaintingOrigin() {
         return false;
     }
 

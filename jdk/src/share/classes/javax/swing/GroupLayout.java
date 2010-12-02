@@ -653,6 +653,10 @@ public class GroupLayout implements LayoutManager2 {
      */
     public ParallelGroup createParallelGroup(Alignment alignment,
             boolean resizable){
+        if (alignment == null) {
+            throw new IllegalArgumentException("alignment must be non null");
+        }
+
         if (alignment == Alignment.BASELINE) {
             return new BaselineGroup(resizable);
         }
@@ -1464,8 +1468,8 @@ public class GroupLayout implements LayoutManager2 {
      * &lt;= {@code pref} &lt;= {@code max}.
      * <p>
      * Similarly any methods that take a {@code Component} throw a
-     * {@code NullPointerException} if passed {@code null} and any methods
-     * that take a {@code Group} throw an {@code IllegalArgumentException} if
+     * {@code IllegalArgumentException} if passed {@code null} and any methods
+     * that take a {@code Group} throw an {@code NullPointerException} if
      * passed {@code null}.
      *
      * @see #createSequentialGroup

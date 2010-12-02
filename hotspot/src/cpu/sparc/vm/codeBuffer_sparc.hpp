@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,5 +30,5 @@ public:
 
   // Heuristic for pre-packing the pt/pn bit of a predicted branch.
   bool is_backward_branch(Label& L) {
-    return L.is_bound() && code_end() <= locator_address(L.loc());
+    return L.is_bound() && insts_end() <= locator_address(L.loc());
   }

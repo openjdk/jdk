@@ -1231,6 +1231,7 @@ public class Container extends Component {
      * reflect the changes.
      *
      * @param comp the component to be removed
+     * @throws NullPointerException if {@code comp} is {@code null}
      * @see #add
      * @see #invalidate
      * @see #validate
@@ -2154,6 +2155,7 @@ public class Container extends Component {
      * @exception ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
+     * @exception NullPointerException if {@code listenerType} is {@code null}
      *
      * @see #getContainerListeners
      *
@@ -2705,6 +2707,7 @@ public class Container extends Component {
      * If there is no child component at the requested point and the
      * point is within the bounds of the container the container itself
      * is returned.
+     * @throws NullPointerException if {@code p} is {@code null}
      * @see Component#contains
      * @see #getComponentAt
      * @since 1.2
@@ -2969,6 +2972,7 @@ public class Container extends Component {
      *
      * @param    out      a print stream
      * @param    indent   the number of spaces to indent
+     * @throws   NullPointerException if {@code out} is {@code null}
      * @see      Component#list(java.io.PrintStream, int)
      * @since    JDK1.0
      */
@@ -2995,6 +2999,7 @@ public class Container extends Component {
      *
      * @param    out      a print writer
      * @param    indent   the number of spaces to indent
+     * @throws   NullPointerException if {@code out} is {@code null}
      * @see      Component#list(java.io.PrintWriter, int)
      * @since    JDK1.1
      */
@@ -4187,7 +4192,7 @@ public class Container extends Component {
             return true;
         }
 
-        for (Container cont = getContainer();
+        for (Container cont = this;
                 cont != null && cont.isLightweight();
                 cont = cont.getContainer())
         {

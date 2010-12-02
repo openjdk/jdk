@@ -56,6 +56,8 @@ import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
+import static com.sun.tools.javac.main.OptionName.*;
+
 /** This class provides operations to read a classfile into an internal
  *  representation. The internal representation is anchored in a
  *  ClassSymbol which contains in its scope symbol representations
@@ -121,6 +123,9 @@ public class ClassReader implements Completer {
 
     /** The symbol table. */
     Symtab syms;
+
+    /** The scope counter */
+    Scope.ScopeCounter scopeCounter;
 
     Types types;
 
@@ -244,6 +249,7 @@ public class ClassReader implements Completer {
 
         names = Names.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null)
@@ -255,23 +261,23 @@ public class ClassReader implements Completer {
 
         Options options = Options.instance(context);
         annotate = Annotate.instance(context);
-        verbose        = options.get("-verbose")        != null;
-        checkClassFile = options.get("-checkclassfile") != null;
+        verbose        = options.isSet(VERBOSE);
+        checkClassFile = options.isSet("-checkclassfile");
         Source source = Source.instance(context);
         allowGenerics    = source.allowGenerics();
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
-        saveParameterNames = options.get("save-parameter-names") != null;
-        cacheCompletionFailure = options.get("dev") == null;
+        saveParameterNames = options.isSet("save-parameter-names");
+        cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
 
         completionFailureName =
-            (options.get("failcomplete") != null)
+            options.isSet("failcomplete")
             ? names.fromString(options.get("failcomplete"))
             : null;
 
         typevars = new Scope(syms.noSymbol);
-        debugJSR308 = options.get("TA:reader") != null;
+        debugJSR308 = options.isSet("TA:reader");
 
         initAttributeReaders();
     }
@@ -1098,12 +1104,6 @@ public class ClassReader implements Completer {
                 }
             },
 
-            new AttributeReader(names.PolymorphicSignature, V45_3/*S.B.V51*/, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
-                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
-                }
-            },
-
 
             // The following attributes for a Code attribute are not currently handled
             // StackMapTable
@@ -1289,6 +1289,9 @@ public class ClassReader implements Completer {
                     sym.flags_field |= PROPRIETARY;
                 else
                     proxies.append(proxy);
+                if (majorVersion >= V51.major && proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
+                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
+                }
             }
             annotate.later(new AnnotationCompleter(sym, proxies.toList()));
         }
@@ -1987,7 +1990,7 @@ public class ClassReader implements Completer {
         ClassType ct = (ClassType)c.type;
 
         // allocate scope for members
-        c.members_field = new Scope(c);
+        c.members_field = new Scope.ClassScope(c, scopeCounter);
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);

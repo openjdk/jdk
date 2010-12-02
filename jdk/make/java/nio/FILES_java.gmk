@@ -33,7 +33,6 @@ FILES_src = \
 	java/nio/channels/AsynchronousByteChannel.java \
 	java/nio/channels/AsynchronousChannel.java \
 	java/nio/channels/AsynchronousChannelGroup.java \
-	java/nio/channels/AsynchronousDatagramChannel.java \
 	java/nio/channels/AsynchronousFileChannel.java \
 	java/nio/channels/AsynchronousServerSocketChannel.java \
 	java/nio/channels/AsynchronousSocketChannel.java \
@@ -83,6 +82,7 @@ FILES_src = \
 	java/nio/file/ClosedFileSystemException.java \
 	java/nio/file/ClosedWatchServiceException.java \
 	java/nio/file/CopyOption.java \
+	java/nio/file/DirectoryIteratorException.java \
 	java/nio/file/DirectoryNotEmptyException.java \
 	java/nio/file/DirectoryStream.java \
 	java/nio/file/FileAlreadyExistsException.java \
@@ -199,13 +199,13 @@ FILES_src = \
 	sun/nio/ch/PipeImpl.java \
 	sun/nio/ch/PollArrayWrapper.java \
 	sun/nio/ch/Reflect.java \
+	sun/nio/ch/Secrets.java \
 	sun/nio/ch/SelectionKeyImpl.java \
 	sun/nio/ch/SelectorImpl.java \
 	sun/nio/ch/SelectorProviderImpl.java \
 	sun/nio/ch/SelChImpl.java \
 	sun/nio/ch/ServerSocketAdaptor.java \
 	sun/nio/ch/ServerSocketChannelImpl.java \
-	sun/nio/ch/SimpleAsynchronousDatagramChannelImpl.java \
         sun/nio/ch/SinkChannelImpl.java \
 	sun/nio/ch/SocketAdaptor.java \
 	sun/nio/ch/SocketChannelImpl.java \

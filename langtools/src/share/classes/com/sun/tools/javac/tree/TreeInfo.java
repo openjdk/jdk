@@ -119,7 +119,7 @@ public class TreeInfo {
     }
 
     public static boolean isMultiCatch(JCCatch catchClause) {
-        return catchClause.param.vartype.getTag() == JCTree.TYPEDISJOINT;
+        return catchClause.param.vartype.getTag() == JCTree.TYPEDISJUNCTION;
     }
 
     /** Is statement an initializer for a synthetic field?
@@ -501,6 +501,10 @@ public class TreeInfo {
                 if (that.sym == sym) result = that;
                 else super.visitVarDef(that);
             }
+            public void visitTypeParameter(JCTypeParameter that) {
+                if (that.type.tsym == sym) result = that;
+                else super.visitTypeParameter(that);
+            }
         }
         DeclScanner s = new DeclScanner();
         tree.accept(s);
@@ -630,6 +634,18 @@ public class TreeInfo {
             return ((JCVariableDecl) node).sym;
         default:
             return null;
+        }
+    }
+
+    public static boolean isDeclaration(JCTree node) {
+        node = skipParens(node);
+        switch (node.getTag()) {
+        case JCTree.CLASSDEF:
+        case JCTree.METHODDEF:
+        case JCTree.VARDEF:
+            return true;
+        default:
+            return false;
         }
     }
 

@@ -308,7 +308,7 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
   assert(e2->num_valid_cards() > 0, "Postcondition.");
 }
 
-CardIdx_t /* RSHashTable:: */ RSHashTableIter::find_first_card_in_list() {
+CardIdx_t RSHashTableIter::find_first_card_in_list() {
   CardIdx_t res;
   while (_bl_ind != RSHashTable::NullEntry) {
     res = _rsht->entry(_bl_ind)->card(0);
@@ -322,14 +322,11 @@ CardIdx_t /* RSHashTable:: */ RSHashTableIter::find_first_card_in_list() {
   return SparsePRTEntry::NullEntry;
 }
 
-size_t /* RSHashTable:: */ RSHashTableIter::compute_card_ind(CardIdx_t ci) {
-  return
-    _heap_bot_card_ind
-    + (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion)
-    + ci;
+size_t RSHashTableIter::compute_card_ind(CardIdx_t ci) {
+  return (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion) + ci;
 }
 
-bool /* RSHashTable:: */ RSHashTableIter::has_next(size_t& card_index) {
+bool RSHashTableIter::has_next(size_t& card_index) {
   _card_ind++;
   CardIdx_t ci;
   if (_card_ind < SparsePRTEntry::cards_num() &&
@@ -424,7 +421,7 @@ void SparsePRT::cleanup_all() {
 
 
 SparsePRT::SparsePRT(HeapRegion* hr) :
-  _expanded(false), _next_expanded(NULL)
+  _hr(hr), _expanded(false), _next_expanded(NULL)
 {
   _cur = new RSHashTable(InitialCapacity);
   _next = _cur;

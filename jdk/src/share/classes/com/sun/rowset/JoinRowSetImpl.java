@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.math.*;
 import java.util.*;
 
 import javax.sql.rowset.*;
+import javax.sql.rowset.spi.SyncProvider;
+import javax.sql.rowset.spi.SyncProviderException;
 
 /**
  * The standard implementation of the <code>JoinRowSet</code>
@@ -127,6 +129,11 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
         strMatchKey = null;
         supportedJOINs =
               new boolean[] {false, true, false, false, false};
+       try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
 
     }
 
@@ -545,7 +552,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
                // This 'if' will be removed after all joins are implemented.
                throw new SQLException(resBundle.handleGetObject("joinrowsetimpl.notsupported").toString());
            } else {
-              Integer Intgr = new Integer(JoinRowSet.INNER_JOIN);
+              Integer Intgr = Integer.valueOf(JoinRowSet.INNER_JOIN);
               vecJoinType.add(Intgr);
            }
        } else {
@@ -869,8 +876,8 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
 
        String strWhereClause = "Select ";
        String whereClause;
-       String tabName= null;
-       String strTabName = null;
+       String tabName= "";
+       String strTabName = "";
        int sz,cols;
        int j;
        CachedRowSetImpl crs;
@@ -884,8 +891,6 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
        // tableNameX.(rowsetX.getMatchColumnName()) ==
        // tableNameZ.(rowsetZ.getMatchColumnName()));
 
-       tabName = new String();
-       strTabName  = new String();
        sz = vecRowSetsInJOIN.size();
        for(int i=0;i<sz; i++) {
           crs = (CachedRowSetImpl)vecRowSetsInJOIN.get(i);
@@ -4306,5 +4311,43 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
          return crsInternal.createCopySchema();
      }
 
-        static final long serialVersionUID = -5590501621560008453L;
+     /**
+      * {@inheritDoc}
+      */
+     public void setSyncProvider(String providerStr) throws SQLException {
+         crsInternal.setSyncProvider(providerStr);
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public void acceptChanges() throws SyncProviderException {
+         crsInternal.acceptChanges();
+     }
+
+     /**
+      * {@inheritDoc}
+      */
+     public SyncProvider getSyncProvider() throws SQLException {
+        return crsInternal.getSyncProvider();
+     }
+
+    /**
+     * This method re populates the resBundle
+     * during the deserialization process
+     *
+     */
+     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        // Default state initialization happens here
+        ois.defaultReadObject();
+        // Initialization of transient Res Bundle happens here .
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+     }
+
+     static final long serialVersionUID = -5590501621560008453L;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
        } else {
           throw new RuntimeException("should not reach here");
        }
-    } else if (ctag.isMethodHandle() || ctag.isMethodType()) {
+    } else if (ctag.isMethodHandle()) {
        Oop x = getCachedConstant();
        int refidx = cpool.getMethodHandleIndexAt(cpIndex);
        int refkind = cpool.getMethodHandleRefKindAt(cpIndex);

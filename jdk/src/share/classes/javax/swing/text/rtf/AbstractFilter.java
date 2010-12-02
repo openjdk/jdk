@@ -160,7 +160,7 @@ abstract class AbstractFilter extends OutputStream
     public void write(byte[] buf, int off, int len)
       throws IOException
     {
-      StringBuffer accumulator = null;
+      StringBuilder accumulator = null;
       while (len > 0) {
         short b = (short)buf[off];
 
@@ -178,7 +178,7 @@ abstract class AbstractFilter extends OutputStream
           char ch = translationTable[b];
           if (ch != (char)0) {
             if (accumulator == null)
-              accumulator = new StringBuffer();
+              accumulator = new StringBuilder();
             accumulator.append(ch);
           }
         }

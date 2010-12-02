@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 # include "incls/_systemDictionary.cpp.incl"
 
 
-Dictionary*       SystemDictionary::_dictionary = NULL;
-PlaceholderTable* SystemDictionary::_placeholders = NULL;
-Dictionary*       SystemDictionary::_shared_dictionary = NULL;
-LoaderConstraintTable* SystemDictionary::_loader_constraints = NULL;
-ResolutionErrorTable* SystemDictionary::_resolution_errors = NULL;
-SymbolPropertyTable* SystemDictionary::_invoke_method_table = NULL;
+Dictionary*            SystemDictionary::_dictionary          = NULL;
+PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
+Dictionary*            SystemDictionary::_shared_dictionary   = NULL;
+LoaderConstraintTable* SystemDictionary::_loader_constraints  = NULL;
+ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
+SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 
 
 int         SystemDictionary::_number_of_modifications = 0;
@@ -1727,8 +1727,7 @@ void SystemDictionary::always_strong_classes_do(OopClosure* blk) {
   placeholders_do(blk);
 
   // Visit extra methods
-  if (invoke_method_table() != NULL)
-    invoke_method_table()->oops_do(blk);
+  invoke_method_table()->oops_do(blk);
 
   // Loader constraints. We must keep the symbolOop used in the name alive.
   constraints()->always_strong_classes_do(blk);
@@ -1766,8 +1765,7 @@ void SystemDictionary::oops_do(OopClosure* f) {
   dictionary()->oops_do(f);
 
   // Visit extra methods
-  if (invoke_method_table() != NULL)
-    invoke_method_table()->oops_do(f);
+  invoke_method_table()->oops_do(f);
 
   // Partially loaded classes
   placeholders()->oops_do(f);
@@ -1841,8 +1839,7 @@ void SystemDictionary::placeholders_do(void f(symbolOop, oop)) {
 
 void SystemDictionary::methods_do(void f(methodOop)) {
   dictionary()->methods_do(f);
-  if (invoke_method_table() != NULL)
-    invoke_method_table()->methods_do(f);
+  invoke_method_table()->methods_do(f);
 }
 
 // ----------------------------------------------------------------------------
@@ -1870,12 +1867,12 @@ void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   assert(dictionary() == NULL,
          "SystemDictionary should only be initialized once");
-  _dictionary = new Dictionary(_nof_buckets);
-  _placeholders = new PlaceholderTable(_nof_buckets);
+  _dictionary          = new Dictionary(_nof_buckets);
+  _placeholders        = new PlaceholderTable(_nof_buckets);
   _number_of_modifications = 0;
-  _loader_constraints = new LoaderConstraintTable(_loader_constraint_size);
-  _resolution_errors = new ResolutionErrorTable(_resolution_error_size);
-  // _invoke_method_table is allocated lazily in find_method_handle_invoke()
+  _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
+  _resolution_errors   = new ResolutionErrorTable(_resolution_error_size);
+  _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
 
   // Allocate private object used as system class loader lock
   _system_loader_lock_obj = oopFactory::new_system_objArray(0, CHECK);
@@ -2346,10 +2343,6 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
                                                       KlassHandle accessing_klass,
                                                       TRAPS) {
   if (!EnableMethodHandles)  return NULL;
-  if (invoke_method_table() == NULL) {
-    // create this side table lazily
-    _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
-  }
   vmSymbols::SID name_id = vmSymbols::find_sid(name());
   assert(name_id != vmSymbols::NO_SID, "must be a known name");
   unsigned int hash  = invoke_method_table()->compute_hash(signature, name_id);
@@ -2361,8 +2354,11 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     if (THREAD->is_Compiler_thread())
       return NULL;              // do not attempt from within compiler
+    bool for_invokeGeneric = (name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name));
     bool found_on_bcp = false;
-    Handle mt = find_method_handle_type(signature(), accessing_klass, found_on_bcp, CHECK_NULL);
+    Handle mt = find_method_handle_type(signature(), accessing_klass,
+                                        for_invokeGeneric,
+                                        found_on_bcp, CHECK_NULL);
     KlassHandle  mh_klass = SystemDictionaryHandles::MethodHandle_klass();
     methodHandle m = methodOopDesc::make_invoke_method(mh_klass, name, signature,
                                                        mt, CHECK_NULL);
@@ -2393,6 +2389,7 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
 // consistent with this loader.
 Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
                                                  KlassHandle accessing_klass,
+                                                 bool for_invokeGeneric,
                                                  bool& return_bcp_flag,
                                                  TRAPS) {
   Handle class_loader, protection_domain;
@@ -2448,10 +2445,26 @@ Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
                          vmSymbols::findMethodHandleType_name(),
                          vmSymbols::findMethodHandleType_signature(),
                          &args, CHECK_(empty));
+  Handle method_type(THREAD, (oop) result.get_jobject());
+
+  if (for_invokeGeneric) {
+    // call sun.dyn.MethodHandleNatives::notifyGenericMethodType(MethodType) -> void
+    JavaCallArguments args(Handle(THREAD, method_type()));
+    JavaValue no_result(T_VOID);
+    JavaCalls::call_static(&no_result,
+                           SystemDictionary::MethodHandleNatives_klass(),
+                           vmSymbols::notifyGenericMethodType_name(),
+                           vmSymbols::notifyGenericMethodType_signature(),
+                           &args, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // If the notification fails, just kill it.
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
 
   // report back to the caller with the MethodType and the "on_bcp" flag
   return_bcp_flag = is_on_bcp;
-  return Handle(THREAD, (oop) result.get_jobject());
+  return method_type;
 }
 
 // Ask Java code to find or construct a method handle constant.
@@ -2466,7 +2479,7 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
   Handle type;
   if (signature->utf8_length() > 0 && signature->byte_at(0) == '(') {
     bool ignore_is_on_bcp = false;
-    type = find_method_handle_type(signature, caller, ignore_is_on_bcp, CHECK_(empty));
+    type = find_method_handle_type(signature, caller, false, ignore_is_on_bcp, CHECK_(empty));
   } else {
     SignatureStream ss(signature(), false);
     if (!ss.is_done()) {
@@ -2542,7 +2555,9 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
 }
 
 Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int caller_bci,
-                                               int cache_index, TRAPS) {
+                                               int cache_index,
+                                               Handle& argument_info_result,
+                                               TRAPS) {
   Handle empty;
 
   constantPoolHandle pool;
@@ -2556,7 +2571,7 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
   constantTag tag = pool->tag_at(constant_pool_index);
 
   if (tag.is_invoke_dynamic()) {
-    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type]
+    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type], plus optional arguments
     // The bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
     int bsm_index = pool->invoke_dynamic_bootstrap_method_ref_index_at(constant_pool_index);
     if (bsm_index != 0) {
@@ -2572,9 +2587,38 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
         tty->print_cr("bootstrap method for "PTR_FORMAT" at %d retrieved as "PTR_FORMAT":",
                       (intptr_t) caller_method(), caller_bci, (intptr_t) bsm_oop);
       }
-      assert(bsm_oop->is_oop()
-             && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
-      return Handle(THREAD, bsm_oop);
+      assert(bsm_oop->is_oop(), "must be sane");
+      // caller must verify that it is of type MethodHandle
+      Handle bsm(THREAD, bsm_oop);
+      bsm_oop = NULL;  // safety
+
+      // Extract the optional static arguments.
+      Handle argument_info;  // either null, or one arg, or Object[]{arg...}
+      int argc = pool->invoke_dynamic_argument_count_at(constant_pool_index);
+      if (TraceInvokeDynamic) {
+        tty->print_cr("find_bootstrap_method: [%d/%d] CONSTANT_InvokeDynamic: %d[%d]",
+                      constant_pool_index, cache_index, bsm_index, argc);
+      }
+      if (argc > 0) {
+        objArrayHandle arg_array;
+        if (argc > 1) {
+          objArrayOop arg_array_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(), argc, CHECK_(empty));
+          arg_array = objArrayHandle(THREAD, arg_array_oop);
+          argument_info = arg_array;
+        }
+        for (int arg_i = 0; arg_i < argc; arg_i++) {
+          int arg_index = pool->invoke_dynamic_argument_index_at(constant_pool_index, arg_i);
+          oop arg_oop = pool->resolve_possibly_cached_constant_at(arg_index, CHECK_(empty));
+          if (arg_array.is_null()) {
+            argument_info = Handle(THREAD, arg_oop);
+          } else {
+            arg_array->obj_at_put(arg_i, arg_oop);
+          }
+        }
+      }
+
+      argument_info_result = argument_info;  // return argument_info to caller
+      return bsm;
     }
     // else null BSM; fall through
   } else if (tag.is_name_and_type()) {
@@ -2587,14 +2631,14 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
   // Fall through to pick up the per-class bootstrap method.
   // This mechanism may go away in the PFD.
   assert(AllowTransitionalJSR292, "else the verifier should have stopped us already");
+  argument_info_result = empty;  // return no argument_info to caller
   oop bsm_oop = instanceKlass::cast(caller_method->method_holder())->bootstrap_method();
   if (bsm_oop != NULL) {
     if (TraceMethodHandles) {
       tty->print_cr("bootstrap method for "PTR_FORMAT" registered as "PTR_FORMAT":",
                     (intptr_t) caller_method(), (intptr_t) bsm_oop);
     }
-    assert(bsm_oop->is_oop()
-           && java_dyn_MethodHandle::is_instance(bsm_oop), "must be sane");
+    assert(bsm_oop->is_oop(), "must be sane");
     return Handle(THREAD, bsm_oop);
   }
 

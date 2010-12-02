@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -241,6 +241,7 @@ g1MMUTracker.cpp			mutexLocker.hpp
 
 g1MMUTracker.hpp			debug.hpp
 g1MMUTracker.hpp			allocation.hpp
+
 g1RemSet.cpp				bufferingOopClosure.hpp
 g1RemSet.cpp				concurrentG1Refine.hpp
 g1RemSet.cpp				concurrentG1RefineThread.hpp
@@ -309,9 +310,15 @@ heapRegionSeq.hpp                       heapRegion.hpp
 
 heapRegionSeq.inline.hpp                heapRegionSeq.hpp
 
+instanceKlass.cpp                       g1RemSet.inline.hpp
+
+instanceRefKlass.cpp                    g1RemSet.inline.hpp
+
 klass.hpp				g1OopClosures.hpp
 
 memoryService.cpp                       g1MemoryPool.hpp
+
+objArrayKlass.cpp                       g1RemSet.inline.hpp
 
 ptrQueue.cpp                            allocation.hpp
 ptrQueue.cpp                            allocation.inline.hpp

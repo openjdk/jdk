@@ -252,12 +252,13 @@ class ModUnionClosurePar: public ModUnionClosure {
 class ChunkArray: public CHeapObj {
   size_t _index;
   size_t _capacity;
+  size_t _overflows;
   HeapWord** _array;   // storage for array
 
  public:
-  ChunkArray() : _index(0), _capacity(0), _array(NULL) {}
+  ChunkArray() : _index(0), _capacity(0), _overflows(0), _array(NULL) {}
   ChunkArray(HeapWord** a, size_t c):
-    _index(0), _capacity(c), _array(a) {}
+    _index(0), _capacity(c), _overflows(0), _array(a) {}
 
   HeapWord** array() { return _array; }
   void set_array(HeapWord** a) { _array = a; }
@@ -266,7 +267,9 @@ class ChunkArray: public CHeapObj {
   void set_capacity(size_t c) { _capacity = c; }
 
   size_t end() {
-    assert(_index < capacity(), "_index out of bounds");
+    assert(_index <= capacity(),
+           err_msg("_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT "): out of bounds",
+                   _index, _capacity));
     return _index;
   }  // exclusive
 
@@ -277,12 +280,23 @@ class ChunkArray: public CHeapObj {
 
   void reset() {
     _index = 0;
+    if (_overflows > 0 && PrintCMSStatistics > 1) {
+      warning("CMS: ChunkArray[" SIZE_FORMAT "] overflowed " SIZE_FORMAT " times",
+              _capacity, _overflows);
+    }
+    _overflows = 0;
   }
 
   void record_sample(HeapWord* p, size_t sz) {
     // For now we do not do anything with the size
     if (_index < _capacity) {
       _array[_index++] = p;
+    } else {
+      ++_overflows;
+      assert(_index == _capacity,
+             err_msg("_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT
+                     "): out of bounds at overflow#" SIZE_FORMAT,
+                     _index, _capacity, _overflows));
     }
   }
 };
@@ -507,6 +521,7 @@ class CMSCollector: public CHeapObj {
   friend class VM_CMS_Operation;
   friend class VM_CMS_Initial_Mark;
   friend class VM_CMS_Final_Remark;
+  friend class TraceCMSMemoryManagerStats;
 
  private:
   jlong _time_of_last_gc;
@@ -522,8 +537,8 @@ class CMSCollector: public CHeapObj {
   // The following array-pair keeps track of mark words
   // displaced for accomodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
-  GrowableArray<oop>*     _preserved_oop_stack;
-  GrowableArray<markOop>* _preserved_mark_stack;
+  Stack<oop>     _preserved_oop_stack;
+  Stack<markOop> _preserved_mark_stack;
 
   int*             _hash_seed;
 
@@ -714,7 +729,9 @@ class CMSCollector: public CHeapObj {
 
   // Support for marking stack overflow handling
   bool take_from_overflow_list(size_t num, CMSMarkStack* to_stack);
-  bool par_take_from_overflow_list(size_t num, OopTaskQueue* to_work_q);
+  bool par_take_from_overflow_list(size_t num,
+                                   OopTaskQueue* to_work_q,
+                                   int no_of_gc_threads);
   void push_on_overflow_list(oop p);
   void par_push_on_overflow_list(oop p);
   // the following is, obviously, not, in general, "MT-stable"
@@ -753,7 +770,7 @@ class CMSCollector: public CHeapObj {
   void abortable_preclean(); // Preclean while looking for possible abort
   void initialize_sequential_subtasks_for_young_gen_rescan(int i);
   // Helper function for above; merge-sorts the per-thread plab samples
-  void merge_survivor_plab_arrays(ContiguousSpace* surv);
+  void merge_survivor_plab_arrays(ContiguousSpace* surv, int no_of_gc_threads);
   // Resets (i.e. clears) the per-thread plab sample vectors
   void reset_survivor_plab_arrays();
 
@@ -1009,10 +1026,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Non-product stat counters
   NOT_PRODUCT(
-    int _numObjectsPromoted;
-    int _numWordsPromoted;
-    int _numObjectsAllocated;
-    int _numWordsAllocated;
+    size_t _numObjectsPromoted;
+    size_t _numWordsPromoted;
+    size_t _numObjectsAllocated;
+    size_t _numWordsAllocated;
   )
 
   // Used for sizing decisions
@@ -1168,8 +1185,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   virtual void par_promote_alloc_done(int thread_num);
   virtual void par_oop_since_save_marks_iterate_done(int thread_num);
 
-  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes) const;
 
   // Inform this (non-young) generation that a promotion failure was
   // encountered during a collection of a younger generation that
@@ -1858,3 +1874,11 @@ public:
     _dead_bit_map(dead_bit_map) {}
   size_t do_blk(HeapWord* addr);
 };
+
+class TraceCMSMemoryManagerStats : public TraceMemoryManagerStats {
+
+ public:
+  TraceCMSMemoryManagerStats(CMSCollector::CollectorState phase);
+  TraceCMSMemoryManagerStats();
+};
+

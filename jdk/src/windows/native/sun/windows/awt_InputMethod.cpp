@@ -296,7 +296,9 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_WInputMethod_getNativeLocale
         // so we can reset this flag.
         g_bUserHasChangedInputLang = FALSE;
 
-        return CreateLocaleObject(env, javaLocaleName);
+        jobject ret = CreateLocaleObject(env, javaLocaleName);
+        free((void *)javaLocaleName);
+        return ret;
     } else {
         return NULL;
     }
@@ -323,6 +325,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
     const char * requested = env->GetStringUTFChars(localeString, &isCopy);
     if ((current != NULL) && (strcmp(current, requested) == 0)) {
         env->ReleaseStringUTFChars(localeString, requested);
+        free((void *)current);
         return JNI_TRUE;
     }
 
@@ -352,6 +355,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
 
     env->ReleaseStringUTFChars(localeString, requested);
     free(hKLList);
+    free((void *)current);
     return retValue;
 
     CATCH_BAD_ALLOC_RET(JNI_FALSE);
@@ -480,6 +484,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
         env->SetObjectArrayElement(locales,
                                    current,
                                    CreateLocaleObject(env, javaLocaleNames[current]));
+        free((void *)javaLocaleNames[current]);
     }
     DASSERT(!safe_ExceptionOccurred(env));
 
@@ -535,34 +540,15 @@ jobject CreateLocaleObject(JNIEnv *env, const char * name)
 {
     TRY;
 
-    // get language, country, variant information
-    char * language = (char *)safe_Malloc(strlen(name) + 1);
-    char * country;
-    char * variant;
-    DASSERT(!safe_ExceptionOccurred(env));
-    strcpy(language, name);
-    for (country = language; *country != '_' && *country != '\0'; country++);
-    if (*country == '_') {
-        *country++ = '\0';
-        for (variant = country; *variant != '_' && *variant != '\0'; variant++);
-        if (*variant == '_') {
-            *variant++ = '\0';
-        }
-    } else {
-        variant = country;
-    }
-
     // create Locale object
-    jobject langObj = env->NewStringUTF(language);
-    jobject ctryObj = env->NewStringUTF(country);
-    jobject vrntObj = env->NewStringUTF(variant);
-    jobject localeObj = JNU_NewObjectByName(env, "java/util/Locale",
-                                            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                                            langObj, ctryObj, vrntObj);
-    free(language);
-    env->DeleteLocalRef(langObj);
-    env->DeleteLocalRef(ctryObj);
-    env->DeleteLocalRef(vrntObj);
+    jobject langtagObj = env->NewStringUTF(name);
+    jobject localeObj = JNU_CallStaticMethodByName(env,
+                                                   NULL,
+                                                   "java/util/Locale",
+                                                   "forLanguageTag",
+                                                   "(Ljava/lang/String;)Ljava/util/Locale;",
+                                                   langtagObj).l;
+    env->DeleteLocalRef(langtagObj);
 
     return localeObj;
 

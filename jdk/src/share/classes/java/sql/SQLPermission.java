@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,14 @@ import java.security.*;
 
 /**
  * The permission for which the <code>SecurityManager</code> will check
- * when code that is running in an applet calls the
- * <code>DriverManager.setLogWriter</code> method or the
- * <code>DriverManager.setLogStream</code> (deprecated) method.
+ * when code that is running in an applet, or an application with a
+ * <code>SecurityManager</code> enabled, calls the
+ * <code>DriverManager.setLogWriter</code> method,
+ * <code>DriverManager.setLogStream</code> (deprecated) method,
+ * {@code SyncFactory.setJNDIContext} method,
+ * {@code SyncFactory.setLogger} method,
+ * {@code Connection.setNetworktimeout} method,
+ * or the <code>Connection.abort</code> method.
  * If there is no <code>SQLPermission</code> object, these methods
  * throw a <code>java.lang.SecurityException</code> as a runtime exception.
  * <P>
@@ -48,7 +53,6 @@ import java.security.*;
  * but <code>*loadLibrary</code> or <code>a*b</code> is not valid.
  * <P>
  * The following table lists all the possible <code>SQLPermission</code> target names.
- * Currently, the only name allowed is <code>setLog</code>.
  * The table gives a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  * <P>
@@ -67,9 +71,33 @@ import java.security.*;
  * The contents of the log may contain usernames and passwords,
  * SQL statements, and SQL data.</td>
  * </tr>
+ * <tr>
+ * <td>callAbort</td>
+ *   <td>Allows the invocation of the {@code Connection} method
+ *   {@code abort}</td>
+ *   <td>Permits an application to terminate a physical connection to a
+ *  database.</td>
+ * </tr>
+ * <tr>
+ * <td>setSyncFactory</td>
+ *   <td>Allows the invocation of the {@code SyncFactory} methods
+ *   {@code setJNDIContext} and {@code setLogger}</td>
+ *   <td>Permits an application to specify the JNDI context from which the
+ *   {@code SyncProvider} implementations can be retrieved from and the logging
+ *   object to be used by the{@codeSyncProvider} implementation.</td>
+ * </tr>
  *
+ * <tr>
+ * <td>setNetworkTimeout</td>
+ *   <td>Allows the invocation of the {@code Connection} method
+ *   {@code setNetworkTimeout}</td>
+ *   <td>Permits an application to specify the maximum period a
+ * <code>Connection</code> or
+ * objects created from the <code>Connection</code>
+ * will wait for the database to reply to any one request.</td>
+ * </tr>
  * </table>
- *
+ *<p>
  * The person running an applet decides what permissions to allow
  * and will run the <code>Policy Tool</code> to create an
  * <code>SQLPermission</code> in a policy file.  A programmer does

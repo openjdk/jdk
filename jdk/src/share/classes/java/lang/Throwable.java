@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,36 @@ public class Throwable implements Serializable {
     private String detailMessage;
 
     /**
+     * A shared value for an empty stack.
+     */
+    private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
+
+    /*
+     * To allow Throwable objects to be made immutable and safely
+     * reused by the JVM, such as OutOfMemoryErrors, fields of
+     * Throwable that are writable in response to user actions, cause
+     * and suppressedExceptions obey the following protocol:
+     *
+     * 1) The fields are initialized to a non-null sentinel value
+     * which indicates the value has logically not been set.
+     *
+     * 2) Writing a null to the field indicates further writes
+     * are forbidden
+     *
+     * 3) The sentinel value may be replaced with another non-null
+     * value.
+     *
+     * For example, implementations of the HotSpot JVM have
+     * preallocated OutOfMemoryError objects to provide for better
+     * diagnosability of that situation.  These objects are created
+     * without calling the constructor for that class and the fields
+     * in question are initialized to null.  To support this
+     * capability, any new fields added to Throwable that require
+     * being initialized to a non-null value require a coordinated JVM
+     * change.
+     */
+
+    /**
      * The throwable that caused this throwable to get thrown, or null if this
      * throwable was not caused by another throwable, or if the causative
      * throwable is unknown.  If this field is equal to this throwable itself,
@@ -188,31 +218,29 @@ public class Throwable implements Serializable {
      * @since 1.4
      */
     private StackTraceElement[] stackTrace;
-    /*
-     * This field is lazily initialized on first use or serialization and
-     * nulled out when fillInStackTrace is called.
-     */
+
+    // Setting this static field introduces an acceptable
+    // initialization dependency on a few java.util classes.
+    private static final List<Throwable> SUPPRESSED_SENTINEL =
+        Collections.unmodifiableList(new ArrayList<Throwable>(0));
 
     /**
-     * The list of suppressed exceptions, as returned by
-     * {@link #getSuppressedExceptions()}.
+     * The list of suppressed exceptions, as returned by {@link
+     * #getSuppressed()}.  The list is initialized to a zero-element
+     * unmodifiable sentinel list.  When a serialized Throwable is
+     * read in, if the {@code suppressedExceptions} field points to a
+     * zero-element list, the field is reset to the sentinel value.
      *
      * @serial
      * @since 1.7
      */
-    private List<Throwable> suppressedExceptions = null;
-    /*
-     * This field is lazily initialized when the first suppressed
-     * exception is added.
-     *
-     * OutOfMemoryError is preallocated in the VM for better OOM
-     * diagnosability during VM initialization. Constructor can't
-     * be not invoked. If a new field to be added in the future must
-     * be initialized to non-null, it requires a synchronized VM change.
-     */
+    private List<Throwable> suppressedExceptions = SUPPRESSED_SENTINEL;
 
     /** Message for trying to suppress a null exception. */
     private static final String NULL_CAUSE_MESSAGE = "Cannot suppress a null exception.";
+
+    /** Message for trying to suppress oneself. */
+    private static final String SELF_SUPPRESSION_MESSAGE = "Self-suppression not permitted";
 
     /** Caption  for labeling causative exception stack traces */
     private static final String CAUSE_CAPTION = "Caused by: ";
@@ -498,8 +526,8 @@ public class Throwable implements Serializable {
      * }
      * </pre>
      * As of release 7, the platform supports the notion of
-     * <i>suppressed exceptions</i> (in conjunction with automatic
-     * resource management blocks). Any exceptions that were
+     * <i>suppressed exceptions</i> (in conjunction with the {@code
+     * try}-with-resources statement). Any exceptions that were
      * suppressed in order to deliver an exception are printed out
      * beneath the stack trace.  The format of this information
      * depends on the implementation, but the following example may be
@@ -572,7 +600,7 @@ public class Throwable implements Serializable {
                 s.println("\tat " + traceElement);
 
             // Print suppressed exceptions, if any
-            for (Throwable se : getSuppressedExceptions())
+            for (Throwable se : getSuppressed())
                 se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
 
             // Print cause, if any
@@ -613,7 +641,7 @@ public class Throwable implements Serializable {
                 s.println(prefix + "\t... " + framesInCommon + " more");
 
             // Print suppressed exceptions, if any
-            for (Throwable se : getSuppressedExceptions())
+            for (Throwable se : getSuppressed())
                 se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION,
                                            prefix +"\t", dejaVu);
 
@@ -780,33 +808,74 @@ public class Throwable implements Serializable {
      */
     native StackTraceElement getStackTraceElement(int index);
 
+    /**
+     * Read a {@code Throwable} from a stream, enforcing
+     * well-formedness constraints on fields.  Null entries and
+     * self-pointers are not allowed in the list of {@code
+     * suppressedExceptions}.  Null entries are not allowed for stack
+     * trace elements.
+     *
+     * Note that there are no constraints on the value the {@code
+     * cause} field can hold; both {@code null} and {@code this} are
+     * valid values for the field.
+     */
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();     // read in all fields
-        List<Throwable> suppressed = null;
-        if (suppressedExceptions != null &&
-            !suppressedExceptions.isEmpty()) { // Copy Throwables to new list
-            suppressed = new ArrayList<Throwable>();
-            for (Throwable t : suppressedExceptions) {
-                if (t == null)
-                    throw new NullPointerException(NULL_CAUSE_MESSAGE);
-                suppressed.add(t);
+        if (suppressedExceptions != null) {
+            List<Throwable> suppressed = null;
+            if (suppressedExceptions.isEmpty()) {
+                // Use the sentinel for a zero-length list
+                suppressed = SUPPRESSED_SENTINEL;
+            } else { // Copy Throwables to new list
+                suppressed = new ArrayList<Throwable>(1);
+                for (Throwable t : suppressedExceptions) {
+                    // Enforce constraints on suppressed exceptions in
+                    // case of corrupt or malicious stream.
+                    if (t == null)
+                        throw new NullPointerException(NULL_CAUSE_MESSAGE);
+                    if (t == this)
+                        throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE);
+                    suppressed.add(t);
+                }
             }
+            suppressedExceptions = suppressed;
+        } // else a null suppressedExceptions field remains null
+
+        if (stackTrace != null) {
+            for (StackTraceElement ste : stackTrace) {
+                if (ste == null)
+                    throw new NullPointerException("null StackTraceElement in serial stream. ");
+            }
+        } else {
+            // A null stackTrace field in the serial form can result from
+            // an exception serialized without that field in older JDK releases.
+            stackTrace = EMPTY_STACK;
         }
-        suppressedExceptions = suppressed;
+
     }
 
+    /**
+     * Write a {@code Throwable} object to a stream.
+     */
     private synchronized void writeObject(ObjectOutputStream s)
-        throws IOException
-    {
+        throws IOException {
         getOurStackTrace();  // Ensure that stackTrace field is initialized.
         s.defaultWriteObject();
     }
 
     /**
      * Adds the specified exception to the list of exceptions that
-     * were suppressed, typically by the automatic resource management
+     * were suppressed, typically by the {@code try}-with-resources
      * statement, in order to deliver this exception.
+     *
+     * If the first exception to be suppressed is {@code null}, that
+     * indicates suppressed exception information will <em>not</em> be
+     * recorded for this exception.  Subsequent calls to this method
+     * will not record any suppressed exceptions.  Otherwise,
+     * attempting to suppress {@code null} after an exception has
+     * already been successfully suppressed results in a {@code
+     * NullPointerException}.
      *
      * <p>Note that when one exception {@linkplain
      * #initCause(Throwable) causes} another exception, the first
@@ -819,35 +888,53 @@ public class Throwable implements Serializable {
      *
      * @param exception the exception to be added to the list of
      *        suppressed exceptions
-     * @throws NullPointerException if {@code exception} is null
      * @throws IllegalArgumentException if {@code exception} is this
      *         throwable; a throwable cannot suppress itself.
+     * @throws NullPointerException if {@code exception} is null and
+     *         an exception has already been suppressed by this exception
      * @since 1.7
      */
-    public synchronized void addSuppressedException(Throwable exception) {
-        if (exception == null)
-            throw new NullPointerException(NULL_CAUSE_MESSAGE);
+    public final synchronized void addSuppressed(Throwable exception) {
         if (exception == this)
-            throw new IllegalArgumentException("Self-suppression not permitted");
+            throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE);
 
-        if (suppressedExceptions == null)
-            suppressedExceptions = new ArrayList<Throwable>();
-        suppressedExceptions.add(exception);
+        if (exception == null) {
+            if (suppressedExceptions == SUPPRESSED_SENTINEL) {
+                suppressedExceptions = null; // No suppression information recorded
+                return;
+            } else
+                throw new NullPointerException(NULL_CAUSE_MESSAGE);
+        } else {
+            assert exception != null && exception != this;
+
+            if (suppressedExceptions == null) // Suppressed exceptions not recorded
+                return;
+
+            if (suppressedExceptions == SUPPRESSED_SENTINEL)
+                suppressedExceptions = new ArrayList<Throwable>(1);
+
+            assert suppressedExceptions != SUPPRESSED_SENTINEL;
+
+            suppressedExceptions.add(exception);
+        }
     }
 
     private static final Throwable[] EMPTY_THROWABLE_ARRAY = new Throwable[0];
 
     /**
      * Returns an array containing all of the exceptions that were
-     * suppressed, typically by the automatic resource management
+     * suppressed, typically by the {@code try}-with-resources
      * statement, in order to deliver this exception.
+     *
+     * If no exceptions were suppressed, an empty array is returned.
      *
      * @return an array containing all of the exceptions that were
      *         suppressed to deliver this exception.
      * @since 1.7
      */
-    public synchronized Throwable[] getSuppressedExceptions() {
-        if (suppressedExceptions == null)
+    public final synchronized Throwable[] getSuppressed() {
+        if (suppressedExceptions == SUPPRESSED_SENTINEL ||
+            suppressedExceptions == null)
             return EMPTY_THROWABLE_ARRAY;
         else
             return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);

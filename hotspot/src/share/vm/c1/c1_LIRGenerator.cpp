@@ -386,18 +386,26 @@ void LIRGenerator::walk(Value instr) {
 
 
 CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ignore_xhandler) {
-  int index;
-  Value value;
-  for_each_stack_value(state, index, value) {
-    assert(value->subst() == value, "missed substition");
-    if (!value->is_pinned() && value->as_Constant() == NULL && value->as_Local() == NULL) {
-      walk(value);
-      assert(value->operand()->is_valid(), "must be evaluated now");
-    }
-  }
+  assert(state != NULL, "state must be defined");
+
   ValueStack* s = state;
-  int bci = x->bci();
   for_each_state(s) {
+    if (s->kind() == ValueStack::EmptyExceptionState) {
+      assert(s->stack_size() == 0 && s->locals_size() == 0 && (s->locks_size() == 0 || s->locks_size() == 1), "state must be empty");
+      continue;
+    }
+
+    int index;
+    Value value;
+    for_each_stack_value(s, index, value) {
+      assert(value->subst() == value, "missed substitution");
+      if (!value->is_pinned() && value->as_Constant() == NULL && value->as_Local() == NULL) {
+        walk(value);
+        assert(value->operand()->is_valid(), "must be evaluated now");
+      }
+    }
+
+    int bci = s->bci();
     IRScope* scope = s->scope();
     ciMethod* method = scope->method();
 
@@ -428,15 +436,14 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
         }
       }
     }
-    bci = scope->caller_bci();
   }
 
-  return new CodeEmitInfo(x->bci(), state, ignore_xhandler ? NULL : x->exception_handlers());
+  return new CodeEmitInfo(state, ignore_xhandler ? NULL : x->exception_handlers());
 }
 
 
 CodeEmitInfo* LIRGenerator::state_for(Instruction* x) {
-  return state_for(x, x->lock_stack());
+  return state_for(x, x->exception_state());
 }
 
 
@@ -479,16 +486,6 @@ void LIRGenerator::nio_range_check(LIR_Opr buffer, LIR_Opr index, LIR_Opr result
   __ move(index, result);
 }
 
-
-// increment a counter returning the incremented value
-LIR_Opr LIRGenerator::increment_and_return_counter(LIR_Opr base, int offset, int increment) {
-  LIR_Address* counter = new LIR_Address(base, offset, T_INT);
-  LIR_Opr result = new_register(T_INT);
-  __ load(counter, result);
-  __ add(result, LIR_OprFact::intConst(increment), result);
-  __ store(result, counter);
-  return result;
-}
 
 
 void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp_op, CodeEmitInfo* info) {
@@ -821,7 +818,6 @@ LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
   return tmp;
 }
 
-
 void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
   if (if_instr->should_profile()) {
     ciMethod* method = if_instr->profiled_method();
@@ -836,23 +832,31 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     assert(data->is_BranchData(), "need BranchData for two-way branches");
     int taken_count_offset     = md->byte_offset_of_slot(data, BranchData::taken_offset());
     int not_taken_count_offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
+    if (if_instr->is_swapped()) {
+      int t = taken_count_offset;
+      taken_count_offset = not_taken_count_offset;
+      not_taken_count_offset = t;
+    }
+
     LIR_Opr md_reg = new_register(T_OBJECT);
-    __ move(LIR_OprFact::oopConst(md->constant_encoding()), md_reg);
-    LIR_Opr data_offset_reg = new_register(T_INT);
+    __ oop2reg(md->constant_encoding(), md_reg);
+
+    LIR_Opr data_offset_reg = new_pointer_register();
     __ cmove(lir_cond(cond),
-             LIR_OprFact::intConst(taken_count_offset),
-             LIR_OprFact::intConst(not_taken_count_offset),
+             LIR_OprFact::intptrConst(taken_count_offset),
+             LIR_OprFact::intptrConst(not_taken_count_offset),
              data_offset_reg);
-    LIR_Opr data_reg = new_register(T_INT);
-    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, T_INT);
+
+    // MDO cells are intptr_t, so the data_reg width is arch-dependent.
+    LIR_Opr data_reg = new_pointer_register();
+    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
     __ move(LIR_OprFact::address(data_addr), data_reg);
-    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     // Use leal instead of add to avoid destroying condition codes on x86
+    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
     __ move(data_reg, LIR_OprFact::address(data_addr));
   }
 }
-
 
 // Phi technique:
 // This is about passing live values from one basic block to the other.
@@ -903,16 +907,12 @@ void LIRGenerator::move_to_phi(ValueStack* cur_state) {
       Value sux_value;
       int index;
 
+      assert(cur_state->scope() == sux_state->scope(), "not matching");
+      assert(cur_state->locals_size() == sux_state->locals_size(), "not matching");
+      assert(cur_state->stack_size() == sux_state->stack_size(), "not matching");
+
       for_each_stack_value(sux_state, index, sux_value) {
         move_to_phi(&resolver, cur_state->stack_at(index), sux_value);
-      }
-
-      // Inlining may cause the local state not to match up, so walk up
-      // the caller state until we get to the same scope as the
-      // successor and then start processing from there.
-      while (cur_state->scope() != sux_state->scope()) {
-        cur_state = cur_state->caller_state();
-        assert(cur_state != NULL, "scopes don't match up");
       }
 
       for_each_local_value(sux_state, index, sux_value) {
@@ -939,7 +939,6 @@ LIR_Opr LIRGenerator::new_register(BasicType type) {
     }
   }
   _virtual_register_number += 1;
-  if (type == T_ADDRESS) type = T_INT;
   return LIR_OprFact::virtual_register(vreg, type);
 }
 
@@ -1027,10 +1026,10 @@ void LIRGenerator::do_Phi(Phi* x) {
 
 // Code for a constant is generated lazily unless the constant is frequently used and can't be inlined.
 void LIRGenerator::do_Constant(Constant* x) {
-  if (x->state() != NULL) {
+  if (x->state_before() != NULL) {
     // Any constant with a ValueStack requires patching so emit the patch here
     LIR_Opr reg = rlock_result(x);
-    CodeEmitInfo* info = state_for(x, x->state());
+    CodeEmitInfo* info = state_for(x, x->state_before());
     __ oop2reg_patch(NULL, reg, info);
   } else if (x->use_count() > 1 && !can_inline_as_constant(x)) {
     if (!x->is_pinned()) {
@@ -1106,7 +1105,7 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   // need to perform the null check on the rcvr
   CodeEmitInfo* info = NULL;
   if (x->needs_null_check()) {
-    info = state_for(x, x->state()->copy_locks());
+    info = state_for(x);
   }
   __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), result, info);
   __ move(new LIR_Address(result, Klass::java_mirror_offset_in_bytes() +
@@ -1305,8 +1304,6 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patc
   LIR_Opr flag_val = new_register(T_INT);
   __ load(mark_active_flag_addr, flag_val);
 
-  LabelObj* start_store = new LabelObj();
-
   LIR_PatchCode pre_val_patch_code =
     patch ? lir_patch_normal : lir_patch_none;
 
@@ -1487,7 +1484,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   } else if (x->needs_null_check()) {
     NullCheck* nc = x->explicit_null_check();
     if (nc == NULL) {
-      info = state_for(x, x->lock_stack());
+      info = state_for(x);
     } else {
       info = state_for(nc);
     }
@@ -1515,10 +1512,12 @@ void LIRGenerator::do_StoreField(StoreField* x) {
 
   set_no_result(x);
 
+#ifndef PRODUCT
   if (PrintNotLoaded && needs_patching) {
     tty->print_cr("   ###class not loaded at store_%s bci %d",
-                  x->is_static() ?  "static" : "field", x->bci());
+                  x->is_static() ?  "static" : "field", x->printable_bci());
   }
+#endif
 
   if (x->needs_null_check() &&
       (needs_patching ||
@@ -1581,7 +1580,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
   } else if (x->needs_null_check()) {
     NullCheck* nc = x->explicit_null_check();
     if (nc == NULL) {
-      info = state_for(x, x->lock_stack());
+      info = state_for(x);
     } else {
       info = state_for(nc);
     }
@@ -1591,10 +1590,12 @@ void LIRGenerator::do_LoadField(LoadField* x) {
 
   object.load_item();
 
+#ifndef PRODUCT
   if (PrintNotLoaded && needs_patching) {
     tty->print_cr("   ###class not loaded at load_%s bci %d",
-                  x->is_static() ?  "static" : "field", x->bci());
+                  x->is_static() ?  "static" : "field", x->printable_bci());
   }
+#endif
 
   if (x->needs_null_check() &&
       (needs_patching ||
@@ -1757,7 +1758,7 @@ void LIRGenerator::do_Throw(Throw* x) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    increment_counter(Runtime1::throw_count_address());
+    increment_counter(Runtime1::throw_count_address(), T_INT);
   }
 #endif
 
@@ -1787,7 +1788,7 @@ void LIRGenerator::do_Throw(Throw* x) {
   if (GenerateCompilerNullChecks &&
       (x->exception()->as_NewInstance() == NULL && x->exception()->as_ExceptionObject() == NULL)) {
     // if the exception object wasn't created using new then it might be null.
-    __ null_check(exception_opr, new CodeEmitInfo(info, true));
+    __ null_check(exception_opr, new CodeEmitInfo(info, x->state()->copy(ValueStack::ExceptionState, x->state()->bci())));
   }
 
   if (compilation()->env()->jvmti_can_post_on_exceptions()) {
@@ -2133,7 +2134,6 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   int lo_key = x->lo_key();
   int hi_key = x->hi_key();
   int len = x->length();
-  CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr value = tag.result();
   if (UseTableRanges) {
     do_SwitchRanges(create_lookup_ranges(x), value, x->default_sux());
@@ -2191,10 +2191,39 @@ void LIRGenerator::do_Goto(Goto* x) {
     ValueStack* state = x->state_before() ? x->state_before() : x->state();
 
     // increment backedge counter if needed
-    increment_backedge_counter(state_for(x, state));
-
+    CodeEmitInfo* info = state_for(x, state);
+    increment_backedge_counter(info, info->stack()->bci());
     CodeEmitInfo* safepoint_info = state_for(x, state);
     __ safepoint(safepoint_poll_register(), safepoint_info);
+  }
+
+  // Gotos can be folded Ifs, handle this case.
+  if (x->should_profile()) {
+    ciMethod* method = x->profiled_method();
+    assert(method != NULL, "method should be set if branch is profiled");
+    ciMethodData* md = method->method_data();
+    if (md == NULL) {
+      bailout("out of memory building methodDataOop");
+      return;
+    }
+    ciProfileData* data = md->bci_to_data(x->profiled_bci());
+    assert(data != NULL, "must have profiling data");
+    int offset;
+    if (x->direction() == Goto::taken) {
+      assert(data->is_BranchData(), "need BranchData for two-way branches");
+      offset = md->byte_offset_of_slot(data, BranchData::taken_offset());
+    } else if (x->direction() == Goto::not_taken) {
+      assert(data->is_BranchData(), "need BranchData for two-way branches");
+      offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
+    } else {
+      assert(data->is_JumpData(), "need JumpData for branches");
+      offset = md->byte_offset_of_slot(data, JumpData::taken_offset());
+    }
+    LIR_Opr md_reg = new_register(T_OBJECT);
+    __ oop2reg(md->constant_encoding(), md_reg);
+
+    increment_counter(new LIR_Address(md_reg, offset,
+                                      NOT_LP64(T_INT) LP64_ONLY(T_LONG)), DataLayout::counter_increment);
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -2270,7 +2299,7 @@ void LIRGenerator::do_Base(Base* x) {
       LIR_Opr lock = new_register(T_INT);
       __ load_stack_address_monitor(0, lock);
 
-      CodeEmitInfo* info = new CodeEmitInfo(SynchronizationEntryBCI, scope()->start()->state(), NULL);
+      CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL);
       CodeStub* slow_path = new MonitorEnterStub(obj, lock, info);
 
       // receiver is guaranteed non-NULL so don't need CodeEmitInfo
@@ -2279,7 +2308,10 @@ void LIRGenerator::do_Base(Base* x) {
   }
 
   // increment invocation counters if needed
-  increment_invocation_counter(new CodeEmitInfo(0, scope()->start()->state(), NULL));
+  if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
+    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL);
+    increment_invocation_counter(info);
+  }
 
   // all blocks with a successor must end with an unconditional jump
   // to the successor even if they are consecutive
@@ -2437,7 +2469,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       break;
     case Bytecodes::_invokedynamic: {
       ciBytecodeStream bcs(x->scope()->method());
-      bcs.force_bci(x->bci());
+      bcs.force_bci(x->state()->bci());
       assert(bcs.cur_bc() == Bytecodes::_invokedynamic, "wrong stream");
       ciCPCache* cpcache = bcs.get_cpcache();
 
@@ -2613,12 +2645,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 }
 
-
 void LIRGenerator::do_ProfileCall(ProfileCall* x) {
   // Need recv in a temporary register so it interferes with the other temporaries
   LIR_Opr recv = LIR_OprFact::illegalOpr;
   LIR_Opr mdo = new_register(T_OBJECT);
-  LIR_Opr tmp = new_register(T_INT);
+  // tmp is used to hold the counters on SPARC
+  LIR_Opr tmp = new_pointer_register();
   if (x->recv() != NULL) {
     LIRItem value(x->recv(), this);
     value.load_item();
@@ -2628,14 +2660,69 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
   __ profile_call(x->method(), x->bci_of_invoke(), mdo, recv, tmp, x->known_holder());
 }
 
-
-void LIRGenerator::do_ProfileCounter(ProfileCounter* x) {
-  LIRItem mdo(x->mdo(), this);
-  mdo.load_item();
-
-  increment_counter(new LIR_Address(mdo.result(), x->offset(), T_INT), x->increment());
+void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
+  // We can safely ignore accessors here, since c2 will inline them anyway,
+  // accessors are also always mature.
+  if (!x->inlinee()->is_accessor()) {
+    CodeEmitInfo* info = state_for(x, x->state(), true);
+    // Increment invocation counter, don't notify the runtime, because we don't inline loops,
+    increment_event_counter_impl(info, x->inlinee(), 0, InvocationEntryBci, false, false);
+  }
 }
 
+void LIRGenerator::increment_event_counter(CodeEmitInfo* info, int bci, bool backedge) {
+  int freq_log;
+  int level = compilation()->env()->comp_level();
+  if (level == CompLevel_limited_profile) {
+    freq_log = (backedge ? Tier2BackedgeNotifyFreqLog : Tier2InvokeNotifyFreqLog);
+  } else if (level == CompLevel_full_profile) {
+    freq_log = (backedge ? Tier3BackedgeNotifyFreqLog : Tier3InvokeNotifyFreqLog);
+  } else {
+    ShouldNotReachHere();
+  }
+  // Increment the appropriate invocation/backedge counter and notify the runtime.
+  increment_event_counter_impl(info, info->scope()->method(), (1 << freq_log) - 1, bci, backedge, true);
+}
+
+void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
+                                                ciMethod *method, int frequency,
+                                                int bci, bool backedge, bool notify) {
+  assert(frequency == 0 || is_power_of_2(frequency + 1), "Frequency must be x^2 - 1 or 0");
+  int level = _compilation->env()->comp_level();
+  assert(level > CompLevel_simple, "Shouldn't be here");
+
+  int offset = -1;
+  LIR_Opr counter_holder = new_register(T_OBJECT);
+  LIR_Opr meth;
+  if (level == CompLevel_limited_profile) {
+    offset = in_bytes(backedge ? methodOopDesc::backedge_counter_offset() :
+                                 methodOopDesc::invocation_counter_offset());
+    __ oop2reg(method->constant_encoding(), counter_holder);
+    meth = counter_holder;
+  } else if (level == CompLevel_full_profile) {
+    offset = in_bytes(backedge ? methodDataOopDesc::backedge_counter_offset() :
+                                 methodDataOopDesc::invocation_counter_offset());
+    __ oop2reg(method->method_data()->constant_encoding(), counter_holder);
+    meth = new_register(T_OBJECT);
+    __ oop2reg(method->constant_encoding(), meth);
+  } else {
+    ShouldNotReachHere();
+  }
+  LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
+  LIR_Opr result = new_register(T_INT);
+  __ load(counter, result);
+  __ add(result, LIR_OprFact::intConst(InvocationCounter::count_increment), result);
+  __ store(result, counter);
+  if (notify) {
+    LIR_Opr mask = load_immediate(frequency << InvocationCounter::count_shift, T_INT);
+    __ logical_and(result, mask, result);
+    __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+    // The bci for info can point to cmp for if's we want the if bci
+    CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
+    __ branch(lir_cond_equal, T_INT, overflow);
+    __ branch_destination(overflow->continuation());
+  }
+}
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);
@@ -2746,30 +2833,4 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIRItemList* args,
     __ move(phys_reg, result);
   }
   return result;
-}
-
-
-
-void LIRGenerator::increment_invocation_counter(CodeEmitInfo* info, bool backedge) {
-#ifdef TIERED
-  if (_compilation->env()->comp_level() == CompLevel_fast_compile &&
-      (method()->code_size() >= Tier1BytecodeLimit || backedge)) {
-    int limit = InvocationCounter::Tier1InvocationLimit;
-    int offset = in_bytes(methodOopDesc::invocation_counter_offset() +
-                          InvocationCounter::counter_offset());
-    if (backedge) {
-      limit = InvocationCounter::Tier1BackEdgeLimit;
-      offset = in_bytes(methodOopDesc::backedge_counter_offset() +
-                        InvocationCounter::counter_offset());
-    }
-
-    LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->constant_encoding(), meth);
-    LIR_Opr result = increment_and_return_counter(meth, offset, InvocationCounter::count_increment);
-    __ cmp(lir_cond_aboveEqual, result, LIR_OprFact::intConst(limit));
-    CodeStub* overflow = new CounterOverflowStub(info, info->bci());
-    __ branch(lir_cond_aboveEqual, T_INT, overflow);
-    __ branch_destination(overflow->continuation());
-  }
-#endif
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import sun.util.BuddhistCalendar;
 import sun.util.calendar.ZoneInfo;
 import sun.util.resources.LocaleData;
@@ -119,7 +121,7 @@ import sun.util.resources.LocaleData;
  * calculating its time or calendar field values if any out-of-range field
  * value has been set.
  *
- * <h4>First Week</h4>
+ * <h4><a name="first_week">First Week</a></h4>
  *
  * <code>Calendar</code> defines a locale-specific seven day week using two
  * parameters: the first day of the week and the minimal days in first week
@@ -837,7 +839,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Cache to hold the firstDayOfWeek and minimalDaysInFirstWeek
      * of a Locale.
      */
-    private static Hashtable<Locale, int[]> cachedLocaleData = new Hashtable<Locale, int[]>(3);
+    private static final ConcurrentMap<Locale, int[]> cachedLocaleData
+        = new ConcurrentHashMap<Locale, int[]>(3);
 
     // Special values of stamp[]
     /**
@@ -933,7 +936,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      */
     protected Calendar()
     {
-        this(TimeZone.getDefaultRef(), Locale.getDefault());
+        this(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
         sharedZone = true;
     }
 
@@ -962,7 +965,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      */
     public static Calendar getInstance()
     {
-        Calendar cal = createCalendar(TimeZone.getDefaultRef(), Locale.getDefault());
+        Calendar cal = createCalendar(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
         cal.sharedZone = true;
         return cal;
     }
@@ -977,7 +980,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      */
     public static Calendar getInstance(TimeZone zone)
     {
-        return createCalendar(zone, Locale.getDefault());
+        return createCalendar(zone, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -1013,19 +1016,30 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private static Calendar createCalendar(TimeZone zone,
                                            Locale aLocale)
     {
-        // If the specified locale is a Thai locale, returns a BuddhistCalendar
-        // instance.
-        if ("th".equals(aLocale.getLanguage())
-            && ("TH".equals(aLocale.getCountry()))) {
-            return new sun.util.BuddhistCalendar(zone, aLocale);
-        } else if ("JP".equals(aLocale.getVariant())
-                   && "JP".equals(aLocale.getCountry())
-                   && "ja".equals(aLocale.getLanguage())) {
-            return new JapaneseImperialCalendar(zone, aLocale);
+        Calendar cal = null;
+
+        String caltype = aLocale.getUnicodeLocaleType("ca");
+        if (caltype == null) {
+            // Calendar type is not specified.
+            // If the specified locale is a Thai locale,
+            // returns a BuddhistCalendar instance.
+            if ("th".equals(aLocale.getLanguage())
+                    && ("TH".equals(aLocale.getCountry()))) {
+                cal = new BuddhistCalendar(zone, aLocale);
+            } else {
+                cal = new GregorianCalendar(zone, aLocale);
+            }
+        } else if (caltype.equals("japanese")) {
+            cal = new JapaneseImperialCalendar(zone, aLocale);
+        } else if (caltype.equals("buddhist")) {
+            cal = new BuddhistCalendar(zone, aLocale);
+        } else {
+            // Unsupported calendar type.
+            // Use Gregorian calendar as a fallback.
+            cal = new GregorianCalendar(zone, aLocale);
         }
 
-        // else create the default calendar
-        return new GregorianCalendar(zone, aLocale);
+        return cal;
     }
 
     /**
@@ -2196,6 +2210,101 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
+     * Returns whether this {@code Calendar} supports week dates.
+     *
+     * <p>The default implementation of this method returns {@code false}.
+     *
+     * @return {@code true} if this {@code Calendar} supports week dates;
+     *         {@code false} otherwise.
+     * @see #getWeekYear()
+     * @see #setWeekDate(int,int,int)
+     * @see #getWeeksInWeekYear()
+     * @since 1.7
+     */
+    public boolean isWeekDateSupported() {
+        return false;
+    }
+
+    /**
+     * Returns the week year represented by this {@code Calendar}. The
+     * week year is in sync with the week cycle. The {@linkplain
+     * #getFirstDayOfWeek() first day of the first week} is the first
+     * day of the week year.
+     *
+     * <p>The default implementation of this method throws an
+     * {@link UnsupportedOperationException}.
+     *
+     * @return the week year of this {@code Calendar}
+     * @exception UnsupportedOperationException
+     *            if any week year numbering isn't supported
+     *            in this {@code Calendar}.
+     * @see #isWeekDateSupported()
+     * @see #getFirstDayOfWeek()
+     * @see #getMinimalDaysInFirstWeek()
+     * @since 1.7
+     */
+    public int getWeekYear() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Sets the date of this {@code Calendar} with the the given date
+     * specifiers - week year, week of year, and day of week.
+     *
+     * <p>Unlike the {@code set} method, all of the calendar fields
+     * and {@code time} values are calculated upon return.
+     *
+     * <p>If {@code weekOfYear} is out of the valid week-of-year range
+     * in {@code weekYear}, the {@code weekYear} and {@code
+     * weekOfYear} values are adjusted in lenient mode, or an {@code
+     * IllegalArgumentException} is thrown in non-lenient mode.
+     *
+     * <p>The default implementation of this method throws an
+     * {@code UnsupportedOperationException}.
+     *
+     * @param weekYear   the week year
+     * @param weekOfYear the week number based on {@code weekYear}
+     * @param dayOfWeek  the day of week value: one of the constants
+     *                   for the {@link #DAY_OF_WEEK} field: {@link
+     *                   #SUNDAY}, ..., {@link #SATURDAY}.
+     * @exception IllegalArgumentException
+     *            if any of the given date specifiers is invalid
+     *            or any of the calendar fields are inconsistent
+     *            with the given date specifiers in non-lenient mode
+     * @exception UnsupportedOperationException
+     *            if any week year numbering isn't supported in this
+     *            {@code Calendar}.
+     * @see #isWeekDateSupported()
+     * @see #getFirstDayOfWeek()
+     * @see #getMinimalDaysInFirstWeek()
+     * @since 1.7
+     */
+    public void setWeekDate(int weekYear, int weekOfYear, int dayOfWeek) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the number of weeks in the week year represented by this
+     * {@code Calendar}.
+     *
+     * <p>The default implementation of this method throws an
+     * {@code UnsupportedOperationException}.
+     *
+     * @return the number of weeks in the week year.
+     * @exception UnsupportedOperationException
+     *            if any week year numbering isn't supported in this
+     *            {@code Calendar}.
+     * @see #WEEK_OF_YEAR
+     * @see #isWeekDateSupported()
+     * @see #getWeekYear()
+     * @see #getActualMaximum(int)
+     * @since 1.7
+     */
+    public int getWeeksInWeekYear() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Returns the minimum value for the given calendar field of this
      * <code>Calendar</code> instance. The minimum value is defined as
      * the smallest value returned by the {@link #get(int) get} method
@@ -2482,7 +2591,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             data = new int[2];
             data[0] = Integer.parseInt(bundle.getString("firstDayOfWeek"));
             data[1] = Integer.parseInt(bundle.getString("minimalDaysInFirstWeek"));
-            cachedLocaleData.put(desiredLocale, data);
+            cachedLocaleData.putIfAbsent(desiredLocale, data);
         }
         firstDayOfWeek = data[0];
         minimalDaysInFirstWeek = data[1];

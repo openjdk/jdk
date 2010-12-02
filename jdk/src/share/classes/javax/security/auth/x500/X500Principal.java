@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,12 +155,12 @@ public final class X500Principal implements Principal, java.io.Serializable {
         if (name == null) {
             throw new NullPointerException
                 (sun.security.util.ResourcesMgr.getString
-                ("provided null name"));
+                ("provided.null.name"));
         }
         if (keywordMap == null) {
             throw new NullPointerException
                 (sun.security.util.ResourcesMgr.getString
-                ("provided null keyword map"));
+                ("provided.null.keyword.map"));
         }
 
         try {
@@ -391,7 +391,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
         if (oidMap == null) {
             throw new NullPointerException
                 (sun.security.util.ResourcesMgr.getString
-                ("provided null OID map"));
+                ("provided.null.OID.map"));
         }
         if (format != null) {
             if (format.equalsIgnoreCase(RFC1779)) {

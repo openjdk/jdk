@@ -25,17 +25,18 @@
 
 package javax.swing;
 
+import sun.awt.AWTAccessor;
+
 import javax.swing.plaf.LayerUI;
+import javax.swing.border.Border;
+import javax.accessibility.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -149,15 +150,13 @@ import java.security.PrivilegedAction;
  */
 public final class JLayer<V extends Component>
         extends JComponent
-        implements Scrollable, PropertyChangeListener {
+        implements Scrollable, PropertyChangeListener, Accessible {
     private V view;
     // this field is necessary because JComponent.ui is transient
     // when layerUI is serializable
     private LayerUI<? super V> layerUI;
     private JPanel glassPane;
     private boolean isPainting;
-    private static final DefaultLayerLayout sharedLayoutInstance =
-            new DefaultLayerLayout();
     private long eventMask;
 
     private static final LayerEventController eventController =
@@ -165,7 +164,7 @@ public final class JLayer<V extends Component>
 
     /**
      * Creates a new {@code JLayer} object with a {@code null} view component
-     * and {@code null} {@link javax.swing.plaf.LayerUI}.
+     * and default {@link javax.swing.plaf.LayerUI}.
      *
      * @see #setView
      * @see #setUI
@@ -176,14 +175,14 @@ public final class JLayer<V extends Component>
 
     /**
      * Creates a new {@code JLayer} object
-     * with {@code null} {@link javax.swing.plaf.LayerUI}.
+     * with default {@link javax.swing.plaf.LayerUI}.
      *
      * @param view the component to be decorated by this {@code JLayer}
      *
      * @see #setUI
      */
     public JLayer(V view) {
-        this(view, null);
+        this(view, new LayerUI<V>());
     }
 
     /**
@@ -195,7 +194,6 @@ public final class JLayer<V extends Component>
      * to be used by this {@code JLayer}
      */
     public JLayer(V view, LayerUI<V> ui) {
-        setLayout(sharedLayoutInstance);
         setGlassPane(createGlassPane());
         setView(view);
         setUI(ui);
@@ -279,10 +277,15 @@ public final class JLayer<V extends Component>
      */
     public void setGlassPane(JPanel glassPane) {
         Component oldGlassPane = getGlassPane();
+        boolean isGlassPaneVisible = false;
         if (oldGlassPane != null) {
+            isGlassPaneVisible = oldGlassPane.isVisible();
             super.remove(oldGlassPane);
         }
         if (glassPane != null) {
+            AWTAccessor.getComponentAccessor().setMixingCutoutShape(glassPane,
+                    new Rectangle());
+            glassPane.setVisible(isGlassPaneVisible);
             super.addImpl(glassPane, null, 0);
         }
         this.glassPane = glassPane;
@@ -300,6 +303,40 @@ public final class JLayer<V extends Component>
      */
     public JPanel createGlassPane() {
         return new DefaultLayerGlassPane();
+    }
+
+    /**
+     * Sets the layout manager for this container.  This method is
+     * overridden to prevent the layout manager from being set.
+     * <p/>Note:  If {@code mgr} is non-{@code null}, this
+     * method will throw an exception as layout managers are not supported on
+     * a {@code JLayer}.
+     *
+     * @param mgr the specified layout manager
+     * @exception IllegalArgumentException this method is not supported
+     */
+    public void setLayout(LayoutManager mgr) {
+        if (mgr != null) {
+            throw new IllegalArgumentException("JLayer.setLayout() not supported");
+        }
+    }
+
+    /**
+     * A non-{@code null] border, or non-zero insets, isn't supported, to prevent the geometry
+     * of this component from becoming complex enough to inhibit
+     * subclassing of {@code LayerUI} class.  To create a {@code JLayer} with a border,
+     * add it to a {@code JPanel} that has a border.
+     * <p/>Note:  If {@code border} is non-{@code null}, this
+     * method will throw an exception as borders are not supported on
+     * a {@code JLayer}.
+     *
+     * @param border the {@code Border} to set
+     * @exception IllegalArgumentException this method is not supported
+     */
+    public void setBorder(Border border) {
+        if (border != null) {
+            throw new IllegalArgumentException("JLayer.setBorder() not supported");
+        }
     }
 
     /**
@@ -341,6 +378,32 @@ public final class JLayer<V extends Component>
     }
 
     /**
+     * Always returns {@code true} to cause painting to originate from {@code JLayer},
+     * or one of its ancestors.
+     *
+     * @return true
+     * @see JComponent#isPaintingOrigin()
+     */
+    protected boolean isPaintingOrigin() {
+        return true;
+    }
+
+    /**
+     * Delegates repainting to {@link javax.swing.plaf.LayerUI#repaint} method.
+     *
+     * @param tm  this parameter is not used
+     * @param x  the x value of the dirty region
+     * @param y  the y value of the dirty region
+     * @param width  the width of the dirty region
+     * @param height  the height of the dirty region
+     */
+    public void repaint(long tm, int x, int y, int width, int height) {
+        if (getUI() != null) {
+            getUI().repaint(tm, x, y, width, height, this);
+        }
+    }
+
+    /**
      * Delegates all painting to the {@link javax.swing.plaf.LayerUI} object.
      *
      * @param g the {@code Graphics} to render to
@@ -364,14 +427,18 @@ public final class JLayer<V extends Component>
     }
 
     /**
-     * To enable the correct painting of the {@code glassPane} and view component,
-     * the {@code JLayer} overrides the default implementation of
-     * this method to return {@code false} when the {@code glassPane} is visible.
+     * The {@code JLayer} overrides the default implementation of
+     * this method (in {@code JComponent}) to return {@code false}.
+     * This ensures
+     * that the drawing machinery will call the {@code JLayer}'s
+     * {@code paint}
+     * implementation rather than messaging the {@code JLayer}'s
+     * children directly.
      *
-     * @return false if {@code JLayer}'s {@code glassPane} is visible
+     * @return false
      */
     public boolean isOptimizedDrawingEnabled() {
-        return glassPane == null || !glassPane.isVisible();
+        return false;
     }
 
     /**
@@ -461,17 +528,16 @@ public final class JLayer<V extends Component>
     /**
      * Returns the preferred size of the viewport for a view component.
      * <p/>
-     * If the ui delegate of this layer is not {@code null}, this method delegates its
-     * implementation to the {@code LayerUI.getPreferredScrollableViewportSize(JLayer)}
+     * If the view component of this layer implements {@link Scrollable}, this method delegates its
+     * implementation to the view component.
      *
      * @return the preferred size of the viewport for a view component
      *
      * @see Scrollable
-     * @see LayerUI#getPreferredScrollableViewportSize(JLayer)
      */
     public Dimension getPreferredScrollableViewportSize() {
-        if (getUI() != null) {
-            return getUI().getPreferredScrollableViewportSize(this);
+        if (getView() instanceof Scrollable) {
+            return ((Scrollable)getView()).getPreferredScrollableViewportSize();
         }
         return getPreferredSize();
     }
@@ -481,18 +547,17 @@ public final class JLayer<V extends Component>
      * that display logical rows or columns in order to completely expose
      * one block of rows or columns, depending on the value of orientation.
      * <p/>
-     * If the ui delegate of this layer is not {@code null}, this method delegates its
-     * implementation to the {@code LayerUI.getScrollableBlockIncrement(JLayer,Rectangle,int,int)}
+     * If the view component of this layer implements {@link Scrollable}, this method delegates its
+     * implementation to the view component.
      *
      * @return the "block" increment for scrolling in the specified direction
      *
      * @see Scrollable
-     * @see LayerUI#getScrollableBlockIncrement(JLayer, Rectangle, int, int)
      */
     public int getScrollableBlockIncrement(Rectangle visibleRect,
                                            int orientation, int direction) {
-        if (getUI() != null) {
-            return getUI().getScrollableBlockIncrement(this, visibleRect,
+        if (getView() instanceof Scrollable) {
+            return ((Scrollable)getView()).getScrollableBlockIncrement(visibleRect,
                     orientation, direction);
         }
         return (orientation == SwingConstants.VERTICAL) ? visibleRect.height :
@@ -504,17 +569,16 @@ public final class JLayer<V extends Component>
      * determine the height of the layer, unless the preferred height
      * of the layer is smaller than the height of the viewport.
      * <p/>
-     * If the ui delegate of this layer is not null, this method delegates its
-     * implementation to the {@code LayerUI.getScrollableTracksViewportHeight(JLayer)}
+     * If the view component of this layer implements {@link Scrollable}, this method delegates its
+     * implementation to the view component.
      *
      * @return whether the layer should track the height of the viewport
      *
      * @see Scrollable
-     * @see LayerUI#getScrollableTracksViewportHeight(JLayer)
      */
     public boolean getScrollableTracksViewportHeight() {
-        if (getUI() != null) {
-            return getUI().getScrollableTracksViewportHeight(this);
+        if (getView() instanceof Scrollable) {
+            return ((Scrollable)getView()).getScrollableTracksViewportHeight();
         }
         return false;
     }
@@ -524,17 +588,16 @@ public final class JLayer<V extends Component>
      * determine the width of the layer, unless the preferred width
      * of the layer is smaller than the width of the viewport.
      * <p/>
-     * If the ui delegate of this layer is not null, this method delegates its
-     * implementation to the {@code LayerUI.getScrollableTracksViewportWidth(JLayer)}
+     * If the view component of this layer implements {@link Scrollable}, this method delegates its
+     * implementation to the view component.
      *
      * @return whether the layer should track the width of the viewport
      *
      * @see Scrollable
-     * @see LayerUI#getScrollableTracksViewportWidth(JLayer)
      */
     public boolean getScrollableTracksViewportWidth() {
-        if (getUI() != null) {
-            return getUI().getScrollableTracksViewportWidth(this);
+        if (getView() instanceof Scrollable) {
+            return ((Scrollable)getView()).getScrollableTracksViewportWidth();
         }
         return false;
     }
@@ -549,20 +612,19 @@ public final class JLayer<V extends Component>
      * Scrolling containers, like {@code JScrollPane}, will use this method
      * each time the user requests a unit scroll.
      * <p/>
-     * If the ui delegate of this layer is not {@code null}, this method delegates its
-     * implementation to the {@code LayerUI.getScrollableUnitIncrement(JLayer,Rectangle,int,int)}
+     * If the view component of this layer implements {@link Scrollable}, this method delegates its
+     * implementation to the view component.
      *
      * @return The "unit" increment for scrolling in the specified direction.
      *         This value should always be positive.
      *
      * @see Scrollable
-     * @see LayerUI#getScrollableUnitIncrement(JLayer, Rectangle, int, int)
      */
     public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation,
                                           int direction) {
-        if (getUI() != null) {
-            return getUI().getScrollableUnitIncrement(
-                    this, visibleRect, orientation, direction);
+        if (getView() instanceof Scrollable) {
+            return ((Scrollable) getView()).getScrollableUnitIncrement(
+                    visibleRect, orientation, direction);
         }
         return 1;
     }
@@ -592,6 +654,32 @@ public final class JLayer<V extends Component>
     public void removeNotify() {
         super.removeNotify();
         eventController.updateAWTEventListener(eventMask, 0);
+    }
+
+    /**
+     * Delegates its functionality to the {@link javax.swing.plaf.LayerUI#doLayout(JLayer)} method,
+     * if {@code LayerUI} is set.
+     */
+    public void doLayout() {
+        if (getUI() != null) {
+            getUI().doLayout(this);
+        }
+    }
+
+    /**
+     * Gets the AccessibleContext associated with this {@code JLayer}.
+     *
+     * @return the AccessibleContext associated with this {@code JLayer}.
+     */
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleJComponent() {
+                public AccessibleRole getAccessibleRole() {
+                    return AccessibleRole.PANEL;
+                }
+            };
+        }
+        return accessibleContext;
     }
 
     /**
@@ -625,8 +713,8 @@ public final class JLayer<V extends Component>
                         JLayer l = (JLayer) component;
                         LayerUI ui = l.getUI();
                         if (ui != null &&
-                                isEventEnabled(l.getLayerEventMask(),
-                                        event.getID())) {
+                                isEventEnabled(l.getLayerEventMask(), event.getID()) &&
+                                (!(event instanceof InputEvent) || !((InputEvent)event).isConsumed())) {
                             ui.eventDispatched(event, l);
                         }
                     }
@@ -756,84 +844,6 @@ public final class JLayer<V extends Component>
                 return false;
             }
             return super.contains(x, y);
-        }
-    }
-
-    /**
-     * The default layout manager for the {@link javax.swing.JLayer}.<br/>
-     * It places the glassPane on top of the view component
-     * and makes it the same size as {@code JLayer},
-     * it also makes the view component the same size but minus layer's insets<br/>
-     */
-    private static class DefaultLayerLayout implements LayoutManager, Serializable {
-        /**
-         * {@inheritDoc}
-         */
-        public void layoutContainer(Container parent) {
-            JLayer layer = (JLayer) parent;
-            Component view = layer.getView();
-            Component glassPane = layer.getGlassPane();
-            if (view != null) {
-                Insets insets = layer.getInsets();
-                view.setLocation(insets.left, insets.top);
-                view.setSize(layer.getWidth() - insets.left - insets.right,
-                        layer.getHeight() - insets.top - insets.bottom);
-            }
-            if (glassPane != null) {
-                glassPane.setLocation(0, 0);
-                glassPane.setSize(layer.getWidth(), layer.getHeight());
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public Dimension minimumLayoutSize(Container parent) {
-            JLayer layer = (JLayer) parent;
-            Insets insets = layer.getInsets();
-            Dimension ret = new Dimension(insets.left + insets.right,
-                    insets.top + insets.bottom);
-            Component view = layer.getView();
-            if (view != null) {
-                Dimension size = view.getMinimumSize();
-                ret.width += size.width;
-                ret.height += size.height;
-            }
-            if (ret.width == 0 || ret.height == 0) {
-                ret.width = ret.height = 4;
-            }
-            return ret;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public Dimension preferredLayoutSize(Container parent) {
-            JLayer layer = (JLayer) parent;
-            Insets insets = layer.getInsets();
-            Dimension ret = new Dimension(insets.left + insets.right,
-                    insets.top + insets.bottom);
-            Component view = layer.getView();
-            if (view != null) {
-                Dimension size = view.getPreferredSize();
-                if (size.width > 0 && size.height > 0) {
-                    ret.width += size.width;
-                    ret.height += size.height;
-                }
-            }
-            return ret;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void addLayoutComponent(String name, Component comp) {
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void removeLayoutComponent(Component comp) {
         }
     }
 }

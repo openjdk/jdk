@@ -595,7 +595,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Constructs a new <code>Subset</code> instance.
          *
-         * @exception NullPointerException if name is <code>null</code>
          * @param  name  The name of this subset
          * @exception NullPointerException if name is <code>null</code>
          */

@@ -32,7 +32,11 @@ void CollectorPolicy::initialize_flags() {
     MaxPermSize = PermSize;
   }
   PermSize = MAX2(min_alignment(), align_size_down_(PermSize, min_alignment()));
-  MaxPermSize = align_size_up(MaxPermSize, max_alignment());
+  // Don't increase Perm size limit above specified.
+  MaxPermSize = align_size_down(MaxPermSize, max_alignment());
+  if (PermSize > MaxPermSize) {
+    PermSize = MaxPermSize;
+  }
 
   MinPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MinPermHeapExpansion, min_alignment()));
   MaxPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MaxPermHeapExpansion, min_alignment()));
@@ -655,9 +659,6 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
     }
     return result;   // could be null if we are out of space
   } else if (!gch->incremental_collection_will_fail()) {
-    // The gc_prologues have not executed yet.  The value
-    // for incremental_collection_will_fail() is the remanent
-    // of the last collection.
     // Do an incremental collection.
     gch->do_collection(false            /* full */,
                        false            /* clear_all_soft_refs */,
@@ -735,9 +736,8 @@ bool GenCollectorPolicy::should_try_older_generation_allocation(
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   size_t gen0_capacity = gch->get_gen(0)->capacity_before_gc();
   return    (word_size > heap_word_size(gen0_capacity))
-         || (GC_locker::is_active_and_needs_gc())
-         || (   gch->last_incremental_collection_failed()
-             && gch->incremental_collection_will_fail());
+         || GC_locker::is_active_and_needs_gc()
+         || gch->incremental_collection_failed();
 }
 
 

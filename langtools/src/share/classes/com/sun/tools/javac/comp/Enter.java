@@ -38,6 +38,7 @@ import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -93,6 +94,7 @@ public class Enter extends JCTree.Visitor {
 
     Log log;
     Symtab syms;
+    Scope.ScopeCounter scopeCounter;
     Check chk;
     TreeMaker make;
     ClassReader reader;
@@ -102,6 +104,7 @@ public class Enter extends JCTree.Visitor {
     Lint lint;
     Names names;
     JavaFileManager fileManager;
+    PkgInfo pkginfoOpt;
 
     private final Todo todo;
 
@@ -119,6 +122,7 @@ public class Enter extends JCTree.Visitor {
         reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         chk = Check.instance(context);
         memberEnter = MemberEnter.instance(context);
         types = Types.instance(context);
@@ -132,6 +136,9 @@ public class Enter extends JCTree.Visitor {
         predefClassDef.sym = syms.predefClass;
         todo = Todo.instance(context);
         fileManager = context.get(JavaFileManager.class);
+
+        Options options = Options.instance(context);
+        pkginfoOpt = PkgInfo.get(options);
     }
 
     /** A hashtable mapping classes and packages to the environments current
@@ -184,7 +191,7 @@ public class Enter extends JCTree.Visitor {
      */
     public Env<AttrContext> classEnv(JCClassDecl tree, Env<AttrContext> env) {
         Env<AttrContext> localEnv =
-            env.dup(tree, env.info.dup(new Scope(tree.sym)));
+            env.dup(tree, env.info.dup(new Scope.ClassScope(tree.sym, scopeCounter)));
         localEnv.enclClass = tree;
         localEnv.outer = env;
         localEnv.info.isSelfCall = false;
@@ -278,7 +285,7 @@ public class Enter extends JCTree.Visitor {
                                                              JavaFileObject.Kind.SOURCE);
         if (tree.pid != null) {
             tree.packge = reader.enterPackage(TreeInfo.fullName(tree.pid));
-            if (tree.packageAnnotations.nonEmpty()) {
+            if (tree.packageAnnotations.nonEmpty() || pkginfoOpt == PkgInfo.ALWAYS) {
                 if (isPkgInfo) {
                     addEnv = true;
                 } else {
@@ -320,7 +327,7 @@ public class Enter extends JCTree.Visitor {
             c.flatname = names.fromString(tree.packge + "." + name);
             c.sourcefile = tree.sourcefile;
             c.completer = null;
-            c.members_field = new Scope(c);
+            c.members_field = new Scope.ClassScope(c, scopeCounter);
             tree.packge.package_info = c;
         }
         classEnter(tree.defs, topEnv);
@@ -388,7 +395,7 @@ public class Enter extends JCTree.Visitor {
         c.completer = memberEnter;
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
         c.sourcefile = env.toplevel.sourcefile;
-        c.members_field = new Scope(c);
+        c.members_field = new Scope.ClassScope(c, scopeCounter);
 
         ClassType ct = (ClassType)c.type;
         if (owner.kind != PCK && (c.flags_field & STATIC) == 0) {

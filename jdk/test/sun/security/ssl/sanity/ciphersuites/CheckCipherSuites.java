@@ -25,6 +25,8 @@
  * @test
  * @bug 4750141 4895631
  * @summary Check enabled and supported ciphersuites are correct
+ * @ignore JSSE supported cipher suites are changed with CR 6916074,
+ *     need to update this test case in JDK 7 soon
  */
 
 import java.util.*;
@@ -64,6 +66,8 @@ public class CheckCipherSuites {
         "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+        "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+
     };
 
     private final static String[] ENABLED_UNLIMITED = {
@@ -101,6 +105,8 @@ public class CheckCipherSuites {
         "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+        "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+
     };
 
     // supported ciphersuites using default JCE policy jurisdiction files
@@ -133,6 +139,7 @@ public class CheckCipherSuites {
         "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+        "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
 
         "SSL_RSA_WITH_NULL_MD5",
         "SSL_RSA_WITH_NULL_SHA",
@@ -160,6 +167,7 @@ public class CheckCipherSuites {
         "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
         "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
         "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+
     };
 
     // supported ciphersuites using unlimited JCE policy jurisdiction files
@@ -199,6 +207,7 @@ public class CheckCipherSuites {
         "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
         "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+        "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
 
         "SSL_RSA_WITH_NULL_MD5",
         "SSL_RSA_WITH_NULL_SHA",
@@ -228,6 +237,7 @@ public class CheckCipherSuites {
         "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
         "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
         "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+
     };
 
     private static void showSuites(String[] suites) {

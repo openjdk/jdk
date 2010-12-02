@@ -27,16 +27,21 @@ package com.sun.tools.javac.util;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.api.DiagnosticFormatter;
+import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
+
+import static com.sun.tools.javac.main.OptionName.*;
 
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
@@ -110,6 +115,12 @@ public class Log extends AbstractLog {
      */
     private JavacMessages messages;
 
+    /**
+     * Deferred diagnostics
+     */
+    public boolean deferDiagnostics;
+    public Queue<JCDiagnostic> deferredDiagnostics = new ListBuffer<JCDiagnostic>();
+
     /** Construct a log with given I/O redirections.
      */
     @Deprecated
@@ -121,14 +132,14 @@ public class Log extends AbstractLog {
         this.noticeWriter = noticeWriter;
 
         Options options = Options.instance(context);
-        this.dumpOnError = options.get("-doe") != null;
-        this.promptOnError = options.get("-prompt") != null;
-        this.emitWarnings = options.get("-Xlint:none") == null;
-        this.suppressNotes = options.get("suppressNotes") != null;
-        this.MaxErrors = getIntOption(options, "-Xmaxerrs", getDefaultMaxErrors());
-        this.MaxWarnings = getIntOption(options, "-Xmaxwarns", getDefaultMaxWarnings());
+        this.dumpOnError = options.isSet(DOE);
+        this.promptOnError = options.isSet(PROMPT);
+        this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
+        this.suppressNotes = options.isSet("suppressNotes");
+        this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
+        this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
 
-        boolean rawDiagnostics = options.get("rawDiagnostics") != null;
+        boolean rawDiagnostics = options.isSet("rawDiagnostics");
         messages = JavacMessages.instance(context);
         this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
                                               new BasicDiagnosticFormatter(options, messages);
@@ -142,7 +153,7 @@ public class Log extends AbstractLog {
             expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
     }
     // where
-        private int getIntOption(Options options, String optionName, int defaultValue) {
+        private int getIntOption(Options options, OptionName optionName, int defaultValue) {
             String s = options.get(optionName);
             try {
                 if (s != null) {
@@ -203,12 +214,6 @@ public class Log extends AbstractLog {
     /** The number of warnings encountered so far.
      */
     public int nwarnings = 0;
-
-    /**
-     * Whether or not an unrecoverable error has been seen.
-     * Unrecoverable errors prevent subsequent annotation processing.
-     */
-    public boolean unrecoverableError;
 
     /** A set of all errors generated so far. This is used to avoid printing an
      *  error message more than once. For each error, a pair consisting of the
@@ -347,12 +352,32 @@ public class Log extends AbstractLog {
         nwarnings++;
     }
 
+    /** Report all deferred diagnostics, and clear the deferDiagnostics flag. */
+    public void reportDeferredDiagnostics() {
+        reportDeferredDiagnostics(EnumSet.allOf(JCDiagnostic.Kind.class));
+    }
+
+    /** Report selected deferred diagnostics, and clear the deferDiagnostics flag. */
+    public void reportDeferredDiagnostics(Set<JCDiagnostic.Kind> kinds) {
+        deferDiagnostics = false;
+        JCDiagnostic d;
+        while ((d = deferredDiagnostics.poll()) != null) {
+            if (kinds.contains(d.getKind()))
+                report(d);
+        }
+    }
+
     /**
      * Common diagnostic handling.
      * The diagnostic is counted, and depending on the options and how many diagnostics have been
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     public void report(JCDiagnostic diagnostic) {
+        if (deferDiagnostics) {
+            deferredDiagnostics.add(diagnostic);
+            return;
+        }
+
         if (expectDiagKeys != null)
             expectDiagKeys.remove(diagnostic.getCode());
 

@@ -51,14 +51,16 @@
 
 
 void warning(const char* format, ...) {
-  // In case error happens before init or during shutdown
-  if (tty == NULL) ostream_init();
+  if (PrintWarnings) {
+    // In case error happens before init or during shutdown
+    if (tty == NULL) ostream_init();
 
-  tty->print("%s warning: ", VM_Version::vm_name());
-  va_list ap;
-  va_start(ap, format);
-  tty->vprint_cr(format, ap);
-  va_end(ap);
+    tty->print("%s warning: ", VM_Version::vm_name());
+    va_list ap;
+    va_start(ap, format);
+    tty->vprint_cr(format, ap);
+    va_end(ap);
+  }
   if (BreakAtWarning) BREAKPOINT;
 }
 
@@ -234,7 +236,7 @@ void report_java_out_of_memory(const char* message) {
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
-      HeapDumper::dump_heap();
+      HeapDumper::dump_heap_from_oome();
     }
 
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {

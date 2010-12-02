@@ -377,10 +377,26 @@ void HeapRegion::calc_gc_efficiency() {
 }
 // </PREDICTION>
 
-void HeapRegion::set_startsHumongous() {
+void HeapRegion::set_startsHumongous(HeapWord* new_end) {
+  assert(end() == _orig_end,
+         "Should be normal before the humongous object allocation");
+  assert(top() == bottom(), "should be empty");
+
   _humongous_type = StartsHumongous;
   _humongous_start_region = this;
-  assert(end() == _orig_end, "Should be normal before alloc.");
+
+  set_end(new_end);
+  _offsets.set_for_starts_humongous(new_end);
+}
+
+void HeapRegion::set_continuesHumongous(HeapRegion* start) {
+  assert(end() == _orig_end,
+         "Should be normal before the humongous object allocation");
+  assert(top() == bottom(), "should be empty");
+  assert(start->startsHumongous(), "pre-condition");
+
+  _humongous_type = ContinuesHumongous;
+  _humongous_start_region = start;
 }
 
 bool HeapRegion::claimHeapRegion(jint claimValue) {
@@ -498,23 +514,6 @@ CompactibleSpace* HeapRegion::next_compaction_space() const {
   NextCompactionHeapRegionClosure blk(r);
   g1h->heap_region_iterate_from(r, &blk);
   return blk.result();
-}
-
-void HeapRegion::set_continuesHumongous(HeapRegion* start) {
-  // The order is important here.
-  start->add_continuingHumongousRegion(this);
-  _humongous_type = ContinuesHumongous;
-  _humongous_start_region = start;
-}
-
-void HeapRegion::add_continuingHumongousRegion(HeapRegion* cont) {
-  // Must join the blocks of the current H region seq with the block of the
-  // added region.
-  offsets()->join_blocks(bottom(), cont->bottom());
-  arrayOop obj = (arrayOop)(bottom());
-  obj->set_length((int) (obj->length() + cont->capacity()/jintSize));
-  set_end(cont->end());
-  set_top(cont->end());
 }
 
 void HeapRegion::save_marks() {
@@ -683,6 +682,8 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
     return NULL;
   }
 
+  assert(!is_young(), "check value of filter_young");
+
   // We used to use "block_start_careful" here.  But we're actually happy
   // to update the BOT while we do this...
   HeapWord* cur = block_start(mr.start());
@@ -788,8 +789,18 @@ void HeapRegion::verify(bool allow_dirty,
   int objs = 0;
   int blocks = 0;
   VerifyLiveClosure vl_cl(g1, use_prev_marking);
+  bool is_humongous = isHumongous();
+  size_t object_num = 0;
   while (p < top()) {
     size_t size = oop(p)->size();
+    if (is_humongous != g1->isHumongous(size)) {
+      gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
+                             SIZE_FORMAT" words) in a %shumongous region",
+                             p, g1->isHumongous(size) ? "" : "non-",
+                             size, is_humongous ? "" : "non-");
+       *failures = true;
+    }
+    object_num += 1;
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
       HeapWord* res = block_start_const(p + (size/2));
       if (p != res) {
@@ -853,6 +864,13 @@ void HeapRegion::verify(bool allow_dirty,
         *failures = true;
         return;
     }
+  }
+
+  if (is_humongous && object_num > 1) {
+    gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
+                           "but has "SIZE_FORMAT", objects",
+                           bottom(), end(), object_num);
+    *failures = true;
   }
 
   if (p != top()) {

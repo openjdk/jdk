@@ -29,6 +29,7 @@ import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -67,6 +68,7 @@ public class Lower extends TreeTranslator {
     private Names names;
     private Log log;
     private Symtab syms;
+    private Scope.ScopeCounter scopeCounter;
     private Resolve rs;
     private Check chk;
     private Attr attr;
@@ -82,12 +84,14 @@ public class Lower extends TreeTranslator {
     private final Name classDollar;
     private Types types;
     private boolean debugLower;
+    private PkgInfo pkginfoOpt;
 
     protected Lower(Context context) {
         context.put(lowerKey, this);
         names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
+        scopeCounter = Scope.ScopeCounter.instance(context);
         rs = Resolve.instance(context);
         chk = Check.instance(context);
         attr = Attr.instance(context);
@@ -105,7 +109,8 @@ public class Lower extends TreeTranslator {
 
         types = Types.instance(context);
         Options options = Options.instance(context);
-        debugLower = options.get("debuglower") != null;
+        debugLower = options.isSet("debuglower");
+        pkginfoOpt = PkgInfo.get(options);
     }
 
     /** The currently enclosing class.
@@ -566,7 +571,7 @@ public class Lower extends TreeTranslator {
         c.flatname = chk.localClassName(c);
         c.sourcefile = owner.sourcefile;
         c.completer = null;
-        c.members_field = new Scope(c);
+        c.members_field = new Scope.ClassScope(c, scopeCounter);
         c.flags_field = flags;
         ClassType ctype = (ClassType) c.type;
         ctype.supertype_field = syms.objectType;
@@ -2161,7 +2166,7 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitTopLevel(JCCompilationUnit tree) {
-        if (tree.packageAnnotations.nonEmpty()) {
+        if (needPackageInfoClass(tree)) {
             Name name = names.package_info;
             long flags = Flags.ABSTRACT | Flags.INTERFACE;
             if (target.isPackageInfoSynthetic())
@@ -2182,6 +2187,23 @@ public class Lower extends TreeTranslator {
 
             translated.append(packageAnnotationsClass);
         }
+    }
+    // where
+    private boolean needPackageInfoClass(JCCompilationUnit tree) {
+        switch (pkginfoOpt) {
+            case ALWAYS:
+                return true;
+            case LEGACY:
+                return tree.packageAnnotations.nonEmpty();
+            case NONEMPTY:
+                for (Attribute.Compound a: tree.packge.attributes_field) {
+                    Attribute.RetentionPolicy p = types.getRetention(a);
+                    if (p != Attribute.RetentionPolicy.SOURCE)
+                        return true;
+                }
+                return false;
+        }
+        throw new AssertionError();
     }
 
     public void visitClassDef(JCClassDecl tree) {
@@ -2657,7 +2679,8 @@ public class Lower extends TreeTranslator {
     }
 //where
         private JCTree convert(JCTree tree, Type pt) {
-            if (tree.type == pt) return tree;
+            if (tree.type == pt || tree.type.tag == TypeTags.BOT)
+                return tree;
             JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
             result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
                                                            : pt;
@@ -2869,8 +2892,17 @@ public class Lower extends TreeTranslator {
     /** Unbox an object to a primitive value. */
     JCExpression unbox(JCExpression tree, Type primitive) {
         Type unboxedType = types.unboxedType(tree.type);
-        // note: the "primitive" parameter is not used.  There muse be
-        // a conversion from unboxedType to primitive.
+        if (unboxedType.tag == NONE) {
+            unboxedType = primitive;
+            if (!unboxedType.isPrimitive())
+                throw new AssertionError(unboxedType);
+            make_at(tree.pos());
+            tree = make.TypeCast(types.boxedClass(unboxedType).type, tree);
+        } else {
+            // There must be a conversion from unboxedType to primitive.
+            if (!types.isSubtype(unboxedType, primitive))
+                throw new AssertionError(tree);
+        }
         make_at(tree.pos());
         Symbol valueSym = lookupMethod(tree.pos(),
                                        unboxedType.tsym.name.append(names.Value), // x.intValue()
