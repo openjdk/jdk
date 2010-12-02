@@ -34,6 +34,7 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.file.BaseFileObject;
@@ -44,7 +45,9 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
+import static com.sun.tools.javac.main.OptionName.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+
 
 /** This class provides operations to map an internal symbol table graph
  *  rooted in a ClassSymbol into a classfile.
@@ -177,15 +180,16 @@ public class ClassWriter extends ClassFile {
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
 
-        debugJSR308    = options.get("TA:writer") != null;
-        verbose        = options.get("-verbose")     != null;
-        scramble       = options.get("-scramble")    != null;
-        scrambleAll    = options.get("-scrambleAll") != null;
-        retrofit       = options.get("-retrofit") != null;
-        genCrt         = options.get("-Xjcov") != null;
-        debugstackmap  = options.get("debugstackmap") != null;
+        debugJSR308    = options.isSet("TA:writer");
+        verbose        = options.isSet(VERBOSE);
+        scramble       = options.isSet("-scramble");
+        scrambleAll    = options.isSet("-scrambleAll");
+        retrofit       = options.isSet("-retrofit");
+        genCrt         = options.isSet(XJCOV);
+        debugstackmap  = options.isSet("debugstackmap");
 
-        emitSourceFile = options.get("-g:")==null || options.get("-g:source")!=null;
+        emitSourceFile = options.isUnset(G_CUSTOM) ||
+                            options.isSet(G_CUSTOM, "source");
 
         String dumpModFlags = options.get("dumpmodifiers");
         dumpClassModifiers =
@@ -651,13 +655,6 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        if ((flags & POLYMORPHIC_SIGNATURE) != 0) {
-            if (target.majorVersion < 51)
-                throw new AssertionError("PolymorphicSignature attributes in java/dyn must be written with -target 7 (required major version is 51, current is"+target.majorVersion+")");
-            int alenIdx = writeAttr(names.PolymorphicSignature);
-            endAttr(alenIdx);
-            acount++;
-        }
         return acount;
     }
 
@@ -692,7 +689,7 @@ public class ClassWriter extends ClassFile {
         boolean hasInvisible = false;
         if (m.params != null) for (VarSymbol s : m.params) {
             for (Attribute.Compound a : s.getAnnotationMirrors()) {
-                switch (getRetention(a.type.tsym)) {
+                switch (types.getRetention(a)) {
                 case SOURCE: break;
                 case CLASS: hasInvisible = true; break;
                 case RUNTIME: hasVisible = true; break;
@@ -708,7 +705,7 @@ public class ClassWriter extends ClassFile {
             for (VarSymbol s : m.params) {
                 ListBuffer<Attribute.Compound> buf = new ListBuffer<Attribute.Compound>();
                 for (Attribute.Compound a : s.getAnnotationMirrors())
-                    if (getRetention(a.type.tsym) == RetentionPolicy.RUNTIME)
+                    if (types.getRetention(a) == RetentionPolicy.RUNTIME)
                         buf.append(a);
                 databuf.appendChar(buf.length());
                 for (Attribute.Compound a : buf)
@@ -723,7 +720,7 @@ public class ClassWriter extends ClassFile {
             for (VarSymbol s : m.params) {
                 ListBuffer<Attribute.Compound> buf = new ListBuffer<Attribute.Compound>();
                 for (Attribute.Compound a : s.getAnnotationMirrors())
-                    if (getRetention(a.type.tsym) == RetentionPolicy.CLASS)
+                    if (types.getRetention(a) == RetentionPolicy.CLASS)
                         buf.append(a);
                 databuf.appendChar(buf.length());
                 for (Attribute.Compound a : buf)
@@ -747,7 +744,7 @@ public class ClassWriter extends ClassFile {
         ListBuffer<Attribute.Compound> visibles = new ListBuffer<Attribute.Compound>();
         ListBuffer<Attribute.Compound> invisibles = new ListBuffer<Attribute.Compound>();
         for (Attribute.Compound a : attrs) {
-            switch (getRetention(a.type.tsym)) {
+            switch (types.getRetention(a)) {
             case SOURCE: break;
             case CLASS: invisibles.append(a); break;
             case RUNTIME: visibles.append(a); break;
@@ -785,7 +782,7 @@ public class ClassWriter extends ClassFile {
             if (tc.position.type == TargetType.UNKNOWN
                 || !tc.position.emitToClassfile())
                 continue;
-            switch (getRetention(tc.type.tsym)) {
+            switch (types.getRetention(tc)) {
             case SOURCE: break;
             case CLASS: invisibles.append(tc); break;
             case RUNTIME: visibles.append(tc); break;
@@ -813,29 +810,6 @@ public class ClassWriter extends ClassFile {
         }
 
         return attrCount;
-    }
-
-    /** A mirror of java.lang.annotation.RetentionPolicy. */
-    enum RetentionPolicy {
-        SOURCE,
-        CLASS,
-        RUNTIME
-    }
-
-    RetentionPolicy getRetention(TypeSymbol annotationType) {
-        RetentionPolicy vis = RetentionPolicy.CLASS; // the default
-        Attribute.Compound c = annotationType.attribute(syms.retentionType.tsym);
-        if (c != null) {
-            Attribute value = c.member(names.value);
-            if (value != null && value instanceof Attribute.Enum) {
-                Name levelName = ((Attribute.Enum)value).value.name;
-                if (levelName == names.SOURCE) vis = RetentionPolicy.SOURCE;
-                else if (levelName == names.CLASS) vis = RetentionPolicy.CLASS;
-                else if (levelName == names.RUNTIME) vis = RetentionPolicy.RUNTIME;
-                else ;// /* fail soft */ throw new AssertionError(levelName);
-            }
-        }
-        return vis;
     }
 
     /** A visitor to write an attribute including its leading

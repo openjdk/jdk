@@ -38,7 +38,6 @@ typedef LIR_OprDesc* LIR_Opr;
 // serve factoring.
 
 class Instruction;
-class   HiWord;
 class   Phi;
 class   Local;
 class   Constant;
@@ -98,7 +97,7 @@ class       UnsafePrefetch;
 class         UnsafePrefetchRead;
 class         UnsafePrefetchWrite;
 class   ProfileCall;
-class   ProfileCounter;
+class   ProfileInvoke;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
@@ -149,7 +148,6 @@ class BlockList: public _BlockList {
 
 class InstructionVisitor: public StackObj {
  public:
-          void do_HiWord         (HiWord*          x) { ShouldNotReachHere(); }
   virtual void do_Phi            (Phi*             x) = 0;
   virtual void do_Local          (Local*           x) = 0;
   virtual void do_Constant       (Constant*        x) = 0;
@@ -195,7 +193,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) = 0;
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
-  virtual void do_ProfileCounter (ProfileCounter*  x) = 0;
+  virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
 };
 
 
@@ -272,7 +270,9 @@ class InstructionVisitor: public StackObj {
 class Instruction: public CompilationResourceObj {
  private:
   int          _id;                              // the unique instruction id
-  int          _bci;                             // the instruction bci
+#ifndef PRODUCT
+  int          _printable_bci;                   // the bci of the instruction for printing
+#endif
   int          _use_count;                       // the number of instructions refering to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
   ValueType*   _type;                            // the instruction value type
@@ -281,17 +281,18 @@ class Instruction: public CompilationResourceObj {
   LIR_Opr      _operand;                         // LIR specific information
   unsigned int _flags;                           // Flag bits
 
+  ValueStack*  _state_before;                    // Copy of state with input operands still on stack (or NULL)
+  ValueStack*  _exception_state;                 // Copy of state for exception handling
   XHandlers*   _exception_handlers;              // Flat list of exception handlers covering this instruction
-
-#ifdef ASSERT
-  HiWord*      _hi_word;
-#endif
 
   friend class UseCountComputer;
   friend class BlockBegin;
 
+  void update_exception_state(ValueStack* state);
+
+  bool has_printable_bci() const                 { return NOT_PRODUCT(_printable_bci != -99) PRODUCT_ONLY(false); }
+
  protected:
-  void set_bci(int bci)                          { assert(bci == SynchronizationEntryBCI || bci >= 0, "illegal bci"); _bci = bci; }
   void set_type(ValueType* type) {
     assert(type != NULL, "type must exist");
     _type = type;
@@ -325,6 +326,7 @@ class Instruction: public CompilationResourceObj {
     NeedsPatchingFlag,
     ThrowIncompatibleClassChangeErrorFlag,
     ProfileMDOFlag,
+    IsLinkedInBlockFlag,
     InstructionLastFlag
   };
 
@@ -356,31 +358,31 @@ class Instruction: public CompilationResourceObj {
   }
 
   // creation
-  Instruction(ValueType* type, bool type_is_constant = false, bool create_hi = true)
-  : _bci(-99)
-  , _use_count(0)
+  Instruction(ValueType* type, ValueStack* state_before = NULL, bool type_is_constant = false)
+  : _use_count(0)
+#ifndef PRODUCT
+  , _printable_bci(-99)
+#endif
   , _pin_state(0)
   , _type(type)
   , _next(NULL)
   , _subst(NULL)
   , _flags(0)
   , _operand(LIR_OprFact::illegalOpr)
+  , _state_before(state_before)
   , _exception_handlers(NULL)
-#ifdef ASSERT
-  , _hi_word(NULL)
-#endif
   {
+    check_state(state_before);
     assert(type != NULL && (!type->is_constant() || type_is_constant), "type must exist");
-#ifdef ASSERT
-    if (create_hi && type->is_double_word()) {
-      create_hi_word();
-    }
-#endif
+    update_exception_state(_state_before);
   }
 
   // accessors
   int id() const                                 { return _id; }
-  int bci() const                                { return _bci; }
+#ifndef PRODUCT
+  int printable_bci() const                      { assert(has_printable_bci(), "_printable_bci should have been set"); return _printable_bci; }
+  void set_printable_bci(int bci)                { NOT_PRODUCT(_printable_bci = bci;) }
+#endif
   int use_count() const                          { return _use_count; }
   int pin_state() const                          { return _pin_state; }
   bool is_pinned() const                         { return _pin_state != 0 || PinAllInstructions; }
@@ -393,9 +395,13 @@ class Instruction: public CompilationResourceObj {
 
   void set_needs_null_check(bool f)              { set_flag(NeedsNullCheckFlag, f); }
   bool needs_null_check() const                  { return check_flag(NeedsNullCheckFlag); }
+  bool is_linked() const                         { return check_flag(IsLinkedInBlockFlag); }
+  bool can_be_linked()                           { return as_Local() == NULL && as_Phi() == NULL; }
 
   bool has_uses() const                          { return use_count() > 0; }
-  bool is_root() const                           { return is_pinned() || use_count() > 1; }
+  ValueStack* state_before() const               { return _state_before; }
+  ValueStack* exception_state() const            { return _exception_state; }
+  virtual bool needs_exception_state() const     { return true; }
   XHandlers* exception_handlers() const          { return _exception_handlers; }
 
   // manipulation
@@ -403,17 +409,23 @@ class Instruction: public CompilationResourceObj {
   void pin()                                     { _pin_state |= PinUnknown; }
   // DANGEROUS: only used by EliminateStores
   void unpin(PinReason reason)                   { assert((reason & PinUnknown) == 0, "can't unpin unknown state"); _pin_state &= ~reason; }
-  virtual void set_lock_stack(ValueStack* l)     { /* do nothing*/ }
-  virtual ValueStack* lock_stack() const         { return NULL; }
 
-  Instruction* set_next(Instruction* next, int bci) {
-    if (next != NULL) {
-      assert(as_BlockEnd() == NULL, "BlockEnd instructions must have no next");
-      assert(next->as_Phi() == NULL && next->as_Local() == NULL, "shouldn't link these instructions into list");
-      next->set_bci(bci);
-    }
+  Instruction* set_next(Instruction* next) {
+    assert(next->has_printable_bci(), "_printable_bci should have been set");
+    assert(next != NULL, "must not be NULL");
+    assert(as_BlockEnd() == NULL, "BlockEnd instructions must have no next");
+    assert(next->can_be_linked(), "shouldn't link these instructions into list");
+
+    next->set_flag(Instruction::IsLinkedInBlockFlag, true);
     _next = next;
     return next;
+  }
+
+  Instruction* set_next(Instruction* next, int bci) {
+#ifndef PRODUCT
+    next->set_printable_bci(bci);
+#endif
+    return set_next(next);
   }
 
   void set_subst(Instruction* subst)             {
@@ -423,14 +435,7 @@ class Instruction: public CompilationResourceObj {
     _subst = subst;
   }
   void set_exception_handlers(XHandlers *xhandlers) { _exception_handlers = xhandlers; }
-
-#ifdef ASSERT
-  // HiWord is used for debugging and is allocated early to avoid
-  // allocation at inconvenient points
-  HiWord* hi_word() { return _hi_word; }
-  void create_hi_word();
-#endif
-
+  void set_exception_state(ValueStack* s)        { check_state(s); _exception_state = s; }
 
   // machine-specifics
   void set_operand(LIR_Opr operand)              { assert(operand != LIR_OprFact::illegalOpr, "operand must exist"); _operand = operand; }
@@ -438,8 +443,7 @@ class Instruction: public CompilationResourceObj {
 
   // generic
   virtual Instruction*      as_Instruction()     { return this; } // to satisfy HASHING1 macro
-  virtual HiWord*           as_HiWord()          { return NULL; }
-  virtual Phi*           as_Phi()          { return NULL; }
+  virtual Phi*              as_Phi()             { return NULL; }
   virtual Local*            as_Local()           { return NULL; }
   virtual Constant*         as_Constant()        { return NULL; }
   virtual AccessField*      as_AccessField()     { return NULL; }
@@ -493,7 +497,7 @@ class Instruction: public CompilationResourceObj {
   virtual bool can_trap() const                  { return false; }
 
   virtual void input_values_do(ValueVisitor* f)   = 0;
-  virtual void state_values_do(ValueVisitor* f)   { /* usually no state - override on demand */ }
+  virtual void state_values_do(ValueVisitor* f);
   virtual void other_values_do(ValueVisitor* f)   { /* usually no other - override on demand */ }
           void       values_do(ValueVisitor* f)   { input_values_do(f); state_values_do(f); other_values_do(f); }
 
@@ -505,6 +509,7 @@ class Instruction: public CompilationResourceObj {
   HASHING1(Instruction, false, id())             // hashing disabled by default
 
   // debugging
+  static void check_state(ValueStack* state)     PRODUCT_RETURN;
   void print()                                   PRODUCT_RETURN;
   void print_line()                              PRODUCT_RETURN;
   void print(InstructionPrinter& ip)             PRODUCT_RETURN;
@@ -539,40 +544,6 @@ class AssertValues: public ValueVisitor {
 #else
   #define ASSERT_VALUES
 #endif // ASSERT
-
-
-// A HiWord occupies the 'high word' of a 2-word
-// expression stack entry. Hi & lo words must be
-// paired on the expression stack (otherwise the
-// bytecode sequence is illegal). Note that 'hi'
-// refers to the IR expression stack format and
-// does *not* imply a machine word ordering. No
-// HiWords are used in optimized mode for speed,
-// but NULL pointers are used instead.
-
-LEAF(HiWord, Instruction)
- private:
-  Value _lo_word;
-
- public:
-  // creation
-  HiWord(Value lo_word)
-    : Instruction(illegalType, false, false),
-      _lo_word(lo_word) {
-    // hi-words are also allowed for illegal lo-words
-    assert(lo_word->type()->is_double_word() || lo_word->type()->is_illegal(),
-           "HiWord must be used for 2-word values only");
-  }
-
-  // accessors
-  Value lo_word() const                          { return _lo_word->subst(); }
-
-  // for invalidating of HiWords
-  void make_illegal()                            { set_type(illegalType); }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { ShouldNotReachHere(); }
-};
 
 
 // A Phi is a phi function in the sense of SSA form. It stands for
@@ -656,37 +627,47 @@ LEAF(Local, Instruction)
 
 
 LEAF(Constant, Instruction)
-  ValueStack* _state;
-
  public:
   // creation
   Constant(ValueType* type):
-      Instruction(type, true)
-  , _state(NULL) {
+      Instruction(type, NULL, true)
+  {
     assert(type->is_constant(), "must be a constant");
   }
 
-  Constant(ValueType* type, ValueStack* state):
-    Instruction(type, true)
-  , _state(state) {
-    assert(state != NULL, "only used for constants which need patching");
+  Constant(ValueType* type, ValueStack* state_before):
+    Instruction(type, state_before, true)
+  {
+    assert(state_before != NULL, "only used for constants which need patching");
     assert(type->is_constant(), "must be a constant");
     // since it's patching it needs to be pinned
     pin();
   }
 
-  ValueStack* state() const               { return _state; }
-
-  // generic
-  virtual bool can_trap() const                  { return state() != NULL; }
+  virtual bool can_trap() const                  { return state_before() != NULL; }
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
-  virtual void other_values_do(ValueVisitor* f);
 
   virtual intx hash() const;
   virtual bool is_equal(Value v) const;
 
-  virtual BlockBegin* compare(Instruction::Condition condition, Value right,
-                              BlockBegin* true_sux, BlockBegin* false_sux);
+
+  enum CompareResult { not_comparable = -1, cond_false, cond_true };
+
+  virtual CompareResult compare(Instruction::Condition condition, Value right) const;
+  BlockBegin* compare(Instruction::Condition cond, Value right,
+                      BlockBegin* true_sux, BlockBegin* false_sux) const {
+    switch (compare(cond, right)) {
+    case not_comparable:
+      return NULL;
+    case cond_false:
+      return false_sux;
+    case cond_true:
+      return true_sux;
+    default:
+      ShouldNotReachHere();
+      return NULL;
+    }
+  }
 };
 
 
@@ -695,20 +676,16 @@ BASE(AccessField, Instruction)
   Value       _obj;
   int         _offset;
   ciField*    _field;
-  ValueStack* _state_before;                     // state is set only for unloaded or uninitialized fields
-  ValueStack* _lock_stack;                       // contains lock and scope information
   NullCheck*  _explicit_null_check;              // For explicit null check elimination
 
  public:
   // creation
-  AccessField(Value obj, int offset, ciField* field, bool is_static, ValueStack* lock_stack,
+  AccessField(Value obj, int offset, ciField* field, bool is_static,
               ValueStack* state_before, bool is_loaded, bool is_initialized)
-  : Instruction(as_ValueType(field->type()->basic_type()))
+  : Instruction(as_ValueType(field->type()->basic_type()), state_before)
   , _obj(obj)
   , _offset(offset)
   , _field(field)
-  , _lock_stack(lock_stack)
-  , _state_before(state_before)
   , _explicit_null_check(NULL)
   {
     set_needs_null_check(!is_static);
@@ -734,13 +711,11 @@ BASE(AccessField, Instruction)
   bool is_static() const                         { return check_flag(IsStaticFlag); }
   bool is_loaded() const                         { return check_flag(IsLoadedFlag); }
   bool is_initialized() const                    { return check_flag(IsInitializedFlag); }
-  ValueStack* state_before() const               { return _state_before; }
-  ValueStack* lock_stack() const                 { return _lock_stack; }
   NullCheck* explicit_null_check() const         { return _explicit_null_check; }
   bool needs_patching() const                    { return check_flag(NeedsPatchingFlag); }
 
   // manipulation
-  void set_lock_stack(ValueStack* l)             { _lock_stack = l; }
+
   // Under certain circumstances, if a previous NullCheck instruction
   // proved the target object non-null, we can eliminate the explicit
   // null check and do an implicit one, simply specifying the debug
@@ -751,16 +726,15 @@ BASE(AccessField, Instruction)
   // generic
   virtual bool can_trap() const                  { return needs_null_check() || needs_patching(); }
   virtual void input_values_do(ValueVisitor* f)   { f->visit(&_obj); }
-  virtual void other_values_do(ValueVisitor* f);
 };
 
 
 LEAF(LoadField, AccessField)
  public:
   // creation
-  LoadField(Value obj, int offset, ciField* field, bool is_static, ValueStack* lock_stack,
+  LoadField(Value obj, int offset, ciField* field, bool is_static,
             ValueStack* state_before, bool is_loaded, bool is_initialized)
-  : AccessField(obj, offset, field, is_static, lock_stack, state_before, is_loaded, is_initialized)
+  : AccessField(obj, offset, field, is_static, state_before, is_loaded, is_initialized)
   {}
 
   ciType* declared_type() const;
@@ -777,9 +751,9 @@ LEAF(StoreField, AccessField)
 
  public:
   // creation
-  StoreField(Value obj, int offset, ciField* field, Value value, bool is_static, ValueStack* lock_stack,
+  StoreField(Value obj, int offset, ciField* field, Value value, bool is_static,
              ValueStack* state_before, bool is_loaded, bool is_initialized)
-  : AccessField(obj, offset, field, is_static, lock_stack, state_before, is_loaded, is_initialized)
+  : AccessField(obj, offset, field, is_static, state_before, is_loaded, is_initialized)
   , _value(value)
   {
     set_flag(NeedsWriteBarrierFlag, as_ValueType(field_type())->is_object());
@@ -799,29 +773,23 @@ LEAF(StoreField, AccessField)
 BASE(AccessArray, Instruction)
  private:
   Value       _array;
-  ValueStack* _lock_stack;
 
  public:
   // creation
-  AccessArray(ValueType* type, Value array, ValueStack* lock_stack)
-  : Instruction(type)
+  AccessArray(ValueType* type, Value array, ValueStack* state_before)
+  : Instruction(type, state_before)
   , _array(array)
-  , _lock_stack(lock_stack) {
+  {
     set_needs_null_check(true);
     ASSERT_VALUES
     pin(); // instruction with side effect (null exception or range check throwing)
   }
 
   Value array() const                            { return _array; }
-  ValueStack* lock_stack() const                 { return _lock_stack; }
-
-  // setters
-  void set_lock_stack(ValueStack* l)             { _lock_stack = l; }
 
   // generic
   virtual bool can_trap() const                  { return needs_null_check(); }
   virtual void input_values_do(ValueVisitor* f)   { f->visit(&_array); }
-  virtual void other_values_do(ValueVisitor* f);
 };
 
 
@@ -831,8 +799,8 @@ LEAF(ArrayLength, AccessArray)
 
  public:
   // creation
-  ArrayLength(Value array, ValueStack* lock_stack)
-  : AccessArray(intType, array, lock_stack)
+  ArrayLength(Value array, ValueStack* state_before)
+  : AccessArray(intType, array, state_before)
   , _explicit_null_check(NULL) {}
 
   // accessors
@@ -855,8 +823,8 @@ BASE(AccessIndexed, AccessArray)
 
  public:
   // creation
-  AccessIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* lock_stack)
-  : AccessArray(as_ValueType(elt_type), array, lock_stack)
+  AccessIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before)
+  : AccessArray(as_ValueType(elt_type), array, state_before)
   , _index(index)
   , _length(length)
   , _elt_type(elt_type)
@@ -883,8 +851,8 @@ LEAF(LoadIndexed, AccessIndexed)
 
  public:
   // creation
-  LoadIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* lock_stack)
-  : AccessIndexed(array, index, length, elt_type, lock_stack)
+  LoadIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before)
+  : AccessIndexed(array, index, length, elt_type, state_before)
   , _explicit_null_check(NULL) {}
 
   // accessors
@@ -906,11 +874,13 @@ LEAF(StoreIndexed, AccessIndexed)
  private:
   Value       _value;
 
+  ciMethod* _profiled_method;
+  int       _profiled_bci;
  public:
   // creation
-  StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* lock_stack)
-  : AccessIndexed(array, index, length, elt_type, lock_stack)
-  , _value(value)
+  StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* state_before)
+  : AccessIndexed(array, index, length, elt_type, state_before)
+  , _value(value), _profiled_method(NULL), _profiled_bci(0)
   {
     set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
     set_flag(NeedsStoreCheckFlag, (as_ValueType(elt_type)->is_object()));
@@ -920,10 +890,15 @@ LEAF(StoreIndexed, AccessIndexed)
 
   // accessors
   Value value() const                            { return _value; }
-  IRScope* scope() const;                        // the state's scope
   bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
   bool needs_store_check() const                 { return check_flag(NeedsStoreCheckFlag); }
-
+  // Helpers for methodDataOop profiling
+  void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
+  void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
+  void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
+  bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
+  ciMethod* profiled_method() const                  { return _profiled_method;     }
+  int       profiled_bci() const                     { return _profiled_bci;        }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessIndexed::input_values_do(f); f->visit(&_value); }
 };
@@ -955,7 +930,12 @@ BASE(Op2, Instruction)
 
  public:
   // creation
-  Op2(ValueType* type, Bytecodes::Code op, Value x, Value y) : Instruction(type), _op(op), _x(x), _y(y) {
+  Op2(ValueType* type, Bytecodes::Code op, Value x, Value y, ValueStack* state_before = NULL)
+  : Instruction(type, state_before)
+  , _op(op)
+  , _x(x)
+  , _y(y)
+  {
     ASSERT_VALUES
   }
 
@@ -977,28 +957,21 @@ BASE(Op2, Instruction)
 
 
 LEAF(ArithmeticOp, Op2)
- private:
-  ValueStack* _lock_stack;                       // used only for division operations
  public:
   // creation
-  ArithmeticOp(Bytecodes::Code op, Value x, Value y, bool is_strictfp, ValueStack* lock_stack)
-  : Op2(x->type()->meet(y->type()), op, x, y)
-  ,  _lock_stack(lock_stack) {
+  ArithmeticOp(Bytecodes::Code op, Value x, Value y, bool is_strictfp, ValueStack* state_before)
+  : Op2(x->type()->meet(y->type()), op, x, y, state_before)
+  {
     set_flag(IsStrictfpFlag, is_strictfp);
     if (can_trap()) pin();
   }
 
   // accessors
-  ValueStack* lock_stack() const                 { return _lock_stack; }
   bool        is_strictfp() const                { return check_flag(IsStrictfpFlag); }
-
-  // setters
-  void set_lock_stack(ValueStack* l)             { _lock_stack = l; }
 
   // generic
   virtual bool is_commutative() const;
   virtual bool can_trap() const;
-  virtual void other_values_do(ValueVisitor* f);
   HASHING3(Op2, true, op(), x()->subst(), y()->subst())
 };
 
@@ -1025,21 +998,14 @@ LEAF(LogicOp, Op2)
 
 
 LEAF(CompareOp, Op2)
- private:
-  ValueStack* _state_before;                     // for deoptimization, when canonicalizing
  public:
   // creation
   CompareOp(Bytecodes::Code op, Value x, Value y, ValueStack* state_before)
-  : Op2(intType, op, x, y)
-  , _state_before(state_before)
+  : Op2(intType, op, x, y, state_before)
   {}
-
-  // accessors
-  ValueStack* state_before() const               { return _state_before; }
 
   // generic
   HASHING3(Op2, true, op(), x()->subst(), y()->subst())
-  virtual void other_values_do(ValueVisitor* f);
 };
 
 
@@ -1095,11 +1061,13 @@ LEAF(Convert, Instruction)
 LEAF(NullCheck, Instruction)
  private:
   Value       _obj;
-  ValueStack* _lock_stack;
 
  public:
   // creation
-  NullCheck(Value obj, ValueStack* lock_stack) : Instruction(obj->type()->base()), _obj(obj), _lock_stack(lock_stack) {
+  NullCheck(Value obj, ValueStack* state_before)
+  : Instruction(obj->type()->base(), state_before)
+  , _obj(obj)
+  {
     ASSERT_VALUES
     set_can_trap(true);
     assert(_obj->type()->is_object(), "null check must be applied to objects only");
@@ -1108,16 +1076,13 @@ LEAF(NullCheck, Instruction)
 
   // accessors
   Value obj() const                              { return _obj; }
-  ValueStack* lock_stack() const                 { return _lock_stack; }
 
   // setters
-  void set_lock_stack(ValueStack* l)             { _lock_stack = l; }
   void set_can_trap(bool can_trap)               { set_flag(CanTrapFlag, can_trap); }
 
   // generic
   virtual bool can_trap() const                  { return check_flag(CanTrapFlag); /* null-check elimination sets to false */ }
   virtual void input_values_do(ValueVisitor* f)   { f->visit(&_obj); }
-  virtual void other_values_do(ValueVisitor* f);
   HASHING1(NullCheck, true, obj()->subst())
 };
 
@@ -1131,7 +1096,10 @@ BASE(StateSplit, Instruction)
 
  public:
   // creation
-  StateSplit(ValueType* type) : Instruction(type), _state(NULL) {
+  StateSplit(ValueType* type, ValueStack* state_before = NULL)
+  : Instruction(type, state_before)
+  , _state(NULL)
+  {
     pin(PinStateSplitConstructor);
   }
 
@@ -1140,7 +1108,7 @@ BASE(StateSplit, Instruction)
   IRScope* scope() const;                        // the state's scope
 
   // manipulation
-  void set_state(ValueStack* state)              { _state = state; }
+  void set_state(ValueStack* state)              { assert(_state == NULL, "overwriting existing state"); check_state(state); _state = state; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
@@ -1156,7 +1124,6 @@ LEAF(Invoke, StateSplit)
   BasicTypeList*  _signature;
   int             _vtable_index;
   ciMethod*       _target;
-  ValueStack*     _state_before;  // Required for deoptimization.
 
  public:
   // creation
@@ -1172,7 +1139,6 @@ LEAF(Invoke, StateSplit)
   int vtable_index() const                       { return _vtable_index; }
   BasicTypeList* signature() const               { return _signature; }
   ciMethod* target() const                       { return _target; }
-  ValueStack* state_before() const               { return _state_before; }
 
   // Returns false if target is not loaded
   bool target_is_final() const                   { return check_flag(TargetIsFinalFlag); }
@@ -1182,6 +1148,8 @@ LEAF(Invoke, StateSplit)
 
   // JSR 292 support
   bool is_invokedynamic() const                  { return code() == Bytecodes::_invokedynamic; }
+
+  virtual bool needs_exception_state() const     { return false; }
 
   // generic
   virtual bool can_trap() const                  { return true; }
@@ -1200,10 +1168,15 @@ LEAF(NewInstance, StateSplit)
 
  public:
   // creation
-  NewInstance(ciInstanceKlass* klass) : StateSplit(instanceType), _klass(klass) {}
+  NewInstance(ciInstanceKlass* klass, ValueStack* state_before)
+  : StateSplit(instanceType, state_before)
+  , _klass(klass)
+  {}
 
   // accessors
   ciInstanceKlass* klass() const                 { return _klass; }
+
+  virtual bool needs_exception_state() const     { return false; }
 
   // generic
   virtual bool can_trap() const                  { return true; }
@@ -1214,22 +1187,24 @@ LEAF(NewInstance, StateSplit)
 BASE(NewArray, StateSplit)
  private:
   Value       _length;
-  ValueStack* _state_before;
 
  public:
   // creation
-  NewArray(Value length, ValueStack* state_before) : StateSplit(objectType), _length(length), _state_before(state_before) {
+  NewArray(Value length, ValueStack* state_before)
+  : StateSplit(objectType, state_before)
+  , _length(length)
+  {
     // Do not ASSERT_VALUES since length is NULL for NewMultiArray
   }
 
   // accessors
-  ValueStack* state_before() const               { return _state_before; }
   Value length() const                           { return _length; }
+
+  virtual bool needs_exception_state() const     { return false; }
 
   // generic
   virtual bool can_trap() const                  { return true; }
   virtual void input_values_do(ValueVisitor* f)   { StateSplit::input_values_do(f); f->visit(&_length); }
-  virtual void other_values_do(ValueVisitor* f);
 };
 
 
@@ -1239,7 +1214,10 @@ LEAF(NewTypeArray, NewArray)
 
  public:
   // creation
-  NewTypeArray(Value length, BasicType elt_type) : NewArray(length, NULL), _elt_type(elt_type) {}
+  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before)
+  : NewArray(length, state_before)
+  , _elt_type(elt_type)
+  {}
 
   // accessors
   BasicType elt_type() const                     { return _elt_type; }
@@ -1295,17 +1273,20 @@ BASE(TypeCheck, StateSplit)
  private:
   ciKlass*    _klass;
   Value       _obj;
-  ValueStack* _state_before;
+
+  ciMethod* _profiled_method;
+  int       _profiled_bci;
 
  public:
   // creation
-  TypeCheck(ciKlass* klass, Value obj, ValueType* type, ValueStack* state_before) : StateSplit(type), _klass(klass), _obj(obj), _state_before(state_before) {
+  TypeCheck(ciKlass* klass, Value obj, ValueType* type, ValueStack* state_before)
+  : StateSplit(type, state_before), _klass(klass), _obj(obj),
+    _profiled_method(NULL), _profiled_bci(0) {
     ASSERT_VALUES
     set_direct_compare(false);
   }
 
   // accessors
-  ValueStack* state_before() const               { return _state_before; }
   ciKlass* klass() const                         { return _klass; }
   Value obj() const                              { return _obj; }
   bool is_loaded() const                         { return klass() != NULL; }
@@ -1317,28 +1298,6 @@ BASE(TypeCheck, StateSplit)
   // generic
   virtual bool can_trap() const                  { return true; }
   virtual void input_values_do(ValueVisitor* f)   { StateSplit::input_values_do(f); f->visit(&_obj); }
-  virtual void other_values_do(ValueVisitor* f);
-};
-
-
-LEAF(CheckCast, TypeCheck)
- private:
-  ciMethod* _profiled_method;
-  int       _profiled_bci;
-
- public:
-  // creation
-  CheckCast(ciKlass* klass, Value obj, ValueStack* state_before)
-  : TypeCheck(klass, obj, objectType, state_before)
-  , _profiled_method(NULL)
-  , _profiled_bci(0) {}
-
-  void set_incompatible_class_change_check() {
-    set_flag(ThrowIncompatibleClassChangeErrorFlag, true);
-  }
-  bool is_incompatible_class_change_check() const {
-    return check_flag(ThrowIncompatibleClassChangeErrorFlag);
-  }
 
   // Helpers for methodDataOop profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
@@ -1347,10 +1306,24 @@ LEAF(CheckCast, TypeCheck)
   bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
   ciMethod* profiled_method() const                  { return _profiled_method;     }
   int       profiled_bci() const                     { return _profiled_bci;        }
+};
+
+
+LEAF(CheckCast, TypeCheck)
+ public:
+  // creation
+  CheckCast(ciKlass* klass, Value obj, ValueStack* state_before)
+  : TypeCheck(klass, obj, objectType, state_before) {}
+
+  void set_incompatible_class_change_check() {
+    set_flag(ThrowIncompatibleClassChangeErrorFlag, true);
+  }
+  bool is_incompatible_class_change_check() const {
+    return check_flag(ThrowIncompatibleClassChangeErrorFlag);
+  }
 
   ciType* declared_type() const;
   ciType* exact_type() const;
-
 };
 
 
@@ -1358,6 +1331,8 @@ LEAF(InstanceOf, TypeCheck)
  public:
   // creation
   InstanceOf(ciKlass* klass, Value obj, ValueStack* state_before) : TypeCheck(klass, obj, intType, state_before) {}
+
+  virtual bool needs_exception_state() const     { return false; }
 };
 
 
@@ -1368,8 +1343,8 @@ BASE(AccessMonitor, StateSplit)
 
  public:
   // creation
-  AccessMonitor(Value obj, int monitor_no)
-  : StateSplit(illegalType)
+  AccessMonitor(Value obj, int monitor_no, ValueStack* state_before = NULL)
+  : StateSplit(illegalType, state_before)
   , _obj(obj)
   , _monitor_no(monitor_no)
   {
@@ -1387,21 +1362,13 @@ BASE(AccessMonitor, StateSplit)
 
 
 LEAF(MonitorEnter, AccessMonitor)
- private:
-  ValueStack* _lock_stack_before;
-
  public:
   // creation
-  MonitorEnter(Value obj, int monitor_no, ValueStack* lock_stack_before)
-  : AccessMonitor(obj, monitor_no)
-  , _lock_stack_before(lock_stack_before)
+  MonitorEnter(Value obj, int monitor_no, ValueStack* state_before)
+  : AccessMonitor(obj, monitor_no, state_before)
   {
     ASSERT_VALUES
   }
-
-  // accessors
-  ValueStack* lock_stack_before() const          { return _lock_stack_before; }
-  virtual void state_values_do(ValueVisitor* f);
 
   // generic
   virtual bool can_trap() const                  { return true; }
@@ -1411,7 +1378,11 @@ LEAF(MonitorEnter, AccessMonitor)
 LEAF(MonitorExit, AccessMonitor)
  public:
   // creation
-  MonitorExit(Value obj, int monitor_no) : AccessMonitor(obj, monitor_no) {}
+  MonitorExit(Value obj, int monitor_no)
+  : AccessMonitor(obj, monitor_no, NULL)
+  {
+    ASSERT_VALUES
+  }
 };
 
 
@@ -1419,7 +1390,6 @@ LEAF(Intrinsic, StateSplit)
  private:
   vmIntrinsics::ID _id;
   Values*          _args;
-  ValueStack*      _lock_stack;
   Value            _recv;
 
  public:
@@ -1434,13 +1404,12 @@ LEAF(Intrinsic, StateSplit)
             vmIntrinsics::ID id,
             Values* args,
             bool has_receiver,
-            ValueStack* lock_stack,
+            ValueStack* state_before,
             bool preserves_state,
             bool cantrap = true)
-  : StateSplit(type)
+  : StateSplit(type, state_before)
   , _id(id)
   , _args(args)
-  , _lock_stack(lock_stack)
   , _recv(NULL)
   {
     assert(args != NULL, "args must exist");
@@ -1462,7 +1431,6 @@ LEAF(Intrinsic, StateSplit)
   vmIntrinsics::ID id() const                    { return _id; }
   int number_of_arguments() const                { return _args->length(); }
   Value argument_at(int i) const                 { return _args->at(i); }
-  ValueStack* lock_stack() const                 { return _lock_stack; }
 
   bool has_receiver() const                      { return (_recv != NULL); }
   Value receiver() const                         { assert(has_receiver(), "must have receiver"); return _recv; }
@@ -1474,8 +1442,6 @@ LEAF(Intrinsic, StateSplit)
     StateSplit::input_values_do(f);
     for (int i = 0; i < _args->length(); i++) f->visit(_args->adr_at(i));
   }
-  virtual void state_values_do(ValueVisitor* f);
-
 };
 
 
@@ -1484,6 +1450,7 @@ class LIR_List;
 LEAF(BlockBegin, StateSplit)
  private:
   int        _block_id;                          // the unique block id
+  int        _bci;                               // start-bci of block
   int        _depth_first_number;                // number of this block in a depth-first ordering
   int        _linear_scan_number;                // number of this block in linear-scan ordering
   int        _loop_depth;                        // the loop nesting level of this block
@@ -1540,6 +1507,7 @@ LEAF(BlockBegin, StateSplit)
   // creation
   BlockBegin(int bci)
   : StateSplit(illegalType)
+  , _bci(bci)
   , _depth_first_number(-1)
   , _linear_scan_number(-1)
   , _loop_depth(0)
@@ -1564,11 +1532,14 @@ LEAF(BlockBegin, StateSplit)
   , _total_preds(0)
   , _stores_to_locals()
   {
-    set_bci(bci);
+#ifndef PRODUCT
+    set_printable_bci(bci);
+#endif
   }
 
   // accessors
   int block_id() const                           { return _block_id; }
+  int bci() const                                { return _bci; }
   BlockList* successors()                        { return &_successors; }
   BlockBegin* dominator() const                  { return _dominator; }
   int loop_depth() const                         { return _loop_depth; }
@@ -1590,7 +1561,6 @@ LEAF(BlockBegin, StateSplit)
   BitMap& stores_to_locals()                     { return _stores_to_locals; }
 
   // manipulation
-  void set_bci(int bci)                          { Instruction::set_bci(bci); }
   void set_dominator(BlockBegin* dom)            { _dominator = dom; }
   void set_loop_depth(int d)                     { _loop_depth = d; }
   void set_depth_first_number(int dfn)           { _depth_first_number = dfn; }
@@ -1688,7 +1658,6 @@ BASE(BlockEnd, StateSplit)
  private:
   BlockBegin* _begin;
   BlockList*  _sux;
-  ValueStack* _state_before;
 
  protected:
   BlockList* sux() const                         { return _sux; }
@@ -1704,23 +1673,19 @@ BASE(BlockEnd, StateSplit)
  public:
   // creation
   BlockEnd(ValueType* type, ValueStack* state_before, bool is_safepoint)
-  : StateSplit(type)
+  : StateSplit(type, state_before)
   , _begin(NULL)
   , _sux(NULL)
-  , _state_before(state_before) {
+  {
     set_flag(IsSafepointFlag, is_safepoint);
   }
 
   // accessors
-  ValueStack* state_before() const               { return _state_before; }
   bool is_safepoint() const                      { return check_flag(IsSafepointFlag); }
   BlockBegin* begin() const                      { return _begin; }
 
   // manipulation
   void set_begin(BlockBegin* begin);
-
-  // generic
-  virtual void other_values_do(ValueVisitor* f);
 
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
@@ -1734,19 +1699,44 @@ BASE(BlockEnd, StateSplit)
 
 LEAF(Goto, BlockEnd)
  public:
+  enum Direction {
+    none,            // Just a regular goto
+    taken, not_taken // Goto produced from If
+  };
+ private:
+  ciMethod*   _profiled_method;
+  int         _profiled_bci;
+  Direction   _direction;
+ public:
   // creation
-  Goto(BlockBegin* sux, ValueStack* state_before, bool is_safepoint = false) : BlockEnd(illegalType, state_before, is_safepoint) {
+  Goto(BlockBegin* sux, ValueStack* state_before, bool is_safepoint = false)
+    : BlockEnd(illegalType, state_before, is_safepoint)
+    , _direction(none)
+    , _profiled_method(NULL)
+    , _profiled_bci(0) {
     BlockList* s = new BlockList(1);
     s->append(sux);
     set_sux(s);
   }
 
-  Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, NULL, is_safepoint) {
+  Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, NULL, is_safepoint)
+                                           , _direction(none)
+                                           , _profiled_method(NULL)
+                                           , _profiled_bci(0) {
     BlockList* s = new BlockList(1);
     s->append(sux);
     set_sux(s);
   }
 
+  bool should_profile() const                    { return check_flag(ProfileMDOFlag); }
+  ciMethod* profiled_method() const              { return _profiled_method; } // set only for profiled branches
+  int profiled_bci() const                       { return _profiled_bci; }
+  Direction direction() const                    { return _direction; }
+
+  void set_should_profile(bool value)            { set_flag(ProfileMDOFlag, value); }
+  void set_profiled_method(ciMethod* method)     { _profiled_method = method; }
+  void set_profiled_bci(int bci)                 { _profiled_bci = bci; }
+  void set_direction(Direction d)                { _direction = d; }
 };
 
 
@@ -1757,6 +1747,8 @@ LEAF(If, BlockEnd)
   Value       _y;
   ciMethod*   _profiled_method;
   int         _profiled_bci; // Canonicalizer may alter bci of If node
+  bool        _swapped;      // Is the order reversed with respect to the original If in the
+                             // bytecode stream?
  public:
   // creation
   // unordered_is_true is valid for float/double compares only
@@ -1767,6 +1759,7 @@ LEAF(If, BlockEnd)
   , _y(y)
   , _profiled_method(NULL)
   , _profiled_bci(0)
+  , _swapped(false)
   {
     ASSERT_VALUES
     set_flag(UnorderedIsTrueFlag, unordered_is_true);
@@ -1788,7 +1781,8 @@ LEAF(If, BlockEnd)
   BlockBegin* usux() const                       { return sux_for(unordered_is_true()); }
   bool should_profile() const                    { return check_flag(ProfileMDOFlag); }
   ciMethod* profiled_method() const              { return _profiled_method; } // set only for profiled branches
-  int profiled_bci() const                       { return _profiled_bci; }    // set only for profiled branches
+  int profiled_bci() const                       { return _profiled_bci; }    // set for profiled branches and tiered
+  bool is_swapped() const                        { return _swapped; }
 
   // manipulation
   void swap_operands() {
@@ -1807,7 +1801,7 @@ LEAF(If, BlockEnd)
   void set_should_profile(bool value)             { set_flag(ProfileMDOFlag, value); }
   void set_profiled_method(ciMethod* method)      { _profiled_method = method; }
   void set_profiled_bci(int bci)                  { _profiled_bci = bci;       }
-
+  void set_swapped(bool value)                    { _swapped = value;         }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_x); f->visit(&_y); }
 };
@@ -1883,6 +1877,8 @@ BASE(Switch, BlockEnd)
   // accessors
   Value tag() const                              { return _tag; }
   int length() const                             { return number_of_sux() - 1; }
+
+  virtual bool needs_exception_state() const     { return false; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_tag); }
@@ -1961,7 +1957,6 @@ LEAF(Throw, BlockEnd)
   // generic
   virtual bool can_trap() const                  { return true; }
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_exception); }
-  virtual void state_values_do(ValueVisitor* f);
 };
 
 
@@ -1987,9 +1982,9 @@ LEAF(OsrEntry, Instruction)
  public:
   // creation
 #ifdef _LP64
-  OsrEntry() : Instruction(longType, false) { pin(); }
+  OsrEntry() : Instruction(longType) { pin(); }
 #else
-  OsrEntry() : Instruction(intType,  false) { pin(); }
+  OsrEntry() : Instruction(intType)  { pin(); }
 #endif
 
   // generic
@@ -2001,7 +1996,7 @@ LEAF(OsrEntry, Instruction)
 LEAF(ExceptionObject, Instruction)
  public:
   // creation
-  ExceptionObject() : Instruction(objectType, false) {
+  ExceptionObject() : Instruction(objectType) {
     pin();
   }
 
@@ -2056,7 +2051,6 @@ BASE(UnsafeOp, Instruction)
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { }
-  virtual void other_values_do(ValueVisitor* f)   { }
 };
 
 
@@ -2235,7 +2229,6 @@ LEAF(UnsafePrefetchWrite, UnsafePrefetch)
   }
 };
 
-
 LEAF(ProfileCall, Instruction)
  private:
   ciMethod* _method;
@@ -2263,34 +2256,28 @@ LEAF(ProfileCall, Instruction)
   virtual void input_values_do(ValueVisitor* f)   { if (_recv != NULL) f->visit(&_recv); }
 };
 
+// Use to trip invocation counter of an inlined method
 
-//
-// Simple node representing a counter update generally used for updating MDOs
-//
-LEAF(ProfileCounter, Instruction)
+LEAF(ProfileInvoke, Instruction)
  private:
-  Value     _mdo;
-  int       _offset;
-  int       _increment;
+  ciMethod*   _inlinee;
+  ValueStack* _state;
 
  public:
-  ProfileCounter(Value mdo, int offset, int increment = 1)
+  ProfileInvoke(ciMethod* inlinee,  ValueStack* state)
     : Instruction(voidType)
-    , _mdo(mdo)
-    , _offset(offset)
-    , _increment(increment)
+    , _inlinee(inlinee)
+    , _state(state)
   {
-    // The ProfileCounter has side-effects and must occur precisely where located
+    // The ProfileInvoke has side-effects and must occur precisely where located QQQ???
     pin();
   }
 
-  Value mdo()      { return _mdo; }
-  int offset()     { return _offset; }
-  int increment()  { return _increment; }
-
-  virtual void input_values_do(ValueVisitor* f)   { f->visit(&_mdo); }
+  ciMethod* inlinee()      { return _inlinee; }
+  ValueStack* state()      { return _state; }
+  virtual void input_values_do(ValueVisitor*)   {}
+  virtual void state_values_do(ValueVisitor*);
 };
-
 
 class BlockPair: public CompilationResourceObj {
  private:

@@ -471,6 +471,7 @@ public:
   // ask Java to compute a java.dyn.MethodType object for a given signature
   static Handle    find_method_handle_type(symbolHandle signature,
                                            KlassHandle accessing_klass,
+                                           bool for_invokeGeneric,
                                            bool& return_bcp_flag,
                                            TRAPS);
   // ask Java to compute a java.dyn.MethodHandle object for a given CP entry
@@ -495,6 +496,7 @@ public:
   static Handle    find_bootstrap_method(methodHandle caller_method,
                                          int caller_bci,  // N.B. must be an invokedynamic
                                          int cache_index, // must be corresponding main_entry
+                                         Handle &argument_info_result, // static BSM arguments, if any
                                          TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints

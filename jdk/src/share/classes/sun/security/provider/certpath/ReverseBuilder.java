@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,9 +347,6 @@ class ReverseBuilder extends Builder {
             return;
         }
 
-        /* check that the signature algorithm is not disabled. */
-        AlgorithmChecker.check(cert);
-
         /*
          * check for looping - abort a loop if
          * ((we encounter the same certificate twice) AND
@@ -470,9 +467,16 @@ class ReverseBuilder extends Builder {
         if (unresolvedCritExts == null) {
             unresolvedCritExts = Collections.<String>emptySet();
         }
+
+        /*
+         * Check that the signature algorithm is not disabled.
+         */
+        currentState.algorithmChecker.check(cert, unresolvedCritExts);
+
         for (PKIXCertPathChecker checker : currentState.userCheckers) {
             checker.check(cert, unresolvedCritExts);
         }
+
         /*
          * Look at the remaining extensions and remove any ones we have
          * already checked. If there are any left, throw an exception!

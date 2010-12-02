@@ -238,7 +238,7 @@ void AwtDesktopProperties::GetNonClientParameters() {
     // when running on XP. However this can't be referenced at compile time
     // with the older SDK, so there use 'lfMessageFont' plus its size.
     if (!IS_WINVISTA) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1600) {
+#if defined(_MSC_VER) && (_MSC_VER >= 1600)
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS, iPaddedBorderWidth);
 #else
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS,lfMessageFont) + sizeof(LOGFONT);
@@ -505,7 +505,8 @@ void AwtDesktopProperties::GetOtherParameters() {
     SetIntegerProperty(TEXT("win.drag.width"), cxdrag);
     SetIntegerProperty(TEXT("win.drag.height"), cydrag);
     SetIntegerProperty(TEXT("DnD.gestureMotionThreshold"), max(cxdrag, cydrag)/2);
-    SetIntegerProperty(TEXT("awt.mouse.numButtons"), GetSystemMetrics(SM_CMOUSEBUTTONS));
+    SetIntegerProperty(TEXT("awt.mouse.numButtons"), AwtToolkit::GetNumberOfButtons());
+
     SetIntegerProperty(TEXT("awt.multiClickInterval"), GetDoubleClickTime());
 
     // BEGIN cross-platform properties

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ import javax.sql.*;
  * </pre>
  * <p>
  * A vendor can register a <code>SyncProvider</code> implementation class name
- * with Sun Microsystems, Inc. by sending email to jdbc@sun.com.
- * Sun will maintain a database listing the
+ * with Oracle Corporation by sending email to jdbc@sun.com.
+ * Oracle will maintain a database listing the
  * available <code>SyncProvider</code> implementations for use with compliant
  * <code>RowSet</code> implementations.  This database will be similar to the
  * one already maintained to list available JDBC drivers.
@@ -344,7 +344,7 @@ public abstract class SyncProvider {
      * source without checking the validity of any data.
      *
      */
-    public static int GRADE_NONE = 1;
+    public static final int GRADE_NONE = 1;
 
     /**
      * Indicates a low level optimistic synchronization grade with
@@ -354,7 +354,7 @@ public abstract class SyncProvider {
      * returning this grade will check only rows that have changed.
      *
      */
-    public static int GRADE_CHECK_MODIFIED_AT_COMMIT = 2;
+    public static final int GRADE_CHECK_MODIFIED_AT_COMMIT = 2;
 
     /**
      * Indicates a high level optimistic synchronization grade with
@@ -364,7 +364,7 @@ public abstract class SyncProvider {
      * returning this grade will check all rows, including rows that have not
      * changed.
      */
-    public static int GRADE_CHECK_ALL_AT_COMMIT = 3;
+    public static final int GRADE_CHECK_ALL_AT_COMMIT = 3;
 
     /**
      * Indicates a pessimistic synchronization grade with
@@ -374,7 +374,7 @@ public abstract class SyncProvider {
      * implementation returning this grade will lock the row in the originating
      * data source.
      */
-    public static int GRADE_LOCK_WHEN_MODIFIED = 4;
+    public static final int GRADE_LOCK_WHEN_MODIFIED = 4;
 
     /**
      * Indicates the most pessimistic synchronization grade with
@@ -384,47 +384,47 @@ public abstract class SyncProvider {
      * table affected by the original statement used to populate a
      * <code>RowSet</code> object.
      */
-    public static int GRADE_LOCK_WHEN_LOADED = 5;
+    public static final int GRADE_LOCK_WHEN_LOADED = 5;
 
     /**
      * Indicates that no locks remain on the originating data source. This is the default
      * lock setting for all <code>SyncProvider</code> implementations unless
      * otherwise directed by a <code>RowSet</code> object.
      */
-    public static int DATASOURCE_NO_LOCK = 1;
+    public static final int DATASOURCE_NO_LOCK = 1;
 
     /**
      * Indicates that a lock is placed on the rows that are touched by the original
      * SQL statement used to populate the <code>RowSet</code> object
      * that is using this <code>SyncProvider</code> object.
      */
-    public static int DATASOURCE_ROW_LOCK = 2;
+    public static final int DATASOURCE_ROW_LOCK = 2;
 
     /**
      * Indicates that a lock is placed on all tables that are touched by the original
      * SQL statement used to populate the <code>RowSet</code> object
      * that is using this <code>SyncProvider</code> object.
      */
-    public static int DATASOURCE_TABLE_LOCK = 3;
+    public static final int DATASOURCE_TABLE_LOCK = 3;
 
     /**
      * Indicates that a lock is placed on the entire data source that is the source of
      * data for the <code>RowSet</code> object
      * that is using this <code>SyncProvider</code> object.
      */
-    public static int DATASOURCE_DB_LOCK = 4;
+    public static final int DATASOURCE_DB_LOCK = 4;
 
     /**
      * Indicates that a <code>SyncProvider</code> implementation
      * supports synchronization between a <code>RowSet</code> object and
      * the SQL <code>VIEW</code> used to populate it.
      */
-    public static int UPDATABLE_VIEW_SYNC = 5;
+    public static final int UPDATABLE_VIEW_SYNC = 5;
 
     /**
      * Indicates that a <code>SyncProvider</code> implementation
      * does <B>not</B> support synchronization between a <code>RowSet</code>
      * object and the SQL <code>VIEW</code> used to populate it.
      */
-    public static int NONUPDATABLE_VIEW_SYNC = 6;
+    public static final int NONUPDATABLE_VIEW_SYNC = 6;
 }

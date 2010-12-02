@@ -25,11 +25,14 @@
 
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.jvm.Target;
+import java.util.*;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
-import java.util.*;
+
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.jvm.Target;
+
+import static com.sun.tools.javac.main.OptionName.*;
 
 /** The source language version accepted.
  *
@@ -71,7 +74,7 @@ public enum Source {
         Source instance = context.get(sourceKey);
         if (instance == null) {
             Options options = Options.instance(context);
-            String sourceString = options.get("-source");
+            String sourceString = options.get(SOURCE);
             if (sourceString != null) instance = lookup(sourceString);
             if (instance == null) instance = DEFAULT;
             context.put(sourceKey, instance);
@@ -171,11 +174,10 @@ public enum Source {
     public boolean allowUnderscoresInLiterals() {
         return compareTo(JDK1_7) >= 0;
     }
-    public boolean allowStringsInSwitch() {
+    public boolean allowExoticIdentifiers() {
         return compareTo(JDK1_7) >= 0;
     }
-    // JSR 292: recognize @PolymorphicSignature on java/dyn names
-    public boolean allowPolymorphicSignature() {
+    public boolean allowStringsInSwitch() {
         return compareTo(JDK1_7) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

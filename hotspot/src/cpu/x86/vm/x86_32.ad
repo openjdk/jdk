@@ -350,54 +350,46 @@ void MachBreakpointNode::format( PhaseRegAlloc *, outputStream* st ) const {
 // EMIT_RM()
 void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
   unsigned char c = (unsigned char)((f1 << 6) | (f2 << 3) | f3);
-  *(cbuf.code_end()) = c;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+  cbuf.insts()->emit_int8(c);
 }
 
 // EMIT_CC()
 void emit_cc(CodeBuffer &cbuf, int f1, int f2) {
   unsigned char c = (unsigned char)( f1 | f2 );
-  *(cbuf.code_end()) = c;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+  cbuf.insts()->emit_int8(c);
 }
 
 // EMIT_OPCODE()
 void emit_opcode(CodeBuffer &cbuf, int code) {
-  *(cbuf.code_end()) = (unsigned char)code;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+  cbuf.insts()->emit_int8((unsigned char) code);
 }
 
 // EMIT_OPCODE() w/ relocation information
 void emit_opcode(CodeBuffer &cbuf, int code, relocInfo::relocType reloc, int offset = 0) {
-  cbuf.relocate(cbuf.inst_mark() + offset, reloc);
+  cbuf.relocate(cbuf.insts_mark() + offset, reloc);
   emit_opcode(cbuf, code);
 }
 
 // EMIT_D8()
 void emit_d8(CodeBuffer &cbuf, int d8) {
-  *(cbuf.code_end()) = (unsigned char)d8;
-  cbuf.set_code_end(cbuf.code_end() + 1);
+  cbuf.insts()->emit_int8((unsigned char) d8);
 }
 
 // EMIT_D16()
 void emit_d16(CodeBuffer &cbuf, int d16) {
-  *((short *)(cbuf.code_end())) = d16;
-  cbuf.set_code_end(cbuf.code_end() + 2);
+  cbuf.insts()->emit_int16(d16);
 }
 
 // EMIT_D32()
 void emit_d32(CodeBuffer &cbuf, int d32) {
-  *((int *)(cbuf.code_end())) = d32;
-  cbuf.set_code_end(cbuf.code_end() + 4);
+  cbuf.insts()->emit_int32(d32);
 }
 
 // emit 32 bit value and construct relocation entry from relocInfo::relocType
 void emit_d32_reloc(CodeBuffer &cbuf, int d32, relocInfo::relocType reloc,
         int format) {
-  cbuf.relocate(cbuf.inst_mark(), reloc, format);
-
-  *((int *)(cbuf.code_end())) = d32;
-  cbuf.set_code_end(cbuf.code_end() + 4);
+  cbuf.relocate(cbuf.insts_mark(), reloc, format);
+  cbuf.insts()->emit_int32(d32);
 }
 
 // emit 32 bit value and construct relocation entry from RelocationHolder
@@ -408,10 +400,8 @@ void emit_d32_reloc(CodeBuffer &cbuf, int d32, RelocationHolder const& rspec,
     assert(oop(d32)->is_oop() && (ScavengeRootsInCode || !oop(d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
-  cbuf.relocate(cbuf.inst_mark(), rspec, format);
-
-  *((int *)(cbuf.code_end())) = d32;
-  cbuf.set_code_end(cbuf.code_end() + 4);
+  cbuf.relocate(cbuf.insts_mark(), rspec, format);
+  cbuf.insts()->emit_int32(d32);
 }
 
 // Access stack slot for load or store
@@ -613,7 +603,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     emit_rm(cbuf, 0x3, 0x05, ESP_enc);
     emit_d32(cbuf, framesize);
   }
-  C->set_frame_complete(cbuf.code_end() - cbuf.code_begin());
+  C->set_frame_complete(cbuf.insts_size());
 
 #ifdef ASSERT
   if (VerifyStackAtCalls) {
@@ -695,7 +685,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   emit_opcode(cbuf, 0x58 | EBP_enc);
 
   if( do_polling() && C->is_method_compilation() ) {
-    cbuf.relocate(cbuf.code_end(), relocInfo::poll_return_type, 0);
+    cbuf.relocate(cbuf.insts_end(), relocInfo::poll_return_type, 0);
     emit_opcode(cbuf,0x85);
     emit_rm(cbuf, 0x0, EAX_enc, 0x5); // EAX
     emit_d32(cbuf, (intptr_t)os::get_polling_page());
@@ -852,6 +842,39 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
   }
 }
 
+static int impl_movgpr2x_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+                            int src_hi, int dst_hi, int size, outputStream* st ) {
+  // 32-bit
+  if (cbuf) {
+    emit_opcode(*cbuf, 0x66);
+    emit_opcode(*cbuf, 0x0F);
+    emit_opcode(*cbuf, 0x6E);
+    emit_rm(*cbuf, 0x3, Matcher::_regEncode[dst_lo] & 7, Matcher::_regEncode[src_lo] & 7);
+#ifndef PRODUCT
+  } else if (!do_size) {
+    st->print("movdl   %s, %s\t# spill", Matcher::regName[dst_lo], Matcher::regName[src_lo]);
+#endif
+  }
+  return 4;
+}
+
+
+static int impl_movx2gpr_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+                                 int src_hi, int dst_hi, int size, outputStream* st ) {
+  // 32-bit
+  if (cbuf) {
+    emit_opcode(*cbuf, 0x66);
+    emit_opcode(*cbuf, 0x0F);
+    emit_opcode(*cbuf, 0x7E);
+    emit_rm(*cbuf, 0x3, Matcher::_regEncode[src_lo] & 7, Matcher::_regEncode[dst_lo] & 7);
+#ifndef PRODUCT
+  } else if (!do_size) {
+    st->print("movdl   %s, %s\t# spill", Matcher::regName[dst_lo], Matcher::regName[src_lo]);
+#endif
+  }
+  return 4;
+}
+
 static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int size, outputStream* st ) {
   if( cbuf ) {
     emit_opcode(*cbuf, 0x8B );
@@ -947,6 +970,12 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( dst_first_rc == rc_int && src_first_rc == rc_stack )
     size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size, st);
 
+  // Check for integer reg-xmm reg copy
+  if( src_first_rc == rc_int && dst_first_rc == rc_xmm ) {
+    assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad),
+            "no 64 bit integer-float reg moves" );
+    return impl_movgpr2x_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+  }
   // --------------------------------------
   // Check for float reg-reg copy
   if( src_first_rc == rc_float && dst_first_rc == rc_float ) {
@@ -1016,6 +1045,13 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
             (src_first+1 == src_second && dst_first+1 == dst_second),
             "no non-adjacent float-moves" );
     return impl_movx_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+  }
+
+  // Check for xmm reg-integer reg copy
+  if( src_first_rc == rc_xmm && dst_first_rc == rc_int ) {
+    assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad),
+            "no 64 bit float-integer reg moves" );
+    return impl_movx2gpr_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
   }
 
   // Check for xmm store
@@ -1165,9 +1201,9 @@ void emit_java_to_interp(CodeBuffer &cbuf ) {
   // mov rbx,0
   // jmp -1
 
-  address mark = cbuf.inst_mark();  // get mark within main instrs section
+  address mark = cbuf.insts_mark();  // get mark within main instrs section
 
-  // Note that the code buffer's inst_mark is always relative to insts.
+  // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a stub.
   MacroAssembler _masm(&cbuf);
 
@@ -1182,7 +1218,7 @@ void emit_java_to_interp(CodeBuffer &cbuf ) {
   __ jump(RuntimeAddress(__ pc()));
 
   __ end_a_stub();
-  // Update current stubs pointer and restore code_end.
+  // Update current stubs pointer and restore insts_end.
 }
 // size of call stub, compiled java to interpretor
 uint size_java_to_interp() {
@@ -1208,7 +1244,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler masm(&cbuf);
 #ifdef ASSERT
-  uint code_size = cbuf.code_size();
+  uint insts_size = cbuf.insts_size();
 #endif
   masm.cmpptr(rax, Address(rcx, oopDesc::klass_offset_in_bytes()));
   masm.jump_cc(Assembler::notEqual,
@@ -1220,7 +1256,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
      nops_cnt += 1;
   masm.nop(nops_cnt);
 
-  assert(cbuf.code_size() - code_size == size(ra_), "checking code size of inline cache node");
+  assert(cbuf.insts_size() - insts_size == size(ra_), "checking code size of inline cache node");
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -1242,14 +1278,14 @@ uint size_exception_handler() {
 // and call a VM stub routine.
 int emit_exception_handler(CodeBuffer& cbuf) {
 
-  // Note that the code buffer's inst_mark is always relative to insts.
+  // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
   address base =
   __ start_a_stub(size_exception_handler());
   if (base == NULL)  return 0;  // CodeBuffer::expand failed
   int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->instructions_begin()));
+  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
   assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
   __ end_a_stub();
   return offset;
@@ -1267,7 +1303,7 @@ uint size_deopt_handler() {
 // Emit deopt handler code.
 int emit_deopt_handler(CodeBuffer& cbuf) {
 
-  // Note that the code buffer's inst_mark is always relative to insts.
+  // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
   address base =
@@ -1472,6 +1508,16 @@ bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
 }
 
+bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
+  // Use hardware integer DIV instruction when
+  // it is faster than a code which use multiply.
+  // Only when constant divisor fits into 32 bit
+  // (min_jint is excluded to get only correct
+  // positive 32 bit values from negative).
+  return VM_Version::has_fast_idiv() &&
+         (divisor == (int)divisor && divisor != min_jint);
+}
+
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
   return EAX_REG_mask;
@@ -1509,6 +1555,9 @@ bool is_operand_hi32_zero(Node* n) {
     if (o2->is_Con() && (o2->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
       return true;
     }
+  }
+  if (opc == Op_ConL && (n->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
+    return true;
   }
   return false;
 }
@@ -1682,12 +1731,12 @@ encode %{
 
   enc_class Lbl (label labl) %{ // JMP, CALL
     Label *l = $labl$$label;
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.code_size()+4)) : 0);
+    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size()+4)) : 0);
   %}
 
   enc_class LblShort (label labl) %{ // JMP, CALL
     Label *l = $labl$$label;
-    int disp = l ? (l->loc_pos() - (cbuf.code_size()+1)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size()+1)) : 0;
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     emit_d8(cbuf, disp);
   %}
@@ -1718,13 +1767,13 @@ encode %{
     Label *l = $labl$$label;
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.code_size()+4)) : 0);
+    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size()+4)) : 0);
   %}
 
   enc_class JccShort (cmpOp cop, label labl) %{    // JCC
     Label *l = $labl$$label;
     emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.code_size()+1)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size()+1)) : 0;
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     emit_d8(cbuf, disp);
   %}
@@ -1792,10 +1841,10 @@ encode %{
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime, Java_To_Runtime_Leaf
     // This is the instruction starting address for relocation info.
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
-    emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.code_end()) - 4),
+    emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                 runtime_call_Relocation::spec(), RELOC_IMM32 );
 
     if (UseSSE >= 2) {
@@ -1825,12 +1874,12 @@ encode %{
 
   enc_class pre_call_FPU %{
     // If method sets FPU control word restore it here
-    debug_only(int off0 = cbuf.code_size());
+    debug_only(int off0 = cbuf.insts_size());
     if( Compile::current()->in_24_bit_fp_mode() ) {
       MacroAssembler masm(&cbuf);
       masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
     }
-    debug_only(int off1 = cbuf.code_size());
+    debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == pre_call_FPU_size(), "correct size prediction");
   %}
 
@@ -1843,12 +1892,12 @@ encode %{
   %}
 
   enc_class preserve_SP %{
-    debug_only(int off0 = cbuf.code_size());
+    debug_only(int off0 = cbuf.insts_size());
     MacroAssembler _masm(&cbuf);
     // RBP is preserved across all calls, even compiled calls.
     // Use it to preserve RSP in places where the callee might change the SP.
     __ movptr(rbp_mh_SP_save, rsp);
-    debug_only(int off1 = cbuf.code_size());
+    debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
   %}
 
@@ -1860,16 +1909,16 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     if ( !_method ) {
-      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.code_end()) - 4),
+      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(), RELOC_IMM32 );
     } else if(_optimized_virtual) {
-      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.code_end()) - 4),
+      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      opt_virtual_call_Relocation::spec(), RELOC_IMM32 );
     } else {
-      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.code_end()) - 4),
+      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      static_call_Relocation::spec(), RELOC_IMM32 );
     }
     if( _method ) {  // Emit stub for static call
@@ -1881,15 +1930,15 @@ encode %{
     // !!!!!
     // Generate  "Mov EAX,0x00", placeholder instruction to load oop-info
     // emit_call_dynamic_prologue( cbuf );
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xB8 + EAX_enc);        // mov    EAX,-1
     emit_d32_reloc(cbuf, (int)Universe::non_oop_word(), oop_Relocation::spec_for_immediate(), RELOC_IMM32);
-    address  virtual_call_oop_addr = cbuf.inst_mark();
+    address  virtual_call_oop_addr = cbuf.insts_mark();
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
-    emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.code_end()) - 4),
+    emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                 virtual_call_Relocation::spec(virtual_call_oop_addr), RELOC_IMM32 );
   %}
 
@@ -1898,7 +1947,7 @@ encode %{
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
     // CALL *[EAX+in_bytes(methodOopDesc::from_compiled_code_entry_point_offset())]
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
     emit_d8(cbuf, disp);             // Displacement
@@ -1930,9 +1979,9 @@ encode %{
 //     emit_rm(cbuf, 0x3, EBP_enc, EBP_enc);
 //
 //     // CALL to interpreter.
-//     cbuf.set_inst_mark();
+//     cbuf.set_insts_mark();
 //     $$$emit8$primary;
-//     emit_d32_reloc(cbuf, ($labl$$label - (int)(cbuf.code_end()) - 4),
+//     emit_d32_reloc(cbuf, ($labl$$label - (int)(cbuf.insts_end()) - 4),
 //                 runtime_call_Relocation::spec(), RELOC_IMM32 );
 //   %}
 
@@ -2041,7 +2090,7 @@ encode %{
   %}
 
   enc_class Opc_MemImm_F(immF src) %{
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_rm(cbuf, 0x0, $secondary, 0x5);
     emit_float_constant(cbuf, $src$$constant);
@@ -2234,7 +2283,7 @@ encode %{
   %}
 
   enc_class set_instruction_start( ) %{
-    cbuf.set_inst_mark();            // Mark start of opcode for reloc info in mem operand
+    cbuf.set_insts_mark();            // Mark start of opcode for reloc info in mem operand
   %}
 
   enc_class RegMem (eRegI ereg, memory mem) %{    // emit_reg_mem
@@ -2273,9 +2322,11 @@ encode %{
   enc_class move_long_big_shift_sign( eRegL dst, immI_32_63 cnt ) %{
     emit_opcode( cbuf, 0x8B ); // Move
     emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
-    emit_d8(cbuf,$primary);
-    emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
-    emit_d8(cbuf,$cnt$$constant-32);
+    if( $cnt$$constant > 32 ) { // Shift, if not by zero
+      emit_d8(cbuf,$primary);
+      emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
+      emit_d8(cbuf,$cnt$$constant-32);
+    }
     emit_d8(cbuf,$primary);
     emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW($dst$$reg));
     emit_d8(cbuf,31);
@@ -2383,7 +2434,7 @@ encode %{
       emit_opcode( cbuf, 0xD9 ); // FLD (i.e., push it)
       emit_d8( cbuf, 0xC0-1+$src$$reg );
     }
-    cbuf.set_inst_mark();       // Mark start of opcode for reloc info in mem operand
+    cbuf.set_insts_mark();       // Mark start of opcode for reloc info in mem operand
     emit_opcode(cbuf,$primary);
     encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_is_oop);
   %}
@@ -2428,7 +2479,7 @@ encode %{
     emit_opcode(cbuf,0x1B);
     emit_rm(cbuf, 0x3, tmpReg, tmpReg);
     // AND $tmp,$y
-    cbuf.set_inst_mark();       // Mark start of opcode for reloc info in mem operand
+    cbuf.set_insts_mark();       // Mark start of opcode for reloc info in mem operand
     emit_opcode(cbuf,0x23);
     int reg_encoding = tmpReg;
     int base  = $mem$$base;
@@ -3111,9 +3162,9 @@ encode %{
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -3130,9 +3181,9 @@ encode %{
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -3778,9 +3829,9 @@ encode %{
   %}
 
   enc_class enc_rethrow() %{
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE9);        // jmp    entry
-    emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.code_end())-4,
+    emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.insts_end())-4,
                    runtime_call_Relocation::spec(), RELOC_IMM32 );
   %}
 
@@ -3827,9 +3878,9 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2i_wrapper() - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
@@ -3869,9 +3920,9 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
@@ -3942,9 +3993,9 @@ encode %{
     emit_d8(cbuf,0x04);
 
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
@@ -4016,9 +4067,9 @@ encode %{
     emit_d8(cbuf,0x08);
 
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);      // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
@@ -4076,9 +4127,9 @@ encode %{
     emit_d8(cbuf, $primary ? 0x8 : 0x4);
 
     // CALL directly to the runtime
-    cbuf.set_inst_mark();
+    cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2i_wrapper() - cbuf.code_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
 
     // Carry on here...
   %}
@@ -4275,7 +4326,7 @@ encode %{
   // so the memory operand is used twice in the encoding.
   enc_class enc_storeL_volatile( memory mem, stackSlotL src ) %{
     store_to_stackslot( cbuf, 0x0DF, 0x05, $src$$disp );
-    cbuf.set_inst_mark();            // Mark start of FIST in case $mem has an oop
+    cbuf.set_insts_mark();            // Mark start of FIST in case $mem has an oop
     emit_opcode(cbuf,0xDF);
     int rm_byte_opcode = 0x07;
     int base     = $mem$$base;
@@ -4299,7 +4350,7 @@ encode %{
       bool disp_is_oop = $src->disp_is_oop(); // disp-as-oop when working with static globals
       encode_RegMem(cbuf, $tmp$$reg, base, index, scale, displace, disp_is_oop);
     }
-    cbuf.set_inst_mark();            // Mark start of MOVSD in case $mem has an oop
+    cbuf.set_insts_mark();            // Mark start of MOVSD in case $mem has an oop
     { // MOVSD $mem,$tmp ! atomic long store
       emit_opcode(cbuf,0xF2);
       emit_opcode(cbuf,0x0F);
@@ -4332,7 +4383,7 @@ encode %{
       emit_opcode(cbuf,0x62);
       emit_rm(cbuf, 0x3, $tmp$$reg, $tmp2$$reg);
     }
-    cbuf.set_inst_mark();            // Mark start of MOVSD in case $mem has an oop
+    cbuf.set_insts_mark();            // Mark start of MOVSD in case $mem has an oop
     { // MOVSD $mem,$tmp ! atomic long store
       emit_opcode(cbuf,0xF2);
       emit_opcode(cbuf,0x0F);
@@ -4353,7 +4404,7 @@ encode %{
   // A better choice might be TESTB [spp + pagesize() - CacheLineSize()],0
 
   enc_class Safepoint_Poll() %{
-    cbuf.relocate(cbuf.inst_mark(), relocInfo::poll_type, 0);
+    cbuf.relocate(cbuf.insts_mark(), relocInfo::poll_type, 0);
     emit_opcode(cbuf,0x85);
     emit_rm (cbuf, 0x0, 0x7, 0x5);
     emit_d32(cbuf, (intptr_t)os::get_polling_page());
@@ -8806,6 +8857,144 @@ instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI 
   ins_pipe( pipe_slow );
 %}
 
+// Divide Register Long (no special case since divisor != -1)
+instruct divL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlagsReg cr ) %{
+  match(Set dst (DivL dst imm));
+  effect( TEMP tmp, TEMP tmp2, KILL cr );
+  ins_cost(1000);
+  format %{ "MOV    $tmp,abs($imm) # ldiv EDX:EAX,$imm\n\t"
+            "XOR    $tmp2,$tmp2\n\t"
+            "CMP    $tmp,EDX\n\t"
+            "JA,s   fast\n\t"
+            "MOV    $tmp2,EAX\n\t"
+            "MOV    EAX,EDX\n\t"
+            "MOV    EDX,0\n\t"
+            "JLE,s  pos\n\t"
+            "LNEG   EAX : $tmp2\n\t"
+            "DIV    $tmp # unsigned division\n\t"
+            "XCHG   EAX,$tmp2\n\t"
+            "DIV    $tmp\n\t"
+            "LNEG   $tmp2 : EAX\n\t"
+            "JMP,s  done\n"
+    "pos:\n\t"
+            "DIV    $tmp\n\t"
+            "XCHG   EAX,$tmp2\n"
+    "fast:\n\t"
+            "DIV    $tmp\n"
+    "done:\n\t"
+            "MOV    EDX,$tmp2\n\t"
+            "NEG    EDX:EAX # if $imm < 0" %}
+  ins_encode %{
+    int con = (int)$imm$$constant;
+    assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
+    int pcon = (con > 0) ? con : -con;
+    Label Lfast, Lpos, Ldone;
+
+    __ movl($tmp$$Register, pcon);
+    __ xorl($tmp2$$Register,$tmp2$$Register);
+    __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ jccb(Assembler::above, Lfast); // result fits into 32 bit
+
+    __ movl($tmp2$$Register, $dst$$Register); // save
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ movl(HIGH_FROM_LOW($dst$$Register),0); // preserve flags
+    __ jccb(Assembler::lessEqual, Lpos); // result is positive
+
+    // Negative dividend.
+    // convert value to positive to use unsigned division
+    __ lneg($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    __ xchgl($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    // revert result back to negative
+    __ lneg($tmp2$$Register, $dst$$Register);
+    __ jmpb(Ldone);
+
+    __ bind(Lpos);
+    __ divl($tmp$$Register); // Use unsigned division
+    __ xchgl($dst$$Register, $tmp2$$Register);
+    // Fallthrow for final divide, tmp2 has 32 bit hi result
+
+    __ bind(Lfast);
+    // fast path: src is positive
+    __ divl($tmp$$Register); // Use unsigned division
+
+    __ bind(Ldone);
+    __ movl(HIGH_FROM_LOW($dst$$Register),$tmp2$$Register);
+    if (con < 0) {
+      __ lneg(HIGH_FROM_LOW($dst$$Register), $dst$$Register);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Remainder Register Long (remainder fit into 32 bits)
+instruct modL_eReg_imm32( eADXRegL dst, immL32 imm, eRegI tmp, eRegI tmp2, eFlagsReg cr ) %{
+  match(Set dst (ModL dst imm));
+  effect( TEMP tmp, TEMP tmp2, KILL cr );
+  ins_cost(1000);
+  format %{ "MOV    $tmp,abs($imm) # lrem EDX:EAX,$imm\n\t"
+            "CMP    $tmp,EDX\n\t"
+            "JA,s   fast\n\t"
+            "MOV    $tmp2,EAX\n\t"
+            "MOV    EAX,EDX\n\t"
+            "MOV    EDX,0\n\t"
+            "JLE,s  pos\n\t"
+            "LNEG   EAX : $tmp2\n\t"
+            "DIV    $tmp # unsigned division\n\t"
+            "MOV    EAX,$tmp2\n\t"
+            "DIV    $tmp\n\t"
+            "NEG    EDX\n\t"
+            "JMP,s  done\n"
+    "pos:\n\t"
+            "DIV    $tmp\n\t"
+            "MOV    EAX,$tmp2\n"
+    "fast:\n\t"
+            "DIV    $tmp\n"
+    "done:\n\t"
+            "MOV    EAX,EDX\n\t"
+            "SAR    EDX,31\n\t" %}
+  ins_encode %{
+    int con = (int)$imm$$constant;
+    assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
+    int pcon = (con > 0) ? con : -con;
+    Label  Lfast, Lpos, Ldone;
+
+    __ movl($tmp$$Register, pcon);
+    __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ jccb(Assembler::above, Lfast); // src is positive and result fits into 32 bit
+
+    __ movl($tmp2$$Register, $dst$$Register); // save
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ movl(HIGH_FROM_LOW($dst$$Register),0); // preserve flags
+    __ jccb(Assembler::lessEqual, Lpos); // result is positive
+
+    // Negative dividend.
+    // convert value to positive to use unsigned division
+    __ lneg($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    __ movl($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    // revert remainder back to negative
+    __ negl(HIGH_FROM_LOW($dst$$Register));
+    __ jmpb(Ldone);
+
+    __ bind(Lpos);
+    __ divl($tmp$$Register);
+    __ movl($dst$$Register, $tmp2$$Register);
+
+    __ bind(Lfast);
+    // fast path: src is positive
+    __ divl($tmp$$Register);
+
+    __ bind(Ldone);
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // result sign
+
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // Integer Shift Instructions
 // Shift Left by one
 instruct shlI_eReg_1(eRegI dst, immI1 shift, eFlagsReg cr) %{
@@ -12886,7 +13075,7 @@ instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     bool ok = false;
     if ($cop$$cmpcode == Assembler::notEqual) {
        // the two jumps 6 bytes apart so the jump distances are too
-       parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+       parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
     } else if ($cop$$cmpcode == Assembler::equal) {
        parity_disp = 6;
        ok = true;
@@ -12896,7 +13085,7 @@ instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     emit_d32(cbuf, parity_disp);
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
     emit_d32(cbuf, disp);
   %}
   ins_pipe(pipe_jcc);
@@ -13082,7 +13271,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     emit_cc(cbuf, $primary, Assembler::parity);
     int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+      parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
     } else if ($cop$$cmpcode == Assembler::equal) {
       parity_disp = 2;
     } else {
@@ -13090,7 +13279,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     }
     emit_d8(cbuf, parity_disp);
     emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
     emit_d8(cbuf, disp);
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");

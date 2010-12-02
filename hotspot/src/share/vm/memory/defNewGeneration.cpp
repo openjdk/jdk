@@ -87,9 +87,7 @@ void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
     _gch->oop_since_save_marks_iterate(_level, _scan_cur_or_nonheap,
                                        _scan_older);
   } while (!_gch->no_allocs_since_save_marks(_level));
-  guarantee(_gen->promo_failure_scan_stack() == NULL
-            || _gen->promo_failure_scan_stack()->length() == 0,
-            "Failed to finish scan");
+  guarantee(_gen->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
@@ -130,9 +128,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    int level,
                                    const char* policy)
   : Generation(rs, initial_size, level),
-    _objs_with_preserved_marks(NULL),
-    _preserved_marks_of_objs(NULL),
-    _promo_failure_scan_stack(NULL),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false)
 {
@@ -515,7 +510,7 @@ void DefNewGeneration::collect(bool   full,
   // from this generation, pass on collection; let the next generation
   // do it.
   if (!collection_attempt_is_safe()) {
-    gch->set_incremental_collection_will_fail();
+    gch->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
     return;
   }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
@@ -601,15 +596,10 @@ void DefNewGeneration::collect(bool   full,
     if (PrintGC && !PrintGCDetails) {
       gch->print_heap_change(gch_prev_used);
     }
+    assert(!gch->incremental_collection_failed(), "Should be clear");
   } else {
-    assert(HandlePromotionFailure,
-      "Should not be here unless promotion failure handling is on");
-    assert(_promo_failure_scan_stack != NULL &&
-      _promo_failure_scan_stack->length() == 0, "post condition");
-
-    // deallocate stack and it's elements
-    delete _promo_failure_scan_stack;
-    _promo_failure_scan_stack = NULL;
+    assert(_promo_failure_scan_stack.is_empty(), "post condition");
+    _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
     remove_forwarding_pointers();
     if (PrintGCDetails) {
@@ -620,9 +610,9 @@ void DefNewGeneration::collect(bool   full,
     // case there can be live objects in to-space
     // as a result of a partial evacuation of eden
     // and from-space.
-    swap_spaces();   // For the sake of uniformity wrt ParNewGeneration::collect().
+    swap_spaces();   // For uniformity wrt ParNewGeneration.
     from()->set_next_compaction_space(to());
-    gch->set_incremental_collection_will_fail();
+    gch->set_incremental_collection_failed();
 
     // Inform the next generation that a promotion failure occurred.
     _next_gen->promotion_failure_occurred();
@@ -653,34 +643,23 @@ void DefNewGeneration::remove_forwarding_pointers() {
   RemoveForwardPointerClosure rspc;
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
+
   // Now restore saved marks, if any.
-  if (_objs_with_preserved_marks != NULL) {
-    assert(_preserved_marks_of_objs != NULL, "Both or none.");
-    assert(_objs_with_preserved_marks->length() ==
-           _preserved_marks_of_objs->length(), "Both or none.");
-    for (int i = 0; i < _objs_with_preserved_marks->length(); i++) {
-      oop obj   = _objs_with_preserved_marks->at(i);
-      markOop m = _preserved_marks_of_objs->at(i);
-      obj->set_mark(m);
-    }
-    delete _objs_with_preserved_marks;
-    delete _preserved_marks_of_objs;
-    _objs_with_preserved_marks = NULL;
-    _preserved_marks_of_objs = NULL;
+  assert(_objs_with_preserved_marks.size() == _preserved_marks_of_objs.size(),
+         "should be the same");
+  while (!_objs_with_preserved_marks.is_empty()) {
+    oop obj   = _objs_with_preserved_marks.pop();
+    markOop m = _preserved_marks_of_objs.pop();
+    obj->set_mark(m);
   }
+  _objs_with_preserved_marks.clear(true);
+  _preserved_marks_of_objs.clear(true);
 }
 
 void DefNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
   if (m->must_be_preserved_for_promotion_failure(obj)) {
-    if (_objs_with_preserved_marks == NULL) {
-      assert(_preserved_marks_of_objs == NULL, "Both or none.");
-      _objs_with_preserved_marks = new (ResourceObj::C_HEAP)
-        GrowableArray<oop>(PreserveMarkStackSize, true);
-      _preserved_marks_of_objs = new (ResourceObj::C_HEAP)
-        GrowableArray<markOop>(PreserveMarkStackSize, true);
-    }
-    _objs_with_preserved_marks->push(obj);
-    _preserved_marks_of_objs->push(m);
+    _objs_with_preserved_marks.push(obj);
+    _preserved_marks_of_objs.push(m);
   }
 }
 
@@ -695,7 +674,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
   old->forward_to(old);
   _promotion_failed = true;
 
-  push_on_promo_failure_scan_stack(old);
+  _promo_failure_scan_stack.push(old);
 
   if (!_promo_failure_drain_in_progress) {
     // prevent recursion in copy_to_survivor_space()
@@ -720,12 +699,6 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   if (obj == NULL) {
     obj = _next_gen->promote(old, s);
     if (obj == NULL) {
-      if (!HandlePromotionFailure) {
-        // A failed promotion likely means the MaxLiveObjectEvacuationRatio flag
-        // is incorrectly set. In any case, its seriously wrong to be here!
-        vm_exit_out_of_memory(s*wordSize, "promotion");
-      }
-
       handle_promotion_failure(old);
       return old;
     }
@@ -748,20 +721,9 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   return obj;
 }
 
-void DefNewGeneration::push_on_promo_failure_scan_stack(oop obj) {
-  if (_promo_failure_scan_stack == NULL) {
-    _promo_failure_scan_stack = new (ResourceObj::C_HEAP)
-                                    GrowableArray<oop>(40, true);
-  }
-
-  _promo_failure_scan_stack->push(obj);
-}
-
 void DefNewGeneration::drain_promo_failure_scan_stack() {
-  assert(_promo_failure_scan_stack != NULL, "precondition");
-
-  while (_promo_failure_scan_stack->length() > 0) {
-     oop obj = _promo_failure_scan_stack->pop();
+  while (!_promo_failure_scan_stack.is_empty()) {
+     oop obj = _promo_failure_scan_stack.pop();
      obj->oop_iterate(_promo_failure_scan_stack_closure);
   }
 }
@@ -843,47 +805,43 @@ bool DefNewGeneration::collection_attempt_is_safe() {
     assert(_next_gen != NULL,
            "This must be the youngest gen, and not the only gen");
   }
-
-  // Decide if there's enough room for a full promotion
-  // When using extremely large edens, we effectively lose a
-  // large amount of old space.  Use the "MaxLiveObjectEvacuationRatio"
-  // flag to reduce the minimum evacuation space requirements. If
-  // there is not enough space to evacuate eden during a scavenge,
-  // the VM will immediately exit with an out of memory error.
-  // This flag has not been tested
-  // with collectors other than simple mark & sweep.
-  //
-  // Note that with the addition of promotion failure handling, the
-  // VM will not immediately exit but will undo the young generation
-  // collection.  The parameter is left here for compatibility.
-  const double evacuation_ratio = MaxLiveObjectEvacuationRatio / 100.0;
-
-  // worst_case_evacuation is based on "used()".  For the case where this
-  // method is called after a collection, this is still appropriate because
-  // the case that needs to be detected is one in which a full collection
-  // has been done and has overflowed into the young generation.  In that
-  // case a minor collection will fail (the overflow of the full collection
-  // means there is no space in the old generation for any promotion).
-  size_t worst_case_evacuation = (size_t)(used() * evacuation_ratio);
-
-  return _next_gen->promotion_attempt_is_safe(worst_case_evacuation,
-                                              HandlePromotionFailure);
+  return _next_gen->promotion_attempt_is_safe(used());
 }
 
 void DefNewGeneration::gc_epilogue(bool full) {
+  DEBUG_ONLY(static bool seen_incremental_collection_failed = false;)
+
+  assert(!GC_locker::is_active(), "We should not be executing here");
   // Check if the heap is approaching full after a collection has
   // been done.  Generally the young generation is empty at
   // a minimum at the end of a collection.  If it is not, then
   // the heap is approaching full.
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  clear_should_allocate_from_space();
-  if (collection_attempt_is_safe()) {
-    gch->clear_incremental_collection_will_fail();
-  } else {
-    gch->set_incremental_collection_will_fail();
-    if (full) { // we seem to be running out of space
-      set_should_allocate_from_space();
+  if (full) {
+    DEBUG_ONLY(seen_incremental_collection_failed = false;)
+    if (!collection_attempt_is_safe()) {
+      gch->set_incremental_collection_failed(); // Slight lie: a full gc left us in that state
+      set_should_allocate_from_space(); // we seem to be running out of space
+    } else {
+      gch->clear_incremental_collection_failed(); // We just did a full collection
+      clear_should_allocate_from_space(); // if set
     }
+  } else {
+#ifdef ASSERT
+    // It is possible that incremental_collection_failed() == true
+    // here, because an attempted scavenge did not succeed. The policy
+    // is normally expected to cause a full collection which should
+    // clear that condition, so we should not be here twice in a row
+    // with incremental_collection_failed() == true without having done
+    // a full collection in between.
+    if (!seen_incremental_collection_failed &&
+        gch->incremental_collection_failed()) {
+      seen_incremental_collection_failed = true;
+    } else if (seen_incremental_collection_failed) {
+      assert(!gch->incremental_collection_failed(), "Twice in a row");
+      seen_incremental_collection_failed = false;
+    }
+#endif // ASSERT
   }
 
   if (ZapUnusedHeapArea) {

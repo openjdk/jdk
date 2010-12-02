@@ -107,7 +107,6 @@ static void deopt_caller() {
     RegisterMap reg_map(thread, false);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
-    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
     assert(caller_is_deopted(), "Must be deoptimized");
   }
@@ -118,8 +117,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   assert(0 <= id && id < number_of_ids, "illegal stub id");
   ResourceMark rm;
   // create code buffer for code storage
-  CodeBuffer code(buffer_blob->instructions_begin(),
-                  buffer_blob->instructions_size());
+  CodeBuffer code(buffer_blob);
 
   Compilation::setup_code_buffer(&code, 0);
 
@@ -141,9 +139,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
     case slow_subtype_check_id:
     case fpu2long_stub_id:
     case unwind_exception_id:
-#ifndef TIERED
-    case counter_overflow_id: // Not generated outside the tiered world
-#endif
+    case counter_overflow_id:
 #if defined(SPARC) || defined(PPC)
     case handle_exception_nofpu_id:  // Unused on sparc
 #endif
@@ -323,31 +319,59 @@ JRT_ENTRY(void, Runtime1::post_jvmti_exception_throw(JavaThread* thread))
   }
 JRT_END
 
-#ifdef TIERED
-JRT_ENTRY(void, Runtime1::counter_overflow(JavaThread* thread, int bci))
-  RegisterMap map(thread, false);
-  frame fr =  thread->last_frame().sender(&map);
+// This is a helper to allow us to safepoint but allow the outer entry
+// to be safepoint free if we need to do an osr
+static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, methodOopDesc* m) {
+  nmethod* osr_nm = NULL;
+  methodHandle method(THREAD, m);
+
+  RegisterMap map(THREAD, false);
+  frame fr =  THREAD->last_frame().sender(&map);
   nmethod* nm = (nmethod*) fr.cb();
-  assert(nm!= NULL && nm->is_nmethod(), "what?");
-  methodHandle method(thread, nm->method());
-  if (bci == 0) {
-    // invocation counter overflow
-    if (!Tier1CountOnly) {
-      CompilationPolicy::policy()->method_invocation_event(method, CHECK);
-    } else {
-      method()->invocation_counter()->reset();
+  assert(nm!= NULL && nm->is_nmethod(), "Sanity check");
+  methodHandle enclosing_method(THREAD, nm->method());
+
+  CompLevel level = (CompLevel)nm->comp_level();
+  int bci = InvocationEntryBci;
+  if (branch_bci != InvocationEntryBci) {
+    // Compute desination bci
+    address pc = method()->code_base() + branch_bci;
+    Bytecodes::Code branch = Bytecodes::code_at(pc, method());
+    int offset = 0;
+    switch (branch) {
+      case Bytecodes::_if_icmplt: case Bytecodes::_iflt:
+      case Bytecodes::_if_icmpgt: case Bytecodes::_ifgt:
+      case Bytecodes::_if_icmple: case Bytecodes::_ifle:
+      case Bytecodes::_if_icmpge: case Bytecodes::_ifge:
+      case Bytecodes::_if_icmpeq: case Bytecodes::_if_acmpeq: case Bytecodes::_ifeq:
+      case Bytecodes::_if_icmpne: case Bytecodes::_if_acmpne: case Bytecodes::_ifne:
+      case Bytecodes::_ifnull: case Bytecodes::_ifnonnull: case Bytecodes::_goto:
+        offset = (int16_t)Bytes::get_Java_u2(pc + 1);
+        break;
+      case Bytecodes::_goto_w:
+        offset = Bytes::get_Java_u4(pc + 1);
+        break;
+      default: ;
     }
-  } else {
-    if (!Tier1CountOnly) {
-      // Twe have a bci but not the destination bci and besides a backedge
-      // event is more for OSR which we don't want here.
-      CompilationPolicy::policy()->method_invocation_event(method, CHECK);
-    } else {
-      method()->backedge_counter()->reset();
-    }
+    bci = branch_bci + offset;
   }
+
+  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, THREAD);
+  return osr_nm;
+}
+
+JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* thread, int bci, methodOopDesc* method))
+  nmethod* osr_nm;
+  JRT_BLOCK
+    osr_nm = counter_overflow_helper(thread, bci, method);
+    if (osr_nm != NULL) {
+      RegisterMap map(thread, false);
+      frame fr =  thread->last_frame().sender(&map);
+      Deoptimization::deoptimize_frame(thread, fr.id());
+    }
+  JRT_BLOCK_END
+  return NULL;
 JRT_END
-#endif // TIERED
 
 extern void vm_exit(int code);
 
@@ -415,8 +439,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // We don't really want to deoptimize the nmethod itself since we
     // can actually continue in the exception handler ourselves but I
     // don't see an easy way to have the desired effect.
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
+    assert(caller_is_deopted(), "Must be deoptimized");
 
     return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
@@ -809,8 +833,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       nm->make_not_entrant();
     }
 
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
 
     // Return to the now deoptimized frame.
   }
@@ -899,7 +922,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
             NativeMovConstReg* n_copy = nativeMovConstReg_at(copy_buff);
 
             assert(n_copy->data() == 0 ||
-                   n_copy->data() == (int)Universe::non_oop_word(),
+                   n_copy->data() == (intptr_t)Universe::non_oop_word(),
                    "illegal init value");
             assert(load_klass() != NULL, "klass not set");
             n_copy->set_data((intx) (load_klass()));

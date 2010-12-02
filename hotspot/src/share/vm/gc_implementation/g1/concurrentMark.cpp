@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,15 +278,16 @@ CMRegionStack::~CMRegionStack() {
   if (_base != NULL) FREE_C_HEAP_ARRAY(oop, _base);
 }
 
-void CMRegionStack::push(MemRegion mr) {
+void CMRegionStack::push_lock_free(MemRegion mr) {
   assert(mr.word_size() > 0, "Precondition");
   while (true) {
-    if (isFull()) {
+    jint index = _index;
+
+    if (index >= _capacity) {
       _overflow = true;
       return;
     }
     // Otherwise...
-    jint index = _index;
     jint next_index = index+1;
     jint res = Atomic::cmpxchg(next_index, &_index, index);
     if (res == index) {
@@ -297,19 +298,17 @@ void CMRegionStack::push(MemRegion mr) {
   }
 }
 
-// Currently we do not call this at all. Normally we would call it
-// during the concurrent marking / remark phases but we now call
-// the lock-based version instead. But we might want to resurrect this
-// code in the future. So, we'll leave it here commented out.
-#if 0
-MemRegion CMRegionStack::pop() {
+// Lock-free pop of the region stack. Called during the concurrent
+// marking / remark phases. Should only be called in tandem with
+// other lock-free pops.
+MemRegion CMRegionStack::pop_lock_free() {
   while (true) {
-    // Otherwise...
     jint index = _index;
 
     if (index == 0) {
       return MemRegion();
     }
+    // Otherwise...
     jint next_index = index-1;
     jint res = Atomic::cmpxchg(next_index, &_index, index);
     if (res == index) {
@@ -326,7 +325,11 @@ MemRegion CMRegionStack::pop() {
     // Otherwise, we need to try again.
   }
 }
-#endif // 0
+
+#if 0
+// The routines that manipulate the region stack with a lock are
+// not currently used. They should be retained, however, as a
+// diagnostic aid.
 
 void CMRegionStack::push_with_lock(MemRegion mr) {
   assert(mr.word_size() > 0, "Precondition");
@@ -361,6 +364,7 @@ MemRegion CMRegionStack::pop_with_lock() {
     }
   }
 }
+#endif
 
 bool CMRegionStack::invalidate_entries_into_cset() {
   bool result = false;
@@ -583,10 +587,13 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 #endif
 
     guarantee(parallel_marking_threads() > 0, "peace of mind");
-    _parallel_workers = new WorkGang("G1 Parallel Marking Threads",
-                                     (int) parallel_marking_threads(), false, true);
-    if (_parallel_workers == NULL)
+    _parallel_workers = new FlexibleWorkGang("G1 Parallel Marking Threads",
+         (int) _parallel_marking_threads, false, true);
+    if (_parallel_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");
+    } else {
+      _parallel_workers->initialize_workers();
+    }
   }
 
   // so that the call below can read a sensible value
@@ -645,8 +652,9 @@ void ConcurrentMark::reset() {
   // We do reset all of them, since different phases will use
   // different number of active threads. So, it's easiest to have all
   // of them ready.
-  for (int i = 0; i < (int) _max_task_num; ++i)
+  for (int i = 0; i < (int) _max_task_num; ++i) {
     _tasks[i]->reset(_nextMarkBitMap);
+  }
 
   // we need this to make sure that the flag is on during the evac
   // pause with initial mark piggy-backed
@@ -985,7 +993,7 @@ void ConcurrentMark::grayRegionIfNecessary(MemRegion mr) {
                              "below the finger, pushing it",
                              mr.start(), mr.end());
 
-    if (!region_stack_push(mr)) {
+    if (!region_stack_push_lock_free(mr)) {
       if (verbose_low())
         gclog_or_tty->print_cr("[global] region stack has overflown.");
     }
@@ -1451,7 +1459,7 @@ public:
                                   _bm, _g1h->concurrent_mark(),
                                   _region_bm, _card_bm);
     calccl.no_yield();
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&calccl, i,
                                             HeapRegion::FinalCountClaimValue);
     } else {
@@ -1531,7 +1539,7 @@ public:
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h,
                                            &_par_cleanup_thread_state[i]->list,
                                            i);
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&g1_note_end, i,
                                             HeapRegion::NoteEndClaimValue);
     } else {
@@ -1575,7 +1583,7 @@ public:
   {}
 
   void work(int i) {
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1rs->scrub_par(_region_bm, _card_bm, i,
                        HeapRegion::ScrubRemSetClaimValue);
     } else {
@@ -1647,7 +1655,7 @@ void ConcurrentMark::cleanup() {
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
                                         &_region_bm, &_card_bm);
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     assert(g1h->check_heap_region_claim_values(
                                                HeapRegion::InitialClaimValue),
            "sanity check");
@@ -1695,7 +1703,7 @@ void ConcurrentMark::cleanup() {
   // Note end of marking in all heap regions.
   double note_end_start = os::elapsedTime();
   G1ParNoteEndTask g1_par_note_end_task(g1h, _par_cleanup_thread_state);
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     int n_workers = g1h->workers()->total_workers();
     g1h->set_par_threads(n_workers);
     g1h->workers()->run_task(&g1_par_note_end_task);
@@ -1720,7 +1728,7 @@ void ConcurrentMark::cleanup() {
   if (G1ScrubRemSets) {
     double rs_scrub_start = os::elapsedTime();
     G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm);
-    if (ParallelGCThreads > 0) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       int n_workers = g1h->workers()->total_workers();
       g1h->set_par_threads(n_workers);
       g1h->workers()->run_task(&g1_par_scrub_rs_task);
@@ -1934,7 +1942,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     G1CollectedHeap::StrongRootsScope srs(g1h);
     // this is remark, so we'll use up all available threads
     int active_workers = ParallelGCThreads;
@@ -2330,6 +2338,39 @@ ConcurrentMark::claim_region(int task_num) {
   return NULL;
 }
 
+bool ConcurrentMark::invalidate_aborted_regions_in_cset() {
+  bool result = false;
+  for (int i = 0; i < (int)_max_task_num; ++i) {
+    CMTask* the_task = _tasks[i];
+    MemRegion mr = the_task->aborted_region();
+    if (mr.start() != NULL) {
+      assert(mr.end() != NULL, "invariant");
+      assert(mr.word_size() > 0, "invariant");
+      HeapRegion* hr = _g1h->heap_region_containing(mr.start());
+      assert(hr != NULL, "invariant");
+      if (hr->in_collection_set()) {
+        // The region points into the collection set
+        the_task->set_aborted_region(MemRegion());
+        result = true;
+      }
+    }
+  }
+  return result;
+}
+
+bool ConcurrentMark::has_aborted_regions() {
+  for (int i = 0; i < (int)_max_task_num; ++i) {
+    CMTask* the_task = _tasks[i];
+    MemRegion mr = the_task->aborted_region();
+    if (mr.start() != NULL) {
+      assert(mr.end() != NULL, "invariant");
+      assert(mr.word_size() > 0, "invariant");
+      return true;
+    }
+  }
+  return false;
+}
+
 void ConcurrentMark::oops_do(OopClosure* cl) {
   if (_markStack.size() > 0 && verbose_low())
     gclog_or_tty->print_cr("[global] scanning the global marking stack, "
@@ -2348,13 +2389,22 @@ void ConcurrentMark::oops_do(OopClosure* cl) {
     queue->oops_do(cl);
   }
 
-  // finally, invalidate any entries that in the region stack that
+  // Invalidate any entries, that are in the region stack, that
   // point into the collection set
   if (_regionStack.invalidate_entries_into_cset()) {
     // otherwise, any gray objects copied during the evacuation pause
     // might not be visited.
     assert(_should_gray_objects, "invariant");
   }
+
+  // Invalidate any aborted regions, recorded in the individual CM
+  // tasks, that point into the collection set.
+  if (invalidate_aborted_regions_in_cset()) {
+    // otherwise, any gray objects copied during the evacuation pause
+    // might not be visited.
+    assert(_should_gray_objects, "invariant");
+  }
+
 }
 
 void ConcurrentMark::clear_marking_state() {
@@ -2368,6 +2418,8 @@ void ConcurrentMark::clear_marking_state() {
   for (int i = 0; i < (int)_max_task_num; ++i) {
     OopTaskQueue* queue = _task_queues->queue(i);
     queue->set_empty();
+    // Clear any partial regions from the CMTasks
+    _tasks[i]->clear_aborted_region();
   }
 }
 
@@ -2586,9 +2638,6 @@ void ConcurrentMark::complete_marking_in_collection_set() {
   double end_time = os::elapsedTime();
   double elapsed_time_ms = (end_time - start) * 1000.0;
   g1h->g1_policy()->record_mark_closure_time(elapsed_time_ms);
-  if (PrintGCDetails) {
-    gclog_or_tty->print_cr("Mark closure took %5.2f ms.", elapsed_time_ms);
-  }
 
   ClearMarksInHRClosure clr(nextMarkBitMap());
   g1h->collection_set_iterate(&clr);
@@ -2638,7 +2687,7 @@ void ConcurrentMark::newCSet() {
   // irrespective whether all collection set regions are below the
   // finger, if the region stack is not empty. This is expected to be
   // a rare case, so I don't think it's necessary to be smarted about it.
-  if (!region_stack_empty())
+  if (!region_stack_empty() || has_aborted_regions())
     _should_gray_objects = true;
 }
 
@@ -2657,8 +2706,9 @@ void ConcurrentMark::abort() {
   _nextMarkBitMap->clearAll();
   // Empty mark stack
   clear_marking_state();
-  for (int i = 0; i < (int)_max_task_num; ++i)
+  for (int i = 0; i < (int)_max_task_num; ++i) {
     _tasks[i]->clear_region_fields();
+  }
   _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
@@ -2936,6 +2986,7 @@ void CMTask::reset(CMBitMap* nextMarkBitMap) {
 
   _nextMarkBitMap                = nextMarkBitMap;
   clear_region_fields();
+  assert(_aborted_region.is_empty(), "should have been cleared");
 
   _calls                         = 0;
   _elapsed_time_ms               = 0.0;
@@ -3372,14 +3423,14 @@ void CMTask::drain_satb_buffers() {
 
   CMObjectClosure oc(this);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  if (ParallelGCThreads > 0)
+  if (G1CollectedHeap::use_parallel_gc_threads())
     satb_mq_set.set_par_closure(_task_id, &oc);
   else
     satb_mq_set.set_closure(&oc);
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     while (!has_aborted() &&
            satb_mq_set.par_apply_closure_to_completed_buffer(_task_id)) {
       if (_cm->verbose_medium())
@@ -3399,7 +3450,7 @@ void CMTask::drain_satb_buffers() {
 
   if (!concurrent() && !has_aborted()) {
     // We should only do this during remark.
-    if (ParallelGCThreads > 0)
+    if (G1CollectedHeap::use_parallel_gc_threads())
       satb_mq_set.par_iterate_closure_all_threads(_task_id);
     else
       satb_mq_set.iterate_closure_all_threads();
@@ -3411,7 +3462,7 @@ void CMTask::drain_satb_buffers() {
          concurrent() ||
          satb_mq_set.completed_buffers_num() == 0, "invariant");
 
-  if (ParallelGCThreads > 0)
+  if (G1CollectedHeap::use_parallel_gc_threads())
     satb_mq_set.set_par_closure(_task_id, NULL);
   else
     satb_mq_set.set_closure(NULL);
@@ -3428,20 +3479,32 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
   assert(_region_finger == NULL,
          "it should be NULL when we're not scanning a region");
 
-  if (!_cm->region_stack_empty()) {
+  if (!_cm->region_stack_empty() || !_aborted_region.is_empty()) {
     if (_cm->verbose_low())
       gclog_or_tty->print_cr("[%d] draining region stack, size = %d",
                              _task_id, _cm->region_stack_size());
 
-    MemRegion mr = _cm->region_stack_pop_with_lock();
-    // it returns MemRegion() if the pop fails
-    statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
+    MemRegion mr;
+
+    if (!_aborted_region.is_empty()) {
+      mr = _aborted_region;
+      _aborted_region = MemRegion();
+
+      if (_cm->verbose_low())
+        gclog_or_tty->print_cr("[%d] scanning aborted region [ " PTR_FORMAT ", " PTR_FORMAT " )",
+                             _task_id, mr.start(), mr.end());
+    } else {
+      mr = _cm->region_stack_pop_lock_free();
+      // it returns MemRegion() if the pop fails
+      statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
+    }
 
     while (mr.start() != NULL) {
       if (_cm->verbose_medium())
         gclog_or_tty->print_cr("[%d] we are scanning region "
                                "["PTR_FORMAT", "PTR_FORMAT")",
                                _task_id, mr.start(), mr.end());
+
       assert(mr.end() <= _cm->finger(),
              "otherwise the region shouldn't be on the stack");
       assert(!mr.is_empty(), "Only non-empty regions live on the region stack");
@@ -3454,7 +3517,7 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
         if (has_aborted())
           mr = MemRegion();
         else {
-          mr = _cm->region_stack_pop_with_lock();
+          mr = _cm->region_stack_pop_lock_free();
           // it returns MemRegion() if the pop fails
           statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
         }
@@ -3468,6 +3531,10 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
         // have definitely set _region_finger to something non-null.
         assert(_region_finger != NULL, "invariant");
 
+        // Make sure that any previously aborted region has been
+        // cleared.
+        assert(_aborted_region.is_empty(), "aborted region not cleared");
+
         // The iteration was actually aborted. So now _region_finger
         // points to the address of the object we last scanned. If we
         // leave it there, when we restart this task, we will rescan
@@ -3480,14 +3547,14 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
 
         if (!newRegion.is_empty()) {
           if (_cm->verbose_low()) {
-            gclog_or_tty->print_cr("[%d] pushing unscanned region"
-                                   "[" PTR_FORMAT "," PTR_FORMAT ") on region stack",
+            gclog_or_tty->print_cr("[%d] recording unscanned region"
+                                   "[" PTR_FORMAT "," PTR_FORMAT ") in CMTask",
                                    _task_id,
                                    newRegion.start(), newRegion.end());
           }
-          // Now push the part of the region we didn't scan on the
-          // region stack to make sure a task scans it later.
-          _cm->region_stack_push_with_lock(newRegion);
+          // Now record the part of the region we didn't scan to
+          // make sure this task scans it later.
+          _aborted_region = newRegion;
         }
         // break from while
         mr = MemRegion();
@@ -3657,6 +3724,8 @@ void CMTask::do_marking_step(double time_target_ms) {
 
   assert(concurrent() || _cm->region_stack_empty(),
          "the region stack should have been cleared before remark");
+  assert(concurrent() || !_cm->has_aborted_regions(),
+         "aborted regions should have been cleared before remark");
   assert(_region_finger == NULL,
          "this should be non-null only when a region is being scanned");
 
@@ -3946,6 +4015,7 @@ void CMTask::do_marking_step(double time_target_ms) {
       // that, if a condition is false, we can immediately find out
       // which one.
       guarantee(_cm->out_of_regions(), "only way to reach here");
+      guarantee(_aborted_region.is_empty(), "only way to reach here");
       guarantee(_cm->region_stack_empty(), "only way to reach here");
       guarantee(_cm->mark_stack_empty(), "only way to reach here");
       guarantee(_task_queue->size() == 0, "only way to reach here");
@@ -4045,7 +4115,8 @@ CMTask::CMTask(int task_id,
     _nextMarkBitMap(NULL), _hash_seed(17),
     _task_queue(task_queue),
     _task_queues(task_queues),
-    _oop_closure(NULL) {
+    _oop_closure(NULL),
+    _aborted_region(MemRegion()) {
   guarantee(task_queue != NULL, "invariant");
   guarantee(task_queues != NULL, "invariant");
 

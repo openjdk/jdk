@@ -33,6 +33,7 @@ import java.util.*;
 import java.awt.color.*;
 import java.awt.image.*;
 import sun.awt.image.ByteInterleavedRaster;
+import sun.security.action.GetPropertyAction;
 import java.lang.reflect.*;
 
 public class WEmbeddedFrame extends EmbeddedFrame {
@@ -48,7 +49,11 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     private int imgWid = 0;
     private int imgHgt = 0;
 
+    private static int pScale = 0;
     private static final int MAX_BAND_SIZE = (1024*30);
+
+    private static String printScale = (String) java.security.AccessController
+       .doPrivileged(new GetPropertyAction("sun.java2d.print.pluginscalefactor"));
 
     public WEmbeddedFrame() {
         this((long)0);
@@ -114,8 +119,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
          * real resolution of the destination so
          */
         if (isPrinterDC(hdc)) {
-            xscale = 4;
-            yscale = 4;
+            xscale = yscale = getPrintScaleFactor();
         }
 
         int frameHeight = getHeight();
@@ -168,6 +172,37 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    protected static int getPrintScaleFactor() {
+        // check if value is already cached
+        if (pScale != 0)
+            return pScale;
+        if (printScale == null) {
+            // if no system property is specified,
+            // check for environment setting
+            printScale = (String) java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction() {
+                    public Object run() {
+                        return System.getenv("JAVA2D_PLUGIN_PRINT_SCALE");
+                    }
+                }
+            );
+        }
+        int default_printDC_scale = 4;
+        int scale = default_printDC_scale;
+        if (printScale != null) {
+            try {
+                scale = Integer.parseInt(printScale);
+                if (scale > 8 || scale < 1) {
+                    scale = default_printDC_scale;
+                }
+            } catch (NumberFormatException nfe) {
+            }
+        }
+        pScale = scale;
+        return pScale;
+    }
+
+
     protected native boolean isPrinterDC(long hdc);
 
     protected native void printBand(long hdc, byte[] data, int offset,
@@ -191,9 +226,20 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     public void activateEmbeddingTopLevel() {
     }
 
-    public void synthesizeWindowActivation(boolean doActivate) {
-        ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(doActivate);
+    public void synthesizeWindowActivation(final boolean doActivate) {
+        if (!doActivate || EventQueue.isDispatchThread()) {
+            ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(doActivate);
+        } else {
+            // To avoid focus concurrence b/w IE and EmbeddedFrame
+            // activation is postponed by means of posting it to EDT.
+            EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(true);
+                    }
+                });
+        }
     }
+
     public void registerAccelerator(AWTKeyStroke stroke) {}
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 

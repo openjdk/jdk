@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,9 @@ class ClassReader implements Constants {
                     fixups[fptr++] = in.readUnsignedShort();
                     break;
                 default:
-                    throw new IOException("Bad constant pool tag "+tag);
+                    throw new ClassFormatException("Bad constant pool tag " +
+                            tag + " in File: " + cls.file.nameString +
+                            " at pos: " + inPos);
             }
         }
 
@@ -403,7 +405,7 @@ class ClassReader implements Constants {
                     skip(length, "unknown "+name+" attribute in "+h);
                     continue;
                 } else {
-                    String message = "unknown in "+h;
+                    String message = " is unknown attribute in class " + h;
                     throw new Attribute.FormatException(message, ctype, name,
                                                         unknownAttrCommand);
                 }
@@ -415,7 +417,12 @@ class ClassReader implements Constants {
                 if (a.name() == "Code") {
                     Class.Method m = (Class.Method) h;
                     m.code = new Code(m);
-                    readCode(m.code);
+                    try {
+                        readCode(m.code);
+                    } catch (Instruction.FormatException iie) {
+                        String message = iie.getMessage() + " in " + h;
+                        throw new ClassReader.ClassFormatException(message, iie);
+                    }
                 } else {
                     assert(h == cls);
                     readInnerClasses(cls);
@@ -426,6 +433,10 @@ class ClassReader implements Constants {
                 byte[] bytes = new byte[length];
                 in.readFully(bytes);
                 a = a.addContent(bytes);
+            }
+            if (a.size() == 0 && !a.layout().isEmpty()) {
+                throw new ClassFormatException(name +
+                        ": attribute length cannot be zero, in " + h);
             }
             h.addAttribute(a);
             if (verbose > 2)
@@ -438,6 +449,7 @@ class ClassReader implements Constants {
         code.max_locals = readUnsignedShort();
         code.bytes = new byte[readInt()];
         in.readFully(code.bytes);
+        Instruction.opcodeChecker(code.bytes);
         int nh = readUnsignedShort();
         code.setHandlerCount(nh);
         for (int i = 0; i < nh; i++) {
@@ -462,5 +474,15 @@ class ClassReader implements Constants {
         }
         cls.innerClasses = ics;  // set directly; do not use setInnerClasses.
         // (Later, ics may be transferred to the pkg.)
+    }
+
+    static class ClassFormatException extends IOException {
+        public ClassFormatException(String message) {
+            super(message);
+        }
+
+        public ClassFormatException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

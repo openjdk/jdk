@@ -928,7 +928,10 @@ public class Window extends Container implements Accessible {
             return;
         }
         if (beforeFirstWindowShown.getAndSet(false)) {
+            // We don't use SplashScreen.getSplashScreen() to avoid instantiating
+            // the object if it hasn't been requested by user code explicitly
             SunToolkit.closeSplashScreen();
+            SplashScreen.markClosed();
         }
     }
 
@@ -1885,6 +1888,7 @@ public class Window extends Container implements Accessible {
      * @exception ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
+     * @exception NullPointerException if {@code listenerType} is {@code null}
      *
      * @see #getWindowListeners
      * @since 1.3

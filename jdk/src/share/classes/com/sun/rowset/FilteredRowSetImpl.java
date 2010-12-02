@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,7 +499,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
      if(onInsertRow) {
         if(p != null) {
-           bool = p.evaluate(new Integer(x),columnIndex);
+           bool = p.evaluate(Integer.valueOf(x),columnIndex);
 
            if(!bool) {
               throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -566,7 +566,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Boolean(x) , columnIndex);
+            bool = p.evaluate(Boolean.valueOf(x) , columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -634,7 +634,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Byte(x),columnIndex);
+            bool = p.evaluate(Byte.valueOf(x),columnIndex);
 
             if(!bool) {
                 throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -703,7 +703,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Short(x), columnIndex);
+            bool = p.evaluate(Short.valueOf(x), columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -771,7 +771,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Long(x), columnIndex);
+            bool = p.evaluate(Long.valueOf(x), columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -1106,12 +1106,12 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
    public void updateBytes(int columnIndex , byte []x) throws SQLException {
 
       boolean bool;
-      String val = new String();
+      String val = "";
 
       Byte [] obj_arr = new Byte[x.length];
 
       for(int i = 0; i < x.length; i++) {
-         obj_arr[i] = new Byte(x[i]);
+         obj_arr[i] = Byte.valueOf(x[i]);
          val = val.concat(obj_arr[i].toString());
      }
 
@@ -1746,5 +1746,23 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
       onInsertRow = false;
       super.insertRow();
    }
-  static final long serialVersionUID = 6178454588413509360L;
+
+   /**
+    * This method re populates the resBundle
+    * during the deserialization process
+    *
+    */
+   private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+       // Default state initialization happens here
+       ois.defaultReadObject();
+       // Initialization of transient Res Bundle happens here .
+       try {
+          resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+       } catch(IOException ioe) {
+           throw new RuntimeException(ioe);
+       }
+
+   }
+
+   static final long serialVersionUID = 6178454588413509360L;
 } // end FilteredRowSetImpl class

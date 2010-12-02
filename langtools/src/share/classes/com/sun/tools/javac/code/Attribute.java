@@ -295,4 +295,11 @@ public abstract class Attribute implements AnnotationValue {
         void visitEnum(Attribute.Enum e);
         void visitError(Attribute.Error e);
     }
+
+    /** A mirror of java.lang.annotation.RetentionPolicy. */
+    public static enum RetentionPolicy {
+        SOURCE,
+        CLASS,
+        RUNTIME
+    }
 }

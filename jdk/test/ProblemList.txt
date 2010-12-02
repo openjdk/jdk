@@ -165,6 +165,12 @@ java/awt/Mouse/MouseModifiersUnitTest/ExtraButtonDrag.java	generic-all
 #  very small tests and could greatly benefit from a samevm test run.
 #  So a large batch of beans tests are currently run with othervm mode.
 
+# Filed 6986807
+java/beans/Introspector/TestTypeResolver.java   		generic-all
+
+# Filed 6986813
+java/beans/Introspector/memory/Test4508780.java			generic-all
+
 # Linux, some kind of problems with X11 display
 java/beans/PropertyChangeSupport/Test4682386.java		generic-all
 java/beans/PropertyChangeSupport/TestSynchronization.java	generic-all
@@ -200,9 +206,6 @@ java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
 
 # Windows X64, RuntimeException: MyThread expected to have RUNNABLE but got WAITING
 java/lang/Thread/ThreadStateTest.java				generic-all
-
-# Timeout on windows 64bit 
-java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 ############################################################################
 
@@ -496,6 +499,9 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
 # jdk_security
 
+# Filed 6986868
+sun/security/tools/jarsigner/crl.sh				generic-all
+
 # Filed 6951285, not sure how often this fails, last was Linux 64bit Fedora 9
 sun/security/krb5/auto/MaxRetries.java				generic-all
 
@@ -692,9 +698,21 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 
 # jdk_tools
 
+# Filed 6952105
+com/sun/jdi/SuspendThreadTest.java				generic-all
+
+# Filed 6986875
+sun/tools/jps/jps-Vvml.sh					generic-all
+
+# Filed 6979016
+sun/tools/jconsole/ResourceCheckTest.sh				generic-all
+
 ############################################################################
 
 # jdk_util
+
+# Filed 6933803
+java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all
 
 # Fails with assertion error on windows
 #   11 separate stacktraces created... file reuse problem?

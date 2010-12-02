@@ -27,6 +27,14 @@
 
 #define __ _masm->
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) __ block_comment(str)
+#endif
+
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+
 address MethodHandleEntry::start_compiled_entry(MacroAssembler* _masm,
                                                 address interpreted_entry) {
   // Just before the actual machine code entry point, allocate space
@@ -62,17 +70,29 @@ MethodHandleEntry* MethodHandleEntry::finish_compiled_entry(MacroAssembler* _mas
 
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm) {
-  // I5_savedSP: sender SP (must preserve)
+  // I5_savedSP/O5_savedSP: sender SP (must preserve)
   // G4 (Gargs): incoming argument list (must preserve)
-  // G5_method:  invoke methodOop; becomes method type.
+  // G5_method:  invoke methodOop
   // G3_method_handle: receiver method handle (must load from sp[MethodTypeForm.vmslots])
-  // O0, O1: garbage temps, blown away
-  Register O0_argslot = O0;
+  // O0, O1, O2, O3, O4: garbage temps, blown away
+  Register O0_mtype   = O0;
   Register O1_scratch = O1;
+  Register O2_scratch = O2;
+  Register O3_scratch = O3;
+  Register O4_argslot = O4;
+  Register O4_argbase = O4;
 
   // emit WrongMethodType path first, to enable back-branch from main path
   Label wrong_method_type;
   __ bind(wrong_method_type);
+  Label invoke_generic_slow_path;
+  assert(methodOopDesc::intrinsic_id_size_in_bytes() == sizeof(u1), "");;
+  __ ldub(Address(G5_method, methodOopDesc::intrinsic_id_offset_in_bytes()), O1_scratch);
+  __ cmp(O1_scratch, (int) vmIntrinsics::_invokeExact);
+  __ brx(Assembler::notEqual, false, Assembler::pt, invoke_generic_slow_path);
+  __ delayed()->nop();
+  __ mov(O0_mtype, G5_method_type);  // required by throw_WrongMethodType
+  // mov(G3_method_handle, G3_method_handle);  // already in this register
   __ jump_to(AddressLiteral(Interpreter::throw_WrongMethodType_entry()), O1_scratch);
   __ delayed()->nop();
 
@@ -80,22 +100,73 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   __ align(CodeEntryAlignment);
   address entry_point = __ pc();
 
-  // fetch the MethodType from the method handle into G5_method_type
+  // fetch the MethodType from the method handle
   {
     Register tem = G5_method;
-    assert(tem == G5_method_type, "yes, it's the same register");
     for (jint* pchase = methodOopDesc::method_type_offsets_chain(); (*pchase) != -1; pchase++) {
-      __ ld_ptr(Address(tem, *pchase), G5_method_type);
+      __ ld_ptr(Address(tem, *pchase), O0_mtype);
+      tem = O0_mtype;          // in case there is another indirection
     }
   }
 
   // given the MethodType, find out where the MH argument is buried
-  __ ld_ptr(Address(G5_method_type, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, O1_scratch)),        O0_argslot);
-  __ ldsw(  Address(O0_argslot,     __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, O1_scratch)), O0_argslot);
-  __ ld_ptr(__ argument_address(O0_argslot), G3_method_handle);
+  __ load_heap_oop(Address(O0_mtype,   __ delayed_value(java_dyn_MethodType::form_offset_in_bytes,        O1_scratch)), O4_argslot);
+  __ ldsw(         Address(O4_argslot, __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, O1_scratch)), O4_argslot);
+  __ add(Gargs, __ argument_offset(O4_argslot, 1), O4_argbase);
+  // Note: argument_address uses its input as a scratch register!
+  __ ld_ptr(Address(O4_argbase, -Interpreter::stackElementSize), G3_method_handle);
 
-  __ check_method_handle_type(G5_method_type, G3_method_handle, O1_scratch, wrong_method_type);
+  trace_method_handle(_masm, "invokeExact");
+
+  __ check_method_handle_type(O0_mtype, G3_method_handle, O1_scratch, wrong_method_type);
   __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
+
+  // for invokeGeneric (only), apply argument and result conversions on the fly
+  __ bind(invoke_generic_slow_path);
+#ifdef ASSERT
+  { Label L;
+    __ ldub(Address(G5_method, methodOopDesc::intrinsic_id_offset_in_bytes()), O1_scratch);
+    __ cmp(O1_scratch, (int) vmIntrinsics::_invokeGeneric);
+    __ brx(Assembler::equal, false, Assembler::pt, L);
+    __ delayed()->nop();
+    __ stop("bad methodOop::intrinsic_id");
+    __ bind(L);
+  }
+#endif //ASSERT
+
+  // make room on the stack for another pointer:
+  insert_arg_slots(_masm, 2 * stack_move_unit(), _INSERT_REF_MASK, O4_argbase, O1_scratch, O2_scratch, O3_scratch);
+  // load up an adapter from the calling type (Java weaves this)
+  Register O2_form    = O2_scratch;
+  Register O3_adapter = O3_scratch;
+  __ load_heap_oop(Address(O0_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes,               O1_scratch)), O2_form);
+  // load_heap_oop(Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
+  // deal with old JDK versions:
+  __ add(          Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
+  __ cmp(O3_adapter, O2_form);
+  Label sorry_no_invoke_generic;
+  __ brx(Assembler::lessUnsigned, false, Assembler::pn, sorry_no_invoke_generic);
+  __ delayed()->nop();
+
+  __ load_heap_oop(Address(O3_adapter, 0), O3_adapter);
+  __ tst(O3_adapter);
+  __ brx(Assembler::zero, false, Assembler::pn, sorry_no_invoke_generic);
+  __ delayed()->nop();
+  __ st_ptr(O3_adapter, Address(O4_argbase, 1 * Interpreter::stackElementSize));
+  // As a trusted first argument, pass the type being called, so the adapter knows
+  // the actual types of the arguments and return values.
+  // (Generic invokers are shared among form-families of method-type.)
+  __ st_ptr(O0_mtype,   Address(O4_argbase, 0 * Interpreter::stackElementSize));
+  // FIXME: assert that O3_adapter is of the right method-type.
+  __ mov(O3_adapter, G3_method_handle);
+  trace_method_handle(_masm, "invokeGeneric");
+  __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
+
+  __ bind(sorry_no_invoke_generic); // no invokeGeneric implementation available!
+  __ mov(O0_mtype, G5_method_type);  // required by throw_WrongMethodType
+  // mov(G3_method_handle, G3_method_handle);  // already in this register
+  __ jump_to(AddressLiteral(Interpreter::throw_WrongMethodType_entry()), O1_scratch);
+  __ delayed()->nop();
 
   return entry_point;
 }
@@ -105,6 +176,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 static void verify_argslot(MacroAssembler* _masm, Register argslot_reg, Register temp_reg, const char* error_message) {
   // Verify that argslot lies within (Gargs, FP].
   Label L_ok, L_bad;
+  BLOCK_COMMENT("{ verify_argslot");
 #ifdef _LP64
   __ add(FP, STACK_BIAS, temp_reg);
   __ cmp(argslot_reg, temp_reg);
@@ -119,6 +191,7 @@ static void verify_argslot(MacroAssembler* _masm, Register argslot_reg, Register
   __ bind(L_bad);
   __ stop(error_message);
   __ bind(L_ok);
+  BLOCK_COMMENT("} verify_argslot");
 }
 #endif
 
@@ -175,6 +248,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
   //   for (temp = sp + size; temp < argslot; temp++)
   //     temp[-size] = temp[0]
   //   argslot -= size;
+  BLOCK_COMMENT("insert_arg_slots {");
   RegisterOrConstant offset = __ regcon_sll_ptr(arg_slots, LogBytesPerWord, temp3_reg);
 
   // Keep the stack pointer 2*wordSize aligned.
@@ -187,7 +261,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
 
   {
     Label loop;
-    __ bind(loop);
+    __ BIND(loop);
     // pull one word down each time through the loop
     __ ld_ptr(Address(temp_reg, 0), temp2_reg);
     __ st_ptr(temp2_reg, Address(temp_reg, offset));
@@ -199,6 +273,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
 
   // Now move the argslot down, to point to the opened-up space.
   __ add(argslot_reg, offset, argslot_reg);
+  BLOCK_COMMENT("} insert_arg_slots");
 }
 
 
@@ -235,6 +310,7 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
   }
 #endif // ASSERT
 
+  BLOCK_COMMENT("remove_arg_slots {");
   // Pull up everything shallower than argslot.
   // Then remove the excess space on the stack.
   // The stacked return address gets pulled up with everything else.
@@ -246,7 +322,7 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
   __ sub(argslot_reg, wordSize, temp_reg);  // source pointer for copy
   {
     Label loop;
-    __ bind(loop);
+    __ BIND(loop);
     // pull one word up each time through the loop
     __ ld_ptr(Address(temp_reg, 0), temp2_reg);
     __ st_ptr(temp2_reg, Address(temp_reg, offset));
@@ -265,28 +341,34 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
   const int TwoWordAlignmentMask = right_n_bits(LogBytesPerWord + 1);
   RegisterOrConstant masked_offset = __ regcon_andn_ptr(offset, TwoWordAlignmentMask, temp_reg);
   __ add(SP, masked_offset, SP);
+  BLOCK_COMMENT("} remove_arg_slots");
 }
 
 
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh) {
-#if 0
-                              intptr_t* entry_sp,
-                              intptr_t* saved_sp,
-                              intptr_t* saved_bp) {
-  // called as a leaf from native code: do not block the JVM!
-  intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
-  intptr_t* base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
-  printf("MH %s mh="INTPTR_FORMAT" sp=("INTPTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="INTPTR_FORMAT"\n",
-         adaptername, (intptr_t)mh, (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
-  if (last_sp != saved_sp)
-    printf("*** last_sp="INTPTR_FORMAT"\n", (intptr_t)last_sp);
-#endif
-
+                              oopDesc* mh) {
   printf("MH %s mh="INTPTR_FORMAT"\n", adaptername, (intptr_t) mh);
   print_method_handle(mh);
+}
+void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
+  if (!TraceMethodHandles)  return;
+  BLOCK_COMMENT("trace_method_handle {");
+  // save: Gargs, O5_savedSP
+  __ save_frame(16);
+  __ set((intptr_t) adaptername, O0);
+  __ mov(G3_method_handle, O1);
+  __ mov(G3_method_handle, L3);
+  __ mov(Gargs, L4);
+  __ mov(G5_method_type, L5);
+  __ call_VM_leaf(L7, CAST_FROM_FN_PTR(address, trace_method_handle_stub));
+
+  __ mov(L3, G3_method_handle);
+  __ mov(L4, Gargs);
+  __ mov(L5, G5_method_type);
+  __ restore();
+  BLOCK_COMMENT("} trace_method_handle");
 }
 #endif // PRODUCT
 
@@ -348,18 +430,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   }
 
   address interp_entry = __ pc();
-  if (UseCompressedOops)  __ unimplemented("UseCompressedOops");
 
-#ifndef PRODUCT
-  if (TraceMethodHandles) {
-    // save: Gargs, O5_savedSP
-    __ save(SP, -16*wordSize, SP);
-    __ set((intptr_t) entry_name(ek), O0);
-    __ mov(G3_method_handle, O1);
-    __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, trace_method_handle_stub));
-    __ restore(SP, 16*wordSize, SP);
-  }
-#endif // PRODUCT
+  trace_method_handle(_masm, entry_name(ek));
 
   switch ((int) ek) {
   case _raise_exception:
@@ -413,7 +485,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _invokestatic_mh:
   case _invokespecial_mh:
     {
-      __ ld_ptr(G3_mh_vmtarget, G5_method);  // target is a methodOop
+      __ load_heap_oop(G3_mh_vmtarget, G5_method);  // target is a methodOop
       __ verify_oop(G5_method);
       // Same as TemplateTable::invokestatic or invokespecial,
       // minus the CP setup and profiling:
@@ -468,7 +540,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // minus the CP setup and profiling:
       __ load_method_handle_vmslots(O0_argslot, G3_method_handle, O1_scratch);
       Register O1_intf  = O1_scratch;
-      __ ld_ptr(G3_mh_vmtarget, O1_intf);
+      __ load_heap_oop(G3_mh_vmtarget, O1_intf);
       __ ldsw(G3_dmh_vmindex, G5_index);
       __ ld_ptr(__ argument_address(O0_argslot, -1), G3_method_handle);
       __ null_check(G3_method_handle, oopDesc::klass_offset_in_bytes());
@@ -523,7 +595,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       insert_arg_slots(_masm, arg_slots * stack_move_unit(), arg_mask, O0_argslot, O1_scratch, O2_scratch, G5_index);
 
       // Store bound argument into the new stack slot:
-      __ ld_ptr(G3_bmh_argument, O1_scratch);
+      __ load_heap_oop(G3_bmh_argument, O1_scratch);
       if (arg_type == T_OBJECT) {
         __ st_ptr(O1_scratch, Address(O0_argslot, 0));
       } else {
@@ -541,12 +613,12 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       }
 
       if (direct_to_method) {
-        __ ld_ptr(G3_mh_vmtarget, G5_method);  // target is a methodOop
+        __ load_heap_oop(G3_mh_vmtarget, G5_method);  // target is a methodOop
         __ verify_oop(G5_method);
         __ jump_indirect_to(G5_method_fie, O1_scratch);
         __ delayed()->nop();
       } else {
-        __ ld_ptr(G3_mh_vmtarget, G3_method_handle);  // target is a methodOop
+        __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);  // target is a methodOop
         __ verify_oop(G3_method_handle);
         __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
       }
@@ -556,7 +628,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _adapter_retype_only:
   case _adapter_retype_raw:
     // Immediately jump to the next MH layer:
-    __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+    __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
     __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     // This is OK when all parameter types widen.
     // It is also OK when a return type narrows.
@@ -572,8 +644,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       Address vmarg = __ argument_address(O0_argslot);
 
       // What class are we casting to?
-      __ ld_ptr(G3_amh_argument, G5_klass);  // This is a Class object!
-      __ ld_ptr(Address(G5_klass, java_lang_Class::klass_offset_in_bytes()), G5_klass);
+      __ load_heap_oop(G3_amh_argument, G5_klass);  // This is a Class object!
+      __ load_heap_oop(Address(G5_klass, java_lang_Class::klass_offset_in_bytes()), G5_klass);
 
       Label done;
       __ ld_ptr(vmarg, O1_scratch);
@@ -590,14 +662,14 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // If we get here, the type check failed!
       __ ldsw(G3_amh_vmargslot, O0_argslot);  // reload argslot field
-      __ ld_ptr(G3_amh_argument, O3_scratch);  // required class
+      __ load_heap_oop(G3_amh_argument, O3_scratch);  // required class
       __ ld_ptr(vmarg, O2_scratch);  // bad object
       __ jump_to(AddressLiteral(from_interpreted_entry(_raise_exception)), O0_argslot);
       __ delayed()->mov(Bytecodes::_checkcast, O1_scratch);  // who is complaining?
 
       __ bind(done);
       // Get the new MH:
-      __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+      __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
       __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     }
     break;
@@ -621,9 +693,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       switch (ek) {
       case _adapter_opt_i2i:
-      case _adapter_opt_l2i:
-        __ unimplemented(entry_name(ek));
         value = vmarg;
+        break;
+      case _adapter_opt_l2i:
+        {
+          // just delete the extra slot
+          __ add(Gargs, __ argument_offset(O0_argslot), O0_argslot);
+          remove_arg_slots(_masm, -stack_move_unit(), O0_argslot, O1_scratch, O2_scratch, O3_scratch);
+          value = vmarg = Address(O0_argslot, 0);
+        }
         break;
       case _adapter_opt_unboxi:
         {
@@ -676,7 +754,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ st(O1_scratch, vmarg);
 
       // Get the new MH:
-      __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+      __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
       __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     }
     break;
@@ -721,7 +799,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         ShouldNotReachHere();
       }
 
-      __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+      __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
       __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     }
     break;
@@ -851,7 +929,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         }
       }
 
-      __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+      __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
       __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     }
     break;
@@ -895,7 +973,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ brx(Assembler::less, false, Assembler::pt, loop);
       __ delayed()->nop();  // FILLME
 
-      __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+      __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
       __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     }
     break;
@@ -913,7 +991,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       remove_arg_slots(_masm, G5_stack_move, O0_argslot, O1_scratch, O2_scratch, O3_scratch);
 
-      __ ld_ptr(G3_mh_vmtarget, G3_method_handle);
+      __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);
       __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
     }
     break;

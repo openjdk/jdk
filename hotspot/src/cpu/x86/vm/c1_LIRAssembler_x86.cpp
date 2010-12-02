@@ -488,7 +488,9 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
-    __ movoop(Address(rsp, 0), method()->constant_encoding());
+    __ get_thread(rax);
+    __ movptr(Address(rsp, 0), rax);
+    __ movoop(Address(rsp, sizeof(void*)), method()->constant_encoding());
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit)));
   }
 
@@ -1613,6 +1615,188 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+void LIR_Assembler::type_profile_helper(Register mdo,
+                                        ciMethodData *md, ciProfileData *data,
+                                        Register recv, Label* update_done) {
+  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
+    Label next_test;
+    // See if the receiver is receiver[n].
+    __ cmpptr(recv, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
+    __ jccb(Assembler::notEqual, next_test);
+    Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
+    __ addptr(data_addr, DataLayout::counter_increment);
+    __ jmp(*update_done);
+    __ bind(next_test);
+  }
+
+  // Didn't find receiver; find next empty slot and fill it in
+  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
+    Label next_test;
+    Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)));
+    __ cmpptr(recv_addr, (intptr_t)NULL_WORD);
+    __ jccb(Assembler::notEqual, next_test);
+    __ movptr(recv_addr, recv);
+    __ movptr(Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))), DataLayout::counter_increment);
+    __ jmp(*update_done);
+    __ bind(next_test);
+  }
+}
+
+void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
+  // we always need a stub for the failure case.
+  CodeStub* stub = op->stub();
+  Register obj = op->object()->as_register();
+  Register k_RInfo = op->tmp1()->as_register();
+  Register klass_RInfo = op->tmp2()->as_register();
+  Register dst = op->result_opr()->as_register();
+  ciKlass* k = op->klass();
+  Register Rtmp1 = noreg;
+
+  // check if it needs to be profiled
+  ciMethodData* md;
+  ciProfileData* data;
+
+  if (op->should_profile()) {
+    ciMethod* method = op->profiled_method();
+    assert(method != NULL, "Should have method");
+    int bci = op->profiled_bci();
+    md = method->method_data();
+    if (md == NULL) {
+      bailout("out of memory building methodDataOop");
+      return;
+    }
+    data = md->bci_to_data(bci);
+    assert(data != NULL,                "need data for type check");
+    assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
+  }
+  Label profile_cast_success, profile_cast_failure;
+  Label *success_target = op->should_profile() ? &profile_cast_success : success;
+  Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
+
+  if (obj == k_RInfo) {
+    k_RInfo = dst;
+  } else if (obj == klass_RInfo) {
+    klass_RInfo = dst;
+  }
+  if (k->is_loaded()) {
+    select_different_registers(obj, dst, k_RInfo, klass_RInfo);
+  } else {
+    Rtmp1 = op->tmp3()->as_register();
+    select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
+  }
+
+  assert_different_registers(obj, k_RInfo, klass_RInfo);
+  if (!k->is_loaded()) {
+    jobject2reg_with_patching(k_RInfo, op->info_for_patch());
+  } else {
+#ifdef _LP64
+    __ movoop(k_RInfo, k->constant_encoding());
+#endif // _LP64
+  }
+  assert(obj != k_RInfo, "must be different");
+
+  __ cmpptr(obj, (int32_t)NULL_WORD);
+  if (op->should_profile()) {
+    Label not_null;
+    __ jccb(Assembler::notEqual, not_null);
+    // Object is null; update MDO and exit
+    Register mdo  = klass_RInfo;
+    __ movoop(mdo, md->constant_encoding());
+    Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
+    int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
+    __ orl(data_addr, header_bits);
+    __ jmp(*obj_is_null);
+    __ bind(not_null);
+  } else {
+    __ jcc(Assembler::equal, *obj_is_null);
+  }
+  __ verify_oop(obj);
+
+  if (op->fast_check()) {
+    // get object class
+    // not a safepoint as obj null check happens earlier
+    if (k->is_loaded()) {
+#ifdef _LP64
+      __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
+#else
+      __ cmpoop(Address(obj, oopDesc::klass_offset_in_bytes()), k->constant_encoding());
+#endif // _LP64
+    } else {
+      __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
+    }
+    __ jcc(Assembler::notEqual, *failure_target);
+    // successful cast, fall through to profile or jump
+  } else {
+    // get object class
+    // not a safepoint as obj null check happens earlier
+    __ movptr(klass_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
+    if (k->is_loaded()) {
+      // See if we get an immediate positive hit
+#ifdef _LP64
+      __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
+#else
+      __ cmpoop(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
+#endif // _LP64
+      if (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() != k->super_check_offset()) {
+        __ jcc(Assembler::notEqual, *failure_target);
+        // successful cast, fall through to profile or jump
+      } else {
+        // See if we get an immediate positive hit
+        __ jcc(Assembler::equal, *success_target);
+        // check for self
+#ifdef _LP64
+        __ cmpptr(klass_RInfo, k_RInfo);
+#else
+        __ cmpoop(klass_RInfo, k->constant_encoding());
+#endif // _LP64
+        __ jcc(Assembler::equal, *success_target);
+
+        __ push(klass_RInfo);
+#ifdef _LP64
+        __ push(k_RInfo);
+#else
+        __ pushoop(k->constant_encoding());
+#endif // _LP64
+        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+        __ pop(klass_RInfo);
+        __ pop(klass_RInfo);
+        // result is a boolean
+        __ cmpl(klass_RInfo, 0);
+        __ jcc(Assembler::equal, *failure_target);
+        // successful cast, fall through to profile or jump
+      }
+    } else {
+      // perform the fast part of the checking logic
+      __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
+      // call out-of-line instance of __ check_klass_subtype_slow_path(...):
+      __ push(klass_RInfo);
+      __ push(k_RInfo);
+      __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ pop(klass_RInfo);
+      __ pop(k_RInfo);
+      // result is a boolean
+      __ cmpl(k_RInfo, 0);
+      __ jcc(Assembler::equal, *failure_target);
+      // successful cast, fall through to profile or jump
+    }
+  }
+  if (op->should_profile()) {
+    Register mdo  = klass_RInfo, recv = k_RInfo;
+    __ bind(profile_cast_success);
+    __ movoop(mdo, md->constant_encoding());
+    __ movptr(recv, Address(obj, oopDesc::klass_offset_in_bytes()));
+    Label update_done;
+    type_profile_helper(mdo, md, data, recv, success);
+    __ jmp(*success);
+
+    __ bind(profile_cast_failure);
+    __ movoop(mdo, md->constant_encoding());
+    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    __ subptr(counter_addr, DataLayout::counter_increment);
+    __ jmp(*failure);
+  }
+  __ jmp(*success);
+}
 
 
 void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
@@ -1625,9 +1809,44 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     Register Rtmp1 = op->tmp3()->as_register();
 
     CodeStub* stub = op->stub();
-    Label done;
+
+    // check if it needs to be profiled
+    ciMethodData* md;
+    ciProfileData* data;
+
+    if (op->should_profile()) {
+      ciMethod* method = op->profiled_method();
+      assert(method != NULL, "Should have method");
+      int bci = op->profiled_bci();
+      md = method->method_data();
+      if (md == NULL) {
+        bailout("out of memory building methodDataOop");
+        return;
+      }
+      data = md->bci_to_data(bci);
+      assert(data != NULL,                "need data for type check");
+      assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
+    }
+    Label profile_cast_success, profile_cast_failure, done;
+    Label *success_target = op->should_profile() ? &profile_cast_success : &done;
+    Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
+
     __ cmpptr(value, (int32_t)NULL_WORD);
-    __ jcc(Assembler::equal, done);
+    if (op->should_profile()) {
+      Label not_null;
+      __ jccb(Assembler::notEqual, not_null);
+      // Object is null; update MDO and exit
+      Register mdo  = klass_RInfo;
+      __ movoop(mdo, md->constant_encoding());
+      Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
+      int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
+      __ orl(data_addr, header_bits);
+      __ jmp(done);
+      __ bind(not_null);
+    } else {
+      __ jcc(Assembler::equal, done);
+    }
+
     add_debug_info_for_null_check_here(op->info_for_exception());
     __ movptr(k_RInfo, Address(array, oopDesc::klass_offset_in_bytes()));
     __ movptr(klass_RInfo, Address(value, oopDesc::klass_offset_in_bytes()));
@@ -1635,7 +1854,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // get instance klass
     __ movptr(k_RInfo, Address(k_RInfo, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
     // perform the fast part of the checking logic
-    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, &done, stub->entry(), NULL);
+    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
     __ push(klass_RInfo);
     __ push(k_RInfo);
@@ -1644,228 +1863,51 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ pop(k_RInfo);
     // result is a boolean
     __ cmpl(k_RInfo, 0);
-    __ jcc(Assembler::equal, *stub->entry());
-    __ bind(done);
-  } else if (op->code() == lir_checkcast) {
-    // we always need a stub for the failure case.
-    CodeStub* stub = op->stub();
-    Register obj = op->object()->as_register();
-    Register k_RInfo = op->tmp1()->as_register();
-    Register klass_RInfo = op->tmp2()->as_register();
-    Register dst = op->result_opr()->as_register();
-    ciKlass* k = op->klass();
-    Register Rtmp1 = noreg;
+    __ jcc(Assembler::equal, *failure_target);
+    // fall through to the success case
 
-    Label done;
-    if (obj == k_RInfo) {
-      k_RInfo = dst;
-    } else if (obj == klass_RInfo) {
-      klass_RInfo = dst;
-    }
-    if (k->is_loaded()) {
-      select_different_registers(obj, dst, k_RInfo, klass_RInfo);
-    } else {
-      Rtmp1 = op->tmp3()->as_register();
-      select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
-    }
-
-    assert_different_registers(obj, k_RInfo, klass_RInfo);
-    if (!k->is_loaded()) {
-      jobject2reg_with_patching(k_RInfo, op->info_for_patch());
-    } else {
-#ifdef _LP64
-      __ movoop(k_RInfo, k->constant_encoding());
-#else
-      k_RInfo = noreg;
-#endif // _LP64
-    }
-    assert(obj != k_RInfo, "must be different");
-    __ cmpptr(obj, (int32_t)NULL_WORD);
-    if (op->profiled_method() != NULL) {
-      ciMethod* method = op->profiled_method();
-      int bci          = op->profiled_bci();
-
-      Label profile_done;
-      __ jcc(Assembler::notEqual, profile_done);
-      // Object is null; update methodDataOop
-      ciMethodData* md = method->method_data();
-      if (md == NULL) {
-        bailout("out of memory building methodDataOop");
-        return;
-      }
-      ciProfileData* data = md->bci_to_data(bci);
-      assert(data != NULL,       "need data for checkcast");
-      assert(data->is_BitData(), "need BitData for checkcast");
-      Register mdo  = klass_RInfo;
+    if (op->should_profile()) {
+      Register mdo  = klass_RInfo, recv = k_RInfo;
+      __ bind(profile_cast_success);
       __ movoop(mdo, md->constant_encoding());
-      Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
-      int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
-      __ orl(data_addr, header_bits);
-      __ jmp(done);
-      __ bind(profile_done);
-    } else {
-      __ jcc(Assembler::equal, done);
+      __ movptr(recv, Address(value, oopDesc::klass_offset_in_bytes()));
+      Label update_done;
+      type_profile_helper(mdo, md, data, recv, &done);
+      __ jmpb(done);
+
+      __ bind(profile_cast_failure);
+      __ movoop(mdo, md->constant_encoding());
+      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+      __ subptr(counter_addr, DataLayout::counter_increment);
+      __ jmp(*stub->entry());
     }
-    __ verify_oop(obj);
 
-    if (op->fast_check()) {
-      // get object classo
-      // not a safepoint as obj null check happens earlier
-      if (k->is_loaded()) {
-#ifdef _LP64
-        __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-#else
-        __ cmpoop(Address(obj, oopDesc::klass_offset_in_bytes()), k->constant_encoding());
-#endif // _LP64
-      } else {
-        __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-
-      }
-      __ jcc(Assembler::notEqual, *stub->entry());
-      __ bind(done);
-    } else {
-      // get object class
-      // not a safepoint as obj null check happens earlier
-      __ movptr(klass_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-      if (k->is_loaded()) {
-        // See if we get an immediate positive hit
-#ifdef _LP64
-        __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
-#else
-        __ cmpoop(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
-#endif // _LP64
-        if (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() != k->super_check_offset()) {
-          __ jcc(Assembler::notEqual, *stub->entry());
-        } else {
-          // See if we get an immediate positive hit
-          __ jcc(Assembler::equal, done);
-          // check for self
-#ifdef _LP64
-          __ cmpptr(klass_RInfo, k_RInfo);
-#else
-          __ cmpoop(klass_RInfo, k->constant_encoding());
-#endif // _LP64
-          __ jcc(Assembler::equal, done);
-
-          __ push(klass_RInfo);
-#ifdef _LP64
-          __ push(k_RInfo);
-#else
-          __ pushoop(k->constant_encoding());
-#endif // _LP64
-          __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-          __ pop(klass_RInfo);
-          __ pop(klass_RInfo);
-          // result is a boolean
-          __ cmpl(klass_RInfo, 0);
-          __ jcc(Assembler::equal, *stub->entry());
-        }
-        __ bind(done);
-      } else {
-        // perform the fast part of the checking logic
-        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, &done, stub->entry(), NULL);
-        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-        __ push(klass_RInfo);
-        __ push(k_RInfo);
-        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-        __ pop(klass_RInfo);
-        __ pop(k_RInfo);
-        // result is a boolean
-        __ cmpl(k_RInfo, 0);
-        __ jcc(Assembler::equal, *stub->entry());
-        __ bind(done);
-      }
-
-    }
-    if (dst != obj) {
-      __ mov(dst, obj);
-    }
-  } else if (code == lir_instanceof) {
-    Register obj = op->object()->as_register();
-    Register k_RInfo = op->tmp1()->as_register();
-    Register klass_RInfo = op->tmp2()->as_register();
-    Register dst = op->result_opr()->as_register();
-    ciKlass* k = op->klass();
-
-    Label done;
-    Label zero;
-    Label one;
-    if (obj == k_RInfo) {
-      k_RInfo = klass_RInfo;
-      klass_RInfo = obj;
-    }
-    // patching may screw with our temporaries on sparc,
-    // so let's do it before loading the class
-    if (!k->is_loaded()) {
-      jobject2reg_with_patching(k_RInfo, op->info_for_patch());
-    } else {
-      LP64_ONLY(__ movoop(k_RInfo, k->constant_encoding()));
-    }
-    assert(obj != k_RInfo, "must be different");
-
-    __ verify_oop(obj);
-    if (op->fast_check()) {
-      __ cmpptr(obj, (int32_t)NULL_WORD);
-      __ jcc(Assembler::equal, zero);
-      // get object class
-      // not a safepoint as obj null check happens earlier
-      if (LP64_ONLY(false &&) k->is_loaded()) {
-        NOT_LP64(__ cmpoop(Address(obj, oopDesc::klass_offset_in_bytes()), k->constant_encoding()));
-        k_RInfo = noreg;
-      } else {
-        __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-
-      }
-      __ jcc(Assembler::equal, one);
-    } else {
-      // get object class
-      // not a safepoint as obj null check happens earlier
-      __ cmpptr(obj, (int32_t)NULL_WORD);
-      __ jcc(Assembler::equal, zero);
-      __ movptr(klass_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-
-#ifndef _LP64
-      if (k->is_loaded()) {
-        // See if we get an immediate positive hit
-        __ cmpoop(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
-        __ jcc(Assembler::equal, one);
-        if (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() == k->super_check_offset()) {
-          // check for self
-          __ cmpoop(klass_RInfo, k->constant_encoding());
-          __ jcc(Assembler::equal, one);
-          __ push(klass_RInfo);
-          __ pushoop(k->constant_encoding());
-          __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-          __ pop(klass_RInfo);
-          __ pop(dst);
-          __ jmp(done);
-        }
-      }
-        else // next block is unconditional if LP64:
-#endif // LP64
-      {
-        assert(dst != klass_RInfo && dst != k_RInfo, "need 3 registers");
-
-        // perform the fast part of the checking logic
-        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, dst, &one, &zero, NULL);
-        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-        __ push(klass_RInfo);
-        __ push(k_RInfo);
-        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-        __ pop(klass_RInfo);
-        __ pop(dst);
-        __ jmp(done);
-      }
-    }
-    __ bind(zero);
-    __ xorptr(dst, dst);
-    __ jmp(done);
-    __ bind(one);
-    __ movptr(dst, 1);
     __ bind(done);
-  } else {
-    ShouldNotReachHere();
-  }
+  } else
+    if (code == lir_checkcast) {
+      Register obj = op->object()->as_register();
+      Register dst = op->result_opr()->as_register();
+      Label success;
+      emit_typecheck_helper(op, &success, op->stub()->entry(), &success);
+      __ bind(success);
+      if (dst != obj) {
+        __ mov(dst, obj);
+      }
+    } else
+      if (code == lir_instanceof) {
+        Register obj = op->object()->as_register();
+        Register dst = op->result_opr()->as_register();
+        Label success, failure, done;
+        emit_typecheck_helper(op, &success, &failure, &failure);
+        __ bind(failure);
+        __ xorptr(dst, dst);
+        __ jmpb(done);
+        __ bind(success);
+        __ movptr(dst, 1);
+        __ bind(done);
+      } else {
+        ShouldNotReachHere();
+      }
 
 }
 
@@ -1899,8 +1941,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
       __ cmpxchgptr(newval, Address(addr, 0));
     } else if (op->code() == lir_cas_int) {
       __ cmpxchgl(newval, Address(addr, 0));
-    } else {
-      LP64_ONLY(__ cmpxchgq(newval, Address(addr, 0)));
     }
 #ifdef _LP64
   } else if (op->code() == lir_cas_long) {
@@ -1921,7 +1961,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     Unimplemented();
   }
 }
-
 
 void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result) {
   Assembler::Condition acond, ncond;
@@ -2014,11 +2053,11 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
         case lir_add: {
-          __ increment(lreg, c);
+          __ incrementl(lreg, c);
           break;
         }
         case lir_sub: {
-          __ decrement(lreg, c);
+          __ decrementl(lreg, c);
           break;
         }
         default: ShouldNotReachHere();
@@ -3253,13 +3292,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
   if ((bc == Bytecodes::_invokevirtual || bc == Bytecodes::_invokeinterface) &&
-      Tier1ProfileVirtualCalls) {
+      C1ProfileVirtualCalls) {
     assert(op->recv()->is_single_cpu(), "recv must be allocated");
     Register recv = op->recv()->as_register();
     assert_different_registers(mdo, recv);
     assert(data->is_VirtualCallData(), "need VirtualCallData for virtual calls");
     ciKlass* known_klass = op->known_holder();
-    if (Tier1OptimizeVirtualCallProfiling && known_klass != NULL) {
+    if (C1OptimizeVirtualCallProfiling && known_klass != NULL) {
       // We know the type that will be seen at this call site; we can
       // statically update the methodDataOop rather than needing to do
       // dynamic tests on the receiver type
@@ -3272,7 +3311,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addl(data_addr, DataLayout::counter_increment);
+          __ addptr(data_addr, DataLayout::counter_increment);
           return;
         }
       }
@@ -3288,48 +3327,25 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
           __ movoop(recv_addr, known_klass->constant_encoding());
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addl(data_addr, DataLayout::counter_increment);
+          __ addptr(data_addr, DataLayout::counter_increment);
           return;
         }
       }
     } else {
       __ movptr(recv, Address(recv, oopDesc::klass_offset_in_bytes()));
       Label update_done;
-      uint i;
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        Label next_test;
-        // See if the receiver is receiver[n].
-        __ cmpptr(recv, Address(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i))));
-        __ jcc(Assembler::notEqual, next_test);
-        Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-        __ addl(data_addr, DataLayout::counter_increment);
-        __ jmp(update_done);
-        __ bind(next_test);
-      }
-
-      // Didn't find receiver; find next empty slot and fill it in
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        Label next_test;
-        Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
-        __ cmpptr(recv_addr, (int32_t)NULL_WORD);
-        __ jcc(Assembler::notEqual, next_test);
-        __ movptr(recv_addr, recv);
-        __ movl(Address(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i))), DataLayout::counter_increment);
-        __ jmp(update_done);
-        __ bind(next_test);
-      }
+      type_profile_helper(mdo, md, data, recv, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
       // Increment total counter to indicate polymorphic case.
-      __ addl(counter_addr, DataLayout::counter_increment);
+      __ addptr(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
     }
   } else {
     // Static call
-    __ addl(counter_addr, DataLayout::counter_increment);
+    __ addptr(counter_addr, DataLayout::counter_increment);
   }
 }
-
 
 void LIR_Assembler::emit_delay(LIR_OpDelay*) {
   Unimplemented();

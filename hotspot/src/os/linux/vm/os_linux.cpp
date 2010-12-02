@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -827,8 +827,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
 
       switch (thr_type) {
       case os::java_thread:
-        // Java threads use ThreadStackSize which default value can be changed with the flag -Xss
-        if (JavaThread::stack_size_at_create() > 0) stack_size = JavaThread::stack_size_at_create();
+        // Java threads use ThreadStackSize which default value can be
+        // changed with the flag -Xss
+        assert (JavaThread::stack_size_at_create() > 0, "this should be set");
+        stack_size = JavaThread::stack_size_at_create();
         break;
       case os::compiler_thread:
         if (CompilerThreadStackSize > 0) {
@@ -2597,10 +2599,14 @@ get_stack_bounds(uintptr_t *bottom, uintptr_t *top)
 // where we're going to put our guard pages, truncate the mapping at
 // that point by munmap()ping it.  This ensures that when we later
 // munmap() the guard pages we don't leave a hole in the stack
-// mapping.
+// mapping. This only affects the main/initial thread, but guard
+// against future OS changes
 bool os::create_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
-  if (get_stack_bounds(&stack_extent, &stack_base)) {
+  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
+  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
+      assert(os::Linux::is_initial_thread(),
+           "growable stack in non-initial thread");
     if (stack_extent < (uintptr_t)addr)
       ::munmap((void*)stack_extent, (uintptr_t)addr - stack_extent);
   }
@@ -2609,10 +2615,15 @@ bool os::create_stack_guard_pages(char* addr, size_t size) {
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
-// munmap()ping them.  If not, just call uncommit_memory().
+// munmap()ping them.  If not, just call uncommit_memory(). This only
+// affects the main/initial thread, but guard against future OS changes
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
-  if (get_stack_bounds(&stack_extent, &stack_base)) {
+  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
+  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
+      assert(os::Linux::is_initial_thread(),
+           "growable stack in non-initial thread");
+
     return ::munmap(addr, size) == 0;
   }
 
@@ -3913,12 +3924,21 @@ jint os::init_2(void)
   Linux::signal_sets_init();
   Linux::install_signal_handlers();
 
+  // Check minimum allowable stack size for thread creation and to initialize
+  // the java system classes, including StackOverflowError - depends on page
+  // size.  Add a page for compiler2 recursion in main thread.
+  // Add in 2*BytesPerWord times page size to account for VM stack during
+  // class initialization depending on 32 or 64 bit VM.
+  os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
+            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                    2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::page_size());
+
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
-      threadStackSizeInBytes < Linux::min_stack_allowed) {
+      threadStackSizeInBytes < os::Linux::min_stack_allowed) {
         tty->print_cr("\nThe stack size specified is too small, "
                       "Specify at least %dk",
-                      Linux::min_stack_allowed / K);
+                      os::Linux::min_stack_allowed/ K);
         return JNI_ERR;
   }
 
@@ -4830,7 +4850,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Next, demultiplex/decode time arguments
   timespec absTime;
-  if (time < 0) { // don't wait at all
+  if (time < 0 || (isAbsolute && time == 0) ) { // don't wait at all
     return;
   }
   if (time > 0) {

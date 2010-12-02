@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,8 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
     if (is_niagara1_plus()) {
-      if (AllocatePrefetchStyle > 0 && FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+      if (has_blk_init() && AllocatePrefetchStyle > 0 &&
+          FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
         // Use BIS instruction for allocation prefetch.
         FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
         if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
@@ -112,17 +113,24 @@ void VM_Version::initialize() {
     }
   }
 
+#ifdef COMPILER2
+  // Currently not supported anywhere.
+  FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+#endif
+
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v8() ? ", has_v8" : ""),
                (has_v9() ? ", has_v9" : ""),
                (has_hardware_popc() ? ", popc" : ""),
                (has_vis1() ? ", has_vis1" : ""),
                (has_vis2() ? ", has_vis2" : ""),
+               (has_blk_init() ? ", has_blk_init" : ""),
                (is_ultra3() ? ", is_ultra3" : ""),
                (is_sun4v() ? ", is_sun4v" : ""),
                (is_niagara1() ? ", is_niagara1" : ""),
                (is_niagara1_plus() ? ", is_niagara1_plus" : ""),
+               (is_sparc64() ? ", is_sparc64" : ""),
                (!has_hardware_mul32() ? ", no-mul32" : ""),
                (!has_hardware_div32() ? ", no-div32" : ""),
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));

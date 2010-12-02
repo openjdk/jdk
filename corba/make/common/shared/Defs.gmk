@@ -51,7 +51,7 @@
 # Get shared system utilities macros defined
 include $(BUILDDIR)/common/shared/Defs-utils.gmk
 
-# Assumes ARCH, PLATFORM, ARCH_VM_SUBDIR, etc. have been defined.
+# Assumes ARCH, PLATFORM, etc. have been defined.
 
 # Simple pwd path
 define PwdPath
@@ -157,7 +157,6 @@ endef
 _check_values:=\
 $(call CheckValue,ARCH,),\
 $(call CheckValue,ARCH_DATA_MODEL,),\
-$(call CheckValue,ARCH_VM_SUBDIR,),\
 $(call CheckValue,VARIANT,),\
 $(call CheckValue,PLATFORM,)
 
@@ -194,21 +193,15 @@ endif
 #    can be OPT or DBG,  default is OPT
 #    Determine the extra pattern to add to the release name for debug/fastdebug.
 #    Determine the JDK_IMPORT_VARIANT, so we get the right VM files copied over.
-#    Determine suffix for obj directory or OBJDIR, for .o files.
-#    (by keeping .o files separate, just .o files, they don't clobber each
-#     other, however, the library files will clobber each other).
 #
 ifeq ($(VARIANT), DBG)
   BUILD_VARIANT_RELEASE=-debug
-  OBJDIRNAME_SUFFIX=_g
 else
   BUILD_VARIANT_RELEASE=
-  OBJDIRNAME_SUFFIX=
 endif
 ifeq ($(FASTDEBUG), true)
   VARIANT=DBG
   BUILD_VARIANT_RELEASE=-fastdebug
-  OBJDIRNAME_SUFFIX=_gO
   _JDK_IMPORT_VARIANT=/fastdebug
 endif
 
@@ -330,6 +323,4 @@ BINDIR      = $(OUTPUTDIR)/bin$(ISA_DIR)
 # Absolute path to output directory
 ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
 
-# Get shared compiler settings
-include $(BUILDDIR)/common/shared/Compiler.gmk
 

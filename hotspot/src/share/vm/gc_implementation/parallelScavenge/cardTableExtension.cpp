@@ -123,7 +123,6 @@ void CardTableExtension::scavenge_contents(ObjectStartArray* start_array,
   assert(start_array != NULL && sp != NULL && pm != NULL, "Sanity");
   assert(start_array->covered_region().contains(sp->used_region()),
          "ObjectStartArray does not cover space");
-  bool depth_first = pm->depth_first();
 
   if (sp->not_empty()) {
     oop* sp_top = (oop*)space_top;
@@ -201,21 +200,12 @@ void CardTableExtension::scavenge_contents(ObjectStartArray* start_array,
           *first_nonclean_card++ = clean_card;
         }
         // scan oops in objects
-        // hoisted the if (depth_first) check out of the loop
-        if (depth_first){
-          do {
-            oop(bottom_obj)->push_contents(pm);
-            bottom_obj += oop(bottom_obj)->size();
-            assert(bottom_obj <= sp_top, "just checking");
-          } while (bottom_obj < top);
-          pm->drain_stacks_cond_depth();
-        } else {
-          do {
-            oop(bottom_obj)->copy_contents(pm);
-            bottom_obj += oop(bottom_obj)->size();
-            assert(bottom_obj <= sp_top, "just checking");
-          } while (bottom_obj < top);
-        }
+        do {
+          oop(bottom_obj)->push_contents(pm);
+          bottom_obj += oop(bottom_obj)->size();
+          assert(bottom_obj <= sp_top, "just checking");
+        } while (bottom_obj < top);
+        pm->drain_stacks_cond_depth();
         // remember top oop* scanned
         prev_top = top;
       }
@@ -230,7 +220,6 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
                                                     uint stripe_number) {
   int ssize = 128; // Naked constant!  Work unit = 64k.
   int dirty_card_count = 0;
-  bool depth_first = pm->depth_first();
 
   oop* sp_top = (oop*)space_top;
   jbyte* start_card = byte_for(sp->bottom());
@@ -363,43 +352,22 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
         const int interval = PrefetchScanIntervalInBytes;
         // scan all objects in the range
         if (interval != 0) {
-          // hoisted the if (depth_first) check out of the loop
-          if (depth_first) {
-            while (p < to) {
-              Prefetch::write(p, interval);
-              oop m = oop(p);
-              assert(m->is_oop_or_null(), "check for header");
-              m->push_contents(pm);
-              p += m->size();
-            }
-            pm->drain_stacks_cond_depth();
-          } else {
-            while (p < to) {
-              Prefetch::write(p, interval);
-              oop m = oop(p);
-              assert(m->is_oop_or_null(), "check for header");
-              m->copy_contents(pm);
-              p += m->size();
-            }
+          while (p < to) {
+            Prefetch::write(p, interval);
+            oop m = oop(p);
+            assert(m->is_oop_or_null(), "check for header");
+            m->push_contents(pm);
+            p += m->size();
           }
+          pm->drain_stacks_cond_depth();
         } else {
-          // hoisted the if (depth_first) check out of the loop
-          if (depth_first) {
-            while (p < to) {
-              oop m = oop(p);
-              assert(m->is_oop_or_null(), "check for header");
-              m->push_contents(pm);
-              p += m->size();
-            }
-            pm->drain_stacks_cond_depth();
-          } else {
-            while (p < to) {
-              oop m = oop(p);
-              assert(m->is_oop_or_null(), "check for header");
-              m->copy_contents(pm);
-              p += m->size();
-            }
+          while (p < to) {
+            oop m = oop(p);
+            assert(m->is_oop_or_null(), "check for header");
+            m->push_contents(pm);
+            p += m->size();
           }
+          pm->drain_stacks_cond_depth();
         }
         last_scanned = p;
       }

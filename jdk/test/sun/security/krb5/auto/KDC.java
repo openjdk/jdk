@@ -35,7 +35,6 @@ import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
-import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.util.DerInputStream;
@@ -129,8 +128,13 @@ public class KDC {
 
     // The random generator to generate random keys (including session keys)
     private static SecureRandom secureRandom = new SecureRandom();
-    // Principal db. principal -> pass
-    private Map<String,char[]> passwords = new HashMap<String,char[]>();
+
+    // Principal db. principal -> pass. A case-insensitive TreeMap is used
+    // so that even if the client provides a name with different case, the KDC
+    // can still locate the principal and give back correct salt.
+    private TreeMap<String,char[]> passwords = new TreeMap<String,char[]>
+            (String.CASE_INSENSITIVE_ORDER);
+
     // Realm name
     private String realm;
     // KDC
@@ -159,9 +163,13 @@ public class KDC {
          */
         ONLY_RC4_TGT,
         /**
-         * Only use RC4 in preauth, enc-type still using eTypes[0]
+         * Use RC4 as the first in preauth
          */
-        ONLY_RC4_PREAUTH,
+        RC4_FIRST_PREAUTH,
+        /**
+         * Use only one preauth, so that some keys are not easy to generate
+         */
+        ONLY_ONE_PREAUTH,
     };
 
     static {
@@ -189,6 +197,12 @@ public class KDC {
      */
     public static KDC create(String realm) throws IOException {
         return create(realm, "kdc." + realm.toLowerCase(), 0, true);
+    }
+
+    public static KDC existing(String realm, String kdc, int port) {
+        KDC k = new KDC(realm, kdc);
+        k.port = port;
+        return k;
     }
 
     /**
@@ -245,7 +259,7 @@ public class KDC {
                         name.indexOf('/') < 0 ?
                             PrincipalName.KRB_NT_UNKNOWN :
                             PrincipalName.KRB_NT_SRV_HST),
-                            kdc.passwords.get(name));
+                            kdc.passwords.get(name), -1, true);
             }
         }
         ktab.save();
@@ -471,7 +485,18 @@ public class KDC {
      * @return the salt
      */
     private String getSalt(PrincipalName p) {
-        String[] ns = p.getNameStrings();
+        String pn = p.toString();
+        if (p.getRealmString() == null) {
+            pn = pn + "@" + getRealm();
+        }
+        if (passwords.containsKey(pn)) {
+            try {
+                // Find the principal name with correct case.
+                p = new PrincipalName(passwords.ceilingEntry(pn).getKey());
+            } catch (RealmException re) {
+                // Won't happen
+            }
+        }
         String s = p.getRealmString();
         if (s == null) s = getRealm();
         for (String n: p.getNameStrings()) {
@@ -493,8 +518,6 @@ public class KDC {
         try {
             // Do not call EncryptionKey.acquireSecretKeys(), otherwise
             // the krb5.conf config file would be loaded.
-            Method stringToKey = EncryptionKey.class.getDeclaredMethod("stringToKey", char[].class, String.class, byte[].class, Integer.TYPE);
-            stringToKey.setAccessible(true);
             Integer kvno = null;
             // For service whose password ending with a number, use it as kvno.
             // Kvno must be postive.
@@ -504,12 +527,9 @@ public class KDC {
                     kvno = pass[pass.length-1] - '0';
                 }
             }
-            return new EncryptionKey((byte[]) stringToKey.invoke(
-                    null, getPassword(p, server), getSalt(p), null, etype),
+            return new EncryptionKey(EncryptionKeyDotStringToKey(
+                    getPassword(p, server), getSalt(p), null, etype),
                     etype, kvno);
-        } catch (InvocationTargetException ex) {
-            KrbException ke = (KrbException)ex.getCause();
-            throw ke;
         } catch (KrbException ke) {
             throw ke;
         } catch (Exception e) {
@@ -590,12 +610,11 @@ public class KDC {
                     " sends TGS-REQ for " +
                     tgsReq.reqBody.sname);
             KDCReqBody body = tgsReq.reqBody;
-            int etype = 0;
+            int[] eTypes = KDCReqBodyDotEType(body);
+            int e2 = eTypes[0];     // etype for outgoing session key
+            int e3 = eTypes[0];     // etype for outgoing ticket
 
-            // Reflection: PAData[] pas = tgsReq.pAData;
-            Field f = KDCReq.class.getDeclaredField("pAData");
-            f.setAccessible(true);
-            PAData[] pas = (PAData[])f.get(tgsReq);
+            PAData[] pas = kDCReqDotPAData(tgsReq);
 
             Ticket tkt = null;
             EncTicketPart etp = null;
@@ -607,9 +626,9 @@ public class KDC {
                         APReq apReq = new APReq(pa.getValue());
                         EncryptedData ed = apReq.authenticator;
                         tkt = apReq.ticket;
-                        etype = tkt.encPart.getEType();
+                        int te = tkt.encPart.getEType();
                         tkt.sname.setRealm(tkt.realm);
-                        EncryptionKey kkey = keyForUser(tkt.sname, etype, true);
+                        EncryptionKey kkey = keyForUser(tkt.sname, te, true);
                         byte[] bb = tkt.encPart.decrypt(kkey, KeyUsage.KU_TICKET);
                         DerInputStream derIn = new DerInputStream(bb);
                         DerValue der = derIn.getDerValue();
@@ -620,16 +639,12 @@ public class KDC {
                     throw new KrbException(Krb5.KDC_ERR_PADATA_TYPE_NOSUPP);
                 }
             }
-            EncryptionKey skey = keyForUser(body.sname, etype, true);
-            if (skey == null) {
-                throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
-            }
 
             // Session key for original ticket, TGT
             EncryptionKey ckey = etp.key;
 
             // Session key for session with the service
-            EncryptionKey key = generateRandomKey(etype);
+            EncryptionKey key = generateRandomKey(e2);
 
             // Check time, TODO
             KerberosTime till = body.till;
@@ -678,6 +693,10 @@ public class KDC {
                     till, body.rtime,
                     body.addresses,
                     null);
+            EncryptionKey skey = keyForUser(body.sname, e3, true);
+            if (skey == null) {
+                throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
+            }
             Ticket t = new Ticket(
                     body.crealm,
                     body.sname,
@@ -741,17 +760,17 @@ public class KDC {
     private byte[] processAsReq(byte[] in) throws Exception {
         ASReq asReq = new ASReq(in);
         int[] eTypes = null;
+        List<PAData> outPAs = new ArrayList<PAData>();
+
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
                     " sends AS-REQ for " +
                     asReq.reqBody.sname);
 
             KDCReqBody body = asReq.reqBody;
+            body.cname.setRealm(getRealm());
 
-            // Reflection: int[] eType = body.eType;
-            Field f = KDCReqBody.class.getDeclaredField("eType");
-            f.setAccessible(true);
-            eTypes = (int[])f.get(body);
+            eTypes = KDCReqBodyDotEType(body);
             int eType = eTypes[0];
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
@@ -807,19 +826,63 @@ public class KDC {
             }
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;
 
-            f = KDCReq.class.getDeclaredField("pAData");
-            f.setAccessible(true);
-            PAData[] pas = (PAData[])f.get(asReq);
-            if (pas == null || pas.length == 0) {
+            // Creating PA-DATA
+            int[] epas = eTypes;
+            if (options.containsKey(KDC.Option.RC4_FIRST_PREAUTH)) {
+                for (int i=1; i<epas.length; i++) {
+                    if (epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC) {
+                        epas[i] = epas[0];
+                        epas[0] = EncryptedData.ETYPE_ARCFOUR_HMAC;
+                        break;
+                    }
+                };
+            } else if (options.containsKey(KDC.Option.ONLY_ONE_PREAUTH)) {
+                epas = new int[] { eTypes[0] };
+            }
+
+            DerValue[] pas = new DerValue[epas.length];
+            for (int i=0; i<epas.length; i++) {
+                pas[i] = new DerValue(new ETypeInfo2(
+                        epas[i],
+                        epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
+                            null : getSalt(body.cname),
+                        null).asn1Encode());
+            }
+            DerOutputStream eid = new DerOutputStream();
+            eid.putSequence(pas);
+
+            outPAs.add(new PAData(Krb5.PA_ETYPE_INFO2, eid.toByteArray()));
+
+            boolean allOld = true;
+            for (int i: eTypes) {
+                if (i == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
+                        i == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
+                    allOld = false;
+                    break;
+                }
+            }
+            if (allOld) {
+                for (int i=0; i<epas.length; i++) {
+                    pas[i] = new DerValue(new ETypeInfo(
+                            epas[i],
+                            epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
+                                null : getSalt(body.cname)
+                            ).asn1Encode());
+                }
+                eid = new DerOutputStream();
+                eid.putSequence(pas);
+                outPAs.add(new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray()));
+            }
+
+            PAData[] inPAs = kDCReqDotPAData(asReq);
+            if (inPAs == null || inPAs.length == 0) {
                 Object preauth = options.get(Option.PREAUTH_REQUIRED);
                 if (preauth == null || preauth.equals(Boolean.TRUE)) {
                     throw new KrbException(Krb5.KDC_ERR_PREAUTH_REQUIRED);
                 }
             } else {
                 try {
-                    Constructor<EncryptedData> ctor = EncryptedData.class.getDeclaredConstructor(DerValue.class);
-                    ctor.setAccessible(true);
-                    EncryptedData data = ctor.newInstance(new DerValue(pas[0].getValue()));
+                    EncryptedData data = newEncryptedData(new DerValue(inPAs[0].getValue()));
                     EncryptionKey pakey = keyForUser(body.cname, data.getEType(), false);
                     data.decrypt(pakey, KeyUsage.KU_PA_ENC_TS);
                 } catch (Exception e) {
@@ -862,7 +925,8 @@ public class KDC {
                     body.addresses
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_AS_REP_PART);
-            ASRep asRep = new ASRep(null,
+            ASRep asRep = new ASRep(
+                    outPAs.toArray(new PAData[outPAs.size()]),
                     body.crealm,
                     body.cname,
                     t,
@@ -907,36 +971,10 @@ public class KDC {
             if (kerr == null) {
                 if (ke.returnCode() == Krb5.KDC_ERR_PREAUTH_REQUIRED ||
                         ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) {
-                    PAData pa;
-
-                    int epa = eTypes[0];
-                    if (options.containsKey(KDC.Option.ONLY_RC4_PREAUTH)) {
-                        epa = EncryptedData.ETYPE_ARCFOUR_HMAC;
-                    }
-                    ETypeInfo2 ei2 = new ETypeInfo2(epa, null, null);
-                    DerOutputStream eid = new DerOutputStream();
-                    eid.write(DerValue.tag_Sequence, ei2.asn1Encode());
-
-                    pa = new PAData(Krb5.PA_ETYPE_INFO2, eid.toByteArray());
-
                     DerOutputStream bytes = new DerOutputStream();
                     bytes.write(new PAData(Krb5.PA_ENC_TIMESTAMP, new byte[0]).asn1Encode());
-                    bytes.write(pa.asn1Encode());
-
-                    boolean allOld = true;
-                    for (int i: eTypes) {
-                        if (i == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
-                                i == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
-                            allOld = false;
-                            break;
-                        }
-                    }
-                    if (allOld) {
-                        ETypeInfo ei = new ETypeInfo(epa, null);
-                        eid = new DerOutputStream();
-                        eid.write(DerValue.tag_Sequence, ei.asn1Encode());
-                        pa = new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray());
-                        bytes.write(pa.asn1Encode());
+                    for (PAData p: outPAs) {
+                        bytes.write(p.asn1Encode());
                     }
                     DerOutputStream temp = new DerOutputStream();
                     temp.write(DerValue.tag_Sequence, bytes);
@@ -1144,6 +1182,63 @@ public class KDC {
         @Override
         public String getType() {
             return "ns";
+        }
+    }
+
+    // Calling private methods thru reflections
+    private static final Field getPADataField;
+    private static final Field getEType;
+    private static final Constructor<EncryptedData> ctorEncryptedData;
+    private static final Method stringToKey;
+
+    static {
+        try {
+            ctorEncryptedData = EncryptedData.class.getDeclaredConstructor(DerValue.class);
+            ctorEncryptedData.setAccessible(true);
+            getPADataField = KDCReq.class.getDeclaredField("pAData");
+            getPADataField.setAccessible(true);
+            getEType = KDCReqBody.class.getDeclaredField("eType");
+            getEType.setAccessible(true);
+            stringToKey = EncryptionKey.class.getDeclaredMethod(
+                    "stringToKey",
+                    char[].class, String.class, byte[].class, Integer.TYPE);
+            stringToKey.setAccessible(true);
+        } catch (NoSuchFieldException nsfe) {
+            throw new AssertionError(nsfe);
+        } catch (NoSuchMethodException nsme) {
+            throw new AssertionError(nsme);
+        }
+    }
+    private EncryptedData newEncryptedData(DerValue der) {
+        try {
+            return ctorEncryptedData.newInstance(der);
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+    private static PAData[] kDCReqDotPAData(KDCReq req) {
+        try {
+            return (PAData[])getPADataField.get(req);
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+    private static int[] KDCReqBodyDotEType(KDCReqBody body) {
+        try {
+            return (int[]) getEType.get(body);
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+    private static byte[] EncryptionKeyDotStringToKey(char[] password, String salt,
+            byte[] s2kparams, int keyType) throws KrbCryptoException {
+        try {
+            return (byte[])stringToKey.invoke(
+                    null, password, salt, s2kparams, keyType);
+        } catch (InvocationTargetException ex) {
+            throw (KrbCryptoException)ex.getCause();
+        } catch (Exception e) {
+            throw new AssertionError(e);
         }
     }
 }

@@ -55,8 +55,8 @@ public class TypeAnnotations {
     }
 
     public void taFillAndLift(JCClassDecl tree, boolean visitBodies) {
-        new TypeAnnotationPositions().scan(tree);
-        new TypeAnnotationLift().scan(tree);
+//308        new TypeAnnotationPositions().scan(tree);
+//308        new TypeAnnotationLift().scan(tree);
     }
 
     private static class TypeAnnotationPositions extends TreeScanner {
@@ -113,7 +113,10 @@ public class TypeAnnotations {
                     p.pos = frame.pos;
                     return p;
 
+                case ANNOTATION_TYPE:
                 case CLASS:
+                case ENUM:
+                case INTERFACE:
                     p.pos = frame.pos;
                     if (((JCClassDecl)frame).extending == tree) {
                         p.type = TargetType.CLASS_EXTENDS;
@@ -206,11 +209,11 @@ public class TypeAnnotations {
                     }
                     return p;
 
-                case ANNOTATED_TYPE: {
-                    List<JCTree> newPath = path.tail;
-                    return resolveFrame(newPath.head, newPath.tail.head,
-                            newPath, p);
-                }
+//308                case ANNOTATED_TYPE: {
+//308                    List<JCTree> newPath = path.tail;
+//308                    return resolveFrame(newPath.head, newPath.tail.head,
+//308                            newPath, p);
+//308                }
 
                 case METHOD_INVOCATION: {
                     JCMethodInvocation invocation = (JCMethodInvocation)frame;

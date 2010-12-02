@@ -296,14 +296,14 @@ protected:
       result |= CPU_CX8;
     if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
       result |= CPU_CMOV;
-    if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || is_amd() &&
-        _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0)
+    if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || (is_amd() &&
+        _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0))
       result |= CPU_FXSR;
     // HT flag is set for multi-core processors also.
     if (threads_per_core() > 1)
       result |= CPU_HT;
-    if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || is_amd() &&
-        _cpuid_info.ext_cpuid1_edx.bits.mmx != 0)
+    if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || (is_amd() &&
+        _cpuid_info.ext_cpuid1_edx.bits.mmx != 0))
       result |= CPU_MMX;
     if (_cpuid_info.std_cpuid1_edx.bits.sse != 0)
       result |= CPU_SSE;
@@ -445,6 +445,10 @@ public:
   static bool supports_3dnow2()   { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.tdnow2 != 0; }
   static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
+
+  // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
+  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+                                           supports_sse3() && _model != 0x1C; }
 
   static bool supports_compare_and_exchange() { return true; }
 

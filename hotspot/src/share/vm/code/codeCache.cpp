@@ -76,14 +76,14 @@ class CodeBlob_sizes {
     relocation_size  += cb->relocation_size();
     if (cb->is_nmethod()) {
       nmethod* nm = cb->as_nmethod_or_null();
-      code_size        += nm->code_size();
+      code_size        += nm->insts_size();
       stub_size        += nm->stub_size();
 
       scopes_oop_size  += nm->oops_size();
       scopes_data_size += nm->scopes_data_size();
       scopes_pcs_size  += nm->scopes_pcs_size();
     } else {
-      code_size        += cb->instructions_size();
+      code_size        += cb->code_size();
     }
   }
 };
@@ -210,7 +210,7 @@ void CodeCache::commit(CodeBlob* cb) {
   }
 
   // flush the hardware I-cache
-  ICache::invalidate_range(cb->instructions_begin(), cb->instructions_size());
+  ICache::invalidate_range(cb->content_begin(), cb->content_size());
 }
 
 
@@ -804,8 +804,8 @@ void CodeCache::print_internals() {
 
       if(nm->method() != NULL && nm->is_java_method()) {
         nmethodJava++;
-        if(nm->code_size() > maxCodeSize) {
-          maxCodeSize = nm->code_size();
+        if (nm->insts_size() > maxCodeSize) {
+          maxCodeSize = nm->insts_size();
         }
       }
     } else if (cb->is_runtime_stub()) {
@@ -830,7 +830,7 @@ void CodeCache::print_internals() {
     if (cb->is_nmethod()) {
       nmethod* nm = (nmethod*)cb;
       if(nm->is_java_method()) {
-        buckets[nm->code_size() / bucketSize]++;
+        buckets[nm->insts_size() / bucketSize]++;
       }
     }
   }
@@ -896,11 +896,11 @@ void CodeCache::print() {
     FOR_ALL_BLOBS(p) {
       if (p->is_alive()) {
         number_of_blobs++;
-        code_size += p->instructions_size();
+        code_size += p->code_size();
         OopMapSet* set = p->oop_maps();
         if (set != NULL) {
           number_of_oop_maps += set->size();
-          map_size   += set->heap_size();
+          map_size           += set->heap_size();
         }
       }
     }
@@ -914,3 +914,14 @@ void CodeCache::print() {
 }
 
 #endif // PRODUCT
+
+void CodeCache::print_bounds(outputStream* st) {
+  st->print_cr("Code Cache  [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+               _heap->low_boundary(),
+               _heap->high(),
+               _heap->high_boundary());
+  st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
+               " adapters=" UINT32_FORMAT " free_code_cache=" SIZE_FORMAT,
+               CodeCache::nof_blobs(), CodeCache::nof_nmethods(),
+               CodeCache::nof_adapters(), CodeCache::unallocated_capacity());
+}

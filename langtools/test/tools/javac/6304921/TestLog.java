@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import javax.tools.SimpleJavaFileObject;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
@@ -60,7 +59,6 @@ public class TestLog
         log.multipleErrors = true;
 
         JavacFileManager.preRegister(context);
-        Scanner.Factory sfac = Scanner.Factory.instance(context);
         ParserFactory pfac = ParserFactory.instance(context);
 
         final String text =

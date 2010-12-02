@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class NTSidPrimaryGroupPrincipal extends NTSid {
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
                 (sun.security.util.ResourcesMgr.getString
-                        ("NTSidPrimaryGroupPrincipal: name",
+                        ("NTSidPrimaryGroupPrincipal.name",
                         "sun.security.util.AuthResources"));
         Object[] source = {getName()};
         return form.format(source);

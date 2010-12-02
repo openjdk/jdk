@@ -2329,6 +2329,19 @@ MsgRouting AwtComponent::WmMouseDown(UINT flags, int x, int y, int button)
     MSG msg;
     InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
 
+    AwtWindow *toplevel = GetContainer();
+    if (toplevel && !toplevel->IsSimpleWindow()) {
+        /*
+         * The frame should be focused by click in case it is
+         * the active window but not the focused window. See 6886678.
+         */
+        if (toplevel->GetHWnd() == ::GetActiveWindow() &&
+            toplevel->GetHWnd() != AwtComponent::GetFocusedWindow())
+        {
+            toplevel->AwtSetActiveWindow();
+        }
+    }
+
     SendMouseEvent(java_awt_event_MouseEvent_MOUSE_PRESSED, now, x, y,
                    GetJavaModifiers(), clickCount, JNI_FALSE,
                    GetButton(button), &msg);
@@ -6071,63 +6084,67 @@ void AwtComponent::SetParent(void * param) {
 
 void AwtComponent::_SetRectangularShape(void *param)
 {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (!AwtToolkit::IsMainThread()) {
+        AwtToolkit::GetInstance().InvokeFunction(AwtComponent::_SetRectangularShape, param);
+    } else {
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetRectangularShapeStruct *data = (SetRectangularShapeStruct *)param;
-    jobject self = data->component;
-    jint x1 = data->x1;
-    jint x2 = data->x2;
-    jint y1 = data->y1;
-    jint y2 = data->y2;
-    jobject region = data->region;
+        SetRectangularShapeStruct *data = (SetRectangularShapeStruct *)param;
+        jobject self = data->component;
+        jint x1 = data->x1;
+        jint x2 = data->x2;
+        jint y1 = data->y1;
+        jint y2 = data->y2;
+        jobject region = data->region;
 
-    AwtComponent *c = NULL;
+        AwtComponent *c = NULL;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
 
-    c = (AwtComponent *)pData;
-    if (::IsWindow(c->GetHWnd())) {
-        HRGN hRgn = NULL;
-        if (region || x1 || x2 || y1 || y2) {
-            // If all the params are zeros, the shape must be simply reset.
-            // Otherwise, convert it into a region.
-            RGNDATA *pRgnData = NULL;
-            RGNDATAHEADER *pRgnHdr;
+        c = (AwtComponent *)pData;
+        if (::IsWindow(c->GetHWnd())) {
+            HRGN hRgn = NULL;
+            if (region || x1 || x2 || y1 || y2) {
+                // If all the params are zeros, the shape must be simply reset.
+                // Otherwise, convert it into a region.
+                RGNDATA *pRgnData = NULL;
+                RGNDATAHEADER *pRgnHdr;
 
-            /* reserving memory for the worst case */
-            size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
-            pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
-                    sizeof(RECT_T) * worstBufferSize);
-            pRgnHdr = (RGNDATAHEADER *) pRgnData;
+                /* reserving memory for the worst case */
+                size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
+                pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
+                        sizeof(RECT_T) * worstBufferSize);
+                pRgnHdr = (RGNDATAHEADER *) pRgnData;
 
-            pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
-            pRgnHdr->iType = RDH_RECTANGLES;
-            pRgnHdr->nRgnSize = 0;
-            pRgnHdr->rcBound.top = 0;
-            pRgnHdr->rcBound.left = 0;
-            pRgnHdr->rcBound.bottom = LONG(y2 - y1);
-            pRgnHdr->rcBound.right = LONG(x2 - x1);
+                pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
+                pRgnHdr->iType = RDH_RECTANGLES;
+                pRgnHdr->nRgnSize = 0;
+                pRgnHdr->rcBound.top = 0;
+                pRgnHdr->rcBound.left = 0;
+                pRgnHdr->rcBound.bottom = LONG(y2 - y1);
+                pRgnHdr->rcBound.right = LONG(x2 - x1);
 
-            RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
-            pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
+                RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
+                pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
 
-            hRgn = ::ExtCreateRegion(NULL,
-                    sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
+                hRgn = ::ExtCreateRegion(NULL,
+                        sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
 
-            free(pRgnData);
+                free(pRgnData);
+            }
+
+            ::SetWindowRgn(c->GetHWnd(), hRgn, TRUE);
         }
 
-        ::SetWindowRgn(c->GetHWnd(), hRgn, TRUE);
-    }
-
 ret:
-    env->DeleteGlobalRef(self);
-    if (region) {
-        env->DeleteGlobalRef(region);
-    }
+        env->DeleteGlobalRef(self);
+        if (region) {
+            env->DeleteGlobalRef(region);
+        }
 
-    delete data;
+        delete data;
+    }
 }
 
 void AwtComponent::_SetZOrder(void *param) {

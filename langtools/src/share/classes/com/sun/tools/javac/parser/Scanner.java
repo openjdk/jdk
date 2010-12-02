@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,48 +47,6 @@ public class Scanner implements Lexer {
 
     private static boolean scannerDebug = false;
 
-    /** A factory for creating scanners. */
-    public static class Factory {
-        /** The context key for the scanner factory. */
-        public static final Context.Key<Scanner.Factory> scannerFactoryKey =
-            new Context.Key<Scanner.Factory>();
-
-        /** Get the Factory instance for this context. */
-        public static Factory instance(Context context) {
-            Factory instance = context.get(scannerFactoryKey);
-            if (instance == null)
-                instance = new Factory(context);
-            return instance;
-        }
-
-        final Log log;
-        final Names names;
-        final Source source;
-        final Keywords keywords;
-
-        /** Create a new scanner factory. */
-        protected Factory(Context context) {
-            context.put(scannerFactoryKey, this);
-            this.log = Log.instance(context);
-            this.names = Names.instance(context);
-            this.source = Source.instance(context);
-            this.keywords = Keywords.instance(context);
-        }
-
-        public Scanner newScanner(CharSequence input) {
-            if (input instanceof CharBuffer) {
-                return new Scanner(this, (CharBuffer)input);
-            } else {
-                char[] array = input.toString().toCharArray();
-                return newScanner(array, array.length);
-            }
-        }
-
-        public Scanner newScanner(char[] input, int inputLength) {
-            return new Scanner(this, input, inputLength);
-        }
-    }
-
     /* Output variables; set by nextToken():
      */
 
@@ -107,6 +65,10 @@ public class Scanner implements Lexer {
     /** Allow underscores in literals.
      */
     private boolean allowUnderscoresInLiterals;
+
+    /** Allow exotic identifiers.
+     */
+    private boolean allowExoticIdentifiers;
 
     /** The source language setting.
      */
@@ -173,7 +135,7 @@ public class Scanner implements Lexer {
     private final Keywords keywords;
 
     /** Common code for constructors. */
-    private Scanner(Factory fac) {
+    private Scanner(ScannerFactory fac) {
         log = fac.log;
         names = fac.names;
         keywords = fac.keywords;
@@ -181,6 +143,7 @@ public class Scanner implements Lexer {
         allowBinaryLiterals = source.allowBinaryLiterals();
         allowHexFloats = source.allowHexFloats();
         allowUnderscoresInLiterals = source.allowBinaryLiterals();
+        allowExoticIdentifiers = source.allowExoticIdentifiers();  // for invokedynamic
     }
 
     private static final boolean hexFloatsWork = hexFloatsWork();
@@ -196,7 +159,7 @@ public class Scanner implements Lexer {
     /** Create a scanner from the input buffer.  buffer must implement
      *  array() and compact(), and remaining() must be less than limit().
      */
-    protected Scanner(Factory fac, CharBuffer buffer) {
+    protected Scanner(ScannerFactory fac, CharBuffer buffer) {
         this(fac, JavacFileManager.toArray(buffer), buffer.limit());
     }
 
@@ -211,7 +174,7 @@ public class Scanner implements Lexer {
      * @param inputLength the size of the input.
      * Must be positive and less than or equal to input.length.
      */
-    protected Scanner(Factory fac, char[] input, int inputLength) {
+    protected Scanner(ScannerFactory fac, char[] input, int inputLength) {
         this(fac);
         eofPos = inputLength;
         if (inputLength == input.length) {
@@ -1010,6 +973,10 @@ public class Scanner implements Lexer {
                 case '#':
                     scanChar();
                     if (ch == '\"') {
+                        if (!allowExoticIdentifiers) {
+                            lexError("unsupported.exotic.id", source.name);
+                            allowExoticIdentifiers = true;
+                        }
                         scanChar();
                         if (ch == '\"')
                             lexError(pos, "empty.bytecode.ident");

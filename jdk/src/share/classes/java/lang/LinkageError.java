@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.lang;
 
 /**
- * Subclasses of <code>LinkageError</code> indicate that a class has
+ * Subclasses of {@code LinkageError} indicate that a class has
  * some dependency on another class; however, the latter class has
  * incompatibly changed after the compilation of the former class.
  *
@@ -39,19 +39,31 @@ class LinkageError extends Error {
     private static final long serialVersionUID = 3579600108157160122L;
 
     /**
-     * Constructs a <code>LinkageError</code> with no detail message.
+     * Constructs a {@code LinkageError} with no detail message.
      */
     public LinkageError() {
         super();
     }
 
     /**
-     * Constructs a <code>LinkageError</code> with the specified detail
+     * Constructs a {@code LinkageError} with the specified detail
      * message.
      *
      * @param   s   the detail message.
      */
     public LinkageError(String s) {
         super(s);
+    }
+
+    /**
+     * Constructs a {@code LinkageError} with the specified detail
+     * message and cause.
+     *
+     * @param s     the detail message.
+     * @param cause the cause, may be {@code null}
+     * @since 1.7
+     */
+    public LinkageError(String s, Throwable cause) {
+        super(s, cause);
     }
 }

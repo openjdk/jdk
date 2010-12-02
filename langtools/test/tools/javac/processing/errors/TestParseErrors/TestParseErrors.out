@@ -1,0 +1,8 @@
+ParseErrors.java:37:37: compiler.err.expected: token.identifier
+ParseErrors.java:38:1: compiler.err.illegal.start.of.type
+ParseErrors.java:38:2: compiler.err.expected: ')'
+ParseErrors.java:40:6: compiler.err.expected: ';'
+ParseErrors.java:40:20: compiler.err.illegal.start.of.type
+ParseErrors.java:41:5: compiler.err.expected: '('
+ParseErrors.java:41:8: compiler.err.expected: token.identifier
+7 errors

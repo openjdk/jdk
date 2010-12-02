@@ -193,14 +193,15 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
     }
   }
 #endif
-  // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
+  // TypeOopPtr::NOTNULL+any is an OOP with unknown offset - generally
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
-  const TypeOopPtr *tinst = tp->isa_oopptr();
+  const TypeOopPtr *toop = tp->isa_oopptr();
   if( tp->base() != Type::AnyPtr &&
-      !(tinst &&
-        tinst->klass()->is_java_lang_Object() &&
-        tinst->offset() == Type::OffsetBot) ) {
+      !(toop &&
+        toop->klass() != NULL &&
+        toop->klass()->is_java_lang_Object() &&
+        toop->offset() == Type::OffsetBot) ) {
     // compress paths and change unreachable cycles to TOP
     // If not, we can update the input infinitely along a MergeMem cycle
     // Equivalent code in PhiNode::Ideal
@@ -255,7 +256,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
   if( can_reshape && igvn != NULL &&
-      (igvn->_worklist.member(address) || phase->type(address) != adr_type()) ) {
+      (igvn->_worklist.member(address) ||
+       igvn->_worklist.size() > 0 && (phase->type(address) != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
@@ -1547,8 +1549,8 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
         adr->is_AddP() && off != Type::OffsetBot) {
       // For constant Strings treat the fields as compile time constants.
       Node* base = adr->in(AddPNode::Base);
-      if (base->Opcode() == Op_ConP) {
-        const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+      const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+      if (t != NULL && t->singleton()) {
         ciObject* string = t->const_oop();
         ciConstant constant = string->as_instance()->field_value_by_offset(off);
         if (constant.basic_type() == T_INT) {

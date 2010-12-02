@@ -53,8 +53,17 @@ typedef struct {
     nchar *user_home;
 
     char *language;
+    char *format_language;
+    char *display_language;
+    char *script;
+    char *format_script;
+    char *display_script;
     char *country;
+    char *format_country;
+    char *display_country;
     char *variant;
+    char *format_variant;
+    char *display_variant;
     char *encoding;
     char *sun_jnu_encoding;
     char *timezone;
