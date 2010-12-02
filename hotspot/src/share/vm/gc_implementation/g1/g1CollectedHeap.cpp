@@ -920,8 +920,10 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
                                            bool expect_null_cur_alloc_region) {
   assert_at_safepoint();
   assert(_cur_alloc_region == NULL || !expect_null_cur_alloc_region,
-         "The current alloc region should only be non-NULL if we're "
-         "expecting it not to be NULL");
+         err_msg("the current alloc region was unexpectedly found "
+                 "to be non-NULL, cur alloc region: "PTR_FORMAT" "
+                 "expect_null_cur_alloc_region: %d word_size: "SIZE_FORMAT,
+                 _cur_alloc_region, expect_null_cur_alloc_region, word_size));
 
   if (!isHumongous(word_size)) {
     if (!expect_null_cur_alloc_region) {
@@ -1597,7 +1599,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   assert(regions_accounted_for(), "Region leakage!");
 
   return attempt_allocation_at_safepoint(word_size,
-                                      true /* expect_null_cur_alloc_region */);
+                                     false /* expect_null_cur_alloc_region */);
 }
 
 size_t G1CollectedHeap::free_region_if_totally_empty(HeapRegion* hr) {
