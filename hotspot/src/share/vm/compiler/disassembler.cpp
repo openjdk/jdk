@@ -467,5 +467,18 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
     env.set_total_ticks(total_bucket_count);
   }
 
+  // Print constant table.
+  if (nm->consts_size() > 0) {
+    nm->print_nmethod_labels(env.output(), nm->consts_begin());
+    int offset = 0;
+    for (address p = nm->consts_begin(); p < nm->consts_end(); p += 4, offset += 4) {
+      if ((offset % 8) == 0) {
+        env.output()->print_cr("  " INTPTR_FORMAT " (offset: %4d): " PTR32_FORMAT "   " PTR64_FORMAT, (intptr_t) p, offset, *((int32_t*) p), *((int64_t*) p));
+      } else {
+        env.output()->print_cr("  " INTPTR_FORMAT " (offset: %4d): " PTR32_FORMAT,                    (intptr_t) p, offset, *((int32_t*) p));
+      }
+    }
+  }
+
   env.decode_instructions(p, end);
 }

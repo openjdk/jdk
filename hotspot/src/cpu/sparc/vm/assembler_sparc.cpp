@@ -1443,6 +1443,45 @@ void MacroAssembler::set64(jlong value, Register d, Register tmp) {
   }
 }
 
+int MacroAssembler::size_of_set64(jlong value) {
+  v9_dep();
+
+  int hi = (int)(value >> 32);
+  int lo = (int)(value & ~0);
+  int count = 0;
+
+  // (Matcher::isSimpleConstant64 knows about the following optimizations.)
+  if (Assembler::is_simm13(lo) && value == lo) {
+    count++;
+  } else if (hi == 0) {
+    count++;
+    if (low10(lo) != 0)
+      count++;
+  }
+  else if (hi == -1) {
+    count += 2;
+  }
+  else if (lo == 0) {
+    if (Assembler::is_simm13(hi)) {
+      count++;
+    } else {
+      count++;
+      if (low10(hi) != 0)
+        count++;
+    }
+    count++;
+  }
+  else {
+    count += 2;
+    if (low10(hi) != 0)
+      count++;
+    if (low10(lo) != 0)
+      count++;
+    count += 2;
+  }
+  return count;
+}
+
 // compute size in bytes of sparc frame, given
 // number of extraWords
 int MacroAssembler::total_frame_size_in_bytes(int extraWords) {

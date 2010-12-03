@@ -2649,6 +2649,37 @@ void Assembler::sqrtsd(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::sqrtsd(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0xF2);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x51);
+  emit_operand(dst, src);
+}
+
+void Assembler::sqrtss(XMMRegister dst, XMMRegister src) {
+  // HMM Table D-1 says sse2
+  // NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x51);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::sqrtss(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x51);
+  emit_operand(dst, src);
+}
+
 void Assembler::stmxcsr( Address dst) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
   InstructionMark im(this);
@@ -4358,16 +4389,6 @@ void Assembler::shrq(Register dst) {
   emit_byte(0xE8 | encode);
 }
 
-void Assembler::sqrtsd(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  emit_byte(0xF2);
-  prefix(src, dst);
-  emit_byte(0x0F);
-  emit_byte(0x51);
-  emit_operand(dst, src);
-}
-
 void Assembler::subq(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefixq(dst);
@@ -4928,10 +4949,6 @@ void MacroAssembler::movptr(Address dst, intptr_t src) {
   movl(dst, src);
 }
 
-
-void MacroAssembler::movsd(XMMRegister dst, AddressLiteral src) {
-  movsd(dst, as_Address(src));
-}
 
 void MacroAssembler::pop_callee_saved_registers() {
   pop(rcx);
