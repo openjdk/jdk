@@ -1716,11 +1716,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     ciMethod* method = op->profiled_method();
     assert(method != NULL, "Should have method");
     int bci = op->profiled_bci();
-    md = method->method_data();
-    if (md == NULL) {
-      bailout("out of memory building methodDataOop");
-      return;
-    }
+    md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     data = md->bci_to_data(bci);
     assert(data != NULL,                "need data for type check");
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
@@ -1879,11 +1876,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       ciMethod* method = op->profiled_method();
       assert(method != NULL, "Should have method");
       int bci = op->profiled_bci();
-      md = method->method_data();
-      if (md == NULL) {
-        bailout("out of memory building methodDataOop");
-        return;
-      }
+      md = method->method_data_or_null();
+      assert(md != NULL, "Sanity");
       data = md->bci_to_data(bci);
       assert(data != NULL,                "need data for type check");
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
@@ -3373,11 +3367,8 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   int bci          = op->profiled_bci();
 
   // Update counter for all call types
-  ciMethodData* md = method->method_data();
-  if (md == NULL) {
-    bailout("out of memory building methodDataOop");
-    return;
-  }
+  ciMethodData* md = method->method_data_or_null();
+  assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
   assert(data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
