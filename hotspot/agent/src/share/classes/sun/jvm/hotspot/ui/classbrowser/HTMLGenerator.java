@@ -460,7 +460,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       return buf.toString();
    }
 
-   private String genListOfShort(int[] values) {
+   private String genListOfShort(short[] values) {
+      if (values == null || values.length == 0)  return "";
       Formatter buf = new Formatter(genHTML);
       buf.append('[');
       for (int i = 0; i < values.length; i++) {
@@ -594,9 +595,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                buf.cell(Integer.toString(cpool.getIntAt(index)));
                break;
 
+            case JVM_CONSTANT_InvokeDynamicTrans:
             case JVM_CONSTANT_InvokeDynamic:
                buf.cell("JVM_CONSTANT_InvokeDynamic");
-               buf.cell(genListOfShort(cpool.getMultiOperandsAt(index)));
+               buf.cell(genLowHighShort(cpool.getIntAt(index)) +
+                        genListOfShort(cpool.getBootstrapSpecifierAt(index)));
                break;
 
             default:
