@@ -9,19 +9,22 @@
  */
 
 class Neg03 {
-    static class A extends Exception {}
-    static class B extends Exception {}
 
-    void m() {
+    static class A extends Exception { public void m() {}; public Object f;}
+    static class B1 extends A {}
+    static class B2 extends A {}
+
+    void m() throws B1, B2 {
         try {
             if (true) {
-                throw new A();
+                throw new B1();
             }
             else {
-                throw new B();
+                throw new B2();
             }
-        } catch (final A | B ex) {
-            ex = new B();
+        } catch (Exception ex) {
+            ex = new B2(); //effectively final analysis disabled!
+            throw ex;
         }
     }
 }
