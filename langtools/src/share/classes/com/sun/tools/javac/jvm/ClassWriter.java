@@ -993,7 +993,9 @@ public class ClassWriter extends ClassFile {
     /** Enter an inner class into the `innerClasses' set/queue.
      */
     void enterInner(ClassSymbol c) {
-        assert !c.type.isCompound();
+        if (c.type.isCompound()) {
+            throw new AssertionError("Unexpected intersection type: " + c.type);
+        }
         try {
             c.complete();
         } catch (CompletionFailure ex) {

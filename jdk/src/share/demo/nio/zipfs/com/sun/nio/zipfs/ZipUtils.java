@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.regex.PatternSyntaxException;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -48,7 +49,7 @@ class ZipUtils {
      * Writes a 16-bit short to the output stream in little-endian byte order.
      */
     public static void writeShort(OutputStream os, int v) throws IOException {
-        os.write((v >>> 0) & 0xff);
+        os.write(v & 0xff);
         os.write((v >>> 8) & 0xff);
     }
 
@@ -56,7 +57,7 @@ class ZipUtils {
      * Writes a 32-bit int to the output stream in little-endian byte order.
      */
     public static void writeInt(OutputStream os, long v) throws IOException {
-        os.write((int)((v >>>  0) & 0xff));
+        os.write((int)(v & 0xff));
         os.write((int)((v >>>  8) & 0xff));
         os.write((int)((v >>> 16) & 0xff));
         os.write((int)((v >>> 24) & 0xff));
@@ -66,7 +67,7 @@ class ZipUtils {
      * Writes a 64-bit int to the output stream in little-endian byte order.
      */
     public static void writeLong(OutputStream os, long v) throws IOException {
-        os.write((int)((v >>>  0) & 0xff));
+        os.write((int)(v & 0xff));
         os.write((int)((v >>>  8) & 0xff));
         os.write((int)((v >>> 16) & 0xff));
         os.write((int)((v >>> 24) & 0xff));
@@ -130,6 +131,27 @@ class ZipUtils {
         return (year - 1980) << 25 | (d.getMonth() + 1) << 21 |
                d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
                d.getSeconds() >> 1;
+    }
+
+
+    // used to adjust values between Windows and java epoch
+    private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;
+    public static final long winToJavaTime(long wtime) {
+        return TimeUnit.MILLISECONDS.convert(
+               wtime / 10 + WINDOWS_EPOCH_IN_MICROSECONDS, TimeUnit.MICROSECONDS);
+    }
+
+    public static final long javaToWinTime(long time) {
+        return (TimeUnit.MICROSECONDS.convert(time, TimeUnit.MILLISECONDS)
+               - WINDOWS_EPOCH_IN_MICROSECONDS) * 10;
+    }
+
+    public static final long unixToJavaTime(long utime) {
+        return TimeUnit.MILLISECONDS.convert(utime, TimeUnit.SECONDS);
+    }
+
+    public static final long javaToUnixTime(long time) {
+        return TimeUnit.SECONDS.convert(time, TimeUnit.MILLISECONDS);
     }
 
     private static final String regexMetaChars = ".^$+{[]|()";

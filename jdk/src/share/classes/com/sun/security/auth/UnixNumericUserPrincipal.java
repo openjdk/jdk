@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class UnixNumericUserPrincipal implements
         if (name == null) {
             java.text.MessageFormat form = new java.text.MessageFormat
                 (sun.security.util.ResourcesMgr.getString
-                        ("invalid null input: value",
+                        ("invalid.null.input.value",
                         "sun.security.util.AuthResources"));
             Object[] source = {"name"};
             throw new NullPointerException(form.format(source));
@@ -127,7 +127,7 @@ public class UnixNumericUserPrincipal implements
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
                 (sun.security.util.ResourcesMgr.getString
-                        ("UnixNumericUserPrincipal: name",
+                        ("UnixNumericUserPrincipal.name",
                         "sun.security.util.AuthResources"));
         Object[] source = {name};
         return form.format(source);
