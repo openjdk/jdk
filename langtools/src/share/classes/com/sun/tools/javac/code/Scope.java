@@ -83,6 +83,10 @@ public class Scope {
         }
     };
 
+    /** A list of scopes to be notified if items are to be removed from this scope.
+     */
+    List<Scope> listeners = List.nil();
+
     public static class ScopeCounter {
         protected static final Context.Key<ScopeCounter> scopeCounterKey =
             new Context.Key<ScopeCounter>();
@@ -220,7 +224,7 @@ public class Scope {
         int n = 0;
         for (int i = oldtable.length; --i >= 0; ) {
             Entry e = oldtable[i];
-            if (e != null && e != sentinel && ! e.isBogus()) {
+            if (e != null && e != sentinel) {
                 table[getIndex(e.sym.name)] = e;
                 n++;
             }
@@ -300,6 +304,11 @@ public class Scope {
             }
             te = te.sibling;
         }
+
+        // remove items from scopes that have done importAll
+        for (List<Scope> l = listeners; l.nonEmpty(); l = l.tail) {
+            l.head.remove(sym);
+        }
     }
 
     /** Enter symbol sym in this scope if not already there.
@@ -365,7 +374,7 @@ public class Scope {
         int h = name.hashCode();
         int i = h & hashMask;
         // The expression below is always odd, so it is guaranteed
-        // be be mutually prime with table.length, a power of 2.
+        // to be mutually prime with table.length, a power of 2.
         int x = hashMask - ((h + (h >> 16)) << 1);
         int d = -1; // Index of a deleted item.
         for (;;) {
@@ -495,8 +504,6 @@ public class Scope {
             // in many cases.
             return scope;
         }
-
-        protected boolean isBogus () { return false; }
     }
 
     public static class ImportScope extends Scope {
@@ -510,15 +517,6 @@ public class Scope {
             return new ImportEntry(sym, shadowed, sibling, scope, origin);
         }
 
-        public Entry lookup(Name name) {
-            Entry e = table[getIndex(name)];
-            if (e == null)
-                return sentinel;
-            while (e.isBogus())
-                e = e.shadowed;
-            return e;
-        }
-
         static class ImportEntry extends Entry {
             private Scope origin;
 
@@ -526,35 +524,25 @@ public class Scope {
                 super(sym, shadowed, sibling, scope);
                 this.origin = origin;
             }
-            public Entry next() {
-                Entry e = super.shadowed;
-                while (e.isBogus())
-                    e = e.shadowed;
-                return e;
-            }
 
             @Override
             public Scope getOrigin() { return origin; }
+        }
+    }
 
-            /**
-             * Is this a bogus inner-class import?
-             * An inner class {@code Outer$Inner.class} read from a class file
-             * starts out in a package scope under the name {@code Outer$Inner},
-             * which (if star-imported) gets copied to the import scope.
-             * When the InnerClasses attribute is processed, the ClassSymbol
-             * is renamed in place (to {@code Inner}), and the owner changed
-             * to the {@code Outer} class.  The ImportScope still has the old
-             * Entry that was created and hashed as {@code "Outer$Inner"},
-             * but whose name was changed to {@code "Inner"}.  This violates
-             * the invariants for the Scope hash table, and so is pretty bogus.
-             * When the symbol was renamed, it should have been removed from
-             * the import scope (and not just the package scope); however,
-             * doing so is difficult.  A better fix would be to change
-             * import scopes to indirectly reference package symbols, rather
-             * than copy from them.
-             * Until then, we detect and skip the bogus entries using this test.
-             */
-            protected boolean isBogus () { return sym.owner != scope.owner; }
+    public static class StarImportScope extends ImportScope {
+
+        public StarImportScope(Symbol owner) {
+            super(owner);
+        }
+
+        public void importAll (Scope fromScope) {
+            for (Scope.Entry e = fromScope.elems; e != null; e = e.sibling) {
+                if (e.sym.kind == Kinds.TYP && !includes(e.sym))
+                    enter(e.sym, fromScope);
+            }
+            // Register to be notified when imported items are removed
+            fromScope.listeners = fromScope.listeners.prepend(this);
         }
     }
 
