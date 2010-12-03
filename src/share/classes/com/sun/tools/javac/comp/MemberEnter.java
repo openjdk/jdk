@@ -143,12 +143,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 log.error(pos, "doesnt.exist", tsym);
             }
         }
-        final Scope fromScope = tsym.members();
-        final Scope toScope = env.toplevel.starImportScope;
-        for (Scope.Entry e = fromScope.elems; e != null; e = e.sibling) {
-            if (e.sym.kind == TYP && !toScope.includes(e.sym))
-                toScope.enter(e.sym, fromScope);
-        }
+        env.toplevel.starImportScope.importAll(tsym.members());
     }
 
     /** Import all static members of a class or package on demand.
