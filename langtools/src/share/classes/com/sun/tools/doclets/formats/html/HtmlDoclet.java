@@ -144,8 +144,11 @@ public class HtmlDoclet extends AbstractDoclet {
             !configuration.nohelp) {
             HelpWriter.generate(configuration);
         }
+        // If a stylesheet file is not specified, copy the default stylesheet.
         if (configuration.stylesheetfile.length() == 0) {
-            StylesheetWriter.generate(configuration);
+            Util.copyFile(configuration, "stylesheet.css", Util.RESOURCESDIR,
+                    (configdestdir.isEmpty()) ?
+                        System.getProperty("user.dir") : configdestdir, false);
         }
     }
 

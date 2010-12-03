@@ -36,67 +36,80 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface ConstructorWriter {
 
     /**
-     * Write the header for the constructor documentation.
+     * Get the constructor details tree header.
      *
-     * @param classDoc the class that the constructors belong to.
-     * @param header the header to write.
+     * @param classDoc the class being documented
+     * @param memberDetailsTree the content tree representing member details
+     * @return content tree for the constructor details header
      */
-    public void writeHeader(ClassDoc classDoc, String header);
+    public Content getConstructorDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree);
 
     /**
-     * Write the constructor header for the given constructor.
+     * Get the constructor documentation tree header.
      *
-     * @param constructor the constructor being documented.
-     * @param isFirst the flag to indicate whether or not the constructor is the
-     *        first to be documented.
+     * @param constructor the constructor being documented
+     * @param constructorDetailsTree the content tree representing constructor details
+     * @return content tree for the constructor documentation header
      */
-    public void writeConstructorHeader(ConstructorDoc constructor, boolean isFirst);
+    public Content getConstructorDocTreeHeader(ConstructorDoc constructor,
+            Content constructorDetailsTree);
 
     /**
-     * Write the signature for the given constructor.
+     * Get the signature for the given constructor.
      *
-     * @param constructor the constructor being documented.
+     * @param constructor the constructor being documented
+     * @return content tree for the constructor signature
      */
-    public void writeSignature(ConstructorDoc constructor);
+    public Content getSignature(ConstructorDoc constructor);
 
     /**
-     * Write the deprecated output for the given constructor.
+     * Add the deprecated output for the given constructor.
      *
-     * @param constructor the constructor being documented.
+     * @param constructor the constructor being documented
+     * @param constructorDocTree content tree to which the deprecated information will be added
      */
-    public void writeDeprecated(ConstructorDoc constructor);
+    public void addDeprecated(ConstructorDoc constructor, Content constructorDocTree);
 
     /**
-     * Write the comments for the given constructor.
+     * Add the comments for the given constructor.
      *
-     * @param constructor the constructor being documented.
+     * @param constructor the constructor being documented
+     * @param constructorDocTree the content tree to which the comments will be added
      */
-    public void writeComments(ConstructorDoc constructor);
+    public void addComments(ConstructorDoc constructor, Content constructorDocTree);
 
     /**
-     * Write the tag output for the given constructor.
+     * Add the tags for the given constructor.
      *
-     * @param constructor the constructor being documented.
+     * @param constructor the constructor being documented
+     * @param constructorDocTree the content tree to which the tags will be added
      */
-    public void writeTags(ConstructorDoc constructor);
+    public void addTags(ConstructorDoc constructor, Content constructorDocTree);
 
     /**
-     * Write the constructor footer.
+     * Get the constructor details tree.
+     *
+     * @param memberDetailsTree the content tree representing member details
+     * @return content tree for the constructor details
      */
-    public void writeConstructorFooter();
+    public Content getConstructorDetails(Content memberDetailsTree);
 
     /**
-     * Write the footer for the constructor documentation.
+     * Get the constructor documentation.
      *
-     * @param classDoc the class that the constructors belong to.
+     * @param constructorDocTree the content tree representing constructor documentation
+     * @param isLastContent true if the content to be added is the last content
+     * @return content tree for the constructor documentation
      */
-    public void writeFooter(ClassDoc classDoc);
+    public Content getConstructorDoc(Content constructorDocTree, boolean isLastContent);
 
     /**
      * Let the writer know whether a non public constructor was found.

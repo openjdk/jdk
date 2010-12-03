@@ -35,14 +35,18 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface AnnotationTypeOptionalMemberWriter extends
-    AnnotationTypeRequiredMemberWriter {
+        AnnotationTypeRequiredMemberWriter {
 
     /**
-     * Write the default value documentation.
+     * Add the the default value documentation.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the default value will be added
      */
-    public void writeDefaultValueInfo(MemberDoc member);
+    public void addDefaultValueInfo(MemberDoc member, Content annotationDocTree);
 }

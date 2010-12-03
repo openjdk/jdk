@@ -37,85 +37,149 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface ClassWriter {
 
     /**
-     * Write the header of the page.
-     * @param header the header to write.
-     */
-    public void writeHeader(String header);
-
-    /**
-     * Write the class tree documentation.
-     */
-    public void writeClassTree();
-
-    /**
-     * Write all implemented interfaces if this is a class.
-     */
-    public void writeImplementedInterfacesInfo();
-
-    /**
-     * Write all super interfaces if this is an interface.
-     */
-    public void writeSuperInterfacesInfo();
-
-    /**
-     * Write the type parameter information.
-     */
-    public void writeTypeParamInfo();
-
-    /**
-     * Write all the classes that extend this one.
-     */
-    public void writeSubClassInfo();
-
-    /**
-     * Write all the interfaces that extend this one.
-     */
-    public void writeSubInterfacesInfo();
-
-    /**
-     * If this is an interface, write all classes that implement this
-     * interface.
-     */
-    public void writeInterfaceUsageInfo ();
-
-    /**
-     * If this is an inner class or interface, write the enclosing class or
-     * interface.
-     */
-    public void writeNestedClassInfo ();
-
-    /**
-     * If this class is deprecated, write the appropriate information.
-     */
-    public void writeClassDeprecationInfo ();
-
-    /**
-     * Write the signature of the current class.
+     * Get the header of the page.
      *
-     * @param modifiers the modifiers for the signature.
+     * @param header the header string to write
+     * @return header content that needs to be added to the documentation
      */
-    public void writeClassSignature(String modifiers);
+    public Content getHeader(String header);
+
+    /**
+     * Get the class content header.
+     *
+     * @return class content header that needs to be added to the documentation
+     */
+    public Content getClassContentHeader();
+
+    /**
+     * Add the class tree documentation.
+     *
+     * @param classContentTree class content tree to which the documentation will be added
+     */
+    public void addClassTree(Content classContentTree);
+
+    /**
+     * Get the class information tree header.
+     *
+     * @return class informaion tree header that needs to be added to the documentation
+     */
+    public Content getClassInfoTreeHeader();
+
+    /**
+     * Add the type parameter information.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addTypeParamInfo(Content classInfoTree);
+
+    /**
+     * Add all super interfaces if this is an interface.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addSuperInterfacesInfo(Content classInfoTree);
+
+    /**
+     * Add all implemented interfaces if this is a class.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addImplementedInterfacesInfo(Content classInfoTree);
+
+    /**
+     * Add all the classes that extend this one.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addSubClassInfo(Content classInfoTree);
+
+    /**
+     * Add all the interfaces that extend this one.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addSubInterfacesInfo(Content classInfoTree);
+
+    /**
+     * If this is an interface, add all classes that implement this
+     * interface.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addInterfaceUsageInfo(Content classInfoTree);
+
+    /**
+     * If this is an inner class or interface, add the enclosing class or
+     * interface.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addNestedClassInfo (Content classInfoTree);
+
+    /**
+     * Get the class information.
+     *
+     * @param classInfoTree content tree conatining the class information
+     * @return a content tree for the class
+     */
+    public Content getClassInfo(Content classInfoTree);
+
+    /**
+     * If this class is deprecated, add the appropriate information.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addClassDeprecationInfo (Content classInfoTree);
+
+    /**
+     * Add the signature of the current class content tree.
+     *
+     * @param modifiers the modifiers for the signature
+     * @param classInfoTree the class content tree to which the signature will be added
+     */
+    public void addClassSignature(String modifiers, Content classInfoTree);
 
     /**
      * Build the class description.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
      */
-    public void writeClassDescription();
+    public void addClassDescription(Content classInfoTree);
 
     /**
-     * Write the tag information for the current class.
+     * Add the tag information for the current class.
+     *
+     * @param classInfoTree content tree to which the tag information will be added
      */
-    public void writeClassTagInfo();
+    public void addClassTagInfo(Content classInfoTree);
 
     /**
-     * Write the footer of the page.
+     * Get the member tree header for the class.
+     *
+     * @return a content tree for the member tree header
      */
-    public void writeFooter();
+    public Content getMemberTreeHeader();
+
+    /**
+     * Add the footer of the page.
+     *
+     * @param contentTree content tree to which the footer will be added
+     */
+    public void addFooter(Content contentTree);
+
+    /**
+     * Print the document.
+     *
+     * @param contentTree content tree that will be printed as a document
+     */
+    public void printDocument(Content contentTree);
 
     /**
      * Close the writer.
@@ -130,8 +194,18 @@ public interface ClassWriter {
     public ClassDoc getClassDoc();
 
     /**
-     * Perform any operations that are necessary when the member summary
-     * finished building.
+     * Get the member summary tree.
+     *
+     * @param memberTree the content tree used to build the summary tree
+     * @return a content tree for the member summary
      */
-    public void completeMemberSummaryBuild();
+    public Content getMemberSummaryTree(Content memberTree);
+
+    /**
+     * Get the member details tree.
+     *
+     * @param memberTree the content tree used to build the details tree
+     * @return a content tree for the member details
+     */
+    public Content getMemberDetailsTree(Content memberTree);
 }

@@ -51,6 +51,11 @@ public class Util {
     {{"&", "&amp;"}, {"<", "&lt;"}, {">", "&gt;"}};
 
     /**
+     * Name of the resource directory.
+     */
+    public static final String RESOURCESDIR = "resources";
+
+    /**
      * Return array of class members whose documentation is to be generated.
      * If the member is deprecated do not include such a member in the
      * returned array.
@@ -236,8 +241,8 @@ public class Util {
         String destname = configuration.docFileDestDirName;
         File srcdir = new File(path + dir);
         if (destname.length() > 0 && !destname.endsWith(
-               DirectoryManager.URL_FILE_SEPERATOR)) {
-            destname += DirectoryManager.URL_FILE_SEPERATOR;
+               DirectoryManager.URL_FILE_SEPARATOR)) {
+            destname += DirectoryManager.URL_FILE_SEPARATOR;
         }
         String dest = destname + dir;
         try {
@@ -263,7 +268,7 @@ public class Util {
                         && ! configuration.shouldExcludeDocFileDir(
                           srcfile.getName())){
                         copyDocFiles(configuration, path, dir +
-                                    DirectoryManager.URL_FILE_SEPERATOR + srcfile.getName(),
+                                    DirectoryManager.URL_FILE_SEPARATOR + srcfile.getName(),
                                 overwrite);
                     }
                 }
@@ -322,25 +327,38 @@ public class Util {
      *                       it already exists.
      */
     public static void copyResourceFile(Configuration configuration,
-            String resourcefile,
-            boolean overwrite) {
-        String destdir = configuration.destDirName;
-        String destresourcesdir = destdir + "resources";
-        DirectoryManager.createDirectory(configuration, destresourcesdir);
-        File destfile = new File(destresourcesdir, resourcefile);
+            String resourcefile, boolean overwrite) {
+        String destresourcesdir = configuration.destDirName + RESOURCESDIR;
+        copyFile(configuration, resourcefile, RESOURCESDIR, destresourcesdir,
+                overwrite);
+    }
+
+    /**
+     * Copy a file from a source directory to a destination directory
+     * (if it is not there already). If <code>overwrite</code> is true and
+     * the destination file already exists, overwrite it.
+     *
+     * @param configuration Holds the error message
+     * @param file The name of the file to copy
+     * @param source The source directory
+     * @param destination The destination directory where the file needs to be copied
+     * @param overwrite A flag to indicate whether the file in the
+     *                  destination directory will be overwritten if
+     *                  it already exists.
+     */
+    public static void copyFile(Configuration configuration, String file, String source,
+            String destination, boolean overwrite) {
+        DirectoryManager.createDirectory(configuration, destination);
+        File destfile = new File(destination, file);
         if(destfile.exists() && (! overwrite)) return;
         try {
-
             InputStream in = Configuration.class.getResourceAsStream(
-                "resources/" + resourcefile);
-
+                source + DirectoryManager.URL_FILE_SEPARATOR + file);
             if(in==null) return;
-
             OutputStream out = new FileOutputStream(destfile);
             byte[] buf = new byte[2048];
             int n;
             while((n = in.read(buf))>0) out.write(buf,0,n);
-
             in.close();
             out.close();
         } catch(Throwable t) {}
@@ -357,12 +375,12 @@ public class Util {
         try{
             String pkgPath = DirectoryManager.getDirectoryPath(pkgDoc);
             String completePath = new SourcePath(configuration.sourcepath).
-                getDirectory(pkgPath) + DirectoryManager.URL_FILE_SEPERATOR;
+                getDirectory(pkgPath) + DirectoryManager.URL_FILE_SEPARATOR;
             //Make sure that both paths are using the same seperators.
             completePath = Util.replaceText(completePath, File.separator,
-                    DirectoryManager.URL_FILE_SEPERATOR);
+                    DirectoryManager.URL_FILE_SEPARATOR);
             pkgPath = Util.replaceText(pkgPath, File.separator,
-                    DirectoryManager.URL_FILE_SEPERATOR);
+                    DirectoryManager.URL_FILE_SEPARATOR);
             return completePath.substring(0, completePath.indexOf(pkgPath));
         } catch (Exception e){
             return "";
@@ -569,6 +587,24 @@ public class Util {
                     HTML_ESCAPE_CHARS[i][0], HTML_ESCAPE_CHARS[i][1]);
         }
         return result;
+    }
+
+    /**
+     * Given a string, strips all html characters and
+     * return the result.
+     *
+     * @param rawString The string to check.
+     * @return the original string with all of the HTML characters
+     * stripped.
+     *
+     */
+    public static String stripHtml(String rawString) {
+        // remove HTML tags
+        rawString = rawString.replaceAll("\\<.*?>", " ");
+        // consolidate multiple spaces between a word to a single space
+        rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
+        // remove extra whitespaces
+        return rawString.trim();
     }
 
     /**
