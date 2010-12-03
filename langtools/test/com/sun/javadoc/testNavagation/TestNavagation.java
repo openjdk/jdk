@@ -45,24 +45,24 @@ public class TestNavagation extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "A.html", "&nbsp;PREV CLASS&nbsp;"},
+        {BUG_ID + FS + "pkg" + FS + "A.html", "<li>PREV CLASS</li>"},
         {BUG_ID + FS + "pkg" + FS + "A.html",
-            "<A HREF=\"../pkg/C.html\" title=\"class in pkg\"><STRONG>NEXT CLASS</STRONG></A>"},
+            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">NEXT CLASS</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<A HREF=\"../pkg/A.html\" title=\"annotation in pkg\"><STRONG>PREV CLASS</STRONG></A>"},
+            "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"strong\">PREV CLASS</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<A HREF=\"../pkg/E.html\" title=\"enum in pkg\"><STRONG>NEXT CLASS</STRONG></A>"},
+            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"strong\">NEXT CLASS</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "E.html",
-            "<A HREF=\"../pkg/C.html\" title=\"class in pkg\"><STRONG>PREV CLASS</STRONG></A>"},
+            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">PREV CLASS</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "E.html",
-            "<A HREF=\"../pkg/I.html\" title=\"interface in pkg\"><STRONG>NEXT CLASS</STRONG></A>"},
+            "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"strong\">NEXT CLASS</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "I.html",
-            "<A HREF=\"../pkg/E.html\" title=\"enum in pkg\"><STRONG>PREV CLASS</STRONG></A>"},
-        {BUG_ID + FS + "pkg" + FS + "I.html", "&nbsp;NEXT CLASS"},
+            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"strong\">PREV CLASS</span></a>"},
+        {BUG_ID + FS + "pkg" + FS + "I.html", "<li>NEXT CLASS</li>"},
         // Test for 4664607
         {BUG_ID + FS + "pkg" + FS + "I.html",
-            "<TD COLSPAN=2 BGCOLOR=\"#EEEEFF\" CLASS=\"NavBarCell1\">" + NL +
-            "<A NAME=\"navbar_top_firstrow\"><!-- --></A>"}
+            "<a href=\"#skip-navbar_top\" title=\"Skip navigation links\"></a><a name=\"navbar_top_firstrow\">" + NL +
+            "<!--   -->" + NL + "</a>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 

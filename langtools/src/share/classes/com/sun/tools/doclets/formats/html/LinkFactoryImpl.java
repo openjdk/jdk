@@ -79,7 +79,7 @@ public class LinkFactoryImpl extends LinkFactory {
                 String filename = pathString(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(linkInfo.classDoc.name() + ".html").equals(m_writer.filename)) {
-                        linkOutput.append(m_writer.getHyperLink(filename,
+                        linkOutput.append(m_writer.getHyperLinkString(filename,
                             classLinkInfo.where, label.toString(),
                             classLinkInfo.isStrong, classLinkInfo.styleName,
                             title, classLinkInfo.target));
