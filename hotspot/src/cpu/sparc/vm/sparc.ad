@@ -667,6 +667,20 @@ intptr_t get_offset_from_base_2(const MachNode* n, const TypePtr* atype, int dis
   return offset;
 }
 
+static inline jdouble replicate_immI(int con, int count, int width) {
+  // Load a constant replicated "count" times with width "width"
+  int bit_width = width * 8;
+  jlong elt_val = con;
+  elt_val &= (((jlong) 1) << bit_width) - 1;  // mask off sign bits
+  jlong val = elt_val;
+  for (int i = 0; i < count - 1; i++) {
+    val <<= bit_width;
+    val |= elt_val;
+  }
+  jdouble dval = *((jdouble*) &val);  // coerce to double type
+  return dval;
+}
+
 // Standard Sparc opcode form2 field breakdown
 static inline void emit2_19(CodeBuffer &cbuf, int f30, int f29, int f25, int f22, int f20, int f19, int f0 ) {
   f0 &= (1<<19)-1;     // Mask displacement to 19 bits
@@ -1005,6 +1019,90 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocTyp
 // REQUIRED FUNCTIONALITY for encoding
 void emit_lo(CodeBuffer &cbuf, int val) {  }
 void emit_hi(CodeBuffer &cbuf, int val) {  }
+
+
+//=============================================================================
+const bool Matcher::constant_table_absolute_addressing = false;
+const RegMask& MachConstantBaseNode::_out_RegMask = PTR_REG_mask;
+
+void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+  Compile* C = ra_->C;
+  Compile::ConstantTable& constant_table = C->constant_table();
+  MacroAssembler _masm(&cbuf);
+
+  Register r = as_Register(ra_->get_encode(this));
+  CodeSection* cs = __ code()->consts();
+  int consts_size = cs->align_at_start(cs->size());
+
+  if (UseRDPCForConstantTableBase) {
+    // For the following RDPC logic to work correctly the consts
+    // section must be allocated right before the insts section.  This
+    // assert checks for that.  The layout and the SECT_* constants
+    // are defined in src/share/vm/asm/codeBuffer.hpp.
+    assert(CodeBuffer::SECT_CONSTS + 1 == CodeBuffer::SECT_INSTS, "must be");
+    int offset = __ offset();
+    int disp;
+
+    // If the displacement from the current PC to the constant table
+    // base fits into simm13 we set the constant table base to the
+    // current PC.
+    if (__ is_simm13(-(consts_size + offset))) {
+      constant_table.set_table_base_offset(-(consts_size + offset));
+      disp = 0;
+    } else {
+      // If the offset of the top constant (last entry in the table)
+      // fits into simm13 we set the constant table base to the actual
+      // table base.
+      if (__ is_simm13(constant_table.top_offset())) {
+        constant_table.set_table_base_offset(0);
+        disp = consts_size + offset;
+      } else {
+        // Otherwise we set the constant table base in the middle of the
+        // constant table.
+        int half_consts_size = consts_size / 2;
+        assert(half_consts_size * 2 == consts_size, "sanity");
+        constant_table.set_table_base_offset(-half_consts_size);  // table base offset gets added to the load displacement.
+        disp = half_consts_size + offset;
+      }
+    }
+
+    __ rdpc(r);
+
+    if (disp != 0) {
+      assert(r != O7, "need temporary");
+      __ sub(r, __ ensure_simm13_or_reg(disp, O7), r);
+    }
+  }
+  else {
+    // Materialize the constant table base.
+    assert(constant_table.size() == consts_size, err_msg("must be: %d == %d", constant_table.size(), consts_size));
+    address baseaddr = cs->start() + -(constant_table.table_base_offset());
+    RelocationHolder rspec = internal_word_Relocation::spec(baseaddr);
+    AddressLiteral base(baseaddr, rspec);
+    __ set(base, r);
+  }
+}
+
+uint MachConstantBaseNode::size(PhaseRegAlloc*) const {
+  if (UseRDPCForConstantTableBase) {
+    // This is really the worst case but generally it's only 1 instruction.
+    return 4 /*rdpc*/ + 4 /*sub*/ + MacroAssembler::worst_case_size_of_set();
+  } else {
+    return MacroAssembler::worst_case_size_of_set();
+  }
+}
+
+#ifndef PRODUCT
+void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
+  char reg[128];
+  ra_->dump_register(this, reg);
+  if (UseRDPCForConstantTableBase) {
+    st->print("RDPC   %s\t! constant table base", reg);
+  } else {
+    st->print("SET    &constanttable,%s\t! constant table base", reg);
+  }
+}
+#endif
 
 
 //=============================================================================
@@ -2247,25 +2345,6 @@ encode %{
     __ delayed()->nop();
   %}
 
-  enc_class jump_enc( iRegX switch_val, o7RegI table) %{
-    MacroAssembler _masm(&cbuf);
-
-    Register switch_reg       = as_Register($switch_val$$reg);
-    Register table_reg        = O7;
-
-    address table_base = __ address_table_constant(_index2label);
-    RelocationHolder rspec = internal_word_Relocation::spec(table_base);
-
-    // Move table address into a register.
-    __ set(table_base, table_reg, rspec);
-
-    // Jump to base address + switch value
-    __ ld_ptr(table_reg, switch_reg, table_reg);
-    __ jmp(table_reg, G0);
-    __ delayed()->nop();
-
-  %}
-
   enc_class enc_ba( Label labl ) %{
     MacroAssembler _masm(&cbuf);
     Label &L = *($labl$$label);
@@ -2384,20 +2463,6 @@ encode %{
     cbuf.insts()->emit_int32(op);
   %}
 
-  // Utility encoding for loading a 64 bit Pointer into a register
-  // The 64 bit pointer is stored in the generated code stream
-  enc_class SetPtr( immP src, iRegP rd ) %{
-    Register dest = reg_to_register_object($rd$$reg);
-    MacroAssembler _masm(&cbuf);
-    // [RGV] This next line should be generated from ADLC
-    if ( _opnds[1]->constant_is_oop() ) {
-      intptr_t val = $src$$constant;
-      __ set_oop_constant((jobject)val, dest);
-    } else {          // non-oop pointers, e.g. card mark base, heap top
-      __ set($src$$constant, dest);
-    }
-  %}
-
   enc_class Set13( immI13 src, iRegI rd ) %{
     emit3_simm13( cbuf, Assembler::arith_op, $rd$$reg, Assembler::or_op3, 0, $src$$constant );
   %}
@@ -2409,10 +2474,6 @@ encode %{
   enc_class Set32( immI src, iRegI rd ) %{
     MacroAssembler _masm(&cbuf);
     __ set($src$$constant, reg_to_register_object($rd$$reg));
-  %}
-
-  enc_class SetNull( iRegI rd ) %{
-    emit3_simm13( cbuf, Assembler::arith_op, $rd$$reg, Assembler::or_op3, 0, 0 );
   %}
 
   enc_class call_epilog %{
@@ -2776,35 +2837,6 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
 
     // Convert condition code fcc0 into -1,0,1; unordered reports less-than (-1)
     __ float_cmp( $primary, -1, Fsrc1, Fsrc2, Rdst);
-  %}
-
-  enc_class LdImmL (immL src, iRegL dst, o7RegL tmp) %{   // Load Immediate
-    MacroAssembler _masm(&cbuf);
-    Register dest = reg_to_register_object($dst$$reg);
-    Register temp = reg_to_register_object($tmp$$reg);
-    __ set64( $src$$constant, dest, temp );
-  %}
-
-  enc_class LdReplImmI(immI src, regD dst, o7RegP tmp, int count, int width) %{
-    // Load a constant replicated "count" times with width "width"
-    int bit_width = $width$$constant * 8;
-    jlong elt_val = $src$$constant;
-    elt_val  &= (((jlong)1) << bit_width) - 1; // mask off sign bits
-    jlong val = elt_val;
-    for (int i = 0; i < $count$$constant - 1; i++) {
-        val <<= bit_width;
-        val |= elt_val;
-    }
-    jdouble dval = *(jdouble*)&val; // coerce to double type
-    MacroAssembler _masm(&cbuf);
-    address double_address = __ double_constant(dval);
-    RelocationHolder rspec = internal_word_Relocation::spec(double_address);
-    AddressLiteral addrlit(double_address, rspec);
-
-    __ sethi(addrlit, $tmp$$Register);
-    // XXX This is a quick fix for 6833573.
-    //__ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
-    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), as_DoubleFloatRegister($dst$$reg), rspec);
   %}
 
   // Compiler ensures base is doubleword aligned and cnt is count of doublewords
@@ -3521,6 +3553,29 @@ operand immP() %{
   interface(CONST_INTER);
 %}
 
+// Pointer Immediate: 32 or 64-bit
+operand immP_set() %{
+  predicate(!VM_Version::is_niagara1_plus());
+  match(ConP);
+
+  op_cost(5);
+  // formats are generated automatically for constants and base registers
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Pointer Immediate: 32 or 64-bit
+// From Niagara2 processors on a load should be better than materializing.
+operand immP_load() %{
+  predicate(VM_Version::is_niagara1_plus());
+  match(ConP);
+
+  op_cost(5);
+  // formats are generated automatically for constants and base registers
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immP13() %{
   predicate((-4096 < n->get_ptr()) && (n->get_ptr() <= 4095));
   match(ConP);
@@ -3609,6 +3664,26 @@ operand immL13m7() %{
 // Long Immediate: low 32-bit mask
 operand immL_32bits() %{
   predicate(n->get_long() == 0xFFFFFFFFL);
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: cheap (materialize in <= 3 instructions)
+operand immL_cheap() %{
+  predicate(!VM_Version::is_niagara1_plus() || MacroAssembler::size_of_set64(n->get_long()) <= 3);
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: expensive (materialize in > 3 instructions)
+operand immL_expensive() %{
+  predicate(VM_Version::is_niagara1_plus() && MacroAssembler::size_of_set64(n->get_long()) > 3);
   match(ConL);
   op_cost(0);
 
@@ -5981,25 +6056,58 @@ instruct loadConI13( iRegI dst, immI13 src ) %{
   ins_pipe(ialu_imm);
 %}
 
-instruct loadConP(iRegP dst, immP src) %{
-  match(Set dst src);
+#ifndef _LP64
+instruct loadConP(iRegP dst, immP con) %{
+  match(Set dst con);
   ins_cost(DEFAULT_COST * 3/2);
-  format %{ "SET    $src,$dst\t!ptr" %}
-  // This rule does not use "expand" unlike loadConI because then
-  // the result type is not known to be an Oop.  An ADLC
-  // enhancement will be needed to make that work - not worth it!
-
-  ins_encode( SetPtr( src, dst ) );
+  format %{ "SET    $con,$dst\t!ptr" %}
+  ins_encode %{
+    // [RGV] This next line should be generated from ADLC
+    if (_opnds[1]->constant_is_oop()) {
+      intptr_t val = $con$$constant;
+      __ set_oop_constant((jobject) val, $dst$$Register);
+    } else {          // non-oop pointers, e.g. card mark base, heap top
+      __ set($con$$constant, $dst$$Register);
+    }
+  %}
   ins_pipe(loadConP);
-
 %}
+#else
+instruct loadConP_set(iRegP dst, immP_set con) %{
+  match(Set dst con);
+  ins_cost(DEFAULT_COST * 3/2);
+  format %{ "SET    $con,$dst\t! ptr" %}
+  ins_encode %{
+    // [RGV] This next line should be generated from ADLC
+    if (_opnds[1]->constant_is_oop()) {
+      intptr_t val = $con$$constant;
+      __ set_oop_constant((jobject) val, $dst$$Register);
+    } else {          // non-oop pointers, e.g. card mark base, heap top
+      __ set($con$$constant, $dst$$Register);
+    }
+  %}
+  ins_pipe(loadConP);
+%}
+
+instruct loadConP_load(iRegP dst, immP_load con) %{
+  match(Set dst con);
+  ins_cost(MEMORY_REF_COST);
+  format %{ "LD     [$constanttablebase + $constantoffset],$dst\t! load from constant table: ptr=$con" %}
+  ins_encode %{
+    __ ld_ptr($constanttablebase, $constantoffset($con), $dst$$Register);
+  %}
+  ins_pipe(loadConP);
+%}
+#endif // _LP64
 
 instruct loadConP0(iRegP dst, immP0 src) %{
   match(Set dst src);
 
   size(4);
   format %{ "CLR    $dst\t!ptr" %}
-  ins_encode( SetNull( dst ) );
+  ins_encode %{
+    __ clr($dst$$Register);
+  %}
   ins_pipe(ialu_imm);
 %}
 
@@ -6019,7 +6127,9 @@ instruct loadConN0(iRegN dst, immN0 src) %{
 
   size(4);
   format %{ "CLR    $dst\t! compressed NULL ptr" %}
-  ins_encode( SetNull( dst ) );
+  ins_encode %{
+    __ clr($dst$$Register);
+  %}
   ins_pipe(ialu_imm);
 %}
 
@@ -6034,13 +6144,26 @@ instruct loadConN(iRegN dst, immN src) %{
   ins_pipe(ialu_hi_lo_reg);
 %}
 
-instruct loadConL(iRegL dst, immL src, o7RegL tmp) %{
-  // %%% maybe this should work like loadConD
-  match(Set dst src);
+// Materialize long value (predicated by immL_cheap).
+instruct loadConL_set64(iRegL dst, immL_cheap con, o7RegL tmp) %{
+  match(Set dst con);
   effect(KILL tmp);
-  ins_cost(DEFAULT_COST * 4);
-  format %{ "SET64   $src,$dst KILL $tmp\t! long" %}
-  ins_encode( LdImmL(src, dst, tmp) );
+  ins_cost(DEFAULT_COST * 3);
+  format %{ "SET64   $con,$dst KILL $tmp\t! cheap long" %}
+  ins_encode %{
+    __ set64($con$$constant, $dst$$Register, $tmp$$Register);
+  %}
+  ins_pipe(loadConL);
+%}
+
+// Load long value from constant table (predicated by immL_expensive).
+instruct loadConL_ldx(iRegL dst, immL_expensive con) %{
+  match(Set dst con);
+  ins_cost(MEMORY_REF_COST);
+  format %{ "LDX     [$constanttablebase + $constantoffset],$dst\t! load from constant table: long=$con" %}
+  ins_encode %{
+    __ ldx($constanttablebase, $constantoffset($con), $dst$$Register);
+  %}
   ins_pipe(loadConL);
 %}
 
@@ -6063,50 +6186,24 @@ instruct loadConL13( iRegL dst, immL13 src ) %{
   ins_pipe(ialu_imm);
 %}
 
-instruct loadConF(regF dst, immF src, o7RegP tmp) %{
-  match(Set dst src);
-  effect(KILL tmp);
-
-#ifdef _LP64
-  size(8*4);
-#else
-  size(2*4);
-#endif
-
-  format %{ "SETHI  hi(&$src),$tmp\t!get float $src from table\n\t"
-            "LDF    [$tmp+lo(&$src)],$dst" %}
+instruct loadConF(regF dst, immF con) %{
+  match(Set dst con);
+  size(4);
+  format %{ "LDF    [$constanttablebase + $constantoffset],$dst\t! load from constant table: float=$con" %}
   ins_encode %{
-    address float_address = __ float_constant($src$$constant);
-    RelocationHolder rspec = internal_word_Relocation::spec(float_address);
-    AddressLiteral addrlit(float_address, rspec);
-
-    __ sethi(addrlit, $tmp$$Register);
-    __ ldf(FloatRegisterImpl::S, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+    __ ldf(FloatRegisterImpl::S, $constanttablebase, $constantoffset($con), $dst$$FloatRegister);
   %}
   ins_pipe(loadConFD);
 %}
 
-instruct loadConD(regD dst, immD src, o7RegP tmp) %{
-  match(Set dst src);
-  effect(KILL tmp);
-
-#ifdef _LP64
-  size(8*4);
-#else
-  size(2*4);
-#endif
-
-  format %{ "SETHI  hi(&$src),$tmp\t!get double $src from table\n\t"
-            "LDDF   [$tmp+lo(&$src)],$dst" %}
+instruct loadConD(regD dst, immD con) %{
+  match(Set dst con);
+  size(4);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: double=$con" %}
   ins_encode %{
-    address double_address = __ double_constant($src$$constant);
-    RelocationHolder rspec = internal_word_Relocation::spec(double_address);
-    AddressLiteral addrlit(double_address, rspec);
-
-    __ sethi(addrlit, $tmp$$Register);
     // XXX This is a quick fix for 6833573.
-    //__ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
-    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), as_DoubleFloatRegister($dst$$reg), rspec);
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset($con), $dst$$FloatRegister);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset($con), as_DoubleFloatRegister($dst$$reg));
   %}
   ins_pipe(loadConFD);
 %}
@@ -8558,16 +8655,15 @@ instruct Repl8B_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar constant to packed byte values in Double register
-instruct Repl8B_immI(regD dst, immI13 src, o7RegP tmp) %{
-  match(Set dst (Replicate8B src));
-#ifdef _LP64
-  size(36);
-#else
-  size(8);
-#endif
-  format %{ "SETHI  hi(&Repl8($src)),$tmp\t!get Repl8B($src) from table\n\t"
-            "LDDF   [$tmp+lo(&Repl8($src))],$dst" %}
-  ins_encode( LdReplImmI(src, dst, tmp, (8), (1)) );
+instruct Repl8B_immI(regD dst, immI13 con) %{
+  match(Set dst (Replicate8B con));
+  size(4);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl8B($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 8, 1)), $dst$$FloatRegister);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 8, 1)), as_DoubleFloatRegister($dst$$reg));
+  %}
   ins_pipe(loadConFD);
 %}
 
@@ -8594,16 +8690,15 @@ instruct Repl4C_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar constant to packed char values in Double register
-instruct Repl4C_immI(regD dst, immI src, o7RegP tmp) %{
-  match(Set dst (Replicate4C src));
-#ifdef _LP64
-  size(36);
-#else
-  size(8);
-#endif
-  format %{ "SETHI  hi(&Repl4($src)),$tmp\t!get Repl4C($src) from table\n\t"
-            "LDDF   [$tmp+lo(&Repl4($src))],$dst" %}
-  ins_encode( LdReplImmI(src, dst, tmp, (4), (2)) );
+instruct Repl4C_immI(regD dst, immI con) %{
+  match(Set dst (Replicate4C con));
+  size(4);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4C($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), as_DoubleFloatRegister($dst$$reg));
+  %}
   ins_pipe(loadConFD);
 %}
 
@@ -8630,16 +8725,15 @@ instruct Repl4S_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar constant to packed short values in Double register
-instruct Repl4S_immI(regD dst, immI src, o7RegP tmp) %{
-  match(Set dst (Replicate4S src));
-#ifdef _LP64
-  size(36);
-#else
-  size(8);
-#endif
-  format %{ "SETHI  hi(&Repl4($src)),$tmp\t!get Repl4S($src) from table\n\t"
-            "LDDF   [$tmp+lo(&Repl4($src))],$dst" %}
-  ins_encode( LdReplImmI(src, dst, tmp, (4), (2)) );
+instruct Repl4S_immI(regD dst, immI con) %{
+  match(Set dst (Replicate4S con));
+  size(4);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4S($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), as_DoubleFloatRegister($dst$$reg));
+  %}
   ins_pipe(loadConFD);
 %}
 
@@ -8664,16 +8758,15 @@ instruct Repl2I_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar zero constant to packed int values in Double register
-instruct Repl2I_immI(regD dst, immI src, o7RegP tmp) %{
-  match(Set dst (Replicate2I src));
-#ifdef _LP64
-  size(36);
-#else
-  size(8);
-#endif
-  format %{ "SETHI  hi(&Repl2($src)),$tmp\t!get Repl2I($src) from table\n\t"
-            "LDDF   [$tmp+lo(&Repl2($src))],$dst" %}
-  ins_encode( LdReplImmI(src, dst, tmp, (2), (4)) );
+instruct Repl2I_immI(regD dst, immI con) %{
+  match(Set dst (Replicate2I con));
+  size(4);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl2I($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 2, 4)), $dst$$FloatRegister);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 2, 4)), as_DoubleFloatRegister($dst$$reg));
+  %}
   ins_pipe(loadConFD);
 %}
 
@@ -8929,12 +9022,26 @@ instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
 
   ins_cost(350);
 
-  format %{  "SETHI  [hi(table_base)],O7\n\t"
-             "ADD    O7, lo(table_base), O7\n\t"
-             "LD     [O7+$switch_val], O7\n\t"
+  format %{  "ADD    $constanttablebase, $constantoffset, O7\n\t"
+             "LD     [O7 + $switch_val], O7\n\t"
              "JUMP   O7"
          %}
-  ins_encode( jump_enc( switch_val, table) );
+  ins_encode %{
+    // Calculate table address into a register.
+    Register table_reg;
+    Register label_reg = O7;
+    if (constant_offset() == 0) {
+      table_reg = $constanttablebase;
+    } else {
+      table_reg = O7;
+      __ add($constanttablebase, $constantoffset, table_reg);
+    }
+
+    // Jump to base address + switch value
+    __ ld_ptr(table_reg, $switch_val$$Register, label_reg);
+    __ jmp(label_reg, G0);
+    __ delayed()->nop();
+  %}
   ins_pc_relative(1);
   ins_pipe(ialu_reg_reg);
 %}

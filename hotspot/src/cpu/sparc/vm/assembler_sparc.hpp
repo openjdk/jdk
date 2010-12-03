@@ -1621,6 +1621,10 @@ public:
 
   void sub(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | rs2(s2) ); }
   void sub(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+
+  // Note: offset is added to s2.
+  inline void sub(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
+
   void subcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | rs2(s2) ); }
   void subcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
   void subc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(subc_op3             ) | rs1(s1) | rs2(s2) ); }
@@ -1894,6 +1898,9 @@ public:
   void patchable_set(const AddressLiteral& addrlit, Register d);
   void patchable_set(intptr_t value, Register d);
   void set64(jlong value, Register d, Register tmp);
+
+  // Compute size of set64.
+  static int size_of_set64(jlong value);
 
   // sign-extend 32 to 64
   inline void signx( Register s, Register d ) { sra( s, G0, d); }

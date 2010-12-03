@@ -75,6 +75,18 @@
 # include "adfiles/ad_zero.hpp"
 #endif
 
+
+// -------------------- Compile::mach_constant_base_node -----------------------
+// Constant table base node singleton.
+MachConstantBaseNode* Compile::mach_constant_base_node() {
+  if (_mach_constant_base_node == NULL) {
+    _mach_constant_base_node = new (C) MachConstantBaseNode();
+    _mach_constant_base_node->add_req(C->root());
+  }
+  return _mach_constant_base_node;
+}
+
+
 /// Support for intrinsics.
 
 // Return the index at which m must be inserted (or already exists).
@@ -432,13 +444,14 @@ void Compile::print_compile_messages() {
 }
 
 
-void Compile::init_scratch_buffer_blob() {
-  if( scratch_buffer_blob() != NULL )  return;
+void Compile::init_scratch_buffer_blob(int const_size) {
+  if (scratch_buffer_blob() != NULL)  return;
 
   // Construct a temporary CodeBuffer to have it construct a BufferBlob
   // Cache this BufferBlob for this compile.
   ResourceMark rm;
-  int size = (MAX_inst_size + MAX_stubs_size + MAX_const_size);
+  _scratch_const_size = const_size;
+  int size = (MAX_inst_size + MAX_stubs_size + _scratch_const_size);
   BufferBlob* blob = BufferBlob::create("Compile::scratch_buffer", size);
   // Record the buffer blob for next time.
   set_scratch_buffer_blob(blob);
@@ -455,9 +468,19 @@ void Compile::init_scratch_buffer_blob() {
 }
 
 
+void Compile::clear_scratch_buffer_blob() {
+  assert(scratch_buffer_blob(), "no BufferBlob set");
+  set_scratch_buffer_blob(NULL);
+  set_scratch_locs_memory(NULL);
+}
+
+
 //-----------------------scratch_emit_size-------------------------------------
 // Helper function that computes size by emitting code
 uint Compile::scratch_emit_size(const Node* n) {
+  // Start scratch_emit_size section.
+  set_in_scratch_emit_size(true);
+
   // Emit into a trash buffer and count bytes emitted.
   // This is a pretty expensive way to compute a size,
   // but it works well enough if seldom used.
@@ -476,13 +499,20 @@ uint Compile::scratch_emit_size(const Node* n) {
   address blob_end   = (address)locs_buf;
   assert(blob->content_contains(blob_end), "sanity");
   CodeBuffer buf(blob_begin, blob_end - blob_begin);
-  buf.initialize_consts_size(MAX_const_size);
+  buf.initialize_consts_size(_scratch_const_size);
   buf.initialize_stubs_size(MAX_stubs_size);
   assert(locs_buf != NULL, "sanity");
-  int lsize = MAX_locs_size / 2;
-  buf.insts()->initialize_shared_locs(&locs_buf[0],     lsize);
-  buf.stubs()->initialize_shared_locs(&locs_buf[lsize], lsize);
+  int lsize = MAX_locs_size / 3;
+  buf.consts()->initialize_shared_locs(&locs_buf[lsize * 0], lsize);
+  buf.insts()->initialize_shared_locs( &locs_buf[lsize * 1], lsize);
+  buf.stubs()->initialize_shared_locs( &locs_buf[lsize * 2], lsize);
+
+  // Do the emission.
   n->emit(buf, this->regalloc());
+
+  // End scratch_emit_size section.
+  set_in_scratch_emit_size(false);
+
   return buf.insts_size();
 }
 
@@ -516,10 +546,13 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _orig_pc_slot(0),
                   _orig_pc_slot_offset_in_bytes(0),
                   _has_method_handle_invokes(false),
+                  _mach_constant_base_node(NULL),
                   _node_bundling_limit(0),
                   _node_bundling_base(NULL),
                   _java_calls(0),
                   _inner_loops(0),
+                  _scratch_const_size(-1),
+                  _in_scratch_emit_size(false),
 #ifndef PRODUCT
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
                   _printer(IdealGraphPrinter::printer()),
@@ -783,6 +816,7 @@ Compile::Compile( ciEnv* ci_env,
     _failure_reason(NULL),
     _code_buffer("Compile::Fill_buffer"),
     _has_method_handle_invokes(false),
+    _mach_constant_base_node(NULL),
     _node_bundling_limit(0),
     _node_bundling_base(NULL),
     _java_calls(0),
@@ -2860,5 +2894,209 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator, boo
 Compile::TracePhase::~TracePhase() {
   if (_log != NULL) {
     _log->done("phase nodes='%d'", C->unique());
+  }
+}
+
+//=============================================================================
+// Two Constant's are equal when the type and the value are equal.
+bool Compile::Constant::operator==(const Constant& other) {
+  if (type()          != other.type()         )  return false;
+  if (can_be_reused() != other.can_be_reused())  return false;
+  // For floating point values we compare the bit pattern.
+  switch (type()) {
+  case T_FLOAT:   return (_value.i == other._value.i);
+  case T_LONG:
+  case T_DOUBLE:  return (_value.j == other._value.j);
+  case T_OBJECT:
+  case T_ADDRESS: return (_value.l == other._value.l);
+  case T_VOID:    return (_value.l == other._value.l);  // jump-table entries
+  default: ShouldNotReachHere();
+  }
+  return false;
+}
+
+// Emit constants grouped in the following order:
+static BasicType type_order[] = {
+  T_FLOAT,    // 32-bit
+  T_OBJECT,   // 32 or 64-bit
+  T_ADDRESS,  // 32 or 64-bit
+  T_DOUBLE,   // 64-bit
+  T_LONG,     // 64-bit
+  T_VOID,     // 32 or 64-bit (jump-tables are at the end of the constant table for code emission reasons)
+  T_ILLEGAL
+};
+
+static int type_to_size_in_bytes(BasicType t) {
+  switch (t) {
+  case T_LONG:    return sizeof(jlong  );
+  case T_FLOAT:   return sizeof(jfloat );
+  case T_DOUBLE:  return sizeof(jdouble);
+    // We use T_VOID as marker for jump-table entries (labels) which
+    // need an interal word relocation.
+  case T_VOID:
+  case T_ADDRESS:
+  case T_OBJECT:  return sizeof(jobject);
+  }
+
+  ShouldNotReachHere();
+  return -1;
+}
+
+void Compile::ConstantTable::calculate_offsets_and_size() {
+  int size = 0;
+  for (int t = 0; type_order[t] != T_ILLEGAL; t++) {
+    BasicType type = type_order[t];
+
+    for (int i = 0; i < _constants.length(); i++) {
+      Constant con = _constants.at(i);
+      if (con.type() != type)  continue;  // Skip other types.
+
+      // Align size for type.
+      int typesize = type_to_size_in_bytes(con.type());
+      size = align_size_up(size, typesize);
+
+      // Set offset.
+      con.set_offset(size);
+      _constants.at_put(i, con);
+
+      // Add type size.
+      size = size + typesize;
+    }
+  }
+
+  // Align size up to the next section start (which is insts; see
+  // CodeBuffer::align_at_start).
+  assert(_size == -1, "already set?");
+  _size = align_size_up(size, CodeEntryAlignment);
+
+  if (Matcher::constant_table_absolute_addressing) {
+    set_table_base_offset(0);  // No table base offset required
+  } else {
+    if (UseRDPCForConstantTableBase) {
+      // table base offset is set in MachConstantBaseNode::emit
+    } else {
+      // When RDPC is not used, the table base is set into the middle of
+      // the constant table.
+      int half_size = _size / 2;
+      assert(half_size * 2 == _size, "sanity");
+      set_table_base_offset(-half_size);
+    }
+  }
+}
+
+void Compile::ConstantTable::emit(CodeBuffer& cb) {
+  MacroAssembler _masm(&cb);
+  for (int t = 0; type_order[t] != T_ILLEGAL; t++) {
+    BasicType type = type_order[t];
+
+    for (int i = 0; i < _constants.length(); i++) {
+      Constant con = _constants.at(i);
+      if (con.type() != type)  continue;  // Skip other types.
+
+      address constant_addr;
+      switch (con.type()) {
+      case T_LONG:   constant_addr = _masm.long_constant(  con.get_jlong()  ); break;
+      case T_FLOAT:  constant_addr = _masm.float_constant( con.get_jfloat() ); break;
+      case T_DOUBLE: constant_addr = _masm.double_constant(con.get_jdouble()); break;
+      case T_OBJECT: {
+        jobject obj = con.get_jobject();
+        int oop_index = _masm.oop_recorder()->find_index(obj);
+        constant_addr = _masm.address_constant((address) obj, oop_Relocation::spec(oop_index));
+        break;
+      }
+      case T_ADDRESS: {
+        address addr = (address) con.get_jobject();
+        constant_addr = _masm.address_constant(addr);
+        break;
+      }
+      // We use T_VOID as marker for jump-table entries (labels) which
+      // need an interal word relocation.
+      case T_VOID: {
+        // Write a dummy word.  The real value is filled in later
+        // in fill_jump_table_in_constant_table.
+        address addr = (address) con.get_jobject();
+        constant_addr = _masm.address_constant(addr);
+        break;
+      }
+      default: ShouldNotReachHere();
+      }
+      assert(constant_addr != NULL, "consts section too small");
+      assert((constant_addr - _masm.code()->consts()->start()) == con.offset(), err_msg("must be: %d == %d", constant_addr - _masm.code()->consts()->start(), con.offset()));
+    }
+  }
+}
+
+int Compile::ConstantTable::find_offset(Constant& con) const {
+  int idx = _constants.find(con);
+  assert(idx != -1, "constant must be in constant table");
+  int offset = _constants.at(idx).offset();
+  assert(offset != -1, "constant table not emitted yet?");
+  return offset;
+}
+
+void Compile::ConstantTable::add(Constant& con) {
+  if (con.can_be_reused()) {
+    int idx = _constants.find(con);
+    if (idx != -1 && _constants.at(idx).can_be_reused()) {
+      return;
+    }
+  }
+  (void) _constants.append(con);
+}
+
+Compile::Constant Compile::ConstantTable::add(BasicType type, jvalue value) {
+  Constant con(type, value);
+  add(con);
+  return con;
+}
+
+Compile::Constant Compile::ConstantTable::add(MachOper* oper) {
+  jvalue value;
+  BasicType type = oper->type()->basic_type();
+  switch (type) {
+  case T_LONG:    value.j = oper->constantL(); break;
+  case T_FLOAT:   value.f = oper->constantF(); break;
+  case T_DOUBLE:  value.d = oper->constantD(); break;
+  case T_OBJECT:
+  case T_ADDRESS: value.l = (jobject) oper->constant(); break;
+  default: ShouldNotReachHere();
+  }
+  return add(type, value);
+}
+
+Compile::Constant Compile::ConstantTable::allocate_jump_table(MachConstantNode* n) {
+  jvalue value;
+  // We can use the node pointer here to identify the right jump-table
+  // as this method is called from Compile::Fill_buffer right before
+  // the MachNodes are emitted and the jump-table is filled (means the
+  // MachNode pointers do not change anymore).
+  value.l = (jobject) n;
+  Constant con(T_VOID, value, false);  // Labels of a jump-table cannot be reused.
+  for (uint i = 0; i < n->outcnt(); i++) {
+    add(con);
+  }
+  return con;
+}
+
+void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const {
+  // If called from Compile::scratch_emit_size do nothing.
+  if (Compile::current()->in_scratch_emit_size())  return;
+
+  assert(labels.is_nonempty(), "must be");
+  assert((uint) labels.length() == n->outcnt(), err_msg("must be equal: %d == %d", labels.length(), n->outcnt()));
+
+  // Since MachConstantNode::constant_offset() also contains
+  // table_base_offset() we need to subtract the table_base_offset()
+  // to get the plain offset into the constant table.
+  int offset = n->constant_offset() - table_base_offset();
+
+  MacroAssembler _masm(&cb);
+  address* jump_table_base = (address*) (_masm.code()->consts()->start() + offset);
+
+  for (int i = 0; i < labels.length(); i++) {
+    address* constant_addr = &jump_table_base[i];
+    assert(*constant_addr == (address) n, "all jump-table entries must contain node pointer");
+    *constant_addr = cb.consts()->target(*labels.at(i), (address) constant_addr);
+    cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
   }
 }

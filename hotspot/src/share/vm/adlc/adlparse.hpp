@@ -156,8 +156,13 @@ protected:
 
   Attribute     *attr_parse(char *ident);// Parse instr/operand attribute rule
   // Parse instruction encode rule
-  InsEncode     *ins_encode_parse(InstructForm &inst);
-  InsEncode     *ins_encode_parse_block(InstructForm &inst);
+  void           ins_encode_parse(InstructForm &inst);
+  void           ins_encode_parse_block(InstructForm &inst);
+  void           ins_encode_parse_block_impl(InstructForm& inst, EncClass* encoding, char* ec_name);
+
+  void           constant_parse(InstructForm& inst);
+  void           constant_parse_expression(EncClass* encoding, char* ec_name);
+
   Opcode        *opcode_parse(InstructForm *insr); // Parse instruction opcode
   char          *size_parse(InstructForm *insr); // Parse instruction size
   Interface     *interface_parse();      // Parse operand interface rule

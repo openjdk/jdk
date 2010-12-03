@@ -231,9 +231,6 @@ public:
   // Return number of relocatable values contained in this instruction
   virtual int   reloc() const { return 0; }
 
-  // Return number of words used for double constants in this instruction
-  virtual int   const_size() const { return 0; }
-
   // Hash and compare over operands.  Used to do GVN on machine Nodes.
   virtual uint  hash() const;
   virtual uint  cmp( const Node &n ) const;
@@ -346,6 +343,65 @@ public:
   virtual const char *Name() const { return "Breakpoint"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
 #endif
+};
+
+//------------------------------MachConstantBaseNode--------------------------
+// Machine node that represents the base address of the constant table.
+class MachConstantBaseNode : public MachIdealNode {
+public:
+  static const RegMask& _out_RegMask;  // We need the out_RegMask statically in MachConstantNode::in_RegMask().
+
+public:
+  MachConstantBaseNode() : MachIdealNode() {
+    init_class_id(Class_MachConstantBase);
+  }
+  virtual const class Type* bottom_type() const { return TypeRawPtr::NOTNULL; }
+  virtual uint ideal_reg() const { return Op_RegP; }
+  virtual uint oper_input_base() const { return 1; }
+
+  virtual void emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const;
+  virtual uint size(PhaseRegAlloc* ra_) const;
+  virtual bool pinned() const { return UseRDPCForConstantTableBase; }
+
+  static const RegMask& static_out_RegMask() { return _out_RegMask; }
+  virtual const RegMask& out_RegMask() const { return static_out_RegMask(); }
+
+#ifndef PRODUCT
+  virtual const char* Name() const { return "MachConstantBaseNode"; }
+  virtual void format(PhaseRegAlloc*, outputStream* st) const;
+#endif
+};
+
+//------------------------------MachConstantNode-------------------------------
+// Machine node that holds a constant which is stored in the constant table.
+class MachConstantNode : public MachNode {
+protected:
+  Compile::Constant _constant;  // This node's constant.
+
+public:
+  MachConstantNode() : MachNode() {
+    init_class_id(Class_MachConstant);
+  }
+
+  virtual void eval_constant(Compile* C) {
+#ifdef ASSERT
+    tty->print("missing MachConstantNode eval_constant function: ");
+    dump();
+#endif
+    ShouldNotCallThis();
+  }
+
+  virtual const RegMask &in_RegMask(uint idx) const {
+    if (idx == mach_constant_base_node_input())
+      return MachConstantBaseNode::static_out_RegMask();
+    return MachNode::in_RegMask(idx);
+  }
+
+  // Input edge of MachConstantBaseNode.
+  uint mach_constant_base_node_input() const { return req() - 1; }
+
+  int  constant_offset();
+  int  constant_offset() const { return ((MachConstantNode*) this)->constant_offset(); }
 };
 
 //------------------------------MachUEPNode-----------------------------------

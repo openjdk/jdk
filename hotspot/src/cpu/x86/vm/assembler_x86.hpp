@@ -1353,6 +1353,10 @@ private:
   void sqrtsd(XMMRegister dst, Address src);
   void sqrtsd(XMMRegister dst, XMMRegister src);
 
+  // Compute Square Root of Scalar Single-Precision Floating-Point Value
+  void sqrtss(XMMRegister dst, Address src);
+  void sqrtss(XMMRegister dst, XMMRegister src);
+
   void std() { emit_byte(0xfd); }
 
   void stmxcsr( Address dst );
@@ -2125,6 +2129,9 @@ class MacroAssembler: public Assembler {
   void comisd(XMMRegister dst, Address src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, AddressLiteral src);
 
+  void fadd_s(Address src)        { Assembler::fadd_s(src); }
+  void fadd_s(AddressLiteral src) { Assembler::fadd_s(as_Address(src)); }
+
   void fldcw(Address src) { Assembler::fldcw(src); }
   void fldcw(AddressLiteral src);
 
@@ -2137,6 +2144,9 @@ class MacroAssembler: public Assembler {
 
   void fld_x(Address src) { Assembler::fld_x(src); }
   void fld_x(AddressLiteral src);
+
+  void fmul_s(Address src)        { Assembler::fmul_s(src); }
+  void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
 
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
@@ -2154,10 +2164,50 @@ private:
 
 public:
 
-  void movsd(XMMRegister dst, XMMRegister src) { Assembler::movsd(dst, src); }
-  void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
-  void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
-  void movsd(XMMRegister dst, AddressLiteral src);
+  void addsd(XMMRegister dst, XMMRegister src)    { Assembler::addsd(dst, src); }
+  void addsd(XMMRegister dst, Address src)        { Assembler::addsd(dst, src); }
+  void addsd(XMMRegister dst, AddressLiteral src) { Assembler::addsd(dst, as_Address(src)); }
+
+  void addss(XMMRegister dst, XMMRegister src)    { Assembler::addss(dst, src); }
+  void addss(XMMRegister dst, Address src)        { Assembler::addss(dst, src); }
+  void addss(XMMRegister dst, AddressLiteral src) { Assembler::addss(dst, as_Address(src)); }
+
+  void divsd(XMMRegister dst, XMMRegister src)    { Assembler::divsd(dst, src); }
+  void divsd(XMMRegister dst, Address src)        { Assembler::divsd(dst, src); }
+  void divsd(XMMRegister dst, AddressLiteral src) { Assembler::divsd(dst, as_Address(src)); }
+
+  void divss(XMMRegister dst, XMMRegister src)    { Assembler::divss(dst, src); }
+  void divss(XMMRegister dst, Address src)        { Assembler::divss(dst, src); }
+  void divss(XMMRegister dst, AddressLiteral src) { Assembler::divss(dst, as_Address(src)); }
+
+  void movsd(XMMRegister dst, XMMRegister src)    { Assembler::movsd(dst, src); }
+  void movsd(Address dst, XMMRegister src)        { Assembler::movsd(dst, src); }
+  void movsd(XMMRegister dst, Address src)        { Assembler::movsd(dst, src); }
+  void movsd(XMMRegister dst, AddressLiteral src) { Assembler::movsd(dst, as_Address(src)); }
+
+  void mulsd(XMMRegister dst, XMMRegister src)    { Assembler::mulsd(dst, src); }
+  void mulsd(XMMRegister dst, Address src)        { Assembler::mulsd(dst, src); }
+  void mulsd(XMMRegister dst, AddressLiteral src) { Assembler::mulsd(dst, as_Address(src)); }
+
+  void mulss(XMMRegister dst, XMMRegister src)    { Assembler::mulss(dst, src); }
+  void mulss(XMMRegister dst, Address src)        { Assembler::mulss(dst, src); }
+  void mulss(XMMRegister dst, AddressLiteral src) { Assembler::mulss(dst, as_Address(src)); }
+
+  void sqrtsd(XMMRegister dst, XMMRegister src)    { Assembler::sqrtsd(dst, src); }
+  void sqrtsd(XMMRegister dst, Address src)        { Assembler::sqrtsd(dst, src); }
+  void sqrtsd(XMMRegister dst, AddressLiteral src) { Assembler::sqrtsd(dst, as_Address(src)); }
+
+  void sqrtss(XMMRegister dst, XMMRegister src)    { Assembler::sqrtss(dst, src); }
+  void sqrtss(XMMRegister dst, Address src)        { Assembler::sqrtss(dst, src); }
+  void sqrtss(XMMRegister dst, AddressLiteral src) { Assembler::sqrtss(dst, as_Address(src)); }
+
+  void subsd(XMMRegister dst, XMMRegister src)    { Assembler::subsd(dst, src); }
+  void subsd(XMMRegister dst, Address src)        { Assembler::subsd(dst, src); }
+  void subsd(XMMRegister dst, AddressLiteral src) { Assembler::subsd(dst, as_Address(src)); }
+
+  void subss(XMMRegister dst, XMMRegister src)    { Assembler::subss(dst, src); }
+  void subss(XMMRegister dst, Address src)        { Assembler::subss(dst, src); }
+  void subss(XMMRegister dst, AddressLiteral src) { Assembler::subss(dst, as_Address(src)); }
 
   void ucomiss(XMMRegister dst, XMMRegister src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address src) { Assembler::ucomiss(dst, src); }
