@@ -152,7 +152,7 @@ public class Paths {
         pathsForLocation.put(location, p);
     }
 
-    boolean isDefaultBootClassPath() {
+    public boolean isDefaultBootClassPath() {
         lazy();
         return isDefaultBootClassPath;
     }

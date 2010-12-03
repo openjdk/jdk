@@ -45,32 +45,24 @@ public class TestStylesheet extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "stylesheet.css",
-                "body { background-color: #FFFFFF; color:#000000 }"},
+                "/* Javadoc style sheet */"},
         {BUG_ID + FS + "stylesheet.css",
-                ".TableHeadingColor     { background: #CCCCFF; color:#000000 }"},
+                "/*" + NL + "Overall document style" + NL + "*/"},
         {BUG_ID + FS + "stylesheet.css",
-                ".TableSubHeadingColor  { background: #EEEEFF; color:#000000 }"},
+                "/*" + NL + "Heading styles" + NL + "*/"},
         {BUG_ID + FS + "stylesheet.css",
-                ".TableRowColor         { background: #FFFFFF; color:#000000 }"},
+                "/*" + NL + "Navigation bar styles" + NL + "*/"},
         {BUG_ID + FS + "stylesheet.css",
-                ".FrameTitleFont   { font-size: 100%; font-family: Helvetica, Arial, sans-serif; color:#000000 }"},
+                "body {" + NL + "    font-family:Helvetica, Arial, sans-serif;" + NL +
+                "    color:#000000;" + NL + "}"},
         {BUG_ID + FS + "stylesheet.css",
-                ".FrameHeadingFont { font-size:  90%; font-family: Helvetica, Arial, sans-serif; color:#000000 }"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".FrameItemFont    { font-size:  90%; font-family: Helvetica, Arial, sans-serif; color:#000000 }"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".NavBarCell1    { background-color:#EEEEFF; color:#000000}"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".NavBarCell1Rev { background-color:#00008B; color:#FFFFFF}"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".NavBarFont1    { font-family: Arial, Helvetica, sans-serif; color:#000000;color:#000000;}"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".NavBarFont1Rev { font-family: Arial, Helvetica, sans-serif; color:#FFFFFF;color:#FFFFFF;}"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".NavBarCell2    { font-family: Arial, Helvetica, sans-serif; background-color:#FFFFFF; color:#000000}"},
-        {BUG_ID + FS + "stylesheet.css",
-                ".NavBarCell3    { font-family: Arial, Helvetica, sans-serif; background-color:#FFFFFF; color:#000000}"},
-
+                "dl dd ul li {" + NL + "    list-style:none;" + NL +
+                "    margin:10px 0 10px 0;" + NL + "}"},
+        // Test whether a link to the stylesheet file is inserted properly
+        // in the class documentation.
+        {BUG_ID + FS + "pkg" + FS + "A.html",
+                "<link rel=\"stylesheet\" type=\"text/css\" " +
+                "href=\"../stylesheet.css\" title=\"Style\">"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 
