@@ -553,7 +553,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   if (ProfileTraps) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
-    method()->build_method_data();
+    method()->ensure_method_data();
   }
 
   Init(::AliasLevel);

@@ -298,8 +298,8 @@ int Compilation::compile_java_method() {
 
   CHECK_BAILOUT_(no_frame_size);
 
-  if (is_profiling()) {
-    method()->build_method_data();
+  if (is_profiling() && !method()->ensure_method_data()) {
+    BAILOUT_("mdo allocation failed", no_frame_size);
   }
 
   {
@@ -484,11 +484,11 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
     if (is_profiling()) {
       // Compilation failed, create MDO, which would signal the interpreter
       // to start profiling on its own.
-      _method->build_method_data();
+      _method->ensure_method_data();
     }
   } else if (is_profiling() && _would_profile) {
-    ciMethodData *md = method->method_data();
-    assert (md != NULL, "Should have MDO");
+    ciMethodData *md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     md->set_would_profile(_would_profile);
   }
 }

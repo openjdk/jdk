@@ -836,11 +836,8 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
   if (if_instr->should_profile()) {
     ciMethod* method = if_instr->profiled_method();
     assert(method != NULL, "method should be set if branch is profiled");
-    ciMethodData* md = method->method_data();
-    if (md == NULL) {
-      bailout("out of memory building methodDataOop");
-      return;
-    }
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     ciProfileData* data = md->bci_to_data(if_instr->profiled_bci());
     assert(data != NULL, "must have profiling data");
     assert(data->is_BranchData(), "need BranchData for two-way branches");
@@ -2219,11 +2216,8 @@ void LIRGenerator::do_Goto(Goto* x) {
   if (x->should_profile()) {
     ciMethod* method = x->profiled_method();
     assert(method != NULL, "method should be set if branch is profiled");
-    ciMethodData* md = method->method_data();
-    if (md == NULL) {
-      bailout("out of memory building methodDataOop");
-      return;
-    }
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     ciProfileData* data = md->bci_to_data(x->profiled_bci());
     assert(data != NULL, "must have profiling data");
     int offset;
@@ -2723,7 +2717,9 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   } else if (level == CompLevel_full_profile) {
     offset = in_bytes(backedge ? methodDataOopDesc::backedge_counter_offset() :
                                  methodDataOopDesc::invocation_counter_offset());
-    __ oop2reg(method->method_data()->constant_encoding(), counter_holder);
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
+    __ oop2reg(md->constant_encoding(), counter_holder);
     meth = new_register(T_OBJECT);
     __ oop2reg(method->constant_encoding(), meth);
   } else {

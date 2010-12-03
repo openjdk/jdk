@@ -3377,6 +3377,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
     INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
   }
 
+  if (is_profiling() && !callee->ensure_method_data()) {
+    INLINE_BAILOUT("mdo allocation failed");
+  }
 #ifndef PRODUCT
       // printing
   if (PrintInlining) {

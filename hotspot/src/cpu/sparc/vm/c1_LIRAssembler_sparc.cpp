@@ -2419,11 +2419,8 @@ void LIR_Assembler::type_profile_helper(Register mdo, int mdo_offset_bias,
 
 void LIR_Assembler::setup_md_access(ciMethod* method, int bci,
                                     ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias) {
-  md = method->method_data();
-  if (md == NULL) {
-    bailout("out of memory building methodDataOop");
-    return;
-  }
+  md = method->method_data_or_null();
+  assert(md != NULL, "Sanity");
   data = md->bci_to_data(bci);
   assert(data != NULL,       "need data for checkcast");
   assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
@@ -2821,11 +2818,8 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   int bci          = op->profiled_bci();
 
   // Update counter for all call types
-  ciMethodData* md = method->method_data();
-  if (md == NULL) {
-    bailout("out of memory building methodDataOop");
-    return;
-  }
+  ciMethodData* md = method->method_data_or_null();
+  assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
   assert(data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
