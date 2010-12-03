@@ -2717,7 +2717,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
         __ encode_heap_oop(t2);
         __ cas(addr, t1, t2);
       } else {
-        __ casx(addr, t1, t2);
+        __ cas_ptr(addr, t1, t2);
       }
     } else {
       __ cas(addr, t1, t2);
