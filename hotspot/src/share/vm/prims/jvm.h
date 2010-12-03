@@ -1064,7 +1064,8 @@ enum {
     JVM_CONSTANT_MethodHandle           = 15,  // JSR 292
     JVM_CONSTANT_MethodType             = 16,  // JSR 292
     JVM_CONSTANT_InvokeDynamicTrans     = 17,  // JSR 292, only occurs in old class files
-    JVM_CONSTANT_InvokeDynamic          = 18   // JSR 292
+    JVM_CONSTANT_InvokeDynamic          = 18,  // JSR 292
+    JVM_CONSTANT_ExternalMax            = 18   // Last tag found in classfiles
 };
 
 /* JVM_CONSTANT_MethodHandle subtypes */
