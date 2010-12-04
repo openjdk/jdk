@@ -159,33 +159,45 @@ public class Resolve {
      *  @param c      The class whose accessibility is checked.
      */
     public boolean isAccessible(Env<AttrContext> env, TypeSymbol c) {
+        return isAccessible(env, c, false);
+    }
+
+    public boolean isAccessible(Env<AttrContext> env, TypeSymbol c, boolean checkInner) {
+        boolean isAccessible = false;
         switch ((short)(c.flags() & AccessFlags)) {
-        case PRIVATE:
-            return
-                env.enclClass.sym.outermostClass() ==
-                c.owner.outermostClass();
-        case 0:
-            return
-                env.toplevel.packge == c.owner // fast special case
-                ||
-                env.toplevel.packge == c.packge()
-                ||
-                // Hack: this case is added since synthesized default constructors
-                // of anonymous classes should be allowed to access
-                // classes which would be inaccessible otherwise.
-                env.enclMethod != null &&
-                (env.enclMethod.mods.flags & ANONCONSTR) != 0;
-        default: // error recovery
-        case PUBLIC:
-            return true;
-        case PROTECTED:
-            return
-                env.toplevel.packge == c.owner // fast special case
-                ||
-                env.toplevel.packge == c.packge()
-                ||
-                isInnerSubClass(env.enclClass.sym, c.owner);
+            case PRIVATE:
+                isAccessible =
+                    env.enclClass.sym.outermostClass() ==
+                    c.owner.outermostClass();
+                break;
+            case 0:
+                isAccessible =
+                    env.toplevel.packge == c.owner // fast special case
+                    ||
+                    env.toplevel.packge == c.packge()
+                    ||
+                    // Hack: this case is added since synthesized default constructors
+                    // of anonymous classes should be allowed to access
+                    // classes which would be inaccessible otherwise.
+                    env.enclMethod != null &&
+                    (env.enclMethod.mods.flags & ANONCONSTR) != 0;
+                break;
+            default: // error recovery
+            case PUBLIC:
+                isAccessible = true;
+                break;
+            case PROTECTED:
+                isAccessible =
+                    env.toplevel.packge == c.owner // fast special case
+                    ||
+                    env.toplevel.packge == c.packge()
+                    ||
+                    isInnerSubClass(env.enclClass.sym, c.owner);
+                break;
         }
+        return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?
+            isAccessible :
+            isAccessible & isAccessible(env, c.type.getEnclosingType(), checkInner);
     }
     //where
         /** Is given class a subclass of given base class, or an inner class
@@ -202,9 +214,13 @@ public class Resolve {
         }
 
     boolean isAccessible(Env<AttrContext> env, Type t) {
+        return isAccessible(env, t, false);
+    }
+
+    boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
         return (t.tag == ARRAY)
             ? isAccessible(env, types.elemtype(t))
-            : isAccessible(env, t.tsym);
+            : isAccessible(env, t.tsym, checkInner);
     }
 
     /** Is symbol accessible as a member of given type in given evironment?
@@ -214,6 +230,9 @@ public class Resolve {
      *  @param sym    The symbol.
      */
     public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym) {
+        return isAccessible(env, site, sym, false);
+    }
+    public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym, boolean checkInner) {
         if (sym.name == names.init && sym.owner != site.tsym) return false;
         ClassSymbol sub;
         switch ((short)(sym.flags() & AccessFlags)) {
@@ -231,7 +250,7 @@ public class Resolve {
                  ||
                  env.toplevel.packge == sym.packge())
                 &&
-                isAccessible(env, site)
+                isAccessible(env, site, checkInner)
                 &&
                 sym.isInheritedIn(site.tsym, types)
                 &&
@@ -248,11 +267,11 @@ public class Resolve {
                  // (but type names should be disallowed elsewhere!)
                  env.info.selectSuper && (sym.flags() & STATIC) == 0 && sym.kind != TYP)
                 &&
-                isAccessible(env, site)
+                isAccessible(env, site, checkInner)
                 &&
                 notOverriddenIn(site, sym);
         default: // this case includes erroneous combinations as well
-            return isAccessible(env, site) && notOverriddenIn(site, sym);
+            return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
         }
     }
     //where

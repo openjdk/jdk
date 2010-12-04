@@ -1123,7 +1123,7 @@ public final class SunPKCS11 extends AuthProvider {
 
             java.text.MessageFormat form = new java.text.MessageFormat
                         (ResourcesMgr.getString
-                        ("PKCS11 Token [providerName] Password: "));
+                        ("PKCS11.Token.providerName.Password."));
             Object[] source = { getName() };
 
             PasswordCallback pcall = new PasswordCallback(form.format(source),
