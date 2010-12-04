@@ -247,6 +247,11 @@ public class Flags {
      */
     public static final long OVERRIDE_BRIDGE = 1L<<41;
 
+    /**
+     * Flag that marks an 'effectively final' local variable
+     */
+    public static final long EFFECTIVELY_FINAL = 1L<<42;
+
     /** Modifier masks.
      */
     public static final int

@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.warn.twr.explicit.close.call
-// options: -Xlint:arm
+// key: compiler.warn.try.explicit.close.call
+// options: -Xlint:try
 
 import java.io.*;
 
