@@ -1012,7 +1012,11 @@ public class IIOPInputStream
              * else,
              *  Handle it as a serializable class.
              */
-            if (currentClassDesc.isExternalizable()) {
+            if (Enum.class.isAssignableFrom( clz )) {
+                int ordinal = orbStream.read_long() ;
+                String value = (String)orbStream.read_value( String.class ) ;
+                return Enum.valueOf( clz, value ) ;
+            } else if (currentClassDesc.isExternalizable()) {
                 try {
                     currentObject = (currentClass == null) ?
                         null : currentClassDesc.newInstance();

@@ -1888,6 +1888,7 @@ public class Window extends Container implements Accessible {
      * @exception ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
+     * @exception NullPointerException if {@code listenerType} is {@code null}
      *
      * @see #getWindowListeners
      * @since 1.3
