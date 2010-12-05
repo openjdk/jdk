@@ -25,7 +25,9 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Interface for encoding and decoding int arrays using bytewise codes.
