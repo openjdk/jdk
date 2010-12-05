@@ -66,10 +66,6 @@ public class Scanner implements Lexer {
      */
     private boolean allowUnderscoresInLiterals;
 
-    /** Allow exotic identifiers.
-     */
-    private boolean allowExoticIdentifiers;
-
     /** The source language setting.
      */
     private Source source;
@@ -143,7 +139,6 @@ public class Scanner implements Lexer {
         allowBinaryLiterals = source.allowBinaryLiterals();
         allowHexFloats = source.allowHexFloats();
         allowUnderscoresInLiterals = source.allowBinaryLiterals();
-        allowExoticIdentifiers = source.allowExoticIdentifiers();  // for invokedynamic
     }
 
     private static final boolean hexFloatsWork = hexFloatsWork();
@@ -295,7 +290,7 @@ public class Scanner implements Lexer {
 
     /** Read next character in character or string literal and copy into sbuf.
      */
-    private void scanLitChar(boolean forBytecodeName) {
+    private void scanLitChar() {
         if (ch == '\\') {
             if (buf[bp+1] == '\\' && unicodeConversionBp != bp) {
                 bp++;
@@ -335,18 +330,6 @@ public class Scanner implements Lexer {
                     putChar('\"'); scanChar(); break;
                 case '\\':
                     putChar('\\'); scanChar(); break;
-                case '|': case ',': case '?': case '%':
-                case '^': case '_': case '{': case '}':
-                case '!': case '-': case '=':
-                    if (forBytecodeName) {
-                        // Accept escape sequences for dangerous bytecode chars.
-                        // This is illegal in normal Java string or character literals.
-                        // Note that the escape sequence itself is passed through.
-                        putChar('\\'); putChar(ch); scanChar();
-                    } else {
-                        lexError(bp, "illegal.esc.char");
-                    }
-                    break;
                 default:
                     lexError(bp, "illegal.esc.char");
                 }
@@ -354,24 +337,6 @@ public class Scanner implements Lexer {
         } else if (bp != buflen) {
             putChar(ch); scanChar();
         }
-    }
-    private void scanLitChar() {
-        scanLitChar(false);
-    }
-
-    /** Read next character in an exotic name #"foo"
-     */
-    private void scanBytecodeNameChar() {
-        switch (ch) {
-        // reject any "dangerous" char which is illegal somewhere in the JVM spec
-        // cf. http://blogs.sun.com/jrose/entry/symbolic_freedom_in_the_vm
-        case '/': case '.': case ';':  // illegal everywhere
-        case '<': case '>':  // illegal in methods, dangerous in classes
-        case '[':  // illegal in classes
-            lexError(bp, "illegal.bytecode.ident.char", String.valueOf((int)ch));
-            break;
-        }
-        scanLitChar(true);
     }
 
     private void scanDigits(int digitRadix) {
@@ -968,30 +933,6 @@ public class Scanner implements Lexer {
                         scanChar();
                     } else {
                         lexError(pos, "unclosed.str.lit");
-                    }
-                    return;
-                case '#':
-                    scanChar();
-                    if (ch == '\"') {
-                        if (!allowExoticIdentifiers) {
-                            lexError("unsupported.exotic.id", source.name);
-                            allowExoticIdentifiers = true;
-                        }
-                        scanChar();
-                        if (ch == '\"')
-                            lexError(pos, "empty.bytecode.ident");
-                        while (ch != '\"' && ch != CR && ch != LF && bp < buflen) {
-                            scanBytecodeNameChar();
-                        }
-                        if (ch == '\"') {
-                            name = names.fromChars(sbuf, 0, sp);
-                            token = IDENTIFIER;  // even if #"int" or #"do"
-                            scanChar();
-                        } else {
-                            lexError(pos, "unclosed.bytecode.ident");
-                        }
-                    } else {
-                        lexError("illegal.char", String.valueOf((int)'#'));
                     }
                     return;
                 default:

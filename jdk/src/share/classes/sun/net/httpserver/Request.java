@@ -201,32 +201,22 @@ class Request {
 
     static class ReadStream extends InputStream {
         SocketChannel channel;
-        SelectorCache sc;
-        Selector selector;
         ByteBuffer chanbuf;
-        SelectionKey key;
-        int available;
         byte[] one;
-        boolean closed = false, eof = false;
+        private boolean closed = false, eof = false;
         ByteBuffer markBuf; /* reads may be satisifed from this buffer */
         boolean marked;
         boolean reset;
         int readlimit;
         static long readTimeout;
         ServerImpl server;
-
-        static {
-            readTimeout = ServerConfig.getReadTimeout();
-        }
+        final static int BUFSIZE = 8 * 1024;
 
         public ReadStream (ServerImpl server, SocketChannel chan) throws IOException {
             this.channel = chan;
             this.server = server;
-            sc = SelectorCache.getSelectorCache();
-            selector = sc.getSelector();
-            chanbuf = ByteBuffer.allocate (8* 1024);
-            key = chan.register (selector, SelectionKey.OP_READ);
-            available = 0;
+            chanbuf = ByteBuffer.allocate (BUFSIZE);
+            chanbuf.clear();
             one = new byte[1];
             closed = marked = reset = false;
         }
@@ -255,6 +245,12 @@ class Request {
                 return -1;
             }
 
+            assert channel.isBlocking();
+
+            if (off < 0 || srclen < 0|| srclen > (b.length-off)) {
+                throw new IndexOutOfBoundsException ();
+            }
+
             if (reset) { /* satisfy from markBuf */
                 canreturn = markBuf.remaining ();
                 willreturn = canreturn>srclen ? srclen : canreturn;
@@ -263,17 +259,19 @@ class Request {
                     reset = false;
                 }
             } else { /* satisfy from channel */
-                canreturn = available();
-                while (canreturn == 0 && !eof) {
-                    block ();
-                    canreturn = available();
+                chanbuf.clear ();
+                if (srclen <  BUFSIZE) {
+                    chanbuf.limit (srclen);
                 }
-                if (eof) {
+                do {
+                    willreturn = channel.read (chanbuf);
+                } while (willreturn == 0);
+                if (willreturn == -1) {
+                    eof = true;
                     return -1;
                 }
-                willreturn = canreturn>srclen ? srclen : canreturn;
+                chanbuf.flip ();
                 chanbuf.get(b, off, willreturn);
-                available -= willreturn;
 
                 if (marked) { /* copy into markBuf */
                     try {
@@ -286,6 +284,11 @@ class Request {
             return willreturn;
         }
 
+        public boolean markSupported () {
+            return true;
+        }
+
+        /* Does not query the OS socket */
         public synchronized int available () throws IOException {
             if (closed)
                 throw new IOException ("Stream is closed");
@@ -296,36 +299,7 @@ class Request {
             if (reset)
                 return markBuf.remaining();
 
-            if (available > 0)
-                return available;
-
-            chanbuf.clear ();
-            available = channel.read (chanbuf);
-            if (available > 0) {
-                chanbuf.flip();
-            } else if (available == -1) {
-                eof = true;
-                available = 0;
-            }
-            return available;
-        }
-
-        /**
-         * block() only called when available==0 and buf is empty
-         */
-        private synchronized void block () throws IOException {
-            long currtime = server.getTime();
-            long maxtime = currtime + readTimeout;
-
-            while (currtime < maxtime) {
-                if (selector.select (readTimeout) == 1) {
-                    selector.selectedKeys().clear();
-                    available ();
-                    return;
-                }
-                currtime = server.getTime();
-            }
-            throw new SocketTimeoutException ("no data received");
+            return chanbuf.remaining();
         }
 
         public void close () throws IOException {
@@ -333,8 +307,6 @@ class Request {
                 return;
             }
             channel.close ();
-            selector.selectNow();
-            sc.freeSelector(selector);
             closed = true;
         }
 
@@ -362,23 +334,14 @@ class Request {
         SocketChannel channel;
         ByteBuffer buf;
         SelectionKey key;
-        SelectorCache sc;
-        Selector selector;
         boolean closed;
         byte[] one;
         ServerImpl server;
-        static long writeTimeout;
-
-        static {
-            writeTimeout = ServerConfig.getWriteTimeout();
-        }
 
         public WriteStream (ServerImpl server, SocketChannel channel) throws IOException {
             this.channel = channel;
             this.server = server;
-            sc = SelectorCache.getSelectorCache();
-            selector = sc.getSelector();
-            key = channel.register (selector, SelectionKey.OP_WRITE);
+            assert channel.isBlocking();
             closed = false;
             one = new byte [1];
             buf = ByteBuffer.allocate (4096);
@@ -411,31 +374,14 @@ class Request {
                 l -= n;
                 if (l == 0)
                     return;
-                block();
             }
         }
-
-        void block () throws IOException {
-            long currtime = server.getTime();
-            long maxtime = currtime + writeTimeout;
-
-            while (currtime < maxtime) {
-                if (selector.select (writeTimeout) == 1) {
-                    selector.selectedKeys().clear ();
-                    return;
-                }
-                currtime = server.getTime();
-            }
-            throw new SocketTimeoutException ("write blocked too long");
-        }
-
 
         public void close () throws IOException {
             if (closed)
                 return;
+            //server.logStackTrace ("Request.OS.close: isOpen="+channel.isOpen());
             channel.close ();
-            selector.selectNow();
-            sc.freeSelector(selector);
             closed = true;
         }
     }
