@@ -432,6 +432,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_GtkFileDialogPeer_initIDs;
         Java_sun_awt_X11_GtkFileDialogPeer_run;
         Java_sun_awt_X11_GtkFileDialogPeer_quit;
+        Java_sun_awt_X11_GtkFileDialogPeer_toFront;
 
 	Java_sun_print_CUPSPrinter_initIDs;
 	Java_sun_print_CUPSPrinter_getCupsServer;

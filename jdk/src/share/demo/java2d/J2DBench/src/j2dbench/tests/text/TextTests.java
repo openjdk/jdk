@@ -454,7 +454,7 @@ public abstract class TextTests extends Test {
                                             taaNames, taaHints,
                                             taaNames, taaNames,
                                             0x1);
-            ((Option.ObjectList) taaList).setNumRows(2);
+            ((Option.ObjectList) taaList).setNumRows(6);
             // add special TextAAOpt for backwards compatibility with
             // older options files
             new TextAAOpt();
@@ -707,3 +707,4 @@ public abstract class TextTests extends Test {
         }
     }
 }
+

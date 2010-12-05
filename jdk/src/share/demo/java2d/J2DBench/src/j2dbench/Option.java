@@ -170,7 +170,7 @@ public abstract class Option extends Node implements Modifier {
                 updateGUI();
                 jcb.addItemListener(new ItemListener() {
                     public void itemStateChanged(ItemEvent e) {
-                        if (e.getStateChange() == e.SELECTED) {
+                        if (e.getStateChange() == ItemEvent.SELECTED) {
                             JComboBox jcb = (JComboBox) e.getItemSelectable();
                             value = jcb.getSelectedIndex();
                             if (J2DBench.verbose.isEnabled()) {
@@ -261,7 +261,7 @@ public abstract class Option extends Node implements Modifier {
                 updateGUI();
                 jcb.addItemListener(new ItemListener() {
                     public void itemStateChanged(ItemEvent e) {
-                        value = (e.getStateChange() == e.SELECTED);
+                        value = (e.getStateChange() == ItemEvent.SELECTED);
                         if (J2DBench.verbose.isEnabled()) {
                             System.out.println(getOptionString());
                         }
@@ -569,8 +569,6 @@ public abstract class Option extends Node implements Modifier {
         }
 
         public String setValueFromString(String value) {
-            int prev = 0;
-            int next = 0;
             int enabled = 0;
             StringTokenizer st = new StringTokenizer(value, ",");
             while (st.hasMoreTokens()) {
@@ -588,7 +586,6 @@ public abstract class Option extends Node implements Modifier {
                 if (s != null) {
                     return "Bad value in list ("+s+")";
                 }
-                prev = next+1;
             }
             this.enabled = enabled;
             updateGUI();
@@ -621,6 +618,175 @@ public abstract class Option extends Node implements Modifier {
             }
             return values;
         }
+    }
+
+    public static class ObjectChoice extends Option {
+         int size;
+         String optionnames[];
+         Object optionvalues[];
+         String abbrevnames[];
+         String descnames[];
+         int defaultselected;
+         int selected;
+         JPanel jp;
+         JComboBox jcombo;
+
+         public ObjectChoice(Group parent, String nodeName, String description,
+                             String optionnames[],
+                             Object optionvalues[],
+                             String abbrevnames[],
+                             String descnames[],
+                             int defaultselected)
+         {
+             this(parent, nodeName, description,
+                  Math.min(Math.min(optionnames.length,
+                                    optionvalues.length),
+                           Math.min(abbrevnames.length,
+                                    descnames.length)),
+                  optionnames, optionvalues,
+                  abbrevnames, descnames, defaultselected);
+         }
+
+         public ObjectChoice(Group parent, String nodeName, String description,
+                             int size,
+                             String optionnames[],
+                             Object optionvalues[],
+                             String abbrevnames[],
+                             String descnames[],
+                             int defaultselected)
+         {
+             super(parent, nodeName, description);
+             this.size = size;
+             this.optionnames = trim(optionnames, size);
+             this.optionvalues = trim(optionvalues, size);
+             this.abbrevnames = trim(abbrevnames, size);
+             this.descnames = trim(descnames, size);
+             this.selected = this.defaultselected = defaultselected;
+         }
+
+         private static String[] trim(String list[], int size) {
+             if (list.length == size) {
+                 return list;
+             }
+             String newlist[] = new String[size];
+             System.arraycopy(list, 0, newlist, 0, size);
+             return newlist;
+         }
+
+         private static Object[] trim(Object list[], int size) {
+             if (list.length == size) {
+                 return list;
+             }
+             Object newlist[] = new Object[size];
+             System.arraycopy(list, 0, newlist, 0, size);
+             return newlist;
+         }
+
+         public void restoreDefault() {
+             if (selected != defaultselected) {
+                 selected = defaultselected;
+                 updateGUI();
+             }
+         }
+
+         public void updateGUI() {
+             if (jcombo != null) {
+                 jcombo.setSelectedIndex(this.selected);
+             }
+         }
+
+         public boolean isDefault() {
+             return (selected == defaultselected);
+         }
+
+         public Modifier.Iterator getIterator(TestEnvironment env) {
+             return new SwitchIterator(optionvalues, 1 << selected);
+         }
+
+         public JComponent getJComponent() {
+             if (jp == null) {
+                 jp = new JPanel();
+                 jp.setLayout(new BorderLayout());
+                 jp.add(new JLabel(getDescription()), BorderLayout.WEST);
+                 jcombo = new JComboBox(descnames);
+                 updateGUI();
+                 jcombo.addItemListener(new ItemListener() {
+                     public void itemStateChanged(ItemEvent e) {
+                         if (e.getStateChange() == ItemEvent.SELECTED) {
+                             selected = jcombo.getSelectedIndex();
+                             if (J2DBench.verbose.isEnabled()) {
+                                 System.out.println(getOptionString());
+                             }
+                         }
+                     }
+                 });
+                 jp.add(jcombo, BorderLayout.EAST);
+             }
+             return jp;
+         }
+
+         public Object getValue() {
+             return optionvalues[selected];
+         }
+
+         public int getIntValue() {
+             return ((Integer) optionvalues[selected]).intValue();
+         }
+
+         public boolean getBooleanValue() {
+             return ((Boolean) optionvalues[selected]).booleanValue();
+         }
+
+         public String getValString() {
+             return optionnames[selected];
+         }
+
+         int findValueIndex(Object value) {
+             for (int i = 0; i < size; i++) {
+                 if (optionvalues[i] == value) {
+                     return i;
+                 }
+             }
+             return -1;
+         }
+
+         public String getValString(Object value) {
+             return optionnames[findValueIndex(value)];
+         }
+
+         public String getAbbreviatedModifierDescription(Object value) {
+             return abbrevnames[findValueIndex(value)];
+         }
+
+         public String setValue(int v) {
+             return setValue(new Integer(v));
+         }
+
+         public String setValue(boolean v) {
+             return setValue(new Boolean(v));
+         }
+
+         public String setValue(Object value) {
+             for (int i = 0; i < size; i++) {
+                 if (optionvalues[i].equals(value)) {
+                     this.selected = i;
+                     updateGUI();
+                     return null;
+                 }
+             }
+             return "Bad value";
+         }
+
+         public String setValueFromString(String value) {
+             for (int i = 0; i < size; i++) {
+                 if (optionnames[i].equals(value)) {
+                     this.selected = i;
+                     updateGUI();
+                     return null;
+                 }
+             }
+             return "Bad value";
+         }
     }
 
     public static class BooleanIterator implements Modifier.Iterator {

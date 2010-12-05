@@ -528,7 +528,7 @@ public class Scope {
             }
             public Entry next() {
                 Entry e = super.shadowed;
-                while (isBogus())
+                while (e.isBogus())
                     e = e.shadowed;
                 return e;
             }

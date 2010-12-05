@@ -395,7 +395,11 @@ class BufferedInputStream extends FilterInputStream {
      *                          or an I/O error occurs.
      */
     public synchronized int available() throws IOException {
-        return getInIfOpen().available() + (count - pos);
+        int n = count - pos;
+        int avail = getInIfOpen().available();
+        return n > (Integer.MAX_VALUE - avail)
+                    ? Integer.MAX_VALUE
+                    : n + avail;
     }
 
     /**
