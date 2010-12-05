@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.misc.twr.not.applicable.to.type
+// key: compiler.misc.try.not.applicable.to.type
 // key: compiler.err.prob.found.req
 
 class ResourceNotApplicableToType {

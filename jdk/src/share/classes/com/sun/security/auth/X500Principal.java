@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class X500Principal implements Principal, java.io.Serializable {
      */
     public X500Principal(String name) {
         if (name == null)
-            throw new NullPointerException(rb.getString("provided null name"));
+            throw new NullPointerException(rb.getString("provided.null.name"));
 
         try {
             thisX500Name = new X500Name(name);
