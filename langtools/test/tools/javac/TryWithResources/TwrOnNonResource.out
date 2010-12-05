@@ -1,7 +1,7 @@
-TwrOnNonResource.java:12:13: compiler.err.prob.found.req: (compiler.misc.twr.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:15:13: compiler.err.prob.found.req: (compiler.misc.twr.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:18:13: compiler.err.prob.found.req: (compiler.misc.twr.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:24:13: compiler.err.prob.found.req: (compiler.misc.twr.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:27:13: compiler.err.prob.found.req: (compiler.misc.twr.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:30:13: compiler.err.prob.found.req: (compiler.misc.twr.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:12:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:15:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:18:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:24:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:27:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:30:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
 6 errors
