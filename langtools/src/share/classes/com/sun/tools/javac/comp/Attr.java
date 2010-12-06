@@ -2889,8 +2889,15 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitTypeDisjunction(JCTypeDisjunction tree) {
-        List<Type> alternatives = attribTypes(tree.alternatives, env);
-        tree.type = result = check(tree, types.lub(alternatives), TYP, pkind, pt);
+        ListBuffer<Type> multicatchTypes = ListBuffer.lb();
+        for (JCExpression typeTree : tree.alternatives) {
+            Type ctype = attribType(typeTree, env);
+            ctype = chk.checkType(typeTree.pos(),
+                          chk.checkClassType(typeTree.pos(), ctype),
+                          syms.throwableType);
+            multicatchTypes.append(ctype);
+        }
+        tree.type = result = check(tree, types.lub(multicatchTypes.toList()), TYP, pkind, pt);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {
