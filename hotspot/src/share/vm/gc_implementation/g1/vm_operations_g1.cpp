@@ -27,13 +27,22 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "gc_implementation/g1/vm_operations_g1.hpp"
 #include "runtime/interfaceSupport.hpp"
+
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(
+                                                  unsigned int gc_count_before,
+                                                  size_t word_size)
+  : VM_G1OperationWithAllocRequest(gc_count_before, word_size) {
+  guarantee(word_size > 0, "an allocation should always be requested");
+}
 
 void VM_G1CollectForAllocation::doit() {
   JvmtiGCForAllocationMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  _res = g1h->satisfy_failed_allocation(_size);
-  assert(g1h->is_in_or_null(_res), "result not in heap");
+  _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
+  assert(_result == NULL || _pause_succeeded,
+         "if we get back a result, the pause should have succeeded");
 }
 
 void VM_G1CollectFull::doit() {
@@ -43,6 +52,25 @@ void VM_G1CollectFull::doit() {
   g1h->do_full_collection(false /* clear_all_soft_refs */);
 }
 
+VM_G1IncCollectionPause::VM_G1IncCollectionPause(
+                                      unsigned int   gc_count_before,
+                                      size_t         word_size,
+                                      bool           should_initiate_conc_mark,
+                                      double         target_pause_time_ms,
+                                      GCCause::Cause gc_cause)
+  : VM_G1OperationWithAllocRequest(gc_count_before, word_size),
+    _should_initiate_conc_mark(should_initiate_conc_mark),
+    _target_pause_time_ms(target_pause_time_ms),
+    _full_collections_completed_before(0) {
+  guarantee(target_pause_time_ms > 0.0,
+            err_msg("target_pause_time_ms = %1.6lf should be positive",
+                    target_pause_time_ms));
+  guarantee(word_size == 0 || gc_cause == GCCause::_g1_inc_collection_pause,
+            "we can only request an allocation if the GC cause is for "
+            "an incremental GC pause");
+  _gc_cause = gc_cause;
+}
+
 void VM_G1IncCollectionPause::doit() {
   JvmtiGCForAllocationMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -50,6 +78,18 @@ void VM_G1IncCollectionPause::doit() {
   ((_gc_cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
    (_gc_cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent)),
          "only a GC locker or a System.gc() induced GC should start a cycle");
+
+  if (_word_size > 0) {
+    // An allocation has been requested. So, try to do that first.
+    _result = g1h->attempt_allocation_at_safepoint(_word_size,
+                                     false /* expect_null_cur_alloc_region */);
+    if (_result != NULL) {
+      // If we can successfully allocate before we actually do the
+      // pause then we will consider this pause successful.
+      _pause_succeeded = true;
+      return;
+    }
+  }
 
   GCCauseSetter x(g1h, _gc_cause);
   if (_should_initiate_conc_mark) {
@@ -63,7 +103,16 @@ void VM_G1IncCollectionPause::doit() {
     // will do so if one is not already in progress.
     bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle();
   }
-  g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+
+  _pause_succeeded =
+    g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+  if (_pause_succeeded && _word_size > 0) {
+    // An allocation had been requested.
+    _result = g1h->attempt_allocation_at_safepoint(_word_size,
+                                      true /* expect_null_cur_alloc_region */);
+  } else {
+    assert(_result == NULL, "invariant");
+  }
 }
 
 void VM_G1IncCollectionPause::doit_epilogue() {

@@ -78,6 +78,8 @@ class GCTaskQueue;
 class ThreadClosure;
 class IdealGraphPrinter;
 
+class WorkerThread;
+
 // Class hierarchy
 // - Thread
 //   - NamedThread
@@ -289,6 +291,10 @@ class Thread: public ThreadShadow {
   virtual bool is_Watcher_thread() const             { return false; }
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
+  virtual bool is_Worker_thread() const              { return false; }
+
+  // Casts
+  virtual WorkerThread* as_Worker_thread() const     { return NULL; }
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -628,9 +634,16 @@ class WorkerThread: public NamedThread {
 private:
   uint _id;
 public:
-  WorkerThread() : _id(0) { }
-  void set_id(uint work_id) { _id = work_id; }
-  uint id() const { return _id; }
+  WorkerThread() : _id(0)               { }
+  virtual bool is_Worker_thread() const { return true; }
+
+  virtual WorkerThread* as_Worker_thread() const {
+    assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
+    return (WorkerThread*) this;
+  }
+
+  void set_id(uint work_id)             { _id = work_id; }
+  uint id() const                       { return _id; }
 };
 
 // A single WatcherThread is used for simulating timer interrupts.
