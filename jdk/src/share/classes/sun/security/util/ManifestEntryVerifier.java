@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,10 @@ public class ManifestEntryVerifier {
                 Hashtable<String, CodeSigner[]> sigFileSigners)
         throws JarException
     {
-        if (skip) return null;
+        // MANIFEST.MF should not be skipped. It has signers.
+        if (skip && !entry.getName().equals(JarFile.MANIFEST_NAME)) {
+            return null;
+        }
 
         if (signers != null)
             return signers;
