@@ -191,13 +191,12 @@ public class ZipPath extends Path {
 
     @Override
     public URI toUri() {
-        String zfPath = zfs.toString();
-        if (File.separatorChar == '\\')  // replace all separators by '/'
-            zfPath = "/" + zfPath.replace("\\", "/");
         try {
-            return new URI("zip", "",
-                           zfPath,
-                           zfs.getString(toAbsolutePath().path));
+            return new URI("jar",
+                           zfs.getZipFile().toUri() +
+                           "!" +
+                           zfs.getString(toAbsolutePath().path),
+                           null);
         } catch (Exception ex) {
             throw new AssertionError(ex);
         }
