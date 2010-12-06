@@ -770,9 +770,8 @@ void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
   for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
-      gclog_or_tty->print_cr(
-        "\nAbandoning %s discovered list",
-        list_name(i));
+      gclog_or_tty->print_cr("\nAbandoning %s discovered list",
+                             list_name(i));
     }
     abandon_partial_discovered_list(_discoveredSoftRefs[i]);
   }
@@ -1059,9 +1058,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
     Thread* thr = Thread::current();
-    assert(thr->is_GC_task_thread(),
-           "Dubious cast from Thread* to WorkerThread*?");
-    id = ((WorkerThread*)thr)->id();
+    id = thr->as_Worker_thread()->id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.
@@ -1095,8 +1092,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       ShouldNotReachHere();
   }
   if (TraceReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT,
-      id, list);
+    gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT, id, list);
   }
   return list;
 }
@@ -1134,6 +1130,11 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
     refs_list.inc_length(1);
     if (_discovered_list_needs_barrier) {
       _bs->write_ref_field((void*)discovered_addr, current_head);
+    }
+
+    if (TraceReferenceGC) {
+      gclog_or_tty->print_cr("Enqueued reference (mt) (" INTPTR_FORMAT ": %s)",
+                             obj, obj->blueprint()->internal_name());
     }
   } else {
     // If retest was non NULL, another thread beat us to it:
@@ -1239,8 +1240,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
       // Check assumption that an object is not potentially
       // discovered twice except by concurrent collectors that potentially
       // trace the same Reference object twice.
-      assert(UseConcMarkSweepGC,
-             "Only possible with an incremental-update concurrent collector");
+      assert(UseConcMarkSweepGC || UseG1GC,
+             "Only possible with a concurrent marking collector");
       return true;
     }
   }
@@ -1293,26 +1294,14 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     }
     list->set_head(obj);
     list->inc_length(1);
-  }
 
-  // In the MT discovery case, it is currently possible to see
-  // the following message multiple times if several threads
-  // discover a reference about the same time. Only one will
-  // however have actually added it to the disocvered queue.
-  // One could let add_to_discovered_list_mt() return an
-  // indication for success in queueing (by 1 thread) or
-  // failure (by all other threads), but I decided the extra
-  // code was not worth the effort for something that is
-  // only used for debugging support.
-  if (TraceReferenceGC) {
-    oop referent = java_lang_ref_Reference::referent(obj);
-    if (PrintGCDetails) {
+    if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Enqueued reference (" INTPTR_FORMAT ": %s)",
-                             obj, obj->blueprint()->internal_name());
+                                obj, obj->blueprint()->internal_name());
     }
-    assert(referent->is_oop(), "Enqueued a bad referent");
   }
   assert(obj->is_oop(), "Enqueued a bad reference");
+  assert(java_lang_ref_Reference::referent(obj)->is_oop(), "Enqueued a bad referent");
   return true;
 }
 

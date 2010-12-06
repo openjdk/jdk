@@ -27,6 +27,7 @@
 
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
 #include "utilities/taskqueue.hpp"
 
@@ -58,37 +59,114 @@ inline bool G1CollectedHeap::obj_in_cs(oop obj) {
   return r != NULL && r->in_collection_set();
 }
 
-inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
-                                              bool permit_collection_pause) {
-  HeapWord* res = NULL;
+// See the comment in the .hpp file about the locking protocol and
+// assumptions of this method (and other related ones).
+inline HeapWord*
+G1CollectedHeap::allocate_from_cur_alloc_region(HeapRegion* cur_alloc_region,
+                                                size_t word_size) {
+  assert_heap_locked_and_not_at_safepoint();
+  assert(cur_alloc_region != NULL, "pre-condition of the method");
+  assert(cur_alloc_region == _cur_alloc_region, "pre-condition of the method");
+  assert(cur_alloc_region->is_young(),
+         "we only support young current alloc regions");
+  assert(!isHumongous(word_size), "allocate_from_cur_alloc_region() "
+         "should not be used for humongous allocations");
+  assert(!cur_alloc_region->isHumongous(), "Catch a regression of this bug.");
 
-  assert( SafepointSynchronize::is_at_safepoint() ||
-          Heap_lock->owned_by_self(), "pre-condition of the call" );
+  assert(!cur_alloc_region->is_empty(),
+         err_msg("region ["PTR_FORMAT","PTR_FORMAT"] should not be empty",
+                 cur_alloc_region->bottom(), cur_alloc_region->end()));
+  // This allocate method does BOT updates and we don't need them in
+  // the young generation. This will be fixed in the near future by
+  // CR 6994297.
+  HeapWord* result = cur_alloc_region->allocate(word_size);
+  if (result != NULL) {
+    assert(is_in(result), "result should be in the heap");
+    Heap_lock->unlock();
 
-  // All humongous allocation requests should go through the slow path in
-  // attempt_allocation_slow().
-  if (!isHumongous(word_size) && _cur_alloc_region != NULL) {
-    // If this allocation causes a region to become non empty,
-    // then we need to update our free_regions count.
-
-    if (_cur_alloc_region->is_empty()) {
-      res = _cur_alloc_region->allocate(word_size);
-      if (res != NULL)
-        _free_regions--;
-    } else {
-      res = _cur_alloc_region->allocate(word_size);
-    }
-
-    if (res != NULL) {
-      if (!SafepointSynchronize::is_at_safepoint()) {
-        assert( Heap_lock->owned_by_self(), "invariant" );
-        Heap_lock->unlock();
-      }
-      return res;
-    }
+    // Do the dirtying after we release the Heap_lock.
+    dirty_young_block(result, word_size);
+    return result;
   }
-  // attempt_allocation_slow will also unlock the heap lock when appropriate.
-  return attempt_allocation_slow(word_size, permit_collection_pause);
+
+  assert_heap_locked();
+  return NULL;
+}
+
+// See the comment in the .hpp file about the locking protocol and
+// assumptions of this method (and other related ones).
+inline HeapWord*
+G1CollectedHeap::attempt_allocation(size_t word_size) {
+  assert_heap_locked_and_not_at_safepoint();
+  assert(!isHumongous(word_size), "attempt_allocation() should not be called "
+         "for humongous allocation requests");
+
+  HeapRegion* cur_alloc_region = _cur_alloc_region;
+  if (cur_alloc_region != NULL) {
+    HeapWord* result = allocate_from_cur_alloc_region(cur_alloc_region,
+                                                      word_size);
+    if (result != NULL) {
+      assert_heap_not_locked();
+      return result;
+    }
+
+    assert_heap_locked();
+
+    // Since we couldn't successfully allocate into it, retire the
+    // current alloc region.
+    retire_cur_alloc_region(cur_alloc_region);
+  }
+
+  // Try to get a new region and allocate out of it
+  HeapWord* result = replace_cur_alloc_region_and_allocate(word_size,
+                                                      false, /* at safepoint */
+                                                      true   /* do_dirtying */);
+  if (result != NULL) {
+    assert_heap_not_locked();
+    return result;
+  }
+
+  assert_heap_locked();
+  return NULL;
+}
+
+inline void
+G1CollectedHeap::retire_cur_alloc_region_common(HeapRegion* cur_alloc_region) {
+  assert_heap_locked_or_at_safepoint();
+  assert(cur_alloc_region != NULL && cur_alloc_region == _cur_alloc_region,
+         "pre-condition of the call");
+  assert(cur_alloc_region->is_young(),
+         "we only support young current alloc regions");
+
+  // The region is guaranteed to be young
+  g1_policy()->add_region_to_incremental_cset_lhs(cur_alloc_region);
+  _summary_bytes_used += cur_alloc_region->used();
+  _cur_alloc_region = NULL;
+}
+
+// It dirties the cards that cover the block so that so that the post
+// write barrier never queues anything when updating objects on this
+// block. It is assumed (and in fact we assert) that the block
+// belongs to a young region.
+inline void
+G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
+  assert_heap_not_locked();
+
+  // Assign the containing region to containing_hr so that we don't
+  // have to keep calling heap_region_containing_raw() in the
+  // asserts below.
+  DEBUG_ONLY(HeapRegion* containing_hr = heap_region_containing_raw(start);)
+  assert(containing_hr != NULL && start != NULL && word_size > 0,
+         "pre-condition");
+  assert(containing_hr->is_in(start), "it should contain start");
+  assert(containing_hr->is_young(), "it should be young");
+  assert(!containing_hr->isHumongous(), "it should not be humongous");
+
+  HeapWord* end = start + word_size;
+  assert(containing_hr->is_in(end - 1), "it should also contain end - 1");
+
+  MemRegion mr(start, end);
+  ((CardTableModRefBS*)_g1h->barrier_set())->dirty(mr);
 }
 
 inline RefToScanQueue* G1CollectedHeap::task_queue(int i) const {

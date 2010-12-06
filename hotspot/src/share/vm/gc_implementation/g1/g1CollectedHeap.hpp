@@ -290,6 +290,63 @@ private:
   // started is maintained in _total_full_collections in CollectedHeap.
   volatile unsigned int _full_collections_completed;
 
+  // These are macros so that, if the assert fires, we get the correct
+  // line number, file, etc.
+
+#define heap_locking_asserts_err_msg(__extra_message)                         \
+  err_msg("%s : Heap_lock %slocked, %sat a safepoint",                        \
+          (__extra_message),                                                  \
+          (!Heap_lock->owned_by_self()) ? "NOT " : "",                        \
+          (!SafepointSynchronize::is_at_safepoint()) ? "NOT " : "")
+
+#define assert_heap_locked()                                                  \
+  do {                                                                        \
+    assert(Heap_lock->owned_by_self(),                                        \
+           heap_locking_asserts_err_msg("should be holding the Heap_lock"));  \
+  } while (0)
+
+#define assert_heap_locked_or_at_safepoint()                                  \
+  do {                                                                        \
+    assert(Heap_lock->owned_by_self() ||                                      \
+                                     SafepointSynchronize::is_at_safepoint(), \
+           heap_locking_asserts_err_msg("should be holding the Heap_lock or " \
+                                        "should be at a safepoint"));         \
+  } while (0)
+
+#define assert_heap_locked_and_not_at_safepoint()                             \
+  do {                                                                        \
+    assert(Heap_lock->owned_by_self() &&                                      \
+                                    !SafepointSynchronize::is_at_safepoint(), \
+          heap_locking_asserts_err_msg("should be holding the Heap_lock and " \
+                                       "should not be at a safepoint"));      \
+  } while (0)
+
+#define assert_heap_not_locked()                                              \
+  do {                                                                        \
+    assert(!Heap_lock->owned_by_self(),                                       \
+        heap_locking_asserts_err_msg("should not be holding the Heap_lock")); \
+  } while (0)
+
+#define assert_heap_not_locked_and_not_at_safepoint()                         \
+  do {                                                                        \
+    assert(!Heap_lock->owned_by_self() &&                                     \
+                                    !SafepointSynchronize::is_at_safepoint(), \
+      heap_locking_asserts_err_msg("should not be holding the Heap_lock and " \
+                                   "should not be at a safepoint"));          \
+  } while (0)
+
+#define assert_at_safepoint()                                                 \
+  do {                                                                        \
+    assert(SafepointSynchronize::is_at_safepoint(),                           \
+           heap_locking_asserts_err_msg("should be at a safepoint"));         \
+  } while (0)
+
+#define assert_not_at_safepoint()                                             \
+  do {                                                                        \
+    assert(!SafepointSynchronize::is_at_safepoint(),                          \
+           heap_locking_asserts_err_msg("should not be at a safepoint"));     \
+  } while (0)
+
 protected:
 
   // Returns "true" iff none of the gc alloc regions have any allocations
@@ -329,31 +386,162 @@ protected:
 
   // Attempt to allocate an object of the given (very large) "word_size".
   // Returns "NULL" on failure.
-  virtual HeapWord* humongousObjAllocate(size_t word_size);
+  virtual HeapWord* humongous_obj_allocate(size_t word_size);
 
-  // If possible, allocate a block of the given word_size, else return "NULL".
-  // Returning NULL will trigger GC or heap expansion.
-  // These two methods have rather awkward pre- and
-  // post-conditions. If they are called outside a safepoint, then
-  // they assume that the caller is holding the heap lock. Upon return
-  // they release the heap lock, if they are returning a non-NULL
-  // value. attempt_allocation_slow() also dirties the cards of a
-  // newly-allocated young region after it releases the heap
-  // lock. This change in interface was the neatest way to achieve
-  // this card dirtying without affecting mem_allocate(), which is a
-  // more frequently called method. We tried two or three different
-  // approaches, but they were even more hacky.
-  HeapWord* attempt_allocation(size_t word_size,
-                               bool permit_collection_pause = true);
+  // The following two methods, allocate_new_tlab() and
+  // mem_allocate(), are the two main entry points from the runtime
+  // into the G1's allocation routines. They have the following
+  // assumptions:
+  //
+  // * They should both be called outside safepoints.
+  //
+  // * They should both be called without holding the Heap_lock.
+  //
+  // * All allocation requests for new TLABs should go to
+  //   allocate_new_tlab().
+  //
+  // * All non-TLAB allocation requests should go to mem_allocate()
+  //   and mem_allocate() should never be called with is_tlab == true.
+  //
+  // * If the GC locker is active we currently stall until we can
+  //   allocate a new young region. This will be changed in the
+  //   near future (see CR 6994056).
+  //
+  // * If either call cannot satisfy the allocation request using the
+  //   current allocating region, they will try to get a new one. If
+  //   this fails, they will attempt to do an evacuation pause and
+  //   retry the allocation.
+  //
+  // * If all allocation attempts fail, even after trying to schedule
+  //   an evacuation pause, allocate_new_tlab() will return NULL,
+  //   whereas mem_allocate() will attempt a heap expansion and/or
+  //   schedule a Full GC.
+  //
+  // * We do not allow humongous-sized TLABs. So, allocate_new_tlab
+  //   should never be called with word_size being humongous. All
+  //   humongous allocation requests should go to mem_allocate() which
+  //   will satisfy them with a special path.
 
-  HeapWord* attempt_allocation_slow(size_t word_size,
-                                    bool permit_collection_pause = true);
+  virtual HeapWord* allocate_new_tlab(size_t word_size);
+
+  virtual HeapWord* mem_allocate(size_t word_size,
+                                 bool   is_noref,
+                                 bool   is_tlab, /* expected to be false */
+                                 bool*  gc_overhead_limit_was_exceeded);
+
+  // The following methods, allocate_from_cur_allocation_region(),
+  // attempt_allocation(), replace_cur_alloc_region_and_allocate(),
+  // attempt_allocation_slow(), and attempt_allocation_humongous()
+  // have very awkward pre- and post-conditions with respect to
+  // locking:
+  //
+  // If they are called outside a safepoint they assume the caller
+  // holds the Heap_lock when it calls them. However, on exit they
+  // will release the Heap_lock if they return a non-NULL result, but
+  // keep holding the Heap_lock if they return a NULL result. The
+  // reason for this is that we need to dirty the cards that span
+  // allocated blocks on young regions to avoid having to take the
+  // slow path of the write barrier (for performance reasons we don't
+  // update RSets for references whose source is a young region, so we
+  // don't need to look at dirty cards on young regions). But, doing
+  // this card dirtying while holding the Heap_lock can be a
+  // scalability bottleneck, especially given that some allocation
+  // requests might be of non-trivial size (and the larger the region
+  // size is, the fewer allocations requests will be considered
+  // humongous, as the humongous size limit is a fraction of the
+  // region size). So, when one of these calls succeeds in allocating
+  // a block it does the card dirtying after it releases the Heap_lock
+  // which is why it will return without holding it.
+  //
+  // The above assymetry is the reason why locking / unlocking is done
+  // explicitly (i.e., with Heap_lock->lock() and
+  // Heap_lock->unlocked()) instead of using MutexLocker and
+  // MutexUnlocker objects. The latter would ensure that the lock is
+  // unlocked / re-locked at every possible exit out of the basic
+  // block. However, we only want that action to happen in selected
+  // places.
+  //
+  // Further, if the above methods are called during a safepoint, then
+  // naturally there's no assumption about the Heap_lock being held or
+  // there's no attempt to unlock it. The parameter at_safepoint
+  // indicates whether the call is made during a safepoint or not (as
+  // an optimization, to avoid reading the global flag with
+  // SafepointSynchronize::is_at_safepoint()).
+  //
+  // The methods share these parameters:
+  //
+  // * word_size     : the size of the allocation request in words
+  // * at_safepoint  : whether the call is done at a safepoint; this
+  //                   also determines whether a GC is permitted
+  //                   (at_safepoint == false) or not (at_safepoint == true)
+  // * do_dirtying   : whether the method should dirty the allocated
+  //                   block before returning
+  //
+  // They all return either the address of the block, if they
+  // successfully manage to allocate it, or NULL.
+
+  // It tries to satisfy an allocation request out of the current
+  // allocating region, which is passed as a parameter. It assumes
+  // that the caller has checked that the current allocating region is
+  // not NULL. Given that the caller has to check the current
+  // allocating region for at least NULL, it might as well pass it as
+  // the first parameter so that the method doesn't have to read it
+  // from the _cur_alloc_region field again.
+  inline HeapWord* allocate_from_cur_alloc_region(HeapRegion* cur_alloc_region,
+                                                  size_t word_size);
+
+  // It attempts to allocate out of the current alloc region. If that
+  // fails, it retires the current alloc region (if there is one),
+  // tries to get a new one and retries the allocation.
+  inline HeapWord* attempt_allocation(size_t word_size);
+
+  // It assumes that the current alloc region has been retired and
+  // tries to allocate a new one. If it's successful, it performs
+  // the allocation out of the new current alloc region and updates
+  // _cur_alloc_region.
+  HeapWord* replace_cur_alloc_region_and_allocate(size_t word_size,
+                                                  bool at_safepoint,
+                                                  bool do_dirtying);
+
+  // The slow path when we are unable to allocate a new current alloc
+  // region to satisfy an allocation request (i.e., when
+  // attempt_allocation() fails). It will try to do an evacuation
+  // pause, which might stall due to the GC locker, and retry the
+  // allocation attempt when appropriate.
+  HeapWord* attempt_allocation_slow(size_t word_size);
+
+  // The method that tries to satisfy a humongous allocation
+  // request. If it cannot satisfy it it will try to do an evacuation
+  // pause to perhaps reclaim enough space to be able to satisfy the
+  // allocation request afterwards.
+  HeapWord* attempt_allocation_humongous(size_t word_size,
+                                         bool at_safepoint);
+
+  // It does the common work when we are retiring the current alloc region.
+  inline void retire_cur_alloc_region_common(HeapRegion* cur_alloc_region);
+
+  // It retires the current alloc region, which is passed as a
+  // parameter (since, typically, the caller is already holding on to
+  // it). It sets _cur_alloc_region to NULL.
+  void retire_cur_alloc_region(HeapRegion* cur_alloc_region);
+
+  // It attempts to do an allocation immediately before or after an
+  // evacuation pause and can only be called by the VM thread. It has
+  // slightly different assumptions that the ones before (i.e.,
+  // assumes that the current alloc region has been retired).
+  HeapWord* attempt_allocation_at_safepoint(size_t word_size,
+                                            bool expect_null_cur_alloc_region);
+
+  // It dirties the cards that cover the block so that so that the post
+  // write barrier never queues anything when updating objects on this
+  // block. It is assumed (and in fact we assert) that the block
+  // belongs to a young region.
+  inline void dirty_young_block(HeapWord* start, size_t word_size);
 
   // Allocate blocks during garbage collection. Will ensure an
   // allocation region, either by picking one or expanding the
   // heap, and then allocate a block of the given size. The block
   // may not be a humongous - it must fit into a single heap region.
-  HeapWord* allocate_during_gc(GCAllocPurpose purpose, size_t word_size);
   HeapWord* par_allocate_during_gc(GCAllocPurpose purpose, size_t word_size);
 
   HeapWord* allocate_during_gc_slow(GCAllocPurpose purpose,
@@ -370,12 +558,14 @@ protected:
   void  retire_alloc_region(HeapRegion* alloc_region, bool par);
 
   // - if explicit_gc is true, the GC is for a System.gc() or a heap
-  // inspection request and should collect the entire heap
-  // - if clear_all_soft_refs is true, all soft references are cleared
-  // during the GC
+  //   inspection request and should collect the entire heap
+  // - if clear_all_soft_refs is true, all soft references should be
+  //   cleared during the GC
   // - if explicit_gc is false, word_size describes the allocation that
-  // the GC should attempt (at least) to satisfy
-  void do_collection(bool explicit_gc,
+  //   the GC should attempt (at least) to satisfy
+  // - it returns false if it is unable to do the collection due to the
+  //   GC locker being active, true otherwise
+  bool do_collection(bool explicit_gc,
                      bool clear_all_soft_refs,
                      size_t word_size);
 
@@ -391,13 +581,13 @@ protected:
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t word_size);
+  HeapWord* satisfy_failed_allocation(size_t word_size, bool* succeeded);
 
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else "NULL".
-  virtual HeapWord* expand_and_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(size_t word_size);
 
 public:
   // Expand the garbage-first heap by at least the given size (in bytes!).
@@ -478,21 +668,27 @@ protected:
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
 
-  // Do an incremental collection: identify a collection set, and evacuate
-  // its live objects elsewhere.
-  virtual void do_collection_pause();
+  // Schedule the VM operation that will do an evacuation pause to
+  // satisfy an allocation request of word_size. *succeeded will
+  // return whether the VM operation was successful (it did do an
+  // evacuation pause) or not (another thread beat us to it or the GC
+  // locker was active). Given that we should not be holding the
+  // Heap_lock when we enter this method, we will pass the
+  // gc_count_before (i.e., total_collections()) as a parameter since
+  // it has to be read while holding the Heap_lock. Currently, both
+  // methods that call do_collection_pause() release the Heap_lock
+  // before the call, so it's easy to read gc_count_before just before.
+  HeapWord* do_collection_pause(size_t       word_size,
+                                unsigned int gc_count_before,
+                                bool*        succeeded);
 
   // The guts of the incremental collection pause, executed by the vm
-  // thread.
-  virtual void do_collection_pause_at_safepoint(double target_pause_time_ms);
+  // thread. It returns false if it is unable to do the collection due
+  // to the GC locker being active, true otherwise
+  bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  virtual void evacuate_collection_set();
-
-  // If this is an appropriate right time, do a collection pause.
-  // The "word_size" argument, if non-zero, indicates the size of an
-  // allocation request that is prompting this query.
-  void do_collection_pause_if_appropriate(size_t word_size);
+  void evacuate_collection_set();
 
   // The g1 remembered set of the heap.
   G1RemSet* _g1_rem_set;
@@ -762,11 +958,6 @@ public:
 #endif // PRODUCT
 
   // These virtual functions do the actual allocation.
-  virtual HeapWord* mem_allocate(size_t word_size,
-                                 bool   is_noref,
-                                 bool   is_tlab,
-                                 bool* gc_overhead_limit_was_exceeded);
-
   // Some heaps may offer a contiguous region for shared non-blocking
   // allocation, via inlined code (by exporting the address of the top and
   // end fields defining the extent of the contiguous allocation region.)
@@ -1046,7 +1237,6 @@ public:
   virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-  virtual HeapWord* allocate_new_tlab(size_t word_size);
 
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
@@ -1186,7 +1376,6 @@ public:
   static G1CollectedHeap* heap();
 
   void empty_young_list();
-  bool should_set_young_locked();
 
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
@@ -1338,8 +1527,6 @@ public:
 
 protected:
   size_t _max_heap_capacity;
-
-//  debug_only(static void check_for_valid_allocation_state();)
 
 public:
   // Temporary: call to mark things unimplemented for the G1 heap (e.g.,
