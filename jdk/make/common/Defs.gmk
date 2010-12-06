@@ -246,8 +246,8 @@ ZLIB_VERSION = 1.2.3
 # Localizations for the different parts of the product beyond English
 #
 
-JRE_LOCALES   = de es fr it ja ko sv zh_CN zh_TW zh_HK
-PLUGIN_LOCALES = de es fr it ja ko sv zh_CN zh_TW zh_HK
+JRE_LOCALES   = de es fr it ja ko pt_BR sv zh_CN zh_TW zh_HK
+PLUGIN_LOCALES = de es fr it ja ko pt_BR sv zh_CN zh_TW zh_HK
 JDK_LOCALES  = ja zh_CN
 
 #
