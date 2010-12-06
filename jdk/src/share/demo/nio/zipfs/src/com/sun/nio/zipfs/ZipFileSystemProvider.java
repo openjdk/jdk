@@ -63,7 +63,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
 
     @Override
     public String getScheme() {
-        return "zip";
+        return "jar";
     }
 
     protected Path uriToPath(URI uri) {
@@ -72,10 +72,14 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             throw new IllegalArgumentException("URI scheme is not '" + getScheme() + "'");
         }
         try {
-            return Paths.get(new URI("file", uri.getHost(), uri.getPath(), null))
-                        .toAbsolutePath();
+            // only support legacy JAR URL syntax  jar:{uri}!/{entry} for now
+            String spec = uri.getSchemeSpecificPart();
+            int sep = spec.indexOf("!/");
+            if (sep != -1)
+                spec = spec.substring(0, sep);
+            return Paths.get(new URI(spec)).toAbsolutePath();
         } catch (URISyntaxException e) {
-            throw new AssertionError(e); //never thrown
+            throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 
@@ -119,14 +123,14 @@ public class ZipFileSystemProvider extends FileSystemProvider {
 
     @Override
     public Path getPath(URI uri) {
-        FileSystem fs = getFileSystem(uri);
-        String fragment = uri.getFragment();
-        if (fragment == null) {
+
+        String spec = uri.getSchemeSpecificPart();
+        int sep = spec.indexOf("!/");
+        if (sep == -1)
             throw new IllegalArgumentException("URI: "
                 + uri
-                + " does not contain path fragment ex. zip:///c:/foo.zip#/BAR");
-        }
-        return fs.getPath(fragment);
+                + " does not contain path info ex. jar:file:/c:/foo.zip!/BAR");
+        return getFileSystem(uri).getPath(spec.substring(sep + 1));
     }
 
     @Override
