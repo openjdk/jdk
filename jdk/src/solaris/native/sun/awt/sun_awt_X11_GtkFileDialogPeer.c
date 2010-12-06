@@ -4,13 +4,29 @@
 #include <string.h>
 #include "gtk2_interface.h"
 #include "sun_awt_X11_GtkFileDialogPeer.h"
+#include "debug_assert.h"
 
 static JavaVM *jvm;
-static GtkWidget *dialog = NULL;
 
 /* To cache some method IDs */
 static jmethodID filenameFilterCallbackMethodID = NULL;
 static jmethodID setFileInternalMethodID = NULL;
+static jfieldID  widgetFieldID = NULL;
+
+JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
+(JNIEnv *env, jclass cx)
+{
+    filenameFilterCallbackMethodID = (*env)->GetMethodID(env, cx,
+            "filenameFilterCallback", "(Ljava/lang/String;)Z");
+    DASSERT(filenameFilterCallbackMethodID != NULL);
+
+    setFileInternalMethodID = (*env)->GetMethodID(env, cx,
+            "setFileInternal", "(Ljava/lang/String;[Ljava/lang/String;)V");
+    DASSERT(setFileInternalMethodID != NULL);
+
+    widgetFieldID = (*env)->GetFieldID(env, cx, "widget", "J");
+    DASSERT(widgetFieldID != NULL);
+}
 
 static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gpointer obj)
 {
@@ -20,30 +36,17 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
 
     env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    if (filenameFilterCallbackMethodID == NULL) {
-        cx = (*env)->GetObjectClass(env, (jobject) obj);
-        if (cx == NULL) {
-            JNU_ThrowInternalError(env, "Could not get file filter class");
-            return 0;
-        }
-
-        filenameFilterCallbackMethodID = (*env)->GetMethodID(env, cx,
-                "filenameFilterCallback", "(Ljava/lang/String;)Z");
-        if (filenameFilterCallbackMethodID == NULL) {
-            JNU_ThrowInternalError(env,
-                    "Could not get filenameFilterCallback method id");
-            return 0;
-        }
-    }
-
     filename = (*env)->NewStringUTF(env, filter_info->filename);
 
     return (*env)->CallBooleanMethod(env, obj, filenameFilterCallbackMethodID,
             filename);
 }
 
-static void quit(gboolean isSignalHandler)
+static void quit(JNIEnv * env, jobject jpeer, gboolean isSignalHandler)
 {
+    GtkWidget * dialog = (GtkWidget*)jlong_to_ptr(
+            (*env)->GetLongField(env, jpeer, widgetFieldID));
+
     if (dialog != NULL)
     {
         // Callbacks from GTK signals are made within the GTK lock
@@ -57,7 +60,8 @@ static void quit(gboolean isSignalHandler)
         fp_gtk_widget_destroy (dialog);
 
         fp_gtk_main_quit ();
-        dialog = NULL;
+
+        (*env)->SetLongField(env, jpeer, widgetFieldID, 0);
 
         if (!isSignalHandler) {
             fp_gdk_threads_leave();
@@ -73,7 +77,7 @@ static void quit(gboolean isSignalHandler)
 JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_quit
 (JNIEnv * env, jobject jpeer)
 {
-    quit(FALSE);
+    quit(env, jpeer, FALSE);
 }
 
 /**
@@ -132,24 +136,8 @@ static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
 
     if (responseId == GTK_RESPONSE_ACCEPT) {
         current_folder = fp_gtk_file_chooser_get_current_folder(
-                GTK_FILE_CHOOSER(dialog));
-        filenames = fp_gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(dialog));
-    }
-
-    if (setFileInternalMethodID == NULL) {
-        cx = (*env)->GetObjectClass(env, (jobject) obj);
-        if (cx == NULL) {
-            JNU_ThrowInternalError(env, "Could not get GTK peer class");
-            return;
-        }
-
-        setFileInternalMethodID = (*env)->GetMethodID(env, cx,
-                "setFileInternal", "(Ljava/lang/String;[Ljava/lang/String;)V");
-        if (setFileInternalMethodID == NULL) {
-            JNU_ThrowInternalError(env,
-                    "Could not get setFileInternalMethodID method id");
-            return;
-        }
+                GTK_FILE_CHOOSER(aDialog));
+        filenames = fp_gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(aDialog));
     }
 
     jcurrent_folder = (*env)->NewStringUTF(env, current_folder);
@@ -159,7 +147,7 @@ static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
             jfilenames);
     fp_g_free(current_folder);
 
-    quit(TRUE);
+    quit(env, (jobject)obj, TRUE);
 }
 
 /*
@@ -172,6 +160,7 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
         jstring jtitle, jint mode, jstring jdir, jstring jfile,
         jobject jfilter, jboolean multiple)
 {
+    GtkWidget *dialog = NULL;
     GtkFileFilter *filter;
 
     if (jvm == NULL) {
@@ -233,8 +222,12 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
 
     fp_g_signal_connect(G_OBJECT(dialog), "response", G_CALLBACK(
             handle_response), jpeer);
+
+    (*env)->SetLongField(env, jpeer, widgetFieldID, ptr_to_jlong(dialog));
+
     fp_gtk_widget_show(dialog);
 
     fp_gtk_main();
     fp_gdk_threads_leave();
 }
+

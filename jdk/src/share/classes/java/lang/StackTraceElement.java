@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.lang;
+
+import java.util.Objects;
 
 /**
  * An element in a stack trace, as returned by {@link
@@ -53,26 +55,21 @@ public final class StackTraceElement implements java.io.Serializable {
      * @param methodName the name of the method containing the execution point
      *        represented by the stack trace element
      * @param fileName the name of the file containing the execution point
-     *         represented by the stack trace element, or <tt>null</tt> if
+     *         represented by the stack trace element, or {@code null} if
      *         this information is unavailable
      * @param lineNumber the line number of the source line containing the
      *         execution point represented by this stack trace element, or
      *         a negative number if this information is unavailable. A value
      *         of -2 indicates that the method containing the execution point
      *         is a native method
-     * @throws NullPointerException if <tt>declaringClass</tt> or
-     *         <tt>methodName</tt> is null
+     * @throws NullPointerException if {@code declaringClass} or
+     *         {@code methodName} is null
      * @since 1.5
      */
     public StackTraceElement(String declaringClass, String methodName,
                              String fileName, int lineNumber) {
-        if (declaringClass == null)
-            throw new NullPointerException("Declaring class is null");
-        if (methodName == null)
-            throw new NullPointerException("Method name is null");
-
-        this.declaringClass = declaringClass;
-        this.methodName     = methodName;
+        this.declaringClass = Objects.nonNull(declaringClass, "Declaring class is null");
+        this.methodName     = Objects.nonNull(methodName, "Method name is null");
         this.fileName       = fileName;
         this.lineNumber     = lineNumber;
     }
@@ -80,13 +77,13 @@ public final class StackTraceElement implements java.io.Serializable {
     /**
      * Returns the name of the source file containing the execution point
      * represented by this stack trace element.  Generally, this corresponds
-     * to the <tt>SourceFile</tt> attribute of the relevant <tt>class</tt>
+     * to the {@code SourceFile} attribute of the relevant {@code class}
      * file (as per <i>The Java Virtual Machine Specification</i>, Section
      * 4.7.7).  In some systems, the name may refer to some source code unit
      * other than a file, such as an entry in source repository.
      *
      * @return the name of the file containing the execution point
-     *         represented by this stack trace element, or <tt>null</tt> if
+     *         represented by this stack trace element, or {@code null} if
      *         this information is unavailable.
      */
     public String getFileName() {
@@ -96,8 +93,8 @@ public final class StackTraceElement implements java.io.Serializable {
     /**
      * Returns the line number of the source line containing the execution
      * point represented by this stack trace element.  Generally, this is
-     * derived from the <tt>LineNumberTable</tt> attribute of the relevant
-     * <tt>class</tt> file (as per <i>The Java Virtual Machine
+     * derived from the {@code LineNumberTable} attribute of the relevant
+     * {@code class} file (as per <i>The Java Virtual Machine
      * Specification</i>, Section 4.7.8).
      *
      * @return the line number of the source line containing the execution
@@ -112,7 +109,7 @@ public final class StackTraceElement implements java.io.Serializable {
      * Returns the fully qualified name of the class containing the
      * execution point represented by this stack trace element.
      *
-     * @return the fully qualified name of the <tt>Class</tt> containing
+     * @return the fully qualified name of the {@code Class} containing
      *         the execution point represented by this stack trace element.
      */
     public String getClassName() {
@@ -123,8 +120,8 @@ public final class StackTraceElement implements java.io.Serializable {
      * Returns the name of the method containing the execution point
      * represented by this stack trace element.  If the execution point is
      * contained in an instance or class initializer, this method will return
-     * the appropriate <i>special method name</i>, <tt>&lt;init&gt;</tt> or
-     * <tt>&lt;clinit&gt;</tt>, as per Section 3.9 of <i>The Java Virtual
+     * the appropriate <i>special method name</i>, {@code <init>} or
+     * {@code <clinit>}, as per Section 3.9 of <i>The Java Virtual
      * Machine Specification</i>.
      *
      * @return the name of the method containing the execution point
@@ -138,7 +135,7 @@ public final class StackTraceElement implements java.io.Serializable {
      * Returns true if the method containing the execution point
      * represented by this stack trace element is a native method.
      *
-     * @return <tt>true</tt> if the method containing the execution point
+     * @return {@code true} if the method containing the execution point
      *         represented by this stack trace element is a native method.
      */
     public boolean isNativeMethod() {
@@ -151,21 +148,21 @@ public final class StackTraceElement implements java.io.Serializable {
      * examples may be regarded as typical:
      * <ul>
      * <li>
-     *   <tt>"MyClass.mash(MyClass.java:9)"</tt> - Here, <tt>"MyClass"</tt>
+     *   {@code "MyClass.mash(MyClass.java:9)"} - Here, {@code "MyClass"}
      *   is the <i>fully-qualified name</i> of the class containing the
      *   execution point represented by this stack trace element,
-     *   <tt>"mash"</tt> is the name of the method containing the execution
-     *   point, <tt>"MyClass.java"</tt> is the source file containing the
-     *   execution point, and <tt>"9"</tt> is the line number of the source
+     *   {@code "mash"} is the name of the method containing the execution
+     *   point, {@code "MyClass.java"} is the source file containing the
+     *   execution point, and {@code "9"} is the line number of the source
      *   line containing the execution point.
      * <li>
-     *   <tt>"MyClass.mash(MyClass.java)"</tt> - As above, but the line
+     *   {@code "MyClass.mash(MyClass.java)"} - As above, but the line
      *   number is unavailable.
      * <li>
-     *   <tt>"MyClass.mash(Unknown Source)"</tt> - As above, but neither
+     *   {@code "MyClass.mash(Unknown Source)"} - As above, but neither
      *   the file name nor the line  number are available.
      * <li>
-     *   <tt>"MyClass.mash(Native Method)"</tt> - As above, but neither
+     *   {@code "MyClass.mash(Native Method)"} - As above, but neither
      *   the file name nor the line  number are available, and the method
      *   containing the execution point is known to be a native method.
      * </ul>
@@ -181,25 +178,21 @@ public final class StackTraceElement implements java.io.Serializable {
 
     /**
      * Returns true if the specified object is another
-     * <tt>StackTraceElement</tt> instance representing the same execution
-     * point as this instance.  Two stack trace elements <tt>a</tt> and
-     * <tt>b</tt> are equal if and only if:
+     * {@code StackTraceElement} instance representing the same execution
+     * point as this instance.  Two stack trace elements {@code a} and
+     * {@code b} are equal if and only if:
      * <pre>
      *     equals(a.getFileName(), b.getFileName()) &&
      *     a.getLineNumber() == b.getLineNumber()) &&
      *     equals(a.getClassName(), b.getClassName()) &&
      *     equals(a.getMethodName(), b.getMethodName())
      * </pre>
-     * where <tt>equals</tt> is defined as:
-     * <pre>
-     *     static boolean equals(Object a, Object b) {
-     *         return a==b || (a != null && a.equals(b));
-     *     }
-     * </pre>
+     * where {@code equals} has the semantics of {@link
+     * java.util.Objects#equals(Object, Object) Objects.equals}.
      *
      * @param  obj the object to be compared with this stack trace element.
      * @return true if the specified object is another
-     *         <tt>StackTraceElement</tt> instance representing the same
+     *         {@code StackTraceElement} instance representing the same
      *         execution point as this instance.
      */
     public boolean equals(Object obj) {
@@ -208,12 +201,10 @@ public final class StackTraceElement implements java.io.Serializable {
         if (!(obj instanceof StackTraceElement))
             return false;
         StackTraceElement e = (StackTraceElement)obj;
-        return e.declaringClass.equals(declaringClass) && e.lineNumber == lineNumber
-            && eq(methodName, e.methodName) && eq(fileName, e.fileName);
-    }
-
-    private static boolean eq(Object a, Object b) {
-        return a==b || (a != null && a.equals(b));
+        return e.declaringClass.equals(declaringClass) &&
+            e.lineNumber == lineNumber &&
+            Objects.equals(methodName, e.methodName) &&
+            Objects.equals(fileName, e.fileName);
     }
 
     /**
@@ -221,7 +212,7 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     public int hashCode() {
         int result = 31*declaringClass.hashCode() + methodName.hashCode();
-        result = 31*result + (fileName == null ?   0 : fileName.hashCode());
+        result = 31*result + Objects.hashCode(fileName);
         result = 31*result + lineNumber;
         return result;
     }
