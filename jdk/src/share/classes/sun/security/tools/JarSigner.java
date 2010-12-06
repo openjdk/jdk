@@ -723,7 +723,7 @@ public class JarSigner {
                         if (signatureRelated(name)) {
                             // Entries inside META-INF and other unsigned
                             // entries are grouped separately.
-                            label = "-" + label.substring(1);
+                            label = "-" + label;
                         }
 
                         // The label finally contains 2 parts separated by '|':
@@ -752,7 +752,7 @@ public class JarSigner {
                     List<String> files = s.getValue();
                     String key = s.getKey();
                     if (key.charAt(0) == '-') { // the signature-related group
-                        key = ' ' + key.substring(1);
+                        key = key.substring(1);
                     }
                     int pipe = key.indexOf('|');
                     if (verbose.equals("all")) {
