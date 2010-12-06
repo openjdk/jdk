@@ -347,6 +347,7 @@ public class Stub implements AuxGen
     stream.println ("     org.omg.CORBA.ORB orb = org.omg.CORBA.ORB.init (args, props);");
     stream.println ("   try {");
     stream.println ("     org.omg.CORBA.Object obj = orb.string_to_object (str);");
+    stream.println ("     org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl) obj)._get_delegate ();");
     stream.println ("     _set_delegate (delegate);");
     stream.println ("   } finally {");
     stream.println ("     orb.destroy() ;");
