@@ -79,9 +79,9 @@ $JAR uvf a.jar A5.class A6.class
 $JARSIGNER -verify a.jar
 [ $? = 0 ] || exit $LINENO
 
-# 4(chainNotValidated)+16(hasUnsignedEntry)+32(aliasNotInStore)
+# 4(chainNotValidated)+16(hasUnsignedEntry)
 $JARSIGNER -verify a.jar -strict
-[ $? = 52 ] || exit $LINENO
+[ $? = 20 ] || exit $LINENO
 
 # 16(hasUnsignedEntry)
 $JARSIGNER -verify a.jar -strict -keystore js.jks
