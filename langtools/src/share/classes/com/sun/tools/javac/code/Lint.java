@@ -212,9 +212,9 @@ public class Lint
         VARARGS("varargs"),
 
         /**
-         * Warn about arm resources
+         * Warn about issues relating to use of try blocks (i.e. try-with-resources)
          */
-        ARM("arm");
+        TRY("try");
 
         LintCategory(String option) {
             this(option, false);

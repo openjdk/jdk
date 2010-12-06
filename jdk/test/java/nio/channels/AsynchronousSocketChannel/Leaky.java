@@ -22,15 +22,19 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6999915
  * @summary Unit test for AsynchronousSocketChannel
- * @run main/othervm -XX:+DisableExplicitGC -mx64m Leaky
+ * @run main/othervm -XX:+DisableExplicitGC -XX:MaxDirectMemorySize=64m Leaky
  */
 
 import java.nio.ByteBuffer;
+import java.nio.BufferPoolMXBean;
 import java.nio.channels.*;
 import java.net.*;
+import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.lang.management.ManagementFactory;
 
 /**
  * Heap buffers must be substituted with direct buffers when doing I/O. This
@@ -49,13 +53,13 @@ public class Leaky {
         private final ByteBuffer dst;
         private Future<Integer> readResult;
 
-        Connection() throws Exception {
+        Connection(AsynchronousChannelGroup group) throws Exception {
             ServerSocketChannel ssc =
                 ServerSocketChannel.open().bind(new InetSocketAddress(0));
             InetAddress lh = InetAddress.getLocalHost();
             int port = ((InetSocketAddress)(ssc.getLocalAddress())).getPort();
             SocketAddress remote = new InetSocketAddress(lh, port);
-            client = AsynchronousSocketChannel.open();
+            client = AsynchronousSocketChannel.open(group);
             client.connect(remote).get();
             peer = ssc.accept();
             ssc.close();
@@ -77,11 +81,21 @@ public class Leaky {
     }
 
     public static void main(String[] args) throws Exception {
+        ThreadFactory threadFactory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                return t;
+            }
+        };
+        AsynchronousChannelGroup group =
+            AsynchronousChannelGroup.withFixedThreadPool(4, threadFactory);
 
         final int CONNECTION_COUNT = 10;
         Connection[] connections = new Connection[CONNECTION_COUNT];
         for (int i=0; i<CONNECTION_COUNT; i++) {
-            connections[i] = new Connection();
+            connections[i] = new Connection(group);
         }
 
         for (int i=0; i<1024; i++) {
@@ -100,5 +114,20 @@ public class Leaky {
                 conn.finishRead();
             }
         }
+
+        // print summary of buffer pool usage
+        List<BufferPoolMXBean> pools =
+            ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
+        for (BufferPoolMXBean pool: pools)
+            System.out.format("         %8s             ", pool.getName());
+        System.out.println();
+        for (int i=0; i<pools.size(); i++)
+            System.out.format("%6s %10s %10s  ",  "Count", "Capacity", "Memory");
+        System.out.println();
+        for (BufferPoolMXBean pool: pools) {
+            System.out.format("%6d %10d %10d  ",
+                pool.getCount(), pool.getTotalCapacity(), pool.getMemoryUsed());
+        }
+        System.out.println();
     }
 }
