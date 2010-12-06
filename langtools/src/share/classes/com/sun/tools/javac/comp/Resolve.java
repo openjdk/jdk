@@ -724,23 +724,11 @@ public class Resolve {
         switch (m2.kind) {
         case MTH:
             if (m1 == m2) return m1;
-            Type mt1 = types.memberType(site, m1);
-            noteWarner.unchecked = false;
-            boolean m1SignatureMoreSpecific =
-                (instantiate(env, site, m2, types.lowerBoundArgtypes(mt1), null,
-                             allowBoxing, false, noteWarner) != null ||
-                 useVarargs && instantiate(env, site, m2, types.lowerBoundArgtypes(mt1), null,
-                                           allowBoxing, true, noteWarner) != null) &&
-                !noteWarner.unchecked;
-            Type mt2 = types.memberType(site, m2);
-            noteWarner.unchecked = false;
-            boolean m2SignatureMoreSpecific =
-                (instantiate(env, site, m1, types.lowerBoundArgtypes(mt2), null,
-                             allowBoxing, false, noteWarner) != null ||
-                 useVarargs && instantiate(env, site, m1, types.lowerBoundArgtypes(mt2), null,
-                                           allowBoxing, true, noteWarner) != null) &&
-                !noteWarner.unchecked;
+            boolean m1SignatureMoreSpecific = signatureMoreSpecific(env, site, m1, m2, allowBoxing, useVarargs);
+            boolean m2SignatureMoreSpecific = signatureMoreSpecific(env, site, m2, m1, allowBoxing, useVarargs);
             if (m1SignatureMoreSpecific && m2SignatureMoreSpecific) {
+                Type mt1 = types.memberType(site, m1);
+                Type mt2 = types.memberType(site, m2);
                 if (!types.overrideEquivalent(mt1, mt2))
                     return new AmbiguityError(m1, m2);
                 // same signature; select (a) the non-bridge method, or
@@ -822,6 +810,50 @@ public class Resolve {
                 return new AmbiguityError(err1, err2);
         default:
             throw new AssertionError();
+        }
+    }
+    //where
+    private boolean signatureMoreSpecific(Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
+        Type mtype1 = types.memberType(site, adjustVarargs(m1, m2, useVarargs));
+        noteWarner.unchecked = false;
+        return (instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
+                             allowBoxing, false, noteWarner) != null ||
+                 useVarargs && instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
+                                           allowBoxing, true, noteWarner) != null) &&
+                !noteWarner.unchecked;
+    }
+    //where
+    private Symbol adjustVarargs(Symbol to, Symbol from, boolean useVarargs) {
+        List<Type> fromArgs = from.type.getParameterTypes();
+        List<Type> toArgs = to.type.getParameterTypes();
+        if (useVarargs &&
+                toArgs.length() < fromArgs.length() &&
+                (from.flags() & VARARGS) != 0 &&
+                (to.flags() & VARARGS) != 0) {
+            //if we are checking a varargs method 'from' against another varargs
+            //method 'to' (where arity of 'to' < arity of 'from') then expand signature
+            //of 'to' to 'fit' arity of 'from' (this means adding fake formals to 'to'
+            //until 'to' signature has the same arity as 'from')
+            ListBuffer<Type> args = ListBuffer.lb();
+            Type varargsTypeFrom = fromArgs.last();
+            Type varargsTypeTo = toArgs.last();
+            while (fromArgs.head != varargsTypeFrom) {
+                args.append(toArgs.head == varargsTypeTo ? types.elemtype(varargsTypeTo) : toArgs.head);
+                fromArgs = fromArgs.tail;
+                toArgs = toArgs.head == varargsTypeTo ?
+                    toArgs :
+                    toArgs.tail;
+            }
+            args.append(varargsTypeTo);
+            MethodSymbol msym = new MethodSymbol(to.flags_field,
+                                                 to.name,
+                                                 (Type)to.type.clone(), //see: 6990136
+                                                 to.owner);
+            MethodType mtype = msym.type.asMethodType();
+            mtype.argtypes = args.toList();
+            return msym;
+        } else {
+            return to;
         }
     }
 
