@@ -196,6 +196,10 @@ protected:
   size_t _young_list_target_length;
   size_t _young_list_fixed_length;
 
+  // The max number of regions we can extend the eden by while the GC
+  // locker is active. This should be >= _young_list_target_length;
+  size_t _young_list_max_length;
+
   size_t _young_cset_length;
   bool   _last_young_gc_full;
 
@@ -1113,13 +1117,22 @@ public:
 
   bool is_young_list_full() {
     size_t young_list_length = _g1->young_list()->length();
-    size_t young_list_max_length = _young_list_target_length;
+    size_t young_list_target_length = _young_list_target_length;
+    if (G1FixedEdenSize) {
+      young_list_target_length -= _max_survivor_regions;
+    }
+    return young_list_length >= young_list_target_length;
+  }
+
+  bool can_expand_young_list() {
+    size_t young_list_length = _g1->young_list()->length();
+    size_t young_list_max_length = _young_list_max_length;
     if (G1FixedEdenSize) {
       young_list_max_length -= _max_survivor_regions;
     }
-
-    return young_list_length >= young_list_max_length;
+    return young_list_length < young_list_max_length;
   }
+
   void update_region_num(bool young);
 
   bool in_young_gc_mode() {
@@ -1230,6 +1243,8 @@ public:
   {
     _survivors_age_table.merge_par(age_table);
   }
+
+  void calculate_max_gc_locker_expansion();
 
   // Calculates survivor space parameters.
   void calculate_survivors_policy();
