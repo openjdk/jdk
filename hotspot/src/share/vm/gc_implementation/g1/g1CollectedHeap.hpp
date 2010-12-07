@@ -496,12 +496,15 @@ protected:
   inline HeapWord* attempt_allocation(size_t word_size);
 
   // It assumes that the current alloc region has been retired and
-  // tries to allocate a new one. If it's successful, it performs
-  // the allocation out of the new current alloc region and updates
-  // _cur_alloc_region.
+  // tries to allocate a new one. If it's successful, it performs the
+  // allocation out of the new current alloc region and updates
+  // _cur_alloc_region. Normally, it would try to allocate a new
+  // region if the young gen is not full, unless can_expand is true in
+  // which case it would always try to allocate a new region.
   HeapWord* replace_cur_alloc_region_and_allocate(size_t word_size,
                                                   bool at_safepoint,
-                                                  bool do_dirtying);
+                                                  bool do_dirtying,
+                                                  bool can_expand);
 
   // The slow path when we are unable to allocate a new current alloc
   // region to satisfy an allocation request (i.e., when
