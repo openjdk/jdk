@@ -21,11 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.unsupported.exotic.id
-// options: -source 6
+package p;
 
-class UnsupportedExoticID {
-    void m() {
-        Object #"Hello!" = null;
-    }
+public class Base {
+    /** javadoc-for-Base.m. */
+    public void m() { }
 }
+

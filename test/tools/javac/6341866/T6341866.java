@@ -97,7 +97,7 @@ public class T6341866 {
         processorServices.delete();
 
         List<String> opts = new ArrayList<String>();
-        opts.addAll(Arrays.asList("-d", ".", "-sourcepath", testSrc, "-classpath", testClasses, "-source", "1.6"));
+        opts.addAll(Arrays.asList("-d", ".", "-sourcepath", testSrc, "-classpath", testClasses, "-source", "1.6", "-Xlint:-options"));
         if (implicitType.opt != null)
             opts.add(implicitType.opt);
 

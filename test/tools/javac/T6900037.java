@@ -21,8 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.illegal.bytecode.ident.char
+/*
+ * @test
+ * @bug 6900037
+ * @summary javac should warn if earlier -source is used and bootclasspath not set
+ * @compile T6900037.java
+ * @compile -source 1.6 T6900037.java
+ * @compile/fail/ref=T6900037.out -XDrawDiagnostics -Werror -source 1.6 T6900037.java
+ * @compile -Werror -source 1.6 -Xlint:-options T6900037.java
+ */
 
-class IllegalBytecodeIdentChar {
-    int #"abc/def" = 3;
-}
+class T6900037 { }
