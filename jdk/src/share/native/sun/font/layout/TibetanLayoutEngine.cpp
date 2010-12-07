@@ -23,42 +23,48 @@
  *
  */
 
-
 /*
- * (C) Copyright IBM Corp. 1998-2008 - All Rights Reserved
  *
- * This file is a modification of the ICU file IndicLayoutEngine.cpp
- * by Jens Herden and Javier Sola for Khmer language
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
+ *
+ * Developed at DIT - Government of Bhutan
+ *
+ * Contact person: Pema Geyleg - <pema_geyleg@druknet.bt>
+ *
+ * This file is a modification of the ICU file KhmerReordering.cpp
+ * by Jens Herden and Javier Sola who have given all their possible rights to IBM and the Governement of Bhutan
+ * A first module for Dzongkha was developed by Karunakar under Panlocalisation funding.
+ * Assistance for this module has been received from Namgay Thinley, Christopher Fynn and Javier Sola
  *
  */
 
 
 #include "OpenTypeLayoutEngine.h"
-#include "KhmerLayoutEngine.h"
+#include "TibetanLayoutEngine.h"
 #include "LEGlyphStorage.h"
-#include "KhmerReordering.h"
+#include "TibetanReordering.h"
 
 U_NAMESPACE_BEGIN
 
-UOBJECT_DEFINE_RTTI_IMPLEMENTATION(KhmerOpenTypeLayoutEngine)
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(TibetanOpenTypeLayoutEngine)
 
-KhmerOpenTypeLayoutEngine::KhmerOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+TibetanOpenTypeLayoutEngine::TibetanOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
                     le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable, LEErrorCode &success)
     : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, gsubTable, success)
 {
-    fFeatureMap   = KhmerReordering::getFeatureMap(fFeatureMapCount);
+    fFeatureMap   = TibetanReordering::getFeatureMap(fFeatureMapCount);
     fFeatureOrder = TRUE;
 }
 
-KhmerOpenTypeLayoutEngine::KhmerOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+TibetanOpenTypeLayoutEngine::TibetanOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
                                                      le_int32 typoFlags, LEErrorCode &success)
     : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success)
 {
-    fFeatureMap   = KhmerReordering::getFeatureMap(fFeatureMapCount);
+    fFeatureMap   = TibetanReordering::getFeatureMap(fFeatureMapCount);
     fFeatureOrder = TRUE;
 }
 
-KhmerOpenTypeLayoutEngine::~KhmerOpenTypeLayoutEngine()
+TibetanOpenTypeLayoutEngine::~TibetanOpenTypeLayoutEngine()
 {
     // nothing to do
 }
@@ -66,7 +72,7 @@ KhmerOpenTypeLayoutEngine::~KhmerOpenTypeLayoutEngine()
 // Input: characters
 // Output: characters, char indices, tags
 // Returns: output character count
-le_int32 KhmerOpenTypeLayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
+le_int32 TibetanOpenTypeLayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
         LEUnicode *&outChars, LEGlyphStorage &glyphStorage, LEErrorCode &success)
 {
     if (LE_FAILURE(success)) {
@@ -97,7 +103,7 @@ le_int32 KhmerOpenTypeLayoutEngine::characterProcessing(const LEUnicode chars[],
 
     // NOTE: assumes this allocates featureTags...
     // (probably better than doing the worst case stuff here...)
-    le_int32 outCharCount = KhmerReordering::reorder(&chars[offset], count, fScriptCode, outChars, glyphStorage);
+    le_int32 outCharCount = TibetanReordering::reorder(&chars[offset], count, fScriptCode, outChars, glyphStorage);
 
     glyphStorage.adoptGlyphCount(outCharCount);
     return outCharCount;

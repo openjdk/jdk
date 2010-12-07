@@ -23,18 +23,23 @@
  *
  */
 
-
 /*
  *
- * (C) Copyright IBM Corp. 1998-2008 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
- * This file is a modification of the ICU file IndicLayoutEngine.h
- * by Jens Herden and Javier Sola for Khmer language
+ * Developed at DIT - Government of Bhutan
+ *
+ * Contact person: Pema Geyleg - <pema_geyleg@druknet.bt>
+ *
+ * This file is a modification of the ICU file KhmerReordering.cpp
+ * by Jens Herden and Javier Sola who have given all their possible rights to IBM and the Governement of Bhutan
+ * A first module for Dzongkha was developed by Karunakar under Panlocalisation funding.
+ * Assistance for this module has been received from Namgay Thinley, Christopher Fynn and Javier Sola
  *
  */
 
-#ifndef __KHMERLAYOUTENGINE_H
-#define __KHMERLAYOUTENGINE_H
+#ifndef __TIBETANLAYOUTENGINE_H
+#define __TIBETANLAYOUTENGINE_H
 
 // #include "LETypes.h"
 // #include "LEFontInstance.h"
@@ -52,23 +57,18 @@ U_NAMESPACE_BEGIN
 // class LEGlyphStorage;
 
 /**
- * This class implements OpenType layout for Khmer OpenType fonts, as
- * specified by Microsoft in "Creating and Supporting OpenType Fonts for
- * Khmer Scripts" (http://www.microsoft.com/typography/otspec/indicot/default.htm) TODO: change url
- *
- * This class overrides the characterProcessing method to do Khmer character processing
- * and reordering (See the MS spec. for more details)
+ * This class implements OpenType layout for Dzongkha and Tibetan OpenType fonts
  *
  * @internal
  */
-class KhmerOpenTypeLayoutEngine : public OpenTypeLayoutEngine
+class TibetanOpenTypeLayoutEngine : public OpenTypeLayoutEngine
 {
 public:
     /**
-     * This is the main constructor. It constructs an instance of KhmerOpenTypeLayoutEngine for
+     * This is the main constructor. It constructs an instance of TibetanOpenTypeLayoutEngine for
      * a particular font, script and language. It takes the GSUB table as a parameter since
      * LayoutEngine::layoutEngineFactory has to read the GSUB table to know that it has an
-     * Khmer OpenType font.
+     * Tibetan OpenType font.
      *
      * @param fontInstance - the font
      * @param scriptCode - the script
@@ -82,7 +82,7 @@ public:
      *
      * @internal
      */
-    KhmerOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+    TibetanOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
                             le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable, LEErrorCode &success);
 
     /**
@@ -99,34 +99,34 @@ public:
      *
      * @internal
      */
-    KhmerOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
-                              le_int32 typoFlags, LEErrorCode &success);
+    TibetanOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                                le_int32 typoFlags, LEErrorCode &success);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
      *
      * @internal
      */
-   virtual ~KhmerOpenTypeLayoutEngine();
+   virtual ~TibetanOpenTypeLayoutEngine();
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for the actual class.
      *
-     * @stable ICU 2.8
+     * @internal ICU 3.6
      */
     virtual UClassID getDynamicClassID() const;
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for this class.
      *
-     * @stable ICU 2.8
+     * @internal ICU 3.6
      */
     static UClassID getStaticClassID();
 
 protected:
 
     /**
-     * This method does Khmer OpenType character processing. It assigns the OpenType feature
+     * This method does Tibetan OpenType character processing. It assigns the OpenType feature
      * tags to the characters, and may generate output characters which have been reordered.
      * It may also split some vowels, resulting in more output characters than input characters.
      *
