@@ -313,6 +313,14 @@ char* java_lang_String::as_utf8_string(oop java_string) {
   return UNICODE::as_utf8(position, length);
 }
 
+char* java_lang_String::as_utf8_string(oop java_string, char* buf, int buflen) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+  jchar* position = (length == 0) ? NULL : value->char_at_addr(offset);
+  return UNICODE::as_utf8(position, length, buf, buflen);
+}
+
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
