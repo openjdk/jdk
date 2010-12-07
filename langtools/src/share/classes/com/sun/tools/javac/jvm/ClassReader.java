@@ -32,6 +32,7 @@ import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.SourceVersion;
@@ -44,11 +45,13 @@ import static javax.tools.StandardLocation.*;
 
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.BaseFileObject;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
@@ -101,6 +104,10 @@ public class ClassReader implements Completer {
     /** Switch: allow annotations.
      */
     boolean allowAnnotations;
+
+    /** Lint option: warn about classfile issues
+     */
+    boolean lintClassfile;
 
     /** Switch: preserve parameter names from the variable table.
      */
@@ -207,6 +214,11 @@ public class ClassReader implements Completer {
      */
     boolean haveParameterNameIndices;
 
+    /**
+     * The set of attribute names for which warnings have been generated for the current class
+     */
+    Set<Name> warnedAttrs = new HashSet<Name>();
+
     /** Get the ClassReader instance for this invocation. */
     public static ClassReader instance(Context context) {
         ClassReader instance = context.get(classReaderKey);
@@ -278,6 +290,8 @@ public class ClassReader implements Completer {
 
         typevars = new Scope(syms.noSymbol);
         debugJSR308 = options.isSet("TA:reader");
+
+        lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
         initAttributeReaders();
     }
@@ -870,7 +884,22 @@ public class ClassReader implements Completer {
         }
 
         boolean accepts(AttributeKind kind) {
-            return kinds.contains(kind) && majorVersion >= version.major;
+            if (kinds.contains(kind)) {
+                if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
+                    return true;
+
+                if (lintClassfile && !warnedAttrs.contains(name)) {
+                    JavaFileObject prev = log.useSource(currentClassFile);
+                    try {
+                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null, "future.attr",
+                                name, version.major, version.minor, majorVersion, minorVersion);
+                    } finally {
+                        log.useSource(prev);
+                    }
+                    warnedAttrs.add(name);
+                }
+            }
+            return false;
         }
 
         abstract void read(Symbol sym, int attrLen);
@@ -889,7 +918,7 @@ public class ClassReader implements Completer {
 
     protected Map<Name, AttributeReader> attributeReaders = new HashMap<Name, AttributeReader>();
 
-    protected void initAttributeReaders() {
+    private void initAttributeReaders() {
         AttributeReader[] readers = {
             // v45.3 attributes
 
@@ -1561,7 +1590,7 @@ public class ClassReader implements Completer {
         public void accept(Visitor v) { ((ProxyVisitor)v).visitCompoundAnnotationProxy(this); }
         @Override
         public String toString() {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             buf.append("@");
             buf.append(type.tsym.getQualifiedName());
             buf.append("/*proxy*/{");
@@ -2286,6 +2315,7 @@ public class ClassReader implements Completer {
             throw new CompletionFailure(c, "user-selected completion failure by class name");
         }
         currentOwner = c;
+        warnedAttrs.clear();
         JavaFileObject classfile = c.classfile;
         if (classfile != null) {
             JavaFileObject previousClassFile = currentClassFile;
