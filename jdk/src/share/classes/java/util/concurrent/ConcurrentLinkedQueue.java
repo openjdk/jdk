@@ -65,8 +65,8 @@ import java.util.Queue;
  * <p>Iterators are <i>weakly consistent</i>, returning elements
  * reflecting the state of the queue at some point at or since the
  * creation of the iterator.  They do <em>not</em> throw {@link
- * ConcurrentModificationException}, and may proceed concurrently with
- * other operations.  Elements contained in the queue since the creation
+ * java.util.ConcurrentModificationException}, and may proceed concurrently
+ * with other operations.  Elements contained in the queue since the creation
  * of the iterator will be returned exactly once.
  *
  * <p>Beware that, unlike in most collections, the {@code size} method
@@ -634,12 +634,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * Returns an iterator over the elements in this queue in proper sequence.
      * The elements will be returned in order from first (head) to last (tail).
      *
-     * <p>The returned {@code Iterator} is a "weakly consistent" iterator that
+     * <p>The returned iterator is a "weakly consistent" iterator that
      * will never throw {@link java.util.ConcurrentModificationException
-     * ConcurrentModificationException},
-     * and guarantees to traverse elements as they existed upon
-     * construction of the iterator, and may (but is not guaranteed to)
-     * reflect any modifications subsequent to construction.
+     * ConcurrentModificationException}, and guarantees to traverse
+     * elements as they existed upon construction of the iterator, and
+     * may (but is not guaranteed to) reflect any modifications
+     * subsequent to construction.
      *
      * @return an iterator over the elements in this queue in proper sequence
      */

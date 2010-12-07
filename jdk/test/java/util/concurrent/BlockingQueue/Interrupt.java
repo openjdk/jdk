@@ -136,5 +136,5 @@ public class Interrupt {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private static abstract class Fun {abstract void f() throws Throwable;}
+    private abstract static class Fun {abstract void f() throws Throwable;}
 }

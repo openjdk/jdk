@@ -36,7 +36,7 @@ public class TwrSuppression implements AutoCloseable {
                 throw new RuntimeException();
             }
         } catch(RuntimeException e) {
-            Throwable[] suppressedExceptions = e.getSuppressedExceptions();
+            Throwable[] suppressedExceptions = e.getSuppressed();
             int length = suppressedExceptions.length;
             if (length != 2)
                 throw new RuntimeException("Unexpected length " + length);

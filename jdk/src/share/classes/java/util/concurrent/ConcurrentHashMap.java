@@ -1270,7 +1270,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * for each key-value mapping, followed by a null pair.
      * The key-value mappings are emitted in no particular order.
      */
-    private void writeObject(java.io.ObjectOutputStream s) throws IOException  {
+    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 
         for (int k = 0; k < segments.length; ++k) {
@@ -1298,7 +1298,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * @param s the stream
      */
     private void readObject(java.io.ObjectInputStream s)
-        throws IOException, ClassNotFoundException  {
+        throws IOException, ClassNotFoundException {
         s.defaultReadObject();
 
         // Initialize each segment to be minimally sized, and let grow.

@@ -65,7 +65,7 @@
 #   If we are using freetype, the freetype version expected.
 #
 # REQUIRED_GCC_VER
-#   Solaris and Linux only. The required version of gcc/g++ for the plugin.
+#   Solaris and Linux only. The required version of gcc/g++ for the legacy OJI plugin.
 #
 # REQUIRED_LINK_VER
 #   Windows only: The version of link.exe expected.
