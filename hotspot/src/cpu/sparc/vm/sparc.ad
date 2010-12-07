@@ -6094,7 +6094,8 @@ instruct loadConP_load(iRegP dst, immP_load con) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "LD     [$constanttablebase + $constantoffset],$dst\t! load from constant table: ptr=$con" %}
   ins_encode %{
-    __ ld_ptr($constanttablebase, $constantoffset($con), $dst$$Register);
+      RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset($con), $dst$$Register);
+     __ ld_ptr($constanttablebase, con_offset, $dst$$Register);
   %}
   ins_pipe(loadConP);
 %}
@@ -6162,7 +6163,8 @@ instruct loadConL_ldx(iRegL dst, immL_expensive con) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "LDX     [$constanttablebase + $constantoffset],$dst\t! load from constant table: long=$con" %}
   ins_encode %{
-    __ ldx($constanttablebase, $constantoffset($con), $dst$$Register);
+      RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset($con), $dst$$Register);
+    __ ldx($constanttablebase, con_offset, $dst$$Register);
   %}
   ins_pipe(loadConL);
 %}
@@ -6186,24 +6188,26 @@ instruct loadConL13( iRegL dst, immL13 src ) %{
   ins_pipe(ialu_imm);
 %}
 
-instruct loadConF(regF dst, immF con) %{
+instruct loadConF(regF dst, immF con, o7RegI tmp) %{
   match(Set dst con);
-  size(4);
+  effect(KILL tmp);
   format %{ "LDF    [$constanttablebase + $constantoffset],$dst\t! load from constant table: float=$con" %}
   ins_encode %{
-    __ ldf(FloatRegisterImpl::S, $constanttablebase, $constantoffset($con), $dst$$FloatRegister);
+      RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset($con), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::S, $constanttablebase, con_offset, $dst$$FloatRegister);
   %}
   ins_pipe(loadConFD);
 %}
 
-instruct loadConD(regD dst, immD con) %{
+instruct loadConD(regD dst, immD con, o7RegI tmp) %{
   match(Set dst con);
-  size(4);
+  effect(KILL tmp);
   format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: double=$con" %}
   ins_encode %{
     // XXX This is a quick fix for 6833573.
     //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset($con), $dst$$FloatRegister);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset($con), as_DoubleFloatRegister($dst$$reg));
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset($con), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
   %}
   ins_pipe(loadConFD);
 %}
@@ -8655,14 +8659,15 @@ instruct Repl8B_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar constant to packed byte values in Double register
-instruct Repl8B_immI(regD dst, immI13 con) %{
+instruct Repl8B_immI(regD dst, immI13 con, o7RegI tmp) %{
   match(Set dst (Replicate8B con));
-  size(4);
+  effect(KILL tmp);
   format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl8B($con)" %}
   ins_encode %{
     // XXX This is a quick fix for 6833573.
     //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 8, 1)), $dst$$FloatRegister);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 8, 1)), as_DoubleFloatRegister($dst$$reg));
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 8, 1)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
   %}
   ins_pipe(loadConFD);
 %}
@@ -8690,14 +8695,15 @@ instruct Repl4C_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar constant to packed char values in Double register
-instruct Repl4C_immI(regD dst, immI con) %{
+instruct Repl4C_immI(regD dst, immI con, o7RegI tmp) %{
   match(Set dst (Replicate4C con));
-  size(4);
+  effect(KILL tmp);
   format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4C($con)" %}
   ins_encode %{
     // XXX This is a quick fix for 6833573.
     //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), as_DoubleFloatRegister($dst$$reg));
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 4, 2)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
   %}
   ins_pipe(loadConFD);
 %}
@@ -8725,14 +8731,15 @@ instruct Repl4S_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar constant to packed short values in Double register
-instruct Repl4S_immI(regD dst, immI con) %{
+instruct Repl4S_immI(regD dst, immI con, o7RegI tmp) %{
   match(Set dst (Replicate4S con));
-  size(4);
+  effect(KILL tmp);
   format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4S($con)" %}
   ins_encode %{
     // XXX This is a quick fix for 6833573.
     //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), as_DoubleFloatRegister($dst$$reg));
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 4, 2)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
   %}
   ins_pipe(loadConFD);
 %}
@@ -8758,14 +8765,15 @@ instruct Repl2I_reg(stackSlotD dst, iRegI src) %{
 %}
 
 // Replicate scalar zero constant to packed int values in Double register
-instruct Repl2I_immI(regD dst, immI con) %{
+instruct Repl2I_immI(regD dst, immI con, o7RegI tmp) %{
   match(Set dst (Replicate2I con));
-  size(4);
+  effect(KILL tmp);
   format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl2I($con)" %}
   ins_encode %{
     // XXX This is a quick fix for 6833573.
     //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 2, 4)), $dst$$FloatRegister);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 2, 4)), as_DoubleFloatRegister($dst$$reg));
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 2, 4)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
   %}
   ins_pipe(loadConFD);
 %}
@@ -9034,7 +9042,8 @@ instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
       table_reg = $constanttablebase;
     } else {
       table_reg = O7;
-      __ add($constanttablebase, $constantoffset, table_reg);
+      RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset, O7);
+      __ add($constanttablebase, con_offset, table_reg);
     }
 
     // Jump to base address + switch value
