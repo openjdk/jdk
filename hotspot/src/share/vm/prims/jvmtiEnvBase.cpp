@@ -161,6 +161,14 @@ JvmtiEnvBase::use_version_1_1_semantics() {
   return major == 1 && minor == 1;  // micro version doesn't matter here
 }
 
+bool
+JvmtiEnvBase::use_version_1_2_semantics() {
+  int major, minor, micro;
+
+  JvmtiExport::decode_version_values(_version, &major, &minor, &micro);
+  return major == 1 && minor == 2;  // micro version doesn't matter here
+}
+
 
 JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
   _version = version;
