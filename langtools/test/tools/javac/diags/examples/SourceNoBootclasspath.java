@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.unclosed.bytecode.ident
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 6
 
-class UnclosedBytecodeIdent {
-    int #"abc
-}
+class SourceNoBootclasspath { }

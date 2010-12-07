@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.try.without.catch.or.finally
-// options: -source 1.6
+// options: -source 1.6 -Xlint:-options
 
 class TryWithoutCatchOrFinally {
     void m() {
