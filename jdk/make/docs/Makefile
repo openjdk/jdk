@@ -190,7 +190,6 @@ $(call CopyrightLine,$(COPYRIGHT_URL),$(FIRST_COPYRIGHT_YEAR),)\
 # Common javadoc options used by all
 COMMON_JAVADOCFLAGS =					\
                 $(NO_PROPRIETARY_API_WARNINGS)          \
-		-source 1.5				\
 		-quiet					\
                 -use					\
                 -keywords				\

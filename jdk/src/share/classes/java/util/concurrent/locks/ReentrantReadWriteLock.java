@@ -155,7 +155,7 @@ import java.util.*;
  *          }
  *          // Downgrade by acquiring read lock before releasing write lock
  *          rwl.readLock().lock();
- *        } finally  {
+ *        } finally {
  *          rwl.writeLock().unlock(); // Unlock write, still hold read
  *        }
  *     }
@@ -215,7 +215,8 @@ import java.util.*;
  * @author Doug Lea
  *
  */
-public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializable  {
+public class ReentrantReadWriteLock
+        implements ReadWriteLock, java.io.Serializable {
     private static final long serialVersionUID = -6992448646407690164L;
     /** Inner class providing readlock */
     private final ReentrantReadWriteLock.ReadLock readerLock;
@@ -251,7 +252,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
      * Synchronization implementation for ReentrantReadWriteLock.
      * Subclassed into fair and nonfair versions.
      */
-    static abstract class Sync extends AbstractQueuedSynchronizer {
+    abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 6317671515068378041L;
 
         /*
@@ -618,7 +619,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
 
         final Thread getOwner() {
             // Must read state before owner to ensure memory consistency
-            return ((exclusiveCount(getState()) == 0)?
+            return ((exclusiveCount(getState()) == 0) ?
                     null :
                     getExclusiveOwnerThread());
         }
@@ -669,7 +670,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
     /**
      * Nonfair version of Sync
      */
-    final static class NonfairSync extends Sync {
+    static final class NonfairSync extends Sync {
         private static final long serialVersionUID = -8159625535654395037L;
         final boolean writerShouldBlock() {
             return false; // writers can always barge
@@ -689,7 +690,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
     /**
      * Fair version of Sync
      */
-    final static class FairSync extends Sync {
+    static final class FairSync extends Sync {
         private static final long serialVersionUID = -2274990926593161451L;
         final boolean writerShouldBlock() {
             return hasQueuedPredecessors();
@@ -702,7 +703,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
     /**
      * The lock returned by method {@link ReentrantReadWriteLock#readLock}.
      */
-    public static class ReadLock implements Lock, java.io.Serializable  {
+    public static class ReadLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -5992448646407690164L;
         private final Sync sync;
 
@@ -867,7 +868,8 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
          * @throws NullPointerException if the time unit is null
          *
          */
-        public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
+        public boolean tryLock(long timeout, TimeUnit unit)
+                throws InterruptedException {
             return sync.tryAcquireSharedNanos(1, unit.toNanos(timeout));
         }
 
@@ -908,7 +910,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
     /**
      * The lock returned by method {@link ReentrantReadWriteLock#writeLock}.
      */
-    public static class WriteLock implements Lock, java.io.Serializable  {
+    public static class WriteLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -4992448646407690164L;
         private final Sync sync;
 
@@ -1108,7 +1110,8 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
          * @throws NullPointerException if the time unit is null
          *
          */
-        public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
+        public boolean tryLock(long timeout, TimeUnit unit)
+                throws InterruptedException {
             return sync.tryAcquireNanos(1, unit.toNanos(timeout));
         }
 

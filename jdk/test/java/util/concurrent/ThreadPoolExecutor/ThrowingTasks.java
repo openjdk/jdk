@@ -35,7 +35,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 public class ThrowingTasks {
-    final static Random rnd = new Random();
+    static final Random rnd = new Random();
 
     @SuppressWarnings("serial")
     static class UncaughtExceptions
@@ -65,16 +65,16 @@ public class ThrowingTasks {
         }
     }
 
-    final static UncaughtExceptions uncaughtExceptions
+    static final UncaughtExceptions uncaughtExceptions
         = new UncaughtExceptions();
-    final static UncaughtExceptionsTable uncaughtExceptionsTable
+    static final UncaughtExceptionsTable uncaughtExceptionsTable
         = new UncaughtExceptionsTable();
-    final static AtomicLong totalUncaughtExceptions
+    static final AtomicLong totalUncaughtExceptions
         = new AtomicLong(0);
-    final static CountDownLatch uncaughtExceptionsLatch
+    static final CountDownLatch uncaughtExceptionsLatch
         = new CountDownLatch(24);
 
-    final static Thread.UncaughtExceptionHandler handler
+    static final Thread.UncaughtExceptionHandler handler
         = new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread t, Throwable e) {
                     check(! Thread.currentThread().isInterrupted());
@@ -84,19 +84,19 @@ public class ThrowingTasks {
                     uncaughtExceptionsLatch.countDown();
                 }};
 
-    final static ThreadGroup tg = new ThreadGroup("Flaky");
+    static final ThreadGroup tg = new ThreadGroup("Flaky");
 
-    final static ThreadFactory tf = new ThreadFactory() {
+    static final ThreadFactory tf = new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(tg, r);
                 t.setUncaughtExceptionHandler(handler);
                 return t;
             }};
 
-    final static RuntimeException rte = new RuntimeException();
-    final static Error error = new Error();
-    final static Throwable weird = new Throwable();
-    final static Exception checkedException = new Exception();
+    static final RuntimeException rte = new RuntimeException();
+    static final Error error = new Error();
+    static final Throwable weird = new Throwable();
+    static final Exception checkedException = new Exception();
 
     static class Thrower implements Runnable {
         Throwable t;
@@ -105,13 +105,13 @@ public class ThrowingTasks {
         public void run() { if (t != null) Thread.currentThread().stop(t); }
     }
 
-    final static Thrower noThrower      = new Thrower(null);
-    final static Thrower rteThrower     = new Thrower(rte);
-    final static Thrower errorThrower   = new Thrower(error);
-    final static Thrower weirdThrower   = new Thrower(weird);
-    final static Thrower checkedThrower = new Thrower(checkedException);
+    static final Thrower noThrower      = new Thrower(null);
+    static final Thrower rteThrower     = new Thrower(rte);
+    static final Thrower errorThrower   = new Thrower(error);
+    static final Thrower weirdThrower   = new Thrower(weird);
+    static final Thrower checkedThrower = new Thrower(checkedException);
 
-    final static List<Thrower> throwers = Arrays.asList(
+    static final List<Thrower> throwers = Arrays.asList(
         noThrower, rteThrower, errorThrower, weirdThrower, checkedThrower);
 
     static class Flaky implements Runnable {

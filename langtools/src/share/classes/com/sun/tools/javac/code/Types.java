@@ -3151,7 +3151,7 @@ public class Types {
         return to.isParameterized() &&
                 (!(isUnbounded(to) ||
                 isSubtype(from, to) ||
-                ((subFrom != null) && isSameType(subFrom, to))));
+                ((subFrom != null) && containsType(to.allparams(), subFrom.allparams()))));
     }
 
     private List<Type> superClosure(Type t, Type s) {
