@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.empty.bytecode.ident
-
-class EmptyBytecodeIdent {
-    int #"" = 3;
+public class Test extends p.Base {
+    // overrides Base.m
+    public void m() { }
 }
+
