@@ -354,18 +354,18 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   // micro version doesn't matter here (yet?)
   decode_version_values(version, &major, &minor, &micro);
   switch (major) {
-  case 1:
+    case 1:
       switch (minor) {
-      case 0:  // version 1.0.<micro> is recognized
-      case 1:  // version 1.1.<micro> is recognized
+        case 0:  // version 1.0.<micro> is recognized
+        case 1:  // version 1.1.<micro> is recognized
+        case 2:  // version 1.2.<micro> is recognized
           break;
 
-      default:
+        default:
           return JNI_EVERSION;  // unsupported minor version number
       }
       break;
-
-  default:
+    default:
       return JNI_EVERSION;  // unsupported major version number
   }
 
