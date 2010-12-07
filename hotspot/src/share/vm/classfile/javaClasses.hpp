@@ -104,6 +104,7 @@ class java_lang_String : AllStatic {
 
   // String converters
   static char*  as_utf8_string(oop java_string);
+  static char*  as_utf8_string(oop java_string, char* buf, int buflen);
   static char*  as_utf8_string(oop java_string, int start, int len);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length);

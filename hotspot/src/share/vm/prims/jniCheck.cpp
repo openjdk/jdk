@@ -1288,6 +1288,9 @@ JNI_ENTRY_CHECKED(jsize,
     return result;
 JNI_END
 
+// Arbitrary (but well-known) tag
+const jint STRING_TAG = 0x47114711;
+
 JNI_ENTRY_CHECKED(const jchar *,
   checked_jni_GetStringChars(JNIEnv *env,
                              jstring str,
@@ -1297,8 +1300,19 @@ JNI_ENTRY_CHECKED(const jchar *,
       checkString(thr, str);
     )
     const jchar *result = UNCHECKED()->GetStringChars(env,str,isCopy);
+    assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringChars didn't return a copy as expected");
+
+    size_t len = UNCHECKED()->GetStringLength(env,str) + 1; // + 1 for NULL termination
+    jint* tagLocation = (jint*) AllocateHeap(len * sizeof(jchar) + sizeof(jint), "checked_jni_GetStringChars");
+    *tagLocation = STRING_TAG;
+    jchar* newResult = (jchar*) (tagLocation + 1);
+    memcpy(newResult, result, len * sizeof(jchar));
+    // Avoiding call to UNCHECKED()->ReleaseStringChars() since that will fire unexpected dtrace probes
+    // Note that the dtrace arguments for the allocated memory will not match up with this solution.
+    FreeHeap((char*)result);
+
     functionExit(env);
-    return result;
+    return newResult;
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1309,11 +1323,17 @@ JNI_ENTRY_CHECKED(void,
     IN_VM(
       checkString(thr, str);
     )
-    /* cannot check validity of copy, unless every request is logged by
-     * checking code.  Implementation of this check is deferred until a
-     * subsequent release.
-     */
-    UNCHECKED()->ReleaseStringChars(env,str,chars);
+    if (chars == NULL) {
+       // still do the unchecked call to allow dtrace probes
+       UNCHECKED()->ReleaseStringChars(env,str,chars);
+    }
+    else {
+       jint* tagLocation = ((jint*) chars) - 1;
+       if (*tagLocation != STRING_TAG) {
+          NativeReportJNIFatalError(thr, "ReleaseStringChars called on something not allocated by GetStringChars");
+       }
+       UNCHECKED()->ReleaseStringChars(env,str,(const jchar*)tagLocation);
+    }
     functionExit(env);
 JNI_END
 
@@ -1338,6 +1358,9 @@ JNI_ENTRY_CHECKED(jsize,
     return result;
 JNI_END
 
+// Arbitrary (but well-known) tag - different than GetStringChars
+const jint STRING_UTF_TAG = 0x48124812;
+
 JNI_ENTRY_CHECKED(const char *,
   checked_jni_GetStringUTFChars(JNIEnv *env,
                                 jstring str,
@@ -1347,8 +1370,19 @@ JNI_ENTRY_CHECKED(const char *,
       checkString(thr, str);
     )
     const char *result = UNCHECKED()->GetStringUTFChars(env,str,isCopy);
+    assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringUTFChars didn't return a copy as expected");
+
+    size_t len = strlen(result) + 1; // + 1 for NULL termination
+    jint* tagLocation = (jint*) AllocateHeap(len + sizeof(jint), "checked_jni_GetStringUTFChars");
+    *tagLocation = STRING_UTF_TAG;
+    char* newResult = (char*) (tagLocation + 1);
+    strcpy(newResult, result);
+    // Avoiding call to UNCHECKED()->ReleaseStringUTFChars() since that will fire unexpected dtrace probes
+    // Note that the dtrace arguments for the allocated memory will not match up with this solution.
+    FreeHeap((char*)result);
+
     functionExit(env);
-    return result;
+    return newResult;
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1359,11 +1393,17 @@ JNI_ENTRY_CHECKED(void,
     IN_VM(
       checkString(thr, str);
     )
-    /* cannot check validity of copy, unless every request is logged by
-     * checking code.  Implementation of this check is deferred until a
-     * subsequent release.
-     */
-    UNCHECKED()->ReleaseStringUTFChars(env,str,chars);
+    if (chars == NULL) {
+       // still do the unchecked call to allow dtrace probes
+       UNCHECKED()->ReleaseStringUTFChars(env,str,chars);
+    }
+    else {
+       jint* tagLocation = ((jint*) chars) - 1;
+       if (*tagLocation != STRING_UTF_TAG) {
+          NativeReportJNIFatalError(thr, "ReleaseStringUTFChars called on something not allocated by GetStringUTFChars");
+       }
+       UNCHECKED()->ReleaseStringUTFChars(env,str,(const char*)tagLocation);
+    }
     functionExit(env);
 JNI_END
 
