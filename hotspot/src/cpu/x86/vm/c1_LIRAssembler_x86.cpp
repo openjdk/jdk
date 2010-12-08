@@ -1993,15 +1993,14 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     if ( op->code() == lir_cas_obj) {
 #ifdef _LP64
       if (UseCompressedOops) {
-        __ mov(rscratch1, cmpval);
         __ encode_heap_oop(cmpval);
-        __ mov(rscratch2, newval);
-        __ encode_heap_oop(rscratch2);
+        __ mov(rscratch1, newval);
+        __ encode_heap_oop(rscratch1);
         if (os::is_MP()) {
           __ lock();
         }
-        __ cmpxchgl(rscratch2, Address(addr, 0));
-        __ mov(cmpval, rscratch1);
+        // cmpval (rax) is implicitly used by this instruction
+        __ cmpxchgl(rscratch1, Address(addr, 0));
       } else
 #endif
       {
