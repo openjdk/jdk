@@ -7,7 +7,7 @@
  * @compile/fail/ref=BadUnderscoreLiterals.7.out -XDrawDiagnostics BadUnderscoreLiterals.java
  *
  * @compile/fail -source 6 BadUnderscoreLiterals.java
- * @compile/fail/ref=BadUnderscoreLiterals.6.out -XDrawDiagnostics -source 6 BadUnderscoreLiterals.java
+ * @compile/fail/ref=BadUnderscoreLiterals.6.out -XDrawDiagnostics -source 6 -Xlint:-options BadUnderscoreLiterals.java
  */
 
 public class BadUnderscoreLiterals {
