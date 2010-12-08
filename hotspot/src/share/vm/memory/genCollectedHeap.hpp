@@ -477,13 +477,17 @@ public:
   bool no_allocs_since_save_marks(int level);
 
   // Returns true if an incremental collection is likely to fail.
-  bool incremental_collection_will_fail() {
+  // We optionally consult the young gen, if asked to do so;
+  // otherwise we base our answer on whether the previous incremental
+  // collection attempt failed with no corrective action as of yet.
+  bool incremental_collection_will_fail(bool consult_young) {
     // Assumes a 2-generation system; the first disjunct remembers if an
     // incremental collection failed, even when we thought (second disjunct)
     // that it would not.
     assert(heap()->collector_policy()->is_two_generation_policy(),
            "the following definition may not be suitable for an n(>2)-generation system");
-    return incremental_collection_failed() || !get_gen(0)->collection_attempt_is_safe();
+    return incremental_collection_failed() ||
+           (consult_young && !get_gen(0)->collection_attempt_is_safe());
   }
 
   // If a generation bails out of an incremental collection,

@@ -483,16 +483,17 @@ void DefNewGeneration::space_iterate(SpaceClosure* blk,
 // so we try to allocate the from-space, too.
 HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
   HeapWord* result = NULL;
-  if (PrintGC && Verbose) {
+  if (Verbose && PrintGCDetails) {
     gclog_or_tty->print("DefNewGeneration::allocate_from_space(%u):"
-                  "  will_fail: %s"
-                  "  heap_lock: %s"
-                  "  free: " SIZE_FORMAT,
-                  size,
-               GenCollectedHeap::heap()->incremental_collection_will_fail() ? "true" : "false",
-               Heap_lock->is_locked() ? "locked" : "unlocked",
-               from()->free());
-    }
+                        "  will_fail: %s"
+                        "  heap_lock: %s"
+                        "  free: " SIZE_FORMAT,
+                        size,
+                        GenCollectedHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
+                          "true" : "false",
+                        Heap_lock->is_locked() ? "locked" : "unlocked",
+                        from()->free());
+  }
   if (should_allocate_from_space() || GC_locker::is_active_and_needs_gc()) {
     if (Heap_lock->owned_by_self() ||
         (SafepointSynchronize::is_at_safepoint() &&
@@ -534,6 +535,9 @@ void DefNewGeneration::collect(bool   full,
   // from this generation, pass on collection; let the next generation
   // do it.
   if (!collection_attempt_is_safe()) {
+    if (Verbose && PrintGCDetails) {
+      gclog_or_tty->print(" :: Collection attempt not safe :: ");
+    }
     gch->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
     return;
   }
@@ -821,6 +825,9 @@ void DefNewGeneration::reset_scratch() {
 
 bool DefNewGeneration::collection_attempt_is_safe() {
   if (!to()->is_empty()) {
+    if (Verbose && PrintGCDetails) {
+      gclog_or_tty->print(" :: to is not empty :: ");
+    }
     return false;
   }
   if (_next_gen == NULL) {
@@ -843,10 +850,18 @@ void DefNewGeneration::gc_epilogue(bool full) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   if (full) {
     DEBUG_ONLY(seen_incremental_collection_failed = false;)
-    if (!collection_attempt_is_safe()) {
+    if (!collection_attempt_is_safe() && !_eden_space->is_empty()) {
+      if (Verbose && PrintGCDetails) {
+        gclog_or_tty->print("DefNewEpilogue: cause(%s), full, not safe, set_failed, set_alloc_from, clear_seen",
+                            GCCause::to_string(gch->gc_cause()));
+      }
       gch->set_incremental_collection_failed(); // Slight lie: a full gc left us in that state
       set_should_allocate_from_space(); // we seem to be running out of space
     } else {
+      if (Verbose && PrintGCDetails) {
+        gclog_or_tty->print("DefNewEpilogue: cause(%s), full, safe, clear_failed, clear_alloc_from, clear_seen",
+                            GCCause::to_string(gch->gc_cause()));
+      }
       gch->clear_incremental_collection_failed(); // We just did a full collection
       clear_should_allocate_from_space(); // if set
     }
@@ -860,11 +875,20 @@ void DefNewGeneration::gc_epilogue(bool full) {
     // a full collection in between.
     if (!seen_incremental_collection_failed &&
         gch->incremental_collection_failed()) {
+      if (Verbose && PrintGCDetails) {
+        gclog_or_tty->print("DefNewEpilogue: cause(%s), not full, not_seen_failed, failed, set_seen_failed",
+                            GCCause::to_string(gch->gc_cause()));
+      }
       seen_incremental_collection_failed = true;
     } else if (seen_incremental_collection_failed) {
-      assert(gch->gc_cause() == GCCause::_scavenge_alot || !gch->incremental_collection_failed(),
+      if (Verbose && PrintGCDetails) {
+        gclog_or_tty->print("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
+                            GCCause::to_string(gch->gc_cause()));
+      }
+      assert(gch->gc_cause() == GCCause::_scavenge_alot ||
+             (gch->gc_cause() == GCCause::_java_lang_system_gc && UseConcMarkSweepGC && ExplicitGCInvokesConcurrent) ||
+             !gch->incremental_collection_failed(),
              "Twice in a row");
-
       seen_incremental_collection_failed = false;
     }
 #endif // ASSERT
