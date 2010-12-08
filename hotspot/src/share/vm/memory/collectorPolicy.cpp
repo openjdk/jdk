@@ -685,7 +685,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
       result = expand_heap_and_allocate(size, is_tlab);
     }
     return result;   // could be null if we are out of space
-  } else if (!gch->incremental_collection_will_fail()) {
+  } else if (!gch->incremental_collection_will_fail(false /* don't consult_young */)) {
     // Do an incremental collection.
     gch->do_collection(false            /* full */,
                        false            /* clear_all_soft_refs */,
@@ -693,6 +693,9 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
                        is_tlab          /* is_tlab */,
                        number_of_generations() - 1 /* max_level */);
   } else {
+    if (Verbose && PrintGCDetails) {
+      gclog_or_tty->print(" :: Trying full because partial may fail :: ");
+    }
     // Try a full collection; see delta for bug id 6266275
     // for the original code and why this has been simplified
     // with from-space allocation criteria modified and
