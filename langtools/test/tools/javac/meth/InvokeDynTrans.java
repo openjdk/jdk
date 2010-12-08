@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class InvokeDynTrans {
         InvokeDynamic.greet(x, "mundus", 456);
         InvokeDynamic.greet(x, "kosmos", 789);
         InvokeDynamic.<String>cogitate(10.11121, 3.14);
-        InvokeDynamic.<void>#"yow: what I mean to say is, please treat this one specially"(null);
+        //InvokeDynamic.<void>#"yow: what I mean to say is, please treat this one specially"(null);
         InvokeDynamic.<int>invoke("goodbye");
     }
 }
