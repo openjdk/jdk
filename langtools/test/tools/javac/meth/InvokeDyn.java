@@ -58,7 +58,7 @@ public class InvokeDyn {
         ojunk = InvokeDynamic.greet(x, "mundus", 456);
         ojunk = InvokeDynamic.greet(x, "kosmos", 789);
         ojunk = (String) InvokeDynamic.cogitate(10.11121, 3.14);
-        InvokeDynamic.#"yow: what I mean to say is, please treat this one specially"(null);
+        //InvokeDynamic.#"yow: what I mean to say is, please treat this one specially"(null);
         ijunk = (int) InvokeDynamic.invoke("goodbye");
     }
 }

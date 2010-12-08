@@ -358,7 +358,7 @@ class UTF_8 extends Unicode
     private static class Encoder extends CharsetEncoder {
 
         private Encoder(Charset cs) {
-            super(cs, 1.1f, 4.0f);
+            super(cs, 1.1f, 3.0f);
         }
 
         public boolean canEncode(char c) {
