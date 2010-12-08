@@ -1403,6 +1403,10 @@ class CommandLineFlags {
           "The exit of a JNI CS necessitating a scavenge also"              \
           " kicks off a bkgrd concurrent collection")                       \
                                                                             \
+  product(uintx, GCLockerEdenExpansionPercent, 5,                           \
+          "How much the GC can expand the eden by while the GC locker  "    \
+          "is active (as a percentage)")                                    \
+                                                                            \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
                                                                             \
