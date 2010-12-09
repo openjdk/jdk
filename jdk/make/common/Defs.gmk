@@ -83,14 +83,19 @@ ifndef CLOSED_SRC
   CLOSED_SRC  = $(BUILDDIR)/../src/closed
 endif
 
-# If we have no closed directory, force it to an openjdk build
-CLOSED_SRC_DIR_EXISTS := $(shell \
-  if [ -d $(CLOSED_SRC) ] ; then \
-    echo true; \
-  else \
-    echo false; \
-  fi)
-ifeq ($(CLOSED_SRC_DIR_EXISTS), false)
+# If CLOSE_SRC_INCLUDED isn't set to true, check if there's any
+# closed directory.
+ifneq ($(CLOSED_SRC_INCLUDED), true)
+  CLOSED_SRC_INCLUDED := $(shell \
+    if [ -d $(CLOSED_SRC) ] ; then \
+      echo true; \
+    else \
+      echo false; \
+    fi)
+endif
+
+# Set OPENJDK based on CLOSED_SRC_INCLUDED
+ifeq ($(CLOSED_SRC_INCLUDED), false)
   OPENJDK = true
 endif
 

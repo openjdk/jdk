@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.foreach.not.supported.in.source
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 class ForeachNotSupported {
     void m(String[] args) {

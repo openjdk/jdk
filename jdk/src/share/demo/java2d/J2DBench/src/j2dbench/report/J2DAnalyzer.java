@@ -61,6 +61,8 @@ public class J2DAnalyzer {
                     "the following result sets are combined into a group");
         out.println("   -NoGroup              "+
                     "the following result sets stand on their own");
+        out.println("   -ShowUncontested      "+
+                    "show results even when only result set has a result");
         out.println("   -Graph                "+
                     "graph the results visually (using lines of *'s)");
         out.println("   -Best                 "+
@@ -83,6 +85,7 @@ public class J2DAnalyzer {
     public static void main(String argv[]) {
         boolean gavehelp = false;
         boolean graph = false;
+        boolean ignoreuncontested = true;
         if (argv.length > 0 && argv[0].equalsIgnoreCase("-html")) {
             String newargs[] = new String[argv.length-1];
             System.arraycopy(argv, 1, newargs, 0, newargs.length);
@@ -97,6 +100,8 @@ public class J2DAnalyzer {
                 results.add(groupHolder);
             } else if (arg.equalsIgnoreCase("-NoGroup")) {
                 groupHolder = null;
+            } else if (arg.equalsIgnoreCase("-ShowUncontested")) {
+                ignoreuncontested = false;
             } else if (arg.equalsIgnoreCase("-Graph")) {
                 graph = true;
             } else if (arg.equalsIgnoreCase("-Best")) {
@@ -171,18 +176,23 @@ public class J2DAnalyzer {
             String key = keys[k];
             ResultHolder rh = base.getResultByKey(key);
             double score = rh.getScore();
-            System.out.println(rh.getShortKey()+":");
             double maxscore = score;
-            if (graph) {
-                for (int i = 0; i < numsets; i++) {
-                    ResultSetHolder rsh =
-                        (ResultSetHolder) results.elementAt(i);
-                    ResultHolder rh2 = rsh.getResultByKey(key);
-                    if (rh2 != null) {
+            int numcontesting = 0;
+            for (int i = 0; i < numsets; i++) {
+                ResultSetHolder rsh =
+                    (ResultSetHolder) results.elementAt(i);
+                ResultHolder rh2 = rsh.getResultByKey(key);
+                if (rh2 != null) {
+                    if (graph) {
                         maxscore = Math.max(maxscore, rh2.getBestScore());
                     }
+                    numcontesting++;
                 }
             }
+            if (ignoreuncontested && numcontesting < 2) {
+                continue;
+            }
+            System.out.println(rh.getShortKey()+":");
             for (int i = 0; i < numsets; i++) {
                 ResultSetHolder rsh = (ResultSetHolder) results.elementAt(i);
                 System.out.print(rsh.getTitle()+": ");
