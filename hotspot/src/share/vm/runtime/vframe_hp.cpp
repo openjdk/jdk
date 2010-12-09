@@ -207,8 +207,8 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
     GrowableArray<MonitorInfo*> *monitors = new GrowableArray<MonitorInfo*>(1);
     // Casting away const
     frame& fr = (frame&) _fr;
-    MonitorInfo* info = new MonitorInfo(fr.compiled_synchronized_native_monitor_owner(nm),
-                                        fr.compiled_synchronized_native_monitor(nm), false, false);
+    MonitorInfo* info = new MonitorInfo(
+        fr.get_native_receiver(), fr.get_native_monitor(), false, false);
     monitors->push(info);
     return monitors;
   }
