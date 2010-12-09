@@ -35,7 +35,7 @@ import java.dyn.*;
 public class Test6991596 {
     private static final Class   CLASS = Test6991596.class;
     private static final String  NAME  = "foo";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = System.getProperty("DEBUG", "false").equals("true");
 
     public static void main(String[] args) throws Throwable {
         testboolean();
@@ -47,7 +47,7 @@ public class Test6991596 {
     }
 
     // Helpers to get various methods.
-    static MethodHandle getmh1(Class ret, Class arg) {
+    static MethodHandle getmh1(Class ret, Class arg) throws NoAccessException {
         return MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(ret, arg));
     }
     static MethodHandle getmh2(MethodHandle mh1, Class ret, Class arg) {
@@ -76,38 +76,38 @@ public class Test6991596 {
             MethodHandle mh2 = getmh2(mh1, boolean.class, boolean.class);
             // TODO add this for all cases when the bugs are fixed.
             //MethodHandle mh3 = getmh3(mh1, boolean.class, boolean.class);
-            boolean a = mh1.<boolean>invokeExact((boolean) x);
-            boolean b = mh2.<boolean>invokeExact(x);
+            boolean a = (boolean) mh1.invokeExact((boolean) x);
+            boolean b = (boolean) mh2.invokeExact(x);
             //boolean c = mh3.<boolean>invokeExact((boolean) x);
-            assert a == b : a + " != " + b;
-            //assert c == x : c + " != " + x;
+            check(x, a, b);
+            //check(x, c, x);
         }
 
         // byte
         {
             MethodHandle mh1 = getmh1(     byte.class,    byte.class   );
             MethodHandle mh2 = getmh2(mh1, byte.class,    boolean.class);
-            byte    a = mh1.<byte>invokeExact((byte) (x ? 1 : 0));
-            byte    b = mh2.<byte>invokeExact(x);
-            assert a == b : a + " != " + b;
+            byte a = (byte) mh1.invokeExact((byte) (x ? 1 : 0));
+            byte b = (byte) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // char
         {
             MethodHandle mh1 = getmh1(     char.class, char.class);
             MethodHandle mh2 = getmh2(mh1, char.class, boolean.class);
-            char a = mh1.<char>invokeExact((char) (x ? 1 : 0));
-            char b = mh2.<char>invokeExact(x);
-            assert a == b : a + " != " + b;
+            char a = (char) mh1.invokeExact((char) (x ? 1 : 0));
+            char b = (char) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // short
         {
             MethodHandle mh1 = getmh1(     short.class, short.class);
             MethodHandle mh2 = getmh2(mh1, short.class, boolean.class);
-            short a = mh1.<short>invokeExact((short) (x ? 1 : 0));
-            short b = mh2.<short>invokeExact(x);
-            assert a == b : a + " != " + b;
+            short a = (short) mh1.invokeExact((short) (x ? 1 : 0));
+            short b = (short) mh2.invokeExact(x);
+            check(x, a, b);
         }
     }
 
@@ -134,36 +134,36 @@ public class Test6991596 {
         {
             MethodHandle mh1 = getmh1(     boolean.class, boolean.class);
             MethodHandle mh2 = getmh2(mh1, boolean.class, byte.class);
-            boolean a = mh1.<boolean>invokeExact((x & 1) == 1);
-            boolean b = mh2.<boolean>invokeExact(x);
-            assert a == b : a + " != " + b;
+            boolean a = (boolean) mh1.invokeExact((x & 1) == 1);
+            boolean b = (boolean) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // byte
         {
             MethodHandle mh1 = getmh1(     byte.class, byte.class);
             MethodHandle mh2 = getmh2(mh1, byte.class, byte.class);
-            byte a = mh1.<byte>invokeExact((byte) x);
-            byte b = mh2.<byte>invokeExact(x);
-            assert a == b : a + " != " + b;
+            byte a = (byte) mh1.invokeExact((byte) x);
+            byte b = (byte) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // char
         {
             MethodHandle mh1 = getmh1(     char.class, char.class);
             MethodHandle mh2 = getmh2(mh1, char.class, byte.class);
-            char a = mh1.<char>invokeExact((char) x);
-            char b = mh2.<char>invokeExact(x);
-            assert a == b : a + " != " + b;
+            char a = (char) mh1.invokeExact((char) x);
+            char b = (char) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // short
         {
             MethodHandle mh1 = getmh1(     short.class, short.class);
             MethodHandle mh2 = getmh2(mh1, short.class, byte.class);
-            short a = mh1.<short>invokeExact((short) x);
-            short b = mh2.<short>invokeExact(x);
-            assert a == b : a + " != " + b;
+            short a = (short) mh1.invokeExact((short) x);
+            short b = (short) mh2.invokeExact(x);
+            check(x, a, b);
         }
     }
 
@@ -188,36 +188,36 @@ public class Test6991596 {
         {
             MethodHandle mh1 = getmh1(     boolean.class, boolean.class);
             MethodHandle mh2 = getmh2(mh1, boolean.class, char.class);
-            boolean a = mh1.<boolean>invokeExact((x & 1) == 1);
-            boolean b = mh2.<boolean>invokeExact(x);
-            assert a == b : a + " != " + b;
+            boolean a = (boolean) mh1.invokeExact((x & 1) == 1);
+            boolean b = (boolean) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // byte
         {
             MethodHandle mh1 = getmh1(     byte.class, byte.class);
             MethodHandle mh2 = getmh2(mh1, byte.class, char.class);
-            byte a = mh1.<byte>invokeExact((byte) x);
-            byte b = mh2.<byte>invokeExact(x);
-            assert a == b : a + " != " + b;
+            byte a = (byte) mh1.invokeExact((byte) x);
+            byte b = (byte) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // char
         {
             MethodHandle mh1 = getmh1(     char.class, char.class);
             MethodHandle mh2 = getmh2(mh1, char.class, char.class);
-            char a = mh1.<char>invokeExact((char) x);
-            char b = mh2.<char>invokeExact(x);
-            assert a == b : a + " != " + b;
+            char a = (char) mh1.invokeExact((char) x);
+            char b = (char) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // short
         {
             MethodHandle mh1 = getmh1(     short.class, short.class);
             MethodHandle mh2 = getmh2(mh1, short.class, char.class);
-            short a = mh1.<short>invokeExact((short) x);
-            short b = mh2.<short>invokeExact(x);
-            assert a == b : a + " != " + b;
+            short a = (short) mh1.invokeExact((short) x);
+            short b = (short) mh2.invokeExact(x);
+            check(x, a, b);
         }
     }
 
@@ -248,36 +248,36 @@ public class Test6991596 {
         {
             MethodHandle mh1 = getmh1(     boolean.class, boolean.class);
             MethodHandle mh2 = getmh2(mh1, boolean.class, short.class);
-            boolean a = mh1.<boolean>invokeExact((x & 1) == 1);
-            boolean b = mh2.<boolean>invokeExact(x);
-            assert a == b : a + " != " + b;
+            boolean a = (boolean) mh1.invokeExact((x & 1) == 1);
+            boolean b = (boolean) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // byte
         {
             MethodHandle mh1 = getmh1(     byte.class, byte.class);
             MethodHandle mh2 = getmh2(mh1, byte.class, short.class);
-            byte a = mh1.<byte>invokeExact((byte) x);
-            byte b = mh2.<byte>invokeExact(x);
-            assert a == b : a + " != " + b;
+            byte a = (byte) mh1.invokeExact((byte) x);
+            byte b = (byte) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // char
         {
             MethodHandle mh1 = getmh1(     char.class, char.class);
             MethodHandle mh2 = getmh2(mh1, char.class, short.class);
-            char a = mh1.<char>invokeExact((char) x);
-            char b = mh2.<char>invokeExact(x);
-            assert a == b : a + " != " + b;
+            char a = (char) mh1.invokeExact((char) x);
+            char b = (char) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // short
         {
             MethodHandle mh1 = getmh1(     short.class, short.class);
             MethodHandle mh2 = getmh2(mh1, short.class, short.class);
-            short a = mh1.<short>invokeExact((short) x);
-            short b = mh2.<short>invokeExact(x);
-            assert a == b : a + " != " + b;
+            short a = (short) mh1.invokeExact((short) x);
+            short b = (short) mh2.invokeExact(x);
+            check(x, a, b);
         }
     }
 
@@ -316,45 +316,46 @@ public class Test6991596 {
         {
             MethodHandle mh1 = getmh1(     boolean.class, boolean.class);
             MethodHandle mh2 = getmh2(mh1, boolean.class, int.class);
-            boolean a = mh1.<boolean>invokeExact((x & 1) == 1);
-            boolean b = mh2.<boolean>invokeExact(x);
-            assert a == b : a + " != " + b;
+            boolean a = (boolean) mh1.invokeExact((x & 1) == 1);
+            boolean b = (boolean) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // byte
         {
             MethodHandle mh1 = getmh1(     byte.class, byte.class);
             MethodHandle mh2 = getmh2(mh1, byte.class, int.class);
-            byte a = mh1.<byte>invokeExact((byte) x);
-            byte b = mh2.<byte>invokeExact(x);
-            assert a == b : a + " != " + b;
+            byte a = (byte) mh1.invokeExact((byte) x);
+            byte b = (byte) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // char
         {
             MethodHandle mh1 = getmh1(     char.class, char.class);
             MethodHandle mh2 = getmh2(mh1, char.class, int.class);
-            char a = mh1.<char>invokeExact((char) x);
-            char b = mh2.<char>invokeExact(x);
-            assert a == b : a + " != " + b;
+            char a = (char) mh1.invokeExact((char) x);
+            char b = (char) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // short
         {
             MethodHandle mh1 = getmh1(     short.class, short.class);
             MethodHandle mh2 = getmh2(mh1, short.class, int.class);
-            short a = mh1.<short>invokeExact((short) x);
-            short b = mh2.<short>invokeExact(x);
+            short a = (short) mh1.invokeExact((short) x);
+            short b = (short) mh2.invokeExact(x);
             assert a == b : a + " != " + b;
+            check(x, a, b);
         }
 
         // int
         {
             MethodHandle mh1 = getmh1(     int.class, int.class);
             MethodHandle mh2 = getmh2(mh1, int.class, int.class);
-            int a = mh1.<int>invokeExact((int) x);
-            int b = mh2.<int>invokeExact(x);
-            assert a == b : a + " != " + b;
+            int a = (int) mh1.invokeExact((int) x);
+            int b = (int) mh2.invokeExact(x);
+            check(x, a, b);
         }
     }
 
@@ -395,48 +396,65 @@ public class Test6991596 {
         {
             MethodHandle mh1 = getmh1(     boolean.class, boolean.class);
             MethodHandle mh2 = getmh2(mh1, boolean.class, long.class);
-            boolean a = mh1.<boolean>invokeExact((x & 1L) == 1L);
-            boolean b = mh2.<boolean>invokeExact(x);
-            assert a == b : a + " != " + b;
+            boolean a = (boolean) mh1.invokeExact((x & 1L) == 1L);
+            boolean b = (boolean) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // byte
         {
             MethodHandle mh1 = getmh1(     byte.class, byte.class);
             MethodHandle mh2 = getmh2(mh1, byte.class, long.class);
-            byte a = mh1.<byte>invokeExact((byte) x);
-            byte b = mh2.<byte>invokeExact(x);
-            assert a == b : a + " != " + b;
+            byte a = (byte) mh1.invokeExact((byte) x);
+            byte b = (byte) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // char
         {
             MethodHandle mh1 = getmh1(     char.class, char.class);
             MethodHandle mh2 = getmh2(mh1, char.class, long.class);
-            char a = mh1.<char>invokeExact((char) x);
-            char b = mh2.<char>invokeExact(x);
-            assert a == b : a + " != " + b;
+            char a = (char) mh1.invokeExact((char) x);
+            char b = (char) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // short
         {
             MethodHandle mh1 = getmh1(     short.class, short.class);
             MethodHandle mh2 = getmh2(mh1, short.class, long.class);
-            short a = mh1.<short>invokeExact((short) x);
-            short b = mh2.<short>invokeExact(x);
-            assert a == b : a + " != " + b;
+            short a = (short) mh1.invokeExact((short) x);
+            short b = (short) mh2.invokeExact(x);
+            check(x, a, b);
         }
 
         // int
         {
             MethodHandle mh1 = getmh1(     int.class, int.class);
             MethodHandle mh2 = getmh2(mh1, int.class, long.class);
-            int a = mh1.<int>invokeExact((int) x);
-            int b = mh2.<int>invokeExact(x);
-            assert a == b : a + " != " + b;
+            int a = (int) mh1.invokeExact((int) x);
+            int b = (int) mh2.invokeExact(x);
+            check(x, a, b);
         }
-
     }
+
+    static void check(boolean x, boolean e, boolean a) { p(z2h(x), z2h(e), z2h(a)); assert e == a : z2h(x) + ": " + z2h(e) + " != " + z2h(a); }
+    static void check(boolean x, byte    e, byte    a) { p(z2h(x), i2h(e), i2h(a)); assert e == a : z2h(x) + ": " + i2h(e) + " != " + i2h(a); }
+    static void check(boolean x, int     e, int     a) { p(z2h(x), i2h(e), i2h(a)); assert e == a : z2h(x) + ": " + i2h(e) + " != " + i2h(a); }
+
+    static void check(int     x, boolean e, boolean a) { p(i2h(x), z2h(e), z2h(a)); assert e == a : i2h(x) + ": " + z2h(e) + " != " + z2h(a); }
+    static void check(int     x, byte    e, byte    a) { p(i2h(x), i2h(e), i2h(a)); assert e == a : i2h(x) + ": " + i2h(e) + " != " + i2h(a); }
+    static void check(int     x, int     e, int     a) { p(i2h(x), i2h(e), i2h(a)); assert e == a : i2h(x) + ": " + i2h(e) + " != " + i2h(a); }
+
+    static void check(long    x, boolean e, boolean a) { p(l2h(x), z2h(e), z2h(a)); assert e == a : l2h(x) + ": " + z2h(e) + " != " + z2h(a); }
+    static void check(long    x, byte    e, byte    a) { p(l2h(x), i2h(e), i2h(a)); assert e == a : l2h(x) + ": " + i2h(e) + " != " + i2h(a); }
+    static void check(long    x, int     e, int     a) { p(l2h(x), i2h(e), i2h(a)); assert e == a : l2h(x) + ": " + i2h(e) + " != " + i2h(a); }
+
+    static void p(String x, String e, String a) { if (DEBUG)  System.out.println(x + ": expected: " + e + ", actual: " + a); }
+
+    static String z2h(boolean x) { return x ? "1" : "0"; }
+    static String i2h(int     x) { return Integer.toHexString(x); }
+    static String l2h(long    x) { return Long.toHexString(x); }
 
     // to int
     public static boolean foo(boolean i) { return i; }

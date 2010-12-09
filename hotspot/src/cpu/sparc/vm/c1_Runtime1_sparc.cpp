@@ -612,7 +612,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // load the klass and check the has finalizer flag
         Label register_finalizer;
         Register t = O1;
-        __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), t);
+        __ load_klass(O0, t);
         __ ld(t, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc), t);
         __ set(JVM_ACC_HAS_FINALIZER, G3);
         __ andcc(G3, t, G0);

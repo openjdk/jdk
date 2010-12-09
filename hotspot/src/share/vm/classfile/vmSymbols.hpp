@@ -132,6 +132,7 @@
   template(tag_runtime_invisible_parameter_annotations,"RuntimeInvisibleParameterAnnotations")    \
   template(tag_annotation_default,                    "AnnotationDefault")                        \
   template(tag_enclosing_method,                      "EnclosingMethod")                          \
+  template(tag_bootstrap_methods,                     "BootstrapMethods")                         \
                                                                                                   \
   /* exception klasses: at least all exceptions thrown by the VM have entries here */             \
   template(java_lang_ArithmeticException,             "java/lang/ArithmeticException")            \

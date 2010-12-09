@@ -80,9 +80,6 @@ protected:
   static bool  is_sparc64(int features) { return (features & fmaf_instructions_m) != 0; }
 
   static int maximum_niagara1_processor_count() { return 32; }
-  // Returns true if the platform is in the niagara line and
-  // newer than the niagara1.
-  static bool is_niagara1_plus();
 
 public:
   // Initialization
@@ -105,6 +102,9 @@ public:
   static bool is_ultra3()               { return (_features & ultra3_m) == ultra3_m; }
   static bool is_sun4v()                { return (_features & sun4v_m) != 0; }
   static bool is_niagara1()             { return is_niagara1(_features); }
+  // Returns true if the platform is in the niagara line and
+  // newer than the niagara1.
+  static bool is_niagara1_plus();
   static bool is_sparc64()              { return is_sparc64(_features); }
 
   static bool has_fast_fxtof()          { return has_v9() && !is_ultra3(); }

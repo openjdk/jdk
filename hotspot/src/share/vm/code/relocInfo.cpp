@@ -1093,8 +1093,8 @@ void RelocIterator::print_current() {
     tty->print_cr("(no relocs)");
     return;
   }
-  tty->print("relocInfo@" INTPTR_FORMAT " [type=%d(%s) addr=" INTPTR_FORMAT,
-             _current, type(), reloc_type_string((relocInfo::relocType) type()), _addr);
+  tty->print("relocInfo@" INTPTR_FORMAT " [type=%d(%s) addr=" INTPTR_FORMAT " offset=%d",
+             _current, type(), reloc_type_string((relocInfo::relocType) type()), _addr, _current->addr_offset());
   if (current()->format() != 0)
     tty->print(" format=%d", current()->format());
   if (datalen() == 1) {
