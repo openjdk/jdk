@@ -155,11 +155,26 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     // This assumes that all prototype bits fit in an int32_t
     movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markOopDesc::prototype());
   }
+#ifdef _LP64
+  if (UseCompressedOops) { // Take care not to kill klass
+    movptr(t1, klass);
+    encode_heap_oop_not_null(t1);
+    movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
+  } else
+#endif
+  {
+    movptr(Address(obj, oopDesc::klass_offset_in_bytes()), klass);
+  }
 
-  movptr(Address(obj, oopDesc::klass_offset_in_bytes()), klass);
   if (len->is_valid()) {
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
   }
+#ifdef _LP64
+  else if (UseCompressedOops) {
+    xorptr(t1, t1);
+    store_klass_gap(obj, t1);
+  }
+#endif
 }
 
 
@@ -230,7 +245,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   initialize_header(obj, klass, noreg, t1, t2);
 
@@ -317,13 +332,19 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   // check against inline cache
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
   int start_offset = offset();
-  cmpptr(iCache, Address(receiver, oopDesc::klass_offset_in_bytes()));
+
+  if (UseCompressedOops) {
+    load_klass(rscratch1, receiver);
+    cmpptr(rscratch1, iCache);
+  } else {
+    cmpptr(iCache, Address(receiver, oopDesc::klass_offset_in_bytes()));
+  }
   // if icache check fails, then jump to runtime routine
   // Note: RECEIVER must still contain the receiver!
   jump_cc(Assembler::notEqual,
           RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  assert(offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
+  assert(UseCompressedOops || offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
 }
 
 

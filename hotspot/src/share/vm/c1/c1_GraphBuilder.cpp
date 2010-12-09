@@ -2795,7 +2795,7 @@ void GraphBuilder::setup_osr_entry_block() {
       get = append(new UnsafeGetRaw(as_BasicType(local->type()), e,
                                     append(new Constant(new IntConstant(offset))),
                                     0,
-                                    true));
+                                    true /*unaligned*/, true /*wide*/));
     }
     _state->store_local(index, get);
   }
@@ -3377,6 +3377,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
     INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
   }
 
+  if (is_profiling() && !callee->ensure_method_data()) {
+    INLINE_BAILOUT("mdo allocation failed");
+  }
 #ifndef PRODUCT
       // printing
   if (PrintInlining) {
