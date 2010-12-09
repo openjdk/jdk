@@ -163,6 +163,12 @@ public abstract class Trees {
     public abstract Scope getScope(TreePath path);
 
     /**
+     * Gets the doc comment, if any, for the Tree node identified by a given TreePath.
+     * Returns null if no doc comment was found.
+     */
+    public abstract String getDocComment(TreePath path);
+
+    /**
      * Checks whether a given type is accessible in a given scope.
      * @param scope the scope to be checked
      * @param type the type to be checked
