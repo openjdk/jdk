@@ -2060,7 +2060,6 @@ void G1CollectedHeap::ref_processing_init() {
   _ref_processor = ReferenceProcessor::create_ref_processor(
                                          mr,    // span
                                          false, // Reference discovery is not atomic
-                                                // (though it shouldn't matter here.)
                                          true,  // mt_discovery
                                          NULL,  // is alive closure: need to fill this in for efficiency
                                          ParallelGCThreads,
