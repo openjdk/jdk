@@ -51,6 +51,7 @@ import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -369,6 +370,15 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
         werror        = options.isSet(WERROR);
+
+        if (source.compareTo(Source.DEFAULT) < 0) {
+            if (options.isUnset(XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option)) {
+                if (fileManager instanceof BaseFileManager) {
+                    if (((BaseFileManager) fileManager).isDefaultBootClassPath())
+                        log.warning(LintCategory.OPTIONS, "source.no.bootclasspath", source.name);
+                }
+            }
+        }
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
@@ -783,6 +793,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         hasBeenUsed = true;
 
         start_msec = now();
+
         try {
             initProcessAnnotations(processors);
 
@@ -797,7 +808,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             elapsed_msec = delegateCompiler.elapsed_msec;
         } catch (Abort ex) {
             if (devVerbose)
-                ex.printStackTrace();
+                ex.printStackTrace(System.err);
         } finally {
             if (procEnvImpl != null)
                 procEnvImpl.close();
@@ -841,7 +852,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             }
         } catch (Abort ex) {
             if (devVerbose)
-                ex.printStackTrace();
+                ex.printStackTrace(System.err);
         }
 
         if (verbose) {

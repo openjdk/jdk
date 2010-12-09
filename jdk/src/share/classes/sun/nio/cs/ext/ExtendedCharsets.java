@@ -778,6 +778,13 @@ public class ExtendedCharsets
                     "csIBM500"
                 });
 
+        charset("x-IBM833", "IBM833",
+                new String[] {
+                     "cp833",
+                     "ibm833",
+                     "ibm-833"
+                 });
+
         //EBCDIC DBCS-only Korean
         charset("x-IBM834", "IBM834",
                 new String[] {
