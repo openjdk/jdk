@@ -1,0 +1,3 @@
+T6476118c.java:18:21: compiler.err.name.clash.same.erasure.no.override: foo(java.lang.Object), T6476118b.C, foo(T), T6476118b.A
+T6476118c.java:19:21: compiler.err.name.clash.same.erasure.no.override: foo(java.lang.Number), T6476118b.C, foo(T), T6476118b.B
+2 errors
