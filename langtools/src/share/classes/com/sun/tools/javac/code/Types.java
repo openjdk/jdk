@@ -2026,7 +2026,7 @@ public class Types {
                 TypeSymbol c = t.tsym;
                 for (Scope.Entry e = c.members().lookup(ms.name, implFilter);
                      e.scope != null;
-                     e = e.next()) {
+                     e = e.next(implFilter)) {
                     if (e.sym != null &&
                              e.sym.overrides(ms, origin, types, checkResult))
                         return (MethodSymbol)e.sym;
