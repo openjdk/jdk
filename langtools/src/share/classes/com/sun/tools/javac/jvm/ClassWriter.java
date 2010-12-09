@@ -1168,7 +1168,7 @@ public class ClassWriter extends ClassFile {
                 VarSymbol sym = var.sym;
                 databuf.appendChar(pool.put(sym.name));
                 Type vartype = sym.erasure(types);
-                if (!types.isSameType(sym.type, vartype))
+                if (needsLocalVariableTypeEntry(sym.type))
                     nGenericVars++;
                 databuf.appendChar(pool.put(typeSig(vartype)));
                 databuf.appendChar(var.reg);
@@ -1185,7 +1185,7 @@ public class ClassWriter extends ClassFile {
             for (int i=0; i<code.varBufferSize; i++) {
                 Code.LocalVar var = code.varBuffer[i];
                 VarSymbol sym = var.sym;
-                if (types.isSameType(sym.type, sym.erasure(types)))
+                if (!needsLocalVariableTypeEntry(sym.type))
                     continue;
                 count++;
                 // write variable info
@@ -1208,6 +1208,14 @@ public class ClassWriter extends ClassFile {
             acount++;
         }
         endAttrs(acountIdx, acount);
+    }
+    //where
+    private boolean needsLocalVariableTypeEntry(Type t) {
+        //a local variable needs a type-entry if its type T is generic
+        //(i.e. |T| != T) and if it's not an intersection type (not supported
+        //in signature attribute grammar)
+        return (!types.isSameType(t, types.erasure(t)) &&
+                !t.isCompound());
     }
 
     void writeStackMap(Code code) {
