@@ -1033,12 +1033,7 @@ public class Types {
                                 && !disjointTypes(aHigh.allparams(), lowSub.allparams())
                                 && !disjointTypes(aLow.allparams(), highSub.allparams())
                                 && !disjointTypes(aLow.allparams(), lowSub.allparams())) {
-                                if (s.isInterface() &&
-                                        !t.isInterface() &&
-                                        t.isFinal() &&
-                                        !isSubtype(t, s)) {
-                                    return false;
-                                } else if (upcast ? giveWarning(a, b) :
+                                if (upcast ? giveWarning(a, b) :
                                     giveWarning(b, a))
                                     warnStack.head.warnUnchecked();
                                 return true;
@@ -3377,8 +3372,8 @@ public class Types {
         public Type visitCapturedType(CapturedType t, Void s) {
             Type bound = visitWildcardType(t.wildcard, null);
             return (bound.contains(t)) ?
-                    (high ? syms.objectType : syms.botType) :
-                        bound;
+                    erasure(bound) :
+                    bound;
         }
 
         @Override
@@ -3386,7 +3381,7 @@ public class Types {
             if (rewriteTypeVars) {
                 Type bound = high ?
                     (t.bound.contains(t) ?
-                        syms.objectType :
+                        erasure(t.bound) :
                         visit(t.bound)) :
                     syms.botType;
                 return rewriteAsWildcardType(bound, t);
