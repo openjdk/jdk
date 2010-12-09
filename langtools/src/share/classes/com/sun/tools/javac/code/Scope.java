@@ -495,6 +495,11 @@ public class Scope {
             return shadowed;
         }
 
+        public Entry next(Filter<Symbol> sf) {
+            if (shadowed.sym == null || sf.accepts(shadowed.sym)) return shadowed;
+            else return shadowed.next(sf);
+        }
+
         public Scope getOrigin() {
             // The origin is only recorded for import scopes.  For all
             // other scope entries, the "enclosing" type is available

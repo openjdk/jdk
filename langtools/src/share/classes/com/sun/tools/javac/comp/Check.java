@@ -1668,12 +1668,6 @@ public class Check {
                     checkOverride(tree, m, (MethodSymbol)e.sym, origin);
                 }
             }
-            else if (!checkNameClash(origin, e.sym, m)) {
-                log.error(tree,
-                            "name.clash.same.erasure.no.override",
-                            m, m.location(),
-                            e.sym, e.sym.location());
-            }
             e = e.next();
         }
     }
@@ -2019,6 +2013,60 @@ public class Check {
                     return;
                 }
             }
+        }
+    }
+
+    /** Check that all non-override equivalent methods accessible from 'site'
+     *  are mutually compatible (JLS 8.4.8/9.4.1).
+     *
+     *  @param pos  Position to be used for error reporting.
+     *  @param site The class whose methods are checked.
+     *  @param sym  The method symbol to be checked.
+     */
+    void checkClashes(DiagnosticPosition pos, Type site, Symbol sym) {
+        List<Type> supertypes = types.closure(site);
+        for (List<Type> l = supertypes; l.nonEmpty(); l = l.tail) {
+            for (List<Type> m = supertypes; m.nonEmpty(); m = m.tail) {
+                checkClashes(pos, l.head, m.head, site, sym);
+            }
+        }
+    }
+
+    /** Reports an error whenever 'sym' seen as a member of type 't1' clashes with
+     *  some unrelated method defined in 't2'.
+     */
+    private void checkClashes(DiagnosticPosition pos, Type t1, Type t2, Type site, Symbol s1) {
+        ClashFilter cf = new ClashFilter(site);
+        s1 = ((MethodSymbol)s1).implementedIn(t1.tsym, types);
+        if (s1 == null) return;
+        Type st1 = types.memberType(site, s1);
+        for (Scope.Entry e2 = t2.tsym.members().lookup(s1.name, cf); e2.scope != null; e2 = e2.next(cf)) {
+            Symbol s2 = e2.sym;
+            if (s1 == s2) continue;
+            Type st2 = types.memberType(site, s2);
+            if (!types.overrideEquivalent(st1, st2) &&
+                    !checkNameClash((ClassSymbol)site.tsym, s1, s2)) {
+                log.error(pos,
+                        "name.clash.same.erasure.no.override",
+                        s1, s1.location(),
+                        s2, s2.location());
+            }
+        }
+    }
+    //where
+    private class ClashFilter implements Filter<Symbol> {
+
+        Type site;
+
+        ClashFilter(Type site) {
+            this.site = site;
+        }
+
+        public boolean accepts(Symbol s) {
+            return s.kind == MTH &&
+                    (s.flags() & SYNTHETIC) == 0 &&
+                    s.isInheritedIn(site.tsym, types) &&
+                    !s.isConstructor();
         }
     }
 
