@@ -345,6 +345,7 @@ class ReferenceProcessor : public CHeapObj {
 
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
+  void verify_referent(oop obj)        PRODUCT_RETURN;
   static void verify();
 
   // clear the discovered lists (unlinking each entry).
