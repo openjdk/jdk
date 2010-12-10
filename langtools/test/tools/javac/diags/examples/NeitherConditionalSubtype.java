@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.neither.conditional.subtype
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 class X {
     Object m(boolean b) {

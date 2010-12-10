@@ -57,8 +57,11 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
 
     private native void run(String title, int mode, String dir, String file,
             FilenameFilter filter, boolean isMultipleMode);
-
     private native void quit();
+
+    @Override
+    public native void toFront();
+
 
     /**
      * Called exclusively by the native C code.

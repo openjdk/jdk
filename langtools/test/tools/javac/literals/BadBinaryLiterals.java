@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 6860965
  * @summary Project Coin: binary literals
- * @compile/fail/ref=BadBinaryLiterals.6.out -XDrawDiagnostics -source 6 BadBinaryLiterals.java
+ * @compile/fail/ref=BadBinaryLiterals.6.out -XDrawDiagnostics -source 6 -Xlint:-options BadBinaryLiterals.java
  * @compile/fail/ref=BadBinaryLiterals.7.out -XDrawDiagnostics BadBinaryLiterals.java
  */
 
