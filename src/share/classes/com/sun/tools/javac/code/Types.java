@@ -1318,6 +1318,13 @@ public class Types {
         }
     }
 
+    public Type elemtypeOrType(Type t) {
+        Type elemtype = elemtype(t);
+        return elemtype != null ?
+            elemtype :
+            t;
+    }
+
     /**
      * Mapping to take element type of an arraytype
      */
