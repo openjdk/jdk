@@ -25,7 +25,9 @@
 #------------------------------------------------------------------------
 # CC, CPP & AS
 
-ifdef ALT_COMPILER_PATH
+# When cross-compiling the ALT_COMPILER_PATH points
+# to the cross-compilation toolset
+ifdef CROSS_COMPILE_ARCH
 CPP = $(ALT_COMPILER_PATH)/g++
 CC  = $(ALT_COMPILER_PATH)/gcc
 else
