@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.try.with.resources.not.supported.in.source
-// options: -source 1.6
+// options: -source 1.6 -Xlint:-options
 
 import java.io.*;
 
