@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,11 +180,15 @@ import java.util.Locale;
  *
  * <p><strong>Examples</strong>
  * <p>Simple:     "&lt; a &lt; b &lt; c &lt; d"
- * <p>Norwegian:  "&lt; a,A&lt; b,B&lt; c,C&lt; d,D&lt; e,E&lt; f,F&lt; g,G&lt; h,H&lt; i,I&lt; j,J
- *                 &lt; k,K&lt; l,L&lt; m,M&lt; n,N&lt; o,O&lt; p,P&lt; q,Q&lt; r,R&lt; s,S&lt; t,T
- *                 &lt; u,U&lt; v,V&lt; w,W&lt; x,X&lt; y,Y&lt; z,Z
- *                 &lt; &#92;u00E5=a&#92;u030A,&#92;u00C5=A&#92;u030A
- *                 ;aa,AA&lt; &#92;u00E6,&#92;u00C6&lt; &#92;u00F8,&#92;u00D8"
+ * <p>Norwegian:  "&lt; a, A &lt; b, B &lt; c, C &lt; d, D &lt; e, E &lt; f, F
+ *                 &lt; g, G &lt; h, H &lt; i, I &lt; j, J &lt; k, K &lt; l, L
+ *                 &lt; m, M &lt; n, N &lt; o, O &lt; p, P &lt; q, Q &lt; r, R
+ *                 &lt; s, S &lt; t, T &lt; u, U &lt; v, V &lt; w, W &lt; x, X
+ *                 &lt; y, Y &lt; z, Z
+ *                 &lt; &#92;u00E6, &#92;u00C6
+ *                 &lt; &#92;u00F8, &#92;u00D8
+ *                 &lt; &#92;u00E5 = a&#92;u030A, &#92;u00C5 = A&#92;u030A;
+ *                      aa, AA"
  *
  * <p>
  * To create a <code>RuleBasedCollator</code> object with specialized
@@ -199,11 +203,14 @@ import java.util.Locale;
  * Or:
  * <blockquote>
  * <pre>
- * String Norwegian = "&lt; a,A&lt; b,B&lt; c,C&lt; d,D&lt; e,E&lt; f,F&lt; g,G&lt; h,H&lt; i,I&lt; j,J" +
- *                 "&lt; k,K&lt; l,L&lt; m,M&lt; n,N&lt; o,O&lt; p,P&lt; q,Q&lt; r,R&lt; s,S&lt; t,T" +
- *                 "&lt; u,U&lt; v,V&lt; w,W&lt; x,X&lt; y,Y&lt; z,Z" +
- *                 "&lt; &#92;u00E5=a&#92;u030A,&#92;u00C5=A&#92;u030A" +
- *                 ";aa,AA&lt; &#92;u00E6,&#92;u00C6&lt; &#92;u00F8,&#92;u00D8";
+ * String Norwegian = "&lt; a, A &lt; b, B &lt; c, C &lt; d, D &lt; e, E &lt; f, F &lt; g, G &lt; h, H &lt; i, I" +
+ *                    "&lt; j, J &lt; k, K &lt; l, L &lt; m, M &lt; n, N &lt; o, O &lt; p, P &lt; q, Q &lt; r, R" +
+ *                    "&lt; s, S &lt; t, T &lt; u, U &lt; v, V &lt; w, W &lt; x, X &lt; y, Y &lt; z, Z" +
+ *                    "&lt; &#92;u00E6, &#92;u00C6" +     // Latin letter ae & AE
+ *                    "&lt; &#92;u00F8, &#92;u00D8" +     // Latin letter o & O with stroke
+ *                    "&lt; &#92;u00E5 = a&#92;u030A," +  // Latin letter a with ring above
+ *                    "  &#92;u00C5 = A&#92;u030A;" +  // Latin letter A with ring above
+ *                    "  aa, AA";
  * RuleBasedCollator myNorwegian = new RuleBasedCollator(Norwegian);
  * </pre>
  * </blockquote>
