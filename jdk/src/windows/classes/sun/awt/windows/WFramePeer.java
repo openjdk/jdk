@@ -79,8 +79,48 @@ class WFramePeer extends WWindowPeer implements FramePeer {
         if (b == null) {
             clearMaximizedBounds();
         } else {
-            setMaximizedBounds(b.x, b.y, b.width, b.height);
+            Rectangle adjBounds = (Rectangle)b.clone();
+            adjustMaximizedBounds(adjBounds);
+            setMaximizedBounds(adjBounds.x, adjBounds.y, adjBounds.width, adjBounds.height);
         }
+    }
+
+    /**
+     * The incoming bounds describe the maximized size and position of the
+     * window on the monitor that displays the window. But the window manager
+     * expects that the bounds are based on the size and position of the
+     * primary monitor, even if the window ultimately maximizes onto a
+     * secondary monitor. And the window manager adjusts these values to
+     * compensate for differences between the primary monitor and the monitor
+     * that displays the window.
+     * The method translates the incoming bounds to the values acceptable
+     * by the window manager. For more details, please refer to 6699851.
+     */
+    private void adjustMaximizedBounds(Rectangle b) {
+        GraphicsConfiguration currentDevGC = getGraphicsConfiguration();
+
+        GraphicsDevice primaryDev = GraphicsEnvironment
+            .getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        GraphicsConfiguration primaryDevGC = primaryDev.getDefaultConfiguration();
+
+        if (currentDevGC != null && currentDevGC != primaryDevGC) {
+            Rectangle currentDevBounds = currentDevGC.getBounds();
+            Rectangle primaryDevBounds = primaryDevGC.getBounds();
+
+            b.width -= (currentDevBounds.width - primaryDevBounds.width);
+            b.height -= (currentDevBounds.height - primaryDevBounds.height);
+        }
+    }
+
+    @Override
+    public boolean updateGraphicsData(GraphicsConfiguration gc) {
+        boolean result = super.updateGraphicsData(gc);
+        Rectangle bounds = AWTAccessor.getFrameAccessor().
+                               getMaximizedBounds((Frame)target);
+        if (bounds != null) {
+            setMaximizedBounds(bounds);
+        }
+        return result;
     }
 
     @Override

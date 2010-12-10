@@ -21,11 +21,29 @@
  * questions.
  */
 
-// key: compiler.err.unsupported.exotic.id
-// options: -source 6
+/*
+ * @test
+ * @bug 6993963
+ * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
+ * @compile Pos07.java
+ */
 
-class UnsupportedExoticID {
-    void m() {
-        Object #"Hello!" = null;
+class Pos07 {
+
+    static class A extends Exception { public void m() {}; public Object f;}
+    static class B1 extends A {}
+    static class B2 extends A {}
+
+    void m() throws B1, B2 {
+        try {
+            if (true) {
+                throw new B1();
+            }
+            else {
+                throw new B2();
+            }
+        } catch (Exception ex) { //effectively final analysis
+            throw ex;
+        }
     }
 }

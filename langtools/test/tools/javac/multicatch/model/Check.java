@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.empty.bytecode.ident
-
-class EmptyBytecodeIdent {
-    int #"" = 3;
-}
+/**
+ * Annotation used by ModelChecker to mark the class whose model is to be checked
+ */
+@interface Check {}

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,18 +23,24 @@
  * questions.
  */
 
-// key: compiler.err.multicatch.param.must.be.final
+package sun.io;
 
-class MulticatchMustBeFinal {
-    void e1() throws NullPointerException { }
-    void e2() throws IllegalArgumentException { }
+import sun.nio.cs.ext.IBM833;
 
-    void m() {
-        try {
-            e1();
-            e2();
-        } catch (NullPointerException | IllegalArgumentException e) {
-            e.printStackTrace();
-        }
+public class CharToByteCp833 extends CharToByteSingleByte {
+
+    private final static IBM833 nioCoder = new IBM833();
+
+    public String getCharacterEncoding() {
+        return "Cp833";
+    }
+
+    public CharToByteCp833() {
+        super.mask1 = 0xFF00;
+        super.mask2 = 0x00FF;
+        super.shift = 8;
+        super.index1 = nioCoder.getEncoderIndex1();
+        super.index2 = nioCoder.getEncoderIndex2();
     }
 }
+
