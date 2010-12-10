@@ -52,6 +52,7 @@ import com.sun.source.tree.Tree;
 public abstract class Trees {
     /**
      * Gets a Trees object for a given CompilationTask.
+     * @param task the compilation task for which to get the Trees object
      * @throws IllegalArgumentException if the task does not support the Trees API.
      */
     public static Trees instance(CompilationTask task) {
@@ -61,7 +62,8 @@ public abstract class Trees {
     }
 
     /**
-     * Gets a Trees object for a given CompilationTask.
+     * Gets a Trees object for a given ProcessingEnvironment.
+     * @param env the processing environment for which to get the Trees object
      * @throws IllegalArgumentException if the env does not support the Trees API.
      */
     public static Trees instance(ProcessingEnvironment env) {
