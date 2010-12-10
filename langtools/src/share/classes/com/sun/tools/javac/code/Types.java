@@ -1080,7 +1080,8 @@ public class Types {
                 case CLASS:
                     return isSubtype(t, s);
                 case ARRAY:
-                    if (elemtype(t).tag <= lastBaseTag) {
+                    if (elemtype(t).tag <= lastBaseTag ||
+                            elemtype(s).tag <= lastBaseTag) {
                         return elemtype(t).tag == elemtype(s).tag;
                     } else {
                         return visit(elemtype(t), elemtype(s));
