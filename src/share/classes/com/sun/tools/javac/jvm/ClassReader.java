@@ -877,7 +877,7 @@ public class ClassReader implements Completer {
 
     protected enum AttributeKind { CLASS, MEMBER };
     protected abstract class AttributeReader {
-        AttributeReader(Name name, Version version, Set<AttributeKind> kinds) {
+        AttributeReader(Name name, ClassFile.Version version, Set<AttributeKind> kinds) {
             this.name = name;
             this.version = version;
             this.kinds = kinds;
@@ -905,7 +905,7 @@ public class ClassReader implements Completer {
         abstract void read(Symbol sym, int attrLen);
 
         final Name name;
-        final Version version;
+        final ClassFile.Version version;
         final Set<AttributeKind> kinds;
     }
 
