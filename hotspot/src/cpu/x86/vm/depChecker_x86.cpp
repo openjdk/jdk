@@ -25,6 +25,5 @@
 #include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
 #include "depChecker_x86.hpp"
-#include "runtime/hpi.hpp"
 
 // Nothing to do on i486

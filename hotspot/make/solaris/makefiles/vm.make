@@ -189,7 +189,7 @@ endef
 
 Src_Files := $(foreach e,$(Src_Dirs),$(call findsrc,$(e)))
 
-Obj_Files = $(addsuffix .o,$(basename $(Src_Files)))
+Obj_Files = $(sort $(addsuffix .o,$(basename $(Src_Files))))
 
 JVM_OBJ_FILES = $(Obj_Files) $(DTRACE_OBJS)
 

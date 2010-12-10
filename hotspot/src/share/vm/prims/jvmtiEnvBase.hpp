@@ -66,7 +66,8 @@ class JvmtiEnvBase : public CHeapObj {
 
   enum {
     JDK15_JVMTI_VERSION = JVMTI_VERSION_1_0 +  33,  /* version: 1.0.33  */
-    JDK16_JVMTI_VERSION = JVMTI_VERSION_1_1 + 102   /* version: 1.1.102 */
+    JDK16_JVMTI_VERSION = JVMTI_VERSION_1_1 + 102,  /* version: 1.1.102 */
+    JDK17_JVMTI_VERSION = JVMTI_VERSION_1_2 +   1   /* version: 1.2.1   */
   };
 
   static jvmtiPhase  get_phase()                    { return _phase; }
@@ -136,6 +137,7 @@ class JvmtiEnvBase : public CHeapObj {
 
   bool use_version_1_0_semantics();  // agent asked for version 1.0
   bool use_version_1_1_semantics();  // agent asked for version 1.1
+  bool use_version_1_2_semantics();  // agent asked for version 1.2
 
   bool is_retransformable()                        { return _is_retransformable; }
 

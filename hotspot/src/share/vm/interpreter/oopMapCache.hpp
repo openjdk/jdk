@@ -26,6 +26,7 @@
 #define SHARE_VM_INTERPRETER_OOPMAPCACHE_HPP
 
 #include "oops/generateOopMap.hpp"
+#include "runtime/mutex.hpp"
 
 // A Cache for storing (method, bci) -> oopMap.
 // The memory management system uses the cache when locating object

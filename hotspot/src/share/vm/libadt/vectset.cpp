@@ -249,13 +249,13 @@ int VectorSet::disjoint(const Set &set) const
   const VectorSet &s = *(set.asVectorSet());
 
   // NOTE: The intersection is never any larger than the smallest set.
-  register uint small = ((size<s.size)?size:s.size);
-  register uint32 *u1 = data;   // Pointer to the destination data
-  register uint32 *u2 = s.data; // Pointer to the source data
-  for( uint i=0; i<small; i++)  // For data in set
-    if( *u1++ & *u2++ )         // If any elements in common
-      return 0;                 // Then not disjoint
-  return 1;                     // Else disjoint
+  register uint small_size = ((size<s.size)?size:s.size);
+  register uint32 *u1 = data;        // Pointer to the destination data
+  register uint32 *u2 = s.data;      // Pointer to the source data
+  for( uint i=0; i<small_size; i++)  // For data in set
+    if( *u1++ & *u2++ )              // If any elements in common
+      return 0;                      // Then not disjoint
+  return 1;                          // Else disjoint
 }
 
 //------------------------------operator<--------------------------------------

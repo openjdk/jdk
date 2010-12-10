@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "compiler/disassembler.hpp"
-#include "depChecker_sparc.hpp"
+#ifndef _JLI_UTIL_H
+#define _JLI_UTIL_H
 
-// Nothing to do on Sparc
+#include <stdlib.h>
+
+void *JLI_MemAlloc(size_t size);
+void *JLI_MemRealloc(void *ptr, size_t size);
+char *JLI_StringDup(const char *s1);
+void  JLI_MemFree(void *ptr);
+
+#endif  /* _JLI_UTIL_H */

@@ -42,7 +42,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -115,6 +114,7 @@
 # include <sys/iapriocntl.h>
 # include <sys/loadavg.h>
 # include <string.h>
+# include <stdio.h>
 
 # define _STRUCTURED_PROC 1  //  this gets us the new structured proc interfaces of 5.6 & later
 # include <sys/procfs.h>     //  see comment in <sys/procfs.h>
@@ -218,6 +218,9 @@ int prio_policy1[MaxPriority+1] = { -99999, 0, 16, 32, 48, 64,
 
 // System parameters used internally
 static clock_t clock_tics_per_sec = 100;
+
+// Track if we have called enable_extended_FILE_stdio (on Solaris 10u4+)
+static bool enabled_extended_FILE_stdio = false;
 
 // For diagnostics to print a message once. see run_periodic_checks
 static bool check_addr0_done = false;
@@ -386,7 +389,7 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
 // The saved state is used to restore the thread to
 // its former state whether or not an interrupt is received.
 // Used by classloader os::read
-// hpi calls skip this layer and stay in _thread_in_native
+// os::restartable_read calls skip this layer and stay in _thread_in_native
 
 void os::Solaris::setup_interruptible(JavaThread* thread) {
 
@@ -1750,13 +1753,13 @@ bool os::getTimesSecs(double* process_real_time,
 bool os::supports_vtime() { return true; }
 
 bool os::enable_vtime() {
-  int fd = open("/proc/self/ctl", O_WRONLY);
+  int fd = ::open("/proc/self/ctl", O_WRONLY);
   if (fd == -1)
     return false;
 
   long cmd[] = { PCSET, PR_MSACCT };
-  int res = write(fd, cmd, sizeof(long) * 2);
-  close(fd);
+  int res = ::write(fd, cmd, sizeof(long) * 2);
+  ::close(fd);
   if (res != sizeof(long) * 2)
     return false;
 
@@ -1764,13 +1767,13 @@ bool os::enable_vtime() {
 }
 
 bool os::vtime_enabled() {
-  int fd = open("/proc/self/status", O_RDONLY);
+  int fd = ::open("/proc/self/status", O_RDONLY);
   if (fd == -1)
     return false;
 
   pstatus_t status;
-  int res = read(fd, (void*) &status, sizeof(pstatus_t));
-  close(fd);
+  int res = os::read(fd, (void*) &status, sizeof(pstatus_t));
+  ::close(fd);
   if (res != sizeof(pstatus_t))
     return false;
 
@@ -1886,7 +1889,6 @@ static bool file_exists(const char* filename) {
 
 void os::dll_build_name(char* buffer, size_t buflen,
                         const char* pname, const char* fname) {
-  // Copied from libhpi
   const size_t pnamelen = pname ? strlen(pname) : 0;
 
   // Quietly truncate on buffer overflow.  Should be an error.
@@ -2182,20 +2184,29 @@ void* os::dll_lookup(void* handle, const char* name) {
   return dlsym(handle, name);
 }
 
+int os::stat(const char *path, struct stat *sbuf) {
+  char pathbuf[MAX_PATH];
+  if (strlen(path) > MAX_PATH - 1) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+  os::native_path(strcpy(pathbuf, path));
+  return ::stat(pathbuf, sbuf);
+}
 
-bool _print_ascii_file(const char* filename, outputStream* st) {
-  int fd = open(filename, O_RDONLY);
+static bool _print_ascii_file(const char* filename, outputStream* st) {
+  int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
      return false;
   }
 
   char buf[32];
   int bytes;
-  while ((bytes = read(fd, buf, sizeof(buf))) > 0) {
+  while ((bytes = ::read(fd, buf, sizeof(buf))) > 0) {
     st->print_raw(buf, bytes);
   }
 
-  close(fd);
+  ::close(fd);
 
   return true;
 }
@@ -2258,10 +2269,10 @@ void os::print_os_info(outputStream* st) {
 
 static bool check_addr0(outputStream* st) {
   jboolean status = false;
-  int fd = open("/proc/self/map",O_RDONLY);
+  int fd = ::open("/proc/self/map",O_RDONLY);
   if (fd >= 0) {
     prmap_t p;
-    while(read(fd, &p, sizeof(p)) > 0) {
+    while(::read(fd, &p, sizeof(p)) > 0) {
       if (p.pr_vaddr == 0x0) {
         st->print("Warning: Address: 0x%x, Size: %dK, ",p.pr_vaddr, p.pr_size/1024, p.pr_mapname);
         st->print("Mapped file: %s, ", p.pr_mapname[0] == '\0' ? "None" : p.pr_mapname);
@@ -2272,7 +2283,7 @@ static bool check_addr0(outputStream* st) {
         st->cr();
         status = true;
       }
-      close(fd);
+      ::close(fd);
     }
   }
   return status;
@@ -2520,8 +2531,6 @@ void os::jvm_path(char *buf, jint buflen) {
           // Use current module name "libjvm[_g].so" instead of
           // "libjvm"debug_only("_g")".so" since for fastdebug version
           // we should have "libjvm.so" but debug_only("_g") adds "_g"!
-          // It is used when we are choosing the HPI library's name
-          // "libhpi[_g].so" in hpi::initialize_get_interface().
           len = strlen(buf);
           snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
         } else {
@@ -2543,6 +2552,23 @@ void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
 
 void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
   // no suffix required
+}
+
+// This method is a copy of JDK's sysGetLastErrorString
+// from src/solaris/hpi/src/system_md.c
+
+size_t os::lasterror(char *buf, size_t len) {
+
+  if (errno == 0)  return 0;
+
+  const char *s = ::strerror(errno);
+  size_t n = ::strlen(s);
+  if (n >= len) {
+    n = len - 1;
+  }
+  ::strncpy(buf, s, n);
+  buf[n] = '\0';
+  return n;
 }
 
 
@@ -3452,6 +3478,10 @@ static int os_sleep(jlong millis, bool interruptible) {
 // Read calls from inside the vm need to perform state transitions
 size_t os::read(int fd, void *buf, unsigned int nBytes) {
   INTERRUPTIBLE_RETURN_INT_VM(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+}
+
+size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
+  INTERRUPTIBLE_RETURN_INT(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
 }
 
 int os::sleep(Thread* thread, jlong millis, bool interruptible) {
@@ -4623,16 +4653,16 @@ bool isT2_libthread() {
 #define ADR(x)  ((uintptr_t)(x))
 #define LWPINDEX(ary,ix)   ((lwpstatus_t *)(((ary)->pr_entsize * (ix)) + (ADR((ary) + 1))))
 
-  lwpFile = open("/proc/self/lstatus", O_RDONLY, 0);
+  lwpFile = ::open("/proc/self/lstatus", O_RDONLY, 0);
   if (lwpFile < 0) {
       if (ThreadPriorityVerbose) warning ("Couldn't open /proc/self/lstatus\n");
       return false;
   }
   lwpSize = 16*1024;
   for (;;) {
-    lseek (lwpFile, 0, SEEK_SET);
+    ::lseek64 (lwpFile, 0, SEEK_SET);
     lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize);
-    if (read(lwpFile, lwpArray, lwpSize) < 0) {
+    if (::read(lwpFile, lwpArray, lwpSize) < 0) {
       if (ThreadPriorityVerbose) warning("Error reading /proc/self/lstatus\n");
       break;
     }
@@ -4653,7 +4683,7 @@ bool isT2_libthread() {
   }
 
   FREE_C_HEAP_ARRAY(char, lwpArray);
-  close (lwpFile);
+  ::close (lwpFile);
   if (ThreadPriorityVerbose) {
     if (isT2) tty->print_cr("We are running with a T2 libthread\n");
     else tty->print_cr("We are not running with a T2 libthread\n");
@@ -4849,7 +4879,7 @@ void os::init(void) {
   // if we need them.
   Solaris::misc_sym_init();
 
-  int fd = open("/dev/zero", O_RDWR);
+  int fd = ::open("/dev/zero", O_RDWR);
   if (fd < 0) {
     fatal(err_msg("os::init: cannot open /dev/zero (%s)", strerror(errno)));
   } else {
@@ -5019,13 +5049,6 @@ jint os::init_2(void) {
     }
   }
 
-  // Initialize HPI.
-  jint hpi_result = hpi::initialize();
-  if (hpi_result != JNI_OK) {
-    tty->print_cr("There was an error trying to initialize the HPI library.");
-    return hpi_result;
-  }
-
   // Calculate theoretical max. size of Threads to guard gainst
   // artifical out-of-memory situations, where all available address-
   // space has been reserved by thread stacks. Default stack size is 1Mb.
@@ -5085,17 +5108,6 @@ void os::make_polling_page_readable(void) {
 
 // OS interface.
 
-int os::stat(const char *path, struct stat *sbuf) {
-  char pathbuf[MAX_PATH];
-  if (strlen(path) > MAX_PATH - 1) {
-    errno = ENAMETOOLONG;
-    return -1;
-  }
-  hpi::native_path(strcpy(pathbuf, path));
-  return ::stat(pathbuf, sbuf);
-}
-
-
 bool os::check_heap(bool force) { return true; }
 
 typedef int (*vsnprintf_t)(char* buf, size_t count, const char* fmt, va_list argptr);
@@ -5140,6 +5152,125 @@ bool os::dir_is_empty(const char* path) {
   return result;
 }
 
+// This code originates from JDK's sysOpen and open64_w
+// from src/solaris/hpi/src/system_md.c
+
+#ifndef O_DELETE
+#define O_DELETE 0x10000
+#endif
+
+// Open a file. Unlink the file immediately after open returns
+// if the specified oflag has the O_DELETE flag set.
+// O_DELETE is used only in j2se/src/share/native/java/util/zip/ZipFile.c
+
+int os::open(const char *path, int oflag, int mode) {
+  if (strlen(path) > MAX_PATH - 1) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+  int fd;
+  int o_delete = (oflag & O_DELETE);
+  oflag = oflag & ~O_DELETE;
+
+  fd = ::open(path, oflag, mode);
+  if (fd == -1) return -1;
+
+  //If the open succeeded, the file might still be a directory
+  {
+    struct stat64 buf64;
+    int ret = ::fstat64(fd, &buf64);
+    int st_mode = buf64.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
+    }
+  }
+    /*
+     * 32-bit Solaris systems suffer from:
+     *
+     * - an historical default soft limit of 256 per-process file
+     *   descriptors that is too low for many Java programs.
+     *
+     * - a design flaw where file descriptors created using stdio
+     *   fopen must be less than 256, _even_ when the first limit above
+     *   has been raised.  This can cause calls to fopen (but not calls to
+     *   open, for example) to fail mysteriously, perhaps in 3rd party
+     *   native code (although the JDK itself uses fopen).  One can hardly
+     *   criticize them for using this most standard of all functions.
+     *
+     * We attempt to make everything work anyways by:
+     *
+     * - raising the soft limit on per-process file descriptors beyond
+     *   256
+     *
+     * - As of Solaris 10u4, we can request that Solaris raise the 256
+     *   stdio fopen limit by calling function enable_extended_FILE_stdio.
+     *   This is done in init_2 and recorded in enabled_extended_FILE_stdio
+     *
+     * - If we are stuck on an old (pre 10u4) Solaris system, we can
+     *   workaround the bug by remapping non-stdio file descriptors below
+     *   256 to ones beyond 256, which is done below.
+     *
+     * See:
+     * 1085341: 32-bit stdio routines should support file descriptors >255
+     * 6533291: Work around 32-bit Solaris stdio limit of 256 open files
+     * 6431278: Netbeans crash on 32 bit Solaris: need to call
+     *          enable_extended_FILE_stdio() in VM initialisation
+     * Giri Mandalika's blog
+     * http://technopark02.blogspot.com/2005_05_01_archive.html
+     */
+#ifndef  _LP64
+     if ((!enabled_extended_FILE_stdio) && fd < 256) {
+         int newfd = ::fcntl(fd, F_DUPFD, 256);
+         if (newfd != -1) {
+             ::close(fd);
+             fd = newfd;
+         }
+     }
+#endif // 32-bit Solaris
+    /*
+     * All file descriptors that are opened in the JVM and not
+     * specifically destined for a subprocess should have the
+     * close-on-exec flag set.  If we don't set it, then careless 3rd
+     * party native code might fork and exec without closing all
+     * appropriate file descriptors (e.g. as we do in closeDescriptors in
+     * UNIXProcess.c), and this in turn might:
+     *
+     * - cause end-of-file to fail to be detected on some file
+     *   descriptors, resulting in mysterious hangs, or
+     *
+     * - might cause an fopen in the subprocess to fail on a system
+     *   suffering from bug 1085341.
+     *
+     * (Yes, the default setting of the close-on-exec flag is a Unix
+     * design flaw)
+     *
+     * See:
+     * 1085341: 32-bit stdio routines should support file descriptors >255
+     * 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+     * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+     */
+#ifdef FD_CLOEXEC
+    {
+        int flags = ::fcntl(fd, F_GETFD);
+        if (flags != -1)
+            ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
+#endif
+
+  if (o_delete != 0) {
+    ::unlink(path);
+  }
+  return fd;
+}
+
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
@@ -5157,6 +5288,55 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
+}
+
+jlong os::lseek(int fd, jlong offset, int whence) {
+  return (jlong) ::lseek64(fd, offset, whence);
+}
+
+char * os::native_path(char *path) {
+  return path;
+}
+
+int os::ftruncate(int fd, jlong length) {
+  return ::ftruncate64(fd, length);
+}
+
+int os::fsync(int fd)  {
+  RESTARTABLE_RETURN_INT(::fsync(fd));
+}
+
+int os::available(int fd, jlong *bytes) {
+  jlong cur, end;
+  int mode;
+  struct stat64 buf64;
+
+  if (::fstat64(fd, &buf64) >= 0) {
+    mode = buf64.st_mode;
+    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
+      /*
+      * XXX: is the following call interruptible? If so, this might
+      * need to go through the INTERRUPT_IO() wrapper as for other
+      * blocking, interruptible calls in this file.
+      */
+      int n,ioctl_return;
+
+      INTERRUPTIBLE(::ioctl(fd, FIONREAD, &n),ioctl_return,os::Solaris::clear_interrupted);
+      if (ioctl_return>= 0) {
+          *bytes = n;
+        return 1;
+      }
+    }
+  }
+  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
+    return 0;
+  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
+    return 0;
+  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
+    return 0;
+  }
+  *bytes = end - cur;
+  return 1;
 }
 
 // Map a block of memory.
@@ -5217,7 +5397,7 @@ void os::pause() {
   int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
   if (fd != -1) {
     struct stat buf;
-    close(fd);
+    ::close(fd);
     while (::stat(filename, &buf) == 0) {
       (void)::poll(NULL, 0, 100);
     }
@@ -5414,16 +5594,16 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   sprintf(proc_name, "/proc/%d/lwp/%d/lwpusage",
                      getpid(),
                      thread->osthread()->lwp_id());
-  fd = open(proc_name, O_RDONLY);
+  fd = ::open(proc_name, O_RDONLY);
   if ( fd == -1 ) return -1;
 
   do {
-    count = pread(fd,
+    count = ::pread(fd,
                   (void *)&prusage.pr_utime,
                   thr_time_size,
                   thr_time_off);
   } while (count < 0 && errno == EINTR);
-  close(fd);
+  ::close(fd);
   if ( count < 0 ) return -1;
 
   if (user_sys_cpu_time) {
@@ -6095,4 +6275,127 @@ bool os::is_headless_jre() {
     return true;
 }
 
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  INTERRUPTIBLE_RETURN_INT(::write(fd, buf, nBytes), os::Solaris::clear_interrupted);
+}
+
+int os::close(int fd) {
+  RESTARTABLE_RETURN_INT(::close(fd));
+}
+
+int os::socket_close(int fd) {
+  RESTARTABLE_RETURN_INT(::close(fd));
+}
+
+int os::recv(int fd, char *buf, int nBytes, int flags) {
+  INTERRUPTIBLE_RETURN_INT(::recv(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+}
+
+
+int os::send(int fd, char *buf, int nBytes, int flags) {
+  INTERRUPTIBLE_RETURN_INT(::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+}
+
+int os::raw_send(int fd, char *buf, int nBytes, int flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+}
+
+// As both poll and select can be interrupted by signals, we have to be
+// prepared to restart the system call after updating the timeout, unless
+// a poll() is done with timeout == -1, in which case we repeat with this
+// "wait forever" value.
+
+int os::timeout(int fd, long timeout) {
+  int res;
+  struct timeval t;
+  julong prevtime, newtime;
+  static const char* aNull = 0;
+  struct pollfd pfd;
+  pfd.fd = fd;
+  pfd.events = POLLIN;
+
+  gettimeofday(&t, &aNull);
+  prevtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec / 1000;
+
+  for(;;) {
+    INTERRUPTIBLE_NORESTART(::poll(&pfd, 1, timeout), res, os::Solaris::clear_interrupted);
+    if(res == OS_ERR && errno == EINTR) {
+        if(timeout != -1) {
+          gettimeofday(&t, &aNull);
+          newtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec /1000;
+          timeout -= newtime - prevtime;
+          if(timeout <= 0)
+            return OS_OK;
+          prevtime = newtime;
+        }
+    } else return res;
+  }
+}
+
+int os::connect(int fd, struct sockaddr *him, int len) {
+  int _result;
+  INTERRUPTIBLE_NORESTART(::connect(fd, him, len), _result,
+                          os::Solaris::clear_interrupted);
+
+  // Depending on when thread interruption is reset, _result could be
+  // one of two values when errno == EINTR
+
+  if (((_result == OS_INTRPT) || (_result == OS_ERR))
+                                        && (errno == EINTR)) {
+     /* restarting a connect() changes its errno semantics */
+     INTERRUPTIBLE(::connect(fd, him, len), _result,
+                     os::Solaris::clear_interrupted);
+     /* undo these changes */
+     if (_result == OS_ERR) {
+       if (errno == EALREADY) {
+         errno = EINPROGRESS; /* fall through */
+       } else if (errno == EISCONN) {
+         errno = 0;
+         return OS_OK;
+       }
+     }
+   }
+   return _result;
+ }
+
+int os::accept(int fd, struct sockaddr *him, int *len) {
+  if (fd < 0)
+   return OS_ERR;
+  INTERRUPTIBLE_RETURN_INT((int)::accept(fd, him,\
+    (socklen_t*) len), os::Solaris::clear_interrupted);
+ }
+
+int os::recvfrom(int fd, char *buf, int nBytes, int flags,
+                             sockaddr *from, int *fromlen) {
+   //%%note jvm_r11
+  INTERRUPTIBLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes,\
+    flags, from, fromlen), os::Solaris::clear_interrupted);
+}
+
+int os::sendto(int fd, char *buf, int len, int flags,
+                           struct sockaddr *to, int tolen) {
+  //%%note jvm_r11
+  INTERRUPTIBLE_RETURN_INT((int)::sendto(fd, buf, len, flags,\
+    to, tolen), os::Solaris::clear_interrupted);
+}
+
+int os::socket_available(int fd, jint *pbytes) {
+   if (fd < 0)
+     return OS_OK;
+
+   int ret;
+
+   RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
+
+   //%% note ioctl can return 0 when successful, JVM_SocketAvailable
+   // is expected to return 0 on failure and 1 on success to the jdk.
+
+   return (ret == OS_ERR) ? 0 : 1;
+}
+
+
+int os::bind(int fd, struct sockaddr *him, int len) {
+   INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
+     os::Solaris::clear_interrupted);
+}
 

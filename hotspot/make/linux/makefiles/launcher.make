@@ -24,19 +24,23 @@
 
 # Rules to build gamma launcher, used by vm.make
 
-# gamma[_g]: launcher
 
+LAUNCHER_SCRIPT = hotspot
 LAUNCHER   = gamma
-LAUNCHER_G = $(LAUNCHER)$(G_SUFFIX)
 
-LAUNCHERDIR   = $(GAMMADIR)/src/os/$(Platform_os_family)/launcher
-LAUNCHERFLAGS = $(ARCHFLAG) \
+LAUNCHERDIR   := $(GAMMADIR)/src/os/posix/launcher
+LAUNCHERDIR_SHARE := $(GAMMADIR)/src/share/tools/launcher
+LAUNCHERFLAGS := $(ARCHFLAG) \
                 -I$(LAUNCHERDIR) -I$(GAMMADIR)/src/share/vm/prims \
+                -I$(LAUNCHERDIR_SHARE) \
                 -DFULL_VERSION=\"$(HOTSPOT_RELEASE_VERSION)\" \
+                -DJDK_MAJOR_VERSION=\"$(JDK_MAJOR_VERSION)\" \
+                -DJDK_MINOR_VERSION=\"$(JDK_MINOR_VERSION)\" \
                 -DARCH=\"$(LIBARCH)\" \
                 -DGAMMA \
                 -DLAUNCHER_TYPE=\"gamma\" \
-                -DLINK_INTO_$(LINK_INTO)
+                -DLINK_INTO_$(LINK_INTO) \
+                $(TARGET_DEFINES)
 
 ifeq ($(LINK_INTO),AOUT)
   LAUNCHER.o                 = launcher.o $(JVM_OBJ_FILES)
@@ -55,22 +59,35 @@ LINK_LAUNCHER = $(LINK.c)
 LINK_LAUNCHER/PRE_HOOK  = $(LINK_LIB.CC/PRE_HOOK)
 LINK_LAUNCHER/POST_HOOK = $(LINK_LIB.CC/POST_HOOK)
 
-launcher.o: launcher.c $(LAUNCHERDIR)/java.c $(LAUNCHERDIR)/java_md.c
-	$(CC) -g -c -o $@ launcher.c $(LAUNCHERFLAGS) $(CPPFLAGS) $(TARGET_DEFINES)
+LAUNCHER_OUT = launcher
 
-launcher.c:
-	@echo Generating $@
-	$(QUIETLY) { \
-	echo '#define debug launcher_debug'; \
-	echo '#include "java.c"'; \
-	echo '#include "java_md.c"'; \
-	} > $@
+SUFFIXES += .d
 
-$(LAUNCHER): $(LAUNCHER.o) $(LIBJVM) $(LAUNCHER_MAPFILE)
-	$(QUIETLY) { \
-	    echo Linking launcher...; \
-	    $(LINK_LAUNCHER/PRE_HOOK) \
-	    $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(LAUNCHER.o) $(LIBS_LAUNCHER); \
-	    $(LINK_LAUNCHER/POST_HOOK) \
-	    [ -f $(LAUNCHER_G) ] || { ln -s $@ $(LAUNCHER_G); }; \
-        }
+SOURCES := $(shell find $(LAUNCHERDIR) -name "*.c")
+SOURCES_SHARE := $(shell find $(LAUNCHERDIR_SHARE) -name "*.c")
+
+OBJS := $(patsubst $(LAUNCHERDIR)/%.c,$(LAUNCHER_OUT)/%.o,$(SOURCES)) $(patsubst $(LAUNCHERDIR_SHARE)/%.c,$(LAUNCHER_OUT)/%.o,$(SOURCES_SHARE))
+
+DEPFILES := $(patsubst %.o,%.d,$(OBJS))
+-include $(DEPFILES)
+
+$(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR_SHARE)/%.c
+	$(QUIETLY) [ -d $(LAUNCHER_OUT) ] || { mkdir -p $(LAUNCHER_OUT); }
+	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CPPFLAGS)
+
+$(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR)/%.c
+	$(QUIETLY) [ -d $(LAUNCHER_OUT) ] || { mkdir -p $(LAUNCHER_OUT); }
+	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CPPFLAGS)
+
+$(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
+	$(QUIETLY) echo Linking launcher...
+	$(QUIETLY) $(LINK_LAUNCHER/PRE_HOOK)
+	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(OBJS) $(LIBS_LAUNCHER)
+	$(QUIETLY) $(LINK_LAUNCHER/POST_HOOK)
+
+$(LAUNCHER): $(LAUNCHER_SCRIPT)
+
+$(LAUNCHER_SCRIPT): $(LAUNCHERDIR)/launcher.script
+	$(QUIETLY) sed -e 's/@@LIBARCH@@/$(LIBARCH)/g' $< > $@
+	$(QUIETLY) chmod +x $@
+

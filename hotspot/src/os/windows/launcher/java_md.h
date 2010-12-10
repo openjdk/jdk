@@ -22,27 +22,30 @@
  *
  */
 
-/*
- * Gamma (Hotspot internal engineering test) launcher based on 1.6.0-b28 JDK,
- * search "GAMMA" for gamma specific changes.
- */
-
 #ifndef JAVA_MD_H
 #define JAVA_MD_H
 
-#include <limits.h>
-#include <unistd.h>
-#include <sys/param.h>
+#include <jni.h>
+#include <windows.h>
+#include <io.h>
 #ifndef GAMMA
 #include "manifest_info.h"
 #endif
+#include "jli_util.h"
 
-#define PATH_SEPARATOR          ':'
-#define FILESEP                 "/"
-#define FILE_SEPARATOR          '/'
-#ifndef MAXNAMELEN
-#define MAXNAMELEN              PATH_MAX
+#ifdef GAMMA
+#define stricmp _stricmp
+#define strnicmp _strnicmp
+#define snprintf _snprintf
+#define strdup _strdup
 #endif
+
+#define PATH_SEPARATOR  ';'
+#define FILESEP         "\\"
+#define FILE_SEPARATOR  '\\'
+#define IS_FILE_SEPARATOR(c) ((c) == '\\' || (c) == '/')
+#define MAXPATHLEN      MAX_PATH
+#define MAXNAMELEN      MAX_PATH
 
 #ifdef JAVA_ARGS
 /*
@@ -51,27 +54,26 @@
  * value of -cp option to the launcher.
  */
 #ifndef APP_CLASSPATH
-#define APP_CLASSPATH        { "/lib/tools.jar", "/classes" }
+#define APP_CLASSPATH        { "\\lib\\tools.jar", "\\classes" }
 #endif
 #endif
 
-#ifdef HAVE_GETHRTIME
 /*
  * Support for doing cheap, accurate interval timing.
  */
-#include <sys/time.h>
-#define CounterGet()              (gethrtime()/1000)
-#define Counter2Micros(counts)    (counts)
-#else
-#define CounterGet()              (0)
-#define Counter2Micros(counts)    (1)
-#endif /* HAVE_GETHRTIME */
+extern jlong CounterGet(void);
+extern jlong Counter2Micros(jlong counts);
+
+#ifdef JAVAW
+#define main _main
+extern int _main(int argc, char **argv);
+#endif
 
 /*
  * Function prototypes.
  */
 #ifndef GAMMA
-char *LocateJRE(manifest_info* info);
+char *LocateJRE(manifest_info *info);
 void ExecJRE(char *jre, char **argv);
 #endif
 int UnsetEnv(char *name);

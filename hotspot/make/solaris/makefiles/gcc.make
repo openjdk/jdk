@@ -47,10 +47,13 @@ $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 
 # check for precompiled headers support
 ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) \| \( \( $(CC_VER_MAJOR) = 3 \) \& \( $(CC_VER_MINOR) \>= 4 \) \))" "0"
+# Allow the user to turn off precompiled headers from the command line.
+ifneq ($(USE_PRECOMPILED_HEADER),0)
 USE_PRECOMPILED_HEADER=1
 PRECOMPILED_HEADER_DIR=.
 PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled.hpp
 PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/precompiled.hpp.gch
+endif
 endif
 
 
@@ -136,6 +139,11 @@ OPT_CFLAGS/NOOPT=-O0
 # Flags for generating make dependency flags.
 ifneq ("${CC_VER_MAJOR}", "2")
 DEPFLAGS = -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
+endif
+
+# -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
+ifneq ($(USE_PRECOMPILED_HEADER),1)
+CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
 endif
 
 #------------------------------------------------------------------------

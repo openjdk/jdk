@@ -1280,9 +1280,6 @@ class CommandLineFlags {
   develop(bool, TraceStartupTime, false,                                    \
           "Trace setup time")                                               \
                                                                             \
-  develop(bool, TraceHPI, false,                                            \
-          "Trace Host Porting Interface (HPI)")                             \
-                                                                            \
   product(ccstr, HPILibPath, NULL,                                          \
           "Specify alternate path to HPI library")                          \
                                                                             \

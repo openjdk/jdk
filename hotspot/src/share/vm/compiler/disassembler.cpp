@@ -30,7 +30,6 @@
 #include "memory/cardTableModRefBS.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #ifdef TARGET_ARCH_x86
@@ -84,17 +83,17 @@ bool Disassembler::load_library() {
     // Find the disassembler next to libjvm.so.
     strcpy(&buf[jvm_offset], hsdis_library_name);
     strcat(&buf[jvm_offset], os::dll_file_extension());
-    _library = hpi::dll_load(buf, ebuf, sizeof ebuf);
+    _library = os::dll_load(buf, ebuf, sizeof ebuf);
   }
   if (_library == NULL) {
     // Try a free-floating lookup.
     strcpy(&buf[0], hsdis_library_name);
     strcat(&buf[0], os::dll_file_extension());
-    _library = hpi::dll_load(buf, ebuf, sizeof ebuf);
+    _library = os::dll_load(buf, ebuf, sizeof ebuf);
   }
   if (_library != NULL) {
     _decode_instructions = CAST_TO_FN_PTR(Disassembler::decode_func,
-                                          hpi::dll_lookup(_library, decode_instructions_name));
+                                          os::dll_lookup(_library, decode_instructions_name));
   }
   _tried_to_load_library = true;
   if (_decode_instructions == NULL) {
