@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,22 @@
  * questions.
  */
 
-// key: compiler.err.illegal.bytecode.ident.char
+/*
+ * @test
+ * @bug 6999067
+ * @summary cast for invokeExact call gets redundant cast to <type> warnings
+ * @author mcimadamore
+ *
+ * @compile -Werror -Xlint:cast XlintWarn.java
+ */
 
-class IllegalBytecodeIdentChar {
-    int #"abc/def" = 3;
+import java.dyn.*;
+
+class XlintWarn {
+    void test(MethodHandle mh) throws Throwable {
+        int i1 = (int)mh.invoke();
+        int i2 = (int)mh.invokeExact();
+        int i3 = (int)mh.invokeVarargs();
+        int i4 = (int)InvokeDynamic.test();
+    }
 }
