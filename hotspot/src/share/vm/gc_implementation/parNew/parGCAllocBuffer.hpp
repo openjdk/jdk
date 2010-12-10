@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/blockOffsetTable.hpp"
 #include "memory/threadLocalAllocBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 

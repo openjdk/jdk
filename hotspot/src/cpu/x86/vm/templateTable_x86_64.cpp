@@ -2762,7 +2762,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     // access constant pool cache entry
     __ get_cache_entry_pointer_at_bcp(c_rarg2, rcx, 1);
     __ verify_oop(rax);
-    __ mov(r12, rax);  // save object pointer before call_VM() clobbers it
+    __ push_ptr(rax);  // save object pointer before call_VM() clobbers it
     __ mov(c_rarg1, rax);
     // c_rarg1: object pointer copied above
     // c_rarg2: cache entry pointer
@@ -2770,8 +2770,7 @@ void TemplateTable::fast_accessfield(TosState state) {
                CAST_FROM_FN_PTR(address,
                                 InterpreterRuntime::post_field_access),
                c_rarg1, c_rarg2);
-    __ mov(rax, r12); // restore object pointer
-    __ reinit_heapbase();
+    __ pop_ptr(rax); // restore object pointer
     __ bind(L1);
   }
 
@@ -3365,10 +3364,7 @@ void TemplateTable::checkcast() {
           JVM_CONSTANT_Class);
   __ jcc(Assembler::equal, quicked);
   __ push(atos); // save receiver for result, and for GC
-  __ mov(r12, rcx); // save rcx XXX
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ movq(rcx, r12); // restore rcx XXX
-  __ reinit_heapbase();
   __ pop_ptr(rdx); // restore receiver
   __ jmpb(resolved);
 
@@ -3422,11 +3418,9 @@ void TemplateTable::instanceof() {
   __ jcc(Assembler::equal, quicked);
 
   __ push(atos); // save receiver for result, and for GC
-  __ mov(r12, rcx); // save rcx
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ movq(rcx, r12); // restore rcx
-  __ reinit_heapbase();
   __ pop_ptr(rdx); // restore receiver
+  __ verify_oop(rdx);
   __ load_klass(rdx, rdx);
   __ jmpb(resolved);
 

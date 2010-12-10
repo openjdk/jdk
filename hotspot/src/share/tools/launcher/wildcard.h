@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "compiler/disassembler.hpp"
-#include "depChecker_sparc.hpp"
+#ifndef WILDCARD_H_
+#define WILDCARD_H_
 
-// Nothing to do on Sparc
+#ifdef EXPAND_CLASSPATH_WILDCARDS
+const char *JLI_WildcardExpandClasspath(const char *classpath);
+#else
+#define JLI_WildcardExpandClasspath(s) (s)
+#endif
+
+#endif /* include guard */

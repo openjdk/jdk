@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,6 @@
  *
  */
 
-/*
- * Gamma (Hotspot internal engineering test) launcher based on 1.6.0-b28 JDK,
- * search "GAMMA" for gamma specific changes.
- */
-
 #ifndef JAVA_MD_H
 #define JAVA_MD_H
 
@@ -36,10 +31,12 @@
 #ifndef GAMMA
 #include "manifest_info.h"
 #endif
+#include "jli_util.h"
 
 #define PATH_SEPARATOR          ':'
 #define FILESEP                 "/"
 #define FILE_SEPARATOR          '/'
+#define IS_FILE_SEPARATOR(c) ((c) == '/')
 #ifndef MAXNAMELEN
 #define MAXNAMELEN              PATH_MAX
 #endif
@@ -71,7 +68,7 @@
  * Function prototypes.
  */
 #ifndef GAMMA
-char *LocateJRE(manifest_info* info);
+char *LocateJRE(manifest_info *info);
 void ExecJRE(char *jre, char **argv);
 #endif
 int UnsetEnv(char *name);

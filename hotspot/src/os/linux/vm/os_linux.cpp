@@ -44,7 +44,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1565,6 +1564,24 @@ void os::die() {
 // unused on linux for now.
 void os::set_error_file(const char *logfile) {}
 
+
+// This method is a copy of JDK's sysGetLastErrorString
+// from src/solaris/hpi/src/system_md.c
+
+size_t os::lasterror(char *buf, size_t len) {
+
+  if (errno == 0)  return 0;
+
+  const char *s = ::strerror(errno);
+  size_t n = ::strlen(s);
+  if (n >= len) {
+    n = len - 1;
+  }
+  ::strncpy(buf, s, n);
+  buf[n] = '\0';
+  return n;
+}
+
 intx os::current_thread_id() { return (intx)pthread_self(); }
 int os::current_process_id() {
 
@@ -1929,19 +1946,19 @@ void* os::dll_lookup(void* handle, const char* name) {
 }
 
 
-bool _print_ascii_file(const char* filename, outputStream* st) {
-  int fd = open(filename, O_RDONLY);
+static bool _print_ascii_file(const char* filename, outputStream* st) {
+  int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
      return false;
   }
 
   char buf[32];
   int bytes;
-  while ((bytes = read(fd, buf, sizeof(buf))) > 0) {
+  while ((bytes = ::read(fd, buf, sizeof(buf))) > 0) {
     st->print_raw(buf, bytes);
   }
 
-  close(fd);
+  ::close(fd);
 
   return true;
 }
@@ -2219,8 +2236,6 @@ void os::jvm_path(char *buf, jint buflen) {
           // Use current module name "libjvm[_g].so" instead of
           // "libjvm"debug_only("_g")".so" since for fastdebug version
           // we should have "libjvm.so" but debug_only("_g") adds "_g"!
-          // It is used when we are choosing the HPI library's name
-          // "libhpi[_g].so" in hpi::initialize_get_interface().
           len = strlen(buf);
           snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
         } else {
@@ -2404,18 +2419,18 @@ void linux_wrap_code(char* base, size_t size) {
            os::get_temp_directory(), os::current_process_id(), num);
   unlink(buf);
 
-  int fd = open(buf, O_CREAT | O_RDWR, S_IRWXU);
+  int fd = ::open(buf, O_CREAT | O_RDWR, S_IRWXU);
 
   if (fd != -1) {
-    off_t rv = lseek(fd, size-2, SEEK_SET);
+    off_t rv = ::lseek(fd, size-2, SEEK_SET);
     if (rv != (off_t)-1) {
-      if (write(fd, "", 1) == 1) {
+      if (::write(fd, "", 1) == 1) {
         mmap(base, size,
              PROT_READ|PROT_WRITE|PROT_EXEC,
              MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE, fd, 0);
       }
     }
-    close(fd);
+    ::close(fd);
     unlink(buf);
   }
 }
@@ -4047,13 +4062,6 @@ jint os::init_2(void)
   // Initialize lock used to serialize thread creation (see os::create_thread)
   Linux::set_createThread_lock(new Mutex(Mutex::leaf, "createThread_lock", false));
 
-  // Initialize HPI.
-  jint hpi_result = hpi::initialize();
-  if (hpi_result != JNI_OK) {
-    tty->print_cr("There was an error trying to initialize the HPI library.");
-    return hpi_result;
-  }
-
   // at-exit methods are called in the reverse order of their registration.
   // atexit functions are called on return from main or as a result of a
   // call to exit(3C). There can be only 32 of these functions registered
@@ -4251,7 +4259,7 @@ int os::stat(const char *path, struct stat *sbuf) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  hpi::native_path(strcpy(pathbuf, path));
+  os::native_path(strcpy(pathbuf, path));
   return ::stat(pathbuf, sbuf);
 }
 
@@ -4283,6 +4291,85 @@ bool os::dir_is_empty(const char* path) {
   return result;
 }
 
+// This code originates from JDK's sysOpen and open64_w
+// from src/solaris/hpi/src/system_md.c
+
+#ifndef O_DELETE
+#define O_DELETE 0x10000
+#endif
+
+// Open a file. Unlink the file immediately after open returns
+// if the specified oflag has the O_DELETE flag set.
+// O_DELETE is used only in j2se/src/share/native/java/util/zip/ZipFile.c
+
+int os::open(const char *path, int oflag, int mode) {
+
+  if (strlen(path) > MAX_PATH - 1) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+  int fd;
+  int o_delete = (oflag & O_DELETE);
+  oflag = oflag & ~O_DELETE;
+
+  fd = ::open64(path, oflag, mode);
+  if (fd == -1) return -1;
+
+  //If the open succeeded, the file might still be a directory
+  {
+    struct stat64 buf64;
+    int ret = ::fstat64(fd, &buf64);
+    int st_mode = buf64.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
+    }
+  }
+
+    /*
+     * All file descriptors that are opened in the JVM and not
+     * specifically destined for a subprocess should have the
+     * close-on-exec flag set.  If we don't set it, then careless 3rd
+     * party native code might fork and exec without closing all
+     * appropriate file descriptors (e.g. as we do in closeDescriptors in
+     * UNIXProcess.c), and this in turn might:
+     *
+     * - cause end-of-file to fail to be detected on some file
+     *   descriptors, resulting in mysterious hangs, or
+     *
+     * - might cause an fopen in the subprocess to fail on a system
+     *   suffering from bug 1085341.
+     *
+     * (Yes, the default setting of the close-on-exec flag is a Unix
+     * design flaw)
+     *
+     * See:
+     * 1085341: 32-bit stdio routines should support file descriptors >255
+     * 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+     * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+     */
+#ifdef FD_CLOEXEC
+    {
+        int flags = ::fcntl(fd, F_GETFD);
+        if (flags != -1)
+            ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
+#endif
+
+  if (o_delete != 0) {
+    ::unlink(path);
+  }
+  return fd;
+}
+
+
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
@@ -4300,6 +4387,40 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
+}
+
+// This code originates from JDK's sysAvailable
+// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
+
+int os::available(int fd, jlong *bytes) {
+  jlong cur, end;
+  int mode;
+  struct stat64 buf64;
+
+  if (::fstat64(fd, &buf64) >= 0) {
+    mode = buf64.st_mode;
+    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
+      /*
+      * XXX: is the following call interruptible? If so, this might
+      * need to go through the INTERRUPT_IO() wrapper as for other
+      * blocking, interruptible calls in this file.
+      */
+      int n;
+      if (::ioctl(fd, FIONREAD, &n) >= 0) {
+        *bytes = n;
+        return 1;
+      }
+    }
+  }
+  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
+    return 0;
+  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
+    return 0;
+  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
+    return 0;
+  }
+  *bytes = end - cur;
+  return 1;
 }
 
 // Map a block of memory.
@@ -4528,7 +4649,7 @@ void os::pause() {
   int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
   if (fd != -1) {
     struct stat buf;
-    close(fd);
+    ::close(fd);
     while (::stat(filename, &buf) == 0) {
       (void)::poll(NULL, 0, 100);
     }

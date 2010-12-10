@@ -26,21 +26,17 @@
 #include "compiler/compileLog.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/hpi.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/top.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef TARGET_OS_FAMILY_linux
-# include "hpi_linux.hpp"
 # include "os_linux.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
-# include "hpi_solaris.hpp"
 # include "os_solaris.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_windows
-# include "hpi_windows.hpp"
 # include "os_windows.inline.hpp"
 #endif
 
@@ -879,9 +875,7 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 
   _socket = -1;
 
-  hpi::initialize_socket_library();
-
-  int result = hpi::socket(AF_INET, SOCK_STREAM, 0);
+  int result = os::socket(AF_INET, SOCK_STREAM, 0);
   if (result <= 0) {
     assert(false, "Socket could not be created!");
   } else {
@@ -890,12 +884,12 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 }
 
 int networkStream::read(char *buf, size_t len) {
-  return hpi::recv(_socket, buf, (int)len, 0);
+  return os::recv(_socket, buf, (int)len, 0);
 }
 
 void networkStream::flush() {
   if (size() != 0) {
-    int result = hpi::raw_send(_socket, (char *)base(), (int)size(), 0);
+    int result = os::raw_send(_socket, (char *)base(), (int)size(), 0);
     assert(result != -1, "connection error");
     assert(result == (int)size(), "didn't send enough data");
   }
@@ -909,7 +903,7 @@ networkStream::~networkStream() {
 void networkStream::close() {
   if (_socket != -1) {
     flush();
-    hpi::socket_close(_socket);
+    os::socket_close(_socket);
     _socket = -1;
   }
 }
@@ -922,11 +916,7 @@ bool networkStream::connect(const char *ip, short port) {
 
   server.sin_addr.s_addr = inet_addr(ip);
   if (server.sin_addr.s_addr == (uint32_t)-1) {
-#ifdef _WINDOWS
-    struct hostent* host = hpi::get_host_by_name((char*)ip);
-#else
-    struct hostent* host = gethostbyname(ip);
-#endif
+    struct hostent* host = os::get_host_by_name((char*)ip);
     if (host != NULL) {
       memcpy(&server.sin_addr, host->h_addr_list[0], host->h_length);
     } else {
@@ -935,7 +925,7 @@ bool networkStream::connect(const char *ip, short port) {
   }
 
 
-  int result = hpi::connect(_socket, (struct sockaddr*)&server, sizeof(struct sockaddr_in));
+  int result = os::connect(_socket, (struct sockaddr*)&server, sizeof(struct sockaddr_in));
   return (result >= 0);
 }
 

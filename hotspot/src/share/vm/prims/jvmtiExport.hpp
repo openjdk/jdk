@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_PRIMS_JVMTIEXPORT_HPP
 #define SHARE_VM_PRIMS_JVMTIEXPORT_HPP
 
-#include "code/jvmticmlr.h"
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -35,6 +34,9 @@
 #include "runtime/handles.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+
+// Must be included after jvmti.h.
+#include "code/jvmticmlr.h"
 
 // Forward declarations
 

@@ -38,7 +38,6 @@
 #include "prims/jvm.h"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/orderAccess.hpp"
@@ -69,11 +68,11 @@ static volatile jint _is_new_verify_byte_codes_fn = (jint) true;
 static void* verify_byte_codes_fn() {
   if (_verify_byte_codes_fn == NULL) {
     void *lib_handle = os::native_java_library();
-    void *func = hpi::dll_lookup(lib_handle, "VerifyClassCodesForMajorVersion");
+    void *func = os::dll_lookup(lib_handle, "VerifyClassCodesForMajorVersion");
     OrderAccess::release_store_ptr(&_verify_byte_codes_fn, func);
     if (func == NULL) {
       OrderAccess::release_store(&_is_new_verify_byte_codes_fn, false);
-      func = hpi::dll_lookup(lib_handle, "VerifyClassCodes");
+      func = os::dll_lookup(lib_handle, "VerifyClassCodes");
       OrderAccess::release_store_ptr(&_verify_byte_codes_fn, func);
     }
   }

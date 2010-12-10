@@ -36,7 +36,6 @@
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/os.hpp"
 #ifdef TARGET_ARCH_MODEL_x86_32
 # include "adfiles/ad_x86_32.hpp"
