@@ -1,6 +1,5 @@
 InvokeDynTrans.java:55:39: compiler.warn.type.parameter.on.polymorphic.signature
-InvokeDynTrans.java:56:91: compiler.warn.type.parameter.on.polymorphic.signature
 InvokeDynTrans.java:57:34: compiler.warn.type.parameter.on.polymorphic.signature
 - compiler.err.warnings.and.werror
 1 error
-3 warnings
+2 warnings

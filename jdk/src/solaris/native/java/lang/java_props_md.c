@@ -217,15 +217,18 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
     /* Normalize the language name */
     if (std_language != NULL) {
         *std_language = "en";
-        if (language != NULL) {
-            mapLookup(language_names, language, std_language);
+        if (language != NULL && mapLookup(language_names, language, std_language) == 0) {
+            *std_language = malloc(strlen(language)+1);
+            strcpy(*std_language, language);
         }
     }
 
     /* Normalize the country name */
     if (std_country != NULL && country != NULL) {
-        *std_country = country;
-        mapLookup(country_names, country, std_country);
+        if (mapLookup(country_names, country, std_country) == 0) {
+            *std_country = malloc(strlen(country)+1);
+            strcpy(*std_country, country);
+        }
     }
 
     /* Normalize the script and variant name.  Note that we only use
