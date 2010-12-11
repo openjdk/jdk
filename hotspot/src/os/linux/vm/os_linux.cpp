@@ -60,6 +60,7 @@
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "thread_linux.inline.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
@@ -1671,14 +1672,23 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   Dl_info dlinfo;
 
   if (dladdr((void*)addr, &dlinfo) && dlinfo.dli_sname != NULL) {
-    if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
-    if (offset) *offset = addr - (address)dlinfo.dli_saddr;
+    if (buf != NULL) {
+      if(!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+        jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
+      }
+    }
+    if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
     return true;
-  } else {
-    if (buf) buf[0] = '\0';
-    if (offset) *offset = -1;
-    return false;
+  } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
+    if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+       dlinfo.dli_fname, buf, buflen, offset) == Decoder::no_error) {
+       return true;
+    }
   }
+
+  if (buf != NULL) buf[0] = '\0';
+  if (offset != NULL) *offset = -1;
+  return false;
 }
 
 struct _address_to_library_name {

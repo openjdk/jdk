@@ -58,6 +58,7 @@
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "thread_solaris.inline.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
@@ -1967,27 +1968,42 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       Sym * info;
       if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
                        RTLD_DL_SYMENT)) {
-          if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
-          if (offset) *offset = addr - (address)dlinfo.dli_saddr;
-
-          // check if the returned symbol really covers addr
-          return ((char *)dlinfo.dli_saddr + info->st_size > (char *)addr);
-      } else {
-          if (buf) buf[0] = '\0';
-          if (offset) *offset  = -1;
-          return false;
+        if ((char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
+          if (buf != NULL) {
+            if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen))
+              jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
+            }
+            if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+            return true;
+        }
       }
+      if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
+        if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+          dlinfo.dli_fname, buf, buflen, offset) == Decoder::no_error) {
+          return true;
+        }
+      }
+      if (buf != NULL) buf[0] = '\0';
+      if (offset != NULL) *offset  = -1;
+      return false;
   } else {
       // no, only dladdr is available
-      if(dladdr((void *)addr, &dlinfo)) {
-          if (buf) jio_snprintf(buf, buflen, dlinfo.dli_sname);
-          if (offset) *offset = addr - (address)dlinfo.dli_saddr;
+      if (dladdr((void *)addr, &dlinfo)) {
+        if (buf != NULL) {
+          if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen))
+            jio_snprintf(buf, buflen, dlinfo.dli_sname);
+        }
+        if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+        return true;
+      } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
+        if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+          dlinfo.dli_fname, buf, buflen, offset) == Decoder::no_error) {
           return true;
-      } else {
-          if (buf) buf[0] = '\0';
-          if (offset) *offset  = -1;
-          return false;
+        }
       }
+      if (buf != NULL) buf[0] = '\0';
+      if (offset != NULL) *offset  = -1;
+      return false;
   }
 }
 
