@@ -22,10 +22,6 @@
  *
  */
 
-/*
- * Gamma (Hotspot internal engineering test) launcher based on 1.6.0-b28 JDK,
- * search "GAMMA" for gamma specific changes.
- */
 
 #include "java.h"
 #include <dirent.h>
@@ -45,64 +41,42 @@
 #include "version_comp.h"
 #endif
 
+#ifdef __linux__
+#include <pthread.h>
+#else
+#include <thread.h>
+#endif
+
 #define JVM_DLL "libjvm.so"
 #define JAVA_DLL "libjava.so"
 
 #ifndef GAMMA   /* launcher.make defines ARCH */
-
 /*
  * If a processor / os combination has the ability to run binaries of
  * two data models and cohabitation of jre/jdk bits with both data
  * models is supported, then DUAL_MODE is defined.  When DUAL_MODE is
  * defined, the architecture names for the narrow and wide version of
- * the architecture are defined in BIG_ARCH and SMALL_ARCH.  Currently
+ * the architecture are defined in LIBARCH64NAME and LIBARCH32NAME.  Currently
  * only Solaris on sparc/sparcv9 and i586/amd64 is DUAL_MODE; linux
  * i586/amd64 could be defined as DUAL_MODE but that is not the
  * current policy.
  */
 
-#ifdef _LP64
-
-#  ifdef ia64
-#    define ARCH "ia64"
-#  elif defined(amd64)
-#    define ARCH "amd64"
-#  elif defined(__sparc)
-#    define ARCH "sparcv9"
-#  else
-#    define ARCH "unknown" /* unknown 64-bit architecture */
-#  endif
-
-#else /* 32-bit data model */
-
-#  ifdef i586
-#    define ARCH "i386"
-#  elif defined(__sparc)
-#    define ARCH "sparc"
-#  elif defined(arm)
-#    define ARCH "arm"
-#  elif defined(PPC)
-#    define ARCH "ppc"
-#  endif
-
-#endif /* _LP64 */
+#ifndef LIBARCHNAME
+#  error "The macro LIBARCHNAME was not defined on the compile line"
+#endif
 
 #ifdef __sun
 #  define DUAL_MODE
-#  ifdef __sparc
-#    define BIG_ARCH "sparcv9"
-#    define SMALL_ARCH "sparc"
-#  else
-#    define BIG_ARCH "amd64"
-#    define SMALL_ARCH "i386"
+#  ifndef LIBARCH32NAME
+#    error "The macro LIBARCH32NAME was not defined on the compile line"
+#  endif
+#  ifndef LIBARCH64NAME
+#    error "The macro LIBARCH64NAME was not defined on the compile line"
 #  endif
 #  include <sys/systeminfo.h>
 #  include <sys/elf.h>
 #  include <stdio.h>
-#else
-#  ifndef ARCH
-#    include <sys/systeminfo.h>
-#  endif
 #endif
 
 #endif /* ifndef GAMMA */
@@ -111,7 +85,6 @@
 extern char **environ;
 
 #ifndef GAMMA
-
 /*
  *      A collection of useful strings. One should think of these as #define
  *      entries, but actual strings can be more efficient (with many compilers).
@@ -124,7 +97,7 @@ static const char *system_dir   = "/usr/jdk";
 static const char *user_dir     = "/jdk";
 #endif
 
-#endif  /* ifndef GAMMA */
+#endif /* ifndef GAMMA */
 
 /*
  * Flowchart of launcher execs and options processing on unix
@@ -196,23 +169,13 @@ static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize, char * arch);
 static jboolean GetJREPath(char *path, jint pathsize, char * arch, jboolean speculative);
 
+#ifndef GAMMA
 const char *
 GetArch()
 {
-    static char *arch = NULL;
-    static char buf[12];
-    if (arch) {
-        return arch;
-    }
-
-#ifdef ARCH
-    strcpy(buf, ARCH);
-#else
-    sysinfo(SI_ARCHITECTURE, buf, sizeof(buf));
-#endif
-    arch = buf;
-    return arch;
+    return LIBARCHNAME;
 }
+#endif /* ifndef GAMMA */
 
 void
 CreateExecutionEnvironment(int *_argcp,
@@ -287,7 +250,7 @@ CreateExecutionEnvironment(int *_argcp,
       { /* open new scope to declare local variables */
         int i;
 
-        newargv = (char **)MemAlloc((argc+1) * sizeof(*newargv));
+        newargv = (char **)JLI_MemAlloc((argc+1) * sizeof(*newargv));
         newargv[newargc++] = argv[0];
 
         /* scan for data model arguments and remove from argument list;
@@ -358,7 +321,7 @@ CreateExecutionEnvironment(int *_argcp,
 #ifdef DUAL_MODE
         if (running != wanted) {
           /* Find out where the JRE is that we will be using. */
-          if (!GetJREPath(jrepath, so_jrepath, ((wanted==64)?BIG_ARCH:SMALL_ARCH), JNI_TRUE)) {
+          if (!GetJREPath(jrepath, so_jrepath, ((wanted==64)?LIBARCH64NAME:LIBARCH32NAME), JNI_TRUE)) {
             goto EndDataModelSpeculate;
           }
 
@@ -366,14 +329,14 @@ CreateExecutionEnvironment(int *_argcp,
            * Read in jvm.cfg for target data model and process vm
            * selection options.
            */
-          if (ReadKnownVMs(jrepath, ((wanted==64)?BIG_ARCH:SMALL_ARCH), JNI_TRUE) < 1) {
+          if (ReadKnownVMs(jrepath, ((wanted==64)?LIBARCH64NAME:LIBARCH32NAME), JNI_TRUE) < 1) {
             goto EndDataModelSpeculate;
           }
           jvmpath[0] = '\0';
           jvmtype = CheckJvmType(_argcp, _argvp, JNI_TRUE);
           /* exec child can do error checking on the existence of the path */
           jvmpathExists = GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath,
-                                     ((wanted==64)?BIG_ARCH:SMALL_ARCH));
+                                     ((wanted==64)?LIBARCH64NAME:LIBARCH32NAME));
 
         }
       EndDataModelSpeculate: /* give up and let other code report error message */
@@ -388,8 +351,8 @@ CreateExecutionEnvironment(int *_argcp,
        * We will set the LD_LIBRARY_PATH as follows:
        *
        *     o          $JVMPATH (directory portion only)
-       *     o          $JRE/lib/$ARCH
-       *     o          $JRE/../lib/$ARCH
+       *     o          $JRE/lib/$LIBARCHNAME
+       *     o          $JRE/../lib/$LIBARCHNAME
        *
        * followed by the user's previous effective LD_LIBRARY_PATH, if
        * any.
@@ -483,8 +446,8 @@ CreateExecutionEnvironment(int *_argcp,
 
       /* runpath contains current effective LD_LIBRARY_PATH setting */
 
-      jvmpath = strdup(jvmpath);
-      new_runpath = MemAlloc( ((runpath!=NULL)?strlen(runpath):0) +
+      jvmpath = JLI_StringDup(jvmpath);
+      new_runpath = JLI_MemAlloc( ((runpath!=NULL)?strlen(runpath):0) +
                               2*strlen(jrepath) + 2*strlen(arch) +
                               strlen(jvmpath) + 52);
       newpath = new_runpath + strlen("LD_LIBRARY_PATH=");
@@ -500,7 +463,7 @@ CreateExecutionEnvironment(int *_argcp,
           *lastslash = '\0';
 
 
-        /* jvmpath, ((running != wanted)?((wanted==64)?"/"BIG_ARCH:"/.."):""), */
+        /* jvmpath, ((running != wanted)?((wanted==64)?"/"LIBARCH64NAME:"/.."):""), */
 
         sprintf(new_runpath, "LD_LIBRARY_PATH="
                 "%s:"
@@ -508,8 +471,8 @@ CreateExecutionEnvironment(int *_argcp,
                 "%s/../lib/%s",
                 jvmpath,
 #ifdef DUAL_MODE
-                jrepath, ((wanted==64)?BIG_ARCH:SMALL_ARCH),
-                jrepath, ((wanted==64)?BIG_ARCH:SMALL_ARCH)
+                jrepath, ((wanted==64)?LIBARCH64NAME:LIBARCH32NAME),
+                jrepath, ((wanted==64)?LIBARCH64NAME:LIBARCH32NAME)
 #else
                 jrepath, arch,
                 jrepath, arch
@@ -576,7 +539,7 @@ CreateExecutionEnvironment(int *_argcp,
          * executable must be updated accordingly; the executable name
          * and directory the executable resides in are separate.  In the
          * case of 32 => 64, the new bits are assumed to reside in, e.g.
-         * "olddir/BIGARCH/execname"; in the case of 64 => 32,
+         * "olddir/LIBARCH64NAME/execname"; in the case of 64 => 32,
          * the bits are assumed to be in "olddir/../execname".  For example,
          *
          * olddir/sparcv9/execname
@@ -586,19 +549,21 @@ CreateExecutionEnvironment(int *_argcp,
          */
 
         if (running != wanted) {
-          char *oldexec = strcpy(MemAlloc(strlen(execname) + 1), execname);
+          char *oldexec = strcpy(JLI_MemAlloc(strlen(execname) + 1), execname);
           char *olddir = oldexec;
           char *oldbase = strrchr(oldexec, '/');
 
 
-          newexec = MemAlloc(strlen(execname) + 20);
+          newexec = JLI_MemAlloc(strlen(execname) + 20);
           *oldbase++ = 0;
           sprintf(newexec, "%s/%s/%s", olddir,
-                  ((wanted==64) ? BIG_ARCH : ".."), oldbase);
+                  ((wanted==64) ? LIBARCH64NAME : ".."), oldbase);
           argv[0] = newexec;
         }
 #endif
 
+        (void)fflush(stdout);
+        (void)fflush(stderr);
         execve(newexec, argv, newenvp);
         perror("execve()");
 
@@ -630,12 +595,14 @@ CreateExecutionEnvironment(int *_argcp,
 
 #else  /* ifndef GAMMA */
 
-  /* gamma launcher is simpler in that it doesn't handle VM flavors, data  */
-  /* model, LD_LIBRARY_PATH, etc. Assuming everything is set-up correctly  */
-  /* all we need to do here is to return correct path names. See also      */
-  /* GetJVMPath() and GetApplicationHome().                                */
+  /*
+   * gamma launcher is simpler in that it doesn't handle VM flavors, data
+   * model, LD_LIBRARY_PATH, etc. Assuming everything is set-up correctly
+   * all we need to do here is to return correct path names. See also
+   * GetJVMPath() and GetApplicationHome().
+   */
 
-  { char *arch = (char *)GetArch(); /* like sparc or sparcv9 */
+  { char *arch = (char *) ARCH; /* like sparc or sparcv9 */
     char *p;
 
     if (!GetJREPath(jrepath, so_jrepath, arch, JNI_FALSE) ) {
@@ -669,9 +636,11 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
         sprintf(jvmpath, "%s/lib/%s/%s/" JVM_DLL, jrepath, arch, jvmtype);
     }
 #else
-    /* For gamma launcher, JVM is either built-in or in the same directory. */
-    /* Either way we return "<exe_path>/libjvm.so" where <exe_path> is the  */
-    /* directory where gamma launcher is located.                           */
+    /*
+     * For gamma launcher, JVM is either built-in or in the same directory.
+     * Either way we return "<exe_path>/libjvm.so" where <exe_path> is the
+     * directory where gamma launcher is located.
+     */
 
     char *p;
 
@@ -684,7 +653,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
        /* this case shouldn't happen */
        snprintf(jvmpath, jvmpathsize, "%s", JVM_DLL);
     }
-#endif
+#endif /* ifndef GAMMA */
 
     if (_launcher_debug)
       printf("Does `%s' exist ... ", jvmpath);
@@ -742,7 +711,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
     ifn->GetDefaultJavaVMInitArgs = JNI_GetDefaultJavaVMInitArgs;
     return JNI_TRUE;
 #else
-    Dl_info dlinfo;
+   Dl_info dlinfo;
     void *libjvm;
 
     if (_launcher_debug) {
@@ -813,24 +782,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 error:
     fprintf(stderr, "Error: failed %s, because %s\n", jvmpath, dlerror());
     return JNI_FALSE;
-#endif /* GAMMA */
-}
-
-/*
- * Get the path to the file that has the usage message for -X options.
- */
-void
-GetXUsagePath(char *buf, jint bufsize)
-{
-    static const char Xusage_txt[] = "/Xusage.txt";
-    Dl_info dlinfo;
-
-    /* we use RTLD_NOW because of problems with ld.so.1 and green threads */
-    dladdr(dlsym(dlopen(JVM_DLL, RTLD_NOW), "JNI_CreateJavaVM"), &dlinfo);
-    strncpy(buf, (char *)dlinfo.dli_fname, bufsize - sizeof(Xusage_txt));
-
-    buf[bufsize-1] = '\0';
-    strcpy(strrchr(buf, '/'), Xusage_txt);
+#endif /* ifndef GAMMA */
 }
 
 /*
@@ -860,13 +812,16 @@ GetApplicationHome(char *buf, jint bufsize)
 
 #ifdef GAMMA
     {
-      /* gamma launcher uses JAVA_HOME environment variable to find JDK/JRE */
-      char* java_home_var = getenv("JAVA_HOME");
-      if (java_home_var == NULL) {
-        printf("JAVA_HOME must point to a valid JDK/JRE to run gamma\n");
-        return JNI_FALSE;
-      }
-      snprintf(buf, bufsize, "%s", java_home_var);
+       /* gamma launcher uses JAVA_HOME or ALT_JAVA_HOME environment variable to find JDK/JRE */
+       char* java_home_var = getenv("ALT_JAVA_HOME");
+       if (java_home_var == NULL) {
+          java_home_var = getenv("JAVA_HOME");
+       }
+       if (java_home_var == NULL) {
+          printf("JAVA_HOME or ALT_JAVA_HOME must point to a valid JDK/JRE to run gamma\n");
+          return JNI_FALSE;
+       }
+       snprintf(buf, bufsize, "%s", java_home_var);
     }
 #else
     if (strrchr(buf, '/') == 0) {
@@ -885,7 +840,7 @@ GetApplicationHome(char *buf, jint bufsize)
         return JNI_FALSE;
     }
     *(strrchr(buf, '/')) = '\0';        /* bin                  */
-#endif /* GAMMA */
+#endif /* ifndef GAMMA */
 
     return JNI_TRUE;
 }
@@ -915,7 +870,7 @@ Resolve(char *indir, char *cmd)
     if ((strlen(indir) + strlen(cmd) + 1)  > PATH_MAX) return 0;
     sprintf(name, "%s%c%s", indir, FILE_SEPARATOR, cmd);
     if (!ProgramExists(name)) return 0;
-    real = MemAlloc(PATH_MAX + 2);
+    real = JLI_MemAlloc(PATH_MAX + 2);
     if (!realpath(name, real))
         strcpy(real, name);
     return real;
@@ -948,7 +903,7 @@ FindExecName(char *program)
     /* from search path? */
     path = getenv("PATH");
     if (!path || !*path) path = ".";
-    tmp_path = MemAlloc(strlen(path) + 2);
+    tmp_path = JLI_MemAlloc(strlen(path) + 2);
     strcpy(tmp_path, path);
 
     for (f=tmp_path; *f && result==0; ) {
@@ -967,7 +922,7 @@ FindExecName(char *program)
         if (result != 0) break;
     }
 
-    free(tmp_path);
+    JLI_MemFree(tmp_path);
     return result;
 }
 
@@ -1000,11 +955,11 @@ SetExecname(char **argv)
     {
         Dl_info dlinfo;
         if (dladdr((void*)&SetExecname, &dlinfo)) {
-            char *resolved = (char*)MemAlloc(PATH_MAX+1);
+            char *resolved = (char*)JLI_MemAlloc(PATH_MAX+1);
             if (resolved != NULL) {
                 exec_path = realpath(dlinfo.dli_fname, resolved);
                 if (exec_path == NULL) {
-                    free(resolved);
+                    JLI_MemFree(resolved);
                 }
             }
         }
@@ -1016,7 +971,7 @@ SetExecname(char **argv)
         int len = readlink(self, buf, PATH_MAX);
         if (len >= 0) {
             buf[len] = '\0';            /* readlink doesn't nul terminate */
-            exec_path = strdup(buf);
+            exec_path = JLI_StringDup(buf);
         }
     }
 #else /* !__sun && !__linux */
@@ -1091,8 +1046,7 @@ void PrintMachineDependentOptions() {
       return;
 }
 
-#ifndef GAMMA  /* gamma launcher does not have ergonomics */
-
+#ifndef GAMMA
 /*
  * The following methods (down to ServerClassMachine()) answer
  * the question about whether a machine is a "server-class"
@@ -1164,7 +1118,7 @@ solaris_sparc_ServerClassMachine(void) {
     }
   }
   if (_launcher_debug) {
-    printf("solaris_" ARCH "_ServerClassMachine: %s\n",
+    printf("solaris_" LIBARCHNAME "_ServerClassMachine: %s\n",
            (result == JNI_TRUE ? "JNI_TRUE" : "JNI_FALSE"));
   }
   return result;
@@ -1262,7 +1216,6 @@ get_cpuid(uint32_t arg,
   uint32_t value_of_edx = 0;
   __asm__ volatile (/* Instructions */
                         /* ebx is callee-save, so push it */
-                        /* even though it's in the clobbers section */
                     "   pushl   %%ebx      \n"
                     "   movl    %4, %%eax  \n"
                     "   cpuid              \n"
@@ -1281,7 +1234,7 @@ get_cpuid(uint32_t arg,
                     : /* Inputs */
                     "m" (arg)
                     : /* Clobbers */
-                    "%eax", "%ebx", "%ecx", "%edx"
+                    "%eax", "%ecx", "%edx"
                     );
   *eaxp = value_of_eax;
   *ebxp = value_of_ebx;
@@ -1461,7 +1414,7 @@ solaris_i586_ServerClassMachine(void) {
     }
   }
   if (_launcher_debug) {
-    printf("solaris_" ARCH "_ServerClassMachine: %s\n",
+    printf("solaris_" LIBARCHNAME "_ServerClassMachine: %s\n",
            (result == JNI_TRUE ? "true" : "false"));
   }
   return result;
@@ -1494,7 +1447,7 @@ linux_i586_ServerClassMachine(void) {
     }
   }
   if (_launcher_debug) {
-    printf("linux_" ARCH "_ServerClassMachine: %s\n",
+    printf("linux_" LIBARCHNAME "_ServerClassMachine: %s\n",
            (result == JNI_TRUE ? "true" : "false"));
   }
   return result;
@@ -1506,7 +1459,11 @@ linux_i586_ServerClassMachine(void) {
 jboolean
 ServerClassMachine(void) {
   jboolean result = JNI_FALSE;
-#if   defined(__sun) && defined(__sparc)
+#if   defined(NEVER_ACT_AS_SERVER_CLASS_MACHINE)
+  result = JNI_FALSE;
+#elif defined(ALWAYS_ACT_AS_SERVER_CLASS_MACHINE)
+  result = JNI_TRUE;
+#elif defined(__sun) && defined(__sparc)
   result = solaris_sparc_ServerClassMachine();
 #elif defined(__sun) && defined(i586)
   result = solaris_i586_ServerClassMachine();
@@ -1520,10 +1477,6 @@ ServerClassMachine(void) {
 #endif
   return result;
 }
-
-#endif /* ifndef GAMMA */
-
-#ifndef GAMMA /* gamma launcher does not choose JDK/JRE/JVM */
 
 /*
  *      Since using the file system as a registry is a bit risky, perform
@@ -1591,13 +1544,13 @@ static char
             else if (strncmp(dp->d_name, "j2sdk", 5) == 0)
                 offset = 5;
             if (offset > 0) {
-                if ((acceptable_release(dp->d_name + offset,
+                if ((JLI_AcceptableRelease(dp->d_name + offset,
                     info->jre_version)) && CheckSanity(dirname, dp->d_name))
-                    if ((best == NULL) || (exact_version_id(
+                    if ((best == NULL) || (JLI_ExactVersionId(
                       dp->d_name + offset, best + best_offset) > 0)) {
                         if (best != NULL)
-                            free(best);
-                        best = strdup(dp->d_name);
+                            JLI_MemFree(best);
+                        best = JLI_StringDup(dp->d_name);
                         best_offset = offset;
                     }
             }
@@ -1607,9 +1560,9 @@ static char
     if (best == NULL)
         return (NULL);
     else {
-        ret_str = MemAlloc(strlen(dirname) + strlen(best) + 2);
+        ret_str = JLI_MemAlloc(strlen(dirname) + strlen(best) + 2);
         ret_str = strcat(strcat(strcpy(ret_str, dirname), "/"), best);
-        free(best);
+        JLI_MemFree(best);
         return (ret_str);
     }
 }
@@ -1636,16 +1589,17 @@ LocateJRE(manifest_info* info)
      * Start by getting JAVA_VERSION_PATH
      */
     if (info->jre_restrict_search)
-        path = strdup(system_dir);
+        path = JLI_StringDup(system_dir);
     else if ((path = getenv("JAVA_VERSION_PATH")) != NULL)
-        path = strdup(path);
+        path = JLI_StringDup(path);
     else
         if ((home = getenv("HOME")) != NULL) {
-            path = (char *)MemAlloc(strlen(home) + 13);
+            path = (char *)JLI_MemAlloc(strlen(home) + strlen(system_dir) +
+                strlen(user_dir) + 2);
             path = strcat(strcat(strcat(strcpy(path, home),
                 user_dir), ":"), system_dir);
         } else
-            path = strdup(system_dir);
+            path = JLI_StringDup(system_dir);
 
     /*
      * Step through each directory on the path. Terminate the scan with
@@ -1662,7 +1616,7 @@ LocateJRE(manifest_info* info)
         if (dp != NULL)
             dp++;
     }
-    free(path);
+    JLI_MemFree(path);
     return (target);
 }
 
@@ -1740,16 +1694,19 @@ ExecJRE(char *jre, char **argv)
     argv[0] = progname;
     if (_launcher_debug) {
         int i;
-        printf("execv(\"%s\"", wanted);
-        for (i = 0; argv[i] != NULL; i++)
-            printf(", \"%s\"", argv[i]);
-        printf(")\n");
+        printf("ReExec Command: %s (%s)\n", wanted, argv[0]);
+        printf("ReExec Args:");
+        for (i = 1; argv[i] != NULL; i++)
+            printf(" %s", argv[i]);
+        printf("\n");
     }
+    (void)fflush(stdout);
+    (void)fflush(stderr);
     execv(wanted, argv);
+    perror("execv()");
     fprintf(stderr, "Exec of %s failed\n", wanted);
     exit(1);
 }
-
 #endif /* ifndef GAMMA */
 
 /*
@@ -1830,23 +1787,92 @@ UnsetEnv(char *name)
 {
     return(borrowed_unsetenv(name));
 }
-/*
- * The implementation for finding classes from the bootstrap
- * class loader, refer to java.h
- */
-static FindClassFromBootLoader_t *findBootClass = NULL;
 
-jclass
-FindBootStrapClass(JNIEnv *env, const char* classname)
-{
-   if (findBootClass == NULL) {
-       findBootClass = (FindClassFromBootLoader_t *)dlsym(RTLD_DEFAULT,
-          "JVM_FindClassFromBootLoader");
-       if (findBootClass == NULL) {
-           fprintf(stderr, "Error: could load method JVM_FindClassFromBootLoader");
-           return NULL;
-       }
-   }
-   return findBootClass(env, classname, JNI_FALSE);
+/* --- Splash Screen shared library support --- */
+
+static const char* SPLASHSCREEN_SO = "libsplashscreen.so";
+
+static void* hSplashLib = NULL;
+
+void* SplashProcAddress(const char* name) {
+    if (!hSplashLib) {
+        hSplashLib = dlopen(SPLASHSCREEN_SO, RTLD_LAZY | RTLD_GLOBAL);
+    }
+    if (hSplashLib) {
+        void* sym = dlsym(hSplashLib, name);
+        return sym;
+    } else {
+        return NULL;
+    }
 }
 
+void SplashFreeLibrary() {
+    if (hSplashLib) {
+        dlclose(hSplashLib);
+        hSplashLib = NULL;
+    }
+}
+
+const char *
+jlong_format_specifier() {
+    return "%lld";
+}
+
+/*
+ * Block current thread and continue execution in a new thread
+ */
+int
+ContinueInNewThread(int (JNICALL *continuation)(void *), jlong stack_size, void * args) {
+    int rslt;
+#ifdef __linux__
+    pthread_t tid;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    if (stack_size > 0) {
+      pthread_attr_setstacksize(&attr, stack_size);
+    }
+
+    if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
+      void * tmp;
+      pthread_join(tid, &tmp);
+      rslt = (int)tmp;
+    } else {
+     /*
+      * Continue execution in current thread if for some reason (e.g. out of
+      * memory/LWP)  a new thread can't be created. This will likely fail
+      * later in continuation as JNI_CreateJavaVM needs to create quite a
+      * few new threads, anyway, just give it a try..
+      */
+      rslt = continuation(args);
+    }
+
+    pthread_attr_destroy(&attr);
+#else
+    thread_t tid;
+    long flags = 0;
+    if (thr_create(NULL, stack_size, (void *(*)(void *))continuation, args, flags, &tid) == 0) {
+      void * tmp;
+      thr_join(tid, NULL, &tmp);
+      rslt = (int)tmp;
+    } else {
+      /* See above. Continue in current thread if thr_create() failed */
+      rslt = continuation(args);
+    }
+#endif
+    return rslt;
+}
+
+/* Coarse estimation of number of digits assuming the worst case is a 64-bit pid. */
+#define MAX_PID_STR_SZ   20
+
+void SetJavaLauncherPlatformProps() {
+   /* Linux only */
+#ifdef __linux__
+    const char *substr = "-Dsun.java.launcher.pid=";
+    char *pid_prop_str = (char *)JLI_MemAlloc(strlen(substr) + MAX_PID_STR_SZ + 1);
+    sprintf(pid_prop_str, "%s%d", substr, getpid());
+    AddOption(pid_prop_str, NULL);
+#endif
+}

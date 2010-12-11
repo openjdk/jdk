@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
 
 #include "runtime/os.hpp"
+#include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
 
 

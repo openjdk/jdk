@@ -43,7 +43,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/dtraceJSDT.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -65,15 +64,12 @@
 #include "utilities/top.hpp"
 #include "utilities/utf8.hpp"
 #ifdef TARGET_OS_FAMILY_linux
-# include "hpi_linux.hpp"
 # include "jvm_linux.h"
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
-# include "hpi_solaris.hpp"
 # include "jvm_solaris.h"
 #endif
 #ifdef TARGET_OS_FAMILY_windows
-# include "hpi_windows.hpp"
 # include "jvm_windows.h"
 #endif
 
@@ -653,7 +649,7 @@ JVM_END
 
 JVM_LEAF(jint, JVM_GetLastErrorString(char *buf, int len))
   JVMWrapper("JVM_GetLastErrorString");
-  return hpi::lasterror(buf, len);
+  return (jint)os::lasterror(buf, len);
 JVM_END
 
 
@@ -661,7 +657,7 @@ JVM_END
 
 JVM_LEAF(char*, JVM_NativePath(char* path))
   JVMWrapper2("JVM_NativePath (%s)", path);
-  return hpi::native_path(path);
+  return os::native_path(path);
 JVM_END
 
 
@@ -2487,7 +2483,7 @@ JVM_LEAF(jint, JVM_Open(const char *fname, jint flags, jint mode))
   JVMWrapper2("JVM_Open (%s)", fname);
 
   //%note jvm_r6
-  int result = hpi::open(fname, flags, mode);
+  int result = os::open(fname, flags, mode);
   if (result >= 0) {
     return result;
   } else {
@@ -2504,7 +2500,7 @@ JVM_END
 JVM_LEAF(jint, JVM_Close(jint fd))
   JVMWrapper2("JVM_Close (0x%x)", fd);
   //%note jvm_r6
-  return hpi::close(fd);
+  return os::close(fd);
 JVM_END
 
 
@@ -2512,7 +2508,7 @@ JVM_LEAF(jint, JVM_Read(jint fd, char *buf, jint nbytes))
   JVMWrapper2("JVM_Read (0x%x)", fd);
 
   //%note jvm_r6
-  return (jint)hpi::read(fd, buf, nbytes);
+  return (jint)os::restartable_read(fd, buf, nbytes);
 JVM_END
 
 
@@ -2520,34 +2516,34 @@ JVM_LEAF(jint, JVM_Write(jint fd, char *buf, jint nbytes))
   JVMWrapper2("JVM_Write (0x%x)", fd);
 
   //%note jvm_r6
-  return (jint)hpi::write(fd, buf, nbytes);
+  return (jint)os::write(fd, buf, nbytes);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Available(jint fd, jlong *pbytes))
   JVMWrapper2("JVM_Available (0x%x)", fd);
   //%note jvm_r6
-  return hpi::available(fd, pbytes);
+  return os::available(fd, pbytes);
 JVM_END
 
 
 JVM_LEAF(jlong, JVM_Lseek(jint fd, jlong offset, jint whence))
   JVMWrapper4("JVM_Lseek (0x%x, %Ld, %d)", fd, offset, whence);
   //%note jvm_r6
-  return hpi::lseek(fd, offset, whence);
+  return os::lseek(fd, offset, whence);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SetLength(jint fd, jlong length))
   JVMWrapper3("JVM_SetLength (0x%x, %Ld)", fd, length);
-  return hpi::ftruncate(fd, length);
+  return os::ftruncate(fd, length);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Sync(jint fd))
   JVMWrapper2("JVM_Sync (0x%x)", fd);
   //%note jvm_r6
-  return hpi::fsync(fd);
+  return os::fsync(fd);
 JVM_END
 
 
@@ -3457,145 +3453,124 @@ JVM_END
 
 JVM_LEAF(jint, JVM_InitializeSocketLibrary())
   JVMWrapper("JVM_InitializeSocketLibrary");
-  return hpi::initialize_socket_library();
+  return 0;
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Socket(jint domain, jint type, jint protocol))
   JVMWrapper("JVM_Socket");
-  return hpi::socket(domain, type, protocol);
+  return os::socket(domain, type, protocol);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SocketClose(jint fd))
   JVMWrapper2("JVM_SocketClose (0x%x)", fd);
   //%note jvm_r6
-  return hpi::socket_close(fd);
+  return os::socket_close(fd);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SocketShutdown(jint fd, jint howto))
   JVMWrapper2("JVM_SocketShutdown (0x%x)", fd);
   //%note jvm_r6
-  return hpi::socket_shutdown(fd, howto);
+  return os::socket_shutdown(fd, howto);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Recv(jint fd, char *buf, jint nBytes, jint flags))
   JVMWrapper2("JVM_Recv (0x%x)", fd);
   //%note jvm_r6
-  return hpi::recv(fd, buf, nBytes, flags);
+  return os::recv(fd, buf, nBytes, flags);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Send(jint fd, char *buf, jint nBytes, jint flags))
   JVMWrapper2("JVM_Send (0x%x)", fd);
   //%note jvm_r6
-  return hpi::send(fd, buf, nBytes, flags);
+  return os::send(fd, buf, nBytes, flags);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Timeout(int fd, long timeout))
   JVMWrapper2("JVM_Timeout (0x%x)", fd);
   //%note jvm_r6
-  return hpi::timeout(fd, timeout);
+  return os::timeout(fd, timeout);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Listen(jint fd, jint count))
   JVMWrapper2("JVM_Listen (0x%x)", fd);
   //%note jvm_r6
-  return hpi::listen(fd, count);
+  return os::listen(fd, count);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Connect(jint fd, struct sockaddr *him, jint len))
   JVMWrapper2("JVM_Connect (0x%x)", fd);
   //%note jvm_r6
-  return hpi::connect(fd, him, len);
+  return os::connect(fd, him, len);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Bind(jint fd, struct sockaddr *him, jint len))
   JVMWrapper2("JVM_Bind (0x%x)", fd);
   //%note jvm_r6
-  return hpi::bind(fd, him, len);
+  return os::bind(fd, him, len);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_Accept(jint fd, struct sockaddr *him, jint *len))
   JVMWrapper2("JVM_Accept (0x%x)", fd);
   //%note jvm_r6
-  return hpi::accept(fd, him, (int *)len);
+  return os::accept(fd, him, (int *)len);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_RecvFrom(jint fd, char *buf, int nBytes, int flags, struct sockaddr *from, int *fromlen))
   JVMWrapper2("JVM_RecvFrom (0x%x)", fd);
   //%note jvm_r6
-  return hpi::recvfrom(fd, buf, nBytes, flags, from, fromlen);
+  return os::recvfrom(fd, buf, nBytes, flags, from, fromlen);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_GetSockName(jint fd, struct sockaddr *him, int *len))
   JVMWrapper2("JVM_GetSockName (0x%x)", fd);
   //%note jvm_r6
-  return hpi::get_sock_name(fd, him, len);
+  return os::get_sock_name(fd, him, len);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SendTo(jint fd, char *buf, int len, int flags, struct sockaddr *to, int tolen))
   JVMWrapper2("JVM_SendTo (0x%x)", fd);
   //%note jvm_r6
-  return hpi::sendto(fd, buf, len, flags, to, tolen);
+  return os::sendto(fd, buf, len, flags, to, tolen);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SocketAvailable(jint fd, jint *pbytes))
   JVMWrapper2("JVM_SocketAvailable (0x%x)", fd);
   //%note jvm_r6
-  return hpi::socket_available(fd, pbytes);
+  return os::socket_available(fd, pbytes);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen))
   JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
   //%note jvm_r6
-  return hpi::get_sock_opt(fd, level, optname, optval, optlen);
+  return os::get_sock_opt(fd, level, optname, optval, optlen);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen))
   JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
   //%note jvm_r6
-  return hpi::set_sock_opt(fd, level, optname, optval, optlen);
+  return os::set_sock_opt(fd, level, optname, optval, optlen);
 JVM_END
 
 JVM_LEAF(int, JVM_GetHostName(char* name, int namelen))
   JVMWrapper("JVM_GetHostName");
-  return hpi::get_host_name(name, namelen);
+  return os::get_host_name(name, namelen);
 JVM_END
-
-#ifdef _WINDOWS
-
-JVM_LEAF(struct hostent*, JVM_GetHostByAddr(const char* name, int len, int type))
-  JVMWrapper("JVM_GetHostByAddr");
-  return hpi::get_host_by_addr(name, len, type);
-JVM_END
-
-
-JVM_LEAF(struct hostent*, JVM_GetHostByName(char* name))
-  JVMWrapper("JVM_GetHostByName");
-  return hpi::get_host_by_name(name);
-JVM_END
-
-
-JVM_LEAF(struct protoent*, JVM_GetProtoByName(char* name))
-  JVMWrapper("JVM_GetProtoByName");
-  return hpi::get_proto_by_name(name);
-JVM_END
-
-#endif
 
 // Library support ///////////////////////////////////////////////////////////////////////////
 
@@ -3606,7 +3581,7 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
   void *load_result;
   {
     ThreadToNativeFromVM ttnfvm(thread);
-    load_result = hpi::dll_load(name, ebuf, sizeof ebuf);
+    load_result = os::dll_load(name, ebuf, sizeof ebuf);
   }
   if (load_result == NULL) {
     char msg[1024];
@@ -3628,13 +3603,13 @@ JVM_END
 
 JVM_LEAF(void, JVM_UnloadLibrary(void* handle))
   JVMWrapper("JVM_UnloadLibrary");
-  hpi::dll_unload(handle);
+  os::dll_unload(handle);
 JVM_END
 
 
 JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
   JVMWrapper2("JVM_FindLibraryEntry (%s)", name);
-  return hpi::dll_lookup(handle, name);
+  return os::dll_lookup(handle, name);
 JVM_END
 
 // Floating point support ////////////////////////////////////////////////////////////////////

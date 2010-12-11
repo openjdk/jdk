@@ -5538,17 +5538,14 @@ void MacroAssembler::stop(const char* msg) {
 }
 
 void MacroAssembler::warn(const char* msg) {
-  push(r12);
-  movq(r12, rsp);
+  push(rsp);
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
 
   push_CPU_state();   // keeps alignment at 16 bytes
   lea(c_rarg0, ExternalAddress((address) msg));
   call_VM_leaf(CAST_FROM_FN_PTR(address, warning), c_rarg0);
   pop_CPU_state();
-
-  movq(rsp, r12);
-  pop(r12);
+  pop(rsp);
 }
 
 #ifndef PRODUCT
@@ -5860,6 +5857,10 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // debugging support
   assert(number_of_arguments >= 0   , "cannot have negative number of arguments");
   LP64_ONLY(assert(java_thread == r15_thread, "unexpected register"));
+#ifdef ASSERT
+  LP64_ONLY(if (UseCompressedOops) verify_heapbase("call_VM_base");)
+#endif // ASSERT
+
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
   assert(java_thread != last_java_sp, "cannot use the same register for java_thread & last_java_sp");
 

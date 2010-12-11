@@ -35,13 +35,24 @@
 inline const char* os::file_separator()                { return "\\"; }
 inline const char* os::line_separator()                { return "\r\n"; }
 inline const char* os::path_separator()                { return ";"; }
+inline const char* os::dll_file_extension()            { return ".dll"; }
 
 inline const char* os::jlong_format_specifier()        { return "%I64d"; }
 inline const char* os::julong_format_specifier()       { return "%I64u"; }
 
+inline const int os::default_file_open_flags() { return O_BINARY | O_NOINHERIT;}
+
 // File names are case-insensitive on windows only
 inline int os::file_name_strcmp(const char* s, const char* t) {
   return _stricmp(s, t);
+}
+
+inline void  os::dll_unload(void *lib) {
+  ::FreeLibrary((HMODULE)lib);
+}
+
+inline void* os::dll_lookup(void *lib, const char *name) {
+  return (void*)::GetProcAddress((HMODULE)lib, name);
 }
 
 // Used to improve time-sharing on some systems
@@ -83,4 +94,19 @@ inline void os::bang_stack_shadow_pages() {
 inline bool os::numa_has_static_binding()   { return true;   }
 inline bool os::numa_has_group_homing()     { return false;  }
 
+inline size_t os::read(int fd, void *buf, unsigned int nBytes) {
+  return ::read(fd, buf, nBytes);
+}
+
+inline size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
+  return ::read(fd, buf, nBytes);
+}
+
+inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  return ::write(fd, buf, nBytes);
+}
+
+inline int os::close(int fd) {
+  return ::close(fd);
+}
 #endif // OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP

@@ -1193,9 +1193,20 @@ void SignatureHandlerLibrary::add(methodHandle method) {
       method->set_signature_handler(_handlers->at(handler_index));
     }
   }
+#ifdef ASSERT
+  int handler_index, fingerprint_index;
+  {
+    // '_handlers' and '_fingerprints' are 'GrowableArray's and are NOT synchronized
+    // in any way if accessed from multiple threads. To avoid races with another
+    // thread which may change the arrays in the above, mutex protected block, we
+    // have to protect this read access here with the same mutex as well!
+    MutexLocker mu(SignatureHandlerLibrary_lock);
+    handler_index = _handlers->find(method->signature_handler());
+    fingerprint_index = _fingerprints->find(Fingerprinter(method).fingerprint());
+  }
   assert(method->signature_handler() == Interpreter::slow_signature_handler() ||
-         _handlers->find(method->signature_handler()) == _fingerprints->find(Fingerprinter(method).fingerprint()),
-         "sanity check");
+         handler_index == fingerprint_index, "sanity check");
+#endif
 }
 
 

@@ -1323,12 +1323,7 @@ run:
           jfloat f;
           jdouble r;
           f = STACK_FLOAT(-1);
-#ifdef IA64
-          // IA64 gcc bug
-          r = ( f == 0.0f ) ? (jdouble) f : (jdouble) f + ia64_double_zero;
-#else
           r = (jdouble) f;
-#endif
           MORE_STACK(-1); // POP
           SET_STACK_DOUBLE(r, 1);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 2);

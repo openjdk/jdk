@@ -457,6 +457,11 @@ void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   }
 }
 
+bool instanceRefKlass::owns_pending_list_lock(JavaThread* thread) {
+  Handle h_lock(thread, java_lang_ref_Reference::pending_list_lock());
+  return ObjectSynchronizer::current_thread_holds_lock(thread, h_lock);
+}
+
 void instanceRefKlass::acquire_pending_list_lock(BasicLock *pending_list_basic_lock) {
   // we may enter this with pending exception set
   PRESERVE_EXCEPTION_MARK;  // exceptions are never thrown, needed for TRAPS argument

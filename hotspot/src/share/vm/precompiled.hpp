@@ -22,6 +22,10 @@
  *
  */
 
+// Precompiled headers are turned off for Sun Studion,
+// or if the user passes USE_PRECOMPILED_HEADER=0 to the makefiles.
+#ifndef DONT_USE_PRECOMPILED_HEADER
+
 # include "asm/assembler.hpp"
 # include "asm/assembler.inline.hpp"
 # include "asm/codeBuffer.hpp"
@@ -168,7 +172,6 @@
 # include "oops/symbolOop.hpp"
 # include "oops/typeArrayKlass.hpp"
 # include "oops/typeArrayOop.hpp"
-# include "prims/hpi_imported.h"
 # include "prims/jni.h"
 # include "prims/jvm.h"
 # include "prims/jvmtiExport.hpp"
@@ -185,7 +188,6 @@
 # include "runtime/globals_extension.hpp"
 # include "runtime/handles.hpp"
 # include "runtime/handles.inline.hpp"
-# include "runtime/hpi.hpp"
 # include "runtime/icache.hpp"
 # include "runtime/init.hpp"
 # include "runtime/interfaceSupport.hpp"
@@ -325,3 +327,5 @@
 # include "gc_implementation/shared/gcAdaptivePolicyCounters.hpp"
 # include "gc_implementation/shared/gcPolicyCounters.hpp"
 #endif // SERIALGC
+
+#endif // !DONT_USE_PRECOMPILED_HEADER

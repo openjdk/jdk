@@ -1073,28 +1073,20 @@ oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
   }
 }
 
-BasicLock* frame::compiled_synchronized_native_monitor(nmethod* nm) {
-  if (nm == NULL) {
-    assert(_cb != NULL && _cb->is_nmethod() &&
-           nm->method()->is_native() &&
-           nm->method()->is_synchronized(),
-           "should not call this otherwise");
-    nm = (nmethod*) _cb;
-  }
-  int byte_offset = in_bytes(nm->compiled_synchronized_native_basic_lock_sp_offset());
+BasicLock* frame::get_native_monitor() {
+  nmethod* nm = (nmethod*)_cb;
+  assert(_cb != NULL && _cb->is_nmethod() && nm->method()->is_native(),
+         "Should not call this unless it's a native nmethod");
+  int byte_offset = in_bytes(nm->native_basic_lock_sp_offset());
   assert(byte_offset >= 0, "should not see invalid offset");
   return (BasicLock*) &sp()[byte_offset / wordSize];
 }
 
-oop frame::compiled_synchronized_native_monitor_owner(nmethod* nm) {
-  if (nm == NULL) {
-    assert(_cb != NULL && _cb->is_nmethod() &&
-           nm->method()->is_native() &&
-           nm->method()->is_synchronized(),
-           "should not call this otherwise");
-    nm = (nmethod*) _cb;
-  }
-  int byte_offset = in_bytes(nm->compiled_synchronized_native_basic_lock_owner_sp_offset());
+oop frame::get_native_receiver() {
+  nmethod* nm = (nmethod*)_cb;
+  assert(_cb != NULL && _cb->is_nmethod() && nm->method()->is_native(),
+         "Should not call this unless it's a native nmethod");
+  int byte_offset = in_bytes(nm->native_receiver_sp_offset());
   assert(byte_offset >= 0, "should not see invalid offset");
   oop owner = ((oop*) sp())[byte_offset / wordSize];
   assert( Universe::heap()->is_in(owner), "bad receiver" );

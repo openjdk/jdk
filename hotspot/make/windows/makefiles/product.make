@@ -25,9 +25,15 @@
 HS_INTERNAL_NAME=jvm
 HS_FNAME=$(HS_INTERNAL_NAME).dll
 AOUT=$(HS_FNAME)
+LAUNCHER_NAME=hotspot.exe
 GENERATED=../generated
 
-default:: _build_pch_file.obj $(AOUT) checkAndBuildSA
+# Allow the user to turn off precompiled headers from the command line.
+!if "$(USE_PRECOMPILED_HEADER)" != "0"
+BUILD_PCH_FILE=_build_pch_file.obj
+!endif
+
+default:: $(BUILD_PCH_FILE) $(AOUT) $(LAUNCHER_NAME) checkAndBuildSA
 
 !include ../local.make
 !include compile.make
@@ -68,3 +74,4 @@ $(AOUT): $(Res_Files) $(Obj_Files)
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make
+!include $(WorkSpace)/make/windows/makefiles/launcher.make

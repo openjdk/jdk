@@ -27,7 +27,6 @@
 
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/hpi.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "utilities/top.hpp"
