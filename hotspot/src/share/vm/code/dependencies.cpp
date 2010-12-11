@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,16 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_dependencies.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciArrayKlass.hpp"
+#include "ci/ciEnv.hpp"
+#include "ci/ciKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "code/dependencies.hpp"
+#include "compiler/compileLog.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/copy.hpp"
 
 
 #ifdef ASSERT

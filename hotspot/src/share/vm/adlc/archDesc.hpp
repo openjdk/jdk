@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ADLC_ARCHDESC_HPP
+#define SHARE_VM_ADLC_ARCHDESC_HPP
 
 // Definitions for Error Flags
 #define  WARN   0
@@ -274,8 +277,13 @@ public:
 
   // output SUN copyright info
   void addSunCopyright(char* legal, int size, FILE *fp);
-  // output #include declarations for machine specific files
-  void machineDependentIncludes(ADLFILE &adlfile);
+  // output the start of an include guard.
+  void addIncludeGuardStart(ADLFILE &adlfile, const char* guardString);
+  // output the end of an include guard.
+  void addIncludeGuardEnd(ADLFILE &adlfile, const char* guardString);
+  // output the #include line for this file.
+  void addInclude(ADLFILE &adlfile, const char* fileName);
+  void addInclude(ADLFILE &adlfile, const char* includeDir, const char* fileName);
   // Output C preprocessor code to verify the backend compilation environment.
   void addPreprocessorChecks(FILE *fp);
   // Output C source and header (source_hpp) blocks.
@@ -387,3 +395,5 @@ public:
   // Allow derived class to output name and position specific info
   virtual void record_position(OutputMap::position place, int index) {}
 };
+
+#endif // SHARE_VM_ADLC_ARCHDESC_HPP

@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CISTREAMS_HPP
+#define SHARE_VM_CI_CISTREAMS_HPP
+
+#include "ci/ciClassList.hpp"
+#include "ci/ciExceptionHandler.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "interpreter/bytecode.hpp"
+
 // ciBytecodeStream
 //
 // The class is used to iterate over the bytecodes of a method.
@@ -397,3 +406,5 @@ public:
     return _method->_exception_handlers[_pos];
   }
 };
+
+#endif // SHARE_VM_CI_CISTREAMS_HPP

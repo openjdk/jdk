@@ -22,8 +22,34 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_frame.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/monitorChunk.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+#endif
 
 RegisterMap::RegisterMap(JavaThread *thread, bool update_map) {
   _thread         = thread;

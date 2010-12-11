@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_ALLOCATION_HPP
+#define SHARE_VM_MEMORY_ALLOCATION_HPP
+
+#include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 #define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
@@ -419,3 +431,5 @@ public:
   ReallocMark()   PRODUCT_RETURN;
   void check()    PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_MEMORY_ALLOCATION_HPP

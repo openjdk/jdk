@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -151,20 +151,20 @@ ifdef LP64
 %.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
-	$(QUIETLY) $(COMPILE.CC) -o $@ $< $(COMPILE_DONE)
+	$(QUIETLY) $(COMPILE.CC) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
 else
 %.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(if $(findstring $@, $(NONPIC_OBJ_FILES)), \
-	   $(subst $(VM_PICFLAG), ,$(COMPILE.CC)) -o $@ $< $(COMPILE_DONE), \
-	   $(COMPILE.CC) -o $@ $< $(COMPILE_DONE))
+	   $(subst $(VM_PICFLAG), ,$(COMPILE.CC)) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE), \
+	   $(COMPILE.CC) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE))
 endif
 
 %.o: %.s
 	@echo Assembling $<
 	$(QUIETLY) $(REMOVE_TARGET)
-	$(QUIETLY) $(AS.S) -o $@ $< $(COMPILE_DONE)
+	$(QUIETLY) $(AS.S) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
 
 %.s: %.cpp
 	@echo Generating assembly for $<

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_MUTEX_HPP
+#define SHARE_VM_RUNTIME_MUTEX_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/os.hpp"
+#include "utilities/histogram.hpp"
 
 // The SplitWord construct allows us to colocate the contention queue
 // (cxq) with the lock-byte.  The queue elements are ParkEvents, which are
@@ -265,3 +272,5 @@ class Mutex : public Monitor {      // degenerate Monitor
    }
 };
 
+
+#endif // SHARE_VM_RUNTIME_MUTEX_HPP

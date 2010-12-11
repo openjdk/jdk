@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_IDEALKIT_HPP
+#define SHARE_VM_OPTO_IDEALKIT_HPP
+
+#include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
 
 //-----------------------------------------------------------------------------
 //----------------------------IdealKit-----------------------------------------
@@ -228,3 +240,5 @@ class IdealKit: public StackObj {
                       Node* parm1 = NULL,
                       Node* parm2 = NULL);
 };
+
+#endif // SHARE_VM_OPTO_IDEALKIT_HPP

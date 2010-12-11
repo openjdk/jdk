@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,15 @@ HS_INTERNAL_NAME=jvm
 HS_FNAME=$(HS_INTERNAL_NAME).dll
 AOUT=$(HS_FNAME)
 SAWINDBG=sawindbg.dll
+LAUNCHER_NAME=hotspot.exe
 GENERATED=../generated
 
-default:: _build_pch_file.obj $(AOUT) checkAndBuildSA
+# Allow the user to turn off precompiled headers from the command line.
+!if "$(USE_PRECOMPILED_HEADER)" != "0"
+BUILD_PCH_FILE=_build_pch_file.obj
+!endif
+
+default:: $(BUILD_PCH_FILE) $(AOUT) $(LAUNCHER_NAME) checkAndBuildSA
 
 !include ../local.make
 !include compile.make
@@ -37,8 +43,6 @@ CPP_FLAGS=$(CPP_FLAGS) $(DEBUG_OPT_OPTION)
 
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make
-
-!include $(GENERATED)/Dependencies
 
 HS_BUILD_ID=$(HS_BUILD_VER)-debug
 
@@ -59,3 +63,4 @@ $(AOUT): $(Res_Files) $(Obj_Files)
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make
+!include $(WorkSpace)/make/windows/makefiles/launcher.make

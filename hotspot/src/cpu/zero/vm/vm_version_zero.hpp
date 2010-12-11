@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,17 @@
  *
  */
 
+#ifndef CPU_ZERO_VM_VM_VERSION_ZERO_HPP
+#define CPU_ZERO_VM_VM_VERSION_ZERO_HPP
+
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
+
 class VM_Version : public Abstract_VM_Version {
  public:
   static const char* cpu_features() {
     return "";
   }
 };
+
+#endif // CPU_ZERO_VM_VM_VERSION_ZERO_HPP

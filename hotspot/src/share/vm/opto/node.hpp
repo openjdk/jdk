@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_NODE_HPP
+#define SHARE_VM_OPTO_NODE_HPP
+
+#include "libadt/port.hpp"
+#include "libadt/vectset.hpp"
+#include "opto/compile.hpp"
+#include "opto/type.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1554,3 +1562,5 @@ public:
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
+
+#endif // SHARE_VM_OPTO_NODE_HPP

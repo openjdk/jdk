@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,20 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_DEFS_HPP
+#define SHARE_VM_C1_C1_DEFS_HPP
+
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_ARCH_x86
+# include "register_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "register_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "register_zero.hpp"
+#endif
+
 // set frame size and return address offset to these values in blobs
 // (if the compiled frame uses ebp as link pointer on IA; otherwise,
 // the frame size must be fixed)
@@ -30,7 +44,13 @@ enum {
 };
 
 
-# include "incls/_c1_Defs_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "c1_Defs_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_Defs_sparc.hpp"
+#endif
+
 
 // native word offsets from memory address
 enum {
@@ -49,3 +69,5 @@ enum {
 enum {
   float_saved_as_double = pd_float_saved_as_double
 };
+
+#endif // SHARE_VM_C1_C1_DEFS_HPP

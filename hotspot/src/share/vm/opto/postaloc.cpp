@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_postaloc.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/machnode.hpp"
 
 // see if this register kind does not requires two registers
 static bool is_single_register(uint x) {

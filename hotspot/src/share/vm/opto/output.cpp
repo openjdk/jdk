@@ -22,8 +22,24 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_output.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
+#include "code/debugInfo.hpp"
+#include "code/debugInfoRec.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/oopMap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/locknode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/output.hpp"
+#include "opto/regalloc.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/xmlstream.hpp"
 
 extern uint size_java_to_interp();
 extern uint reloc_java_to_interp();

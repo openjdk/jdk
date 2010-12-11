@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandles_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "prims/methodHandles.hpp"
 
 #define __ _masm->
 

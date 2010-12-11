@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_REGISTERMAP_SPARC_HPP
+#define CPU_SPARC_VM_REGISTERMAP_SPARC_HPP
 
 // machine-dependent implemention for register maps
   friend class frame;
@@ -51,3 +54,5 @@
   void shift_individual_registers();
   // When popping out of compiled frames, we make all IRegs disappear.
   void make_integer_regs_unsaved() { _location_valid[0] = 0; }
+
+#endif // CPU_SPARC_VM_REGISTERMAP_SPARC_HPP

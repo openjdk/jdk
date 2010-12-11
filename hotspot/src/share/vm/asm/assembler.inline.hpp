@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ASM_ASSEMBLER_INLINE_HPP
+#define SHARE_VM_ASM_ASSEMBLER_INLINE_HPP
+
+#include "asm/assembler.hpp"
+#include "asm/codeBuffer.hpp"
+#include "compiler/disassembler.hpp"
+#include "runtime/threadLocalStorage.hpp"
 
 inline void AbstractAssembler::sync() {
   CodeSection* cs = code_section();
@@ -133,3 +141,5 @@ address AbstractAssembler::address_table_constant(GrowableArray<Label*> labels) 
   }
   return ptr;
 }
+
+#endif // SHARE_VM_ASM_ASSEMBLER_INLINE_HPP

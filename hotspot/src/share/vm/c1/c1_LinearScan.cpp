@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_LinearScan.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "utilities/bitMap.inline.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmreg_zero.inline.hpp"
+#endif
 
 
 #ifndef PRODUCT

@@ -22,8 +22,21 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiEventController.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
 
 #ifdef JVMTI_TRACE
 #define EC_TRACE(out) if (JvmtiTrace::trace_event_controller()) { SafeResourceMark rm; tty->print_cr out; } while (0)

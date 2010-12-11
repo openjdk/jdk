@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
+#define CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
+
+#include "asm/assembler.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "code/codeCache.hpp"
+#include "runtime/handles.inline.hpp"
+
 inline void MacroAssembler::pd_patch_instruction(address branch, address target) {
   jint& stub_inst = *(jint*) branch;
   stub_inst = patched_branch(target - branch, stub_inst, 0);
@@ -822,3 +830,5 @@ inline void MacroAssembler::membar( Membar_mask_bits const7a ) {
     Assembler::ldstub(SP, 0, G0);
   }
 }
+
+#endif // CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP

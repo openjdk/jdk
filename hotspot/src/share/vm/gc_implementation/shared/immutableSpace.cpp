@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_immutableSpace.cpp.incl"
+#include "precompiled.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/shared/immutableSpace.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#endif
 
 void ImmutableSpace::initialize(MemRegion mr) {
   HeapWord* bottom = mr.start();

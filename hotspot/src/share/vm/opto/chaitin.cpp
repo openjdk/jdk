@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_chaitin.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/oopMap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/block.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/coalesce.hpp"
+#include "opto/connode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/indexSet.hpp"
+#include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/rootnode.hpp"
 
 //=============================================================================
 

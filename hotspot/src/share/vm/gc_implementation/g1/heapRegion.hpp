@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
+
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
+#include "gc_implementation/g1/survRateGroup.hpp"
+#include "gc_implementation/shared/ageTable.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/space.inline.hpp"
+#include "memory/watermark.hpp"
+
 #ifndef SERIALGC
 
 // A HeapRegion is the smallest piece of a G1CollectedHeap that
@@ -945,3 +956,5 @@ public:
 // End: ***
 
 #endif // SERIALGC
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP

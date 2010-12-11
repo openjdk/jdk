@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_IDEALGRAPHPRINTER_HPP
+#define SHARE_VM_OPTO_IDEALGRAPHPRINTER_HPP
+
+#include "libadt/dict.hpp"
+#include "libadt/vectset.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/xmlstream.hpp"
 
 #ifndef PRODUCT
 
@@ -140,3 +149,5 @@ public:
 };
 
 #endif
+
+#endif // SHARE_VM_OPTO_IDEALGRAPHPRINTER_HPP

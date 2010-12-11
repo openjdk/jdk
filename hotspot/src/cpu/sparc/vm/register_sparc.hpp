@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_REGISTER_SPARC_HPP
+#define CPU_SPARC_VM_REGISTER_SPARC_HPP
+
+#include "asm/register.hpp"
+#include "vm_version_sparc.hpp"
 
 // forward declaration
 class Address;
@@ -440,3 +446,5 @@ class QuadFloatRegisterImpl {
     return as_FloatRegister( ((encoding & 1) << 5) | (encoding & 0x1c) );
   }
 };
+
+#endif // CPU_SPARC_VM_REGISTER_SPARC_HPP

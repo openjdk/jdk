@@ -22,8 +22,41 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciMethod.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciCallProfile.hpp"
+#include "ci/ciExceptionHandler.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciMethodBlocks.hpp"
+#include "ci/ciMethodData.hpp"
+#include "ci/ciMethodKlass.hpp"
+#include "ci/ciStreams.hpp"
+#include "ci/ciSymbol.hpp"
+#include "ci/ciUtilities.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/generateOopMap.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/deoptimization.hpp"
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef COMPILER2
+#include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "oops/methodOop.hpp"
+#endif
+#ifdef SHARK
+#include "ci/ciTypeFlow.hpp"
+#include "oops/methodOop.hpp"
+#endif
 
 // ciMethod
 //

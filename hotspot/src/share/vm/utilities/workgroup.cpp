@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_workgroup.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/os.hpp"
+#include "utilities/workgroup.hpp"
 
 // Definitions of WorkGang methods.
 

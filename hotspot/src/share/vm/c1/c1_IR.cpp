@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_IR.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_Optimizer.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 // Implementation of XHandlers

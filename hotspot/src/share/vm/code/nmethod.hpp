@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_NMETHOD_HPP
+#define SHARE_VM_CODE_NMETHOD_HPP
+
+#include "code/codeBlob.hpp"
+#include "code/pcDesc.hpp"
+
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
 
@@ -704,3 +710,5 @@ class nmethodLocker : public StackObj {
     lock_nmethod(_nm);
   }
 };
+
+#endif // SHARE_VM_CODE_NMETHOD_HPP

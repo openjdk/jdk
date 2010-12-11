@@ -22,6 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_FRAMEMAP_HPP
+#define SHARE_VM_C1_C1_FRAMEMAP_HPP
+
+#include "asm/assembler.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_LIR.hpp"
+#include "code/vmreg.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/synchronizer.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 class ciMethod;
 class CallingConvention;
 class BasicTypeArray;
@@ -70,7 +82,13 @@ class FrameMap : public CompilationResourceObj {
     spill_slot_size_in_bytes = 4
   };
 
-# include "incls/_c1_FrameMap_pd.hpp.incl"  // platform dependent declarations
+#ifdef TARGET_ARCH_x86
+# include "c1_FrameMap_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_FrameMap_sparc.hpp"
+#endif
+
 
   friend class LIR_OprDesc;
 
@@ -266,3 +284,5 @@ class CallingConvention: public ResourceObj {
   }
 #endif // PRODUCT
 };
+
+#endif // SHARE_VM_C1_C1_FRAMEMAP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,53 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "prims/jniCheck.hpp"
+#include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgentThread.hpp"
+#include "prims/jvmtiClassFileReconstituter.hpp"
+#include "prims/jvmtiCodeBlobEvents.hpp"
+#include "prims/jvmtiExtensions.hpp"
+#include "prims/jvmtiGetLoadedClasses.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiManageCapabilities.hpp"
+#include "prims/jvmtiRawMonitor.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiTagMap.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
+#include "prims/jvmtiUtil.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/reflectionUtils.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vmThread.hpp"
+#include "services/threadService.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiEnv.cpp.incl"
 
 
 #define FIXLATER 0 // REMOVE this when completed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKTYPE_HPP
+#define SHARE_VM_SHARK_SHARKTYPE_HPP
+
+#include "ci/ciType.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkContext.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class SharkType : public AllStatic {
  private:
@@ -110,3 +119,5 @@ class SharkType : public AllStatic {
     return to_arrayType(type->basic_type());
   }
 };
+
+#endif // SHARE_VM_SHARK_SHARKTYPE_HPP

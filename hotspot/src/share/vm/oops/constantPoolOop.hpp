@@ -22,6 +22,23 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
+#define SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
+
+#include "oops/arrayOop.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "utilities/constantTag.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
+
 // A constantPool is an array containing class constants as described in the
 // class file.
 //
@@ -765,3 +782,5 @@ class SymbolHashMap: public CHeapObj {
     delete _buckets;
   }
 }; // End SymbolHashMap class
+
+#endif // SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP

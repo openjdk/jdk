@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_ASSEMBLER_X86_HPP
+#define CPU_X86_VM_ASSEMBLER_X86_HPP
+
 class BiasedLockingCounters;
 
 // Contains all the definitions needed for x86 assembly code generation.
@@ -2273,3 +2276,5 @@ class SkipIfEqual {
 #ifdef ASSERT
 inline bool AbstractAssembler::pd_check_instruction_mark() { return true; }
 #endif
+
+#endif // CPU_X86_VM_ASSEMBLER_X86_HPP

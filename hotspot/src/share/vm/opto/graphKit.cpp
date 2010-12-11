@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_graphKit.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "opto/addnode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/idealKit.hpp"
+#include "opto/locknode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -569,7 +584,8 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       const TypePtr* adr_typ = ex_con->add_offset(offset);
 
       Node *adr = basic_plus_adr(ex_node, ex_node, offset);
-      Node *store = store_oop_to_object(control(), ex_node, adr, adr_typ, null(), ex_con, T_OBJECT);
+      const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
+      Node *store = store_oop_to_object(control(), ex_node, adr, adr_typ, null(), val_type, T_OBJECT);
 
       add_exception_state(make_exception_state(ex_node));
       return;
