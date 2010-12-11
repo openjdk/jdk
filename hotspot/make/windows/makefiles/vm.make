@@ -128,7 +128,13 @@ CPP_INCLUDE_DIRS=\
   /I "$(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm" \
   /I "$(WorkSpace)\src\cpu\$(Platform_arch)\vm"
 
+CPP_DONT_USE_PCH=/D DONT_USE_PRECOMPILED_HEADER
+
+!if "$(USE_PRECOMPILED_HEADER)" != "0"
 CPP_USE_PCH=/Fp"vm.pch" /Yu"precompiled.hpp"
+!else
+CPP_USE_PCH=$(CPP_DONT_USE_PCH)
+!endif
 
 # Where to find the source code for the virtual machine
 VM_PATH=../generated
@@ -164,31 +170,31 @@ VM_PATH={$(VM_PATH)}
 # Special case files not using precompiled header files.
 
 c1_RInfo_$(Platform_arch).obj: $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp 
-	 $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
+	 $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
 
 os_windows.obj: $(WorkSpace)\src\os\windows\vm\os_windows.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os\windows\vm\os_windows.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\os_windows.cpp
 
 os_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
 
 osThread_windows.obj: $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
 
 conditionVar_windows.obj: $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
 
 getThread_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
 
 opcodes.obj: $(WorkSpace)\src\share\vm\opto\opcodes.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\share\vm\opto\opcodes.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\opto\opcodes.cpp
 
 bytecodeInterpreter.obj: $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
 
 bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
-        $(CPP) $(CPP_FLAGS) /c ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
 
 # Default rules for the Virtual Machine
 {$(WorkSpace)\src\share\vm\c1}.cpp.obj::

@@ -2113,11 +2113,10 @@ JNI_END
 JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboolean *isCopy))
   JNIWrapper("GetStringUTFChars");
   DTRACE_PROBE3(hotspot_jni, GetStringUTFChars__entry, env, string, isCopy);
-  ResourceMark rm;
-  char* str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(string));
-  int length = (int)strlen(str);
-  char* result = AllocateHeap(length+1, "GetStringUTFChars");
-  strcpy(result, str);
+  oop java_string = JNIHandles::resolve_non_null(string);
+  size_t length = java_lang_String::utf8_length(java_string);
+  char* result = AllocateHeap(length + 1, "GetStringUTFChars");
+  java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
   if (isCopy != NULL) *isCopy = JNI_TRUE;
   DTRACE_PROBE1(hotspot_jni, GetStringUTFChars__return, result);
   return result;
@@ -3258,7 +3257,6 @@ struct JavaVM_ main_vm = {&jni_InvokeInterface};
 
 
 #define JAVASTACKSIZE (400 * 1024)    /* Default size of a thread java stack */
-#define PROCSTACKSIZE 0               /* 0 means default size in HPI */
 enum { VERIFY_NONE, VERIFY_REMOTE, VERIFY_ALL };
 
 HS_DTRACE_PROBE_DECL1(hotspot_jni, GetDefaultJavaVMInitArgs__entry, void*);

@@ -79,6 +79,9 @@ ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
 DEPFLAGS = -xMMD -xMF $(DEP_DIR)/$(@:%=%.d)
 endif
 
+# -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
+CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
+
 #------------------------------------------------------------------------
 # Linker flags
 

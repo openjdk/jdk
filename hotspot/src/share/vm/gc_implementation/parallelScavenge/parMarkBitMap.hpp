@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARMARKBITMAP_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARMARKBITMAP_HPP
 
+#include "memory/memRegion.hpp"
 #include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
 #include "utilities/bitMap.inline.hpp"
 

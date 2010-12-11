@@ -182,7 +182,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   if (_to_java_string_fn == NULL) {
     void *lib_handle = os::native_java_library();
-    _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, hpi::dll_lookup(lib_handle, "NewStringPlatform"));
+    _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "NewStringPlatform"));
     if (_to_java_string_fn == NULL) {
       fatal("NewStringPlatform missing");
     }
@@ -207,7 +207,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
 
   if (_to_platform_string_fn == NULL) {
     void *lib_handle = os::native_java_library();
-    _to_platform_string_fn = CAST_TO_FN_PTR(to_platform_string_fn_t, hpi::dll_lookup(lib_handle, "GetStringPlatformChars"));
+    _to_platform_string_fn = CAST_TO_FN_PTR(to_platform_string_fn_t, os::dll_lookup(lib_handle, "GetStringPlatformChars"));
     if (_to_platform_string_fn == NULL) {
       fatal("GetStringPlatformChars missing");
     }
@@ -311,6 +311,14 @@ char* java_lang_String::as_utf8_string(oop java_string) {
   int          length = java_lang_String::length(java_string);
   jchar* position = (length == 0) ? NULL : value->char_at_addr(offset);
   return UNICODE::as_utf8(position, length);
+}
+
+char* java_lang_String::as_utf8_string(oop java_string, char* buf, int buflen) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+  jchar* position = (length == 0) ? NULL : value->char_at_addr(offset);
+  return UNICODE::as_utf8(position, length, buf, buflen);
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {

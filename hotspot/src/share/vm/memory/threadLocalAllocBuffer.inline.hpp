@@ -28,6 +28,7 @@
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/threadLocalAllocBuffer.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 
 inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {

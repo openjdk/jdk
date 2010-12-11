@@ -26,6 +26,7 @@
 #define SHARE_VM_PRIMS_JVMTIIMPL_HPP
 
 #ifndef JVMTI_KERNEL
+
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "oops/objArrayOop.hpp"
@@ -35,7 +36,6 @@
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "runtime/vm_operations.hpp"
-#endif
 
 //
 // Forward Declarations
@@ -355,7 +355,7 @@ bool JvmtiCurrentBreakpoints::is_breakpoint(address bcp) {
 // to the thread simultaneously.
 //
 class VM_GetOrSetLocal : public VM_Operation {
-private:
+ protected:
   JavaThread* _thread;
   JavaThread* _calling_thread;
   jint        _depth;
@@ -364,6 +364,10 @@ private:
   jvalue      _value;
   javaVFrame* _jvf;
   bool        _set;
+
+  // It is possible to get the receiver out of a non-static native wrapper
+  // frame.  Use VM_GetReceiver to do this.
+  virtual bool getting_receiver() const { return false; }
 
   jvmtiError  _result;
 
@@ -395,6 +399,15 @@ public:
   static bool is_assignable(const char* ty_sign, Klass* klass, Thread* thread);
 };
 
+class VM_GetReceiver : public VM_GetOrSetLocal {
+ protected:
+  virtual bool getting_receiver() const { return true; }
+
+ public:
+  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth);
+  const char* name() const                       { return "get receiver"; }
+};
+
 
 ///////////////////////////////////////////////////////////////
 //
@@ -416,6 +429,8 @@ public:
 
   static void print();
 };
+
+#endif // !JVMTI_KERNEL
 
 // Utility macro that checks for NULL pointers:
 #define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
