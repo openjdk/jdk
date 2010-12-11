@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_CPU_SOLARIS_X86_VM_GLOBALS_SOLARIS_X86_HPP
+#define OS_CPU_SOLARIS_X86_VM_GLOBALS_SOLARIS_X86_HPP
+
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 
@@ -44,3 +47,5 @@ define_pd_global(intx, CompilerThreadStackSize,  0);
 define_pd_global(uintx,HeapBaseMinAddress,       256*M);
 // Only used on 64 bit Windows platforms
 define_pd_global(bool, UseVectoredExceptions,    false);
+
+#endif // OS_CPU_SOLARIS_X86_VM_GLOBALS_SOLARIS_X86_HPP

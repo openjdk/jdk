@@ -22,12 +22,20 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+
 /*
  * JSR 292 reference implementation: method handles
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandles.cpp.incl"
 
 bool MethodHandles::_enabled = false; // set true after successful native linkage
 

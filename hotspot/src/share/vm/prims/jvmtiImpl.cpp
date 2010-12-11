@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiImpl.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "prims/jvmtiAgentThread.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/exceptions.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 //
 // class JvmtiAgentThread

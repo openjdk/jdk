@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ASM_REGISTER_HPP
+#define SHARE_VM_ASM_REGISTER_HPP
+
+#include "utilities/top.hpp"
 
 // Use AbstractRegister as shortcut
 class AbstractRegisterImpl;
@@ -209,3 +214,5 @@ inline void assert_different_registers(
     "registers must be different"
   );
 }
+
+#endif // SHARE_VM_ASM_REGISTER_HPP

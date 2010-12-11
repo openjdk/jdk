@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKCONTEXT_HPP
+#define SHARE_VM_SHARK_SHARKCONTEXT_HPP
+
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkCompiler.hpp"
 
 // The LLVMContext class allows multiple instances of LLVM to operate
 // independently of each other in a multithreaded context.  We extend
@@ -185,3 +191,5 @@ class SharkContext : public llvm::LLVMContext {
   void push_to_free_queue(llvm::Function* function);
   llvm::Function* pop_from_free_queue();
 };
+
+#endif // SHARE_VM_SHARK_SHARKCONTEXT_HPP

@@ -22,7 +22,7 @@
 #  
 #
 
-Variant=compiler1
+Variant=kernel
 !include local.make
 
 !include $(HOTSPOTWORKSPACE)/make/windows/projectfiles/common/Makefile

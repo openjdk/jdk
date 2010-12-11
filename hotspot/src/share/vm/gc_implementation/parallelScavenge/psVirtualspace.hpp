@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSVIRTUALSPACE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSVIRTUALSPACE_HPP
+
+#include "runtime/virtualspace.hpp"
 
 // VirtualSpace for the parallel scavenge collector.
 //
@@ -173,3 +178,5 @@ inline void PSVirtualSpace::set_committed(char* low_addr, char* high_addr) {
   _committed_low_addr = low_addr;
   _committed_high_addr = high_addr;
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSVIRTUALSPACE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,28 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ASM_ASSEMBLER_HPP
+#define SHARE_VM_ASM_ASSEMBLER_HPP
+
+#include "code/oopRecorder.hpp"
+#include "code/relocInfo.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_ARCH_x86
+# include "register_x86.hpp"
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "register_sparc.hpp"
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "register_zero.hpp"
+# include "vm_version_zero.hpp"
+#endif
 
 // This file contains platform-independent assembler declarations.
 
@@ -348,4 +370,15 @@ class AbstractAssembler : public ResourceObj  {
 #endif // PRODUCT
 };
 
-#include "incls/_assembler_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.hpp"
+#endif
+
+
+#endif // SHARE_VM_ASM_ASSEMBLER_HPP

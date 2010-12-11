@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_MACHNODE_HPP
+#define SHARE_VM_OPTO_MACHNODE_HPP
+
+#include "opto/callnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/multnode.hpp"
+#include "opto/node.hpp"
+#include "opto/regmask.hpp"
+
 class BufferBlob;
 class CodeBuffer;
 class JVMState;
@@ -828,3 +837,5 @@ public:
   virtual void ext_format(PhaseRegAlloc *ra, const MachNode *node, int idx, outputStream *st) const { int_format( ra, node, st ); }
 #endif
 };
+
+#endif // SHARE_VM_OPTO_MACHNODE_HPP

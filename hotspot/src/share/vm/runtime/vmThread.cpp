@@ -22,8 +22,30 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vmThread.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/runtimeService.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 HS_DTRACE_PROBE_DECL3(hotspot, vmops__request, char *, uintptr_t, int);
 HS_DTRACE_PROBE_DECL3(hotspot, vmops__begin, char *, uintptr_t, int);

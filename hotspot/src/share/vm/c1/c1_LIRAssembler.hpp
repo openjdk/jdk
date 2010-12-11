@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+#define SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+
+#include "c1/c1_CodeStubs.hpp"
+#include "ci/ciMethodData.hpp"
+#include "oops/methodDataOop.hpp"
+#include "utilities/top.hpp"
+
 class Compilation;
 class ScopeValue;
 class BarrierSet;
@@ -236,5 +244,13 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void verify_oop_map(CodeEmitInfo* info);
 
-  #include "incls/_c1_LIRAssembler_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "c1_LIRAssembler_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_LIRAssembler_sparc.hpp"
+#endif
+
 };
+
+#endif // SHARE_VM_C1_C1_LIRASSEMBLER_HPP

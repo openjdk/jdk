@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_SOLARIS_X86_VM_COPY_SOLARIS_X86_INLINE_HPP
+#define OS_CPU_SOLARIS_X86_VM_COPY_SOLARIS_X86_INLINE_HPP
 
 static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
@@ -136,3 +139,5 @@ static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count)
   _Copy_arrayof_conjoint_jints(from, to, count);
 #endif // AMD64
 }
+
+#endif // OS_CPU_SOLARIS_X86_VM_COPY_SOLARIS_X86_INLINE_HPP

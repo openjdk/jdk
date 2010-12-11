@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_METHODHANDLEWALK_HPP
+#define SHARE_VM_PRIMS_METHODHANDLEWALK_HPP
+
+#include "prims/methodHandles.hpp"
+
 // Low-level parser for method handle chains.
 class MethodHandleChain : StackObj {
 public:
@@ -411,3 +416,5 @@ public:
             klass == SystemDictionary::InvokeDynamic_klass());
   }
 };
+
+#endif // SHARE_VM_PRIMS_METHODHANDLEWALK_HPP

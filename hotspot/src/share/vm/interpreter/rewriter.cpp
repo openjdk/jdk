@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_rewriter.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/generateOopMap.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/methodComparator.hpp"
 
 // Computes a CPC map (new_index -> original_index) for constant pool entries
 // that are referred to by the interpreter at runtime via the constant pool cache.

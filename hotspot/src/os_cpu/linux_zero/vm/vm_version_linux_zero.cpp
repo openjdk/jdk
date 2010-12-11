@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,5 +22,9 @@
  * questions.
  *
  */
+
+#include "precompiled.hpp"
+#include "runtime/os.hpp"
+#include "vm_version_zero.hpp"
 
 // This file is intentionally empty

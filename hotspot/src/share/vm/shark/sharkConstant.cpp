@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,12 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharkConstant.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciInstance.hpp"
+#include "ci/ciStreams.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkConstant.hpp"
+#include "shark/sharkValue.hpp"
 
 using namespace llvm;
 

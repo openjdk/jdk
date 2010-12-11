@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
+#define SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
+
+#include "classfile/classFileStream.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/accessFlags.hpp"
+
 // Parser for for .class files
 //
 // The bytes describing the class file structure is read from a Stream object
@@ -286,3 +296,5 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   static void check_final_method_override(instanceKlassHandle this_klass, TRAPS);
   static void check_illegal_static_method(instanceKlassHandle this_klass, TRAPS);
 };
+
+#endif // SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP

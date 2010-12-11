@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_RUNTIME_HPP
+#define SHARE_VM_OPTO_RUNTIME_HPP
+
+#include "code/codeBlob.hpp"
+#include "opto/machnode.hpp"
+#include "opto/type.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/vframe.hpp"
 
 //------------------------------OptoRuntime------------------------------------
 // Opto compiler runtime routines
@@ -298,3 +308,5 @@ private:
  static void          print_named_counters();
 
 };
+
+#endif // SHARE_VM_OPTO_RUNTIME_HPP

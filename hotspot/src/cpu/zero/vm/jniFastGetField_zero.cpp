@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,12 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_jniFastGetField_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_zero.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm_misc.hpp"
+#include "runtime/safepoint.hpp"
 
 address JNI_FastGetField::generate_fast_get_boolean_field() {
   return (address) -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#ifndef SHARE_VM_OPTO_VECTORNODE_HPP
+#define SHARE_VM_OPTO_VECTORNODE_HPP
+
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
 
 //------------------------------VectorNode--------------------------------------
 // Vector Operation
@@ -1132,3 +1140,5 @@ class ExtractDNode : public ExtractNode {
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
 };
+
+#endif // SHARE_VM_OPTO_VECTORNODE_HPP

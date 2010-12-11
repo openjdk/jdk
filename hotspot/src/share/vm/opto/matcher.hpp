@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_MATCHER_HPP
+#define SHARE_VM_OPTO_MATCHER_HPP
+
+#include "libadt/vectset.hpp"
+#include "memory/resourceArea.hpp"
+#include "opto/node.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
+
 class Compile;
 class Node;
 class MachNode;
@@ -447,3 +456,5 @@ public:
   }
 #endif
 };
+
+#endif // SHARE_VM_OPTO_MATCHER_HPP

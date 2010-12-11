@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_VM_VERSION_SPARC_HPP
+#define CPU_SPARC_VM_VM_VERSION_SPARC_HPP
+
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
+
 class VM_Version: public Abstract_VM_Version {
 protected:
   enum Feature_Flag {
@@ -152,3 +158,5 @@ public:
   // Calculates the number of parallel threads
   static unsigned int calc_parallel_worker_threads();
 };
+
+#endif // CPU_SPARC_VM_VM_VERSION_SPARC_HPP

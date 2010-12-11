@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_bytecodeTracer.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/timer.hpp"
 
 
 #ifndef PRODUCT

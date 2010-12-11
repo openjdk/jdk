@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_codeBuffer.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/codeBuffer.hpp"
+#include "compiler/disassembler.hpp"
+#include "utilities/copy.hpp"
 
 // The structure of a CodeSection:
 //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,35 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "libadt/vectset.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/block.hpp"
+#include "opto/c2compiler.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/deoptimization.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-
-#include "incls/_precompiled.incl"
-#include "incls/_gcm.cpp.incl"
 
 // To avoid float value underflow
 #define MIN_BLOCK_FREQUENCY 1.e-35f

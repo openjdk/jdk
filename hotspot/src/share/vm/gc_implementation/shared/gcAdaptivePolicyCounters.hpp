@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCADAPTIVEPOLICYCOUNTERS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCADAPTIVEPOLICYCOUNTERS_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#endif
 
 // This class keeps statistical information and computes the
 // size of the heap.
@@ -222,3 +230,5 @@ class GCAdaptivePolicyCounters : public GCPolicyCounters {
     return GCPolicyCounters::GCAdaptivePolicyCountersKind;
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCADAPTIVEPOLICYCOUNTERS_HPP

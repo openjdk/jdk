@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_NATIVEINST_X86_HPP
+#define CPU_X86_VM_NATIVEINST_X86_HPP
+
+#include "asm/assembler.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/os.hpp"
+#include "utilities/top.hpp"
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -547,3 +556,5 @@ inline bool NativeInstruction::is_mov_literal64() {
   return false;
 #endif // AMD64
 }
+
+#endif // CPU_X86_VM_NATIVEINST_X86_HPP
