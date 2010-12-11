@@ -63,6 +63,7 @@
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "thread_windows.inline.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
@@ -1369,12 +1370,11 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
-  // Unimplemented on Windows - in order to use SymGetSymFromAddr(),
-  // we need to initialize imagehlp/dbghelp, then load symbol table
-  // for every module. That's too much work to do after a fatal error.
-  // For an example on how to implement this function, see 1.4.2.
-  if (offset)  *offset  = -1;
-  if (buf) buf[0] = '\0';
+  if (Decoder::decode(addr, buf, buflen, offset) == Decoder::no_error) {
+    return true;
+  }
+  if (offset != NULL)  *offset  = -1;
+  if (buf != NULL) buf[0] = '\0';
   return false;
 }
 

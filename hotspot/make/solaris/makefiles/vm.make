@@ -106,17 +106,17 @@ ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 # Not sure what the 'designed for' comment is referring too above.
 #   The order may not be too significant anymore, but I have placed this
 #   older libm before libCrun, just to make sure it's found and used first.
-LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc
+LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc -ldemangle
 else
 ifeq ($(COMPILER_REV_NUMERIC), 502)
 # SC6.1 has it's own libm.so: specifying anything else provokes a name conflict.
-LIBS += -ldl -lthread -lsocket -lm -lsched -ldoor
+LIBS += -ldl -lthread -lsocket -lm -lsched -ldoor -ldemangle
 else
-LIBS += -ldl -lthread -lsocket $(LIBM) -lsched -ldoor
+LIBS += -ldl -lthread -lsocket $(LIBM) -lsched -ldoor -ldemangle
 endif # 502
 endif # 505
 else
-LIBS += -lsocket -lsched -ldl $(LIBM) -lthread -lc
+LIBS += -lsocket -lsched -ldl $(LIBM) -lthread -lc -ldemangle
 endif # sparcWorks
 
 # By default, link the *.o into the library, not the executable.

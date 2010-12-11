@@ -41,6 +41,8 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/decoder.hpp"
+
 #ifdef TARGET_ARCH_x86
 # include "nativeInst_x86.hpp"
 #endif
@@ -652,7 +654,7 @@ static void print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
   // names if pc is within jvm.dll or libjvm.so, because JVM only has
   // JVM_xxxx and a few other symbols in the dynamic symbol table. Do this
   // only for native libraries.
-  if (!in_vm) {
+  if (!in_vm || Decoder::can_decode_C_frame_in_vm()) {
     found = os::dll_address_to_function_name(pc, buf, buflen, &offset);
 
     if (found) {
