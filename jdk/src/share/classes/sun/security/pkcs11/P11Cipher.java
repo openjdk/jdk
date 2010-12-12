@@ -74,7 +74,7 @@ final class P11Cipher extends CipherSpi {
         // DEC: return the length of trailing padding bytes given the specified
         // padded data
         int unpad(byte[] paddedData, int len)
-                throws BadPaddingException;
+                throws BadPaddingException, IllegalBlockSizeException;
     }
 
     private static class PKCS5Padding implements Padding {
@@ -96,9 +96,10 @@ final class P11Cipher extends CipherSpi {
         }
 
         public int unpad(byte[] paddedData, int len)
-                throws BadPaddingException {
-            if (len < 1 || len > paddedData.length) {
-                throw new BadPaddingException("Invalid pad array length!");
+                throws BadPaddingException, IllegalBlockSizeException {
+            if ((len < 1) || (len % blockSize != 0)) {
+                throw new IllegalBlockSizeException
+                    ("Input length must be multiples of " + blockSize);
             }
             byte padValue = paddedData[len - 1];
             if (padValue < 1 || padValue > blockSize) {

@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.illegal.bytecode.ident.char
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 6
 
-class IllegalBytecodeIdentChar {
-    int #"abc/def" = 3;
-}
+class SourceNoBootclasspath { }

@@ -32,6 +32,7 @@ IBM297		IBM297		Cp297		false		sun.nio.cs.ext
 IBM420		IBM420		Cp420		false		sun.nio.cs.ext
 IBM424		IBM424		Cp424		false		sun.nio.cs.ext
 IBM500		IBM500		Cp500		false		sun.nio.cs.ext
+IBM833		x-IBM833	Cp833		false		sun.nio.cs.ext
 IBM838		IBM-Thai	Cp838		false		sun.nio.cs.ext
 IBM856		x-IBM856	Cp856		false		sun.nio.cs.ext
 IBM860		IBM860		Cp860		false		sun.nio.cs.ext
