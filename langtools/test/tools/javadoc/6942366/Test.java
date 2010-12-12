@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.illegal.bytecode.ident.char
-
-class IllegalBytecodeIdentChar {
-    int #"abc/def" = 3;
+public class Test extends p.Base {
+    // overrides Base.m
+    public void m() { }
 }
+

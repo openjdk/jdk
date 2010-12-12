@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.multicatch.not.supported.in.source
-// options: -source 1.6
+// options: -source 1.6 -Xlint:-options
 
 class MulticatchNotSupported {
     class E1 extends Exception { }
