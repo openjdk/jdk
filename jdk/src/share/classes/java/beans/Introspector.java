@@ -29,6 +29,8 @@ import com.sun.beans.WeakCache;
 import com.sun.beans.finder.BeanInfoFinder;
 import com.sun.beans.finder.ClassFinder;
 
+import java.awt.Component;
+
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.EventListener;
+import java.util.EventObject;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -1234,7 +1237,23 @@ public class Introspector {
             }
         }
         // OK, fabricate a default BeanDescriptor.
-        return (new BeanDescriptor(beanClass));
+        return new BeanDescriptor(this.beanClass, findCustomizerClass(this.beanClass));
+    }
+
+    private static Class<?> findCustomizerClass(Class<?> type) {
+        String name = type.getName() + "Customizer";
+        try {
+            type = ClassFinder.findClass(name, type.getClassLoader());
+            // Each customizer should inherit java.awt.Component and implement java.beans.Customizer
+            // according to the section 9.3 of JavaBeans specification
+            if (Component.class.isAssignableFrom(type) && Customizer.class.isAssignableFrom(type)) {
+                return type;
+            }
+        }
+        catch (Exception exception) {
+            // ignore any exceptions
+        }
+        return null;
     }
 
     private boolean isEventHandler(Method m) {
@@ -1244,10 +1263,7 @@ public class Introspector {
         if (argTypes.length != 1) {
             return false;
         }
-        if (isSubclass(argTypes[0], java.util.EventObject.class)) {
-            return true;
-        }
-        return false;
+        return isSubclass(argTypes[0], EventObject.class);
     }
 
     /*
