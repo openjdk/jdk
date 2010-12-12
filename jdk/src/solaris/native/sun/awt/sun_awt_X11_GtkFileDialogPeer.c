@@ -80,6 +80,28 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_quit
     quit(env, jpeer, FALSE);
 }
 
+/*
+ * Class:     sun_awt_X11_GtkFileDialogPeer
+ * Method:    toFront
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_toFront
+(JNIEnv * env, jobject jpeer)
+{
+    GtkWidget * dialog;
+
+    fp_gdk_threads_enter();
+
+    dialog = (GtkWidget*)jlong_to_ptr(
+            (*env)->GetLongField(env, jpeer, widgetFieldID));
+
+    if (dialog != NULL) {
+        fp_gtk_window_present((GtkWindow*)dialog);
+    }
+
+    fp_gdk_threads_leave();
+}
+
 /**
  * Convert a GSList to an array of filenames (without the parent folder)
  */

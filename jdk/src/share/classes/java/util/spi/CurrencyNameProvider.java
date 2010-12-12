@@ -25,7 +25,9 @@
 
 package java.util.spi;
 
+import java.util.Arrays;
 import java.util.Currency;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -93,6 +95,23 @@ public abstract class CurrencyNameProvider extends LocaleServiceProvider {
     public String getDisplayName(String currencyCode, Locale locale) {
         if (currencyCode == null || locale == null) {
             throw new NullPointerException();
+        }
+
+        // Check whether the currencyCode is valid
+        char[] charray = currencyCode.toCharArray();
+        if (charray.length != 3) {
+            throw new IllegalArgumentException("The currencyCode is not in the form of three upper-case letters.");
+        }
+        for (char c : charray) {
+            if (c < 'A' || c > 'Z') {
+                throw new IllegalArgumentException("The currencyCode is not in the form of three upper-case letters.");
+            }
+        }
+
+        // Check whether the locale is valid
+        List<Locale> avail = Arrays.asList(getAvailableLocales());
+        if (!avail.contains(locale)) {
+            throw new IllegalArgumentException("The locale is not available");
         }
 
         return null;
