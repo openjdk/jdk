@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4917233 6461727 6490213
+ * @bug 4917233 6461727 6490213 6720456
  * @summary test the KeyGenerator
  * @author Andreas Sterbenz
  * @library ..
@@ -104,7 +104,7 @@ public class TestKeyGenerator extends PKCS11Test {
         // Different PKCS11 impls have different ranges
         // of supported key sizes for variable-key-length
         // algorithms.
-        // Solaris> Blowfish: 32-128 bits, RC4: 8-128 bits
+        // Solaris> Blowfish: 32-128 or even 448 bits, RC4: 8-128 bits or as much as 2048 bits
         // NSS>     Blowfish: n/a,         RC4: 8-2048 bits
         // However, we explicitly disallowed key sizes less
         // than 40-bits.
@@ -114,8 +114,8 @@ public class TestKeyGenerator extends PKCS11Test {
         test("Blowfish", 32, p, TestResult.FAIL);
         test("Blowfish", 40, p, TestResult.PASS);
         test("Blowfish", 128, p, TestResult.PASS);
-        test("Blowfish", 136, p, TestResult.FAIL);
-        test("Blowfish", 448, p, TestResult.FAIL);
+        test("Blowfish", 136, p, TestResult.TBD);
+        test("Blowfish", 448, p, TestResult.TBD);
         test("Blowfish", 456, p, TestResult.FAIL);
 
         test("ARCFOUR", 0, p, TestResult.FAIL);
@@ -124,7 +124,7 @@ public class TestKeyGenerator extends PKCS11Test {
         test("ARCFOUR", 128, p, TestResult.PASS);
 
         if (p.getName().equals("SunPKCS11-Solaris")) {
-            test("ARCFOUR", 1024, p, TestResult.FAIL);
+            test("ARCFOUR", 1024, p, TestResult.TBD);
         } else if (p.getName().equals("SunPKCS11-NSS")) {
             test("ARCFOUR", 1024, p, TestResult.PASS);
             test("ARCFOUR", 2048, p, TestResult.PASS);

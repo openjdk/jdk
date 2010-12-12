@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.unsupported.underscore.lit
-// options: -source 6
+// options: -source 6 -Xlint:-options
 
 class UnsupportedUnderscoreLiteral {
     int i = 123_456_789;
