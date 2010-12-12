@@ -51,16 +51,16 @@ import com.sun.tools.javac.parser.DocCommentScanner;
  *  or deletion without notice.</b>
  */
 @SuppressWarnings("deprecation")
-public class JavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
+public class AptJavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
     /** The context key for the compiler. */
-    protected static final Context.Key<JavaCompiler> compilerKey =
-        new Context.Key<JavaCompiler>();
+    protected static final Context.Key<AptJavaCompiler> compilerKey =
+        new Context.Key<AptJavaCompiler>();
 
     /** Get the JavaCompiler instance for this context. */
-    public static JavaCompiler instance(Context context) {
-        JavaCompiler instance = context.get(compilerKey);
+    public static AptJavaCompiler instance(Context context) {
+        AptJavaCompiler instance = context.get(compilerKey);
         if (instance == null)
-            instance = new JavaCompiler(context);
+            instance = new AptJavaCompiler(context);
         return instance;
     }
 
@@ -107,7 +107,7 @@ public class JavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
 
     /** Construct a new compiler from a shared context.
      */
-    public JavaCompiler(Context context) {
+    public AptJavaCompiler(Context context) {
         super(preRegister(context));
 
         context.put(compilerKey, this);
