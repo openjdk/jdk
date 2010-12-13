@@ -641,7 +641,7 @@ public class Types {
                         if (!set.remove(new SingletonType(x)))
                             return false;
                     }
-                    return (set.size() == 0);
+                    return (set.isEmpty());
                 }
                 return t.tsym == s.tsym
                     && visit(t.getEnclosingType(), s.getEnclosingType())
@@ -838,26 +838,26 @@ public class Types {
                     return isSameType(t, s);
             }
 
-            void debugContainsType(WildcardType t, Type s) {
-                System.err.println();
-                System.err.format(" does %s contain %s?%n", t, s);
-                System.err.format(" %s U(%s) <: U(%s) %s = %s%n",
-                                  upperBound(s), s, t, U(t),
-                                  t.isSuperBound()
-                                  || isSubtypeNoCapture(upperBound(s), U(t)));
-                System.err.format(" %s L(%s) <: L(%s) %s = %s%n",
-                                  L(t), t, s, lowerBound(s),
-                                  t.isExtendsBound()
-                                  || isSubtypeNoCapture(L(t), lowerBound(s)));
-                System.err.println();
-            }
+//            void debugContainsType(WildcardType t, Type s) {
+//                System.err.println();
+//                System.err.format(" does %s contain %s?%n", t, s);
+//                System.err.format(" %s U(%s) <: U(%s) %s = %s%n",
+//                                  upperBound(s), s, t, U(t),
+//                                  t.isSuperBound()
+//                                  || isSubtypeNoCapture(upperBound(s), U(t)));
+//                System.err.format(" %s L(%s) <: L(%s) %s = %s%n",
+//                                  L(t), t, s, lowerBound(s),
+//                                  t.isExtendsBound()
+//                                  || isSubtypeNoCapture(L(t), lowerBound(s)));
+//                System.err.println();
+//            }
 
             @Override
             public Boolean visitWildcardType(WildcardType t, Type s) {
                 if (s.tag >= firstPartialTag)
                     return containedBy(s, t);
                 else {
-                    // debugContainsType(t, s);
+//                    debugContainsType(t, s);
                     return isSameWildcard(t, s)
                         || isCaptureOf(s, t)
                         || ((t.isExtendsBound() || isSubtypeNoCapture(L(t), lowerBound(s))) &&
