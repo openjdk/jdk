@@ -25,7 +25,7 @@
 
 package java.security;
 
-import java.io.Serializable;
+import java.io.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertPath;
 import java.security.cert.X509Extension;
@@ -152,5 +152,12 @@ public final class Timestamp implements Serializable {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    // Explicitly reset hash code value to -1
+    private void readObject(ObjectInputStream ois)
+        throws IOException, ClassNotFoundException {
+     ois.defaultReadObject();
+     myhash = -1;
     }
 }
