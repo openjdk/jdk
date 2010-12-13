@@ -44,6 +44,16 @@ public class ManifestEntryVerifier {
 
     private static final Debug debug = Debug.getInstance("jar");
 
+    /**
+     * Holder class to lazily load Sun provider. NOTE: if
+     * Providers.getSunProvider returned a cached provider, we could avoid the
+     * need for caching the provider with this holder class; we should try to
+     * revisit this in JDK 8.
+     */
+    private static class SunProviderHolder {
+        private static final Provider instance = Providers.getSunProvider();
+    }
+
     /** the created digest objects */
     HashMap<String, MessageDigest> createdDigests;
 
@@ -125,7 +135,7 @@ public class ManifestEntryVerifier {
                     try {
 
                         digest = MessageDigest.getInstance
-                                        (algorithm, Providers.getSunProvider());
+                                        (algorithm, SunProviderHolder.instance);
                         createdDigests.put(algorithm, digest);
                     } catch (NoSuchAlgorithmException nsae) {
                         // ignore

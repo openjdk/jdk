@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.empty.bytecode.ident
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 6
 
-class EmptyBytecodeIdent {
-    int #"" = 3;
-}
+class SourceNoBootclasspath { }

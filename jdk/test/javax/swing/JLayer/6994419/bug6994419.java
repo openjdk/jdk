@@ -21,11 +21,35 @@
  * questions.
  */
 
-// key: compiler.err.unsupported.exotic.id
-// options: -source 6
+/* @test
+ * @bug 6994419
+ * @summary JLayer.removeAll() behavior doesn't correspond to JLayer.remove() behavior.
+ * @author Alexander Potochkin
+ */
 
-class UnsupportedExoticID {
-    void m() {
-        Object #"Hello!" = null;
+import javax.swing.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
+
+public class bug6994419 {
+
+    public static void main(String... args) throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+
+                JLayer<JComponent> l = new JLayer<JComponent>(new JButton());
+
+                l.removeAll();
+
+                l.addPropertyChangeListener(new PropertyChangeListener() {
+
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        throw new RuntimeException("Property change event was unexpectedly fired");
+                    }
+                });
+
+                l.removeAll();
+            }
+        });
     }
 }
