@@ -31,6 +31,7 @@
 import com.sun.net.httpserver.*;
 
 import java.util.concurrent.*;
+import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 
@@ -45,12 +46,19 @@ public class Test13 extends Test {
 
     static SSLContext ctx;
 
+    final static int NUM = 32; // was 32
+
     static boolean fail = false;
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
+        Logger l = Logger.getLogger ("com.sun.net.httpserver");
+        Handler ha = new ConsoleHandler();
+        ha.setLevel(Level.ALL);
+        l.setLevel(Level.ALL);
+        l.addHandler(ha);
         try {
             String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test13: ");
@@ -70,10 +78,10 @@ public class Test13 extends Test {
 
             int port = s1.getAddress().getPort();
             int httpsport = s2.getAddress().getPort();
-            Runner r[] = new Runner[64];
-            for (int i=0; i<32; i++) {
+            Runner r[] = new Runner[NUM*2];
+            for (int i=0; i<NUM; i++) {
                 r[i] = new Runner (true, "http", root+"/test1", port, "smallfile.txt", 23);
-                r[i+32] = new Runner (true, "https", root+"/test1", port, "smallfile.txt", 23);
+                r[i+NUM] = new Runner (true, "https", root+"/test1", httpsport, "smallfile.txt", 23);
             }
             start (r);
             join (r);
@@ -91,6 +99,7 @@ public class Test13 extends Test {
 
     static void start (Runner[] x) {
         for (int i=0; i<x.length; i++) {
+            if (x[i] != null)
             x[i].start();
         }
     }
@@ -98,6 +107,7 @@ public class Test13 extends Test {
     static void join (Runner[] x) {
         for (int i=0; i<x.length; i++) {
             try {
+                if (x[i] != null)
                 x[i].join();
             } catch (InterruptedException e) {}
         }

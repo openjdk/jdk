@@ -33,6 +33,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_run
 JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_quit
 (JNIEnv *, jobject);
 
+/*
+ * Class:     sun_awt_X11_GtkFileDialogPeer
+ * Method:    toFront
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_toFront
+(JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
