@@ -197,7 +197,7 @@ public class Resolve {
         }
         return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?
             isAccessible :
-            isAccessible & isAccessible(env, c.type.getEnclosingType(), checkInner);
+            isAccessible && isAccessible(env, c.type.getEnclosingType(), checkInner);
     }
     //where
         /** Is given class a subclass of given base class, or an inner class
@@ -234,7 +234,6 @@ public class Resolve {
     }
     public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym, boolean checkInner) {
         if (sym.name == names.init && sym.owner != site.tsym) return false;
-        ClassSymbol sub;
         switch ((short)(sym.flags() & AccessFlags)) {
         case PRIVATE:
             return
