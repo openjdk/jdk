@@ -82,9 +82,9 @@ public class Comment extends Content{
      */
     public void write(StringBuilder contentBuilder) {
         if (!endsWithNewLine(contentBuilder))
-            contentBuilder.append("\n");
+            contentBuilder.append(DocletConstants.NL);
         contentBuilder.append("<!-- ");
         contentBuilder.append(commentText);
-        contentBuilder.append(" -->\n");
+        contentBuilder.append(" -->" + DocletConstants.NL);
     }
 }

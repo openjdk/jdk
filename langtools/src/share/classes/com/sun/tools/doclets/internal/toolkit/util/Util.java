@@ -211,14 +211,14 @@ public class Util {
         try {
             while ((len = input.read(bytearr)) != -1) {
                 output.write(bytearr, 0, len);
-            }
+                }
         } catch (FileNotFoundException exc) {
         } catch (SecurityException exc) {
-        } finally {
+            } finally {
             input.close();
             output.close();
+            }
         }
-    }
 
     /**
      * Copy the given directory contents from the source package directory
@@ -330,7 +330,7 @@ public class Util {
             String resourcefile, boolean overwrite) {
         String destresourcesdir = configuration.destDirName + RESOURCESDIR;
         copyFile(configuration, resourcefile, RESOURCESDIR, destresourcesdir,
-                overwrite);
+                overwrite, false);
     }
 
     /**
@@ -345,23 +345,46 @@ public class Util {
      * @param overwrite A flag to indicate whether the file in the
      *                  destination directory will be overwritten if
      *                  it already exists.
+     * @param replaceNewLine true if the newline needs to be replaced with platform-
+     *                  specific newline.
      */
     public static void copyFile(Configuration configuration, String file, String source,
-            String destination, boolean overwrite) {
+            String destination, boolean overwrite, boolean replaceNewLine) {
         DirectoryManager.createDirectory(configuration, destination);
         File destfile = new File(destination, file);
         if(destfile.exists() && (! overwrite)) return;
         try {
             InputStream in = Configuration.class.getResourceAsStream(
-                source + DirectoryManager.URL_FILE_SEPARATOR + file);
+                    source + DirectoryManager.URL_FILE_SEPARATOR + file);
             if(in==null) return;
             OutputStream out = new FileOutputStream(destfile);
-            byte[] buf = new byte[2048];
-            int n;
-            while((n = in.read(buf))>0) out.write(buf,0,n);
-            in.close();
-            out.close();
-        } catch(Throwable t) {}
+            try {
+                if (!replaceNewLine) {
+                    byte[] buf = new byte[2048];
+                    int n;
+                    while((n = in.read(buf))>0) out.write(buf,0,n);
+                } else {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+                    try {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            writer.write(line);
+                            writer.write(DocletConstants.NL);
+                        }
+                    } finally {
+                        reader.close();
+                        writer.close();
+                    }
+                }
+            } finally {
+                in.close();
+                out.close();
+            }
+        } catch (IOException ie) {
+            ie.printStackTrace();
+            throw new DocletAbortException();
+        }
     }
 
     /**

@@ -48,7 +48,7 @@ public class DocType extends Content{
      */
     private DocType(String type, String dtd) {
         docType = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " + type +
-                "//EN\" \"" + dtd + "\">\n";
+                "//EN\" \"" + dtd + "\">" + DocletConstants.NL;
     }
 
      /**

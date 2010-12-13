@@ -239,7 +239,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             Type superclass = Util.getFirstVisibleSuperClass(classDoc,
                     configuration());
             if (superclass != null) {
-                pre.addContent("\n");
+                pre.addContent(DocletConstants.NL);
                 pre.addContent("extends ");
                 Content link = new RawHtml(getLink(new LinkInfoImpl(
                         LinkInfoImpl.CONTEXT_CLASS_SIGNATURE_PARENT_NAME,
@@ -257,7 +257,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     continue;
                 }
                 if (counter == 0) {
-                    pre.addContent("\n");
+                    pre.addContent(DocletConstants.NL);
                     pre.addContent(isInterface? "extends " : "implements ");
                 } else {
                     pre.addContent(", ");

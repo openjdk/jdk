@@ -101,6 +101,6 @@ public abstract class Content {
      */
     public boolean endsWithNewLine(StringBuilder contentBuilder) {
         return ((contentBuilder.length() == 0) ||
-                (contentBuilder.substring(contentBuilder.length() - 1).equals("\n")));
+                (contentBuilder.toString().endsWith(DocletConstants.NL)));
     }
 }

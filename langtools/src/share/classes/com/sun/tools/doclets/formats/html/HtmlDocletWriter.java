@@ -216,15 +216,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getAllClassesLinkScript(String id) {
         HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
         script.addAttr(HtmlAttr.TYPE, "text/javascript");
-        String scriptCode = "<!--\n" +
-                "  allClassesLink = document.getElementById(\"" + id + "\");\n" +
-                "  if(window==top) {\n" +
-                "    allClassesLink.style.display = \"block\";\n" +
-                "  }\n" +
-                "  else {\n" +
-                "    allClassesLink.style.display = \"none\";\n" +
-                "  }\n" +
-                "  //-->\n";
+        String scriptCode = "<!--" + DocletConstants.NL +
+                "  allClassesLink = document.getElementById(\"" + id + "\");" + DocletConstants.NL +
+                "  if(window==top) {" + DocletConstants.NL +
+                "    allClassesLink.style.display = \"block\";" + DocletConstants.NL +
+                "  }" + DocletConstants.NL +
+                "  else {" + DocletConstants.NL +
+                "    allClassesLink.style.display = \"none\";" + DocletConstants.NL +
+                "  }" + DocletConstants.NL +
+                "  //-->" + DocletConstants.NL;
         Content scriptContent = new RawHtml(scriptCode);
         script.addContent(scriptContent);
         Content div = HtmlTree.DIV(script);

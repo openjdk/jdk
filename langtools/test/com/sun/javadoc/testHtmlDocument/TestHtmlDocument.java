@@ -44,6 +44,7 @@ public class TestHtmlDocument {
     private static final String BUGID = "6851834";
     private static final String BUGNAME = "TestHtmlDocument";
     private static final String FS = System.getProperty("file.separator");
+    private static final String LS = System.getProperty("line.separator");
     private static String srcdir = System.getProperty("test.src", ".");
 
     // Entry point
@@ -143,13 +144,17 @@ public class TestHtmlDocument {
             System.out.println("\nFILE DOES NOT EXIST: " + filename);
         }
         BufferedReader in = new BufferedReader(new FileReader(file));
+        StringBuilder fileString = new StringBuilder();
         // Create an array of characters the size of the file
-        char[] allChars = new char[(int)file.length()];
-        // Read the characters into the allChars array
-        in.read(allChars, 0, (int)file.length());
-        in.close();
-        // Convert to a string
-        String allCharsString = new String(allChars);
-        return allCharsString;
+        try {
+            String line;
+            while ((line = in.readLine()) != null) {
+                fileString.append(line);
+                fileString.append(LS);
+            }
+        } finally {
+            in.close();
+        }
+        return fileString.toString();
     }
 }

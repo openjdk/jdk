@@ -753,7 +753,7 @@ public class HtmlTree extends Content {
      */
     public void write(StringBuilder contentBuilder) {
         if (!isInline() && !endsWithNewLine(contentBuilder))
-            contentBuilder.append("\n");
+            contentBuilder.append(DocletConstants.NL);
         String tagString = htmlTag.toString();
         contentBuilder.append("<" + tagString);
         Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
@@ -772,6 +772,6 @@ public class HtmlTree extends Content {
         if (htmlTag.endTagRequired())
             contentBuilder.append("</" + tagString + ">");
         if (!isInline())
-            contentBuilder.append("\n");
+            contentBuilder.append(DocletConstants.NL);
     }
 }
