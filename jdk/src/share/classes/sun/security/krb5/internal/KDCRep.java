@@ -32,7 +32,6 @@ package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
 import sun.security.util.*;
-import java.util.Vector;
 import java.io.IOException;
 import java.math.BigInteger;
 
@@ -69,7 +68,7 @@ public class KDCRep {
     public EncKDCRepPart encKDCRepPart; //not part of ASN.1 encoding
     private int pvno;
     private int msgType;
-    private PAData[] pAData = null; //optional
+    public PAData[] pAData = null; //optional
     private boolean DEBUG = Krb5.DEBUG;
 
     public KDCRep(

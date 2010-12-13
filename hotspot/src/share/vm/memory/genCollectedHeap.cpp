@@ -935,7 +935,7 @@ void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
                                           int max_level) {
   int local_max_level;
-  if (!incremental_collection_will_fail() &&
+  if (!incremental_collection_will_fail(false /* don't consult_young */) &&
       gc_cause() == GCCause::_gc_locker) {
     local_max_level = 0;
   } else {
@@ -951,7 +951,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   // A scavenge may not have been attempted, or may have
   // been attempted and failed, because the old gen was too full
   if (local_max_level == 0 && gc_cause() == GCCause::_gc_locker &&
-      incremental_collection_will_fail()) {
+      incremental_collection_will_fail(false /* don't consult_young */)) {
     if (PrintGCDetails) {
       gclog_or_tty->print_cr("GC locker: Trying a full collection "
                              "because scavenge failed");

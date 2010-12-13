@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,33 @@ import java.util.*;
 
 /*
  * @test
- * @bug     4202914 4363318
+ * @bug     4202914 4363318 6991528
  * @summary Basic test of serialization of stack trace information
  * @author  Josh Bloch
  */
 
 public class StackTraceSerialization {
     public static void main(String args[]) throws Exception {
+        testWithSetStackTrace();
+        testWithFillInStackTrace();
+    }
+
+    private static void testWithSetStackTrace() throws Exception {
+        Throwable t = new Throwable();
+
+        t.setStackTrace(new StackTraceElement[]
+            {new StackTraceElement("foo", "bar", "baz", -1)});
+
+        if (!equal(t, reconstitute(t)))
+            throw new Exception("Unequal Throwables with set stacktrace");
+    }
+
+    private static void assertEmptyStackTrace(Throwable t) {
+        if (t.getStackTrace().length != 0)
+            throw new AssertionError("Nonempty stacktrace.");
+    }
+
+    private static void testWithFillInStackTrace() throws Exception {
         Throwable original = null;
         try {
             a();
@@ -40,27 +60,42 @@ public class StackTraceSerialization {
             original = e;
         }
 
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bout);
-        out.writeObject(original);
-        out.flush();
-        ByteArrayInputStream bin =
-            new ByteArrayInputStream(bout.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bin);
-        Throwable clone = (Throwable) in.readObject();
+        if (!equal(original, reconstitute(original)))
+            throw new Exception("Unequal Throwables with filled-in stacktrace");
+    }
 
-        if (!equal(original, clone))
-            throw new Exception();
+
+    /**
+     * Serialize the argument and return the deserialized result.
+     */
+    private static Throwable reconstitute(Throwable t) throws Exception {
+        Throwable result = null;
+
+        try(ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bout)) {
+            out.writeObject(t);
+            out.flush();
+            try(ByteArrayInputStream bin =
+                new ByteArrayInputStream(bout.toByteArray());
+                ObjectInputStream in = new ObjectInputStream(bin)) {
+                result = (Throwable) in.readObject();
+            }
+        }
+
+        return result;
     }
 
     /**
-     * Returns true if e1 and e2 have equal stack traces and their causes
-     * are recursively equal (by the same definition).  Returns false
-     * or throws NullPointerExeption otherwise.
+     * Returns true if e1 and e2 have equal stack traces and their
+     * causes are recursively equal (by the same definition) and their
+     * suppressed exception information is equals.  Returns false or
+     * throws NullPointerExeption otherwise.
      */
     private static boolean equal(Throwable t1, Throwable t2) {
-        return t1==t2 || (Arrays.equals(t1.getStackTrace(), t2.getStackTrace())
-                          && equal(t1.getCause(), t2.getCause()));
+        return t1==t2 ||
+            (Arrays.equals(t1.getStackTrace(), t2.getStackTrace()) &&
+             equal(t1.getCause(), t2.getCause()) &&
+             Objects.equals(t1.getSuppressed(), t2.getSuppressed()));
     }
 
     static void a() throws HighLevelException {

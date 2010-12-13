@@ -1146,6 +1146,20 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   }
 }
 
+#ifndef PRODUCT
+// Non-atomic (i.e. concurrent) discovery might allow us
+// to observe j.l.References with NULL referents, being those
+// cleared concurrently by mutators during (or after) discovery.
+void ReferenceProcessor::verify_referent(oop obj) {
+  bool da = discovery_is_atomic();
+  oop referent = java_lang_ref_Reference::referent(obj);
+  assert(da ? referent->is_oop() : referent->is_oop_or_null(),
+         err_msg("Bad referent " INTPTR_FORMAT " found in Reference "
+                 INTPTR_FORMAT " during %satomic discovery ",
+                 (intptr_t)referent, (intptr_t)obj, da ? "" : "non-"));
+}
+#endif
+
 // We mention two of several possible choices here:
 // #0: if the reference object is not in the "originating generation"
 //     (or part of the heap being collected, indicated by our "span"
@@ -1196,14 +1210,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // We only enqueue references whose referents are not (yet) strongly
   // reachable.
   if (is_alive_non_header() != NULL) {
-    oop referent = java_lang_ref_Reference::referent(obj);
-    // In the case of non-concurrent discovery, the last
-    // disjunct below should hold. It may not hold in the
-    // case of concurrent discovery because mutators may
-    // concurrently clear() a Reference.
-    assert(UseConcMarkSweepGC || UseG1GC || referent != NULL,
-           "Refs with null referents already filtered");
-    if (is_alive_non_header()->do_object_b(referent)) {
+    verify_referent(obj);
+    if (is_alive_non_header()->do_object_b(java_lang_ref_Reference::referent(obj))) {
       return false;  // referent is reachable
     }
   }
@@ -1247,13 +1255,13 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   }
 
   if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-    oop referent = java_lang_ref_Reference::referent(obj);
-    assert(referent->is_oop(), "bad referent");
+    verify_referent(obj);
     // enqueue if and only if either:
     // reference is in our span or
     // we are an atomic collector and referent is in our span
     if (_span.contains(obj_addr) ||
-        (discovery_is_atomic() && _span.contains(referent))) {
+        (discovery_is_atomic() &&
+         _span.contains(java_lang_ref_Reference::referent(obj)))) {
       // should_enqueue = true;
     } else {
       return false;
@@ -1301,7 +1309,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     }
   }
   assert(obj->is_oop(), "Enqueued a bad reference");
-  assert(java_lang_ref_Reference::referent(obj)->is_oop(), "Enqueued a bad referent");
+  verify_referent(obj);
   return true;
 }
 

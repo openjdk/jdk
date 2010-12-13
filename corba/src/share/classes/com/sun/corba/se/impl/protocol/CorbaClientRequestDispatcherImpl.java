@@ -185,6 +185,7 @@ public class CorbaClientRequestDispatcherImpl
                             if(getContactInfoListIterator(orb).hasNext()) {
                                 contactInfo = (ContactInfo)
                                    getContactInfoListIterator(orb).next();
+                                unregisterWaiter(orb);
                                 return beginRequest(self, opName,
                                                     isOneWay, contactInfo);
                             } else {
@@ -292,10 +293,22 @@ public class CorbaClientRequestDispatcherImpl
             // ContactInfoList outside of subcontract.
             // Want to move that update to here.
             if (getContactInfoListIterator(orb).hasNext()) {
-                contactInfo = (ContactInfo)
-                    getContactInfoListIterator(orb).next();
+                contactInfo = (ContactInfo)getContactInfoListIterator(orb).next();
+                if (orb.subcontractDebugFlag) {
+                    dprint( "RemarshalException: hasNext true\ncontact info " + contactInfo );
+                }
+
+                // Fix for 6763340: Complete the first attempt before starting another.
+                orb.getPIHandler().makeCompletedClientRequest(
+                    ReplyMessage.LOCATION_FORWARD, null ) ;
+                unregisterWaiter(orb);
+                orb.getPIHandler().cleanupClientPIRequest() ;
+
                 return beginRequest(self, opName, isOneWay, contactInfo);
             } else {
+                if (orb.subcontractDebugFlag) {
+                    dprint( "RemarshalException: hasNext false" );
+                }
                 ORBUtilSystemException wrapper =
                     ORBUtilSystemException.get(orb,
                                                CORBALogDomains.RPC_PROTOCOL);

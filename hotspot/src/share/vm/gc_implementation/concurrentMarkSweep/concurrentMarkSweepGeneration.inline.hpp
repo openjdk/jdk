@@ -287,7 +287,7 @@ inline bool CMSCollector::should_abort_preclean() const {
   // scavenge is done or foreground GC wants to take over collection
   return _collectorState == AbortablePreclean &&
          (_abort_preclean || _foregroundGCIsActive ||
-          GenCollectedHeap::heap()->incremental_collection_will_fail());
+          GenCollectedHeap::heap()->incremental_collection_will_fail(true /* consult_young */));
 }
 
 inline size_t CMSCollector::get_eden_used() const {

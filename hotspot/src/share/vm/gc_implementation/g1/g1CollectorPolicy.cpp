@@ -479,6 +479,7 @@ void G1CollectorPolicy::calculate_young_list_target_length() {
   // region before we need to do a collection again.
   size_t min_length = _g1->young_list()->length() + 1;
   _young_list_target_length = MAX2(_young_list_target_length, min_length);
+  calculate_max_gc_locker_expansion();
   calculate_survivors_policy();
 }
 
@@ -2299,6 +2300,21 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
       ShouldNotReachHere();
       return REGIONS_UNLIMITED;
   };
+}
+
+void G1CollectorPolicy::calculate_max_gc_locker_expansion() {
+  size_t expansion_region_num = 0;
+  if (GCLockerEdenExpansionPercent > 0) {
+    double perc = (double) GCLockerEdenExpansionPercent / 100.0;
+    double expansion_region_num_d = perc * (double) _young_list_target_length;
+    // We use ceiling so that if expansion_region_num_d is > 0.0 (but
+    // less than 1.0) we'll get 1.
+    expansion_region_num = (size_t) ceil(expansion_region_num_d);
+  } else {
+    assert(expansion_region_num == 0, "sanity");
+  }
+  _young_list_max_length = _young_list_target_length + expansion_region_num;
+  assert(_young_list_target_length <= _young_list_max_length, "post-condition");
 }
 
 // Calculates survivor space parameters.

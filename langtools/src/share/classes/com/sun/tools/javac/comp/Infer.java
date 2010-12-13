@@ -305,7 +305,8 @@ public class Infer {
             uv.hibounds = hibounds.toList();
         }
         Type qtype1 = types.subst(that.qtype, that.tvars, undetvars);
-        if (!types.isSubtype(qtype1, to)) {
+        if (!types.isSubtype(qtype1,
+                qtype1.tag == UNDETVAR ? types.boxedTypeOrType(to) : to)) {
             throw unambiguousNoInstanceException
                 .setMessage("infer.no.conforming.instance.exists",
                             that.tvars, that.qtype, to);

@@ -2772,6 +2772,8 @@ public class Types {
     public Type glb(Type t, Type s) {
         if (s == null)
             return t;
+        else if (t.isPrimitive() || s.isPrimitive())
+            return syms.errType;
         else if (isSubtypeNoCapture(t, s))
             return t;
         else if (isSubtypeNoCapture(s, t))
@@ -2925,6 +2927,15 @@ public class Types {
      */
     public ClassSymbol boxedClass(Type t) {
         return reader.enterClass(syms.boxedName[t.tag]);
+    }
+
+    /**
+     * Return the boxed type if 't' is primitive, otherwise return 't' itself.
+     */
+    public Type boxedTypeOrType(Type t) {
+        return t.isPrimitive() ?
+            boxedClass(t).type :
+            t;
     }
 
     /**
@@ -3151,7 +3162,7 @@ public class Types {
         return to.isParameterized() &&
                 (!(isUnbounded(to) ||
                 isSubtype(from, to) ||
-                ((subFrom != null) && isSameType(subFrom, to))));
+                ((subFrom != null) && containsType(to.allparams(), subFrom.allparams()))));
     }
 
     private List<Type> superClosure(Type t, Type s) {

@@ -119,8 +119,9 @@ G1CollectedHeap::attempt_allocation(size_t word_size) {
 
   // Try to get a new region and allocate out of it
   HeapWord* result = replace_cur_alloc_region_and_allocate(word_size,
-                                                      false, /* at safepoint */
-                                                      true   /* do_dirtying */);
+                                                     false, /* at_safepoint */
+                                                     true,  /* do_dirtying */
+                                                     false  /* can_expand */);
   if (result != NULL) {
     assert_heap_not_locked();
     return result;
