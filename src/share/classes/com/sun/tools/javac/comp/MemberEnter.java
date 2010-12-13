@@ -77,6 +77,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Target target;
 
     private final boolean skipAnnotations;
+    private final boolean allowSimplifiedVarargs;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -103,6 +104,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         target = Target.instance(context);
         Options options = Options.instance(context);
         skipAnnotations = options.isSet("skipAnnotations");
+        Source source = Source.instance(context);
+        allowSimplifiedVarargs = source.allowSimplifiedVarargs();
     }
 
     /** A queue for classes whose members still need to be entered into the
@@ -617,6 +620,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             localEnv.info.staticLevel++;
         }
         attr.attribType(tree.vartype, localEnv);
+        if ((tree.mods.flags & VARARGS) != 0) {
+            //if we are entering a varargs parameter, we need to replace its type
+            //(a plain array type) with the more precise VarargsType --- we need
+            //to do it this way because varargs is represented in the tree as a modifier
+            //on the parameter declaration, and not as a distinct type of array node.
+            ArrayType atype = (ArrayType)tree.vartype.type;
+            tree.vartype.type = atype.makeVarargs();
+        }
         Scope enclScope = enter.enterScope(env);
         VarSymbol v =
             new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);

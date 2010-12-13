@@ -21,10 +21,12 @@
  * questions.
  */
 
-// key: compiler.note.varargs.plural.additional
-// key: compiler.warn.varargs.non.reifiable.type
-// options: -Xlint:varargs -Xmaxwarns 1
+// key: compiler.err.varargs.invalid.trustme.anno
+// key: compiler.misc.varargs.trustme.on.virtual.varargs
+// options: -Xlint:varargs,unchecked
 
-class VarargsPluralAdditional<T> {
-    void m(T... items) { }
+import java.util.List;
+
+class TrustMeOnVirtualMethod {
+    @SafeVarargs void m(List<String>... args) { }
 }

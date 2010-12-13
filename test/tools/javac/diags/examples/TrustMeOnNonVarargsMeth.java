@@ -21,6 +21,10 @@
  * questions.
  */
 
-class VarargsFilename<T> {
-    void m(T... items) { }
+// key: compiler.err.varargs.invalid.trustme.anno
+// key: compiler.misc.varargs.trustme.on.non.varargs.meth
+// options: -Xlint:varargs
+
+class TrustMeOnNonVarargsMeth {
+    @SafeVarargs static void m(String[] args) { }
 }
