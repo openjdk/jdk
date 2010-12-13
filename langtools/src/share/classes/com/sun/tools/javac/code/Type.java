@@ -754,6 +754,10 @@ public class Type implements PrimitiveType {
             return (ARRAY << 5) + elemtype.hashCode();
         }
 
+        public boolean isVarargs() {
+            return false;
+        }
+
         public List<Type> allparams() { return elemtype.allparams(); }
 
         public boolean isErroneous() {
@@ -766,6 +770,15 @@ public class Type implements PrimitiveType {
 
         public boolean isRaw() {
             return elemtype.isRaw();
+        }
+
+        public ArrayType makeVarargs() {
+            return new ArrayType(elemtype, tsym) {
+                @Override
+                public boolean isVarargs() {
+                    return true;
+                }
+            };
         }
 
         public Type map(Mapping f) {
