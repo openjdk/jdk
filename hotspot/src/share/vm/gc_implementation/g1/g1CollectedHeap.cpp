@@ -619,15 +619,19 @@ G1CollectedHeap::retire_cur_alloc_region(HeapRegion* cur_alloc_region) {
 HeapWord*
 G1CollectedHeap::replace_cur_alloc_region_and_allocate(size_t word_size,
                                                        bool at_safepoint,
-                                                       bool do_dirtying) {
+                                                       bool do_dirtying,
+                                                       bool can_expand) {
   assert_heap_locked_or_at_safepoint();
   assert(_cur_alloc_region == NULL,
          "replace_cur_alloc_region_and_allocate() should only be called "
          "after retiring the previous current alloc region");
   assert(SafepointSynchronize::is_at_safepoint() == at_safepoint,
          "at_safepoint and is_at_safepoint() should be a tautology");
+  assert(!can_expand || g1_policy()->can_expand_young_list(),
+         "we should not call this method with can_expand == true if "
+         "we are not allowed to expand the young gen");
 
-  if (!g1_policy()->is_young_list_full()) {
+  if (can_expand || !g1_policy()->is_young_list_full()) {
     if (!at_safepoint) {
       // The cleanup operation might update _summary_bytes_used
       // concurrently with this method. So, right now, if we don't
@@ -738,11 +742,26 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     }
 
     if (GC_locker::is_active_and_needs_gc()) {
-      // We are locked out of GC because of the GC locker. Right now,
-      // we'll just stall until the GC locker-induced GC
-      // completes. This will be fixed in the near future by extending
-      // the eden while waiting for the GC locker to schedule the GC
-      // (see CR 6994056).
+      // We are locked out of GC because of the GC locker. We can
+      // allocate a new region only if we can expand the young gen.
+
+      if (g1_policy()->can_expand_young_list()) {
+        // Yes, we are allowed to expand the young gen. Let's try to
+        // allocate a new current alloc region.
+
+        HeapWord* result =
+          replace_cur_alloc_region_and_allocate(word_size,
+                                                false, /* at_safepoint */
+                                                true,  /* do_dirtying */
+                                                true   /* can_expand */);
+        if (result != NULL) {
+          assert_heap_not_locked();
+          return result;
+        }
+      }
+      // We could not expand the young gen further (or we could but we
+      // failed to allocate a new region). We'll stall until the GC
+      // locker forces a GC.
 
       // If this thread is not in a jni critical section, we stall
       // the requestor until the critical section has cleared and
@@ -950,7 +969,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
            "at this point we should have no cur alloc region");
     return replace_cur_alloc_region_and_allocate(word_size,
                                                  true, /* at_safepoint */
-                                                 false /* do_dirtying */);
+                                                 false /* do_dirtying */,
+                                                 false /* can_expand */);
   } else {
     return attempt_allocation_humongous(word_size,
                                         true /* at_safepoint */);
@@ -2040,7 +2060,6 @@ void G1CollectedHeap::ref_processing_init() {
   _ref_processor = ReferenceProcessor::create_ref_processor(
                                          mr,    // span
                                          false, // Reference discovery is not atomic
-                                                // (though it shouldn't matter here.)
                                          true,  // mt_discovery
                                          NULL,  // is alive closure: need to fill this in for efficiency
                                          ParallelGCThreads,

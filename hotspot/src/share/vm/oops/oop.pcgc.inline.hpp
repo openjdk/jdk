@@ -118,12 +118,15 @@ inline oop oopDesc::forward_to_atomic(oop p) {
   assert(forwardPtrMark->decode_pointer() == p, "encoding must be reversable");
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
-  while (!is_forwarded()) {
+  while (!oldMark->is_marked()) {
     curMark = (markOop)Atomic::cmpxchg_ptr(forwardPtrMark, &_mark, oldMark);
+    assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
-      assert(is_forwarded(), "the CAS should have succeeded.");
       return NULL;
     }
+    // If the CAS was unsuccessful then curMark->is_marked()
+    // should return true as another thread has CAS'd in another
+    // forwarding pointer.
     oldMark = curMark;
   }
   return forwardee();

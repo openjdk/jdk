@@ -174,9 +174,6 @@ public enum Source {
     public boolean allowUnderscoresInLiterals() {
         return compareTo(JDK1_7) >= 0;
     }
-    public boolean allowExoticIdentifiers() {
-        return compareTo(JDK1_7) >= 0;
-    }
     public boolean allowStringsInSwitch() {
         return compareTo(JDK1_7) >= 0;
     }
