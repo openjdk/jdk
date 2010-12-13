@@ -1426,7 +1426,12 @@ public final class Locale implements Cloneable, Serializable {
         LanguageTag tag = LanguageTag.parse(languageTag, null);
         InternalLocaleBuilder bldr = new InternalLocaleBuilder();
         bldr.setLanguageTag(tag);
-        return getInstance(bldr.getBaseLocale(), bldr.getLocaleExtensions());
+        BaseLocale base = bldr.getBaseLocale();
+        LocaleExtensions exts = bldr.getLocaleExtensions();
+        if (exts.isEmpty() && base.getVariant().length() > 0) {
+            exts = getCompatibilityExtensions(base.getLanguage(), base.getScript(), base.getRegion(), base.getVariant());
+        }
+        return getInstance(base, exts);
     }
 
     /**
@@ -2485,6 +2490,10 @@ public final class Locale implements Cloneable, Serializable {
         public Locale build() {
             BaseLocale baseloc = _locbld.getBaseLocale();
             LocaleExtensions extensions = _locbld.getLocaleExtensions();
+            if (extensions.isEmpty() && baseloc.getVariant().length() > 0) {
+                extensions = getCompatibilityExtensions(baseloc.getLanguage(), baseloc.getScript(),
+                        baseloc.getRegion(), baseloc.getVariant());
+            }
             return Locale.getInstance(baseloc, extensions);
         }
     }
