@@ -287,11 +287,11 @@ public class HtmlWriter extends PrintWriter {
         HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
         if(winTitle != null && winTitle.length() > 0) {
             script.addAttr(HtmlAttr.TYPE, "text/javascript");
-            String scriptCode = "<!--\n" +
-                    "    if (location.href.indexOf('is-external=true') == -1) {\n" +
-                    "        parent.document.title=\"" + winTitle + "\";\n" +
-                    "    }\n" +
-                    "//-->\n";
+            String scriptCode = "<!--" + DocletConstants.NL +
+                    "    if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
+                    "        parent.document.title=\"" + winTitle + "\";" + DocletConstants.NL +
+                    "    }" + DocletConstants.NL +
+                    "//-->" + DocletConstants.NL;
             RawHtml scriptContent = new RawHtml(scriptCode);
             script.addContent(scriptContent);
         }
@@ -306,15 +306,15 @@ public class HtmlWriter extends PrintWriter {
     protected Content getFramesetJavaScript(){
         HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
         script.addAttr(HtmlAttr.TYPE, "text/javascript");
-        String scriptCode = "\n    targetPage = \"\" + window.location.search;\n" +
-                "    if (targetPage != \"\" && targetPage != \"undefined\")\n" +
-                "        targetPage = targetPage.substring(1);\n" +
-                "    if (targetPage.indexOf(\":\") != -1)\n" +
-                "        targetPage = \"undefined\";\n" +
-                "    function loadFrames() {\n" +
-                "        if (targetPage != \"\" && targetPage != \"undefined\")\n" +
-                "             top.classFrame.location = top.targetPage;\n" +
-                "    }\n";
+        String scriptCode = DocletConstants.NL + "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
+                "    if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
+                "        targetPage = targetPage.substring(1);" + DocletConstants.NL +
+                "    if (targetPage.indexOf(\":\") != -1)" + DocletConstants.NL +
+                "        targetPage = \"undefined\";" + DocletConstants.NL +
+                "    function loadFrames() {" + DocletConstants.NL +
+                "        if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
+                "             top.classFrame.location = top.targetPage;" + DocletConstants.NL +
+                "    }" + DocletConstants.NL;
         RawHtml scriptContent = new RawHtml(scriptCode);
         script.addContent(scriptContent);
         return script;
