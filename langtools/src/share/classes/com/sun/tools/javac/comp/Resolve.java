@@ -815,13 +815,13 @@ public class Resolve {
     }
     //where
     private boolean signatureMoreSpecific(Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
+        noteWarner.clear();
         Type mtype1 = types.memberType(site, adjustVarargs(m1, m2, useVarargs));
-        noteWarner.unchecked = false;
         return (instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
                              allowBoxing, false, noteWarner) != null ||
                  useVarargs && instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
                                            allowBoxing, true, noteWarner) != null) &&
-                !noteWarner.unchecked;
+                !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
     }
     //where
     private Symbol adjustVarargs(Symbol to, Symbol from, boolean useVarargs) {

@@ -129,10 +129,15 @@ public class CheckExamples {
         File testSrc = new File(System.getProperty("test.src"));
         File examples = new File(testSrc, "examples");
         for (File f: examples.listFiles()) {
-            if (f.isDirectory() || f.isFile() && f.getName().endsWith(".java"))
+            if (isValidExample(f))
                 results.add(new Example(f));
         }
         return results;
+    }
+
+    boolean isValidExample(File f) {
+        return (f.isDirectory() && f.list().length > 0) ||
+                (f.isFile() && f.getName().endsWith(".java"));
     }
 
     /**
