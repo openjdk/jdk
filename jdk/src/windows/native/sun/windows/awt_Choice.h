@@ -94,6 +94,7 @@ private:
     static BOOL sm_isMouseMoveInList;
     HWND m_hList;
     WNDPROC m_listDefWindowProc;
+    int m_selectedItem;
     static LRESULT CALLBACK ListWindowProc(HWND hwnd, UINT message,
                                            WPARAM wParam, LPARAM lParam);
 };
