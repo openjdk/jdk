@@ -91,11 +91,11 @@ public class ZipFileSystem extends FileSystem {
         throws IOException
     {
         // configurable env setup
+        this.createNew    = "true".equals(env.get("create"));
+        this.nameEncoding = env.containsKey("encoding") ?
+                            (String)env.get("encoding") : "UTF-8";
         this.buildDirTree = TRUE.equals(env.get("buildDirTreea"));
         this.useTempFile  = TRUE.equals(env.get("useTempFile"));
-        this.createNew    = TRUE.equals(env.get("createNew"));
-        this.nameEncoding = env.containsKey("nameEncoding") ?
-                            (String)env.get("nameEncoding") : "UTF-8";
         this.defaultDir   = env.containsKey("default.dir") ?
                             (String)env.get("default.dir") : "/";
         if (this.defaultDir.charAt(0) != '/')
@@ -1176,7 +1176,9 @@ public class ZipFileSystem extends FileSystem {
         } else {
             os.write(buf, 0, LOCHDR);    // write out the loc header
             locoff += LOCHDR;
-            size += LOCNAM(buf) + LOCEXT(buf) + LOCSIZ(buf);
+            // use e.csize,  LOCSIZ(buf) is zero if FLAG_DATADESCR is on
+            // size += LOCNAM(buf) + LOCEXT(buf) + LOCSIZ(buf);
+            size += LOCNAM(buf) + LOCEXT(buf) + e.csize;
             written = LOCHDR + size;
         }
         int n;

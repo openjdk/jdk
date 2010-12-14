@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile MapLoops.java
+ * @compile -source 1.5 MapLoops.java
  * @run main/timeout=4700 MapLoops
  * @summary Exercise multithreaded maps, by default ConcurrentHashMap.
  * Multithreaded hash table test.  Each thread does a random walk
@@ -65,7 +65,7 @@ public class MapLoops {
         if (args.length > 0) {
             try {
                 mapClass = Class.forName(args[0]);
-            } catch(ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Class " + args[0] + " not found.");
             }
         }
