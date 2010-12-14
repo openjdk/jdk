@@ -869,8 +869,9 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return false;
         if (!path.equals(uri.getPath())) // implicitly checks for embedded . and ..
             return false;
-        char first = path.charAt(0);
-        return first != '.' && first != '/';
+        if (path.startsWith("/") || path.startsWith("./") || path.startsWith("../"))
+            return false;
+        return true;
     }
 
     // Convenience method
