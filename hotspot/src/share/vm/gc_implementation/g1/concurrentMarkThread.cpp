@@ -277,7 +277,9 @@ void ConcurrentMarkThread::run() {
     // completed. This will also notify the FullGCCount_lock in case a
     // Java thread is waiting for a full GC to happen (e.g., it
     // called System.gc() with +ExplicitGCInvokesConcurrent).
-    g1->increment_full_collections_completed(true /* outer */);
+    _sts.join();
+    g1->increment_full_collections_completed(true /* concurrent */);
+    _sts.leave();
   }
   assert(_should_terminate, "just checking");
 
