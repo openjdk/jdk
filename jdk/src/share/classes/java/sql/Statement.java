@@ -577,7 +577,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @see #addBatch
      * @see DatabaseMetaData#supportsBatchUpdates
-     * @since 1.3
+     * @since 1.2
      */
     int[] executeBatch() throws SQLException;
 
