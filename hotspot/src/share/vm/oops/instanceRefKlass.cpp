@@ -458,6 +458,7 @@ void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
 }
 
 bool instanceRefKlass::owns_pending_list_lock(JavaThread* thread) {
+  if (java_lang_ref_Reference::pending_list_lock() == NULL) return false;
   Handle h_lock(thread, java_lang_ref_Reference::pending_list_lock());
   return ObjectSynchronizer::current_thread_holds_lock(thread, h_lock);
 }
