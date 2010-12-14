@@ -25,30 +25,9 @@
 
 #include "math.h"
 #include "GraphicsPrimitiveMgr.h"
+#include "ParallelogramUtils.h"
 
 #include "sun_java2d_loops_FillParallelogram.h"
-
-#define PGRAM_MIN_MAX(bmin, bmax, v0, dv1, dv2) \
-    do { \
-        double vmin, vmax; \
-        if (dv1 < 0) { \
-            vmin = v0+dv1; \
-            vmax = v0; \
-        } else { \
-            vmin = v0; \
-            vmax = v0+dv1; \
-        } \
-        if (dv2 < 0) { \
-            vmin -= dv2; \
-        } else { \
-            vmax += dv2; \
-        } \
-        bmin = (jint) floor(vmin + 0.5); \
-        bmax = (jint) floor(vmax + 0.5); \
-    } while(0)
-
-#define PGRAM_INIT_X(starty, x, y, slope) \
-    (DblToLong((x) + (slope) * ((starty)+0.5 - (y))) + LongOneHalf - 1)
 
 /*
  * Class:     sun_java2d_loops_FillParallelogram
@@ -76,22 +55,11 @@ Java_sun_java2d_loops_FillParallelogram_FillParallelogram
 
     /*
      * Sort parallelogram by y values, ensure that each delta vector
-     * has a non-negative y delta, and eliminate degenerate parallelograms.
+     * has a non-negative y delta.
      */
-    if (dy1 < 0) {
-        x0 += dx1;  y0 += dy1;
-        dx1 = -dx1; dy1 = -dy1;
-    }
-    if (dy2 < 0) {
-        x0 += dx2;  y0 += dy2;
-        dx2 = -dx2; dy2 = -dy2;
-    }
-    /* Sort delta vectors so dxy1 is left of dxy2. */
-    if (dx1 * dy2 > dx2 * dy1) {
-        double v = dx1; dx1 = dx2; dx2 = v;
-               v = dy1; dy1 = dy2; dy2 = v;
-    }
-    PGRAM_MIN_MAX(ix1, ix2, x0, dx1, dx2);
+    SORT_PGRAM(x0, y0, dx1, dy1, dx2, dy2, );
+
+    PGRAM_MIN_MAX(ix1, ix2, x0, dx1, dx2, JNI_FALSE);
     iy1 = (jint) floor(y0 + 0.5);
     iy2 = (jint) floor(y0 + dy1 + dy2 + 0.5);
 

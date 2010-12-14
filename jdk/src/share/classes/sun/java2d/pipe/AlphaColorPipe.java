@@ -34,7 +34,7 @@ import sun.java2d.SunGraphics2D;
  * into a destination that supports direct alpha compositing of a solid
  * color, according to one of the rules in the AlphaComposite class.
  */
-public class AlphaColorPipe implements CompositePipe {
+public class AlphaColorPipe implements CompositePipe, ParallelogramPipe {
     public AlphaColorPipe() {
     }
 
@@ -63,5 +63,24 @@ public class AlphaColorPipe implements CompositePipe {
 
     public void endSequence(Object context) {
         return;
+    }
+
+    public void fillParallelogram(SunGraphics2D sg,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2)
+    {
+        sg.alphafill.FillAAPgram(sg, sg.getSurfaceData(), sg.composite,
+                                 x, y, dx1, dy1, dx2, dy2);
+    }
+
+    public void drawParallelogram(SunGraphics2D sg,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2,
+                                  double lw1, double lw2)
+    {
+        sg.alphafill.DrawAAPgram(sg, sg.getSurfaceData(), sg.composite,
+                                 x, y, dx1, dy1, dx2, dy2, lw1, lw2);
     }
 }

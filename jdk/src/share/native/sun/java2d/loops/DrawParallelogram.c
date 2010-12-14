@@ -26,13 +26,10 @@
 #include "math.h"
 #include "GraphicsPrimitiveMgr.h"
 #include "LineUtils.h"
-#include "LoopMacros.h"
 #include "Trace.h"
+#include "ParallelogramUtils.h"
 
-#include "sun_java2d_loops_FillParallelogram.h"
 #include "sun_java2d_loops_DrawParallelogram.h"
-
-DECLARE_SOLID_DRAWLINE(AnyInt);
 
 #define HANDLE_PGRAM_EDGE(X1, Y1, X2, Y2, \
                           pRasInfo, pixel, pPrim, pFunc, pCompInfo) \
@@ -45,28 +42,6 @@ DECLARE_SOLID_DRAWLINE(AnyInt);
                                pFunc, pPrim, pCompInfo, \
                                ix1, iy1, ix2, iy2, JNI_TRUE); \
     } while (0)
-
-#define PGRAM_MIN_MAX(bmin, bmax, v0, dv1, dv2) \
-    do { \
-        double vmin, vmax; \
-        if (dv1 < 0) { \
-            vmin = v0+dv1; \
-            vmax = v0; \
-        } else { \
-            vmin = v0; \
-            vmax = v0+dv1; \
-        } \
-        if (dv2 < 0) { \
-            vmin -= dv2; \
-        } else { \
-            vmax += dv2; \
-        } \
-        bmin = (jint) floor(vmin + 0.5); \
-        bmax = (jint) floor(vmax + 0.5); \
-    } while(0)
-
-#define PGRAM_INIT_X(starty, x, y, slope) \
-    (DblToLong((x) + (slope) * ((starty)+0.5 - (y))) + LongOneHalf - 1)
 
 typedef struct {
     jdouble x0;
@@ -136,20 +111,8 @@ Java_sun_java2d_loops_DrawParallelogram_DrawParallelogram
      * Sort parallelogram by y values, ensure that each delta vector
      * has a non-negative y delta.
      */
-    if (dy1 < 0) {
-        x0 += dx1;  y0 += dy1;
-        dx1 = -dx1; dy1 = -dy1;
-    }
-    if (dy2 < 0) {
-        x0 += dx2;  y0 += dy2;
-        dx2 = -dx2; dy2 = -dy2;
-    }
-    /* Sort delta vectors so dxy1 is left of dxy2. */
-    if (dx1 * dy2 > dx2 * dy1) {
-        double v = dx1; dx1 = dx2; dx2 = v;
-               v = dy1; dy1 = dy2; dy2 = v;
-               v = lw1; lw1 = lw2; lw2 = v;
-    }
+    SORT_PGRAM(x0, y0, dx1, dy1, dx2, dy2,
+               v = lw1; lw1 = lw2; lw2 = v;);
 
     // dx,dy for line width in the "1" and "2" directions.
     ldx1 = dx1 * lw1;
@@ -161,7 +124,7 @@ Java_sun_java2d_loops_DrawParallelogram_DrawParallelogram
     ox0 = x0 - (ldx1 + ldx2) / 2.0;
     oy0 = y0 - (ldy1 + ldy2) / 2.0;
 
-    PGRAM_MIN_MAX(ix1, ix2, ox0, dx1+ldx1, dx2+ldx2);
+    PGRAM_MIN_MAX(ix1, ix2, ox0, dx1+ldx1, dx2+ldx2, JNI_FALSE);
     iy1 = (jint) floor(oy0 + 0.5);
     iy2 = (jint) floor(oy0 + dy1 + ldy1 + dy2 + ldy2 + 0.5);
 
@@ -212,7 +175,7 @@ Java_sun_java2d_loops_DrawParallelogram_DrawParallelogram
             // Only need to generate 4 quads if the interior still
             // has a hole in it (i.e. if the line width ratios were
             // both less than 1.0)
-            if (lw1 < 1.0f && lw2 < 1.0f) {
+            if (lw1 < 1.0 && lw2 < 1.0) {
                 // If the line widths are both less than a pixel wide
                 // then we can use a drawline function instead for even
                 // more performance.
