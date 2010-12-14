@@ -452,7 +452,7 @@ public class TreeSet<E> extends AbstractSet<E>
      */
     public E pollFirst() {
         Map.Entry<E,?> e = m.pollFirstEntry();
-        return (e == null)? null : e.getKey();
+        return (e == null) ? null : e.getKey();
     }
 
     /**
@@ -460,7 +460,7 @@ public class TreeSet<E> extends AbstractSet<E>
      */
     public E pollLast() {
         Map.Entry<E,?> e = m.pollLastEntry();
-        return (e == null)? null : e.getKey();
+        return (e == null) ? null : e.getKey();
     }
 
     /**

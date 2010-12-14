@@ -33,9 +33,7 @@ package com.sun.nio.zipfs;
 
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
-import com.sun.nio.zipfs.ZipFileSystem.Entry;
 import static com.sun.nio.zipfs.ZipConstants.*;
 import static com.sun.nio.zipfs.ZipUtils.*;
 
@@ -172,7 +170,7 @@ public class ZipInfo {
 
     static void printExtra(byte[] extra, int off, int len) {
         int end = off + len;
-        while (off + 4 < end) {
+        while (off + 4 <= end) {
             int tag = SH(extra, off);
             int sz = SH(extra, off + 2);
             print("        [tag=0x%04x, sz=%d, data= ", tag, sz);
