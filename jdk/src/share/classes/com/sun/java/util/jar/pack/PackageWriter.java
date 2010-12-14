@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Writer for a package file.
@@ -111,12 +111,12 @@ class PackageWriter extends BandStructure {
         }
     }
 
-    HashSet     requiredEntries;  // for the CP
-    HashMap     backCountTable;   // for layout callables
+    Set<Entry>                       requiredEntries;  // for the CP
+    Map<Attribute.Layout, int[]>     backCountTable;   // for layout callables
     int[][]     attrCounts;       // count attr. occurences
 
     void setup() {
-        requiredEntries = new HashSet();
+        requiredEntries = new HashSet<>();
         setArchiveOptions();
         trimClassAttributes();
         collectAttributeLayouts();
@@ -139,9 +139,7 @@ class PackageWriter extends BandStructure {
         // Import defaults from package (deflate hint, etc.).
         archiveOptions |= pkg.default_options;
 
-        for (Iterator i = pkg.files.iterator(); i.hasNext(); ) {
-            File file = (File) i.next();
-
+        for (File file : pkg.files) {
             int modtime = file.modtime;
             int options = file.options;
 
@@ -178,16 +176,15 @@ class PackageWriter extends BandStructure {
             }
         }
         // Decide on default version number (majority rule).
-        HashMap verCounts = new HashMap();
+        Map<Integer, int[]> verCounts = new HashMap<>();
         int bestCount = 0;
         int bestVersion = -1;
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+        for (Class cls : pkg.classes) {
             int version = cls.getVersion();
-            int[] var = (int[]) verCounts.get(new Integer(version));
+            int[] var = verCounts.get(version);
             if (var == null) {
                 var = new int[1];
-                verCounts.put(new Integer(version), var);
+                verCounts.put(version, var);
             }
             int count = (var[0] += 1);
             //System.out.println("version="+version+" count="+count);
@@ -210,9 +207,7 @@ class PackageWriter extends BandStructure {
                            Package.versionStringOf(pkg.getHighestClassVersion()));
 
         // Now add explicit pseudo-attrs. to classes with odd versions.
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
-
+        for (Class cls : pkg.classes) {
             if (cls.getVersion() != bestVersion) {
                 Attribute a = makeClassFileVersionAttr(cls.minver, cls.majver);
                 if (verbose > 1) {
@@ -228,8 +223,7 @@ class PackageWriter extends BandStructure {
         }
 
         // Decide if we are transmitting a huge resource file:
-        for (Iterator i = pkg.files.iterator(); i.hasNext(); ) {
-            File file = (File) i.next();
+        for (File file : pkg.files) {
             long len = file.getFileLength();
             if (len != (int)len) {
                 archiveOptions |= AO_HAVE_FILE_SIZE_HI;
@@ -244,10 +238,8 @@ class PackageWriter extends BandStructure {
         // we must declare unconditional presence of code flags.
         int cost0 = 0;
         int cost1 = 0;
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
-            for (Iterator j = cls.getMethods().iterator(); j.hasNext(); ) {
-                Class.Method m = (Class.Method) j.next();
+        for (Class cls : pkg.classes) {
+            for (Class.Method m : cls.getMethods()) {
                 if (m.code != null) {
                     if (m.code.attributeSize() == 0) {
                         // cost of a useless unconditional flags byte
@@ -352,7 +344,7 @@ class PackageWriter extends BandStructure {
             archive_header_1.putInt(pkg.default_modtime);
             archive_header_1.putInt(pkg.files.size());
         } else {
-            assert(pkg.files.size() == 0);
+            assert(pkg.files.isEmpty());
         }
 
         if (haveSpecial) {
@@ -697,8 +689,7 @@ class PackageWriter extends BandStructure {
         boolean haveModtime = testBit(options, AO_HAVE_FILE_MODTIME);
         boolean haveOptions = testBit(options, AO_HAVE_FILE_OPTIONS);
         if (!haveOptions) {
-            for (Iterator i = pkg.files.iterator(); i.hasNext(); ) {
-                File file = (File) i.next();
+            for (File file : pkg.files) {
                 if (file.isClassStub()) {
                     haveOptions = true;
                     options |= AO_HAVE_FILE_OPTIONS;
@@ -711,9 +702,7 @@ class PackageWriter extends BandStructure {
             options |= AO_HAVE_FILE_HEADERS;
             archiveOptions = options;
         }
-
-        for (Iterator i = pkg.files.iterator(); i.hasNext(); ) {
-            File file = (File) i.next();
+        for (File file : pkg.files) {
             file_name.putRef(file.name);
             long len = file.getFileLength();
             file_size_lo.putInt((int)len);
@@ -731,22 +720,20 @@ class PackageWriter extends BandStructure {
             Utils.log.info("Wrote "+numFiles+" resource files");
     }
 
+    @SuppressWarnings("unchecked")
     void collectAttributeLayouts() {
         maxFlags = new int[ATTR_CONTEXT_LIMIT];
-        allLayouts = new HashMap[ATTR_CONTEXT_LIMIT];
+        allLayouts = new FixedList<>(ATTR_CONTEXT_LIMIT);
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
-            allLayouts[i] = new HashMap();
+            allLayouts.set(i, new HashMap<Attribute.Layout, int[]>());
         }
         // Collect maxFlags and allLayouts.
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+        for (Class cls : pkg.classes) {
             visitAttributeLayoutsIn(ATTR_CONTEXT_CLASS, cls);
-            for (Iterator j = cls.getFields().iterator(); j.hasNext(); ) {
-                Class.Field f = (Class.Field) j.next();
+            for (Class.Field f : cls.getFields()) {
                 visitAttributeLayoutsIn(ATTR_CONTEXT_FIELD, f);
             }
-            for (Iterator j = cls.getMethods().iterator(); j.hasNext(); ) {
-                Class.Method m = (Class.Method) j.next();
+            for (Class.Method m : cls.getMethods()) {
                 visitAttributeLayoutsIn(ATTR_CONTEXT_METHOD, m);
                 if (m.code != null) {
                     visitAttributeLayoutsIn(ATTR_CONTEXT_CODE, m.code);
@@ -755,7 +742,7 @@ class PackageWriter extends BandStructure {
         }
         // If there are many species of attributes, use 63-bit flags.
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
-            int nl = allLayouts[i].size();
+            int nl = allLayouts.get(i).size();
             boolean haveLongFlags = haveFlagsHi(i);
             final int TOO_MANY_ATTRS = 32 /*int flag size*/
                 - 12 /*typical flag bits in use*/
@@ -781,7 +768,7 @@ class PackageWriter extends BandStructure {
         }
         // Collect counts for both predefs. and custom defs.
         // Decide on custom, local attribute definitions.
-        backCountTable = new HashMap();
+        backCountTable = new HashMap<>();
         attrCounts = new int[ATTR_CONTEXT_LIMIT][];
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
             // Now the remaining defs in allLayouts[i] need attr. indexes.
@@ -793,11 +780,12 @@ class PackageWriter extends BandStructure {
             assert(attrIndexLimit[i] < 64);  // all bits fit into a Java long
             avHiBits &= (1L<<attrIndexLimit[i])-1;
             int nextLoBit = 0;
-            Map.Entry[] layoutsAndCounts = new Map.Entry[allLayouts[i].size()];
-            allLayouts[i].entrySet().toArray(layoutsAndCounts);
+            Map<Attribute.Layout, int[]> defMap = allLayouts.get(i);
+            Map.Entry[] layoutsAndCounts = new Map.Entry[defMap.size()];
+            defMap.entrySet().toArray(layoutsAndCounts);
             // Sort by count, most frequent first.
             // Predefs. participate in this sort, though it does not matter.
-            Arrays.sort(layoutsAndCounts, new Comparator() {
+            Arrays.sort(layoutsAndCounts, new Comparator<>() {
                 public int compare(Object o0, Object o1) {
                     Map.Entry e0 = (Map.Entry) o0;
                     Map.Entry e1 = (Map.Entry) o1;
@@ -814,7 +802,7 @@ class PackageWriter extends BandStructure {
                 Attribute.Layout def = (Attribute.Layout) e.getKey();
                 int count = ((int[])e.getValue())[0];
                 int index;
-                Integer predefIndex = (Integer) attrIndexTable.get(def);
+                Integer predefIndex = attrIndexTable.get(def);
                 if (predefIndex != null) {
                     // The index is already set.
                     index = predefIndex.intValue();
@@ -872,29 +860,32 @@ class PackageWriter extends BandStructure {
 
     // Scratch variables for processing attributes and flags.
     int[] maxFlags;
-    HashMap[] allLayouts;
+    List<Map<Attribute.Layout, int[]>> allLayouts;
 
     void visitAttributeLayoutsIn(int ctype, Attribute.Holder h) {
         // Make note of which flags appear in the class file.
         // Set them in maxFlags.
         maxFlags[ctype] |= h.flags;
-        for (Iterator i = h.getAttributes().iterator(); i.hasNext(); ) {
-            Attribute a = (Attribute) i.next();
+        for (Attribute a : h.getAttributes()) {
             Attribute.Layout def = a.layout();
-            int[] count = (int[]) allLayouts[ctype].get(def);
-            if (count == null)
-                allLayouts[ctype].put(def, count = new int[1]);
-            if (count[0] < Integer.MAX_VALUE)
+            Map<Attribute.Layout, int[]> defMap = allLayouts.get(ctype);
+            int[] count = defMap.get(def);
+            if (count == null) {
+                defMap.put(def, count = new int[1]);
+            }
+            if (count[0] < Integer.MAX_VALUE) {
                 count[0] += 1;
+            }
         }
     }
 
     Attribute.Layout[] attrDefsWritten;
 
+    @SuppressWarnings("unchecked")
     void writeAttrDefs() throws IOException {
-        ArrayList defList = new ArrayList();
+        List<Object[]> defList = new ArrayList<>();
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
-            int limit = attrDefs[i].size();
+            int limit = attrDefs.get(i).size();
             for (int j = 0; j < limit; j++) {
                 int header = i;  // ctype
                 if (j < attrIndexLimit[i]) {
@@ -906,9 +897,9 @@ class PackageWriter extends BandStructure {
                         continue;
                     }
                 }
-                Attribute.Layout def = (Attribute.Layout) attrDefs[i].get(j);
-                defList.add(new Object[]{ new Integer(header), def });
-                assert(new Integer(j).equals(attrIndexTable.get(def)));
+                Attribute.Layout def = attrDefs.get(i).get(j);
+                defList.add(new Object[]{ Integer.valueOf(header), def });
+                assert(Integer.valueOf(j).equals(attrIndexTable.get(def)));
             }
         }
         // Sort the new attr defs into some "natural" order.
@@ -934,10 +925,7 @@ class PackageWriter extends BandStructure {
         attrDefsWritten = new Attribute.Layout[numAttrDefs];
         PrintStream dump = !optDumpBands ? null
             : new PrintStream(getDumpStream(attr_definition_headers, ".def"));
-        int[] indexForDebug = new int[ATTR_CONTEXT_LIMIT];
-        for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
-            indexForDebug[i] = attrIndexLimit[i];
-        }
+        int[] indexForDebug = Arrays.copyOf(attrIndexLimit, ATTR_CONTEXT_LIMIT);
         for (int i = 0; i < defs.length; i++) {
             int header = ((Integer)defs[i][0]).intValue();
             Attribute.Layout def = (Attribute.Layout) defs[i][1];
@@ -953,7 +941,7 @@ class PackageWriter extends BandStructure {
             if (debug) {
                 int hdrIndex = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
                 if (hdrIndex < 0)  hdrIndex = indexForDebug[def.ctype()]++;
-                int realIndex = ((Integer) attrIndexTable.get(def)).intValue();
+                int realIndex = (attrIndexTable.get(def)).intValue();
                 assert(hdrIndex == realIndex);
             }
             if (dump != null) {
@@ -969,8 +957,8 @@ class PackageWriter extends BandStructure {
         for (int ctype = 0; ctype < ATTR_CONTEXT_LIMIT; ctype++) {
             MultiBand xxx_attr_bands = attrBands[ctype];
             IntBand xxx_attr_calls = getAttrBand(xxx_attr_bands, AB_ATTR_CALLS);
-            Attribute.Layout[] defs = new Attribute.Layout[attrDefs[ctype].size()];
-            attrDefs[ctype].toArray(defs);
+            Attribute.Layout[] defs = new Attribute.Layout[attrDefs.get(ctype).size()];
+            attrDefs.get(ctype).toArray(defs);
             for (boolean predef = true; ; predef = false) {
                 for (int ai = 0; ai < defs.length; ai++) {
                     Attribute.Layout def = defs[ai];
@@ -980,7 +968,7 @@ class PackageWriter extends BandStructure {
                     int totalCount = attrCounts[ctype][ai];
                     if (totalCount == 0)
                         continue;  // irrelevant
-                    int[] bc = (int[]) backCountTable.get(def);
+                    int[] bc = backCountTable.get(def);
                     for (int j = 0; j < bc.length; j++) {
                         if (bc[j] >= 0) {
                             int backCount = bc[j];
@@ -998,8 +986,7 @@ class PackageWriter extends BandStructure {
     }
 
     void trimClassAttributes() {
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+        for (Class cls : pkg.classes) {
             // Replace "obvious" SourceFile attrs by null.
             cls.minimizeSourceFile();
         }
@@ -1008,14 +995,12 @@ class PackageWriter extends BandStructure {
     void collectInnerClasses() {
         // Capture inner classes, removing them from individual classes.
         // Irregular inner classes must stay local, though.
-        HashMap allICMap = new HashMap();
+        Map<ClassEntry, InnerClass> allICMap = new HashMap<>();
         // First, collect a consistent global set.
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+        for (Class cls : pkg.classes) {
             if (!cls.hasInnerClasses())  continue;
-            for (Iterator j = cls.getInnerClasses().iterator(); j.hasNext(); ) {
-                InnerClass ic = (InnerClass) j.next();
-                InnerClass pic = (InnerClass) allICMap.put(ic.thisClass, ic);
+            for (InnerClass ic : cls.getInnerClasses()) {
+                InnerClass pic = allICMap.put(ic.thisClass, ic);
                 if (pic != null && !pic.equals(ic) && pic.predictable) {
                     // Different ICs.  Choose the better to make global.
                     allICMap.put(pic.thisClass, pic);
@@ -1036,15 +1021,13 @@ class PackageWriter extends BandStructure {
         // Next, empty out of every local set the consistent entries.
         // Calculate whether there is any remaining need to have a local
         // set, and whether it needs to be locked.
-        for (Iterator i = pkg.classes.iterator(); i.hasNext(); ) {
-            Class cls = (Class) i.next();
+        for (Class cls : pkg.classes) {
             cls.minimizeLocalICs();
         }
     }
 
     void writeInnerClasses() throws IOException {
-        for (Iterator i = pkg.getAllInnerClasses().iterator(); i.hasNext(); ) {
-            InnerClass ic = (InnerClass) i.next();
+        for (InnerClass ic : pkg.getAllInnerClasses()) {
             int flags = ic.flags;
             assert((flags & ACC_IC_LONG_FORM) == 0);
             if (!ic.predictable) {
@@ -1064,10 +1047,9 @@ class PackageWriter extends BandStructure {
      *  local attribute.  This is expected to be rare.
      */
     void writeLocalInnerClasses(Class cls) throws IOException {
-        List localICs = cls.getInnerClasses();
+        List<InnerClass> localICs = cls.getInnerClasses();
         class_InnerClasses_N.putInt(localICs.size());
-        for (Iterator i = localICs.iterator(); i.hasNext(); ) {
-            InnerClass ic = (InnerClass) i.next();
+        for(InnerClass ic : localICs) {
             class_InnerClasses_RC.putRef(ic.thisClass);
             // Is it redundant with the global version?
             if (ic.equals(pkg.getGlobalInnerClass(ic.thisClass))) {
@@ -1121,18 +1103,16 @@ class PackageWriter extends BandStructure {
     }
 
     void writeMembers(Class cls) throws IOException {
-        List fields = cls.getFields();
+        List<Class.Field> fields = cls.getFields();
         class_field_count.putInt(fields.size());
-        for (Iterator i = fields.iterator(); i.hasNext(); ) {
-            Class.Field f = (Class.Field) i.next();
+        for (Class.Field f : fields) {
             field_descr.putRef(f.getDescriptor());
             writeAttrs(ATTR_CONTEXT_FIELD, f, cls);
         }
 
-        List methods = cls.getMethods();
+        List<Class.Method> methods = cls.getMethods();
         class_method_count.putInt(methods.size());
-        for (Iterator i = methods.iterator(); i.hasNext(); ) {
-            Class.Method m = (Class.Method) i.next();
+        for (Class.Method m : methods) {
             method_descr.putRef(m.getDescriptor());
             writeAttrs(ATTR_CONTEXT_METHOD, m, cls);
             assert((m.code != null) == (m.getAttribute(attrCodeEmpty) != null));
@@ -1206,11 +1186,10 @@ class PackageWriter extends BandStructure {
         long flagMask = attrFlagMask[ctype];  // which flags are attr bits?
         long flagsToAdd = 0;
         int overflowCount = 0;
-        for (ListIterator j = h.attributes.listIterator(); j.hasNext(); ) {
-            Attribute a = (Attribute) j.next();
+        for (Attribute a : h.attributes) {
             Attribute.Layout def = a.layout();
-            int index = ((Integer)attrIndexTable.get(def)).intValue();
-            assert(attrDefs[ctype].get(index) == def);
+            int index = (attrIndexTable.get(def)).intValue();
+            assert(attrDefs.get(ctype).get(index) == def);
             if (verbose > 3)
                 Utils.log.fine("add attr @"+index+" "+a+" in "+h);
             if (index < attrIndexLimit[ctype] && testBit(flagMask, 1L<<index)) {
@@ -1239,10 +1218,10 @@ class PackageWriter extends BandStructure {
                 continue;
             }
             assert(a.fixups == null);
-            final Band[] ab = (Band[]) attrBandTable.get(def);
+            final Band[] ab = attrBandTable.get(def);
             assert(ab != null);
             assert(ab.length == def.bandCount);
-            final int[] bc = (int[]) backCountTable.get(def);
+            final int[] bc = backCountTable.get(def);
             assert(bc != null);
             assert(bc.length == def.getCallables().length);
             // Write one attribute of type def into ab.
@@ -1306,7 +1285,7 @@ class PackageWriter extends BandStructure {
     private int initOpVariant(Instruction i, Entry newClass) {
         if (i.getBC() != _invokespecial)  return -1;
         MemberEntry ref = (MemberEntry) i.getCPRef(curCPMap);
-        if (ref.descRef.nameRef.stringValue() != "<init>")
+        if ("<init>".equals(ref.descRef.nameRef.stringValue()) == false)
             return -1;
         ClassEntry refClass = ref.classRef;
         if (refClass == curClass.thisClass)
@@ -1618,14 +1597,16 @@ class PackageWriter extends BandStructure {
             String count = "" + codeHist[bc];
             count = "         ".substring(count.length()) + count;
             String pct = "" + (codeHist[bc] * 10000 / totalBytes);
-            while (pct.length() < 4)  pct = "0" + pct;
+            while (pct.length() < 4) {
+                pct = "0" + pct;
+            }
             pct = pct.substring(0, pct.length()-2) + "." + pct.substring(pct.length()-2);
             hist[bc] = count + "  " + pct + "%  " + iname;
         }
         Arrays.sort(hist);
         System.out.println("Bytecode histogram ["+totalBytes+"]");
         for (int i = hist.length; --i >= 0; ) {
-            if (hist[i] == "")  continue;
+            if ("".equals(hist[i]))  continue;
             System.out.println(hist[i]);
         }
         for (int tag = 0; tag < ldcHist.length; tag++) {

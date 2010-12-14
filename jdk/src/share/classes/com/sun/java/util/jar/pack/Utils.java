@@ -297,7 +297,7 @@ class Utils {
             (int)( (1.0 - ((double)ze.getCompressedSize()/(double)ze.getSize()))*100 )
             : 0 ;
         // Follow unzip -lv output
-        return (long)ze.getSize() + "\t" + ze.getMethod()
+        return ze.getSize() + "\t" + ze.getMethod()
             + "\t" + ze.getCompressedSize() + "\t"
             + store + "%\t"
             + new Date(ze.getTime()) + "\t"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-
+import static com.sun.java.util.jar.pack.Constants.*;
 /**
  * Heuristic chooser of basic encodings.
  * Runs "zip" to measure the apparent information content after coding.
  * @author John Rose
  */
-class CodingChooser implements Constants {
+class CodingChooser {
     int verbose;
     int effort;
     boolean optUseHistogram = true;
@@ -124,10 +125,10 @@ class CodingChooser implements Constants {
                 = !p200.getBoolean(Utils.COM_PREFIX+"no.population.coding");
             this.optUseAdaptiveCoding
                 = !p200.getBoolean(Utils.COM_PREFIX+"no.adaptive.coding");
-            int stress
+            int lstress
                 = p200.getInteger(Utils.COM_PREFIX+"stress.coding");
-            if (stress != 0)
-                this.stress = new Random(stress);
+            if (lstress != 0)
+                this.stress = new Random(lstress);
         }
 
         this.effort = effort;
@@ -376,9 +377,9 @@ class CodingChooser implements Constants {
                              " fewer bytes than regular "+regular+
                              "; win="+pct(zipSize1-bestZipSize, zipSize1));
         }
-        CodingMethod bestMethod = this.bestMethod;
+        CodingMethod lbestMethod = this.bestMethod;
         reset(null, 0, 0);  // for GC
-        return bestMethod;
+        return lbestMethod;
     }
     CodingMethod choose(int[] values, int start, int end, Coding regular) {
         return choose(values, start, end, regular, null);
@@ -742,9 +743,9 @@ class CodingChooser implements Constants {
         // Steps 1/2/3 are interdependent, and may be iterated.
         // Steps 4 and 5 may be decided independently afterward.
         int[] LValuesCoded = PopulationCoding.LValuesCoded;
-        ArrayList bestFits = new ArrayList();
-        ArrayList fullFits = new ArrayList();
-        ArrayList longFits = new ArrayList();
+        List<Coding> bestFits = new ArrayList<>();
+        List<Coding> fullFits = new ArrayList<>();
+        List<Coding> longFits = new ArrayList<>();
         final int PACK_TO_MAX_S = 1;
         if (bestPopFVC <= 255) {
             bestFits.add(BandStructure.BYTE1);
@@ -776,16 +777,16 @@ class CodingChooser implements Constants {
                 }
             }
             // interleave all B greater than bestB with best and full fits
-            for (Iterator i = bestFits.iterator(); i.hasNext(); ) {
-                Coding c = (Coding) i.next();
+            for (Iterator<Coding> i = bestFits.iterator(); i.hasNext(); ) {
+                Coding c = i.next();
                 if (c.B() > bestB) {
                     i.remove();
                     longFits.add(0, c);
                 }
             }
         }
-        ArrayList allFits = new ArrayList();
-        for (Iterator i = bestFits.iterator(),
+        List<Coding> allFits = new ArrayList<>();
+        for (Iterator<Coding> i = bestFits.iterator(),
                       j = fullFits.iterator(),
                       k = longFits.iterator();
              i.hasNext() || j.hasNext() || k.hasNext(); ) {
@@ -812,8 +813,7 @@ class CodingChooser implements Constants {
         }
         if (verbose > 3)
             Utils.log.info("allFits: "+allFits);
-        for (Iterator i = allFits.iterator(); i.hasNext(); ) {
-            Coding tc = (Coding) i.next();
+        for (Coding tc : allFits) {
             boolean packToMax = false;
             if (tc.S() == PACK_TO_MAX_S) {
                 // Kludge:  setS(PACK_TO_MAX_S) means packToMax here.
@@ -910,7 +910,7 @@ class CodingChooser implements Constants {
                              " tc="+pop.tokenCoding+
                              " uc="+pop.unfavoredCoding);
             //pop.hist.print("pop-hist", null, System.out);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("fv = {");
             for (int i = 1; i <= fVlen; i++) {
                 if ((i % 10) == 0)
@@ -949,20 +949,20 @@ class CodingChooser implements Constants {
         // run occupies too much space.  ("Too much" means, say 5% more
         // than the average integer size of the band as a whole.)
         // Try to find a better coding for those segments.
-        int   start  = this.start;
-        int   end    = this.end;
-        int[] values = this.values;
-        int len = end-start;
+        int   lstart  = this.start;
+        int   lend    = this.end;
+        int[] lvalues = this.values;
+        int len = lend-lstart;
         if (plainCoding.isDelta()) {
-            values = getDeltas(0,0); //%%% not quite right!
-            start = 0;
-            end = values.length;
+            lvalues = getDeltas(0,0); //%%% not quite right!
+            lstart = 0;
+            lend = lvalues.length;
         }
         int[] sizes = new int[len+1];
         int fillp = 0;
         int totalSize = 0;
-        for (int i = start; i < end; i++) {
-            int val = values[i];
+        for (int i = lstart; i < lend; i++) {
+            int val = lvalues[i];
             sizes[fillp++] = totalSize;
             int size = plainCoding.getLength(val);
             assert(size < Integer.MAX_VALUE);
@@ -1013,22 +1013,23 @@ class CodingChooser implements Constants {
         double[] fuzzes   = new double[meshes.length];
         for (int i = 0; i < meshes.length; i++) {
             int mesh = meshes[i];
-            double fuzz;
+            double lfuzz;
             if (mesh < 10)
-                fuzz = sizeFuzz3;
+                lfuzz = sizeFuzz3;
             else if (mesh < 100)
-                fuzz = sizeFuzz2;
+                lfuzz = sizeFuzz2;
             else
-                fuzz = sizeFuzz;
-            fuzzes[i] = fuzz;
-            threshes[i] = BAND_HEADER + (int)Math.ceil(mesh * avgSize * fuzz);
+                lfuzz = sizeFuzz;
+            fuzzes[i] = lfuzz;
+            threshes[i] = BAND_HEADER + (int)Math.ceil(mesh * avgSize * lfuzz);
         }
         if (verbose > 1) {
             System.out.print("tryAdaptiveCoding ["+len+"]"+
                              " avgS="+avgSize+" fuzz="+sizeFuzz+
                              " meshes: {");
-            for (int i = 0; i < meshes.length; i++)
-                System.out.print(" "+meshes[i]+"("+threshes[i]+")");
+            for (int i = 0; i < meshes.length; i++) {
+                System.out.print(" " + meshes[i] + "(" + threshes[i] + ")");
+            }
             Utils.log.info(" }");
         }
         if (runHelper == null) {
@@ -1229,20 +1230,19 @@ class CodingChooser implements Constants {
         Histogram hist = getValueHistogram();
         int fVlen = stressLen(hist.getTotalLength());
         if (fVlen == 0)  return coding;
-        List popvals = new ArrayList();
+        List<Integer> popvals = new ArrayList<>();
         if (stress.nextBoolean()) {
             // Build the population from the value list.
-            HashSet popset = new HashSet();
+            Set<Integer> popset = new HashSet<>();
             for (int i = start; i < end; i++) {
-                Integer val = new Integer(values[i]);
-                if (popset.add(val))  popvals.add(val);
+                if (popset.add(values[i]))  popvals.add(values[i]);
             }
         } else {
             int[][] matrix = hist.getMatrix();
             for (int mrow = 0; mrow < matrix.length; mrow++) {
                 int[] row = matrix[mrow];
                 for (int mcol = 1; mcol < row.length; mcol++) {
-                    popvals.add(new Integer(row[mcol]));
+                    popvals.add(row[mcol]);
                 }
             }
         }
@@ -1269,7 +1269,7 @@ class CodingChooser implements Constants {
         fVlen = popvals.size();
         int[] fvals = new int[1+fVlen];
         for (int i = 0; i < fVlen; i++) {
-            fvals[1+i] = ((Integer)popvals.get(i)).intValue();
+            fvals[1+i] = (popvals.get(i)).intValue();
         }
         PopulationCoding pop = new PopulationCoding();
         pop.setFavoredValues(fvals, fVlen);
@@ -1283,13 +1283,13 @@ class CodingChooser implements Constants {
             }
         }
         if (pop.tokenCoding == null) {
-            int min = fvals[1], max = min;
+            int lmin = fvals[1], lmax = lmin;
             for (int i = 2; i <= fVlen; i++) {
                 int val = fvals[i];
-                if (min > val)  min = val;
-                if (max < val)  max = val;
+                if (lmin > val)  lmin = val;
+                if (lmax < val)  lmax = val;
             }
-            pop.tokenCoding = stressCoding(min, max);
+            pop.tokenCoding = stressCoding(lmin, lmax);
         }
 
         computePopSizePrivate(pop, valueCoding, valueCoding);
@@ -1310,13 +1310,13 @@ class CodingChooser implements Constants {
         try {
             assert(!disableRunCoding);
             disableRunCoding = true;  // temporary, while I decide spans
-            int[] allValues = (int[]) values.clone();
+            int[] allValues = values.clone();
             CodingMethod result = null;
             int scan  = this.end;
-            int start = this.start;
-            for (int split; scan > start; scan = split) {
+            int lstart = this.start;
+            for (int split; scan > lstart; scan = split) {
                 int thisspan;
-                int rand = (scan - start < 100)? -1: stress.nextInt();
+                int rand = (scan - lstart < 100)? -1: stress.nextInt();
                 if ((rand & 7) != 0) {
                     thisspan = (spanlen==1? spanlen: stressLen(spanlen-1)+1);
                 } else {
@@ -1325,7 +1325,7 @@ class CodingChooser implements Constants {
                     int KB = (rand >>>= 3) & AdaptiveCoding.KB_MAX;
                     for (;;) {
                         thisspan = AdaptiveCoding.decodeK(KX, KB);
-                        if (thisspan <= scan - start)  break;
+                        if (thisspan <= scan - lstart)  break;
                         // Try smaller and smaller codings:
                         if (KB != AdaptiveCoding.KB_DEFAULT)
                             KB = AdaptiveCoding.KB_DEFAULT;
@@ -1335,11 +1335,13 @@ class CodingChooser implements Constants {
                     //System.out.println("KX="+KX+" KB="+KB+" K="+thisspan);
                     assert(AdaptiveCoding.isCodableLength(thisspan));
                 }
-                if (thisspan > scan - start)  thisspan = scan - start;
-                while (!AdaptiveCoding.isCodableLength(thisspan))  --thisspan;
+                if (thisspan > scan - lstart)  thisspan = scan - lstart;
+                while (!AdaptiveCoding.isCodableLength(thisspan)) {
+                    --thisspan;
+                }
                 split = scan - thisspan;
                 assert(split < scan);
-                assert(split >= start);
+                assert(split >= lstart);
                 // Choose a coding for the span [split..scan).
                 CodingMethod sc = choose(allValues, split, scan, plainCoding);
                 if (result == null) {
@@ -1420,7 +1422,7 @@ class CodingChooser implements Constants {
                 case StreamTokenizer.TT_EOF:
                     throw new NoSuchElementException();
                 case StreamTokenizer.TT_NUMBER:
-                    return new Integer((int) in.nval);
+                    return Integer.valueOf((int) in.nval);
                 default:
                     assert(false);
                     return null;

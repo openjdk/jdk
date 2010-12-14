@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@ import com.sun.java.util.jar.pack.Package.Class;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Represents a chunk of bytecodes.
  * @author John Rose
  */
-class Code extends Attribute.Holder implements Constants {
+class Code extends Attribute.Holder {
     Class.Method m;
 
     public Code(Class.Method m) {
@@ -141,15 +142,12 @@ class Code extends Attribute.Holder implements Constants {
         super.trimToSize();
     }
 
-    protected void visitRefs(int mode, Collection refs) {
+    protected void visitRefs(int mode, Collection<ConstantPool.Entry> refs) {
         int verbose = getPackage().verbose;
         if (verbose > 2)
             System.out.println("Reference scan "+this);
         Class cls = thisClass();
-        Package pkg = cls.getPackage();
-        for (int i = 0; i < handler_class.length; i++) {
-            refs.add(handler_class[i]);
-        }
+        refs.addAll(Arrays.asList(handler_class));
         if (fixups != null) {
             fixups.visitRefs(refs);
         } else {
@@ -196,11 +194,8 @@ class Code extends Attribute.Holder implements Constants {
             map[mapLen] = (short)(PClimit + Short.MIN_VALUE);
             return map;
         } else {
-            int[] map = new int[mapLen+1];
-            for (int i = 0; i < mapLen; i++) {
-                map[i] = (int) insnMap[i];
-            }
-            map[mapLen] = (int) PClimit;
+            int[] map = Arrays.copyOf(insnMap, mapLen + 1);
+            map[mapLen] = PClimit;
             return map;
         }
     }
@@ -220,10 +215,7 @@ class Code extends Attribute.Holder implements Constants {
             }
         } else {
             int[] map = (int[]) map0;
-            imap = new int[map.length-1];
-            for (int i = 0; i < imap.length; i++) {
-                imap[i] = map[i];
-            }
+            imap = Arrays.copyOfRange(map, 0, map.length - 1);
         }
         return imap;
     }
@@ -266,7 +258,7 @@ class Code extends Attribute.Holder implements Constants {
         } else {
             int[] map = (int[]) map0;
             len = map.length;
-            i = Arrays.binarySearch(map, (int)bci);
+            i = Arrays.binarySearch(map, bci);
         }
         assert(i != -1);
         assert(i != 0);
@@ -322,7 +314,7 @@ class Code extends Attribute.Holder implements Constants {
             len = map.length;
             if (bciCode < len)
                 return map[bciCode];
-            i = Arrays.binarySearch(map, (int)bciCode);
+            i = Arrays.binarySearch(map, bciCode);
             if (i < 0)  i = -i-1;
             int key = bciCode-len;
             for (;; i--) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Iterator;
  *
  * @author John Rose
  */
-class Fixups extends AbstractCollection implements Constants {
+final class Fixups extends AbstractCollection {
     byte[] bytes;    // the subject of the relocations
     int head;        // desc locating first reloc
     int tail;        // desc locating last reloc
@@ -99,7 +99,7 @@ class Fixups extends AbstractCollection implements Constants {
         }
     }
 
-    public void visitRefs(Collection refs) {
+    public void visitRefs(Collection<Entry> refs) {
         for (int i = 0; i < size; i++) {
             refs.add(entries[i]);
         }
@@ -124,6 +124,7 @@ class Fixups extends AbstractCollection implements Constants {
         return bytes;
     }
 
+    @SuppressWarnings("unchecked")
     public void setBytes(byte[] newBytes) {
         if (bytes == newBytes)  return;
         ArrayList old = null;
@@ -278,7 +279,7 @@ class Fixups extends AbstractCollection implements Constants {
             return new Fixup(nextDesc(), entries[thisIndex]);
         }
         int nextDesc() {
-            int thisIndex = index++;
+            index++;
             int thisDesc = next;
             if (index < size) {
                 // Fetch next desc eagerly, in case this fixup gets finalized.
@@ -310,6 +311,7 @@ class Fixups extends AbstractCollection implements Constants {
     public boolean add(Object fixup) {
         return add((Fixup) fixup);
     }
+    @SuppressWarnings("unchecked")
     public boolean addAll(Collection c) {
         if (c instanceof Fixups) {
             // Use knowledge of Itr structure to avoid building little structs.
@@ -420,7 +422,7 @@ class Fixups extends AbstractCollection implements Constants {
 
     // Iterate over all the references in this set of fixups.
     public static
-    void visitRefs(Object fixups, Collection refs) {
+    void visitRefs(Object fixups, Collection<Entry> refs) {
         if (fixups == null) {
         } else if (!(fixups instanceof Fixups)) {
             // Special convention; see above.

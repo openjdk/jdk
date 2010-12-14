@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@
 package com.sun.java.util.jar.pack;
 
 import java.io.IOException;
+import java.util.Arrays;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * A parsed bytecode instruction.
  * Provides accessors to various relevant bits.
  * @author John Rose
  */
-class Instruction implements Constants {
+class Instruction  {
     protected byte[] bytes;  // bytecodes
     protected int pc;        // location of this instruction
     protected int bc;        // opcode of this instruction
@@ -91,8 +93,8 @@ class Instruction implements Constants {
 
     /** A fake instruction at this pc whose next() will be at nextpc. */
     public Instruction forceNextPC(int nextpc) {
-        int length = nextpc - pc;
-        return new Instruction(bytes, pc, -1, -1, length);
+        int llength = nextpc - pc;
+        return new Instruction(bytes, pc, -1, -1, llength);
     }
 
     public static Instruction at(byte[] bytes, int pc) {
@@ -315,12 +317,24 @@ class Instruction implements Constants {
         }
     }
 
-    /** Two insns are equal if they have the same bytes. */
+    /** Two instructions are equal if they have the same bytes. */
     public boolean equals(Object o) {
-        return (o instanceof Instruction) && equals((Instruction)o);
+        return (o != null) && (o.getClass() == Instruction.class)
+                && equals((Instruction) o);
+    }
+
+    public int hashCode() {
+        int hash = 3;
+        hash = 11 * hash + Arrays.hashCode(this.bytes);
+        hash = 11 * hash + this.pc;
+        hash = 11 * hash + this.bc;
+        hash = 11 * hash + this.w;
+        hash = 11 * hash + this.length;
+        return hash;
     }
 
     public boolean equals(Instruction that) {
+        if (this.pc != that.pc)            return false;
         if (this.bc != that.bc)            return false;
         if (this.w  != that.w)             return false;
         if (this.length  != that.length)   return false;
