@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Adaptive coding.
  * See the section "Adaptive Encodings" in the Pack200 spec.
  * @author John Rose
  */
-class AdaptiveCoding implements Constants, CodingMethod {
+class AdaptiveCoding implements CodingMethod {
     CodingMethod headCoding;
     int          headLength;
     CodingMethod tailCoding;
@@ -147,7 +148,6 @@ class AdaptiveCoding implements Constants, CodingMethod {
         }
         if (KX == KX_MAX)  return Integer.MAX_VALUE;
         KX += 1;
-        int unit2 = 1      << (KX * KX_LG2BASE);
         int mask2 = KB_MAX << (KX * KX_LG2BASE);
         K1 |= (mask & ~mask2);
         K1 += unit;
@@ -250,7 +250,7 @@ class AdaptiveCoding implements Constants, CodingMethod {
         return m.toString();
     }
     public String toString() {
-        StringBuffer res = new StringBuffer(20);
+        StringBuilder res = new StringBuilder(20);
         AdaptiveCoding run = this;
         res.append("run(");
         for (;;) {

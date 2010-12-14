@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,28 @@ import com.sun.java.util.jar.pack.ConstantPool.Index;
 import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
 import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
-import java.io.*;
-import java.util.*;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.File;
 import com.sun.java.util.jar.pack.Package.InnerClass;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.PrintStream;
+import java.io.FilterInputStream;
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Reader for a package file.
@@ -418,7 +435,7 @@ class PackageReader extends BandStructure {
                 cp_Int.readFrom(in);
                 for (int i = 0; i < cpMap.length; i++) {
                     int x = cp_Int.getInt();  // coding handles signs OK
-                    cpMap[i] = ConstantPool.getLiteralEntry(new Integer(x));
+                    cpMap[i] = ConstantPool.getLiteralEntry(x);
                 }
                 cp_Int.doneDisbursing();
                 break;
@@ -428,7 +445,7 @@ class PackageReader extends BandStructure {
                 for (int i = 0; i < cpMap.length; i++) {
                     int x = cp_Float.getInt();
                     float fx = Float.intBitsToFloat(x);
-                    cpMap[i] = ConstantPool.getLiteralEntry(new Float(fx));
+                    cpMap[i] = ConstantPool.getLiteralEntry(fx);
                 }
                 cp_Float.doneDisbursing();
                 break;
@@ -444,7 +461,7 @@ class PackageReader extends BandStructure {
                     long hi = cp_Long_hi.getInt();
                     long lo = cp_Long_lo.getInt();
                     long x = (hi << 32) + ((lo << 32) >>> 32);
-                    cpMap[i] = ConstantPool.getLiteralEntry(new Long(x));
+                    cpMap[i] = ConstantPool.getLiteralEntry(x);
                 }
                 cp_Long_hi.doneDisbursing();
                 cp_Long_lo.doneDisbursing();
@@ -462,7 +479,7 @@ class PackageReader extends BandStructure {
                     long lo = cp_Double_lo.getInt();
                     long x = (hi << 32) + ((lo << 32) >>> 32);
                     double dx = Double.longBitsToDouble(x);
-                    cpMap[i] = ConstantPool.getLiteralEntry(new Double(dx));
+                    cpMap[i] = ConstantPool.getLiteralEntry(dx);
                 }
                 cp_Double_hi.doneDisbursing();
                 cp_Double_lo.doneDisbursing();
@@ -645,7 +662,7 @@ class PackageReader extends BandStructure {
         cp_Utf8_big_suffix.doneDisbursing();
     }
 
-    HashMap utf8Signatures;  // Utf8Entry->SignatureEntry
+    Map<Utf8Entry, SignatureEntry> utf8Signatures;
 
     void readSignatureBands(Entry[] cpMap) throws IOException {
         //  cp_Signature:
@@ -663,7 +680,7 @@ class PackageReader extends BandStructure {
         cp_Signature_classes.expectLength(getIntTotal(numSigClasses));
         cp_Signature_classes.readFrom(in);
         cp_Signature_classes.setIndex(getCPIndex(CONSTANT_Class));
-        utf8Signatures = new HashMap();
+        utf8Signatures = new HashMap<>();
         for (int i = 0; i < cpMap.length; i++) {
             Utf8Entry formRef = (Utf8Entry) cp_Signature_form.getRef();
             ClassEntry[] classRefs = new ClassEntry[numSigClasses[i]];
@@ -863,7 +880,7 @@ class PackageReader extends BandStructure {
         ic_name.expectLength(longICCount);
         ic_name.readFrom(in);
         ic_flags.resetForSecondPass();
-        ArrayList icList = new ArrayList(numInnerClasses);
+        List<InnerClass> icList = new ArrayList<>(numInnerClasses);
         for (int i = 0; i < numInnerClasses; i++) {
             int flags = ic_flags.getInt();
             boolean longForm = (flags & ACC_IC_LONG_FORM) != 0;
@@ -876,7 +893,7 @@ class PackageReader extends BandStructure {
                 thisName   = (Utf8Entry)  ic_name.getRef();
             } else {
                 String n = thisClass.stringValue();
-                String[] parse = pkg.parseInnerClassName(n);
+                String[] parse = Package.parseInnerClassName(n);
                 assert(parse != null);
                 String pkgOuter = parse[0];
                 //String number = parse[1];
@@ -905,7 +922,7 @@ class PackageReader extends BandStructure {
 
     void readLocalInnerClasses(Class cls) throws IOException {
         int nc = class_InnerClasses_N.getInt();
-        ArrayList localICs = new ArrayList(nc);
+        List<InnerClass> localICs = new ArrayList<>(nc);
         for (int i = 0; i < nc; i++) {
             ClassEntry thisClass = (ClassEntry) class_InnerClasses_RC.getRef();
             int        flags     =              class_InnerClasses_F.getInt();
@@ -994,10 +1011,8 @@ class PackageReader extends BandStructure {
         return -1;
     }
 
-    Comparator entryOutputOrder = new Comparator() {
-        public int compare(Object o0, Object o1) {
-            Entry e0 = (Entry) o0;
-            Entry e1 = (Entry) o1;
+    Comparator<Entry> entryOutputOrder = new Comparator<>() {
+        public int compare(Entry  e0, Entry e1) {
             int k0 = getOutputIndex(e0);
             int k1 = getOutputIndex(e1);
             if (k0 >= 0 && k1 >= 0)
@@ -1034,9 +1049,8 @@ class PackageReader extends BandStructure {
     }
 
     Entry[] reconstructLocalCPMap(Class cls) {
-        HashSet ldcRefs = (HashSet) ldcRefMap.get(cls);
-        HashSet cpRefs = new HashSet();
-        HashSet sigSet = new HashSet();
+        Set<Entry> ldcRefs = ldcRefMap.get(cls);
+        Set<Entry> cpRefs = new HashSet<>();
 
         // look for constant pool entries:
         cls.visitRefs(VRM_CLASSIC, cpRefs);
@@ -1064,8 +1078,7 @@ class PackageReader extends BandStructure {
 
         // construct a local constant pool
         int numDoubles = 0;
-        for (Iterator i = cpRefs.iterator(); i.hasNext(); ) {
-            Entry e = (Entry) i.next();
+        for (Entry e : cpRefs) {
             if (e.isDoubleWord())  numDoubles++;
             assert(e.tag != CONSTANT_Signature) : (e);
         }
@@ -1075,8 +1088,7 @@ class PackageReader extends BandStructure {
         // Add all ldc operands first.
         if (ldcRefs != null) {
             assert(cpRefs.containsAll(ldcRefs));
-            for (Iterator i = ldcRefs.iterator(); i.hasNext(); ) {
-                Entry e = (Entry) i.next();
+            for (Entry e : ldcRefs) {
                 cpMap[fillp++] = e;
             }
             assert(fillp == 1+ldcRefs.size());
@@ -1085,11 +1097,10 @@ class PackageReader extends BandStructure {
         }
 
         // Next add all the two-byte references.
-        HashSet wideRefs = cpRefs;
+        Set<Entry> wideRefs = cpRefs;
         cpRefs = null;  // do not use!
         int narrowLimit = fillp;
-        for (Iterator i = wideRefs.iterator(); i.hasNext(); ) {
-            Entry e = (Entry) i.next();
+        for (Entry e : wideRefs) {
             cpMap[fillp++] = e;
         }
         assert(fillp == narrowLimit+wideRefs.size());
@@ -1144,7 +1155,7 @@ class PackageReader extends BandStructure {
         method_descr.expectLength(totalNM);
         if (verbose > 1)  Utils.log.fine("expecting #fields="+totalNF+" and #methods="+totalNM+" in #classes="+numClasses);
 
-        ArrayList fields = new ArrayList(totalNF);
+        List<Class.Field> fields = new ArrayList<>(totalNF);
         field_descr.readFrom(in);
         for (int i = 0; i < classes.length; i++) {
             Class c = classes[i];
@@ -1160,7 +1171,7 @@ class PackageReader extends BandStructure {
         countAndReadAttrs(ATTR_CONTEXT_FIELD, fields);
         fields = null;  // release to GC
 
-        ArrayList methods = new ArrayList(totalNM);
+        List<Class.Method> methods = new ArrayList<>(totalNM);
         method_descr.readFrom(in);
         for (int i = 0; i < classes.length; i++) {
             Class c = classes[i];
@@ -1182,13 +1193,12 @@ class PackageReader extends BandStructure {
     }
 
     Code[] allCodes;
-    List codesWithFlags;
-    HashMap ldcRefMap = new HashMap();  // HashMap<Class, HashSet<Entry>>
+    List<Code> codesWithFlags;
+    Map<Class, Set<Entry>> ldcRefMap = new HashMap<>();
 
-    Code[] buildCodeAttrs(List methods) {
-        ArrayList codes = new ArrayList(methods.size());
-        for (Iterator i = methods.iterator(); i.hasNext(); ) {
-            Class.Method m = (Class.Method) i.next();
+    Code[] buildCodeAttrs(List<Class.Method> methods) {
+        List<Code> codes = new ArrayList<>(methods.size());
+        for (Class.Method m : methods) {
             if (m.getAttribute(attrCodeEmpty) != null) {
                 m.code = new Code(m);
                 codes.add(m.code);
@@ -1211,7 +1221,7 @@ class PackageReader extends BandStructure {
         boolean attrsOK = testBit(archiveOptions, AO_HAVE_ALL_CODE_FLAGS);
         code_headers.expectLength(allCodes.length);
         code_headers.readFrom(in);
-        ArrayList longCodes = new ArrayList(allCodes.length / 10);
+        List<Code> longCodes = new ArrayList<>(allCodes.length / 10);
         for (int i = 0; i < allCodes.length; i++) {
             Code c = allCodes[i];
             int sc = code_headers.getByte();
@@ -1238,8 +1248,7 @@ class PackageReader extends BandStructure {
         code_max_stack.readFrom(in);
         code_max_na_locals.readFrom(in);
         code_handler_count.readFrom(in);
-        for (Iterator i = longCodes.iterator(); i.hasNext(); ) {
-            Code c = (Code) i.next();
+        for (Code c : longCodes) {
             c.setMaxStack(     code_max_stack.getInt() );
             c.setMaxNALocals(  code_max_na_locals.getInt() );
             c.setHandlerCount( code_handler_count.getInt() );
@@ -1386,8 +1395,9 @@ class PackageReader extends BandStructure {
 
         // Fetch the attribute layout definitions which govern the bands
         // we are about to read.
-        Attribute.Layout[] defs = new Attribute.Layout[attrDefs[ctype].size()];
-        attrDefs[ctype].toArray(defs);
+        List<Attribute.Layout> defList = attrDefs.get(ctype);
+        Attribute.Layout[] defs = new Attribute.Layout[defList.size()];
+        defList.toArray(defs);
         IntBand xxx_flags_hi = getAttrBand(xxx_attr_bands, AB_FLAGS_HI);
         IntBand xxx_flags_lo = getAttrBand(xxx_attr_bands, AB_FLAGS_LO);
         IntBand xxx_attr_count = getAttrBand(xxx_attr_bands, AB_ATTR_COUNT);
@@ -1450,7 +1460,7 @@ class PackageReader extends BandStructure {
                 bits -= (1L<<ai);
                 nfa += 1;
             }
-            ArrayList ha = new ArrayList(nfa + noa);
+            List<Attribute> ha = new ArrayList<>(nfa + noa);
             h.attributes = ha;
             bits = attrBits;  // iterate again
             for (int ai = 0; bits != 0; ai++) {
@@ -1516,7 +1526,7 @@ class PackageReader extends BandStructure {
                 if (predef != isPredefinedAttr(ctype, ai))
                     continue;  // wrong pass
                 int totalCount = totalCounts[ai];
-                Band[] ab = (Band[]) attrBandTable.get(def);
+                Band[] ab = attrBandTable.get(def);
                 if (def == attrInnerClassesEmpty) {
                     // Special case.
                     // Size the bands as if using the following layout:
@@ -1571,15 +1581,16 @@ class PackageReader extends BandStructure {
                                    ATTR_CONTEXT_NAME[ctype]+" attribute");
     }
 
+    @SuppressWarnings("unchecked")
     void readAttrs(int ctype, Collection holders) throws IOException {
         // Decode band values into attributes.
-        HashSet sawDefs = new HashSet();
+        Set<Attribute.Layout> sawDefs = new HashSet<>();
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         for (Iterator i = holders.iterator(); i.hasNext(); ) {
             final Attribute.Holder h = (Attribute.Holder) i.next();
             if (h.attributes == null)  continue;
-            for (ListIterator j = h.attributes.listIterator(); j.hasNext(); ) {
-                Attribute a = (Attribute) j.next();
+            for (ListIterator<Attribute> j = h.attributes.listIterator(); j.hasNext(); ) {
+                Attribute a = j.next();
                 Attribute.Layout def = a.layout();
                 if (def.bandCount == 0) {
                     if (def == attrInnerClassesEmpty) {
@@ -1595,7 +1606,7 @@ class PackageReader extends BandStructure {
                 if (isCV)  setConstantValueIndex((Class.Field)h);
                 if (verbose > 2)
                     Utils.log.fine("read "+a+" in "+h);
-                final Band[] ab = (Band[]) attrBandTable.get(def);
+                final Band[] ab = attrBandTable.get(def);
                 // Read one attribute of type def from ab into a byte array.
                 buf.reset();
                 Object fixups = a.unparse(new Attribute.ValueStream() {
@@ -1617,10 +1628,9 @@ class PackageReader extends BandStructure {
         }
 
         // Mark the bands we just used as done disbursing.
-        for (Iterator i = sawDefs.iterator(); i.hasNext(); ) {
-            Attribute.Layout def = (Attribute.Layout) i.next();
+        for (Attribute.Layout def : sawDefs) {
             if (def == null)  continue;  // unused index
-            Band[] ab = (Band[]) attrBandTable.get(def);
+            Band[] ab = attrBandTable.get(def);
             for (int j = 0; j < ab.length; j++) {
                 ab[j].doneDisbursing();
             }
@@ -1778,7 +1788,7 @@ class PackageReader extends BandStructure {
         // scratch buffer for collecting code::
         byte[] buf = new byte[1<<12];
         // record of all switch opcodes (these are variable-length)
-        ArrayList allSwitchOps = new ArrayList();
+        List<Integer> allSwitchOps = new ArrayList<>();
         for (int k = 0; k < allCodes.length; k++) {
             Code c = allCodes[k];
         scanOneMethod:
@@ -1798,7 +1808,7 @@ class PackageReader extends BandStructure {
                 case _tableswitch:
                 case _lookupswitch:
                     bc_case_count.expectMoreLength(1);
-                    allSwitchOps.add(new Integer(bc));
+                    allSwitchOps.add(bc);
                     break;
                 case _iinc:
                     bc_local.expectMoreLength(1);
@@ -1866,8 +1876,8 @@ class PackageReader extends BandStructure {
 
         // To size instruction bands correctly, we need info on switches:
         bc_case_count.readFrom(in);
-        for (Iterator i = allSwitchOps.iterator(); i.hasNext(); ) {
-            int bc = ((Integer)i.next()).intValue();
+        for (Integer i : allSwitchOps) {
+            int bc = i.intValue();
             int caseCount = bc_case_count.getInt();
             bc_label.expectMoreLength(1+caseCount); // default label + cases
             bc_case_value.expectMoreLength(bc == _tableswitch ? 1 : caseCount);
@@ -1892,9 +1902,9 @@ class PackageReader extends BandStructure {
 
             Class curClass = code.thisClass();
 
-            HashSet ldcRefSet = (HashSet) ldcRefMap.get(curClass);
+            Set<Entry> ldcRefSet = ldcRefMap.get(curClass);
             if (ldcRefSet == null)
-                ldcRefMap.put(curClass, ldcRefSet = new HashSet());
+                ldcRefMap.put(curClass, ldcRefSet = new HashSet<>());
 
             ClassEntry thisClass  = curClass.thisClass;
             ClassEntry superClass = curClass.superClass;

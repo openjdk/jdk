@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Population-based coding.
@@ -38,7 +40,7 @@ import java.util.HashSet;
  * @author John Rose
  */
 // This tactic alone reduces the final zipped rt.jar by about a percent.
-class PopulationCoding implements Constants, CodingMethod {
+class PopulationCoding implements CodingMethod {
     Histogram vHist;   // histogram of all values
     int[]     fValues; // list of favored values
     int       fVlen;   // inclusive max index
@@ -62,8 +64,8 @@ class PopulationCoding implements Constants, CodingMethod {
         }
     }
     public void setFavoredValues(int[] fValues) {
-        int fVlen = fValues.length-1;
-        setFavoredValues(fValues, fVlen);
+        int lfVlen = fValues.length-1;
+        setFavoredValues(fValues, lfVlen);
     }
     public void setHistogram(Histogram vHist) {
         this.vHist = vHist;
@@ -103,7 +105,7 @@ class PopulationCoding implements Constants, CodingMethod {
         if (tokenCoding instanceof Coding && fValues != null) {
             Coding tc = (Coding) tokenCoding;
             if (tc == fitTokenCoding(fVlen, tc.L()))
-                this.L = tc.L();;
+                this.L = tc.L();
             // Otherwise, it's a non-default coding.
         }
     }
@@ -217,13 +219,13 @@ class PopulationCoding implements Constants, CodingMethod {
     }
 
     private long[] makeSymtab() {
-        long[] symtab = new long[fVlen];
+        long[] lsymtab = new long[fVlen];
         for (int token = 1; token <= fVlen; token++) {
-            symtab[token-1] = ((long)fValues[token] << 32) | token;
+            lsymtab[token-1] = ((long)fValues[token] << 32) | token;
         }
         // Index by value:
-        Arrays.sort(symtab);
-        return symtab;
+        Arrays.sort(lsymtab);
+        return lsymtab;
     }
 
     private Coding getTailCoding(CodingMethod c) {
@@ -302,12 +304,12 @@ class PopulationCoding implements Constants, CodingMethod {
     }
 
     int[] readFavoredValuesFrom(InputStream in, int maxForDebug) throws IOException {
-        int[] fValues = new int[1000];  // realloc as needed
+        int[] lfValues = new int[1000];  // realloc as needed
         // The set uniqueValuesForDebug records all favored values.
         // As each new value is added, we assert that the value
         // was not already in the set.
-        HashSet uniqueValuesForDebug = null;
-        assert((uniqueValuesForDebug = new HashSet()) != null);
+        Set<Integer> uniqueValuesForDebug = null;
+        assert((uniqueValuesForDebug = new HashSet<>()) != null);
         int fillp = 1;
         maxForDebug += fillp;
         int min = Integer.MIN_VALUE;  // farthest from the center
@@ -317,13 +319,14 @@ class PopulationCoding implements Constants, CodingMethod {
         while (fcm instanceof AdaptiveCoding) {
             AdaptiveCoding ac = (AdaptiveCoding) fcm;
             int len = ac.headLength;
-            while (fillp + len > fValues.length)
-                fValues = BandStructure.realloc(fValues);
+            while (fillp + len > lfValues.length) {
+                lfValues = BandStructure.realloc(lfValues);
+            }
             int newFillp = fillp + len;
-            ac.headCoding.readArrayFrom(in, fValues, fillp, newFillp);
+            ac.headCoding.readArrayFrom(in, lfValues, fillp, newFillp);
             while (fillp < newFillp) {
-                int val = fValues[fillp++];
-                assert(uniqueValuesForDebug.add(new Integer(val)));
+                int val = lfValues[fillp++];
+                assert(uniqueValuesForDebug.add(val));
                 assert(fillp <= maxForDebug);
                 last = val;
                 min = moreCentral(min, val);
@@ -344,10 +347,10 @@ class PopulationCoding implements Constants, CodingMethod {
                 state = val;
                 if (fillp > 1 && (val == last || val == min)) //|| val == min2
                     break;
-                if (fillp == fValues.length)
-                    fValues = BandStructure.realloc(fValues);
-                fValues[fillp++] = val;
-                assert(uniqueValuesForDebug.add(new Integer(val)));
+                if (fillp == lfValues.length)
+                    lfValues = BandStructure.realloc(lfValues);
+                lfValues[fillp++] = val;
+                assert(uniqueValuesForDebug.add(val));
                 assert(fillp <= maxForDebug);
                 last = val;
                 min = moreCentral(min, val);
@@ -358,17 +361,17 @@ class PopulationCoding implements Constants, CodingMethod {
                 int val = fc.readFrom(in);
                 if (fillp > 1 && (val == last || val == min)) //|| val == min2
                     break;
-                if (fillp == fValues.length)
-                    fValues = BandStructure.realloc(fValues);
-                fValues[fillp++] = val;
-                assert(uniqueValuesForDebug.add(new Integer(val)));
+                if (fillp == lfValues.length)
+                    lfValues = BandStructure.realloc(lfValues);
+                lfValues[fillp++] = val;
+                assert(uniqueValuesForDebug.add(val));
                 assert(fillp <= maxForDebug);
                 last = val;
                 min = moreCentral(min, val);
                 //min2 = moreCentral2(min2, val, min);
             }
         }
-        return BandStructure.realloc(fValues, fillp);
+        return BandStructure.realloc(lfValues, fillp);
     }
 
     private static int moreCentral(int x, int y) {
@@ -478,7 +481,7 @@ class PopulationCoding implements Constants, CodingMethod {
         boolean verbose
             = (p200 != null &&
                p200.getBoolean(Utils.COM_PREFIX+"verbose.pop"));
-        StringBuffer res = new StringBuffer(100);
+        StringBuilder res = new StringBuilder(100);
         res.append("pop(").append("fVlen=").append(fVlen);
         if (verbose && fValues != null) {
             res.append(" fV=[");

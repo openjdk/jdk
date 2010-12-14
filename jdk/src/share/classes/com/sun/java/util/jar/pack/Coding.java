@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
-
+import java.util.Map;
+import static com.sun.java.util.jar.pack.Constants.*;
 /**
  * Define the conversions between sequences of small integers and raw bytes.
  * This is a schema of encodings which incorporates varying lengths,
  * varying degrees of length variability, and varying amounts of signed-ness.
  * @author John Rose
  */
-class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric {
+class Coding implements Comparable, CodingMethod, Histogram.BitMetric {
     /*
       Coding schema for single integers, parameterized by (B,H,S):
 
@@ -191,7 +192,9 @@ class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric
         if (S == 0 || range >= (long)1<<32)
             return saturate32(range-1);
         long maxPos = range-1;
-        while (isNegativeCode(maxPos, S))  --maxPos;
+        while (isNegativeCode(maxPos, S)) {
+            --maxPos;
+        }
         if (maxPos < 0)  return -1;  // No positive codings at all.
         int smax = decodeSign32(maxPos, S);
         // check for 32-bit wraparound:
@@ -213,9 +216,10 @@ class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric
         if (S == 0) {
             return 0;
         }
-        int Smask = (1<<S)-1;
         long maxNeg = range-1;
-        while (!isNegativeCode(maxNeg, S))  --maxNeg;
+        while (!isNegativeCode(maxNeg, S))
+            --maxNeg;
+
         if (maxNeg < 0)  return 0;  // No negative codings at all.
         return decodeSign32(maxNeg, S);
     }
@@ -395,12 +399,12 @@ class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric
         return (del<<14)+(S<<11)+(B<<8)+(H<<0);
     }
 
-    private static HashMap codeMap;
+    private static Map<Coding, Coding> codeMap;
 
     private static synchronized Coding of(int B, int H, int S, int del) {
-        if (codeMap == null)  codeMap = new HashMap();
+        if (codeMap == null)  codeMap = new HashMap<>();
         Coding x0 = new Coding(B, H, S, del);
-        Coding x1 = (Coding) codeMap.get(x0);
+        Coding x1 = codeMap.get(x0);
         if (x1 == null)  codeMap.put(x0, x1 = x0);
         return x1;
     }
@@ -462,6 +466,7 @@ class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric
         // %%% use byte[] buffer
         for (int i = start; i < end; i++)
             a[i] = readFrom(in);
+
         for (int dstep = 0; dstep < del; dstep++) {
             long state = 0;
             for (int i = start; i < end; i++) {
@@ -750,14 +755,14 @@ class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric
         if (len == 0)       return true;
         if (isFullRange())  return true;
         // Calculate max, min:
-        int max = values[start];
-        int min = max;
+        int lmax = values[start];
+        int lmin = lmax;
         for (int i = 1; i < len; i++) {
             int value = values[start+i];
-            if (max < value)  max = value;
-            if (min > value)  min = value;
+            if (lmax < value)  lmax = value;
+            if (lmin > value)  lmin = value;
         }
-        return canRepresent(min, max);
+        return canRepresent(lmin, lmax);
     }
 
     public double getBitLength(int value) {  // implements BitMetric
@@ -800,21 +805,20 @@ class Coding implements Constants, Comparable, CodingMethod, Histogram.BitMetric
             //return Coding.of(B, H, S).getLength(deltas, 0, len);
             values = deltas;
             start = 0;
-            end = values.length;
         }
         int sum = len;  // at least 1 byte per
         // add extra bytes for extra-long values
         for (int n = 1; n <= B; n++) {
             // what is the coding interval [min..max] for n bytes?
-            int max = byteMax[n-1];
-            int min = byteMin[n-1];
+            int lmax = byteMax[n-1];
+            int lmin = byteMin[n-1];
             int longer = 0;  // count of guys longer than n bytes
             for (int i = 0; i < len; i++) {
                 int value = values[start+i];
                 if (value >= 0) {
-                    if (value > max)  longer++;
+                    if (value > lmax)  longer++;
                 } else {
-                    if (value < min)  longer++;
+                    if (value < lmin)  longer++;
                 }
             }
             if (longer == 0)  break;  // no more passes needed

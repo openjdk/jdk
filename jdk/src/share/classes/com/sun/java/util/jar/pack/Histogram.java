@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Arrays;
  * Histogram derived from an integer array of events (int[]).
  * @author John Rose
  */
-class Histogram {
+final class Histogram {
     // Compact histogram representation:  4 bytes per distinct value,
     // plus 5 words per distinct count.
     protected final int[][] matrix;  // multi-row matrix {{counti,valueij...}}
@@ -304,7 +304,7 @@ class Histogram {
     public
     String[] getRowTitles(String name) {
         int totalUnique = getTotalLength();
-        int totalWeight = getTotalWeight();
+        int ltotalWeight = getTotalWeight();
         String[] histTitles = new String[matrix.length];
         int cumWeight = 0;
         int cumUnique = 0;
@@ -314,7 +314,7 @@ class Histogram {
             int weight = getRowWeight(i);
             cumWeight += weight;
             cumUnique += unique;
-            long wpct = ((long)cumWeight * 100 + totalWeight/2) / totalWeight;
+            long wpct = ((long)cumWeight * 100 + ltotalWeight/2) / ltotalWeight;
             long upct = ((long)cumUnique * 100 + totalUnique/2) / totalUnique;
             double len = getRowBitLength(i);
             assert(0.1 > Math.abs(len - getBitLength(matrix[i][1])));
@@ -346,14 +346,14 @@ class Histogram {
     public
     void print(String name, String[] histTitles, PrintStream out) {
         int totalUnique = getTotalLength();
-        int totalWeight = getTotalWeight();
+        int ltotalWeight = getTotalWeight();
         double tlen = getBitLength();
-        double avgLen = tlen / totalWeight;
-        double avg = (double) totalWeight / totalUnique;
+        double avgLen = tlen / ltotalWeight;
+        double avg = (double) ltotalWeight / totalUnique;
         String title = (name
                         +" len="+round(tlen,10)
                         +" avgLen="+round(avgLen,10)
-                        +" weight("+totalWeight+")"
+                        +" weight("+ltotalWeight+")"
                         +" unique["+totalUnique+"]"
                         +" avgWeight("+round(avg,100)+")");
         if (histTitles == null) {
@@ -363,9 +363,9 @@ class Histogram {
             StringBuffer buf = new StringBuffer();
             for (int i = 0; i < matrix.length; i++) {
                 buf.setLength(0);
-                buf.append("  "+histTitles[i]+" {");
+                buf.append("  ").append(histTitles[i]).append(" {");
                 for (int j = 1; j < matrix[i].length; j++) {
-                    buf.append(" "+matrix[i][j]);
+                    buf.append(" ").append(matrix[i][j]);
                 }
                 buf.append(" }");
                 out.println(buf);
@@ -603,7 +603,7 @@ class Histogram {
     private static
     int[] maybeSort(int[] values) {
         if (!isSorted(values, 0, false)) {
-            values = (int[]) values.clone();
+            values = values.clone();
             Arrays.sort(values);
         }
         return values;
