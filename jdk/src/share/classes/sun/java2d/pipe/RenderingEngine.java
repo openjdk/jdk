@@ -281,6 +281,72 @@ public abstract class RenderingEngine {
                                                        int bbox[]);
 
     /**
+     * Construct an antialiased tile generator for the given parallelogram
+     * store the bounds of the tile iteration in the bbox parameter.
+     * The parallelogram is specified as a starting point and 2 delta
+     * vectors that indicate the slopes of the 2 pairs of sides of the
+     * parallelogram.
+     * The 4 corners of the parallelogram are defined by the 4 points:
+     * <ul>
+     * <li> {@code x}, {@code y}
+     * <li> {@code x+dx1}, {@code y+dy1}
+     * <li> {@code x+dx1+dx2}, {@code y+dy1+dy2}
+     * <li> {@code x+dx2}, {@code y+dy2}
+     * </ul>
+     * The {@code lw1} and {@code lw2} parameters provide a specification
+     * for an optionally stroked parallelogram if they are positive numbers.
+     * The {@code lw1} parameter is the ratio of the length of the {@code dx1},
+     * {@code dx2} delta vector to half of the line width in that same
+     * direction.
+     * The {@code lw2} parameter provides the same ratio for the other delta
+     * vector.
+     * If {@code lw1} and {@code lw2} are both greater than zero, then
+     * the parallelogram figure is doubled by both expanding and contracting
+     * each delta vector by its corresponding {@code lw} value.
+     * If either (@code lw1) or {@code lw2} are also greater than 1, then
+     * the inner (contracted) parallelogram disappears and the figure is
+     * simply a single expanded parallelogram.
+     * The {@code clip} parameter specifies the current clip in effect
+     * in device coordinates and can be used to prune the data for the
+     * operation, but the renderer is not required to perform any
+     * clipping.
+     * <p>
+     * Upon returning, this method will fill the {@code bbox} parameter
+     * with 4 values indicating the bounds of the iteration of the
+     * tile generator.
+     * The iteration order of the tiles will be as specified by the
+     * pseudo-code:
+     * <pre>
+     *     for (y = bbox[1]; y < bbox[3]; y += tileheight) {
+     *         for (x = bbox[0]; x < bbox[2]; x += tilewidth) {
+     *         }
+     *     }
+     * </pre>
+     * If there is no output to be rendered, this method may return
+     * null.
+     *
+     * @param x the X coordinate of the first corner of the parallelogram
+     * @param y the Y coordinate of the first corner of the parallelogram
+     * @param dx1 the X coordinate delta of the first leg of the parallelogram
+     * @param dy1 the Y coordinate delta of the first leg of the parallelogram
+     * @param dx2 the X coordinate delta of the second leg of the parallelogram
+     * @param dy2 the Y coordinate delta of the second leg of the parallelogram
+     * @param lw1 the line width ratio for the first leg of the parallelogram
+     * @param lw2 the line width ratio for the second leg of the parallelogram
+     * @param clip the current clip in effect in device coordinates
+     * @param bbox returns the bounds of the iteration
+     * @return the {@code AATileGenerator} instance to be consulted
+     *         for tile coverages, or null if there is no output to render
+     * @since 1.7
+     */
+    public abstract AATileGenerator getAATileGenerator(double x, double y,
+                                                       double dx1, double dy1,
+                                                       double dx2, double dy2,
+                                                       double lw1, double lw2,
+                                                       Region clip,
+                                                       int bbox[]);
+
+    /**
      * Returns the minimum pen width that the antialiasing rasterizer
      * can represent without dropouts occuring.
      * @since 1.7
@@ -392,6 +458,25 @@ public abstract class RenderingEngine {
             return target.getAATileGenerator(s, at, clip,
                                              bs, thin, normalize,
                                              bbox);
+        }
+        public AATileGenerator getAATileGenerator(double x, double y,
+                                                  double dx1, double dy1,
+                                                  double dx2, double dy2,
+                                                  double lw1, double lw2,
+                                                  Region clip,
+                                                  int bbox[])
+        {
+            System.out.println(name+".getAATileGenerator("+
+                               x+", "+y+", "+
+                               dx1+", "+dy1+", "+
+                               dx2+", "+dy2+", "+
+                               lw1+", "+lw2+", "+
+                               clip+")");
+            return target.getAATileGenerator(x, y,
+                                             dx1, dy1,
+                                             dx2, dy2,
+                                             lw1, lw2,
+                                             clip, bbox);
         }
     }
 }

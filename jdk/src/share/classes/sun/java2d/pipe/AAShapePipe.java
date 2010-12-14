@@ -28,6 +28,7 @@ package sun.java2d.pipe;
 import java.awt.BasicStroke;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.PathIterator;
 import sun.awt.SunHints;
 import sun.java2d.SunGraphics2D;
@@ -39,7 +40,9 @@ import sun.java2d.SunGraphics2D;
  * This class sets up the Generator and computes the alpha tiles
  * and then passes them on to a CompositePipe object for painting.
  */
-public class AAShapePipe implements ShapeDrawPipe {
+public class AAShapePipe
+    implements ShapeDrawPipe, ParallelogramPipe
+{
     static RenderingEngine renderengine = RenderingEngine.getInstance();
 
     CompositePipe outpipe;
@@ -65,6 +68,59 @@ public class AAShapePipe implements ShapeDrawPipe {
         renderPath(sg, s, null);
     }
 
+    private static Rectangle2D computeBBox(double x, double y,
+                                           double dx1, double dy1,
+                                           double dx2, double dy2)
+    {
+        double lox, loy, hix, hiy;
+        lox = hix = x;
+        loy = hiy = y;
+        if (dx1 < 0) { lox += dx1; } else { hix += dx1; }
+        if (dy1 < 0) { loy += dy1; } else { hiy += dy1; }
+        if (dx2 < 0) { lox += dx2; } else { hix += dx2; }
+        if (dy2 < 0) { loy += dy2; } else { hiy += dy2; }
+        return new Rectangle2D.Double(lox, loy, hix-lox, hiy-loy);
+    }
+
+    public void fillParallelogram(SunGraphics2D sg,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2)
+    {
+        Region clip = sg.getCompClip();
+        int abox[] = new int[4];
+        AATileGenerator aatg =
+            renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, 0, 0,
+                                            clip, abox);
+        if (aatg == null) {
+            // Nothing to render
+            return;
+        }
+
+        renderTiles(sg, computeBBox(x, y, dx1, dy1, dx2, dy2), aatg, abox);
+    }
+
+    public void drawParallelogram(SunGraphics2D sg,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2,
+                                  double lw1, double lw2)
+    {
+        Region clip = sg.getCompClip();
+        int abox[] = new int[4];
+        AATileGenerator aatg =
+            renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, 0, 0,
+                                            clip, abox);
+        if (aatg == null) {
+            // Nothing to render
+            return;
+        }
+
+        // Note that bbox is of the original shape, not the wide path.
+        // This is appropriate for handing to Paint methods...
+        renderTiles(sg, computeBBox(x, y, dx1, dy1, dx2, dy2), aatg, abox);
+    }
+
     private static byte[] theTile;
 
     public synchronized static byte[] getAlphaTile(int len) {
@@ -85,8 +141,6 @@ public class AAShapePipe implements ShapeDrawPipe {
         boolean adjust = (bs != null &&
                           sg.strokeHint != SunHints.INTVAL_STROKE_PURE);
         boolean thin = (sg.strokeState <= sg.STROKE_THINDASHED);
-        Object context = null;
-        byte alpha[] = null;
 
         Region clip = sg.getCompClip();
         int abox[] = new int[4];
@@ -98,6 +152,14 @@ public class AAShapePipe implements ShapeDrawPipe {
             return;
         }
 
+        renderTiles(sg, s, aatg, abox);
+    }
+
+    public void renderTiles(SunGraphics2D sg, Shape s,
+                            AATileGenerator aatg, int abox[])
+    {
+        Object context = null;
+        byte alpha[] = null;
         try {
             context = outpipe.startSequence(sg, s,
                                             new Rectangle(abox[0], abox[1],

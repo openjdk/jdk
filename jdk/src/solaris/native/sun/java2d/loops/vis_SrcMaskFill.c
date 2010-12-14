@@ -150,10 +150,12 @@ void ADD_SUFF(IntArgbSrcMaskFill)(void *rasBase,
     }
 
     if (pMask == NULL) {
+        void *pBase = pRasInfo->rasBase;
+        pRasInfo->rasBase = rasBase;
         ADD_SUFF(AnyIntSetRect)(pRasInfo,
-                                pRasInfo->bounds.x1, pRasInfo->bounds.y1,
-                                pRasInfo->bounds.x2, pRasInfo->bounds.y2,
+                                0, 0, width, height,
                                 fgColor, pPrim, pCompInfo);
+        pRasInfo->rasBase = pBase;
         return;
     }
 
@@ -214,15 +216,17 @@ void ADD_SUFF(FourByteAbgrSrcMaskFill)(void *rasBase,
     cnstB = (fgColor      ) & 0xff;
 
     if (pMask == NULL) {
+        void *pBase = pRasInfo->rasBase;
+        pRasInfo->rasBase = rasBase;
         if (cnstA == 0) {
             fgColor = 0;
         } else {
             fgColor = (fgColor << 8) | cnstA;
         }
         ADD_SUFF(Any4ByteSetRect)(pRasInfo,
-                                  pRasInfo->bounds.x1, pRasInfo->bounds.y1,
-                                  pRasInfo->bounds.x2, pRasInfo->bounds.y2,
+                                  0, 0, width, height,
                                   fgColor, pPrim, pCompInfo);
+        pRasInfo->rasBase = pBase;
         return;
     }
 
@@ -390,10 +394,12 @@ void ADD_SUFF(IntRgbSrcMaskFill)(void *rasBase,
     if (cnstA == 0) fgColor = 0;
 
     if (pMask == NULL) {
+        void *pBase = pRasInfo->rasBase;
+        pRasInfo->rasBase = rasBase;
         ADD_SUFF(AnyIntSetRect)(pRasInfo,
-                                pRasInfo->bounds.x1, pRasInfo->bounds.y1,
-                                pRasInfo->bounds.x2, pRasInfo->bounds.y2,
+                                0, 0, width, height,
                                 fgColor, pPrim, pCompInfo);
+        pRasInfo->rasBase = pBase;
         return;
     }
 
@@ -458,10 +464,12 @@ void ADD_SUFF(IntBgrSrcMaskFill)(void *rasBase,
     }
 
     if (pMask == NULL) {
+        void *pBase = pRasInfo->rasBase;
+        pRasInfo->rasBase = rasBase;
         ADD_SUFF(AnyIntSetRect)(pRasInfo,
-                                pRasInfo->bounds.x1, pRasInfo->bounds.y1,
-                                pRasInfo->bounds.x2, pRasInfo->bounds.y2,
+                                0, 0, width, height,
                                 fgColor, pPrim, pCompInfo);
+        pRasInfo->rasBase = pBase;
         return;
     }
 
@@ -526,10 +534,12 @@ void ADD_SUFF(ThreeByteBgrSrcMaskFill)(void *rasBase,
     }
 
     if (pMask == NULL) {
+        void *pBase = pRasInfo->rasBase;
+        pRasInfo->rasBase = rasBase;
         ADD_SUFF(Any3ByteSetRect)(pRasInfo,
-                                  pRasInfo->bounds.x1, pRasInfo->bounds.y1,
-                                  pRasInfo->bounds.x2, pRasInfo->bounds.y2,
+                                  0, 0, width, height,
                                   fgColor, pPrim, pCompInfo);
+        pRasInfo->rasBase = pBase;
         return;
     }
 

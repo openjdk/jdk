@@ -557,6 +557,69 @@ public class PiscesRenderingEngine extends RenderingEngine {
         return ptg;
     }
 
+    public AATileGenerator getAATileGenerator(double x, double y,
+                                              double dx1, double dy1,
+                                              double dx2, double dy2,
+                                              double lw1, double lw2,
+                                              Region clip,
+                                              int bbox[])
+    {
+        // REMIND: Deal with large coordinates!
+        double ldx1, ldy1, ldx2, ldy2;
+        boolean innerpgram = (lw1 > 0 && lw2 > 0);
+
+        if (innerpgram) {
+            ldx1 = dx1 * lw1;
+            ldy1 = dy1 * lw1;
+            ldx2 = dx2 * lw2;
+            ldy2 = dy2 * lw2;
+            x -= (ldx1 + ldx2) / 2.0;
+            y -= (ldy1 + ldy2) / 2.0;
+            dx1 += ldx1;
+            dy1 += ldy1;
+            dx2 += ldx2;
+            dy2 += ldy2;
+            if (lw1 > 1 && lw2 > 1) {
+                // Inner parallelogram was entirely consumed by stroke...
+                innerpgram = false;
+            }
+        } else {
+            ldx1 = ldy1 = ldx2 = ldy2 = 0;
+        }
+
+        Renderer r = new Renderer(3, 3,
+                                  clip.getLoX(), clip.getLoY(),
+                                  clip.getWidth(), clip.getHeight(),
+                                  PathIterator.WIND_EVEN_ODD);
+
+        r.moveTo((float) x, (float) y);
+        r.lineTo((float) (x+dx1), (float) (y+dy1));
+        r.lineTo((float) (x+dx1+dx2), (float) (y+dy1+dy2));
+        r.lineTo((float) (x+dx2), (float) (y+dy2));
+        r.closePath();
+
+        if (innerpgram) {
+            x += ldx1 + ldx2;
+            y += ldy1 + ldy2;
+            dx1 -= 2.0 * ldx1;
+            dy1 -= 2.0 * ldy1;
+            dx2 -= 2.0 * ldx2;
+            dy2 -= 2.0 * ldy2;
+            r.moveTo((float) x, (float) y);
+            r.lineTo((float) (x+dx1), (float) (y+dy1));
+            r.lineTo((float) (x+dx1+dx2), (float) (y+dy1+dy2));
+            r.lineTo((float) (x+dx2), (float) (y+dy2));
+            r.closePath();
+        }
+
+        r.pathDone();
+
+        r.endRendering();
+        PiscesTileGenerator ptg = new PiscesTileGenerator(r, r.MAX_AA_ALPHA);
+        ptg.getBbox(bbox);
+        return ptg;
+    }
+
     /**
      * Returns the minimum pen width that the antialiasing rasterizer
      * can represent without dropouts occuring.

@@ -367,16 +367,17 @@ public abstract class SurfaceData
     public static final TextPipe aaTextRenderer;
     public static final TextPipe lcdTextRenderer;
 
-    protected static final CompositePipe colorPipe;
+    protected static final AlphaColorPipe colorPipe;
     protected static final PixelToShapeConverter colorViaShape;
     protected static final PixelToParallelogramConverter colorViaPgram;
     protected static final TextPipe colorText;
     protected static final CompositePipe clipColorPipe;
     protected static final TextPipe clipColorText;
     protected static final AAShapePipe AAColorShape;
-    protected static final PixelToShapeConverter AAColorViaShape;
+    protected static final PixelToParallelogramConverter AAColorViaShape;
+    protected static final PixelToParallelogramConverter AAColorViaPgram;
     protected static final AAShapePipe AAClipColorShape;
-    protected static final PixelToShapeConverter AAClipColorViaShape;
+    protected static final PixelToParallelogramConverter AAClipColorViaShape;
 
     protected static final CompositePipe paintPipe;
     protected static final SpanShapeRenderer paintShape;
@@ -385,9 +386,9 @@ public abstract class SurfaceData
     protected static final CompositePipe clipPaintPipe;
     protected static final TextPipe clipPaintText;
     protected static final AAShapePipe AAPaintShape;
-    protected static final PixelToShapeConverter AAPaintViaShape;
+    protected static final PixelToParallelogramConverter AAPaintViaShape;
     protected static final AAShapePipe AAClipPaintShape;
-    protected static final PixelToShapeConverter AAClipPaintViaShape;
+    protected static final PixelToParallelogramConverter AAClipPaintViaShape;
 
     protected static final CompositePipe compPipe;
     protected static final SpanShapeRenderer compShape;
@@ -396,9 +397,9 @@ public abstract class SurfaceData
     protected static final CompositePipe clipCompPipe;
     protected static final TextPipe clipCompText;
     protected static final AAShapePipe AACompShape;
-    protected static final PixelToShapeConverter AACompViaShape;
+    protected static final PixelToParallelogramConverter AACompViaShape;
     protected static final AAShapePipe AAClipCompShape;
-    protected static final PixelToShapeConverter AAClipCompViaShape;
+    protected static final PixelToParallelogramConverter AAClipCompViaShape;
 
     protected static final DrawImagePipe imagepipe;
 
@@ -427,6 +428,22 @@ public abstract class SurfaceData
         }
     }
 
+    private static PixelToParallelogramConverter
+        makeConverter(AAShapePipe renderer,
+                      ParallelogramPipe pgrampipe)
+    {
+        return new PixelToParallelogramConverter(renderer,
+                                                 pgrampipe,
+                                                 1.0/8.0, 0.499,
+                                                 false);
+    }
+
+    private static PixelToParallelogramConverter
+        makeConverter(AAShapePipe renderer)
+    {
+        return makeConverter(renderer, renderer);
+    }
+
     static {
         colorPrimitives = new LoopPipe();
 
@@ -445,9 +462,10 @@ public abstract class SurfaceData
         clipColorPipe = new SpanClipRenderer(colorPipe);
         clipColorText = new TextRenderer(clipColorPipe);
         AAColorShape = new AAShapePipe(colorPipe);
-        AAColorViaShape = new PixelToShapeConverter(AAColorShape);
+        AAColorViaShape = makeConverter(AAColorShape);
+        AAColorViaPgram = makeConverter(AAColorShape, colorPipe);
         AAClipColorShape = new AAShapePipe(clipColorPipe);
-        AAClipColorViaShape = new PixelToShapeConverter(AAClipColorShape);
+        AAClipColorViaShape = makeConverter(AAClipColorShape);
 
         paintPipe = new AlphaPaintPipe();
         paintShape = new SpanShapeRenderer.Composite(paintPipe);
@@ -456,9 +474,9 @@ public abstract class SurfaceData
         clipPaintPipe = new SpanClipRenderer(paintPipe);
         clipPaintText = new TextRenderer(clipPaintPipe);
         AAPaintShape = new AAShapePipe(paintPipe);
-        AAPaintViaShape = new PixelToShapeConverter(AAPaintShape);
+        AAPaintViaShape = makeConverter(AAPaintShape);
         AAClipPaintShape = new AAShapePipe(clipPaintPipe);
-        AAClipPaintViaShape = new PixelToShapeConverter(AAClipPaintShape);
+        AAClipPaintViaShape = makeConverter(AAClipPaintShape);
 
         compPipe = new GeneralCompositePipe();
         compShape = new SpanShapeRenderer.Composite(compPipe);
@@ -467,9 +485,9 @@ public abstract class SurfaceData
         clipCompPipe = new SpanClipRenderer(compPipe);
         clipCompText = new TextRenderer(clipCompPipe);
         AACompShape = new AAShapePipe(compPipe);
-        AACompViaShape = new PixelToShapeConverter(AACompShape);
+        AACompViaShape = makeConverter(AACompShape);
         AAClipCompShape = new AAShapePipe(clipCompPipe);
-        AAClipCompViaShape = new PixelToShapeConverter(AAClipCompShape);
+        AAClipCompViaShape = makeConverter(AAClipCompShape);
 
         imagepipe = new DrawImage();
     }
@@ -591,12 +609,12 @@ public abstract class SurfaceData
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipCompViaShape;
                     sg2d.fillpipe = AAClipCompViaShape;
-                    sg2d.shapepipe = AAClipCompShape;
+                    sg2d.shapepipe = AAClipCompViaShape;
                     sg2d.textpipe = clipCompText;
                 } else {
                     sg2d.drawpipe = AACompViaShape;
                     sg2d.fillpipe = AACompViaShape;
-                    sg2d.shapepipe = AACompShape;
+                    sg2d.shapepipe = AACompViaShape;
                     sg2d.textpipe = compText;
                 }
             } else {
@@ -616,12 +634,16 @@ public abstract class SurfaceData
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipColorViaShape;
                     sg2d.fillpipe = AAClipColorViaShape;
-                    sg2d.shapepipe = AAClipColorShape;
+                    sg2d.shapepipe = AAClipColorViaShape;
                     sg2d.textpipe = clipColorText;
                 } else {
-                    sg2d.drawpipe = AAColorViaShape;
-                    sg2d.fillpipe = AAColorViaShape;
-                    sg2d.shapepipe = AAColorShape;
+                    PixelToParallelogramConverter converter =
+                        (sg2d.alphafill.canDoParallelograms()
+                         ? AAColorViaPgram
+                         : AAColorViaShape);
+                    sg2d.drawpipe = converter;
+                    sg2d.fillpipe = converter;
+                    sg2d.shapepipe = converter;
                     if (sg2d.paintState > sg2d.PAINT_OPAQUECOLOR ||
                         sg2d.compositeState > sg2d.COMP_ISCOPY)
                     {
@@ -634,12 +656,12 @@ public abstract class SurfaceData
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipPaintViaShape;
                     sg2d.fillpipe = AAClipPaintViaShape;
-                    sg2d.shapepipe = AAClipPaintShape;
+                    sg2d.shapepipe = AAClipPaintViaShape;
                     sg2d.textpipe = clipPaintText;
                 } else {
                     sg2d.drawpipe = AAPaintViaShape;
                     sg2d.fillpipe = AAPaintViaShape;
-                    sg2d.shapepipe = AAPaintShape;
+                    sg2d.shapepipe = AAPaintViaShape;
                     sg2d.textpipe = paintText;
                 }
             }
@@ -793,6 +815,18 @@ public abstract class SurfaceData
         }
     }
 
+    private static CompositeType getFillCompositeType(SunGraphics2D sg2d) {
+        CompositeType compType = sg2d.imageComp;
+        if (sg2d.compositeState == sg2d.COMP_ISCOPY) {
+            if (compType == CompositeType.SrcOverNoEa) {
+                compType = CompositeType.OpaqueSrcOverNoEa;
+            } else {
+                compType = CompositeType.SrcNoEa;
+            }
+        }
+        return compType;
+    }
+
     /**
      * Returns a MaskFill object that can be used on this destination
      * with the source (paint) and composite types determined by the given
@@ -802,9 +836,10 @@ public abstract class SurfaceData
      * surface) before returning a specific MaskFill object.
      */
     protected MaskFill getMaskFill(SunGraphics2D sg2d) {
-        return MaskFill.getFromCache(getPaintSurfaceType(sg2d),
-                                     sg2d.imageComp,
-                                     getSurfaceType());
+        SurfaceType src = getPaintSurfaceType(sg2d);
+        CompositeType comp = getFillCompositeType(sg2d);
+        SurfaceType dst = getSurfaceType();
+        return MaskFill.getFromCache(src, comp, dst);
     }
 
     private static RenderCache loopcache = new RenderCache(30);
@@ -816,9 +851,7 @@ public abstract class SurfaceData
      */
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
         SurfaceType src = getPaintSurfaceType(sg2d);
-        CompositeType comp = (sg2d.compositeState == sg2d.COMP_ISCOPY
-                              ? CompositeType.SrcNoEa
-                              : sg2d.imageComp);
+        CompositeType comp = getFillCompositeType(sg2d);
         SurfaceType dst = sg2d.getSurfaceData().getSurfaceType();
 
         Object o = loopcache.get(src, comp, dst);
