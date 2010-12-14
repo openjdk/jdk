@@ -266,80 +266,114 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         System.out.println(message);
     }
 
+
     /**
-     * Insert all files in subdirectory `subdirectory' of `directory' which end
-     * in one of the extensions in `extensions' into packageSym.
+     * Insert all files in subdirectory subdirectory of directory directory
+     * which match fileKinds into resultList
      */
     private void listDirectory(File directory,
                                RelativeDirectory subdirectory,
                                Set<JavaFileObject.Kind> fileKinds,
                                boolean recurse,
-                               ListBuffer<JavaFileObject> l) {
-        Archive archive = archives.get(directory);
+                               ListBuffer<JavaFileObject> resultList) {
+        File d = subdirectory.getFile(directory);
+        if (!caseMapCheck(d, subdirectory))
+            return;
 
-        boolean isFile = fsInfo.isFile(directory);
+        File[] files = d.listFiles();
+        if (files == null)
+            return;
 
-        if (archive != null || isFile) {
-            if (archive == null) {
-                try {
-                    archive = openArchive(directory);
-                } catch (IOException ex) {
-                    log.error("error.reading.file",
-                       directory, getMessage(ex));
-                    return;
+        if (sortFiles != null)
+            Arrays.sort(files, sortFiles);
+
+        for (File f: files) {
+            String fname = f.getName();
+            if (f.isDirectory()) {
+                if (recurse && SourceVersion.isIdentifier(fname)) {
+                    listDirectory(directory,
+                                  new RelativeDirectory(subdirectory, fname),
+                                  fileKinds,
+                                  recurse,
+                                  resultList);
                 }
-            }
-
-            List<String> files = archive.getFiles(subdirectory);
-            if (files != null) {
-                for (String file; !files.isEmpty(); files = files.tail) {
-                    file = files.head;
-                    if (isValidFile(file, fileKinds)) {
-                        l.append(archive.getFileObject(subdirectory, file));
-                    }
-                }
-            }
-            if (recurse) {
-                for (RelativeDirectory s: archive.getSubdirectories()) {
-                    if (subdirectory.contains(s)) {
-                        // Because the archive map is a flat list of directories,
-                        // the enclosing loop will pick up all child subdirectories.
-                        // Therefore, there is no need to recurse deeper.
-                        listDirectory(directory, s, fileKinds, false, l);
-                    }
-                }
-            }
-        } else {
-            File d = subdirectory.getFile(directory);
-            if (!caseMapCheck(d, subdirectory))
-                return;
-
-            File[] files = d.listFiles();
-            if (files == null)
-                return;
-
-            if (sortFiles != null)
-                Arrays.sort(files, sortFiles);
-
-            for (File f: files) {
-                String fname = f.getName();
-                if (f.isDirectory()) {
-                    if (recurse && SourceVersion.isIdentifier(fname)) {
-                        listDirectory(directory,
-                                      new RelativeDirectory(subdirectory, fname),
-                                      fileKinds,
-                                      recurse,
-                                      l);
-                    }
-                } else {
-                    if (isValidFile(fname, fileKinds)) {
-                        JavaFileObject fe =
-                            new RegularFileObject(this, fname, new File(d, fname));
-                        l.append(fe);
-                    }
+            } else {
+                if (isValidFile(fname, fileKinds)) {
+                    JavaFileObject fe =
+                        new RegularFileObject(this, fname, new File(d, fname));
+                    resultList.append(fe);
                 }
             }
         }
+    }
+
+    /**
+     * Insert all files in subdirectory subdirectory of archive archive
+     * which match fileKinds into resultList
+     */
+    private void listArchive(Archive archive,
+                               RelativeDirectory subdirectory,
+                               Set<JavaFileObject.Kind> fileKinds,
+                               boolean recurse,
+                               ListBuffer<JavaFileObject> resultList) {
+        // Get the files directly in the subdir
+        List<String> files = archive.getFiles(subdirectory);
+        if (files != null) {
+            for (; !files.isEmpty(); files = files.tail) {
+                String file = files.head;
+                if (isValidFile(file, fileKinds)) {
+                    resultList.append(archive.getFileObject(subdirectory, file));
+                }
+            }
+        }
+        if (recurse) {
+            for (RelativeDirectory s: archive.getSubdirectories()) {
+                if (subdirectory.contains(s)) {
+                    // Because the archive map is a flat list of directories,
+                    // the enclosing loop will pick up all child subdirectories.
+                    // Therefore, there is no need to recurse deeper.
+                    listArchive(archive, s, fileKinds, false, resultList);
+                }
+            }
+        }
+    }
+
+    /**
+     * container is a directory, a zip file, or a non-existant path.
+     * Insert all files in subdirectory subdirectory of container which
+     * match fileKinds into resultList
+     */
+    private void listContainer(File container,
+                               RelativeDirectory subdirectory,
+                               Set<JavaFileObject.Kind> fileKinds,
+                               boolean recurse,
+                               ListBuffer<JavaFileObject> resultList) {
+        Archive archive = archives.get(container);
+        if (archive == null) {
+            // archives are not created for directories.
+            if  (fsInfo.isDirectory(container)) {
+                listDirectory(container,
+                              subdirectory,
+                              fileKinds,
+                              recurse,
+                              resultList);
+                return;
+            }
+
+            // Not a directory; either a file or non-existant, create the archive
+            try {
+                archive = openArchive(container);
+            } catch (IOException ex) {
+                log.error("error.reading.file",
+                          container, getMessage(ex));
+                return;
+            }
+        }
+        listArchive(archive,
+                    subdirectory,
+                    fileKinds,
+                    recurse,
+                    resultList);
     }
 
     private boolean isValidFile(String s, Set<JavaFileObject.Kind> fileKinds) {
@@ -434,95 +468,92 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private static final RelativeDirectory symbolFilePrefix
             = new RelativeDirectory("META-INF/sym/rt.jar/");
 
-    /** Open a new zip file directory.
+    /** Open a new zip file directory, and cache it.
      */
     protected Archive openArchive(File zipFileName) throws IOException {
-        Archive archive = archives.get(zipFileName);
-        if (archive == null) {
-            File origZipFileName = zipFileName;
-            if (!ignoreSymbolFile && paths.isBootClassPathRtJar(zipFileName)) {
-                File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
-                if (new File(file.getName()).equals(new File("jre")))
-                    file = file.getParentFile();
-                // file == ${jdk.home}
-                for (String name : symbolFileLocation)
-                    file = new File(file, name);
-                // file == ${jdk.home}/lib/ct.sym
-                if (file.exists())
-                    zipFileName = file;
+        File origZipFileName = zipFileName;
+        if (!ignoreSymbolFile && paths.isBootClassPathRtJar(zipFileName)) {
+            File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
+            if (new File(file.getName()).equals(new File("jre")))
+                file = file.getParentFile();
+            // file == ${jdk.home}
+            for (String name : symbolFileLocation)
+                file = new File(file, name);
+            // file == ${jdk.home}/lib/ct.sym
+            if (file.exists())
+                zipFileName = file;
+        }
+
+        Archive archive;
+        try {
+
+            ZipFile zdir = null;
+
+            boolean usePreindexedCache = false;
+            String preindexCacheLocation = null;
+
+            if (!useZipFileIndex) {
+                zdir = new ZipFile(zipFileName);
             }
+            else {
+                usePreindexedCache = options.isSet("usezipindex");
+                preindexCacheLocation = options.get("java.io.tmpdir");
+                String optCacheLoc = options.get("cachezipindexdir");
 
-            try {
-
-                ZipFile zdir = null;
-
-                boolean usePreindexedCache = false;
-                String preindexCacheLocation = null;
-
-                if (!useZipFileIndex) {
-                    zdir = new ZipFile(zipFileName);
-                }
-                else {
-                    usePreindexedCache = options.isSet("usezipindex");
-                    preindexCacheLocation = options.get("java.io.tmpdir");
-                    String optCacheLoc = options.get("cachezipindexdir");
-
-                    if (optCacheLoc != null && optCacheLoc.length() != 0) {
-                        if (optCacheLoc.startsWith("\"")) {
-                            if (optCacheLoc.endsWith("\"")) {
-                                optCacheLoc = optCacheLoc.substring(1, optCacheLoc.length() - 1);
-                            }
-                           else {
-                                optCacheLoc = optCacheLoc.substring(1);
-                            }
+                if (optCacheLoc != null && optCacheLoc.length() != 0) {
+                    if (optCacheLoc.startsWith("\"")) {
+                        if (optCacheLoc.endsWith("\"")) {
+                            optCacheLoc = optCacheLoc.substring(1, optCacheLoc.length() - 1);
                         }
+                        else {
+                            optCacheLoc = optCacheLoc.substring(1);
+                        }
+                    }
 
-                        File cacheDir = new File(optCacheLoc);
-                        if (cacheDir.exists() && cacheDir.canWrite()) {
-                            preindexCacheLocation = optCacheLoc;
-                            if (!preindexCacheLocation.endsWith("/") &&
-                                !preindexCacheLocation.endsWith(File.separator)) {
-                                preindexCacheLocation += File.separator;
-                            }
+                    File cacheDir = new File(optCacheLoc);
+                    if (cacheDir.exists() && cacheDir.canWrite()) {
+                        preindexCacheLocation = optCacheLoc;
+                        if (!preindexCacheLocation.endsWith("/") &&
+                            !preindexCacheLocation.endsWith(File.separator)) {
+                            preindexCacheLocation += File.separator;
                         }
                     }
                 }
+            }
 
-                if (origZipFileName == zipFileName) {
-                    if (!useZipFileIndex) {
-                        archive = new ZipArchive(this, zdir);
-                    } else {
-                        archive = new ZipFileIndexArchive(this,
+            if (origZipFileName == zipFileName) {
+                if (!useZipFileIndex) {
+                    archive = new ZipArchive(this, zdir);
+                } else {
+                    archive = new ZipFileIndexArchive(this,
                                 ZipFileIndex.getZipFileIndex(zipFileName,
                                     null,
                                     usePreindexedCache,
                                     preindexCacheLocation,
                                     options.isSet("writezipindexfiles")));
-                    }
+                }
+            } else {
+                if (!useZipFileIndex) {
+                    archive = new SymbolArchive(this, origZipFileName, zdir, symbolFilePrefix);
                 }
                 else {
-                    if (!useZipFileIndex) {
-                        archive = new SymbolArchive(this, origZipFileName, zdir, symbolFilePrefix);
-                    }
-                    else {
-                        archive = new ZipFileIndexArchive(this,
+                    archive = new ZipFileIndexArchive(this,
                                 ZipFileIndex.getZipFileIndex(zipFileName,
                                     symbolFilePrefix,
                                     usePreindexedCache,
                                     preindexCacheLocation,
                                     options.isSet("writezipindexfiles")));
-                    }
                 }
-            } catch (FileNotFoundException ex) {
-                archive = new MissingArchive(zipFileName);
-            } catch (IOException ex) {
-                if (zipFileName.exists())
-                    log.error("error.reading.file", zipFileName, getMessage(ex));
-                archive = new MissingArchive(zipFileName);
             }
-
-            archives.put(origZipFileName, archive);
+        } catch (FileNotFoundException ex) {
+            archive = new MissingArchive(zipFileName);
+        } catch (IOException ex) {
+            if (zipFileName.exists())
+                log.error("error.reading.file", zipFileName, getMessage(ex));
+            archive = new MissingArchive(zipFileName);
         }
+
+        archives.put(origZipFileName, archive);
         return archive;
     }
 
@@ -589,8 +620,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         ListBuffer<JavaFileObject> results = new ListBuffer<JavaFileObject>();
 
         for (File directory : path)
-            listDirectory(directory, subdirectory, kinds, recurse, results);
-
+            listContainer(directory, subdirectory, kinds, recurse, results);
         return results.toList();
     }
 
@@ -659,19 +689,22 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return null;
 
         for (File dir: path) {
-            if (dir.isDirectory()) {
-                File f = name.getFile(dir);
-                if (f.exists())
-                    return new RegularFileObject(this, f);
-            } else {
-                Archive a = openArchive(dir);
-                if (a.contains(name)) {
-                    return a.getFileObject(name.dirname(), name.basename());
+            Archive a = archives.get(dir);
+            if (a == null) {
+                if (fsInfo.isDirectory(dir)) {
+                    File f = name.getFile(dir);
+                    if (f.exists())
+                        return new RegularFileObject(this, f);
+                    continue;
                 }
-
+                // Not a directory, create the archive
+                a = openArchive(dir);
+            }
+            // Process the archive
+            if (a.contains(name)) {
+                return a.getFileObject(name.dirname(), name.basename());
             }
         }
-
         return null;
     }
 
