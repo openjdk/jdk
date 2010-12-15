@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -329,6 +329,8 @@ public abstract class FontConfiguration {
      * tables.
      */
     public static void saveBinary(OutputStream out) throws IOException {
+        sanityCheck();
+
         DataOutputStream dataOut = new DataOutputStream(out);
         writeShortTable(dataOut, head);
         writeShortTable(dataOut, table_scriptIDs);
@@ -350,7 +352,6 @@ public abstract class FontConfiguration {
         if (verbose) {
             dump();
         }
-        sanityCheck();
     }
 
     //private static boolean loadingProperties;
@@ -1343,6 +1344,11 @@ public abstract class FontConfiguration {
     private static short[] table_stringIDs;
     private static char[]  table_stringTable;
 
+    /**
+     * Checks consistencies of complied fontconfig data. This method
+     * is called only at the build-time from
+     * build.tools.compilefontconfig.CompileFontConfig.
+     */
     private static void sanityCheck() {
         int errors = 0;
 
@@ -1358,12 +1364,20 @@ public abstract class FontConfiguration {
         //componentFontNameID starts from "1"
         for (int ii = 1; ii < table_filenames.length; ii++) {
             if (table_filenames[ii] == -1) {
-                System.out.println("\n Warning: "
-                                   + "<filename."
-                                   + getString(table_componentFontNameIDs[ii])
-                                   + "> entry is missing!!!");
-                if (!osName.contains("Linux")) {
+                // The corresponding finename entry for a component
+                // font name is mandatory on Windows, but it's
+                // optional on Solaris and Linux.
+                if (osName.contains("Windows")) {
+                    System.err.println("\n Error: <filename."
+                                       + getString(table_componentFontNameIDs[ii])
+                                       + "> entry is missing!!!");
                     errors++;
+                } else {
+                    if (verbose && !isEmpty(table_filenames)) {
+                        System.err.println("\n Note: 'filename' entry is undefined for \""
+                                           + getString(table_componentFontNameIDs[ii])
+                                           + "\"");
+                    }
                 }
             }
         }
@@ -1382,7 +1396,7 @@ public abstract class FontConfiguration {
                         int jj = iii * NUM_STYLES + iij;
                         short ffid = table_scriptFonts[fid + jj];
                         if (ffid == 0) {
-                            System.out.println("\n Error: <"
+                            System.err.println("\n Error: <"
                                            + getFontName(iii) + "."
                                            + getStyleName(iij) + "."
                                            + getString(table_scriptIDs[ii])
@@ -1402,7 +1416,7 @@ public abstract class FontConfiguration {
                         script.contains("symbol")) {
                         continue;
                     }
-                    System.out.println("\nError: "
+                    System.err.println("\nError: "
                                        + "<awtfontpath."
                                        + script
                                        + "> entry is missing!!!");
@@ -1411,11 +1425,19 @@ public abstract class FontConfiguration {
             }
         }
         if (errors != 0) {
-            System.out.println("!!THERE ARE " + errors + " ERROR(S) IN "
+            System.err.println("!!THERE ARE " + errors + " ERROR(S) IN "
                                + "THE FONTCONFIG FILE, PLEASE CHECK ITS CONTENT!!\n");
             System.exit(1);
-
         }
+    }
+
+    private static boolean isEmpty(short[] a) {
+        for (short s : a) {
+            if (s != -1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     //dump the fontconfig data tables
@@ -1652,20 +1674,16 @@ public abstract class FontConfiguration {
 
     private static void writeShortTable(DataOutputStream out, short[] data)
         throws IOException {
-        for (int i = 0; i < data.length; i++) {
-            out.writeShort(data[i]);
+        for (short val : data) {
+            out.writeShort(val);
         }
     }
 
-    private static short[] toList(HashMap map) {
+    private static short[] toList(HashMap<String, Short> map) {
         short[] list = new short[map.size()];
-        for (int i = 0; i < list.length; i++) {
-            list[i] = -1;
-        }
-        Iterator iterator = map.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Entry<String, Short> entry = (Entry <String, Short>)iterator.next();
-            list[entry.getValue().shortValue()] = getStringID(entry.getKey());
+        Arrays.fill(list, (short) -1);
+        for (Entry<String, Short> entry : map.entrySet()) {
+            list[entry.getValue()] = getStringID(entry.getKey());
         }
         return list;
     }
@@ -1763,25 +1781,19 @@ public abstract class FontConfiguration {
             int len = table_scriptIDs.length + scriptFonts.size() * 20;
             table_scriptFonts = new short[len];
 
-            Iterator iterator = scriptAllfonts.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<Short, Short> entry = (Entry <Short, Short>)iterator.next();
-                table_scriptFonts[entry.getKey().intValue()] = (short)entry.getValue().shortValue();
+            for (Entry<Short, Short> entry : scriptAllfonts.entrySet()) {
+                table_scriptFonts[entry.getKey().intValue()] = entry.getValue();
             }
             int off = table_scriptIDs.length;
-            iterator = scriptFonts.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<Short, Short[]> entry = (Entry <Short, Short[]>)iterator.next();
+            for (Entry<Short, Short[]> entry : scriptFonts.entrySet()) {
                 table_scriptFonts[entry.getKey().intValue()] = (short)-off;
                 Short[] v = entry.getValue();
-                int i = 0;
-                while (i < 20) {
+                for (int i = 0; i < 20; i++) {
                     if (v[i] != null) {
-                        table_scriptFonts[off++] = v[i].shortValue();
+                        table_scriptFonts[off++] = v[i];
                     } else {
                         table_scriptFonts[off++] = 0;
                     }
-                    i++;
                 }
             }
 
@@ -1792,9 +1804,7 @@ public abstract class FontConfiguration {
             //(3) sequences  elcID -> XXXX[1|5] -> scriptID[]
             head[INDEX_sequences] = (short)(head[INDEX_elcIDs]  + table_elcIDs.length);
             table_sequences = new short[elcIDs.size() * NUM_FONTS];
-            iterator = sequences.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<Short, short[]> entry = (Entry <Short, short[]>)iterator.next();
+            for (Entry<Short, short[]> entry : sequences.entrySet()) {
                 //table_sequences[entry.getKey().intValue()] = (short)-off;
                 int k = entry.getKey().intValue();
                 short[] v = entry.getValue();
@@ -1827,31 +1837,24 @@ public abstract class FontConfiguration {
             //(6)componentFontNameID -> filenameID
             head[INDEX_filenames] = (short)(head[INDEX_componentFontNameIDs]  + table_componentFontNameIDs.length);
             table_filenames = new short[table_componentFontNameIDs.length];
-            for (int i = 0; i < table_filenames.length; i++) {
-                table_filenames[i] = -1;
-            }
-            iterator = filenames.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<Short, Short> entry = (Entry <Short, Short>)iterator.next();
-                table_filenames[entry.getKey().shortValue()] = entry.getValue().shortValue();
+            Arrays.fill(table_filenames, (short) -1);
+
+            for (Entry<Short, Short> entry : filenames.entrySet()) {
+                table_filenames[entry.getKey()] = entry.getValue();
             }
 
             //(7)scriptID-> awtfontpath
             //the paths are stored as scriptID -> stringID in awtfontpahts
             head[INDEX_awtfontpaths] = (short)(head[INDEX_filenames]  + table_filenames.length);
             table_awtfontpaths = new short[table_scriptIDs.length];
-            iterator = awtfontpaths.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<Short, Short> entry = (Entry <Short, Short>)iterator.next();
-                table_awtfontpaths[entry.getKey().shortValue()] = entry.getValue().shortValue();
+            for (Entry<Short, Short> entry : awtfontpaths.entrySet()) {
+                table_awtfontpaths[entry.getKey()] = entry.getValue();
             }
 
             //(8)exclusions
             head[INDEX_exclusions] = (short)(head[INDEX_awtfontpaths]  + table_awtfontpaths.length);
             table_exclusions = new short[scriptIDs.size()];
-            iterator = exclusions.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<Short, int[]> entry = (Entry <Short, int[]>)iterator.next();
+            for (Entry<Short, int[]> entry : exclusions.entrySet()) {
                 int[] exI = entry.getValue();
                 char[] exC = new char[exI.length * 2];
                 int j = 0;
@@ -1859,17 +1862,15 @@ public abstract class FontConfiguration {
                     exC[j++] = (char) (exI[i] >> 16);
                     exC[j++] = (char) (exI[i] & 0xffff);
                 }
-                table_exclusions[entry.getKey().shortValue()] = getStringID(new String (exC));
+                table_exclusions[entry.getKey()] = getStringID(new String (exC));
             }
             //(9)proportionals
             head[INDEX_proportionals] = (short)(head[INDEX_exclusions]  + table_exclusions.length);
             table_proportionals = new short[proportionals.size() * 2];
-            iterator = proportionals.entrySet().iterator();
             int j = 0;
-            while (iterator.hasNext()) {
-                Entry<Short, Short> entry = (Entry <Short, Short>)iterator.next();
-                table_proportionals[j++] = entry.getKey().shortValue();
-                table_proportionals[j++] = entry.getValue().shortValue();
+            for (Entry<Short, Short> entry : proportionals.entrySet()) {
+                table_proportionals[j++] = entry.getKey();
+                table_proportionals[j++] = entry.getValue();
             }
 
             //(10) see (1) for info, the only difference is "xxx.motif"
@@ -1878,22 +1879,18 @@ public abstract class FontConfiguration {
                 len = table_scriptIDs.length + scriptFontsMotif.size() * 20;
                 table_scriptFontsMotif = new short[len];
 
-                iterator = scriptAllfontsMotif.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    Entry<Short, Short> entry = (Entry <Short, Short>)iterator.next();
+                for (Entry<Short, Short> entry : scriptAllfontsMotif.entrySet()) {
                     table_scriptFontsMotif[entry.getKey().intValue()] =
-                      (short)entry.getValue().shortValue();
+                      (short)entry.getValue();
                 }
                 off = table_scriptIDs.length;
-                iterator = scriptFontsMotif.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    Entry<Short, Short[]> entry = (Entry <Short, Short[]>)iterator.next();
+                for (Entry<Short, Short[]> entry : scriptFontsMotif.entrySet()) {
                     table_scriptFontsMotif[entry.getKey().intValue()] = (short)-off;
                     Short[] v = entry.getValue();
                     int i = 0;
                     while (i < 20) {
                         if (v[i] != null) {
-                            table_scriptFontsMotif[off++] = v[i].shortValue();
+                            table_scriptFontsMotif[off++] = v[i];
                         } else {
                             table_scriptFontsMotif[off++] = 0;
                         }
@@ -1907,12 +1904,10 @@ public abstract class FontConfiguration {
             //(11)short[] alphabeticSuffix
             head[INDEX_alphabeticSuffix] = (short)(head[INDEX_scriptFontsMotif] + table_scriptFontsMotif.length);
             table_alphabeticSuffix = new short[alphabeticSuffix.size() * 2];
-            iterator = alphabeticSuffix.entrySet().iterator();
             j = 0;
-            while (iterator.hasNext()) {
-                Entry<Short, Short> entry = (Entry <Short, Short>)iterator.next();
-                table_alphabeticSuffix[j++] = entry.getKey().shortValue();
-                table_alphabeticSuffix[j++] = entry.getValue().shortValue();
+            for (Entry<Short, Short> entry : alphabeticSuffix.entrySet()) {
+                table_alphabeticSuffix[j++] = entry.getKey();
+                table_alphabeticSuffix[j++] = entry.getValue();
             }
 
             //(15)short[] fallbackScriptIDs; just put the ID in head
