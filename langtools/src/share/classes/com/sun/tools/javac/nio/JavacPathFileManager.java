@@ -376,7 +376,8 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
                 new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                if (SourceVersion.isIdentifier(dir.getName().toString())) // JSR 292?
+                Path name = dir.getName();
+                if (name == null || SourceVersion.isIdentifier(name.toString())) // JSR 292?
                     return FileVisitResult.CONTINUE;
                 else
                     return FileVisitResult.SKIP_SUBTREE;
