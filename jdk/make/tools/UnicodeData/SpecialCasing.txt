@@ -1,10 +1,10 @@
-# SpecialCasing-5.1.0.txt
-# Date: 2008-03-03, 21:58:10 GMT [MD]
+# SpecialCasing-6.0.0.txt
+# Date: 2010-05-18, 00:49:39 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2008 Unicode, Inc.
+# Copyright (c) 1991-2010 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
-# For documentation, see UCD.html
+# For documentation, see http://www.unicode.org/reports/tr44/
 #
 # Special Casing Properties
 #
@@ -106,11 +106,11 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 1FE7; 1FE7; 03A5 0308 0342; 03A5 0308 0342; # GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND PERISPOMENI
 1FF6; 1FF6; 03A9 0342; 03A9 0342; # GREEK SMALL LETTER OMEGA WITH PERISPOMENI
 
-# IMPORTANT-when capitalizing iota-subscript (0345)
-#  It MUST be in normalized form--moved to the end of any sequence of combining marks.
-#  This is because logically it represents a following base character!
-#  E.g. <iota_subscript> (<Mn> | <Mc> | <Me>)+ => (<Mn> | <Mc> | <Me>)+ <iota_subscript>
-# It should never be the first character in a word, so in titlecasing it can be left as is.
+# IMPORTANT-when iota-subscript (0345) is uppercased or titlecased,
+#  the result will be incorrect unless the iota-subscript is moved to the end
+#  of any sequence of combining marks. Otherwise, the accents will go on the capital iota.
+#  This process can be achieved by first transforming the text to NFC before casing.
+#  E.g. <alpha><iota_subscript><acute> is uppercased to <ALPHA><acute><IOTA>
 
 # The following cases are already in the UnicodeData file, so are only commented here.
 

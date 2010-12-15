@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.expected2
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 int Expected2;

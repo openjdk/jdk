@@ -62,6 +62,7 @@ class JavadocClassReader extends ClassReader {
     private JavadocClassReader(Context context) {
         super(context, true);
         docenv = DocEnv.instance(context);
+        preferSource = true;
     }
 
     /**
