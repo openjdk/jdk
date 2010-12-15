@@ -36,6 +36,20 @@ REM
 REM Note: Running this batch file from the Windows command shell requires
 REM that "grep" be accessible on the PATH. An MKS install does this.
 REM 
+
+cl 2>NUL >NUL
+if %errorlevel% == 0 goto nexttest
+echo Make sure cl.exe is in your PATH before running this script.
+goto end
+
+:nexttest
+grep -V 2>NUL >NUL
+if %errorlevel% == 0 goto testit
+echo Make sure grep.exe is in your PATH before running this script. Either cygwin or MKS should work.
+goto end
+
+
+:testit
 cl 2>&1 | grep "IA-64" >NUL
 if %errorlevel% == 0 goto isia64
 cl 2>&1 | grep "AMD64" >NUL
@@ -44,37 +58,40 @@ set ARCH=x86
 set BUILDARCH=i486
 set Platform_arch=x86
 set Platform_arch_model=x86_32
-goto end
+goto done
 :amd64
 set ARCH=x86
 set BUILDARCH=amd64
 set Platform_arch=x86
 set Platform_arch_model=x86_64
-goto end
+goto done
 :isia64
 set ARCH=ia64
 set BUILDARCH=ia64
 set Platform_arch=ia64
 set Platform_arch_model=ia64
-:end
+:done
 
 setlocal
 
 if "%1" == "" goto usage
 
-if not "%4" == "" goto usage
+if not "%2" == "" goto usage
 
-set HotSpotWorkSpace=%1
-set HotSpotBuildSpace=%2
-set HotSpotJDKDist=%3
+REM Set HotSpotWorkSpace to the directy two steps above this script
+for %%i in ("%~dp0..") do ( set HotSpotWorkSpace=%%~dpi)
+set HotSpotBuildRoot=%HotSpotWorkSpace%build
+set HotSpotBuildSpace=%HotSpotBuildRoot%\vs
+set HotSpotJDKDist=%1
+
 
 REM figure out MSC version
 for /F %%i in ('sh %HotSpotWorkSpace%/make/windows/get_msc_ver.sh') do set %%i
 
 echo **************************************************************
-set ProjectFile=vm.vcproj
+set ProjectFile=jvm.vcproj
 if "%MSC_VER%" == "1200" (
-set ProjectFile=vm.dsp
+set ProjectFile=jvm.dsp
 echo Will generate VC6 project {unsupported}
 ) else (
 if "%MSC_VER%" == "1400" (
@@ -83,7 +100,13 @@ echo Will generate VC8 {Visual Studio 2005}
 if "%MSC_VER%" == "1500" (
 echo Will generate VC9 {Visual Studio 2008}
 ) else (
+if "%MSC_VER%" == "1600" (
+echo Detected Visual Studio 2010, but
+echo will generate VC9 {Visual Studio 2008}
+echo Use conversion wizard in VS 2010.
+) else (
 echo Will generate VC7 project {Visual Studio 2003 .NET}
+)
 )
 )
 )
@@ -118,6 +141,8 @@ goto usage
 
 :test3
 if not "%HOTSPOTMKSHOME%" == "" goto makedir
+if exist c:\cygwin\bin set HOTSPOTMKSHOME=c:\cygwin\bin
+if not "%HOTSPOTMKSHOME%" == "" goto makedir
 echo Warning: please set variable HOTSPOTMKSHOME to place where 
 echo          your MKS/Cygwin installation is
 echo.
@@ -133,21 +158,24 @@ echo   HotSpotJDKDist=%HotSpotJDKDist%
 REM This is now safe to do.
 :copyfiles
 for /D %%i in (compiler1, compiler2, tiered, core, kernel) do (
-if NOT EXIST %HotSpotBuildSpace%\%%i mkdir %HotSpotBuildSpace%\%%i
-copy %HotSpotWorkSpace%\make\windows\projectfiles\%%i\* %HotSpotBuildSpace%\%%i\ > NUL
+if NOT EXIST %HotSpotBuildSpace%\%%i\generated mkdir %HotSpotBuildSpace%\%%i\generated
+copy %HotSpotWorkSpace%\make\windows\projectfiles\%%i\* %HotSpotBuildSpace%\%%i\generated > NUL
 )
 
 REM force regneration of ProjectFile
 if exist %HotSpotBuildSpace%\%ProjectFile% del %HotSpotBuildSpace%\%ProjectFile%
 
 for /D %%i in (compiler1, compiler2, tiered, core, kernel) do (
-
-echo # Generated file!                                                 >    %HotSpotBuildSpace%\%%i\local.make
+echo -- %%i --
+echo # Generated file!                                                        >    %HotSpotBuildSpace%\%%i\local.make
 echo # Changing a variable below and then deleting %ProjectFile% will cause  >>    %HotSpotBuildSpace%\%%i\local.make
 echo # %ProjectFile% to be regenerated with the new values.  Changing the    >>    %HotSpotBuildSpace%\%%i\local.make
-echo # version requires rerunning create.bat.                         >>    %HotSpotBuildSpace%\%%i\local.make
+echo # version requires rerunning create.bat.                                >>    %HotSpotBuildSpace%\%%i\local.make
 echo.                                      >>    %HotSpotBuildSpace%\%%i\local.make
+echo Variant=%%i			   >>    %HotSpotBuildSpace%\%%i\local.make
+echo WorkSpace=%HotSpotWorkSpace%   	   >>    %HotSpotBuildSpace%\%%i\local.make
 echo HOTSPOTWORKSPACE=%HotSpotWorkSpace%   >>    %HotSpotBuildSpace%\%%i\local.make
+echo HOTSPOTBUILDROOT=%HotSpotBuildRoot%   >>    %HotSpotBuildSpace%\%%i\local.make
 echo HOTSPOTBUILDSPACE=%HotSpotBuildSpace% >>    %HotSpotBuildSpace%\%%i\local.make
 echo HOTSPOTJDKDIST=%HotSpotJDKDist%       >>    %HotSpotBuildSpace%\%%i\local.make
 echo ARCH=%ARCH%                           >>    %HotSpotBuildSpace%\%%i\local.make
@@ -155,42 +183,35 @@ echo BUILDARCH=%BUILDARCH%                 >>    %HotSpotBuildSpace%\%%i\local.m
 echo Platform_arch=%Platform_arch%         >>    %HotSpotBuildSpace%\%%i\local.make
 echo Platform_arch_model=%Platform_arch_model% >>    %HotSpotBuildSpace%\%%i\local.make
 
-pushd %HotSpotBuildSpace%\%%i
+for /D %%j in (debug, fastdebug, product) do (
+if NOT EXIST %HotSpotBuildSpace%\%%i\%%j mkdir %HotSpotBuildSpace%\%%i\%%j
+)
+
+pushd %HotSpotBuildSpace%\%%i\generated
 nmake /nologo
 popd
 
 )
 
-pushd %HotSpotBuildSpace%
+pushd %HotSpotBuildRoot%
 
-echo # Generated file!                                                 >    local.make
-echo # Changing a variable below and then deleting %ProjectFile% will cause  >>    local.make
-echo # %ProjectFile% to be regenerated with the new values.  Changing the    >>    local.make
-echo # version requires rerunning create.bat.                         >>    local.make
-echo.                                      >>    local.make
-echo HOTSPOTWORKSPACE=%HotSpotWorkSpace%   >>    local.make
-echo HOTSPOTBUILDSPACE=%HotSpotBuildSpace% >>    local.make
-echo HOTSPOTJDKDIST=%HotSpotJDKDist%       >>    local.make
-echo ARCH=%ARCH%                           >>    local.make
-echo BUILDARCH=%BUILDARCH%                 >>    local.make
-echo Platform_arch=%Platform_arch%         >>    local.make
-echo Platform_arch_model=%Platform_arch_model% >>    local.make
-
-nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile %HotSpotBuildSpace%/%ProjectFile%
+REM It doesn't matter which variant we use here, "compiler1" is as good as any of the others - we need the common variables
+nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile LOCAL_MAKE=%HotSpotBuildSpace%\compiler1\local.make %HotSpotBuildRoot%/%ProjectFile%
 
 popd
 
 goto end
 
 :usage
-echo Usage: create HotSpotWorkSpace HotSpotBuildSpace HotSpotJDKDist
+echo Usage: create HotSpotJDKDist
 echo.
-echo This is the interactive build setup script (as opposed to the batch
-echo build execution script). It creates HotSpotBuildSpace if necessary,
-echo copies the appropriate files out of HotSpotWorkSpace into it, and
+echo This is the VS build setup script (as opposed to the batch
+echo build execution script). It creates a build directory if necessary,
+echo copies the appropriate files out of the workspace into it, and
 echo builds and runs ProjectCreator in it. This has the side-effect of creating
 echo the %ProjectFile% file in the build space, which is then used in Visual C++.
-echo The HotSpotJDKDist defines place where JVM binaries should be placed.
+echo.
+echo The HotSpotJDKDist defines the JDK that should be used when running the JVM.
 echo Environment variable FORCE_MSC_VER allows to override MSVC version autodetection.
 echo.
 echo NOTE that it is now NOT safe to modify any of the files in the build

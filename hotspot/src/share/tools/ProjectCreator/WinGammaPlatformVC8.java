@@ -22,7 +22,7 @@
  *
  */
 
-import java.util.*;
+import java.util.Vector;
 
 public class WinGammaPlatformVC8 extends WinGammaPlatformVC7 {
 
@@ -40,6 +40,9 @@ class CompilerInterfaceVC8 extends CompilerInterfaceVC7 {
         addAttr(rv, "UsePrecompiledHeader", "2");
         // Set /EHsc- option. 0 is cppExceptionHandlingNo
         addAttr(rv, "ExceptionHandling", "0");
+
+        // enable multi process builds
+        extAttr(rv, "AdditionalOptions", "/MP");
 
         return rv;
     }

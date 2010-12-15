@@ -22,6 +22,7 @@
  *
  */
 
+#include <ctype.h>
 #include <windows.h>
 #include <io.h>
 #include <process.h>
@@ -486,16 +487,62 @@ GetApplicationHome(char *buf, jint bufsize)
 
 #else /* ifndef GAMMA */
 
-    /* gamma launcher uses JAVA_HOME or ALT_JAVA_HOME environment variable to find JDK/JRE */
-    char* java_home_var = getenv("ALT_JAVA_HOME");
-    if (java_home_var == NULL) {
-       java_home_var = getenv("JAVA_HOME");
+    char env[MAXPATHLEN + 1];
+
+    /* gamma launcher uses ALT_JAVA_HOME environment variable or jdkpath.txt file to find JDK/JRE */
+
+    if (getenv("ALT_JAVA_HOME") != NULL) {
+       snprintf(buf, bufsize, "%s", getenv("ALT_JAVA_HOME"));
     }
-    if (java_home_var == NULL) {
-       printf("JAVA_HOME or ALT_JAVA_HOME must point to a valid JDK/JRE to run gamma\n");
-       return JNI_FALSE;
+    else {
+       char path[MAXPATHLEN + 1];
+       char* p;
+       int len;
+       FILE* fp;
+
+       // find the path to the currect executable
+       len = GetModuleFileName(NULL, path, MAXPATHLEN + 1);
+       if (len == 0 || len > MAXPATHLEN) {
+          printf("Could not get directory of current executable.");
+          return JNI_FALSE;
+       }
+       // remove last path component ("hotspot.exe")
+       p = strrchr(path, '\\');
+       if (p == NULL) {
+          printf("Could not parse directory of current executable.\n");
+          return JNI_FALSE;
+       }
+       *p = '\0';
+
+       // open jdkpath.txt and read JAVA_HOME from it
+       if (strlen(path) + strlen("\\jdkpath.txt") + 1 >= MAXPATHLEN) {
+          printf("Path too long: %s\n", path);
+          return JNI_FALSE;
+       }
+       strcat(path, "\\jdkpath.txt");
+       fp = fopen(path, "r");
+       if (fp == NULL) {
+          printf("Could not open file %s to get path to JDK.\n", path);
+          return JNI_FALSE;
+       }
+
+       if (fgets(buf, bufsize, fp) == NULL) {
+          printf("Could not read from file %s to get path to JDK.\n", path);
+          fclose(fp);
+          return JNI_FALSE;
+       }
+       // trim the buffer
+       p = buf + strlen(buf) - 1;
+       while(isspace(*p)) {
+          *p = '\0';
+          p--;
+       }
+       fclose(fp);
     }
-    snprintf(buf, bufsize, "%s", java_home_var);
+
+    _snprintf(env, MAXPATHLEN, "JAVA_HOME=%s", buf);
+    _putenv(env);
+
     return JNI_TRUE;
 #endif /* ifndef GAMMA */
 }

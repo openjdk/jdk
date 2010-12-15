@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,7 +28,7 @@
 #include "jli_util.h"
 
 #ifdef GAMMA
-#ifdef _WINDOWS
+#ifdef TARGET_OS_FAMILY_windows
 #define strdup _strdup
 #endif
 #endif
