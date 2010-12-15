@@ -178,7 +178,7 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         jnbits = (*env)->GetObjectField(env, rasterP->jsampleModel,
                                         g_SPPSMnBitsID);
         if (jmask == NULL || joffs == NULL || jnbits == NULL ||
-            rasterP->sppsm.maxBitSize < 0 || rasterP->sppsm.maxBitSize > 8)
+            rasterP->sppsm.maxBitSize < 0)
         {
             JNU_ThrowInternalError(env, "Can't grab SPPSM fields");
             return -1;
@@ -278,6 +278,17 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         }
         (*env)->GetIntArrayRegion(env, joffs, 0, rasterP->numDataElements,
                                   rasterP->chanOffsets);
+    }
+
+    /* additioanl check for sppsm fields validity: make sure that
+     * size of raster samples doesn't exceed the data type cpacity.
+     */
+    if (rasterP->dataType > UNKNOWN_DATA_TYPE && /* data type has been recognized */
+        rasterP->sppsm.maxBitSize > 0 && /* raster has SPP sample model */
+        rasterP->sppsm.maxBitSize > (rasterP->dataSize * 8))
+    {
+        JNU_ThrowInternalError(env, "Raster samples are too big");
+        return -1;
     }
 
 #if 0
