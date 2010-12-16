@@ -518,18 +518,21 @@ bool klassVtable::is_miranda_entry_at(int i) {
 bool klassVtable::is_miranda(methodOop m, objArrayOop class_methods, klassOop super) {
   symbolOop name = m->name();
   symbolOop signature = m->signature();
+
   if (instanceKlass::find_method(class_methods, name, signature) == NULL) {
-     // did not find it in the method table of the current class
+    // did not find it in the method table of the current class
     if (super == NULL) {
       // super doesn't exist
       return true;
-    } else {
-      if (instanceKlass::cast(super)->lookup_method(name, signature) == NULL) {
-        // super class hierarchy does not implement it
-        return true;
-      }
+    }
+
+    methodOop mo = instanceKlass::cast(super)->lookup_method(name, signature);
+    if (mo == NULL || mo->access_flags().is_private() ) {
+      // super class hierarchy does not implement it or protection is different
+      return true;
     }
   }
+
   return false;
 }
 

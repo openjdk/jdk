@@ -1796,6 +1796,29 @@ JvmtiEnv::GetLocalObject(JavaThread* java_thread, jint depth, jint slot, jobject
   }
 } /* end GetLocalObject */
 
+// Threads_lock NOT held, java_thread not protected by lock
+// java_thread - pre-checked
+// java_thread - unchecked
+// depth - pre-checked as non-negative
+// value - pre-checked for NULL
+jvmtiError
+JvmtiEnv::GetLocalInstance(JavaThread* java_thread, jint depth, jobject* value){
+  JavaThread* current_thread = JavaThread::current();
+  // rm object is created to clean up the javaVFrame created in
+  // doit_prologue(), but after doit() is finished with it.
+  ResourceMark rm(current_thread);
+
+  VM_GetReceiver op(java_thread, current_thread, depth);
+  VMThread::execute(&op);
+  jvmtiError err = op.result();
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  } else {
+    *value = op.value().l;
+    return JVMTI_ERROR_NONE;
+  }
+} /* end GetLocalInstance */
+
 
 // Threads_lock NOT held, java_thread not protected by lock
 // java_thread - pre-checked

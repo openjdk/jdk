@@ -22,8 +22,13 @@
  *
  */
 
-import java.io.*;
-import java.util.*;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.TreeSet;
+import java.util.Vector;
 
 public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
@@ -104,7 +109,9 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
 
         boolean match(FileInfo fi) {
-            return fi.full.regionMatches(true, baseLen, dir, 0, dirLen);
+           int lastSlashIndex = fi.full.lastIndexOf('/');
+           String fullDir = fi.full.substring(0, lastSlashIndex);
+           return fullDir.endsWith(dir);
         }
     }
 
@@ -217,65 +224,41 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
     //   - container filter just provides a container to group together real filters
     //   - real filter can select elements from the set according to some rule, put it into XML
     //     and remove from the list
-    Vector makeFilters(TreeSet files) {
+    Vector makeFilters(TreeSet<FileInfo> files) {
         Vector rv = new Vector();
         String sbase = Util.normalize(BuildConfig.getFieldString(null, "SourceBase")+"/src/");
 
-        ContainerFilter rt = new ContainerFilter("Runtime");
-        rt.add(new DirectoryFilter("share/vm/prims", sbase));
-        rt.add(new DirectoryFilter("share/vm/runtime", sbase));
-        rt.add(new DirectoryFilter("share/vm/oops", sbase));
-        rv.add(rt);
+        String currentDir = "";
+        DirectoryFilter container = null;
+        for(FileInfo fileInfo : files) {
 
-        ContainerFilter gc = new ContainerFilter("GC");
-        gc.add(new DirectoryFilter("share/vm/memory", sbase));
-        gc.add(new DirectoryFilter("share/vm/gc_interface", sbase));
+           if (!fileInfo.full.startsWith(sbase)) {
+              continue;
+           }
 
-        ContainerFilter gc_impl = new ContainerFilter("Implementations");
-        gc_impl.add(new DirectoryFilter("CMS",
-                                        "share/vm/gc_implementation/concurrentMarkSweep",
-                                        sbase));
-        gc_impl.add(new DirectoryFilter("Parallel Scavenge",
-                                        "share/vm/gc_implementation/parallelScavenge",
-                                        sbase));
-        gc_impl.add(new DirectoryFilter("Shared",
-                                        "share/vm/gc_implementation/shared",
-                                        sbase));
-        // for all leftovers
-        gc_impl.add(new DirectoryFilter("Misc",
-                                        "share/vm/gc_implementation",
-                                        sbase));
+           int lastSlash = fileInfo.full.lastIndexOf('/');
+           String dir = fileInfo.full.substring(sbase.length(), lastSlash);
+           if(dir.equals("share/vm")) {
+              // skip files directly in share/vm - should only be precompiled.hpp which is handled below
+              continue;
+           }
+           if (!dir.equals(currentDir)) {
+              currentDir = dir;
+              if (container != null) {
+                 rv.add(container);
+              }
 
-        gc.add(gc_impl);
-        rv.add(gc);
-
-        rv.add(new DirectoryFilter("C1", "share/vm/c1", sbase));
-
-        rv.add(new DirectoryFilter("C2", "share/vm/opto", sbase));
-
-        ContainerFilter comp = new ContainerFilter("Compiler Common");
-        comp.add(new DirectoryFilter("share/vm/asm", sbase));
-        comp.add(new DirectoryFilter("share/vm/ci", sbase));
-        comp.add(new DirectoryFilter("share/vm/code", sbase));
-        comp.add(new DirectoryFilter("share/vm/compiler", sbase));
-        rv.add(comp);
-
-        rv.add(new DirectoryFilter("Interpreter",
-                                   "share/vm/interpreter",
-                                   sbase));
-
-        ContainerFilter misc = new ContainerFilter("Misc");
-        misc.add(new DirectoryFilter("share/vm/libadt", sbase));
-        misc.add(new DirectoryFilter("share/vm/services", sbase));
-        misc.add(new DirectoryFilter("share/vm/utilities", sbase));
-        misc.add(new DirectoryFilter("share/vm/classfile", sbase));
-        rv.add(misc);
-
-        rv.add(new DirectoryFilter("os_cpu", sbase));
-
-        rv.add(new DirectoryFilter("cpu", sbase));
-
-        rv.add(new DirectoryFilter("os", sbase));
+              // remove "share/vm/" from names
+              String name = dir;
+              if (dir.startsWith("share/vm/")) {
+                 name = dir.substring("share/vm/".length(), dir.length());
+              }
+              container = new DirectoryFilter(name, dir, sbase);
+           }
+        }
+        if (container != null) {
+           rv.add(container);
+        }
 
         ContainerFilter generated = new ContainerFilter("Generated");
         ContainerFilter c1Generated = new ContainerFilter("C1");
@@ -397,7 +380,6 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
                                          "Name", cfg,
                                          "ExcludedFromBuild", "TRUE"
                                      });
-                            tag("Tool", new String[] {"Name", "VCCLCompilerTool"});
                             endTag("FileConfiguration");
 
                         }
@@ -441,7 +423,11 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
         tag("Tool",
             new String[] {
-                "Name", "VCPostBuildEventTool"
+               "Name", "VCPostBuildEventTool",
+                "Description", BuildConfig.getFieldString(null, "PostbuildDescription"),
+                //Caution: String.replace(String,String) is available from JDK5 onwards only
+                "CommandLine", cfg.expandFormat(BuildConfig.getFieldString(null, "PostbuildCommand").replace
+                   ("\t", "&#x0D;&#x0A;"))
             }
             );
 
@@ -467,33 +453,6 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
                 // XXX???
                 "PreprocessorDefinitions", "NDEBUG",
                 "Culture", "1033"
-            }
-            );
-        tag("Tool",
-            new String[] {
-              "Name", "VCWebServiceProxyGeneratorTool"
-            }
-            );
-
-        tag ("Tool",
-             new String[] {
-              "Name", "VCXMLDataGeneratorTool"
-             }
-             );
-
-        tag("Tool",
-            new String[] {
-              "Name", "VCWebDeploymentTool"
-            }
-            );
-        tag("Tool",
-             new String[] {
-            "Name", "VCManagedWrapperGeneratorTool"
-             }
-            );
-        tag("Tool",
-            new String[] {
-              "Name", "VCAuxiliaryManagedWrapperGeneratorTool"
             }
             );
 
@@ -597,7 +556,7 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "PrecompiledHeaderFile", outDir+Util.sep+"vm.pch");
         addAttr(rv, "AssemblerListingLocation", outDir);
         addAttr(rv, "ObjectFile", outDir+Util.sep);
-        addAttr(rv, "ProgramDataBaseFileName", outDir+Util.sep+"vm.pdb");
+        addAttr(rv, "ProgramDataBaseFileName", outDir+Util.sep+"jvm.pdb");
         // Set /nologo optin
         addAttr(rv, "SuppressStartupBanner", "TRUE");
         // Surpass the default /Tc or /Tp. 0 is compileAsDefault
@@ -631,17 +590,22 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "AdditionalOptions",
                 "/export:JNI_GetDefaultJavaVMInitArgs " +
                 "/export:JNI_CreateJavaVM " +
+                "/export:JVM_FindClassFromBootLoader "+
                 "/export:JNI_GetCreatedJavaVMs "+
                 "/export:jio_snprintf /export:jio_printf "+
                 "/export:jio_fprintf /export:jio_vfprintf "+
-                "/export:jio_vsnprintf ");
+                "/export:jio_vsnprintf "+
+                "/export:JVM_GetVersionInfo "+
+                "/export:JVM_GetThreadStateNames "+
+                "/export:JVM_GetThreadStateValues "+
+                "/export:JVM_InitAgentProperties ");
         addAttr(rv, "AdditionalDependencies", "Wsock32.lib winmm.lib");
         addAttr(rv, "OutputFile", outDll);
         // Set /INCREMENTAL option. 1 is linkIncrementalNo
         addAttr(rv, "LinkIncremental", "1");
         addAttr(rv, "SuppressStartupBanner", "TRUE");
         addAttr(rv, "ModuleDefinitionFile", outDir+Util.sep+"vm.def");
-        addAttr(rv, "ProgramDatabaseFile", outDir+Util.sep+"vm.pdb");
+        addAttr(rv, "ProgramDatabaseFile", outDir+Util.sep+"jvm.pdb");
         // Set /SUBSYSTEM option. 2 is subSystemWindows
         addAttr(rv, "SubSystem", "2");
         addAttr(rv, "BaseAddress", "0x8000000");
@@ -680,6 +644,11 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "GenerateDebugInformation", "TRUE"); // == /DEBUG option
 
         return rv;
+    }
+
+    void getAdditionalNonKernelLinkerFlags(Vector rv) {
+        extAttr(rv, "AdditionalOptions",
+                "/export:AsyncGetCallTrace ");
     }
 
     void getProductCompilerFlags_common(Vector rv) {

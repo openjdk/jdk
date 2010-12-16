@@ -124,7 +124,7 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
 BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make sa.make \
-        env.sh env.csh .dbxrc test_gamma
+        env.sh env.csh jdkpath.sh .dbxrc test_gamma
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 	ARCH=$(ARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
@@ -317,6 +317,13 @@ env.csh: env.sh
 	{ echo "if (! \$$?JAVA_HOME) setenv JAVA_HOME \"$$JAVA_HOME\""; }; \
 	sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=/setenv \1 /p' $?; \
 	) > $@
+
+jdkpath.sh: $(BUILDTREE_MAKE)
+	@echo Creating $@ ...
+	$(QUIETLY) ( \
+	$(BUILDTREE_COMMENT); \
+	echo "JDK=${JAVA_HOME}"; \
+	) > $@	   
 
 .dbxrc:  $(BUILDTREE_MAKE)
 	@echo Creating $@ ...
