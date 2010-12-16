@@ -51,7 +51,7 @@
  * changes being made to the Java Virtual Machine specification for JSR 292.
  * This information will be incorporated in a future version of the JVM specification.</em>
  *
- * <h3>{@code invokedynamic} instruction format</h3>
+ * <h3><a name="indyinsn"></a>{@code invokedynamic} instruction format</h3>
  * In bytecode, an {@code invokedynamic} instruction is formatted as five bytes.
  * The first byte is the opcode 186 (hexadecimal {@code BA}).
  * The next two bytes are a constant pool index (in the same format as for the other {@code invoke} instructions).
@@ -82,7 +82,7 @@
  * instead of a {@code CONSTANT_InvokeDynamic}.  In earlier, obsolete versions of this API, the
  * bootstrap method was specified dynamically, in a per-class basis, during class initialization.)
  *
- * <h3>constant pool entries for {@code invokedynamic} instructions</h3>
+ * <h3><a name="indycon"></a>constant pool entries for {@code invokedynamic} instructions</h3>
  * If a constant pool entry has the tag {@code CONSTANT_InvokeDynamic} (decimal 18),
  * it must contain exactly four more bytes after the tag.
  * These bytes are interpreted as two 16-bit indexes, in the usual {@code u2} format.
@@ -109,7 +109,7 @@
  * <em>(Note: The Proposed Final Draft of this specification is likely to support
  * only the tag 18, not the tag 17.)</em>
  *
- * <h3>constant pool entries for {@linkplain java.dyn.MethodType method types}</h3>
+ * <h3><a name="mtcon"></a>constant pool entries for {@linkplain java.dyn.MethodType method types}</h3>
  * If a constant pool entry has the tag {@code CONSTANT_MethodType} (decimal 16),
  * it must contain exactly two more bytes, which must be an index to a {@code CONSTANT_Utf8}
  * entry which represents a method type signature.
@@ -121,13 +121,8 @@
  * but not initialized.
  * Access checking and error reporting is performed exactly as it is for
  * references by {@code ldc} instructions to {@code CONSTANT_Class} constants.
- * <p>
- * Every use of this constant pool entry must lead to the same outcome.
- * If the resolution of the names in the method type constant causes an exception to occur,
- * this exception must be recorded by the JVM, and re-thrown on every subsequent attempt
- * to use this particular constant.
  *
- * <h3>constant pool entries for {@linkplain java.dyn.MethodHandle method handles}</h3>
+ * <h3><a name="mhcon"></a>constant pool entries for {@linkplain java.dyn.MethodHandle method handles}</h3>
  * If a constant pool entry has the tag {@code CONSTANT_MethodHandle} (decimal 15),
  * it must contain exactly three more bytes.  The first byte after the tag is a subtag
  * value which must be in the range 1 through 9, and the last two must be an index to a
@@ -162,7 +157,8 @@
  * </table>
  * </code>
  * <p>
- * The special names {@code <init>} and {@code <clinit>} are not allowed except for subtag 8 as shown.
+ * The special name {@code <clinit>} is not allowed.
+ * The special name {@code <init>} is not allowed except for subtag 8 as shown.
  * <p>
  * The JVM verifier and linker apply the same access checks and restrictions for these references as for the hypothetical
  * bytecode instructions specified in the last column of the table.  In particular, method handles to
@@ -183,10 +179,23 @@
  * Method handle constants for subtags {@code REF_getStatic}, {@code REF_putStatic}, and {@code REF_invokeStatic}
  * may force class initialization on their first invocation, just like the corresponding bytecodes.
  * <p>
- * Every use of this constant pool entry must lead to the same outcome.
- * If the resolution of the names in the method handle constant causes an exception to occur,
- * this exception must be recorded by the JVM, and re-thrown on every subsequent attempt
- * to use this particular constant.
+ * The rules of section 5.4.3 of the
+ * <a href="http://java.sun.com/docs/books/jvms/second_edition/html/ConstantPool.doc.html#73492">JVM Specification</a>
+ * apply to the resolution of {@code CONSTANT_MethodType}, {@code CONSTANT_MethodHandle},
+ * and {@code CONSTANT_InvokeDynamic} constants,
+ * by the execution of {@code invokedynamic} and {@code ldc} instructions.
+ * (Roughly speaking, this means that every use of a constant pool entry
+ * must lead to the same outcome.
+ * If the resoultion succeeds, the same object reference is produced
+ * by every subsequent execution of the same instruction.
+ * If the resolution of the constant causes an error to occur,
+ * the same error will be re-thrown on every subsequent attempt
+ * to use this particular constant.)
+ * <p>
+ * Constants created by the resolution of these constant pool types are not necessarily
+ * interned.  Except for {@link CONSTANT_Class} and {@link CONSTANT_String} entries,
+ * two distinct constant pool entries might not resolve to the same reference
+ * even if they contain the same symbolic reference.
  *
  * <h2><a name="bsm"></a>Bootstrap Methods</h2>
  * Before the JVM can execute a dynamic call site (an {@code invokedynamic} instruction),
@@ -263,7 +272,7 @@
  *     the expected {@code MethodType} </li>
  * </ul>
  *
- * <h3>timing of linkage</h3>
+ * <h3><a name="linktime"></a>timing of linkage</h3>
  * A dynamic call site is linked just before its first execution.
  * The bootstrap method call implementing the linkage occurs within
  * a thread that is attempting a first execution.
@@ -398,6 +407,7 @@
  * Such a practice is likely to produce large class files and constant pools.
  *
  * <p style="font-size:smaller;">
+ * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
  * (Usage Note: There is no mechanism for specifying five or more positional arguments to the bootstrap method.
  * If there are two or more arguments, the Java code of the bootstrap method is required to extract them from
  * a varargs-style object array.
@@ -414,7 +424,7 @@
  * {@link java.dyn.MethodHandle#asSpreader asSpreader}
  * and {@link java.dyn.MethodHandle#asSpreader asCollector} methods.)
  *
- * <h2>Structure Summary</h2>
+ * <h2><a name="structs"></a>Structure Summary</h2>
  * <blockquote><pre>// summary of constant and attribute structures
 struct CONSTANT_MethodHandle_info {
   u1 tag = 15;

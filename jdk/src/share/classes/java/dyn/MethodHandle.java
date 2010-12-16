@@ -128,8 +128,11 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * <p>
  * Bytecode in the JVM can directly obtain a method handle
  * for any accessible method from a {@code ldc} instruction
- * which refers to a {@code CONSTANT_Methodref} or
- * {@code CONSTANT_InterfaceMethodref} constant pool entry.
+ * which refers to a {@code CONSTANT_MethodHandle} constant pool entry.
+ * (Each such entry refers directly to a {@code CONSTANT_Methodref},
+ * {@code CONSTANT_InterfaceMethodref}, or {@code CONSTANT_Fieldref}
+ * constant pool entry.
+ * For more details, see the <a href="package-summary.html#mhcon">package summary</a>.)
  * <p>
  * Java code can also use a reflective API called
  * {@link java.dyn.MethodHandles.Lookup MethodHandles.Lookup}
@@ -185,12 +188,20 @@ mh = lookup.findVirtual(java.util.List.class, "size", mt);
 // (Ljava/util/List;)I
 i = (int) mh.invokeExact(java.util.Arrays.asList(1,2,3));
 assert(i == 3);
+mt = MethodType.methodType(void.class, String.class);
+mh = lookup.findVirtual(java.io.PrintStream.class, "println", mt);
+mh.invokeExact(System.out, "Hello, world.");
+// (Ljava/io/PrintStream;Ljava/lang/String;)V
  * </pre></blockquote>
  * Each of the above calls generates a single invokevirtual instruction
  * with the name {@code invoke} and the type descriptors indicated in the comments.
  * The argument types are taken directly from the actual arguments,
- * while the return type is taken from the type parameter.
- * (This type parameter may be a primitive, and it defaults to {@code Object}.)
+ * while the return type is taken from the cast immediately applied to the call.
+ * This cast may be to a primitive.
+ * If it is missing, the type defaults to {@code Object} if the call
+ * occurs in a context which uses the return value.
+ * If the call occurs as a statement, a cast is impossible,
+ * and there is no return type; the call is {@code void}.
  * <p>
  * <em>A note on generic typing:</em>  Method handles do not represent
  * their function types in terms of Java parameterized (generic) types,
@@ -216,6 +227,19 @@ assert(i == 3);
  * fields, methods, and constructors can be represented directly
  * in a class file's constant pool as constants to be loaded by {@code ldc} bytecodes.
  * Loading such a constant causes the component classes of its type to be loaded as necessary.
+ * <p>
+ * Method handles cannot be subclassed by the user.
+ * Implementations may (or may not) create internal subclasses of {@code MethodHandle}
+ * which may be visible via the {@code java.lang.Object#getClass Object.getClass}
+ * operation.  The programmer should not draw conclusions about a method handle
+ * from its specific class, as the method handle class hierarchy (if any)
+ * may change from time to time or across implementations from different vendors.
+ * <p>
+ * With respect to the Java Memory Model, any method handle will behave
+ * as if all of its fields are final variables.  This means that any method
+ * handle made visible to the application will always be fully formed.
+ * This is true even if the method handle is published through a shared
+ * variables in a data race.
  *
  * @see MethodType
  * @see MethodHandles
@@ -282,8 +306,20 @@ public abstract class MethodHandle
         });
     }
 
-    /** Produce a printed representation that displays information about this call site
-     *  that may be useful to the human reader.
+    /**
+     * Returns a string representation of the method handle,
+     * starting with the string {@code "MethodHandle"} and
+     * ending with the string representation of the method handle's type.
+     * In other words, this method returns a string equal to the value of:
+     * <blockquote><pre>
+     * "MethodHandle" + type().toString()
+     * </pre></blockquote>
+     * <p>
+     * Note:  Future releases of this API may add further information
+     * to the string representation.
+     * Therefore, the present syntax should not be parsed by applications.
+     *
+     * @return a string representation of the method handle
      */
     @Override
     public String toString() {
@@ -512,7 +548,7 @@ public abstract class MethodHandle
         if (nargs < arrayLength)  throw newIllegalArgumentException("bad spread array length");
         int keepPosArgs = nargs - arrayLength;
         MethodType newType = oldType.dropParameterTypes(keepPosArgs, nargs);
-        newType = newType.insertParameterTypes(keepPosArgs, arrayElement);
+        newType = newType.insertParameterTypes(keepPosArgs, arrayType);
         return MethodHandles.spreadArguments(this, newType);
     }
 
@@ -610,6 +646,14 @@ public abstract class MethodHandle
      * else if the type of the target does not exactly match
      * the requested type, a {@link WrongMethodTypeException} is thrown.
      * <p>
+     * A method handle's type handler is not guaranteed to be called every
+     * time its {@code asType} or {@code invokeGeneric} method is called.
+     * If the implementation is faced is able to prove that an equivalent
+     * type handler call has already occurred (on the same two arguments),
+     * it may substitute the result of that previous invocation, without
+     * making a new invocation.  Thus, type handlers should not (in general)
+     * perform significant side effects.
+     * <p>
      * Therefore, the type handler is invoked as if by this code:
      * <blockquote><pre>
      * MethodHandle target = this;      // original method handle
@@ -637,9 +681,9 @@ MethodHandle collectingTypeHandler = lookup()
      methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
 MethodHandle makeAnyList = makeEmptyList.withTypeHandler(collectingTypeHandler);
 
-System.out.println(makeAnyList.invokeGeneric()); // prints []
-System.out.println(makeAnyList.invokeGeneric(1)); // prints [1]
-System.out.println(makeAnyList.invokeGeneric("two", "too")); // prints [two, too]
+assertEquals("[]", makeAnyList.invokeGeneric().toString());
+assertEquals("[1]", makeAnyList.invokeGeneric(1).toString());
+assertEquals("[two, too]", makeAnyList.invokeGeneric("two", "too").toString());
      * <pre><blockquote>
      */
     public MethodHandle withTypeHandler(MethodHandle typeHandler) {

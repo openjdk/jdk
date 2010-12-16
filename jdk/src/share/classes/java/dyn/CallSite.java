@@ -35,14 +35,25 @@ import java.util.Collection;
  * which is called its {@code target}.
  * An {@code invokedynamic} instruction linked to a {@code CallSite} delegates
  * all calls to the site's current target.
+ * A {@code CallSite} may be associated with several {@code invokedynamic}
+ * instructions, or it may be "free floating", associated with none.
+ * In any case, it may be invoked through an associated method handle
+ * called its {@linkplain #dynamicInvoker dynamic invoker}.
  * <p>
- * If a mutable target is not required, the {@code invokedynamic} instruction
- * should be linked to a {@linkplain ConstantCallSite constant call site}.
- * If a volatile target is required, because updates to the target must be
- * reliably witnessed by other threads, the {@code invokedynamic} instruction
- * should be linked to a {@linkplain VolatileCallSite volatile call site}.
+ * {@code CallSite} is an abstract class which does not allow
+ * direct subclassing by users.  It has three immediate,
+ * concrete subclasses that may be either instantiated or subclassed.
+ * <ul>
+ * <li>If a mutable target is not required, an {@code invokedynamic} instruction
+ * may be permanently bound by means of a {@linkplain ConstantCallSite constant call site}.
+ * <li>If a mutable target is required which has volatile variable semantics,
+ * because updates to the target must be immediately and reliably witnessed by other threads,
+ * a {@linkplain VolatileCallSite volatile call site} may be used.
+ * <li>Otherwise, if a mutable target is required,
+ * a {@linkplain MutableCallSite mutable call site} may be used.
+ * </ul>
  * <p>
- * A call site may be <em>relinked</em> by changing its target.
+ * A non-constant call site may be <em>relinked</em> by changing its target.
  * The new target must have the same {@linkplain MethodHandle#type() type}
  * as the previous target.
  * Thus, though a call site can be relinked to a series of
@@ -72,6 +83,7 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
 </pre></blockquote>
  * @author John Rose, JSR 292 EG
  */
+abstract
 public class CallSite {
     private static final Access IMPL_TOKEN = Access.getToken();
 
@@ -87,7 +99,6 @@ public class CallSite {
     private MemberName calleeNameRemoveForPFD;
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Make a blank call site object with the given method type.
      * An initial target method is supplied which will throw
      * an {@link IllegalStateException} if called.
@@ -95,16 +106,20 @@ public class CallSite {
      * Before this {@code CallSite} object is returned from a bootstrap method,
      * it is usually provided with a more useful target method,
      * via a call to {@link CallSite#setTarget(MethodHandle) setTarget}.
+     * @throws NullPointerException if the proposed type is null
      */
-    public CallSite(MethodType type) {
+    /*package-private*/
+    CallSite(MethodType type) {
         target = MethodHandles.invokers(type).uninitializedCallSite();
     }
 
     /**
      * Make a blank call site object, possibly equipped with an initial target method handle.
      * @param target the method handle which will be the initial target of the call site
+     * @throws NullPointerException if the proposed target is null
      */
-    public CallSite(MethodHandle target) {
+    /*package-private*/
+    CallSite(MethodHandle target) {
         target.type();  // null check
         this.target = target;
     }
@@ -199,6 +214,8 @@ public class CallSite {
      * @throws NullPointerException if the proposed new target is null
      * @throws WrongMethodTypeException if the proposed new target
      *         has a method type that differs from the previous target
+     * @throws UnsupportedOperationException if the call site is
+     *         in fact a {@link ConstantCallSite}
      */
     public void setTarget(MethodHandle newTarget) {
         checkTargetChange(this.target, newTarget);
@@ -214,14 +231,6 @@ public class CallSite {
 
     private static WrongMethodTypeException wrongTargetType(MethodHandle target, MethodType type) {
         return new WrongMethodTypeException(String.valueOf(target)+" should be of type "+type);
-    }
-
-    /** Produce a printed representation that displays information about this call site
-     *  that may be useful to the human reader.
-     */
-    @Override
-    public String toString() {
-        return super.toString() + type();
     }
 
     /**
@@ -240,7 +249,7 @@ public class CallSite {
      */
     public final MethodHandle dynamicInvoker() {
         if (this instanceof ConstantCallSite) {
-            return target;  // will not change dynamically
+            return getTarget0();  // will not change dynamically
         }
         MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, GET_TARGET, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());

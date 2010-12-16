@@ -155,16 +155,39 @@ public class MethodHandles {
         /** The class on behalf of whom the lookup is being performed. */
         private final Class<?> lookupClass;
 
-        /** The allowed sorts of members which may be looked up (public, etc.), with STATIC for package. */
+        /** The allowed sorts of members which may be looked up (PUBLIC, etc.). */
         private final int allowedModes;
 
-        private static final int
-            PUBLIC    = Modifier.PUBLIC,
-            PACKAGE   = Modifier.STATIC,
-            PROTECTED = Modifier.PROTECTED,
-            PRIVATE   = Modifier.PRIVATE,
-            ALL_MODES = (PUBLIC | PACKAGE | PROTECTED | PRIVATE),
-            TRUSTED   = -1;
+        /** A single-bit mask representing {@code public} access,
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value, {@code 0x01}, happens to be the same as the value of the
+         *  {@code public} {@linkplain java.lang.reflect.Modifier#PUBLIC modifier bit}.
+         */
+        public static final int PUBLIC = Modifier.PUBLIC;
+
+        /** A single-bit mask representing {@code private} access,
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value, {@code 0x02}, happens to be the same as the value of the
+         *  {@code private} {@linkplain java.lang.reflect.Modifier#PRIVATE modifier bit}.
+         */
+        public static final int PRIVATE = Modifier.PRIVATE;
+
+        /** A single-bit mask representing {@code protected} access,
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value, {@code 0x04}, happens to be the same as the value of the
+         *  {@code protected} {@linkplain java.lang.reflect.Modifier#PROTECTED modifier bit}.
+         */
+        public static final int PROTECTED = Modifier.PROTECTED;
+
+        /** A single-bit mask representing {@code package} access (default access),
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value is {@code 0x08}, which does not correspond meaningfully to
+         *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
+         */
+        public static final int PACKAGE = Modifier.STATIC;
+
+        private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE);
+        private static final int TRUSTED   = -1;
 
         private static int fixmods(int mods) {
             mods &= (ALL_MODES - PACKAGE);
@@ -189,13 +212,11 @@ public class MethodHandles {
         }
 
         /** Which types of members can this lookup object produce?
-         *  The result is a bit-mask of the {@link java.lang.reflect.Modifier Modifier} bits
-         *  {@linkplain java.lang.reflect.Modifier#PUBLIC PUBLIC (0x01)},
-         *  {@linkplain java.lang.reflect.Modifier#PROTECTED PROTECTED (0x02)},
-         *  {@linkplain java.lang.reflect.Modifier#PRIVATE PRIVATE (0x04)},
-         *  and {@linkplain java.lang.reflect.Modifier#STATIC STATIC (0x08)}.
-         *  The modifier bit {@code STATIC} stands in for the package protection mode,
-         *  which does not have an explicit modifier bit.
+         *  The result is a bit-mask of the bits
+         *  {@linkplain #PUBLIC PUBLIC (0x01)},
+         *  {@linkplain #PRIVATE PRIVATE (0x02)},
+         *  {@linkplain #PROTECTED PROTECTED (0x04)},
+         *  and {@linkplain #PACKAGE PACKAGE (0x08)}.
          *  <p>
          *  A freshly-created lookup object
          *  on the {@linkplain java.dyn.MethodHandles#lookup() caller's class}
@@ -238,7 +259,7 @@ public class MethodHandles {
         /**
          * Create a lookup on the specified new lookup class.
          * The resulting object will report the specified
-         * class as its own {@link #lookupClass}.
+         * class as its own {@link #lookupClass lookupClass}.
          * <p>
          * However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
@@ -300,35 +321,43 @@ public class MethodHandles {
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
         }
 
-        /** Display the name of the class.
-         *  If there are restrictions on the access permitted to this lookup,
-         *  display those also.
+        /**
+         * Display the name of the class from which lookups are to be made.
+         * (The name is the one reported by {@link java.lang.Class#getName() Class.getName}.)
+         * If there are restrictions on the access permitted to this lookup,
+         * this is indicated by adding a suffix to the class name, consisting
+         * of a slash and a keyword.  The keyword is chosen as follows:
+         * <ul>
+         * <li>If no access is allowed, the suffix is "/noaccess".
+         * <li>If only public access is allowed, the suffix is "/public".
+         * <li>If only public and package access are allowed, the suffix is "/package".
+         * <li>If only public, package, and private access are allowed, the suffix is "/private".
+         * </ul>
+         * If none of the above cases apply, it is the case that full
+         * access (public, package, private, and protected) is allowed.
+         * In this case, no suffix is added.
+         * This is true only of an object obtained originally from
+         * {@link java.dyn.MethodHandles#lookup() MethodHandles.lookup}.
+         * Objects created by {@link java.dyn.MethodHandles.Lookup#in() Lookup#in}
+         * always have restricted access, and will display a suffix.
          */
         @Override
         public String toString() {
-            String modestr;
             String cname = lookupClass.getName();
             switch (allowedModes) {
             case TRUSTED:
-                return "/trusted";
+                return "/trusted";  // internal only
             case PUBLIC:
-                modestr = "/public";
-                if (lookupClass == Object.class)
-                    return modestr;
-                break;
+                return cname + "/public";
             case PUBLIC|PACKAGE:
                 return cname + "/package";
             case 0:  // no privileges
                 return cname + "/noaccess";
             case ALL_MODES:
                 return cname;
+            default:
+                return cname + "/private";
             }
-            StringBuilder buf = new StringBuilder(cname);
-            if ((allowedModes & PUBLIC) != 0)     buf.append("/public");
-            if ((allowedModes & PACKAGE) != 0)    buf.append("/package");
-            if ((allowedModes & PROTECTED) != 0)  buf.append("/protected");
-            if ((allowedModes & PRIVATE) != 0)    buf.append("/private");
-            return buf.toString();
         }
 
         // call this from an entry point method in Lookup with extraFrames=0.
@@ -368,13 +397,6 @@ public class MethodHandles {
          * The type of the method handle will be that of the method,
          * with the receiver type (usually {@code refc}) prepended.
          * The method and all its argument types must be accessible to the lookup class.
-         * <p>
-         * (<em>BUG NOTE:</em> The type {@code Object} may be prepended instead
-         * of the receiver type, if the receiver type is not on the boot class path.
-         * This is due to a temporary JVM limitation, in which MethodHandle
-         * claims to be unable to access such classes.  To work around this
-         * bug, use {@code convertArguments} to normalize the type of the leading
-         * argument to a type on the boot class path, such as {@code Object}.)
          * <p>
          * When called, the handle will treat the first argument as a receiver
          * and dispatch on the receiver's type to determine which method
@@ -923,18 +945,6 @@ public class MethodHandles {
         return invokers(type).exactInvoker();
     }
 
-    /**
-     * <em>METHOD WILL BE REMOVED FOR PFD:</em>
-     * Produce a method handle equivalent to an invokedynamic instruction
-     * which has been linked to the given call site.
-     * @return a method handle which always invokes the call site's target
-     * @deprecated Use {@link CallSite#dynamicInvoker} instead.
-     */
-    public static
-    MethodHandle dynamicInvoker(CallSite site) throws NoAccessException {
-        return site.dynamicInvoker();
-    }
-
     static Invokers invokers(MethodType type) {
         return MethodTypeImpl.invokers(IMPL_TOKEN, type);
     }
@@ -1071,7 +1081,6 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle which adapts the type of the
      * given method handle to a new type by pairwise argument conversion.
      * The original type and new type must have the same number of arguments.
@@ -1292,7 +1301,6 @@ assert((int)twice.invokeExact(21) == 42);
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle of the requested return type which returns the given
      * constant value every time it is invoked.
      * <p>
@@ -1318,7 +1326,6 @@ assert((int)twice.invokeExact(21) == 42);
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle of the requested type which returns the given
      * constant value every time it is invoked.
      * <p>
@@ -1343,7 +1350,6 @@ assert((int)twice.invokeExact(21) == 42);
     }
 
      /**
-      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
       * Produce a method handle which returns its sole argument when invoked.
       * <p>The identity function for {@code void} takes no arguments and returns no values.
       * @param type the type of the sole parameter and return value of the desired method handle
@@ -1355,13 +1361,11 @@ assert((int)twice.invokeExact(21) == 42);
     }
 
      /**
-      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
       * Produce a method handle of the requested type which returns its argument when invoked.
       * If the return type differs from the first argument type, the argument will be
       * converted as if by {@link #explicitCastArguments explicitCastArguments}.
-      * All other arguments are discarded.
+      * If there are additional arguments beyond the first, they are discarded.
       * <p>The identity function for {@code void} discards all its arguments.
-      * <p>
       * @param type the type of the desired method handle
       * @return a method handle of the given type, which always returns its first argument
       * @throws WrongMethodTypeException if the first argument cannot be converted to the required return type
@@ -1446,20 +1450,20 @@ assert((int)twice.invokeExact(21) == 42);
      * <p>
      * <b>Example:</b>
      * <p><blockquote><pre>
-     *   import static java.dyn.MethodHandles.*;
-     *   import static java.dyn.MethodType.*;
-     *   ...
-     *   MethodHandle cat = lookup().findVirtual(String.class,
-     *     "concat", methodType(String.class, String.class));
-     *   System.out.println((String) cat.invokeExact("x", "y")); // xy
-     *   MethodHandle d0 = dropArguments(cat, 0, String.class);
-     *   System.out.println((String) d0.invokeExact("x", "y", "z")); // yz
-     *   MethodHandle d1 = dropArguments(cat, 1, String.class);
-     *   System.out.println((String) d1.invokeExact("x", "y", "z")); // xz
-     *   MethodHandle d2 = dropArguments(cat, 2, String.class);
-     *   System.out.println((String) d2.invokeExact("x", "y", "z")); // xy
-     *   MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
-     *   System.out.println((String) d12.invokeExact("x", 12, true, "z")); // xz
+import static java.dyn.MethodHandles.*;
+import static java.dyn.MethodType.*;
+...
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
+MethodHandle d0 = dropArguments(cat, 0, String.class);
+assertEquals("yz", (String) d0.invokeExact("x", "y", "z"));
+MethodHandle d1 = dropArguments(cat, 1, String.class);
+assertEquals("xz", (String) d1.invokeExact("x", "y", "z"));
+MethodHandle d2 = dropArguments(cat, 2, String.class);
+assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
+MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
+assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * </pre></blockquote>
      * @param target the method handle to invoke after the arguments are dropped
      * @param valueTypes the type(s) of the argument(s) to drop
@@ -1532,13 +1536,13 @@ MethodHandle cat = lookup().findVirtual(String.class,
   "concat", methodType(String.class, String.class));
 MethodHandle upcase = lookup().findVirtual(String.class,
   "toUpperCase", methodType(String.class));
-System.out.println((String) cat.invokeExact("x", "y")); // xy
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
 MethodHandle f0 = filterArguments(cat, 0, upcase);
-System.out.println((String) f0.invokeExact("x", "y")); // Xy
+assertEquals("Xy", (String) f0.invokeExact("x", "y")); // Xy
 MethodHandle f1 = filterArguments(cat, 1, upcase);
-System.out.println((String) f1.invokeExact("x", "y")); // xY
+assertEquals("xY", (String) f1.invokeExact("x", "y")); // xY
 MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
-System.out.println((String) f2.invokeExact("x", "y")); // XY
+assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * </pre></blockquote>
      * @param target the method handle to invoke after arguments are filtered
      * @param pos the position of the first argument to filter
@@ -1571,7 +1575,7 @@ System.out.println((String) f2.invokeExact("x", "y")); // XY
         return adapter;
     }
 
-    /** <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+    /**
      * Adapt a target method handle {@code target} by post-processing
      * its return value with a unary filter function.
      * <p>
@@ -1693,6 +1697,9 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      *     return fallback(a..., b...);
      * }
      * </pre></blockquote>
+     * Note that the test arguments ({@code a...} in the pseudocode) cannot
+     * be modified by execution of the test, and so are passed unchanged
+     * from the caller to the target or fallback as appropriate.
      * @param test method handle used for test, must return boolean
      * @param target method handle to call if test passes
      * @param fallback method handle to call if test fails
@@ -1708,40 +1715,19 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         MethodType gtype = test.type();
         MethodType ttype = target.type();
         MethodType ftype = fallback.type();
-        if (ttype != ftype)
+        if (!ttype.equals(ftype))
             throw misMatchedTypes("target and fallback types", ttype, ftype);
-        MethodType gtype2 = ttype.changeReturnType(boolean.class);
-        if (gtype2 != gtype) {
-            if (gtype.returnType() != boolean.class)
-                throw newIllegalArgumentException("guard type is not a predicate "+gtype);
-            int gpc = gtype.parameterCount(), tpc = ttype.parameterCount();
-            if (gpc < tpc) {
-                test = dropArguments(test, gpc, ttype.parameterList().subList(gpc, tpc));
-                gtype = test.type();
-            }
-            if (gtype2 != gtype)
+        if (gtype.returnType() != boolean.class)
+            throw newIllegalArgumentException("guard type is not a predicate "+gtype);
+        List<Class<?>> targs = ttype.parameterList();
+        List<Class<?>> gargs = gtype.parameterList();
+        if (!targs.equals(gargs)) {
+            int gpc = gargs.size(), tpc = targs.size();
+            if (gpc >= tpc || !targs.subList(0, gpc).equals(gargs))
                 throw misMatchedTypes("target and test types", ttype, gtype);
+            test = dropArguments(test, gpc, targs.subList(gpc, tpc));
+            gtype = test.type();
         }
-        /* {
-            MethodHandle invoke = findVirtual(MethodHandle.class, "invoke", target.type());
-            static MethodHandle choose(boolean z, MethodHandle t, MethodHandle f) {
-                return z ? t : f;
-            }
-            static MethodHandle compose(MethodHandle f, MethodHandle g) {
-                Class<?> initargs = g.type().parameterArray();
-                f = dropArguments(f, 1, initargs);  // ignore 2nd copy of args
-                return combineArguments(f, g);
-            }
-            // choose = \z.(z ? target : fallback)
-            MethodHandle choose = findVirtual(MethodHandles.class, "choose",
-                    MethodType.methodType(boolean.class, MethodHandle.class, MethodHandle.class));
-            choose = appendArgument(choose, target);
-            choose = appendArgument(choose, fallback);
-            MethodHandle dispatch = compose(choose, test);
-            // dispatch = \(a...).(test(a...) ? target : fallback)
-            return combineArguments(invoke, dispatch, 0);
-            // return \(a...).((test(a...) ? target : fallback).invokeExact(a...))
-        } */
         return MethodHandleImpl.makeGuardWithTest(IMPL_TOKEN, test, target, fallback);
     }
 
@@ -1756,22 +1742,32 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * If an exception matching the specified type is thrown, the fallback
      * handle is called instead on the exception, plus the original arguments.
      * <p>
-     * The handler must have leading parameter of {@code exType} or a supertype,
-     * followed by arguments which correspond <em>(how? TBD)</em> to
-     * all the parameters of the target.
-     * The target and handler must return the same type.
+     * The target and handler must have the same corresponding
+     * argument and return types, except that handler may omit trailing arguments
+     * (similarly to the predicate in {@link #guardWithTest guardWithTest}).
+     * Also, the handler must have an extra leading parameter of {@code exType} or a supertype.
      * <p> Here is pseudocode for the resulting adapter:
      * <blockquote><pre>
-     * T target(A...);
+     * T target(A..., B...);
      * T handler(ExType, A...);
-     * T adapter(A... a) {
+     * T adapter(A... a, B... b) {
      *   try {
-     *     return target(a...);
+     *     return target(a..., b...);
      *   } catch (ExType ex) {
      *     return handler(ex, a...);
      *   }
      * }
      * </pre></blockquote>
+     * Note that the saved arguments ({@code a...} in the pseudocode) cannot
+     * be modified by execution of the target, and so are passed unchanged
+     * from the caller to the handler, if the handler is invoked.
+     * <p>
+     * The target and handler must return the same type, even if the handler
+     * always throws.  (This might happen, for instance, because the handler
+     * is simulating a {@code finally} clause).
+     * To create such a throwing handler, compose the handler creation logic
+     * with {@link #throwException throwException},
+     * in order to create a method handle of the correct return type.
      * @param target method handle to call
      * @param exType the type of exception which the handler will catch
      * @param handler method handle to call if a matching exception is thrown
@@ -1785,16 +1781,23 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
     MethodHandle catchException(MethodHandle target,
                                 Class<? extends Throwable> exType,
                                 MethodHandle handler) {
-        MethodType targetType = target.type();
-        MethodType handlerType = handler.type();
-        boolean ok = (targetType.parameterCount() ==
-                      handlerType.parameterCount() - 1);
-//        for (int i = 0; ok && i < numExArgs; i++) {
-//            if (targetType.parameterType(i) != handlerType.parameterType(1+i))
-//                ok = false;
-//        }
-        if (!ok)
-            throw newIllegalArgumentException("target and handler types do not match");
+        MethodType ttype = target.type();
+        MethodType htype = handler.type();
+        if (htype.parameterCount() < 1 ||
+            !htype.parameterType(0).isAssignableFrom(exType))
+            throw newIllegalArgumentException("handler does not accept exception type "+exType);
+        if (htype.returnType() != ttype.returnType())
+            throw misMatchedTypes("target and handler return types", ttype, htype);
+        List<Class<?>> targs = ttype.parameterList();
+        List<Class<?>> hargs = htype.parameterList();
+        hargs = hargs.subList(1, hargs.size());  // omit leading parameter from handler
+        if (!targs.equals(hargs)) {
+            int hpc = hargs.size(), tpc = targs.size();
+            if (hpc >= tpc || !targs.subList(0, hpc).equals(hargs))
+                throw misMatchedTypes("target and handler types", ttype, htype);
+            handler = dropArguments(handler, hpc, hargs.subList(hpc, tpc));
+            htype = handler.type();
+        }
         return MethodHandleImpl.makeGuardWithCatch(IMPL_TOKEN, target, exType, handler);
     }
 
@@ -1813,10 +1816,10 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Produce a wrapper instance of the given "SAM" type which redirects its calls to the given method handle.
-     * A SAM type is a type which declares a single abstract method.
-     * Additionally, it must have either no constructor (as an interface)
-     * or have a public or protected constructor of zero arguments (as a class).
+     * Produce a wrapper instance of the given "SAM" interface which redirects
+     * its calls to the given method handle.
+     * A SAM interface is an interface which declares a single abstract method.
+     * The type must be public.  (No additional access checks are performed.)
      * <p>
      * The resulting instance of the required SAM type will respond to
      * invocation of the SAM type's single abstract method by calling
@@ -1828,9 +1831,9 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * The method handle may throw an <em>undeclared exception</em>,
      * which means any checked exception (or other checked throwable)
      * not declared by the SAM type's single abstract method.
-     * If this happens, the throwable will be wrapped in an instance
-     * of {@link UndeclaredThrowableException} and thrown in that
-     * wrapped form.
+     * If this happens, the throwable will be wrapped in an instance of
+     * {@link java.lang.reflect.UndeclaredThrowableException UndeclaredThrowableException}
+     * and thrown in that wrapped form.
      * <p>
      * The wrapper instance is guaranteed to be of a non-public
      * implementation class C in a package containing no classes
@@ -1841,18 +1844,36 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * <li>the SAM type itself and any methods in the SAM type
      * <li>the supertypes of the SAM type (if any) and their methods
      * <li>{@link Object} and its methods
+     * <li>{@link java.dyn.AsInstanceObject AsInstanceObject} and its methods</li>
      * </ul>
+     * <p>
+     * (Note: When determining the unique abstract method of a SAM interface,
+     * the public {@code Object} methods ({@code toString}, {@code equals}, {@code hashCode})
+     * are disregarded.  For example, {@link java.util.Comparator} is a SAM interface,
+     * even though it re-declares the {@code Object.equals} method.)
      * <p>
      * No stable mapping is promised between the SAM type and
      * the implementation class C.  Over time, several implementation
      * classes might be used for the same SAM type.
      * <p>
      * This method is not guaranteed to return a distinct
-     * wrapper object for each separate call.  If the JVM is able
-     * to prove that a wrapper has already been created for a given
+     * wrapper object for each separate call.  If the implementation is able
+     * to prove that a wrapper of the required SAM type
+     * has already been created for a given
      * method handle, or for another method handle with the
-     * same behavior, the JVM may return that wrapper in place of
+     * same behavior, the implementation may return that wrapper in place of
      * a new wrapper.
+     * <p>
+     * This method is designed to apply to common use cases
+     * where a single method handle must interoperate with
+     * a type (class or interface) that implements a function-like
+     * API.  Additional variations, such as SAM classes with
+     * private constructors, or interfaces with multiple but related
+     * entry points, must be covered by hand-written or automatically
+     * generated adapter classes.  In those cases, consider implementing
+     * {@link java.dyn.MethodHandles.AsInstanceObject AsInstanceObject}
+     * in the adapters, so that generic code can extract the underlying
+     * method handle without knowing where the SAM adapter came from.
      * @param target the method handle to invoke from the wrapper
      * @param samType the desired type of the wrapper, a SAM type
      * @return a correctly-typed wrapper for the given {@code target}
@@ -1870,7 +1891,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
             throw new IllegalArgumentException("not a SAM type: "+samType.getName());
         MethodType samMT = MethodType.methodType(sam.getReturnType(), sam.getParameterTypes());
         if (!samMT.equals(target.type()))
-            throw new IllegalArgumentException("wrong method type");
+            throw new IllegalArgumentException("wrong method type: "+target+" should match "+sam);
         return samType.cast(Proxy.newProxyInstance(
                 samType.getClassLoader(),
                 new Class[]{ samType, AsInstanceObject.class },
@@ -1883,8 +1904,11 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         if (method.getDeclaringClass() == AsInstanceObject.class)
                             return getArg(method.getName());
-                        assert method.equals(sam) : method;
-                        return target.invokeVarargs(args);
+                        if (method.equals(sam))
+                            return target.invokeVarargs(args);
+                        if (isObjectMethod(method))
+                            return callObjectMethod(this, method, args);
+                        throw new InternalError();
                     }
                 }));
     }
@@ -1908,12 +1932,43 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
     }
 
     private static
+    boolean isObjectMethod(Method m) {
+        switch (m.getName()) {
+        case "toString":
+            return (m.getReturnType() == String.class
+                    && m.getParameterTypes().length == 0);
+        case "hashCode":
+            return (m.getReturnType() == int.class
+                    && m.getParameterTypes().length == 0);
+        case "equals":
+            return (m.getReturnType() == boolean.class
+                    && m.getParameterTypes().length == 1
+                    && m.getParameterTypes()[0] == Object.class);
+        }
+        return false;
+    }
+
+    private static
+    Object callObjectMethod(Object self, Method m, Object[] args) {
+        assert(isObjectMethod(m)) : m;
+        switch (m.getName()) {
+        case "toString":
+            return self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
+        case "hashCode":
+            return System.identityHashCode(self);
+        case "equals":
+            return (self == args[0]);
+        }
+        return null;
+    }
+
+    private static
     Method getSamMethod(Class<?> samType) {
         Method sam = null;
         for (Method m : samType.getMethods()) {
             int mod = m.getModifiers();
             if (Modifier.isAbstract(mod)) {
-                if (sam != null)
+                if (sam != null && !isObjectMethod(sam))
                     return null;  // too many abstract methods
                 sam = m;
             }
