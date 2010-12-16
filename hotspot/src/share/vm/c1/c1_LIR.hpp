@@ -985,6 +985,7 @@ enum LIR_MoveKind {
   lir_move_normal,
   lir_move_volatile,
   lir_move_unaligned,
+  lir_move_wide,
   lir_move_max_flag
 };
 
@@ -1932,7 +1933,20 @@ class LIR_List: public CompilationResourceObj {
   void move(LIR_Opr src, LIR_Opr dst, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_move, src, dst, dst->type(), lir_patch_none, info)); }
   void move(LIR_Address* src, LIR_Opr dst, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_move, LIR_OprFact::address(src), dst, src->type(), lir_patch_none, info)); }
   void move(LIR_Opr src, LIR_Address* dst, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_move, src, LIR_OprFact::address(dst), dst->type(), lir_patch_none, info)); }
-
+  void move_wide(LIR_Address* src, LIR_Opr dst, CodeEmitInfo* info = NULL) {
+    if (UseCompressedOops) {
+      append(new LIR_Op1(lir_move, LIR_OprFact::address(src), dst, src->type(), lir_patch_none, info, lir_move_wide));
+    } else {
+      move(src, dst, info);
+    }
+  }
+  void move_wide(LIR_Opr src, LIR_Address* dst, CodeEmitInfo* info = NULL) {
+    if (UseCompressedOops) {
+      append(new LIR_Op1(lir_move, src, LIR_OprFact::address(dst), dst->type(), lir_patch_none, info, lir_move_wide));
+    } else {
+      move(src, dst, info);
+    }
+  }
   void volatile_move(LIR_Opr src, LIR_Opr dst, BasicType type, CodeEmitInfo* info = NULL, LIR_PatchCode patch_code = lir_patch_none) { append(new LIR_Op1(lir_move, src, dst, type, patch_code, info, lir_move_volatile)); }
 
   void oop2reg  (jobject o, LIR_Opr reg)         { append(new LIR_Op1(lir_move, LIR_OprFact::oopConst(o),    reg));   }

@@ -489,6 +489,20 @@ void MachTypeNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+
+//=============================================================================
+int MachConstantNode::constant_offset() {
+  int offset = _constant.offset();
+  // Bind the offset lazily.
+  if (offset == -1) {
+    Compile::ConstantTable& constant_table = Compile::current()->constant_table();
+    offset = constant_table.table_base_offset() + constant_table.find_offset(_constant);
+    _constant.set_offset(offset);
+  }
+  return offset;
+}
+
+
 //=============================================================================
 #ifndef PRODUCT
 void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {

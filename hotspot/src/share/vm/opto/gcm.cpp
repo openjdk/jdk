@@ -89,7 +89,7 @@ void PhaseCFG::replace_block_proj_ctrl( Node *n ) {
   assert(in0 != NULL, "Only control-dependent");
   const Node *p = in0->is_block_proj();
   if (p != NULL && p != n) {    // Control from a block projection?
-    assert(!n->pinned() || n->is_SafePointScalarObject(), "only SafePointScalarObject pinned node is expected here");
+    assert(!n->pinned() || n->is_MachConstantBase() || n->is_SafePointScalarObject(), "only pinned MachConstantBase or SafePointScalarObject node is expected here");
     // Find trailing Region
     Block *pb = _bbs[in0->_idx]; // Block-projection already has basic block
     uint j = 0;

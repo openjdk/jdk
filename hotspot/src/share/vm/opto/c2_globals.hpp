@@ -284,6 +284,9 @@
   develop(bool, SparcV9RegsHiBitsZero, true,                                \
           "Assume Sparc V9 I&L registers on V8+ systems are zero-extended") \
                                                                             \
+  product(bool, UseRDPCForConstantTableBase, false,                         \
+          "Use Sparc RDPC instruction for the constant table base.")        \
+                                                                            \
   develop(intx, PrintIdealGraphLevel, 0,                                    \
           "Print ideal graph to XML file / network interface. "             \
           "By default attempts to connect to the visualizer on a socket.")  \

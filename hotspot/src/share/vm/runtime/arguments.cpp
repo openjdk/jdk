@@ -1007,23 +1007,8 @@ static void no_shared_spaces() {
 void Arguments::check_compressed_oops_compat() {
 #ifdef _LP64
   assert(UseCompressedOops, "Precondition");
-#  if defined(COMPILER1) && !defined(TIERED)
-  // Until c1 supports compressed oops turn them off.
-  FLAG_SET_DEFAULT(UseCompressedOops, false);
-#  else
   // Is it on by default or set on ergonomically
   bool is_on_by_default = FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops);
-
-  // Tiered currently doesn't work with compressed oops
-  if (TieredCompilation) {
-    if (is_on_by_default) {
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
-      return;
-    } else {
-      vm_exit_during_initialization(
-        "Tiered compilation is not supported with compressed oops yet", NULL);
-    }
-  }
 
   // If dumping an archive or forcing its use, disable compressed oops if possible
   if (DumpSharedSpaces || RequireSharedSpaces) {
@@ -1038,9 +1023,7 @@ void Arguments::check_compressed_oops_compat() {
     // UseSharedSpaces is on by default. With compressed oops, we turn it off.
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
-
-#  endif // defined(COMPILER1) && !defined(TIERED)
-#endif // _LP64
+#endif
 }
 
 void Arguments::set_tiered_flags() {
@@ -3075,11 +3058,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
-#ifdef _LP64
   if (UseCompressedOops) {
     check_compressed_oops_compat();
   }
-#endif
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {
