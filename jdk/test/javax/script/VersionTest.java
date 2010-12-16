@@ -32,8 +32,8 @@ import java.io.*;
 
 public class VersionTest  {
 
-        private static final String JS_LANG_VERSION = "1.6";
-        private static final String JS_ENGINE_VERSION = "1.6 release 2";
+        private static final String JS_LANG_VERSION = "1.8";
+        private static final String JS_ENGINE_VERSION = "1.7 release 3 PRERELEASE";
 
         public static void main(String[] args) throws Exception {
             ScriptEngineManager manager = new ScriptEngineManager();
