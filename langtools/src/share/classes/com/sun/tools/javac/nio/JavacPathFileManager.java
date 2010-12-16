@@ -172,6 +172,11 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         return getClassLoader(lb.toArray(new URL[lb.size()]));
     }
 
+    @Override
+    public boolean isDefaultBootClassPath() {
+        return searchPaths.isDefaultBootClassPath();
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Location handling">
 
     public boolean hasLocation(Location location) {

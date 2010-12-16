@@ -1904,6 +1904,11 @@ bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(_cdecl *fn)(void *), voi
     return true;
 }
 
+bool AwtToolkit::PreloadThread::OnPreloadThread()
+{
+    return GetThreadId() == ::GetCurrentThreadId();
+}
+
 /*static*/
 unsigned WINAPI AwtToolkit::PreloadThread::StaticThreadProc(void *param)
 {

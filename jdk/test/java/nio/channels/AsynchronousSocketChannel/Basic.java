@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272 6842687
+ * @bug 4607272 6842687 6878369
  * @summary Unit test for AsynchronousSocketChannel
  * @run main/timeout=600 Basic
  */
@@ -712,51 +712,56 @@ public class Basic {
     }
 
     static void testTimeout() throws Exception {
+        System.out.println("-- timeouts --");
+        testTimeout(Integer.MIN_VALUE, TimeUnit.SECONDS);
+        testTimeout(-1L, TimeUnit.SECONDS);
+        testTimeout(0L, TimeUnit.SECONDS);
+        testTimeout(2L, TimeUnit.SECONDS);
+    }
+
+    static void testTimeout(final long timeout, final TimeUnit unit) throws Exception {
         Server server = new Server();
         AsynchronousSocketChannel ch = AsynchronousSocketChannel.open();
         ch.connect(server.address()).get();
-
-        System.out.println("-- timeout when reading --");
 
         ByteBuffer dst = ByteBuffer.allocate(512);
 
         final AtomicReference<Throwable> readException = new AtomicReference<Throwable>();
 
-        // this read should timeout
-        ch.read(dst, 3, TimeUnit.SECONDS, (Void)null,
-            new CompletionHandler<Integer,Void>()
-        {
+        // this read should timeout if value is > 0
+        ch.read(dst, timeout, unit, null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer result, Void att) {
-                throw new RuntimeException("Should not complete");
+                readException.set(new RuntimeException("Should not complete"));
             }
             public void failed(Throwable exc, Void att) {
                 readException.set(exc);
             }
         });
-        // wait for exception
-        while (readException.get() == null) {
-            Thread.sleep(100);
+        if (timeout > 0L) {
+            // wait for exception
+            while (readException.get() == null) {
+                Thread.sleep(100);
+            }
+            if (!(readException.get() instanceof InterruptedByTimeoutException))
+                throw new RuntimeException("InterruptedByTimeoutException expected");
+
+            // after a timeout then further reading should throw unspecified runtime exception
+            boolean exceptionThrown = false;
+            try {
+                ch.read(dst);
+            } catch (RuntimeException x) {
+                exceptionThrown = true;
+            }
+            if (!exceptionThrown)
+                throw new RuntimeException("RuntimeException expected after timeout.");
+        } else {
+            Thread.sleep(1000);
+            Throwable exc = readException.get();
+            if (exc != null)
+                throw new RuntimeException(exc);
         }
-        if (!(readException.get() instanceof InterruptedByTimeoutException))
-            throw new RuntimeException("InterruptedByTimeoutException expected");
-
-        // after a timeout then further reading should throw unspecified runtime exception
-        boolean exceptionThrown = false;
-        try {
-            ch.read(dst);
-        } catch (RuntimeException x) {
-            exceptionThrown = true;
-        }
-        if (!exceptionThrown)
-            throw new RuntimeException("RuntimeException expected after timeout.");
-
-
-        System.out.println("-- timeout when writing --");
 
         final AtomicReference<Throwable> writeException = new AtomicReference<Throwable>();
-
-        final long timeout = 5;
-        final TimeUnit unit = TimeUnit.SECONDS;
 
         // write bytes to fill socket buffer
         ch.write(genBuffer(), timeout, unit, ch,
@@ -769,24 +774,32 @@ public class Basic {
                 writeException.set(exc);
             }
         });
+        if (timeout > 0) {
+            // wait for exception
+            while (writeException.get() == null) {
+                Thread.sleep(100);
+            }
+            if (!(writeException.get() instanceof InterruptedByTimeoutException))
+                throw new RuntimeException("InterruptedByTimeoutException expected");
 
-        // wait for exception
-        while (writeException.get() == null) {
-            Thread.sleep(100);
+            // after a timeout then further writing should throw unspecified runtime exception
+            boolean exceptionThrown = false;
+            try {
+                ch.write(genBuffer());
+            } catch (RuntimeException x) {
+                exceptionThrown = true;
+            }
+            if (!exceptionThrown)
+                throw new RuntimeException("RuntimeException expected after timeout.");
+        } else {
+            Thread.sleep(1000);
+            Throwable exc = writeException.get();
+            if (exc != null)
+                throw new RuntimeException(exc);
         }
-        if (!(writeException.get() instanceof InterruptedByTimeoutException))
-            throw new RuntimeException("InterruptedByTimeoutException expected");
 
-        // after a timeout then further writing should throw unspecified runtime exception
-        exceptionThrown = false;
-        try {
-            ch.write(genBuffer());
-        } catch (RuntimeException x) {
-            exceptionThrown = true;
-        }
-        if (!exceptionThrown)
-            throw new RuntimeException("RuntimeException expected after timeout.");
-
+        // clean-up
+        server.accept().close();
         ch.close();
         server.close();
     }

@@ -59,7 +59,7 @@ import javax.tools.JavaFileObject.Kind;
  * There are no references here to file-system specific objects such as
  * java.io.File or java.nio.file.Path.
  */
-public class BaseFileManager {
+public abstract class BaseFileManager {
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
@@ -163,6 +163,9 @@ public class BaseFileManager {
         }
         return -1;
     }
+
+    public abstract boolean isDefaultBootClassPath();
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Encoding">
