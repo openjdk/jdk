@@ -29,6 +29,7 @@
 # include <sys/auxv.h>
 # include <sys/auxv_SPARC.h>
 # include <sys/systeminfo.h>
+# include <kstat.h>
 
 // We need to keep these here as long as we have to build on Solaris
 // versions before 10.
@@ -96,11 +97,23 @@ int VM_Version::platform_features(int features) {
 #ifndef AV_SPARC_ASI_BLK_INIT
 #define AV_SPARC_ASI_BLK_INIT 0x0080  /* ASI_BLK_INIT_xxx ASI */
 #endif
-#ifndef AV_SPARC_FMAF
-#define AV_SPARC_FMAF 0x0100  /* Sparc64 Fused Multiply-Add */
-#endif
     if (av & AV_SPARC_ASI_BLK_INIT) features |= blk_init_instructions_m;
+
+#ifndef AV_SPARC_FMAF
+#define AV_SPARC_FMAF 0x0100        /* Fused Multiply-Add */
+#endif
     if (av & AV_SPARC_FMAF)         features |= fmaf_instructions_m;
+
+#ifndef AV_SPARC_FMAU
+#define    AV_SPARC_FMAU    0x0200  /* Unfused Multiply-Add */
+#endif
+    if (av & AV_SPARC_FMAU)         features |= fmau_instructions_m;
+
+#ifndef AV_SPARC_VIS3
+#define    AV_SPARC_VIS3    0x0400  /* VIS3 instruction set extensions */
+#endif
+    if (av & AV_SPARC_VIS3)         features |= vis3_instructions_m;
+
   } else {
     // getisax(2) failed, use the old legacy code.
 #ifndef PRODUCT
@@ -139,6 +152,60 @@ int VM_Version::platform_features(int features) {
 
   // Determine the machine type.
   do_sysinfo(SI_MACHINE, "sun4v", &features, sun4v_m);
+
+  {
+    // Using kstat to determine the machine type.
+    kstat_ctl_t* kc = kstat_open();
+    kstat_t* ksp = kstat_lookup(kc, (char*)"cpu_info", -1, NULL);
+    const char* implementation = "UNKNOWN";
+    if (ksp != NULL) {
+      if (kstat_read(kc, ksp, NULL) != -1 && ksp->ks_data != NULL) {
+        kstat_named_t* knm = (kstat_named_t *)ksp->ks_data;
+        for (int i = 0; i < ksp->ks_ndata; i++) {
+          if (strcmp((const char*)&(knm[i].name),"implementation") == 0) {
+#ifndef KSTAT_DATA_STRING
+#define KSTAT_DATA_STRING   9
+#endif
+            if (knm[i].data_type == KSTAT_DATA_CHAR) {
+              // VM is running on Solaris 8 which does not have value.str.
+              implementation = &(knm[i].value.c[0]);
+            } else if (knm[i].data_type == KSTAT_DATA_STRING) {
+              // VM is running on Solaris 10.
+#ifndef KSTAT_NAMED_STR_PTR
+              // Solaris 8 was used to build VM, define the structure it misses.
+              struct str_t {
+                union {
+                  char *ptr;     /* NULL-term string */
+                  char __pad[8]; /* 64-bit padding */
+                } addr;
+                uint32_t len;    /* # bytes for strlen + '\0' */
+              };
+#define KSTAT_NAMED_STR_PTR(knptr) (( (str_t*)&((knptr)->value) )->addr.ptr)
+#endif
+              implementation = KSTAT_NAMED_STR_PTR(&knm[i]);
+            }
+#ifndef PRODUCT
+            if (PrintMiscellaneous && Verbose) {
+              tty->print_cr("cpu_info.implementation: %s", implementation);
+            }
+#endif
+            if (strncmp(implementation, "SPARC64", 7) == 0) {
+              features |= sparc64_family_m;
+            } else if (strncmp(implementation, "UltraSPARC-T", 12) == 0) {
+              features |= T_family_m;
+              if (strncmp(implementation, "UltraSPARC-T1", 13) == 0) {
+                features |= T1_model_m;
+              }
+            }
+            break;
+          }
+        } // for(
+      }
+    }
+    assert(strcmp(implementation, "UNKNOWN") != 0,
+           "unknown cpu info (changed kstat interface?)");
+    kstat_close(kc);
+  }
 
   return features;
 }
