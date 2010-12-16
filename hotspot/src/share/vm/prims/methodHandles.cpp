@@ -485,9 +485,8 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   Handle polymorphic_method_type;
   bool polymorphic_signature = false;
   if ((flags & ALL_KINDS) == IS_METHOD &&
-      (defc() == SystemDictionary::InvokeDynamic_klass() ||
-       (defc() == SystemDictionary::MethodHandle_klass() &&
-        methodOopDesc::is_method_handle_invoke_name(name()))))
+      (defc() == SystemDictionary::MethodHandle_klass() &&
+       methodOopDesc::is_method_handle_invoke_name(name())))
     polymorphic_signature = true;
 
   // convert the external string or reflective type to an internal signature

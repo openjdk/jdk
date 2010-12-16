@@ -1239,6 +1239,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
   // Cycle through this block's predecessors, collecting Reaches
   // info for each spilled LRG and update edges.
   // Walk the phis list to patch inputs, split phis, and name phis
+  uint lrgs_before_phi_split = maxlrg;
   for( insidx = 0; insidx < phis->size(); insidx++ ) {
     Node *phi = phis->at(insidx);
     assert(phi->is_Phi(),"This list must only contain Phi Nodes");
@@ -1273,7 +1274,16 @@ uint PhaseChaitin::Split( uint maxlrg ) {
       assert( def, "must have reaching def" );
       // If input up/down sense and reg-pressure DISagree
       if( def->rematerialize() ) {
-        def = split_Rematerialize( def, pred, pred->end_idx(), maxlrg, splits, slidx, lrg2reach, Reachblock, false );
+        // Place the rematerialized node above any MSCs created during
+        // phi node splitting.  end_idx points at the insertion point
+        // so look at the node before it.
+        int insert = pred->end_idx();
+        while (insert >= 1 &&
+               pred->_nodes[insert - 1]->is_SpillCopy() &&
+               Find(pred->_nodes[insert - 1]) >= lrgs_before_phi_split) {
+          insert--;
+        }
+        def = split_Rematerialize( def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false );
         if( !def ) return 0;    // Bail out
       }
       // Update the Phi's input edge array
