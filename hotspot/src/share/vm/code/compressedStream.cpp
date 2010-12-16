@@ -197,6 +197,7 @@ void CompressedWriteStream::write_int_mb(jint value) {
 // compiler stack overflow is fixed.
 #if _MSC_VER >=1400 && !defined(_WIN64)
 #pragma optimize("", off)
+#pragma warning(disable: 4748)
 #endif
 
 // generator for an "interesting" set of critical values
@@ -276,6 +277,7 @@ void test_compressed_stream(int trace) {
 }
 
 #if _MSC_VER >=1400 && !defined(_WIN64)
+#pragma warning(default: 4748)
 #pragma optimize("", on)
 #endif
 
