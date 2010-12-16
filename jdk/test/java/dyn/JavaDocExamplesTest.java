@@ -107,16 +107,15 @@ assertEquals("xy".hashCode(), (int) HASHCODE_3.invokeExact((Object)"xy"));
 {} /// JAVADOC
 MethodHandle cat = lookup().findVirtual(String.class,
   "concat", methodType(String.class, String.class));
-cat = cat.asType(methodType(Object.class, String.class, String.class)); /*(String)*/
-assertEquals("xy", /*(String)*/ cat.invokeExact("x", "y"));
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
 MethodHandle d0 = dropArguments(cat, 0, String.class);
-assertEquals("yz", /*(String)*/ d0.invokeExact("x", "y", "z"));
+assertEquals("yz", (String) d0.invokeExact("x", "y", "z"));
 MethodHandle d1 = dropArguments(cat, 1, String.class);
-assertEquals("xz", /*(String)*/ d1.invokeExact("x", "y", "z"));
+assertEquals("xz", (String) d1.invokeExact("x", "y", "z"));
 MethodHandle d2 = dropArguments(cat, 2, String.class);
-assertEquals("xy", /*(String)*/ d2.invokeExact("x", "y", "z"));
+assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
 MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
-assertEquals("xz", /*(String)*/ d12.invokeExact("x", 12, true, "z"));
+assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
             }}
     }
 
@@ -125,16 +124,15 @@ assertEquals("xz", /*(String)*/ d12.invokeExact("x", 12, true, "z"));
 {} /// JAVADOC
 MethodHandle cat = lookup().findVirtual(String.class,
   "concat", methodType(String.class, String.class));
-cat = cat.asType(methodType(Object.class, String.class, String.class)); /*(String)*/
 MethodHandle upcase = lookup().findVirtual(String.class,
   "toUpperCase", methodType(String.class));
-assertEquals("xy", /*(String)*/ cat.invokeExact("x", "y")); // xy
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
 MethodHandle f0 = filterArguments(cat, 0, upcase);
-assertEquals("Xy", /*(String)*/ f0.invokeExact("x", "y")); // Xy
+assertEquals("Xy", (String) f0.invokeExact("x", "y")); // Xy
 MethodHandle f1 = filterArguments(cat, 1, upcase);
-assertEquals("xY", /*(String)*/ f1.invokeExact("x", "y")); // xY
+assertEquals("xY", (String) f1.invokeExact("x", "y")); // xY
 MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
-assertEquals("XY", /*(String)*/ f2.invokeExact("x", "y")); // XY
+assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
             }}
     }
 
@@ -142,24 +140,6 @@ assertEquals("XY", /*(String)*/ f2.invokeExact("x", "y")); // XY
         if (verbosity > 0)
             System.out.println("result: "+act);
         Assert.assertEquals(exp, act);
-    }
-
-    @Test public void testVolatileCallSite() throws Throwable {
-        {{
-{} /// JAVADOC
-MethodHandle strcat = MethodHandles.lookup()
-  .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
-MethodHandle trueCon  = MethodHandles.constant(boolean.class, true);
-MethodHandle falseCon = MethodHandles.constant(boolean.class, false);
-VolatileCallSite switcher = new VolatileCallSite(trueCon, falseCon);
-// following steps may be repeated to re-use the same switcher:
-MethodHandle worker1 = strcat;
-MethodHandle worker2 = MethodHandles.permuteArguments(strcat, strcat.type(), 1, 0);
-MethodHandle worker = MethodHandles.guardWithTest(switcher.dynamicInvoker(), worker1, worker2);
-System.out.println((String) worker.invokeExact("met", "hod"));  // method
-switcher.invalidate();
-System.out.println((String) worker.invokeExact("met", "hod"));  // hodmet
-            }}
     }
 
 static MethodHandle asList;
@@ -182,9 +162,9 @@ MethodHandle collectingTypeHandler = lookup()
      methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
 MethodHandle makeAnyList = makeEmptyList.withTypeHandler(collectingTypeHandler);
 
-System.out.println(makeAnyList.invokeGeneric());
-System.out.println(makeAnyList.invokeGeneric(1));
-System.out.println(makeAnyList.invokeGeneric("two", "too"));
+assertEquals("[]", makeAnyList.invokeGeneric().toString());
+assertEquals("[1]", makeAnyList.invokeGeneric(1).toString());
+assertEquals("[two, too]", makeAnyList.invokeGeneric("two", "too").toString());
             }}
     }
 

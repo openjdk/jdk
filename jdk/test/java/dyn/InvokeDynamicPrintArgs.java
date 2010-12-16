@@ -99,7 +99,7 @@ public class InvokeDynamicPrintArgs {
     private static CallSite bsm(Lookup caller, String name, MethodType type) throws ReflectiveOperationException {
         // ignore caller and name, but match the type:
         Object bsmInfo = Arrays.asList(caller, name, type);
-        return new CallSite(MH_printArgs().bindTo(bsmInfo).asCollector(Object[].class, type.parameterCount()).asType(type));
+        return new ConstantCallSite(MH_printArgs().bindTo(bsmInfo).asCollector(Object[].class, type.parameterCount()).asType(type));
     }
     private static MethodType MT_bsm() {
         shouldNotCallThis();
@@ -117,7 +117,7 @@ public class InvokeDynamicPrintArgs {
             bsmInfo.addAll(Arrays.asList((Object[])arg));
         else
             bsmInfo.add(arg);
-        return new CallSite(MH_printArgs().bindTo(bsmInfo).asCollector(Object[].class, type.parameterCount()).asType(type));
+        return new ConstantCallSite(MH_printArgs().bindTo(bsmInfo).asCollector(Object[].class, type.parameterCount()).asType(type));
     }
     private static MethodType MT_bsm2() {
         shouldNotCallThis();

@@ -1688,8 +1688,8 @@ public class MethodHandlesTest {
 
         // dynamic invoker
         countTest();
-        CallSite site = new CallSite(type);
-        inv = MethodHandles.dynamicInvoker(site);
+        CallSite site = new MutableCallSite(type);
+        inv = site.dynamicInvoker();
 
         // see if we get the result of the original target:
         try {
@@ -1820,11 +1820,12 @@ public class MethodHandlesTest {
         MethodHandle throwOrReturn
                 = PRIVATE.findStatic(MethodHandlesTest.class, "throwOrReturn",
                     MethodType.methodType(Object.class, Object.class, Throwable.class));
-        MethodHandle thrower = throwOrReturn;
+        MethodHandle thrower = throwOrReturn.asType(MethodType.genericMethodType(2));
         while (thrower.type().parameterCount() < nargs)
             thrower = MethodHandles.dropArguments(thrower, thrower.type().parameterCount(), Object.class);
+        MethodHandle catcher = ValueConversions.varargsList(1+nargs).asType(MethodType.genericMethodType(1+nargs));
         MethodHandle target = MethodHandles.catchException(thrower,
-                thrown.getClass(), ValueConversions.varargsList(1+nargs));
+                thrown.getClass(), catcher);
         assertEquals(thrower.type(), target.type());
         //System.out.println("catching with "+target+" : "+throwOrReturn);
         Object[] args = randomArgs(nargs, Object.class);
