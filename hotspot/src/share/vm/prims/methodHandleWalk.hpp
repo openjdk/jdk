@@ -412,8 +412,7 @@ public:
 
   // Tests if the given class is a MH adapter holder.
   static bool klass_is_method_handle_adapter_holder(klassOop klass) {
-    return (klass == SystemDictionary::MethodHandle_klass() ||
-            klass == SystemDictionary::InvokeDynamic_klass());
+    return (klass == SystemDictionary::MethodHandle_klass());
   }
 };
 
