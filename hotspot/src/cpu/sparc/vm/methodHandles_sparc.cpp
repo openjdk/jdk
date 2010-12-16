@@ -689,8 +689,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
     {
       // Perform an in-place conversion to int or an int subword.
       __ ldsw(G3_amh_vmargslot, O0_argslot);
-      Address vmarg = __ argument_address(O0_argslot);
       Address value;
+      Address vmarg = __ argument_address(O0_argslot);
       bool value_left_justified = false;
 
       switch (ek) {
@@ -700,9 +700,21 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       case _adapter_opt_l2i:
         {
           // just delete the extra slot
+#ifdef _LP64
+          // In V9, longs are given 2 64-bit slots in the interpreter, but the
+          // data is passed in only 1 slot.
+          // Keep the second slot.
+          __ add(Gargs, __ argument_offset(O0_argslot, -1), O0_argslot);
+          remove_arg_slots(_masm, -stack_move_unit(), O0_argslot, O1_scratch, O2_scratch, O3_scratch);
+          value = Address(O0_argslot, 4);  // Get least-significant 32-bit of 64-bit value.
+          vmarg = Address(O0_argslot, Interpreter::stackElementSize);
+#else
+          // Keep the first slot.
           __ add(Gargs, __ argument_offset(O0_argslot), O0_argslot);
           remove_arg_slots(_masm, -stack_move_unit(), O0_argslot, O1_scratch, O2_scratch, O3_scratch);
-          value = vmarg = Address(O0_argslot, 0);
+          value = Address(O0_argslot, 0);
+          vmarg = value;
+#endif
         }
         break;
       case _adapter_opt_unboxi:

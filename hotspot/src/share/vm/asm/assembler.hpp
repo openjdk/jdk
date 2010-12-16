@@ -292,7 +292,16 @@ class AbstractAssembler : public ResourceObj  {
   address    start_a_const(int required_space, int required_align = sizeof(double));
   void       end_a_const();
 
-  // fp constants support
+  // constants support
+  address long_constant(jlong c) {
+    address ptr = start_a_const(sizeof(c), sizeof(c));
+    if (ptr != NULL) {
+      *(jlong*)ptr = c;
+      _code_pos = ptr + sizeof(c);
+      end_a_const();
+    }
+    return ptr;
+  }
   address double_constant(jdouble c) {
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
@@ -311,6 +320,15 @@ class AbstractAssembler : public ResourceObj  {
     }
     return ptr;
   }
+  address address_constant(address c) {
+    address ptr = start_a_const(sizeof(c), sizeof(c));
+    if (ptr != NULL) {
+      *(address*)ptr = c;
+      _code_pos = ptr + sizeof(c);
+      end_a_const();
+    }
+    return ptr;
+  }
   address address_constant(address c, RelocationHolder const& rspec) {
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
@@ -321,8 +339,6 @@ class AbstractAssembler : public ResourceObj  {
     }
     return ptr;
   }
-  inline address address_constant(Label& L);
-  inline address address_table_constant(GrowableArray<Label*> label);
 
   // Bootstrapping aid to cope with delayed determination of constants.
   // Returns a static address which will eventually contain the constant.

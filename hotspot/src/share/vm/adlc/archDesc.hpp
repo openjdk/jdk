@@ -126,7 +126,6 @@ private:
   void chain_rule(FILE *fp, const char *indent, const char *ideal,
                   const Expr *icost, const char *irule,
                   Dict &operands_chained_from, ProductionState &status);
-  void chain_rule_c(FILE *fp, char *indent, char *ideal, char *irule);  // %%%%% TODO: remove this
   void expand_opclass(FILE *fp, const char *indent, const Expr *cost,
                       const char *result_type, ProductionState &status);
   Expr *calc_cost(FILE *fp, const char *spaces, MatchList &mList, ProductionState &status);
@@ -301,13 +300,18 @@ public:
   void buildMachNodeGenerator(FILE *fp_cpp);
 
   // Generator for Expand methods for instructions with expand rules
-  void defineExpand(FILE *fp, InstructForm *node);
+  void defineExpand      (FILE *fp, InstructForm *node);
   // Generator for Peephole methods for instructions with peephole rules
-  void definePeephole(FILE *fp, InstructForm *node);
+  void definePeephole    (FILE *fp, InstructForm *node);
   // Generator for Size methods for instructions
-  void defineSize(FILE *fp, InstructForm &node);
+  void defineSize        (FILE *fp, InstructForm &node);
+
+public:
+  // Generator for EvalConstantValue methods for instructions
+  void defineEvalConstant(FILE *fp, InstructForm &node);
   // Generator for Emit methods for instructions
-  void defineEmit(FILE *fp, InstructForm &node);
+  void defineEmit        (FILE *fp, InstructForm &node);
+
   // Define a MachOper encode method
   void define_oper_interface(FILE *fp, OperandForm &oper, FormDict &globals,
                              const char *name, const char *encoding);

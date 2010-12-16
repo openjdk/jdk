@@ -915,7 +915,8 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
   {
     int k1 = method_type_index_at(index1);
     int k2 = cp2->method_type_index_at(index2);
-    if (k1 == k2) {
+    bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
+    if (match) {
       return true;
     }
   } break;
@@ -927,28 +928,33 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
     if (k1 == k2) {
       int i1 = method_handle_index_at(index1);
       int i2 = cp2->method_handle_index_at(index2);
-      if (i1 == i2) {
+      bool match = compare_entry_to(i1, cp2, i2, CHECK_false);
+      if (match) {
         return true;
       }
     }
   } break;
 
   case JVM_CONSTANT_InvokeDynamic:
+  case JVM_CONSTANT_InvokeDynamicTrans:
   {
-    int op_count = multi_operand_count_at(index1);
-    if (op_count == cp2->multi_operand_count_at(index2)) {
-      bool all_equal = true;
-      for (int op_i = 0; op_i < op_count; op_i++) {
-        int k1 = multi_operand_ref_at(index1, op_i);
-        int k2 = cp2->multi_operand_ref_at(index2, op_i);
-        if (k1 != k2) {
-          all_equal = false;
-          break;
-        }
+    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(index1);
+    int k2 = cp2->invoke_dynamic_bootstrap_method_ref_index_at(index2);
+    bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
+    if (!match)  return false;
+    k1 = invoke_dynamic_name_and_type_ref_index_at(index1);
+    k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
+    match = compare_entry_to(k1, cp2, k2, CHECK_false);
+    if (!match)  return false;
+    int argc = invoke_dynamic_argument_count_at(index1);
+    if (argc == cp2->invoke_dynamic_argument_count_at(index2)) {
+      for (int j = 0; j < argc; j++) {
+        k1 = invoke_dynamic_argument_index_at(index1, j);
+        k2 = cp2->invoke_dynamic_argument_index_at(index2, j);
+        match = compare_entry_to(k1, cp2, k2, CHECK_false);
+        if (!match)  return false;
       }
-      if (all_equal) {
-        return true;           // got through loop; all elements equal
-      }
+      return true;           // got through loop; all elements equal
     }
   } break;
 
@@ -984,44 +990,18 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
 } // end compare_entry_to()
 
 
-// Grow this->operands() to the indicated length, unless it is already at least that long.
-void constantPoolOopDesc::multi_operand_buffer_grow(int min_length, TRAPS) {
-  int old_length = multi_operand_buffer_fill_pointer();
-  if (old_length >= min_length)  return;
-  int new_length = min_length;
-  assert(new_length > _multi_operand_buffer_fill_pointer_offset, "");
-  typeArrayHandle new_operands = oopFactory::new_permanent_intArray(new_length, CHECK);
-  if (operands() == NULL) {
-    new_operands->int_at_put(_multi_operand_buffer_fill_pointer_offset, old_length);
-  } else {
-    // copy fill pointer and everything else
-    for (int i = 0; i < old_length; i++) {
-      new_operands->int_at_put(i, operands()->int_at(i));
-    }
-  }
-  set_operands(new_operands());
-}
-
-
 // Copy this constant pool's entries at start_i to end_i (inclusive)
 // to the constant pool to_cp's entries starting at to_i. A total of
 // (end_i - start_i) + 1 entries are copied.
-void constantPoolOopDesc::copy_cp_to(int start_i, int end_i,
+void constantPoolOopDesc::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i,
        constantPoolHandle to_cp, int to_i, TRAPS) {
 
   int dest_i = to_i;  // leave original alone for debug purposes
 
-  if (operands() != NULL) {
-    // pre-grow the target CP's operand buffer
-    int nops = this->multi_operand_buffer_fill_pointer();
-    nops   += to_cp->multi_operand_buffer_fill_pointer();
-    to_cp->multi_operand_buffer_grow(nops, CHECK);
-  }
-
   for (int src_i = start_i; src_i <= end_i; /* see loop bottom */ ) {
-    copy_entry_to(src_i, to_cp, dest_i, CHECK);
+    copy_entry_to(from_cp, src_i, to_cp, dest_i, CHECK);
 
-    switch (tag_at(src_i).value()) {
+    switch (from_cp->tag_at(src_i).value()) {
     case JVM_CONSTANT_Double:
     case JVM_CONSTANT_Long:
       // double and long take two constant pool entries
@@ -1036,30 +1016,81 @@ void constantPoolOopDesc::copy_cp_to(int start_i, int end_i,
       break;
     }
   }
+
+  int from_oplen = operand_array_length(from_cp->operands());
+  int old_oplen  = operand_array_length(to_cp->operands());
+  if (from_oplen != 0) {
+    // append my operands to the target's operands array
+    if (old_oplen == 0) {
+      to_cp->set_operands(from_cp->operands());  // reuse; do not merge
+    } else {
+      int old_len  = to_cp->operands()->length();
+      int from_len = from_cp->operands()->length();
+      int old_off  = old_oplen * sizeof(u2);
+      int from_off = from_oplen * sizeof(u2);
+      typeArrayHandle new_operands = oopFactory::new_permanent_shortArray(old_len + from_len, CHECK);
+      int fillp = 0, len = 0;
+      // first part of dest
+      Copy::conjoint_memory_atomic(to_cp->operands()->short_at_addr(0),
+                                   new_operands->short_at_addr(fillp),
+                                   (len = old_off) * sizeof(u2));
+      fillp += len;
+      // first part of src
+      Copy::conjoint_memory_atomic(to_cp->operands()->short_at_addr(0),
+                                   new_operands->short_at_addr(fillp),
+                                   (len = from_off) * sizeof(u2));
+      fillp += len;
+      // second part of dest
+      Copy::conjoint_memory_atomic(to_cp->operands()->short_at_addr(old_off),
+                                   new_operands->short_at_addr(fillp),
+                                   (len = old_len - old_off) * sizeof(u2));
+      fillp += len;
+      // second part of src
+      Copy::conjoint_memory_atomic(to_cp->operands()->short_at_addr(from_off),
+                                   new_operands->short_at_addr(fillp),
+                                   (len = from_len - from_off) * sizeof(u2));
+      fillp += len;
+      assert(fillp == new_operands->length(), "");
+
+      // Adjust indexes in the first part of the copied operands array.
+      for (int j = 0; j < from_oplen; j++) {
+        int offset = operand_offset_at(new_operands(), old_oplen + j);
+        assert(offset == operand_offset_at(from_cp->operands(), j), "correct copy");
+        offset += old_len;  // every new tuple is preceded by old_len extra u2's
+        operand_offset_at_put(new_operands(), old_oplen + j, offset);
+      }
+
+      // replace target operands array with combined array
+      to_cp->set_operands(new_operands());
+    }
+  }
+
 } // end copy_cp_to()
 
 
 // Copy this constant pool's entry at from_i to the constant pool
 // to_cp's entry at to_i.
-void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
-       int to_i, TRAPS) {
+void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
+                                        constantPoolHandle to_cp, int to_i,
+                                        TRAPS) {
 
-  switch (tag_at(from_i).value()) {
+  int tag = from_cp->tag_at(from_i).value();
+  switch (tag) {
   case JVM_CONSTANT_Class:
   {
-    klassOop k = klass_at(from_i, CHECK);
+    klassOop k = from_cp->klass_at(from_i, CHECK);
     to_cp->klass_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_ClassIndex:
   {
-    jint ki = klass_index_at(from_i);
+    jint ki = from_cp->klass_index_at(from_i);
     to_cp->klass_index_at_put(to_i, ki);
   } break;
 
   case JVM_CONSTANT_Double:
   {
-    jdouble d = double_at(from_i);
+    jdouble d = from_cp->double_at(from_i);
     to_cp->double_at_put(to_i, d);
     // double takes two constant pool entries so init second entry's tag
     to_cp->tag_at_put(to_i + 1, JVM_CONSTANT_Invalid);
@@ -1067,33 +1098,33 @@ void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
 
   case JVM_CONSTANT_Fieldref:
   {
-    int class_index = uncached_klass_ref_index_at(from_i);
-    int name_and_type_index = uncached_name_and_type_ref_index_at(from_i);
+    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
+    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
     to_cp->field_at_put(to_i, class_index, name_and_type_index);
   } break;
 
   case JVM_CONSTANT_Float:
   {
-    jfloat f = float_at(from_i);
+    jfloat f = from_cp->float_at(from_i);
     to_cp->float_at_put(to_i, f);
   } break;
 
   case JVM_CONSTANT_Integer:
   {
-    jint i = int_at(from_i);
+    jint i = from_cp->int_at(from_i);
     to_cp->int_at_put(to_i, i);
   } break;
 
   case JVM_CONSTANT_InterfaceMethodref:
   {
-    int class_index = uncached_klass_ref_index_at(from_i);
-    int name_and_type_index = uncached_name_and_type_ref_index_at(from_i);
+    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
+    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
     to_cp->interface_method_at_put(to_i, class_index, name_and_type_index);
   } break;
 
   case JVM_CONSTANT_Long:
   {
-    jlong l = long_at(from_i);
+    jlong l = from_cp->long_at(from_i);
     to_cp->long_at_put(to_i, l);
     // long takes two constant pool entries so init second entry's tag
     to_cp->tag_at_put(to_i + 1, JVM_CONSTANT_Invalid);
@@ -1101,39 +1132,39 @@ void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
 
   case JVM_CONSTANT_Methodref:
   {
-    int class_index = uncached_klass_ref_index_at(from_i);
-    int name_and_type_index = uncached_name_and_type_ref_index_at(from_i);
+    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
+    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
     to_cp->method_at_put(to_i, class_index, name_and_type_index);
   } break;
 
   case JVM_CONSTANT_NameAndType:
   {
-    int name_ref_index = name_ref_index_at(from_i);
-    int signature_ref_index = signature_ref_index_at(from_i);
+    int name_ref_index = from_cp->name_ref_index_at(from_i);
+    int signature_ref_index = from_cp->signature_ref_index_at(from_i);
     to_cp->name_and_type_at_put(to_i, name_ref_index, signature_ref_index);
   } break;
 
   case JVM_CONSTANT_String:
   {
-    oop s = string_at(from_i, CHECK);
+    oop s = from_cp->string_at(from_i, CHECK);
     to_cp->string_at_put(to_i, s);
   } break;
 
   case JVM_CONSTANT_StringIndex:
   {
-    jint si = string_index_at(from_i);
+    jint si = from_cp->string_index_at(from_i);
     to_cp->string_index_at_put(to_i, si);
   } break;
 
   case JVM_CONSTANT_UnresolvedClass:
   {
-    symbolOop k = unresolved_klass_at(from_i);
+    symbolOop k = from_cp->unresolved_klass_at(from_i);
     to_cp->unresolved_klass_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_UnresolvedClassInError:
   {
-    symbolOop k = unresolved_klass_at(from_i);
+    symbolOop k = from_cp->unresolved_klass_at(from_i);
     to_cp->unresolved_klass_at_put(to_i, k);
     to_cp->tag_at_put(to_i, JVM_CONSTANT_UnresolvedClassInError);
   } break;
@@ -1141,51 +1172,42 @@ void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
 
   case JVM_CONSTANT_UnresolvedString:
   {
-    symbolOop s = unresolved_string_at(from_i);
+    symbolOop s = from_cp->unresolved_string_at(from_i);
     to_cp->unresolved_string_at_put(to_i, s);
   } break;
 
   case JVM_CONSTANT_Utf8:
   {
-    symbolOop s = symbol_at(from_i);
+    symbolOop s = from_cp->symbol_at(from_i);
     to_cp->symbol_at_put(to_i, s);
   } break;
 
   case JVM_CONSTANT_MethodType:
   {
-    jint k = method_type_index_at(from_i);
+    jint k = from_cp->method_type_index_at(from_i);
     to_cp->method_type_index_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_MethodHandle:
   {
-    int k1 = method_handle_ref_kind_at(from_i);
-    int k2 = method_handle_index_at(from_i);
+    int k1 = from_cp->method_handle_ref_kind_at(from_i);
+    int k2 = from_cp->method_handle_index_at(from_i);
     to_cp->method_handle_index_at_put(to_i, k1, k2);
+  } break;
+
+  case JVM_CONSTANT_InvokeDynamicTrans:
+  {
+    int k1 = from_cp->invoke_dynamic_bootstrap_method_ref_index_at(from_i);
+    int k2 = from_cp->invoke_dynamic_name_and_type_ref_index_at(from_i);
+    to_cp->invoke_dynamic_trans_at_put(to_i, k1, k2);
   } break;
 
   case JVM_CONSTANT_InvokeDynamic:
   {
-    int op_count = multi_operand_count_at(from_i);
-    int fillp = to_cp->multi_operand_buffer_fill_pointer();
-    int to_op_base = fillp - _multi_operand_count_offset;  // fillp is count offset; get to base
-    to_cp->multi_operand_buffer_grow(to_op_base + op_count, CHECK);
-    to_cp->operands()->int_at_put(fillp++, op_count);
-    assert(fillp == to_op_base + _multi_operand_base_offset, "just wrote count, will now write args");
-    for (int op_i = 0; op_i < op_count; op_i++) {
-      int op = multi_operand_ref_at(from_i, op_i);
-      to_cp->operands()->int_at_put(fillp++, op);
-    }
-    assert(fillp <= to_cp->operands()->length(), "oob");
-    to_cp->set_multi_operand_buffer_fill_pointer(fillp);
-    to_cp->invoke_dynamic_at_put(to_i, to_op_base, op_count);
-#ifdef ASSERT
-    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(from_i);
-    int k2 = invoke_dynamic_name_and_type_ref_index_at(from_i);
-    int k3 = invoke_dynamic_argument_count_at(from_i);
-    assert(to_cp->check_invoke_dynamic_at(to_i, k1, k2, k3),
-           "indy structure is OK");
-#endif //ASSERT
+    int k1 = from_cp->invoke_dynamic_bootstrap_specifier_index(from_i);
+    int k2 = from_cp->invoke_dynamic_name_and_type_ref_index_at(from_i);
+    k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
+    to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
 
   // Invalid is used as the tag for the second constant pool entry
@@ -1195,7 +1217,6 @@ void constantPoolOopDesc::copy_entry_to(int from_i, constantPoolHandle to_cp,
 
   default:
   {
-    jbyte bad_value = tag_at(from_i).value(); // leave a breadcrumb
     ShouldNotReachHere();
   } break;
   }
@@ -1406,8 +1427,9 @@ jint constantPoolOopDesc::cpool_entry_size(jint idx) {
       return 5;
 
     case JVM_CONSTANT_InvokeDynamic:
-      // u1 tag, u2 bsm, u2 nt, u2 argc, u2 argv[argc]
-      return 7 + 2 * invoke_dynamic_argument_count_at(idx);
+    case JVM_CONSTANT_InvokeDynamicTrans:
+      // u1 tag, u2 bsm, u2 nt
+      return 5;
 
     case JVM_CONSTANT_Long:
     case JVM_CONSTANT_Double:
@@ -1620,19 +1642,15 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
         DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
         break;
       }
+      case JVM_CONSTANT_InvokeDynamicTrans:
       case JVM_CONSTANT_InvokeDynamic: {
-        *bytes = JVM_CONSTANT_InvokeDynamic;
-        idx1 = invoke_dynamic_bootstrap_method_ref_index_at(idx);
-        idx2 = invoke_dynamic_name_and_type_ref_index_at(idx);
-        int argc = invoke_dynamic_argument_count_at(idx);
+        *bytes = tag;
+        idx1 = extract_low_short_from_int(*int_at_addr(idx));
+        idx2 = extract_high_short_from_int(*int_at_addr(idx));
+        assert(idx2 == invoke_dynamic_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        Bytes::put_Java_u2((address) (bytes+5), argc);
-        for (int arg_i = 0; arg_i < argc; arg_i++) {
-          int arg = invoke_dynamic_argument_index_at(idx, arg_i);
-          Bytes::put_Java_u2((address) (bytes+7+2*arg_i), arg);
-        }
-        DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd [%d]", idx1, idx2, argc));
+        DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd", idx1, idx2));
         break;
       }
     }

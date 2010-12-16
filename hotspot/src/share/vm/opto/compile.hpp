@@ -48,7 +48,10 @@ class ConnectionGraph;
 class InlineTree;
 class Int_Array;
 class Matcher;
+class MachConstantNode;
+class MachConstantBaseNode;
 class MachNode;
+class MachOper;
 class MachSafePointNode;
 class Node;
 class Node_Array;
@@ -139,6 +142,81 @@ class Compile : public Phase {
     trapHistLength = methodDataOopDesc::_trap_hist_limit
   };
 
+  // Constant entry of the constant table.
+  class Constant {
+  private:
+    BasicType _type;
+    jvalue    _value;
+    int       _offset;         // offset of this constant (in bytes) relative to the constant table base.
+    bool      _can_be_reused;  // true (default) if the value can be shared with other users.
+
+  public:
+    Constant() : _type(T_ILLEGAL), _offset(-1), _can_be_reused(true) { _value.l = 0; }
+    Constant(BasicType type, jvalue value, bool can_be_reused = true) :
+      _type(type),
+      _value(value),
+      _offset(-1),
+      _can_be_reused(can_be_reused)
+    {}
+
+    bool operator==(const Constant& other);
+
+    BasicType type()      const    { return _type; }
+
+    jlong   get_jlong()   const    { return _value.j; }
+    jfloat  get_jfloat()  const    { return _value.f; }
+    jdouble get_jdouble() const    { return _value.d; }
+    jobject get_jobject() const    { return _value.l; }
+
+    int         offset()  const    { return _offset; }
+    void    set_offset(int offset) {        _offset = offset; }
+
+    bool    can_be_reused() const  { return _can_be_reused; }
+  };
+
+  // Constant table.
+  class ConstantTable {
+  private:
+    GrowableArray<Constant> _constants;          // Constants of this table.
+    int                     _size;               // Size in bytes the emitted constant table takes (including padding).
+    int                     _table_base_offset;  // Offset of the table base that gets added to the constant offsets.
+
+  public:
+    ConstantTable() :
+      _size(-1),
+      _table_base_offset(-1)  // We can use -1 here since the constant table is always bigger than 2 bytes (-(size / 2), see MachConstantBaseNode::emit).
+    {}
+
+    int size() const { assert(_size != -1, "size not yet calculated"); return _size; }
+
+    void set_table_base_offset(int x)  { assert(_table_base_offset == -1, "set only once");                        _table_base_offset = x; }
+    int      table_base_offset() const { assert(_table_base_offset != -1, "table base offset not yet set"); return _table_base_offset; }
+
+    void emit(CodeBuffer& cb);
+
+    // Returns the offset of the last entry (the top) of the constant table.
+    int  top_offset() const { assert(_constants.top().offset() != -1, "constant not yet bound"); return _constants.top().offset(); }
+
+    void calculate_offsets_and_size();
+    int  find_offset(Constant& con) const;
+
+    void     add(Constant& con);
+    Constant add(BasicType type, jvalue value);
+    Constant add(MachOper* oper);
+    Constant add(jfloat f) {
+      jvalue value; value.f = f;
+      return add(T_FLOAT, value);
+    }
+    Constant add(jdouble d) {
+      jvalue value; value.d = d;
+      return add(T_DOUBLE, value);
+    }
+
+    // Jump table
+    Constant allocate_jump_table(MachConstantNode* n);
+    void         fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const;
+  };
+
  private:
   // Fixed parameters to this compilation.
   const int             _compile_id;
@@ -212,6 +290,11 @@ class Compile : public Phase {
   Node*                 _recent_alloc_obj;
   Node*                 _recent_alloc_ctl;
 
+  // Constant table
+  ConstantTable         _constant_table;        // The constant table for this compile.
+  MachConstantBaseNode* _mach_constant_base_node;  // Constant table base node singleton.
+
+
   // Blocked array of debugging and profiling information,
   // tracked per node.
   enum { _log2_node_notes_block_size = 8,
@@ -272,6 +355,8 @@ class Compile : public Phase {
   static int            _CompiledZap_count;     // counter compared against CompileZap[First/Last]
   BufferBlob*           _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*            _scratch_locs_memory;   // For temporary code buffers.
+  int                   _scratch_const_size;    // For temporary code buffers.
+  bool                  _in_scratch_emit_size;  // true when in scratch_emit_size.
 
  public:
   // Accessors
@@ -454,6 +539,12 @@ class Compile : public Phase {
                                                   _recent_alloc_obj = obj;
                                                 }
 
+  // Constant table
+  ConstantTable&   constant_table() { return _constant_table; }
+
+  MachConstantBaseNode*     mach_constant_base_node();
+  bool                  has_mach_constant_base_node() const { return _mach_constant_base_node != NULL; }
+
   // Handy undefined Node
   Node*             top() const                 { return _top; }
 
@@ -605,13 +696,16 @@ class Compile : public Phase {
   Dependencies*     dependencies()              { return env()->dependencies(); }
   static int        CompiledZap_count()         { return _CompiledZap_count; }
   BufferBlob*       scratch_buffer_blob()       { return _scratch_buffer_blob; }
-  void         init_scratch_buffer_blob();
+  void         init_scratch_buffer_blob(int const_size);
+  void        clear_scratch_buffer_blob();
   void          set_scratch_buffer_blob(BufferBlob* b) { _scratch_buffer_blob = b; }
   relocInfo*        scratch_locs_memory()       { return _scratch_locs_memory; }
   void          set_scratch_locs_memory(relocInfo* b)  { _scratch_locs_memory = b; }
 
   // emit to scratch blob, report resulting size
   uint              scratch_emit_size(const Node* n);
+  void       set_in_scratch_emit_size(bool x)   {        _in_scratch_emit_size = x; }
+  bool           in_scratch_emit_size() const   { return _in_scratch_emit_size;     }
 
   enum ScratchBufferBlob {
     MAX_inst_size       = 1024,
@@ -692,7 +786,7 @@ class Compile : public Phase {
   void Fill_buffer();
 
   // Determine which variable sized branches can be shortened
-  void Shorten_branches(Label *labels, int& code_size, int& reloc_size, int& stub_size, int& const_size);
+  void Shorten_branches(Label *labels, int& code_size, int& reloc_size, int& stub_size);
 
   // Compute the size of first NumberOfLoopInstrToAlign instructions
   // at the head of a loop.
