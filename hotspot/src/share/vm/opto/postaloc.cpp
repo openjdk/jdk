@@ -200,6 +200,19 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
   // then reloaded BUT survives in a register the whole way.
   Node *val = skip_copies(n->in(k));
 
+  if (val == x && nk_idx != 0 &&
+      regnd[nk_reg] != NULL && regnd[nk_reg] != x &&
+      n2lidx(x) == n2lidx(regnd[nk_reg])) {
+    // When rematerialzing nodes and stretching lifetimes, the
+    // allocator will reuse the original def for multidef LRG instead
+    // of the current reaching def because it can't know it's safe to
+    // do so.  After allocation completes if they are in the same LRG
+    // then it should use the current reaching def instead.
+    n->set_req(k, regnd[nk_reg]);
+    blk_adjust += yank_if_dead(val, current_block, &value, &regnd);
+    val = skip_copies(n->in(k));
+  }
+
   if( val == x ) return blk_adjust; // No progress?
 
   bool single = is_single_register(val->ideal_reg());

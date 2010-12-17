@@ -71,21 +71,10 @@ CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
 CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
 CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
 
-CPP_FLAGS=$(CPP_FLAGS) /D "WIN32" /D "_WINDOWS" $(CPP_INCLUDE_DIRS)
-
-# Must specify this for sharedRuntimeTrig.cpp
-CPP_FLAGS=$(CPP_FLAGS) /D "VM_LITTLE_ENDIAN"
+CPP_FLAGS=$(CPP_FLAGS) $(CPP_INCLUDE_DIRS)
 
 # Define that so jni.h is on correct side
 CPP_FLAGS=$(CPP_FLAGS) /D "_JNI_IMPLEMENTATION_"
-
-# Used for platform dispatching
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_FAMILY_windows
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_$(Platform_arch)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_MODEL_$(Platform_arch_model)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_windows_$(Platform_arch)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_COMPILER_visCPP
 
 !if "$(BUILDARCH)" == "ia64"
 STACK_SIZE="/STACK:1048576,262144"
@@ -104,6 +93,8 @@ AGCT_EXPORT=/export:AsyncGetCallTrace
 !endif
 !endif
 
+# If you modify exports below please do the corresponding changes in
+# src/share/tools/ProjectCreator/WinGammaPlatformVC7.java 
 LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JNI_GetDefaultJavaVMInitArgs       \
   /export:JNI_CreateJavaVM                   \

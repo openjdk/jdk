@@ -1742,6 +1742,8 @@ const char * LIR_Op1::name() const {
       return "unaligned move";
     case lir_move_volatile:
       return "volatile_move";
+    case lir_move_wide:
+      return "wide_move";
     default:
       ShouldNotReachHere();
     return "illegal_op";

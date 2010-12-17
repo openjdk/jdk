@@ -22,7 +22,10 @@
 #  
 #
 
-!include local.make
+!ifdef LOCAL_MAKE
+!include $(LOCAL_MAKE)
+!endif
+
 
 WorkSpace=$(HOTSPOTWORKSPACE)
 
@@ -34,11 +37,18 @@ BootStrapDir=$(BOOTDIR)
 !else
 !ifdef JAVA_HOME
 BootStrapDir=$(JAVA_HOME)
+!else
+!ifdef HOTSPOTJDKDIST
+BootStrapDir=$(HOTSPOTJDKDIST)
+!endif
 !endif
 !endif
 !endif
 
+
+
 !include $(HOTSPOTWORKSPACE)/make/windows/makefiles/projectcreator.make
+!include $(WorkSpace)/make/windows/makefiles/compile.make
 
 # Pick up rules for building JVMTI (JSR-163)
 JvmtiOutDir=$(HOTSPOTBUILDSPACE)\$(Variant)\generated\jvmtifiles
@@ -55,6 +65,9 @@ Platform=$(HOTSPOTWORKSPACE)/make/windows/platform_$(BUILDARCH)
 # Pick up rules for building adlc
 !include $(HOTSPOTWORKSPACE)/make/windows/makefiles/adlc.make
 !endif
+
+HS_INTERNAL_NAME=jvm
+!include $(HOTSPOTWORKSPACE)/make/windows/makefiles/launcher.make
 
 default:: $(AdditionalTargets) $(JvmtiGeneratedFiles)
 
@@ -97,7 +110,7 @@ ProjectCreatorIDEOptions =       $(ProjectCreatorIDEOptions) \
       -define              JRE_RELEASE_VERSION=\\\"$(JRE_RELEASE_VERSION)\\\" \
       -define              HOTSPOT_VM_DISTRO=\\\"$(HOTSPOT_VM_DISTRO)\\\"
 
-$(HOTSPOTBUILDSPACE)/$(ProjectFile): local.make $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
+$(HOTSPOTBUILDROOT)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
 	@$(RUN_JAVA) -Djava.class.path=$(HOTSPOTBUILDSPACE)/classes ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
 
 clean:

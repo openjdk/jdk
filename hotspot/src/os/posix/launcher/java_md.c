@@ -28,6 +28,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -812,13 +813,10 @@ GetApplicationHome(char *buf, jint bufsize)
 
 #ifdef GAMMA
     {
-       /* gamma launcher uses JAVA_HOME or ALT_JAVA_HOME environment variable to find JDK/JRE */
-       char* java_home_var = getenv("ALT_JAVA_HOME");
+       /* gamma launcher uses JAVA_HOME environment variable to find JDK/JRE */
+       char* java_home_var = getenv("JAVA_HOME");
        if (java_home_var == NULL) {
-          java_home_var = getenv("JAVA_HOME");
-       }
-       if (java_home_var == NULL) {
-          printf("JAVA_HOME or ALT_JAVA_HOME must point to a valid JDK/JRE to run gamma\n");
+          printf("JAVA_HOME must point to a valid JDK/JRE to run gamma\n");
           return JNI_FALSE;
        }
        snprintf(buf, bufsize, "%s", java_home_var);
@@ -1837,7 +1835,7 @@ ContinueInNewThread(int (JNICALL *continuation)(void *), jlong stack_size, void 
     if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
       void * tmp;
       pthread_join(tid, &tmp);
-      rslt = (int)tmp;
+      rslt = (int)(intptr_t)tmp;
     } else {
      /*
       * Continue execution in current thread if for some reason (e.g. out of
@@ -1855,7 +1853,7 @@ ContinueInNewThread(int (JNICALL *continuation)(void *), jlong stack_size, void 
     if (thr_create(NULL, stack_size, (void *(*)(void *))continuation, args, flags, &tid) == 0) {
       void * tmp;
       thr_join(tid, NULL, &tmp);
-      rslt = (int)tmp;
+      rslt = (int)(intptr_t)tmp;
     } else {
       /* See above. Continue in current thread if thr_create() failed */
       rslt = continuation(args);

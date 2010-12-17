@@ -346,6 +346,7 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
     break;
   case JVM_CONSTANT_NameAndType:
   case JVM_CONSTANT_InvokeDynamic:
+  case JVM_CONSTANT_InvokeDynamicTrans:
     has_klass = false;
     break;
   default:

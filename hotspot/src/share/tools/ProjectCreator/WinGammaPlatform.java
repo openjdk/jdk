@@ -22,8 +22,15 @@
  *
  */
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.Vector;
 
 abstract class HsArgHandler extends ArgHandler {
     static final int STRING = 1;
@@ -345,11 +352,23 @@ public abstract class WinGammaPlatform {
         new ArgsParser(args,
                        new ArgRule[]
             {
-                new HsArgRule("-sourceBase",
-                              "SourceBase",
-                              "   (Did you set the HotSpotWorkSpace environment variable?)",
-                              HsArgHandler.STRING
-                              ),
+                new ArgRule("-sourceBase",
+                            new HsArgHandler() {
+                                public void handle(ArgIterator it) {
+                                   String cfg = getCfg(it.get());
+                                   if (nextNotKey(it)) {
+                                      String sb = (String) it.get();
+                                      if (sb.endsWith(Util.sep)) {
+                                         sb = sb.substring(0, sb.length() - 1);
+                                      }
+                                      BuildConfig.putField(cfg, "SourceBase", sb);
+                                      it.next();
+                                   } else {
+                                      empty("-sourceBase", null);
+                                   }
+                                }
+                            }
+                            ),
 
                 new HsArgRule("-buildBase",
                               "BuildBase",
@@ -512,7 +531,6 @@ public abstract class WinGammaPlatform {
                             new HsArgHandler() {
                                 public void handle(ArgIterator it) {
                                     if (nextNotKey(it)) {
-                                        String build = it.get();
                                         if (nextNotKey(it)) {
                                             String description = it.get();
                                             if (nextNotKey(it)) {
@@ -528,7 +546,28 @@ public abstract class WinGammaPlatform {
                                     empty(null,  "** Error: wrong number of args to -prelink");
                                 }
                             }
-                            )
+                            ),
+
+                new ArgRule("-postbuild",
+                            new HsArgHandler() {
+                                public void handle(ArgIterator it) {
+                                    if (nextNotKey(it)) {
+                                        if (nextNotKey(it)) {
+                                            String description = it.get();
+                                            if (nextNotKey(it)) {
+                                                String command = it.get();
+                                                BuildConfig.putField(null, "PostbuildDescription", description);
+                                                BuildConfig.putField(null, "PostbuildCommand", command);
+                                                it.next();
+                                                return;
+                                            }
+                                        }
+                                    }
+
+                                    empty(null,  "** Error: wrong number of args to -postbuild");
+                                }
+                            }
+                            ),
             },
                                        new ArgHandler() {
                                            public void handle(ArgIterator it) {
@@ -618,10 +657,6 @@ public abstract class WinGammaPlatform {
 
         public int compareTo(Object o) {
             FileInfo oo = (FileInfo)o;
-            // Don't squelch identical short file names where the full
-            // paths are different
-            if (!attr.shortName.equals(oo.attr.shortName))
-              return attr.shortName.compareTo(oo.attr.shortName);
             return full.compareTo(oo.full);
         }
 

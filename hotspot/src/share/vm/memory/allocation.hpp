@@ -337,7 +337,9 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   // When this object is allocated on stack the new() operator is not
   // called but garbage on stack may look like a valid allocation_type.
   // Store negated 'this' pointer when new() is called to distinguish cases.
-  uintptr_t _allocation;
+  // Use second array's element for verification value to distinguish garbage.
+  uintptr_t _allocation_t[2];
+  bool is_type_set() const;
  public:
   allocation_type get_allocation_type() const;
   bool allocated_on_stack()    const { return get_allocation_type() == STACK_OR_EMBEDDED; }
