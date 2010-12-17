@@ -1825,23 +1825,11 @@ void ConcurrentMark::completeCleanup() {
   }
 }
 
-
-class G1CMIsAliveClosure: public BoolObjectClosure {
-  G1CollectedHeap* _g1;
- public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1) :
-    _g1(g1)
-  {}
-
-  void do_object(oop obj) {
-    assert(false, "not to be invoked");
-  }
-  bool do_object_b(oop obj) {
-    HeapWord* addr = (HeapWord*)obj;
-    return addr != NULL &&
-           (!_g1->is_in_g1_reserved(addr) || !_g1->is_obj_ill(obj));
-  }
-};
+bool G1CMIsAliveClosure::do_object_b(oop obj) {
+  HeapWord* addr = (HeapWord*)obj;
+  return addr != NULL &&
+         (!_g1->is_in_g1_reserved(addr) || !_g1->is_obj_ill(obj));
+}
 
 class G1CMKeepAliveClosure: public OopClosure {
   G1CollectedHeap* _g1;
@@ -1896,16 +1884,15 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   rp->setup_policy(clear_all_soft_refs);
   assert(_markStack.isEmpty(), "mark stack should be empty");
 
-  G1CMIsAliveClosure   g1IsAliveClosure  (g1h);
-  G1CMKeepAliveClosure g1KeepAliveClosure(g1h, this, nextMarkBitMap());
+  G1CMIsAliveClosure   g1_is_alive(g1h);
+  G1CMKeepAliveClosure g1_keep_alive(g1h, this, nextMarkBitMap());
   G1CMDrainMarkingStackClosure
-    g1DrainMarkingStackClosure(nextMarkBitMap(), &_markStack,
-                               &g1KeepAliveClosure);
+    g1_drain_mark_stack(nextMarkBitMap(), &_markStack, &g1_keep_alive);
 
   // XXXYYY  Also: copy the parallel ref processing code from CMS.
-  rp->process_discovered_references(&g1IsAliveClosure,
-                                    &g1KeepAliveClosure,
-                                    &g1DrainMarkingStackClosure,
+  rp->process_discovered_references(&g1_is_alive,
+                                    &g1_keep_alive,
+                                    &g1_drain_mark_stack,
                                     NULL);
   assert(_markStack.overflow() || _markStack.isEmpty(),
          "mark stack should be empty (unless it overflowed)");
@@ -1918,8 +1905,8 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   assert(!rp->discovery_enabled(), "should have been disabled");
 
   // Now clean up stale oops in SymbolTable and StringTable
-  SymbolTable::unlink(&g1IsAliveClosure);
-  StringTable::unlink(&g1IsAliveClosure);
+  SymbolTable::unlink(&g1_is_alive);
+  StringTable::unlink(&g1_is_alive);
 }
 
 void ConcurrentMark::swapMarkBitMaps() {
