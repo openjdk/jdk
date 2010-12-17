@@ -1768,6 +1768,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
   _into_cset_dirty_card_queue_set(false),
+  _is_alive_closure(this),
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
@@ -2061,7 +2062,8 @@ void G1CollectedHeap::ref_processing_init() {
                                          mr,    // span
                                          false, // Reference discovery is not atomic
                                          true,  // mt_discovery
-                                         NULL,  // is alive closure: need to fill this in for efficiency
+                                         &_is_alive_closure, // is alive closure
+                                                             // for efficiency
                                          ParallelGCThreads,
                                          ParallelRefProcEnabled,
                                          true); // Setting next fields of discovered
