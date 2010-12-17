@@ -115,6 +115,7 @@
 # include <link.h>
 # include <stdint.h>
 # include <inttypes.h>
+# include <sys/ioctl.h>
 
 #define MAX_PATH    (2 * K)
 
@@ -4431,6 +4432,15 @@ int os::available(int fd, jlong *bytes) {
   }
   *bytes = end - cur;
   return 1;
+}
+
+int os::socket_available(int fd, jint *pbytes) {
+  // Linux doc says EINTR not returned, unlike Solaris
+  int ret = ::ioctl(fd, FIONREAD, pbytes);
+
+  //%% note ioctl can return 0 when successful, JVM_SocketAvailable
+  // is expected to return 0 on failure and 1 on success to the jdk.
+  return (ret < 0) ? 0 : 1;
 }
 
 // Map a block of memory.
