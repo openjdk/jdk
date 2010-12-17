@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,73 +93,65 @@ import java.util.Locale;
  *         currency
  *         percent
  *         <i>SubformatPattern</i>
- *
- * <i>String:</i>
- *         <i>StringPart<sub>opt</sub></i>
- *         <i>String</i> <i>StringPart</i>
- *
- * <i>StringPart:</i>
- *         ''
- *         ' <i>QuotedString</i> '
- *         <i>UnquotedString</i>
- *
- * <i>SubformatPattern:</i>
- *         <i>SubformatPatternPart<sub>opt</sub></i>
- *         <i>SubformatPattern</i> <i>SubformatPatternPart</i>
- *
- * <i>SubFormatPatternPart:</i>
- *         ' <i>QuotedPattern</i> '
- *         <i>UnquotedPattern</i>
  * </pre></blockquote>
  *
- * <p>
- * Within a <i>String</i>, <code>"''"</code> represents a single
- * quote. A <i>QuotedString</i> can contain arbitrary characters
- * except single quotes; the surrounding single quotes are removed.
- * An <i>UnquotedString</i> can contain arbitrary characters
- * except single quotes and left curly brackets. Thus, a string that
- * should result in the formatted message "'{0}'" can be written as
- * <code>"'''{'0}''"</code> or <code>"'''{0}'''"</code>.
- * <p>
- * Within a <i>SubformatPattern</i>, different rules apply.
- * A <i>QuotedPattern</i> can contain arbitrary characters
- * except single quotes; but the surrounding single quotes are
- * <strong>not</strong> removed, so they may be interpreted by the
- * subformat. For example, <code>"{1,number,$'#',##}"</code> will
- * produce a number format with the pound-sign quoted, with a result
- * such as: "$#31,45".
- * An <i>UnquotedPattern</i> can contain arbitrary characters
- * except single quotes, but curly braces within it must be balanced.
- * For example, <code>"ab {0} de"</code> and <code>"ab '}' de"</code>
- * are valid subformat patterns, but <code>"ab {0'}' de"</code> and
- * <code>"ab } de"</code> are not.
+ * <p>Within a <i>String</i>, a pair of single quotes can be used to
+ * quote any arbitrary characters except single quotes. For example,
+ * pattern string <code>"'{0}'"</code> represents string
+ * <code>"{0}"</code>, not a <i>FormatElement</i>. A single quote itself
+ * must be represented by doubled single quotes {@code ''} throughout a
+ * <i>String</i>.  For example, pattern string <code>"'{''}'"</code> is
+ * interpreted as a sequence of <code>'{</code> (start of quoting and a
+ * left curly brace), <code>''</code> (a single quote), and
+ * <code>}'</code> (a right curly brace and end of quoting),
+ * <em>not</em> <code>'{'</code> and <code>'}'</code> (quoted left and
+ * right curly braces): representing string <code>"{'}"</code>,
+ * <em>not</em> <code>"{}"</code>.
+ *
+ * <p>A <i>SubformatPattern</i> is interpreted by its corresponding
+ * subformat, and subformat-dependent pattern rules apply. For example,
+ * pattern string <code>"{1,number,<u>$'#',##</u>}"</code>
+ * (<i>SubformatPattern</i> with underline) will produce a number format
+ * with the pound-sign quoted, with a result such as: {@code
+ * "$#31,45"}. Refer to each {@code Format} subclass documentation for
+ * details.
+ *
+ * <p>Any unmatched quote is treated as closed at the end of the given
+ * pattern. For example, pattern string {@code "'{0}"} is treated as
+ * pattern {@code "'{0}'"}.
+ *
+ * <p>Any curly braces within an unquoted pattern must be balanced. For
+ * example, <code>"ab {0} de"</code> and <code>"ab '}' de"</code> are
+ * valid patterns, but <code>"ab {0'}' de"</code>, <code>"ab } de"</code>
+ * and <code>"''{''"</code> are not.
+ *
  * <p>
  * <dl><dt><b>Warning:</b><dd>The rules for using quotes within message
  * format patterns unfortunately have shown to be somewhat confusing.
  * In particular, it isn't always obvious to localizers whether single
  * quotes need to be doubled or not. Make sure to inform localizers about
  * the rules, and tell them (for example, by using comments in resource
- * bundle source files) which strings will be processed by MessageFormat.
+ * bundle source files) which strings will be processed by {@code MessageFormat}.
  * Note that localizers may need to use single quotes in translated
  * strings where the original version doesn't have them.
  * </dl>
  * <p>
  * The <i>ArgumentIndex</i> value is a non-negative integer written
- * using the digits '0' through '9', and represents an index into the
- * <code>arguments</code> array passed to the <code>format</code> methods
- * or the result array returned by the <code>parse</code> methods.
+ * using the digits {@code '0'} through {@code '9'}, and represents an index into the
+ * {@code arguments} array passed to the {@code format} methods
+ * or the result array returned by the {@code parse} methods.
  * <p>
  * The <i>FormatType</i> and <i>FormatStyle</i> values are used to create
- * a <code>Format</code> instance for the format element. The following
- * table shows how the values map to Format instances. Combinations not
+ * a {@code Format} instance for the format element. The following
+ * table shows how the values map to {@code Format} instances. Combinations not
  * shown in the table are illegal. A <i>SubformatPattern</i> must
- * be a valid pattern string for the Format subclass used.
+ * be a valid pattern string for the {@code Format} subclass used.
  * <p>
  * <table border=1 summary="Shows how FormatType and FormatStyle values map to Format instances">
  *    <tr>
- *       <th id="ft">Format Type
- *       <th id="fs">Format Style
- *       <th id="sc">Subformat Created
+ *       <th id="ft" class="TableHeadingColor">FormatType
+ *       <th id="fs" class="TableHeadingColor">FormatStyle
+ *       <th id="sc" class="TableHeadingColor">Subformat Created
  *    <tr>
  *       <td headers="ft"><i>(none)</i>
  *       <td headers="fs"><i>(none)</i>
@@ -167,61 +159,61 @@ import java.util.Locale;
  *    <tr>
  *       <td headers="ft" rowspan=5><code>number</code>
  *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>NumberFormat.getInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getInstance(Locale) NumberFormat.getInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><code>integer</code>
- *       <td headers="sc"><code>NumberFormat.getIntegerInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getIntegerInstance(Locale) NumberFormat.getIntegerInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><code>currency</code>
- *       <td headers="sc"><code>NumberFormat.getCurrencyInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getCurrencyInstance(Locale) NumberFormat.getCurrencyInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><code>percent</code>
- *       <td headers="sc"><code>NumberFormat.getPercentInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new DecimalFormat(subformatPattern, DecimalFormatSymbols.getInstance(getLocale()))</code>
+ *       <td headers="sc">{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
  *    <tr>
  *       <td headers="ft" rowspan=6><code>date</code>
  *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>short</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.SHORT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>medium</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>long</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.LONG, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>full</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.FULL, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new SimpleDateFormat(subformatPattern, getLocale())</code>
+ *       <td headers="sc">{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
  *       <td headers="ft" rowspan=6><code>time</code>
  *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>short</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.SHORT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>medium</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>long</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.LONG, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>full</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.FULL, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new SimpleDateFormat(subformatPattern, getLocale())</code>
+ *       <td headers="sc">{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
  *       <td headers="ft"><code>choice</code>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new ChoiceFormat(subformatPattern)</code>
+ *       <td headers="sc">{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
  * </table>
  * <p>
  *
@@ -321,7 +313,7 @@ import java.util.Locale;
  * </pre></blockquote>
  *
  * <p>
- * Likewise, parsing with a MessageFormat object using patterns containing
+ * Likewise, parsing with a {@code MessageFormat} object using patterns containing
  * multiple occurrences of the same argument would return the last match.  For
  * example,
  * <blockquote><pre>
@@ -343,7 +335,11 @@ import java.util.Locale;
  * @see          Format
  * @see          NumberFormat
  * @see          DecimalFormat
+ * @see          DecimalFormatSymbols
  * @see          ChoiceFormat
+ * @see          DateFormat
+ * @see          SimpleDateFormat
+ *
  * @author       Mark Davis
  */
 
