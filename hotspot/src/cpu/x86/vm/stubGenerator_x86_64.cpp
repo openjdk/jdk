@@ -2197,9 +2197,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    checkcast_copy_entry  = __ pc();
-    BLOCK_COMMENT("Entry:");
-
 #ifdef ASSERT
     // caller guarantees that the arrays really are different
     // otherwise, we would have to make conjoint checks
@@ -2210,25 +2207,27 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    // allocate spill slots for r13, r14
-    enum {
-      saved_r13_offset,
-      saved_r14_offset,
-      saved_rbp_offset,
-      saved_rip_offset,
-      saved_rarg0_offset
-    };
-    __ subptr(rsp, saved_rbp_offset * wordSize);
-    __ movptr(Address(rsp, saved_r13_offset * wordSize), r13);
-    __ movptr(Address(rsp, saved_r14_offset * wordSize), r14);
     setup_arg_regs(4); // from => rdi, to => rsi, length => rdx
                        // ckoff => rcx, ckval => r8
                        // r9 and r10 may be used to save non-volatile registers
 #ifdef _WIN64
     // last argument (#4) is on stack on Win64
-    const int ckval_offset = saved_rarg0_offset + 4;
-    __ movptr(ckval, Address(rsp, ckval_offset * wordSize));
+    __ movptr(ckval, Address(rsp, 6 * wordSize));
 #endif
+
+    // Caller of this entry point must set up the argument registers.
+    checkcast_copy_entry  = __ pc();
+    BLOCK_COMMENT("Entry:");
+
+    // allocate spill slots for r13, r14
+    enum {
+      saved_r13_offset,
+      saved_r14_offset,
+      saved_rbp_offset
+    };
+    __ subptr(rsp, saved_rbp_offset * wordSize);
+    __ movptr(Address(rsp, saved_r13_offset * wordSize), r13);
+    __ movptr(Address(rsp, saved_r14_offset * wordSize), r14);
 
     // check that int operands are properly extended to size_t
     assert_clean_int(length, rax);
@@ -2443,11 +2442,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register src_pos    = c_rarg1;  // source position
     const Register dst        = c_rarg2;  // destination array oop
     const Register dst_pos    = c_rarg3;  // destination position
-    // elements count is on stack on Win64
-#ifdef _WIN64
-#define C_RARG4 Address(rsp, 6 * wordSize)
+#ifndef _WIN64
+    const Register length     = c_rarg4;
 #else
-#define C_RARG4 c_rarg4
+    const Address  length(rsp, 6 * wordSize);  // elements count is on stack on Win64
 #endif
 
     { int modulus = CodeEntryAlignment;
@@ -2514,27 +2512,27 @@ class StubGenerator: public StubCodeGenerator {
     // registers used as temp
     const Register r11_length    = r11; // elements count to copy
     const Register r10_src_klass = r10; // array klass
-    const Register r9_dst_klass  = r9;  // dest array klass
 
     //  if (length < 0) return -1;
-    __ movl(r11_length, C_RARG4);       // length (elements count, 32-bits value)
+    __ movl(r11_length, length);        // length (elements count, 32-bits value)
     __ testl(r11_length, r11_length);
     __ jccb(Assembler::negative, L_failed_0);
 
     __ load_klass(r10_src_klass, src);
 #ifdef ASSERT
     //  assert(src->klass() != NULL);
-    BLOCK_COMMENT("assert klasses not null");
-    { Label L1, L2;
+    {
+      BLOCK_COMMENT("assert klasses not null {");
+      Label L1, L2;
       __ testptr(r10_src_klass, r10_src_klass);
       __ jcc(Assembler::notZero, L2);   // it is broken if klass is NULL
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(r9_dst_klass, dst);
-      __ cmpq(r9_dst_klass, 0);
+      __ load_klass(rax, dst);
+      __ cmpq(rax, 0);
       __ jcc(Assembler::equal, L1);     // this would be broken also
-      BLOCK_COMMENT("assert done");
+      BLOCK_COMMENT("} assert klasses not null done");
     }
 #endif
 
@@ -2546,22 +2544,21 @@ class StubGenerator: public StubCodeGenerator {
     //   array_tag: typeArray = 0x3, objArray = 0x2, non-array = 0x0
     //
 
-    int lh_offset = klassOopDesc::header_size() * HeapWordSize +
-                    Klass::layout_helper_offset_in_bytes();
-
-    const Register rax_lh = rax;  // layout helper
-
-    __ movl(rax_lh, Address(r10_src_klass, lh_offset));
+    const int lh_offset = klassOopDesc::header_size() * HeapWordSize +
+                          Klass::layout_helper_offset_in_bytes();
 
     // Handle objArrays completely differently...
-    jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
-    __ cmpl(rax_lh, objArray_lh);
+    const jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
+    __ cmpl(Address(r10_src_klass, lh_offset), objArray_lh);
     __ jcc(Assembler::equal, L_objArray);
 
     //  if (src->klass() != dst->klass()) return -1;
-    __ load_klass(r9_dst_klass, dst);
-    __ cmpq(r10_src_klass, r9_dst_klass);
+    __ load_klass(rax, dst);
+    __ cmpq(r10_src_klass, rax);
     __ jcc(Assembler::notEqual, L_failed);
+
+    const Register rax_lh = rax;  // layout helper
+    __ movl(rax_lh, Address(r10_src_klass, lh_offset));
 
     //  if (!src->is_Array()) return -1;
     __ cmpl(rax_lh, Klass::_lh_neutral_value);
@@ -2569,11 +2566,14 @@ class StubGenerator: public StubCodeGenerator {
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
-    { Label L;
+    {
+      BLOCK_COMMENT("assert primitive array {");
+      Label L;
       __ cmpl(rax_lh, (Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift));
       __ jcc(Assembler::greaterEqual, L);
       __ stop("must be a primitive array");
       __ bind(L);
+      BLOCK_COMMENT("} assert primitive array done");
     }
 #endif
 
@@ -2631,11 +2631,14 @@ class StubGenerator: public StubCodeGenerator {
 
   __ BIND(L_copy_longs);
 #ifdef ASSERT
-    { Label L;
+    {
+      BLOCK_COMMENT("assert long copy {");
+      Label L;
       __ cmpl(rax_elsize, LogBytesPerLong);
       __ jcc(Assembler::equal, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
+      BLOCK_COMMENT("} assert long copy done");
     }
 #endif
     __ lea(from, Address(src, src_pos, Address::times_8, 0));// src_addr
@@ -2645,12 +2648,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // objArrayKlass
   __ BIND(L_objArray);
-    // live at this point:  r10_src_klass, src[_pos], dst[_pos]
+    // live at this point:  r10_src_klass, r11_length, src[_pos], dst[_pos]
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ load_klass(r9_dst_klass, dst);
-    __ cmpq(r10_src_klass, r9_dst_klass); // usual case is exact equality
+    __ load_klass(rax, dst);
+    __ cmpq(r10_src_klass, rax); // usual case is exact equality
     __ jcc(Assembler::notEqual, L_checkcast_copy);
 
     // Identically typed arrays can be copied without element-wise checks.
@@ -2666,41 +2669,33 @@ class StubGenerator: public StubCodeGenerator {
     __ jump(RuntimeAddress(oop_copy_entry));
 
   __ BIND(L_checkcast_copy);
-    // live at this point:  r10_src_klass, !r11_length
+    // live at this point:  r10_src_klass, r11_length, rax (dst_klass)
     {
-      // assert(r11_length == C_RARG4); // will reload from here
-      Register r11_dst_klass = r11;
-      __ load_klass(r11_dst_klass, dst);
-
       // Before looking at dst.length, make sure dst is also an objArray.
-      __ cmpl(Address(r11_dst_klass, lh_offset), objArray_lh);
+      __ cmpl(Address(rax, lh_offset), objArray_lh);
       __ jcc(Assembler::notEqual, L_failed);
 
       // It is safe to examine both src.length and dst.length.
-#ifndef _WIN64
-      arraycopy_range_checks(src, src_pos, dst, dst_pos, C_RARG4,
-                             rax, L_failed);
-#else
-      __ movl(r11_length, C_RARG4);     // reload
       arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
                              rax, L_failed);
+
+      const Register r11_dst_klass = r11;
       __ load_klass(r11_dst_klass, dst); // reload
-#endif
 
       // Marshal the base address arguments now, freeing registers.
       __ lea(from, Address(src, src_pos, TIMES_OOP,
                    arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
       __ lea(to,   Address(dst, dst_pos, TIMES_OOP,
                    arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
-      __ movl(count, C_RARG4);          // length (reloaded)
+      __ movl(count, length);           // length (reloaded)
       Register sco_temp = c_rarg3;      // this register is free now
       assert_different_registers(from, to, count, sco_temp,
                                  r11_dst_klass, r10_src_klass);
       assert_clean_int(count, sco_temp);
 
       // Generate the type check.
-      int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                        Klass::super_check_offset_offset_in_bytes());
+      const int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
+                              Klass::super_check_offset_offset_in_bytes());
       __ movl(sco_temp, Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);
       generate_type_check(r10_src_klass, sco_temp, r11_dst_klass, L_plain_copy);
@@ -2709,12 +2704,14 @@ class StubGenerator: public StubCodeGenerator {
       int ek_offset = (klassOopDesc::header_size() * HeapWordSize +
                        objArrayKlass::element_klass_offset_in_bytes());
       __ movptr(r11_dst_klass, Address(r11_dst_klass, ek_offset));
-      __ movl(sco_temp,      Address(r11_dst_klass, sco_offset));
+      __ movl(  sco_temp,      Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);
 
       // the checkcast_copy loop needs two extra arguments:
       assert(c_rarg3 == sco_temp, "#3 already in place");
-      __ movptr(C_RARG4, r11_dst_klass);  // dst.klass.element_klass
+      // Set up arguments for checkcast_copy_entry.
+      setup_arg_regs(4);
+      __ movptr(r8, r11_dst_klass);  // dst.klass.element_klass, r8 is c_rarg4 on Linux/Solaris
       __ jump(RuntimeAddress(checkcast_copy_entry));
     }
 
@@ -2726,8 +2723,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
-
-#undef length_arg
 
   void generate_arraycopy_stubs() {
     // Call the conjoint generation methods immediately after

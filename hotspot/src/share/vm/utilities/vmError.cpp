@@ -33,6 +33,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
@@ -516,8 +517,10 @@ void VMError::report(outputStream* st) {
        if (fr.pc()) {
           st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
 
-          int count = 0;
+          // initialize decoder to decode C frames
+          Decoder decoder;
 
+          int count = 0;
           while (count++ < StackPrintLimit) {
              fr.print_on_error(st, buf, sizeof(buf));
              st->cr();

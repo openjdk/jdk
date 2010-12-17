@@ -45,7 +45,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
-#include <sys/ioctl.h>
 #include <netdb.h>
 
 inline void* os::thread_local_storage_at(int index) {
@@ -267,16 +266,6 @@ inline int os::sendto(int fd, char *buf, int len, int flags,
                         struct sockaddr *to, int tolen) {
   RESTARTABLE_RETURN_INT(::sendto(fd, buf, len, (unsigned int) flags, to, tolen));
 }
-
-inline int os::socket_available(int fd, jint *pbytes) {
-  // Linux doc says EINTR not returned, unlike Solaris
-  int ret = ::ioctl(fd, FIONREAD, pbytes);
-
-  //%% note ioctl can return 0 when successful, JVM_SocketAvailable
-  // is expected to return 0 on failure and 1 on success to the jdk.
-  return (ret < 0) ? 0 : 1;
-}
-
 
 inline int os::socket_shutdown(int fd, int howto){
   return ::shutdown(fd, howto);

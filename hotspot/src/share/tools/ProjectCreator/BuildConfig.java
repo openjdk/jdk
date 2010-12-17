@@ -22,8 +22,11 @@
  *
  */
 
-import java.util.*;
 import java.io.File;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
 class BuildConfig {
     Hashtable vars;
@@ -57,7 +60,6 @@ class BuildConfig {
 
         // ones mentioned above were needed to expand format
         String buildBase = expandFormat(getFieldString(null, "BuildBase"));
-        String jdkDir =  getFieldString(null, "JdkTargetRoot");
         String sourceBase = getFieldString(null, "SourceBase");
         String outDir = buildBase;
 
@@ -65,7 +67,7 @@ class BuildConfig {
         put("OutputDir", outDir);
         put("SourceBase", sourceBase);
         put("BuildBase", buildBase);
-        put("OutputDll", jdkDir + Util.sep + outDll);
+        put("OutputDll", outDir + Util.sep + outDll);
 
         context = new String [] {flavourBuild, flavour, build, null};
     }
@@ -537,68 +539,75 @@ abstract class GenericDebugConfig extends BuildConfig {
    }
 }
 
-class C1DebugConfig extends GenericDebugConfig {
+abstract class GenericDebugNonKernelConfig extends GenericDebugConfig {
+    protected void init(Vector includes, Vector defines) {
+        super.init(includes, defines);
+        getCI().getAdditionalNonKernelLinkerFlags(getV("LinkerFlags"));
+   }
+}
+
+class C1DebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getNoOptFlag();
     }
 
     C1DebugConfig() {
-        initNames("compiler1", "debug", "fastdebug\\jre\\bin\\client\\jvm.dll");
+        initNames("compiler1", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
-class C1FastDebugConfig extends GenericDebugConfig {
+class C1FastDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getOptFlag();
     }
 
     C1FastDebugConfig() {
-        initNames("compiler1", "fastdebug", "fastdebug\\jre\\bin\\client\\jvm.dll");
+        initNames("compiler1", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
-class C2DebugConfig extends GenericDebugConfig {
+class C2DebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getNoOptFlag();
     }
 
     C2DebugConfig() {
-        initNames("compiler2", "debug", "fastdebug\\jre\\bin\\server\\jvm.dll");
+        initNames("compiler2", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
-class C2FastDebugConfig extends GenericDebugConfig {
+class C2FastDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getOptFlag();
     }
 
     C2FastDebugConfig() {
-        initNames("compiler2", "fastdebug", "fastdebug\\jre\\bin\\server\\jvm.dll");
+        initNames("compiler2", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
-class TieredDebugConfig extends GenericDebugConfig {
+class TieredDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getNoOptFlag();
     }
 
     TieredDebugConfig() {
-        initNames("tiered", "debug", "fastdebug\\jre\\bin\\server\\jvm.dll");
+        initNames("tiered", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
-class TieredFastDebugConfig extends GenericDebugConfig {
+class TieredFastDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getOptFlag();
     }
 
     TieredFastDebugConfig() {
-        initNames("tiered", "fastdebug", "fastdebug\\jre\\bin\\server\\jvm.dll");
+        initNames("tiered", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -618,45 +627,45 @@ abstract class ProductConfig extends BuildConfig {
 
 class C1ProductConfig extends ProductConfig {
     C1ProductConfig() {
-        initNames("compiler1", "product", "jre\\bin\\client\\jvm.dll");
+        initNames("compiler1", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
 class C2ProductConfig extends ProductConfig {
     C2ProductConfig() {
-        initNames("compiler2", "product", "jre\\bin\\server\\jvm.dll");
+        initNames("compiler2", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
 class TieredProductConfig extends ProductConfig {
     TieredProductConfig() {
-        initNames("tiered", "product", "jre\\bin\\server\\jvm.dll");
+        initNames("tiered", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
 
-class CoreDebugConfig extends GenericDebugConfig {
+class CoreDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getNoOptFlag();
     }
 
     CoreDebugConfig() {
-        initNames("core", "debug", "fastdebug\\jre\\bin\\core\\jvm.dll");
+        initNames("core", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
 
-class CoreFastDebugConfig extends GenericDebugConfig {
+class CoreFastDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getOptFlag();
     }
 
     CoreFastDebugConfig() {
-        initNames("core", "fastdebug", "fastdebug\\jre\\bin\\core\\jvm.dll");
+        initNames("core", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -664,7 +673,7 @@ class CoreFastDebugConfig extends GenericDebugConfig {
 
 class CoreProductConfig extends ProductConfig {
     CoreProductConfig() {
-        initNames("core", "product", "jre\\bin\\core\\jvm.dll");
+        initNames("core", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -675,7 +684,7 @@ class KernelDebugConfig extends GenericDebugConfig {
     }
 
     KernelDebugConfig() {
-        initNames("kernel", "debug", "fastdebug\\jre\\bin\\kernel\\jvm.dll");
+        initNames("kernel", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -687,7 +696,7 @@ class KernelFastDebugConfig extends GenericDebugConfig {
     }
 
     KernelFastDebugConfig() {
-        initNames("kernel", "fastdebug", "fastdebug\\jre\\bin\\kernel\\jvm.dll");
+        initNames("kernel", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -695,7 +704,7 @@ class KernelFastDebugConfig extends GenericDebugConfig {
 
 class KernelProductConfig extends ProductConfig {
     KernelProductConfig() {
-        initNames("kernel", "product", "jre\\bin\\kernel\\jvm.dll");
+        initNames("kernel", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -704,6 +713,7 @@ abstract class CompilerInterface {
     abstract Vector getBaseLinkerFlags(String outDir, String outDll);
     abstract Vector getDebugCompilerFlags(String opt);
     abstract Vector getDebugLinkerFlags();
+    abstract void   getAdditionalNonKernelLinkerFlags(Vector rv);
     abstract Vector getProductCompilerFlags();
     abstract Vector getProductLinkerFlags();
     abstract String getOptFlag();
@@ -712,5 +722,15 @@ abstract class CompilerInterface {
 
     void addAttr(Vector receiver, String attr, String value) {
         receiver.add(attr); receiver.add(value);
+    }
+    void extAttr(Vector receiver, String attr, String value) {
+        int attr_pos=receiver.indexOf(attr) ;
+        if ( attr_pos == -1) {
+          // If attr IS NOT present in the Vector - add it
+          receiver.add(attr); receiver.add(value);
+        } else {
+          // If attr IS present in the Vector - append value to it
+          receiver.set(attr_pos+1,receiver.get(attr_pos+1)+value);
+        }
     }
 }

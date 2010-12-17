@@ -131,6 +131,7 @@ CodeBuffer::~CodeBuffer() {
 #ifdef ASSERT
   // Save allocation type to execute assert in ~ResourceObj()
   // which is called after this destructor.
+  assert(_default_oop_recorder.allocated_on_stack(), "should be embedded object");
   ResourceObj::allocation_type at = _default_oop_recorder.get_allocation_type();
   Copy::fill_to_bytes(this, sizeof(*this), badResourceValue);
   ResourceObj::set_allocation_type((address)(&_default_oop_recorder), at);

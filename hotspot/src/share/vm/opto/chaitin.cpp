@@ -1782,7 +1782,7 @@ void PhaseChaitin::dump() const {
   for(uint i2 = 1; i2 < _maxlrg; i2++ ) {
     tty->print("L%d: ",i2);
     if( i2 < _ifg->_maxlrg ) lrgs(i2).dump( );
-    else tty->print("new LRG");
+    else tty->print_cr("new LRG");
   }
   tty->print_cr("");
 
@@ -1993,7 +1993,7 @@ void PhaseChaitin::dump_bb( uint pre_order ) const {
 }
 
 //------------------------------dump_lrg---------------------------------------
-void PhaseChaitin::dump_lrg( uint lidx ) const {
+void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
   tty->print_cr("---dump of L%d---",lidx);
 
   if( _ifg ) {
@@ -2002,9 +2002,11 @@ void PhaseChaitin::dump_lrg( uint lidx ) const {
       return;
     }
     tty->print("L%d: ",lidx);
-    lrgs(lidx).dump( );
+    if( lidx < _ifg->_maxlrg ) lrgs(lidx).dump( );
+    else tty->print_cr("new LRG");
   }
-  if( _ifg ) {    tty->print("Neighbors: %d - ", _ifg->neighbor_cnt(lidx));
+  if( _ifg && lidx < _ifg->_maxlrg) {
+    tty->print("Neighbors: %d - ", _ifg->neighbor_cnt(lidx));
     _ifg->neighbors(lidx)->dump();
     tty->cr();
   }
@@ -2024,16 +2026,18 @@ void PhaseChaitin::dump_lrg( uint lidx ) const {
         dump(n);
         continue;
       }
-      uint cnt = n->req();
-      for( uint k = 1; k < cnt; k++ ) {
-        Node *m = n->in(k);
-        if (!m)  continue;  // be robust in the dumper
-        if( Find_const(m) == lidx ) {
-          if( !dump_once++ ) {
-            tty->cr();
-            b->dump_head( &_cfg._bbs );
+      if (!defs_only) {
+        uint cnt = n->req();
+        for( uint k = 1; k < cnt; k++ ) {
+          Node *m = n->in(k);
+          if (!m)  continue;  // be robust in the dumper
+          if( Find_const(m) == lidx ) {
+            if( !dump_once++ ) {
+              tty->cr();
+              b->dump_head( &_cfg._bbs );
+            }
+            dump(n);
           }
-          dump(n);
         }
       }
     }

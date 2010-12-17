@@ -179,28 +179,16 @@ class constantPoolOopDesc : public oopDesc {
     *int_at_addr(which) = ref_index;
   }
 
-  void invoke_dynamic_at_put(int which, int operand_base, int operand_count) {
+  void invoke_dynamic_at_put(int which, int bootstrap_specifier_index, int name_and_type_index) {
     tag_at_put(which, JVM_CONSTANT_InvokeDynamic);
-    *int_at_addr(which) = operand_base;  // this is the real information
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_specifier_index;
   }
-#ifdef ASSERT
-  bool check_invoke_dynamic_at(int which,
-                               int bootstrap_method_index,
-                               int name_and_type_index,
-                               int argument_count) {
-    assert(invoke_dynamic_bootstrap_method_ref_index_at(which) == bootstrap_method_index,
-           "already stored by caller");
-    assert(invoke_dynamic_name_and_type_ref_index_at(which) == name_and_type_index,
-           "already stored by caller");
-    assert(invoke_dynamic_argument_count_at(which) == argument_count,
-           "consistent argument count");
-    if (argument_count != 0) {
-      invoke_dynamic_argument_index_at(which, 0);
-      invoke_dynamic_argument_index_at(which, argument_count - 1);
-    }
-    return true;
+
+  void invoke_dynamic_trans_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
+    tag_at_put(which, JVM_CONSTANT_InvokeDynamicTrans);
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_method_index;
+    assert(AllowTransitionalJSR292, "");
   }
-#endif //ASSERT
 
   // Temporary until actual use
   void unresolved_string_at_put(int which, symbolOop s) {
@@ -443,75 +431,90 @@ class constantPoolOopDesc : public oopDesc {
     return symbol_at(sym);
   }
 
- private:
-  // some nodes (InvokeDynamic) have a variable number of operands, each a u2 value
-  enum { _multi_operand_count_offset = -1,
-         _multi_operand_base_offset  = 0,
-         _multi_operand_buffer_fill_pointer_offset = 0  // shared at front of operands array
-  };
-  int multi_operand_buffer_length() {
-    return operands() == NULL ? 0 : operands()->length();
-  }
-  int multi_operand_buffer_fill_pointer() {
-    return operands() == NULL
-      ? _multi_operand_buffer_fill_pointer_offset + 1
-      : operands()->int_at(_multi_operand_buffer_fill_pointer_offset);
-  }
-  void multi_operand_buffer_grow(int min_length, TRAPS);
-  void set_multi_operand_buffer_fill_pointer(int fillp) {
-    assert(operands() != NULL, "");
-    operands()->int_at_put(_multi_operand_buffer_fill_pointer_offset, fillp);
-  }
-  int multi_operand_base_at(int which) {
+  int invoke_dynamic_name_and_type_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    int op_base = *int_at_addr(which);
-    assert(op_base > _multi_operand_buffer_fill_pointer_offset, "Corrupted operand base");
-    return op_base;
+    return extract_high_short_from_int(*int_at_addr(which));
   }
-  int multi_operand_count_at(int which) {
-    int op_base = multi_operand_base_at(which);
-    assert((uint)(op_base + _multi_operand_count_offset) < (uint)operands()->length(), "oob");
-    int count = operands()->int_at(op_base + _multi_operand_count_offset);
-    return count;
+  int invoke_dynamic_bootstrap_specifier_index(int which) {
+    assert(tag_at(which).value() == JVM_CONSTANT_InvokeDynamic, "Corrupted constant pool");
+    return extract_low_short_from_int(*int_at_addr(which));
   }
-  int multi_operand_ref_at(int which, int i) {
-    int op_base = multi_operand_base_at(which);
-    assert((uint)i < (uint)multi_operand_count_at(which), "oob");
-    assert((uint)(op_base + _multi_operand_base_offset + i) < (uint)operands()->length(), "oob");
-    return operands()->int_at(op_base + _multi_operand_base_offset + i);
+  int invoke_dynamic_operand_base(int which) {
+    int bootstrap_specifier_index = invoke_dynamic_bootstrap_specifier_index(which);
+    return operand_offset_at(operands(), bootstrap_specifier_index);
   }
-  void set_multi_operand_ref_at(int which, int i, int ref) {
-    DEBUG_ONLY(multi_operand_ref_at(which, i));  // trigger asserts
-    int op_base = multi_operand_base_at(which);
-    operands()->int_at_put(op_base + _multi_operand_base_offset + i, ref);
+  // The first part of the operands array consists of an index into the second part.
+  // Extract a 32-bit index value from the first part.
+  static int operand_offset_at(typeArrayOop operands, int bootstrap_specifier_index) {
+    int n = (bootstrap_specifier_index * 2);
+    assert(n >= 0 && n+2 <= operands->length(), "oob");
+    // The first 32-bit index points to the beginning of the second part
+    // of the operands array.  Make sure this index is in the first part.
+    DEBUG_ONLY(int second_part = build_int_from_shorts(operands->short_at(0),
+                                                       operands->short_at(1)));
+    assert(second_part == 0 || n+2 <= second_part, "oob (2)");
+    int offset = build_int_from_shorts(operands->short_at(n+0),
+                                       operands->short_at(n+1));
+    // The offset itself must point into the second part of the array.
+    assert(offset == 0 || offset >= second_part && offset <= operands->length(), "oob (3)");
+    return offset;
+  }
+  static void operand_offset_at_put(typeArrayOop operands, int bootstrap_specifier_index, int offset) {
+    int n = bootstrap_specifier_index * 2;
+    assert(n >= 0 && n+2 <= operands->length(), "oob");
+    operands->short_at_put(n+0, extract_low_short_from_int(offset));
+    operands->short_at_put(n+1, extract_high_short_from_int(offset));
+  }
+  static int operand_array_length(typeArrayOop operands) {
+    if (operands == NULL || operands->length() == 0)  return 0;
+    int second_part = operand_offset_at(operands, 0);
+    return (second_part / 2);
   }
 
- public:
-  // layout of InvokeDynamic:
+#ifdef ASSERT
+  // operand tuples fit together exactly, end to end
+  static int operand_limit_at(typeArrayOop operands, int bootstrap_specifier_index) {
+    int nextidx = bootstrap_specifier_index + 1;
+    if (nextidx == operand_array_length(operands))
+      return operands->length();
+    else
+      return operand_offset_at(operands, nextidx);
+  }
+  int invoke_dynamic_operand_limit(int which) {
+    int bootstrap_specifier_index = invoke_dynamic_bootstrap_specifier_index(which);
+    return operand_limit_at(operands(), bootstrap_specifier_index);
+  }
+#endif //ASSERT
+
+  // layout of InvokeDynamic bootstrap method specifier (in second part of operands array):
   enum {
          _indy_bsm_offset  = 0,  // CONSTANT_MethodHandle bsm
-         _indy_nt_offset   = 1,  // CONSTANT_NameAndType descr
-         _indy_argc_offset = 2,  // u2 argc
-         _indy_argv_offset = 3   // u2 argv[argc]
+         _indy_argc_offset = 1,  // u2 argc
+         _indy_argv_offset = 2   // u2 argv[argc]
   };
   int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    return multi_operand_ref_at(which, _indy_bsm_offset);
-  }
-  int invoke_dynamic_name_and_type_ref_index_at(int which) {
-    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    return multi_operand_ref_at(which, _indy_nt_offset);
+    if (tag_at(which).value() == JVM_CONSTANT_InvokeDynamicTrans)
+      return extract_low_short_from_int(*int_at_addr(which));
+    int op_base = invoke_dynamic_operand_base(which);
+    return operands()->short_at(op_base + _indy_bsm_offset);
   }
   int invoke_dynamic_argument_count_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    int argc = multi_operand_ref_at(which, _indy_argc_offset);
-    DEBUG_ONLY(int op_count = multi_operand_count_at(which));
-    assert(_indy_argv_offset + argc == op_count, "consistent inner and outer counts");
+    if (tag_at(which).value() == JVM_CONSTANT_InvokeDynamicTrans)
+      return 0;
+    int op_base = invoke_dynamic_operand_base(which);
+    int argc = operands()->short_at(op_base + _indy_argc_offset);
+    DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
+               int next_offset = invoke_dynamic_operand_limit(which));
+    assert(end_offset == next_offset, "matched ending");
     return argc;
   }
   int invoke_dynamic_argument_index_at(int which, int j) {
-    assert((uint)j < (uint)invoke_dynamic_argument_count_at(which), "oob");
-    return multi_operand_ref_at(which, _indy_argv_offset + j);
+    int op_base = invoke_dynamic_operand_base(which);
+    DEBUG_ONLY(int argc = operands()->short_at(op_base + _indy_argc_offset));
+    assert((uint)j < (uint)argc, "oob");
+    return operands()->short_at(op_base + _indy_argv_offset + j);
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
@@ -659,9 +662,12 @@ class constantPoolOopDesc : public oopDesc {
  public:
   // Merging constantPoolOop support:
   bool compare_entry_to(int index1, constantPoolHandle cp2, int index2, TRAPS);
-  void copy_cp_to(int start_i, int end_i, constantPoolHandle to_cp, int to_i,
-    TRAPS);
-  void copy_entry_to(int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
+  void copy_cp_to(int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS) {
+    constantPoolHandle h_this(THREAD, this);
+    copy_cp_to_impl(h_this, start_i, end_i, to_cp, to_i, THREAD);
+  }
+  static void copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS);
+  static void copy_entry_to(constantPoolHandle from_cp, int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
   int  find_matching_entry(int pattern_i, constantPoolHandle search_cp, TRAPS);
   int  orig_length() const                { return _orig_length; }
   void set_orig_length(int orig_length)   { _orig_length = orig_length; }

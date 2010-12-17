@@ -52,6 +52,7 @@ void Rewriter::compute_index_maps() {
       case JVM_CONSTANT_MethodHandle      : // fall through
       case JVM_CONSTANT_MethodType        : // fall through
       case JVM_CONSTANT_InvokeDynamic     : // fall through
+      case JVM_CONSTANT_InvokeDynamicTrans: // fall through
         add_cp_cache_entry(i);
         break;
     }
@@ -61,6 +62,7 @@ void Rewriter::compute_index_maps() {
             "all cp cache indexes fit in a u2");
 
   _have_invoke_dynamic = ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamic)) != 0);
+  _have_invoke_dynamic |= ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamicTrans)) != 0);
 }
 
 
@@ -74,7 +76,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
       oopFactory::new_constantPoolCache(length, methodOopDesc::IsUnsafeConc, CHECK);
   cache->initialize(_cp_cache_map);
 
-  // Don't bother to the next pass if there is no JVM_CONSTANT_InvokeDynamic.
+  // Don't bother with the next pass if there is no JVM_CONSTANT_InvokeDynamic.
   if (_have_invoke_dynamic) {
     for (int i = 0; i < length; i++) {
       int pool_index = cp_cache_entry_pool_index(i);

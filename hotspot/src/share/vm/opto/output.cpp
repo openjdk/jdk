@@ -61,11 +61,6 @@ void Compile::Output() {
   // RootNode goes
   assert( _cfg->_broot->_nodes.size() == 0, "" );
 
-  // Initialize the space for the BufferBlob used to find and verify
-  // instruction size in MachNode::emit_size()
-  init_scratch_buffer_blob();
-  if (failing())  return; // Out of memory
-
   // The number of new nodes (mostly MachNop) is proportional to
   // the number of java calls and inner loops which are aligned.
   if ( C->check_node_count((NodeLimitFudgeFactor + C->java_calls()*3 +
@@ -333,7 +328,7 @@ void Compile::compute_loop_first_inst_sizes() {
 //----------------------Shorten_branches---------------------------------------
 // The architecture description provides short branch variants for some long
 // branch instructions. Replace eligible long branches with short branches.
-void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, int& stub_size, int& const_size) {
+void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, int& stub_size) {
 
   // fill in the nop array for bundling computations
   MachNode *_nop_list[Bundle::_nop_count];
@@ -353,12 +348,11 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   // Size in bytes of all relocation entries, including those in local stubs.
   // Start with 2-bytes of reloc info for the unvalidated entry point
   reloc_size = 1;          // Number of relocation entries
-  const_size = 0;          // size of fp constants in words
 
   // Make three passes.  The first computes pessimistic blk_starts,
-  // relative jmp_end, reloc_size and const_size information.
-  // The second performs short branch substitution using the pessimistic
-  // sizing. The third inserts nops where needed.
+  // relative jmp_end and reloc_size information.  The second performs
+  // short branch substitution using the pessimistic sizing.  The
+  // third inserts nops where needed.
 
   Node *nj; // tmp
 
@@ -381,7 +375,6 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
         MachNode *mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
-        const_size += mach->const_size();
         if( mach->is_MachCall() ) {
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
@@ -398,10 +391,6 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
           if (min_offset_from_last_call == 0) {
             blk_size += nop_size;
           }
-        } else if (mach->ideal_Opcode() == Op_Jump) {
-          const_size += b->_num_succs; // Address table size
-          // The size is valid even for 64 bit since it is
-          // multiplied by 2*jintSize on this method exit.
         }
       }
       min_offset_from_last_call += inst_size;
@@ -562,10 +551,6 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   // a relocation index.
   // The CodeBuffer will expand the locs array if this estimate is too low.
   reloc_size   *= 10 / sizeof(relocInfo);
-
-  // Adjust const_size to number of bytes
-  const_size   *= 2*jintSize; // both float and double take two words per entry
-
 }
 
 //------------------------------FillLocArray-----------------------------------
@@ -1102,10 +1087,39 @@ void Compile::Fill_buffer() {
     blk_labels[i].init();
   }
 
+  if (has_mach_constant_base_node()) {
+    // Fill the constant table.
+    // Note:  This must happen before Shorten_branches.
+    for (i = 0; i < _cfg->_num_blocks; i++) {
+      Block* b = _cfg->_blocks[i];
+
+      for (uint j = 0; j < b->_nodes.size(); j++) {
+        Node* n = b->_nodes[j];
+
+        // If the node is a MachConstantNode evaluate the constant
+        // value section.
+        if (n->is_MachConstant()) {
+          MachConstantNode* machcon = n->as_MachConstant();
+          machcon->eval_constant(C);
+        }
+      }
+    }
+
+    // Calculate the offsets of the constants and the size of the
+    // constant table (including the padding to the next section).
+    constant_table().calculate_offsets_and_size();
+    const_req = constant_table().size();
+  }
+
+  // Initialize the space for the BufferBlob used to find and verify
+  // instruction size in MachNode::emit_size()
+  init_scratch_buffer_blob(const_req);
+  if (failing())  return; // Out of memory
+
   // If this machine supports different size branch offsets, then pre-compute
   // the length of the blocks
   if( _matcher->is_short_branch_offset(-1, 0) ) {
-    Shorten_branches(blk_labels, code_req, locs_req, stub_req, const_req);
+    Shorten_branches(blk_labels, code_req, locs_req, stub_req);
     labels_not_set = false;
   }
 
@@ -1121,12 +1135,12 @@ void Compile::Fill_buffer() {
     code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
 
   int total_req =
+    const_req +
     code_req +
     pad_req +
     stub_req +
     exception_handler_req +
-    deopt_handler_req +              // deopt handler
-    const_req;
+    deopt_handler_req;               // deopt handler
 
   if (has_method_handle_invokes())
     total_req += deopt_handler_req;  // deopt MH handler
@@ -1180,6 +1194,11 @@ void Compile::Fill_buffer() {
 
   NonSafepointEmitter non_safepoints(this);  // emit non-safepoints lazily
 
+  // Emit the constant table.
+  if (has_mach_constant_base_node()) {
+    constant_table().emit(*cb);
+  }
+
   // ------------------
   // Now fill in the code buffer
   Node *delay_slot = NULL;
@@ -1196,12 +1215,13 @@ void Compile::Fill_buffer() {
       cb->flush_bundle(true);
 
     // Define the label at the beginning of the basic block
-    if( labels_not_set )
-      MacroAssembler(cb).bind( blk_labels[b->_pre_order] );
-
-    else
-      assert( blk_labels[b->_pre_order].loc_pos() == cb->insts_size(),
-              "label position does not match code offset" );
+    if (labels_not_set) {
+      MacroAssembler(cb).bind(blk_labels[b->_pre_order]);
+    } else {
+      assert(blk_labels[b->_pre_order].loc_pos() == cb->insts_size(),
+             err_msg("label position does not match code offset: %d != %d",
+                     blk_labels[b->_pre_order].loc_pos(), cb->insts_size()));
+    }
 
     uint last_inst = b->_nodes.size();
 
@@ -1718,9 +1738,17 @@ void Compile::ScheduleAndBundle() {
   // Create a data structure for all the scheduling information
   Scheduling scheduling(Thread::current()->resource_area(), *this);
 
+  // Initialize the space for the BufferBlob used to find and verify
+  // instruction size in MachNode::emit_size()
+  init_scratch_buffer_blob(MAX_const_size);
+  if (failing())  return;  // Out of memory
+
   // Walk backwards over each basic block, computing the needed alignment
   // Walk over all the basic blocks
   scheduling.DoScheduling();
+
+  // Clear the BufferBlob used for scheduling.
+  clear_scratch_buffer_blob();
 }
 
 //------------------------------ComputeLocalLatenciesForward-------------------

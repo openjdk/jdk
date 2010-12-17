@@ -3599,10 +3599,12 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
     intptr_t size_limit = phase->find_intptr_t_con(size_in_bytes, max_jint);
     if (zeroes_done + BytesPerLong >= size_limit) {
       assert(allocation() != NULL, "");
-      Node* klass_node = allocation()->in(AllocateNode::KlassNode);
-      ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
-      if (zeroes_done == k->layout_helper())
-        zeroes_done = size_limit;
+      if (allocation()->Opcode() == Op_Allocate) {
+        Node* klass_node = allocation()->in(AllocateNode::KlassNode);
+        ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
+        if (zeroes_done == k->layout_helper())
+          zeroes_done = size_limit;
+      }
     }
     if (zeroes_done < size_limit) {
       rawmem = ClearArrayNode::clear_memory(rawctl, rawmem, rawptr,
