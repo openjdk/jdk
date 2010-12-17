@@ -437,6 +437,10 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         protected int getElem(final int x, final int y,
                               final SurfaceData sData)
         {
+            if (sData.isSurfaceLost()) {
+                return 0;
+            }
+
             int retPixel;
             D3DRenderQueue rq = D3DRenderQueue.getInstance();
             rq.lock();
@@ -456,6 +460,10 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         protected void setElem(final int x, final int y, final int pixel,
                                final SurfaceData sData)
         {
+            if (sData.isSurfaceLost()) {
+                  return;
+            }
+
             D3DRenderQueue rq = D3DRenderQueue.getInstance();
             rq.lock();
             try {
@@ -512,15 +520,32 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             sg2d.surfaceData.getTransparency() == Transparency.OPAQUE;
     }
 
+    /**
+     * If acceleration should no longer be used for this surface.
+     * This implementation flags to the manager that it should no
+     * longer attempt to re-create a D3DSurface.
+     */
+    void disableAccelerationForSurface() {
+        if (offscreenImage != null) {
+            SurfaceManager sm = SurfaceManager.getManager(offscreenImage);
+            if (sm instanceof D3DVolatileSurfaceManager) {
+                setSurfaceLost(true);
+                ((D3DVolatileSurfaceManager)sm).setAccelerationEnabled(false);
+            }
+        }
+    }
+
     public void validatePipe(SunGraphics2D sg2d) {
         TextPipe textpipe;
         boolean validated = false;
 
         // REMIND: the D3D pipeline doesn't support XOR!, more
-        // fixes will be needed below
+        // fixes will be needed below. For now we disable D3D rendering
+        // for the surface which had any XOR rendering done to.
         if (sg2d.compositeState >= sg2d.COMP_XOR) {
             super.validatePipe(sg2d);
             sg2d.imagepipe = d3dImagePipe;
+            disableAccelerationForSurface();
             return;
         }
 
@@ -895,7 +920,25 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         }
 
         @Override
+        void disableAccelerationForSurface() {
+            // for on-screen surfaces we need to make sure a backup GDI surface is
+            // is used until a new one is set (which may happen during a resize). We
+            // don't want the screen update maanger to replace the surface right way
+            // because it causes repainting issues in Swing, so we invalidate it,
+            // this will prevent SUM from issuing a replaceSurfaceData call.
+            setSurfaceLost(true);
+            invalidate();
+            flush();
+            peer.disableAcceleration();
+            ScreenUpdateManager.getInstance().dropScreenSurface(this);
+        }
+
+        @Override
         void restoreSurface() {
+            if (!peer.isAccelCapable()) {
+                throw new InvalidPipeException("Onscreen acceleration " +
+                                               "disabled for this surface");
+            }
             Window fsw = graphicsDevice.getFullScreenWindow();
             if (fsw != null && fsw != peer.getTarget()) {
                 throw new InvalidPipeException("Can't restore onscreen surface"+
