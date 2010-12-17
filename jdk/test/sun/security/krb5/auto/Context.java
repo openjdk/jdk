@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,8 @@ import org.ietf.jgss.Oid;
 import com.sun.security.jgss.ExtendedGSSContext;
 import com.sun.security.jgss.InquireType;
 import com.sun.security.jgss.AuthorizationDataEntry;
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -77,6 +78,8 @@ public class Context {
     private boolean f;      // context established?
     private String name;
     private GSSCredential cred;     // see static method delegated().
+
+    static boolean usingStream = false;
 
     private Context() {}
 
@@ -365,7 +368,14 @@ public class Context {
             public byte[] run(Context me, byte[] dummy) throws Exception {
                 System.out.println("wrap");
                 MessageProp p1 = new MessageProp(0, true);
-                byte[] out = me.x.wrap(messageBytes, 0, messageBytes.length, p1);
+                byte[] out;
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.wrap(new ByteArrayInputStream(messageBytes), os, p1);
+                    out = os.toByteArray();
+                } else {
+                    out = me.x.wrap(messageBytes, 0, messageBytes.length, p1);
+                }
                 System.out.println(printProp(p1));
                 return out;
             }
@@ -375,27 +385,46 @@ public class Context {
             @Override
             public byte[] run(Context me, byte[] input) throws Exception {
                 MessageProp p1 = new MessageProp(0, true);
-                byte[] bytes = me.x.unwrap(input, 0, input.length, p1);
+                byte[] bytes;
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.unwrap(new ByteArrayInputStream(input), os, p1);
+                    bytes = os.toByteArray();
+                } else {
+                    bytes = me.x.unwrap(input, 0, input.length, p1);
+                }
                 if (!Arrays.equals(messageBytes, bytes))
                     throw new Exception("wrap/unwrap mismatch");
                 System.out.println("unwrap");
                 System.out.println(printProp(p1));
                 p1 = new MessageProp(0, true);
                 System.out.println("getMIC");
-                bytes = me.x.getMIC(bytes, 0, bytes.length, p1);
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.getMIC(new ByteArrayInputStream(messageBytes), os, p1);
+                    bytes = os.toByteArray();
+                } else {
+                    bytes = me.x.getMIC(messageBytes, 0, messageBytes.length, p1);
+                }
                 System.out.println(printProp(p1));
                 return bytes;
             }
         }, t);
+
         // Re-unwrap should make p2.isDuplicateToken() returns true
         s1.doAs(new Action() {
             @Override
             public byte[] run(Context me, byte[] input) throws Exception {
                 MessageProp p1 = new MessageProp(0, true);
                 System.out.println("verifyMIC");
-                me.x.verifyMIC(input, 0, input.length,
-                        messageBytes, 0, messageBytes.length,
-                        p1);
+                if (usingStream) {
+                    me.x.verifyMIC(new ByteArrayInputStream(input),
+                            new ByteArrayInputStream(messageBytes), p1);
+                } else {
+                    me.x.verifyMIC(input, 0, input.length,
+                            messageBytes, 0, messageBytes.length,
+                            p1);
+                }
                 System.out.println(printProp(p1));
                 return null;
             }
@@ -416,7 +445,9 @@ public class Context {
         sb.append(prop.isGapToken()?"gap, ":"");
         sb.append(prop.isOldToken()?"old, ":"");
         sb.append(prop.isUnseqToken()?"unseq, ":"");
-        sb.append(prop.getMinorString()+ "(" + prop.getMinorStatus()+")");
+        if (prop.getMinorStatus() != 0) {
+            sb.append(prop.getMinorString()+ "(" + prop.getMinorStatus()+")");
+        }
         return sb.toString();
     }
 
@@ -442,7 +473,13 @@ public class Context {
                         return null;
                     } else {
                         System.out.println(c.name + " call initSecContext");
-                        return me.x.initSecContext(input, 0, input.length);
+                        if (usingStream) {
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            me.x.initSecContext(new ByteArrayInputStream(input), os);
+                            return os.size() == 0 ? null : os.toByteArray();
+                        } else {
+                            return me.x.initSecContext(input, 0, input.length);
+                        }
                     }
                 }
             }, t);
@@ -460,7 +497,13 @@ public class Context {
                         return null;
                     } else {
                         System.out.println(s.name + " called acceptSecContext");
-                        return me.x.acceptSecContext(input, 0, input.length);
+                        if (usingStream) {
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            me.x.acceptSecContext(new ByteArrayInputStream(input), os);
+                            return os.size() == 0 ? null : os.toByteArray();
+                        } else {
+                            return me.x.acceptSecContext(input, 0, input.length);
+                        }
                     }
                 }
             }, t);
