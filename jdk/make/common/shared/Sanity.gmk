@@ -1389,20 +1389,21 @@ ifdef REQUIRED_ALSA_VERSION
 endif
 sane-alsa-headers:
 ifdef REQUIRED_ALSA_VERSION
-        if [ "$(ALSA_CHECK)" != "same" -a "$(ALSA_CHECK)" != "newer"  ] ; then \
-	    $(ECHO) "ERROR: The ALSA version must be $(REQUIRED_ALSA_VERSION) or higher. \n" \
-	      "      You have the following ALSA version installed: $${alsa_version) \n" \
-	      "      Please reinstall ALSA (drivers and lib). You can download \n" \
-	      "      the source distribution from http://www.alsa-project.org \n" \
-	      "      or go to http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
-	      "" >> $(ERROR_FILE) ; \
-	  fi \
+	@if [ "$(ALSA_CHECK)" != "missing" ] ; then \
+	    if [ "$(ALSA_CHECK)" != "same" -a "$(ALSA_CHECK)" != "newer"  ] ; then \
+		$(ECHO) "ERROR: The ALSA version must be $(REQUIRED_ALSA_VERSION) or higher. \n" \
+		"      You have the following ALSA version installed: $${alsa_version} \n" \
+		"      Please reinstall ALSA (drivers and lib). You can download \n" \
+		"      the source distribution from http://www.alsa-project.org \n" \
+		"      or go to http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
+		"" >> $(ERROR_FILE) ; \
+	    fi ; \
 	else \
-	  $(ECHO) "ERROR: You seem to not have installed ALSA $(REQUIRED_ALSA_VERSION) or higher. \n" \
-	  "      Please install ALSA (drivers and lib). You can download the \n" \
-	  "      source distribution from http://www.alsa-project.org or go to \n" \
-	  "      http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
-	  "" >> $(ERROR_FILE) ; \
+	    $(ECHO) "ERROR: You seem to not have installed ALSA $(REQUIRED_ALSA_VERSION) or higher. \n" \
+	    "      Please install ALSA (drivers and lib). You can download the \n" \
+	    "      source distribution from http://www.alsa-project.org or go to \n" \
+	    "      http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
+	    "" >> $(ERROR_FILE) ; \
 	fi
 endif
 
