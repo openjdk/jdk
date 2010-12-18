@@ -3958,8 +3958,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   // Now restore saved marks, if any.
   if (_objs_with_preserved_marks != NULL) {
     assert(_preserved_marks_of_objs != NULL, "Both or none.");
-    assert(_objs_with_preserved_marks->length() ==
-           _preserved_marks_of_objs->length(), "Both or none.");
     guarantee(_objs_with_preserved_marks->length() ==
               _preserved_marks_of_objs->length(), "Both or none.");
     for (int i = 0; i < _objs_with_preserved_marks->length(); i++) {
@@ -4054,7 +4052,10 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
 }
 
 void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
-  if (m != markOopDesc::prototype()) {
+  assert(evacuation_failed(), "Oversaving!");
+  // We want to call the "for_promotion_failure" version only in the
+  // case of a promotion failure.
+  if (m->must_be_preserved_for_promotion_failure(obj)) {
     if (_objs_with_preserved_marks == NULL) {
       assert(_preserved_marks_of_objs == NULL, "Both or none.");
       _objs_with_preserved_marks =
