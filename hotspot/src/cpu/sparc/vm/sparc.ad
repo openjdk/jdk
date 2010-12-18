@@ -3556,7 +3556,7 @@ operand immP() %{
 #ifdef _LP64
 // Pointer Immediate: 64-bit
 operand immP_set() %{
-  predicate(!VM_Version::is_niagara1_plus());
+  predicate(!VM_Version::is_niagara_plus());
   match(ConP);
 
   op_cost(5);
@@ -3568,7 +3568,7 @@ operand immP_set() %{
 // Pointer Immediate: 64-bit
 // From Niagara2 processors on a load should be better than materializing.
 operand immP_load() %{
-  predicate(VM_Version::is_niagara1_plus() && (n->bottom_type()->isa_oop_ptr() || (MacroAssembler::insts_for_set(n->get_ptr()) > 3)));
+  predicate(VM_Version::is_niagara_plus() && (n->bottom_type()->isa_oop_ptr() || (MacroAssembler::insts_for_set(n->get_ptr()) > 3)));
   match(ConP);
 
   op_cost(5);
@@ -3579,7 +3579,7 @@ operand immP_load() %{
 
 // Pointer Immediate: 64-bit
 operand immP_no_oop_cheap() %{
-  predicate(VM_Version::is_niagara1_plus() && !n->bottom_type()->isa_oop_ptr() && (MacroAssembler::insts_for_set(n->get_ptr()) <= 3));
+  predicate(VM_Version::is_niagara_plus() && !n->bottom_type()->isa_oop_ptr() && (MacroAssembler::insts_for_set(n->get_ptr()) <= 3));
   match(ConP);
 
   op_cost(5);
@@ -3686,7 +3686,7 @@ operand immL_32bits() %{
 
 // Long Immediate: cheap (materialize in <= 3 instructions)
 operand immL_cheap() %{
-  predicate(!VM_Version::is_niagara1_plus() || MacroAssembler::insts_for_set64(n->get_long()) <= 3);
+  predicate(!VM_Version::is_niagara_plus() || MacroAssembler::insts_for_set64(n->get_long()) <= 3);
   match(ConL);
   op_cost(0);
 
@@ -3696,7 +3696,7 @@ operand immL_cheap() %{
 
 // Long Immediate: expensive (materialize in > 3 instructions)
 operand immL_expensive() %{
-  predicate(VM_Version::is_niagara1_plus() && MacroAssembler::insts_for_set64(n->get_long()) > 3);
+  predicate(VM_Version::is_niagara_plus() && MacroAssembler::insts_for_set64(n->get_long()) > 3);
   match(ConL);
   op_cost(0);
 

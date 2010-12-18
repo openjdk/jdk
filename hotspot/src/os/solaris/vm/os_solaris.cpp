@@ -3065,7 +3065,7 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
     if (addr == NULL) {
       jio_snprintf(buf, sizeof(buf), ": %s", strerror(err));
     }
-    warning("attempt_reserve_memory_at: couldn't reserve %d bytes at "
+    warning("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
             PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
             "%s", bytes, requested_addr, addr, buf);
   }
