@@ -61,7 +61,7 @@ include $(GAMMADIR)/make/scm.make
 QUIETLY$(MAKE_VERBOSE)	= @
 
 # For now, until the compiler is less wobbly:
-TESTFLAGS	= -Xbatch -showversion
+TESTFLAGS	= -Xbatch -Xmx32m -showversion
 
 ### maye ARCH_XXX instead?
 ifdef USE_GCC

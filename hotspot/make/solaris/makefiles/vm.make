@@ -119,6 +119,10 @@ else
 LIBS += -lsocket -lsched -ldl $(LIBM) -lthread -lc
 endif # sparcWorks
 
+ifeq ("${Platform_arch}", "sparc")
+LIBS += -lkstat
+endif
+
 # By default, link the *.o into the library, not the executable.
 LINK_INTO$(LINK_INTO) = LIBJVM
 
