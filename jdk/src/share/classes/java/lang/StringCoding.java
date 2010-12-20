@@ -53,9 +53,9 @@ class StringCoding {
 
     /** The cached coders for each thread */
     private final static ThreadLocal<SoftReference<StringDecoder>> decoder =
-        new ThreadLocal<SoftReference<StringDecoder>>();
+        new ThreadLocal<>();
     private final static ThreadLocal<SoftReference<StringEncoder>> encoder =
-        new ThreadLocal<SoftReference<StringEncoder>>();
+        new ThreadLocal<>();
 
     private static boolean warnUnsupportedCharset = true;
 
@@ -67,7 +67,7 @@ class StringCoding {
     }
 
     private static <T> void set(ThreadLocal<SoftReference<T>> tl, T ob) {
-        tl.set(new SoftReference<T>(ob));
+        tl.set(new SoftReference<>(ob));
     }
 
     // Trim the given byte array to the given length

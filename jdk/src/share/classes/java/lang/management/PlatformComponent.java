@@ -267,7 +267,7 @@ enum PlatformComponent {
             List<T> getGcMXBeanList(Class<T> gcMXBeanIntf) {
         List<GarbageCollectorMXBean> list =
             ManagementFactoryHelper.getGarbageCollectorMXBeans();
-        List<T> result = new ArrayList<T>(list.size());
+        List<T> result = new ArrayList<>(list.size());
         for (GarbageCollectorMXBean m : list) {
             if (gcMXBeanIntf.isInstance(m)) {
                 result.add(gcMXBeanIntf.cast(m));
@@ -330,7 +330,7 @@ enum PlatformComponent {
     }
 
     private static Set<String> keyProperties(String... keyNames) {
-        Set<String> set = new HashSet<String>();
+        Set<String> set = new HashSet<>();
         set.add("type");
         for (String s : keyNames) {
             set.add(s);
@@ -364,7 +364,7 @@ enum PlatformComponent {
         List<T> getMXBeans(MBeanServerConnection mbs, Class<T> mxbeanInterface)
         throws java.io.IOException
     {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         for (ObjectName on : getObjectNames(mbs)) {
             result.add(ManagementFactory.
                 newPlatformMXBeanProxy(mbs,

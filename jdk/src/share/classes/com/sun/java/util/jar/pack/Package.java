@@ -322,7 +322,7 @@ class Package {
         }
 
         public void setInnerClasses(Collection<InnerClass> ics) {
-            innerClasses = (ics == null) ? null : new ArrayList<InnerClass>(ics);
+            innerClasses = (ics == null) ? null : new ArrayList<>(ics);
             // Edit the attribute list, if necessary.
             Attribute a = getAttribute(attrInnerClassesEmpty);
             if (innerClasses != null && a == null)

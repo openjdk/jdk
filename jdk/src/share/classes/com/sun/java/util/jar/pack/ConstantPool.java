@@ -1137,7 +1137,7 @@ class ConstantPool {
     void completeReferencesIn(Set<Entry> cpRefs, boolean flattenSigs) {
         cpRefs.remove(null);
         for (ListIterator<Entry> work =
-                 new ArrayList<Entry>(cpRefs).listIterator(cpRefs.size());
+                 new ArrayList<>(cpRefs).listIterator(cpRefs.size());
              work.hasPrevious(); ) {
             Entry e = work.previous();
             work.remove();          // pop stack

@@ -196,7 +196,7 @@ class TimSort<T> {
          * extending short natural runs to minRun elements, and merging runs
          * to maintain stack invariant.
          */
-        TimSort<T> ts = new TimSort<T>(a, c);
+        TimSort<T> ts = new TimSort<>(a, c);
         int minRun = minRunLength(nRemaining);
         do {
             // Identify next run
