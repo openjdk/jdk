@@ -1192,6 +1192,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     return false;
   }
 
+  DTraceGCProbeMarker gc_probe_marker(true /* full */);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -3213,13 +3214,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     return false;
   }
 
+  DTraceGCProbeMarker gc_probe_marker(false /* full */);
+  ResourceMark rm;
+
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
 
   {
-    ResourceMark rm;
-
     // This call will decide whether this pause is an initial-mark
     // pause. If it is, during_initial_mark_pause() will return true
     // for the duration of this pause.
