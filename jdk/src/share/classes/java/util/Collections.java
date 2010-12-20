@@ -1035,7 +1035,7 @@ public class Collections {
      * @return an unmodifiable view of the specified collection.
      */
     public static <T> Collection<T> unmodifiableCollection(Collection<? extends T> c) {
-        return new UnmodifiableCollection<T>(c);
+        return new UnmodifiableCollection<>(c);
     }
 
     /**
@@ -1109,7 +1109,7 @@ public class Collections {
      * @return an unmodifiable view of the specified set.
      */
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
-        return new UnmodifiableSet<T>(s);
+        return new UnmodifiableSet<>(s);
     }
 
     /**
@@ -1141,7 +1141,7 @@ public class Collections {
      * @return an unmodifiable view of the specified sorted set.
      */
     public static <T> SortedSet<T> unmodifiableSortedSet(SortedSet<T> s) {
-        return new UnmodifiableSortedSet<T>(s);
+        return new UnmodifiableSortedSet<>(s);
     }
 
     /**
@@ -1158,13 +1158,13 @@ public class Collections {
         public Comparator<? super E> comparator() {return ss.comparator();}
 
         public SortedSet<E> subSet(E fromElement, E toElement) {
-            return new UnmodifiableSortedSet<E>(ss.subSet(fromElement,toElement));
+            return new UnmodifiableSortedSet<>(ss.subSet(fromElement,toElement));
         }
         public SortedSet<E> headSet(E toElement) {
-            return new UnmodifiableSortedSet<E>(ss.headSet(toElement));
+            return new UnmodifiableSortedSet<>(ss.headSet(toElement));
         }
         public SortedSet<E> tailSet(E fromElement) {
-            return new UnmodifiableSortedSet<E>(ss.tailSet(fromElement));
+            return new UnmodifiableSortedSet<>(ss.tailSet(fromElement));
         }
 
         public E first()                   {return ss.first();}
@@ -1188,8 +1188,8 @@ public class Collections {
      */
     public static <T> List<T> unmodifiableList(List<? extends T> list) {
         return (list instanceof RandomAccess ?
-                new UnmodifiableRandomAccessList<T>(list) :
-                new UnmodifiableList<T>(list));
+                new UnmodifiableRandomAccessList<>(list) :
+                new UnmodifiableList<>(list));
     }
 
     /**
@@ -1250,7 +1250,7 @@ public class Collections {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            return new UnmodifiableList<E>(list.subList(fromIndex, toIndex));
+            return new UnmodifiableList<>(list.subList(fromIndex, toIndex));
         }
 
         /**
@@ -1267,7 +1267,7 @@ public class Collections {
          */
         private Object readResolve() {
             return (list instanceof RandomAccess
-                    ? new UnmodifiableRandomAccessList<E>(list)
+                    ? new UnmodifiableRandomAccessList<>(list)
                     : this);
         }
     }
@@ -1283,7 +1283,7 @@ public class Collections {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            return new UnmodifiableRandomAccessList<E>(
+            return new UnmodifiableRandomAccessList<>(
                 list.subList(fromIndex, toIndex));
         }
 
@@ -1296,7 +1296,7 @@ public class Collections {
          * deserialization.
          */
         private Object writeReplace() {
-            return new UnmodifiableList<E>(list);
+            return new UnmodifiableList<>(list);
         }
     }
 
@@ -1315,7 +1315,7 @@ public class Collections {
      * @return an unmodifiable view of the specified map.
      */
     public static <K,V> Map<K,V> unmodifiableMap(Map<? extends K, ? extends V> m) {
-        return new UnmodifiableMap<K,V>(m);
+        return new UnmodifiableMap<>(m);
     }
 
     /**
@@ -1363,7 +1363,7 @@ public class Collections {
 
         public Set<Map.Entry<K,V>> entrySet() {
             if (entrySet==null)
-                entrySet = new UnmodifiableEntrySet<K,V>(m.entrySet());
+                entrySet = new UnmodifiableEntrySet<>(m.entrySet());
             return entrySet;
         }
 
@@ -1400,7 +1400,7 @@ public class Collections {
                         return i.hasNext();
                     }
                     public Map.Entry<K,V> next() {
-                        return new UnmodifiableEntry<K,V>(i.next());
+                        return new UnmodifiableEntry<>(i.next());
                     }
                     public void remove() {
                         throw new UnsupportedOperationException();
@@ -1411,7 +1411,7 @@ public class Collections {
             public Object[] toArray() {
                 Object[] a = c.toArray();
                 for (int i=0; i<a.length; i++)
-                    a[i] = new UnmodifiableEntry<K,V>((Map.Entry<K,V>)a[i]);
+                    a[i] = new UnmodifiableEntry<>((Map.Entry<K,V>)a[i]);
                 return a;
             }
 
@@ -1422,7 +1422,7 @@ public class Collections {
                 Object[] arr = c.toArray(a.length==0 ? a : Arrays.copyOf(a, 0));
 
                 for (int i=0; i<arr.length; i++)
-                    arr[i] = new UnmodifiableEntry<K,V>((Map.Entry<K,V>)arr[i]);
+                    arr[i] = new UnmodifiableEntry<>((Map.Entry<K,V>)arr[i]);
 
                 if (arr.length > a.length)
                     return (T[])arr;
@@ -1443,7 +1443,7 @@ public class Collections {
                 if (!(o instanceof Map.Entry))
                     return false;
                 return c.contains(
-                    new UnmodifiableEntry<Object,Object>((Map.Entry<?,?>) o));
+                    new UnmodifiableEntry<>((Map.Entry<?,?>) o));
             }
 
             /**
@@ -1517,7 +1517,7 @@ public class Collections {
      * @return an unmodifiable view of the specified sorted map.
      */
     public static <K,V> SortedMap<K,V> unmodifiableSortedMap(SortedMap<K, ? extends V> m) {
-        return new UnmodifiableSortedMap<K,V>(m);
+        return new UnmodifiableSortedMap<>(m);
     }
 
     /**
@@ -1535,13 +1535,13 @@ public class Collections {
         public Comparator<? super K> comparator() {return sm.comparator();}
 
         public SortedMap<K,V> subMap(K fromKey, K toKey) {
-            return new UnmodifiableSortedMap<K,V>(sm.subMap(fromKey, toKey));
+            return new UnmodifiableSortedMap<>(sm.subMap(fromKey, toKey));
         }
         public SortedMap<K,V> headMap(K toKey) {
-            return new UnmodifiableSortedMap<K,V>(sm.headMap(toKey));
+            return new UnmodifiableSortedMap<>(sm.headMap(toKey));
         }
         public SortedMap<K,V> tailMap(K fromKey) {
-            return new UnmodifiableSortedMap<K,V>(sm.tailMap(fromKey));
+            return new UnmodifiableSortedMap<>(sm.tailMap(fromKey));
         }
 
         public K firstKey()           {return sm.firstKey();}
@@ -1583,11 +1583,11 @@ public class Collections {
      * @return a synchronized view of the specified collection.
      */
     public static <T> Collection<T> synchronizedCollection(Collection<T> c) {
-        return new SynchronizedCollection<T>(c);
+        return new SynchronizedCollection<>(c);
     }
 
     static <T> Collection<T> synchronizedCollection(Collection<T> c, Object mutex) {
-        return new SynchronizedCollection<T>(c, mutex);
+        return new SynchronizedCollection<>(c, mutex);
     }
 
     /**
@@ -1686,11 +1686,11 @@ public class Collections {
      * @return a synchronized view of the specified set.
      */
     public static <T> Set<T> synchronizedSet(Set<T> s) {
-        return new SynchronizedSet<T>(s);
+        return new SynchronizedSet<>(s);
     }
 
     static <T> Set<T> synchronizedSet(Set<T> s, Object mutex) {
-        return new SynchronizedSet<T>(s, mutex);
+        return new SynchronizedSet<>(s, mutex);
     }
 
     /**
@@ -1754,7 +1754,7 @@ public class Collections {
      * @return a synchronized view of the specified sorted set.
      */
     public static <T> SortedSet<T> synchronizedSortedSet(SortedSet<T> s) {
-        return new SynchronizedSortedSet<T>(s);
+        return new SynchronizedSortedSet<>(s);
     }
 
     /**
@@ -1783,18 +1783,18 @@ public class Collections {
 
         public SortedSet<E> subSet(E fromElement, E toElement) {
             synchronized (mutex) {
-                return new SynchronizedSortedSet<E>(
+                return new SynchronizedSortedSet<>(
                     ss.subSet(fromElement, toElement), mutex);
             }
         }
         public SortedSet<E> headSet(E toElement) {
             synchronized (mutex) {
-                return new SynchronizedSortedSet<E>(ss.headSet(toElement), mutex);
+                return new SynchronizedSortedSet<>(ss.headSet(toElement), mutex);
             }
         }
         public SortedSet<E> tailSet(E fromElement) {
             synchronized (mutex) {
-               return new SynchronizedSortedSet<E>(ss.tailSet(fromElement),mutex);
+               return new SynchronizedSortedSet<>(ss.tailSet(fromElement),mutex);
             }
         }
 
@@ -1833,14 +1833,14 @@ public class Collections {
      */
     public static <T> List<T> synchronizedList(List<T> list) {
         return (list instanceof RandomAccess ?
-                new SynchronizedRandomAccessList<T>(list) :
-                new SynchronizedList<T>(list));
+                new SynchronizedRandomAccessList<>(list) :
+                new SynchronizedList<>(list));
     }
 
     static <T> List<T> synchronizedList(List<T> list, Object mutex) {
         return (list instanceof RandomAccess ?
-                new SynchronizedRandomAccessList<T>(list, mutex) :
-                new SynchronizedList<T>(list, mutex));
+                new SynchronizedRandomAccessList<>(list, mutex) :
+                new SynchronizedList<>(list, mutex));
     }
 
     /**
@@ -1903,7 +1903,7 @@ public class Collections {
 
         public List<E> subList(int fromIndex, int toIndex) {
             synchronized (mutex) {
-                return new SynchronizedList<E>(list.subList(fromIndex, toIndex),
+                return new SynchronizedList<>(list.subList(fromIndex, toIndex),
                                             mutex);
             }
         }
@@ -1922,7 +1922,7 @@ public class Collections {
          */
         private Object readResolve() {
             return (list instanceof RandomAccess
-                    ? new SynchronizedRandomAccessList<E>(list)
+                    ? new SynchronizedRandomAccessList<>(list)
                     : this);
         }
     }
@@ -1944,7 +1944,7 @@ public class Collections {
 
         public List<E> subList(int fromIndex, int toIndex) {
             synchronized (mutex) {
-                return new SynchronizedRandomAccessList<E>(
+                return new SynchronizedRandomAccessList<>(
                     list.subList(fromIndex, toIndex), mutex);
             }
         }
@@ -1958,7 +1958,7 @@ public class Collections {
          * deserialization.
          */
         private Object writeReplace() {
-            return new SynchronizedList<E>(list);
+            return new SynchronizedList<>(list);
         }
     }
 
@@ -1990,7 +1990,7 @@ public class Collections {
      * @return a synchronized view of the specified map.
      */
     public static <K,V> Map<K,V> synchronizedMap(Map<K,V> m) {
-        return new SynchronizedMap<K,V>(m);
+        return new SynchronizedMap<>(m);
     }
 
     /**
@@ -2051,7 +2051,7 @@ public class Collections {
         public Set<K> keySet() {
             synchronized (mutex) {
                 if (keySet==null)
-                    keySet = new SynchronizedSet<K>(m.keySet(), mutex);
+                    keySet = new SynchronizedSet<>(m.keySet(), mutex);
                 return keySet;
             }
         }
@@ -2059,7 +2059,7 @@ public class Collections {
         public Set<Map.Entry<K,V>> entrySet() {
             synchronized (mutex) {
                 if (entrySet==null)
-                    entrySet = new SynchronizedSet<Map.Entry<K,V>>(m.entrySet(), mutex);
+                    entrySet = new SynchronizedSet<>(m.entrySet(), mutex);
                 return entrySet;
             }
         }
@@ -2067,7 +2067,7 @@ public class Collections {
         public Collection<V> values() {
             synchronized (mutex) {
                 if (values==null)
-                    values = new SynchronizedCollection<V>(m.values(), mutex);
+                    values = new SynchronizedCollection<>(m.values(), mutex);
                 return values;
             }
         }
@@ -2129,7 +2129,7 @@ public class Collections {
      * @return a synchronized view of the specified sorted map.
      */
     public static <K,V> SortedMap<K,V> synchronizedSortedMap(SortedMap<K,V> m) {
-        return new SynchronizedSortedMap<K,V>(m);
+        return new SynchronizedSortedMap<>(m);
     }
 
 
@@ -2159,18 +2159,18 @@ public class Collections {
 
         public SortedMap<K,V> subMap(K fromKey, K toKey) {
             synchronized (mutex) {
-                return new SynchronizedSortedMap<K,V>(
+                return new SynchronizedSortedMap<>(
                     sm.subMap(fromKey, toKey), mutex);
             }
         }
         public SortedMap<K,V> headMap(K toKey) {
             synchronized (mutex) {
-                return new SynchronizedSortedMap<K,V>(sm.headMap(toKey), mutex);
+                return new SynchronizedSortedMap<>(sm.headMap(toKey), mutex);
             }
         }
         public SortedMap<K,V> tailMap(K fromKey) {
             synchronized (mutex) {
-               return new SynchronizedSortedMap<K,V>(sm.tailMap(fromKey),mutex);
+               return new SynchronizedSortedMap<>(sm.tailMap(fromKey),mutex);
             }
         }
 
@@ -2246,7 +2246,7 @@ public class Collections {
      */
     public static <E> Collection<E> checkedCollection(Collection<E> c,
                                                       Class<E> type) {
-        return new CheckedCollection<E>(c, type);
+        return new CheckedCollection<>(c, type);
     }
 
     @SuppressWarnings("unchecked")
@@ -2378,7 +2378,7 @@ public class Collections {
      * @since 1.5
      */
     public static <E> Set<E> checkedSet(Set<E> s, Class<E> type) {
-        return new CheckedSet<E>(s, type);
+        return new CheckedSet<>(s, type);
     }
 
     /**
@@ -2424,7 +2424,7 @@ public class Collections {
      */
     public static <E> SortedSet<E> checkedSortedSet(SortedSet<E> s,
                                                     Class<E> type) {
-        return new CheckedSortedSet<E>(s, type);
+        return new CheckedSortedSet<>(s, type);
     }
 
     /**
@@ -2484,8 +2484,8 @@ public class Collections {
      */
     public static <E> List<E> checkedList(List<E> list, Class<E> type) {
         return (list instanceof RandomAccess ?
-                new CheckedRandomAccessList<E>(list, type) :
-                new CheckedList<E>(list, type));
+                new CheckedRandomAccessList<>(list, type) :
+                new CheckedList<>(list, type));
     }
 
     /**
@@ -2550,7 +2550,7 @@ public class Collections {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            return new CheckedList<E>(list.subList(fromIndex, toIndex), type);
+            return new CheckedList<>(list.subList(fromIndex, toIndex), type);
         }
     }
 
@@ -2567,7 +2567,7 @@ public class Collections {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            return new CheckedRandomAccessList<E>(
+            return new CheckedRandomAccessList<>(
                 list.subList(fromIndex, toIndex), type);
         }
     }
@@ -2609,7 +2609,7 @@ public class Collections {
     public static <K, V> Map<K, V> checkedMap(Map<K, V> m,
                                               Class<K> keyType,
                                               Class<V> valueType) {
-        return new CheckedMap<K,V>(m, keyType, valueType);
+        return new CheckedMap<>(m, keyType, valueType);
     }
 
 
@@ -2677,15 +2677,14 @@ public class Collections {
             // - protection from malicious t
             // - correct behavior if t is a concurrent map
             Object[] entries = t.entrySet().toArray();
-            List<Map.Entry<K,V>> checked =
-                new ArrayList<Map.Entry<K,V>>(entries.length);
+            List<Map.Entry<K,V>> checked = new ArrayList<>(entries.length);
             for (Object o : entries) {
                 Map.Entry<?,?> e = (Map.Entry<?,?>) o;
                 Object k = e.getKey();
                 Object v = e.getValue();
                 typeCheck(k, v);
                 checked.add(
-                    new AbstractMap.SimpleImmutableEntry<K,V>((K) k, (V) v));
+                    new AbstractMap.SimpleImmutableEntry<>((K) k, (V) v));
             }
             for (Map.Entry<K,V> e : checked)
                 m.put(e.getKey(), e.getValue());
@@ -2695,7 +2694,7 @@ public class Collections {
 
         public Set<Map.Entry<K,V>> entrySet() {
             if (entrySet==null)
-                entrySet = new CheckedEntrySet<K,V>(m.entrySet(), valueType);
+                entrySet = new CheckedEntrySet<>(m.entrySet(), valueType);
             return entrySet;
         }
 
@@ -2810,7 +2809,7 @@ public class Collections {
                 if (!(o instanceof Map.Entry))
                     return false;
                 return s.remove(new AbstractMap.SimpleImmutableEntry
-                                <Object, Object>((Map.Entry<?,?>)o));
+                                <>((Map.Entry<?,?>)o));
             }
 
             public boolean removeAll(Collection<?> c) {
@@ -2843,7 +2842,7 @@ public class Collections {
 
             static <K,V,T> CheckedEntry<K,V,T> checkedEntry(Map.Entry<K,V> e,
                                                             Class<T> valueType) {
-                return new CheckedEntry<K,V,T>(e, valueType);
+                return new CheckedEntry<>(e, valueType);
             }
 
             /**
@@ -2884,7 +2883,7 @@ public class Collections {
                     if (!(o instanceof Map.Entry))
                         return false;
                     return e.equals(new AbstractMap.SimpleImmutableEntry
-                                    <Object, Object>((Map.Entry<?,?>)o));
+                                    <>((Map.Entry<?,?>)o));
                 }
             }
         }
@@ -2927,7 +2926,7 @@ public class Collections {
     public static <K,V> SortedMap<K,V> checkedSortedMap(SortedMap<K, V> m,
                                                         Class<K> keyType,
                                                         Class<V> valueType) {
-        return new CheckedSortedMap<K,V>(m, keyType, valueType);
+        return new CheckedSortedMap<>(m, keyType, valueType);
     }
 
     /**
@@ -2993,7 +2992,7 @@ public class Collections {
 
     private static class EmptyIterator<E> implements Iterator<E> {
         static final EmptyIterator<Object> EMPTY_ITERATOR
-            = new EmptyIterator<Object>();
+            = new EmptyIterator<>();
 
         public boolean hasNext() { return false; }
         public E next() { throw new NoSuchElementException(); }
@@ -3042,7 +3041,7 @@ public class Collections {
         implements ListIterator<E>
     {
         static final EmptyListIterator<Object> EMPTY_ITERATOR
-            = new EmptyListIterator<Object>();
+            = new EmptyListIterator<>();
 
         public boolean hasPrevious() { return false; }
         public E previous() { throw new NoSuchElementException(); }
@@ -3078,7 +3077,7 @@ public class Collections {
 
     private static class EmptyEnumeration<E> implements Enumeration<E> {
         static final EmptyEnumeration<Object> EMPTY_ENUMERATION
-            = new EmptyEnumeration<Object>();
+            = new EmptyEnumeration<>();
 
         public boolean hasMoreElements() { return false; }
         public E nextElement() { throw new NoSuchElementException(); }
@@ -3090,7 +3089,7 @@ public class Collections {
      * @see #emptySet()
      */
     @SuppressWarnings("unchecked")
-    public static final Set EMPTY_SET = new EmptySet<Object>();
+    public static final Set EMPTY_SET = new EmptySet<>();
 
     /**
      * Returns the empty set (immutable).  This set is serializable.
@@ -3150,7 +3149,7 @@ public class Collections {
      * @see #emptyList()
      */
     @SuppressWarnings("unchecked")
-    public static final List EMPTY_LIST = new EmptyList<Object>();
+    public static final List EMPTY_LIST = new EmptyList<>();
 
     /**
      * Returns the empty list (immutable).  This list is serializable.
@@ -3224,7 +3223,7 @@ public class Collections {
      * @since 1.3
      */
     @SuppressWarnings("unchecked")
-    public static final Map EMPTY_MAP = new EmptyMap<Object,Object>();
+    public static final Map EMPTY_MAP = new EmptyMap<>();
 
     /**
      * Returns the empty map (immutable).  This map is serializable.
@@ -3286,7 +3285,7 @@ public class Collections {
      * @return an immutable set containing only the specified object.
      */
     public static <T> Set<T> singleton(T o) {
-        return new SingletonSet<T>(o);
+        return new SingletonSet<>(o);
     }
 
     static <E> Iterator<E> singletonIterator(final E e) {
@@ -3339,7 +3338,7 @@ public class Collections {
      * @since 1.3
      */
     public static <T> List<T> singletonList(T o) {
-        return new SingletonList<T>(o);
+        return new SingletonList<>(o);
     }
 
     /**
@@ -3381,7 +3380,7 @@ public class Collections {
      * @since 1.3
      */
     public static <K,V> Map<K,V> singletonMap(K key, V value) {
-        return new SingletonMap<K,V>(key, value);
+        return new SingletonMap<>(key, value);
     }
 
     /**
@@ -3423,7 +3422,7 @@ public class Collections {
         public Set<Map.Entry<K,V>> entrySet() {
             if (entrySet==null)
                 entrySet = Collections.<Map.Entry<K,V>>singleton(
-                    new SimpleImmutableEntry<K,V>(k, v));
+                    new SimpleImmutableEntry<>(k, v));
             return entrySet;
         }
 
@@ -3455,7 +3454,7 @@ public class Collections {
     public static <T> List<T> nCopies(int n, T o) {
         if (n < 0)
             throw new IllegalArgumentException("List length = " + n);
-        return new CopiesList<T>(n, o);
+        return new CopiesList<>(n, o);
     }
 
     /**
@@ -3529,7 +3528,7 @@ public class Collections {
             if (fromIndex > toIndex)
                 throw new IllegalArgumentException("fromIndex(" + fromIndex +
                                                    ") > toIndex(" + toIndex + ")");
-            return new CopiesList<E>(toIndex - fromIndex, element);
+            return new CopiesList<>(toIndex - fromIndex, element);
         }
     }
 
@@ -3595,7 +3594,7 @@ public class Collections {
         if (cmp instanceof ReverseComparator2)
             return ((ReverseComparator2<T>)cmp).cmp;
 
-        return new ReverseComparator2<T>(cmp);
+        return new ReverseComparator2<>(cmp);
     }
 
     /**
@@ -3674,7 +3673,7 @@ public class Collections {
      * @see ArrayList
      */
     public static <T> ArrayList<T> list(Enumeration<T> e) {
-        ArrayList<T> l = new ArrayList<T>();
+        ArrayList<T> l = new ArrayList<>();
         while (e.hasMoreElements())
             l.add(e.nextElement());
         return l;
@@ -3819,7 +3818,7 @@ public class Collections {
      * @since 1.6
      */
     public static <E> Set<E> newSetFromMap(Map<E, Boolean> map) {
-        return new SetFromMap<E>(map);
+        return new SetFromMap<>(map);
     }
 
     /**
@@ -3883,7 +3882,7 @@ public class Collections {
      * @since  1.6
      */
     public static <T> Queue<T> asLifoQueue(Deque<T> deque) {
-        return new AsLIFOQueue<T>(deque);
+        return new AsLIFOQueue<>(deque);
     }
 
     /**

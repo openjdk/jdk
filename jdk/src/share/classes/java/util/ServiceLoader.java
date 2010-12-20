@@ -191,7 +191,7 @@ public final class ServiceLoader<S>
     private ClassLoader loader;
 
     // Cached providers, in instantiation order
-    private LinkedHashMap<String,S> providers = new LinkedHashMap<String,S>();
+    private LinkedHashMap<String,S> providers = new LinkedHashMap<>();
 
     // The current lazy-lookup iterator
     private LazyIterator lookupIterator;
@@ -291,7 +291,7 @@ public final class ServiceLoader<S>
     {
         InputStream in = null;
         BufferedReader r = null;
-        ArrayList<String> names = new ArrayList<String>();
+        ArrayList<String> names = new ArrayList<>();
         try {
             in = u.openStream();
             r = new BufferedReader(new InputStreamReader(in, "utf-8"));
@@ -463,7 +463,7 @@ public final class ServiceLoader<S>
     public static <S> ServiceLoader<S> load(Class<S> service,
                                             ClassLoader loader)
     {
-        return new ServiceLoader<S>(service, loader);
+        return new ServiceLoader<>(service, loader);
     }
 
     /**

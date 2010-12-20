@@ -1067,7 +1067,7 @@ public class File
         if ((names == null) || (filter == null)) {
             return names;
         }
-        List<String> v = new ArrayList<String>();
+        List<String> v = new ArrayList<>();
         for (int i = 0 ; i < names.length ; i++) {
             if (filter.accept(this, names[i])) {
                 v.add(names[i]);
@@ -1158,7 +1158,7 @@ public class File
     public File[] listFiles(FilenameFilter filter) {
         String ss[] = list();
         if (ss == null) return null;
-        ArrayList<File> files = new ArrayList<File>();
+        ArrayList<File> files = new ArrayList<>();
         for (String s : ss)
             if ((filter == null) || filter.accept(this, s))
                 files.add(new File(s, this));
@@ -1195,7 +1195,7 @@ public class File
     public File[] listFiles(FileFilter filter) {
         String ss[] = list();
         if (ss == null) return null;
-        ArrayList<File> files = new ArrayList<File>();
+        ArrayList<File> files = new ArrayList<>();
         for (String s : ss) {
             File f = new File(s, this);
             if ((filter == null) || filter.accept(f))

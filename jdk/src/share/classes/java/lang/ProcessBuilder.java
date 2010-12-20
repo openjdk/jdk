@@ -214,7 +214,7 @@ public final class ProcessBuilder
      * @param command a string array containing the program and its arguments
      */
     public ProcessBuilder(String... command) {
-        this.command = new ArrayList<String>(command.length);
+        this.command = new ArrayList<>(command.length);
         for (String arg : command)
             this.command.add(arg);
     }
@@ -251,7 +251,7 @@ public final class ProcessBuilder
      * @return this process builder
      */
     public ProcessBuilder command(String... command) {
-        this.command = new ArrayList<String>(command.length);
+        this.command = new ArrayList<>(command.length);
         for (String arg : command)
             this.command.add(arg);
         return this;

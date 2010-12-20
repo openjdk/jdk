@@ -127,7 +127,7 @@ public class FileHandler extends StreamHandler {
     private FileOutputStream lockStream;
     private File files[];
     private static final int MAX_LOCKS = 100;
-    private static java.util.HashMap<String, String> locks = new java.util.HashMap<String, String>();
+    private static java.util.HashMap<String, String> locks = new java.util.HashMap<>();
 
     // A metered stream is a subclass of OutputStream that
     //   (a) forwards all its output to a target stream
