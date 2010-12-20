@@ -121,7 +121,7 @@ public abstract class SampleModel
      */
     public SampleModel(int dataType, int w, int h, int numBands)
     {
-        float size = (float)w*h;
+        long size = (long)w * h;
         if (w <= 0 || h <= 0) {
             throw new IllegalArgumentException("Width ("+w+") and height ("+
                                                h+") must be > 0");
