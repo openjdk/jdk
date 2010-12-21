@@ -40,7 +40,7 @@ public class ShutdownNowExecuteRace {
     static volatile boolean quit = false;
     static volatile ThreadPoolExecutor pool = null;
 
-    final static Runnable sleeper = new Runnable() { public void run() {
+    static final Runnable sleeper = new Runnable() { public void run() {
         final long ONE_HOUR = 1000L * 60L * 60L;
         try { Thread.sleep(ONE_HOUR); }
         catch (InterruptedException ie) {}
@@ -81,14 +81,14 @@ public class ShutdownNowExecuteRace {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private static abstract class Fun {abstract void f() throws Throwable;}
+    private abstract static class Fun {abstract void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }
             catch (Throwable t) {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
-    private static abstract class CheckedThread extends Thread {
+    private abstract static class CheckedThread extends Thread {
         abstract void realRun() throws Throwable;
         public void run() {
             try {realRun();} catch (Throwable t) {unexpected(t);}}}

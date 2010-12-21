@@ -45,7 +45,7 @@ public class Bug6571733 {
 
         Thread thread = new Thread() { public void run() {
             try {
-                check (! lock.writeLock().tryLock(0, TimeUnit.DAYS));
+                check(! lock.writeLock().tryLock(0, TimeUnit.DAYS));
 
                 lock.readLock().lock();
                 lock.readLock().unlock();

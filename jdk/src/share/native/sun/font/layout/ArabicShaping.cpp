@@ -104,6 +104,7 @@ ArabicShaping::ShapeType ArabicShaping::getShapeType(LEUnicode c)
 #define markFeatureMask 0x00040000UL
 #define mkmkFeatureMask 0x00020000UL
 
+#define NO_FEATURES   0
 #define ISOL_FEATURES (isolFeatureMask | ligaFeatureMask | msetFeatureMask | markFeatureMask | ccmpFeatureMask | rligFeatureMask | caltFeatureMask | dligFeatureMask | cswhFeatureMask | cursFeatureMask | kernFeatureMask | mkmkFeatureMask)
 
 #define SHAPE_MASK 0xF0000000UL
@@ -198,7 +199,11 @@ void ArabicShaping::shape(const LEUnicode *chars, le_int32 offset, le_int32 char
         LEUnicode c = chars[in];
         ShapeType t = getShapeType(c);
 
+        if (t == ST_NOSHAPE_NONE) {
+            glyphStorage.setAuxData(out, NO_FEATURES, success);
+        } else {
         glyphStorage.setAuxData(out, ISOL_FEATURES, success);
+        }
 
         if ((t & MASK_TRANSPARENT) != 0) {
             continue;

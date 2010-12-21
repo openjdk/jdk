@@ -36,6 +36,8 @@ FILES_export = \
 	sun/java2d/loops/TransformBlit.java \
 	sun/java2d/loops/FillRect.java \
 	sun/java2d/loops/FillSpans.java \
+	sun/java2d/loops/FillParallelogram.java \
+	sun/java2d/loops/DrawParallelogram.java \
         sun/java2d/loops/DrawGlyphList.java \
         sun/java2d/loops/DrawGlyphListAA.java \
         sun/java2d/loops/DrawGlyphListLCD.java \

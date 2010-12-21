@@ -40,24 +40,24 @@ public class Basic {
         boolean found = false;
 
         for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
-            if (provider.getScheme().equalsIgnoreCase("zip")) {
+            if (provider.getScheme().equalsIgnoreCase("jar")) {
                 found = true;
                 break;
             }
         }
         if (!found)
-            throw new RuntimeException("'zip' provider not installed");
+            throw new RuntimeException("'jar' provider not installed");
 
         // Test: FileSystems#newFileSystem(FileRef)
         Map<String,?> env = new HashMap<String,Object>();
         FileSystems.newFileSystem(zipfile, env, null).close();
 
         // Test: FileSystems#newFileSystem(URI)
-        URI uri = URI.create("zip" + zipfile.toUri().toString().substring(4));
+        URI uri = new URI("jar", zipfile.toUri().toString(), null);
         FileSystem fs = FileSystems.newFileSystem(uri, env, null);
 
         // Test: exercise toUri method
-        String expected = uri.toString() + "#/foo";
+        String expected = uri.toString() + "!/foo";
         String actual = fs.getPath("/foo").toUri().toString();
         if (!actual.equals(expected)) {
             throw new RuntimeException("toUri returned '" + actual +
