@@ -175,7 +175,7 @@ public class CountDownLatch {
         }
 
         protected int tryAcquireShared(int acquires) {
-            return getState() == 0? 1 : -1;
+            return (getState() == 0) ? 1 : -1;
         }
 
         protected boolean tryReleaseShared(int releases) {
