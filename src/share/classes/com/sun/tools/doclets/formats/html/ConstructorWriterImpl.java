@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -43,7 +44,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     implements ConstructorWriter, MemberSummaryWriter {
 
     private boolean foundNonPubConstructor = false;
-    private boolean printedSummaryHeader = false;
 
     /**
      * Construct a new ConstructorWriterImpl.
@@ -75,125 +75,112 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     }
 
     /**
-     * Write the constructors summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeMemberSummaryHeader(ClassDoc classDoc) {
-        printedSummaryHeader = true;
-        writer.println();
-        writer.println("<!-- ======== CONSTRUCTOR SUMMARY ======== -->");
-        writer.println();
-        writer.printSummaryHeader(this, classDoc);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree) {
+        memberSummaryTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_SUMMARY);
+        Content memberTree = writer.getMemberTreeHeader();
+        writer.addSummaryHeader(this, classDoc, memberTree);
+        return memberTree;
     }
 
     /**
-     * Write the constructors summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printSummaryFooter(this, classDoc);
+    public Content getConstructorDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree) {
+        memberDetailsTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_DETAILS);
+        Content constructorDetailsTree = writer.getMemberTreeHeader();
+        constructorDetailsTree.addContent(writer.getMarkerAnchor("constructor_detail"));
+        Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
+                writer.constructorDetailsLabel);
+        constructorDetailsTree.addContent(heading);
+        return constructorDetailsTree;
     }
 
     /**
-     * Write the header for the constructor documentation.
-     *
-     * @param classDoc the class that the constructors belong to.
+     * {@inheritDoc}
      */
-    public void writeHeader(ClassDoc classDoc, String header) {
-        writer.println();
-        writer.println("<!-- ========= CONSTRUCTOR DETAIL ======== -->");
-        writer.println();
-        writer.anchor("constructor_detail");
-        writer.printTableHeadingBackground(header);
-    }
-
-    /**
-     * Write the constructor header for the given constructor.
-     *
-     * @param constructor the constructor being documented.
-     * @param isFirst the flag to indicate whether or not the constructor is the
-     *        first to be documented.
-     */
-    public void writeConstructorHeader(ConstructorDoc constructor, boolean isFirst) {
-        if (! isFirst) {
-            writer.printMemberHeader();
-        }
-        writer.println();
+    public Content getConstructorDocTreeHeader(ConstructorDoc constructor,
+            Content constructorDetailsTree) {
         String erasureAnchor;
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
-            writer.anchor(erasureAnchor);
+            constructorDetailsTree.addContent(writer.getMarkerAnchor((erasureAnchor)));
         }
-        writer.anchor(constructor);
-        writer.h3();
-        writer.print(constructor.name());
-        writer.h3End();
+        constructorDetailsTree.addContent(
+                writer.getMarkerAnchor(writer.getAnchor(constructor)));
+        Content constructorDocTree = writer.getMemberTreeHeader();
+        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
+        heading.addContent(constructor.name());
+        constructorDocTree.addContent(heading);
+        return constructorDocTree;
     }
 
     /**
-     * Write the signature for the given constructor.
-     *
-     * @param constructor the constructor being documented.
+     * {@inheritDoc}
      */
-    public void writeSignature(ConstructorDoc constructor) {
+    public Content getSignature(ConstructorDoc constructor) {
         writer.displayLength = 0;
-        writer.pre();
-        writer.writeAnnotationInfo(constructor);
-        printModifiers(constructor);
-        //printReturnType((ConstructorDoc)constructor);
+        Content pre = new HtmlTree(HtmlTag.PRE);
+        writer.addAnnotationInfo(constructor, pre);
+        addModifiers(constructor, pre);
         if (configuration().linksource) {
-            writer.printSrcLink(constructor, constructor.name());
+            Content constructorName = new StringContent(constructor.name());
+            writer.addSrcLink(constructor, constructorName, pre);
         } else {
-            strong(constructor.name());
+            addName(constructor.name(), pre);
         }
-        writeParameters(constructor);
-        writeExceptions(constructor);
-        writer.preEnd();
-        assert !writer.getMemberDetailsListPrinted();
+        addParameters(constructor, pre);
+        addExceptions(constructor, pre);
+        return pre;
     }
 
     /**
-     * Write the deprecated output for the given constructor.
-     *
-     * @param constructor the constructor being documented.
+     * {@inheritDoc}
      */
-    public void writeDeprecated(ConstructorDoc constructor) {
-        printDeprecated(constructor);
+    @Override
+    public void setSummaryColumnStyle(HtmlTree tdTree) {
+        if (foundNonPubConstructor)
+            tdTree.addStyle(HtmlStyle.colLast);
+        else
+            tdTree.addStyle(HtmlStyle.colOne);
     }
 
     /**
-     * Write the comments for the given constructor.
-     *
-     * @param constructor the constructor being documented.
+     * {@inheritDoc}
      */
-    public void writeComments(ConstructorDoc constructor) {
-        printComment(constructor);
+    public void addDeprecated(ConstructorDoc constructor, Content constructorDocTree) {
+        addDeprecatedInfo(constructor, constructorDocTree);
     }
 
     /**
-     * Write the tag output for the given constructor.
-     *
-     * @param constructor the constructor being documented.
+     * {@inheritDoc}
      */
-    public void writeTags(ConstructorDoc constructor) {
-        writer.printTags(constructor);
+    public void addComments(ConstructorDoc constructor, Content constructorDocTree) {
+        addComment(constructor, constructorDocTree);
     }
 
     /**
-     * Write the constructor footer.
+     * {@inheritDoc}
      */
-    public void writeConstructorFooter() {
-        printMemberFooter();
+    public void addTags(ConstructorDoc constructor, Content constructorDocTree) {
+        writer.addTagsInfo(constructor, constructorDocTree);
     }
 
     /**
-     * Write the footer for the constructor documentation.
-     *
-     * @param classDoc the class that the constructors belong to.
+     * {@inheritDoc}
      */
-    public void writeFooter(ClassDoc classDoc) {
-        //No footer to write for constructor documentation
+    public Content getConstructorDetails(Content constructorDetailsTree) {
+        return getMemberTree(constructorDetailsTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getConstructorDoc(Content constructorDocTree,
+            boolean isLastContent) {
+        return getMemberTree(constructorDocTree, isLastContent);
     }
 
     /**
@@ -212,17 +199,35 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         this.foundNonPubConstructor = foundNonPubConstructor;
     }
 
-    public void printSummaryLabel() {
-        writer.printText("doclet.Constructor_Summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryLabel(Content memberTree) {
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+                writer.getResource("doclet.Constructor_Summary"));
+        memberTree.addContent(label);
     }
 
-    public void printTableSummary() {
-        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+    /**
+     * {@inheritDoc}
+     */
+    public String getTableSummary() {
+        return configuration().getText("doclet.Member_Table_Summary",
                 configuration().getText("doclet.Constructor_Summary"),
-                configuration().getText("doclet.constructors")));
+                configuration().getText("doclet.constructors"));
     }
 
-    public void printSummaryTableHeader(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    public String getCaption() {
+        return configuration().getText("doclet.Constructors");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header;
         if (foundNonPubConstructor) {
             header = new String[] {
@@ -239,87 +244,73 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                         configuration().getText("doclet.Description"))
             };
         }
-        writer.summaryTableHeader(header, "col");
+        return header;
     }
 
-    public void printSummaryAnchor(ClassDoc cd) {
-        writer.anchor("constructor_summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
+        memberTree.addContent(writer.getMarkerAnchor("constructor_summary"));
     }
 
-    public void printInheritedSummaryAnchor(ClassDoc cd) {
-    }   // no such
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree) {
+    }
 
-    public void printInheritedSummaryLabel(ClassDoc cd) {
-        // no such
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
     }
 
     public int getMemberKind() {
         return VisibleMemberMap.CONSTRUCTORS;
     }
 
-    protected void navSummaryLink(List<?> members) {
-        printNavSummaryLink(classdoc,
-                members.size() > 0? true: false);
-    }
-
-    protected void printNavSummaryLink(ClassDoc cd, boolean link) {
-        if (link) {
-            writer.printHyperLink("", "constructor_summary",
-                    ConfigurationImpl.getInstance().getText("doclet.navConstructor"));
-        } else {
-            writer.printText("doclet.navConstructor");
-        }
-    }
-
-    protected void printNavDetailLink(boolean link) {
-        if (link) {
-            writer.printHyperLink("", "constructor_detail",
-                    ConfigurationImpl.getInstance().getText("doclet.navConstructor"));
-        } else {
-            writer.printText("doclet.navConstructor");
-        }
-    }
-
-    protected void printSummaryType(ProgramElementDoc member) {
-        if (foundNonPubConstructor) {
-            writer.printTypeSummaryHeader();
-            if (member.isProtected()) {
-                print("protected ");
-            } else if (member.isPrivate()) {
-                print("private ");
-            } else if (member.isPublic()) {
-                writer.space();
-            } else {
-                writer.printText("doclet.Package_private");
-            }
-            writer.printTypeSummaryFooter();
-        }
-    }
-
     /**
-     * Write the inherited member summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeInheritedMemberSummaryHeader(ClassDoc classDoc) {
-        if(! printedSummaryHeader){
-            //We don't want inherited summary to not be under heading.
-            writeMemberSummaryHeader(classDoc);
-            writeMemberSummaryFooter(classDoc);
-            printedSummaryHeader = true;
+    protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
+        if (link) {
+            return writer.getHyperLink("", "constructor_summary",
+                    writer.getResource("doclet.navConstructor"));
+        } else {
+            return writer.getResource("doclet.navConstructor");
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeInheritedMemberSummary(ClassDoc classDoc,
-        ProgramElementDoc member, boolean isFirst, boolean isLast) {}
+    protected void addNavDetailLink(boolean link, Content liNav) {
+        if (link) {
+            liNav.addContent(writer.getHyperLink("", "constructor_detail",
+                    writer.getResource("doclet.navConstructor")));
+        } else {
+            liNav.addContent(writer.getResource("doclet.navConstructor"));
+        }
+    }
 
     /**
-     * Write the inherited member summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeInheritedMemberSummaryFooter(ClassDoc classDoc) {}
+    protected void addSummaryType(ProgramElementDoc member, Content tdSummaryType) {
+        if (foundNonPubConstructor) {
+            Content code = new HtmlTree(HtmlTag.CODE);
+            if (member.isProtected()) {
+                code.addContent("protected ");
+            } else if (member.isPrivate()) {
+                code.addContent("private ");
+            } else if (member.isPublic()) {
+                code.addContent(writer.getSpace());
+            } else {
+                code.addContent(
+                        configuration().getText("doclet.Package_private"));
+            }
+            tdSummaryType.addContent(code);
+        }
+    }
 }

@@ -21,6 +21,11 @@
  * questions.
  */
 
-class VarargsFilename<T> {
-    void m(T... items) { }
+// key: compiler.warn.varargs.unsafe.use.varargs.param
+// options: -Xlint:varargs
+
+class UnsafeUseOfVarargsParam {
+    @SafeVarargs static <X> void m(X... x) {
+        Object[] o = x;
+    }
 }

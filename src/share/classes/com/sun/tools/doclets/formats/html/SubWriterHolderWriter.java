@@ -25,10 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.javadoc.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
 import java.io.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * This abstract class exists to provide functionality needed in the
@@ -71,13 +72,31 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         tdEnd();
     }
 
-    public void printSummaryHeader(AbstractMemberWriter mw, ClassDoc cd) {
-        mw.printSummaryAnchor(cd);
-        mw.printTableSummary();
-        tableCaptionStart();
-        mw.printSummaryLabel();
-        tableCaptionEnd();
-        mw.printSummaryTableHeader(cd);
+    /**
+     * Add the summary header.
+     *
+     * @param mw the writer for the member being documented
+     * @param cd the classdoc to be documented
+     * @param memberTree the content tree to which the summary header will be added
+     */
+    public void addSummaryHeader(AbstractMemberWriter mw, ClassDoc cd,
+            Content memberTree) {
+        mw.addSummaryAnchor(cd, memberTree);
+        mw.addSummaryLabel(memberTree);
+    }
+
+    /**
+     * Get the summary table.
+     *
+     * @param mw the writer for the member being documented
+     * @param cd the classdoc to be documented
+     * @return the content tree for the summary table
+     */
+    public Content getSummaryTableTree(AbstractMemberWriter mw, ClassDoc cd) {
+        Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0,
+                mw.getTableSummary(), getTableCaption(mw.getCaption()));
+        table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(cd), "col"));
+        return table;
     }
 
     public void printTableHeadingBackground(String str) {
@@ -88,15 +107,17 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         tableEnd();
     }
 
-    public void printInheritedSummaryHeader(AbstractMemberWriter mw, ClassDoc cd) {
-        mw.printInheritedSummaryAnchor(cd);
-        tableIndexSummary();
-        tableInheritedHeaderStart("#EEEEFF");
-        mw.printInheritedSummaryLabel(cd);
-        tableInheritedHeaderEnd();
-        trBgcolorStyle("white", "TableRowColor");
-        summaryRow(0);
-        code();
+    /**
+     * Add the inherited summary header.
+     *
+     * @param mw the writer for the member being documented
+     * @param cd the classdoc to be documented
+     * @param inheritedTree the content tree to which the inherited summary header will be added
+     */
+    public void addInheritedSummaryHeader(AbstractMemberWriter mw, ClassDoc cd,
+            Content inheritedTree) {
+        mw.addInheritedSummaryAnchor(cd, inheritedTree);
+        mw.addInheritedSummaryLabel(cd, inheritedTree);
     }
 
     public void printSummaryFooter(AbstractMemberWriter mw, ClassDoc cd) {
@@ -112,8 +133,14 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         space();
     }
 
-    protected void printIndexComment(Doc member) {
-        printIndexComment(member, member.firstSentenceTags());
+    /**
+     * Add the index comment.
+     *
+     * @param member the member being documented
+     * @param contentTree the content tree to which the comment will be added
+     */
+    protected void addIndexComment(Doc member, Content contentTree) {
+        addIndexComment(member, member.firstSentenceTags(), contentTree);
     }
 
     protected void printIndexComment(Doc member, Tag[] firstSentenceTags) {
@@ -134,17 +161,60 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         printSummaryComment(member, firstSentenceTags);
     }
 
-    public void printSummaryLinkType(AbstractMemberWriter mw,
-                                     ProgramElementDoc member) {
-        trBgcolorStyle("white", "TableRowColor");
-        mw.printSummaryType(member);
-        summaryRow(0);
-        code();
+    /**
+     * Add the index comment.
+     *
+     * @param member the member being documented
+     * @param firstSentenceTags the first sentence tags for the member to be documented
+     * @param tdSummary the content tree to which the comment will be added
+     */
+    protected void addIndexComment(Doc member, Tag[] firstSentenceTags,
+            Content tdSummary) {
+        Tag[] deprs = member.tags("deprecated");
+        Content div;
+        if (Util.isDeprecated((ProgramElementDoc) member)) {
+            Content strong = HtmlTree.STRONG(deprecatedPhrase);
+            div = HtmlTree.DIV(HtmlStyle.block, strong);
+            div.addContent(getSpace());
+            if (deprs.length > 0) {
+                addInlineDeprecatedComment(member, deprs[0], div);
+            }
+            tdSummary.addContent(div);
+            return;
+        } else {
+            ClassDoc cd = ((ProgramElementDoc)member).containingClass();
+            if (cd != null && Util.isDeprecated(cd)) {
+                Content strong = HtmlTree.STRONG(deprecatedPhrase);
+                div = HtmlTree.DIV(HtmlStyle.block, strong);
+                div.addContent(getSpace());
+                tdSummary.addContent(div);
+            }
+        }
+        addSummaryComment(member, firstSentenceTags, tdSummary);
     }
 
-    public void printSummaryLinkComment(AbstractMemberWriter mw,
-                                        ProgramElementDoc member) {
-        printSummaryLinkComment(mw, member, member.firstSentenceTags());
+    /**
+     * Add the summary type for the member.
+     *
+     * @param mw the writer for the member being documented
+     * @param member the member to be documented
+     * @param tdSummaryType the content tree to which the type will be added
+     */
+    public void addSummaryType(AbstractMemberWriter mw, ProgramElementDoc member,
+            Content tdSummaryType) {
+        mw.addSummaryType(member, tdSummaryType);
+    }
+
+    /**
+     * Add the summary link for the member.
+     *
+     * @param mw the writer for the member being documented
+     * @param member the member to be documented
+     * @param contentTree the content tree to which the link will be added
+     */
+    public void addSummaryLinkComment(AbstractMemberWriter mw,
+            ProgramElementDoc member, Content contentTree) {
+        addSummaryLinkComment(mw, member, member.firstSentenceTags(), contentTree);
     }
 
     public void printSummaryLinkComment(AbstractMemberWriter mw,
@@ -159,12 +229,34 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         trEnd();
     }
 
-    public void printInheritedSummaryMember(AbstractMemberWriter mw, ClassDoc cd,
-            ProgramElementDoc member, boolean isFirst) {
+    /**
+     * Add the summary link comment.
+     *
+     * @param mw the writer for the member being documented
+     * @param member the member being documented
+     * @param firstSentenceTags the first sentence tags for the member to be documented
+     * @param tdSummary the content tree to which the comment will be added
+     */
+    public void addSummaryLinkComment(AbstractMemberWriter mw,
+            ProgramElementDoc member, Tag[] firstSentenceTags, Content tdSummary) {
+        addIndexComment(member, firstSentenceTags, tdSummary);
+    }
+
+    /**
+     * Add the inherited member summary.
+     *
+     * @param mw the writer for the member being documented
+     * @param cd the class being documented
+     * @param member the member being documented
+     * @param isFirst true if its the first link being documented
+     * @param linksTree the content tree to which the summary will be added
+     */
+    public void addInheritedMemberSummary(AbstractMemberWriter mw, ClassDoc cd,
+            ProgramElementDoc member, boolean isFirst, Content linksTree) {
         if (! isFirst) {
-            mw.print(", ");
+            linksTree.addContent(", ");
         }
-        mw.writeInheritedSummaryLink(cd, member);
+        mw.addInheritedSummaryLink(cd, member, linksTree);
     }
 
     public void printMemberHeader() {
@@ -174,4 +266,67 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     public void printMemberFooter() {
     }
 
+    /**
+     * Get the document content header tree
+     *
+     * @return a content tree the document content header
+     */
+    public Content getContentHeader() {
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.contentContainer);
+        return div;
+    }
+
+    /**
+     * Get the member header tree
+     *
+     * @return a content tree the member header
+     */
+    public Content getMemberTreeHeader() {
+        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        li.addStyle(HtmlStyle.blockList);
+        return li;
+    }
+
+    /**
+     * Get the member tree
+     *
+     * @param contentTree the tree used to generate the complete member tree
+     * @return a content tree for the member
+     */
+    public Content getMemberTree(Content contentTree) {
+        Content ul = HtmlTree.UL(HtmlStyle.blockList, contentTree);
+        return ul;
+    }
+
+    /**
+     * Get the member summary tree
+     *
+     * @param contentTree the tree used to generate the member summary tree
+     * @return a content tree for the member summary
+     */
+    public Content getMemberSummaryTree(Content contentTree) {
+        return getMemberTree(HtmlStyle.summary, contentTree);
+    }
+
+    /**
+     * Get the member details tree
+     *
+     * @param contentTree the tree used to generate the member details tree
+     * @return a content tree for the member details
+     */
+    public Content getMemberDetailsTree(Content contentTree) {
+        return getMemberTree(HtmlStyle.details, contentTree);
+    }
+
+    /**
+     * Get the member tree
+     *
+     * @param style the style class to be added to the content tree
+     * @param contentTree the tree used to generate the complete member tree
+     */
+    public Content getMemberTree(HtmlStyle style, Content contentTree) {
+        Content div = HtmlTree.DIV(style, getMemberTree(contentTree));
+        return div;
+    }
 }

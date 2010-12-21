@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,11 +23,51 @@
  * questions.
  */
 
-// key: compiler.note.varargs.filename.additional
-// key: compiler.warn.varargs.non.reifiable.type
-// options: -Xlint:varargs -Xmaxwarns 1
+package com.sun.tools.doclets.formats.html.markup;
 
-class VarargsFilenameAdditional<T> {
-    void m1(T... items) { }
-    void m2(T... items) { }
+/**
+ * Enum representing HTML tag attributes.
+ *
+ * @author Bhavesh Patel
+ */
+public enum HtmlAttr {
+    ALT,
+    BORDER,
+    CELLPADDING,
+    CELLSPACING,
+    CHARSET,
+    CLASS,
+    CLEAR,
+    COLS,
+    CONTENT,
+    HREF,
+    HTTP_EQUIV("http-equiv"),
+    ID,
+    LANG,
+    NAME,
+    ONLOAD,
+    REL,
+    ROWS,
+    SCOPE,
+    SCROLLING,
+    SRC,
+    SUMMARY,
+    TARGET,
+    TITLE,
+    TYPE,
+    WIDTH;
+
+    private final String value;
+
+    HtmlAttr() {
+        this.value = name().toLowerCase();
+    }
+
+    HtmlAttr(String name) {
+        this.value = name;
+    }
+
+    public String toString() {
+        return value;
+    }
 }

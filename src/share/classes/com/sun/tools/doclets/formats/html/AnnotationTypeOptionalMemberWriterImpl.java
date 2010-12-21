@@ -28,6 +28,7 @@ package com.sun.tools.doclets.formats.html;
 import java.io.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
@@ -54,29 +55,26 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
-    public void writeMemberSummaryHeader(ClassDoc classDoc) {
-        writer.println("<!-- =========== ANNOTATION TYPE OPTIONAL MEMBER SUMMARY =========== -->");
-        writer.println();
-        writer.printSummaryHeader(this, classDoc);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree) {
+        memberSummaryTree.addContent(
+                HtmlConstants.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY);
+        Content memberTree = writer.getMemberTreeHeader();
+        writer.addSummaryHeader(this, classDoc, memberTree);
+        return memberTree;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeDefaultValueInfo(MemberDoc member) {
+    public void addDefaultValueInfo(MemberDoc member, Content annotationDocTree) {
         if (((AnnotationTypeElementDoc) member).defaultValue() != null) {
-            writer.printMemberDetailsListStartTag();
-            writer.dd();
-            writer.dl();
-            writer.dt();
-            writer.strong(ConfigurationImpl.getInstance().
-                getText("doclet.Default"));
-            writer.dtEnd();
-            writer.dd();
-            writer.print(((AnnotationTypeElementDoc) member).defaultValue());
-            writer.ddEnd();
-            writer.dlEnd();
-            writer.ddEnd();
+            Content dt = HtmlTree.DT(writer.getResource("doclet.Default"));
+            Content dl = HtmlTree.DL(dt);
+            Content dd = HtmlTree.DD(new StringContent(
+                    ((AnnotationTypeElementDoc) member).defaultValue().toString()));
+            dl.addContent(dd);
+            annotationDocTree.addContent(dl);
         }
     }
 
@@ -90,45 +88,58 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
-    public void printSummaryLabel() {
-        writer.printText("doclet.Annotation_Type_Optional_Member_Summary");
+    public void addSummaryLabel(Content memberTree) {
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+                writer.getResource("doclet.Annotation_Type_Optional_Member_Summary"));
+        memberTree.addContent(label);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void printTableSummary() {
-        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+    public String getTableSummary() {
+        return configuration().getText("doclet.Member_Table_Summary",
                 configuration().getText("doclet.Annotation_Type_Optional_Member_Summary"),
-                configuration().getText("doclet.annotation_type_optional_members")));
+                configuration().getText("doclet.annotation_type_optional_members"));
     }
 
-    public void printSummaryTableHeader(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    public String getCaption() {
+        return configuration().getText("doclet.Annotation_Type_Optional_Members");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
             configuration().getText("doclet.0_and_1",
                     configuration().getText("doclet.Annotation_Type_Optional_Member"),
                     configuration().getText("doclet.Description"))
         };
-        writer.summaryTableHeader(header, "col");
+        return header;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void printSummaryAnchor(ClassDoc cd) {
-        writer.anchor("annotation_type_optional_element_summary");
+    public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
+        memberTree.addContent(writer.getMarkerAnchor(
+                "annotation_type_optional_element_summary"));
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void printNavSummaryLink(ClassDoc cd, boolean link) {
+    protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            writer.printHyperLink("", "annotation_type_optional_element_summary",
-                    configuration().getText("doclet.navAnnotationTypeOptionalMember"));
+            return writer.getHyperLink("", "annotation_type_optional_element_summary",
+                    writer.getResource("doclet.navAnnotationTypeOptionalMember"));
         } else {
-            writer.printText("doclet.navAnnotationTypeOptionalMember");
+            return writer.getResource("doclet.navAnnotationTypeOptionalMember");
         }
     }
 }

@@ -25,10 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
-
+import java.lang.reflect.Modifier;
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
@@ -60,36 +61,125 @@ public abstract class AbstractMemberWriter {
 
     /*** abstracts ***/
 
-    public abstract void printSummaryLabel();
+    /**
+     * Add the summary label for the member.
+     *
+     * @param memberTree the content tree to which the label will be added
+     */
+    public abstract void addSummaryLabel(Content memberTree);
 
-    public abstract void printTableSummary();
+    /**
+     * Get the summary for the member summary table.
+     *
+     * @return a string for the table summary
+     */
+    public abstract String getTableSummary();
 
-    public abstract void printSummaryTableHeader(ProgramElementDoc member);
+    /**
+     * Get the caption for the member summary table.
+     *
+     * @return a string for the table caption
+     */
+    public abstract String getCaption();
 
-    public abstract void printInheritedSummaryLabel(ClassDoc cd);
+    /**
+     * Get the summary table header for the member.
+     *
+     * @param member the member to be documented
+     * @return the summary table header
+     */
+    public abstract String[] getSummaryTableHeader(ProgramElementDoc member);
 
-    public abstract void printSummaryAnchor(ClassDoc cd);
+    /**
+     * Add inherited summary lable for the member.
+     *
+     * @param cd the class doc to which to link to
+     * @param inheritedTree the content tree to which the inherited summary label will be added
+     */
+    public abstract void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree);
 
-    public abstract void printInheritedSummaryAnchor(ClassDoc cd);
+    /**
+     * Add the anchor for the summary section of the member.
+     *
+     * @param cd the class doc to be documented
+     * @param memberTree the content tree to which the summary anchor will be added
+     */
+    public abstract void addSummaryAnchor(ClassDoc cd, Content memberTree);
 
-    protected abstract void printSummaryType(ProgramElementDoc member);
+    /**
+     * Add the anchor for the inherited summary section of the member.
+     *
+     * @param cd the class doc to be documented
+     * @param inheritedTree the content tree to which the inherited summary anchor will be added
+     */
+    public abstract void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree);
 
-    protected void writeSummaryLink(ClassDoc cd, ProgramElementDoc member) {
-        writeSummaryLink(LinkInfoImpl.CONTEXT_MEMBER, cd, member);
+    /**
+     * Add the summary type for the member.
+     *
+     * @param member the member to be documented
+     * @param tdSummaryType the content tree to which the type will be added
+     */
+    protected abstract void addSummaryType(ProgramElementDoc member,
+            Content tdSummaryType);
+
+    /**
+     * Add the summary link for the member.
+     *
+     * @param cd the class doc to be documented
+     * @param member the member to be documented
+     * @param tdSummary the content tree to which the link will be added
+     */
+    protected void addSummaryLink(ClassDoc cd, ProgramElementDoc member,
+            Content tdSummary) {
+        addSummaryLink(LinkInfoImpl.CONTEXT_MEMBER, cd, member, tdSummary);
     }
 
-    protected abstract void writeSummaryLink(int context,
-                                             ClassDoc cd,
-                                             ProgramElementDoc member);
+    /**
+     * Add the summary link for the member.
+     *
+     * @param context the id of the context where the link will be printed
+     * @param cd the class doc to be documented
+     * @param member the member to be documented
+     * @param tdSummary the content tree to which the summary link will be added
+     */
+    protected abstract void addSummaryLink(int context,
+            ClassDoc cd, ProgramElementDoc member, Content tdSummary);
 
-    protected abstract void writeInheritedSummaryLink(ClassDoc cd,
-                                                     ProgramElementDoc member);
+    /**
+     * Add the inherited summary link for the member.
+     *
+     * @param cd the class doc to be documented
+     * @param member the member to be documented
+     * @param linksTree the content tree to which the inherited summary link will be added
+     */
+    protected abstract void addInheritedSummaryLink(ClassDoc cd,
+            ProgramElementDoc member, Content linksTree);
 
-    protected abstract void writeDeprecatedLink(ProgramElementDoc member);
+    /**
+     * Get the deprecated link.
+     *
+     * @param member the member being linked to
+     * @return a content tree representing the link
+     */
+    protected abstract Content getDeprecatedLink(ProgramElementDoc member);
 
-    protected abstract void printNavSummaryLink(ClassDoc cd, boolean link);
+    /**
+     * Get the navigation summary link.
+     *
+     * @param cd the class doc to be documented
+     * @param link true if its a link else the label to be printed
+     * @return a content tree for the navigation summary link.
+     */
+    protected abstract Content getNavSummaryLink(ClassDoc cd, boolean link);
 
-    protected abstract void printNavDetailLink(boolean link);
+    /**
+     * Add the navigation detail link.
+     *
+     * @param link true if its a link else the label to be printed
+     * @param liNav the content tree to which the navigation detail link will be added
+     */
+    protected abstract void addNavDetailLink(boolean link, Content liNav);
 
     /***  ***/
 
@@ -106,6 +196,17 @@ public abstract class AbstractMemberWriter {
     protected void strong(String str) {
         writer.strong(str);
         writer.displayLength += str.length();
+    }
+
+    /**
+     * Add the member name to the content tree and modifies the display length.
+     *
+     * @param name the member name to be added to the content tree.
+     * @param htmltree the content tree to which the name will be added.
+     */
+    protected void addName(String name, Content htmltree) {
+        htmltree.addContent(name);
+        writer.displayLength += name.length();
     }
 
     /**
@@ -131,18 +232,24 @@ public abstract class AbstractMemberWriter {
         return type;
     }
 
-    protected void printModifiers(MemberDoc member) {
+    /**
+     * Add the modifier for the member.
+     *
+     * @param member the member for which teh modifier will be added.
+     * @param htmltree the content tree to which the modifier information will be added.
+     */
+    protected void addModifiers(MemberDoc member, Content htmltree) {
         String mod = modifierString(member);
         // According to JLS, we should not be showing public modifier for
         // interface methods.
         if ((member.isField() || member.isMethod()) &&
             writer instanceof ClassWriterImpl &&
-             ((ClassWriterImpl) writer).getClassDoc().isInterface()) {
+            ((ClassWriterImpl) writer).getClassDoc().isInterface()) {
             mod = Util.replaceText(mod, "public", "").trim();
         }
         if(mod.length() > 0) {
-            print(mod);
-            print(' ');
+            htmltree.addContent(mod);
+            htmltree.addContent(writer.getSpace());
         }
     }
 
@@ -158,66 +265,43 @@ public abstract class AbstractMemberWriter {
     }
 
     /**
-     * Print 'static' if static and type link.
-     */
-    protected void printStaticAndType(boolean isStatic, Type type) {
-        writer.printTypeSummaryHeader();
-        if (isStatic) {
-            print("static");
-        }
-        writer.space();
-        if (type != null) {
-            writer.printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
-                type));
-        }
-        writer.printTypeSummaryFooter();
-    }
-
-    /**
-     * Print the modifier and type for the member in the member summary.
+     * Add the modifier and type for the member in the member summary.
      *
-     * @param member the member to print the type for.
-     * @param type   the type to print.
+     * @param member the member to add the type for
+     * @param type the type to add
+     * @param tdSummaryType the content tree to which the modified and type will be added
      */
-    protected void printModifierAndType(ProgramElementDoc member, Type type) {
-        writer.printTypeSummaryHeader();
-        printModifier(member);
+    protected void addModifierAndType(ProgramElementDoc member, Type type,
+            Content tdSummaryType) {
+        HtmlTree code = new HtmlTree(HtmlTag.CODE);
+        addModifier(member, code);
         if (type == null) {
-            writer.space();
             if (member.isClass()) {
-                print("class");
+                code.addContent("class");
             } else {
-                print("interface");
+                code.addContent("interface");
             }
+            code.addContent(writer.getSpace());
         } else {
             if (member instanceof ExecutableMemberDoc &&
                     ((ExecutableMemberDoc) member).typeParameters().length > 0) {
                 //Code to avoid ugly wrapping in member summary table.
-                writer.table(0,0,0);
-                writer.trAlignVAlign("right", "");
-                writer.tdNowrap();
-                writer.font("-1");
-                writer.code();
-                int displayLength = ((AbstractExecutableMemberWriter) this).
-                writeTypeParameters((ExecutableMemberDoc) member);
+                int displayLength = ((AbstractExecutableMemberWriter) this).addTypeParameters(
+                        (ExecutableMemberDoc) member, code);
                 if (displayLength > 10) {
-                    writer.br();
+                    code.addContent(new HtmlTree(HtmlTag.BR));
                 }
-                writer.printLink(new LinkInfoImpl(
-                    LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type));
-                writer.codeEnd();
-                writer.fontEnd();
-                writer.tdEnd();
-                writer.trEnd();
-                writer.tableEnd();
+                code.addContent(new RawHtml(
+                        writer.getLink(new LinkInfoImpl(
+                        LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
             } else {
-                writer.space();
-                writer.printLink(new LinkInfoImpl(
-                    LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type));
+                code.addContent(new RawHtml(
+                        writer.getLink(new LinkInfoImpl(
+                        LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
             }
 
         }
-        writer.printTypeSummaryFooter();
+        tdSummaryType.addContent(code);
     }
 
     private void printModifier(ProgramElementDoc member) {
@@ -238,25 +322,53 @@ public abstract class AbstractMemberWriter {
     }
 
     /**
-     * Print the deprecated output for the given member.
+     * Add the modifier for the member.
      *
-     * @param member the member being documented.
+     * @param member the member to add the type for
+     * @param code the content tree to which the modified will be added
      */
-    protected void printDeprecated(ProgramElementDoc member) {
-        String output = (new DeprecatedTaglet()).getTagletOutput(member,
-            writer.getTagletWriterInstance(false)).toString().trim();
-        if (!output.isEmpty()) {
-            writer.printMemberDetailsListStartTag();
-            writer.print(output);
+    private void addModifier(ProgramElementDoc member, Content code) {
+        if (member.isProtected()) {
+            code.addContent("protected ");
+        } else if (member.isPrivate()) {
+            code.addContent("private ");
+        } else if (!member.isPublic()) { // Package private
+            code.addContent(configuration().getText("doclet.Package_private"));
+            code.addContent(" ");
+        }
+        if (member.isMethod() && ((MethodDoc)member).isAbstract()) {
+            code.addContent("abstract ");
+        }
+        if (member.isStatic()) {
+            code.addContent("static ");
         }
     }
 
-    protected void printComment(ProgramElementDoc member) {
+    /**
+     * Add the deprecated information for the given member.
+     *
+     * @param member the member being documented.
+     * @param contentTree the content tree to which the deprecated information will be added.
+     */
+    protected void addDeprecatedInfo(ProgramElementDoc member, Content contentTree) {
+        String output = (new DeprecatedTaglet()).getTagletOutput(member,
+            writer.getTagletWriterInstance(false)).toString().trim();
+        if (!output.isEmpty()) {
+            Content deprecatedContent = new RawHtml(output);
+            Content div = HtmlTree.DIV(HtmlStyle.block, deprecatedContent);
+            contentTree.addContent(div);
+        }
+    }
+
+    /**
+     * Add the comment for the given member.
+     *
+     * @param member the member being documented.
+     * @param contentTree the content tree to which the comment will be added.
+     */
+    protected void addComment(ProgramElementDoc member, Content htmltree) {
         if (member.inlineTags().length > 0) {
-            writer.printMemberDetailsListStartTag();
-            writer.dd();
-            writer.printInlineComment(member);
-            writer.ddEnd();
+            writer.addInlineComment(member, htmltree);
         }
     }
 
@@ -264,67 +376,19 @@ public abstract class AbstractMemberWriter {
         return member.name();
     }
 
-    protected void printHead(MemberDoc member) {
-        writer.h3();
-        writer.print(member.name());
-        writer.h3End();
-    }
-
-    protected void printFullComment(ProgramElementDoc member) {
-        if(configuration().nocomment){
-            return;
-        }
-        writer.dl();
-        print(((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(member,
-            writer.getTagletWriterInstance(false))).toString());
-        printCommentAndTags(member);
-        writer.dlEnd();
-    }
-
-    protected void printCommentAndTags(ProgramElementDoc member) {
-        printComment(member);
-        writer.printTags(member);
+    /**
+     * Get the header for the section.
+     *
+     * @param member the member being documented.
+     * @return a header content for the section.
+     */
+    protected Content getHead(MemberDoc member) {
+        Content memberContent = new RawHtml(member.name());
+        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, memberContent);
+        return heading;
     }
 
     /**
-     * Write the member footer.
-     */
-    protected void printMemberFooter() {
-        writer.printMemberDetailsListEndTag();
-        assert !writer.getMemberDetailsListPrinted();
-    }
-
-    /**
-     * Forward to containing writer
-     */
-    public void printSummaryHeader(ClassDoc cd) {
-        printedSummaryHeader = true;
-        writer.printSummaryHeader(this, cd);
-    }
-
-    /**
-     * Forward to containing writer
-     */
-    public void printInheritedSummaryHeader(ClassDoc cd) {
-        writer.printInheritedSummaryHeader(this, cd);
-    }
-
-    /**
-     * Forward to containing writer
-     */
-    public void printInheritedSummaryFooter(ClassDoc cd) {
-        writer.printInheritedSummaryFooter(this, cd);
-    }
-
-    /**
-     * Forward to containing writer
-     */
-    public void printSummaryFooter(ClassDoc cd) {
-        writer.printSummaryFooter(this, cd);
-    }
-
-   /**
     * Return true if the given <code>ProgramElement</code> is inherited
     * by the class that is being documented.
     *
@@ -340,102 +404,134 @@ public abstract class AbstractMemberWriter {
         return true;
     }
 
-
     /**
-     * Generate the code for listing the deprecated APIs. Create the table
-     * format for listing the API. Call methods from the sub-class to complete
-     * the generation.
+     * Add deprecated information to the documentation tree
+     *
+     * @param deprmembers list of deprecated members
+     * @param headingKey the caption for the deprecated members table
+     * @param tableSummary the summary for the deprecated members table
+     * @param tableHeader table headers for the deprecated members table
+     * @param contentTree the content tree to which the deprecated members table will be added
      */
-    protected void printDeprecatedAPI(List<Doc> deprmembers, String headingKey, String tableSummary, String[] tableHeader) {
+    protected void addDeprecatedAPI(List<Doc> deprmembers, String headingKey,
+            String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
-            writer.tableIndexSummary(tableSummary);
-            writer.tableCaptionStart();
-            writer.printText(headingKey);
-            writer.tableCaptionEnd();
-            writer.summaryTableHeader(tableHeader, "col");
+            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+                writer.getTableCaption(configuration().getText(headingKey)));
+            table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
+            Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprmembers.size(); i++) {
                 ProgramElementDoc member =(ProgramElementDoc)deprmembers.get(i);
-                writer.trBgcolorStyle("white", "TableRowColor");
-                writer.summaryRow(0);
-                writeDeprecatedLink(member);
-                writer.br();
-                writer.printNbsps();
+                HtmlTree td = HtmlTree.TD(HtmlStyle.colOne, getDeprecatedLink(member));
                 if (member.tags("deprecated").length > 0)
-                    writer.printInlineDeprecatedComment(member, member.tags("deprecated")[0]);
-                writer.space();
-                writer.summaryRowEnd();
-                writer.trEnd();
+                    writer.addInlineDeprecatedComment(member,
+                            member.tags("deprecated")[0], td);
+                HtmlTree tr = HtmlTree.TR(td);
+                if (i%2 == 0)
+                    tr.addStyle(HtmlStyle.altColor);
+                else
+                    tr.addStyle(HtmlStyle.rowColor);
+                tbody.addContent(tr);
             }
-            writer.tableEnd();
-            writer.space();
-            writer.p();
+            table.addContent(tbody);
+            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+            Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
+            contentTree.addContent(ul);
         }
     }
 
     /**
-     * Print use info.
+     * Add use information to the documentation tree.
+     *
+     * @param mems list of program elements for which the use information will be added
+     * @param heading the section heading
+     * @param tableSummary the summary for the use table
+     * @param contentTree the content tree to which the use information will be added
      */
-    protected void printUseInfo(List<? extends ProgramElementDoc> mems, String heading, String tableSummary) {
+    protected void addUseInfo(List<? extends ProgramElementDoc> mems,
+            String heading, String tableSummary, Content contentTree) {
         if (mems == null) {
             return;
         }
         List<? extends ProgramElementDoc> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            writer.tableIndexSummary(tableSummary);
-            writer.tableSubCaptionStart();
-            writer.print(heading);
-            writer.tableCaptionEnd();
-            for (Iterator<? extends ProgramElementDoc> it = members.iterator(); it.hasNext(); ) {
+            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+                    writer.getTableCaption(heading));
+            Content tbody = new HtmlTree(HtmlTag.TBODY);
+            Iterator<? extends ProgramElementDoc> it = members.iterator();
+            for (int i = 0; it.hasNext(); i++) {
                 ProgramElementDoc pgmdoc = it.next();
                 ClassDoc cd = pgmdoc.containingClass();
                 if (!printedUseTableHeader) {
-                    // Passing ProgramElementDoc helps decides printing
-                    // interface or class header in case of nested classes.
-                    this.printSummaryTableHeader(pgmdoc);
+                    table.addContent(writer.getSummaryTableHeader(
+                            this.getSummaryTableHeader(pgmdoc), "col"));
                     printedUseTableHeader = true;
                 }
-
-                writer.printSummaryLinkType(this, pgmdoc);
+                HtmlTree tr = new HtmlTree(HtmlTag.TR);
+                if (i % 2 == 0) {
+                    tr.addStyle(HtmlStyle.altColor);
+                } else {
+                    tr.addStyle(HtmlStyle.rowColor);
+                }
+                HtmlTree tdFirst = new HtmlTree(HtmlTag.TD);
+                tdFirst.addStyle(HtmlStyle.colFirst);
+                writer.addSummaryType(this, pgmdoc, tdFirst);
+                tr.addContent(tdFirst);
+                HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
+                tdLast.addStyle(HtmlStyle.colLast);
                 if (cd != null && !(pgmdoc instanceof ConstructorDoc)
-                               && !(pgmdoc instanceof ClassDoc)) {
-                    // Add class context
-                    writer.strong(cd.name() + ".");
+                        && !(pgmdoc instanceof ClassDoc)) {
+                    HtmlTree name = new HtmlTree(HtmlTag.SPAN);
+                    name.addStyle(HtmlStyle.strong);
+                    name.addContent(cd.name() + ".");
+                    tdLast.addContent(name);
                 }
-                writeSummaryLink(
-                    pgmdoc instanceof ClassDoc ?
-                        LinkInfoImpl.CONTEXT_CLASS_USE : LinkInfoImpl.CONTEXT_MEMBER,
-                    cd, pgmdoc);
-                writer.printSummaryLinkComment(this, pgmdoc);
+                addSummaryLink(pgmdoc instanceof ClassDoc ?
+                    LinkInfoImpl.CONTEXT_CLASS_USE : LinkInfoImpl.CONTEXT_MEMBER,
+                    cd, pgmdoc, tdLast);
+                writer.addSummaryLinkComment(this, pgmdoc, tdLast);
+                tr.addContent(tdLast);
+                tbody.addContent(tr);
             }
-            writer.tableEnd();
-            writer.space();
-            writer.p();
+            table.addContent(tbody);
+            contentTree.addContent(table);
         }
     }
 
-    protected void navDetailLink(List<?> members) {
-            printNavDetailLink(members.size() > 0? true: false);
+    /**
+     * Add the navigation detail link.
+     *
+     * @param members the members to be linked
+     * @param liNav the content tree to which the navigation detail link will be added
+     */
+    protected void addNavDetailLink(List<?> members, Content liNav) {
+        addNavDetailLink(members.size() > 0 ? true : false, liNav);
     }
 
-
-    protected void navSummaryLink(List<?> members,
-            VisibleMemberMap visibleMemberMap) {
+    /**
+     * Add the navigation summary link.
+     *
+     * @param members members to be linked
+     * @param visibleMemberMap the visible inherited members map
+     * @param liNav the content tree to which the navigation summary link will be added
+     */
+    protected void addNavSummaryLink(List<?> members,
+            VisibleMemberMap visibleMemberMap, Content liNav) {
         if (members.size() > 0) {
-            printNavSummaryLink(null, true);
+            liNav.addContent(getNavSummaryLink(null, true));
             return;
-        } else {
-            ClassDoc icd = classdoc.superclass();
-            while (icd != null) {
-                List<?> inhmembers = visibleMemberMap.getMembersFor(icd);
-                if (inhmembers.size() > 0) {
-                    printNavSummaryLink(icd, true);
-                    return;
-                }
-                icd = icd.superclass();
-            }
         }
-        printNavSummaryLink(null, false);
+        ClassDoc icd = classdoc.superclass();
+        while (icd != null) {
+            List<?> inhmembers = visibleMemberMap.getMembersFor(icd);
+            if (inhmembers.size() > 0) {
+                liNav.addContent(getNavSummaryLink(icd, true));
+                return;
+            }
+            icd = icd.superclass();
+        }
+        liNav.addContent(getNavSummaryLink(null, false));
     }
 
     protected void serialWarning(SourcePosition pos, String key, String a1, String a2) {
@@ -453,12 +549,109 @@ public abstract class AbstractMemberWriter {
     }
 
     /**
-     * {@inheritDoc}
+     * Add the member summary for the given class.
+     *
+     * @param classDoc the class that is being documented
+     * @param member the member being documented
+     * @param firstSentenceTags the first sentence tags to be added to the summary
+     * @param tableTree the content tree to which the documentation will be added
+     * @param counter the counter for determing style for the table row
      */
-    public void writeMemberSummary(ClassDoc classDoc, ProgramElementDoc member,
-        Tag[] firstSentenceTags, boolean isFirst, boolean isLast) {
-        writer.printSummaryLinkType(this, member);
-        writeSummaryLink(classDoc, member);
-        writer.printSummaryLinkComment(this, member, firstSentenceTags);
+    public void addMemberSummary(ClassDoc classDoc, ProgramElementDoc member,
+            Tag[] firstSentenceTags, Content tableTree, int counter) {
+        HtmlTree tdSummaryType = new HtmlTree(HtmlTag.TD);
+        tdSummaryType.addStyle(HtmlStyle.colFirst);
+        writer.addSummaryType(this, member, tdSummaryType);
+        HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
+        setSummaryColumnStyle(tdSummary);
+        addSummaryLink(classDoc, member, tdSummary);
+        writer.addSummaryLinkComment(this, member, firstSentenceTags, tdSummary);
+        HtmlTree tr = HtmlTree.TR(tdSummaryType);
+        tr.addContent(tdSummary);
+        if (counter%2 == 0)
+            tr.addStyle(HtmlStyle.altColor);
+        else
+            tr.addStyle(HtmlStyle.rowColor);
+        tableTree.addContent(tr);
+    }
+
+    /**
+     * Set the style for the summary column.
+     *
+     * @param tdTree the column for which the style will be set
+     */
+    public void setSummaryColumnStyle(HtmlTree tdTree) {
+        tdTree.addStyle(HtmlStyle.colLast);
+    }
+
+    /**
+     * Add inherited member summary for the given class and member.
+     *
+     * @param classDoc the class the inherited member belongs to
+     * @param nestedClass the inherited member that is summarized
+     * @param isFirst true if this is the first member in the list
+     * @param isLast true if this is the last member in the list
+     * @param linksTree the content tree to which the summary will be added
+     */
+    public void addInheritedMemberSummary(ClassDoc classDoc,
+            ProgramElementDoc nestedClass, boolean isFirst, boolean isLast,
+            Content linksTree) {
+        writer.addInheritedMemberSummary(this, classDoc, nestedClass, isFirst,
+                linksTree);
+    }
+
+    /**
+     * Get the inherited summary header for the given class.
+     *
+     * @param classDoc the class the inherited member belongs to
+     * @return a content tree for the inherited summary header
+     */
+    public Content getInheritedSummaryHeader(ClassDoc classDoc) {
+        Content inheritedTree = writer.getMemberTreeHeader();
+        writer.addInheritedSummaryHeader(this, classDoc, inheritedTree);
+        return inheritedTree;
+    }
+
+    /**
+     * Get the inherited summary links tree.
+     *
+     * @return a content tree for the inherited summary links
+     */
+    public Content getInheritedSummaryLinksTree() {
+        return new HtmlTree(HtmlTag.CODE);
+    }
+
+    /**
+     * Get the summary table tree for the given class.
+     *
+     * @param classDoc the class for which the summary table is generated
+     * @return a content tree for the summary table
+     */
+    public Content getSummaryTableTree(ClassDoc classDoc) {
+        return writer.getSummaryTableTree(this, classDoc);
+    }
+
+    /**
+     * Get the member tree to be documented.
+     *
+     * @param memberTree the content tree of member to be documented
+     * @return a content tree that will be added to the class documentation
+     */
+    public Content getMemberTree(Content memberTree) {
+        return writer.getMemberTree(memberTree);
+    }
+
+    /**
+     * Get the member tree to be documented.
+     *
+     * @param memberTree the content tree of member to be documented
+     * @param isLastContent true if the content to be added is the last content
+     * @return a content tree that will be added to the class documentation
+     */
+    public Content getMemberTree(Content memberTree, boolean isLastContent) {
+        if (isLastContent)
+            return HtmlTree.UL(HtmlStyle.blockListLast, memberTree);
+        else
+            return HtmlTree.UL(HtmlStyle.blockList, memberTree);
     }
 }

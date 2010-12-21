@@ -228,6 +228,17 @@ public class JavacTrees extends Trees {
         return new JavacScope(getAttrContext(path));
     }
 
+    public String getDocComment(TreePath path) {
+        CompilationUnitTree t = path.getCompilationUnit();
+        if (t instanceof JCTree.JCCompilationUnit) {
+            JCCompilationUnit cu = (JCCompilationUnit) t;
+            if (cu.docComments != null) {
+                return cu.docComments.get(path.getLeaf());
+            }
+        }
+        return null;
+    }
+
     public boolean isAccessible(Scope scope, TypeElement type) {
         if (scope instanceof JavacScope && type instanceof ClassSymbol) {
             Env<AttrContext> env = ((JavacScope) scope).env;

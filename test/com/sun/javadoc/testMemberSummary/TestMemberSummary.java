@@ -48,21 +48,23 @@ public class TestMemberSummary extends JavadocTester {
     private static final String[][] TEST = {
         // Check return type in member summary.
         {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
-            "<CODE>&nbsp;<A HREF=\"../pkg/PublicChild.html\" " +
-            "title=\"class in pkg\">PublicChild</A></CODE></FONT></TD>" + NL +
-            "<TD><CODE><STRONG><A HREF=\"../pkg/PublicChild.html#" +
-            "returnTypeTest()\">returnTypeTest</A></STRONG>()</CODE>"
+            "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>" + NL +
+            "<td class=\"colLast\"><code><strong><a href=\"../pkg/PublicChild.html#returnTypeTest()\">" +
+            "returnTypeTest</a></strong>()</code>"
         },
         // Check return type in member detail.
         {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
-            "public <A HREF=\"../pkg/PublicChild.html\" " +
-            "title=\"class in pkg\">PublicChild</A> " +
-            "<STRONG>returnTypeTest</STRONG>()"
+            "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">" +
+            "PublicChild</a>&nbsp;returnTypeTest()</pre>"
         },
 
          // Legacy anchor dimensions (6290760)
         {BUG_ID + FS + "pkg2" + FS + "A.html",
-            "<A NAME=\"f(java.lang.Object[])\"><!-- --></A><A NAME=\"f(T[])\"><!-- --></A>"
+            "<a name=\"f(java.lang.Object[])\">" + NL +
+            "<!--   -->" + NL +
+            "</a><a name=\"f(T[])\">" + NL +
+            "<!--   -->" + NL +
+            "</a>"
         },
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
