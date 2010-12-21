@@ -25,10 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Generate package usage information.
@@ -106,49 +108,74 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
 
     /**
-     * Print the class use list.
+     * Generate the package use list.
      */
     protected void generatePackageUseFile() throws IOException {
-        printPackageUseHeader();
-
+        Content body = getPackageUseHeader();
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.contentContainer);
         if (usingPackageToUsedClasses.isEmpty()) {
-            printText("doclet.ClassUse_No.usage.of.0", pkgdoc.name());
-            p();
+            div.addContent(getResource(
+                    "doclet.ClassUse_No.usage.of.0", pkgdoc.name()));
         } else {
-            generatePackageUse();
+            addPackageUse(div);
         }
-
-        printPackageUseFooter();
+        body.addContent(div);
+        addNavLinks(false, body);
+        addBottom(body);
+        printHtmlDocument(null, true, body);
     }
 
     /**
-     * Print the class use list.
+     * Add the package use information.
+     *
+     * @param contentTree the content tree to which the package use information will be added
      */
-    protected void generatePackageUse() throws IOException {
+    protected void addPackageUse(Content contentTree) throws IOException {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
         if (configuration.packages.length > 1) {
-            generatePackageList();
+            addPackageList(ul);
         }
-        generateClassList();
+        addClassList(ul);
+        contentTree.addContent(ul);
     }
 
-    protected void generatePackageList() throws IOException {
-        tableIndexSummary(useTableSummary);
-        tableCaptionStart();
-        printText("doclet.ClassUse_Packages.that.use.0",
-            getPackageLink(pkgdoc, Util.getPackageName(pkgdoc), false));
-        tableCaptionEnd();
-        summaryTableHeader(packageTableHeader, "col");
+    /**
+     * Add the list of packages that use the given package.
+     *
+     * @param contentTree the content tree to which the package list will be added
+     */
+    protected void addPackageList(Content contentTree) throws IOException {
+        Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
+                getTableCaption(configuration().getText(
+                "doclet.ClassUse_Packages.that.use.0",
+                getPackageLinkString(pkgdoc, Util.getPackageName(pkgdoc), false))));
+        table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
+        Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
-        while (it.hasNext()) {
+        for (int i = 0; it.hasNext(); i++) {
             PackageDoc pkg = configuration.root.packageNamed(it.next());
-            generatePackageUse(pkg);
+            HtmlTree tr = new HtmlTree(HtmlTag.TR);
+            if (i % 2 == 0) {
+                tr.addStyle(HtmlStyle.altColor);
+            } else {
+                tr.addStyle(HtmlStyle.rowColor);
+            }
+            addPackageUse(pkg, tr);
+            tbody.addContent(tr);
         }
-        tableEnd();
-        space();
-        p();
+        table.addContent(tbody);
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+        contentTree.addContent(li);
     }
 
-    protected void generateClassList() throws IOException {
+    /**
+     * Add the list of classes that use the given package.
+     *
+     * @param contentTree the content tree to which the class list will be added
+     */
+    protected void addClassList(Content contentTree) throws IOException {
         String[] classTableHeader = new String[] {
             configuration.getText("doclet.0_and_1",
                     configuration.getText("doclet.Class"),
@@ -158,117 +185,126 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         while (itp.hasNext()) {
             String packageName = itp.next();
             PackageDoc usingPackage = configuration.root.packageNamed(packageName);
+            HtmlTree li = new HtmlTree(HtmlTag.LI);
+            li.addStyle(HtmlStyle.blockList);
             if (usingPackage != null) {
-                anchor(usingPackage.name());
+                li.addContent(getMarkerAnchor(usingPackage.name()));
             }
-            tableIndexSummary(configuration.getText("doclet.Use_Table_Summary",
-                    configuration.getText("doclet.classes")));
-            tableCaptionStart();
-            printText("doclet.ClassUse_Classes.in.0.used.by.1",
-                getPackageLink(pkgdoc, Util.getPackageName(pkgdoc), false),
-                getPackageLink(usingPackage,Util.getPackageName(usingPackage), false));
-            tableCaptionEnd();
-            summaryTableHeader(classTableHeader, "col");
+            String tableSummary = configuration.getText("doclet.Use_Table_Summary",
+                    configuration.getText("doclet.classes"));
+            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+                    getTableCaption(configuration().getText(
+                    "doclet.ClassUse_Classes.in.0.used.by.1",
+                    getPackageLinkString(pkgdoc, Util.getPackageName(pkgdoc), false),
+                    getPackageLinkString(usingPackage,Util.getPackageName(usingPackage), false))));
+            table.addContent(getSummaryTableHeader(classTableHeader, "col"));
+            Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =
                     usingPackageToUsedClasses.get(packageName).iterator();
-            while (itc.hasNext()) {
-                printClassRow(itc.next(), packageName);
+            for (int i = 0; itc.hasNext(); i++) {
+                HtmlTree tr = new HtmlTree(HtmlTag.TR);
+                if (i % 2 == 0) {
+                    tr.addStyle(HtmlStyle.altColor);
+                } else {
+                    tr.addStyle(HtmlStyle.rowColor);
+                }
+                addClassRow(itc.next(), packageName, tr);
+                tbody.addContent(tr);
             }
-            tableEnd();
-            space();
-            p();
+            table.addContent(tbody);
+            li.addContent(table);
+            contentTree.addContent(li);
         }
     }
 
-    protected void printClassRow(ClassDoc usedClass, String packageName) {
+    /**
+     * Add a row for the class that uses the given package.
+     *
+     * @param usedClass the class that uses the given package
+     * @param packageName the name of the package to which the class belongs
+     * @param contentTree the content tree to which the row will be added
+     */
+    protected void addClassRow(ClassDoc usedClass, String packageName,
+            Content contentTree) {
         String path = pathString(usedClass,
-                                 "class-use/" + usedClass.name() + ".html");
-
-        trBgcolorStyle("white", "TableRowColor");
-        summaryRow(0);
-        strong();
-        printHyperLink(path, packageName, usedClass.name(), true);
-        strongEnd();
-        println(); br();
-        printNbsps();
-        printIndexComment(usedClass);
-        summaryRowEnd();
-        trEnd();
+                "class-use/" + usedClass.name() + ".html");
+        Content td = HtmlTree.TD(HtmlStyle.colOne,
+                getHyperLink(path, packageName, new StringContent(usedClass.name())));
+        addIndexComment(usedClass, td);
+        contentTree.addContent(td);
     }
 
     /**
-     * Print the package use list.
+     * Add the package use information.
+     *
+     * @param pkg the package that used the given package
+     * @param contentTree the content tree to which the information will be added
      */
-    protected void generatePackageUse(PackageDoc pkg) throws IOException {
-        trBgcolorStyle("white", "TableRowColor");
-        summaryRow(0);
-        //Just want an anchor here.
-        printHyperLink("", pkg.name(), Util.getPackageName(pkg), true);
-        summaryRowEnd();
-        summaryRow(0);
-        if (pkg != null) {
-            printSummaryComment(pkg);
-        }
-        space();
-        summaryRowEnd();
-        trEnd();
+    protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
+        Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
+                getHyperLink("", pkg.name(), new StringContent(Util.getPackageName(pkg))));
+        contentTree.addContent(tdFirst);
+        HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
+        tdLast.addStyle(HtmlStyle.colLast);
+        if (pkg != null)
+            addSummaryComment(pkg, tdLast);
+        else
+            tdLast.addContent(getSpace());
+        contentTree.addContent(tdLast);
     }
 
     /**
-     * Print the header for the class use Listing.
+     * Get the header for the package use listing.
+     *
+     * @return a content tree representing the package use header
      */
-    protected void printPackageUseHeader() {
-        String packageLabel = configuration.getText("doclet.Package");
+    protected Content getPackageUseHeader() {
+        String packageText = configuration.getText("doclet.Package");
         String name = pkgdoc.name();
-        printHtmlHeader(configuration.getText("doclet.Window_ClassUse_Header",
-            packageLabel, name), null, true);
-        printTop();
-        navLinks(true);
-        hr();
-        center();
-        h2();
-        strongText("doclet.ClassUse_Title", packageLabel, name);
-        h2End();
-        centerEnd();
+        String title = configuration.getText("doclet.Window_ClassUse_Header",
+                packageText, name);
+        Content bodyTree = getBody(true, getWindowTitle(title));
+        addTop(bodyTree);
+        addNavLinks(true, bodyTree);
+        Content headContent = getResource("doclet.ClassUse_Title", packageText, name);
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+                HtmlStyle.title, headContent);
+        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        bodyTree.addContent(div);
+        return bodyTree;
     }
 
     /**
-     * Print the footer for the class use Listing.
+     * Get this package link.
+     *
+     * @return a content tree for the package link
      */
-    protected void printPackageUseFooter() {
-        hr();
-        navLinks(false);
-        printBottom();
-        printBodyHtmlEnd();
-    }
-
-
-    /**
-     * Print this package link
-     */
-    protected void navLinkPackage() {
-        navCellStart();
-        printHyperLink("package-summary.html", "", configuration.getText("doclet.Package"),
-                       true, "NavBarFont1");
-        navCellEnd();
+    protected Content getNavLinkPackage() {
+        Content linkContent = getHyperLink("package-summary.html", "",
+                packageLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
     }
 
     /**
-     * Print class use link
+     * Get the use link.
+     *
+     * @return a content tree for the use link
      */
-    protected void navLinkClassUse() {
-        navCellRevStart();
-        fontStyle("NavBarFont1Rev");
-        strongText("doclet.navClassUse");
-        fontEnd();
-        navCellEnd();
+    protected Content getNavLinkClassUse() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, useLabel);
+        return li;
     }
 
-    protected void navLinkTree() {
-        navCellStart();
-        printHyperLink("package-tree.html", "", configuration.getText("doclet.Tree"),
-                       true, "NavBarFont1");
-        navCellEnd();
+    /**
+     * Get the tree link.
+     *
+     * @return a content tree for the tree link
+     */
+    protected Content getNavLinkTree() {
+        Content linkContent = getHyperLink("package-tree.html", "",
+                treeLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
     }
-
 }
