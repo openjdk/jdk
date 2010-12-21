@@ -23,14 +23,14 @@
  * questions.
  */
 
-package com.sun.tools.doclets.internal.toolkit.util;
+package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import java.util.*;
 import javax.tools.FileObject;
-
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Converts Java Source Code to HTML.
@@ -40,27 +40,28 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.4
  */
 public class SourceToHTMLConverter {
-
-    /**
-     * The background color.
-     */
-    protected static final String BGCOLOR = "white";
-
-    /**
-     * The line number color.
-     */
-    protected static final String LINE_NO_COLOR = "green";
 
     /**
      * The number of trailing blank lines at the end of the page.
      * This is inserted so that anchors at the bottom of small pages
      * can be reached.
      */
-    protected static final int NUM_BLANK_LINES = 60;
+    private static final int NUM_BLANK_LINES = 60;
 
+    /**
+     * New line to be added to the documentation.
+     */
+    private static final Content NEW_LINE = new RawHtml(DocletConstants.NL);
+
+    /**
+     * Relative path from the documentation root to the file that is being
+     * generated.
+     */
+    private static String relativePath = "";
 
     /**
      * Source is converted to HTML using static methods below.
@@ -69,11 +70,13 @@ public class SourceToHTMLConverter {
 
     /**
      * Convert the Classes in the given RootDoc to an HTML.
+     *
      * @param configuration the configuration.
      * @param rd the RootDoc to convert.
      * @param outputdir the name of the directory to output to.
      */
-    public static void convertRoot(Configuration configuration, RootDoc rd, String outputdir) {
+    public static void convertRoot(ConfigurationImpl configuration, RootDoc rd,
+            String outputdir) {
         if (rd == null || outputdir == null) {
             return;
         }
@@ -84,17 +87,19 @@ public class SourceToHTMLConverter {
         ClassDoc[] cds = rd.specifiedClasses();
         for (int i = 0; i < cds.length; i++) {
             convertClass(configuration, cds[i],
-                getPackageOutputDir(outputdir, cds[i].containingPackage()));
+                    getPackageOutputDir(outputdir, cds[i].containingPackage()));
         }
     }
 
     /**
      * Convert the Classes in the given Package to an HTML.
+     *
      * @param configuration the configuration.
      * @param pd the Package to convert.
      * @param outputdir the name of the directory to output to.
      */
-    public static void convertPackage(Configuration configuration, PackageDoc pd, String outputdir) {
+    public static void convertPackage(ConfigurationImpl configuration, PackageDoc pd,
+            String outputdir) {
         if (pd == null || outputdir == null) {
             return;
         }
@@ -107,8 +112,10 @@ public class SourceToHTMLConverter {
 
     /**
      * Return the directory write output to for the given package.
+     *
      * @param outputDir the directory to output to.
      * @param pd the Package to generate output for.
+     * @return the package output directory as a String.
      */
     private static String getPackageOutputDir(String outputDir, PackageDoc pd) {
         return outputDir + File.separator +
@@ -117,11 +124,13 @@ public class SourceToHTMLConverter {
 
     /**
      * Convert the given Class to an HTML.
+     *
      * @param configuration the configuration.
      * @param cd the class to convert.
      * @param outputdir the name of the directory to output to.
      */
-    public static void convertClass(Configuration configuration, ClassDoc cd, String outputdir) {
+    public static void convertClass(ConfigurationImpl configuration, ClassDoc cd,
+            String outputdir) {
         if (cd == null || outputdir == null) {
             return;
         }
@@ -145,19 +154,23 @@ public class SourceToHTMLConverter {
             LineNumberReader reader = new LineNumberReader(r);
             int lineno = 1;
             String line;
-            StringBuffer output = new StringBuffer();
+            relativePath = DirectoryManager.getRelativePath(DocletConstants.SOURCE_OUTPUT_DIR_NAME) +
+                    DirectoryManager.getRelativePath(cd.containingPackage());
+            Content body = getHeader();
+            Content pre = new HtmlTree(HtmlTag.PRE);
             try {
                 while ((line = reader.readLine()) != null) {
-                    output.append(formatLine(line, configuration.sourcetab, lineno));
+                    addLineNo(pre, lineno);
+                    addLine(pre, line, configuration.sourcetab, lineno);
                     lineno++;
                 }
             } finally {
                 reader.close();
             }
-            output = addLineNumbers(output.toString());
-            output.insert(0, getHeader(configuration));
-            output.append(getFooter());
-            writeToFile(output.toString(), outputdir, cd.name(), configuration);
+            addBlankLines(pre);
+            Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
+            body.addContent(div);
+            writeToFile(body, outputdir, cd.name(), configuration);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -165,135 +178,117 @@ public class SourceToHTMLConverter {
 
     /**
      * Write the output to the file.
-     * @param output the string to output.
+     *
+     * @param body the documentation content to be written to the file.
      * @param outputDir the directory to output to.
      * @param className the name of the class that I am converting to HTML.
      * @param configuration the Doclet configuration to pass notices to.
      */
-    private static void writeToFile(String output, String outputDir, String className, Configuration configuration) throws IOException {
+    private static void writeToFile(Content body, String outputDir,
+            String className, ConfigurationImpl configuration) throws IOException {
+        Content htmlDocType = DocType.Transitional();
+        Content head = new HtmlTree(HtmlTag.HEAD);
+        head.addContent(HtmlTree.TITLE(new StringContent(
+                configuration.getText("doclet.Window_Source_title"))));
+        head.addContent(getStyleSheetProperties(configuration));
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
+                head, body);
+        Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
         File dir = new File(outputDir);
         dir.mkdirs();
         File newFile = new File(dir, className + ".html");
         configuration.message.notice("doclet.Generating_0", newFile.getPath());
         FileOutputStream fout = new FileOutputStream(newFile);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout));
-        bw.write(output);
+        bw.write(htmlDocument.toString());
         bw.close();
         fout.close();
     }
 
     /**
-     * Given a <code>String</code>, add line numbers.
-     * @param s the text to add line numbers to.
+     * Returns a link to the stylesheet file.
      *
-     * @return the string buffer with the line numbering for each line.
+     * @param configuration the doclet configuration for the current run of javadoc
+     * @return an HtmlTree for the lINK tag which provides the stylesheet location
      */
-    private static StringBuffer addLineNumbers(String s) {
-        StringBuffer sb = new StringBuffer();
-        StringTokenizer st = new StringTokenizer(s, "\n", true);
-        int lineno = 1;
-        String current;
-        while(st.hasMoreTokens()){
-            current = st.nextToken();
-            sb.append(current.equals("\n") ?
-                    getHTMLLineNo(lineno) + current :
-                    getHTMLLineNo(lineno) + current + st.nextToken());
-            lineno++;
+    public static HtmlTree getStyleSheetProperties(ConfigurationImpl configuration) {
+        String filename = configuration.stylesheetfile;
+        if (filename.length() > 0) {
+            File stylefile = new File(filename);
+            String parent = stylefile.getParent();
+            filename = (parent == null)?
+                filename:
+                filename.substring(parent.length() + 1);
+        } else {
+            filename = "stylesheet.css";
         }
-        return sb;
+        filename = relativePath + filename;
+        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", filename, "Style");
+        return link;
     }
 
     /**
      * Get the header.
-     * @param configuration the Doclet configuration
-     * @return the header to the output file
+     *
+     * @return the header content for the HTML file
      */
-    protected static String getHeader(Configuration configuration) {
-        StringBuffer result = new StringBuffer("<HTML lang=\"" + configuration.getLocale().getLanguage() + "\">" + DocletConstants.NL);
-        result.append("<BODY BGCOLOR=\""+ BGCOLOR + "\">" + DocletConstants.NL);
-        result.append("<PRE>" + DocletConstants.NL);
-        return result.toString();
+    private static Content getHeader() {
+        return new HtmlTree(HtmlTag.BODY);
     }
 
     /**
-     * Get the footer
-     * @return the footer to the output file
-     */
-    protected static String getFooter() {
-        StringBuffer footer = new StringBuffer();
-        for (int i = 0; i < NUM_BLANK_LINES; i++) {
-            footer.append(DocletConstants.NL);
-        }
-        footer.append("</PRE>" + DocletConstants.NL + "</BODY>" +
-            DocletConstants.NL + "</HTML>" + DocletConstants.NL);
-        return footer.toString();
-    }
-
-    /**
-     * Get the HTML for the lines.
+     * Add the line numbers for the source code.
+     *
+     * @param pre the content tree to which the line number will be added
      * @param lineno The line number
-     * @return the HTML code for the line
      */
-    protected static String getHTMLLineNo(int lineno) {
-        StringBuffer result = new StringBuffer("<FONT color=\"" + LINE_NO_COLOR
-            + "\">");
+    private static void addLineNo(Content pre, int lineno) {
+        HtmlTree span = new HtmlTree(HtmlTag.SPAN);
+        span.addStyle(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
-            result.append("00" + ((new Integer(lineno)).toString()));
+            span.addContent("00" + Integer.toString(lineno));
         } else if (lineno < 100) {
-            result.append("0" + ((new Integer(lineno)).toString()));
+            span.addContent("0" + Integer.toString(lineno));
         } else {
-            result.append((new Integer(lineno)).toString());
+            span.addContent(Integer.toString(lineno));
         }
-        result.append("</FONT>    ");
-        return result.toString();
+        pre.addContent(span);
     }
 
     /**
-     * Format a given line of source. <br>
-     * Note:  In the future, we will add special colors for constructs in the
-     * language.
+     * Add a line from source to the HTML file that is generated.
+     *
+     * @param pre the content tree to which the line will be added.
      * @param line the string to format.
      * @param tabLength the number of spaces for each tab.
      * @param currentLineNo the current number.
      */
-    protected static String formatLine(String line, int tabLength, int currentLineNo) {
-        if (line == null) {
-            return null;
-        }
-        StringBuffer lineBuffer = new StringBuffer(Util.escapeHtmlChars(line));
-        //Insert an anchor for the line
-        lineBuffer.append("<a name=\"line." + Integer.toString(currentLineNo) + "\"></a>");
-        lineBuffer.append(DocletConstants.NL);
-        Util.replaceTabs(tabLength, lineBuffer);
-        return lineBuffer.toString();
-    }
-
-    /**
-     * Given an array of <code>Doc</code>s, add to the given <code>HashMap</code> the
-     * line numbers and anchors that should be inserted in the output at those lines.
-     * @param docs the array of <code>Doc</code>s to add anchors for.
-     * @param hash the <code>HashMap</code> to add to.
-     */
-    protected static void addToHash(Doc[] docs, HashMap<Integer,String> hash) {
-        if(docs == null) {
-            return;
-        }
-        for(int i = 0; i < docs.length; i++) {
-            hash.put(docs[i].position().line(), getAnchor(docs[i]));
+    private static void addLine(Content pre, String line, int tabLength,
+            int currentLineNo) {
+        if (line != null) {
+            StringBuffer lineBuffer = new StringBuffer(Util.escapeHtmlChars(line));
+            Util.replaceTabs(tabLength, lineBuffer);
+            pre.addContent(new RawHtml(lineBuffer.toString()));
+            Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));
+            pre.addContent(anchor);
+            pre.addContent(NEW_LINE);
         }
     }
 
     /**
-     * Given a <code>Doc</code>, return an anchor for it.
-     * @param d the <code>Doc</code> to check.
-     * @return an anchor of the form &lt;a name="my_name">&lt;/a>
+     * Add trailing blank lines at the end of the page.
+     *
+     * @param pre the content tree to which the blank lines will be added.
      */
-    protected static String getAnchor(Doc d) {
-        return "    <a name=\"" + getAnchorName(d) + "\"></a>";
+    private static void addBlankLines(Content pre) {
+        for (int i = 0; i < NUM_BLANK_LINES; i++) {
+            pre.addContent(NEW_LINE);
+        }
     }
 
     /**
      * Given a <code>Doc</code>, return an anchor name for it.
+     *
      * @param d the <code>Doc</code> to check.
      * @return the name of the anchor.
      */

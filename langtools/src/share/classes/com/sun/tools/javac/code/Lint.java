@@ -134,6 +134,11 @@ public class Lint
         CAST("cast"),
 
         /**
+         * Warn about issues related to classfile contents
+         */
+        CLASSFILE("classfile"),
+
+        /**
          * Warn about use of deprecated items.
          */
         DEPRECATION("deprecation"),

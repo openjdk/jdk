@@ -46,7 +46,7 @@ public class DirectoryManager {
     /**
      * The file separator string, "/", used in the formation of the URL path.
      */
-    public static final String URL_FILE_SEPERATOR = "/";
+    public static final String URL_FILE_SEPARATOR = "/";
 
     /**
      * Never instaniated.
@@ -123,13 +123,13 @@ public class DirectoryManager {
         for (int i = 0; i < packageName.length(); i++) {
             char ch = packageName.charAt(i);
             if (ch == '.') {
-                pathstr.append(URL_FILE_SEPERATOR);
+                pathstr.append(URL_FILE_SEPARATOR);
             } else {
                 pathstr.append(ch);
             }
         }
-        if (pathstr.length() > 0 && ! pathstr.toString().endsWith(URL_FILE_SEPERATOR)) {
-            pathstr.append(URL_FILE_SEPERATOR);
+        if (pathstr.length() > 0 && ! pathstr.toString().endsWith(URL_FILE_SEPARATOR)) {
+            pathstr.append(URL_FILE_SEPARATOR);
         }
         return pathstr.toString();
     }
@@ -155,7 +155,7 @@ public class DirectoryManager {
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
             if (ch == '.') {
-                pathstr.append(URL_FILE_SEPERATOR);
+                pathstr.append(URL_FILE_SEPARATOR);
             } else {
                 pathstr.append(ch);
             }
@@ -184,7 +184,7 @@ public class DirectoryManager {
         StringBuffer pathstr = new StringBuffer();
         pathstr.append(getRelativePath(from));
         pathstr.append(getPath(to));
-        pathstr.append(URL_FILE_SEPERATOR);
+        pathstr.append(URL_FILE_SEPARATOR);
         return pathstr.toString();
     }
 
@@ -226,10 +226,10 @@ public class DirectoryManager {
         for (int i = 0; i < from.length(); i++) {
             char ch = from.charAt(i);
             if (ch == '.') {
-                pathstr.append(".." + URL_FILE_SEPERATOR);
+                pathstr.append(".." + URL_FILE_SEPARATOR);
             }
         }
-        pathstr.append(".." + URL_FILE_SEPERATOR);
+        pathstr.append(".." + URL_FILE_SEPARATOR);
         return pathstr.toString();
     }
 
@@ -297,7 +297,7 @@ public class DirectoryManager {
         String pathstr = createPathString(pd);
         if (pathstr.length() > 0) {
             buf.append(pathstr);
-            buf.append(URL_FILE_SEPERATOR);
+            buf.append(URL_FILE_SEPARATOR);
         }
         buf.append(filename);
         return buf.toString();

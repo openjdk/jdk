@@ -21,9 +21,19 @@
  * questions.
  */
 
-// key: compiler.note.varargs.filename
-// key: compiler.note.varargs.recompile
+/*
+ * @test
+ * @bug 6476118
+ * @summary compiler bug causes runtime ClassCastException for generics overloading
+ * @compile T6476118d.java
+ */
 
-class VarargsFilename<T> {
-    void m(T... items) { }
+class T6476118d {
+    int m = 3;
+
+    interface m { }
+
+    int m () {
+        return m;
+    }
 }
