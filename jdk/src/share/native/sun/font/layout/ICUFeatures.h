@@ -25,28 +25,45 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998, 1999, 2000 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
  */
 
-#ifndef __HEBREWSHAPING_H
-#define __HEBREWSHAPING_H
+#ifndef __ICUFEATURES_H
+#define __ICUFEATURES_H
+
+/**
+ * \file
+ * \internal
+ */
 
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 
-class HebrewShaping
+U_NAMESPACE_BEGIN
+
+struct FeatureRecord
 {
-public:
-    static void shape(const LEUnicode *chars, le_int32 offset, le_int32 charCount, le_int32 charMax,
-                      le_bool rightToLeft, const LETag **tags);
-
-    static const le_uint8 glyphSubstitutionTable[];
-    static const le_uint8 glyphDefinitionTable[];
-
-private:
-    // forbid instantiation
-    HebrewShaping();
+    ATag        featureTag;
+    Offset      featureTableOffset;
 };
 
+struct FeatureTable
+{
+    Offset      featureParamsOffset;
+    le_uint16   lookupCount;
+    le_uint16   lookupListIndexArray[ANY_NUMBER];
+};
+
+struct FeatureListTable
+{
+    le_uint16           featureCount;
+    FeatureRecord       featureRecordArray[ANY_NUMBER];
+
+    const FeatureTable  *getFeatureTable(le_uint16 featureIndex, LETag *featureTag) const;
+
+    const FeatureTable *getFeatureTable(LETag featureTag) const;
+};
+
+U_NAMESPACE_END
 #endif
