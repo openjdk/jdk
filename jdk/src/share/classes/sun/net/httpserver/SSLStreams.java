@@ -74,8 +74,8 @@ class SSLStreams {
     private void configureEngine(HttpsConfigurator cfg, InetSocketAddress addr){
         if (cfg != null) {
             Parameters params = new Parameters (cfg, addr);
-            cfg.configure (params);
 //BEGIN_TIGER_EXCLUDE
+            cfg.configure (params);
             SSLParameters sslParams = params.getSSLParameters();
             if (sslParams != null) {
                 engine.setSSLParameters (sslParams);
