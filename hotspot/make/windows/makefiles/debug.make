@@ -26,7 +26,6 @@ HS_INTERNAL_NAME=jvm
 HS_FNAME=$(HS_INTERNAL_NAME).dll
 AOUT=$(HS_FNAME)
 SAWINDBG=sawindbg.dll
-LAUNCHER_NAME=hotspot.exe
 GENERATED=../generated
 
 # Allow the user to turn off precompiled headers from the command line.
@@ -34,7 +33,7 @@ GENERATED=../generated
 BUILD_PCH_FILE=_build_pch_file.obj
 !endif
 
-default:: $(BUILD_PCH_FILE) $(AOUT) $(LAUNCHER_NAME) checkAndBuildSA
+default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 
 !include ../local.make
 !include compile.make
@@ -49,8 +48,10 @@ HS_BUILD_ID=$(HS_BUILD_VER)-debug
 # Force resources to be rebuilt every time
 $(Res_Files): FORCE
 
-$(AOUT): $(Res_Files) $(Obj_Files)
+vm.def: $(Obj_Files)
 	sh $(WorkSpace)/make/windows/build_vm_def.sh
+
+$(AOUT): $(Res_Files) $(Obj_Files) vm.def
 	$(LINK) @<<
   $(LINK_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
 <<

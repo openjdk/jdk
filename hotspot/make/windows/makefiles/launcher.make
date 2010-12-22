@@ -22,7 +22,8 @@
 #  
 #
 
-LAUNCHER_FLAGS=$(ARCHFLAG) \
+
+LAUNCHER_FLAGS=$(CPP_FLAGS) $(ARCHFLAG) \
 	/D FULL_VERSION=\"$(HOTSPOT_RELEASE_VERSION)\" \
 	/D JDK_MAJOR_VERSION=\"$(JDK_MAJOR_VERSION)\" \
 	/D JDK_MINOR_VERSION=\"$(JDK_MINOR_VERSION)\" \
@@ -32,9 +33,11 @@ LAUNCHER_FLAGS=$(ARCHFLAG) \
 	/D _CRT_SECURE_NO_DEPRECATE \
 	/D LINK_INTO_LIBJVM \
 	/I $(WorkSpace)\src\os\windows\launcher \
-	/I $(WorkSpace)\src\share\tools\launcher
-
-CPP_FLAGS=$(CPP_FLAGS) $(LAUNCHER_FLAGS)
+	/I $(WorkSpace)\src\share\tools\launcher \
+	/I $(WorkSpace)\src\share\vm\prims \
+	/I $(WorkSpace)\src\share\vm \
+	/I $(WorkSpace)\src\cpu\$(Platform_arch)\vm \
+	/I $(WorkSpace)\src\os\windows\vm
 
 LINK_FLAGS=/manifest $(HS_INTERNAL_NAME).lib kernel32.lib user32.lib /nologo /machine:$(MACHINE) /map /debug /subsystem:console 
 
@@ -46,22 +49,23 @@ BUFFEROVERFLOWLIB = bufferoverflowU.lib
 LINK_FLAGS = $(LINK_FLAGS) $(BUFFEROVERFLOWLIB)
 !endif
 
-LAUNCHERDIR = $(GAMMADIR)/src/os/windows/launcher
-LAUNCHERDIR_SHARE = $(GAMMADIR)/src/share/tools/launcher
+LAUNCHERDIR = $(WorkSpace)/src/os/windows/launcher
+LAUNCHERDIR_SHARE = $(WorkSpace)/src/share/tools/launcher
 
 OUTDIR = launcher
 
 {$(LAUNCHERDIR)}.c{$(OUTDIR)}.obj:
-	-mkdir $(OUTDIR)
-        $(CPP) $(CPP_FLAGS) /c /Fo$@ $<
+	-mkdir $(OUTDIR) 2>NUL >NUL
+        $(CPP) $(LAUNCHER_FLAGS) /c /Fo$@ $<
 
 {$(LAUNCHERDIR_SHARE)}.c{$(OUTDIR)}.obj:
-	-mkdir $(OUTDIR)
-        $(CPP) $(CPP_FLAGS) /c /Fo$@ $<
+	-mkdir $(OUTDIR) 2>NUL >NUL
+        $(CPP) $(LAUNCHER_FLAGS) /c /Fo$@ $<
 
 $(OUTDIR)\*.obj: $(LAUNCHERDIR)\*.c $(LAUNCHERDIR)\*.h $(LAUNCHERDIR_SHARE)\*.c $(LAUNCHERDIR_SHARE)\*.h
 
-$(LAUNCHER_NAME): $(OUTDIR)\java.obj $(OUTDIR)\java_md.obj $(OUTDIR)\jli_util.obj
-	$(LINK) $(LINK_FLAGS) /out:$@ $**
+launcher: $(OUTDIR)\java.obj $(OUTDIR)\java_md.obj $(OUTDIR)\jli_util.obj
+	echo $(JAVA_HOME) > jdkpath.txt  
+	$(LINK) $(LINK_FLAGS) /out:hotspot.exe $**
 
 
