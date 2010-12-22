@@ -456,7 +456,6 @@ CACERTS_FILE.desc          = Location of certificates file
 DEVTOOLS_PATH.desc         = Directory containing zip and gnumake
 CUPS_HEADERS_PATH.desc     = Include directory location for CUPS header files
 DXSDK_PATH.desc            = Root directory of DirectX SDK
-MSDEVTOOLS_PATH.desc       = Root directory of VC++ tools (e.g. rc.exe)
 MSVCRT_DLL_PATH.desc       = Directory containing mscvrt.dll
 
 # Make variables to print out (description and value)
@@ -487,12 +486,10 @@ ifeq ($(PLATFORM), windows)
 
 VARIABLE_PRINTVAL_LIST +=       \
     DXSDK_PATH                  \
-    MSDEVTOOLS_PATH             \
     MSVCRT_DLL_PATH
 
 VARIABLE_CHECKDIR_LIST +=       \
     DXSDK_PATH                  \
-    MSDEVTOOLS_PATH             \
     MSVCRT_DLL_PATH
 
 endif
