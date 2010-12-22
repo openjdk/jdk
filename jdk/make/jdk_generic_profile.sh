@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@
 #    ALT_CLOSED_JDK_IMPORT_PATH
 #    Windows Only:
 #      ALT_UNIXCOMMAND_PATH
-#      ALT_MSDEVTOOLS_PATH
 #      ALT_DXSDK_PATH
 #      ALT_MSVCRT_DLL_PATH
 #      ALT_MSVCR71_DLL_PATH
@@ -221,8 +220,6 @@ else
     # VisualStudio .NET 2003 VC++ 7.1 (VS71COMNTOOLS should be defined)
     vs_root=$(${cygpath} "${VS71COMNTOOLS}/../..")
     # Fill in PATH, LIB, and INCLUDE (unset all others to make sure)
-    msdev_root="${vs_root}/Common7/Tools"
-    msdevtools_path="${msdev_root}/bin"
     vc7_root="${vs_root}/Vc7"
     compiler_path="${vc7_root}/bin"
     platform_sdk="${vc7_root}/PlatformSDK"
@@ -260,12 +257,6 @@ else
     else
       compiler_path="${platform_sdk}/Bin/win64/x86/AMD64"
     fi
-    if [ "${ALT_MSDEVTOOLS_PATH}" != "" ] ; then
-      msdevtools_path=${ALT_MSDEVTOOLS_PATH}
-    else
-      msdevtools_path="${platform_sdk}/Bin/win64/x86/AMD64"
-    fi
-    msdevtools_path="${compiler_path}"
     # LIB and INCLUDE must use ; as a separator
     include4sdk="${platform_sdk}/Include"
     include4sdk="${include4sdk};${platform_sdk}/Include/crt/sys"
