@@ -644,7 +644,7 @@ public abstract class SurfaceData
                     sg2d.drawpipe = converter;
                     sg2d.fillpipe = converter;
                     sg2d.shapepipe = converter;
-                    if (sg2d.paintState > sg2d.PAINT_OPAQUECOLOR ||
+                    if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR ||
                         sg2d.compositeState > sg2d.COMP_ISCOPY)
                     {
                         sg2d.textpipe = colorText;
