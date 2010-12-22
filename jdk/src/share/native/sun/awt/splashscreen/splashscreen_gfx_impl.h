@@ -88,27 +88,18 @@ ditherColor(rgbquad_t value, ImageFormat * format, int row, int col)
 /*      blend (lerp between) two rgb quads
         src and dst alpha is ignored
         the algorithm: src*alpha+dst*(1-alpha)=(src-dst)*alpha+dst, rb and g are done separately
-        it's possible to verify that it's almost accurate indeed */
-
+*/
 INLINE rgbquad_t
 blendRGB(rgbquad_t dst, rgbquad_t src, rgbquad_t alpha)
 {
-    const rgbquad_t dstrb = dst & 0xFF00FF;
-    const rgbquad_t dstg = dst & 0xFF00;
-    const rgbquad_t srcrb = src & 0xFF00FF;
-    const rgbquad_t srcg = src & 0xFF00;
+    const rgbquad_t a = alpha;
+    const rgbquad_t a1 = 0xFF - alpha;
 
-    rgbquad_t drb = srcrb - dstrb;
-    rgbquad_t dg = srcg - dstg;
-
-    alpha += 1;
-
-    drb *= alpha;
-    dg *= alpha;
-    drb >>= 8;
-    dg >>= 8;
-
-    return ((drb + dstrb) & 0xFF00FF) | ((dg + dstg) & 0xFF00);
+    return MAKE_QUAD(
+        (rgbquad_t)((QUAD_RED(src) * a + QUAD_RED(dst) * a1) / 0xFF),
+        (rgbquad_t)((QUAD_GREEN(src) * a + QUAD_GREEN(dst) * a1) / 0xFF),
+        (rgbquad_t)((QUAD_BLUE(src) * a + QUAD_BLUE(dst) * a1) / 0xFF),
+        0);
 }
 
 /*      scales rgb quad by alpha. basically similar to what's above. src alpha is retained.
