@@ -1449,10 +1449,15 @@ public final class Locale implements Cloneable, Serializable {
      * three-letter language abbreviation is not available for this locale.
      */
     public String getISO3Language() throws MissingResourceException {
-        String language3 = getISO3Code(_baseLocale.getLanguage(), LocaleISOData.isoLanguageTable);
+        String lang = _baseLocale.getLanguage();
+        if (lang.length() == 3) {
+            return lang;
+        }
+
+        String language3 = getISO3Code(lang, LocaleISOData.isoLanguageTable);
         if (language3 == null) {
             throw new MissingResourceException("Couldn't find 3-letter language code for "
-                    + _baseLocale.getLanguage(), "FormatData_" + toString(), "ShortLanguage");
+                    + lang, "FormatData_" + toString(), "ShortLanguage");
         }
         return language3;
     }
