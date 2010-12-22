@@ -260,6 +260,8 @@ class CompilerInterfaceVC6  extends CompilerInterface {
         return rv;
     }
 
+    void getAdditionalNonKernelLinkerFlags(Vector rv) {}
+
     Vector getProductCompilerFlags() {
         Vector rv = new Vector();
 

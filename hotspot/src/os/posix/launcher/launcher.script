@@ -95,15 +95,19 @@ case "$1" in
         ;;
 esac
 
+# Find out the absolute path to this script
+MYDIR=$(cd $(dirname $SCRIPT) && pwd)
+
+JDK=
 if [ "${ALT_JAVA_HOME}" = "" ]; then
-    if [ "${JAVA_HOME}" = "" ]; then
-	echo "Neither ALT_JAVA_HOME nor JAVA_HOME is set. Aborting.";
-	exit 1;
-    else
-	JDK=${JAVA_HOME%%/jre};
-    fi
+    source ${MYDIR}/jdkpath.sh
 else 
     JDK=${ALT_JAVA_HOME%%/jre};
+fi
+
+if [ "${JDK}" = "" ]; then
+    echo Failed to find JDK. ALT_JAVA_HOME is not set or ./jdkpath.sh is empty or not found.
+    exit 1
 fi
 
 # We will set the LD_LIBRARY_PATH as follows:

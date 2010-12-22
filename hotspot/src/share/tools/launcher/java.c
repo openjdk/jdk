@@ -275,6 +275,8 @@ main(int argc, char ** argv)
                                jvmpath, sizeof(jvmpath),
                                original_argv);
 
+    printf("Using java runtime at: %s\n", jrepath);
+
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
 
