@@ -1389,7 +1389,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   }
 
   // Update the number of full collections that have been completed.
-  increment_full_collections_completed(false /* outer */);
+  increment_full_collections_completed(false /* concurrent */);
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
@@ -2176,8 +2176,13 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
      (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
 
-void G1CollectedHeap::increment_full_collections_completed(bool outer) {
+void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
   MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+
+  // We assume that if concurrent == true, then the caller is a
+  // concurrent thread that was joined the Suspendible Thread
+  // Set. If there's ever a cheap way to check this, we should add an
+  // assert here.
 
   // We have already incremented _total_full_collections at the start
   // of the GC, so total_full_collections() represents how many full
@@ -2192,17 +2197,18 @@ void G1CollectedHeap::increment_full_collections_completed(bool outer) {
   // behind the number of full collections started.
 
   // This is the case for the inner caller, i.e. a Full GC.
-  assert(outer ||
+  assert(concurrent ||
          (full_collections_started == _full_collections_completed + 1) ||
          (full_collections_started == _full_collections_completed + 2),
-         err_msg("for inner caller: full_collections_started = %u "
+         err_msg("for inner caller (Full GC): full_collections_started = %u "
                  "is inconsistent with _full_collections_completed = %u",
                  full_collections_started, _full_collections_completed));
 
   // This is the case for the outer caller, i.e. the concurrent cycle.
-  assert(!outer ||
+  assert(!concurrent ||
          (full_collections_started == _full_collections_completed + 1),
-         err_msg("for outer caller: full_collections_started = %u "
+         err_msg("for outer caller (concurrent cycle): "
+                 "full_collections_started = %u "
                  "is inconsistent with _full_collections_completed = %u",
                  full_collections_started, _full_collections_completed));
 
@@ -2212,7 +2218,7 @@ void G1CollectedHeap::increment_full_collections_completed(bool outer) {
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cyle is still in progress.
-  if (outer) {
+  if (concurrent) {
     _cmThread->clear_in_progress();
   }
 

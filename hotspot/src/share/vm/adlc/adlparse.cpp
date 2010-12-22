@@ -95,7 +95,7 @@ void ADLParser::parse() {
     if (ident == NULL) {         // Empty line
       continue;                  // Get the next line
     }
-    if (!strcmp(ident, "instruct"))        instr_parse();
+         if (!strcmp(ident, "instruct"))   instr_parse();
     else if (!strcmp(ident, "operand"))    oper_parse();
     else if (!strcmp(ident, "opclass"))    opclass_parse();
     else if (!strcmp(ident, "ins_attrib")) ins_attr_parse();
@@ -216,24 +216,23 @@ void ADLParser::instr_parse(void) {
     else if (!strcmp(ident, "encode"))  {
       parse_err(SYNERR, "Instructions specify ins_encode, not encode\n");
     }
-    else if (!strcmp(ident, "ins_encode"))
-      instr->_insencode = ins_encode_parse(*instr);
-    else if (!strcmp(ident, "opcode"))  instr->_opcode = opcode_parse(instr);
-    else if (!strcmp(ident, "size"))    instr->_size = size_parse(instr);
-    else if (!strcmp(ident, "effect"))  effect_parse(instr);
-    else if (!strcmp(ident, "expand"))  instr->_exprule = expand_parse(instr);
-    else if (!strcmp(ident, "rewrite")) instr->_rewrule = rewrite_parse();
+    else if (!strcmp(ident, "ins_encode"))     ins_encode_parse(*instr);
+    else if (!strcmp(ident, "opcode"))         instr->_opcode    = opcode_parse(instr);
+    else if (!strcmp(ident, "size"))           instr->_size      = size_parse(instr);
+    else if (!strcmp(ident, "effect"))         effect_parse(instr);
+    else if (!strcmp(ident, "expand"))         instr->_exprule   = expand_parse(instr);
+    else if (!strcmp(ident, "rewrite"))        instr->_rewrule   = rewrite_parse();
     else if (!strcmp(ident, "constraint")) {
       parse_err(SYNERR, "Instructions do not specify a constraint\n");
     }
     else if (!strcmp(ident, "construct")) {
       parse_err(SYNERR, "Instructions do not specify a construct\n");
     }
-    else if (!strcmp(ident, "format"))  instr->_format  = format_parse();
+    else if (!strcmp(ident, "format"))         instr->_format    = format_parse();
     else if (!strcmp(ident, "interface")) {
       parse_err(SYNERR, "Instructions do not specify an interface\n");
     }
-    else if (!strcmp(ident, "ins_pipe")) ins_pipe_parse(*instr);
+    else if (!strcmp(ident, "ins_pipe"))        ins_pipe_parse(*instr);
     else {  // Done with staticly defined parts of instruction definition
       // Check identifier to see if it is the name of an attribute
       const Form    *form = _globalNames[ident];
@@ -323,7 +322,8 @@ void ADLParser::adjust_set_rule(InstructForm *instr) {
       const char *optype2  = NULL;
       // Can not have additional base operands in right side of match!
       if ( ! right->base_operand( position, _globalNames, result2, name2, optype2) ) {
-        assert( instr->_predicate == NULL, "ADLC does not support instruction chain rules with predicates");
+        if (instr->_predicate != NULL)
+          parse_err(SYNERR, "ADLC does not support instruction chain rules with predicates");
         // Chain from input  _ideal_operand_type_,
         // Needed for shared roots of match-trees
         ChainList *lst = (ChainList *)_AD._chainRules[optype];
@@ -935,9 +935,9 @@ void ADLParser::enc_class_parse_block(EncClass* encoding, char* ec_name) {
     // (2)
     // If we are at a replacement variable,
     // copy it and record in EncClass
-    if ( _curchar == '$' ) {
+    if (_curchar == '$') {
       // Found replacement Variable
-      char *rep_var = get_rep_var_ident_dup();
+      char* rep_var = get_rep_var_ident_dup();
       // Add flag to _strings list indicating we should check _rep_vars
       encoding->add_rep_var(rep_var);
     }
@@ -2774,47 +2774,122 @@ Predicate *ADLParser::pred_parse(void) {
 
 //------------------------------ins_encode_parse_block-------------------------
 // Parse the block form of ins_encode.  See ins_encode_parse for more details
-InsEncode *ADLParser::ins_encode_parse_block(InstructForm &inst) {
+void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
-  const char * prefix = "__enc_";
-  char* ec_name = (char*)malloc(strlen(inst._ident) + strlen(prefix) + 1);
+  const char* prefix = "__ins_encode_";
+  char* ec_name = (char*) malloc(strlen(inst._ident) + strlen(prefix) + 1);
   sprintf(ec_name, "%s%s", prefix, inst._ident);
 
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
-  EncClass  *encoding = _AD._encode->add_EncClass(ec_name);
+  EncClass* encoding = _AD._encode->add_EncClass(ec_name);
   encoding->_linenum = linenum();
 
   // synthesize the arguments list for the enc_class from the
   // arguments to the instruct definition.
-  const char * param = NULL;
+  const char* param = NULL;
   inst._parameters.reset();
   while ((param = inst._parameters.iter()) != NULL) {
-    OperandForm *opForm = (OperandForm*)inst._localNames[param];
+    OperandForm* opForm = (OperandForm*) inst._localNames[param];
     encoding->add_parameter(opForm->_ident, param);
   }
 
-  // Add the prologue to create the MacroAssembler
-  encoding->add_code("\n"
-  "    // Define a MacroAssembler instance for use by the encoding.  The\n"
-  "    // name is chosen to match the __ idiom used for assembly in other\n"
-  "    // parts of hotspot and assumes the existence of the standard\n"
-  "    // #define __ _masm.\n"
-  "    MacroAssembler _masm(&cbuf);\n");
+  // Define a MacroAssembler instance for use by the encoding.  The
+  // name is chosen to match the __ idiom used for assembly in other
+  // parts of hotspot and assumes the existence of the standard
+  // #define __ _masm.
+  encoding->add_code("    MacroAssembler _masm(&cbuf);\n");
 
   // Parse the following %{ }% block
-  enc_class_parse_block(encoding, ec_name);
+  ins_encode_parse_block_impl(inst, encoding, ec_name);
 
   // Build an encoding rule which invokes the encoding rule we just
   // created, passing all arguments that we received.
-  InsEncode *encrule  = new InsEncode(); // Encode class for instruction
-  NameAndList *params = encrule->add_encode(ec_name);
+  InsEncode*   encrule = new InsEncode(); // Encode class for instruction
+  NameAndList* params  = encrule->add_encode(ec_name);
   inst._parameters.reset();
   while ((param = inst._parameters.iter()) != NULL) {
     params->add_entry(param);
   }
 
-  return encrule;
+  // Set encode class of this instruction.
+  inst._insencode = encrule;
+}
+
+
+void ADLParser::ins_encode_parse_block_impl(InstructForm& inst, EncClass* encoding, char* ec_name) {
+  skipws_no_preproc();              // Skip leading whitespace
+  // Prepend location descriptor, for debugging; cf. ADLParser::find_cpp_block
+  if (_AD._adlocation_debug) {
+    encoding->add_code(get_line_string());
+  }
+
+  // Collect the parts of the encode description
+  // (1) strings that are passed through to output
+  // (2) replacement/substitution variable, preceeded by a '$'
+  while ((_curchar != '%') && (*(_ptr+1) != '}')) {
+
+    // (1)
+    // Check if there is a string to pass through to output
+    char *start = _ptr;       // Record start of the next string
+    while ((_curchar != '$') && ((_curchar != '%') || (*(_ptr+1) != '}')) ) {
+      // If at the start of a comment, skip past it
+      if( (_curchar == '/') && ((*(_ptr+1) == '/') || (*(_ptr+1) == '*')) ) {
+        skipws_no_preproc();
+      } else {
+        // ELSE advance to the next character, or start of the next line
+        next_char_or_line();
+      }
+    }
+    // If a string was found, terminate it and record in EncClass
+    if (start != _ptr) {
+      *_ptr = '\0';          // Terminate the string
+      encoding->add_code(start);
+    }
+
+    // (2)
+    // If we are at a replacement variable,
+    // copy it and record in EncClass
+    if (_curchar == '$') {
+      // Found replacement Variable
+      char* rep_var = get_rep_var_ident_dup();
+
+      // Add flag to _strings list indicating we should check _rep_vars
+      encoding->add_rep_var(rep_var);
+
+      skipws();
+
+      // Check if this instruct is a MachConstantNode.
+      if (strcmp(rep_var, "constanttablebase") == 0) {
+        // This instruct is a MachConstantNode.
+        inst.set_is_mach_constant(true);
+
+        if (_curchar == '(')  {
+          parse_err(SYNERR, "constanttablebase in instruct %s cannot have an argument (only constantaddress and constantoffset)", ec_name);
+          return;
+        }
+      }
+      else if ((strcmp(rep_var, "constantaddress")   == 0) ||
+               (strcmp(rep_var, "constantoffset")    == 0)) {
+        // This instruct is a MachConstantNode.
+        inst.set_is_mach_constant(true);
+
+        // If the constant keyword has an argument, parse it.
+        if (_curchar == '(')  constant_parse(inst);
+      }
+    }
+  } // end while part of format description
+  next_char();                      // Skip '%'
+  next_char();                      // Skip '}'
+
+  skipws();
+
+  if (_AD._adlocation_debug) {
+    encoding->add_code(end_line_marker());
+  }
+
+  // Debug Stuff
+  if (_AD._adl_debug > 1)  fprintf(stderr, "EncodingClass Form: %s\n", ec_name);
 }
 
 
@@ -2838,7 +2913,7 @@ InsEncode *ADLParser::ins_encode_parse_block(InstructForm &inst) {
 //
 //  making it more compact to take advantage of the MacroAssembler and
 //  placing the assembly closer to it's use by instructions.
-InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
+void ADLParser::ins_encode_parse(InstructForm& inst) {
 
   // Parse encode class name
   skipws();                        // Skip whitespace
@@ -2849,11 +2924,12 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
       next_char();                      // Skip '{'
 
       // Parse the block form of ins_encode
-      return ins_encode_parse_block(inst);
+      ins_encode_parse_block(inst);
+      return;
     }
 
     parse_err(SYNERR, "missing '%%{' or '(' in ins_encode definition\n");
-    return NULL;
+    return;
   }
   next_char();                     // move past '('
   skipws();
@@ -2866,7 +2942,7 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
     ec_name = get_ident();
     if (ec_name == NULL) {
       parse_err(SYNERR, "Invalid encode class name after 'ins_encode('.\n");
-      return NULL;
+      return;
     }
     // Check that encoding is defined in the encode section
     EncClass *encode_class = _AD._encode->encClass(ec_name);
@@ -2898,7 +2974,7 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
                (Opcode::as_opcode_type(param) == Opcode::NOT_AN_OPCODE) &&
                ((_AD._register == NULL ) || (_AD._register->getRegDef(param) == NULL)) ) {
             parse_err(SYNERR, "Using non-locally defined parameter %s for encoding %s.\n", param, ec_name);
-            return NULL;
+            return;
           }
           params->add_entry(param);
 
@@ -2915,7 +2991,7 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
             // Only ',' or ')' are valid after a parameter name
             parse_err(SYNERR, "expected ',' or ')' after parameter %s.\n",
                       ec_name);
-            return NULL;
+            return;
           }
 
         } else {
@@ -2923,11 +2999,11 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
           // Did not find a parameter
           if (_curchar == ',') {
             parse_err(SYNERR, "Expected encode parameter before ',' in encoding %s.\n", ec_name);
-            return NULL;
+            return;
           }
           if (_curchar != ')') {
             parse_err(SYNERR, "Expected ')' after encode parameters.\n");
-            return NULL;
+            return;
           }
         }
       } // WHILE loop collecting parameters
@@ -2944,7 +3020,7 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
     else if ( _curchar != ')' ) {
       // If not a ',' then only a ')' is allowed
       parse_err(SYNERR, "Expected ')' after encoding %s.\n", ec_name);
-      return NULL;
+      return;
     }
 
     // Check for ',' separating parameters
@@ -2956,14 +3032,14 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
   } // done parsing ins_encode methods and their parameters
   if (_curchar != ')') {
     parse_err(SYNERR, "Missing ')' at end of ins_encode description.\n");
-    return NULL;
+    return;
   }
   next_char();                     // move past ')'
   skipws();                        // Skip leading whitespace
 
   if ( _curchar != ';' ) {
     parse_err(SYNERR, "Missing ';' at end of ins_encode.\n");
-    return NULL;
+    return;
   }
   next_char();                     // move past ';'
   skipws();                        // be friendly to oper_parse()
@@ -2971,7 +3047,113 @@ InsEncode *ADLParser::ins_encode_parse(InstructForm &inst) {
   // Debug Stuff
   if (_AD._adl_debug > 1) fprintf(stderr,"Instruction Encode: %s\n", ec_name);
 
-  return encrule;
+  // Set encode class of this instruction.
+  inst._insencode = encrule;
+}
+
+
+//------------------------------constant_parse---------------------------------
+// Parse a constant expression.
+void ADLParser::constant_parse(InstructForm& inst) {
+  // Create a new encoding name based on the name of the instruction
+  // definition, which should be unique.
+  const char* prefix = "__constant_";
+  char* ec_name = (char*) malloc(strlen(inst._ident) + strlen(prefix) + 1);
+  sprintf(ec_name, "%s%s", prefix, inst._ident);
+
+  assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
+  EncClass* encoding = _AD._encode->add_EncClass(ec_name);
+  encoding->_linenum = linenum();
+
+  // synthesize the arguments list for the enc_class from the
+  // arguments to the instruct definition.
+  const char* param = NULL;
+  inst._parameters.reset();
+  while ((param = inst._parameters.iter()) != NULL) {
+    OperandForm* opForm = (OperandForm*) inst._localNames[param];
+    encoding->add_parameter(opForm->_ident, param);
+  }
+
+  // Parse the following ( ) expression.
+  constant_parse_expression(encoding, ec_name);
+
+  // Build an encoding rule which invokes the encoding rule we just
+  // created, passing all arguments that we received.
+  InsEncode*   encrule = new InsEncode(); // Encode class for instruction
+  NameAndList* params  = encrule->add_encode(ec_name);
+  inst._parameters.reset();
+  while ((param = inst._parameters.iter()) != NULL) {
+    params->add_entry(param);
+  }
+
+  // Set encode class of this instruction.
+  inst._constant = encrule;
+}
+
+
+//------------------------------constant_parse_expression----------------------
+void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
+  skipws();
+
+  // Prepend location descriptor, for debugging; cf. ADLParser::find_cpp_block
+  if (_AD._adlocation_debug) {
+    encoding->add_code(get_line_string());
+  }
+
+  // Start code line.
+  encoding->add_code("    _constant = C->constant_table().add");
+
+  // Parse everything in ( ) expression.
+  encoding->add_code("(");
+  next_char();  // Skip '('
+  int parens_depth = 1;
+
+  // Collect the parts of the constant expression.
+  // (1) strings that are passed through to output
+  // (2) replacement/substitution variable, preceeded by a '$'
+  while (parens_depth > 0) {
+    if (_curchar == '(') {
+      parens_depth++;
+      encoding->add_code("(");
+      next_char();
+    }
+    else if (_curchar == ')') {
+      parens_depth--;
+      encoding->add_code(")");
+      next_char();
+    }
+    else {
+      // (1)
+      // Check if there is a string to pass through to output
+      char *start = _ptr;  // Record start of the next string
+      while ((_curchar != '$') && (_curchar != '(') && (_curchar != ')')) {
+        next_char();
+      }
+      // If a string was found, terminate it and record in EncClass
+      if (start != _ptr) {
+        *_ptr = '\0';  // Terminate the string
+        encoding->add_code(start);
+      }
+
+      // (2)
+      // If we are at a replacement variable, copy it and record in EncClass.
+      if (_curchar == '$') {
+        // Found replacement Variable
+        char* rep_var = get_rep_var_ident_dup();
+        encoding->add_rep_var(rep_var);
+      }
+    }
+  }
+
+  // Finish code line.
+  encoding->add_code(";");
+
+  if (_AD._adlocation_debug) {
+    encoding->add_code(end_line_marker());
+  }
+
+  // Debug Stuff
+  if (_AD._adl_debug > 1)  fprintf(stderr, "EncodingClass Form: %s\n", ec_name);
 }
 
 

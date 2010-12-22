@@ -25,9 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.io.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.DeprecatedAPIListBuilder;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import java.io.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate File to list all the deprecated classes and class members with the
@@ -125,28 +127,21 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Print the deprecated API list. Separately print all class kinds and
-     * member kinds.
+     * Generate the deprecated API list.
      *
      * @param deprapi list of deprecated API built already.
      */
     protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprapi)
-             throws IOException {
-        writeHeader();
-
-        strong(configuration.getText("doclet.Contents"));
-        ul();
-        for (int i = 0; i < DeprecatedAPIListBuilder.NUM_TYPES; i++) {
-            writeIndexLink(deprapi, i);
-        }
-        ulEnd();
-        println();
-
+            throws IOException {
+        Content body = getHeader();
+        body.addContent(getContentsList(deprapi));
         String memberTableSummary;
         String[] memberTableHeader = new String[1];
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.contentContainer);
         for (int i = 0; i < DeprecatedAPIListBuilder.NUM_TYPES; i++) {
             if (deprapi.hasDocumentation(i)) {
-                writeAnchor(deprapi, i);
+                addAnchor(deprapi, i, div);
                 memberTableSummary =
                         configuration.getText("doclet.Member_Table_Summary",
                         configuration.getText(HEADING_KEYS[i]),
@@ -154,66 +149,87 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 memberTableHeader[0] = configuration.getText("doclet.0_and_1",
                         configuration.getText(HEADER_KEYS[i]),
                         configuration.getText("doclet.Description"));
-                writers[i].printDeprecatedAPI(deprapi.getList(i),
-                    HEADING_KEYS[i], memberTableSummary, memberTableHeader);
+                writers[i].addDeprecatedAPI(deprapi.getList(i),
+                        HEADING_KEYS[i], memberTableSummary, memberTableHeader, div);
             }
         }
-        printDeprecatedFooter();
+        body.addContent(div);
+        addNavLinks(false, body);
+        addBottom(body);
+        printHtmlDocument(null, true, body);
     }
 
-    private void writeIndexLink(DeprecatedAPIListBuilder builder,
-            int type) {
+    /**
+     * Add the index link.
+     *
+     * @param builder the deprecated list builder
+     * @param type the type of list being documented
+     * @param contentTree the content tree to which the index link will be added
+     */
+    private void addIndexLink(DeprecatedAPIListBuilder builder,
+            int type, Content contentTree) {
         if (builder.hasDocumentation(type)) {
-            li();
-            printHyperLink("#" + ANCHORS[type],
-                configuration.getText(HEADING_KEYS[type]));
-            println();
+            Content li = HtmlTree.LI(getHyperLink("#" + ANCHORS[type],
+                    getResource(HEADING_KEYS[type])));
+            contentTree.addContent(li);
         }
     }
 
-    private void writeAnchor(DeprecatedAPIListBuilder builder, int type) {
+    /**
+     * Get the contents list.
+     *
+     * @param deprapi the deprecated list builder
+     * @return a content tree for the contents list
+     */
+    public Content getContentsList(DeprecatedAPIListBuilder deprapi) {
+        Content headContent = getResource("doclet.Deprecated_API");
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+                HtmlStyle.title, headContent);
+        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        Content headingContent = getResource("doclet.Contents");
+        div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
+                headingContent));
+        Content ul = new HtmlTree(HtmlTag.UL);
+        for (int i = 0; i < DeprecatedAPIListBuilder.NUM_TYPES; i++) {
+            addIndexLink(deprapi, i, ul);
+        }
+        div.addContent(ul);
+        return div;
+    }
+
+    /**
+     * Add the anchor.
+     *
+     * @param builder the deprecated list builder
+     * @param type the type of list being documented
+     * @param contentTree the content tree to which the anchor will be added
+     */
+    private void addAnchor(DeprecatedAPIListBuilder builder, int type, Content htmlTree) {
         if (builder.hasDocumentation(type)) {
-            anchor(ANCHORS[type]);
+            htmlTree.addContent(getMarkerAnchor(ANCHORS[type]));
         }
     }
 
     /**
-     * Print the navigation bar and header for the deprecated API Listing.
+     * Get the header for the deprecated API Listing.
+     *
+     * @return a content tree for the header
      */
-    protected void writeHeader() {
-        printHtmlHeader(configuration.getText("doclet.Window_Deprecated_List"),
-            null, true);
-        printTop();
-        navLinks(true);
-        hr();
-        center();
-        h2();
-        strongText("doclet.Deprecated_API");
-        h2End();
-        centerEnd();
-
-        hr(4, "noshade");
+    public Content getHeader() {
+        String title = configuration.getText("doclet.Window_Deprecated_List");
+        Content bodyTree = getBody(true, getWindowTitle(title));
+        addTop(bodyTree);
+        addNavLinks(true, bodyTree);
+        return bodyTree;
     }
 
     /**
-     * Print the navigation bar and the footer for the deprecated API Listing.
+     * Get the deprecated label.
+     *
+     * @return a content tree for the deprecated label
      */
-    protected void printDeprecatedFooter() {
-        hr();
-        navLinks(false);
-        printBottom();
-        printBodyHtmlEnd();
-    }
-
-    /**
-     * Highlight the word "Deprecated" in the navigation bar as this is the same
-     * page.
-     */
-    protected void navLinkDeprecated() {
-        navCellRevStart();
-        fontStyle("NavBarFont1Rev");
-        strongText("doclet.navDeprecated");
-        fontEnd();
-        navCellEnd();
+    protected Content getNavLinkDeprecated() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, deprecatedLabel);
+        return li;
     }
 }

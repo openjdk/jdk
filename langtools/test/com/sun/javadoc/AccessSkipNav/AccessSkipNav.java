@@ -46,6 +46,7 @@ public class AccessSkipNav {
     private static final String BUGNAME = "AccessSkipNav";
     private static final String FS = System.getProperty("file.separator");
     private static final String PS = System.getProperty("path.separator");
+    private static final String LS = System.getProperty("line.separator");
     private static final String TMPDEST_DIR1 = "." + FS + "docs1" + FS;
     private static final String TMPDEST_DIR2 = "." + FS + "docs2" + FS;
 
@@ -84,20 +85,22 @@ public class AccessSkipNav {
 
             // Testing only for the presence of the <a href> and <a name>
 
-            // Top navbar <A HREF>
-            { "<A HREF=\"#skip-navbar_top\" title=\"Skip navigation links\"></A>",
+            // Top navbar <a href>
+            { "<a href=\"#skip-navbar_top\" title=\"Skip navigation links\"></a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" },
 
-            // Top navbar <A NAME>
-            { "<A NAME=\"skip-navbar_top\"></A>",
+            // Top navbar <a name>
+            { "<a name=\"skip-navbar_top\">" + LS +
+                      "<!--   -->" + LS + "</a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" },
 
-            // Bottom navbar <A HREF>
-            { "<A HREF=\"#skip-navbar_bottom\" title=\"Skip navigation links\"></A>",
+            // Bottom navbar <a href>
+            { "<a href=\"#skip-navbar_bottom\" title=\"Skip navigation links\"></a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" },
 
-            // Bottom navbar <A NAME>
-            { "<A NAME=\"skip-navbar_bottom\"></A>",
+            // Bottom navbar <a name>
+            { "<a name=\"skip-navbar_bottom\">" + LS +
+                      "<!--   -->" + LS + "</a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" }
         };
 

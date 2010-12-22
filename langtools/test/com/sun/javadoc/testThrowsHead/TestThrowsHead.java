@@ -38,7 +38,7 @@ public class TestThrowsHead extends JavadocTester {
 
     private static final String BUG_ID = "4530727";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "<DT><STRONG>Throws:</STRONG>"}
+        {BUG_ID + FS + "C.html", "<dt><span class=\"strong\">Throws:</span>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {

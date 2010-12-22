@@ -83,18 +83,19 @@ public class AccessH1 {
      * NOTE: The standard doclet uses the same separator "\n" for all OS's
      */
     private static final String[][] testArray = {
-
-            // Test the style sheet
-            {
-               "h1 { font-size: 145% }",
-                     TMPDEST_DIR1 + "stylesheet.css"              },
-
-            // Test the doc title in the overview page
-            {
-               "<H1>" + LS + "Document Title" + LS + "</H1>",
-                          TMPDEST_DIR1 + "overview-summary.html"  }
-
-        };
+        // Test the style sheet
+        {
+            ".header h1.title {" + LS + "    font-size:1.4em;" + LS +
+            "    text-align:center;" + LS + "    margin:0;" + LS +
+            "}",
+            TMPDEST_DIR1 + "stylesheet.css"
+        },
+        // Test the doc title in the overview page
+        {
+            "<h1 class=\"title\">Document Title</h1>",
+            TMPDEST_DIR1 + "overview-summary.html"
+        }
+    };
 
     public static void runTestsOnHTML(String[][] testArray) {
 

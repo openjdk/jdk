@@ -40,11 +40,13 @@ public class TestOverridenPrivateMethods extends JavadocTester {
     private static final String[][] TEST = {
         //The public method should be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#publicMethod"},
+         "<dt><strong>Overrides:</strong></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod"},
 
         //The public method in different package should be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#publicMethod"}
+         "<dt><strong>Overrides:</strong></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod"}
     };
 
     private static final String[][] NEGATED_TEST = {
@@ -52,20 +54,23 @@ public class TestOverridenPrivateMethods extends JavadocTester {
         //The package private method should be overriden since the base and sub class are in the same
         //package.  However, the link should not show up because the package private methods are not documented.
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#packagePrivateMethod"},
+         "<dt><strong>Overrides:</strong></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod"},
 
         //The private method in should not be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#privateMethod"},
+         "<dt><strong>Overrides:</strong></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod"},
 
         //The private method in different package should not be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#privateMethod"},
+         "<dt><strong>Overrides:</strong></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod"},
 
         //The package private method should not be overriden since the base and sub class are in
         //different packages.
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#packagePrivateMethod"}
+         "Overrides:</strong></dt><dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod"}
     };
 
     private static final String[] ARGS =

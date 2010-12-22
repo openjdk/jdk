@@ -49,16 +49,17 @@ public class TestTypeParameters extends JavadocTester {
     private static final String[][] TEST =
     {
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<CODE>&lt;W extends java.lang.String,V extends java.util.List&gt; " + NL +
-            "<BR>" + NL +
-            "java.lang.Object</CODE>"},
+            "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,V extends " +
+            "java.util.List&gt;&nbsp;<br>java.lang.Object</code></td>"},
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<CODE>&lt;T&gt; java.lang.Object</CODE>"},
+            "<code>&lt;T&gt;&nbsp;java.lang.Object</code>"},
         {BUG_ID + FS + "pkg" + FS + "package-summary.html",
             "C&lt;E extends Parent&gt;"},
         //Nested type parameters
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<A NAME=\"formatDetails(java.util.Collection, java.util.Collection)\"><!-- --></A>"},
+            "<a name=\"formatDetails(java.util.Collection, java.util.Collection)\">" + NL +
+            "<!--   -->" + NL +
+            "</a>"},
 
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

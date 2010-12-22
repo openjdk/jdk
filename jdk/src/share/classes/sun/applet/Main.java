@@ -339,7 +339,7 @@ public class Main {
         // Standard browser properties
         avProps.put("browser", "sun.applet.AppletViewer");
         avProps.put("browser.version", "1.06");
-        avProps.put("browser.vendor", "Sun Microsystems Inc.");
+        avProps.put("browser.vendor", "Oracle Corporation");
         avProps.put("http.agent", "Java(tm) 2 SDK, Standard Edition v" + theVersion);
 
         // Define which packages can be extended by applets
