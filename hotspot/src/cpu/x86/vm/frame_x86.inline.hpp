@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_FRAME_X86_INLINE_HPP
+#define CPU_X86_VM_FRAME_X86_INLINE_HPP
+
 // Inline functions for Intel frames:
 
 // Constructors:
@@ -296,3 +299,5 @@ inline oop frame::saved_oop_result(RegisterMap* map) const       {
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   *((oop*) map->location(rax->as_VMReg())) = obj;
 }
+
+#endif // CPU_X86_VM_FRAME_X86_INLINE_HPP

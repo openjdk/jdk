@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,21 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKBUILDER_HPP
+#define SHARE_VM_SHARK_SHARKBUILDER_HPP
+
+#include "ci/ciType.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/llvmValue.hpp"
+#include "shark/sharkCodeBuffer.hpp"
+#include "shark/sharkEntry.hpp"
+#include "shark/sharkType.hpp"
+#include "shark/sharkValue.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/sizes.hpp"
 
 class SharkBuilder : public llvm::IRBuilder<> {
   friend class SharkCompileInvariants;
@@ -207,3 +222,5 @@ class SharkBuilder : public llvm::IRBuilder<> {
   llvm::BasicBlock* CreateBlock(llvm::BasicBlock* ip,
                                 const char*       name="") const;
 };
+
+#endif // SHARE_VM_SHARK_SHARKBUILDER_HPP

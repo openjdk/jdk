@@ -26,6 +26,15 @@
 #ifndef __LESTANDALONE
 #define __LESTANDALONE
 
+#ifndef U_COPYRIGHT_STRING
+#define U_COPYRIGHT_STRING " (C) Copyright IBM Corp and Others. 1998-2010 - All Rights Reserved"
+#endif
+
+/* ICU Version number */
+#ifndef U_ICU_VERSION
+#define U_ICU_VERSION "4.6"
+#endif
+
 /* Definitions to make Layout Engine work away from ICU. */
 #ifndef U_NAMESPACE_BEGIN
 #define U_NAMESPACE_BEGIN

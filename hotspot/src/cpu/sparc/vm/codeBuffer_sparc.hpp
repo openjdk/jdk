@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_CODEBUFFER_SPARC_HPP
+#define CPU_SPARC_VM_CODEBUFFER_SPARC_HPP
+
 private:
   void pd_initialize() {}
 
@@ -32,3 +35,5 @@ public:
   bool is_backward_branch(Label& L) {
     return L.is_bound() && insts_end() <= locator_address(L.loc());
   }
+
+#endif // CPU_SPARC_VM_CODEBUFFER_SPARC_HPP

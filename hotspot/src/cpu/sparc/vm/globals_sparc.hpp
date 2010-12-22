@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_GLOBALS_SPARC_HPP
+#define CPU_SPARC_VM_GLOBALS_SPARC_HPP
+
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
@@ -64,3 +70,5 @@ define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, UseMembar,            false);
+
+#endif // CPU_SPARC_VM_GLOBALS_SPARC_HPP

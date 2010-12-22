@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_INTERPRETERGENERATOR_X86_HPP
+#define CPU_X86_VM_INTERPRETERGENERATOR_X86_HPP
+
 
 // Generation of Interpreter
 //
@@ -41,3 +44,5 @@
 
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);
   void generate_counter_overflow(Label* do_continue);
+
+#endif // CPU_X86_VM_INTERPRETERGENERATOR_X86_HPP

@@ -565,7 +565,7 @@ public class Dialog extends Window {
      * @since 1.6
      */
     public Dialog(Window owner) {
-        this(owner, null, ModalityType.MODELESS);
+        this(owner, "", ModalityType.MODELESS);
     }
 
     /**
@@ -624,7 +624,7 @@ public class Dialog extends Window {
      * @since 1.6
      */
     public Dialog(Window owner, ModalityType modalityType) {
-        this(owner, null, modalityType);
+        this(owner, "", modalityType);
     }
 
     /**

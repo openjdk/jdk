@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,12 @@ public class TestKeyPairGenerator {
         sig.initVerify(kp2.getPublic());
         sig.update(data);
         // verify needs to return false and not throw an Exception
-        if (sig.verify(signature)) {
-            throw new Exception("verification unexpectedly succeeded");
+        try {
+            if (sig.verify(signature)) {
+                throw new Exception("verification unexpectedly succeeded");
+            }
+        } catch (SignatureException se) {
+            // Yet another kind of failure, OK.
         }
     }
 

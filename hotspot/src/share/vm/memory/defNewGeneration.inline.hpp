@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_DEFNEWGENERATION_INLINE_HPP
+#define SHARE_VM_MEMORY_DEFNEWGENERATION_INLINE_HPP
+
+#include "memory/cardTableRS.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/space.hpp"
 
 // Methods of protected closure types
 
@@ -79,3 +86,5 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }
+
+#endif // SHARE_VM_MEMORY_DEFNEWGENERATION_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSMARKSWEEP_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSMARKSWEEP_HPP
+
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "utilities/stack.hpp"
 
 class PSAdaptiveSizePolicy;
 class PSYoungGen;
@@ -83,3 +90,5 @@ class PSMarkSweep : public MarkSweep {
   // Time since last full gc (in milliseconds)
   static jlong millis_since_last_gc();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSMARKSWEEP_HPP

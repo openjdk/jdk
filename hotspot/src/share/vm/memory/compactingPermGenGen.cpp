@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compactingPermGenGen.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "memory/compactingPermGenGen.hpp"
+#include "memory/filemap.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/generationSpec.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#endif
 
 
 // An ObjectClosure helper: Recursively adjust all pointers in an object

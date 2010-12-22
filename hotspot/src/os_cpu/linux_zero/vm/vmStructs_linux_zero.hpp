@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,9 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_ZERO_VM_VMSTRUCTS_LINUX_ZERO_HPP
+#define OS_CPU_LINUX_ZERO_VM_VMSTRUCTS_LINUX_ZERO_HPP
+
 // These are the OS and CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
 // referenced by vmStructs.cpp.
@@ -43,3 +46,5 @@
 #define VM_LONG_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant, last_entry) \
   /* This must be the last entry, and must be present */                \
   last_entry()
+
+#endif // OS_CPU_LINUX_ZERO_VM_VMSTRUCTS_LINUX_ZERO_HPP

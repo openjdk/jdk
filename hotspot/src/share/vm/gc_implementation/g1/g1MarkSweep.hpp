@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1MARKSWEEP_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1MARKSWEEP_HPP
+
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "memory/genMarkSweep.hpp"
+#include "memory/generation.hpp"
+#include "memory/universe.hpp"
+#include "oops/markOop.hpp"
+#include "oops/oop.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/growableArray.hpp"
 
 class ReferenceProcessor;
 
@@ -55,3 +68,5 @@ class G1MarkSweep : AllStatic {
 
   static void allocate_stacks();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1MARKSWEEP_HPP

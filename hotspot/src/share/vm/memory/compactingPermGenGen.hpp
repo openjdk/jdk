@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_COMPACTINGPERMGENGEN_HPP
+#define SHARE_VM_MEMORY_COMPACTINGPERMGENGEN_HPP
+
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "memory/space.hpp"
 
 // All heaps contains a "permanent generation," containing permanent
 // (reflective) objects.  This is like a regular generation in some ways,
@@ -247,3 +253,5 @@ public:
   // or if the remapping has already been done by a prior call.
   static bool remap_shared_readonly_as_readwrite();
 };
+
+#endif // SHARE_VM_MEMORY_COMPACTINGPERMGENGEN_HPP

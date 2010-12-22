@@ -38,13 +38,13 @@ public class TestTitleInHref extends JavadocTester {
 
     private static final String[][] TEST = {
         //Test to make sure that the title shows up in a class link.
-        {BUG_ID + FS + "pkg" + FS + "Links.html", "<A HREF=\"../pkg/Class.html\" title=\"class in pkg\">"},
+        {BUG_ID + FS + "pkg" + FS + "Links.html", "<a href=\"../pkg/Class.html\" title=\"class in pkg\">"},
 
         //Test to make sure that the title shows up in an interface link.
-        {BUG_ID + FS + "pkg" + FS + "Links.html", "<A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">"},
+        {BUG_ID + FS + "pkg" + FS + "Links.html", "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"},
 
         //Test to make sure that the title shows up in cross link shows up
-        {BUG_ID + FS + "pkg" + FS + "Links.html", "<A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/io/File.html?is-external=true\" title=\"class or interface in java.io\"><CODE>This is a cross link to class File</CODE></A>"},
+        {BUG_ID + FS + "pkg" + FS + "Links.html", "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/io/File.html?is-external=true\" title=\"class or interface in java.io\"><code>This is a cross link to class File</code></a>"},
 
     };
 

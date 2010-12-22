@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_TEMPLATEINTERPRETER_X86_HPP
+#define CPU_X86_VM_TEMPLATEINTERPRETER_X86_HPP
+
 
   protected:
 
@@ -35,3 +38,5 @@
 #else
   const static int InterpreterCodeSize = 168 * 1024;
 #endif // AMD64
+
+#endif // CPU_X86_VM_TEMPLATEINTERPRETER_X86_HPP

@@ -1496,8 +1496,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
-  fprintf(fp,"MachNode *%sNode::Expand(State *state, Node_List &proj_list, Node* mem) {\n", node->_ident);
-  fprintf(fp,"Compile* C = Compile::current();\n");
+  fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List& proj_list, Node* mem) {\n", node->_ident);
+  fprintf(fp, "  Compile* C = Compile::current();\n");
   // Generate expand code
   if( node->expands() ) {
     const char   *opid;
@@ -1818,6 +1818,12 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     }
   }
 
+  // If the node is a MachConstantNode, insert the MachConstantBaseNode edge.
+  // NOTE: this edge must be the last input (see MachConstantNode::mach_constant_base_node_input).
+  if (node->is_mach_constant()) {
+    fprintf(fp,"  add_req(C->mach_constant_base_node());\n");
+  }
+
   fprintf(fp,"\n");
   if( node->expands() ) {
     fprintf(fp,"  return result;\n");
@@ -1924,7 +1930,17 @@ public:
         // No state needed.
         assert( _opclass == NULL,
                 "'primary', 'secondary' and 'tertiary' don't follow operand.");
-      } else {
+      }
+      else if ((strcmp(rep_var, "constanttablebase") == 0) ||
+               (strcmp(rep_var, "constantoffset")    == 0) ||
+               (strcmp(rep_var, "constantaddress")   == 0)) {
+        if (!_inst.is_mach_constant()) {
+          _AD.syntax_err(_encoding._linenum,
+                         "Replacement variable %s not allowed in instruct %s (only in MachConstantNode).\n",
+                         rep_var, _encoding._name);
+        }
+      }
+      else {
         // Lookup its position in parameter list
         int   param_no  = _encoding.rep_var_index(rep_var);
         if ( param_no == -1 ) {
@@ -2380,6 +2396,15 @@ private:
                         rep_var, _inst._ident, _encoding._name);
       }
     }
+    else if (strcmp(rep_var, "constanttablebase") == 0) {
+      fprintf(_fp, "as_Register(ra_->get_encode(in(mach_constant_base_node_input())))");
+    }
+    else if (strcmp(rep_var, "constantoffset") == 0) {
+      fprintf(_fp, "constant_offset()");
+    }
+    else if (strcmp(rep_var, "constantaddress") == 0) {
+      fprintf(_fp, "InternalAddress(__ code()->consts()->start() + constant_offset())");
+    }
     else {
       // Lookup its position in parameter list
       int   param_no  = _encoding.rep_var_index(rep_var);
@@ -2465,37 +2490,39 @@ void ArchDesc::defineSize(FILE *fp, InstructForm &inst) {
   fprintf(fp,"}\n");
 }
 
-void ArchDesc::defineEmit(FILE *fp, InstructForm &inst) {
-  InsEncode *ins_encode = inst._insencode;
+// defineEmit -----------------------------------------------------------------
+void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
+  InsEncode* encode = inst._insencode;
 
   // (1)
   // Output instruction's emit prototype
-  fprintf(fp,"void  %sNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {\n",
-          inst._ident);
+  fprintf(fp, "void %sNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {\n", inst._ident);
 
   // If user did not define an encode section,
   // provide stub that does not generate any machine code.
-  if( (_encode == NULL) || (ins_encode == NULL) ) {
+  if( (_encode == NULL) || (encode == NULL) ) {
     fprintf(fp, "  // User did not define an encode section.\n");
-    fprintf(fp,"}\n");
+    fprintf(fp, "}\n");
     return;
   }
 
   // Save current instruction's starting address (helps with relocation).
-  fprintf(fp, "    cbuf.set_insts_mark();\n");
+  fprintf(fp, "  cbuf.set_insts_mark();\n");
 
-  // // // idx0 is only needed for syntactic purposes and only by "storeSSI"
-  // fprintf( fp, "    unsigned idx0  = 0;\n");
+  // For MachConstantNodes which are ideal jump nodes, fill the jump table.
+  if (inst.is_mach_constant() && inst.is_ideal_jump()) {
+    fprintf(fp, "  ra_->C->constant_table().fill_jump_table(cbuf, (MachConstantNode*) this, _index2label);\n");
+  }
 
   // Output each operand's offset into the array of registers.
-  inst.index_temps( fp, _globalNames );
+  inst.index_temps(fp, _globalNames);
 
   // Output this instruction's encodings
   const char *ec_name;
   bool        user_defined = false;
-  ins_encode->reset();
-  while ( (ec_name = ins_encode->encode_class_iter()) != NULL ) {
-    fprintf(fp, "  {");
+  encode->reset();
+  while ((ec_name = encode->encode_class_iter()) != NULL) {
+    fprintf(fp, "  {\n");
     // Output user-defined encoding
     user_defined           = true;
 
@@ -2507,25 +2534,25 @@ void ArchDesc::defineEmit(FILE *fp, InstructForm &inst) {
       abort();
     }
 
-    if (ins_encode->current_encoding_num_args() != encoding->num_args()) {
-      globalAD->syntax_err(ins_encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                           inst._ident, ins_encode->current_encoding_num_args(),
+    if (encode->current_encoding_num_args() != encoding->num_args()) {
+      globalAD->syntax_err(encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
+                           inst._ident, encode->current_encoding_num_args(),
                            ec_name, encoding->num_args());
     }
 
-    DefineEmitState  pending(fp, *this, *encoding, *ins_encode, inst );
+    DefineEmitState pending(fp, *this, *encoding, *encode, inst);
     encoding->_code.reset();
     encoding->_rep_vars.reset();
     // Process list of user-defined strings,
     // and occurrences of replacement variables.
     // Replacement Vars are pushed into a list and then output
-    while ( (ec_code = encoding->_code.iter()) != NULL ) {
-      if ( ! encoding->_code.is_signal( ec_code ) ) {
+    while ((ec_code = encoding->_code.iter()) != NULL) {
+      if (!encoding->_code.is_signal(ec_code)) {
         // Emit pending code
         pending.emit();
         pending.clear();
         // Emit this code section
-        fprintf(fp,"%s", ec_code);
+        fprintf(fp, "%s", ec_code);
       } else {
         // A replacement variable or one of its subfields
         // Obtain replacement variable from list
@@ -2536,7 +2563,7 @@ void ArchDesc::defineEmit(FILE *fp, InstructForm &inst) {
     // Emit pending code
     pending.emit();
     pending.clear();
-    fprintf(fp, "}\n");
+    fprintf(fp, "  }\n");
   } // end while instruction's encodings
 
   // Check if user stated which encoding to user
@@ -2545,7 +2572,86 @@ void ArchDesc::defineEmit(FILE *fp, InstructForm &inst) {
   }
 
   // (3) and (4)
-  fprintf(fp,"}\n");
+  fprintf(fp, "}\n");
+}
+
+// defineEvalConstant ---------------------------------------------------------
+void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
+  InsEncode* encode = inst._constant;
+
+  // (1)
+  // Output instruction's emit prototype
+  fprintf(fp, "void %sNode::eval_constant(Compile* C) {\n", inst._ident);
+
+  // For ideal jump nodes, allocate a jump table.
+  if (inst.is_ideal_jump()) {
+    fprintf(fp, "  _constant = C->constant_table().allocate_jump_table(this);\n");
+  }
+
+  // If user did not define an encode section,
+  // provide stub that does not generate any machine code.
+  if ((_encode == NULL) || (encode == NULL)) {
+    fprintf(fp, "  // User did not define an encode section.\n");
+    fprintf(fp, "}\n");
+    return;
+  }
+
+  // Output this instruction's encodings
+  const char *ec_name;
+  bool        user_defined = false;
+  encode->reset();
+  while ((ec_name = encode->encode_class_iter()) != NULL) {
+    fprintf(fp, "  {\n");
+    // Output user-defined encoding
+    user_defined           = true;
+
+    const char *ec_code    = NULL;
+    const char *ec_rep_var = NULL;
+    EncClass   *encoding   = _encode->encClass(ec_name);
+    if (encoding == NULL) {
+      fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
+      abort();
+    }
+
+    if (encode->current_encoding_num_args() != encoding->num_args()) {
+      globalAD->syntax_err(encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
+                           inst._ident, encode->current_encoding_num_args(),
+                           ec_name, encoding->num_args());
+    }
+
+    DefineEmitState pending(fp, *this, *encoding, *encode, inst);
+    encoding->_code.reset();
+    encoding->_rep_vars.reset();
+    // Process list of user-defined strings,
+    // and occurrences of replacement variables.
+    // Replacement Vars are pushed into a list and then output
+    while ((ec_code = encoding->_code.iter()) != NULL) {
+      if (!encoding->_code.is_signal(ec_code)) {
+        // Emit pending code
+        pending.emit();
+        pending.clear();
+        // Emit this code section
+        fprintf(fp, "%s", ec_code);
+      } else {
+        // A replacement variable or one of its subfields
+        // Obtain replacement variable from list
+        ec_rep_var  = encoding->_rep_vars.iter();
+        pending.add_rep_var(ec_rep_var);
+      }
+    }
+    // Emit pending code
+    pending.emit();
+    pending.clear();
+    fprintf(fp, "  }\n");
+  } // end while instruction's encodings
+
+  // Check if user stated which encoding to user
+  if (user_defined == false) {
+    fprintf(fp, "  // User did not define which encode class to use.\n");
+  }
+
+  // (3) and (4)
+  fprintf(fp, "}\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -2952,6 +3058,7 @@ void ArchDesc::defineClasses(FILE *fp) {
     // If there are multiple defs/kills, or an explicit expand rule, build rule
     if( instr->expands() || instr->needs_projections() ||
         instr->has_temps() ||
+        instr->is_mach_constant() ||
         instr->_matrule != NULL &&
         instr->num_opnds() != instr->num_unique_opnds() )
       defineExpand(_CPP_EXPAND_file._fp, instr);
@@ -3032,8 +3139,9 @@ void ArchDesc::defineClasses(FILE *fp) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
-    if (instr->_insencode) defineEmit(fp, *instr);
-    if (instr->_size)      defineSize(fp, *instr);
+    if (instr->_insencode)         defineEmit        (fp, *instr);
+    if (instr->is_mach_constant()) defineEvalConstant(fp, *instr);
+    if (instr->_size)              defineSize        (fp, *instr);
 
     // side-call to generate output that used to be in the header file:
     extern void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &oper, bool for_c_file);

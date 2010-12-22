@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef _SET_
-#define _SET_
+#ifndef SHARE_VM_LIBADT_SET_HPP
+#define SHARE_VM_LIBADT_SET_HPP
+
+#include "libadt/port.hpp"
+#include "memory/allocation.hpp"
+
 // Sets - An Abstract Data Type
 
-// Should not manually include these in AVM framework. %%%%% - Ungar
-// #ifndef _PORT_
-// #include "port.hpp"
-// #endif // _PORT_
 //INTERFACE
 
 class SparseSet;
@@ -248,4 +248,4 @@ public:
   int test(void) { return impl->test(); }
 };
 
-#endif // _SET_
+#endif // SHARE_VM_LIBADT_SET_HPP

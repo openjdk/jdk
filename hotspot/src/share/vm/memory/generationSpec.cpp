@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_generationSpec.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/compactPermGen.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/filemap.hpp"
+#include "memory/genRemSet.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/tenuredGeneration.hpp"
+#include "runtime/java.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
+#include "gc_implementation/parNew/asParNewGeneration.hpp"
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#endif
 
 Generation* GenerationSpec::init(ReservedSpace rs, int level,
                                  GenRemSet* remset) {

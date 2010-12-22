@@ -22,10 +22,46 @@
  *
  */
 
+// no precompiled headers
+#include "classfile/vmSymbols.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/bytecodeInterpreter.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/threadCritical.hpp"
+#include "utilities/exceptions.hpp"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "orderAccess_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "orderAccess_linux_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "orderAccess_linux_zero.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "orderAccess_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "orderAccess_solaris_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "orderAccess_windows_x86.inline.hpp"
+#endif
+
 
 // no precompiled headers
-#include "incls/_bytecodeInterpreter.cpp.incl"
-
 #ifdef CC_INTERP
 
 /*
@@ -1287,12 +1323,7 @@ run:
           jfloat f;
           jdouble r;
           f = STACK_FLOAT(-1);
-#ifdef IA64
-          // IA64 gcc bug
-          r = ( f == 0.0f ) ? (jdouble) f : (jdouble) f + ia64_double_zero;
-#else
           r = (jdouble) f;
-#endif
           MORE_STACK(-1); // POP
           SET_STACK_DOUBLE(r, 1);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 2);

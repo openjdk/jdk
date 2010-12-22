@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_PRIMS_JNIFASTGETFIELD_HPP
+#define SHARE_VM_PRIMS_JNIFASTGETFIELD_HPP
+
+#include "memory/allocation.hpp"
+#include "prims/jvm_misc.hpp"
 
 // Basic logic of a fast version of jni_Get<Primitive>Field:
 //
@@ -92,3 +98,5 @@ class JNI_FastGetField : AllStatic {
   // for example, for debugging purpose, in which case we need the mapping also.
   static address find_slowcase_pc(address pc);
 };
+
+#endif // SHARE_VM_PRIMS_JNIFASTGETFIELD_HPP

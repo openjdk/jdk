@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,23 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_COMPILEDIC_HPP
+#define SHARE_VM_CODE_COMPILEDIC_HPP
+
+#include "interpreter/linkResolver.hpp"
+#include "oops/compiledICHolderKlass.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "oops/klassOop.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.
@@ -239,3 +256,5 @@ inline CompiledStaticCall* compiledStaticCall_at(address native_call) {
 inline CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) {
   return compiledStaticCall_at(call_site->addr());
 }
+
+#endif // SHARE_VM_CODE_COMPILEDIC_HPP
