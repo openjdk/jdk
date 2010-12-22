@@ -1020,10 +1020,11 @@ ifeq ($(PLATFORM), solaris)
 endif
 
 ######################################################
-# Check for existence of MSDEVTOOLS_PATH on windows
+# Check for existence of the extra tools on windows
 ######################################################
 sane-msdevtools_path:
 ifeq ($(PLATFORM), windows)
+  ifneq ($(COMPILER_VERSION), VS2010)
 	@if [ "$(MSDEVTOOLS_PATH)" != "" -a ! -r "$(MSDEVTOOLS_PATH)" ]; then \
 	  $(ECHO) "ERROR: You do not have a valid MSDEVTOOLS_PATH setting. \n" \
 	    "      Please check your access to \n" \
@@ -1031,6 +1032,7 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSDEVTOOLS_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+  endif
 endif
 
 ######################################################
@@ -1439,10 +1441,24 @@ ifeq ($(PLATFORM), windows)
 endif
 
 ######################################################
-# Check for existence of INSTALL_MSSDK on windows
+# Check for existence of the MSSDK on windows
 ######################################################
 sane-install-mssdk_path:
 ifeq ($(PLATFORM), windows)
+  ifeq ($(COMPILER_VERSION), VS2010)
+	@if [ -z "$(WINDOWSSDKDIR)" ]; then \
+	  $(ECHO) "WARNING: Your WINDOWSSDKDIR setting is empty.\n" \
+	    "        It is recommended to set ALT_WINDOWSSDKDIR.\n" \
+	    "" >> $(WARNING_FILE) ; \
+	fi
+	@if [ ! -r "$(WINDOWSSDKDIR)" ]; then \
+	  $(ECHO) "ERROR: You do not have a valid WINDOWSSDKDIR setting. \n" \
+	    "      Please check your access to \n" \
+	    "          $(WINDOWSSDKDIR) \n" \
+	    "      and/or check your value of ALT_WINDOWSSDKDIR. \n" \
+	    "" >> $(ERROR_FILE) ; \
+	fi
+  endif
 	@if [ -z "$(INSTALL_MSSDK)" ]; then \
 	  $(ECHO) "WARNING: Your INSTALL_MSSDK setting is empty.\n" \
 	    "        It is recommended to set ALT_INSTALL_MSSDK.\n" \
