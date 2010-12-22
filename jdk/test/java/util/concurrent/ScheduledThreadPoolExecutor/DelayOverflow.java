@@ -161,11 +161,8 @@ public class DelayOverflow {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        Class<?> k = new Object(){}.getClass().getEnclosingClass();
-        try {k.getMethod("instanceMain",String[].class)
-                .invoke( k.newInstance(), (Object) args);}
-        catch (Throwable e) {throw e.getCause();}}
-    public void instanceMain(String[] args) throws Throwable {
+        new DelayOverflow().instanceMain(args);}
+    void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}

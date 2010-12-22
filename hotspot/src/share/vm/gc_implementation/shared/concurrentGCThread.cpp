@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,17 @@
  *
  */
 
-// CopyrightVersion 1.2
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/concurrentGCThread.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 
-# include "incls/_precompiled.incl"
-# include "incls/_concurrentGCThread.cpp.incl"
+// CopyrightVersion 1.2
 
 int  ConcurrentGCThread::_CGC_flag            = CGC_nil;
 

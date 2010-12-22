@@ -22,8 +22,29 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vframe.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
 
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : _reg_map(reg_map), _thread(thread) {

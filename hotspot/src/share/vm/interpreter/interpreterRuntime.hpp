@@ -22,6 +22,26 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_INTERPRETERRUNTIME_HPP
+#define SHARE_VM_INTERPRETER_INTERPRETERRUNTIME_HPP
+
+#include "interpreter/bytecode.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/universe.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/signature.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+
 // The InterpreterRuntime is called by the interpreter for everything
 // that cannot/should not be dealt with in assembly and needs C support.
 
@@ -128,7 +148,16 @@ class InterpreterRuntime: AllStatic {
 #endif
 
   // Platform dependent stuff
-  #include "incls/_interpreterRT_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "interpreterRT_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "interpreterRT_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "interpreterRT_zero.hpp"
+#endif
+
 
   // Interpreter's frequency counter overflow
   static nmethod* frequency_counter_overflow(JavaThread* thread, address branch_bcp);
@@ -163,3 +192,5 @@ class SignatureHandlerLibrary: public AllStatic {
  public:
   static void add(methodHandle method);
 };
+
+#endif // SHARE_VM_INTERPRETER_INTERPRETERRUNTIME_HPP

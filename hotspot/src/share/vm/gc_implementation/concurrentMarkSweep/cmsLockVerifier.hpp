@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSLOCKVERIFIER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSLOCKVERIFIER_HPP
+
+#include "runtime/mutex.hpp"
+
 ///////////// Locking verification specific to CMS //////////////
 // Much like "assert_lock_strong()", except
 // that it relaxes the assertion somewhat for the parallel GC case, where
@@ -38,3 +43,5 @@ class CMSLockVerifier: AllStatic {
     assert_locked(lock, NULL);
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSLOCKVERIFIER_HPP

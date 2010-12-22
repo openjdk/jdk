@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
+#define OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
+
+#include "runtime/orderAccess.hpp"
+#include "vm_version_x86.hpp"
+
 #pragma warning(disable: 4035) // Disables warnings reporting missing return statement
 
 // Implementation of class OrderAccess.
@@ -208,3 +214,5 @@ inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*
 }
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
+
+#endif // OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP

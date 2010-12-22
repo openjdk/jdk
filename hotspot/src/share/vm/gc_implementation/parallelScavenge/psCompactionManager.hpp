@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/stack.hpp"
+#include "utilities/taskqueue.hpp"
+
 // Move to some global location
 #define HAS_BEEN_MOVED 0x1501d01d
 // End move to some global location
@@ -167,3 +174,5 @@ inline ParCompactionManager* ParCompactionManager::manager_array(int index) {
 bool ParCompactionManager::marking_stacks_empty() const {
   return _marking_stack.is_empty() && _objarray_stack.is_empty();
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_HPP

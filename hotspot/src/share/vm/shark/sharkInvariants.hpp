@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKINVARIANTS_HPP
+#define SHARE_VM_SHARK_SHARKINVARIANTS_HPP
+
+#include "ci/ciEnv.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/dependencies.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkBuilder.hpp"
 
 // Base classes used to track various values through the compilation.
 // SharkCompileInvariants is used to track values which remain the
@@ -165,3 +178,5 @@ class SharkTargetInvariants : public SharkCompileInvariants {
     return target()->is_synchronized();
   }
 };
+
+#endif // SHARE_VM_SHARK_SHARKINVARIANTS_HPP

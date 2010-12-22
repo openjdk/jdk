@@ -22,6 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_INTERPRETER_HPP
+#define SHARE_VM_INTERPRETER_INTERPRETER_HPP
+
+#include "code/stubs.hpp"
+#include "interpreter/cppInterpreter.hpp"
+#include "interpreter/templateInterpreter.hpp"
+#ifdef ZERO
+#ifdef TARGET_ARCH_zero
+# include "entry_zero.hpp"
+#endif
+#endif
+
 // This file contains the platform-independent parts
 // of the interpreter and the interpreter generator.
 
@@ -131,5 +143,16 @@ class Interpreter: public CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateI
   public:
   // Debugging/printing
   static InterpreterCodelet* codelet_containing(address pc)     { return (InterpreterCodelet*)_code->stub_containing(pc); }
-#include "incls/_interpreter_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "interpreter_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "interpreter_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "interpreter_zero.hpp"
+#endif
+
 };
+
+#endif // SHARE_VM_INTERPRETER_INTERPRETER_HPP

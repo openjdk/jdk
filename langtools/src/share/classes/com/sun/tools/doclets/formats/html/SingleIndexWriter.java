@@ -25,9 +25,10 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
 import java.io.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Generate only one index file for all the Member Names with Indexing in
@@ -36,6 +37,7 @@ import java.io.*;
  *
  * @see java.lang.Character
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class SingleIndexWriter extends AbstractIndexWriter {
 
@@ -82,34 +84,35 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * Member Field, Method and Constructor Description.
      */
     protected void generateIndexFile() throws IOException {
-        printHtmlHeader(configuration.getText("doclet.Window_Single_Index"),
-            null, true);
-        printTop();
-        navLinks(true);
-        printLinksForIndexes();
-
-        hr();
-
+        String title = configuration.getText("doclet.Window_Single_Index");
+        Content body = getBody(true, getWindowTitle(title));
+        addTop(body);
+        addNavLinks(true, body);
+        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
+        divTree.addStyle(HtmlStyle.contentContainer);
+        addLinksForIndexes(divTree);
         for (int i = 0; i < indexbuilder.elements().length; i++) {
             Character unicode = (Character)((indexbuilder.elements())[i]);
-            generateContents(unicode, indexbuilder.getMemberList(unicode));
+            addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
         }
-
-        printLinksForIndexes();
-        navLinks(false);
-
-        printBottom();
-        printBodyHtmlEnd();
+        addLinksForIndexes(divTree);
+        body.addContent(divTree);
+        addNavLinks(false, body);
+        addBottom(body);
+        printHtmlDocument(null, true, body);
     }
 
     /**
-     * Print Links for all the Index Files per unicode character.
+     * Add links for all the Index Files per unicode character.
+     *
+     * @param contentTree the content tree to which the links for indexes will be added
      */
-    protected void printLinksForIndexes() {
+    protected void addLinksForIndexes(Content contentTree) {
         for (int i = 0; i < indexbuilder.elements().length; i++) {
             String unicode = (indexbuilder.elements())[i].toString();
-            printHyperLink("#_" + unicode + "_", unicode);
-            print(' ');
+            contentTree.addContent(
+                    getHyperLink("#_" + unicode + "_", new StringContent(unicode)));
+            contentTree.addContent(getSpace());
         }
     }
 }

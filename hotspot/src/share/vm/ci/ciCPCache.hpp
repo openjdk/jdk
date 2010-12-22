@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CICPCACHE_HPP
+#define SHARE_VM_CI_CICPCACHE_HPP
+
+#include "ci/ciClassList.hpp"
+#include "ci/ciObject.hpp"
+#include "oops/cpCacheOop.hpp"
+
 // ciCPCache
 //
 // This class represents a constant pool cache.
@@ -57,3 +64,5 @@ public:
 
   void print();
 };
+
+#endif // SHARE_VM_CI_CICPCACHE_HPP

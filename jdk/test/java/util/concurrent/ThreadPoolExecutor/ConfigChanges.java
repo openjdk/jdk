@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.*;
 import static java.util.concurrent.TimeUnit.*;
 
 public class ConfigChanges {
-    final static ThreadGroup tg = new ThreadGroup("pool");
+    static final ThreadGroup tg = new ThreadGroup("pool");
 
-    final static Random rnd = new Random();
+    static final Random rnd = new Random();
 
     static void report(ThreadPoolExecutor tpe) {
         try {
@@ -241,7 +241,7 @@ public class ConfigChanges {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private static abstract class Fun {abstract void f() throws Throwable;}
+    private abstract static class Fun {abstract void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

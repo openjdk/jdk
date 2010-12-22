@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,24 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_space.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_implementation/shared/liveRange.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/space.hpp"
+#include "memory/space.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/java.hpp"
+#include "runtime/safepoint.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void SpaceMemRegionOopsIterClosure::do_oop(oop* p)       { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
 void SpaceMemRegionOopsIterClosure::do_oop(narrowOop* p) { SpaceMemRegionOopsIterClosure::do_oop_work(p); }

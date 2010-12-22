@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1038,22 +1038,38 @@ void ArchDesc::addSunCopyright(char* legal, int size, FILE *fp) {
   fprintf(fp,"\n");
 }
 
-//---------------------------machineDependentIncludes--------------------------
-// output #include declarations for machine specific files
-void ArchDesc::machineDependentIncludes(ADLFILE &adlfile) {
-  const char *basename = adlfile._name;
-  const char *cp;
-  for (cp = basename; *cp; cp++)
-    if (*cp == '/')  basename = cp+1;
 
+//---------------------------addIncludeGuardStart--------------------------
+// output the start of an include guard.
+void ArchDesc::addIncludeGuardStart(ADLFILE &adlfile, const char* guardString) {
   // Build #include lines
   fprintf(adlfile._fp, "\n");
-  fprintf(adlfile._fp, "#include \"incls/_precompiled.incl\"\n");
-  fprintf(adlfile._fp, "#include \"incls/_%s.incl\"\n",basename);
+  fprintf(adlfile._fp, "#ifndef %s\n", guardString);
+  fprintf(adlfile._fp, "#define %s\n", guardString);
   fprintf(adlfile._fp, "\n");
 
 }
 
+//---------------------------addIncludeGuardEnd--------------------------
+// output the end of an include guard.
+void ArchDesc::addIncludeGuardEnd(ADLFILE &adlfile, const char* guardString) {
+  // Build #include lines
+  fprintf(adlfile._fp, "\n");
+  fprintf(adlfile._fp, "#endif // %s\n", guardString);
+
+}
+
+//---------------------------addInclude--------------------------
+// output the #include line for this file.
+void ArchDesc::addInclude(ADLFILE &adlfile, const char* fileName) {
+  fprintf(adlfile._fp, "#include \"%s\"\n", fileName);
+
+}
+
+void ArchDesc::addInclude(ADLFILE &adlfile, const char* includeDir, const char* fileName) {
+  fprintf(adlfile._fp, "#include \"%s/%s\"\n", includeDir, fileName);
+
+}
 
 //---------------------------addPreprocessorChecks-----------------------------
 // Output C preprocessor code to verify the backend compilation environment.

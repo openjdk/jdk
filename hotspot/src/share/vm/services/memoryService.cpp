@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,40 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_memoryService.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/heap.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/permGen.hpp"
+#include "memory/tenuredGeneration.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "services/classLoadingService.hpp"
+#include "services/lowMemoryDetector.hpp"
+#include "services/management.hpp"
+#include "services/memoryManager.hpp"
+#include "services/memoryPool.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/growableArray.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psOldGen.hpp"
+#include "gc_implementation/parallelScavenge/psPermGen.hpp"
+#include "gc_implementation/parallelScavenge/psYoungGen.hpp"
+#include "services/g1MemoryPool.hpp"
+#include "services/psMemoryPool.hpp"
+#endif
 
 GrowableArray<MemoryPool*>* MemoryService::_pools_list =
   new (ResourceObj::C_HEAP) GrowableArray<MemoryPool*>(init_pools_list_size, true);

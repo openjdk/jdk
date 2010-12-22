@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_atomic.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/atomic.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "atomic_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "atomic_linux_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "atomic_linux_zero.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "atomic_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "atomic_solaris_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "atomic_windows_x86.inline.hpp"
+#endif
 
 jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
   assert(sizeof(jbyte) == 1, "assumption.");

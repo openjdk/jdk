@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_perfMemory.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/java.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/perfMemory.hpp"
+#include "runtime/statSampler.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Prefix of performance data file.
 const char               PERFDATA_NAME[] = "hsperfdata";

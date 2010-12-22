@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,26 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharkCompiler.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciEnv.hpp"
+#include "ci/ciMethod.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/dependencies.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "code/oopRecorder.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "compiler/oopMap.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkCodeBuffer.hpp"
+#include "shark/sharkCompiler.hpp"
+#include "shark/sharkContext.hpp"
+#include "shark/sharkEntry.hpp"
+#include "shark/sharkFunction.hpp"
+#include "shark/sharkMemoryManager.hpp"
+#include "shark/sharkNativeWrapper.hpp"
+#include "shark/shark_globals.hpp"
+#include "utilities/debug.hpp"
 
 #include <fnmatch.h>
 

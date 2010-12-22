@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_threadLS_linux_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "thread_linux.inline.hpp"
 
 // Map stack pointer (%esp) to thread pointer for faster TLS access
 //

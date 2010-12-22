@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_mutex_windows.cpp.incl"
+#include "precompiled.hpp"
+#include "mutex_windows.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/mutex.hpp"
+#include "thread_windows.inline.hpp"
+#include "utilities/events.hpp"
 
 // put OS-includes here
 # include <windows.h>

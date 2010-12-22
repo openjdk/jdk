@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,24 @@
  *
  */
 
+#ifndef OS_SOLARIS_VM_THREAD_SOLARIS_INLINE_HPP
+#define OS_SOLARIS_VM_THREAD_SOLARIS_INLINE_HPP
+
+#include "runtime/atomic.hpp"
+#include "runtime/prefetch.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "atomic_solaris_x86.inline.hpp"
+# include "orderAccess_solaris_x86.inline.hpp"
+# include "prefetch_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "atomic_solaris_sparc.inline.hpp"
+# include "orderAccess_solaris_sparc.inline.hpp"
+# include "prefetch_solaris_sparc.inline.hpp"
+#endif
+
 // Thread::current is "hot" it's called > 128K times in the 1st 500 msecs of
 // startup.
 // ThreadLocalStorage::thread is warm -- it's called > 16K times in the same
@@ -43,3 +61,5 @@ inline Thread* ThreadLocalStorage::thread()  {
     return ThreadLocalStorage::get_thread_via_cache_slowly(raw, ix);
   }
 }
+
+#endif // OS_SOLARIS_VM_THREAD_SOLARIS_INLINE_HPP

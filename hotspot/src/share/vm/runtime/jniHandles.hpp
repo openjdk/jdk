@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_JNIHANDLES_HPP
+#define SHARE_VM_RUNTIME_JNIHANDLES_HPP
+
+#include "runtime/handles.hpp"
+#include "utilities/top.hpp"
+
 class JNIHandleBlock;
 
 
@@ -220,3 +226,5 @@ inline void JNIHandles::destroy_local(jobject handle) {
     *((oop*)handle) = deleted_handle(); // Mark the handle as deleted, allocate will reuse it
   }
 }
+
+#endif // SHARE_VM_RUNTIME_JNIHANDLES_HPP

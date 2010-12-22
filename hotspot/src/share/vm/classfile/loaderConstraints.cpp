@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_loaderConstraints.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/loaderConstraints.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
+#include "utilities/hashtable.inline.hpp"
 
 LoaderConstraintTable::LoaderConstraintTable(int nof_buckets)
   : Hashtable(nof_buckets, sizeof(LoaderConstraintEntry)) {};

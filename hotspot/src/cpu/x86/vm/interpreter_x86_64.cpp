@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,32 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interpreter_x86_64.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterGenerator.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/templateTable.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/timer.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/debug.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 #define __ _masm->
 
