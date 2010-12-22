@@ -187,7 +187,7 @@ all: build
 clobber: clean
 
 # All ant targets of interest
-ANT_TARGETS = build clean sanity post-sanity diagnostics # for now
+ANT_TARGETS = build clean sanity post-sanity diagnostics build-all-tools  # for now
 
 # Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
 $(OUTPUTDIR)/build/ant-diagnostics.log:
