@@ -27,6 +27,7 @@ package com.sun.tools.doclets.internal.toolkit.builders;
 
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import java.util.*;
 
 /**
  * The superclass for all member builders.  Member builders are only executed
@@ -66,12 +67,13 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
     /**
      * Build the sub component if there is anything to document.
      *
-     * @param elements {@inheritDoc}
+     * @param node the XML element that specifies which components to document.
+     * @param contentTree content tree to which the documentation will be added
      */
     @Override
-    public void build(XMLNode node) {
+    public void build(XMLNode node, Content contentTree) {
         if (hasMembersToDocument()) {
-            super.build(node);
+            super.build(node, contentTree);
         }
     }
 

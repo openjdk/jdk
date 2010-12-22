@@ -46,20 +46,22 @@ public class TestLinkTaglet extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "Qualified Link: <A HREF=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><CODE>C.InnerC</CODE></A>.<br/>\n" +
-            " Unqualified Link1: <A HREF=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><CODE>C.InnerC</CODE></A>.<br/>\n" +
-            " Unqualified Link2: <A HREF=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><CODE>C.InnerC</CODE></A>.<br/>\n" +
-            " Qualified Link: <A HREF=\"../pkg/C.html#method(pkg.C.InnerC, pkg.C.InnerC2)\"><CODE>method(pkg.C.InnerC, pkg.C.InnerC2)</CODE></A>.<br/>\n" +
-            " Unqualified Link: <A HREF=\"../pkg/C.html#method(pkg.C.InnerC, pkg.C.InnerC2)\"><CODE>method(C.InnerC, C.InnerC2)</CODE></A>.<br/>\n" +
-            " Unqualified Link: <A HREF=\"../pkg/C.html#method(pkg.C.InnerC, pkg.C.InnerC2)\"><CODE>method(InnerC, InnerC2)</CODE></A>.<br/>"
+            "Qualified Link: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n" +
+            " Unqualified Link1: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n" +
+            " Unqualified Link2: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n" +
+            " Qualified Link: <a href=\"../pkg/C.html#method(pkg.C.InnerC, pkg.C.InnerC2)\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>\n" +
+            " Unqualified Link: <a href=\"../pkg/C.html#method(pkg.C.InnerC, pkg.C.InnerC2)\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>\n" +
+            " Unqualified Link: <a href=\"../pkg/C.html#method(pkg.C.InnerC, pkg.C.InnerC2)\"><code>method(InnerC, InnerC2)</code></a>.<br/>"
         },
         {BUG_ID + FS + "pkg" + FS + "C.InnerC.html",
-            "Link to member in outer class: <A HREF=\"../pkg/C.html#MEMBER\"><CODE>C.MEMBER</CODE></A> <br/>\n" +
-            " Link to member in inner class: <A HREF=\"../pkg/C.InnerC2.html#MEMBER2\"><CODE>C.InnerC2.MEMBER2</CODE></A> <br/>\n" +
-            " Link to another inner class: <A HREF=\"../pkg/C.InnerC2.html\" title=\"class in pkg\"><CODE>C.InnerC2</CODE></A>"
+            "Link to member in outer class: <a href=\"../pkg/C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>\n" +
+            " Link to member in inner class: <a href=\"../pkg/C.InnerC2.html#MEMBER2\"><code>C.InnerC2.MEMBER2</code></a> <br/>\n" +
+            " Link to another inner class: <a href=\"../pkg/C.InnerC2.html\" title=\"class in pkg\"><code>C.InnerC2</code></a>"
         },
         {BUG_ID + FS + "pkg" + FS + "C.InnerC2.html",
-            "Enclosing class:</STRONG></DT><DD><A HREF=\"../pkg/C.html\" title=\"class in pkg\">C</A>"
+            "<dl>" + NL + "<dt>Enclosing class:</dt>" + NL +
+            "<dd><a href=\"../pkg/C.html\" title=\"class in pkg\">C</a></dd>" + NL +
+            "</dl>"
         },
     };
     private static final String[][] NEGATED_TEST = {

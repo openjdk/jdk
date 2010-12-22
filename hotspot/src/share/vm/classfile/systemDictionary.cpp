@@ -2010,7 +2010,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
     scan = WKID(meth_group_end+1);
   }
   WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
-  WKID indy_group_end   = WK_KLASS_ENUM_NAME(InvokeDynamic_klass);
+  WKID indy_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
   initialize_wk_klasses_until(indy_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
     initialize_wk_klasses_through(indy_group_end, scan, CHECK);

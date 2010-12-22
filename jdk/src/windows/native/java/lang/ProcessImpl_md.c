@@ -315,3 +315,51 @@ Java_java_lang_ProcessImpl_closeHandle(JNIEnv *env, jclass ignored, jlong handle
 {
     return CloseHandle((HANDLE) handle);
 }
+
+/**
+ * Returns a copy of the Unicode characters of a string. Fow now this
+ * function doesn't handle long path names and other issues.
+ */
+static WCHAR* getPath(JNIEnv *env, jstring ps) {
+    WCHAR *pathbuf = NULL;
+    const jchar *chars = (*(env))->GetStringChars(env, ps, NULL);
+    if (chars != NULL) {
+        size_t pathlen = wcslen(chars);
+        pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
+        if (pathbuf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+        } else {
+            wcscpy(pathbuf, chars);
+        }
+        (*env)->ReleaseStringChars(env, ps, chars);
+    }
+    return pathbuf;
+}
+
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessImpl_openForAtomicAppend(JNIEnv *env, jclass ignored, jstring path)
+{
+    const DWORD access = (FILE_GENERIC_WRITE & ~FILE_WRITE_DATA);
+    const DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE;
+    const DWORD disposition = OPEN_ALWAYS;
+    const DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
+    HANDLE h;
+    WCHAR *pathbuf = getPath(env, path);
+    if (pathbuf == NULL) {
+        /* Exception already pending */
+        return -1;
+    }
+    h = CreateFileW(
+        pathbuf,            /* Wide char path name */
+        access,             /* Read and/or write permission */
+        sharing,            /* File sharing flags */
+        NULL,               /* Security attributes */
+        disposition,        /* creation disposition */
+        flagsAndAttributes, /* flags and attributes */
+        NULL);
+    free(pathbuf);
+    if (h == INVALID_HANDLE_VALUE) {
+        JNU_ThrowIOExceptionWithLastError(env, "CreateFileW");
+    }
+    return ptr_to_jlong(h);
+}

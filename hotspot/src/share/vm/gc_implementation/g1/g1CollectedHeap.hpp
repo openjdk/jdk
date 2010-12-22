@@ -643,16 +643,16 @@ public:
   // can happen in a nested fashion, i.e., we start a concurrent
   // cycle, a Full GC happens half-way through it which ends first,
   // and then the cycle notices that a Full GC happened and ends
-  // too. The outer parameter is a boolean to help us do a bit tighter
-  // consistency checking in the method. If outer is false, the caller
-  // is the inner caller in the nesting (i.e., the Full GC). If outer
-  // is true, the caller is the outer caller in this nesting (i.e.,
-  // the concurrent cycle). Further nesting is not currently
-  // supported. The end of the this call also notifies the
-  // FullGCCount_lock in case a Java thread is waiting for a full GC
-  // to happen (e.g., it called System.gc() with
+  // too. The concurrent parameter is a boolean to help us do a bit
+  // tighter consistency checking in the method. If concurrent is
+  // false, the caller is the inner caller in the nesting (i.e., the
+  // Full GC). If concurrent is true, the caller is the outer caller
+  // in this nesting (i.e., the concurrent cycle). Further nesting is
+  // not currently supported. The end of the this call also notifies
+  // the FullGCCount_lock in case a Java thread is waiting for a full
+  // GC to happen (e.g., it called System.gc() with
   // +ExplicitGCInvokesConcurrent).
-  void increment_full_collections_completed(bool outer);
+  void increment_full_collections_completed(bool concurrent);
 
   unsigned int full_collections_completed() {
     return _full_collections_completed;

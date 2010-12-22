@@ -365,6 +365,10 @@ public:
   // registers?  True for Intel but false for most RISCs
   static const bool clone_shift_expressions;
 
+  // Should constant table entries be accessed with loads using
+  // absolute addressing?  True for x86 but false for most RISCs.
+  static const bool constant_table_absolute_addressing;
+
   static bool narrow_oop_use_complex_address();
 
   // Generate implicit null check for narrow oops if it can fold

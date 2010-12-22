@@ -25,10 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
-import com.sun.javadoc.*;
 import java.io.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the package index for the left-hand frame in the generated output.
@@ -58,7 +59,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         String filename = "overview-frame.html";
         try {
             packgen = new PackageIndexFrameWriter(configuration, filename);
-            packgen.generatePackageIndexFile("doclet.Window_Overview", false);
+            packgen.buildPackageIndexFile("doclet.Window_Overview", false);
             packgen.close();
         } catch (IOException exc) {
             configuration.standardmessage.error(
@@ -69,114 +70,86 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Print each package name on separate rows.
-     *
-     * @param pd PackageDoc
+     * {@inheritDoc}
      */
-    protected void printIndexRow(PackageDoc pd) {
-        fontStyle("FrameItemFont");
-        if (pd.name().length() > 0) {
-            print(getHyperLink(pathString(pd, "package-frame.html"), "",
-                pd.name(), false, "", "", "packageFrame"));
-        } else {
-            print(getHyperLink("package-frame.html", "", "&lt;unnamed package>",
-                false, "", "", "packageFrame"));
+    protected void addPackagesList(PackageDoc[] packages, String text,
+            String tableSummary, Content body) {
+        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+                packagesLabel);
+        Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addAttr(HtmlAttr.TITLE, packagesLabel.toString());
+        for(int i = 0; i < packages.length; i++) {
+            if (packages[i] != null) {
+                ul.addContent(getPackage(packages[i]));
+            }
         }
-        fontEnd();
-        br();
+        div.addContent(ul);
+        body.addContent(div);
     }
 
     /**
-     * Print the "-packagesheader" string in strong format, at top of the page,
-     * if it is not the empty string.  Otherwise print the "-header" string.
-     * Despite the name, there is actually no navigation bar for this page.
+     * Gets each package name as a separate link.
+     *
+     * @param pd PackageDoc
+     * @return content for the package link
      */
-    protected void printNavigationBarHeader() {
-        printTableHeader(true);
-        fontSizeStyle("+1", "FrameTitleFont");
-        if (configuration.packagesheader.length() > 0) {
-            strong(replaceDocRootDir(configuration.packagesheader));
+    protected Content getPackage(PackageDoc pd) {
+        Content packageLinkContent;
+        Content packageLabel;
+        if (pd.name().length() > 0) {
+            packageLabel = getPackageLabel(pd.name());
+            packageLinkContent = getHyperLink(pathString(pd,
+                    "package-frame.html"), "", packageLabel, "",
+                    "packageFrame");
         } else {
-            strong(replaceDocRootDir(configuration.header));
+            packageLabel = new RawHtml("&lt;unnamed package&gt;");
+            packageLinkContent = getHyperLink("package-frame.html",
+                    "", packageLabel, "", "packageFrame");
         }
-        fontEnd();
-        printTableFooter(true);
+        Content li = HtmlTree.LI(packageLinkContent);
+        return li;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected void addNavigationBarHeader(Content body) {
+        Content headerContent;
+        if (configuration.packagesheader.length() > 0) {
+            headerContent = new RawHtml(replaceDocRootDir(configuration.packagesheader));
+        } else {
+            headerContent = new RawHtml(replaceDocRootDir(configuration.header));
+        }
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+                HtmlStyle.bar, headerContent);
+        body.addContent(heading);
     }
 
     /**
      * Do nothing as there is no overview information in this page.
      */
-    protected void printOverviewHeader() {
+    protected void addOverviewHeader(Content body) {
     }
 
     /**
-     * Print Html "table" tag for the package index format.
+     * Adds "All Classes" link for the top of the left-hand frame page to the
+     * documentation tree.
      *
-     * @param text Text string will not be used in this method.
+     * @param body the Content object to which the all classes link should be added
      */
-    protected void printIndexHeader(String text, String tableSummary) {
-        printTableHeader(false);
+    protected void addAllClassesLink(Content body) {
+        Content linkContent = getHyperLink("allclasses-frame.html", "",
+                allclassesLabel, "", "packageFrame");
+        Content div = HtmlTree.DIV(HtmlStyle.indexHeader, linkContent);
+        body.addContent(div);
     }
 
     /**
-     * Print Html closing "table" tag at the end of the package index.
+     * {@inheritDoc}
      */
-    protected void printIndexFooter() {
-        printTableFooter(false);
-    }
-
-    /**
-     * Print "All Classes" link at the top of the left-hand frame page.
-     */
-    protected void printAllClassesPackagesLink() {
-        fontStyle("FrameItemFont");
-        print(getHyperLink("allclasses-frame.html", "",
-            configuration.getText("doclet.All_Classes"), false, "", "",
-            "packageFrame"));
-        fontEnd();
-        p();
-        fontSizeStyle("+1", "FrameHeadingFont");
-        printText("doclet.Packages");
-        fontEnd();
-        br();
-    }
-
-    /**
-     * Just print some space, since there is no navigation bar for this page.
-     */
-    protected void printNavigationBarFooter() {
-        p();
-        space();
-    }
-
-    /**
-     * Print Html closing tags for the table for package index.
-     *
-     * @param isHeading true if this is a table for a heading.
-     */
-    private void printTableFooter(boolean isHeading) {
-        if (isHeading) {
-            thEnd();
-        } else {
-            tdEnd();
-        }
-        trEnd();
-        tableEnd();
-    }
-
-    /**
-     * Print Html tags for the table for package index.
-     *
-     * @param isHeading true if this is a table for a heading.
-     */
-    private void printTableHeader(boolean isHeading) {
-        table();
-        tr();
-        if (isHeading) {
-            thAlignNowrap("left");
-        } else {
-            tdNowrap();
-        }
-
+    protected void addNavigationBarFooter(Content body) {
+        Content p = HtmlTree.P(getSpace());
+        body.addContent(p);
     }
 }

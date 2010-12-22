@@ -47,21 +47,21 @@ package java.util.concurrent;
  * computation has completed, the computation cannot be cancelled.
  * If you would like to use a <tt>Future</tt> for the sake
  * of cancellability but not provide a usable result, you can
- * declare types of the form <tt>Future&lt;?&gt;</tt> and
+ * declare types of the form {@code Future<?>} and
  * return <tt>null</tt> as a result of the underlying task.
  *
  * <p>
  * <b>Sample Usage</b> (Note that the following classes are all
  * made-up.) <p>
- * <pre>
+ *  <pre> {@code
  * interface ArchiveSearcher { String search(String target); }
  * class App {
  *   ExecutorService executor = ...
  *   ArchiveSearcher searcher = ...
  *   void showSearch(final String target)
  *       throws InterruptedException {
- *     Future&lt;String&gt; future
- *       = executor.submit(new Callable&lt;String&gt;() {
+ *     Future<String> future
+ *       = executor.submit(new Callable<String>() {
  *         public String call() {
  *             return searcher.search(target);
  *         }});
@@ -70,20 +70,18 @@ package java.util.concurrent;
  *       displayText(future.get()); // use future
  *     } catch (ExecutionException ex) { cleanup(); return; }
  *   }
- * }
- * </pre>
+ * }}</pre>
  *
  * The {@link FutureTask} class is an implementation of <tt>Future</tt> that
  * implements <tt>Runnable</tt>, and so may be executed by an <tt>Executor</tt>.
  * For example, the above construction with <tt>submit</tt> could be replaced by:
- * <pre>
- *     FutureTask&lt;String&gt; future =
- *       new FutureTask&lt;String&gt;(new Callable&lt;String&gt;() {
+ *  <pre> {@code
+ *     FutureTask<String> future =
+ *       new FutureTask<String>(new Callable<String>() {
  *         public String call() {
  *           return searcher.search(target);
  *       }});
- *     executor.execute(future);
- * </pre>
+ *     executor.execute(future);}</pre>
  *
  * <p>Memory consistency effects: Actions taken by the asynchronous computation
  * <a href="package-summary.html#MemoryVisibility"> <i>happen-before</i></a>

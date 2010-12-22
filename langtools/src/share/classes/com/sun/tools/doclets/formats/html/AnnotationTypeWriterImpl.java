@@ -29,6 +29,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the Class Information Page.
@@ -40,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.builders.*;
  *
  * @author Atul M Dambalkar
  * @author Robert Field
+ * @author Bhavesh Patel (Modified)
  */
 public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         implements AnnotationTypeWriter {
@@ -69,126 +71,168 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     }
 
     /**
-     * Print this package link
+     * Get this package link.
+     *
+     * @return a content tree for the package link
      */
-    protected void navLinkPackage() {
-        navCellStart();
-        printHyperLink("package-summary.html", "",
-            configuration.getText("doclet.Package"), true, "NavBarFont1");
-        navCellEnd();
+    protected Content getNavLinkPackage() {
+        Content linkContent = getHyperLink("package-summary.html", "",
+                packageLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
     }
 
     /**
-     * Print class page indicator
+     * Get the class link.
+     *
+     * @return a content tree for the class link
      */
-    protected void navLinkClass() {
-        navCellRevStart();
-        fontStyle("NavBarFont1Rev");
-        strongText("doclet.Class");
-        fontEnd();
-        navCellEnd();
+    protected Content getNavLinkClass() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, classLabel);
+        return li;
     }
 
     /**
-     * Print class use link
+     * Get the class use link.
+     *
+     * @return a content tree for the class use link
      */
-    protected void navLinkClassUse() {
-        navCellStart();
-        printHyperLink("class-use/" + filename, "",
-                       configuration.getText("doclet.navClassUse"), true, "NavBarFont1");
-        navCellEnd();
+    protected Content getNavLinkClassUse() {
+        Content linkContent = getHyperLink("class-use/" + filename, "", useLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
     }
 
     /**
-     * Print previous package link
+     * Get link to previous class.
+     *
+     * @return a content tree for the previous class link
      */
-    protected void navLinkPrevious() {
-        if (prev == null) {
-            printText("doclet.Prev_Class");
-        } else {
-            printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS,
-                prev.asClassDoc(), "",
-                configuration.getText("doclet.Prev_Class"), true));
+    public Content getNavLinkPrevious() {
+        Content li;
+        if (prev != null) {
+            Content prevLink = new RawHtml(getLink(new LinkInfoImpl(
+                    LinkInfoImpl.CONTEXT_CLASS, prev.asClassDoc(), "",
+                    configuration.getText("doclet.Prev_Class"), true)));
+            li = HtmlTree.LI(prevLink);
         }
+        else
+            li = HtmlTree.LI(prevclassLabel);
+        return li;
     }
 
     /**
-     * Print next package link
+     * Get link to next class.
+     *
+     * @return a content tree for the next class link
      */
-    protected void navLinkNext() {
-        if (next == null) {
-            printText("doclet.Next_Class");
-        } else {
-            printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS,
-                next.asClassDoc(), "",
-                configuration.getText("doclet.Next_Class"), true));
+    public Content getNavLinkNext() {
+        Content li;
+        if (next != null) {
+            Content nextLink = new RawHtml(getLink(new LinkInfoImpl(
+                    LinkInfoImpl.CONTEXT_CLASS, next.asClassDoc(), "",
+                    configuration.getText("doclet.Next_Class"), true)));
+            li = HtmlTree.LI(nextLink);
         }
+        else
+            li = HtmlTree.LI(nextclassLabel);
+        return li;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeHeader(String header) {
-
+    public Content getHeader(String header) {
         String pkgname = (annotationType.containingPackage() != null)?
             annotationType.containingPackage().name(): "";
         String clname = annotationType.name();
-
-        printHtmlHeader(clname,
-            configuration.metakeywords.getMetaKeywords(annotationType), true);
-        printTop();
-        navLinks(true);
-        hr();
-        println("<!-- ======== START OF CLASS DATA ======== -->");
-        h2();
+        Content bodyTree = getBody(true, getWindowTitle(clname));
+        addTop(bodyTree);
+        addNavLinks(true, bodyTree);
+        bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.header);
         if (pkgname.length() > 0) {
-            font("-1"); print(pkgname); fontEnd(); br();
+            Content pkgNameContent = new StringContent(pkgname);
+            Content pkgNamePara = HtmlTree.P(HtmlStyle.subTitle, pkgNameContent);
+            div.addContent(pkgNamePara);
         }
-        print(header + getTypeParameterLinks(new LinkInfoImpl(
-            LinkInfoImpl.CONTEXT_CLASS_HEADER,
-            annotationType, false)));
-        h2End();
+        LinkInfoImpl linkInfo = new LinkInfoImpl(
+                LinkInfoImpl.CONTEXT_CLASS_HEADER, annotationType, false);
+        Content headerContent = new StringContent(header);
+        Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING, true,
+                HtmlStyle.title, headerContent);
+        heading.addContent(new RawHtml(getTypeParameterLinks(linkInfo)));
+        div.addContent(heading);
+        bodyTree.addContent(div);
+        return bodyTree;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeFooter() {
-        println("<!-- ========= END OF CLASS DATA ========= -->");
-        hr();
-        navLinks(false);
-        printBottom();
-        printBodyHtmlEnd();
+    public Content getAnnotationContentHeader() {
+        return getContentHeader();
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeAnnotationTypeSignature(String modifiers) {
-        preNoNewLine();
-        writeAnnotationInfo(annotationType);
-        print(modifiers);
-        String name = annotationType.name() +
-            getTypeParameterLinks(new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, annotationType, false));
+    public void addFooter(Content contentTree) {
+        contentTree.addContent(HtmlConstants.END_OF_CLASS_DATA);
+        addNavLinks(false, contentTree);
+        addBottom(contentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printDocument(Content contentTree) {
+        printHtmlDocument(configuration.metakeywords.getMetaKeywords(annotationType),
+                true, contentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getAnnotationInfoTreeHeader() {
+        return getMemberTreeHeader();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getAnnotationInfo(Content annotationInfoTree) {
+        return getMemberTree(HtmlStyle.description, annotationInfoTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addAnnotationTypeSignature(String modifiers, Content annotationInfoTree) {
+        annotationInfoTree.addContent(new HtmlTree(HtmlTag.BR));
+        Content pre = new HtmlTree(HtmlTag.PRE);
+        addAnnotationInfo(annotationType, pre);
+        pre.addContent(modifiers);
+        LinkInfoImpl linkInfo = new LinkInfoImpl(
+                LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, annotationType, false);
+        Content name = new RawHtml (annotationType.name() +
+                getTypeParameterLinks(linkInfo));
         if (configuration().linksource) {
-            printSrcLink(annotationType, name);
+            addSrcLink(annotationType, name, pre);
         } else {
-            strong(name);
+            pre.addContent(HtmlTree.STRONG(name));
         }
-        preEnd();
-        p();
+        annotationInfoTree.addContent(pre);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeAnnotationTypeDescription() {
+    public void addAnnotationTypeDescription(Content annotationInfoTree) {
         if(!configuration.nocomment) {
-            // generate documentation for the class.
             if (annotationType.inlineTags().length > 0) {
-                printInlineComment(annotationType);
-                p();
+                addInlineComment(annotationType, annotationInfoTree);
             }
         }
     }
@@ -196,148 +240,152 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     /**
      * {@inheritDoc}
      */
-    public void writeAnnotationTypeTagInfo() {
-        boolean needHr = annotationType.elements().length > 0;
+    public void addAnnotationTypeTagInfo(Content annotationInfoTree) {
         if(!configuration.nocomment) {
-            // Print Information about all the tags here
-            printTags(annotationType);
-            if (needHr) {
-                hr();
-            }
-            p();
-        } else if (needHr) {
-            hr();
+            addTagsInfo(annotationType, annotationInfoTree);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeAnnotationTypeDeprecationInfo() {
-        hr();
+    public void addAnnotationTypeDeprecationInfo(Content annotationInfoTree) {
+        Content hr = new HtmlTree(HtmlTag.HR);
+        annotationInfoTree.addContent(hr);
         Tag[] deprs = annotationType.tags("deprecated");
         if (Util.isDeprecated(annotationType)) {
-            strongText("doclet.Deprecated");
+            Content strong = HtmlTree.STRONG(deprecatedPhrase);
+            Content div = HtmlTree.DIV(HtmlStyle.block, strong);
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();
                 if (commentTags.length > 0) {
-
-                    space();
-                    printInlineDeprecatedComment(annotationType, deprs[0]);
+                    div.addContent(getSpace());
+                    addInlineDeprecatedComment(annotationType, deprs[0], div);
                 }
             }
-            p();
+            annotationInfoTree.addContent(div);
         }
     }
 
-    protected void navLinkTree() {
-        navCellStart();
-        printHyperLink("package-tree.html", "",
-            configuration.getText("doclet.Tree"), true, "NavBarFont1");
-        navCellEnd();
+    /**
+     * {@inheritDoc}
+     */
+    public void addAnnotationDetailsMarker(Content memberDetails) {
+        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_DETAILS);
     }
 
-    protected void printSummaryDetailLinks() {
-        try {
-            tr();
-            tdVAlignClass("top", "NavBarCell3");
-            font("-2");
-            print("  ");
-            navSummaryLinks();
-            fontEnd();
-            tdEnd();
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getNavLinkTree() {
+        Content treeLinkContent = getHyperLink("package-tree.html",
+                "", treeLabel, "", "");
+        Content li = HtmlTree.LI(treeLinkContent);
+        return li;
+    }
 
-            tdVAlignClass("top", "NavBarCell3");
-            font("-2");
-            navDetailLinks();
-            fontEnd();
-            tdEnd();
-            trEnd();
+    /**
+     * Add summary details to the navigation bar.
+     *
+     * @param subDiv the content tree to which the summary detail links will be added
+     */
+    protected void addSummaryDetailLinks(Content subDiv) {
+        try {
+            Content div = HtmlTree.DIV(getNavSummaryLinks());
+            div.addContent(getNavDetailLinks());
+            subDiv.addContent(div);
         } catch (Exception e) {
             e.printStackTrace();
             throw new DocletAbortException();
         }
     }
 
-    protected void navSummaryLinks() throws Exception {
-        printText("doclet.Summary");
-        space();
+    /**
+     * Get summary links for navigation bar.
+     *
+     * @return the content tree for the navigation summary links
+     */
+    protected Content getNavSummaryLinks() throws Exception {
+        Content li = HtmlTree.LI(summaryLabel);
+        li.addContent(getSpace());
+        Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
-            configuration.getBuilderFactory().getMemberSummaryBuilder(this);
-        writeNavSummaryLink(memberSummaryBuilder,
-            "doclet.navAnnotationTypeRequiredMember",
-            VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED);
-        navGap();
-        writeNavSummaryLink(memberSummaryBuilder,
-            "doclet.navAnnotationTypeOptionalMember",
-            VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL);
+                configuration.getBuilderFactory().getMemberSummaryBuilder(this);
+        Content liNavReq = new HtmlTree(HtmlTag.LI);
+        addNavSummaryLink(memberSummaryBuilder,
+                "doclet.navAnnotationTypeRequiredMember",
+                VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED, liNavReq);
+        addNavGap(liNavReq);
+        ulNav.addContent(liNavReq);
+        Content liNavOpt = new HtmlTree(HtmlTag.LI);
+        addNavSummaryLink(memberSummaryBuilder,
+                "doclet.navAnnotationTypeOptionalMember",
+                VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL, liNavOpt);
+        ulNav.addContent(liNavOpt);
+        return ulNav;
     }
 
-    private void writeNavSummaryLink(MemberSummaryBuilder builder,
-            String label, int type) {
+    /**
+     * Add the navigation summary link.
+     *
+     * @param builder builder for the member to be documented
+     * @param label the label for the navigation
+     * @param type type to be documented
+     * @param liNav the content tree to which the navigation summary link will be added
+     */
+    protected void addNavSummaryLink(MemberSummaryBuilder builder,
+            String label, int type, Content liNav) {
         AbstractMemberWriter writer = ((AbstractMemberWriter) builder.
-            getMemberSummaryWriter(type));
+                getMemberSummaryWriter(type));
         if (writer == null) {
-              printText(label);
+            liNav.addContent(getResource(label));
         } else {
-            writer.printNavSummaryLink(null,
-                ! builder.getVisibleMemberMap(type).noVisibleMembers());
+            liNav.addContent(writer.getNavSummaryLink(null,
+                    ! builder.getVisibleMemberMap(type).noVisibleMembers()));
         }
     }
 
     /**
-     * Method navDetailLinks
+     * Get detail links for the navigation bar.
      *
-     * @throws   Exception
-     *
+     * @return the content tree for the detail links
      */
-    protected void navDetailLinks() throws Exception {
-        printText("doclet.Detail");
-        space();
+    protected Content getNavDetailLinks() throws Exception {
+        Content li = HtmlTree.LI(detailLabel);
+        li.addContent(getSpace());
+        Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
-            configuration.getBuilderFactory().getMemberSummaryBuilder(this);
+                configuration.getBuilderFactory().getMemberSummaryBuilder(this);
         AbstractMemberWriter writerOptional =
-            ((AbstractMemberWriter) memberSummaryBuilder.
+                ((AbstractMemberWriter) memberSummaryBuilder.
                 getMemberSummaryWriter(VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL));
         AbstractMemberWriter writerRequired =
-            ((AbstractMemberWriter) memberSummaryBuilder.
+                ((AbstractMemberWriter) memberSummaryBuilder.
                 getMemberSummaryWriter(VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED));
         if (writerOptional != null){
-            writerOptional.printNavDetailLink(annotationType.elements().length > 0);
+            Content liNavOpt = new HtmlTree(HtmlTag.LI);
+            writerOptional.addNavDetailLink(annotationType.elements().length > 0, liNavOpt);
+            ulNav.addContent(liNavOpt);
         } else if (writerRequired != null){
-            writerRequired.printNavDetailLink(annotationType.elements().length > 0);
+            Content liNavReq = new HtmlTree(HtmlTag.LI);
+            writerRequired.addNavDetailLink(annotationType.elements().length > 0, liNavReq);
+            ulNav.addContent(liNavReq);
         } else {
-            printText("doclet.navAnnotationTypeMember");
+            Content liNav = HtmlTree.LI(getResource("doclet.navAnnotationTypeMember"));
+            ulNav.addContent(liNav);
         }
-    }
-
-    protected void navGap() {
-        space();
-        print('|');
-        space();
+        return ulNav;
     }
 
     /**
-     * If this is an inner class or interface, write the enclosing class or
-     * interface.
+     * Add gap between navigation bar elements.
+     *
+     * @param liNav the content tree to which the gap will be added
      */
-    public void writeNestedClassInfo() {
-        ClassDoc outerClass = annotationType.containingClass();
-        if (outerClass != null) {
-            dl();
-            dt();
-            if (annotationType.isInterface()) {
-                strongText("doclet.Enclosing_Interface");
-            } else {
-                strongText("doclet.Enclosing_Class");
-            }
-            dtEnd();
-            dd();
-            printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS, outerClass,
-                false));
-            ddEnd();
-            dlEnd();
-        }
+    protected void addNavGap(Content liNav) {
+        liNav.addContent(getSpace());
+        liNav.addContent("|");
+        liNav.addContent(getSpace());
     }
 
     /**
@@ -345,12 +393,5 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     public AnnotationTypeDoc getAnnotationTypeDoc() {
         return annotationType;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void completeMemberSummaryBuild() {
-        p();
     }
 }

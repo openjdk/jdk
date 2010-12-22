@@ -36,68 +36,81 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface MethodWriter {
 
     /**
-     * Write the header for the method documentation.
+     * Get the method details tree header.
      *
-     * @param classDoc the class that the methods belong to.
-     * @param header the header to write.
+     * @param classDoc the class being documented
+     * @param memberDetailsTree the content tree representing member details
+     * @return content tree for the method details header
      */
-    public void writeHeader(ClassDoc classDoc, String header);
+    public Content getMethodDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree);
 
     /**
-     * Write the method header for the given method.
+     * Get the method documentation tree header.
      *
-     * @param method the method being documented.
-     * @param isFirst the flag to indicate whether or not the method is the
-     *        first to be documented.
+     * @param method the method being documented
+     * @param methodDetailsTree the content tree representing method details
+     * @return content tree for the method documentation header
      */
-    public void writeMethodHeader(MethodDoc method, boolean isFirst);
+    public Content getMethodDocTreeHeader(MethodDoc method,
+            Content methodDetailsTree);
 
     /**
-     * Write the signature for the given method.
+     * Get the signature for the given method.
      *
-     * @param method the method being documented.
+     * @param method the method being documented
+     * @return content tree for the method signature
      */
-    public void writeSignature(MethodDoc method);
+    public Content getSignature(MethodDoc method);
 
     /**
-     * Write the deprecated output for the given method.
+     * Add the deprecated output for the given method.
      *
-     * @param method the method being documented.
+     * @param method the method being documented
+     * @param methodDocTree content tree to which the deprecated information will be added
      */
-    public void writeDeprecated(MethodDoc method);
+    public void addDeprecated(MethodDoc method, Content methodDocTree);
 
     /**
-     * Write the comments for the given method.
+     * Add the comments for the given method.
      *
-     * @param holder the holder type (not erasure) of the method.
-     * @param method the method being documented.
+     * @param holder the holder type (not erasure) of the method
+     * @param method the method being documented
+     * @param methodDocTree the content tree to which the comments will be added
      */
-    public void writeComments(Type holder, MethodDoc method);
+    public void addComments(Type holder, MethodDoc method, Content methodDocTree);
 
     /**
-     * Write the tag output for the given method.
+     * Add the tags for the given method.
      *
-     * @param method the method being documented.
+     * @param method the method being documented
+     * @param methodDocTree the content tree to which the tags will be added
      */
-    public void writeTags(MethodDoc method);
+    public void addTags(MethodDoc method, Content methodDocTree);
 
     /**
-     * Write the method footer.
+     * Get the method details tree.
+     *
+     * @param methodDetailsTree the content tree representing method details
+     * @return content tree for the method details
      */
-    public void writeMethodFooter();
+    public Content getMethodDetails(Content methodDetailsTree);
 
     /**
-     * Write the footer for the method documentation.
+     * Get the method documentation.
      *
-     * @param classDoc the class that the methods belong to.
+     * @param methodDocTree the content tree representing method documentation
+     * @param isLastContent true if the content to be added is the last content
+     * @return content tree for the method documentation
      */
-    public void writeFooter(ClassDoc classDoc);
+    public Content getMethodDoc(Content methodDocTree, boolean isLastContent);
 
     /**
      * Close the writer.

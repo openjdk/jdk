@@ -38,7 +38,7 @@ public class TestHtmlStrongTag extends JavadocTester {
 
     private static final String BUG_ID = "6786028";
     private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<STRONG>See Also:</STRONG>"}};
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<span class=\"strong\">See Also:</span>"}};
     private static final String[][] NEGATED_TEST1 = {
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<STRONG>Method Summary</STRONG>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<B>"},

@@ -42,13 +42,13 @@ public class TestSimpleTag extends JavadocTester {
     private static final String[][] TEST =
         new String[][] {
             {"./" + BUG_ID + "/C.html",
-                "<STRONG>Todo:</STRONG>"},
+                "<span class=\"strong\">Todo:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<STRONG>EJB Beans:</STRONG>"},
+                "<span class=\"strong\">EJB Beans:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<STRONG>Regular Tag:</STRONG>"},
+                "<span class=\"strong\">Regular Tag:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<STRONG>Back-Slash-Tag:</STRONG>"},
+                "<span class=\"strong\">Back-Slash-Tag:</span>"},
         };
 
     private static final String[] ARGS = new String[] {

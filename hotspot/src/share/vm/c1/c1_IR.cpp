@@ -504,7 +504,12 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   count_edges(start_block, NULL);
 
   if (compilation()->is_profiling()) {
-    compilation()->method()->method_data()->set_compilation_stats(_num_loops, _num_blocks);
+    ciMethod *method = compilation()->method();
+    if (!method->is_accessor()) {
+      ciMethodData* md = method->method_data_or_null();
+      assert(md != NULL, "Sanity");
+      md->set_compilation_stats(_num_loops, _num_blocks);
+    }
   }
 
   if (_num_loops > 0) {

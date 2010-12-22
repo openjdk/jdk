@@ -65,9 +65,9 @@ public class TestWarnings extends JavadocTester {
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<A HREF=\"../pkg/X.html#m()\"><CODE>m()</CODE></A><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<A HREF=\"../pkg/X.html#X()\"><CODE>X()</CODE></A><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<A HREF=\"../pkg/X.html#f\"><CODE>f</CODE></A><br/>"},
+        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#m()\"><code>m()</code></a><br/>"},
+        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#X()\"><code>X()</code></a><br/>"},
+        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
     };
 
     private static final String[][] NEGATED_TEST2 = NO_TEST;
