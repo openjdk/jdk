@@ -1650,13 +1650,16 @@ Windows binaries use the the 7.1 Windows SDK.<b>END WARNING.</b>
                 <dt><strong>Windows specific:</strong></dt>
                 <dd>
                     <dl>
-                        <dt><a name="ALT_MSDEVTOOLS_PATH"><tt>ALT_MSDEVTOOLS_PATH</tt></a> </dt>
+                        <dt><a name="ALT_WINDOWSSDKDIR"><tt>ALT_WINDOWSSDKDIR</tt></a> </dt>
                         <dd>
                             The location of the 
-                            Microsoft Visual Studio
-                            tools 'bin' directory.
-                            The default is usually derived from
-                            <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a>.
+                            Microsoft Windows SDK where some tools will be
+			    located.
+			    The default is whatever WINDOWSSDKDIR is set to
+			    (or WindowsSdkDir) or the path
+			    <pre>
+                            c:\Program Files\Microsoft SDKs\Windows\v6.1a
+			    </pre>
                         </dd>
                         <dt><tt><a name="ALT_DXSDK_PATH">ALT_DXSDK_PATH</a></tt> </dt>
                         <dd>
