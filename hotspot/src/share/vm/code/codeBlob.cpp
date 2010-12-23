@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_codeBlob.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeBlob.hpp"
+#include "code/codeCache.hpp"
+#include "code/relocInfo.hpp"
+#include "compiler/disassembler.hpp"
+#include "interpreter/bytecode.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/heap.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/vframe.hpp"
+#include "services/memoryService.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 unsigned int align_code_offset(int offset) {
   // align the size to CodeEntryAlignment

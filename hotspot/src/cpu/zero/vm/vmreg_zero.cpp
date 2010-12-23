@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vmreg_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
 
 void VMRegImpl::set_regName() {
   int i = 0;

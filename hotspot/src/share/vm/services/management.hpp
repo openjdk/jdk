@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_MANAGEMENT_HPP
+#define SHARE_VM_SERVICES_MANAGEMENT_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/timer.hpp"
+#include "services/jmm.h"
 
 class OopClosure;
 class ThreadSnapshot;
@@ -104,3 +112,5 @@ public:
   { Management::record_vm_startup_time(_begin_time, _timer.milliseconds()); }
 
 };
+
+#endif // SHARE_VM_SERVICES_MANAGEMENT_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_INSTANCEOOP_HPP
+#define SHARE_VM_OOPS_INSTANCEOOP_HPP
+
+#include "oops/oop.hpp"
+
 // An instanceOop is an instance of a Java Class
 // Evaluating "new HashTable()" will create an instanceOop.
 
@@ -43,3 +48,5 @@ class instanceOopDesc : public oopDesc {
             (offset-base_in_bytes) < nonstatic_field_size * heapOopSize);
   }
 };
+
+#endif // SHARE_VM_OOPS_INSTANCEOOP_HPP

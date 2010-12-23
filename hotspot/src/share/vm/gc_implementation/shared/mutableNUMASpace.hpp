@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLENUMASPACE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLENUMASPACE_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/shared/gcUtil.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#endif
 
 /*
  *    The NUMA-aware allocator (MutableNUMASpace) is basically a modification
@@ -221,3 +229,5 @@ class MutableNUMASpace : public MutableSpace {
 
   virtual void set_top(HeapWord* value);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLENUMASPACE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_INIT_HPP
+#define SHARE_VM_RUNTIME_INIT_HPP
+
+#include "utilities/top.hpp"
+
 // init_globals replaces C++ global objects so we can use the standard linker
 // to link Delta (which is at least twice as fast as using the GNU C++ linker).
 // Also, init.c gives explicit control over the sequence of initialization.
@@ -36,3 +41,5 @@ void exit_globals();     // call destructors before exit
 
 bool is_init_completed();     // returns true when bootstrapping has completed
 void set_init_completed();    // set basic init to completed
+
+#endif // SHARE_VM_RUNTIME_INIT_HPP

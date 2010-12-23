@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,3 +21,12 @@
  * questions.
  *
  */
+
+#ifndef OS_WINDOWS_VM_MUTEX_WINDOWS_INLINE_HPP
+#define OS_WINDOWS_VM_MUTEX_WINDOWS_INLINE_HPP
+
+#include "os_windows.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "thread_windows.inline.hpp"
+
+#endif // OS_WINDOWS_VM_MUTEX_WINDOWS_INLINE_HPP

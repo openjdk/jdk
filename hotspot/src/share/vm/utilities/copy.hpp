@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_COPY_HPP
+#define SHARE_VM_UTILITIES_COPY_HPP
+
+#include "runtime/stubRoutines.hpp"
 
 // Assembly code for platforms that need it.
 extern "C" {
@@ -317,5 +322,16 @@ class Copy : AllStatic {
   }
 
   // Platform dependent implementations of the above methods.
-  #include "incls/_copy_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "copy_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "copy_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "copy_zero.hpp"
+#endif
+
 };
+
+#endif // SHARE_VM_UTILITIES_COPY_HPP

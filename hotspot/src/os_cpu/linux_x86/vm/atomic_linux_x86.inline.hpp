@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_X86_VM_ATOMIC_LINUX_X86_INLINE_HPP
+#define OS_CPU_LINUX_X86_VM_ATOMIC_LINUX_X86_INLINE_HPP
+
+#include "orderAccess_linux_x86.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#include "vm_version_x86.hpp"
 
 // Implementation of class atomic
 
@@ -193,3 +201,5 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)cmpxchg((jint)exchange_value, (volatile jint*)dest, (jint)compare_value);
 }
 #endif // AMD64
+
+#endif // OS_CPU_LINUX_X86_VM_ATOMIC_LINUX_X86_INLINE_HPP

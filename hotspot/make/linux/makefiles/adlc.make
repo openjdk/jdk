@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,14 @@ SOURCE.AD = $(OUTDIR)/$(OS)_$(Platform_arch_model).ad
 SOURCES.AD = $(GAMMADIR)/src/cpu/$(ARCH)/vm/$(Platform_arch_model).ad \
 	     $(GAMMADIR)/src/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad 
 
-Src_Dirs += $(GAMMADIR)/src/share/vm/adlc
-
 EXEC	= $(OUTDIR)/adlc
 
 # set VPATH so make knows where to look for source files
-Src_Dirs_V = ${Src_Dirs} $(GENERATED)/incls
-VPATH    += $(Src_Dirs_V:%=%:)
+Src_Dirs_V += $(GAMMADIR)/src/share/vm/adlc
+VPATH += $(Src_Dirs_V:%=%:)
 
 # set INCLUDES for C preprocessor
-Src_Dirs_I = ${Src_Dirs} $(GENERATED)
+Src_Dirs_I += $(GAMMADIR)/src/share/vm/adlc $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
 # set flags for adlc compilation

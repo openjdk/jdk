@@ -22,6 +22,25 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_STUBROUTINES_HPP
+#define SHARE_VM_RUNTIME_STUBROUTINES_HPP
+
+#include "code/codeBlob.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+#endif
+
 // StubRoutines provides entry points to assembly routines used by
 // compiled code and the run-time system. Platform-specific entry
 // points are defined in the platform-specific inner class.
@@ -74,7 +93,19 @@ class StubRoutines: AllStatic {
 
   // Dependencies
   friend class StubGenerator;
-  #include "incls/_stubRoutines_pd.hpp.incl"               // machine-specific parts
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "stubRoutines_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "stubRoutines_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "stubRoutines_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "stubRoutines_zero.hpp"
+#endif
+
 
   static jint    _verify_oop_count;
   static address _verify_oop_subroutine_entry;
@@ -321,3 +352,5 @@ class StubRoutines: AllStatic {
   static void arrayof_jlong_copy (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy   (HeapWord* src, HeapWord* dest, size_t count);
 };
+
+#endif // SHARE_VM_RUNTIME_STUBROUTINES_HPP

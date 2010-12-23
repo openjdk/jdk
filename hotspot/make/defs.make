@@ -101,15 +101,14 @@ ifndef HOTSPOT_RELEASE_VERSION
 endif
 
 ifdef HOTSPOT_BUILD_VERSION
-# specified in command line (PRT build)
+# specified in command line
 else
-  ifdef JPRT_BUILD_VERSION
-# JPR build
-    HOTSPOT_BUILD_VERSION=$(JPRT_BUILD_VERSION)
-  else
-    ifdef COOKED_BUILD_NUMBER
+  ifdef COOKED_BUILD_NUMBER
 # JRE build
-      HOTSPOT_BUILD_VERSION=
+    HOTSPOT_BUILD_VERSION=
+  else
+    ifdef USER_RELEASE_SUFFIX
+      HOTSPOT_BUILD_VERSION=internal-$(USER_RELEASE_SUFFIX)
     else
       HOTSPOT_BUILD_VERSION=internal
     endif

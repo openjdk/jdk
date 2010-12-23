@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
+#define SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#endif
 
 inline void oopDesc::update_contents(ParCompactionManager* cm) {
   // The klass field must be updated before anything else
@@ -106,12 +118,15 @@ inline oop oopDesc::forward_to_atomic(oop p) {
   assert(forwardPtrMark->decode_pointer() == p, "encoding must be reversable");
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
-  while (!is_forwarded()) {
+  while (!oldMark->is_marked()) {
     curMark = (markOop)Atomic::cmpxchg_ptr(forwardPtrMark, &_mark, oldMark);
+    assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
-      assert(is_forwarded(), "the CAS should have succeeded.");
       return NULL;
     }
+    // If the CAS was unsuccessful then curMark->is_marked()
+    // should return true as another thread has CAS'd in another
+    // forwarding pointer.
     oldMark = curMark;
   }
   return forwardee();
@@ -133,3 +148,5 @@ inline void oopDesc::update_header(HeapWord* beg_addr, HeapWord* end_addr) {
     PSParallelCompact::adjust_pointer(klass_addr(), beg_addr, end_addr);
   }
 }
+
+#endif // SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP

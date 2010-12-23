@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_COMPILATION_HPP
+#define SHARE_VM_C1_C1_COMPILATION_HPP
+
+#include "ci/ciEnv.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "memory/resourceArea.hpp"
+
 class CompilationResourceObj;
 class XHandlers;
 class ExceptionInfo;
@@ -285,3 +292,5 @@ class ExceptionInfo: public CompilationResourceObj {
   int pco()                                      { return _pco; }
   XHandlers* exception_handlers()                { return _exception_handlers; }
 };
+
+#endif // SHARE_VM_C1_C1_COMPILATION_HPP

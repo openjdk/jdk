@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP
+#define SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP
+
+#include "classfile/verificationType.hpp"
+#include "classfile/verifier.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/signature.hpp"
+#include "utilities/exceptions.hpp"
 
 // A StackMapFrame represents one frame in the stack map attribute.
 
@@ -224,3 +234,5 @@ class StackMapFrame : public ResourceObj {
   // Debugging
   void print() const PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP

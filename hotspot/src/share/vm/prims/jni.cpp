@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,72 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jni.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "prims/jni.h"
+#include "prims/jniCheck.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/runtimeService.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/histogram.hpp"
+#ifdef TARGET_ARCH_x86
+# include "jniTypes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "jniTypes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "jniTypes_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 static jint CurrentVersion = JNI_VERSION_1_6;
 
@@ -2049,11 +2113,10 @@ JNI_END
 JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboolean *isCopy))
   JNIWrapper("GetStringUTFChars");
   DTRACE_PROBE3(hotspot_jni, GetStringUTFChars__entry, env, string, isCopy);
-  ResourceMark rm;
-  char* str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(string));
-  int length = (int)strlen(str);
-  char* result = AllocateHeap(length+1, "GetStringUTFChars");
-  strcpy(result, str);
+  oop java_string = JNIHandles::resolve_non_null(string);
+  size_t length = java_lang_String::utf8_length(java_string);
+  char* result = AllocateHeap(length + 1, "GetStringUTFChars");
+  java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
   if (isCopy != NULL) *isCopy = JNI_TRUE;
   DTRACE_PROBE1(hotspot_jni, GetStringUTFChars__return, result);
   return result;
@@ -3194,7 +3257,6 @@ struct JavaVM_ main_vm = {&jni_InvokeInterface};
 
 
 #define JAVASTACKSIZE (400 * 1024)    /* Default size of a thread java stack */
-#define PROCSTACKSIZE 0               /* 0 means default size in HPI */
 enum { VERIFY_NONE, VERIFY_REMOTE, VERIFY_ALL };
 
 HS_DTRACE_PROBE_DECL1(hotspot_jni, GetDefaultJavaVMInitArgs__entry, void*);

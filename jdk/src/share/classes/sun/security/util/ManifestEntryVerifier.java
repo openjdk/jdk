@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,16 @@ import sun.security.jca.Providers;
 public class ManifestEntryVerifier {
 
     private static final Debug debug = Debug.getInstance("jar");
+
+    /**
+     * Holder class to lazily load Sun provider. NOTE: if
+     * Providers.getSunProvider returned a cached provider, we could avoid the
+     * need for caching the provider with this holder class; we should try to
+     * revisit this in JDK 8.
+     */
+    private static class SunProviderHolder {
+        private static final Provider instance = Providers.getSunProvider();
+    }
 
     /** the created digest objects */
     HashMap<String, MessageDigest> createdDigests;
@@ -125,7 +135,7 @@ public class ManifestEntryVerifier {
                     try {
 
                         digest = MessageDigest.getInstance
-                                        (algorithm, Providers.getSunProvider());
+                                        (algorithm, SunProviderHolder.instance);
                         createdDigests.put(algorithm, digest);
                     } catch (NoSuchAlgorithmException nsae) {
                         // ignore
@@ -185,7 +195,10 @@ public class ManifestEntryVerifier {
                 Hashtable<String, CodeSigner[]> sigFileSigners)
         throws JarException
     {
-        if (skip) return null;
+        // MANIFEST.MF should not be skipped. It has signers.
+        if (skip && !entry.getName().equals(JarFile.MANIFEST_NAME)) {
+            return null;
+        }
 
         if (signers != null)
             return signers;

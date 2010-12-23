@@ -22,8 +22,41 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciMethod.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciCallProfile.hpp"
+#include "ci/ciExceptionHandler.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciMethodBlocks.hpp"
+#include "ci/ciMethodData.hpp"
+#include "ci/ciMethodKlass.hpp"
+#include "ci/ciStreams.hpp"
+#include "ci/ciSymbol.hpp"
+#include "ci/ciUtilities.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/generateOopMap.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/deoptimization.hpp"
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef COMPILER2
+#include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "oops/methodOop.hpp"
+#endif
+#ifdef SHARK
+#include "ci/ciTypeFlow.hpp"
+#include "oops/methodOop.hpp"
+#endif
 
 // ciMethod
 //
@@ -764,12 +797,13 @@ ciInstance* ciMethod::method_handle_type() {
 
 
 // ------------------------------------------------------------------
-// ciMethod::build_method_data
+// ciMethod::ensure_method_data
 //
 // Generate new methodDataOop objects at compile time.
-void ciMethod::build_method_data(methodHandle h_m) {
+// Return true if allocation was successful or no MDO is required.
+bool ciMethod::ensure_method_data(methodHandle h_m) {
   EXCEPTION_CONTEXT;
-  if (is_native() || is_abstract() || h_m()->is_accessor()) return;
+  if (is_native() || is_abstract() || h_m()->is_accessor()) return true;
   if (h_m()->method_data() == NULL) {
     methodOopDesc::build_interpreter_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -779,18 +813,22 @@ void ciMethod::build_method_data(methodHandle h_m) {
   if (h_m()->method_data() != NULL) {
     _method_data = CURRENT_ENV->get_object(h_m()->method_data())->as_method_data();
     _method_data->load_data();
+    return true;
   } else {
     _method_data = CURRENT_ENV->get_empty_methodData();
+    return false;
   }
 }
 
 // public, retroactive version
-void ciMethod::build_method_data() {
+bool ciMethod::ensure_method_data() {
+  bool result = true;
   if (_method_data == NULL || _method_data->is_empty()) {
     GUARDED_VM_ENTRY({
-      build_method_data(get_methodOop());
+      result = ensure_method_data(get_methodOop());
     });
   }
+  return result;
 }
 
 
@@ -806,11 +844,6 @@ ciMethodData* ciMethod::method_data() {
   Thread* my_thread = JavaThread::current();
   methodHandle h_m(my_thread, get_methodOop());
 
-  // Create an MDO for the inlinee
-  if (TieredCompilation && is_c1_compile(env->comp_level())) {
-    build_method_data(h_m);
-  }
-
   if (h_m()->method_data() != NULL) {
     _method_data = CURRENT_ENV->get_object(h_m()->method_data())->as_method_data();
     _method_data->load_data();
@@ -821,6 +854,15 @@ ciMethodData* ciMethod::method_data() {
 
 }
 
+// ------------------------------------------------------------------
+// ciMethod::method_data_or_null
+// Returns a pointer to ciMethodData if MDO exists on the VM side,
+// NULL otherwise.
+ciMethodData* ciMethod::method_data_or_null() {
+  ciMethodData *md = method_data();
+  if (md->is_empty()) return NULL;
+  return md;
+}
 
 // ------------------------------------------------------------------
 // ciMethod::will_link

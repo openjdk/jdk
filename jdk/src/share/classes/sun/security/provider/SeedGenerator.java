@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,13 +138,7 @@ abstract class SeedGenerator {
         instance.getSeedBytes(result);
     }
 
-    void getSeedBytes(byte[] result) {
-        for (int i = 0; i < result.length; i++) {
-          result[i] = getSeedByte();
-        }
-    }
-
-    abstract byte getSeedByte();
+    abstract void getSeedBytes(byte[] result);
 
     /**
      * Retrieve some system information, hashed.
@@ -369,6 +363,13 @@ abstract class SeedGenerator {
             }
         }
 
+        @Override
+        void getSeedBytes(byte[] result) {
+            for (int i = 0; i < result.length; i++) {
+                result[i] = getSeedByte();
+            }
+        }
+
         byte getSeedByte() {
             byte b = 0;
 
@@ -455,8 +456,7 @@ abstract class SeedGenerator {
     static class URLSeedGenerator extends SeedGenerator {
 
         private String deviceName;
-        private BufferedInputStream devRandom;
-
+        private InputStream devRandom;
 
         /**
          * The constructor is only called once to construct the one
@@ -465,7 +465,7 @@ abstract class SeedGenerator {
          */
 
         URLSeedGenerator(String egdurl) throws IOException {
-            if (egdurl == null) {
+        if (egdurl == null) {
                 throw new IOException("No random source specified");
             }
             deviceName = egdurl;
@@ -478,40 +478,77 @@ abstract class SeedGenerator {
 
         private void init() throws IOException {
             final URL device = new URL(deviceName);
-            devRandom = java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedAction<BufferedInputStream>() {
-                        public BufferedInputStream run() {
-                            try {
-                                return new BufferedInputStream(device.openStream());
-                            } catch (IOException ioe) {
-                                return null;
+            try {
+                devRandom = java.security.AccessController.doPrivileged
+                    (new java.security.PrivilegedExceptionAction<InputStream>() {
+                        public InputStream run() throws IOException {
+                            /*
+                             * return a FileInputStream for file URLs and
+                             * avoid buffering. The openStream() call wraps
+                             * InputStream in a BufferedInputStream which
+                             * can buffer up to 8K bytes. This read is a
+                             * performance issue for entropy sources which
+                             * can be slow to replenish.
+                             */
+                            if (device.getProtocol().equalsIgnoreCase("file")) {
+                                File deviceFile = getDeviceFile(device);
+                                return new FileInputStream(deviceFile);
+                            } else {
+                                return device.openStream();
                             }
                         }
                     });
-
-            if (devRandom == null) {
-                throw new IOException("failed to open " + device);
+            } catch (Exception e) {
+                throw new IOException("Failed to open " + deviceName, e.getCause());
             }
         }
 
-        byte getSeedByte() {
-            byte b[] = new byte[1];
-            int stat;
+        /*
+         * Use a URI to access this File. Previous code used a URL
+         * which is less strict on syntax. If we encounter a
+         * URISyntaxException we make best efforts for backwards
+         * compatibility. e.g. space character in deviceName string.
+         *
+         * Method called within PrivilegedExceptionAction block.
+         */
+        private File getDeviceFile(URL device) throws IOException {
             try {
-                stat = devRandom.read(b, 0, b.length);
+                URI deviceURI = device.toURI();
+                if(deviceURI.isOpaque()) {
+                    // File constructor does not accept opaque URI
+                    URI localDir = new File(System.getProperty("user.dir")).toURI();
+                    String uriPath = localDir.toString() +
+                                         deviceURI.toString().substring(5);
+                    return new File(URI.create(uriPath));
+                } else {
+                    return new File(deviceURI);
+                }
+            } catch (URISyntaxException use) {
+                /*
+                 * Make best effort to access this File.
+                 * We can try using the URL path.
+                 */
+                return new File(device.getPath());
+            }
+        }
+
+        @Override
+        void getSeedBytes(byte[] result) {
+            int len = result.length;
+            int read = 0;
+            try {
+                while (read < len) {
+                    int count = devRandom.read(result, read, len - read);
+                    // /dev/random blocks - should never have EOF
+                    if (count < 0)
+                        throw new InternalError("URLSeedGenerator " + deviceName +
+                                        " reached end of file");
+                    read += count;
+                }
             } catch (IOException ioe) {
                 throw new InternalError("URLSeedGenerator " + deviceName +
                                         " generated exception: " +
                                         ioe.getMessage());
-            }
-            if (stat == b.length) {
-                return b[0];
-            } else if (stat == -1) {
-                throw new InternalError("URLSeedGenerator " + deviceName +
-                                           " reached end of file");
-            } else {
-                throw new InternalError("URLSeedGenerator " + deviceName +
-                                           " failed read");
             }
         }
 

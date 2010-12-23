@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ADLC_ARCHDESC_HPP
+#define SHARE_VM_ADLC_ARCHDESC_HPP
 
 // Definitions for Error Flags
 #define  WARN   0
@@ -123,7 +126,6 @@ private:
   void chain_rule(FILE *fp, const char *indent, const char *ideal,
                   const Expr *icost, const char *irule,
                   Dict &operands_chained_from, ProductionState &status);
-  void chain_rule_c(FILE *fp, char *indent, char *ideal, char *irule);  // %%%%% TODO: remove this
   void expand_opclass(FILE *fp, const char *indent, const Expr *cost,
                       const char *result_type, ProductionState &status);
   Expr *calc_cost(FILE *fp, const char *spaces, MatchList &mList, ProductionState &status);
@@ -274,8 +276,13 @@ public:
 
   // output SUN copyright info
   void addSunCopyright(char* legal, int size, FILE *fp);
-  // output #include declarations for machine specific files
-  void machineDependentIncludes(ADLFILE &adlfile);
+  // output the start of an include guard.
+  void addIncludeGuardStart(ADLFILE &adlfile, const char* guardString);
+  // output the end of an include guard.
+  void addIncludeGuardEnd(ADLFILE &adlfile, const char* guardString);
+  // output the #include line for this file.
+  void addInclude(ADLFILE &adlfile, const char* fileName);
+  void addInclude(ADLFILE &adlfile, const char* includeDir, const char* fileName);
   // Output C preprocessor code to verify the backend compilation environment.
   void addPreprocessorChecks(FILE *fp);
   // Output C source and header (source_hpp) blocks.
@@ -293,13 +300,18 @@ public:
   void buildMachNodeGenerator(FILE *fp_cpp);
 
   // Generator for Expand methods for instructions with expand rules
-  void defineExpand(FILE *fp, InstructForm *node);
+  void defineExpand      (FILE *fp, InstructForm *node);
   // Generator for Peephole methods for instructions with peephole rules
-  void definePeephole(FILE *fp, InstructForm *node);
+  void definePeephole    (FILE *fp, InstructForm *node);
   // Generator for Size methods for instructions
-  void defineSize(FILE *fp, InstructForm &node);
+  void defineSize        (FILE *fp, InstructForm &node);
+
+public:
+  // Generator for EvalConstantValue methods for instructions
+  void defineEvalConstant(FILE *fp, InstructForm &node);
   // Generator for Emit methods for instructions
-  void defineEmit(FILE *fp, InstructForm &node);
+  void defineEmit        (FILE *fp, InstructForm &node);
+
   // Define a MachOper encode method
   void define_oper_interface(FILE *fp, OperandForm &oper, FormDict &globals,
                              const char *name, const char *encoding);
@@ -387,3 +399,5 @@ public:
   // Allow derived class to output name and position specific info
   virtual void record_position(OutputMap::position place, int index) {}
 };
+
+#endif // SHARE_VM_ADLC_ARCHDESC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vmError_linux.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/vmError.hpp"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -41,11 +44,11 @@ void VMError::show_message_box(char *buf, int buflen) {
     jio_snprintf(p, buflen - len,
                "\n\n"
                "Do you want to debug the problem?\n\n"
-               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT "\n"
+               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
                "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
                "Otherwise, press RETURN to abort...",
                os::current_process_id(), os::current_process_id(),
-               os::current_thread_id());
+               os::current_thread_id(), os::current_thread_id());
 
     yes = os::message_box("Unexpected Error", buf);
 

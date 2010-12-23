@@ -48,20 +48,20 @@ public class TestParamTaglet extends JavadocTester {
     private static final String[][] TEST = {
         //Regular param tags.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<STRONG>Parameters:</STRONG></DT><DD><CODE>param1</CODE> - testing 1 2 3.</DD>" +
-                "<DD><CODE>param2</CODE> - testing 1 2 3."
+            "<span class=\"strong\">Parameters:</span></dt><dd><code>param1</code> - testing 1 2 3.</dd>" +
+                "<dd><code>param2</code> - testing 1 2 3."
         },
         //Param tags that don't match with any real parameters.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<STRONG>Parameters:</STRONG></DT><DD><CODE><I>p1</I></CODE> - testing 1 2 3.</DD>" +
-                "<DD><CODE><I>p2</I></CODE> - testing 1 2 3."
+            "<span class=\"strong\">Parameters:</span></dt><dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
+                "<dd><code><I>p2</I></code> - testing 1 2 3."
         },
         //{@inherit} doc misuse does not cause doclet to throw exception.
         // Param is printed with nothing inherited.
         //XXX: in the future when Configuration is available during doc inheritence,
         //print a warning for this mistake.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<CODE><I>inheritBug</I></CODE> -"
+            "<code><I>inheritBug</I></code> -"
         },
 
     };

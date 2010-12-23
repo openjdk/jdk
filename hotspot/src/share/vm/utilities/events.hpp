@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_EVENTS_HPP
+#define SHARE_VM_UTILITIES_EVENTS_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/top.hpp"
 
 // Events and EventMark provide interfaces to log events taking place in the vm.
 // This facility is extremly useful for post-mortem debugging. The eventlog
@@ -62,3 +68,5 @@ class EventMark : public StackObj {
 };
 
 int print_all_events(outputStream *st);
+
+#endif // SHARE_VM_UTILITIES_EVENTS_HPP

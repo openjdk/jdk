@@ -362,12 +362,12 @@ public class ConcurrentSkipListSet<E>
 
     public E pollFirst() {
         Map.Entry<E,Object> e = m.pollFirstEntry();
-        return e == null? null : e.getKey();
+        return (e == null) ? null : e.getKey();
     }
 
     public E pollLast() {
         Map.Entry<E,Object> e = m.pollLastEntry();
-        return e == null? null : e.getKey();
+        return (e == null) ? null : e.getKey();
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_CHAITIN_HPP
+#define SHARE_VM_OPTO_CHAITIN_HPP
+
+#include "code/vmreg.hpp"
+#include "libadt/port.hpp"
+#include "memory/resourceArea.hpp"
+#include "opto/connode.hpp"
+#include "opto/live.hpp"
+#include "opto/matcher.hpp"
+#include "opto/phase.hpp"
+#include "opto/regalloc.hpp"
+#include "opto/regmask.hpp"
 
 class LoopTree;
 class MachCallNode;
@@ -499,7 +512,11 @@ private:
   void dump( const Block * b ) const;
   void dump_degree_lists() const;
   void dump_simplified() const;
-  void dump_lrg( uint lidx ) const;
+  void dump_lrg( uint lidx, bool defs_only) const;
+  void dump_lrg( uint lidx) const {
+    // dump defs and uses by default
+    dump_lrg(lidx, false);
+  }
   void dump_bb( uint pre_order ) const;
 
   // Verify that base pointers and derived pointers are still sane
@@ -519,3 +536,5 @@ private:
   friend class PhaseAggressiveCoalesce;
   friend class PhaseConservativeCoalesce;
 };
+
+#endif // SHARE_VM_OPTO_CHAITIN_HPP

@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_RUNTIME1_HPP
+#define SHARE_VM_C1_C1_RUNTIME1_HPP
+
+#include "c1/c1_FrameMap.hpp"
+#include "code/stubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/deoptimization.hpp"
+
 class StubAssembler;
 
 // The Runtime1 holds all assembly stubs and VM
@@ -174,3 +183,5 @@ class Runtime1: public AllStatic {
 
   static void print_statistics()                 PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_C1_C1_RUNTIME1_HPP

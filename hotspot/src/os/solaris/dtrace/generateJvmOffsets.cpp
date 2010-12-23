@@ -38,9 +38,22 @@
 #define protected public
 
 #include <proc_service.h>
-#include "incls/_precompiled.incl"
-#include "incls/_vmStructs.cpp.incl"
-
+#include "code/codeBlob.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/heap.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/universe.hpp"
+#include "oops/constMethodOop.hpp"
+#include "oops/klass.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/virtualspace.hpp"
+#include "runtime/vmStructs.hpp"
+#include "utilities/accessFlags.hpp"
+#include "utilities/globalDefinitions.hpp"
 #ifdef COMPILER1
 #if defined(DEBUG) || defined(FASTDEBUG)
 

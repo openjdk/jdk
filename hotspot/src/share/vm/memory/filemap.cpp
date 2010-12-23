@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_filemap.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/symbolTable.hpp"
+#include "memory/filemap.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/java.hpp"
+#include "runtime/os.hpp"
+#include "utilities/defaultStream.hpp"
+
 # include <sys/stat.h>
 # include <errno.h>
 
