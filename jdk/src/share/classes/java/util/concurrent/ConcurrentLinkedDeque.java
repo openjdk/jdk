@@ -38,7 +38,6 @@ package java.util.concurrent;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -212,7 +211,7 @@ public class ConcurrentLinkedDeque<E>
      * The actual representation we use is that p.next == p means to
      * goto the first node (which in turn is reached by following prev
      * pointers from head), and p.next == null && p.prev == p means
-     * that the iteration is at an end and that p is a (final static)
+     * that the iteration is at an end and that p is a (static final)
      * dummy node, NEXT_TERMINATOR, and not the last active node.
      * Finishing the iteration when encountering such a TERMINATOR is
      * good enough for read-only traversals, so such traversals can use
@@ -271,7 +270,7 @@ public class ConcurrentLinkedDeque<E>
      */
     private transient volatile Node<E> tail;
 
-    private final static Node<Object> PREV_TERMINATOR, NEXT_TERMINATOR;
+    private static final Node<Object> PREV_TERMINATOR, NEXT_TERMINATOR;
 
     static {
         PREV_TERMINATOR = new Node<Object>(null);
@@ -401,7 +400,7 @@ public class ConcurrentLinkedDeque<E>
             }
     }
 
-    private final static int HOPS = 2;
+    private static final int HOPS = 2;
 
     /**
      * Unlinks non-null node x.
@@ -871,7 +870,7 @@ public class ConcurrentLinkedDeque<E>
     /**
      * Inserts the specified element at the front of this deque.
      *
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if the specified element is null
      */
     public void addFirst(E e) {
         linkFirst(e);
@@ -882,7 +881,7 @@ public class ConcurrentLinkedDeque<E>
      *
      * <p>This method is equivalent to {@link #add}.
      *
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if the specified element is null
      */
     public void addLast(E e) {
         linkLast(e);
@@ -892,7 +891,7 @@ public class ConcurrentLinkedDeque<E>
      * Inserts the specified element at the front of this deque.
      *
      * @return {@code true} always
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if the specified element is null
      */
     public boolean offerFirst(E e) {
         linkFirst(e);
@@ -905,7 +904,7 @@ public class ConcurrentLinkedDeque<E>
      * <p>This method is equivalent to {@link #add}.
      *
      * @return {@code true} always
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if the specified element is null
      */
     public boolean offerLast(E e) {
         linkLast(e);
@@ -940,7 +939,7 @@ public class ConcurrentLinkedDeque<E>
     /**
      * @throws NoSuchElementException {@inheritDoc}
      */
-    public E getLast()  {
+    public E getLast() {
         return screenNullResult(peekLast());
     }
 
@@ -1016,7 +1015,7 @@ public class ConcurrentLinkedDeque<E>
      *
      * @param o element to be removed from this deque, if present
      * @return {@code true} if the deque contained the specified element
-     * @throws NullPointerException if the specified element is {@code null}
+     * @throws NullPointerException if the specified element is null
      */
     public boolean removeFirstOccurrence(Object o) {
         checkNotNull(o);
@@ -1037,7 +1036,7 @@ public class ConcurrentLinkedDeque<E>
      *
      * @param o element to be removed from this deque, if present
      * @return {@code true} if the deque contained the specified element
-     * @throws NullPointerException if the specified element is {@code null}
+     * @throws NullPointerException if the specified element is null
      */
     public boolean removeLastOccurrence(Object o) {
         checkNotNull(o);
@@ -1110,7 +1109,7 @@ public class ConcurrentLinkedDeque<E>
      *
      * @param o element to be removed from this deque, if present
      * @return {@code true} if the deque contained the specified element
-     * @throws NullPointerException if the specified element is {@code null}
+     * @throws NullPointerException if the specified element is null
      */
     public boolean remove(Object o) {
         return removeFirstOccurrence(o);
@@ -1165,7 +1164,7 @@ public class ConcurrentLinkedDeque<E>
                     beginningOfTheEnd.lazySetPrev(p); // CAS piggyback
                     if (p.casNext(null, beginningOfTheEnd)) {
                         // Successful CAS is the linearization point
-                        // for all elements to be added to this queue.
+                        // for all elements to be added to this deque.
                         if (!casTail(t, last)) {
                             // Try a little harder to update tail,
                             // since we may be adding many elements.
@@ -1251,12 +1250,12 @@ public class ConcurrentLinkedDeque<E>
      * Returns an iterator over the elements in this deque in proper sequence.
      * The elements will be returned in order from first (head) to last (tail).
      *
-     * <p>The returned {@code Iterator} is a "weakly consistent" iterator that
+     * <p>The returned iterator is a "weakly consistent" iterator that
      * will never throw {@link java.util.ConcurrentModificationException
-     * ConcurrentModificationException},
-     * and guarantees to traverse elements as they existed upon
-     * construction of the iterator, and may (but is not guaranteed to)
-     * reflect any modifications subsequent to construction.
+     * ConcurrentModificationException}, and guarantees to traverse
+     * elements as they existed upon construction of the iterator, and
+     * may (but is not guaranteed to) reflect any modifications
+     * subsequent to construction.
      *
      * @return an iterator over the elements in this deque in proper sequence
      */
@@ -1269,12 +1268,12 @@ public class ConcurrentLinkedDeque<E>
      * sequential order.  The elements will be returned in order from
      * last (tail) to first (head).
      *
-     * <p>The returned {@code Iterator} is a "weakly consistent" iterator that
+     * <p>The returned iterator is a "weakly consistent" iterator that
      * will never throw {@link java.util.ConcurrentModificationException
-     * ConcurrentModificationException},
-     * and guarantees to traverse elements as they existed upon
-     * construction of the iterator, and may (but is not guaranteed to)
-     * reflect any modifications subsequent to construction.
+     * ConcurrentModificationException}, and guarantees to traverse
+     * elements as they existed upon construction of the iterator, and
+     * may (but is not guaranteed to) reflect any modifications
+     * subsequent to construction.
      *
      * @return an iterator over the elements in this deque in reverse order
      */

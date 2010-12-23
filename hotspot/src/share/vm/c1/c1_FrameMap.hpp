@@ -22,6 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_FRAMEMAP_HPP
+#define SHARE_VM_C1_C1_FRAMEMAP_HPP
+
+#include "asm/assembler.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_LIR.hpp"
+#include "code/vmreg.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/synchronizer.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 class ciMethod;
 class CallingConvention;
 class BasicTypeArray;
@@ -64,13 +76,19 @@ class FrameMap : public CompilationResourceObj {
     nof_cpu_regs_reg_alloc = pd_nof_cpu_regs_reg_alloc,
     nof_fpu_regs_reg_alloc = pd_nof_fpu_regs_reg_alloc,
 
-    nof_caller_save_cpu_regs = pd_nof_caller_save_cpu_regs_frame_map,
-    nof_caller_save_fpu_regs = pd_nof_caller_save_fpu_regs_frame_map,
+    max_nof_caller_save_cpu_regs = pd_nof_caller_save_cpu_regs_frame_map,
+    nof_caller_save_fpu_regs     = pd_nof_caller_save_fpu_regs_frame_map,
 
     spill_slot_size_in_bytes = 4
   };
 
-# include "incls/_c1_FrameMap_pd.hpp.incl"  // platform dependent declarations
+#ifdef TARGET_ARCH_x86
+# include "c1_FrameMap_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_FrameMap_sparc.hpp"
+#endif
+
 
   friend class LIR_OprDesc;
 
@@ -79,7 +97,7 @@ class FrameMap : public CompilationResourceObj {
   static Register     _cpu_rnr2reg [nof_cpu_regs];
   static int          _cpu_reg2rnr [nof_cpu_regs];
 
-  static LIR_Opr      _caller_save_cpu_regs [nof_caller_save_cpu_regs];
+  static LIR_Opr      _caller_save_cpu_regs [max_nof_caller_save_cpu_regs];
   static LIR_Opr      _caller_save_fpu_regs [nof_caller_save_fpu_regs];
 
   int                 _framesize;
@@ -225,7 +243,7 @@ class FrameMap : public CompilationResourceObj {
   VMReg regname(LIR_Opr opr) const;
 
   static LIR_Opr caller_save_cpu_reg_at(int i) {
-    assert(i >= 0 && i < nof_caller_save_cpu_regs, "out of bounds");
+    assert(i >= 0 && i < max_nof_caller_save_cpu_regs, "out of bounds");
     return _caller_save_cpu_regs[i];
   }
 
@@ -266,3 +284,5 @@ class CallingConvention: public ResourceObj {
   }
 #endif // PRODUCT
 };
+
+#endif // SHARE_VM_C1_C1_FRAMEMAP_HPP

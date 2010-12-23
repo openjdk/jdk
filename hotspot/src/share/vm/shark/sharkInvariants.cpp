@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharkInvariants.cpp.incl"
+#include "precompiled.hpp"
+#include "shark/sharkInvariants.hpp"
 
 int SharkTargetInvariants::count_monitors() {
   int result = 0;

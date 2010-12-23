@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_INTERPRETER_TEMPLATEINTERPRETER_HPP
+#define SHARE_VM_INTERPRETER_TEMPLATEINTERPRETER_HPP
+
+#include "interpreter/abstractInterpreter.hpp"
+#include "interpreter/templateTable.hpp"
 
 // This file contains the platform-independent parts
 // of the template interpreter and the template interpreter generator.
@@ -177,8 +183,19 @@ class TemplateInterpreter: public AbstractInterpreter {
   // Compute the address for reexecution
   static address deopt_reexecute_entry(methodOop method, address bcp);
 
-#include "incls/_templateInterpreter_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "templateInterpreter_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "templateInterpreter_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "templateInterpreter_zero.hpp"
+#endif
+
 
 };
 
 #endif // !CC_INTERP
+
+#endif // SHARE_VM_INTERPRETER_TEMPLATEINTERPRETER_HPP

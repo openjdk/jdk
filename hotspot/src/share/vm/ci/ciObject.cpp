@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciObject.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciObject.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "oops/oop.inline2.hpp"
 
 // ciObject
 //

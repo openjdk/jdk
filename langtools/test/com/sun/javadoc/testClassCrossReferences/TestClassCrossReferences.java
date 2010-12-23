@@ -37,18 +37,20 @@ public class TestClassCrossReferences extends JavadocTester {
     private static final String BUG_ID = "4652655-4857717";
     private static final String[][] TEST = {
         {BUG_ID + FS + "C.html",
-            "<A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/math/package-summary.html?is-external=true\"><CODE>Link to math package</CODE></A>"},
+            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/package-summary.html?is-external=true\"><code>Link to math package</code></a>"},
         {BUG_ID + FS + "C.html",
-            "<A HREF=\"http://java.sun.com/j2se/1.4/docs/api/javax/swing/text/AbstractDocument.AttributeContext.html?is-external=true\" " +
-            "title=\"class or interface in javax.swing.text\"><CODE>Link to AttributeContext innerclass</CODE></A>"},
+            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/javax/swing/text/AbstractDocument.AttributeContext.html?is-external=true\" " +
+            "title=\"class or interface in javax.swing.text\"><code>Link to AttributeContext innerclass</code></a>"},
         {BUG_ID + FS + "C.html",
-            "<A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigDecimal.html?is-external=true\" " +
-                "title=\"class or interface in java.math\"><CODE>Link to external class BigDecimal</CODE></A>"},
+            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigDecimal.html?is-external=true\" " +
+                "title=\"class or interface in java.math\"><code>Link to external class BigDecimal</code></a>"},
         {BUG_ID + FS + "C.html",
-            "<A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigInteger.html?is-external=true#gcd(java.math.BigInteger)\" " +
-                "title=\"class or interface in java.math\"><CODE>Link to external member gcd</CODE></A>"},
+            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigInteger.html?is-external=true#gcd(java.math.BigInteger)\" " +
+                "title=\"class or interface in java.math\"><code>Link to external member gcd</code></a>"},
         {BUG_ID + FS + "C.html",
-            "<STRONG>Overrides:</STRONG></DT><DD><CODE>toString</CODE> in class <CODE>java.lang.Object</CODE>"}
+            "<dl>" + NL + "<dt><strong>Overrides:</strong></dt>" + NL +
+            "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>" + NL +
+            "</dl>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =

@@ -28,57 +28,119 @@ package com.sun.tools.doclets.formats.html;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate serialized form for Serializable/Externalizable methods.
  * Documentation denoted by the <code>serialData</code> tag is processed.
  *
  * @author Joe Fialli
+ * @author Bhavesh Patel (Modified)
  */
 public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         SerializedFormWriter.SerialMethodWriter{
-
-    private boolean printedFirstMember = false;
 
     public HtmlSerialMethodWriter(SubWriterHolderWriter writer,
             ClassDoc classdoc) {
         super(writer, classdoc);
     }
 
-    public void writeHeader(String heading) {
-        writer.anchor("serialized_methods");
-        writer.printTableHeadingBackground(heading);
-        writer.p();
+    /**
+     * Return the header for serializable methods section.
+     *
+     * @return a content tree for the header
+     */
+    public Content getSerializableMethodsHeader() {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
+        return ul;
     }
 
-    public void writeNoCustomizationMsg(String msg) {
-        writer.print(msg);
-        writer.p();
+    /**
+     * Return the header for serializable methods content section.
+     *
+     * @param isLastContent true if the cotent being documented is the last content.
+     * @return a content tree for the header
+     */
+    public Content getMethodsContentHeader(boolean isLastContent) {
+        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        if (isLastContent)
+            li.addStyle(HtmlStyle.blockListLast);
+        else
+            li.addStyle(HtmlStyle.blockList);
+        return li;
     }
 
-    public void writeMemberHeader(MethodDoc member) {
-        if (printedFirstMember) {
-            writer.printMemberHeader();
-        }
-        printedFirstMember = true;
-        writer.anchor(member);
-        printHead(member);
-        writeSignature(member);
+    /**
+     * Add serializable methods.
+     *
+     * @param heading the heading for the section
+     * @param serializableMethodContent the tree to be added to the serializable methods
+     *        content tree
+     * @return a content tree for the serializable methods content
+     */
+    public Content getSerializableMethods(String heading, Content serializableMethodContent) {
+        Content li = HtmlTree.LI(HtmlStyle.blockList, writer.getMarkerAnchor(
+                "serialized_methods"));
+        Content headingContent = new StringContent(heading);
+        Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
+                headingContent);
+        li.addContent(serialHeading);
+        li.addContent(serializableMethodContent);
+        return li;
     }
 
-    public void writeMemberFooter() {
-        printMemberFooter();
+    /**
+     * Return the no customization message.
+     *
+     * @param msg the message to be displayed
+     * @return no customization message content
+     */
+    public Content getNoCustomizationMsg(String msg) {
+        Content noCustomizationMsg = new StringContent(msg);
+        return noCustomizationMsg;
     }
 
-    public void writeDeprecatedMemberInfo(MethodDoc member) {
-        printDeprecated(member);
+    /**
+     * Add the member header.
+     *
+     * @param member the method document to be listed
+     * @param methodsContentTree the content tree to which the member header will be added
+     */
+    public void addMemberHeader(MethodDoc member, Content methodsContentTree) {
+        methodsContentTree.addContent(writer.getMarkerAnchor(
+                writer.getAnchor(member)));
+        methodsContentTree.addContent(getHead(member));
+        methodsContentTree.addContent(getSignature(member));
     }
 
-    public void writeMemberDescription(MethodDoc member) {
-        printComment(member);
+    /**
+     * Add the deprecated information for this member.
+     *
+     * @param member the method to document.
+     * @param methodsContentTree the tree to which the deprecated info will be added
+     */
+    public void addDeprecatedMemberInfo(MethodDoc member, Content methodsContentTree) {
+        addDeprecatedInfo(member, methodsContentTree);
     }
 
-    public void writeMemberTags(MethodDoc member) {
+    /**
+     * Add the description text for this member.
+     *
+     * @param member the method to document.
+     * @param methodsContentTree the tree to which the deprecated info will be added
+     */
+    public void addMemberDescription(MethodDoc member, Content methodsContentTree) {
+        addComment(member, methodsContentTree);
+    }
+
+    /**
+     * Add the tag information for this member.
+     *
+     * @param member the method to document.
+     * @param methodsContentTree the tree to which the member tags info will be added
+     */
+    public void addMemberTags(MethodDoc member, Content methodsContentTree) {
         TagletOutputImpl output = new TagletOutputImpl("");
         TagletManager tagletManager =
             ConfigurationImpl.getInstance().tagletManager;
@@ -86,14 +148,12 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
             tagletManager.getSerializedFormTags(),
             writer.getTagletWriterInstance(false), output);
         String outputString = output.toString().trim();
+        Content dlTags = new HtmlTree(HtmlTag.DL);
         if (!outputString.isEmpty()) {
-            writer.printMemberDetailsListStartTag();
-            writer.dd();
-            writer.dl();
-            print(outputString);
-            writer.dlEnd();
-            writer.ddEnd();
+            Content tagContent = new RawHtml(outputString);
+            dlTags.addContent(tagContent);
         }
+        methodsContentTree.addContent(dlTags);
         MethodDoc method = member;
         if (method.name().compareTo("writeExternal") == 0
                 && method.tags("serialData").length == 0) {

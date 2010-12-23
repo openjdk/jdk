@@ -127,7 +127,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 }
 
 void
-writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid) {
+writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid) {
     // Discard the 24 high-order bits of byte. See OutputStream#write(int)
     char c = (char) byte;
     jint n;
@@ -136,7 +136,11 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
     }
-    n = IO_Write(fd, &c, 1);
+    if (append == JNI_TRUE) {
+        n = IO_Append(fd, &c, 1);
+    } else {
+        n = IO_Write(fd, &c, 1);
+    }
     if (n == JVM_IO_ERR) {
         JNU_ThrowIOExceptionWithLastError(env, "Write error");
     } else if (n == JVM_IO_INTR) {
@@ -146,7 +150,7 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid) {
 
 void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-           jint off, jint len, jfieldID fid)
+           jint off, jint len, jboolean append, jfieldID fid)
 {
     jint n;
     char stackBuf[BUF_SIZE];
@@ -185,7 +189,11 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
                 JNU_ThrowIOException(env, "Stream Closed");
                 break;
             }
-            n = IO_Write(fd, buf+off, len);
+            if (append == JNI_TRUE) {
+                n = IO_Append(fd, buf+off, len);
+            } else {
+                n = IO_Write(fd, buf+off, len);
+            }
             if (n == JVM_IO_ERR) {
                 JNU_ThrowIOExceptionWithLastError(env, "Write error");
                 break;

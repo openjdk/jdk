@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,15 @@
  * questions.
  *
  */
-# include "incls/_precompiled.incl"
-# include "incls/_vmCMSOperations.cpp.incl"
 
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
+#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "utilities/dtrace.hpp"
 HS_DTRACE_PROBE_DECL(hs_private, cms__initmark__begin);
 HS_DTRACE_PROBE_DECL(hs_private, cms__initmark__end);
 

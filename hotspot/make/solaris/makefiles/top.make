@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #   -generate sa-jdi.jar (JDI binding to core files)
 
 # It assumes the following flags are set:
-# CFLAGS Platform_file, Src_Dirs, SYSDEFS, AOUT, Jvm_Obj_Files
+# CFLAGS Platform_file, Src_Dirs_I, Src_Dirs_V, SYSDEFS, AOUT, Jvm_Obj_Files
 
 # -- D. Ungar (5/97) from a file by Bill Bush
 
@@ -44,42 +44,7 @@ VM          = $(GAMMADIR)/src/share/vm
 Plat_File   = $(Platform_file)
 CDG         = cd $(GENERATED); 
 
-# Pick up MakeDeps' sources and definitions
-include $(GAMMADIR)/make/$(Platform_os_family)/makefiles/makedeps.make
-MakeDepsClass = MakeDeps.class
-MakeDeps    = $(RUN.JAVA) -classpath . MakeDeps
-
-Include_DBs/GC     = $(VM)/includeDB_gc \
-                     $(VM)/includeDB_gc_parallel \
-                     $(VM)/gc_implementation/includeDB_gc_parallelScavenge \
-                     $(VM)/gc_implementation/includeDB_gc_concurrentMarkSweep \
-                     $(VM)/gc_implementation/includeDB_gc_parNew \
-                     $(VM)/gc_implementation/includeDB_gc_g1 \
-                     $(VM)/gc_implementation/includeDB_gc_serial \
-                     $(VM)/gc_implementation/includeDB_gc_shared
-
-
-Include_DBs/KERNEL      = $(VM)/includeDB_core $(VM)/includeDB_gc \
-                          $(VM)/gc_implementation/includeDB_gc_serial \
-                          $(VM)/includeDB_jvmti \
-                          $(VM)/includeDB_compiler1
-
-Include_DBs/CORE        = $(VM)/includeDB_core   $(Include_DBs/GC) \
-                          $(VM)/includeDB_jvmti \
-                          $(VM)/includeDB_features
-Include_DBs/COMPILER1   = $(Include_DBs/CORE) $(VM)/includeDB_compiler1
-Include_DBs/COMPILER2   = $(Include_DBs/CORE) $(VM)/includeDB_compiler2
-Include_DBs/TIERED      = $(Include_DBs/CORE) $(VM)/includeDB_compiler1 \
-                          $(VM)/includeDB_compiler2
-
-Include_DBs = $(Include_DBs/$(TYPE))
-
-Cached_plat = platform.current
-Cached_db   = includeDB.current
-
-Incremental_Lists =$(GENERATED)/$(Cached_db)
-# list generation also creates $(GENERATED)/$(Cached_plat)
-
+Cached_plat = $(GENERATED)/platform.current
 
 AD_Dir   = $(GENERATED)/adfiles
 ADLC     = $(AD_Dir)/adlc
@@ -98,7 +63,7 @@ adjust-mflags   = $(GENERATED)/adjust-mflags
 MFLAGS-adjusted = -r `$(adjust-mflags) "$(MFLAGS)" "$(HOTSPOT_BUILD_JOBS)"`
 
 
-# default target: make makeDeps, update lists, make vm
+# default target: update lists, make vm
 # done in stages to force sequential order with parallel make
 #
 
@@ -106,38 +71,18 @@ default: vm_build_preliminaries the_vm
 	@echo All done.
 
 # This is an explicit dependency for the sake of parallel makes.
-vm_build_preliminaries:  checks $(Incremental_Lists) $(AD_Files_If_Required) jvmti_stuff sa_stuff
+vm_build_preliminaries:  checks $(Cached_plat) $(AD_Files_If_Required) jvmti_stuff sa_stuff
 	@# We need a null action here, so implicit rules don't get consulted.
 
-# make makeDeps: (and zap the cached db files to force a nonincremental run)
-
-$(GENERATED)/$(MakeDepsClass): $(MakeDepsSources)
-	@$(COMPILE.JAVAC) -classpath $(GAMMADIR)/src/share/tools/MakeDeps -d $(GENERATED) $(MakeDepsSources)
-	@echo Removing $(Incremental_Lists) to force regeneration.
-	@rm -f $(Incremental_Lists)
-	@$(CDG) echo >$(Cached_plat)
-
-# make incremental_lists, if cached files out of date, run makeDeps
-
-$(Incremental_Lists):  $(Include_DBs) $(Plat_File) $(GENERATED)/$(MakeDepsClass)
-	$(CDG)  cat $(Include_DBs) > includeDB
-	$(CDG) if [ ! -r incls ] ; then \
-	mkdir incls ; \
-	fi
-	$(CDG)  $(MakeDeps) diffs UnixPlatform $(Cached_plat) $(Cached_db) $(Plat_File) includeDB $(MakeDepsOptions)
-	$(CDG)  cp includeDB    $(Cached_db)
-	$(CDG)  cp $(Plat_File) $(Cached_plat)
-
-# symbolic target for command lines
-lists: $(Incremental_Lists)
-	@: lists are now up to date
+$(Cached_plat): $(Plat_File)
+	$(CDG) cp $(Plat_File) $(Cached_plat)
 
 # make AD files as necessary
-ad_stuff: $(Incremental_Lists) $(adjust-mflags)
+ad_stuff: $(Cached_plat) $(adjust-mflags)
 	@$(MAKE) -f adlc.make $(MFLAGS-adjusted)
 
 # generate JVMTI files from the spec
-jvmti_stuff: $(Incremental_Lists) $(adjust-mflags)
+jvmti_stuff: $(Cached_plat) $(adjust-mflags)
 	@$(MAKE) -f jvmti.make $(MFLAGS-adjusted)
 
 # generate SA jar files and native header
@@ -172,7 +117,6 @@ install: the_vm
 # this should force everything to be rebuilt
 clean: 
 	rm -f $(GENERATED)/*.class
-	$(MAKE) $(MFLAGS) $(GENERATED)/$(MakeDepsClass)
 	$(MAKE) -f vm.make $(MFLAGS) clean
 
 # just in case it doesn't, this should do it

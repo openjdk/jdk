@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2009 Red Hat, Inc.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -25,7 +25,7 @@
 
 # Setup for Zero (non-Shark) version of VM
 
-# Select which includeDB files to use (in top.make)
+# Select which files to use (in top.make)
 TYPE = ZERO
 
 # Install libjvm.so, etc in in server directory.

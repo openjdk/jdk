@@ -29,6 +29,7 @@ import java.lang.reflect.*;
 import sun.dyn.Access;
 import sun.dyn.MemberName;
 import sun.dyn.MethodHandleImpl;
+import sun.dyn.util.ValueConversions;
 import sun.dyn.util.VerifyAccess;
 import sun.dyn.util.Wrapper;
 import java.util.List;
@@ -135,28 +136,58 @@ public class MethodHandles {
      * In general, the conditions under which a method handle may be
      * created for a method {@code M} are exactly as restrictive as the conditions
      * under which the lookup class could have compiled a call to {@code M}.
-     * This rule is applied even if the Java compiler might have created
+     * <p>
+     * In some cases, this access is obtained by the Java compiler by creating
      * an wrapper method to access a private method of another class
      * in the same top-level declaration.
-     * For example, a lookup object created for a nested class {@code C.D}
+     * For example, a nested class {@code C.D}
      * can access private members within other related classes such as
-     * {@code C}, {@code C.D.E}, or {@code C.B}.
+     * {@code C}, {@code C.D.E}, or {@code C.B},
+     * but the Java compiler may need to generate wrapper methods in
+     * those related classes.  In such cases, a {@code Lookup} object on
+     * {@code C.E} would be unable to those private members.
+     * A workaround for this limitation is the {@link Lookup#in Lookup.in} method,
+     * which can transform a lookup on {@code C.E} into one on any of those other
+     * classes, without special elevation of privilege.
      */
     public static final
     class Lookup {
         /** The class on behalf of whom the lookup is being performed. */
         private final Class<?> lookupClass;
 
-        /** The allowed sorts of members which may be looked up (public, etc.), with STATIC for package. */
+        /** The allowed sorts of members which may be looked up (PUBLIC, etc.). */
         private final int allowedModes;
 
-        private static final int
-            PUBLIC    = Modifier.PUBLIC,
-            PACKAGE   = Modifier.STATIC,
-            PROTECTED = Modifier.PROTECTED,
-            PRIVATE   = Modifier.PRIVATE,
-            ALL_MODES = (PUBLIC | PACKAGE | PROTECTED | PRIVATE),
-            TRUSTED   = -1;
+        /** A single-bit mask representing {@code public} access,
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value, {@code 0x01}, happens to be the same as the value of the
+         *  {@code public} {@linkplain java.lang.reflect.Modifier#PUBLIC modifier bit}.
+         */
+        public static final int PUBLIC = Modifier.PUBLIC;
+
+        /** A single-bit mask representing {@code private} access,
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value, {@code 0x02}, happens to be the same as the value of the
+         *  {@code private} {@linkplain java.lang.reflect.Modifier#PRIVATE modifier bit}.
+         */
+        public static final int PRIVATE = Modifier.PRIVATE;
+
+        /** A single-bit mask representing {@code protected} access,
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value, {@code 0x04}, happens to be the same as the value of the
+         *  {@code protected} {@linkplain java.lang.reflect.Modifier#PROTECTED modifier bit}.
+         */
+        public static final int PROTECTED = Modifier.PROTECTED;
+
+        /** A single-bit mask representing {@code package} access (default access),
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value is {@code 0x08}, which does not correspond meaningfully to
+         *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
+         */
+        public static final int PACKAGE = Modifier.STATIC;
+
+        private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE);
+        private static final int TRUSTED   = -1;
 
         private static int fixmods(int mods) {
             mods &= (ALL_MODES - PACKAGE);
@@ -181,13 +212,21 @@ public class MethodHandles {
         }
 
         /** Which types of members can this lookup object produce?
-         *  The result is a bit-mask of the {@link Modifier} bits
-         *  {@linkplain Modifier#PUBLIC PUBLIC (0x01)},
-         *  {@linkplain Modifier#PROTECTED PROTECTED (0x02)},
-         *  {@linkplain Modifier#PRIVATE PRIVATE (0x04)},
-         *  and {@linkplain Modifier#STATIC STATIC (0x08)}.
-         *  The modifier bit {@code STATIC} stands in for the package protection mode,
-         *  which does not have an explicit modifier bit.
+         *  The result is a bit-mask of the bits
+         *  {@linkplain #PUBLIC PUBLIC (0x01)},
+         *  {@linkplain #PRIVATE PRIVATE (0x02)},
+         *  {@linkplain #PROTECTED PROTECTED (0x04)},
+         *  and {@linkplain #PACKAGE PACKAGE (0x08)}.
+         *  <p>
+         *  A freshly-created lookup object
+         *  on the {@linkplain java.dyn.MethodHandles#lookup() caller's class}
+         *  has all possible bits set, since the caller class can access all its own members.
+         *  A lookup object on a new lookup class
+         *  {@linkplain java.dyn.MethodHandles.Lookup#in created from a previous lookup object}
+         *  may have some mode bits set to zero.
+         *  The purpose of this is to restrict access via the new lookup object,
+         *  so that it can access only names which can be reached by the original
+         *  lookup object, and also by the new lookup class.
          */
         public int lookupModes() {
             return allowedModes & ALL_MODES;
@@ -220,18 +259,21 @@ public class MethodHandles {
         /**
          * Create a lookup on the specified new lookup class.
          * The resulting object will report the specified
-         * class as its own {@link #lookupClass}.
+         * class as its own {@link #lookupClass lookupClass}.
          * <p>
          * However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
-         * In particular:<ul>
+         * In particular, access capabilities can be lost as follows:<ul>
          * <li>If the new lookup class differs from the old one,
          * protected members will not be accessible by virtue of inheritance.
+         * (Protected members may continue to be accessible because of package sharing.)
          * <li>If the new lookup class is in a different package
          * than the old one, protected and default (package) members will not be accessible.
          * <li>If the new lookup class is not within the same package member
          * as the old one, private members will not be accessible.
-         * <li>In all cases, public members will continue to be accessible.
+         * <li>If the new lookup class is not accessible to the old lookup class,
+         * then no members, not even public members, will be accessible.
+         * (In all other cases, public members will continue to be accessible.)
          * </ul>
          */
         public Lookup in(Class<?> requestedLookupClass) {
@@ -245,9 +287,16 @@ public class MethodHandles {
                 && !VerifyAccess.isSamePackage(this.lookupClass, requestedLookupClass)) {
                 newModes &= ~(PACKAGE|PRIVATE);
             }
+            // Allow nestmate lookups to be created without special privilege:
             if ((newModes & PRIVATE) != 0
                 && !VerifyAccess.isSamePackageMember(this.lookupClass, requestedLookupClass)) {
                 newModes &= ~PRIVATE;
+            }
+            if (newModes == PUBLIC
+                && !VerifyAccess.isClassAccessible(requestedLookupClass, this.lookupClass)) {
+                // The requested class it not accessible from the lookup class.
+                // No permissions.
+                newModes = 0;
             }
             checkUnprivilegedlookupClass(requestedLookupClass);
             return new Lookup(requestedLookupClass, newModes);
@@ -272,35 +321,43 @@ public class MethodHandles {
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
         }
 
-        /** Display the name of the class.
-         *  If there are restrictions on the access permitted to this lookup,
-         *  display those also.
+        /**
+         * Display the name of the class from which lookups are to be made.
+         * (The name is the one reported by {@link java.lang.Class#getName() Class.getName}.)
+         * If there are restrictions on the access permitted to this lookup,
+         * this is indicated by adding a suffix to the class name, consisting
+         * of a slash and a keyword.  The keyword is chosen as follows:
+         * <ul>
+         * <li>If no access is allowed, the suffix is "/noaccess".
+         * <li>If only public access is allowed, the suffix is "/public".
+         * <li>If only public and package access are allowed, the suffix is "/package".
+         * <li>If only public, package, and private access are allowed, the suffix is "/private".
+         * </ul>
+         * If none of the above cases apply, it is the case that full
+         * access (public, package, private, and protected) is allowed.
+         * In this case, no suffix is added.
+         * This is true only of an object obtained originally from
+         * {@link java.dyn.MethodHandles#lookup() MethodHandles.lookup}.
+         * Objects created by {@link java.dyn.MethodHandles.Lookup#in() Lookup#in}
+         * always have restricted access, and will display a suffix.
          */
         @Override
         public String toString() {
-            String modestr;
             String cname = lookupClass.getName();
             switch (allowedModes) {
             case TRUSTED:
-                return "/trusted";
+                return "/trusted";  // internal only
             case PUBLIC:
-                modestr = "/public";
-                if (lookupClass == Object.class)
-                    return modestr;
-                break;
+                return cname + "/public";
             case PUBLIC|PACKAGE:
                 return cname + "/package";
-            case 0:  // should not happen
-                return cname + "/empty";
+            case 0:  // no privileges
+                return cname + "/noaccess";
             case ALL_MODES:
                 return cname;
+            default:
+                return cname + "/private";
             }
-            StringBuilder buf = new StringBuilder(cname);
-            if ((allowedModes & PUBLIC) != 0)     buf.append("/public");
-            if ((allowedModes & PACKAGE) != 0)    buf.append("/package");
-            if ((allowedModes & PROTECTED) != 0)  buf.append("/protected");
-            if ((allowedModes & PRIVATE) != 0)    buf.append("/private");
-            return buf.toString();
         }
 
         // call this from an entry point method in Lookup with extraFrames=0.
@@ -326,7 +383,6 @@ public class MethodHandles {
          * @param name the name of the method
          * @param type the type of the method
          * @return the desired method handle
-         * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public
@@ -342,13 +398,6 @@ public class MethodHandles {
          * with the receiver type (usually {@code refc}) prepended.
          * The method and all its argument types must be accessible to the lookup class.
          * <p>
-         * (<em>BUG NOTE:</em> The type {@code Object} may be prepended instead
-         * of the receiver type, if the receiver type is not on the boot class path.
-         * This is due to a temporary JVM limitation, in which MethodHandle
-         * claims to be unable to access such classes.  To work around this
-         * bug, use {@code convertArguments} to normalize the type of the leading
-         * argument to a type on the boot class path, such as {@code Object}.)
-         * <p>
          * When called, the handle will treat the first argument as a receiver
          * and dispatch on the receiver's type to determine which method
          * implementation to enter.
@@ -358,7 +407,6 @@ public class MethodHandles {
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
          * @return the desired method handle
-         * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoAccessException {
@@ -382,7 +430,6 @@ public class MethodHandles {
          * @param refc the class or interface from which the method is accessed
          * @param type the type of the method, with the receiver argument omitted, and a void return type
          * @return the desired method handle
-         * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoAccessException {
@@ -409,13 +456,13 @@ public class MethodHandles {
          * {@code invokespecial} instruction.)
          * <p>
          * If the explicitly specified caller class is not identical with the
-         * lookup class, a security check TBD is performed.
+         * lookup class, or if this lookup object does not have private access
+         * privileges, the access fails.
          * @param refc the class or interface from which the method is accessed
          * @param name the name of the method (which must not be "&lt;init&gt;")
          * @param type the type of the method, with the receiver argument omitted
          * @param specialCaller the proposed calling class to perform the {@code invokespecial}
          * @return the desired method handle
-         * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public MethodHandle findSpecial(Class<?> refc, String name, MethodType type,
@@ -428,7 +475,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle giving read access to a non-static field.
          * The type of the method handle will have a return type of the field's
          * value type.
@@ -445,7 +491,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle giving write access to a non-static field.
          * The type of the method handle will have a void return type.
          * The method handle will take two arguments, the instance containing
@@ -462,7 +507,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle giving read access to a static field.
          * The type of the method handle will have a return type of the field's
          * value type.
@@ -478,7 +522,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle giving write access to a static field.
          * The type of the method handle will have a void return type.
          * The method handle will take a single
@@ -515,7 +558,6 @@ public class MethodHandles {
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
          * @return the desired method handle
-         * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public MethodHandle bind(Object receiver, String name, MethodType type) throws NoAccessException {
@@ -530,7 +572,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Make a direct method handle to <i>m</i>, if the lookup class has permission.
          * If <i>m</i> is non-static, the receiver argument is treated as an initial argument.
          * If <i>m</i> is virtual, overriding is respected on every call.
@@ -554,7 +595,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle for a reflected method.
          * It will bypass checks for overriding methods on the receiver,
          * as if by a {@code invokespecial} instruction from within the {@code specialCaller}.
@@ -579,7 +619,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle for a reflected constructor.
          * The type of the method handle will be that of the constructor,
          * with the return type changed to the declaring class.
@@ -602,7 +641,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle giving read access to a reflected field.
          * The type of the method handle will have a return type of the field's
          * value type.
@@ -620,7 +658,6 @@ public class MethodHandles {
         }
 
         /**
-         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle giving write access to a reflected field.
          * The type of the method handle will have a void return type.
          * If the field is static, the method handle will take a single
@@ -681,7 +718,7 @@ public class MethodHandles {
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
-            if (Modifier.isPublic(mods) && Modifier.isPublic(refc.getModifiers()))
+            if (Modifier.isPublic(mods) && Modifier.isPublic(refc.getModifiers()) && allowedModes != 0)
                 return;  // common case
             int requestedModes = fixmods(mods);  // adjust 0 => PACKAGE
             if ((requestedModes & allowedModes) != 0
@@ -706,6 +743,8 @@ public class MethodHandles {
                 return "access to public member failed";  // (how?)
             else if (allowedModes == PUBLIC)
                 return "member is not public";
+            else if (allowedModes == 0)
+                return "attempted member access through a non-public class";
             if (Modifier.isPrivate(mods))
                 return "member is private";
             if (Modifier.isProtected(mods))
@@ -713,9 +752,14 @@ public class MethodHandles {
             return "member is private to package";
         }
 
+        private static final boolean ALLOW_NESTMATE_ACCESS = false;
+
         void checkSpecialCaller(Class<?> specialCaller) throws NoAccessException {
             if (allowedModes == TRUSTED)  return;
-            if (!VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))
+            if ((allowedModes & PRIVATE) == 0
+                || (specialCaller != lookupClass()
+                    && !(ALLOW_NESTMATE_ACCESS &&
+                         VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))))
                 throw newNoAccessException("no private access for invokespecial",
                                            new MemberName(specialCaller), lookupClass());
         }
@@ -725,7 +769,9 @@ public class MethodHandles {
             // on itself or a subclass.  Enforce that restriction, from JVMS 5.4.4, etc.
             if (!method.isProtected() || method.isStatic()
                 || allowedModes == TRUSTED
-                || VerifyAccess.isSamePackageMember(method.getDeclaringClass(), lookupClass()))
+                || method.getDeclaringClass() == lookupClass()
+                || (ALLOW_NESTMATE_ACCESS &&
+                    VerifyAccess.isSamePackageMember(method.getDeclaringClass(), lookupClass())))
                 return mh;
             else
                 return restrictReceiver(method, mh, lookupClass());
@@ -765,7 +811,6 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle giving read access to elements of an array.
      * The type of the method handle will have a return type of the array's
      * element type.  Its first argument will be the array type,
@@ -780,7 +825,6 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle giving write access to elements of an array.
      * The type of the method handle will have a void return type.
      * Its last argument will be the array's element type.
@@ -796,25 +840,6 @@ public class MethodHandles {
     /// method handle invocation (reflective style)
 
     /**
-     * @deprecated Alias for MethodHandle.invokeVarargs.
-     */
-    @Deprecated
-    public static
-    Object invokeVarargs(MethodHandle target, Object... arguments) throws Throwable {
-        return target.invokeVarargs(arguments);
-    }
-
-    /**
-     * @deprecated Alias for MethodHandle.invokeVarargs.
-     */
-    @Deprecated
-    public static
-    Object invoke(MethodHandle target, Object... arguments) throws Throwable {
-        return target.invokeVarargs(arguments);
-    }
-
-    /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle which will invoke any method handle of the
      * given type on a standard set of {@code Object} type arguments.
      * The resulting invoker will be a method handle with the following
@@ -823,18 +848,28 @@ public class MethodHandles {
      * <li>a single {@code MethodHandle} target
      * <li>zero or more {@code Object} values (one for each argument in {@code type})
      * </ul>
-     * The invoker will apply reference casts as necessary and unbox primitive arguments,
-     * as if by {@link #convertArguments}.
+     * <p>
+     * The invoker will behave like a call to {@link MethodHandle.invokeGeneric} with
+     * the indicated {@code type}.
+     * That is, if the target is exactly of the given {@code type}, it will behave
+     * like {@code invokeExact}; otherwise it behave as if {@link MethodHandle.asType}
+     * is used to convert the target to the required {@code type}.
+     * <p>
+     * The type of the returned invoker will not be the given {@code type}, but rather
+     * will have all parameter and return types replaced by {@code Object}.
+     * <p>
+     * Before invoking its target, the invoker will apply reference casts as
+     * necessary and unbox and widen primitive arguments, as if by {@link #convertArguments}.
      * The return value of the invoker will be an {@code Object} reference,
      * boxing a primitive value if the original type returns a primitive,
      * and always null if the original type returns void.
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-     * MethodHandle invoker = exactInvoker(type);
+     * MethodHandle invoker = lookup().findVirtual(MethodHandle.class, "invokeGeneric", type);
      * MethodType genericType = type.generic();
      * genericType = genericType.insertParameterType(0, MethodHandle.class);
-     * return convertArguments(invoker, genericType);
+     * return invoker.asType(genericType);
      * </pre></blockquote>
      * @param type the type of target methods which the invoker will apply to
      * @return a method handle suitable for invoking any method handle of the given type
@@ -845,9 +880,8 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle which will invoke any method handle of the
-     * given type on a standard set of {@code Object} type arguments
+     * given {@code type} on a standard set of {@code Object} type arguments
      * and a single trailing {@code Object[]} array.
      * The resulting invoker will be a method handle with the following
      * arguments:
@@ -856,18 +890,31 @@ public class MethodHandles {
      * <li>zero or more {@code Object} values (counted by {@code objectArgCount})
      * <li>an {@code Object[]} array containing more arguments
      * </ul>
-     * The invoker will spread the varargs array, apply
-     * reference casts as necessary, and unbox primitive arguments.
+     * <p>
+     * The invoker will behave like a call to {@link MethodHandle.invokeGeneric} with
+     * the indicated {@code type}.
+     * That is, if the target is exactly of the given {@code type}, it will behave
+     * like {@code invokeExact}; otherwise it behave as if {@link MethodHandle.asType}
+     * is used to convert the target to the required {@code type}.
+     * <p>
+     * The type of the returned invoker will not be the given {@code type}, but rather
+     * will have all parameter and return types replaced by {@code Object}, except for
+     * the last parameter type, which will be the array type {@code Object[]}.
+     * <p>
+     * Before invoking its target, the invoker will spread the varargs array, apply
+     * reference casts as necessary, and unbox and widen primitive arguments.
      * The return value of the invoker will be an {@code Object} reference,
      * boxing a primitive value if the original type returns a primitive,
      * and always null if the original type returns void.
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-     * MethodHandle invoker = exactInvoker(type);
-     * MethodType vaType = MethodType.makeGeneric(objectArgCount, true);
+     * MethodHandle invoker = lookup().findVirtual(MethodHandle.class, "invokeGeneric", type);
+     * MethodType vaType = MethodType.genericMethodType(objectArgCount, true);
      * vaType = vaType.insertParameterType(0, MethodHandle.class);
-     * return spreadArguments(invoker, vaType);
+     * int spreadArgCount = type.parameterCount - objectArgCount;
+     * invoker = invoker.asSpreader(Object.class, spreadArgCount);
+     * return invoker.asType(vaType);
      * </pre></blockquote>
      * @param type the desired target type
      * @param objectArgCount number of fixed (non-varargs) {@code Object} arguments
@@ -881,7 +928,6 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle which will take a invoke any method handle of the
      * given type.  The resulting invoker will have a type which is
      * exactly equal to the desired type, except that it will accept
@@ -889,7 +935,7 @@ public class MethodHandles {
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-     * lookup().findVirtual(MethodHandle.class, "invoke", type);
+     * lookup().findVirtual(MethodHandle.class, "invokeExact", type);
      * </pre></blockquote>
      * @param type the desired target type
      * @return a method handle suitable for invoking any method handle of the given type
@@ -898,39 +944,6 @@ public class MethodHandles {
     MethodHandle exactInvoker(MethodType type) {
         return invokers(type).exactInvoker();
     }
-
-    /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Produce a method handle equivalent to an invokedynamic instruction
-     * which has been linked to the given call site.
-     * Along with {@link Lookup#findVirtual}, {@link Lookup#findStatic},
-     * and {@link Lookup#findSpecial}, this completes the emulation
-     * of the JVM's {@code invoke} instructions.
-     * <p>This method is equivalent to the following code:
-     * <p><blockquote><pre>
-     * MethodHandle getTarget, invoker, result;
-     * getTarget = lookup().bind(site, "getTarget", methodType(MethodHandle.class));
-     * invoker = exactInvoker(site.type());
-     * result = foldArguments(invoker, getTarget)
-     * </pre></blockquote>
-     * @return a method handle which always invokes the call site's target
-     */
-    public static
-    MethodHandle dynamicInvoker(CallSite site) throws NoAccessException {
-        MethodHandle getCSTarget = GET_TARGET;
-        if (getCSTarget == null) {
-            try {
-                GET_TARGET = getCSTarget = Lookup.IMPL_LOOKUP.
-                    findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
-            } catch (NoAccessException ex) {
-                throw new InternalError();
-            }
-        }
-        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, getCSTarget, site);
-        MethodHandle invoker = exactInvoker(site.type());
-        return foldArguments(invoker, getTarget);
-    }
-    private static MethodHandle GET_TARGET = null;  // link this lazily, not eagerly
 
     static Invokers invokers(MethodType type) {
         return MethodTypeImpl.invokers(IMPL_TOKEN, type);
@@ -974,23 +987,23 @@ public class MethodHandles {
             if (t0.isPrimitive())
                 return Wrapper.asPrimitiveType(t1).cast(value);
             else
-                return Wrapper.OBJECT.cast(value, t1);
+                return Wrapper.OBJECT.convert(value, t1);
         }
         boolean prim0 = t0.isPrimitive(), prim1 = t1.isPrimitive();
         if (!prim0) {
             // check contract with caller
-            Wrapper.OBJECT.cast(value, t0);
+            Wrapper.OBJECT.convert(value, t0);
             if (!prim1) {
-                return Wrapper.OBJECT.cast(value, t1);
+                return Wrapper.OBJECT.convert(value, t1);
             }
             // convert reference to primitive by unboxing
             Wrapper w1 = Wrapper.forPrimitiveType(t1);
-            return w1.cast(value, t1);
+            return w1.convert(value, t1);
         }
         // check contract with caller:
         Wrapper.asWrapperType(t0).cast(value);
         Wrapper w1 = Wrapper.forPrimitiveType(t1);
-        return w1.cast(value, t1);
+        return w1.convert(value, t1);
     }
 
     static
@@ -1011,7 +1024,7 @@ public class MethodHandles {
      * Produce a method handle which adapts the type of the
      * given method handle to a new type by pairwise argument conversion.
      * The original type and new type must have the same number of arguments.
-     * The resulting method handle is guaranteed to confess a type
+     * The resulting method handle is guaranteed to report a type
      * which is equal to the desired new type.
      * <p>
      * If the original type and new type are equal, returns target.
@@ -1023,34 +1036,21 @@ public class MethodHandles {
      * Given those types T0, T1, one of the following conversions is applied
      * if possible:
      * <ul>
-     * <li>If T0 and T1 are references, and T1 is not an interface type,
-     *     then a cast to T1 is applied.
+     * <li>If T0 and T1 are references, then a cast to T1 is applied.
      *     (The types do not need to be related in any particular way.)
-     * <li>If T0 and T1 are references, and T1 is an interface type,
-     *     then the value of type T0 is passed as a T1 without a cast.
-     *     (This treatment of interfaces follows the usage of the bytecode verifier.)
-     * <li>If T0 and T1 are primitives, then a Java casting
-     *     conversion (JLS 5.5) is applied, if one exists.
-     * <li>If T0 and T1 are primitives and one is boolean,
-     *     the boolean is treated as a one-bit unsigned integer.
-     *     (This treatment follows the usage of the bytecode verifier.)
-     *     A conversion from another primitive type behaves as if
-     *     it first converts to byte, and then masks all but the low bit.
+     * <li>If T0 and T1 are primitives, then a Java method invocation
+     *     conversion (JLS 5.3) is applied, if one exists.
      * <li>If T0 is a primitive and T1 a reference, a boxing
      *     conversion is applied if one exists, possibly followed by
-     *     an reference conversion to a superclass.
+     *     a reference conversion to a superclass.
      *     T1 must be a wrapper class or a supertype of one.
-     *     If T1 is a wrapper class, T0 is converted if necessary
-     *     to T1's primitive type by one of the preceding conversions.
-     *     Otherwise, T0 is boxed, and its wrapper converted to T1.
      * <li>If T0 is a reference and T1 a primitive, an unboxing
-     *     conversion is applied if one exists, possibly preceded by
-     *     a reference conversion to a wrapper class.
+     *     conversion will be applied at runtime, possibly followed
+     *     by a Java method invocation conversion (JLS 5.3)
+     *     on the primitive value.  (These are the widening conversions.)
      *     T0 must be a wrapper class or a supertype of one.
-     *     If T0 is a wrapper class, its primitive value is converted
-     *     if necessary to T1 by one of the preceding conversions.
-     *     Otherwise, T0 is converted directly to the wrapper type for T1,
-     *     which is then unboxed.
+     *     (In the case where T0 is Object, these are the conversions
+     *     allowed by java.lang.reflect.Method.invoke.)
      * <li>If the return type T1 is void, any returned value is discarded
      * <li>If the return type T0 is void and T1 a reference, a null value is introduced.
      * <li>If the return type T0 is void and T1 a primitive, a zero value is introduced.
@@ -1060,26 +1060,109 @@ public class MethodHandles {
      * @return a method handle which delegates to {@code target} after performing
      *           any necessary argument conversions, and arranges for any
      *           necessary return value conversions
-     * @throws IllegalArgumentException if the conversion cannot be made
+     * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandle#asType
+     * @see MethodHandles#explicitCastArguments
      */
     public static
     MethodHandle convertArguments(MethodHandle target, MethodType newType) {
         MethodType oldType = target.type();
         if (oldType.equals(newType))
             return target;
-        MethodHandle res = MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
-                                                 newType, oldType, null);
+        MethodHandle res = null;
+        try {
+            res = MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
+                                                    newType, oldType, null);
+        } catch (IllegalArgumentException ex) {
+        }
         if (res == null)
-            throw newIllegalArgumentException("cannot convert to "+newType+": "+target);
+            throw new WrongMethodTypeException("cannot convert to "+newType+": "+target);
         return res;
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a method handle which adapts the type of the
+     * given method handle to a new type by pairwise argument conversion.
+     * The original type and new type must have the same number of arguments.
+     * The resulting method handle is guaranteed to report a type
+     * which is equal to the desired new type.
+     * <p>
+     * If the original type and new type are equal, returns target.
+     * <p>
+     * The same conversions are allowed as for {@link #convertArguments convertArguments},
+     * and some additional conversions are also applied if those conversions fail.
+     * Given types T0, T1, one of the following conversions is applied
+     * in addition, if the conversions specified for {@code convertArguments}
+     * would be insufficient:
+     * <ul>
+     * <li>If T0 and T1 are references, and T1 is an interface type,
+     *     then the value of type T0 is passed as a T1 without a cast.
+     *     (This treatment of interfaces follows the usage of the bytecode verifier.)
+     * <li>If T0 and T1 are primitives and one is boolean,
+     *     the boolean is treated as a one-bit unsigned integer.
+     *     (This treatment follows the usage of the bytecode verifier.)
+     *     A conversion from another primitive type behaves as if
+     *     it first converts to byte, and then masks all but the low bit.
+     * <li>If a primitive value would be converted by {@code convertArguments}
+     *     using Java method invocation conversion (JLS 5.3),
+     *     Java casting conversion (JLS 5.5) may be used also.
+     *     This allows primitives to be narrowed as well as widened.
+     * </ul>
+     * @param target the method handle to invoke after arguments are retyped
+     * @param newType the expected type of the new method handle
+     * @return a method handle which delegates to {@code target} after performing
+     *           any necessary argument conversions, and arranges for any
+     *           necessary return value conversions
+     * @throws WrongMethodTypeException if the conversion cannot be made
+     * @see MethodHandle#asType
+     * @see MethodHandles#convertArguments
+     */
+    public static
+    MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
+        return convertArguments(target, newType);  // FIXME!
+    }
+
+    /*
+      FIXME: Reconcile javadoc with 10/22/2010 EG notes on conversion:
+
+      Both converters arrange for their method handles to convert arguments
+      and return values.  The conversion rules are the same for arguments
+      and return values, and depend only on source and target types, S and
+      T.  The conversions allowed by castConvertArguments are a strict
+      superset of those performed by convertArguments.
+
+      In all cases, if S and T are references, a simple checkcast is done.
+      If neither S nor T is a primitive, no attempt is made to unbox and
+      box.  A failed conversion throws ClassCastException.
+
+      If T is void, the value is dropped.
+
+      For compatibility with reflection, if S is void and T is a reference,
+      a null value is produced.
+
+      For compatibility with reflection, if S is a reference and T is a
+      primitive, S is first unboxed and then undergoes primitive conversion.
+      In the case of 'convertArguments', only assignment conversion is
+      performed (no narrowing primitive conversion).
+
+      If S is a primitive, S is boxed, and then the above rules are applied.
+      If S and T are both primitives, the boxing will be undetectable; only
+      the primitive conversions will be apparent to the user.  The key point
+      is that if S is a primitive type, the implementation may box it and
+      treat is as Object, without loss of information, or it may use a "fast
+      path" which does not use boxing.
+
+      Notwithstanding the rules above, for compatibility with the verifier,
+      if T is an interface, it is treated as if it were Object.  [KEEP THIS?]
+
+      Also, for compatibility with the verifier, a boolean may be undergo
+      widening or narrowing conversion to any other primitive type.  [KEEP THIS?]
+    */
+
+    /**
      * Produce a method handle which adapts the calling sequence of the
      * given method handle to a new type, by reordering the arguments.
-     * The resulting method handle is guaranteed to confess a type
+     * The resulting method handle is guaranteed to report a type
      * which is equal to the desired new type.
      * <p>
      * The given array controls the reordering.
@@ -1092,22 +1175,42 @@ public class MethodHandles {
      * outgoing argument will be taken from the {@code I}-th incoming
      * argument, where {@code I} is {@code reorder[N]}.
      * <p>
+     * No argument or return value conversions are applied.
+     * The type of each incoming argument, as determined by {@code newType},
+     * must be identical to the type of the corresponding outgoing argument
+     * or arguments in the target method handle.
+     * The return type of {@code newType} must be identical to the return
+     * type of the original target.
+     * <p>
      * The reordering array need not specify an actual permutation.
      * An incoming argument will be duplicated if its index appears
      * more than once in the array, and an incoming argument will be dropped
      * if its index does not appear in the array.
-     * <p>
-     * Pairwise conversions are applied as needed to arguments and return
-     * values, as with {@link #convertArguments}.
+     * As in the case of {@link #dropArguments(MethodHandle,int,List) dropArguments},
+     * incoming arguments which are not mentioned in the reordering array
+     * are may be any type, as determined only by {@code newType}.
+     * <blockquote><pre>
+MethodType intfn1 = MethodType.methodType(int.class, int.class);
+MethodType intfn2 = MethodType.methodType(int.class, int.class, int.class);
+MethodHandle sub = ... {int x, int y => x-y} ...;
+assert(sub.type().equals(intfn2));
+MethodHandle sub1 = MethodHandles.permuteArguments(sub, intfn2, 0, 1);
+MethodHandle rsub = MethodHandles.permuteArguments(sub, intfn2, 1, 0);
+assert((int)rsub.invokeExact(1, 100) == 99);
+MethodHandle add = ... {int x, int y => x+y} ...;
+assert(add.type().equals(intfn2));
+MethodHandle twice = MethodHandles.permuteArguments(add, intfn1, 0, 0);
+assert(twice.type().equals(intfn1));
+assert((int)twice.invokeExact(21) == 42);
+     * </pre></blockquote>
      * @param target the method handle to invoke after arguments are reordered
      * @param newType the expected type of the new method handle
      * @param reorder a string which controls the reordering
-     * @return a method handle which delegates to {@code target} after performing
-     *           any necessary argument motion and conversions, and arranges for any
-     *           necessary return value conversions
+     * @return a method handle which delegates to {@code target} after it
+     *           drops unused arguments and moves and/or duplicates the other arguments
      */
     public static
-    MethodHandle permuteArguments(MethodHandle target, MethodType newType, int[] reorder) {
+    MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
         MethodType oldType = target.type();
         checkReorder(reorder, newType, oldType);
         return MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
@@ -1130,33 +1233,21 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Produce a method handle which adapts the type of the
-     * given method handle to a new type, by spreading the final argument.
-     * The resulting method handle is guaranteed to confess a type
-     * which is equal to the desired new type.
-     * <p>
-     * The final parameter type of the new type must be an array type T[].
-     * This is the type of what is called the <i>spread</i> argument.
-     * All other arguments of the new type are called <i>ordinary</i> arguments.
-     * <p>
-     * The ordinary arguments of the new type are pairwise converted
-     * to the initial parameter types of the old type, according to the
-     * rules in {@link #convertArguments}.
-     * Any additional arguments in the old type
-     * are converted from the array element type T,
-     * again according to the rules in {@link #convertArguments}.
-     * The return value is converted according likewise.
-     * <p>
-     * The call verifies that the spread argument is in fact an array
-     * of exactly the type length, i.e., the excess number of
-     * arguments in the old type over the ordinary arguments in the new type.
-     * If there are no excess arguments, the spread argument is also
-     * allowed to be null.
-     * @param target the method handle to invoke after the argument is prepended
+     * <em>METHOD WILL BE REMOVED FOR PFD:</em>
+     * Equivalent to the following code:
+     * <p><blockquote><pre>
+     * int spreadPos = newType.parameterCount() - 1;
+     * Class<?> spreadType = newType.parameterType(spreadPos);
+     * int spreadCount = target.type().parameterCount() - spreadPos;
+     * MethodHandle adapter = target.asSpreader(spreadType, spreadCount);
+     * adapter = adapter.asType(newType);
+     * return adapter;
+     * </pre></blockquote>
+     * @param target the method handle to invoke after argument spreading
      * @param newType the expected type of the new method handle
-     * @return a new method handle which spreads its final argument,
+     * @return a method handle which spreads its final argument,
      *         before calling the original method handle
+     * @deprecated Use {@link MethodHandle#asSpreader}
      */
     public static
     MethodHandle spreadArguments(MethodHandle target, MethodType newType) {
@@ -1176,21 +1267,22 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Produce a method handle which adapts the type of the
-     * given method handle to a new type, by collecting a series of
-     * trailing arguments as elements to a single argument array.
-     * <p>
-     * This method may be used as an inverse to {@link #spreadArguments}.
-     * The final parameter type of the old type must be an array type T[],
-     * which is the type of what is called the <i>spread</i> argument.
-     * The trailing arguments of the new type which correspond to
-     * the spread argument are all converted to type T and collected
-     * into an array before the original method is called.
-     * @param target the method handle to invoke after the argument is prepended
+     * <em>METHOD WILL BE REMOVED FOR PFD:</em>
+     * Equivalent to the following code:
+     * <p><blockquote><pre>
+     * int collectPos = target.type().parameterCount() - 1;
+     * Class<?> collectType = target.type().parameterType(collectPos);
+     * if (!collectType.isArray())  collectType = Object[].class;
+     * int collectCount = newType.parameterCount() - collectPos;
+     * MethodHandle adapter = target.asCollector(collectType, collectCount);
+     * adapter = adapter.asType(newType);
+     * return adapter;
+     * </pre></blockquote>
+     * @param target the method handle to invoke after argument collection
      * @param newType the expected type of the new method handle
-     * @return a new method handle which collects some trailing argument
+     * @return a method handle which collects some trailing argument
      *         into an array, before calling the original method handle
+     * @deprecated Use {@link MethodHandle#asCollector} instead.
      */
     public static
     MethodHandle collectArguments(MethodHandle target, MethodType newType) {
@@ -1209,7 +1301,88 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a method handle of the requested return type which returns the given
+     * constant value every time it is invoked.
+     * <p>
+     * Before the method handle is returned, the passed-in value is converted to the requested type.
+     * If the requested type is primitive, widening primitive conversions are attempted,
+     * else reference conversions are attempted.
+     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)},
+     * unless the type is {@code void}, in which case it is {@code identity(type)}.
+     * @param type the return type of the desired method handle
+     * @param value the value to return
+     * @return a method handle of the given return type and no arguments, which always returns the given value
+     * @throws WrongMethodTypeException if the value cannot be converted to the required return type
+     */
+    public static
+    MethodHandle constant(Class<?> type, Object value) {
+        if (type.isPrimitive()) {
+            if (type == void.class)  return identity(type);
+            Wrapper w = Wrapper.forPrimitiveType(type);
+            return identity(type).bindTo(w.convert(value, type));
+        } else {
+            return identity(type).bindTo(type.cast(value));
+        }
+    }
+
+    /**
+     * Produce a method handle of the requested type which returns the given
+     * constant value every time it is invoked.
+     * <p>
+     * Before the method handle is returned, the passed-in value is converted to the requested return type,
+     * as if by {@link #explicitCastArguments #explicitCastArguments}.
+     * That is, if the return type is primitive, the value is unboxed,
+     * and the primitive value is widened and/or narrowed.
+     * Otherwise, reference conversions are attempted.
+     * @param type the type of the desired method handle
+     * @param value the value to return
+     * @return a method handle of the given return type and no arguments, which always returns the given value
+     * @throws WrongMethodTypeException if the value cannot be converted to the required return type
+     */
+    public static
+    MethodHandle constant(MethodType type, Object value) {
+        MethodHandle target = constant(type.returnType(), value);
+        int len = type.parameterCount();
+        if (len == 0)
+            return target.asType(type);
+        target = target.asType(type.dropParameterTypes(0, len));
+        return dropArguments(target, 0, type.parameterList().subList(0, len));
+    }
+
+     /**
+      * Produce a method handle which returns its sole argument when invoked.
+      * <p>The identity function for {@code void} takes no arguments and returns no values.
+      * @param type the type of the sole parameter and return value of the desired method handle
+      * @return a unary method handle which accepts and returns the given type
+      */
+    public static
+    MethodHandle identity(Class<?> type) {
+        return ValueConversions.identity(type);
+    }
+
+     /**
+      * Produce a method handle of the requested type which returns its argument when invoked.
+      * If the return type differs from the first argument type, the argument will be
+      * converted as if by {@link #explicitCastArguments explicitCastArguments}.
+      * If there are additional arguments beyond the first, they are discarded.
+      * <p>The identity function for {@code void} discards all its arguments.
+      * @param type the type of the desired method handle
+      * @return a method handle of the given type, which always returns its first argument
+      * @throws WrongMethodTypeException if the first argument cannot be converted to the required return type
+      */
+    public static
+    MethodHandle identity(MethodType type) {
+        MethodHandle target = identity(type.returnType());
+        int len = type.parameterCount();
+        if (len == 1)
+            return explicitCastArguments(target, type);
+        if (len == 0)
+            throw new IllegalArgumentException("not enough arguments");
+        target = explicitCastArguments(target, type.dropParameterTypes(1, len));
+        return dropArguments(target, 1, type.parameterList().subList(1, len));
+    }
+
+    /**
      * Produce a method handle which calls the original method handle {@code target},
      * after inserting the given argument(s) at the given position.
      * The formal parameters to {@code target} which will be supplied by those
@@ -1229,8 +1402,9 @@ public class MethodHandles {
      * @param target the method handle to invoke after the argument is inserted
      * @param pos where to insert the argument (zero for the first)
      * @param values the series of arguments to insert
-     * @return a new method handle which inserts an additional argument,
+     * @return a method handle which inserts an additional argument,
      *         before calling the original method handle
+     * @see MethodHandle#bindTo
      */
     public static
     MethodHandle insertArguments(MethodHandle target, int pos, Object... values) {
@@ -1263,14 +1437,7 @@ public class MethodHandles {
         return result;
     }
 
-    @Deprecated // "use MethodHandles.insertArguments instead"
-    public static
-    MethodHandle insertArgument(MethodHandle target, int pos, Object value) {
-        return insertArguments(target, pos, value);
-    }
-
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Produce a method handle which calls the original method handle,
      * after dropping the given argument(s) at the given position.
      * The type of the new method handle will insert the given argument
@@ -1283,25 +1450,25 @@ public class MethodHandles {
      * <p>
      * <b>Example:</b>
      * <p><blockquote><pre>
-     *   import static java.dyn.MethodHandles.*;
-     *   import static java.dyn.MethodType.*;
-     *   ...
-     *   MethodHandle cat = lookup().findVirtual(String.class,
-     *     "concat", methodType(String.class, String.class));
-     *   System.out.println((String) cat.invokeExact("x", "y")); // xy
-     *   MethodHandle d0 = dropArguments(cat, 0, String.class);
-     *   System.out.println((String) d0.invokeExact("x", "y", "z")); // yz
-     *   MethodHandle d1 = dropArguments(cat, 1, String.class);
-     *   System.out.println((String) d1.invokeExact("x", "y", "z")); // xz
-     *   MethodHandle d2 = dropArguments(cat, 2, String.class);
-     *   System.out.println((String) d2.invokeExact("x", "y", "z")); // xy
-     *   MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
-     *   System.out.println((String) d12.invokeExact("x", 12, true, "z")); // xz
+import static java.dyn.MethodHandles.*;
+import static java.dyn.MethodType.*;
+...
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
+MethodHandle d0 = dropArguments(cat, 0, String.class);
+assertEquals("yz", (String) d0.invokeExact("x", "y", "z"));
+MethodHandle d1 = dropArguments(cat, 1, String.class);
+assertEquals("xz", (String) d1.invokeExact("x", "y", "z"));
+MethodHandle d2 = dropArguments(cat, 2, String.class);
+assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
+MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
+assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * </pre></blockquote>
-     * @param target the method handle to invoke after the argument is dropped
-     * @param valueTypes the type(s) of the argument to drop
-     * @param pos which argument to drop (zero for the first)
-     * @return a new method handle which drops an argument of the given type,
+     * @param target the method handle to invoke after the arguments are dropped
+     * @param valueTypes the type(s) of the argument(s) to drop
+     * @param pos position of first argument to drop (zero for the leftmost)
+     * @return a method handle which drops arguments of the given types,
      *         before calling the original method handle
      */
     public static
@@ -1319,23 +1486,36 @@ public class MethodHandles {
         return MethodHandleImpl.dropArguments(IMPL_TOKEN, target, newType, pos);
     }
 
+    /**
+     * Produce a method handle which calls the original method handle,
+     * after dropping the given argument(s) at the given position.
+     * The type of the new method handle will insert the given argument
+     * type(s), at that position, into the original handle's type.
+     * This method is equivalent to the following code:
+     * <code>
+     * {@link #dropArguments(MethodHandle,int,List) dropArguments}(target, pos, Arrays.asList(valueTypes))
+     * </code>
+     * @param target the method handle to invoke after the arguments are dropped
+     * @param valueTypes the type(s) of the argument(s) to drop
+     * @param pos position of first argument to drop (zero for the leftmost)
+     * @return a method handle which drops arguments of the given types,
+     *         before calling the original method handle
+     */
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
         return dropArguments(target, pos, Arrays.asList(valueTypes));
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Adapt a target method handle {@code target} by pre-processing
      * one or more of its arguments, each with its own unary filter function,
      * and then calling the target with each pre-processed argument
      * replaced by the result of its corresponding filter function.
      * <p>
      * The pre-processing is performed by one or more method handles,
-     * specified in the non-null elements of the {@code filters} array.
-     * (If there are no such elements, the original target is returned.)
-     * Each filter (that is, each non-null element of {@code filters})
-     * is applied to the corresponding argument of the adapter.
+     * specified in the elements of the {@code filters} array.
+     * (If there are no elements in the array, the original target is returned.)
+     * Each filter is applied to the corresponding argument of the adapter.
      * <p>
      * If a filter {@code F} applies to the {@code N}th argument of
      * the method handle, then {@code F} must be a method handle which
@@ -1345,46 +1525,49 @@ public class MethodHandles {
      * The return type of {@code F} must be identical to the corresponding
      * parameter type of the target.
      * <p>
-     * It is an error if there are non-null elements of {@code filters}
+     * It is an error if there are elements of {@code filters}
      * which do not correspond to argument positions in the target.
-     * The actual length of the target array may be any number, it need
-     * not be the same as the parameter count of the target type.
-     * (This provides an easy way to filter just the first argument or two
-     * of a target method handle.)
-     * <p> Here is pseudocode for the resulting adapter:
-     * <blockquote><pre>
-     * // there are N arguments in the A sequence
-     * T target(A[N]...);
-     * [i&lt;N] V[i] filter[i](B[i]) = filters[i] ?: identity;
-     * T adapter(B[N]... b) {
-     *   A[N] a...;
-     *   [i&lt;N] a[i] = filter[i](b[i]);
-     *   return target(a...);
-     * }
+     * <b>Example:</b>
+     * <p><blockquote><pre>
+import static java.dyn.MethodHandles.*;
+import static java.dyn.MethodType.*;
+...
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+MethodHandle upcase = lookup().findVirtual(String.class,
+  "toUpperCase", methodType(String.class));
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
+MethodHandle f0 = filterArguments(cat, 0, upcase);
+assertEquals("Xy", (String) f0.invokeExact("x", "y")); // Xy
+MethodHandle f1 = filterArguments(cat, 1, upcase);
+assertEquals("xY", (String) f1.invokeExact("x", "y")); // xY
+MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
+assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * </pre></blockquote>
      * @param target the method handle to invoke after arguments are filtered
+     * @param pos the position of the first argument to filter
      * @param filters method handles to call initially on filtered arguments
      * @return method handle which incorporates the specified argument filtering logic
-     * @throws IllegalArgumentException if a non-null element of {@code filters}
-     *          does not match a corresponding argument type of {@code target}
+     * @throws IllegalArgumentException if an element of {@code filters} is null or
+     *          does not match a corresponding argument type of {@code target} as described above
      */
     public static
-    MethodHandle filterArguments(MethodHandle target, MethodHandle... filters) {
+    MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
         MethodType targetType = target.type();
         MethodHandle adapter = target;
         MethodType adapterType = targetType;
-        int pos = -1, maxPos = targetType.parameterCount();
+        int maxPos = targetType.parameterCount();
+        int curPos = pos;
         for (MethodHandle filter : filters) {
-            pos += 1;
-            if (filter == null)  continue;
-            if (pos >= maxPos)
+            if (curPos >= maxPos)
                 throw newIllegalArgumentException("too many filters");
             MethodType filterType = filter.type();
             if (filterType.parameterCount() != 1
-                || filterType.returnType() != targetType.parameterType(pos))
+                || filterType.returnType() != targetType.parameterType(curPos))
                 throw newIllegalArgumentException("target and filter types do not match");
-            adapterType = adapterType.changeParameterType(pos, filterType.parameterType(0));
-            adapter = MethodHandleImpl.filterArgument(IMPL_TOKEN, adapter, pos, filter);
+            adapterType = adapterType.changeParameterType(curPos, filterType.parameterType(0));
+            adapter = MethodHandleImpl.filterArgument(IMPL_TOKEN, adapter, curPos, filter);
+            curPos += 1;
         }
         MethodType midType = adapter.type();
         if (midType != adapterType)
@@ -1393,7 +1576,48 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Adapt a target method handle {@code target} by post-processing
+     * its return value with a unary filter function.
+     * <p>
+     * If a filter {@code F} applies to the return value of
+     * the target method handle, then {@code F} must be a method handle which
+     * takes exactly one argument.  The return type of {@code F}
+     * replaces the return type of the target
+     * in the resulting adapted method handle.
+     * The argument type of {@code F} must be identical to the
+     * return type of the target.
+     * <b>Example:</b>
+     * <p><blockquote><pre>
+import static java.dyn.MethodHandles.*;
+import static java.dyn.MethodType.*;
+...
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+MethodHandle length = lookup().findVirtual(String.class,
+  "length", methodType(int.class));
+System.out.println((String) cat.invokeExact("x", "y")); // xy
+MethodHandle f0 = filterReturnValue(cat, length);
+System.out.println((int) f0.invokeExact("x", "y")); // 2
+     * </pre></blockquote>
+     * @param target the method handle to invoke before filtering the return value
+     * @param filter method handle to call on the return value
+     * @return method handle which incorporates the specified return value filtering logic
+     * @throws IllegalArgumentException if {@code filter} is null or
+     *          does not match the return type of {@code target} as described above
+     */
+    public static
+    MethodHandle filterReturnValue(MethodHandle target, MethodHandle filter) {
+        MethodType targetType = target.type();
+        MethodType filterType = filter.type();
+        if (filterType.parameterCount() != 1
+            || filterType.parameterType(0) != targetType.returnType())
+            throw newIllegalArgumentException("target and filter types do not match");
+        // FIXME: Too many nodes here.
+        MethodHandle returner = dropArguments(filter, 0, targetType.parameterList());
+        return foldArguments(returner, exactInvoker(target.type()).bindTo(target));
+    }
+
+    /**
      * Adapt a target method handle {@code target} by pre-processing
      * some of its arguments, and then calling the target with
      * the result of the pre-processing, plus all original arguments.
@@ -1410,10 +1634,10 @@ public class MethodHandles {
      * The resulting adapter is the same type as the target, except that the
      * initial argument type of the target is dropped.
      * <p>
-     * (Note that {@link #dropArguments} can be used to remove any arguments
+     * (Note that {@link #dropArguments(MethodHandle,int,List) dropArguments} can be used to remove any arguments
      * that either the {@code combiner} or {@code target} does not wish to receive.
      * If some of the incoming arguments are destined only for the combiner,
-     * consider using {@link #collectArguments} instead, since those
+     * consider using {@link MethodHandle#asCollector} instead, since those
      * arguments will not need to be live on the stack on entry to the
      * target.)
      * <p>
@@ -1434,7 +1658,7 @@ public class MethodHandles {
      * @return method handle which incorporates the specified argument folding logic
      * @throws IllegalArgumentException if the first argument type of
      *          {@code target} is not the same as {@code combiner}'s return type,
-     *          or if the next {@code foldArgs} argument types of {@code target}
+     *          or if the following argument types of {@code target}
      *          are not identical with the argument types of {@code combiner}
      */
     public static
@@ -1443,6 +1667,10 @@ public class MethodHandles {
         MethodType combinerType = combiner.type();
         int foldArgs = combinerType.parameterCount();
         boolean ok = (targetType.parameterCount() >= 1 + foldArgs);
+        if (ok && !combinerType.parameterList().equals(targetType.parameterList().subList(1, foldArgs+1)))
+            ok = false;
+        if (ok && !combinerType.returnType().equals(targetType.parameterType(0)))
+            ok = false;
         if (!ok)
             throw misMatchedTypes("target and combiner types", targetType, combinerType);
         MethodType newType = targetType.dropParameterTypes(0, 1);
@@ -1450,7 +1678,6 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Make a method handle which adapts a target method handle,
      * by guarding it with a test, a boolean-valued method handle.
      * If the guard fails, a fallback handle is called instead.
@@ -1470,6 +1697,9 @@ public class MethodHandles {
      *     return fallback(a..., b...);
      * }
      * </pre></blockquote>
+     * Note that the test arguments ({@code a...} in the pseudocode) cannot
+     * be modified by execution of the test, and so are passed unchanged
+     * from the caller to the target or fallback as appropriate.
      * @param test method handle used for test, must return boolean
      * @param target method handle to call if test passes
      * @param fallback method handle to call if test fails
@@ -1485,40 +1715,19 @@ public class MethodHandles {
         MethodType gtype = test.type();
         MethodType ttype = target.type();
         MethodType ftype = fallback.type();
-        if (ttype != ftype)
+        if (!ttype.equals(ftype))
             throw misMatchedTypes("target and fallback types", ttype, ftype);
-        MethodType gtype2 = ttype.changeReturnType(boolean.class);
-        if (gtype2 != gtype) {
-            if (gtype.returnType() != boolean.class)
-                throw newIllegalArgumentException("guard type is not a predicate "+gtype);
-            int gpc = gtype.parameterCount(), tpc = ttype.parameterCount();
-            if (gpc < tpc) {
-                test = dropArguments(test, gpc, ttype.parameterList().subList(gpc, tpc));
-                gtype = test.type();
-            }
-            if (gtype2 != gtype)
+        if (gtype.returnType() != boolean.class)
+            throw newIllegalArgumentException("guard type is not a predicate "+gtype);
+        List<Class<?>> targs = ttype.parameterList();
+        List<Class<?>> gargs = gtype.parameterList();
+        if (!targs.equals(gargs)) {
+            int gpc = gargs.size(), tpc = targs.size();
+            if (gpc >= tpc || !targs.subList(0, gpc).equals(gargs))
                 throw misMatchedTypes("target and test types", ttype, gtype);
+            test = dropArguments(test, gpc, targs.subList(gpc, tpc));
+            gtype = test.type();
         }
-        /* {
-            MethodHandle invoke = findVirtual(MethodHandle.class, "invoke", target.type());
-            static MethodHandle choose(boolean z, MethodHandle t, MethodHandle f) {
-                return z ? t : f;
-            }
-            static MethodHandle compose(MethodHandle f, MethodHandle g) {
-                Class<?> initargs = g.type().parameterArray();
-                f = dropArguments(f, 1, initargs);  // ignore 2nd copy of args
-                return combineArguments(f, g);
-            }
-            // choose = \z.(z ? target : fallback)
-            MethodHandle choose = findVirtual(MethodHandles.class, "choose",
-                    MethodType.methodType(boolean.class, MethodHandle.class, MethodHandle.class));
-            choose = appendArgument(choose, target);
-            choose = appendArgument(choose, fallback);
-            MethodHandle dispatch = compose(choose, test);
-            // dispatch = \(a...).(test(a...) ? target : fallback)
-            return combineArguments(invoke, dispatch, 0);
-            // return \(a...).((test(a...) ? target : fallback).invokeExact(a...))
-        } */
         return MethodHandleImpl.makeGuardWithTest(IMPL_TOKEN, test, target, fallback);
     }
 
@@ -1527,29 +1736,38 @@ public class MethodHandles {
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Make a method handle which adapts a target method handle,
      * by running it inside an exception handler.
      * If the target returns normally, the adapter returns that value.
      * If an exception matching the specified type is thrown, the fallback
      * handle is called instead on the exception, plus the original arguments.
      * <p>
-     * The handler must have leading parameter of {@code exType} or a supertype,
-     * followed by arguments which correspond <em>(how? TBD)</em> to
-     * all the parameters of the target.
-     * The target and handler must return the same type.
+     * The target and handler must have the same corresponding
+     * argument and return types, except that handler may omit trailing arguments
+     * (similarly to the predicate in {@link #guardWithTest guardWithTest}).
+     * Also, the handler must have an extra leading parameter of {@code exType} or a supertype.
      * <p> Here is pseudocode for the resulting adapter:
      * <blockquote><pre>
-     * T target(A...);
+     * T target(A..., B...);
      * T handler(ExType, A...);
-     * T adapter(A... a) {
+     * T adapter(A... a, B... b) {
      *   try {
-     *     return target(a...);
+     *     return target(a..., b...);
      *   } catch (ExType ex) {
      *     return handler(ex, a...);
      *   }
      * }
      * </pre></blockquote>
+     * Note that the saved arguments ({@code a...} in the pseudocode) cannot
+     * be modified by execution of the target, and so are passed unchanged
+     * from the caller to the handler, if the handler is invoked.
+     * <p>
+     * The target and handler must return the same type, even if the handler
+     * always throws.  (This might happen, for instance, because the handler
+     * is simulating a {@code finally} clause).
+     * To create such a throwing handler, compose the handler creation logic
+     * with {@link #throwException throwException},
+     * in order to create a method handle of the correct return type.
      * @param target method handle to call
      * @param exType the type of exception which the handler will catch
      * @param handler method handle to call if a matching exception is thrown
@@ -1563,16 +1781,23 @@ public class MethodHandles {
     MethodHandle catchException(MethodHandle target,
                                 Class<? extends Throwable> exType,
                                 MethodHandle handler) {
-        MethodType targetType = target.type();
-        MethodType handlerType = handler.type();
-        boolean ok = (targetType.parameterCount() ==
-                      handlerType.parameterCount() - 1);
-//        for (int i = 0; ok && i < numExArgs; i++) {
-//            if (targetType.parameterType(i) != handlerType.parameterType(1+i))
-//                ok = false;
-//        }
-        if (!ok)
-            throw newIllegalArgumentException("target and handler types do not match");
+        MethodType ttype = target.type();
+        MethodType htype = handler.type();
+        if (htype.parameterCount() < 1 ||
+            !htype.parameterType(0).isAssignableFrom(exType))
+            throw newIllegalArgumentException("handler does not accept exception type "+exType);
+        if (htype.returnType() != ttype.returnType())
+            throw misMatchedTypes("target and handler return types", ttype, htype);
+        List<Class<?>> targs = ttype.parameterList();
+        List<Class<?>> hargs = htype.parameterList();
+        hargs = hargs.subList(1, hargs.size());  // omit leading parameter from handler
+        if (!targs.equals(hargs)) {
+            int hpc = hargs.size(), tpc = targs.size();
+            if (hpc >= tpc || !targs.subList(0, hpc).equals(hargs))
+                throw misMatchedTypes("target and handler types", ttype, htype);
+            handler = dropArguments(handler, hpc, hargs.subList(hpc, tpc));
+            htype = handler.type();
+        }
         return MethodHandleImpl.makeGuardWithCatch(IMPL_TOKEN, target, exType, handler);
     }
 
@@ -1590,10 +1815,11 @@ public class MethodHandles {
     }
 
     /**
-     * Produce a wrapper instance of the given "SAM" type which redirects its calls to the given method handle.
-     * A SAM type is a type which declares a single abstract method.
-     * Additionally, it must have either no constructor (as an interface)
-     * or have a public or protected constructor of zero arguments (as a class).
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a wrapper instance of the given "SAM" interface which redirects
+     * its calls to the given method handle.
+     * A SAM interface is an interface which declares a single abstract method.
+     * The type must be public.  (No additional access checks are performed.)
      * <p>
      * The resulting instance of the required SAM type will respond to
      * invocation of the SAM type's single abstract method by calling
@@ -1605,9 +1831,9 @@ public class MethodHandles {
      * The method handle may throw an <em>undeclared exception</em>,
      * which means any checked exception (or other checked throwable)
      * not declared by the SAM type's single abstract method.
-     * If this happens, the throwable will be wrapped in an instance
-     * of {@link UndeclaredThrowableException} and thrown in that
-     * wrapped form.
+     * If this happens, the throwable will be wrapped in an instance of
+     * {@link java.lang.reflect.UndeclaredThrowableException UndeclaredThrowableException}
+     * and thrown in that wrapped form.
      * <p>
      * The wrapper instance is guaranteed to be of a non-public
      * implementation class C in a package containing no classes
@@ -1618,19 +1844,36 @@ public class MethodHandles {
      * <li>the SAM type itself and any methods in the SAM type
      * <li>the supertypes of the SAM type (if any) and their methods
      * <li>{@link Object} and its methods
-     * <li>{@link MethodHandleProvider} and its methods
+     * <li>{@link java.dyn.AsInstanceObject AsInstanceObject} and its methods</li>
      * </ul>
+     * <p>
+     * (Note: When determining the unique abstract method of a SAM interface,
+     * the public {@code Object} methods ({@code toString}, {@code equals}, {@code hashCode})
+     * are disregarded.  For example, {@link java.util.Comparator} is a SAM interface,
+     * even though it re-declares the {@code Object.equals} method.)
      * <p>
      * No stable mapping is promised between the SAM type and
      * the implementation class C.  Over time, several implementation
      * classes might be used for the same SAM type.
      * <p>
      * This method is not guaranteed to return a distinct
-     * wrapper object for each separate call.  If the JVM is able
-     * to prove that a wrapper has already been created for a given
+     * wrapper object for each separate call.  If the implementation is able
+     * to prove that a wrapper of the required SAM type
+     * has already been created for a given
      * method handle, or for another method handle with the
-     * same behavior, the JVM may return that wrapper in place of
+     * same behavior, the implementation may return that wrapper in place of
      * a new wrapper.
+     * <p>
+     * This method is designed to apply to common use cases
+     * where a single method handle must interoperate with
+     * a type (class or interface) that implements a function-like
+     * API.  Additional variations, such as SAM classes with
+     * private constructors, or interfaces with multiple but related
+     * entry points, must be covered by hand-written or automatically
+     * generated adapter classes.  In those cases, consider implementing
+     * {@link java.dyn.MethodHandles.AsInstanceObject AsInstanceObject}
+     * in the adapters, so that generic code can extract the underlying
+     * method handle without knowing where the SAM adapter came from.
      * @param target the method handle to invoke from the wrapper
      * @param samType the desired type of the wrapper, a SAM type
      * @return a correctly-typed wrapper for the given {@code target}
@@ -1639,29 +1882,84 @@ public class MethodHandles {
      */
     // ISSUE: Should we delegate equals/hashCode to the targets?
     // Not useful unless there is a stable equals/hashCode behavior
-    // for MethodHandle, and for MethodHandleProvider.asMethodHandle.
+    // for MethodHandle, but there isn't.
     public static
-    <T> T asInstance(MethodHandle target, Class<T> samType) {
+    <T> T asInstance(final MethodHandle target, final Class<T> samType) {
         // POC implementation only; violates the above contract several ways
         final Method sam = getSamMethod(samType);
         if (sam == null)
             throw new IllegalArgumentException("not a SAM type: "+samType.getName());
         MethodType samMT = MethodType.methodType(sam.getReturnType(), sam.getParameterTypes());
         if (!samMT.equals(target.type()))
-            throw new IllegalArgumentException("wrong method type");
-        final MethodHandle mh = target;
+            throw new IllegalArgumentException("wrong method type: "+target+" should match "+sam);
         return samType.cast(Proxy.newProxyInstance(
                 samType.getClassLoader(),
-                new Class[]{ samType, MethodHandleProvider.class },
+                new Class[]{ samType, AsInstanceObject.class },
                 new InvocationHandler() {
+                    private Object getArg(String name) {
+                        if ((Object)name == "getAsInstanceTarget")  return target;
+                        if ((Object)name == "getAsInstanceType")    return samType;
+                        throw new AssertionError();
+                    }
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        if (method.getDeclaringClass() == MethodHandleProvider.class) {
-                            return method.invoke(mh, args);
-                        }
-                        assert method.equals(sam) : method;
-                        return mh.invokeVarargs(args);
+                        if (method.getDeclaringClass() == AsInstanceObject.class)
+                            return getArg(method.getName());
+                        if (method.equals(sam))
+                            return target.invokeVarargs(args);
+                        if (isObjectMethod(method))
+                            return callObjectMethod(this, method, args);
+                        throw new InternalError();
                     }
                 }));
+    }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Interface implemented by every object which is produced by {@link #asInstance asInstance}.
+     * The methods of this interface allow a caller to recover the parameters
+     * to {@code asInstance}.
+     * This allows applications to repeatedly convert between method handles
+     * and SAM objects, without the risk of creating unbounded delegation chains.
+     */
+    public interface AsInstanceObject {
+        /** Produce or recover a target method handle which is behaviorally
+         *  equivalent to the SAM method of this object.
+         */
+        public MethodHandle getAsInstanceTarget();
+        /** Recover the SAM type for which this object was created.
+         */
+        public Class<?> getAsInstanceType();
+    }
+
+    private static
+    boolean isObjectMethod(Method m) {
+        switch (m.getName()) {
+        case "toString":
+            return (m.getReturnType() == String.class
+                    && m.getParameterTypes().length == 0);
+        case "hashCode":
+            return (m.getReturnType() == int.class
+                    && m.getParameterTypes().length == 0);
+        case "equals":
+            return (m.getReturnType() == boolean.class
+                    && m.getParameterTypes().length == 1
+                    && m.getParameterTypes()[0] == Object.class);
+        }
+        return false;
+    }
+
+    private static
+    Object callObjectMethod(Object self, Method m, Object[] args) {
+        assert(isObjectMethod(m)) : m;
+        switch (m.getName()) {
+        case "toString":
+            return self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
+        case "hashCode":
+            return System.identityHashCode(self);
+        case "equals":
+            return (self == args[0]);
+        }
+        return null;
     }
 
     private static
@@ -1670,7 +1968,7 @@ public class MethodHandles {
         for (Method m : samType.getMethods()) {
             int mod = m.getModifiers();
             if (Modifier.isAbstract(mod)) {
-                if (sam != null)
+                if (sam != null && !isObjectMethod(sam))
                     return null;  // too many abstract methods
                 sam = m;
             }
@@ -1690,5 +1988,10 @@ public class MethodHandles {
             }
         }
         return null;
+    }
+
+    /*non-public*/
+    static MethodHandle withTypeHandler(MethodHandle target, MethodHandle typeHandler) {
+        return MethodHandleImpl.withTypeHandler(IMPL_TOKEN, target, typeHandler);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CIOBJARRAYKLASS_HPP
+#define SHARE_VM_CI_CIOBJARRAYKLASS_HPP
+
+#include "ci/ciArrayKlass.hpp"
 
 // ciObjArrayKlass
 //
@@ -69,3 +74,5 @@ public:
 
   static ciObjArrayKlass* make(ciKlass* element_klass);
 };
+
+#endif // SHARE_VM_CI_CIOBJARRAYKLASS_HPP

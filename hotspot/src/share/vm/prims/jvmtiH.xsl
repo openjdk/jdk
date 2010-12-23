@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,7 @@ enum {
     JVMTI_VERSION_1   = 0x30010000,
     JVMTI_VERSION_1_0 = 0x30010000,
     JVMTI_VERSION_1_1 = 0x30010100,
+    JVMTI_VERSION_1_2 = 0x30010200,
 
     JVMTI_VERSION = 0x30000000 + (</xsl:text>
   <xsl:value-of select="//specification/@majorversion"/>

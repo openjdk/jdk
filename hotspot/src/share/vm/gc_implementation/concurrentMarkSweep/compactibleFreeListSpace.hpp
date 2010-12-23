@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_COMPACTIBLEFREELISTSPACE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_COMPACTIBLEFREELISTSPACE_HPP
+
+#include "gc_implementation/concurrentMarkSweep/binaryTreeDictionary.hpp"
+#include "gc_implementation/concurrentMarkSweep/freeList.hpp"
+#include "gc_implementation/concurrentMarkSweep/promotionInfo.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/space.hpp"
+
 // Classes in support of keeping track of promotions into a non-Contiguous
 // space, in this case a CompactibleFreeListSpace.
 
@@ -646,3 +655,5 @@ size_t PromotionInfo::refillSize() const {
                                    * CMSSpoolBlockSize);
   return CompactibleFreeListSpace::adjustObjectSize(sz);
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_COMPACTIBLEFREELISTSPACE_HPP

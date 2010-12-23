@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,28 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharedRuntime_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_zero.inline.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/vframeArray.hpp"
+#include "vmreg_zero.inline.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
+#ifdef SHARK
+#include "compiler/compileBroker.hpp"
+#include "shark/sharkCompiler.hpp"
+#endif
 
 DeoptimizationBlob *SharedRuntime::_deopt_blob;
 SafepointBlob      *SharedRuntime::_polling_page_safepoint_handler_blob;

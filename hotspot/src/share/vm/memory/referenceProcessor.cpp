@@ -22,8 +22,16 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_referenceProcessor.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/jniHandles.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -762,9 +770,8 @@ void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
   for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
-      gclog_or_tty->print_cr(
-        "\nAbandoning %s discovered list",
-        list_name(i));
+      gclog_or_tty->print_cr("\nAbandoning %s discovered list",
+                             list_name(i));
     }
     abandon_partial_discovered_list(_discoveredSoftRefs[i]);
   }
@@ -1051,9 +1058,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
     Thread* thr = Thread::current();
-    assert(thr->is_GC_task_thread(),
-           "Dubious cast from Thread* to WorkerThread*?");
-    id = ((WorkerThread*)thr)->id();
+    id = thr->as_Worker_thread()->id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.
@@ -1087,8 +1092,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       ShouldNotReachHere();
   }
   if (TraceReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT,
-      id, list);
+    gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT, id, list);
   }
   return list;
 }
@@ -1127,6 +1131,11 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
     if (_discovered_list_needs_barrier) {
       _bs->write_ref_field((void*)discovered_addr, current_head);
     }
+
+    if (TraceReferenceGC) {
+      gclog_or_tty->print_cr("Enqueued reference (mt) (" INTPTR_FORMAT ": %s)",
+                             obj, obj->blueprint()->internal_name());
+    }
   } else {
     // If retest was non NULL, another thread beat us to it:
     // The reference has already been discovered...
@@ -1136,6 +1145,20 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
     }
   }
 }
+
+#ifndef PRODUCT
+// Non-atomic (i.e. concurrent) discovery might allow us
+// to observe j.l.References with NULL referents, being those
+// cleared concurrently by mutators during (or after) discovery.
+void ReferenceProcessor::verify_referent(oop obj) {
+  bool da = discovery_is_atomic();
+  oop referent = java_lang_ref_Reference::referent(obj);
+  assert(da ? referent->is_oop() : referent->is_oop_or_null(),
+         err_msg("Bad referent " INTPTR_FORMAT " found in Reference "
+                 INTPTR_FORMAT " during %satomic discovery ",
+                 (intptr_t)referent, (intptr_t)obj, da ? "" : "non-"));
+}
+#endif
 
 // We mention two of several possible choices here:
 // #0: if the reference object is not in the "originating generation"
@@ -1187,14 +1210,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // We only enqueue references whose referents are not (yet) strongly
   // reachable.
   if (is_alive_non_header() != NULL) {
-    oop referent = java_lang_ref_Reference::referent(obj);
-    // In the case of non-concurrent discovery, the last
-    // disjunct below should hold. It may not hold in the
-    // case of concurrent discovery because mutators may
-    // concurrently clear() a Reference.
-    assert(UseConcMarkSweepGC || UseG1GC || referent != NULL,
-           "Refs with null referents already filtered");
-    if (is_alive_non_header()->do_object_b(referent)) {
+    verify_referent(obj);
+    if (is_alive_non_header()->do_object_b(java_lang_ref_Reference::referent(obj))) {
       return false;  // referent is reachable
     }
   }
@@ -1231,20 +1248,20 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
       // Check assumption that an object is not potentially
       // discovered twice except by concurrent collectors that potentially
       // trace the same Reference object twice.
-      assert(UseConcMarkSweepGC,
-             "Only possible with an incremental-update concurrent collector");
+      assert(UseConcMarkSweepGC || UseG1GC,
+             "Only possible with a concurrent marking collector");
       return true;
     }
   }
 
   if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-    oop referent = java_lang_ref_Reference::referent(obj);
-    assert(referent->is_oop(), "bad referent");
+    verify_referent(obj);
     // enqueue if and only if either:
     // reference is in our span or
     // we are an atomic collector and referent is in our span
     if (_span.contains(obj_addr) ||
-        (discovery_is_atomic() && _span.contains(referent))) {
+        (discovery_is_atomic() &&
+         _span.contains(java_lang_ref_Reference::referent(obj)))) {
       // should_enqueue = true;
     } else {
       return false;
@@ -1285,26 +1302,14 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     }
     list->set_head(obj);
     list->inc_length(1);
-  }
 
-  // In the MT discovery case, it is currently possible to see
-  // the following message multiple times if several threads
-  // discover a reference about the same time. Only one will
-  // however have actually added it to the disocvered queue.
-  // One could let add_to_discovered_list_mt() return an
-  // indication for success in queueing (by 1 thread) or
-  // failure (by all other threads), but I decided the extra
-  // code was not worth the effort for something that is
-  // only used for debugging support.
-  if (TraceReferenceGC) {
-    oop referent = java_lang_ref_Reference::referent(obj);
-    if (PrintGCDetails) {
+    if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Enqueued reference (" INTPTR_FORMAT ": %s)",
-                             obj, obj->blueprint()->internal_name());
+                                obj, obj->blueprint()->internal_name());
     }
-    assert(referent->is_oop(), "Enqueued a bad referent");
   }
   assert(obj->is_oop(), "Enqueued a bad reference");
+  verify_referent(obj);
   return true;
 }
 

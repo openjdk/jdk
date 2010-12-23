@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_ACCESSFLAGS_HPP
+#define SHARE_VM_UTILITIES_ACCESSFLAGS_HPP
+
+#include "prims/jvm.h"
+#include "utilities/top.hpp"
+
 // AccessFlags is an abstraction over Java access flags.
 
 
@@ -226,3 +232,5 @@ inline AccessFlags accessFlags_from(jint flags) {
   af._flags = flags;
   return af;
 }
+
+#endif // SHARE_VM_UTILITIES_ACCESSFLAGS_HPP

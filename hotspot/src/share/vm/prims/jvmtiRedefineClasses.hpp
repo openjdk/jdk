@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP
+#define SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP
+
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/vm_operations.hpp"
 
 // Introduction:
 //
@@ -487,3 +498,5 @@ class VM_RedefineClasses: public VM_Operation {
   // and redefine implementation
   static bool is_modifiable_class(oop klass_mirror);
 };
+
+#endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP

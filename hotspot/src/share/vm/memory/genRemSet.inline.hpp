@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_GENREMSET_INLINE_HPP
+#define SHARE_VM_MEMORY_GENREMSET_INLINE_HPP
+
 // Inline functions of GenRemSet, which de-virtualize this
 // performance-critical call when when the rem set is the most common
 // card-table kind.
@@ -33,3 +36,5 @@ void GenRemSet::write_ref_field_gc(void* field, oop new_val) {
     write_ref_field_gc_work(field, new_val);
   }
 }
+
+#endif // SHARE_VM_MEMORY_GENREMSET_INLINE_HPP

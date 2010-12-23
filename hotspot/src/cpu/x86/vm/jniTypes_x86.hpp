@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_JNITYPES_X86_HPP
+#define CPU_X86_VM_JNITYPES_X86_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/oop.hpp"
+#include "prims/jni.h"
 
 // This file holds platform-dependent routines used to write primitive jni
 // types to the array of arguments passed into JavaCalls::call
@@ -122,3 +129,5 @@ public:
   static inline jdouble get_double(intptr_t *from) { return *(jdouble *)(from + _JNI_SLOT_OFFSET); }
 #undef _JNI_SLOT_OFFSET
 };
+
+#endif // CPU_X86_VM_JNITYPES_X86_HPP

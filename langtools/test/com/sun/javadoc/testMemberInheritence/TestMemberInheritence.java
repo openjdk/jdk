@@ -40,55 +40,57 @@ public class TestMemberInheritence extends JavadocTester {
     private static final String[][] TEST = {
         //Public field should be inherited
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<A HREF=\"../pkg/BaseClass.html#pubField\">"},
+         "<a href=\"../pkg/BaseClass.html#pubField\">"},
 
         //Public method should be inherited
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<A HREF=\"../pkg/BaseClass.html#pubMethod()\">"},
+         "<a href=\"../pkg/BaseClass.html#pubMethod()\">"},
 
         //Public inner class should be inherited.
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<A HREF=\"../pkg/BaseClass.pubInnerClass.html\" title=\"class in pkg\">"},
+         "<a href=\"../pkg/BaseClass.pubInnerClass.html\" title=\"class in pkg\">"},
 
         //Protected field should be inherited
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<A HREF=\"../pkg/BaseClass.html#proField\">"},
+         "<a href=\"../pkg/BaseClass.html#proField\">"},
 
         //Protected method should be inherited
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<A HREF=\"../pkg/BaseClass.html#proMethod()\">"},
+         "<a href=\"../pkg/BaseClass.html#proMethod()\">"},
 
         //Protected inner class should be inherited.
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<A HREF=\"../pkg/BaseClass.proInnerClass.html\" title=\"class in pkg\">"},
+         "<a href=\"../pkg/BaseClass.proInnerClass.html\" title=\"class in pkg\">"},
 
         // New labels as of 1.5.0
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<STRONG>Nested classes/interfaces inherited from class pkg." +
-         "<A HREF=\"../pkg/BaseClass.html\" title=\"class in pkg\">" +
-         "BaseClass</A></STRONG>"},
+         "Nested classes/interfaces inherited from class&nbsp;pkg." +
+                 "<a href=\"../pkg/BaseClass.html\" title=\"class in pkg\">BaseClass</a>"},
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<STRONG>Nested classes/interfaces inherited from interface pkg." +
-         "<A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +
-         "BaseInterface</A></STRONG>"},
+         "Nested classes/interfaces inherited from interface&nbsp;pkg." +
+                 "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>"},
 
          // Test overriding/implementing methods with generic parameters.
                  {BUG_ID + FS + "pkg" + FS + "BaseClass.html",
-         "<DT><STRONG>Specified by:</STRONG></DT><DD><CODE><A HREF=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">getAnnotation</A></CODE> in interface <CODE><A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</A></CODE></DD>"+NL+"</DL>"},
+         "<dl>" + NL + "<dt><strong>Specified by:</strong></dt>" + NL +
+                          "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">" +
+                          "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>" +
+                          "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +
+                          "BaseInterface</a></code></dd>" + NL + "</dl>"},
 
          // Test diamond inheritence member summary (6256068)
                  {BUG_ID + FS + "diamond" + FS + "Z.html",
-                 "<TD><CODE><A HREF=\"../diamond/A.html#aMethod()\">aMethod</A></CODE></TD>"},
+                 "<code><a href=\"../diamond/A.html#aMethod()\">aMethod</a></code>"},
 
          // Test that doc is inherited from closed parent (6270645)
                  {BUG_ID + FS + "inheritDist" + FS + "C.html",
-                 "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m1-B</TD>"},
+                 "<div class=\"block\">m1-B</div>"},
 
     };
 
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-        "<A HREF=\"../pkg/BaseClass.html#staticMethod()\">staticMethod</A></CODE>"},
+        "<a href=\"../pkg/BaseClass.html#staticMethod()\">staticMethod</a></code>"},
     };
     private static final String[] ARGS =
         new String[] {

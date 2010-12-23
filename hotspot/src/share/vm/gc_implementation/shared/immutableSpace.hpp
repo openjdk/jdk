@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_IMMUTABLESPACE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_IMMUTABLESPACE_HPP
+
+#include "memory/iterator.hpp"
 
 // An ImmutableSpace is a viewport into a contiguous range
 // (or subrange) of previously allocated objects.
@@ -62,3 +67,5 @@ class ImmutableSpace: public CHeapObj {
   virtual void print_short() const      PRODUCT_RETURN;
   virtual void verify(bool allow_dirty);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_IMMUTABLESPACE_HPP

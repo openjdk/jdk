@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_COLLECTORCOUNTERS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_COLLECTORCOUNTERS_HPP
+
+#include "runtime/perfData.hpp"
 
 // CollectorCounters is a holder class for performance counters
 // that track a collector
@@ -78,3 +83,5 @@ class TraceCollectorStats: public PerfTraceTimedEvent {
       if (UsePerfData) _c->last_exit_counter()->set_value(os::elapsed_counter());
     }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_COLLECTORCOUNTERS_HPP

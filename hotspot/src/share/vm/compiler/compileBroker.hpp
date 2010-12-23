@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_COMPILER_COMPILEBROKER_HPP
+#define SHARE_VM_COMPILER_COMPILEBROKER_HPP
+
+#include "ci/compilerInterface.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "runtime/perfData.hpp"
+
 class nmethod;
 class nmethodLocker;
 
@@ -380,3 +387,5 @@ class CompileBroker: AllStatic {
 
   static void print_compiler_threads_on(outputStream* st);
 };
+
+#endif // SHARE_VM_COMPILER_COMPILEBROKER_HPP
