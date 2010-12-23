@@ -70,13 +70,12 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
         int mark = src.position();
 
-        if (needsMark) {
+        if (needsMark && src.hasRemaining()) {
             if (dst.remaining() < 2)
                 return CoderResult.OVERFLOW;
             put(BYTE_ORDER_MARK, dst);
             needsMark = false;
         }
-
         try {
             while (src.hasRemaining()) {
                 char c = src.get();

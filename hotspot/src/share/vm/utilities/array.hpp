@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_ARRAY_HPP
+#define SHARE_VM_UTILITIES_ARRAY_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
 
 // correct linkage required to compile w/o warnings
 // (must be on file level - cannot be local)
@@ -285,3 +291,5 @@ class CHeapArray: public CHeapObj {
 
 define_array(boolArray, bool)          define_stack(boolStack, boolArray)
 define_array(intArray , int )          define_stack(intStack , intArray )
+
+#endif // SHARE_VM_UTILITIES_ARRAY_HPP

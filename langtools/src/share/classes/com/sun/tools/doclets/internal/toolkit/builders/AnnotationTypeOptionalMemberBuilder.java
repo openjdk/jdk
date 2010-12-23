@@ -25,11 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
-
+import java.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
-import java.util.*;
 
 /**
  * Builds documentation for optional annotation type members.
@@ -39,6 +38,7 @@ import java.util.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 public class AnnotationTypeOptionalMemberBuilder extends
@@ -90,27 +90,25 @@ public class AnnotationTypeOptionalMemberBuilder extends
     }
 
     /**
-     * Build the member documentation.
+     * Build the annotation type optional member documentation.
      *
-     * @param elements the XML elements that specify how to construct this
-     *                documentation.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeOptionalMember(XMLNode node) {
-        if (writer == null) {
-            return;
-        }
-        for (currentMemberIndex = 0; currentMemberIndex < members.size();
-            currentMemberIndex++) {
-            buildChildren(node);
-        }
+    public void buildAnnotationTypeOptionalMember(XMLNode node, Content memberDetailsTree) {
+        buildAnnotationTypeMember(node, memberDetailsTree);
     }
 
     /**
-     * Document the default value for this optional member.
+     * Build the default value for this optional member.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildDefaultValueInfo(XMLNode node) {
-        ((AnnotationTypeOptionalMemberWriter) writer).writeDefaultValueInfo(
-            (MemberDoc) members.get(currentMemberIndex));
+    public void buildDefaultValueInfo(XMLNode node, Content annotationDocTree) {
+        ((AnnotationTypeOptionalMemberWriter) writer).addDefaultValueInfo(
+                (MemberDoc) members.get(currentMemberIndex),
+                annotationDocTree);
     }
 
     /**

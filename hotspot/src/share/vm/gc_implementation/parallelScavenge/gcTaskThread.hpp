@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GCTASKTHREAD_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GCTASKTHREAD_HPP
+
+#include "runtime/thread.hpp"
 
 // Forward declarations of classes defined here.
 class GCTaskThread;
@@ -97,3 +102,5 @@ class GCTaskTimeStamp : public CHeapObj
   void set_exit_time(jlong time)  { _exit_time = time; }
   void set_name(char* name)       { _name = name; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GCTASKTHREAD_HPP

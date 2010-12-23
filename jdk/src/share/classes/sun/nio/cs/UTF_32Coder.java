@@ -144,7 +144,7 @@ class UTF_32Coder {
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             int mark = src.position();
-            if (!doneBOM) {
+            if (!doneBOM && src.hasRemaining()) {
                 if (dst.remaining() < 4)
                     return CoderResult.OVERFLOW;
                 put(BOM_BIG, dst);

@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_IR.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_Optimizer.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 // Implementation of XHandlers
@@ -498,7 +504,12 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   count_edges(start_block, NULL);
 
   if (compilation()->is_profiling()) {
-    compilation()->method()->method_data()->set_compilation_stats(_num_loops, _num_blocks);
+    ciMethod *method = compilation()->method();
+    if (!method->is_accessor()) {
+      ciMethodData* md = method->method_data_or_null();
+      assert(md != NULL, "Sanity");
+      md->set_compilation_stats(_num_loops, _num_blocks);
+    }
   }
 
   if (_num_loops > 0) {

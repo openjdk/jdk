@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_BYTECODES_SPARC_HPP
+#define CPU_SPARC_VM_BYTECODES_SPARC_HPP
+
 #ifdef SPARC
 #define NLOCALS_IN_REGS 6
 #endif
@@ -30,3 +33,5 @@
 // Sparc specific bytecodes
 
 // (none)
+
+#endif // CPU_SPARC_VM_BYTECODES_SPARC_HPP

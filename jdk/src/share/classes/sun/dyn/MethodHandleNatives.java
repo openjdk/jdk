@@ -317,6 +317,20 @@ class MethodHandleNatives {
     }
 
     /**
+     * The JVM wants to use a MethodType with invokeGeneric.  Give the runtime fair warning.
+     */
+    static void notifyGenericMethodType(MethodType type) {
+        try {
+            // Trigger adapter creation.
+            InvokeGeneric.genericInvokerOf(type);
+        } catch (Exception ex) {
+            Error err = new InternalError("Exception while resolving invokeGeneric");
+            err.initCause(ex);
+            throw err;
+        }
+    }
+
+    /**
      * The JVM is resolving a CONSTANT_MethodHandle CP entry.  And it wants our help.
      * It will make an up-call to this method.  (Do not change the name or signature.)
      */

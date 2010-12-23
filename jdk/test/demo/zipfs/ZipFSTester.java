@@ -58,7 +58,7 @@ public class ZipFSTester {
         // clone a fs and test on it
         Path tmpfsPath = getTempPath();
         Map<String, Object> env = new HashMap<String, Object>();
-        env.put("createNew", true);
+        env.put("create", "true");
         FileSystem fs0 = newZipFileSystem(tmpfsPath, env);
         z2zcopy(fs, fs0, "/", 0);
         fs0.close();                // sync to file
@@ -147,7 +147,7 @@ public class ZipFSTester {
 
         // create a new filesystem, copy everything from fs
         Map<String, Object> env = new HashMap<String, Object>();
-        env.put("createNew", true);
+        env.put("create", "true");
         FileSystem fs0 = newZipFileSystem(fs1Path, env);
 
         final FileSystem fs2 = newZipFileSystem(fs2Path, env);
@@ -282,11 +282,7 @@ public class ZipFSTester {
     private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
         throws IOException
     {
-        return FileSystems.newFileSystem(
-                   URI.create("zip" +
-                               path.toUri().toString().substring(4)),
-                   env,
-                   null);
+        return FileSystems.newFileSystem(path, env, null);
     }
 
     private static Path getTempPath() throws IOException

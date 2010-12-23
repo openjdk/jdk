@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile ExchangeLoops.java
+ * @compile -source 1.5 ExchangeLoops.java
  * @run main/timeout=720 ExchangeLoops
  * @summary checks to make sure a pipeline of exchangers passes data.
  */
@@ -78,9 +78,9 @@ public class ExchangeLoops {
         final Exchanger<Int> right;
         final CyclicBarrier barrier;
         volatile int result;
-        Stage (Exchanger<Int> left,
-               Exchanger<Int> right,
-               CyclicBarrier b, int iters) {
+        Stage(Exchanger<Int> left,
+              Exchanger<Int> right,
+              CyclicBarrier b, int iters) {
             this.left = left;
             this.right = right;
             barrier = b;

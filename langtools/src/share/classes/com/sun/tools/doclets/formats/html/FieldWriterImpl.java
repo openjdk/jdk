@@ -28,6 +28,7 @@ package com.sun.tools.doclets.formats.html;
 import java.io.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -42,8 +43,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class FieldWriterImpl extends AbstractMemberWriter
     implements FieldWriter, MemberSummaryWriter {
 
-    private boolean printedSummaryHeader = false;
-
     public FieldWriterImpl(SubWriterHolderWriter writer, ClassDoc classdoc) {
         super(writer, classdoc);
     }
@@ -53,177 +52,118 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Write the fields summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeMemberSummaryHeader(ClassDoc classDoc) {
-        printedSummaryHeader = true;
-        writer.println("<!-- =========== FIELD SUMMARY =========== -->");
-        writer.println();
-        writer.printSummaryHeader(this, classDoc);
-    }
-
-    /**
-     * Write the fields summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeMemberSummaryFooter(ClassDoc classDoc) {
-        writer.tableEnd();
-        writer.space();
-    }
-
-    /**
-     * Write the inherited fields summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeInheritedMemberSummaryHeader(ClassDoc classDoc) {
-        if(! printedSummaryHeader){
-            //We don't want inherited summary to not be under heading.
-            writeMemberSummaryHeader(classDoc);
-            writeMemberSummaryFooter(classDoc);
-            printedSummaryHeader = true;
-        }
-        writer.printInheritedSummaryHeader(this, classDoc);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree) {
+        memberSummaryTree.addContent(HtmlConstants.START_OF_FIELD_SUMMARY);
+        Content memberTree = writer.getMemberTreeHeader();
+        writer.addSummaryHeader(this, classDoc, memberTree);
+        return memberTree;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeInheritedMemberSummary(ClassDoc classDoc,
-        ProgramElementDoc field, boolean isFirst, boolean isLast) {
-        writer.printInheritedSummaryMember(this, classDoc, field, isFirst);
+    public Content getFieldDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree) {
+        memberDetailsTree.addContent(HtmlConstants.START_OF_FIELD_DETAILS);
+        Content fieldDetailsTree = writer.getMemberTreeHeader();
+        fieldDetailsTree.addContent(writer.getMarkerAnchor("field_detail"));
+        Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
+                writer.fieldDetailsLabel);
+        fieldDetailsTree.addContent(heading);
+        return fieldDetailsTree;
     }
 
     /**
-     * Write the inherited fields summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeInheritedMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printInheritedSummaryFooter(this, classDoc);
+    public Content getFieldDocTreeHeader(FieldDoc field,
+            Content fieldDetailsTree) {
+        fieldDetailsTree.addContent(
+                writer.getMarkerAnchor(field.name()));
+        Content fieldDocTree = writer.getMemberTreeHeader();
+        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
+        heading.addContent(field.name());
+        fieldDocTree.addContent(heading);
+        return fieldDocTree;
     }
 
     /**
-     * Write the header for the field documentation.
-     *
-     * @param classDoc the class that the fields belong to.
+     * {@inheritDoc}
      */
-    public void writeHeader(ClassDoc classDoc, String header) {
-        writer.println();
-        writer.println("<!-- ============ FIELD DETAIL =========== -->");
-        writer.println();
-        writer.anchor("field_detail");
-        writer.printTableHeadingBackground(header);
-        writer.println();
-    }
-
-    /**
-     * Write the field header for the given field.
-     *
-     * @param field the field being documented.
-     * @param isFirst the flag to indicate whether or not the field is the
-     *        first to be documented.
-     */
-    public void writeFieldHeader(FieldDoc field, boolean isFirst) {
-        if (! isFirst) {
-            writer.printMemberHeader();
-            writer.println("");
-        }
-        writer.anchor(field.name());
-        writer.h3();
-        writer.print(field.name());
-        writer.h3End();
-    }
-
-    /**
-     * Write the signature for the given field.
-     *
-     * @param field the field being documented.
-     */
-    public void writeSignature(FieldDoc field) {
-        writer.pre();
-        writer.writeAnnotationInfo(field);
-        printModifiers(field);
-        writer.printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
-            field.type()));
-        print(' ');
+    public Content getSignature(FieldDoc field) {
+        Content pre = new HtmlTree(HtmlTag.PRE);
+        writer.addAnnotationInfo(field, pre);
+        addModifiers(field, pre);
+        Content fieldlink = new RawHtml(writer.getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
+                field.type())));
+        pre.addContent(fieldlink);
+        pre.addContent(" ");
         if (configuration().linksource) {
-            writer.printSrcLink(field, field.name());
+            Content fieldName = new StringContent(field.name());
+            writer.addSrcLink(field, fieldName, pre);
         } else {
-            strong(field.name());
+            addName(field.name(), pre);
         }
-        writer.preEnd();
-        assert !writer.getMemberDetailsListPrinted();
+        return pre;
     }
 
     /**
-     * Write the deprecated output for the given field.
-     *
-     * @param field the field being documented.
+     * {@inheritDoc}
      */
-    public void writeDeprecated(FieldDoc field) {
-        printDeprecated(field);
+    public void addDeprecated(FieldDoc field, Content fieldDocTree) {
+        addDeprecatedInfo(field, fieldDocTree);
     }
 
     /**
-     * Write the comments for the given field.
-     *
-     * @param field the field being documented.
+     * {@inheritDoc}
      */
-    public void writeComments(FieldDoc field) {
+    public void addComments(FieldDoc field, Content fieldDocTree) {
         ClassDoc holder = field.containingClass();
         if (field.inlineTags().length > 0) {
-            writer.printMemberDetailsListStartTag();
             if (holder.equals(classdoc) ||
-                (! (holder.isPublic() || Util.isLinkable(holder, configuration())))) {
-                writer.dd();
-                writer.printInlineComment(field);
-                writer.ddEnd();
+                    (! (holder.isPublic() || Util.isLinkable(holder, configuration())))) {
+                writer.addInlineComment(field, fieldDocTree);
             } else {
-                String classlink = writer.codeText(
-                    writer.getDocLink(LinkInfoImpl.CONTEXT_FIELD_DOC_COPY,
+                Content link = new RawHtml(
+                        writer.getDocLink(LinkInfoImpl.CONTEXT_FIELD_DOC_COPY,
                         holder, field,
                         holder.isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
-                        false));
-                writer.dd();
-                writer.strong(configuration().getText(holder.isClass()?
-                   "doclet.Description_From_Class" :
-                    "doclet.Description_From_Interface", classlink));
-                writer.ddEnd();
-                writer.dd();
-                writer.printInlineComment(field);
-                writer.ddEnd();
+                            false));
+                Content codeLink = HtmlTree.CODE(link);
+                Content strong = HtmlTree.STRONG(holder.isClass()?
+                   writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
+                strong.addContent(writer.getSpace());
+                strong.addContent(codeLink);
+                fieldDocTree.addContent(HtmlTree.DIV(HtmlStyle.block, strong));
+                writer.addInlineComment(field, fieldDocTree);
             }
         }
     }
 
     /**
-     * Write the tag output for the given field.
-     *
-     * @param field the field being documented.
+     * {@inheritDoc}
      */
-    public void writeTags(FieldDoc field) {
-        writer.printTags(field);
+    public void addTags(FieldDoc field, Content fieldDocTree) {
+        writer.addTagsInfo(field, fieldDocTree);
     }
 
     /**
-     * Write the field footer.
+     * {@inheritDoc}
      */
-    public void writeFieldFooter() {
-        printMemberFooter();
+    public Content getFieldDetails(Content fieldDetailsTree) {
+        return getMemberTree(fieldDetailsTree);
     }
 
     /**
-     * Write the footer for the field documentation.
-     *
-     * @param classDoc the class that the fields belong to.
+     * {@inheritDoc}
      */
-    public void writeFooter(ClassDoc classDoc) {
-        //No footer to write for field documentation
+    public Content getFieldDoc(Content fieldDocTree,
+            boolean isLastContent) {
+        return getMemberTree(fieldDocTree, isLastContent);
     }
 
     /**
@@ -237,85 +177,136 @@ public class FieldWriterImpl extends AbstractMemberWriter
         return VisibleMemberMap.FIELDS;
     }
 
-    public void printSummaryLabel() {
-        writer.printText("doclet.Field_Summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryLabel(Content memberTree) {
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+                writer.getResource("doclet.Field_Summary"));
+        memberTree.addContent(label);
     }
 
-    public void printTableSummary() {
-        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+    /**
+     * {@inheritDoc}
+     */
+    public String getTableSummary() {
+        return configuration().getText("doclet.Member_Table_Summary",
                 configuration().getText("doclet.Field_Summary"),
-                configuration().getText("doclet.fields")));
+                configuration().getText("doclet.fields"));
     }
 
-    public void printSummaryTableHeader(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    public String getCaption() {
+        return configuration().getText("doclet.Fields");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
             configuration().getText("doclet.0_and_1",
                     configuration().getText("doclet.Field"),
                     configuration().getText("doclet.Description"))
         };
-        writer.summaryTableHeader(header, "col");
+        return header;
     }
 
-    public void printSummaryAnchor(ClassDoc cd) {
-        writer.anchor("field_summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
+        memberTree.addContent(writer.getMarkerAnchor("field_summary"));
     }
 
-    public void printInheritedSummaryAnchor(ClassDoc cd) {
-        writer.anchor("fields_inherited_from_class_" + configuration().getClassName(cd));
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree) {
+        inheritedTree.addContent(writer.getMarkerAnchor(
+                "fields_inherited_from_class_" + configuration().getClassName(cd)));
     }
 
-    public void printInheritedSummaryLabel(ClassDoc cd) {
-        String classlink = writer.getPreQualifiedClassLink(
-            LinkInfoImpl.CONTEXT_MEMBER, cd, false);
-        writer.strong();
-        String key = cd.isClass()?
-            "doclet.Fields_Inherited_From_Class" :
-            "doclet.Fields_Inherited_From_Interface";
-        writer.printText(key, classlink);
-        writer.strongEnd();
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
+        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
+                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+        Content label = new StringContent(cd.isClass() ?
+            configuration().getText("doclet.Fields_Inherited_From_Class") :
+            configuration().getText("doclet.Fields_Inherited_From_Interface"));
+        Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
+                label);
+        labelHeading.addContent(writer.getSpace());
+        labelHeading.addContent(classLink);
+        inheritedTree.addContent(labelHeading);
     }
 
-    protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.strong();
-        writer.printDocLink(context, cd , (MemberDoc) member, member.name(), false);
-        writer.strongEnd();
+    /**
+     * {@inheritDoc}
+     */
+    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+            Content tdSummary) {
+        Content strong = HtmlTree.STRONG(new RawHtml(
+                writer.getDocLink(context, cd , (MemberDoc) member, member.name(), false)));
+        Content code = HtmlTree.CODE(strong);
+        tdSummary.addContent(code);
     }
 
-    protected void writeInheritedSummaryLink(ClassDoc cd,
-            ProgramElementDoc member) {
-        writer.printDocLink(LinkInfoImpl.CONTEXT_MEMBER, cd, (MemberDoc)member,
-            member.name(), false);
+    /**
+     * {@inheritDoc}
+     */
+    protected void addInheritedSummaryLink(ClassDoc cd,
+            ProgramElementDoc member, Content linksTree) {
+        linksTree.addContent(new RawHtml(
+                writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER, cd, (MemberDoc)member,
+                member.name(), false)));
     }
 
-    protected void printSummaryType(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    protected void addSummaryType(ProgramElementDoc member, Content tdSummaryType) {
         FieldDoc field = (FieldDoc)member;
-        printModifierAndType(field, field.type());
+        addModifierAndType(field, field.type(), tdSummaryType);
     }
 
-    protected void writeDeprecatedLink(ProgramElementDoc member) {
-        writer.printDocLink(LinkInfoImpl.CONTEXT_MEMBER,
-            (MemberDoc) member, ((FieldDoc)member).qualifiedName(), false);
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getDeprecatedLink(ProgramElementDoc member) {
+        return writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER,
+                (MemberDoc) member, ((FieldDoc)member).qualifiedName());
     }
 
-    protected void printNavSummaryLink(ClassDoc cd, boolean link) {
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            writer.printHyperLink("", (cd == null)?
-                        "field_summary":
-                        "fields_inherited_from_class_" +
-                        configuration().getClassName(cd),
-                    configuration().getText("doclet.navField"));
+            return writer.getHyperLink("", (cd == null)?
+                "field_summary":
+                "fields_inherited_from_class_" +
+                configuration().getClassName(cd),
+                writer.getResource("doclet.navField"));
         } else {
-            writer.printText("doclet.navField");
+            return writer.getResource("doclet.navField");
         }
     }
 
-    protected void printNavDetailLink(boolean link) {
+    /**
+     * {@inheritDoc}
+     */
+    protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            writer.printHyperLink("", "field_detail",
-                configuration().getText("doclet.navField"));
+            liNav.addContent(writer.getHyperLink("", "field_detail",
+                    writer.getResource("doclet.navField")));
         } else {
-            writer.printText("doclet.navField");
+            liNav.addContent(writer.getResource("doclet.navField"));
         }
     }
 }

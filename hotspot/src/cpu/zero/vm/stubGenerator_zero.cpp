@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,29 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stubGenerator_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_zero.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "nativeInst_zero.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "stack_zero.inline.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure

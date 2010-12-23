@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_WINDOWS_X86_VM_VMSTRUCTS_WINDOWS_X86_HPP
+#define OS_CPU_WINDOWS_X86_VM_VMSTRUCTS_WINDOWS_X86_HPP
 
 // These are the OS and CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -52,3 +55,5 @@
                                                                         \
   /* This must be the last entry, and must be present */                \
   last_entry()
+
+#endif // OS_CPU_WINDOWS_X86_VM_VMSTRUCTS_WINDOWS_X86_HPP

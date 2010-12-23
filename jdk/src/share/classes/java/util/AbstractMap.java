@@ -523,7 +523,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
             sb.append(value == this ? "(this Map)" : value);
             if (! i.hasNext())
                 return sb.append('}').toString();
-            sb.append(", ");
+            sb.append(',').append(' ');
         }
     }
 

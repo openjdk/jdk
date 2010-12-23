@@ -56,7 +56,7 @@ KEYTAB=ktarg.tmp
 rm $KEYTAB 2> /dev/null
 KTAB="${TESTJAVA}${FS}bin${FS}ktab -k $KEYTAB"
 
-$KTAB -a me mine || exit 1
+$KTAB -a me@LOCAL mine || exit 1
 
 $KTAB -hello
 if [ $? = 0 ]; then exit 2; fi

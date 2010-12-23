@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_permGen.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/cSpaceCounters.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/compactPermGen.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/permGen.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
 
 HeapWord* PermGen::request_expand_and_allocate(Generation* gen, size_t size,
                                                GCCause::Cause prev_cause) {

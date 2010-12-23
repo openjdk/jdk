@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
+#define SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
+
+#include "memory/allocation.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "utilities/hashtable.hpp"
 
 // The symbol table holds all symbolOops and corresponding interned strings.
 // symbolOops and literal strings should be canonicalized.
@@ -222,3 +229,5 @@ public:
     ((BasicHashtable*)the_table())->reverse();
   }
 };
+
+#endif // SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
