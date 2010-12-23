@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_ISGCACTIVEMARK_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_ISGCACTIVEMARK_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#endif
+
 // This class provides a method for block structured setting of the
 // _is_gc_active state without requiring accessors in CollectedHeap
 
@@ -39,3 +46,5 @@ class IsGCActiveMark : public StackObj {
     heap->_is_gc_active = false;
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_ISGCACTIVEMARK_HPP

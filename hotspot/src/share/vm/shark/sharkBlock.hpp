@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKBLOCK_HPP
+#define SHARE_VM_SHARK_SHARKBLOCK_HPP
+
+#include "ci/ciMethod.hpp"
+#include "ci/ciStreams.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkConstant.hpp"
+#include "shark/sharkInvariants.hpp"
+#include "shark/sharkState.hpp"
+#include "shark/sharkValue.hpp"
+#include "utilities/debug.hpp"
 
 class SharkState;
 
@@ -279,3 +293,5 @@ class SharkBlock : public SharkTargetInvariants {
   virtual void do_monitorenter();
   virtual void do_monitorexit();
 };
+
+#endif // SHARE_VM_SHARK_SHARKBLOCK_HPP

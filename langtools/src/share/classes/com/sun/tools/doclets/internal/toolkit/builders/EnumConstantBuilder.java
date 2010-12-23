@@ -25,10 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
+import java.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
-import java.util.*;
 
 /**
  * Builds documentation for a enum constants.
@@ -38,200 +38,195 @@ import java.util.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 public class EnumConstantBuilder extends AbstractMemberBuilder {
 
-        /**
-         * The class whose enum constants are being documented.
-         */
-        private ClassDoc classDoc;
+    /**
+     * The class whose enum constants are being documented.
+     */
+    private ClassDoc classDoc;
 
-        /**
-         * The visible enum constantss for the given class.
-         */
-        private VisibleMemberMap visibleMemberMap;
+    /**
+     * The visible enum constantss for the given class.
+     */
+    private VisibleMemberMap visibleMemberMap;
 
-        /**
-         * The writer to output the enum constants documentation.
-         */
-        private EnumConstantWriter writer;
+    /**
+     * The writer to output the enum constants documentation.
+     */
+    private EnumConstantWriter writer;
 
-        /**
-         * The list of enum constants being documented.
-         */
-        private List<ProgramElementDoc> enumConstants;
+    /**
+     * The list of enum constants being documented.
+     */
+    private List<ProgramElementDoc> enumConstants;
 
-        /**
-         * The index of the current enum constant that is being documented at this point
-         * in time.
-         */
-        private int currentEnumConstantsIndex;
+    /**
+     * The index of the current enum constant that is being documented at this point
+     * in time.
+     */
+    private int currentEnumConstantsIndex;
 
-        /**
-         * Construct a new EnumConstantsBuilder.
-         *
-         * @param configuration the current configuration of the
-         *                      doclet.
-         */
-        private EnumConstantBuilder(Configuration configuration) {
-                super(configuration);
+    /**
+     * Construct a new EnumConstantsBuilder.
+     *
+     * @param configuration the current configuration of the
+     *                      doclet.
+     */
+    private EnumConstantBuilder(Configuration configuration) {
+        super(configuration);
+    }
+
+    /**
+     * Construct a new EnumConstantsBuilder.
+     *
+     * @param configuration the current configuration of the doclet.
+     * @param classDoc the class whoses members are being documented.
+     * @param writer the doclet specific writer.
+     */
+    public static EnumConstantBuilder getInstance(
+            Configuration configuration,
+            ClassDoc classDoc,
+            EnumConstantWriter writer) {
+        EnumConstantBuilder builder = new EnumConstantBuilder(configuration);
+        builder.classDoc = classDoc;
+        builder.writer = writer;
+        builder.visibleMemberMap =
+                new VisibleMemberMap(
+                classDoc,
+                VisibleMemberMap.ENUM_CONSTANTS,
+                configuration.nodeprecated);
+        builder.enumConstants =
+                new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getMembersFor(classDoc));
+        if (configuration.getMemberComparator() != null) {
+            Collections.sort(
+                    builder.enumConstants,
+                    configuration.getMemberComparator());
         }
+        return builder;
+    }
 
-        /**
-         * Construct a new EnumConstantsBuilder.
-         *
-         * @param configuration the current configuration of the doclet.
-         * @param classDoc the class whoses members are being documented.
-         * @param writer the doclet specific writer.
-         */
-        public static EnumConstantBuilder getInstance(
-                Configuration configuration,
-                ClassDoc classDoc,
-                EnumConstantWriter writer) {
-                EnumConstantBuilder builder = new EnumConstantBuilder(configuration);
-                builder.classDoc = classDoc;
-                builder.writer = writer;
-                builder.visibleMemberMap =
-                        new VisibleMemberMap(
-                                classDoc,
-                                VisibleMemberMap.ENUM_CONSTANTS,
-                                configuration.nodeprecated);
-                builder.enumConstants =
-                        new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getMembersFor(classDoc));
-                if (configuration.getMemberComparator() != null) {
-                        Collections.sort(
-                                builder.enumConstants,
-                                configuration.getMemberComparator());
-                }
-                return builder;
+    /**
+     * {@inheritDoc}
+     */
+    public String getName() {
+        return "EnumConstantDetails";
+    }
+
+    /**
+     * Returns a list of enum constants that will be documented for the given class.
+     * This information can be used for doclet specific documentation
+     * generation.
+     *
+     * @param classDoc the {@link ClassDoc} we want to check.
+     * @return a list of enum constants that will be documented.
+     */
+    public List<ProgramElementDoc> members(ClassDoc classDoc) {
+        return visibleMemberMap.getMembersFor(classDoc);
+    }
+
+    /**
+     * Returns the visible member map for the enum constants of this class.
+     *
+     * @return the visible member map for the enum constants of this class.
+     */
+    public VisibleMemberMap getVisibleMemberMap() {
+        return visibleMemberMap;
+    }
+
+    /**
+     * summaryOrder.size()
+     */
+    public boolean hasMembersToDocument() {
+        return enumConstants.size() > 0;
+    }
+
+    /**
+     * Build the enum constant documentation.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
+     */
+    public void buildEnumConstant(XMLNode node, Content memberDetailsTree) {
+        if (writer == null) {
+            return;
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        public String getName() {
-                return "EnumConstantDetails";
-        }
-
-        /**
-         * Returns a list of enum constants that will be documented for the given class.
-         * This information can be used for doclet specific documentation
-         * generation.
-         *
-         * @param classDoc the {@link ClassDoc} we want to check.
-         * @return a list of enum constants that will be documented.
-         */
-        public List<ProgramElementDoc> members(ClassDoc classDoc) {
-                return visibleMemberMap.getMembersFor(classDoc);
-        }
-
-        /**
-         * Returns the visible member map for the enum constants of this class.
-         *
-         * @return the visible member map for the enum constants of this class.
-         */
-        public VisibleMemberMap getVisibleMemberMap() {
-                return visibleMemberMap;
-        }
-
-        /**
-         * summaryOrder.size()
-         */
-        public boolean hasMembersToDocument() {
-                return enumConstants.size() > 0;
-        }
-
-        /**
-         * Build the enum constant documentation.
-         *
-         * @param elements the XML elements that specify how to construct this
-         *                documentation.
-         */
-        public void buildEnumConstant(XMLNode node) {
-                if (writer == null) {
-                        return;
-                }
-                for (currentEnumConstantsIndex = 0;
-                        currentEnumConstantsIndex < enumConstants.size();
-                        currentEnumConstantsIndex++) {
-                        buildChildren(node);
-                }
-        }
-
-        /**
-         * Build the overall header.
-         */
-        public void buildHeader(XMLNode node) {
-                writer.writeHeader(
-                        classDoc,
-                        configuration.getText("doclet.Enum_Constant_Detail"));
-        }
-
-        /**
-         * Build the header for the individual enum constants.
-         */
-        public void buildEnumConstantHeader(XMLNode node) {
-                writer.writeEnumConstantHeader(
+        int size = enumConstants.size();
+        if (size > 0) {
+            Content enumConstantsDetailsTree = writer.getEnumConstantsDetailsTreeHeader(
+                    classDoc, memberDetailsTree);
+            for (currentEnumConstantsIndex = 0; currentEnumConstantsIndex < size;
+                    currentEnumConstantsIndex++) {
+                Content enumConstantsTree = writer.getEnumConstantsTreeHeader(
                         (FieldDoc) enumConstants.get(currentEnumConstantsIndex),
-                        currentEnumConstantsIndex == 0);
+                        enumConstantsDetailsTree);
+                buildChildren(node, enumConstantsTree);
+                enumConstantsDetailsTree.addContent(writer.getEnumConstants(
+                        enumConstantsTree, (currentEnumConstantsIndex == size - 1)));
+            }
+            memberDetailsTree.addContent(
+                    writer.getEnumConstantsDetails(enumConstantsDetailsTree));
         }
+    }
 
-        /**
-         * Build the signature.
-         */
-        public void buildSignature(XMLNode node) {
-                writer.writeSignature(
-                        (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
-        }
+    /**
+     * Build the signature.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param enumConstantsTree the content tree to which the documentation will be added
+     */
+    public void buildSignature(XMLNode node, Content enumConstantsTree) {
+        enumConstantsTree.addContent(writer.getSignature(
+                (FieldDoc) enumConstants.get(currentEnumConstantsIndex)));
+    }
 
-        /**
-         * Build the deprecation information.
-         */
-        public void buildDeprecationInfo(XMLNode node) {
-                writer.writeDeprecated(
-                        (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
-        }
+    /**
+     * Build the deprecation information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param enumConstantsTree the content tree to which the documentation will be added
+     */
+    public void buildDeprecationInfo(XMLNode node, Content enumConstantsTree) {
+        writer.addDeprecated(
+                (FieldDoc) enumConstants.get(currentEnumConstantsIndex),
+                enumConstantsTree);
+    }
 
-        /**
-         * Build the comments for the enum constant.  Do nothing if
-         * {@link Configuration#nocomment} is set to true.
-         */
-        public void buildEnumConstantComments(XMLNode node) {
-                if (!configuration.nocomment) {
-                        writer.writeComments(
-                                (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
-                }
+    /**
+     * Build the comments for the enum constant.  Do nothing if
+     * {@link Configuration#nocomment} is set to true.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param enumConstantsTree the content tree to which the documentation will be added
+     */
+    public void buildEnumConstantComments(XMLNode node, Content enumConstantsTree) {
+        if (!configuration.nocomment) {
+            writer.addComments(
+                    (FieldDoc) enumConstants.get(currentEnumConstantsIndex),
+                    enumConstantsTree);
         }
+    }
 
-        /**
-         * Build the tag information.
-         */
-        public void buildTagInfo(XMLNode node) {
-                writer.writeTags(
-                        (FieldDoc) enumConstants.get(currentEnumConstantsIndex));
-        }
+    /**
+     * Build the tag information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param enumConstantsTree the content tree to which the documentation will be added
+     */
+    public void buildTagInfo(XMLNode node, Content enumConstantsTree) {
+        writer.addTags(
+                (FieldDoc) enumConstants.get(currentEnumConstantsIndex),
+                enumConstantsTree);
+    }
 
-        /**
-         * Build the footer for the individual enum constants.
-         */
-        public void buildEnumConstantFooter(XMLNode node) {
-                writer.writeEnumConstantFooter();
-        }
-
-        /**
-         * Build the overall footer.
-         */
-        public void buildFooter(XMLNode node) {
-                writer.writeFooter(classDoc);
-        }
-
-        /**
-         * Return the enum constant writer for this builder.
-         *
-         * @return the enum constant writer for this builder.
-         */
-        public EnumConstantWriter getWriter() {
-                return writer;
-        }
+    /**
+     * Return the enum constant writer for this builder.
+     *
+     * @return the enum constant writer for this builder.
+     */
+    public EnumConstantWriter getWriter() {
+        return writer;
+    }
 }

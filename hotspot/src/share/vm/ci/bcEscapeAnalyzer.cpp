@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,15 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciConstant.hpp"
+#include "ci/ciField.hpp"
+#include "ci/ciMethodBlocks.hpp"
+#include "ci/ciStreams.hpp"
+#include "interpreter/bytecode.hpp"
+#include "utilities/bitMap.inline.hpp"
 
-#include "incls/_precompiled.incl"
-#include "incls/_bcEscapeAnalyzer.cpp.incl"
 
 
 #ifndef PRODUCT

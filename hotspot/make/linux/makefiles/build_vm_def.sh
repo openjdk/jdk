@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # If we're cross compiling use that path for nm
-if [ "$ALT_COMPILER_PATH" != "" ]; then 
+if [ "$CROSS_COMPILE_ARCH" != "" ]; then 
 NM=$ALT_COMPILER_PATH/nm
 else
 NM=nm

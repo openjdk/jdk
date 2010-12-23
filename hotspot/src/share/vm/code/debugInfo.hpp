@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_DEBUGINFO_HPP
+#define SHARE_VM_CODE_DEBUGINFO_HPP
+
+#include "code/compressedStream.hpp"
+#include "code/location.hpp"
+#include "code/nmethod.hpp"
+#include "code/oopRecorder.hpp"
+#include "runtime/stackValue.hpp"
+#include "utilities/growableArray.hpp"
 
 // Classes used for serializing debugging information.
 // These abstractions are introducted to provide symmetric
@@ -270,3 +280,5 @@ class DebugInfoWriteStream : public CompressedWriteStream {
   void write_handle(jobject h);
   void write_bci(int bci) { write_int(bci - InvocationEntryBci); }
 };
+
+#endif // SHARE_VM_CODE_DEBUGINFO_HPP

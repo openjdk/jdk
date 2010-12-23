@@ -25,8 +25,10 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import java.io.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the documentation in the Html "frame" format in the browser. The
@@ -46,6 +48,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * Number of packages specified on the command line.
      */
     int noOfPackages;
+
+    private final String SCROLL_YES = "yes";
 
     /**
      * Constructor to construct FrameOutputWriter object.
@@ -86,82 +90,93 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * as well as warning if browser is not supporting the Html frames.
      */
     protected void generateFrameFile() {
+        Content frameset = getFrameDetails();
         if (configuration.windowtitle.length() > 0) {
-            printFramesetHeader(configuration.windowtitle, configuration.notimestamp);
+            printFramesetDocument(configuration.windowtitle, configuration.notimestamp,
+                    frameset);
         } else {
-            printFramesetHeader(configuration.getText("doclet.Generated_Docs_Untitled"),
-                                configuration.notimestamp);
+            printFramesetDocument(configuration.getText("doclet.Generated_Docs_Untitled"),
+                    configuration.notimestamp, frameset);
         }
-        printFrameDetails();
-        printFrameFooter();
     }
 
     /**
-     * Generate the code for issueing the warning for a non-frame capable web
+     * Add the code for issueing the warning for a non-frame capable web
      * client. Also provide links to the non-frame version documentation.
+     *
+     * @param contentTree the content tree to which the non-frames information will be added
      */
-    protected void printFrameWarning() {
-        noFrames();
-        h2();
-        printText("doclet.Frame_Alert");
-        h2End();
-        p();
-        printText("doclet.Frame_Warning_Message");
-        br();
-        printText("doclet.Link_To");
-        printHyperLink(configuration.topFile,
-            configuration.getText("doclet.Non_Frame_Version"));
-        println("");
-        noFramesEnd();
+    protected void addFrameWarning(Content contentTree) {
+        Content noframes = new HtmlTree(HtmlTag.NOFRAMES);
+        Content noScript = HtmlTree.NOSCRIPT(
+                HtmlTree.DIV(getResource("doclet.No_Script_Message")));
+        noframes.addContent(noScript);
+        Content noframesHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                getResource("doclet.Frame_Alert"));
+        noframes.addContent(noframesHead);
+        Content p = HtmlTree.P(getResource("doclet.Frame_Warning_Message"));
+        noframes.addContent(p);
+        noframes.addContent(new HtmlTree(HtmlTag.BR));
+        noframes.addContent(getResource("doclet.Link_To"));
+        Content link = getHyperLink(configuration.topFile,
+                getResource("doclet.Non_Frame_Version"));
+        noframes.addContent(link);
+        contentTree.addContent(noframes);
     }
 
     /**
-     * Print the frame sizes and their contents.
+     * Get the frame sizes and their contents.
+     *
+     * @return a content tree for the frame details
      */
-    protected void printFrameDetails() {
-        // title attribute intentionally made empty so
-        // 508 tests will not flag it as missing
-        frameSet("cols=\"20%,80%\" title=\"\" onLoad=\"top.loadFrames()\"");
+    protected Content getFrameDetails() {
+        HtmlTree frameset = HtmlTree.FRAMESET("20%,80%", null, "Documentation frame",
+                "top.loadFrames()");
         if (noOfPackages <= 1) {
-            printAllClassesFrameTag();
+            addAllClassesFrameTag(frameset);
         } else if (noOfPackages > 1) {
-            frameSet("rows=\"30%,70%\" title=\"\" onLoad=\"top.loadFrames()\"");
-            printAllPackagesFrameTag();
-            printAllClassesFrameTag();
-            frameSetEnd();
+            HtmlTree leftFrameset = HtmlTree.FRAMESET(null, "30%,70%", "Left frames",
+                "top.loadFrames()");
+            addAllPackagesFrameTag(leftFrameset);
+            addAllClassesFrameTag(leftFrameset);
+            frameset.addContent(leftFrameset);
         }
-        printClassFrameTag();
-        printFrameWarning();
-        frameSetEnd();
+        addClassFrameTag(frameset);
+        addFrameWarning(frameset);
+        return frameset;
     }
 
     /**
-     * Print the FRAME tag for the frame that lists all packages
+     * Add the FRAME tag for the frame that lists all packages.
+     *
+     * @param contentTree the content tree to which the information will be added
      */
-    private void printAllPackagesFrameTag() {
-        frame("src=\"overview-frame.html\" name=\"packageListFrame\""
-            + " title=\"" + configuration.getText("doclet.All_Packages") + "\"");
+    private void addAllPackagesFrameTag(Content contentTree) {
+        HtmlTree frame = HtmlTree.FRAME("overview-frame.html", "packageListFrame",
+                configuration.getText("doclet.All_Packages"));
+        contentTree.addContent(frame);
     }
 
     /**
-     * Print the FRAME tag for the frame that lists all classes
+     * Add the FRAME tag for the frame that lists all classes.
+     *
+     * @param contentTree the content tree to which the information will be added
      */
-    private void printAllClassesFrameTag() {
-        frame("src=\"" + "allclasses-frame.html" + "\""
-            + " name=\"packageFrame\""
-            + " title=\"" + configuration.getText("doclet.All_classes_and_interfaces")
-            + "\"");
+    private void addAllClassesFrameTag(Content contentTree) {
+        HtmlTree frame = HtmlTree.FRAME("allclasses-frame.html", "packageFrame",
+                configuration.getText("doclet.All_classes_and_interfaces"));
+        contentTree.addContent(frame);
     }
 
     /**
-     * Print the FRAME tag for the frame that describes the class in detail
+     * Add the FRAME tag for the frame that describes the class in detail.
+     *
+     * @param contentTree the content tree to which the information will be added
      */
-    private void printClassFrameTag() {
-        frame("src=\"" + configuration.topFile + "\""
-            + " name=\"classFrame\""
-            + " title=\""
-            + configuration.getText("doclet.Package_class_and_interface_descriptions")
-            + "\" scrolling=\"yes\"");
+    private void addClassFrameTag(Content contentTree) {
+        HtmlTree frame = HtmlTree.FRAME(configuration.topFile, "classFrame",
+                configuration.getText("doclet.Package_class_and_interface_descriptions"),
+                SCROLL_YES);
+        contentTree.addContent(frame);
     }
-
 }

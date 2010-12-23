@@ -27,17 +27,21 @@ package java.dyn;
 
 /**
  * A {@code ConstantCallSite} is a {@link CallSite} whose target is permanent, and can never be changed.
- * The only way to relink an {@code invokedynamic} instruction bound to a {@code ConstantCallSite} is
- * to invalidate the instruction as a whole.
+ * An {@code invokedynamic} instruction linked to a {@code ConstantCallSite} is permanently
+ * bound to the call site's target.
  * @author John Rose, JSR 292 EG
  */
 public class ConstantCallSite extends CallSite {
-    /** Create a call site with a permanent target. */
+    /** Create a call site with a permanent target.
+     * @throws NullPointerException if the proposed target is null
+     */
     public ConstantCallSite(MethodHandle target) {
         super(target);
     }
-    /** Throw an {@link IllegalArgumentException}, because this kind of call site cannot change its target. */
+    /**
+     * Throw an {@link UnsupportedOperationException}, because this kind of call site cannot change its target.
+     */
     @Override public final void setTarget(MethodHandle ignore) {
-        throw new IllegalArgumentException("ConstantCallSite");
+        throw new UnsupportedOperationException("ConstantCallSite");
     }
 }

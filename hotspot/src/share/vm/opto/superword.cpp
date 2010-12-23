@@ -21,8 +21,19 @@
  * questions.
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_superword.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "libadt/vectset.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/superword.hpp"
+#include "opto/vectornode.hpp"
 
 //
 //                  S U P E R W O R D   T R A N S F O R M

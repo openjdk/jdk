@@ -26,12 +26,16 @@
 package com.sun.tools.doclets.formats.html;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Print method and constructor info.
  *
  * @author Robert Field
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public abstract class AbstractExecutableMemberWriter extends AbstractMemberWriter {
 
@@ -45,82 +49,111 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     /**
-     * Write the type parameters for the executable member.
+     * Add the type parameters for the executable member.
      *
      * @param member the member to write type parameters for.
+     * @param htmltree the content tree to which the parameters will be added.
      * @return the display length required to write this information.
      */
-    protected int writeTypeParameters(ExecutableMemberDoc member) {
+    protected int addTypeParameters(ExecutableMemberDoc member, Content htmltree) {
         LinkInfoImpl linkInfo = new LinkInfoImpl(
             LinkInfoImpl.CONTEXT_MEMBER_TYPE_PARAMS, member, false);
         String typeParameters = writer.getTypeParameterLinks(linkInfo);
         if (linkInfo.displayLength > 0) {
-            writer.print(typeParameters + " ");
+            Content linkContent = new RawHtml(typeParameters);
+            htmltree.addContent(linkContent);
+            htmltree.addContent(writer.getSpace());
             writer.displayLength += linkInfo.displayLength + 1;
         }
         return linkInfo.displayLength;
     }
 
-    protected void writeSignature(ExecutableMemberDoc member) {
-        writer.displayLength = 0;
-        writer.pre();
-        writer.writeAnnotationInfo(member);
-        printModifiers(member);
-        writeTypeParameters(member);
-        if (configuration().linksource &&
-            member.position().line() != classdoc.position().line()) {
-            writer.printSrcLink(member, member.name());
-        } else {
-            strong(member.name());
-        }
-        writeParameters(member);
-        writeExceptions(member);
-        writer.preEnd();
-    }
-
-    protected void writeDeprecatedLink(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getDeprecatedLink(ProgramElementDoc member) {
         ExecutableMemberDoc emd = (ExecutableMemberDoc)member;
-        writer.printDocLink(LinkInfoImpl.CONTEXT_MEMBER, (MemberDoc) emd,
-            emd.qualifiedName() + emd.flatSignature(), false);
+        return writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER, (MemberDoc) emd,
+                emd.qualifiedName() + emd.flatSignature());
     }
 
-    protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
+    /**
+     * Add the summary link for the member.
+     *
+     * @param context the id of the context where the link will be printed
+     * @param classDoc the classDoc that we should link to
+     * @param member the member being linked to
+     * @param tdSummary the content tree to which the link will be added
+     */
+    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+            Content tdSummary) {
         ExecutableMemberDoc emd = (ExecutableMemberDoc)member;
         String name = emd.name();
-        writer.strong();
-        writer.printDocLink(context, cd, (MemberDoc) emd,
-            name, false);
-        writer.strongEnd();
+        Content strong = HtmlTree.STRONG(new RawHtml(
+                writer.getDocLink(context, cd, (MemberDoc) emd,
+                name, false)));
+        Content code = HtmlTree.CODE(strong);
         writer.displayLength = name.length();
-        writeParameters(emd, false);
+        addParameters(emd, false, code);
+        tdSummary.addContent(code);
     }
 
-    protected void writeInheritedSummaryLink(ClassDoc cd,
-            ProgramElementDoc member) {
-        writer.printDocLink(LinkInfoImpl.CONTEXT_MEMBER, cd, (MemberDoc) member,
-            member.name(), false);
+    /**
+     * Add the inherited summary link for the member.
+     *
+     * @param classDoc the classDoc that we should link to
+     * @param member the member being linked to
+     * @param linksTree the content tree to which the link will be added
+     */
+    protected void addInheritedSummaryLink(ClassDoc cd,
+            ProgramElementDoc member, Content linksTree) {
+        linksTree.addContent(new RawHtml(
+                writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER, cd, (MemberDoc) member,
+                member.name(), false)));
     }
 
-    protected void writeParam(ExecutableMemberDoc member, Parameter param,
-        boolean isVarArg) {
+    /**
+     * Add the parameter for the executable member.
+     *
+     * @param member the member to write parameter for.
+     * @param param the parameter that needs to be written.
+     * @param isVarArg true if this is a link to var arg.
+     * @param tree the content tree to which the parameter information will be added.
+     */
+    protected void addParam(ExecutableMemberDoc member, Parameter param,
+        boolean isVarArg, Content tree) {
         if (param.type() != null) {
-            writer.printLink(new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_EXECUTABLE_MEMBER_PARAM, param.type(),
-                isVarArg));
+            Content link = new RawHtml(writer.getLink(new LinkInfoImpl(
+                    LinkInfoImpl.CONTEXT_EXECUTABLE_MEMBER_PARAM, param.type(),
+                    isVarArg)));
+            tree.addContent(link);
         }
         if(param.name().length() > 0) {
-            writer.space();
-            writer.print(param.name());
+            tree.addContent(writer.getSpace());
+            tree.addContent(param.name());
         }
     }
 
-    protected void writeParameters(ExecutableMemberDoc member) {
-        writeParameters(member, true);
+    /**
+     * Add all the parameters for the executable member.
+     *
+     * @param member the member to write parameters for.
+     * @param tree the content tree to which the parameters information will be added.
+     */
+    protected void addParameters(ExecutableMemberDoc member, Content htmltree) {
+        addParameters(member, true, htmltree);
     }
 
-    protected void writeParameters(ExecutableMemberDoc member,
-            boolean includeAnnotations) {
-        print('(');
+    /**
+     * Add all the parameters for the executable member.
+     *
+     * @param member the member to write parameters for.
+     * @param includeAnnotations true if annotation information needs to be added.
+     * @param tree the content tree to which the parameters information will be added.
+     */
+    protected void addParameters(ExecutableMemberDoc member,
+            boolean includeAnnotations, Content htmltree) {
+        htmltree.addContent("(");
         Parameter[] params = member.parameters();
         String indent = makeSpace(writer.displayLength);
         if (configuration().linksource) {
@@ -132,58 +165,70 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             Parameter param = params[paramstart];
             if (!param.name().startsWith("this$")) {
                 if (includeAnnotations) {
-                        boolean foundAnnotations =
-                                writer.writeAnnotationInfo(indent.length(), member, param);
-                        if (foundAnnotations) {
-                                writer.println();
-                                writer.print(indent);
+                    boolean foundAnnotations =
+                            writer.addAnnotationInfo(indent.length(),
+                            member, param, htmltree);
+                    if (foundAnnotations) {
+                        htmltree.addContent(DocletConstants.NL);
+                        htmltree.addContent(indent);
                     }
                 }
-                writeParam(member, param,
-                    (paramstart == params.length - 1) && member.isVarArgs());
+                addParam(member, param,
+                    (paramstart == params.length - 1) && member.isVarArgs(), htmltree);
                 break;
             }
         }
 
         for (int i = paramstart + 1; i < params.length; i++) {
-            writer.print(',');
-            writer.println();
-            writer.print(indent);
+            htmltree.addContent(",");
+            htmltree.addContent(DocletConstants.NL);
+            htmltree.addContent(indent);
             if (includeAnnotations) {
                 boolean foundAnnotations =
-                    writer.writeAnnotationInfo(indent.length(), member, params[i]);
+                        writer.addAnnotationInfo(indent.length(), member, params[i],
+                        htmltree);
                 if (foundAnnotations) {
-                    writer.println();
-                    writer.print(indent);
+                    htmltree.addContent(DocletConstants.NL);
+                    htmltree.addContent(indent);
                 }
             }
-            writeParam(member, params[i], (i == params.length - 1) && member.isVarArgs());
+            addParam(member, params[i], (i == params.length - 1) && member.isVarArgs(),
+                    htmltree);
         }
-        writer.print(')');
+        htmltree.addContent(")");
     }
 
-    protected void writeExceptions(ExecutableMemberDoc member) {
+    /**
+     * Add exceptions for the executable member.
+     *
+     * @param member the member to write exceptions for.
+     * @param htmltree the content tree to which the exceptions information will be added.
+     */
+    protected void addExceptions(ExecutableMemberDoc member, Content htmltree) {
         Type[] exceptions = member.thrownExceptionTypes();
         if(exceptions.length > 0) {
             LinkInfoImpl memberTypeParam = new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_MEMBER, member, false);
+                    LinkInfoImpl.CONTEXT_MEMBER, member, false);
             int retlen = getReturnTypeLength(member);
             writer.getTypeParameterLinks(memberTypeParam);
             retlen += memberTypeParam.displayLength == 0 ?
                 0 : memberTypeParam.displayLength + 1;
             String indent = makeSpace(modifierString(member).length() +
-                member.name().length() + retlen - 4);
-            writer.println();
-            writer.print(indent);
-            writer.print("throws ");
+                    member.name().length() + retlen - 4);
+            htmltree.addContent(DocletConstants.NL);
+            htmltree.addContent(indent);
+            htmltree.addContent("throws ");
             indent += "       ";
-            writer.printLink(new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_MEMBER, exceptions[0]));
+            Content link = new RawHtml(writer.getLink(new LinkInfoImpl(
+                    LinkInfoImpl.CONTEXT_MEMBER, exceptions[0])));
+            htmltree.addContent(link);
             for(int i = 1; i < exceptions.length; i++) {
-                writer.println(",");
-                writer.print(indent);
-                writer.printLink(new LinkInfoImpl(
-                    LinkInfoImpl.CONTEXT_MEMBER, exceptions[i]));
+                htmltree.addContent(",");
+                htmltree.addContent(DocletConstants.NL);
+                htmltree.addContent(indent);
+                Content exceptionLink = new RawHtml(writer.getLink(new LinkInfoImpl(
+                        LinkInfoImpl.CONTEXT_MEMBER, exceptions[i])));
+                htmltree.addContent(exceptionLink);
             }
         }
     }

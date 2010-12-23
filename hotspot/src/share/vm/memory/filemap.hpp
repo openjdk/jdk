@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_FILEMAP_HPP
+#define SHARE_VM_MEMORY_FILEMAP_HPP
+
+#include "memory/compactingPermGenGen.hpp"
+#include "memory/space.hpp"
 
 // Layout of the file:
 //  header: dump of archive instance plus versioning info, datestamp, etc.
@@ -137,3 +143,5 @@ public:
   // Return true if given address is in the mapped shared space.
   bool is_in_shared_space(const void* p);
 };
+
+#endif // SHARE_VM_MEMORY_FILEMAP_HPP

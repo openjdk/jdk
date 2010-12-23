@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,29 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
+#define SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
+
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "orderAccess_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "orderAccess_linux_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "orderAccess_linux_zero.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "orderAccess_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "orderAccess_solaris_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "orderAccess_windows_x86.inline.hpp"
+#endif
 //
 // An object for encapsulating the machine/os dependent part of a JavaThread frame state
 //
@@ -70,7 +93,16 @@ friend class JavaCallWrapper;
   // and no one should look at the other fields.
   void zap(void)                                     { _last_Java_sp = NULL; }
 
-#include "incls/_javaFrameAnchor_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "javaFrameAnchor_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "javaFrameAnchor_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "javaFrameAnchor_zero.hpp"
+#endif
+
 
 public:
   JavaFrameAnchor()                              { clear(); }
@@ -84,3 +116,5 @@ public:
   static ByteSize last_Java_pc_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_pc); }
 
 };
+
+#endif // SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP

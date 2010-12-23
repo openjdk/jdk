@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSSCAVENGE_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSSCAVENGE_INLINE_HPP
+
+#include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -77,3 +85,5 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
     }
   }
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSSCAVENGE_INLINE_HPP

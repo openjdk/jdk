@@ -22,12 +22,14 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/oopFactory.hpp"
+#include "prims/methodHandleWalk.hpp"
+
 /*
  * JSR 292 reference implementation: method handle structure analysis
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandleWalk.cpp.incl"
 
 
 // -----------------------------------------------------------------------------
@@ -966,15 +968,10 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
 
   if (tailcall) {
     // Actually, in order to make these methods more recognizable,
-    // let's put them in holder classes MethodHandle and InvokeDynamic.
-    // That way stack walkers and compiler heuristics can recognize them.
-    _target_klass = (for_invokedynamic()
-                     ? SystemDictionary::InvokeDynamic_klass()
-                     : SystemDictionary::MethodHandle_klass());
+    // let's put them in holder class MethodHandle.  That way stack
+    // walkers and compiler heuristics can recognize them.
+    _target_klass = SystemDictionary::MethodHandle_klass();
   }
-
-  // instanceKlass* ik = instanceKlass::cast(klass);
-  // tty->print_cr("MethodHandleCompiler::make_invoke: %s %s.%s%s", Bytecodes::name(op), ik->external_name(), name->as_C_string(), signature->as_C_string());
 
   // Inline the method.
   InvocationCounter* ic = m->invocation_counter();

@@ -26,8 +26,10 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -42,8 +44,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class NestedClassWriterImpl extends AbstractMemberWriter
     implements MemberSummaryWriter {
 
-    private boolean printedSummaryHeader = false;
-
     public NestedClassWriterImpl(SubWriterHolderWriter writer,
             ClassDoc classdoc) {
         super(writer, classdoc);
@@ -54,88 +54,15 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Write the classes summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeMemberSummaryHeader(ClassDoc classDoc) {
-        printedSummaryHeader = true;
-        writer.println("<!-- ======== NESTED CLASS SUMMARY ======== -->");
-        writer.println();
-        writer.printSummaryHeader(this, classDoc);
-    }
-
-    /**
-     * Write the classes summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printSummaryFooter(this, classDoc);
-    }
-
-    /**
-     * Write the inherited classes summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeInheritedMemberSummaryHeader(ClassDoc classDoc) {
-        if(! printedSummaryHeader){
-            //We don't want inherited summary to not be under heading.
-            writeMemberSummaryHeader(classDoc);
-            writeMemberSummaryFooter(classDoc);
-            printedSummaryHeader = true;
-        }
-        writer.printInheritedSummaryHeader(this, classDoc);
-    }
-
-    /**
      * {@inheritDoc}
      */
-    public void writeInheritedMemberSummary(ClassDoc classDoc,
-            ProgramElementDoc nestedClass, boolean isFirst, boolean isLast) {
-        writer.printInheritedSummaryMember(this, classDoc, nestedClass, isFirst);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree) {
+        memberSummaryTree.addContent(HtmlConstants.START_OF_NESTED_CLASS_SUMMARY);
+        Content memberTree = writer.getMemberTreeHeader();
+        writer.addSummaryHeader(this, classDoc, memberTree);
+        return memberTree;
     }
-
-    /**
-     * Write the inherited classes summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeInheritedMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printInheritedSummaryFooter(this, classDoc);
-        writer.println();
-    }
-
-    /**
-     * Write the header for the nested class documentation.
-     *
-     * @param classDoc the class that the classes belong to.
-     */
-    public void writeHeader(ClassDoc classDoc, String header) {
-        writer.anchor("nested class_detail");
-        writer.printTableHeadingBackground(header);
-    }
-
-    /**
-     * Write the nested class header for the given nested class.
-     *
-     * @param nestedClass the nested class being documented.
-     * @param isFirst the flag to indicate whether or not the nested class is the
-     *        first to be documented.
-     */
-    public void writeClassHeader(ClassDoc nestedClass, boolean isFirst) {
-        if (! isFirst) {
-            writer.printMemberHeader();
-            writer.println("");
-        }
-        writer.anchor(nestedClass.name());
-        writer.h3();
-        writer.print(nestedClass.name());
-        writer.h3End();
-    }
-
-
 
     /**
      * Close the writer.
@@ -148,17 +75,35 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
         return VisibleMemberMap.INNERCLASSES;
     }
 
-    public void printSummaryLabel() {
-        writer.printText("doclet.Nested_Class_Summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryLabel(Content memberTree) {
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+                writer.getResource("doclet.Nested_Class_Summary"));
+        memberTree.addContent(label);
     }
 
-    public void printTableSummary() {
-        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+    /**
+     * {@inheritDoc}
+     */
+    public String getTableSummary() {
+        return configuration().getText("doclet.Member_Table_Summary",
                 configuration().getText("doclet.Nested_Class_Summary"),
-                configuration().getText("doclet.nested_classes")));
+                configuration().getText("doclet.nested_classes"));
     }
 
-    public void printSummaryTableHeader(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    public String getCaption() {
+        return configuration().getText("doclet.Nested_Classes");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header;
         if (member.isInterface()) {
             header = new String[] {
@@ -176,92 +121,95 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                         configuration().getText("doclet.Description"))
             };
         }
-        writer.summaryTableHeader(header, "col");
+        return header;
     }
 
-    public void printSummaryAnchor(ClassDoc cd) {
-        writer.anchor("nested_class_summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
+        memberTree.addContent(writer.getMarkerAnchor("nested_class_summary"));
     }
 
-    public void printInheritedSummaryAnchor(ClassDoc cd) {
-        writer.anchor("nested_classes_inherited_from_class_" +
-                       cd.qualifiedName());
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree) {
+        inheritedTree.addContent(writer.getMarkerAnchor(
+                "nested_classes_inherited_from_class_" + cd.qualifiedName()));
     }
 
-    public void printInheritedSummaryLabel(ClassDoc cd) {
-        String clslink = writer.getPreQualifiedClassLink(
-            LinkInfoImpl.CONTEXT_MEMBER, cd, false);
-        writer.strong();
-        writer.printText(cd.isInterface() ?
-            "doclet.Nested_Classes_Interface_Inherited_From_Interface" :
-            "doclet.Nested_Classes_Interfaces_Inherited_From_Class",
-            clslink);
-        writer.strongEnd();
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
+        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
+                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+        Content label = new StringContent(cd.isInterface() ?
+            configuration().getText("doclet.Nested_Classes_Interface_Inherited_From_Interface") :
+            configuration().getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
+        Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
+                label);
+        labelHeading.addContent(writer.getSpace());
+        labelHeading.addContent(classLink);
+        inheritedTree.addContent(labelHeading);
     }
 
-    protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.strong();
-        writer.printLink(new LinkInfoImpl(context, (ClassDoc)member, false));
-        writer.strongEnd();
+    /**
+     * {@inheritDoc}
+     */
+    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+            Content tdSummary) {
+        Content strong = HtmlTree.STRONG(new RawHtml(
+                writer.getLink(new LinkInfoImpl(context, (ClassDoc)member, false))));
+        Content code = HtmlTree.CODE(strong);
+        tdSummary.addContent(code);
     }
 
-    protected void writeInheritedSummaryLink(ClassDoc cd,
-            ProgramElementDoc member) {
-        writer.printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
-            (ClassDoc)member, false));
+    /**
+     * {@inheritDoc}
+     */
+    protected void addInheritedSummaryLink(ClassDoc cd,
+            ProgramElementDoc member, Content linksTree) {
+        linksTree.addContent(new RawHtml(
+                writer.getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
+                (ClassDoc)member, false))));
     }
 
-    protected void printSummaryType(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    protected void addSummaryType(ProgramElementDoc member,
+            Content tdSummaryType) {
         ClassDoc cd = (ClassDoc)member;
-        printModifierAndType(cd, null);
+        addModifierAndType(cd, null, tdSummaryType);
     }
 
-    protected void printHeader(ClassDoc cd) {
-        // N.A.
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getDeprecatedLink(ProgramElementDoc member) {
+        return writer.getQualifiedClassLink(LinkInfoImpl.CONTEXT_MEMBER,
+                (ClassDoc)member);
     }
 
-    protected void printBodyHtmlEnd(ClassDoc cd) {
-        // N.A.
-    }
-
-    protected void printMember(ProgramElementDoc member) {
-        // N.A.
-    }
-
-    protected void writeDeprecatedLink(ProgramElementDoc member) {
-        writer.printQualifiedClassLink(LinkInfoImpl.CONTEXT_MEMBER,
-            (ClassDoc)member);
-    }
-
-    protected void printNavSummaryLink(ClassDoc cd, boolean link) {
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            writer.printHyperLink("", (cd == null) ? "nested_class_summary":
-                    "nested_classes_inherited_from_class_" +
+            return writer.getHyperLink("", (cd == null) ? "nested_class_summary":
+                "nested_classes_inherited_from_class_" +
                 cd.qualifiedName(),
-                ConfigurationImpl.getInstance().getText("doclet.navNested"));
+                writer.getResource("doclet.navNested"));
         } else {
-            writer.printText("doclet.navNested");
+            return writer.getResource("doclet.navNested");
         }
     }
 
-    protected void printNavDetailLink(boolean link) {
-    }
-
-    protected void printMemberLink(ProgramElementDoc member) {
-    }
-
-    protected void printMembersSummaryLink(ClassDoc cd, ClassDoc icd,
-                                           boolean link) {
-        if (link) {
-            writer.printHyperLink(cd.name() + ".html",
-                (cd == icd)?
-                    "nested_class_summary":
-                    "nested_classes_inherited_from_class_" +
-                    icd.qualifiedName(),
-                    ConfigurationImpl.getInstance().getText(
-                        "doclet.Nested_Class_Summary"));
-        } else {
-            writer.printText("doclet.Nested_Class_Summary");
-        }
+    /**
+     * {@inheritDoc}
+     */
+    protected void addNavDetailLink(boolean link, Content liNav) {
     }
 }

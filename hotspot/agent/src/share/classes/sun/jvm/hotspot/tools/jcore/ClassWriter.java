@@ -321,13 +321,16 @@ public class ClassWriter implements /* imports */ ClassConstants
                      break;
                 }
 
+                case JVM_CONSTANT_InvokeDynamicTrans:
                 case JVM_CONSTANT_InvokeDynamic: {
                      dos.writeByte(cpConstType);
-                     int[] values = cpool.getMultiOperandsAt(ci);
-                     for (int vn = 0; vn < values.length; vn++) {
-                         dos.writeShort(values[vn]);
-                     }
-                     if (DEBUG) debugMessage("CP[" + ci + "] = INDY indexes = " + Arrays.toString(values));
+                     int value = cpool.getIntAt(ci);
+                     short bsmIndex = (short) extractLowShortFromInt(value);
+                     short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                     dos.writeShort(bsmIndex);
+                     dos.writeShort(nameAndTypeIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = INDY bsm = " +
+                           bsmIndex + ", N&T = " + nameAndTypeIndex);
                      break;
                 }
 

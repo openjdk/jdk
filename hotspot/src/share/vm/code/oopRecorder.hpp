@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_OOPRECORDER_HPP
+#define SHARE_VM_CODE_OOPRECORDER_HPP
+
+#include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
+
 // Recording and retrieval of oop relocations in compiled code.
 
 class CodeBlob;
@@ -134,3 +140,5 @@ class OopRecorder : public ResourceObj {
   static int _find_index_calls, _hit_indexes, _missed_indexes;
 #endif
 };
+
+#endif // SHARE_VM_CODE_OOPRECORDER_HPP

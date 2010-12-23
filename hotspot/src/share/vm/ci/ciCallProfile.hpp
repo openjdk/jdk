@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CICALLPROFILE_HPP
+#define SHARE_VM_CI_CICALLPROFILE_HPP
+
+#include "ci/ciClassList.hpp"
+#include "memory/allocation.hpp"
 
 // ciCallProfile
 //
@@ -73,3 +79,5 @@ public:
     return _receiver[i];
   }
 };
+
+#endif // SHARE_VM_CI_CICALLPROFILE_HPP

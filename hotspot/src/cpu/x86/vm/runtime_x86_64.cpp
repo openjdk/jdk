@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
+#include "precompiled.hpp"
+#ifdef COMPILER2
+#include "asm/assembler.hpp"
+#include "assembler_x86.inline.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/vmreg.hpp"
+#include "interpreter/interpreter.hpp"
+#include "nativeInst_x86.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "vmreg_x86.inline.hpp"
+#endif
+
 
 // This file should really contain the code for generating the OptoRuntime
 // exception_blob. However that code uses SimpleRuntimeFrame which only

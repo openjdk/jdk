@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,22 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_HISTOGRAM_HPP
+#define SHARE_VM_UTILITIES_HISTOGRAM_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/os.hpp"
+#include "utilities/growableArray.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 // This class provides a framework for collecting various statistics.
 // The current implementation is oriented towards counting invocations
@@ -89,3 +105,5 @@ class Histogram : public CHeapObj {
 };
 
 #endif
+
+#endif // SHARE_VM_UTILITIES_HISTOGRAM_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vmreg.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
 
 // First VMReg value that could refer to a stack slot
 VMReg VMRegImpl::stack0 = (VMReg)(intptr_t)((ConcreteRegisterImpl::number_of_registers + 1) & ~1);

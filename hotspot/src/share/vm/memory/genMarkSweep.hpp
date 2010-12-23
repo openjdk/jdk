@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENMARKSWEEP_HPP
+#define SHARE_VM_MEMORY_GENMARKSWEEP_HPP
+
+#include "gc_implementation/shared/markSweep.hpp"
 
 class GenMarkSweep : public MarkSweep {
   friend class VM_MarkSweep;
@@ -44,3 +49,5 @@ class GenMarkSweep : public MarkSweep {
   static void allocate_stacks();
   static void deallocate_stacks();
 };
+
+#endif // SHARE_VM_MEMORY_GENMARKSWEEP_HPP

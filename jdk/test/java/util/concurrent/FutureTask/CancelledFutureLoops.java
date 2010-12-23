@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile CancelledFutureLoops.java
+ * @compile -source 1.5 CancelledFutureLoops.java
  * @run main/timeout=2000 CancelledFutureLoops
  * @summary Checks for responsiveness of futures to cancellation.
  * Runs under the assumption that ITERS computations require more than
@@ -64,10 +64,10 @@ public final class CancelledFutureLoops {
             try {
                 new FutureLoop(i).test();
             }
-            catch(BrokenBarrierException bb) {
+            catch (BrokenBarrierException bb) {
                 // OK; ignore
             }
-            catch(ExecutionException ee) {
+            catch (ExecutionException ee) {
                 // OK; ignore
             }
             Thread.sleep(TIMEOUT);

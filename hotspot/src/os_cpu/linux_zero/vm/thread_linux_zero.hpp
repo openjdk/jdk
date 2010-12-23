@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_ZERO_VM_THREAD_LINUX_ZERO_HPP
+#define OS_CPU_LINUX_ZERO_VM_THREAD_LINUX_ZERO_HPP
 
  private:
   ZeroStack  _zero_stack;
@@ -114,3 +117,5 @@
   static bool register_stack_overflow() { return false; }
   static void enable_register_stack_guard() {}
   static void disable_register_stack_guard() {}
+
+#endif // OS_CPU_LINUX_ZERO_VM_THREAD_LINUX_ZERO_HPP

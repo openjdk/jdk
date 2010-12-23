@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-#ifndef _PORT_
-#define _PORT_
+#ifndef SHARE_VM_LIBADT_PORT_HPP
+#define SHARE_VM_LIBADT_PORT_HPP
+
+#include "utilities/top.hpp"
+
 // Typedefs for portable compiling
 
 #if defined(__GNUC__)
@@ -204,4 +207,4 @@ uint32 rotate32( uint32 x, int32 cnt );
 extern uint32 heap_totalmem;      // Current total memory allocation
 extern uint32 heap_highwater;     // Highwater mark to date for memory usage
 
-#endif // _PORT_
+#endif // SHARE_VM_LIBADT_PORT_HPP

@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_doCall.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciCPCache.hpp"
+#include "ci/ciCallSite.hpp"
+#include "ci/ciMethodHandle.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileLog.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 #ifndef PRODUCT
 void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {

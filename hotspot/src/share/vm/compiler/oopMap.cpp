@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,20 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_oopMap.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeBlob.hpp"
+#include "code/codeCache.hpp"
+#include "code/nmethod.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/signature.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Defs.hpp"
+#endif
 
 // OopMapStream
 

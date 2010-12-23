@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_REFERENCEPOLICY_HPP
+#define SHARE_VM_MEMORY_REFERENCEPOLICY_HPP
 
 // referencePolicy is used to determine when soft reference objects
 // should be cleared.
@@ -66,3 +69,5 @@ class LRUMaxHeapPolicy : public ReferencePolicy {
   void setup();
   bool should_clear_reference(oop p);
 };
+
+#endif // SHARE_VM_MEMORY_REFERENCEPOLICY_HPP
