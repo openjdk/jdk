@@ -498,7 +498,7 @@ public class JavacParser implements Parser {
             try {
                 n = Float.valueOf(proper);
             } catch (NumberFormatException ex) {
-                // error already repoted in scanner
+                // error already reported in scanner
                 n = Float.NaN;
             }
             if (n.floatValue() == 0.0f && !isZero(proper))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,21 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiRedefineClasses.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verifier.hpp"
+#include "code/codeCache.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/klassVtable.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/methodComparator.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/relocator.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 objArrayOop VM_RedefineClasses::_old_methods = NULL;
@@ -201,7 +214,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_Double:  // fall through
     case JVM_CONSTANT_Long:
     {
-      scratch_cp->copy_entry_to(scratch_i, *merge_cp_p, *merge_cp_length_p,
+      constantPoolOopDesc::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
 
       if (scratch_i != *merge_cp_length_p) {
@@ -226,7 +239,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_UnresolvedClass:  // fall through
     case JVM_CONSTANT_UnresolvedString:
     {
-      scratch_cp->copy_entry_to(scratch_i, *merge_cp_p, *merge_cp_length_p,
+      constantPoolOopDesc::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
 
       if (scratch_i != *merge_cp_length_p) {
@@ -1080,13 +1093,13 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       case JVM_CONSTANT_Long:
         // just copy the entry to *merge_cp_p, but double and long take
         // two constant pool entries
-        old_cp->copy_entry_to(old_i, *merge_cp_p, old_i, CHECK_0);
+        constantPoolOopDesc::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
         old_i++;
         break;
 
       default:
         // just copy the entry to *merge_cp_p
-        old_cp->copy_entry_to(old_i, *merge_cp_p, old_i, CHECK_0);
+        constantPoolOopDesc::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
         break;
       }
     } // end for each old_cp entry

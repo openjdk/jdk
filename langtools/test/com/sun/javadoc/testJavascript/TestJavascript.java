@@ -45,11 +45,11 @@ public class TestJavascript extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<A HREF=\"../index.html?pkg/C.html\" target=\"_top\"><STRONG>FRAMES</STRONG></A>"},
+            "<a href=\"../index.html?pkg/C.html\" target=\"_top\">FRAMES</a>"},
         {BUG_ID + FS + "TestJavascript.html",
-            "<A HREF=\"index.html?TestJavascript.html\" target=\"_top\"><STRONG>FRAMES</STRONG></A>"},
+            "<a href=\"index.html?TestJavascript.html\" target=\"_top\">FRAMES</a>"},
         {BUG_ID + FS + "index.html",
-            "<SCRIPT type=\"text/javascript\">" + NL +
+            "<script type=\"text/javascript\">" + NL +
                         "    targetPage = \"\" + window.location.search;" + NL +
             "    if (targetPage != \"\" && targetPage != \"undefined\")" + NL +
             "        targetPage = targetPage.substring(1);" + NL +
@@ -59,7 +59,7 @@ public class TestJavascript extends JavadocTester {
             "        if (targetPage != \"\" && targetPage != \"undefined\")" + NL +
             "             top.classFrame.location = top.targetPage;" + NL +
             "    }" + NL +
-            "</SCRIPT>"},
+            "</script>"},
 
         //Make sure title javascript only runs if is-external is not true
         {BUG_ID + FS + "pkg" + FS + "C.html",

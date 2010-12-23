@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARKTHREAD_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARKTHREAD_INLINE_HPP
+
+#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.hpp"
+
   // Total virtual time so far.
 inline double ConcurrentMarkThread::vtime_accum() {
   return _vtime_accum + _cm->all_task_accum_vtime();
@@ -31,3 +37,5 @@ inline double ConcurrentMarkThread::vtime_accum() {
 inline double ConcurrentMarkThread::vtime_mark_accum() {
   return _vtime_mark_accum + _cm->all_task_accum_vtime();
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARKTHREAD_INLINE_HPP

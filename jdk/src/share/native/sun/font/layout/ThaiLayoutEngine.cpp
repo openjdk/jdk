@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
  */
 
@@ -36,19 +36,24 @@
 #include "ScriptAndLanguageTags.h"
 #include "LEGlyphStorage.h"
 
+#include "KernTable.h"
+
 #include "ThaiShaping.h"
 
 U_NAMESPACE_BEGIN
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(ThaiLayoutEngine)
 
-ThaiLayoutEngine::ThaiLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags)
-    : LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags)
+ThaiLayoutEngine::ThaiLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags, LEErrorCode &success)
+    : LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success)
 {
     fErrorChar = 0x25CC;
 
     // Figure out which presentation forms the font uses
-    if (fontInstance->canDisplay(0x0E64)) {
+    if (! fontInstance->canDisplay(0x0E01)) {
+        // No Thai in font; don't use presentation forms.
+        fGlyphSet = 3;
+    } else if (fontInstance->canDisplay(0x0E64)) {
         // WorldType uses reserved space in Thai block
         fGlyphSet = 0;
     } else if (fontInstance->canDisplay(0xF701)) {
@@ -114,6 +119,30 @@ le_int32 ThaiLayoutEngine::computeGlyphs(const LEUnicode chars[], le_int32 offse
 
     glyphStorage.adoptGlyphCount(glyphCount);
     return glyphCount;
+}
+
+// This is the same as LayoutEngline::adjustGlyphPositions() except that it doesn't call adjustMarkGlyphs
+void ThaiLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool  /*reverse*/,
+                                        LEGlyphStorage &glyphStorage, LEErrorCode &success)
+{
+    if (LE_FAILURE(success)) {
+        return;
+    }
+
+    if (chars == NULL || offset < 0 || count < 0) {
+        success = LE_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
+
+    if (fTypoFlags & 0x1) { /* kerning enabled */
+      static const le_uint32 kernTableTag = LE_KERN_TABLE_TAG;
+
+      KernTable kt(fFontInstance, getFontTable(kernTableTag));
+      kt.process(glyphStorage);
+    }
+
+    // default is no adjustments
+    return;
 }
 
 U_NAMESPACE_END

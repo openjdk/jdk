@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_EXCEPTIONS_HPP
+#define SHARE_VM_UTILITIES_EXCEPTIONS_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/sizes.hpp"
 
 // This file provides the basic support for exception handling in the VM.
 // Note: We do not use C++ exceptions to avoid compiler dependencies and
@@ -276,3 +283,5 @@ class ExceptionMark {
 // exceptions.
 
 #define EXCEPTION_MARK                           Thread* THREAD; ExceptionMark __em(THREAD);
+
+#endif // SHARE_VM_UTILITIES_EXCEPTIONS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_DEBUGINFOREC_HPP
+#define SHARE_VM_CODE_DEBUGINFOREC_HPP
+
+#include "ci/ciClassList.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "code/debugInfo.hpp"
+#include "code/location.hpp"
+#include "code/pcDesc.hpp"
+#include "compiler/oopMap.hpp"
+#include "oops/oop.hpp"
+#include "utilities/growableArray.hpp"
 
 //** The DebugInformationRecorder collects debugging information
 //   for a compiled method.
@@ -183,3 +196,5 @@ class DebugInformationRecorder: public ResourceObj {
  public:
   enum { serialized_null = 0 };
 };
+
+#endif // SHARE_VM_CODE_DEBUGINFOREC_HPP

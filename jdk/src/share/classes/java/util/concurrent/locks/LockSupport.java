@@ -200,8 +200,8 @@ public class LockSupport {
      * <li>Some other thread invokes {@link #unpark unpark} with the
      * current thread as the target; or
      *
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts} the current
-     * thread; or
+     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread; or
      *
      * <li>The specified waiting time elapses; or
      *

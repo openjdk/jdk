@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_mutex.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/osThread.hpp"
+#include "utilities/events.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "mutex_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "mutex_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "mutex_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
 //

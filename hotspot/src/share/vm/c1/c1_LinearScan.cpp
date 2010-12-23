@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_LinearScan.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "utilities/bitMap.inline.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmreg_zero.inline.hpp"
+#endif
 
 
 #ifndef PRODUCT
@@ -1256,7 +1273,7 @@ void LinearScan::build_intervals() {
   int caller_save_registers[LinearScan::nof_regs];
 
   int i;
-  for (i = 0; i < FrameMap::nof_caller_save_cpu_regs; i++) {
+  for (i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
     LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
     assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
     assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
@@ -3540,7 +3557,7 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
 
     // invalidate all caller save registers at calls
     if (visitor.has_call()) {
-      for (j = 0; j < FrameMap::nof_caller_save_cpu_regs; j++) {
+      for (j = 0; j < FrameMap::nof_caller_save_cpu_regs(); j++) {
         state_put(input_state, reg_num(FrameMap::caller_save_cpu_reg_at(j)), NULL);
       }
       for (j = 0; j < FrameMap::nof_caller_save_fpu_regs; j++) {
@@ -5579,7 +5596,7 @@ void LinearScanWalker::init_vars_for_alloc(Interval* cur) {
     _last_reg = pd_last_fpu_reg;
   } else {
     _first_reg = pd_first_cpu_reg;
-    _last_reg = pd_last_cpu_reg;
+    _last_reg = FrameMap::last_cpu_reg();
   }
 
   assert(0 <= _first_reg && _first_reg < LinearScan::nof_regs, "out of range");

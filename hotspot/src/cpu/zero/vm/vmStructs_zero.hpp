@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_VMSTRUCTS_ZERO_HPP
+#define CPU_ZERO_VM_VMSTRUCTS_ZERO_HPP
 
 // These are the CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -50,3 +53,5 @@
   /* NOTE that we do not use the last_entry() macro here; it is used         */
   /* in vmStructs_<os>_<cpu>.hpp's VM_LONG_CONSTANTS_OS_CPU macro (and must  */
   /* be present there)                                                       */
+
+#endif // CPU_ZERO_VM_VMSTRUCTS_ZERO_HPP

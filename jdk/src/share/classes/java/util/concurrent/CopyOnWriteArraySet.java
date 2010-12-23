@@ -59,24 +59,23 @@ import java.util.*;
  * copy-on-write set to maintain a set of Handler objects that
  * perform some action upon state updates.
  *
- * <pre>
+ *  <pre> {@code
  * class Handler { void handle(); ... }
  *
  * class X {
- *    private final CopyOnWriteArraySet&lt;Handler&gt; handlers
- *       = new CopyOnWriteArraySet&lt;Handler&gt;();
- *    public void addHandler(Handler h) { handlers.add(h); }
+ *   private final CopyOnWriteArraySet<Handler> handlers
+ *     = new CopyOnWriteArraySet<Handler>();
+ *   public void addHandler(Handler h) { handlers.add(h); }
  *
- *    private long internalState;
- *    private synchronized void changeState() { internalState = ...; }
+ *   private long internalState;
+ *   private synchronized void changeState() { internalState = ...; }
  *
- *    public void update() {
- *       changeState();
- *       for (Handler handler : handlers)
- *          handler.handle();
- *    }
- * }
- * </pre>
+ *   public void update() {
+ *     changeState();
+ *     for (Handler handler : handlers)
+ *        handler.handle();
+ *   }
+ * }}</pre>
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_SOLARIS_SPARC_VM_THREADLS_SOLARIS_SPARC_HPP
+#define OS_CPU_SOLARIS_SPARC_VM_THREADLS_SOLARIS_SPARC_HPP
 
 public:
   // Java Thread  - force inlining
@@ -64,3 +67,5 @@ public:
     uintptr_t ix = (int) (((raw_id >> 9) ^ (raw_id >> 20)) % _pd_cache_size);
     return ix;
   }
+
+#endif // OS_CPU_SOLARIS_SPARC_VM_THREADLS_SOLARIS_SPARC_HPP

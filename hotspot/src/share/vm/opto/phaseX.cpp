@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_phaseX.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/block.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regalloc.hpp"
+#include "opto/rootnode.hpp"
 
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255

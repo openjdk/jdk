@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ADLC_FILEBUFF_HPP
+#define SHARE_VM_ADLC_FILEBUFF_HPP
 
 // FILEBUFF.HPP - Definitions for parser file buffering routines
 #include <iostream>
@@ -99,3 +102,5 @@ class FileBuffRegion {
   void print(ostream&);
   friend ostream& operator<< (ostream&, FileBuffRegion&);
 };
+
+#endif // SHARE_VM_ADLC_FILEBUFF_HPP

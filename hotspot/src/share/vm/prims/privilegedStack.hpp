@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP
+#define SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/vframe.hpp"
+#include "utilities/growableArray.hpp"
+
 class PrivilegedElement VALUE_OBJ_CLASS_SPEC {
  private:
   klassOop  _klass;                // klass for method
@@ -41,3 +49,5 @@ class PrivilegedElement VALUE_OBJ_CLASS_SPEC {
   void print_on(outputStream* st) const   PRODUCT_RETURN;
   bool contains(address addr)             PRODUCT_RETURN0;
 };
+
+#endif // SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP

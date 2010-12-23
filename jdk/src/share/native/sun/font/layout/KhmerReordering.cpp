@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2007 - All Rights Reserved
  *
  * This file is a modification of the ICU file IndicReordering.cpp
  * by Jens Herden and Javier Sola for Khmer language
@@ -149,8 +149,9 @@ const KhmerClassTable *KhmerClassTable::getKhmerClassTable()
 
 
 
-class ReorderingOutput : public UMemory {
+class KhmerReorderingOutput : public UMemory {
 private:
+    le_int32 fSyllableCount;
     le_int32 fOutIndex;
     LEUnicode *fOutChars;
 
@@ -158,15 +159,20 @@ private:
 
 
 public:
-    ReorderingOutput(LEUnicode *outChars, LEGlyphStorage &glyphStorage)
-        : fOutIndex(0), fOutChars(outChars), fGlyphStorage(glyphStorage)
+    KhmerReorderingOutput(LEUnicode *outChars, LEGlyphStorage &glyphStorage)
+        : fSyllableCount(0), fOutIndex(0), fOutChars(outChars), fGlyphStorage(glyphStorage)
     {
         // nothing else to do...
     }
 
-    ~ReorderingOutput()
+    ~KhmerReorderingOutput()
     {
         // nothing to do here...
+    }
+
+    void reset()
+    {
+        fSyllableCount += 1;
     }
 
     void writeChar(LEUnicode ch, le_uint32 charIndex, FeatureMask charFeatures)
@@ -176,7 +182,7 @@ public:
         fOutChars[fOutIndex] = ch;
 
         fGlyphStorage.setCharIndex(fOutIndex, charIndex, success);
-        fGlyphStorage.setAuxData(fOutIndex, charFeatures, success);
+        fGlyphStorage.setAuxData(fOutIndex, charFeatures | (fSyllableCount & LE_GLYPH_GROUP_MASK), success);
 
         fOutIndex += 1;
     }
@@ -328,12 +334,12 @@ static const le_int8 khmerStateTable[][KhmerClassTable::CC_COUNT] =
     {-1, -1, -1, -1, 12, 13, -1, 10, 16, 17,  1, 14}, //  9 - First consonant or type 3 after ceong
     {-1, 11, 11, 11, -1, -1, -1, -1, -1, -1, -1, -1}, // 10 - Second Coeng (no register shifter before)
     {-1, -1, -1, -1, 15, -1, -1, -1, 16, 17,  1, 14}, // 11 - Second coeng consonant (or ind. vowel) no register shifter before
-    {-1, -1,  1, -1, -1, 13, -1, -1, 16, -1, -1, -1}, // 12 - Second ZWNJ before a register shifter
+    {-1, -1, -1, -1, -1, 13, -1, -1, 16, -1, -1, -1}, // 12 - Second ZWNJ before a register shifter
     {-1, -1, -1, -1, 15, -1, -1, -1, 16, 17,  1, 14}, // 13 - Second register shifter
     {-1, -1, -1, -1, -1, -1, -1, -1, 16, -1, -1, -1}, // 14 - ZWJ before vowel
     {-1, -1, -1, -1, -1, -1, -1, -1, 16, -1, -1, -1}, // 15 - ZWNJ before vowel
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, 17,  1, 18}, // 16 - dependent vowel
-    {-1, -1,  1, -1, -1, -1, -1, -1, -1, -1,  1, 18}, // 17 - sign above
+    {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, 18}, // 17 - sign above
     {-1, -1, -1, -1, -1, -1, -1, 19, -1, -1, -1, -1}, // 18 - ZWJ after vowel
     {-1,  1, -1,  1, -1, -1, -1, -1, -1, -1, -1, -1}, // 19 - Third coeng
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1}, // 20 - dependent vowel after a Robat
@@ -380,7 +386,7 @@ le_int32 KhmerReordering::reorder(const LEUnicode *chars, le_int32 charCount, le
 {
     const KhmerClassTable *classTable = KhmerClassTable::getKhmerClassTable();
 
-    ReorderingOutput output(outChars, glyphStorage);
+    KhmerReorderingOutput output(outChars, glyphStorage);
     KhmerClassTable::CharClass charClass;
     le_int32 i, prev = 0, coengRo;
 
@@ -389,6 +395,8 @@ le_int32 KhmerReordering::reorder(const LEUnicode *chars, le_int32 charCount, le
     // several syllables.
     while (prev < charCount) {
         le_int32 syllable = findSyllable(classTable, chars, prev, charCount);
+
+        output.reset();
 
         // write a pre vowel or the pre part of a split vowel first
         // and look out for coeng + ro. RO is the only vowel of type 2, and

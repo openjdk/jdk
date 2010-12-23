@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,17 @@
  *
  */
 
-// Portions of code courtesy of Clifford Click
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
 
-#include "incls/_precompiled.incl"
-#include "incls/_addnode.cpp.incl"
+// Portions of code courtesy of Clifford Click
 
 #define MAXFLOAT        ((float)3.40282346638528860e+38)
 

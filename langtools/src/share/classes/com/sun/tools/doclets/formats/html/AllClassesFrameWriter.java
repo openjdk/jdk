@@ -25,10 +25,13 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the file with list of all the classes in this run. This page will be
@@ -38,6 +41,7 @@ import java.util.*;
  *
  * @author Atul M Dambalkar
  * @author Doug Kramer
+ * @author Bhavesh Patel (Modified)
  */
 public class AllClassesFrameWriter extends HtmlDocletWriter {
 
@@ -55,6 +59,11 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * Index of all the classes.
      */
     protected IndexBuilder indexbuilder;
+
+    /**
+     * BR tag to be used within a document tree.
+     */
+    final HtmlTree BR = new HtmlTree(HtmlTag.BR);
 
     /**
      * Construct AllClassesFrameWriter object. Also initilises the indexbuilder
@@ -84,12 +93,12 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         try {
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
-            allclassgen.generateAllClassesFile(true);
+            allclassgen.buildAllClassesFile(true);
             allclassgen.close();
             filename = OUTPUT_FILE_NAME_NOFRAMES;
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
-            allclassgen.generateAllClassesFile(false);
+            allclassgen.buildAllClassesFile(false);
             allclassgen.close();
         } catch (IOException exc) {
             configuration.standardmessage.
@@ -100,30 +109,34 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Print all the classes in table format in the file.
+     * Print all the classes in the file.
      * @param wantFrames True if we want frames.
      */
-    protected void generateAllClassesFile(boolean wantFrames) throws IOException {
+    protected void buildAllClassesFile(boolean wantFrames) throws IOException {
         String label = configuration.getText("doclet.All_Classes");
-
-        printHtmlHeader(label, null, false);
-
-        printAllClassesTableHeader();
-        printAllClasses(wantFrames);
-        printAllClassesTableFooter();
-
-        printBodyHtmlEnd();
+        Content body = getBody(false, getWindowTitle(label));
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
+                HtmlStyle.bar, allclassesLabel);
+        body.addContent(heading);
+        Content ul = new HtmlTree(HtmlTag.UL);
+        // Generate the class links and add it to the tdFont tree.
+        addAllClasses(ul, wantFrames);
+        Content div = HtmlTree.DIV(HtmlStyle.indexContainer, ul);
+        body.addContent(div);
+        printHtmlDocument(null, false, body);
     }
 
     /**
-     * Use the sorted index of all the classes and print all the classes.
+     * Use the sorted index of all the classes and add all the classes to the
+     * content list.
      *
+     * @param content HtmlTree content to which all classes information will be added
      * @param wantFrames True if we want frames.
      */
-    protected void printAllClasses(boolean wantFrames) {
+    protected void addAllClasses(Content content, boolean wantFrames) {
         for (int i = 0; i < indexbuilder.elements().length; i++) {
             Character unicode = (Character)((indexbuilder.elements())[i]);
-            generateContents(indexbuilder.getMemberList(unicode), wantFrames);
+            addContents(indexbuilder.getMemberList(unicode), wantFrames, content);
         }
     }
 
@@ -136,46 +149,25 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      *
      * @param classlist Sorted list of classes.
      * @param wantFrames True if we want frames.
+     * @param content HtmlTree content to which the links will be added
      */
-    protected void generateContents(List<Doc> classlist, boolean wantFrames) {
+    protected void addContents(List<Doc> classlist, boolean wantFrames,
+            Content content) {
         for (int i = 0; i < classlist.size(); i++) {
             ClassDoc cd = (ClassDoc)classlist.get(i);
             if (!Util.isCoreClass(cd)) {
                 continue;
             }
             String label = italicsClassName(cd, false);
+            Content linkContent;
             if(wantFrames){
-                printLink(new LinkInfoImpl(LinkInfoImpl.ALL_CLASSES_FRAME, cd,
-                    label, "classFrame")
-                );
+                linkContent = new RawHtml(getLink(new LinkInfoImpl(
+                        LinkInfoImpl.ALL_CLASSES_FRAME, cd, label, "classFrame")));
             } else {
-                printLink(new LinkInfoImpl(cd, label));
+                linkContent = new RawHtml(getLink(new LinkInfoImpl(cd, label)));
             }
-            br();
+            Content li = HtmlTree.LI(linkContent);
+            content.addContent(li);
         }
-    }
-
-    /**
-     * Print the heading "All Classes" and also print Html table tag.
-     */
-    protected void printAllClassesTableHeader() {
-        fontSizeStyle("+1", "FrameHeadingFont");
-        strongText("doclet.All_Classes");
-        fontEnd();
-        br();
-        table();
-        tr();
-        tdNowrap();
-        fontStyle("FrameItemFont");
-    }
-
-    /**
-     * Print Html closing table tag.
-     */
-    protected void printAllClassesTableFooter() {
-        fontEnd();
-        tdEnd();
-        trEnd();
-        tableEnd();
     }
 }

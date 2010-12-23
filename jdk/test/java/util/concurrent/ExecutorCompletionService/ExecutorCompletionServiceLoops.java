@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4965960
- * @compile ExecutorCompletionServiceLoops.java
+ * @compile -source 1.5 ExecutorCompletionServiceLoops.java
  * @run main/timeout=3600 ExecutorCompletionServiceLoops
  * @summary  Exercise ExecutorCompletionServiceLoops
  */

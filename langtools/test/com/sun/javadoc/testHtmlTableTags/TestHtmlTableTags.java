@@ -50,139 +50,128 @@ public class TestHtmlTableTags extends JavadocTester {
 
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Class Summary table, " +
+            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            " cellspacing=\"0\" summary=\"Class Summary table, " +
             "listing classes, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Interface Summary table, " +
+            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            " cellspacing=\"0\" summary=\"Interface Summary table, " +
             "listing interfaces, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Enum Summary table, " +
+            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            " cellspacing=\"0\" summary=\"Enum Summary table, " +
             "listing enums, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Annotation Types Summary table, " +
+            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            " cellspacing=\"0\" summary=\"Annotation Types Summary table, " +
             "listing annotation types, and an explanation\">"
         },
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Field Summary table, " +
-            "listing fields, and an explanation\">"
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Field Summary table, listing fields, " +
+            "and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Method Summary table, " +
-            "listing methods, and an explanation\">"
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Method Summary table, listing methods, " +
+            "and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Nested Class Summary table, " +
-            "listing nested classes, and an explanation\">"
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Nested Class Summary table, listing " +
+            "nested classes, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Constructor Summary table, " +
-            "listing constructors, and an explanation\">"
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Constructor Summary table, listing " +
+            "constructors, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.ModalExclusionType.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Enum Constant Summary table, " +
-            "listing enum constants, and an explanation\">"
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Enum Constant Summary table, listing " +
+            "enum constants, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C3.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Required Element Summary table, " +
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Required Element Summary table, " +
             "listing required elements, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C4.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Optional Element Summary table, " +
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Optional Element Summary table, " +
             "listing optional elements, and an explanation\">"
         },
         // Class use documentation
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "I1.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing packages, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing fields, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing fields, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing methods, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing methods, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing fields, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing fields, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing methods, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing methods, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing packages, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing methods, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing methods, and an explanation\">"
         },
         // Package use documentation
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing packages, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing classes, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing classes, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing packages, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Use table, " +
-            "listing classes, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "table, listing classes, and an explanation\">"
         },
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Deprecated Fields table, " +
-            "listing deprecated fields, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
+            "summary=\"Deprecated Fields table, listing deprecated fields, " +
+            "and an explanation\">"
         },
         {BUG_ID + FS + "deprecated-list.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Deprecated Methods table, " +
-            "listing deprecated methods, and an explanation\">"
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
+            "summary=\"Deprecated Methods table, listing deprecated methods, " +
+            "and an explanation\">"
         },
         // Constant values
         {BUG_ID + FS + "constant-values.html",
-            "<TABLE BORDER=\"1\" CELLPADDING=\"3\" CELLSPACING=\"0\" " +
-            "SUMMARY=\"Constant Field Values table, listing " +
+            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
+            "summary=\"Constant Field Values table, listing " +
             "constant fields, and values\">"
         },
         // Overview Summary
         {BUG_ID + FS + "overview-summary.html",
-            "<TABLE BORDER=\"1\" WIDTH=\"100%\" CELLPADDING=\"3\" " +
-            "CELLSPACING=\"0\" SUMMARY=\"Packages table, " +
+            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "cellspacing=\"0\" summary=\"Packages table, " +
             "listing packages, and an explanation\">"
         },
 
@@ -192,125 +181,117 @@ public class TestHtmlTableTags extends JavadocTester {
 
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Class Summary</CAPTION>"
+            "<caption><span>Class Summary</span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Interface Summary</CAPTION>"
+            "<caption><span>Interface Summary</span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Enum Summary</CAPTION>"
+            "<caption><span>Enum Summary</span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Annotation Types Summary</CAPTION>"
+            "<caption><span>Annotation Types Summary</span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Field Summary</CAPTION>"
+            "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Method Summary</CAPTION>"
+            "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Nested Class Summary</CAPTION>"
+            "<caption><span>Nested Classes</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Constructor Summary</CAPTION>"
+            "<caption><span>Constructors</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.ModalExclusionType.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Enum Constant Summary</CAPTION>"
+            "<caption><span>Enum Constants</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C3.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Required Element Summary</CAPTION>"
+            "<caption><span>Required Elements</span><span class=\"tabEnd\">&nbsp;" +
+            "</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C4.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Optional Element Summary</CAPTION>"
+            "<caption><span>Optional Elements</span><span class=\"tabEnd\">&nbsp;" +
+            "</span></caption>"
         },
         // Class use documentation
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "I1.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Packages that use <A HREF=\"../../pkg1/I1.html\" " +
-            "title=\"interface in pkg1\">I1</A></CAPTION>"
+            "<caption><span>Packages that use <a href=\"../../pkg1/I1.html\" " +
+            "title=\"interface in pkg1\">I1</a></span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<CAPTION CLASS=\"TableSubCaption\">" + NL +
-            "Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> " +
-            "declared as <A HREF=\"../../pkg1/C1.html\" title=\"class in pkg1\">" +
-            "C1</A></CAPTION>"
+            "<caption><span>Fields in <a href=\"../../pkg2/package-summary.html\">" +
+            "pkg2</a> declared as <a href=\"../../pkg1/C1.html\" " +
+            "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">&nbsp;" +
+            "</span></caption>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<CAPTION CLASS=\"TableSubCaption\">" + NL +
-            "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> " +
-            "with parameters of type <A HREF=\"../../pkg1/C1.html\" " +
-            "title=\"class in pkg1\">C1</A></CAPTION>"
+            "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">" +
+            "pkg2</a> that return <a href=\"../../pkg1/C1.html\" " +
+            "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<CAPTION CLASS=\"TableSubCaption\">" + NL +
-            "Fields in <A HREF=\"../../pkg1/package-summary.html\">pkg1</A> " +
-            "declared as <A HREF=\"../../pkg2/C2.html\" title=\"class in pkg2\">" +
-            "C2</A></CAPTION>"
+            "<caption><span>Fields in <a href=\"../../pkg1/package-summary.html\">" +
+            "pkg1</a> declared as <a href=\"../../pkg2/C2.html\" " +
+            "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<CAPTION CLASS=\"TableSubCaption\">" + NL +
-            "Methods in <A HREF=\"../../pkg1/package-summary.html\">pkg1</A> " +
-            "with parameters of type <A HREF=\"../../pkg2/C2.html\" " +
-            "title=\"class in pkg2\">C2</A></CAPTION>"
+            "<caption><span>Methods in <a href=\"../../pkg1/package-summary.html\">" +
+            "pkg1</a> that return <a href=\"../../pkg2/C2.html\" " +
+            "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<CAPTION CLASS=\"TableSubCaption\">" + NL +
-            "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> " +
-            "that return <A HREF=\"../../pkg2/C2.ModalExclusionType.html\" " +
-            "title=\"enum in pkg2\">C2.ModalExclusionType</A></CAPTION>"
+            "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">" +
+            "pkg2</a> that return <a href=\"../../pkg2/C2.ModalExclusionType.html\" " +
+            "title=\"enum in pkg2\">C2.ModalExclusionType</a></span>" +
+            "<span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         // Package use documentation
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Packages that use <A HREF=\"../pkg1/package-summary.html\">" +
-            "pkg1</A></CAPTION>"
+            "<caption><span>Packages that use <a href=\"../pkg1/package-summary.html\">" +
+            "pkg1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Classes in <A HREF=\"../pkg1/package-summary.html\">pkg1</A> " +
-            "used by <A HREF=\"../pkg1/package-summary.html\">pkg1</A></CAPTION>"
+            "<caption><span>Classes in <a href=\"../pkg1/package-summary.html\">" +
+            "pkg1</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>" +
+            "</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Packages that use <A HREF=\"../pkg2/package-summary.html\">" +
-            "pkg2</A></CAPTION>"
+            "<caption><span>Packages that use <a href=\"../pkg2/package-summary.html\">" +
+            "pkg2</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Classes in <A HREF=\"../pkg2/package-summary.html\">pkg2</A> " +
-            "used by <A HREF=\"../pkg1/package-summary.html\">pkg1</A></CAPTION>"
+            "<caption><span>Classes in <a href=\"../pkg2/package-summary.html\">" +
+            "pkg2</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>" +
+            "</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Deprecated Fields</CAPTION>"
+            "<caption><span>Deprecated Fields</span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         {BUG_ID + FS + "deprecated-list.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Deprecated Methods</CAPTION>"
+            "<caption><span>Deprecated Methods</span><span class=\"tabEnd\">" +
+            "&nbsp;</span></caption>"
         },
         // Constant values
         {BUG_ID + FS + "constant-values.html",
-            "<CAPTION CLASS=\"TableSubCaption\">" + NL +
-            "pkg1.<A HREF=\"pkg1/C1.html\" title=\"class in pkg1\">C1</A></CAPTION>"
+            "<caption><span>pkg1.<a href=\"pkg1/C1.html\" title=\"class in pkg1\">" +
+            "C1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
         // Overview Summary
         {BUG_ID + FS + "overview-summary.html",
-            "<CAPTION CLASS=\"TableCaption\">" + NL +
-            "Packages</CAPTION>"
+            "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>"
         },
 
         /*
@@ -319,135 +300,115 @@ public class TestHtmlTableTags extends JavadocTester {
 
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Class</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Class</th>" + NL + "<th class=\"colLast\" scope=\"col\"" +
+            ">Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Interface</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Interface</th>" + NL + "<th class=\"colLast\" scope=\"col\"" +
+            ">Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Enum</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Enum</th>" + NL + "<th class=\"colLast\" scope=\"col\"" +
+            ">Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Annotation Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Annotation Type</th>" + NL + "<th class=\"colLast\"" +
+            " scope=\"col\">Description</th>"
         },
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Method and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Class and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Class and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Constructor and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Constructor and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.ModalExclusionType.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Enum Constant and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Enum Constant and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C3.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Required Element and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Required Element and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "C4.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Optional Element and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Optional Element and Description</th>"
         },
         // Class use documentation
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "I1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Package</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Method and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Method and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Package</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Method and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
         },
         // Package use documentation
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Package</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Class and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Class and Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Package</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Class and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Class and Description</th>"
         },
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Field and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Field and Description</th>"
         },
         {BUG_ID + FS + "deprecated-list.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Method and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Method and Description</th>"
         },
         // Constant values
         {BUG_ID + FS + "constant-values.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Constant Field</TH>" + NL +
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>Value</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Modifier and Type</th>" + NL + "<th" +
+            " scope=\"col\">Constant Field</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Value</th>"
         },
         // Overview Summary
         {BUG_ID + FS + "overview-summary.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Package</th>" + NL + "<th class=\"colLast\" scope=\"col\"" +
+            ">Description</th>"
         }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

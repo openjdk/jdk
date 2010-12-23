@@ -22,8 +22,41 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Runtime1.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/codeBuffer.hpp"
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeBlob.hpp"
+#include "code/compiledIC.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/disassembler.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 
 
 // Implementation of StubAssembler
@@ -1141,7 +1174,7 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
     memmove(dst_addr, src_addr, length << l2es);
     return ac_ok;
   } else if (src->is_objArray() && dst->is_objArray()) {
-    if (UseCompressedOops) {  // will need for tiered
+    if (UseCompressedOops) {
       narrowOop *src_addr  = objArrayOop(src)->obj_at_addr<narrowOop>(src_pos);
       narrowOop *dst_addr  = objArrayOop(dst)->obj_at_addr<narrowOop>(dst_pos);
       return obj_arraycopy_work(src, src_addr, dst, dst_addr, length);
@@ -1177,10 +1210,11 @@ JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
   assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
   if (UseCompressedOops) {
     bs->write_ref_array_pre((narrowOop*)dst, num);
+    Copy::conjoint_oops_atomic((narrowOop*) src, (narrowOop*) dst, num);
   } else {
     bs->write_ref_array_pre((oop*)dst, num);
+    Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   }
-  Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   bs->write_ref_array(dst, num);
 JRT_END
 

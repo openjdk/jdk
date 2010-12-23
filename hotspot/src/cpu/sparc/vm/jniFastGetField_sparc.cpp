@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jniFastGetField_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_sparc.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm_misc.hpp"
+#include "runtime/safepoint.hpp"
 
 // TSO ensures that loads are blocking and ordered with respect to
 // to earlier loads, so we don't need LoadLoad membars.
