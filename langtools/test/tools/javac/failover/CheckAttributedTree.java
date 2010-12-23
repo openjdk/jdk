@@ -252,6 +252,13 @@ public class CheckAttributedTree {
             error("File " + file + " ignored");
     }
 
+    // See CR:  6982992 Tests CheckAttributedTree.java, JavacTreeScannerTest.java, and SourceTreeeScannerTest.java timeout
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    Reporter r = new Reporter(pw);
+    JavacTool tool = JavacTool.create();
+    StandardJavaFileManager fm = tool.getStandardFileManager(r, null, null);
+
     /**
      * Read a file.
      * @param file the file to be read
@@ -260,12 +267,8 @@ public class CheckAttributedTree {
      * @throws TreePosTest.ParseException if any errors occur while parsing the file
      */
     List<Pair<JCCompilationUnit, JCTree>> read(File file) throws IOException, AttributionException {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        Reporter r = new Reporter(pw);
         JavacTool tool = JavacTool.create();
-        Charset cs = (encoding == null ? null : Charset.forName(encoding));
-        StandardJavaFileManager fm = tool.getStandardFileManager(r, null, null);
+        r.errors = 0;
         Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(file);
         String[] opts = { "-XDshouldStopPolicy=ATTR", "-XDverboseCompilePolicy" };
         JavacTask task = tool.getTask(pw, fm, r, Arrays.asList(opts), null, files);
