@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_scopeDesc.cpp.incl"
+#include "precompiled.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
 
 ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool return_oop) {

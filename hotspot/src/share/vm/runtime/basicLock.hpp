@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_BASICLOCK_HPP
+#define SHARE_VM_RUNTIME_BASICLOCK_HPP
+
+#include "oops/markOop.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/top.hpp"
 
 class BasicLock VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
@@ -70,3 +77,5 @@ class BasicObjectLock VALUE_OBJ_CLASS_SPEC {
   static int lock_offset_in_bytes()                   { return offset_of(BasicObjectLock, _lock); }
 };
 
+
+#endif // SHARE_VM_RUNTIME_BASICLOCK_HPP

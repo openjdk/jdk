@@ -22,13 +22,13 @@
  */
 
 /* @test
- * @bug 4429043 4493595 6332756
+ * @bug 4429043 4493595 6332756 6709457
  * @summary The FileChannel file locking
  */
 
 import java.io.*;
 import java.nio.channels.*;
-import java.nio.*;
+import static java.nio.file.StandardOpenOption.*;
 
 /**
  * Testing FileChannel's lock method.
@@ -55,6 +55,7 @@ public class Lock {
         test2(blah, true);
         test2(blah, false);
         test3(blah);
+        test4(blah);
         blah.delete();
     }
 
@@ -162,6 +163,24 @@ public class Lock {
 
         fc1.close();
         fc2.close();
+    }
+
+    /**
+     * Test file locking when file is opened for append
+     */
+    static void test4(File blah) throws Exception {
+        try (FileChannel fc = new FileOutputStream(blah, true).getChannel()) {
+            fc.tryLock().release();
+            fc.tryLock(0L, 1L, false).release();
+            fc.lock().release();
+            fc.lock(0L, 1L, false).release();
+        }
+        try (FileChannel fc = FileChannel.open(blah.toPath(), APPEND)) {
+            fc.tryLock().release();
+            fc.tryLock(0L, 1L, false).release();
+            fc.lock().release();
+            fc.lock(0L, 1L, false).release();
+        }
     }
 }
 

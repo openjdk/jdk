@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_GraphBuilder.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_Canonicalizer.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "ci/ciField.hpp"
+#include "ci/ciKlass.hpp"
+#include "interpreter/bytecode.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
  private:
@@ -2786,7 +2795,7 @@ void GraphBuilder::setup_osr_entry_block() {
       get = append(new UnsafeGetRaw(as_BasicType(local->type()), e,
                                     append(new Constant(new IntConstant(offset))),
                                     0,
-                                    true));
+                                    true /*unaligned*/, true /*wide*/));
     }
     _state->store_local(index, get);
   }
@@ -3368,6 +3377,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
     INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
   }
 
+  if (is_profiling() && !callee->ensure_method_data()) {
+    INLINE_BAILOUT("mdo allocation failed");
+  }
 #ifndef PRODUCT
       // printing
   if (PrintInlining) {

@@ -22,8 +22,25 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vframeArray.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/monitorChunk.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "utilities/events.hpp"
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }

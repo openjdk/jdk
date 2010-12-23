@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_SHARK_GLOBALS_ZERO_HPP
+#define CPU_ZERO_VM_SHARK_GLOBALS_ZERO_HPP
 
 // Set the default values for platform dependent flags used by the
 // Shark compiler.  See globals.hpp for details of what they do.
@@ -60,3 +63,5 @@ define_pd_global(uintx,    MaxPermSize,                  64*M );
 define_pd_global(bool,     NeverActAsServerClassMachine, true );
 define_pd_global(uint64_t, MaxRAM,                       1ULL*G);
 define_pd_global(bool,     CICompileOSR,                 true );
+
+#endif // CPU_ZERO_VM_SHARK_GLOBALS_ZERO_HPP

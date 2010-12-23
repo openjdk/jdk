@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_HANDLES_INLINE_HPP
+#define SHARE_VM_RUNTIME_HANDLES_INLINE_HPP
+
+#include "runtime/handles.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 // these inline functions are in a separate file to break an include cycle
 // between Thread and Handle
@@ -71,3 +85,5 @@ inline void HandleMark::pop_and_restore() {
   NOT_PRODUCT(area->set_size_in_bytes(_size_in_bytes);)
   debug_only(area->_handle_mark_nesting--);
 }
+
+#endif // SHARE_VM_RUNTIME_HANDLES_INLINE_HPP

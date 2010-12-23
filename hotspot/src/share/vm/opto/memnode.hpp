@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_MEMNODE_HPP
+#define SHARE_VM_OPTO_MEMNODE_HPP
+
+#include "opto/multnode.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/type.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1250,3 +1258,5 @@ public:
   virtual uint match_edge(uint idx) const { return idx==2; }
   virtual const Type *bottom_type() const { return ( AllocatePrefetchStyle == 3 ) ? Type::MEMORY : Type::ABIO; }
 };
+
+#endif // SHARE_VM_OPTO_MEMNODE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_VMSTRUCTS_X86_HPP
+#define CPU_X86_VM_VMSTRUCTS_X86_HPP
 
 // These are the CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -60,3 +63,5 @@
   /* NOTE that we do not use the last_entry() macro here; it is used         */
   /* in vmStructs_<os>_<cpu>.hpp's VM_LONG_CONSTANTS_OS_CPU macro (and must  */
   /* be present there)                                                       */
+
+#endif // CPU_X86_VM_VMSTRUCTS_X86_HPP

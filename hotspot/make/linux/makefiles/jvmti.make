@@ -37,11 +37,10 @@ JvmtiOutDir = $(GENERATED)/jvmtifiles
 
 JvmtiSrcDir = $(GAMMADIR)/src/share/vm/prims
 InterpreterSrcDir = $(GAMMADIR)/src/share/vm/interpreter
-Src_Dirs += $(JvmtiSrcDir)
 
 # set VPATH so make knows where to look for source files
-Src_Dirs_V = ${Src_Dirs}
-VPATH    += $(Src_Dirs_V:%=%:)
+Src_Dirs_V += $(JvmtiSrcDir)
+VPATH += $(Src_Dirs_V:%=%:)
 
 JvmtiGeneratedNames = \
         jvmtiEnv.hpp \

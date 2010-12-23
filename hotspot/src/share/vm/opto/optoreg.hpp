@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_OPTOREG_HPP
+#define SHARE_VM_OPTO_OPTOREG_HPP
 
 //------------------------------OptoReg----------------------------------------
 // We eventually need Registers for the Real World.  Registers are essentially
@@ -192,3 +195,5 @@ public:
   OptoRegPair(OptoReg::Name f) { _second = OptoReg::Bad; _first = f; }
   OptoRegPair() { _second = OptoReg::Bad; _first = OptoReg::Bad; }
 };
+
+#endif // SHARE_VM_OPTO_OPTOREG_HPP

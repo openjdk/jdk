@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKCODEBUFFER_HPP
+#define SHARE_VM_SHARK_SHARKCODEBUFFER_HPP
+
+#include "asm/codeBuffer.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
 
 class SharkCodeBuffer : public StackObj {
  public:
@@ -85,3 +92,5 @@ class SharkCodeBuffer : public StackObj {
     return offset;
   }
 };
+
+#endif // SHARE_VM_SHARK_SHARKCODEBUFFER_HPP

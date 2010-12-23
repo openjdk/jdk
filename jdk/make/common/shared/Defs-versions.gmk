@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@
 #   If we are using freetype, the freetype version expected.
 #
 # REQUIRED_GCC_VER
-#   Solaris and Linux only. The required version of gcc/g++ for the plugin.
+#   Solaris and Linux only. The required version of gcc/g++ for the legacy OJI plugin.
 #
 # REQUIRED_LINK_VER
 #   Windows only: The version of link.exe expected.
@@ -193,7 +193,7 @@ endif
 REQUIRED_ANT_VER          = 1.6.3
 REQUIRED_BOOT_VER         = 1.6
 REQUIRED_FREETYPE_VERSION = 2.3.0
-REQUIRED_MAKE_VER         = 3.78
+REQUIRED_MAKE_VER         = 3.81
 REQUIRED_UNZIP_VER        = 5.12
 REQUIRED_ZIP_VER          = 2.2
 

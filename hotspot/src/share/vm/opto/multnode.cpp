@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_multnode.cpp.incl"
+#include "precompiled.hpp"
+#include "opto/matcher.hpp"
+#include "opto/multnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
+#include "opto/type.hpp"
 
 //=============================================================================
 //------------------------------MultiNode--------------------------------------

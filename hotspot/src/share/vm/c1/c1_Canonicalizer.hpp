@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_CANONICALIZER_HPP
+#define SHARE_VM_C1_C1_CANONICALIZER_HPP
+
+#include "c1/c1_Instruction.hpp"
+
 class Canonicalizer: InstructionVisitor {
  private:
   Compilation *_compilation;
@@ -98,3 +103,5 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
 };
+
+#endif // SHARE_VM_C1_C1_CANONICALIZER_HPP

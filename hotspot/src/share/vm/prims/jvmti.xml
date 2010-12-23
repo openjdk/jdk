@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -359,8 +359,8 @@
 
 <specification label="JVM(TM) Tool Interface"
         majorversion="1"
-        minorversion="1"
-        microversion="109">
+        minorversion="2"
+        microversion="1">
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>
@@ -5649,6 +5649,45 @@ class C2 extends C1 implements I2 {
       </errors>
     </function>
 
+    <function id="GetLocalInstance" num="155" since="1.2">
+      <synopsis>Get Local Instance</synopsis>
+      <description>
+        This function can be used to retrieve the value of the local object
+        variable at slot 0 (the "<code>this</code>" object) from non-static
+        frames.  This function can retrieve the "<code>this</code>" object from
+        native method frames, whereas <code>GetLocalObject()</code> would 
+        return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
+      </description>
+      <origin>new</origin>
+      <capabilities>
+	<required id="can_access_local_variables"></required>
+      </capabilities>
+      <parameters>
+ 	<param id="thread">
+	  <jthread null="current" frame="frame"/>
+	  <description>
+	    The thread of the frame containing the variable's value.
+	  </description>
+	</param>
+	<param id="depth">
+	  <jframeID thread="thread"/>
+	  <description>
+	    The depth of the frame containing the variable's value.
+	  </description>
+	</param>
+	<param id="value_ptr">
+	  <outptr><jobject/></outptr>
+	    <description>
+	      On return, points to the variable's value. 
+	    </description>
+	</param>
+      </parameters>
+      <errors>
+	<error id="JVMTI_ERROR_INVALID_SLOT">
+	  If the specified frame is a static method frame.
+	</error>
+      </errors>
+    </function>
     <function id="GetLocalInt" num="22">
       <synopsis>Get Local Variable - Int</synopsis>
       <description>

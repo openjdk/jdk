@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,23 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/allocation.inline.hpp"
+#include "prims/jni.h"
+#include "prims/jvm.h"
+#include "runtime/globals.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/reflectionCompat.hpp"
+#include "runtime/synchronizer.hpp"
+#include "services/threadService.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/dtrace.hpp"
+
 /*
  *      Implementation of class sun.misc.Unsafe
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_unsafe.cpp.incl"
 
 HS_DTRACE_PROBE_DECL3(hotspot, thread__park__begin, uintptr_t, int, long long);
 HS_DTRACE_PROBE_DECL1(hotspot, thread__park__end, uintptr_t);

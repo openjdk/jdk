@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_cardTableExtension.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
+#include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psTasks.hpp"
+#include "gc_implementation/parallelScavenge/psYoungGen.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.psgc.inline.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.

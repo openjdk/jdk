@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_pcTasks.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "gc_implementation/parallelScavenge/pcTasks.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/objArrayKlass.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
+#include "services/management.hpp"
 
 //
 // ThreadRootsMarkingTask

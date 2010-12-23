@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_markSweep.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/objArrayKlass.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 Stack<oop>              MarkSweep::_marking_stack;
 Stack<DataLayout*>      MarkSweep::_revisit_mdo_stack;

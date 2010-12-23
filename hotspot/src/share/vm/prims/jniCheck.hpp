@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_PRIMS_JNICHECK_HPP
+#define SHARE_VM_PRIMS_JNICHECK_HPP
+
+#ifndef KERNEL
+#include "runtime/thread.hpp"
+#endif
 
 extern "C" {
   // Report a JNI failure caught by -Xcheck:jni.  Perform a core dump.
@@ -50,3 +57,5 @@ class jniCheck : public AllStatic {
   static void validate_call_class(JavaThread* thr, jclass clazz, jmethodID method_id);
   static methodOop validate_jmethod_id(JavaThread* thr, jmethodID method_id);
 };
+
+#endif // SHARE_VM_PRIMS_JNICHECK_HPP

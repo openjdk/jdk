@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_nativeInst_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_zero.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "nativeInst_zero.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/ostream.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 // This method is called by nmethod::make_not_entrant_or_zombie to
 // insert a jump to SharedRuntime::get_handle_wrong_method_stub()

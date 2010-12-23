@@ -22,8 +22,15 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_bytecodeInfo.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileLog.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/parse.hpp"
+#include "runtime/handles.inline.hpp"
 
 //=============================================================================
 //------------------------------InlineTree-------------------------------------

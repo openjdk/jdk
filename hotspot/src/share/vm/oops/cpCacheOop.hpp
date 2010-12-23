@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_CPCACHEOOP_HPP
+#define SHARE_VM_OOPS_CPCACHEOOP_HPP
+
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.hpp"
+#include "oops/arrayOop.hpp"
+#include "utilities/array.hpp"
+
 // A ConstantPoolCacheEntry describes an individual entry of the constant
 // pool cache. There's 2 principal kinds of entries: field entries for in-
 // stance & static field access, and method entries for invokes. Some of
@@ -406,3 +414,5 @@ class constantPoolCacheOopDesc: public oopDesc {
   void adjust_method_entries(methodOop* old_methods, methodOop* new_methods,
                              int methods_length, bool * trace_name_printed);
 };
+
+#endif // SHARE_VM_OOPS_CPCACHEOOP_HPP

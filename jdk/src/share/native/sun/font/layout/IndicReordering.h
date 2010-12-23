@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2009 - All Rights Reserved
  *
  */
 
@@ -62,7 +62,8 @@ U_NAMESPACE_BEGIN
 #define CC_SPLIT_VOWEL_PIECE_3   12U
 #define CC_VIRAMA                13U
 #define CC_ZERO_WIDTH_MARK       14U
-#define CC_COUNT                 15U
+#define CC_AL_LAKUNA             15U
+#define CC_COUNT                 16U
 
 // Character class flags
 #define CF_CLASS_MASK    0x0000FFFFU
@@ -74,6 +75,7 @@ U_NAMESPACE_BEGIN
 #define CF_BELOW_BASE    0x10000000U
 #define CF_POST_BASE     0x08000000U
 #define CF_LENGTH_MARK   0x04000000U
+#define CF_PRE_BASE      0x02000000U
 
 #define CF_POS_BEFORE    0x00300000U
 #define CF_POS_BELOW     0x00200000U
@@ -89,6 +91,7 @@ U_NAMESPACE_BEGIN
 #define SF_REPH_AFTER_BELOW      0x40000000U
 #define SF_EYELASH_RA            0x20000000U
 #define SF_MPRE_FIXUP            0x10000000U
+#define SF_FILTER_ZERO_WIDTH     0x08000000U
 
 #define SF_POST_BASE_LIMIT_MASK  0x0000FFFFU
 #define SF_NO_POST_BASE_LIMIT    0x00007FFFU
@@ -97,6 +100,15 @@ typedef LEUnicode SplitMatra[3];
 
 class MPreFixups;
 class LEGlyphStorage;
+
+// Dynamic Properties ( v2 fonts only )
+typedef le_uint32 DynamicProperties;
+
+#define DP_REPH               0x80000000U
+#define DP_HALF               0x40000000U
+#define DP_PREF               0x20000000U
+#define DP_BLWF               0x10000000U
+#define DP_PSTF               0x08000000U
 
 struct IndicClassTable
 {
@@ -111,6 +123,7 @@ struct IndicClassTable
     const SplitMatra *splitMatraTable;
 
     inline le_int32 getWorstCaseExpansion() const;
+    inline le_bool getFilterZeroWidth() const;
 
     CharClass getCharClass(LEUnicode ch) const;
 
@@ -121,6 +134,7 @@ struct IndicClassTable
     inline le_bool isConsonant(LEUnicode ch) const;
     inline le_bool isReph(LEUnicode ch) const;
     inline le_bool isVirama(LEUnicode ch) const;
+    inline le_bool isAlLakuna(LEUnicode ch) const;
     inline le_bool isNukta(LEUnicode ch) const;
     inline le_bool isVattu(LEUnicode ch) const;
     inline le_bool isMatra(LEUnicode ch) const;
@@ -129,12 +143,15 @@ struct IndicClassTable
     inline le_bool hasPostOrBelowBaseForm(LEUnicode ch) const;
     inline le_bool hasPostBaseForm(LEUnicode ch) const;
     inline le_bool hasBelowBaseForm(LEUnicode ch) const;
+    inline le_bool hasAboveBaseForm(LEUnicode ch) const;
+    inline le_bool hasPreBaseForm(LEUnicode ch) const;
 
     inline static le_bool isVowelModifier(CharClass charClass);
     inline static le_bool isStressMark(CharClass charClass);
     inline static le_bool isConsonant(CharClass charClass);
     inline static le_bool isReph(CharClass charClass);
     inline static le_bool isVirama(CharClass charClass);
+    inline static le_bool isAlLakuna(CharClass charClass);
     inline static le_bool isNukta(CharClass charClass);
     inline static le_bool isVattu(CharClass charClass);
     inline static le_bool isMatra(CharClass charClass);
@@ -143,6 +160,8 @@ struct IndicClassTable
     inline static le_bool hasPostOrBelowBaseForm(CharClass charClass);
     inline static le_bool hasPostBaseForm(CharClass charClass);
     inline static le_bool hasBelowBaseForm(CharClass charClass);
+    inline static le_bool hasAboveBaseForm(CharClass charClass);
+    inline static le_bool hasPreBaseForm(CharClass charClass);
 
     static const IndicClassTable *getScriptClassTable(le_int32 scriptCode);
 };
@@ -151,13 +170,26 @@ class IndicReordering /* not : public UObject because all methods are static */ 
 public:
     static le_int32 getWorstCaseExpansion(le_int32 scriptCode);
 
+    static le_bool getFilterZeroWidth(le_int32 scriptCode);
+
     static le_int32 reorder(const LEUnicode *theChars, le_int32 charCount, le_int32 scriptCode,
         LEUnicode *outChars, LEGlyphStorage &glyphStorage,
-        MPreFixups **outMPreFixups);
+        MPreFixups **outMPreFixups, LEErrorCode& success);
 
-    static void adjustMPres(MPreFixups *mpreFixups, LEGlyphStorage &glyphStorage);
+    static void adjustMPres(MPreFixups *mpreFixups, LEGlyphStorage &glyphStorage, LEErrorCode& success);
+
+    static le_int32 v2process(const LEUnicode *theChars, le_int32 charCount, le_int32 scriptCode,
+        LEUnicode *outChars, LEGlyphStorage &glyphStorage);
 
     static const FeatureMap *getFeatureMap(le_int32 &count);
+
+        static const FeatureMap *getv2FeatureMap(le_int32 &count);
+
+    static void applyPresentationForms(LEGlyphStorage &glyphStorage, le_int32 count);
+
+    static void finalReordering(LEGlyphStorage &glyphStorage, le_int32 count);
+
+    static void getDynamicProperties(DynamicProperties *dProps, const IndicClassTable *classTable);
 
 private:
     // do not instantiate
@@ -170,6 +202,11 @@ private:
 inline le_int32 IndicClassTable::getWorstCaseExpansion() const
 {
     return worstCaseExpansion;
+}
+
+inline le_bool IndicClassTable::getFilterZeroWidth() const
+{
+    return (scriptFlags & SF_FILTER_ZERO_WIDTH) != 0;
 }
 
 inline const SplitMatra *IndicClassTable::getSplitMatra(CharClass charClass) const
@@ -209,6 +246,11 @@ inline le_bool IndicClassTable::isVirama(CharClass charClass)
     return (charClass & CF_CLASS_MASK) == CC_VIRAMA;
 }
 
+inline le_bool IndicClassTable::isAlLakuna(CharClass charClass)
+{
+    return (charClass & CF_CLASS_MASK) == CC_AL_LAKUNA;
+}
+
 inline le_bool IndicClassTable::isVattu(CharClass charClass)
 {
     return (charClass & CF_VATTU) != 0;
@@ -241,9 +283,19 @@ inline le_bool IndicClassTable::hasPostBaseForm(CharClass charClass)
     return (charClass & CF_POST_BASE) != 0;
 }
 
+inline le_bool IndicClassTable::hasPreBaseForm(CharClass charClass)
+{
+    return (charClass & CF_PRE_BASE) != 0;
+}
+
 inline le_bool IndicClassTable::hasBelowBaseForm(CharClass charClass)
 {
     return (charClass & CF_BELOW_BASE) != 0;
+}
+
+inline le_bool IndicClassTable::hasAboveBaseForm(CharClass charClass)
+{
+    return ((charClass & CF_POS_MASK) == CF_POS_ABOVE);
 }
 
 inline le_bool IndicClassTable::isVowelModifier(LEUnicode ch) const
@@ -269,6 +321,11 @@ inline le_bool IndicClassTable::isReph(LEUnicode ch) const
 inline le_bool IndicClassTable::isVirama(LEUnicode ch) const
 {
     return isVirama(getCharClass(ch));
+}
+
+inline le_bool IndicClassTable::isAlLakuna(LEUnicode ch) const
+{
+    return isAlLakuna(getCharClass(ch));
 }
 
 inline le_bool IndicClassTable::isNukta(LEUnicode ch) const
@@ -311,5 +368,14 @@ inline le_bool IndicClassTable::hasBelowBaseForm(LEUnicode ch) const
     return hasBelowBaseForm(getCharClass(ch));
 }
 
+inline le_bool IndicClassTable::hasPreBaseForm(LEUnicode ch) const
+{
+    return hasPreBaseForm(getCharClass(ch));
+}
+
+inline le_bool IndicClassTable::hasAboveBaseForm(LEUnicode ch) const
+{
+    return hasAboveBaseForm(getCharClass(ch));
+}
 U_NAMESPACE_END
 #endif

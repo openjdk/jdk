@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_CPCACHEKLASS_HPP
+#define SHARE_VM_OOPS_CPCACHEKLASS_HPP
+
+#include "oops/arrayKlass.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/instanceKlass.hpp"
 
 class constantPoolCacheKlass: public Klass {
   juint    _alloc_size;        // allocation profiling support
@@ -69,3 +76,5 @@ class constantPoolCacheKlass: public Klass {
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);
 };
+
+#endif // SHARE_VM_OOPS_CPCACHEKLASS_HPP

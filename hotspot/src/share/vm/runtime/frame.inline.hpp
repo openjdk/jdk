@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,33 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_FRAME_INLINE_HPP
+#define SHARE_VM_RUNTIME_FRAME_INLINE_HPP
+
+#include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/bytecodeInterpreter.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/signature.hpp"
+#ifdef TARGET_ARCH_x86
+# include "jniTypes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "jniTypes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "jniTypes_zero.hpp"
+#endif
+#ifdef ZERO
+#ifdef TARGET_ARCH_zero
+# include "entryFrame_zero.hpp"
+# include "fakeStubFrame_zero.hpp"
+# include "interpreterFrame_zero.hpp"
+# include "sharkFrame_zero.hpp"
+#endif
+#endif
 
 // This file holds platform-independent bodies of inline functions for frames.
 
@@ -52,4 +79,15 @@ inline bool frame::is_first_frame() const {
 
 // here are the platform-dependent bodies:
 
-# include "incls/_frame_pd.inline.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "frame_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "frame_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "frame_zero.inline.hpp"
+#endif
+
+
+#endif // SHARE_VM_RUNTIME_FRAME_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_ICACHE_X86_HPP
+#define CPU_X86_VM_ICACHE_X86_HPP
 
 // Interface for updating the instruction cache.  Whenever the VM modifies
 // code, part of the processor instruction cache potentially has to be flushed.
@@ -53,3 +56,5 @@ class ICache : public AbstractICache {
   };
 #endif // AMD64
 };
+
+#endif // CPU_X86_VM_ICACHE_X86_HPP

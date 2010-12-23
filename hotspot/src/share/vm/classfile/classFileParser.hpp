@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
+#define SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
+
+#include "classfile/classFileStream.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/accessFlags.hpp"
+
 // Parser for for .class files
 //
 // The bytes describing the class file structure is read from a Stream object
@@ -40,6 +50,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   bool _has_empty_finalizer;
   bool _has_vanilla_constructor;
 
+  int _max_bootstrap_specifier_index;
+
   enum { fixed_buffer_size = 128 };
   u_char linenumbertable_buffer[fixed_buffer_size];
 
@@ -55,9 +67,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS);
 
   constantPoolHandle parse_constant_pool(TRAPS);
-
-  static int start_operand_group(GrowableArray<int>* &operands, int op_count, TRAPS);
-  static void store_operand_array(GrowableArray<int>* operands, constantPoolHandle cp, TRAPS);
 
   // Interface parsing
   objArrayHandle parse_interfaces(constantPoolHandle cp,
@@ -120,6 +129,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_classfile_attributes(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_synthetic_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_signature_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
+  void parse_classfile_bootstrap_methods_attribute(constantPoolHandle cp, instanceKlassHandle k, u4 attribute_length, TRAPS);
 
   // Annotations handling
   typeArrayHandle assemble_annotations(u1* runtime_visible_annotations,
@@ -286,3 +296,5 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   static void check_final_method_override(instanceKlassHandle this_klass, TRAPS);
   static void check_illegal_static_method(instanceKlassHandle this_klass, TRAPS);
 };
+
+#endif // SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
