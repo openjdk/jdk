@@ -1058,10 +1058,11 @@ bool ParNewGeneration::is_legal_forward_ptr(oop p) {
 #endif
 
 void ParNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
-  if ((m != markOopDesc::prototype()) &&
-      (!UseBiasedLocking || (m != markOopDesc::biased_locking_prototype()))) {
+  if (m->must_be_preserved_for_promotion_failure(obj)) {
+    // We should really have separate per-worker stacks, rather
+    // than use locking of a common pair of stacks.
     MutexLocker ml(ParGCRareEvent_lock);
-    DefNewGeneration::preserve_mark_if_necessary(obj, m);
+    preserve_mark(obj, m);
   }
 }
 
