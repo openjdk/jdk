@@ -343,6 +343,7 @@ final class Config {
         st.wordChars('{', '{'); // need {} for property subst
         st.wordChars('}', '}');
         st.wordChars('*', '*');
+        st.wordChars('~', '~');
         // XXX check ASCII table and add all other characters except special
 
         // special: #="(),
