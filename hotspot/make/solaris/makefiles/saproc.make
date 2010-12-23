@@ -44,10 +44,9 @@ DEST_SAPROC = $(JDK_LIBDIR)/$(LIBSAPROC)
 
 # if $(AGENT_DIR) does not exist, we don't build SA
 
-checkAndBuildSA:
-	$(QUIETLY) if [ -d $(AGENT_DIR) ] ; then \
-	   $(MAKE) -f vm.make $(LIBSAPROC); \
-	fi
+ifneq ($(wildcard $(AGENT_DIR)),)
+  BUILDLIBSAPROC = $(LIBSAPROC)
+endif
 
 SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE))
 
@@ -75,10 +74,10 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -ldl -ldemangle -lthread -lc
 	[ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
 
-install_saproc: checkAndBuildSA
+install_saproc: $(BULDLIBSAPROC)
 	$(QUIETLY) if [ -f $(LIBSAPROC) ] ; then             \
 	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
 	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
 	fi
 
-.PHONY: checkAndBuildSA install_saproc
+.PHONY: install_saproc

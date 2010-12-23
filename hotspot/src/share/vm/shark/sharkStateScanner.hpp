@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKSTATESCANNER_HPP
+#define SHARE_VM_SHARK_SHARKSTATESCANNER_HPP
+
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkFunction.hpp"
+#include "shark/sharkInvariants.hpp"
 
 class SharkState;
 
@@ -73,3 +81,5 @@ class SharkStateScanner : public SharkTargetInvariants {
   void stack_integrity_checks(SharkState* state) PRODUCT_RETURN;
   void locals_integrity_checks(SharkState* state) PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_SHARK_SHARKSTATESCANNER_HPP

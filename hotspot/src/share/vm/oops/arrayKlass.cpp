@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,20 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_arrayKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "jvmtifiles/jvmti.h"
+#include "memory/gcLocker.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/arrayKlassKlass.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
 
 int arrayKlass::object_size(int header_size) const {
   // size of an array klass object

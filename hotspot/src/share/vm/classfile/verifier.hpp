@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_VERIFIER_HPP
+#define SHARE_VM_CLASSFILE_VERIFIER_HPP
+
+#include "classfile/verificationType.hpp"
+#include "memory/gcLocker.hpp"
+#include "oops/klass.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/exceptions.hpp"
 
 // The verifier class
 class Verifier : AllStatic {
@@ -157,6 +167,8 @@ class ClassVerifier : public StackObj {
 
   bool name_in_supers(symbolOop ref_name, instanceKlassHandle current);
 
+  VerificationType object_type() const;
+
   instanceKlassHandle _klass;  // the class being verified
   methodHandle        _method; // current method being verified
   VerificationType    _this_type; // the verification type of the current class
@@ -252,3 +264,5 @@ inline int ClassVerifier::change_sig_to_verificationType(
       return 1;
   }
 }
+
+#endif // SHARE_VM_CLASSFILE_VERIFIER_HPP

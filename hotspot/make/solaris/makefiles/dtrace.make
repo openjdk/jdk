@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,6 @@ endif
 
 # making libjvm_db
 
-INCLS = $(GENERATED)/incls
-
 # Use mapfile with libjvm_db.so
 LIBJVM_DB_MAPFILE = $(MAKEFILES_DIR)/mapfile-vers-jvm_db
 LFLAGS_JVM_DB += $(MAPFLAG:FILENAME=$(LIBJVM_DB_MAPFILE))
@@ -114,7 +112,7 @@ LFLAGS_GENOFFS += -mt -xnolib -norunpath
 endif
 
 lib$(GENOFFS).so: $(DTRACE_SRCDIR)/$(GENOFFS).cpp $(DTRACE_SRCDIR)/$(GENOFFS).h \
-                  $(INCLS)/_vmStructs.cpp.incl $(LIBJVM.o)
+                  $(LIBJVM.o)
 	$(QUIETLY) $(CCC) $(CPPFLAGS) $(GENOFFS_CFLAGS) $(SHARED_FLAG) $(PICFLAG) \
 		 $(LFLAGS_GENOFFS) -o $@ $(DTRACE_SRCDIR)/$(GENOFFS).cpp -lc
 
@@ -160,6 +158,27 @@ $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SR
 $(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
              $(DTRACE_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d
 	$(QUIETLY) cat $^ > $@
+
+DTraced_Files = ciEnv.o \
+                classLoadingService.o \
+                compileBroker.o \
+                hashtable.o \
+                instanceKlass.o \
+                java.o \
+                jni.o \
+                jvm.o \
+                memoryManager.o \
+                nmethod.o \
+                objectMonitor.o \
+                runtimeService.o \
+                sharedRuntime.o \
+                synchronizer.o \
+                thread.o \
+                unsafe.o \
+                vmThread.o \
+                vmCMSOperations.o \
+                vmPSOperations.o \
+                vmGCOperations.o \
 
 # Dtrace is available, so we build $(DTRACE.o)  
 $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)

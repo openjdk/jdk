@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Optimizer.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Canonicalizer.hpp"
+#include "c1/c1_Optimizer.hpp"
+#include "c1/c1_ValueMap.hpp"
+#include "c1/c1_ValueSet.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 define_array(ValueSetArray, ValueSet*);
 define_stack(ValueSetList, ValueSetArray);

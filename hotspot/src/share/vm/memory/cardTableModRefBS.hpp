@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_CARDTABLEMODREFBS_HPP
+#define SHARE_VM_MEMORY_CARDTABLEMODREFBS_HPP
+
+#include "memory/modRefBarrierSet.hpp"
+#include "oops/oop.hpp"
+#include "oops/oop.inline2.hpp"
+
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
@@ -490,3 +497,5 @@ public:
 
   void set_CTRS(CardTableRS* rs) { _rs = rs; }
 };
+
+#endif // SHARE_VM_MEMORY_CARDTABLEMODREFBS_HPP

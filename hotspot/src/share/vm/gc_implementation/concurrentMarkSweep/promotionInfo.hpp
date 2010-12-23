@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_PROMOTIONINFO_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_PROMOTIONINFO_HPP
+
+#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#include "memory/allocation.hpp"
+
 // Forward declarations
 class CompactibleFreeListSpace;
 
@@ -204,3 +210,5 @@ class PromotionInfo VALUE_OBJ_CLASS_SPEC {
   void print_statistics(uint worker_id) const;
 };
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_PROMOTIONINFO_HPP

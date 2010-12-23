@@ -41,6 +41,12 @@ public interface ConnectionCache
     public long numberOfBusyConnections();
 
     public boolean reclaim();
+
+    /** Close all connections in the connection cache.
+     * This is used as a final cleanup, and will result
+     * in abrupt termination of any pending communications.
+     */
+    public void close();
 }
 
 // End of file.

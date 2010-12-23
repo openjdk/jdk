@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_ASPSYOUNGGEN_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_ASPSYOUNGGEN_HPP
+
+#include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
+#include "gc_implementation/parallelScavenge/psYoungGen.hpp"
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "gc_implementation/shared/spaceCounters.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
 
 class ASPSYoungGen : public PSYoungGen {
   friend class VMStructs;
@@ -62,3 +73,5 @@ class ASPSYoungGen : public PSYoungGen {
   // Printing support
   virtual const char* short_name() const { return "ASPSYoungGen"; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_ASPSYOUNGGEN_HPP

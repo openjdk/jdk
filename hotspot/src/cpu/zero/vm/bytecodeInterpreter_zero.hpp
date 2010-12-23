@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_HPP
+#define CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_HPP
 
 // Platform specific for C++ based Interpreter
 
@@ -146,3 +149,5 @@
                                                   ((VMJavaVal64*)(addr))->d)
 #define SET_LOCALS_LONG_FROM_ADDR(addr, offset) (((VMJavaVal64*)&locals[-((offset)+1)])->l = \
                                                 ((VMJavaVal64*)(addr))->l)
+
+#endif // CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_HPP

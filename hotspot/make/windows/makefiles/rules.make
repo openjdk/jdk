@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ BOOT_TARGET_CLASS_VERSION=6
 JAVAC_FLAGS=-g -encoding ascii
 BOOTSTRAP_JAVAC_FLAGS=$(JAVAC_FLAGS) -source $(BOOT_SOURCE_LANGUAGE_VERSION) -target $(BOOT_TARGET_CLASS_VERSION)
 
-ProjectFile=vm.vcproj
+ProjectFile=jvm.vcproj
 
 !if "$(MSC_VER)" == "1200"
 
@@ -61,6 +61,11 @@ VcVersion=VC8
 
 !elseif "$(MSC_VER)" == "1500"
 
+VcVersion=VC9
+
+!elseif "$(MSC_VER)" == "1600"
+
+# for compatibility - we don't yet have a ProjectCreator for VC10
 VcVersion=VC9
 
 !else

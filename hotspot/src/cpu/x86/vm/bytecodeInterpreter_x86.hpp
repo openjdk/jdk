@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_BYTECODEINTERPRETER_X86_HPP
+#define CPU_X86_VM_BYTECODEINTERPRETER_X86_HPP
 
 // Platform specific for C++ based Interpreter
 
@@ -108,3 +111,5 @@ inline intptr_t* sender_sp() {
                                                   ((VMJavaVal64*)(addr))->d)
 #define SET_LOCALS_LONG_FROM_ADDR(addr, offset) (((VMJavaVal64*)&locals[-((offset)+1)])->l = \
                                                 ((VMJavaVal64*)(addr))->l)
+
+#endif // CPU_X86_VM_BYTECODEINTERPRETER_X86_HPP

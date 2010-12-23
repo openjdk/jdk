@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_XMLSTREAM_HPP
+#define SHARE_VM_UTILITIES_XMLSTREAM_HPP
+
+#include "runtime/handles.hpp"
+#include "utilities/ostream.hpp"
 
 class xmlStream;
 class defaultStream;
@@ -175,3 +181,5 @@ class xmlStream : public outputStream {
 extern xmlStream* xtty;
 
 // Note:  If ::xtty != NULL, ::tty == ::xtty->text().
+
+#endif // SHARE_VM_UTILITIES_XMLSTREAM_HPP

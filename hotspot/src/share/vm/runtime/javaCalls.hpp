@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,33 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_JAVACALLS_HPP
+#define SHARE_VM_RUNTIME_JAVACALLS_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/javaFrameAnchor.hpp"
+#include "runtime/vmThread.hpp"
+#ifdef TARGET_ARCH_x86
+# include "jniTypes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "jniTypes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "jniTypes_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 // A JavaCallWrapper is constructed before each JavaCall and destructed after the call.
 // Its purpose is to allocate/deallocate a new handle block and to save/restore the last
@@ -189,3 +216,5 @@ class JavaCalls: AllStatic {
   // Low-level interface
   static void call(JavaValue* result, methodHandle method, JavaCallArguments* args, TRAPS);
 };
+
+#endif // SHARE_VM_RUNTIME_JAVACALLS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENERATION_INLINE_HPP
+#define SHARE_VM_MEMORY_GENERATION_INLINE_HPP
+
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/space.hpp"
 
 bool OneContigSpaceCardGeneration::is_in(const void* p) const {
   return the_space()->is_in(p);
@@ -63,3 +70,5 @@ size_t OneContigSpaceCardGeneration::block_size(const HeapWord* addr) const {
 bool OneContigSpaceCardGeneration::block_is_obj(const HeapWord* addr) const {
   return addr < the_space()->top();
 }
+
+#endif // SHARE_VM_MEMORY_GENERATION_INLINE_HPP

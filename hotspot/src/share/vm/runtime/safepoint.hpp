@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_SAFEPOINT_HPP
+#define SHARE_VM_RUNTIME_SAFEPOINT_HPP
+
+#include "asm/assembler.hpp"
+#include "code/nmethod.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/os.hpp"
+#include "utilities/ostream.hpp"
+
 //
 // Safepoint synchronization
 ////
@@ -232,3 +242,5 @@ class ThreadSafepointState: public CHeapObj {
 };
 
 
+
+#endif // SHARE_VM_RUNTIME_SAFEPOINT_HPP

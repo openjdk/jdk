@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSADAPTIVESIZEPOLICY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSADAPTIVESIZEPOLICY_HPP
+
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "runtime/timer.hpp"
 
 // This class keeps statistical information and computes the
 // size of the heap for the concurrent mark sweep collector.
@@ -467,3 +473,5 @@ class CMSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Printing support
   virtual bool print_adaptive_size_policy_on(outputStream* st) const;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSADAPTIVESIZEPOLICY_HPP

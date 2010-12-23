@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_OBJARRAYKLASS_HPP
+#define SHARE_VM_OOPS_OBJARRAYKLASS_HPP
+
+#include "memory/specialized_oop_closures.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/instanceKlass.hpp"
 
 // objArrayKlass is the klass for objArrays
 
@@ -140,3 +147,5 @@ class objArrayKlass : public arrayKlass {
   void oop_verify_old_oop(oop obj, oop* p, bool allow_dirty);
   void oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty);
 };
+
+#endif // SHARE_VM_OOPS_OBJARRAYKLASS_HPP

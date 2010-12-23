@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_VMSTRUCTS_PARNEW_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARNEW_VMSTRUCTS_PARNEW_HPP
+
 #define VM_TYPES_PARNEW(declare_type)                                     \
            declare_type(ParNewGeneration,             DefNewGeneration)
 
 #define VM_INT_CONSTANTS_PARNEW(declare_constant)                         \
   declare_constant(Generation::ParNew)
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARNEW_VMSTRUCTS_PARNEW_HPP

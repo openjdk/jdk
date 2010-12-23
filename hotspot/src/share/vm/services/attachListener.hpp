@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_ATTACHLISTENER_HPP
+#define SHARE_VM_SERVICES_ATTACHLISTENER_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 // The AttachListener thread services a queue of operations that are enqueued
 // by client tools. Each operation is identified by a name and has up to 3
@@ -145,3 +152,5 @@ class AttachOperation: public CHeapObj {
   virtual void complete(jint result, bufferedStream* result_stream) = 0;
 };
 #endif // SERVICES_KERNEL
+
+#endif // SHARE_VM_SERVICES_ATTACHLISTENER_HPP

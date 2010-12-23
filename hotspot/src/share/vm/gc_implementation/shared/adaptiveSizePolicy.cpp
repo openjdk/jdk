@@ -21,9 +21,13 @@
  * questions.
  *
  */
-#include "incls/_precompiled.incl"
-#include "incls/_adaptiveSizePolicy.cpp.incl"
 
+#include "precompiled.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_interface/gcCause.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/ostream.hpp"
 elapsedTimer AdaptiveSizePolicy::_minor_timer;
 elapsedTimer AdaptiveSizePolicy::_major_timer;
 

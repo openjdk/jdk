@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_LIRGENERATOR_HPP
+#define SHARE_VM_C1_C1_LIRGENERATOR_HPP
+
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIR.hpp"
+#include "ci/ciMethodData.hpp"
+#include "utilities/sizes.hpp"
+
 // The classes responsible for code emission and register allocation
 
 
@@ -596,3 +604,5 @@ class LIRItem: public CompilationResourceObj {
   jdouble   get_jdouble_constant() const;
   jint      get_address_constant() const;
 };
+
+#endif // SHARE_VM_C1_C1_LIRGENERATOR_HPP

@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_X86_VM_VM_VERSION_X86_HPP
+#define CPU_X86_VM_VM_VERSION_X86_HPP
+
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
+
 class VM_Version : public Abstract_VM_Version {
 public:
   // cpuid result register layouts.  These are all unions of a uint32_t
@@ -520,3 +526,5 @@ public:
     return count >= 0 ? count : 1;
   }
 };
+
+#endif // CPU_X86_VM_VM_VERSION_X86_HPP

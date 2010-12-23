@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_SYNCHRONIZER_HPP
+#define SHARE_VM_RUNTIME_SYNCHRONIZER_HPP
+
+#include "oops/markOop.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/perfData.hpp"
+#include "utilities/top.hpp"
 
 
 class ObjectMonitor;
@@ -153,3 +162,5 @@ class ObjectLocker : public StackObj {
   intptr_t complete_exit(TRAPS) { return  ObjectSynchronizer::complete_exit(_obj, CHECK_0); }
   void reenter(intptr_t recursion, TRAPS) { ObjectSynchronizer::reenter(_obj, recursion, CHECK); }
 };
+
+#endif // SHARE_VM_RUNTIME_SYNCHRONIZER_HPP
