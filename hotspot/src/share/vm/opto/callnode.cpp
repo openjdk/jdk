@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,23 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "ci/bcEscapeAnalyzer.hpp"
+#include "compiler/oopMap.hpp"
+#include "opto/callnode.hpp"
+#include "opto/escape.hpp"
+#include "opto/locknode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/parse.hpp"
+#include "opto/regalloc.hpp"
+#include "opto/regmask.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-
-#include "incls/_precompiled.incl"
-#include "incls/_callnode.cpp.incl"
 
 //=============================================================================
 uint StartNode::size_of() const { return sizeof(*this); }

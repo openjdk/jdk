@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_phase.cpp.incl"
+#include "precompiled.hpp"
+#include "code/nmethod.hpp"
+#include "compiler/compileBroker.hpp"
+#include "opto/compile.hpp"
+#include "opto/node.hpp"
+#include "opto/phase.hpp"
 
 #ifndef PRODUCT
 int Phase::_total_bytes_compiled = 0;

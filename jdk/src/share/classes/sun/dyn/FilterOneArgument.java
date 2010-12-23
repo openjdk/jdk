@@ -36,7 +36,7 @@ import static sun.dyn.MemberName.uncaughtException;
  * final method type is the responsibility of a JVM-level adapter.
  * @author jrose
  */
-public class FilterOneArgument extends JavaMethodHandle {
+public class FilterOneArgument extends BoundMethodHandle {
     protected final MethodHandle filter;  // Object -> Object
     protected final MethodHandle target;  // Object -> Object
 
@@ -62,7 +62,7 @@ public class FilterOneArgument extends JavaMethodHandle {
     }
 
     protected FilterOneArgument(MethodHandle filter, MethodHandle target) {
-        super(INVOKE);
+        super(Access.TOKEN, INVOKE);
         this.filter = filter;
         this.target = target;
     }

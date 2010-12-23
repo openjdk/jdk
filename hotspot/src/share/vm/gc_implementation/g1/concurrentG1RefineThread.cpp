@@ -22,8 +22,14 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_concurrentG1RefineThread.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/concurrentG1RefineThread.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 
 ConcurrentG1RefineThread::
 ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,

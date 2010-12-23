@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSPERMGEN_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSPERMGEN_HPP
+
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#include "memory/permGen.hpp"
 
 class CardTableRS;   // fwd decl
 class ConcurrentMarkSweepGeneration;
@@ -75,3 +81,5 @@ public:
   bool must_be_youngest() const { return false; }
   bool must_be_oldest() const { return false; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSPERMGEN_HPP

@@ -22,11 +22,45 @@
  *
  */
 
-// do not include  precompiled  header file
+// no precompiled headers
+#include "assembler_sparc.inline.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvm_solaris.h"
+#include "memory/allocation.inline.hpp"
+#include "mutex_solaris.inline.hpp"
+#include "nativeInst_sparc.hpp"
+#include "os_share_solaris.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "thread_solaris.inline.hpp"
+#include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
+
 
 # include <signal.h>        // needed first to avoid name collision for "std" with SC 5.0
-
-# include "incls/_os_solaris_sparc.cpp.incl"
 
 // put OS-includes here
 # include <sys/types.h>
@@ -254,17 +288,17 @@ static int threadgetstate(thread_t tid, int *flags, lwpid_t *lwp, stack_t *ss, g
   if (*flags == TRS_LWPID) {
     sprintf(lwpstatusfile, "/proc/%d/lwp/%d/lwpstatus", getpid(),
             *lwp);
-    if ((lwpfd = open(lwpstatusfile, O_RDONLY)) < 0) {
+    if ((lwpfd = ::open(lwpstatusfile, O_RDONLY)) < 0) {
       perror("thr_mutator_status: open lwpstatus");
       return (EINVAL);
     }
     if (pread(lwpfd, lwpstatus, sizeof (lwpstatus_t), (off_t)0) !=
         sizeof (lwpstatus_t)) {
       perror("thr_mutator_status: read lwpstatus");
-      (void) close(lwpfd);
+      (void) ::close(lwpfd);
       return (EINVAL);
     }
-    (void) close(lwpfd);
+    (void) ::close(lwpfd);
   }
   return (0);
 }

@@ -28,9 +28,9 @@ package com.sun.tools.doclets.formats.html;
 import java.io.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 /**
  * Writes method documentation in HTML format.
@@ -42,8 +42,6 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  */
 public class MethodWriterImpl extends AbstractExecutableMemberWriter
         implements MethodWriter, MemberSummaryWriter {
-
-    private boolean printedSummaryHeader = false;
 
     /**
      * Construct a new MethodWriterImpl.
@@ -65,184 +63,127 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     /**
-     * Write the methods summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeMemberSummaryHeader(ClassDoc classDoc) {
-        printedSummaryHeader = true;
-        writer.println();
-        writer.println("<!-- ========== METHOD SUMMARY =========== -->");
-        writer.println();
-        writer.printSummaryHeader(this, classDoc);
-    }
-
-    /**
-     * Write the methods summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printSummaryFooter(this, classDoc);
-    }
-
-    /**
-     * Write the inherited methods summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeInheritedMemberSummaryHeader(ClassDoc classDoc) {
-        if(! printedSummaryHeader){
-            //We don't want inherited summary to not be under heading.
-            writeMemberSummaryHeader(classDoc);
-            writeMemberSummaryFooter(classDoc);
-            printedSummaryHeader = true;
-        }
-        writer.printInheritedSummaryHeader(this, classDoc);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree) {
+        memberSummaryTree.addContent(HtmlConstants.START_OF_METHOD_SUMMARY);
+        Content memberTree = writer.getMemberTreeHeader();
+        writer.addSummaryHeader(this, classDoc, memberTree);
+        return memberTree;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeInheritedMemberSummary(ClassDoc classDoc,
-        ProgramElementDoc method, boolean isFirst, boolean isLast) {
-        writer.printInheritedSummaryMember(this, classDoc, method, isFirst);
+    public Content getMethodDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree) {
+        memberDetailsTree.addContent(HtmlConstants.START_OF_METHOD_DETAILS);
+        Content methodDetailsTree = writer.getMemberTreeHeader();
+        methodDetailsTree.addContent(writer.getMarkerAnchor("method_detail"));
+        Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
+                writer.methodDetailsLabel);
+        methodDetailsTree.addContent(heading);
+        return methodDetailsTree;
     }
 
     /**
-     * Write the inherited methods summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeInheritedMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printInheritedSummaryFooter(this, classDoc);        ;
-    }
-
-    /**
-     * Write the header for the method documentation.
-     *
-     * @param classDoc the class that the methods belong to.
-     */
-    public void writeHeader(ClassDoc classDoc, String header) {
-        writer.println();
-        writer.println("<!-- ============ METHOD DETAIL ========== -->");
-        writer.println();
-        writer.anchor("method_detail");
-        writer.printTableHeadingBackground(header);
-    }
-
-    /**
-     * Write the method header for the given method.
-     *
-     * @param method the method being documented.
-     * @param isFirst the flag to indicate whether or not the method is the
-     *        first to be documented.
-     */
-    public void writeMethodHeader(MethodDoc method, boolean isFirst) {
-        if (! isFirst) {
-            writer.printMemberHeader();
-        }
-        writer.println();
+    public Content getMethodDocTreeHeader(MethodDoc method,
+            Content methodDetailsTree) {
         String erasureAnchor;
         if ((erasureAnchor = getErasureAnchor(method)) != null) {
-            writer.anchor(erasureAnchor);
+            methodDetailsTree.addContent(writer.getMarkerAnchor((erasureAnchor)));
         }
-        writer.anchor(method);
-        writer.h3();
-        writer.print(method.name());
-        writer.h3End();
+        methodDetailsTree.addContent(
+                writer.getMarkerAnchor(writer.getAnchor(method)));
+        Content methodDocTree = writer.getMemberTreeHeader();
+        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
+        heading.addContent(method.name());
+        methodDocTree.addContent(heading);
+        return methodDocTree;
     }
 
     /**
-     * Write the signature for the given method.
+     * Get the signature for the given method.
      *
      * @param method the method being documented.
+     * @return a content object for the signature
      */
-    public void writeSignature(MethodDoc method) {
+    public Content getSignature(MethodDoc method) {
         writer.displayLength = 0;
-        writer.pre();
-        writer.writeAnnotationInfo(method);
-        printModifiers(method);
-        writeTypeParameters(method);
-        printReturnType(method);
+        Content pre = new HtmlTree(HtmlTag.PRE);
+        writer.addAnnotationInfo(method, pre);
+        addModifiers(method, pre);
+        addTypeParameters(method, pre);
+        addReturnType(method, pre);
         if (configuration().linksource) {
-            writer.printSrcLink(method, method.name());
+            Content methodName = new StringContent(method.name());
+            writer.addSrcLink(method, methodName, pre);
         } else {
-            strong(method.name());
+            addName(method.name(), pre);
         }
-        writeParameters(method);
-        writeExceptions(method);
-        writer.preEnd();
-        assert !writer.getMemberDetailsListPrinted();
+        addParameters(method, pre);
+        addExceptions(method, pre);
+        return pre;
     }
 
     /**
-     * Write the deprecated output for the given method.
-     *
-     * @param method the method being documented.
+     * {@inheritDoc}
      */
-    public void writeDeprecated(MethodDoc method) {
-        printDeprecated(method);
+    public void addDeprecated(MethodDoc method, Content methodDocTree) {
+        addDeprecatedInfo(method, methodDocTree);
     }
 
     /**
-     * Write the comments for the given method.
-     *
-     * @param method the method being documented.
+     * {@inheritDoc}
      */
-    public void writeComments(Type holder, MethodDoc method) {
+    public void addComments(Type holder, MethodDoc method, Content methodDocTree) {
         ClassDoc holderClassDoc = holder.asClassDoc();
         if (method.inlineTags().length > 0) {
-            writer.printMemberDetailsListStartTag();
             if (holder.asClassDoc().equals(classdoc) ||
-                (! (holderClassDoc.isPublic() ||
+                    (! (holderClassDoc.isPublic() ||
                     Util.isLinkable(holderClassDoc, configuration())))) {
-                writer.dd();
-                writer.printInlineComment(method);
-                writer.ddEnd();
+                writer.addInlineComment(method, methodDocTree);
             } else {
-                String classlink = writer.codeText(
-                    writer.getDocLink(LinkInfoImpl.CONTEXT_METHOD_DOC_COPY,
+                Content link = new RawHtml(
+                        writer.getDocLink(LinkInfoImpl.CONTEXT_METHOD_DOC_COPY,
                         holder.asClassDoc(), method,
                         holder.asClassDoc().isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
-                        false));
-                writer.dd();
-                writer.strongText(holder.asClassDoc().isClass()?
-                        "doclet.Description_From_Class":
-                        "doclet.Description_From_Interface",
-                    classlink);
-                writer.ddEnd();
-                writer.dd();
-                writer.printInlineComment(method);
-                writer.ddEnd();
+                            false));
+                Content codelLink = HtmlTree.CODE(link);
+                Content strong = HtmlTree.STRONG(holder.asClassDoc().isClass()?
+                    writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
+                strong.addContent(writer.getSpace());
+                strong.addContent(codelLink);
+                methodDocTree.addContent(HtmlTree.DIV(HtmlStyle.block, strong));
+                writer.addInlineComment(method, methodDocTree);
             }
         }
     }
 
     /**
-     * Write the tag output for the given method.
-     *
-     * @param method the method being documented.
+     * {@inheritDoc}
      */
-    public void writeTags(MethodDoc method) {
-        writer.printTags(method);
+    public void addTags(MethodDoc method, Content methodDocTree) {
+        writer.addTagsInfo(method, methodDocTree);
     }
 
     /**
-     * Write the method footer.
+     * {@inheritDoc}
      */
-    public void writeMethodFooter() {
-        printMemberFooter();
+    public Content getMethodDetails(Content methodDetailsTree) {
+        return getMemberTree(methodDetailsTree);
     }
 
     /**
-     * Write the footer for the method documentation.
-     *
-     * @param classDoc the class that the methods belong to.
+     * {@inheritDoc}
      */
-    public void writeFooter(ClassDoc classDoc) {
-        //No footer to write for method documentation
+    public Content getMethodDoc(Content methodDocTree,
+            boolean isLastContent) {
+        return getMemberTree(methodDocTree, isLastContent);
     }
 
     /**
@@ -256,53 +197,89 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         return VisibleMemberMap.METHODS;
     }
 
-    public void printSummaryLabel() {
-        writer.printText("doclet.Method_Summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryLabel(Content memberTree) {
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+                writer.getResource("doclet.Method_Summary"));
+        memberTree.addContent(label);
     }
 
-    public void printTableSummary() {
-        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+    /**
+     * {@inheritDoc}
+     */
+    public String getTableSummary() {
+        return configuration().getText("doclet.Member_Table_Summary",
                 configuration().getText("doclet.Method_Summary"),
-                configuration().getText("doclet.methods")));
+                configuration().getText("doclet.methods"));
     }
 
-    public void printSummaryTableHeader(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    public String getCaption() {
+        return configuration().getText("doclet.Methods");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
             configuration().getText("doclet.0_and_1",
                     configuration().getText("doclet.Method"),
                     configuration().getText("doclet.Description"))
         };
-        writer.summaryTableHeader(header, "col");
+        return header;
     }
 
-    public void printSummaryAnchor(ClassDoc cd) {
-        writer.anchor("method_summary");
+    /**
+     * {@inheritDoc}
+     */
+    public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
+        memberTree.addContent(writer.getMarkerAnchor("method_summary"));
     }
 
-    public void printInheritedSummaryAnchor(ClassDoc cd) {
-        writer.anchor("methods_inherited_from_class_" +
-            ConfigurationImpl.getInstance().getClassName(cd));
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree) {
+        inheritedTree.addContent(writer.getMarkerAnchor(
+                "methods_inherited_from_class_" +
+                configuration().getClassName(cd)));
     }
 
-    public void printInheritedSummaryLabel(ClassDoc cd) {
-        String classlink = writer.getPreQualifiedClassLink(
-            LinkInfoImpl.CONTEXT_MEMBER, cd, false);
-        writer.strong();
-        String key = cd.isClass()?
-            "doclet.Methods_Inherited_From_Class" :
-            "doclet.Methods_Inherited_From_Interface";
-        writer.printText(key, classlink);
-        writer.strongEnd();
+    /**
+     * {@inheritDoc}
+     */
+    public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
+        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
+                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+        Content label = new StringContent(cd.isClass() ?
+            configuration().getText("doclet.Methods_Inherited_From_Class") :
+            configuration().getText("doclet.Methods_Inherited_From_Interface"));
+        Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
+                label);
+        labelHeading.addContent(writer.getSpace());
+        labelHeading.addContent(classLink);
+        inheritedTree.addContent(labelHeading);
     }
 
-    protected void printSummaryType(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    protected void addSummaryType(ProgramElementDoc member, Content tdSummaryType) {
         MethodDoc meth = (MethodDoc)member;
-        printModifierAndType(meth, meth.returnType());
+        addModifierAndType(meth, meth.returnType(), tdSummaryType);
     }
 
-    protected static void printOverridden(HtmlDocletWriter writer,
-            Type overriddenType, MethodDoc method) {
+    /**
+     * {@inheritDoc}
+     */
+    protected static void addOverridden(HtmlDocletWriter writer,
+            Type overriddenType, MethodDoc method, Content dl) {
         if(writer.configuration.nocomment){
             return;
         }
@@ -317,31 +294,33 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             //is not visible so don't document this.
             return;
         }
-        String label = "doclet.Overrides";
+        Content label = writer.overridesLabel;
         int context = LinkInfoImpl.CONTEXT_METHOD_OVERRIDES;
 
         if (method != null) {
             if(overriddenType.asClassDoc().isAbstract() && method.isAbstract()){
                 //Abstract method is implemented from abstract class,
                 //not overridden
-                label = "doclet.Specified_By";
+                label = writer.specifiedByLabel;
                 context = LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY;
             }
-            String overriddenTypeLink = writer.codeText(
-                writer.getLink(new LinkInfoImpl(context, overriddenType)));
+            Content dt = HtmlTree.DT(HtmlTree.STRONG(label));
+            dl.addContent(dt);
+            Content overriddenTypeLink = new RawHtml(
+                    writer.getLink(new LinkInfoImpl(context, overriddenType)));
+            Content codeOverridenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             String name = method.name();
-            writer.dt();
-            writer.strongText(label);
-            writer.dtEnd();
-            writer.dd();
-            String methLink = writer.codeText(
-                writer.getLink(
+            Content methlink = new RawHtml(writer.getLink(
                     new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
-                        overriddenType.asClassDoc(),
-                        writer.getAnchor(method), name, false)
-                ));
-            writer.printText("doclet.in_class", methLink, overriddenTypeLink);
-            writer.ddEnd();
+                    overriddenType.asClassDoc(),
+                    writer.getAnchor(method), name, false)));
+            Content codeMethLink = HtmlTree.CODE(methlink);
+            Content dd = HtmlTree.DD(codeMethLink);
+            dd.addContent(writer.getSpace());
+            dd.addContent(writer.getResource("doclet.in_class"));
+            dd.addContent(writer.getSpace());
+            dd.addContent(codeOverridenTypeLink);
+            dl.addContent(dd);
         }
     }
 
@@ -363,61 +342,78 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
     }
 
-    protected static void printImplementsInfo(HtmlDocletWriter writer,
-            MethodDoc method) {
+    /**
+     * {@inheritDoc}
+     */
+    protected static void addImplementsInfo(HtmlDocletWriter writer,
+            MethodDoc method, Content dl) {
         if(writer.configuration.nocomment){
             return;
         }
         ImplementedMethods implementedMethodsFinder =
-            new ImplementedMethods(method, writer.configuration);
+                new ImplementedMethods(method, writer.configuration);
         MethodDoc[] implementedMethods = implementedMethodsFinder.build();
         for (int i = 0; i < implementedMethods.length; i++) {
             MethodDoc implementedMeth = implementedMethods[i];
             Type intfac = implementedMethodsFinder.getMethodHolder(implementedMeth);
-            String methlink = "";
-            String intfaclink = writer.codeText(
-                writer.getLink(new LinkInfoImpl(
+            Content intfaclink = new RawHtml(writer.getLink(new LinkInfoImpl(
                     LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY, intfac)));
-            writer.dt();
-            writer.strongText("doclet.Specified_By");
-            writer.dtEnd();
-            writer.dd();
-            methlink = writer.codeText(writer.getDocLink(
-                LinkInfoImpl.CONTEXT_MEMBER, implementedMeth,
-                implementedMeth.name(), false));
-            writer.printText("doclet.in_interface", methlink, intfaclink);
-            writer.ddEnd();
+            Content codeIntfacLink = HtmlTree.CODE(intfaclink);
+            Content dt = HtmlTree.DT(HtmlTree.STRONG(writer.specifiedByLabel));
+            dl.addContent(dt);
+            Content methlink = new RawHtml(writer.getDocLink(
+                    LinkInfoImpl.CONTEXT_MEMBER, implementedMeth,
+                    implementedMeth.name(), false));
+            Content codeMethLink = HtmlTree.CODE(methlink);
+            Content dd = HtmlTree.DD(codeMethLink);
+            dd.addContent(writer.getSpace());
+            dd.addContent(writer.getResource("doclet.in_interface"));
+            dd.addContent(writer.getSpace());
+            dd.addContent(codeIntfacLink);
+            dl.addContent(dd);
         }
-
     }
 
-    protected void printReturnType(MethodDoc method) {
+    /**
+     * Add the return type.
+     *
+     * @param method the method being documented.
+     * @param htmltree the content tree to which the return type will be added
+     */
+    protected void addReturnType(MethodDoc method, Content htmltree) {
         Type type = method.returnType();
         if (type != null) {
-            writer.printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_RETURN_TYPE,
-                type));
-            print(' ');
+            Content linkContent = new RawHtml(writer.getLink(
+                    new LinkInfoImpl(LinkInfoImpl.CONTEXT_RETURN_TYPE, type)));
+            htmltree.addContent(linkContent);
+            htmltree.addContent(writer.getSpace());
         }
     }
 
-    protected void printNavSummaryLink(ClassDoc cd, boolean link) {
+    /**
+     * {@inheritDoc}
+     */
+    protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            writer.printHyperLink("", (cd == null)?
+            return writer.getHyperLink("", (cd == null)?
                 "method_summary":
                 "methods_inherited_from_class_" +
-                ConfigurationImpl.getInstance().getClassName(cd),
-                ConfigurationImpl.getInstance().getText("doclet.navMethod"));
+                configuration().getClassName(cd),
+                writer.getResource("doclet.navMethod"));
         } else {
-            writer.printText("doclet.navMethod");
+            return writer.getResource("doclet.navMethod");
         }
     }
 
-    protected void printNavDetailLink(boolean link) {
+    /**
+     * {@inheritDoc}
+     */
+    protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            writer.printHyperLink("", "method_detail",
-                ConfigurationImpl.getInstance().getText("doclet.navMethod"));
+            liNav.addContent(writer.getHyperLink("", "method_detail",
+                    writer.getResource("doclet.navMethod")));
         } else {
-            writer.printText("doclet.navMethod");
+            liNav.addContent(writer.getResource("doclet.navMethod"));
         }
     }
 }

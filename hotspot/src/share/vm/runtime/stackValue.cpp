@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_stackValue.cpp.incl"
+#include "precompiled.hpp"
+#include "code/debugInfo.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/stackValue.hpp"
 
 StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv) {
   if (sv->is_location()) {

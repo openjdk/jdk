@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interpreterRT_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/signature.hpp"
+#include "stack_zero.inline.hpp"
 
 void InterpreterRuntime::SignatureHandlerGeneratorBase::pass_int() {
   push(T_INT);

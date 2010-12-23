@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_globalDefinitions.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/top.hpp"
+
 // Basic error support
 
 // Info for oops within a java object.  Defaults are zero so

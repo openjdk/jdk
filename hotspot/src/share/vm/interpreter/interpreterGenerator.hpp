@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_INTERPRETERGENERATOR_HPP
+#define SHARE_VM_INTERPRETER_INTERPRETERGENERATOR_HPP
+
+#include "interpreter/cppInterpreter.hpp"
+#include "interpreter/cppInterpreterGenerator.hpp"
+#include "interpreter/templateInterpreter.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
+
 // This file contains the platform-independent parts
 // of the interpreter generator.
 
@@ -33,6 +41,17 @@ public:
 
 InterpreterGenerator(StubQueue* _code);
 
-#include "incls/_interpreterGenerator_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "interpreterGenerator_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "interpreterGenerator_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "interpreterGenerator_zero.hpp"
+#endif
+
 
 };
+
+#endif // SHARE_VM_INTERPRETER_INTERPRETERGENERATOR_HPP

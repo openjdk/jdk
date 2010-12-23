@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_CodeStubs_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "nativeInst_x86.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "vmreg_x86.inline.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 
 #define __ ce->masm()->
@@ -473,7 +483,7 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
 
   Register pre_val_reg = pre_val()->as_register();
 
-  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false);
+  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
 
   __ cmpptr(pre_val_reg, (int32_t) NULL_WORD);
   __ jcc(Assembler::equal, _continuation);

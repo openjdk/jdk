@@ -43,152 +43,77 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // Optional Element should print properly nested definition list tags
     // for default value.
     private static final String[][] TEST_ALL = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<PRE>public class " +
-                 "<STRONG>C1</STRONG>" + NL + "extends " +
-                 "java.lang.Object" + NL + "implements " +
-                 "java.io.Serializable</PRE>"},
-        {BUG_ID + FS + "pkg1" + FS + "C4.html", "<DL>" + NL + "<DD><DL>" + NL +
-                 "<DT><STRONG>Default:</STRONG></DT><DD>true</DD>" + NL +
-                 "</DL>" + NL + "</DD>" + NL + "</DL>"}};
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<pre>public class <strong>C1</strong>" + NL +
+                 "extends java.lang.Object" + NL + "implements java.io.Serializable</pre>"},
+        {BUG_ID + FS + "pkg1" + FS + "C4.html", "<dl>" + NL +
+                 "<dt>Default:</dt>" + NL + "<dd>true</dd>" + NL +
+                 "</dl>"}};
 
     // Test for normal run of javadoc in which various ClassDocs and
     // serialized form should have properly nested definition list tags
     // enclosing comments, tags and deprecated information.
     private static final String[][] TEST_CMNT_DEPR = {
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL>" + NL +
-                 "<DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>JDK1.0</DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>JDK1.0</DD>" + NL + "<DT><STRONG>See Also:</STRONG></DT><DD>" +
-                 "<A HREF=\"../pkg1/C2.html\" title=\"class in pkg1\">" +
-                 "<CODE>C2</CODE></A>, " + NL +
-                 "<A HREF=\"../serialized-form.html#pkg1.C1\">" +
-                 "Serialized Form</A></DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;<I>As of JDK version" +
-                 " 1.5, replaced by" + NL +
-                 " <A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I></DD>" +
-                 "<DD>This field indicates whether the C1 is undecorated." + NL +
-                 "<P>" + NL + "</DD>" + NL + "<DD><DL>" + NL + "<DT><STRONG>" +
-                 "Since:</STRONG></DT>" + NL + "  <DD>1.4</DD>" + NL + "<DT>" +
-                 "<STRONG>See Also:</STRONG></DT><DD>" +
-                 "<A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\"><CODE>" +
-                 "setUndecorated(boolean)</CODE></A></DD></DL>" + NL +"</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DD>Constructor." + NL + "<P>" + NL + "</DD>" + NL +
-                 "<DD><DL>" + NL + "<DT><STRONG>Parameters:</STRONG></DT><DD>" +
-                 "<CODE>title</CODE> - the title</DD><DD><CODE>test</CODE>" +
-                 " - boolean value</DD>" + NL + "<DT><STRONG>Throws:</STRONG></DT>" + NL +
-                 "<DD><CODE>java.lang.IllegalArgumentException</CODE>" +
-                 " - if the <code>owner</code>'s" + NL + "     <code>GraphicsConfiguration" +
-                 "</code> is not from a screen device</DD>" + NL +"<DD><CODE>" +
-                 "HeadlessException</CODE></DD></DL>" + NL + "</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DD>Method comments." + NL + "<P>" + NL +
-                 "</DD>" + NL + "<DD><DL>" + NL + "<DT><STRONG>Parameters:" +
-                 "</STRONG></DT><DD><CODE>undecorated</CODE> - <code>true</code>" +
-                 " if no decorations are" + NL + "         to be enabled;" + NL +
-                 "         <code>false</code> if decorations are to be enabled." +
-                 "</DD><DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>1.4</DD>" + NL + "<DT><STRONG>See Also:</STRONG></DT>" +
-                 "<DD><A HREF=\"../pkg1/C1.html#readObject()\"><CODE>" +
-                 "readObject()</CODE></A></DD></DL>" + NL + "</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL + "<DD><DL>" + NL +
-                 "<DT><STRONG>Throws:</STRONG></DT>" + NL + "<DD><CODE>" +
-                 "java.io.IOException</CODE></DD><DT><STRONG>See Also:" +
-                 "</STRONG></DT><DD>" +
-                 "<A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<DL>" + NL +
-                 "<DD>No modal exclusion." + NL + "<P>" + NL +"</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<DL>" + NL + "<DD>Constructor." + NL +
-                 "<P>" + NL +"</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;<I>As of JDK version 1.5, replaced " +
-                 "by" + NL + " <A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I>" + NL + "<P>" + NL +
-                 "</DD><DD>Set visible." + NL + "<P>" + NL + "</DD>" +NL +
-                 "<DD><DL>" + NL + "<DT><STRONG>Parameters:</STRONG></DT><DD>" +
-                 "<CODE>set</CODE> - boolean</DD><DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>1.4</DD></DL>" + NL + "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C3.html", "<DL>" + NL + "<DD>Comment." + NL +
-                 "<P>" + NL + "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL + "<DD><DL>" + NL +
-                 "<DT><STRONG>Throws:</STRONG></DT>" + NL + "<DD><CODE>" +
-                 "java.io.IOException</CODE></DD><DT><STRONG>See Also:</STRONG>" +
-                 "</DT><DD><A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>C1.setUndecorated(boolean)</CODE></A></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;<I>As of JDK version " +
-                 "1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I></DD>" +
-                 "<DD>This field indicates whether the C1 is undecorated." + NL +
-                 "<P>" + NL + "</DD>" + NL + "<DD>&nbsp;</DD>" + NL +
-                 "<DD><DL>" + NL + "<DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>1.4</DD>" + NL + "<DT><STRONG>See Also:</STRONG>" +
-                 "</DT><DD><A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>C1.setUndecorated(boolean)</CODE></A></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;<I>As of JDK version" +
-                 " 1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I>" + NL + "<P>" + NL +
-                 "</DD><DD>Reads the object stream." + NL + "<P>" + NL +
-                 "</DD>" + NL + "<DD><DL>" + NL + "<DT><STRONG>Throws:" +
-                 "</STRONG></DT>" + NL + "<DD><CODE><code>" +
-                 "IOException</code></CODE></DD>" + NL +
-                 "<DD><CODE>java.io.IOException</CODE></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;</DD><DD>" +
-                 "The name for this class." + NL + "<P>" + NL + "</DD>" + NL +
-                 "<DD>&nbsp;</DD>" + NL + "</DL>"}};
-
-    // Test with -nocomment option. The ClassDocs and serialized form should
-    // have properly nested definition list tags enclosing deprecated
-    // information and should not display definition lists for comments
-    // and tags.
-    private static final String[][] TEST_NOCMNT = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;<I>As of JDK version 1.5, replaced by" + NL +
-                 " <A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\"><CODE>" +
-                 "setUndecorated(boolean)</CODE></A>.</I></DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;<I>As of JDK version" +
-                 " 1.5, replaced by" + NL +
-                 " <A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I>" + NL + "<P>" + NL +
-                 "</DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C5.html", "<PRE>" + NL +
-                 "protected <STRONG>C5</STRONG>()</PRE>" + NL + "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;</DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C5.html", "<PRE>" + NL +
-                 "public void <STRONG>printInfo</STRONG>()</PRE>" + NL + "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;</DD></DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<PRE>" + NL + "boolean <STRONG>" +
-                 "undecorated</STRONG></PRE>" + NL + "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;<I>As of JDK version 1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\"><CODE>" +
-                 "setUndecorated(boolean)</CODE></A>.</I></DD></DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;<I>As of JDK version" +
-                 " 1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I>" + NL + "<P>" + NL +
-                 "</DD></DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<PRE>" + NL + "int <STRONG>" +
-                 "publicKey</STRONG></PRE>" + NL + "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;</DD></DL>"}};
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<dl>" +
+                 "<dt><span class=\"strong\">Since:</span></dt>" + NL +
+                 "  <dd>JDK1.0</dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
+                 "  <dd>JDK1.0</dd>" + NL + "<dt><span class=\"strong\">See Also:</span></dt>" +
+                 "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\"><code>" +
+                 "C2</code></a>, " + NL + "<a href=\"../serialized-form.html#pkg1.C1\">" +
+                 "Serialized Form</a></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
+                 "  <dd>1.4</dd>" + NL +
+                 "<dt><span class=\"strong\">See Also:</span></dt><dd>" +
+                 "<a href=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Parameters:</span></dt><dd><code>title" +
+                 "</code> - the title</dd><dd><code>test</code> - boolean value" +
+                 "</dd>" + NL + "<dt><span class=\"strong\">Throws:</span></dt>" + NL +
+                 "<dd><code>java.lang.IllegalArgumentException</code> - if the " +
+                 "<code>owner</code>'s" + NL +
+                 "     <code>GraphicsConfiguration</code> is not from a screen " +
+                 "device</dd>" + NL + "<dd><code>HeadlessException</code></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Parameters:</span></dt><dd><code>undecorated" +
+                 "</code> - <code>true</code> if no decorations are" + NL +
+                 "         to be enabled;" + NL + "         <code>false</code> " +
+                 "if decorations are to be enabled.</dd><dt><span class=\"strong\">Since:" +
+                 "</span></dt>" + NL + "  <dd>1.4</dd>" + NL +
+                 "<dt><span class=\"strong\">See Also:</span></dt><dd>" +
+                 "<a href=\"../pkg1/C1.html#readObject()\"><code>readObject()" +
+                 "</code></a></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Throws:</span></dt>" + NL +
+                 "<dd><code>java.io.IOException</code></dd><dt><span class=\"strong\">See Also:" +
+                 "</span></dt><dd><a href=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<dl><dt><span class=\"strong\">Parameters:" +
+                 "</span></dt><dd><code>set</code> - boolean</dd><dt><span class=\"strong\">" +
+                 "Since:</span></dt>" + NL + "  <dd>1.4</dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<dl><dt><span class=\"strong\">Throws:</span>" +
+                 "</dt>" + NL + "<dd><code>" +
+                 "java.io.IOException</code></dd><dt><span class=\"strong\">See Also:</span>" +
+                 "</dt><dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>C1.setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+                 "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL +
+                 "<div class=\"block\">This field indicates whether the C1 is " +
+                 "undecorated.</div>" + NL + "&nbsp;" + NL + "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
+                 "  <dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
+                 "</dt><dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>C1.setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+                 "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL +
+                 "<div class=\"block\">Reads the object stream.</div>" + NL +
+                 "<dl><dt><span class=\"strong\">Throws:" +
+                 "</span></dt>" + NL + "<dd><code><code>" +
+                 "IOException</code></code></dd>" + NL +
+                 "<dd><code>java.io.IOException</code></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+                 "&nbsp;</div>" + NL +
+                 "<div class=\"block\">The name for this class.</div>"}};
 
     // Test with -nodeprecated option. The ClassDocs should have properly nested
     // definition list tags enclosing comments and tags. The ClassDocs should not
@@ -196,138 +121,104 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // should display properly nested definition list tags for comments, tags
     // and deprecated information.
     private static final String[][] TEST_NODEPR = {
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL>" + NL +
-                 "<DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>JDK1.0</DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>JDK1.0</DD>" + NL + "<DT><STRONG>See Also:</STRONG></DT><DD>" +
-                 "<A HREF=\"../pkg1/C2.html\" title=\"class in pkg1\">" +
-                 "<CODE>C2</CODE></A>, " + NL +
-                 "<A HREF=\"../serialized-form.html#pkg1.C1\">" +
-                 "Serialized Form</A></DD></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DD>Constructor." + NL + "<P>" + NL + "</DD>" + NL +
-                 "<DD><DL>" + NL + "<DT><STRONG>Parameters:</STRONG></DT><DD>" +
-                 "<CODE>title</CODE> - the title</DD><DD><CODE>test</CODE>" +
-                 " - boolean value</DD>" + NL + "<DT><STRONG>Throws:</STRONG></DT>" + NL +
-                 "<DD><CODE>java.lang.IllegalArgumentException</CODE>" +
-                 " - if the <code>owner</code>'s" + NL + "     <code>GraphicsConfiguration" +
-                 "</code> is not from a screen device</DD>" + NL +"<DD><CODE>" +
-                 "HeadlessException</CODE></DD></DL>" + NL + "</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
-                 "<DD>Method comments." + NL + "<P>" + NL +
-                 "</DD>" + NL + "<DD><DL>" + NL + "<DT><STRONG>Parameters:" +
-                 "</STRONG></DT><DD><CODE>undecorated</CODE> - <code>true</code>" +
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<dl>" +
+                 "<dt><span class=\"strong\">Since:</span></dt>" + NL +
+                 "  <dd>JDK1.0</dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Since:</span>" +
+                 "</dt>" + NL + "  <dd>JDK1.0</dd>" + NL + "<dt><span class=\"strong\">See Also:" +
+                 "</span></dt><dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\">" +
+                 "<code>C2</code></a>, " + NL + "<a href=\"../serialized-form.html#pkg1.C1\">" +
+                 "Serialized Form</a></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Parameters:" +
+                 "</span></dt><dd><code>title</code> - the title</dd><dd><code>" +
+                 "test</code> - boolean value</dd>" + NL + "<dt><span class=\"strong\">Throws:" +
+                 "</span></dt>" + NL + "<dd><code>java.lang.IllegalArgumentException" +
+                 "</code> - if the <code>owner</code>'s" + NL + "     <code>GraphicsConfiguration" +
+                 "</code> is not from a screen device</dd>" + NL + "<dd><code>" +
+                 "HeadlessException</code></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Parameters:" +
+                 "</span></dt><dd><code>undecorated</code> - <code>true</code>" +
                  " if no decorations are" + NL + "         to be enabled;" + NL +
                  "         <code>false</code> if decorations are to be enabled." +
-                 "</DD><DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>1.4</DD>" + NL + "<DT><STRONG>See Also:</STRONG></DT>" +
-                 "<DD><A HREF=\"../pkg1/C1.html#readObject()\"><CODE>" +
-                 "readObject()</CODE></A></DD></DL>" + NL + "</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL + "<DD><DL>" + NL +
-                 "<DT><STRONG>Throws:</STRONG></DT>" + NL + "<DD><CODE>" +
-                 "java.io.IOException</CODE></DD><DT><STRONG>See Also:" +
-                 "</STRONG></DT><DD>" +
-                 "<A HREF=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<DL>" + NL +
-                 "<DD>No modal exclusion." + NL + "<P>" + NL +"</DD>" + NL +
-                 "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<DL>" + NL + "<DD>Constructor." + NL +
-                 "<P>" + NL +"</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C3.html", "<DL>" + NL + "<DD>Comment." + NL +
-                 "<P>" + NL + "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL + "<DD><DL>" + NL +
-                 "<DT><STRONG>Throws:</STRONG></DT>" + NL + "<DD><CODE>" +
-                 "java.io.IOException</CODE></DD><DT><STRONG>See Also:</STRONG>" +
-                 "</DT><DD><A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>C1.setUndecorated(boolean)</CODE></A></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;<I>As of JDK version " +
-                 "1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I></DD>" +
-                 "<DD>This field indicates whether the C1 is undecorated." + NL +
-                 "<P>" + NL + "</DD>" + NL + "<DD>&nbsp;</DD>" + NL +
-                 "<DD><DL>" + NL + "<DT><STRONG>Since:</STRONG></DT>" + NL +
-                 "  <DD>1.4</DD>" + NL + "<DT><STRONG>See Also:</STRONG>" +
-                 "</DT><DD><A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>C1.setUndecorated(boolean)</CODE></A></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;<I>As of JDK version" +
-                 " 1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I>" + NL + "<P>" + NL +
-                 "</DD><DD>Reads the object stream." + NL + "<P>" + NL +
-                 "</DD>" + NL + "<DD><DL>" + NL + "<DT><STRONG>Throws:" +
-                 "</STRONG></DT>" + NL + "<DD><CODE><code>" +
-                 "IOException</code></CODE></DD>" + NL +
-                 "<DD><CODE>java.io.IOException</CODE></DD></DL>" + NL +
-                 "</DD>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL +
-                 "<DD><STRONG>Deprecated.</STRONG>&nbsp;</DD><DD>" +
-                 "The name for this class." + NL + "<P>" + NL + "</DD>" + NL +
-                 "<DD>&nbsp;</DD>" + NL + "</DL>"}};
+                 "</dd><dt><span class=\"strong\">Since:</span></dt>" + NL + "  <dd>1.4</dd>" + NL +
+                 "<dt><span class=\"strong\">See Also:</span></dt><dd><a href=\"../pkg1/C1.html#readObject()\">" +
+                 "<code>readObject()</code></a></dd></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl><dt><span class=\"strong\">Throws:</span>" +
+                 "</dt>" + NL + "<dd><code>java.io.IOException</code></dd><dt>" +
+                 "<span class=\"strong\">See Also:</span></dt><dd><a href=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<dl><dt><span class=\"strong\">Throws:</span>" +
+                 "</dt>" + NL + "<dd><code>" +
+                 "java.io.IOException</code></dd><dt><span class=\"strong\">See Also:</span>" +
+                 "</dt><dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>C1.setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+                 "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL +
+                 "<div class=\"block\">This field indicates whether the C1 is " +
+                 "undecorated.</div>" + NL + "&nbsp;" + NL + "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
+                 "  <dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
+                 "</dt><dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>C1.setUndecorated(boolean)</code></a></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+                 "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL +
+                 "<div class=\"block\">Reads the object stream.</div>" + NL +
+                 "<dl><dt><span class=\"strong\">Throws:" +
+                 "</span></dt>" + NL + "<dd><code><code>" +
+                 "IOException</code></code></dd>" + NL +
+                 "<dd><code>java.io.IOException</code></dd></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+                 "&nbsp;</div>" + NL + "<div class=\"block\">" +
+                 "The name for this class.</div>"}};
 
     // Test with -nocomment and -nodeprecated options. The ClassDocs whould
-    // not display definition lists for any member details. The serialized
-    // form should display properly nested definition list tags for
-    // deprecated information only.
+    // not display definition lists for any member details.
     private static final String[][] TEST_NOCMNT_NODEPR = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<PRE>" + NL + "public void " +
-                 "<STRONG>readObject</STRONG>()" + NL + "                throws" +
-                 " java.io.IOException</PRE>" + NL + "<HR>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<PRE>" +NL + "public <STRONG>" +
-                 "C2</STRONG>()</PRE>" + NL + "<HR>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<PRE>" + NL +
-                 "public static final " +
-                 "<A HREF=\"../pkg1/C1.ModalExclusionType.html\" " +
-                 "title=\"enum in pkg1\">C1.ModalExclusionType</A> <STRONG>" +
-                 "APPLICATION_EXCLUDE</STRONG></PRE>" + NL + "<HR>"},
-        {BUG_ID + FS + "serialized-form.html", "<PRE>" + NL + "boolean <STRONG>" +
-                 "undecorated</STRONG></PRE>" + NL + "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;<I>As of JDK version 1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\"><CODE>" +
-                 "setUndecorated(boolean)</CODE></A>.</I></DD></DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;<I>As of JDK version" +
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<pre>public&nbsp;void&nbsp;readObject()" + NL +
+                 "                throws java.io.IOException</pre>" + NL + "</li>"},
+        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<pre>public&nbsp;C2()</pre>" + NL +
+                 "</li>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<pre>public " +
+                 "static final&nbsp;<a href=\"../pkg1/C1.ModalExclusionType.html\" " +
+                 "title=\"enum in pkg1\">C1.ModalExclusionType</a> " +
+                 "APPLICATION_EXCLUDE</pre>" + NL + "</li>"},
+        {BUG_ID + FS + "serialized-form.html", "<pre>boolean " +
+                 "undecorated</pre>" + NL + "<div class=\"block\"><span class=\"strong\">" +
+                 "Deprecated.</span>&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\"><code>" +
+                 "setUndecorated(boolean)</code></a>.</i></div>" + NL + "</li>"},
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">" +
+                 "Deprecated.</span>&nbsp;<i>As of JDK version" +
                  " 1.5, replaced by" + NL +
-                 " <A HREF=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<CODE>setUndecorated(boolean)</CODE></A>.</I>" + NL + "<P>" + NL +
-                 "</DD></DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<PRE>" + NL + "int <STRONG>" +
-                 "publicKey</STRONG></PRE>" + NL + "<DL>" + NL + "<DD><STRONG>" +
-                 "Deprecated.</STRONG>&nbsp;</DD></DL>"}};
+                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL + "</li>"}};
 
     // Test for valid HTML generation which should not comprise of empty
     // definition list tags.
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.ModalType.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C2.ModalType.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C3.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C3.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C4.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C4.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C5.html", "<DL></DL>"},
-        {BUG_ID + FS + "pkg1" + FS + "C5.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "overview-tree.html", "<DL></DL>"},
-        {BUG_ID + FS + "overview-tree.html", "<DL>" + NL + "</DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL></DL>"},
-        {BUG_ID + FS + "serialized-form.html", "<DL>" + NL + "</DL>"}};
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C2.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C2.ModalType.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C2.ModalType.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C3.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C3.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C4.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C4.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C5.html", "<dl></dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "C5.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "overview-tree.html", "<dl></dl>"},
+        {BUG_ID + FS + "overview-tree.html", "<dl>" + NL + "</dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<dl></dl>"},
+        {BUG_ID + FS + "serialized-form.html", "<dl>" + NL + "</dl>"}};
 
     private static final String[] ARGS1 =
         new String[] {
@@ -355,7 +246,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         run(tester, ARGS1, TEST_ALL, NEGATED_TEST);
         run(tester, ARGS1, TEST_CMNT_DEPR, NEGATED_TEST);
         run(tester, ARGS2, TEST_ALL, NEGATED_TEST);
-        run(tester, ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
+        run(tester, ARGS2, NO_TEST, TEST_CMNT_DEPR);
         run(tester, ARGS3, TEST_ALL, NEGATED_TEST);
         run(tester, ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
         run(tester, ARGS4, TEST_ALL, NEGATED_TEST);
