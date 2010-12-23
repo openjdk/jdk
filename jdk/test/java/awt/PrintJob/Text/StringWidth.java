@@ -60,7 +60,6 @@ public class StringWidth extends Frame {
     pg.dispose();
     pj.end();
     setVisible(false);
-    System.exit(0);
   }
 
   public static void main(String[] args) {
