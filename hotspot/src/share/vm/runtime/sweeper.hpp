@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_SWEEPER_HPP
+#define SHARE_VM_RUNTIME_SWEEPER_HPP
+
 // An NmethodSweeper is an incremental cleaner for:
 //    - cleanup inline caches
 //    - reclamation of unreferences zombie nmethods
@@ -71,3 +74,5 @@ class NMethodSweeper : public AllStatic {
   static void set_was_full(bool state) { _was_full = state; }
   static bool was_full() { return _was_full; }
 };
+
+#endif // SHARE_VM_RUNTIME_SWEEPER_HPP

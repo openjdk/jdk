@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_oopRecorder.cpp.incl"
+#include "precompiled.hpp"
+#include "code/oopRecorder.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 #ifdef ASSERT
 int OopRecorder::_find_index_calls = 0;

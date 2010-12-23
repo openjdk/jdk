@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,30 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_icBuffer.cpp.incl"
+#include "precompiled.hpp"
+#include "code/compiledIC.hpp"
+#include "code/icBuffer.hpp"
+#include "code/nmethod.hpp"
+#include "code/scopeDesc.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.inline.hpp"
+#endif
 
 
 DEF_STUB_INTERFACE(ICStub);

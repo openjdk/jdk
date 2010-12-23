@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "libadt/port.hpp"
+
 // Code for portable compiling
 
 #ifdef __GNUC__
 #pragma implementation
 #endif
-
-#include "incls/_precompiled.incl"
-#include "incls/_port.cpp.incl"
 
 // %%%%% includes not needed with AVM framework - Ungar
 // #include "port.hpp"

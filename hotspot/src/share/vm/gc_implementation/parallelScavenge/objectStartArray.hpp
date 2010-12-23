@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_OBJECTSTARTARRAY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_OBJECTSTARTARRAY_HPP
+
+#include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/oop.hpp"
 
 //
 // This class can be used to locate the beginning of an object in the
@@ -160,3 +168,5 @@ class ObjectStartArray : public CHeapObj {
   // "start", the method will return true.
   bool object_starts_in_range(HeapWord* start_addr, HeapWord* end_addr) const;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_OBJECTSTARTARRAY_HPP

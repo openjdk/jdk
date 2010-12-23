@@ -22,6 +22,21 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_METHODOOP_HPP
+#define SHARE_VM_OOPS_METHODOOP_HPP
+
+#include "classfile/vmSymbols.hpp"
+#include "code/compressedStream.hpp"
+#include "compiler/oopMap.hpp"
+#include "interpreter/invocationCounter.hpp"
+#include "oops/constMethodOop.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oop.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "utilities/accessFlags.hpp"
+#include "utilities/growableArray.hpp"
+
 // A methodOop represents a Java method.
 //
 // Memory layout (each line represents a word). Note that most applications load thousands of methods,
@@ -784,3 +799,5 @@ class BreakpointInfo : public CHeapObj {
   void set(methodOop method);
   void clear(methodOop method);
 };
+
+#endif // SHARE_VM_OOPS_METHODOOP_HPP

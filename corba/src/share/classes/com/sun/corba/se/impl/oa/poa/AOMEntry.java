@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ import com.sun.corba.se.spi.orbutil.fsm.StateEngineFactory ;
 
 import com.sun.corba.se.impl.orbutil.concurrent.Mutex ;
 import com.sun.corba.se.impl.orbutil.concurrent.CondVar ;
+
+import org.omg.CORBA.SystemException ;
+
+import org.omg.PortableServer.POAPackage.ObjectAlreadyActive ;
 
 /** AOMEntry represents a Servant or potential Servant in the ActiveObjectMap.
 * It may be in several states to allow for long incarnate or etherealize operations.
@@ -121,6 +125,12 @@ public class AOMEntry extends FSMImpl {
         }
     } ;
 
+    private static Action oaaAction = new ActionBase( "throwObjectAlreadyActive" ) {
+         public void doIt( FSM fsm, Input in ) {
+             throw new RuntimeException( new ObjectAlreadyActive() ) ;
+         }
+    } ;
+
     private static Guard waitGuard = new GuardBase( "wait" ) {
         public Guard.Result evaluate( FSM fsm, Input in ) {
             AOMEntry entry = (AOMEntry)fsm ;
@@ -173,19 +183,23 @@ public class AOMEntry extends FSMImpl {
         engine.add( INCARN,  START_ETH, waitGuard,              null,               INCARN      ) ;
         engine.add( INCARN,  INC_DONE,                          null,               VALID       ) ;
         engine.add( INCARN,  INC_FAIL,                          decrementAction,    INVALID     ) ;
+        engine.add( INCARN,  ACTIVATE,                          oaaAction,          INCARN      ) ;
 
         engine.add( VALID,   ENTER,                             incrementAction,    VALID       ) ;
         engine.add( VALID,   EXIT,                              decrementAction,    VALID       ) ;
         engine.add( VALID,   START_ETH, greaterZeroGuard,       null,               ETHP        ) ;
         engine.add( VALID,   START_ETH, zeroGuard,              null,               ETH         ) ;
+        engine.add( VALID,   ACTIVATE,                          oaaAction,          VALID       ) ;
 
         engine.add( ETHP,    ENTER,     waitGuard,              null,               ETHP        ) ;
         engine.add( ETHP,    START_ETH,                         null,               ETHP        ) ;
         engine.add( ETHP,    EXIT,      greaterOneGuard,        decrementAction,    ETHP        ) ;
         engine.add( ETHP,    EXIT,      oneGuard,               decrementAction,    ETH         ) ;
+        engine.add( ETHP,    ACTIVATE,                          oaaAction,          ETHP        ) ;
 
         engine.add( ETH,     START_ETH,                         null,               ETH         ) ;
         engine.add( ETH,     ETH_DONE,                          null,               DESTROYED   ) ;
+        engine.add( ETH,     ACTIVATE,                          oaaAction,          ETH         ) ;
         engine.add( ETH,     ENTER,     waitGuard,              null,               ETH         ) ;
 
         engine.setDefault( DESTROYED, throwIllegalStateExceptionAction, DESTROYED ) ;
@@ -217,7 +231,17 @@ public class AOMEntry extends FSMImpl {
     public void etherealizeComplete() { doIt( ETH_DONE ) ; }
     public void incarnateComplete() { doIt( INC_DONE ) ; }
     public void incarnateFailure() { doIt( INC_FAIL ) ; }
-    public void activateObject() { doIt( ACTIVATE ) ; }
+    public void activateObject() throws ObjectAlreadyActive {
+         try {
+             doIt( ACTIVATE ) ;
+         } catch (RuntimeException exc) {
+             Throwable thr = exc.getCause() ;
+             if (thr instanceof ObjectAlreadyActive)
+                 throw (ObjectAlreadyActive)thr ;
+             else
+                 throw exc ;
+         }
+    }
     public void enter() { doIt( ENTER ) ; }
     public void exit() { doIt( EXIT ) ; }
 }

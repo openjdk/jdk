@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_C1_FRAMEMAP_X86_HPP
+#define CPU_X86_VM_C1_FRAMEMAP_X86_HPP
+
 //  On i486 the frame looks as follows:
 //
 //  +-----------------------------+---------+----------------------------------------+----------------+-----------
@@ -126,3 +129,16 @@
     assert(i >= 0 && i < nof_caller_save_xmm_regs, "out of bounds");
     return _caller_save_xmm_regs[i];
   }
+
+  static int adjust_reg_range(int range) {
+    // Reduce the number of available regs (to free r12) in case of compressed oops
+    if (UseCompressedOops) return range - 1;
+    return range;
+  }
+
+  static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }
+  static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg);  }
+  static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg); }
+
+#endif // CPU_X86_VM_C1_FRAMEMAP_X86_HPP
+

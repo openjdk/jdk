@@ -30,12 +30,14 @@ import com.sun.corba.se.impl.orbutil.ORBConstants;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.MessageBase;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.FragmentMessage;
+import com.sun.corba.se.impl.protocol.giopmsgheaders.ReplyMessage;
 import com.sun.corba.se.impl.encoding.BufferManagerWrite;
 import com.sun.corba.se.impl.encoding.ByteBufferWithInfo;
 import com.sun.corba.se.impl.encoding.CDROutputObject;
 import com.sun.corba.se.spi.orb.ORB;
 import com.sun.corba.se.pept.transport.Connection;
 import com.sun.corba.se.pept.encoding.OutputObject;
+import org.omg.CORBA.SystemException;
 
 /**
  * Streaming buffer manager.
@@ -66,7 +68,13 @@ public class BufferManagerWriteStream extends BufferManagerWrite
         // Set the fragment's moreFragments field to true
         MessageBase.setFlag(bbwi.byteBuffer, Message.MORE_FRAGMENTS_BIT);
 
-        sendFragment(false);
+        try {
+           sendFragment(false);
+        } catch(SystemException se){
+                orb.getPIHandler().invokeClientPIEndingPoint(
+                        ReplyMessage.SYSTEM_EXCEPTION, se);
+                throw se;
+        }
 
         // Reuse the old buffer
 

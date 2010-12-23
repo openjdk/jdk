@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_STUBROUTINES_ZERO_HPP
+#define CPU_ZERO_VM_STUBROUTINES_ZERO_HPP
 
   // This file holds the platform specific parts of the StubRoutines
   // definition. See stubRoutines.hpp for a description on how to
@@ -53,3 +56,5 @@
     static address _call_stub_compiled_return;
   };
 #endif // IA32
+
+#endif // CPU_ZERO_VM_STUBROUTINES_ZERO_HPP

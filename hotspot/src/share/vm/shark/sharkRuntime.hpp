@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKRUNTIME_HPP
+#define SHARE_VM_SHARK_SHARKRUNTIME_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/klassOop.hpp"
+#include "runtime/thread.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/llvmValue.hpp"
 
 class SharkRuntime : public AllStatic {
   // VM calls
@@ -81,3 +90,5 @@ class SharkRuntime : public AllStatic {
   static bool is_subtype_of(klassOop check_klass, klassOop object_klass);
   static int uncommon_trap(JavaThread* thread, int trap_request);
 };
+
+#endif // SHARE_VM_SHARK_SHARKRUNTIME_HPP

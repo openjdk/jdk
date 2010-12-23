@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Compilation.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_ValueMap.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "code/debugInfoRec.hpp"
 
 
 typedef enum {
@@ -290,8 +298,8 @@ int Compilation::compile_java_method() {
 
   CHECK_BAILOUT_(no_frame_size);
 
-  if (is_profiling()) {
-    method()->build_method_data();
+  if (is_profiling() && !method()->ensure_method_data()) {
+    BAILOUT_("mdo allocation failed", no_frame_size);
   }
 
   {
@@ -471,9 +479,16 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
   compile_method();
-  if (is_profiling() && _would_profile) {
-    ciMethodData *md = method->method_data();
-    assert (md != NULL, "Should have MDO");
+  if (bailed_out()) {
+    _env->record_method_not_compilable(bailout_msg(), !TieredCompilation);
+    if (is_profiling()) {
+      // Compilation failed, create MDO, which would signal the interpreter
+      // to start profiling on its own.
+      _method->ensure_method_data();
+    }
+  } else if (is_profiling() && _would_profile) {
+    ciMethodData *md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     md->set_would_profile(_would_profile);
   }
 }

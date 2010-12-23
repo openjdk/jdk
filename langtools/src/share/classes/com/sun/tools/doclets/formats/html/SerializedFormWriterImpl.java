@@ -25,8 +25,10 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.javadoc.*;
 import java.io.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Generate the Serialized Form Information Page.
@@ -64,76 +66,167 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     /**
-     * Write the given package header.
+     * Get the given header.
      *
-     * @param packageName the package header to write.
+     * @param header the header to write
+     * @return the body content tree
      */
-    public void writePackageHeader(String packageName) {
-        hr(4, "noshade");
-        tableHeader();
-        thAlign("center");
-        font("+2");
-        strongText("doclet.Package");
-        print(' ');
-        strong(packageName);
-        tableFooter();
+    public Content getHeader(String header) {
+        Content bodyTree = getBody(true, getWindowTitle(header));
+        addTop(bodyTree);
+        addNavLinks(true, bodyTree);
+        Content h1Content = new StringContent(header);
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+                HtmlStyle.title, h1Content);
+        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        bodyTree.addContent(div);
+        return bodyTree;
     }
 
     /**
-     * Write the serial UID info.
+     * Get the serialized form summaries header.
      *
-     * @param header the header that will show up before the UID.
-     * @param serialUID the serial UID to print.
+     * @return the serialized form summary header tree
      */
-    public void writeSerialUIDInfo(String header, String serialUID) {
-        strong(header + "&nbsp;");
-        println(serialUID);
-        p();
+    public Content getSerializedSummariesHeader() {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
+        return ul;
     }
 
     /**
-     * Write the footer.
+     * Get the package serialized form header.
+     *
+     * @return the package serialized form header tree
      */
-    public void writeFooter() {
-        p();
-        hr();
-        navLinks(false);
-        printBottom();
-        printBodyHtmlEnd();
+    public Content getPackageSerializedHeader() {
+        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        li.addStyle(HtmlStyle.blockList);
+        return li;
     }
 
+    /**
+     * Get the given package header.
+     *
+     * @param packageName the package header to write
+     * @return a content tree for the package header
+     */
+    public Content getPackageHeader(String packageName) {
+        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+                packageLabel);
+        heading.addContent(getSpace());
+        heading.addContent(packageName);
+        return heading;
+    }
 
     /**
-     * Write the serializable class heading.
+     * Get the serialized class header.
      *
-     * @param classDoc the class being processed.
+     * @return a content tree for the serialized class header
      */
-    public void writeClassHeader(ClassDoc classDoc) {
+    public Content getClassSerializedHeader() {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
+        return ul;
+    }
+
+    /**
+     * Get the serializable class heading.
+     *
+     * @param classDoc the class being processed
+     * @return a content tree for the class header
+     */
+    public Content getClassHeader(ClassDoc classDoc) {
         String classLink = (classDoc.isPublic() || classDoc.isProtected())?
             getLink(new LinkInfoImpl(classDoc,
-                configuration.getClassName(classDoc))):
+            configuration.getClassName(classDoc))):
             classDoc.qualifiedName();
-        p();
-        anchor(classDoc.qualifiedName());
+        Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
+                classDoc.qualifiedName()));
         String superClassLink =
             classDoc.superclassType() != null ?
                 getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_SERIALIZED_FORM,
-                    classDoc.superclassType())) :
+                classDoc.superclassType())) :
                 null;
 
         //Print the heading.
         String className = superClassLink == null ?
             configuration.getText(
-                "doclet.Class_0_implements_serializable", classLink) :
+            "doclet.Class_0_implements_serializable", classLink) :
             configuration.getText(
-                "doclet.Class_0_extends_implements_serializable", classLink,
-                    superClassLink);
-        tableHeader();
-        thAlignColspan("left", 2);
-        font("+2");
-        strong(className);
-        tableFooter();
-        p();
+            "doclet.Class_0_extends_implements_serializable", classLink,
+            superClassLink);
+        Content classNameContent = new RawHtml(className);
+        li.addContent(HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
+                classNameContent));
+        return li;
+    }
+
+    /**
+     * Get the serial UID info header.
+     *
+     * @return a content tree for the serial uid info header
+     */
+    public Content getSerialUIDInfoHeader() {
+        HtmlTree dl = new HtmlTree(HtmlTag.DL);
+        dl.addStyle(HtmlStyle.nameValue);
+        return dl;
+    }
+
+    /**
+     * Adds the serial UID info.
+     *
+     * @param header the header that will show up before the UID.
+     * @param serialUID the serial UID to print.
+     * @param serialUidTree the serial UID content tree to which the serial UID
+     *                      content will be added
+     */
+    public void addSerialUIDInfo(String header, String serialUID,
+            Content serialUidTree) {
+        Content headerContent = new StringContent(header);
+        serialUidTree.addContent(HtmlTree.DT(headerContent));
+        Content serialContent = new StringContent(serialUID);
+        serialUidTree.addContent(HtmlTree.DD(serialContent));
+    }
+
+    /**
+     * Get the class serialize content header.
+     *
+     * @return a content tree for the class serialize content header
+     */
+    public Content getClassContentHeader() {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
+        return ul;
+    }
+
+    /**
+     * Get the serialized content tree section.
+     *
+     * @param serializedTreeContent the serialized content tree to be added
+     * @return a div content tree
+     */
+    public Content getSerializedContent(Content serializedTreeContent) {
+        Content divContent = HtmlTree.DIV(HtmlStyle.serializedFormContainer,
+                serializedTreeContent);
+        return divContent;
+    }
+
+    /**
+     * Add the footer.
+     *
+     * @param serializedTree the serialized tree to be added
+     */
+    public void addFooter(Content serializedTree) {
+        addNavLinks(false, serializedTree);
+        addBottom(serializedTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printDocument(Content serializedTree) {
+        printHtmlDocument(null, true, serializedTree);
     }
 
     private void tableHeader() {

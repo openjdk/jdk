@@ -53,8 +53,9 @@
 #define THIS_FD(obj) (*env)->GetIntField(env, obj, IO_fd_fdID)
 
 /*
- * Route the routines through HPI
+ * Route the routines through VM
  */
+#define IO_Append JVM_Write
 #define IO_Write JVM_Write
 #define IO_Sync JVM_Sync
 #define IO_Read JVM_Read

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,12 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_STACK_ZERO_INLINE_HPP
+#define CPU_ZERO_VM_STACK_ZERO_INLINE_HPP
+
+#include "runtime/thread.hpp"
+#include "stack_zero.hpp"
 
 // This function should match SharkStack::CreateStackOverflowCheck
 inline void ZeroStack::overflow_check(int required_words, TRAPS) {
@@ -46,3 +52,5 @@ inline int ZeroStack::abi_stack_available(Thread *thread) const {
   int stack_free = thread->stack_size() - stack_used;
   return stack_free - shadow_pages_size();
 }
+
+#endif // CPU_ZERO_VM_STACK_ZERO_INLINE_HPP

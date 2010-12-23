@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_VMREG_SPARC_INLINE_HPP
+#define CPU_SPARC_VM_VMREG_SPARC_INLINE_HPP
 
 inline VMReg RegisterImpl::as_VMReg() {
   if( this==noreg ) return VMRegImpl::Bad();
@@ -60,3 +63,5 @@ inline   bool VMRegImpl::is_concrete() {
   assert(false, "what register?");
   return false;
 }
+
+#endif // CPU_SPARC_VM_VMREG_SPARC_INLINE_HPP

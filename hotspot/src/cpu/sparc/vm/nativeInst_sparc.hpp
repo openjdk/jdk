@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_NATIVEINST_SPARC_HPP
+#define CPU_SPARC_VM_NATIVEINST_SPARC_HPP
+
+#include "asm/assembler.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/os.hpp"
+#include "utilities/top.hpp"
 
 // We have interface for the following instructions:
 // - NativeInstruction
@@ -913,3 +922,5 @@ class NativeIllegalInstruction: public NativeInstruction {
   // Insert illegal opcode as specific address
   static void insert(address code_pos);
 };
+
+#endif // CPU_SPARC_VM_NATIVEINST_SPARC_HPP

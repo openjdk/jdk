@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 2002-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 2002-2008 - All Rights Reserved
  *
  */
 
@@ -54,7 +54,7 @@ public:
 
     void add(le_int32 baseIndex, le_int32 mpreIndex);
 
-    void apply(LEGlyphStorage &glyphStorage);
+    void apply(LEGlyphStorage &glyphStorage, LEErrorCode& success);
 
 private:
     FixupData *fFixupData;

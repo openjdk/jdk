@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,27 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vm_operations.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sweeper.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/threadService.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
 

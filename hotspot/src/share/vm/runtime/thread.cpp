@@ -22,8 +22,83 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_thread.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/compileBroker.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvm_misc.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "prims/privilegedStack.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/memprofiler.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/task.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/attachListener.hpp"
+#include "services/management.hpp"
+#include "services/threadService.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/parallelScavenge/pcTasks.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -3156,12 +3231,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
     }
-
-    if (EnableInvokeDynamic) {
-      // JSR 292: An intialized java.dyn.InvokeDynamic is required in
-      // the compiler.
-      initialize_class(vmSymbolHandles::java_dyn_InvokeDynamic(), CHECK_0);
-    }
   }
 
   // See        : bugid 4211085.
@@ -3310,7 +3379,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     const char *msg = "Could not find agent library ";
 
     if (agent->is_absolute_path()) {
-      library = hpi::dll_load(name, ebuf, sizeof ebuf);
+      library = os::dll_load(name, ebuf, sizeof ebuf);
       if (library == NULL) {
         const char *sub_msg = " in absolute path, with error: ";
         size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
@@ -3322,8 +3391,8 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
       }
     } else {
       // Try to load the agent from the standard dll directory
-      hpi::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), name);
-      library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+      os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), name);
+      library = os::dll_load(buffer, ebuf, sizeof ebuf);
 #ifdef KERNEL
       // Download instrument dll
       if (library == NULL && strcmp(name, "instrument") == 0) {
@@ -3343,13 +3412,13 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
         }
         FREE_C_HEAP_ARRAY(char, cmd);
         // when this comes back the instrument.dll should be where it belongs.
-        library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+        library = os::dll_load(buffer, ebuf, sizeof ebuf);
       }
 #endif // KERNEL
       if (library == NULL) { // Try the local directory
         char ns[1] = {0};
-        hpi::dll_build_name(buffer, sizeof(buffer), ns, name);
-        library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+        os::dll_build_name(buffer, sizeof(buffer), ns, name);
+        library = os::dll_load(buffer, ebuf, sizeof ebuf);
         if (library == NULL) {
           const char *sub_msg = " on the library path, with error: ";
           size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
@@ -3366,7 +3435,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
 
   // Find the OnLoad function.
   for (size_t symbol_index = 0; symbol_index < num_symbol_entries; symbol_index++) {
-    on_load_entry = CAST_TO_FN_PTR(OnLoadEntry_t, hpi::dll_lookup(library, on_load_symbols[symbol_index]));
+    on_load_entry = CAST_TO_FN_PTR(OnLoadEntry_t, os::dll_lookup(library, on_load_symbols[symbol_index]));
     if (on_load_entry != NULL) break;
   }
   return on_load_entry;
@@ -3448,7 +3517,7 @@ void Threads::shutdown_vm_agents() {
     // Find the Agent_OnUnload function.
     for (uint symbol_index = 0; symbol_index < ARRAY_SIZE(on_unload_symbols); symbol_index++) {
       Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
-               hpi::dll_lookup(agent->os_lib(), on_unload_symbols[symbol_index]));
+               os::dll_lookup(agent->os_lib(), on_unload_symbols[symbol_index]));
 
       // Invoke the Agent_OnUnload function
       if (unload_entry != NULL) {
@@ -3617,7 +3686,6 @@ bool Threads::destroy_vm() {
 
 #ifndef PRODUCT
   // disable function tracing at JNI/JVM barriers
-  TraceHPI = false;
   TraceJNICalls = false;
   TraceJVMCalls = false;
   TraceRuntimeCalls = false;
