@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_VMERROR_HPP
+#define SHARE_VM_UTILITIES_VMERROR_HPP
+
+#include "utilities/globalDefinitions.hpp"
+
 
 class VM_ReportJavaOutOfMemory;
 
@@ -116,3 +121,5 @@ public:
   // check to see if fatal error reporting is in progress
   static bool fatal_error_in_progress() { return first_error != NULL; }
 };
+
+#endif // SHARE_VM_UTILITIES_VMERROR_HPP

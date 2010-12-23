@@ -22,10 +22,8 @@
  */
 
 // key: compiler.warn.unchecked.generic.array.creation
-// key: compiler.warn.varargs.non.reifiable.type
-// options: -Xlint:unchecked,varargs
-
-import java.util.*;
+// key: compiler.warn.unchecked.varargs.non.reifiable.type
+// options: -Xlint:unchecked
 
 class UncheckedGenericArrayCreation<T> {
     void m(T t1, T t2, T t3) {

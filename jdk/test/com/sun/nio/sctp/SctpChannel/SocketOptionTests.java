@@ -188,6 +188,7 @@ public class SocketOptionTests {
             }
             check(found, "SCTP_PRIMARY_ADDR returned bogus address!");
 
+            System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
             sc.setOption(SCTP_PRIMARY_ADDR, addrToSet);
             System.out.println("SCTP_PRIMARY_ADDR set to: " + addrToSet);
             primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);

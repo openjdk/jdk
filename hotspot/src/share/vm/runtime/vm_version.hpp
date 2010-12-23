@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_VM_VERSION_HPP
+#define SHARE_VM_RUNTIME_VM_VERSION_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/ostream.hpp"
 
 // VM_Version provides information about the VM.
 
@@ -88,3 +94,5 @@ class Abstract_VM_Version: AllStatic {
   // be VM version specific.
   static unsigned int calc_parallel_worker_threads();
 };
+
+#endif // SHARE_VM_RUNTIME_VM_VERSION_HPP

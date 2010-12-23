@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_METHODHANDLES_HPP
+#define SHARE_VM_PRIMS_METHODHANDLES_HPP
+
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/interfaceSupport.hpp"
+
 class MacroAssembler;
 class Label;
 class MethodHandleEntry;
@@ -523,3 +532,5 @@ public:
 
   void generate();
 };
+
+#endif // SHARE_VM_PRIMS_METHODHANDLES_HPP

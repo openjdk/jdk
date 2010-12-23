@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-#ifndef _JAVA_JVMTIENVBASE_H_
-#define _JAVA_JVMTIENVBASE_H_
+#ifndef SHARE_VM_PRIMS_JVMTIENVBASE_HPP
+#define SHARE_VM_PRIMS_JVMTIENVBASE_HPP
+
+#include "classfile/classLoader.hpp"
+#include "prims/jvmtiEnvThreadState.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 // Forward Declarations
@@ -55,7 +66,8 @@ class JvmtiEnvBase : public CHeapObj {
 
   enum {
     JDK15_JVMTI_VERSION = JVMTI_VERSION_1_0 +  33,  /* version: 1.0.33  */
-    JDK16_JVMTI_VERSION = JVMTI_VERSION_1_1 + 102   /* version: 1.1.102 */
+    JDK16_JVMTI_VERSION = JVMTI_VERSION_1_1 + 102,  /* version: 1.1.102 */
+    JDK17_JVMTI_VERSION = JVMTI_VERSION_1_2 +   1   /* version: 1.2.1   */
   };
 
   static jvmtiPhase  get_phase()                    { return _phase; }
@@ -125,6 +137,7 @@ class JvmtiEnvBase : public CHeapObj {
 
   bool use_version_1_0_semantics();  // agent asked for version 1.0
   bool use_version_1_1_semantics();  // agent asked for version 1.1
+  bool use_version_1_2_semantics();  // agent asked for version 1.2
 
   bool is_retransformable()                        { return _is_retransformable; }
 
@@ -597,4 +610,4 @@ class JvmtiMonitorClosure: public MonitorClosure {
   jvmtiError error() { return _error;}
 };
 
-#endif   /* _JAVA_JVMTIENVBASE_H_ */
+#endif // SHARE_VM_PRIMS_JVMTIENVBASE_HPP

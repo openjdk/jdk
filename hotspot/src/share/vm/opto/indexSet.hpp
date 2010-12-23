@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_INDEXSET_HPP
+#define SHARE_VM_OPTO_INDEXSET_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
+#include "opto/compile.hpp"
+#include "opto/regmask.hpp"
 
 // This file defines the IndexSet class, a set of sparse integer indices.
 // This data structure is used by the compiler in its liveness analysis and
@@ -459,3 +467,5 @@ class IndexSetIterator VALUE_OBJ_CLASS_SPEC {
     }
   }
 };
+
+#endif // SHARE_VM_OPTO_INDEXSET_HPP

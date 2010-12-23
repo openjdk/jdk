@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_JVMTIAGENTTHREAD_HPP
+#define SHARE_VM_PRIMS_JVMTIAGENTTHREAD_HPP
+
+#include "jvmtifiles/jvmtiEnv.hpp"
+
 //
 // class JvmtiAgentThread
 //
@@ -42,3 +47,5 @@ public:
   static void start_function_wrapper(JavaThread *thread, TRAPS);
   void call_start_function();
 };
+
+#endif // SHARE_VM_PRIMS_JVMTIAGENTTHREAD_HPP

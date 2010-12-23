@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_PERMGEN_HPP
+#define SHARE_VM_MEMORY_PERMGEN_HPP
+
+#include "gc_interface/gcCause.hpp"
+#include "memory/generation.hpp"
+#include "memory/iterator.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/virtualspace.hpp"
+
 // All heaps contains a "permanent generation," containing permanent
 // (reflective) objects.  This is like a regular generation in some ways,
 // but unlike one in others, and so is split apart.
@@ -84,3 +94,5 @@ class PermGen : public CHeapObj {
     g->update_counters();
   }
 };
+
+#endif // SHARE_VM_MEMORY_PERMGEN_HPP

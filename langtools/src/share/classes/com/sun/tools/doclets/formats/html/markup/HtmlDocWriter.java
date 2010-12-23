@@ -87,7 +87,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      */
     public void printHyperLink(String link, String where,
                                String label, boolean strong) {
-        print(getHyperLink(link, where, label, strong, "", "", ""));
+        print(getHyperLinkString(link, where, label, strong, "", "", ""));
     }
 
     /**
@@ -115,7 +115,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     public void printHyperLink(String link, String where,
                                String label, boolean strong,
                                String stylename) {
-        print(getHyperLink(link, where, label, strong, stylename, "", ""));
+        print(getHyperLinkString(link, where, label, strong, stylename, "", ""));
     }
 
     /**
@@ -128,9 +128,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param strong       Boolean that sets label to strong.
      * @return String    Hyper Link.
      */
-    public String getHyperLink(String link, String where,
+    public String getHyperLinkString(String link, String where,
                                String label, boolean strong) {
-        return getHyperLink(link, where, label, strong, "", "", "");
+        return getHyperLinkString(link, where, label, strong, "", "", "");
     }
 
     /**
@@ -144,10 +144,24 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param stylename  String style of text defined in style sheet.
      * @return String    Hyper Link.
      */
-    public String getHyperLink(String link, String where,
+    public String getHyperLinkString(String link, String where,
                                String label, boolean strong,
                                String stylename) {
-        return getHyperLink(link, where, label, strong, stylename, "", "");
+        return getHyperLinkString(link, where, label, strong, stylename, "", "");
+    }
+
+    /**
+     * Get Html Hyper Link string.
+     *
+     * @param link       String name of the file.
+     * @param where      Position of the link in the file. Character '#' is not
+     *                   needed.
+     * @param label      Tag for the link.
+     * @return a content tree for the hyper link
+     */
+    public Content getHyperLink(String link, String where,
+                               Content label) {
+        return getHyperLink(link, where, label, "", "");
     }
 
     /**
@@ -163,11 +177,11 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param target     Target frame.
      * @return String    Hyper Link.
      */
-    public String getHyperLink(String link, String where,
+    public String getHyperLinkString(String link, String where,
                                String label, boolean strong,
                                String stylename, String title, String target) {
         StringBuffer retlink = new StringBuffer();
-        retlink.append("<A HREF=\"");
+        retlink.append("<a href=\"");
         retlink.append(link);
         if (where != null && where.length() != 0) {
             retlink.append("#");
@@ -187,27 +201,54 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             retlink.append("\">");
         }
         if (strong) {
-            retlink.append("<STRONG>");
+            retlink.append("<span class=\"strong\">");
         }
         retlink.append(label);
         if (strong) {
-            retlink.append("</STRONG>");
+            retlink.append("</span>");
         }
         if (stylename != null && stylename.length() != 0) {
             retlink.append("</FONT>");
         }
-        retlink.append("</A>");
+        retlink.append("</a>");
         return retlink.toString();
     }
 
     /**
-     * Print link without positioning in the file.
+     * Get Html Hyper Link.
      *
      * @param link       String name of the file.
+     * @param where      Position of the link in the file. Character '#' is not
+     *                   needed.
      * @param label      Tag for the link.
+     * @param title      String that describes the link's content for accessibility.
+     * @param target     Target frame.
+     * @return a content tree for the hyper link.
      */
-    public void printHyperLink(String link, String label) {
-        print(getHyperLink(link, "", label, false));
+    public Content getHyperLink(String link, String where,
+            Content label, String title, String target) {
+        if (where != null && where.length() != 0) {
+            link += "#" + where;
+        }
+        HtmlTree anchor = HtmlTree.A(link, label);
+        if (title != null && title.length() != 0) {
+            anchor.addAttr(HtmlAttr.TITLE, title);
+        }
+        if (target != null && target.length() != 0) {
+            anchor.addAttr(HtmlAttr.TARGET, target);
+        }
+        return anchor;
+    }
+
+    /**
+     * Get a hyperlink to a file.
+     *
+     * @param link String name of the file
+     * @param label Label for the link
+     * @return a content for the hyperlink to the file
+     */
+    public Content getHyperLink(String link, Content label) {
+        return getHyperLink(link, "", label);
     }
 
     /**
@@ -217,8 +258,8 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param label      Tag for the link.
      * @return Strign    Hyper link.
      */
-    public String getHyperLink(String link, String label) {
-        return getHyperLink(link, "", label, false);
+    public String getHyperLinkString(String link, String label) {
+        return getHyperLinkString(link, "", label, false);
     }
 
     /**
@@ -273,54 +314,32 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Print the frameset version of the Html file header.
      * Called only when generating an HTML frameset file.
      *
-     * @param title    Title of this HTML document.
+     * @param title Title of this HTML document
+     * @param noTimeStamp If true, don't print time stamp in header
+     * @param frameset the frameset to be added to the HTML document
      */
-    public void printFramesetHeader(String title) {
-        printFramesetHeader(title, false);
-    }
-
-    /**
-     * Print the frameset version of the Html file header.
-     * Called only when generating an HTML frameset file.
-     *
-     * @param title        Title of this HTML document.
-     * @param noTimeStamp  If true, don't print time stamp in header.
-     */
-    public void printFramesetHeader(String title, boolean noTimeStamp) {
-        println("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " +
-                    "Frameset//EN\" " +
-                    "\"http://www.w3.org/TR/html4/frameset.dtd\">");
-        println("<!--NewPage-->");
-        html();
-        head();
+    public void printFramesetDocument(String title, boolean noTimeStamp,
+            Content frameset) {
+        Content htmlDocType = DocType.Frameset();
+        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
+        Content head = new HtmlTree(HtmlTag.HEAD);
         if (! noTimeStamp) {
-            print("<!-- Generated by javadoc on ");
-            print(today());
-            println("-->");
+            Content headComment = new Comment("Generated by javadoc on " + today());
+            head.addContent(headComment);
         }
         if (configuration.charset.length() > 0) {
-            println("<META http-equiv=\"Content-Type\" content=\"text/html; "
-                        + "charset=" + configuration.charset + "\">");
+            Content meta = HtmlTree.META("Content-Type", "text/html",
+                    configuration.charset);
+            head.addContent(meta);
         }
-        title();
-        println(title);
-        titleEnd();
-        //Script to set the classFrame if necessary.
-        script();
-        println("    targetPage = \"\" + window.location.search;");
-        println("    if (targetPage != \"\" && targetPage != \"undefined\")");
-        println("        targetPage = targetPage.substring(1);");
-        println("    if (targetPage.indexOf(\":\") != -1)");
-        println("        targetPage = \"undefined\";");
-
-        println("    function loadFrames() {");
-        println("        if (targetPage != \"\" && targetPage != \"undefined\")");
-        println("             top.classFrame.location = top.targetPage;");
-        println("    }");
-        scriptEnd();
-        noScript();
-        noScriptEnd();
-        headEnd();
+        Content windowTitle = HtmlTree.TITLE(new StringContent(title));
+        head.addContent(windowTitle);
+        head.addContent(getFramesetJavaScript());
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
+                head, frameset);
+        Content htmlDocument = new HtmlDocument(htmlDocType,
+                htmlComment, htmlTree);
+        print(htmlDocument.toString());
     }
 
     /**

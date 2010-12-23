@@ -481,7 +481,7 @@ public class Infer {
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), formals, msym, env);
+                        chk.checkVararg(env.tree.pos(), formals, msym);
                     }
                     return super.inst(inferred, types);
             }};

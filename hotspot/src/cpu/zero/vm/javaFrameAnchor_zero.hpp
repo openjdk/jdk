@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_JAVAFRAMEANCHOR_ZERO_HPP
+#define CPU_ZERO_VM_JAVAFRAMEANCHOR_ZERO_HPP
 
  private:
   ZeroFrame* volatile _last_Java_fp;
@@ -89,3 +92,5 @@
   static ByteSize last_Java_fp_offset() {
     return byte_offset_of(JavaFrameAnchor, _last_Java_fp);
   }
+
+#endif // CPU_ZERO_VM_JAVAFRAMEANCHOR_ZERO_HPP

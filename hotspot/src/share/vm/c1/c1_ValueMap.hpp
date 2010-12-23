@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_VALUEMAP_HPP
+#define SHARE_VM_C1_C1_VALUEMAP_HPP
+
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_ValueSet.hpp"
+#include "memory/allocation.hpp"
+
 class ValueMapEntry: public CompilationResourceObj {
  private:
   intx           _hash;
@@ -226,3 +233,5 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   // main entry point that performs global value numbering
   GlobalValueNumbering(IR* ir);
 };
+
+#endif // SHARE_VM_C1_C1_VALUEMAP_HPP

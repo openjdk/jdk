@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_COMPILEDICHOLDERKLASS_HPP
+#define SHARE_VM_OOPS_COMPILEDICHOLDERKLASS_HPP
+
+#include "oops/compiledICHolderOop.hpp"
+#include "oops/klass.hpp"
+#include "oops/methodOop.hpp"
 
 class CMSIsAliveClosure;
 
@@ -77,3 +84,5 @@ class compiledICHolderKlass : public Klass {
   void oop_verify_on(oop obj, outputStream* st);
 
 };
+
+#endif // SHARE_VM_OOPS_COMPILEDICHOLDERKLASS_HPP

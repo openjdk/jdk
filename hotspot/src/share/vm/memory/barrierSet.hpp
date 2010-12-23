@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_BARRIERSET_HPP
+#define SHARE_VM_MEMORY_BARRIERSET_HPP
+
+#include "memory/memRegion.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
@@ -170,3 +176,5 @@ public:
   virtual bool is_aligned(HeapWord* addr) = 0;
 
 };
+
+#endif // SHARE_VM_MEMORY_BARRIERSET_HPP

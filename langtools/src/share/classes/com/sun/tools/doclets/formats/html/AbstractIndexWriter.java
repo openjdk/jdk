@@ -30,6 +30,8 @@ import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Generate Index for all the Member Names with Indexing in
@@ -39,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @see    IndexBuilder
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class AbstractIndexWriter extends HtmlDocletWriter {
 
@@ -78,175 +81,187 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Print the text "Index" in strong format in the navigation bar.
+     * Get the index label for navigation bar.
+     *
+     * @return a content tree for the tree label
      */
-    protected void navLinkIndex() {
-        navCellRevStart();
-        fontStyle("NavBarFont1Rev");
-        strongText("doclet.Index");
-        fontEnd();
-        navCellEnd();
+    protected Content getNavLinkIndex() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, indexLabel);
+        return li;
     }
 
     /**
-     * Generate the member information for the unicode character along with the
+     * Add the member information for the unicode character along with the
      * list of the members.
      *
-     * @param unicode Unicode for which member list information to be generated.
-     * @param memberlist List of members for the unicode character.
+     * @param unicode Unicode for which member list information to be generated
+     * @param memberlist List of members for the unicode character
+     * @param contentTree the content tree to which the information will be added
      */
-    protected void generateContents(Character unicode, List<? extends Doc> memberlist) {
-        anchor("_" + unicode + "_");
-        h2();
-        strong(unicode.toString());
-        h2End();
+    protected void addContents(Character unicode, List<? extends Doc> memberlist,
+            Content contentTree) {
+        contentTree.addContent(getMarkerAnchor("_" + unicode + "_"));
+        Content headContent = new StringContent(unicode.toString());
+        Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, false,
+                HtmlStyle.title, headContent);
+        contentTree.addContent(heading);
         int memberListSize = memberlist.size();
         // Display the list only if there are elements to be displayed.
         if (memberListSize > 0) {
-            dl();
+            Content dl = new HtmlTree(HtmlTag.DL);
             for (int i = 0; i < memberListSize; i++) {
                 Doc element = memberlist.get(i);
                 if (element instanceof MemberDoc) {
-                    printDescription((MemberDoc)element);
+                    addDescription((MemberDoc)element, dl);
                 } else if (element instanceof ClassDoc) {
-                    printDescription((ClassDoc)element);
+                    addDescription((ClassDoc)element, dl);
                 } else if (element instanceof PackageDoc) {
-                    printDescription((PackageDoc)element);
+                    addDescription((PackageDoc)element, dl);
                 }
             }
-            dlEnd();
+            contentTree.addContent(dl);
         }
-        hr();
     }
 
-
     /**
-     * Print one line summary comment for the package.
+     * Add one line summary comment for the package.
      *
-     * @param pkg PackageDoc passed.
+     * @param pkg the package to be documented
+     * @param dlTree the content tree to which the description will be added
      */
-    protected void printDescription(PackageDoc pkg) {
-        dt();
-        printPackageLink(pkg, Util.getPackageName(pkg), true);
-        print(" - ");
-        print(configuration.getText("doclet.package") + " " + pkg.name());
-        dtEnd();
-        dd();
-        printSummaryComment(pkg);
-        ddEnd();
+    protected void addDescription(PackageDoc pkg, Content dlTree) {
+        Content link = getPackageLink(pkg, new StringContent(Util.getPackageName(pkg)));
+        Content dt = HtmlTree.DT(link);
+        dt.addContent(" - ");
+        dt.addContent(getResource("doclet.package"));
+        dt.addContent(" " + pkg.name());
+        dlTree.addContent(dt);
+        Content dd = new HtmlTree(HtmlTag.DD);
+        addSummaryComment(pkg, dd);
+        dlTree.addContent(dd);
     }
 
     /**
-     * Print one line summary comment for the class.
+     * Add one line summary comment for the class.
      *
-     * @param cd ClassDoc passed.
+     * @param cd the class being documented
+     * @param dlTree the content tree to which the description will be added
      */
-    protected void printDescription(ClassDoc cd) {
-        dt();
-        printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_INDEX, cd, true));
-        print(" - ");
-        printClassInfo(cd);
-        dtEnd();
-        dd();
-        printComment(cd);
-        ddEnd();
+    protected void addDescription(ClassDoc cd, Content dlTree) {
+        Content link = new RawHtml(
+                getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_INDEX, cd, true)));
+        Content dt = HtmlTree.DT(link);
+        dt.addContent(" - ");
+        addClassInfo(cd, dt);
+        dlTree.addContent(dt);
+        Content dd = new HtmlTree(HtmlTag.DD);
+        addComment(cd, dd);
+        dlTree.addContent(dd);
     }
 
     /**
-     * Print the classkind(class, interface, exception, error of the class
+     * Add the classkind(class, interface, exception, error of the class
      * passed.
      *
-     * @param cd ClassDoc.
+     * @param cd the class being documented
+     * @param contentTree the content tree to which the class info will be added
      */
-    protected void printClassInfo(ClassDoc cd) {
-        print(configuration.getText("doclet.in",
-            Util.getTypeName(configuration, cd, false),
-            getPackageLink(cd.containingPackage(),
+    protected void addClassInfo(ClassDoc cd, Content contentTree) {
+        contentTree.addContent(getResource("doclet.in",
+                Util.getTypeName(configuration, cd, false),
+                getPackageLinkString(cd.containingPackage(),
                 Util.getPackageName(cd.containingPackage()), false)));
     }
 
-
     /**
-     * Generate Description for Class, Field, Method or Constructor.
-     * for Java.* Packages Class Members.
+     * Add description for Class, Field, Method or Constructor.
      *
-     * @param member MemberDoc for the member of the Class Kind.
-     * @see com.sun.javadoc.MemberDoc
+     * @param member MemberDoc for the member of the Class Kind
+     * @param dlTree the content tree to which the description will be added
      */
-    protected void printDescription(MemberDoc member) {
+    protected void addDescription(MemberDoc member, Content dlTree) {
         String name = (member instanceof ExecutableMemberDoc)?
             member.name() + ((ExecutableMemberDoc)member).flatSignature() :
             member.name();
         if (name.indexOf("<") != -1 || name.indexOf(">") != -1) {
                 name = Util.escapeHtmlChars(name);
         }
-        ClassDoc containing = member.containingClass();
-        dt();
-        printDocLink(LinkInfoImpl.CONTEXT_INDEX, member, name, true);
-        println(" - ");
-        printMemberDesc(member);
-        println();
-        dtEnd();
-        dd();
-        printComment(member);
-        ddEnd();
-        println();
+        Content span = HtmlTree.SPAN(HtmlStyle.strong,
+                getDocLink(LinkInfoImpl.CONTEXT_INDEX, member, name));
+        Content dt = HtmlTree.DT(span);
+        dt.addContent(" - ");
+        addMemberDesc(member, dt);
+        dlTree.addContent(dt);
+        Content dd = new HtmlTree(HtmlTag.DD);
+        addComment(member, dd);
+        dlTree.addContent(dd);
     }
 
-
     /**
-     * Print comment for each element in the index. If the element is deprecated
+     * Add comment for each element in the index. If the element is deprecated
      * and it has a @deprecated tag, use that comment. Else if the containing
      * class for this element is deprecated, then add the word "Deprecated." at
      * the start and then print the normal comment.
      *
-     * @param element Index element.
+     * @param element Index element
+     * @param contentTree the content tree to which the comment will be added
      */
-    protected void printComment(ProgramElementDoc element) {
+    protected void addComment(ProgramElementDoc element, Content contentTree) {
         Tag[] tags;
+        Content span = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.block);
         if (Util.isDeprecated(element)) {
-            strongText("doclet.Deprecated"); space();
+            div.addContent(span);
             if ((tags = element.tags("deprecated")).length > 0)
-                printInlineDeprecatedComment(element, tags[0]);
+                addInlineDeprecatedComment(element, tags[0], div);
+            contentTree.addContent(div);
         } else {
             ClassDoc cont = element.containingClass();
             while (cont != null) {
                 if (Util.isDeprecated(cont)) {
-                    strongText("doclet.Deprecated"); space();
+                    div.addContent(span);
+                    contentTree.addContent(div);
                     break;
                 }
                 cont = cont.containingClass();
             }
-            printSummaryComment(element);
+            addSummaryComment(element, contentTree);
         }
     }
 
     /**
-     * Print description about the Static Varible/Method/Constructor for a
+     * Add description about the Static Varible/Method/Constructor for a
      * member.
      *
-     * @param member MemberDoc for the member within the Class Kind.
-     * @see com.sun.javadoc.MemberDoc
+     * @param member MemberDoc for the member within the Class Kind
+     * @param contentTree the content tree to which the member description will be added
      */
-    protected void printMemberDesc(MemberDoc member) {
+    protected void addMemberDesc(MemberDoc member, Content contentTree) {
         ClassDoc containing = member.containingClass();
-        String classdesc = Util.getTypeName(configuration, containing, true) + " " +
-            getPreQualifiedClassLink(LinkInfoImpl.CONTEXT_INDEX, containing,
-                false);
+        String classdesc = Util.getTypeName(
+                configuration, containing, true) + " ";
         if (member.isField()) {
             if (member.isStatic()) {
-                printText("doclet.Static_variable_in", classdesc);
+                contentTree.addContent(
+                        getResource("doclet.Static_variable_in", classdesc));
             } else {
-                printText("doclet.Variable_in", classdesc);
+                contentTree.addContent(
+                        getResource("doclet.Variable_in", classdesc));
             }
         } else if (member.isConstructor()) {
-            printText("doclet.Constructor_for", classdesc);
+            contentTree.addContent(
+                    getResource("doclet.Constructor_for", classdesc));
         } else if (member.isMethod()) {
             if (member.isStatic()) {
-                printText("doclet.Static_method_in", classdesc);
+                contentTree.addContent(
+                        getResource("doclet.Static_method_in", classdesc));
             } else {
-                printText("doclet.Method_in", classdesc);
+                contentTree.addContent(
+                        getResource("doclet.Method_in", classdesc));
             }
         }
+        addPreQualifiedClassLink(LinkInfoImpl.CONTEXT_INDEX, containing,
+                false, contentTree);
     }
 }

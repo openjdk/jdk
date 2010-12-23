@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_SPECIALIZED_OOP_CLOSURES_HPP
+#define SHARE_VM_MEMORY_SPECIALIZED_OOP_CLOSURES_HPP
+
+#include "runtime/atomic.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
+#endif
 
 // The following OopClosure types get specialized versions of
 // "oop_oop_iterate" that invoke the closures' do_oop methods
@@ -251,3 +259,5 @@ inline void SpecializationStats::print() {}
 
 #endif  // ENABLE_SPECIALIZATION_STATS
 #endif  // !PRODUCT
+
+#endif // SHARE_VM_MEMORY_SPECIALIZED_OOP_CLOSURES_HPP

@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSCOLLECTORPOLICY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSCOLLECTORPOLICY_HPP
+
+#include "memory/collectorPolicy.hpp"
+
 class ConcurrentMarkSweepPolicy : public TwoGenerationCollectorPolicy {
  protected:
   void initialize_generations();
@@ -55,3 +60,5 @@ class ASConcurrentMarkSweepPolicy : public ConcurrentMarkSweepPolicy {
     return CollectorPolicy::ASConcurrentMarkSweepPolicyKind;
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSCOLLECTORPOLICY_HPP

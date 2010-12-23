@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_NATIVELOOKUP_HPP
+#define SHARE_VM_PRIMS_NATIVELOOKUP_HPP
+
+#include "runtime/handles.hpp"
+#include "utilities/top.hpp"
+
 // NativeLookup provides an interface for finding DLL entry points for
 // Java native functions.
 
@@ -43,3 +49,5 @@ class NativeLookup : AllStatic {
   // Lookup native functions in base library.
   static address base_library_lookup(const char* class_name, const char* method_name, const char* signature);
 };
+
+#endif // SHARE_VM_PRIMS_NATIVELOOKUP_HPP

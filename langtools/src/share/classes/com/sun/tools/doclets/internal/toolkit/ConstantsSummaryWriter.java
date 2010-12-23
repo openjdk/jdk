@@ -25,9 +25,9 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
-import com.sun.javadoc.*;
 import java.util.*;
 import java.io.*;
+import com.sun.javadoc.*;
 
 /**
  * The interface for writing constants summary output.
@@ -37,20 +37,11 @@ import java.io.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface ConstantsSummaryWriter {
-
-    /**
-     * Write the header for the summary.
-     */
-    public abstract void writeHeader();
-
-    /**
-     * Write the footer for the summary.
-     */
-    public abstract void writeFooter();
 
     /**
      * Close the writer.
@@ -58,17 +49,22 @@ public interface ConstantsSummaryWriter {
     public abstract void close() throws IOException;
 
     /**
-     * Write the header for the index.
+     * Get the header for the constant summary documentation.
+     *
+     * @return header that needs to be added to the documentation
      */
-    public abstract void writeContentsHeader();
+    public abstract Content getHeader();
 
     /**
-     * Write the footer for the index.
+     * Get the header for the constant content list.
+     *
+     * @return content header that needs to be added to the documentation
      */
-    public abstract void writeContentsFooter();
+    public abstract Content getContentsHeader();
 
     /**
-     * Add the given package name to the index.
+     * Adds the given package name link to the constant content list tree.
+     *
      * @param pkg                    the {@link PackageDoc} to index.
      * @param parsedPackageName      the parsed package name.  We only Write the
      *                               first 2 directory levels of the package
@@ -77,38 +73,70 @@ public interface ConstantsSummaryWriter {
      * @param WriteedPackageHeaders the set of package headers that have already
      *                              been indexed.  We don't want to index
      *                              something more than once.
+     * @param contentListTree the content tree to which the link will be added
      */
-    public abstract void writeLinkToPackageContent(PackageDoc pkg, String parsedPackageName,
-        Set<String> WriteedPackageHeaders);
+    public abstract void addLinkToPackageContent(PackageDoc pkg, String parsedPackageName,
+        Set<String> WriteedPackageHeaders, Content contentListTree);
 
     /**
-     * Write the given package name.
-     * @param pkg                    the {@link PackageDoc} to index.
-     * @param parsedPackageName      the parsed package name.  We only Write the
-     *                               first 2 directory levels of the package
-     *                               name. For example, java.lang.ref would be
-     *                               indexed as java.lang.*.
+     * Get the content list to be added to the documentation tree.
+     *
+     * @param contentListTree the content that will be added to the list
+     * @return content list that will be added to the documentation tree
      */
-    public abstract void writePackageName(PackageDoc pkg,
-        String parsedPackageName);
+    public abstract Content getContentsList(Content contentListTree);
 
     /**
-     * Write the heading for the current table of constants for a given class.
-     * @param cd the class whose constants are being documented.
+     * Get the constant summaries for the document.
+     *
+     * @return constant summaries header to be added to the documentation tree
      */
-    public abstract void writeConstantMembersHeader(ClassDoc cd);
+    public abstract Content getConstantSummaries();
 
     /**
-     * Document the given constants.
+     * Adds the given package name.
+     *
+     * @param pkg the {@link PackageDoc} to index.
+     * @param parsedPackageName the parsed package name.  We only Write the
+     *                          first 2 directory levels of the package
+     *                          name. For example, java.lang.ref would be
+     *                          indexed as java.lang.*.
+     * @param summariesTree the documentation tree to which the package name will
+     *                    be written
+     */
+    public abstract void addPackageName(PackageDoc pkg,
+        String parsedPackageName, Content summariesTree);
+
+    /**
+     * Get the class summary header for the constants summary.
+     *
+     * @return the header content for the class constants summary
+     */
+    public abstract Content getClassConstantHeader();
+
+    /**
+     * Adds the constant member table to the documentation tree.
+     *
      * @param cd the class whose constants are being documented.
      * @param fields the constants being documented.
+     * @param classConstantTree the documentation tree to which theconstant member
+     *                    table content will be added
      */
-    public abstract void writeConstantMembers(ClassDoc cd, List<FieldDoc> fields);
+    public abstract void addConstantMembers(ClassDoc cd, List<FieldDoc> fields,
+            Content classConstantTree);
 
     /**
-     * Document the given constants.
-     * @param cd the class whose constants are being documented.
+     * Adds the footer for the summary documentation.
+     *
+     * @param contentTree content tree to which the footer will be added
      */
-    public abstract void writeConstantMembersFooter(ClassDoc cd);
+    public abstract void addFooter(Content contentTree);
+
+    /**
+     * Print the constants summary document.
+     *
+     * @param contentTree content tree which should be printed
+     */
+    public abstract void printDocument(Content contentTree);
 
 }
