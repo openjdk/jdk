@@ -60,8 +60,8 @@ public class FileFontStrike extends PhysicalStrike {
 
     private volatile int glyphCacheFormat = UNINITIALISED;
 
-    /* segmented arrays are blocks of 256 */
-    private static final int SEGSHIFT = 8;
+    /* segmented arrays are blocks of 32 */
+    private static final int SEGSHIFT = 5;
     private static final int SEGSIZE  = 1 << SEGSHIFT;
 
     private boolean segmentedCache;
@@ -171,7 +171,7 @@ public class FileFontStrike extends PhysicalStrike {
         mapper = fileFont.getMapper();
         int numGlyphs = mapper.getNumGlyphs();
 
-        /* Always segment for fonts with > 2K glyphs, but also for smaller
+        /* Always segment for fonts with > 256 glyphs, but also for smaller
          * fonts with non-typical sizes and transforms.
          * Segmenting for all non-typical pt sizes helps to minimise memory
          * usage when very many distinct strikes are created.
