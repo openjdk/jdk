@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_PARSE_HPP
+#define SHARE_VM_OPTO_PARSE_HPP
+
+#include "ci/ciMethodData.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "libadt/vectset.hpp"
+#include "oops/generateOopMap.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/subnode.hpp"
 
 class BytecodeParseHistogram;
 class InlineTree;
@@ -567,3 +578,5 @@ class Parse : public GraphKit {
   void dump_bci(int bci);
 #endif
 };
+
+#endif // SHARE_VM_OPTO_PARSE_HPP

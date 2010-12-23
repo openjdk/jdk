@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_FPUSTACKSIM_HPP
+#define SHARE_VM_C1_C1_FPUSTACKSIM_HPP
+
+#include "c1/c1_FrameMap.hpp"
+#include "memory/allocation.hpp"
+
 // Provides location for forward declaration of this class, which is
 // only implemented on Intel
 class FpuStackSim;
 
-# include "incls/_c1_FpuStackSim_pd.hpp.incl"  // platform dependent declarations
+#ifdef TARGET_ARCH_x86
+# include "c1_FpuStackSim_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_FpuStackSim_sparc.hpp"
+#endif
+
+
+#endif // SHARE_VM_C1_C1_FPUSTACKSIM_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciMethodHandle.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciClassList.hpp"
+#include "ci/ciInstance.hpp"
+#include "ci/ciMethodHandle.hpp"
+#include "ci/ciUtilities.hpp"
+#include "prims/methodHandleWalk.hpp"
+#include "prims/methodHandles.hpp"
 
 // ciMethodHandle
 

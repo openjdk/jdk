@@ -886,6 +886,8 @@ public class Flow extends TreeScanner {
         alive = resolveBreaks(tree, prevPendingExits) ||
             tree.cond != null && !tree.cond.type.isTrue();
         nextadr = nextadrPrev;
+        inits.excludeFrom(nextadr);
+        uninits.excludeFrom(nextadr);
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {

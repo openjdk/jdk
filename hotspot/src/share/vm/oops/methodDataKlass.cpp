@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_methodDataKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodDataKlass.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/handles.inline.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 klassOop methodDataKlass::create_klass(TRAPS) {
   methodDataKlass o;

@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
+#define SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
+
+#include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/java.hpp"
+#include "runtime/reflectionUtils.hpp"
+#include "utilities/hashtable.hpp"
+
 // The system dictionary stores all loaded classes and maps:
 //
 //   [class name,class loader] -> class   i.e.  [symbolOop,oop] -> klassOop
@@ -145,8 +156,7 @@ class SymbolPropertyTable;
   template(WrongMethodTypeException_klass, java_dyn_WrongMethodTypeException, Opt) \
   template(Linkage_klass,                java_dyn_Linkage,               Opt) \
   template(CallSite_klass,               java_dyn_CallSite,              Opt) \
-  template(InvokeDynamic_klass,          java_dyn_InvokeDynamic,         Opt) \
-  /* Note: MethodHandle must be first, and InvokeDynamic last in group */     \
+  /* Note: MethodHandle must be first, and CallSite last in group */          \
                                                                               \
   template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
   template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \
@@ -672,3 +682,5 @@ public:
 
   static KlassHandle box_klass(BasicType t);
 };
+
+#endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP

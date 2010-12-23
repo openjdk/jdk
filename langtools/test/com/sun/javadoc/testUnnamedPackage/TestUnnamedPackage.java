@@ -46,7 +46,7 @@ public class TestUnnamedPackage extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "package-summary.html",
-            "<H2>"+NL+"Package &lt;Unnamed&gt;"+NL+"</H2>"
+            "<h1 title=\"Package\" class=\"title\">Package&nbsp;&lt;Unnamed&gt;</h1>"
         },
         {BUG_ID + FS + "package-summary.html",
             "This is a package comment for the unnamed package."
@@ -55,12 +55,12 @@ public class TestUnnamedPackage extends JavadocTester {
             "This is a class in the unnamed package."
         },
         {BUG_ID + FS + "package-tree.html",
-            "<H2>"+NL+"Hierarchy For Package &lt;Unnamed&gt;"+NL+"</H2>"
+            "<h1 class=\"title\">Hierarchy For Package &lt;Unnamed&gt;</h1>"
         },
         {BUG_ID + FS + "index-all.html",
             "title=\"class in &lt;Unnamed&gt;\""
         },
-        {BUG_ID + FS + "C.html", "<A HREF=\"package-summary.html\">"}
+        {BUG_ID + FS + "C.html", "<a href=\"package-summary.html\">"}
     };
     private static final String[][] NEGATED_TEST = {
         {ERROR_OUTPUT, "BadSource"},

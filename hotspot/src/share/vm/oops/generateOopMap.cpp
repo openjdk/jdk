@@ -22,6 +22,16 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "oops/generateOopMap.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/relocator.hpp"
+#include "utilities/bitMap.inline.hpp"
+
 //
 //
 // Compute stack layouts for each instruction in method.
@@ -84,9 +94,6 @@
 //  returns to).
 //
 // (Note this comment is borrowed form the original author of the algorithm)
-
-#include "incls/_precompiled.incl"
-#include "incls/_generateOopMap.cpp.incl"
 
 // ComputeCallStack
 //

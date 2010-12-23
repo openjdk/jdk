@@ -103,7 +103,8 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             String s = ((protocolVersion.v >= ProtocolVersion.TLS12.v) ?
                 "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret");
             KeyGenerator kg = JsseJce.getKeyGenerator(s);
-            kg.init(new TlsRsaPremasterSecretParameterSpec(major, minor));
+            kg.init(new TlsRsaPremasterSecretParameterSpec(major, minor),
+                    generator);
             preMaster = kg.generateKey();
 
             Cipher cipher = JsseJce.getCipher(JsseJce.CIPHER_RSA_PKCS1);

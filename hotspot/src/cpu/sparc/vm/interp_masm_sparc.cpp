@@ -22,8 +22,26 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interp_masm_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "interp_masm_sparc.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/sharedRuntime.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
 
 #ifndef CC_INTERP
 #ifndef FAST_DISPATCH

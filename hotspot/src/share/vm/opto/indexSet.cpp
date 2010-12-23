@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,16 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/compile.hpp"
+#include "opto/indexSet.hpp"
+#include "opto/regmask.hpp"
+
 // This file defines the IndexSet class, a set of sparse integer indices.
 // This data structure is used by the compiler in its liveness analysis and
 // during register allocation.  It also defines an iterator for this class.
-
-#include "incls/_precompiled.incl"
-#include "incls/_indexSet.cpp.incl"
 
 //-------------------------------- Initializations ------------------------------
 

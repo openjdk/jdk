@@ -22,8 +22,24 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_sparc.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#endif
 
 // Convert the raw encoding form into the form expected by the
 // constructor for Address.
@@ -893,10 +909,10 @@ void MacroAssembler::verify_thread() {
 #if defined(COMPILER2) && !defined(_LP64)
     // Save & restore possible 64-bit Long arguments in G-regs
     sllx(L0,32,G2);             // Move old high G1 bits high in G2
-    sllx(G1, 0,G1);             // Clear current high G1 bits
+    srl(G1, 0,G1);              // Clear current high G1 bits
     or3 (G1,G2,G1);             // Recover 64-bit G1
     sllx(L6,32,G2);             // Move old high G4 bits high in G2
-    sllx(G4, 0,G4);             // Clear current high G4 bits
+    srl(G4, 0,G4);              // Clear current high G4 bits
     or3 (G4,G2,G4);             // Recover 64-bit G4
 #endif
     restore(O0, 0, G2_thread);
@@ -1425,6 +1441,45 @@ void MacroAssembler::set64(jlong value, Register d, Register tmp) {
     sllx(tmp, 32, tmp);
     or3 (d, tmp, d);
   }
+}
+
+int MacroAssembler::size_of_set64(jlong value) {
+  v9_dep();
+
+  int hi = (int)(value >> 32);
+  int lo = (int)(value & ~0);
+  int count = 0;
+
+  // (Matcher::isSimpleConstant64 knows about the following optimizations.)
+  if (Assembler::is_simm13(lo) && value == lo) {
+    count++;
+  } else if (hi == 0) {
+    count++;
+    if (low10(lo) != 0)
+      count++;
+  }
+  else if (hi == -1) {
+    count += 2;
+  }
+  else if (lo == 0) {
+    if (Assembler::is_simm13(hi)) {
+      count++;
+    } else {
+      count++;
+      if (low10(hi) != 0)
+        count++;
+    }
+    count++;
+  }
+  else {
+    count += 2;
+    if (low10(hi) != 0)
+      count++;
+    if (low10(lo) != 0)
+      count++;
+    count += 2;
+  }
+  return count;
 }
 
 // compute size in bytes of sparc frame, given

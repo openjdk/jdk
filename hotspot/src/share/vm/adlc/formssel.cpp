@@ -30,11 +30,14 @@
 InstructForm::InstructForm(const char *id, bool ideal_only)
   : _ident(id), _ideal_only(ideal_only),
     _localNames(cmpstr, hashstr, Form::arena),
-    _effects(cmpstr, hashstr, Form::arena) {
+    _effects(cmpstr, hashstr, Form::arena),
+    _is_mach_constant(false)
+{
       _ftype = Form::INS;
 
       _matrule   = NULL;
       _insencode = NULL;
+      _constant  = NULL;
       _opcode    = NULL;
       _size      = NULL;
       _attribs   = NULL;
@@ -58,11 +61,14 @@ InstructForm::InstructForm(const char *id, bool ideal_only)
 InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
   : _ident(id), _ideal_only(false),
     _localNames(instr->_localNames),
-    _effects(instr->_effects) {
+    _effects(instr->_effects),
+    _is_mach_constant(false)
+{
       _ftype = Form::INS;
 
       _matrule   = rule;
       _insencode = instr->_insencode;
+      _constant  = instr->_constant;
       _opcode    = instr->_opcode;
       _size      = instr->_size;
       _attribs   = instr->_attribs;
@@ -1094,6 +1100,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   else if (is_ideal_nop()) {
     return "MachNopNode";
   }
+  else if (is_mach_constant()) {
+    return "MachConstantNode";
+  }
   else if (captures_bottom_type(globals)) {
     return "MachTypeNode";
   } else {
@@ -1190,6 +1199,21 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
 //
 // Generate the format call for the replacement variable
 void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
+  // Handle special constant table variables.
+  if (strcmp(rep_var, "constanttablebase") == 0) {
+    fprintf(fp, "char reg[128];  ra->dump_register(in(mach_constant_base_node_input()), reg);\n");
+    fprintf(fp, "st->print(\"%%s\");\n");
+    return;
+  }
+  if (strcmp(rep_var, "constantoffset") == 0) {
+    fprintf(fp, "st->print(\"#%%d\", constant_offset());\n");
+    return;
+  }
+  if (strcmp(rep_var, "constantaddress") == 0) {
+    fprintf(fp, "st->print(\"constant table base + #%%d\", constant_offset());\n");
+    return;
+  }
+
   // Find replacement variable's type
   const Form *form   = _localNames[rep_var];
   if (form == NULL) {
@@ -1348,6 +1372,7 @@ void InstructForm::output(FILE *fp) {
   fprintf(fp,"\nInstruction: %s\n", (_ident?_ident:""));
   if (_matrule)   _matrule->output(fp);
   if (_insencode) _insencode->output(fp);
+  if (_constant)  _constant->output(fp);
   if (_opcode)    _opcode->output(fp);
   if (_attribs)   _attribs->output(fp);
   if (_predicate) _predicate->output(fp);

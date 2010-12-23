@@ -22,8 +22,22 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_runtime_sparc.cpp.incl"
+#include "precompiled.hpp"
+#ifdef COMPILER2
+#include "asm/assembler.hpp"
+#include "assembler_sparc.inline.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/vmreg.hpp"
+#include "interpreter/interpreter.hpp"
+#include "nativeInst_sparc.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "vmreg_sparc.inline.hpp"
+#endif
 
 
 #define __ masm->

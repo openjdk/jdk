@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_C1_C1_COMPILER_HPP
+#define SHARE_VM_C1_C1_COMPILER_HPP
+
+#include "compiler/abstractCompiler.hpp"
 
 // There is one instance of the Compiler per CompilerThread.
 
@@ -61,3 +66,5 @@ class Compiler: public AbstractCompiler {
   // Print compilation timers and statistics
   virtual void print_timers();
 };
+
+#endif // SHARE_VM_C1_C1_COMPILER_HPP

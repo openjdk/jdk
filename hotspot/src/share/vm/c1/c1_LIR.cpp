@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_LIR.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciInstance.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 Register LIR_OprDesc::as_register() const {
   return FrameMap::cpu_rnr2reg(cpu_regnr());
@@ -1737,6 +1742,8 @@ const char * LIR_Op1::name() const {
       return "unaligned move";
     case lir_move_volatile:
       return "volatile_move";
+    case lir_move_wide:
+      return "wide_move";
     default:
       ShouldNotReachHere();
     return "illegal_op";
