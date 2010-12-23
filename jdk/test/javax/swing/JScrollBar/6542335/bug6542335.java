@@ -40,10 +40,12 @@ public class bug6542335 {
     private static MyScrollBarUI ui;
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
+        final Robot robot = new Robot();
         robot.setAutoDelay(10);
 
         SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+
+        final Rectangle[] thumbBounds = new Rectangle[1];
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -63,25 +65,39 @@ public class bug6542335 {
                 rangeModel.setValue(50);
 
                 sb.setModel(rangeModel);
-                frame.add(sb);
+                frame.add(sb, BorderLayout.NORTH);
 
                 frame.setSize(200, 100);
                 frame.setVisible(true);
+
+                thumbBounds[0] = new Rectangle(ui.getThumbBounds());
             }
         });
 
-        Rectangle thumbBounds = new Rectangle(ui.getThumbBounds());
-
-        toolkit.realSync();
-        Point l = sb.getLocationOnScreen();
-        robot.mouseMove(l.x + (int) (0.75 * sb.getWidth()), l.y + sb.getHeight()/2);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
         toolkit.realSync();
 
-        if (!thumbBounds.equals(ui.getThumbBounds())) {
-            throw new RuntimeException("Test failed");
-        }
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                Point l = sb.getLocationOnScreen();
+
+                robot.mouseMove(l.x + (int) (0.75 * sb.getWidth()), l.y + sb.getHeight() / 2);
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            }
+        });
+
+        toolkit.realSync();
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                Rectangle newThumbBounds = ui.getThumbBounds();
+
+                if (!thumbBounds[0].equals(newThumbBounds)) {
+                    throw new RuntimeException("Test failed.\nOld bounds: " + thumbBounds[0] +
+                    "\nNew bounds: " + newThumbBounds);
+                }
+            }
+        });
     }
 
     static class MyScrollBarUI extends BasicScrollBarUI {
