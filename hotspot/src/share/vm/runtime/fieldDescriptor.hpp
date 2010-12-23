@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_FIELDDESCRIPTOR_HPP
+#define SHARE_VM_RUNTIME_FIELDDESCRIPTOR_HPP
+
+#include "oops/constantPoolOop.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/fieldType.hpp"
+#include "utilities/accessFlags.hpp"
+#include "utilities/constantTag.hpp"
 
 // A fieldDescriptor describes the attributes of a single field (instance or class variable).
 // It needs the class constant pool to work (because it only holds indices into the pool
@@ -90,3 +101,5 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   void print_on(outputStream* st) const         PRODUCT_RETURN;
   void print_on_for(outputStream* st, oop obj)  PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_RUNTIME_FIELDDESCRIPTOR_HPP

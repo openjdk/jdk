@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_HASHTABLE_HPP
+#define SHARE_VM_UTILITIES_HASHTABLE_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/oop.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.hpp"
 
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
@@ -278,3 +286,5 @@ public:
     return hash_to_index(compute_hash(name, loader));
   }
 };
+
+#endif // SHARE_VM_UTILITIES_HASHTABLE_HPP

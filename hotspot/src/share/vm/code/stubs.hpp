@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_STUBS_HPP
+#define SHARE_VM_CODE_STUBS_HPP
+
+#include "memory/allocation.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 // The classes in this file provide a simple framework for the
 // management of little pieces of machine code - or stubs -
@@ -206,3 +220,5 @@ class StubQueue: public CHeapObj {
   void  verify();                                // verifies the stub queue
   void  print();                                 // prints information about the stub queue
 };
+
+#endif // SHARE_VM_CODE_STUBS_HPP

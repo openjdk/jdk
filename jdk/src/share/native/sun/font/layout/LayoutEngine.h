@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2008 - All Rights Reserved
  *
  */
 
@@ -133,6 +133,14 @@ protected:
     le_int32 fTypoFlags;
 
     /**
+     * <code>TRUE</code> if <code>mapCharsToGlyphs</code> should replace ZWJ / ZWNJ with a glyph
+     * with no contours.
+     *
+     * @internal
+     */
+    le_bool fFilterZeroWidth;
+
+    /**
      * This constructs an instance for a given font, script and language. Subclass constructors
      * must call this constructor.
      *
@@ -141,13 +149,18 @@ protected:
      * @param languageCode - the language for the text
      * @param typoFlags - the typographic control flags for the text.  Set bit 1 if kerning
      * is desired, set bit 2 if ligature formation is desired.  Others are reserved.
+     * @param success - set to an error code if the operation fails
      *
      * @see LEFontInstance
      * @see ScriptAndLanguageTags.h
      *
      * @internal
      */
-    LayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags);
+    LayoutEngine(const LEFontInstance *fontInstance,
+                 le_int32 scriptCode,
+                 le_int32 languageCode,
+                 le_int32 typoFlags,
+                 LEErrorCode &success);
 
     /**
      * This overrides the default no argument constructor to make it
@@ -338,7 +351,7 @@ public:
 
     /**
      * This method will invoke the layout steps in their correct order by calling
-     * the computeGlyphs, positionGlyphs and adjustGlyphPosition methods.. It will
+     * the computeGlyphs, positionGlyphs and adjustGlyphPosition methods. It will
      * compute the glyph, character index and position arrays.
      *
      * @param chars - the input character context
@@ -352,8 +365,12 @@ public:
      *
      * @return the number of glyphs in the glyph array
      *
-     * Note; the glyph, character index and position array can be accessed
-     * using the getter method below.
+     * Note: The glyph, character index and position array can be accessed
+     * using the getter methods below.
+     *
+     * Note: If you call this method more than once, you must call the reset()
+     * method first to free the glyph, character index and position arrays
+     * allocated by the previous call.
      *
      * @stable ICU 2.8
      */
@@ -479,7 +496,7 @@ public:
 
     /**
      * Override of existing call that provides flags to control typography.
-     * @draft ICU 3.4
+     * @stable ICU 3.4
      */
     static LayoutEngine *layoutEngineFactory(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typo_flags, LEErrorCode &success);
 

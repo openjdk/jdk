@@ -18,10 +18,14 @@ MEDIA_SRC = $(SUN_SRC)/awt/medialib
 J2D_SRC  = $(SUN_SRC)/java2d
 J2D_FONT_SRC = $(SUN_SRC)/font
 J2D_WINDOWS_SRC = $(WINDOWS_SRC)/native/sun/java2d
+AWT_WINDOWS_SRC = $(WINDOWS_SRC)/native/sun/awt
 LOOP_SRC = $(SUN_SRC)/java2d/loops
 PIPE_SRC = $(SUN_SRC)/java2d/pipe
 WINDOWS_SRC = $(TOPDIR)/src/windows
 SRC = $(WINDOWS_SRC)/native/sun/windows
+
+# ensure consistent sort order
+LC_ALL:= C
 
 SRCDIRS = \
 	$(COMP_SRC) \
@@ -61,6 +65,7 @@ INCLUDES = \
 	   -I$(J2D_WINDOWS_SRC)/windows \
 	   -I$(J2D_WINDOWS_SRC)/d3d \
 	   -I$(J2D_WINDOWS_SRC)/opengl \
+	   -I$(AWT_WINDOWS_SRC) \
 	   -I$(LOOP_SRC) \
 	   -I$(PIPE_SRC) \
 	   -I$(SRC)
@@ -68,22 +73,29 @@ INCLUDES = \
 STUBFILES = \
 	$(STUBDIR)/ddraw.h \
 	$(STUBDIR)/d3d.h \
+	$(STUBDIR)/d3d9.h \
 	$(STUBDIR)/Ole2.h \
 	$(STUBDIR)/Zmouse.h \
 	$(STUBDIR)/cderr.h \
+	$(STUBDIR)/comdef.h \
 	$(STUBDIR)/commctrl.h \
 	$(STUBDIR)/commdlg.h \
+	$(STUBDIR)/comutil.h \
 	$(STUBDIR)/direct.h \
 	$(STUBDIR)/d3dcom.h \
 	$(STUBDIR)/imm.h \
 	$(STUBDIR)/ime.h \
 	$(STUBDIR)/io.h \
+	$(STUBDIR)/map \
 	$(STUBDIR)/mmsystem.h \
 	$(STUBDIR)/new.h \
+	$(STUBDIR)/new \
 	$(STUBDIR)/ole2.h \
+	$(STUBDIR)/process.h \
 	$(STUBDIR)/richole.h \
 	$(STUBDIR)/richedit.h \
 	$(STUBDIR)/shellapi.h \
+	$(STUBDIR)/shlwapi.h \
 	$(STUBDIR)/shlobj.h \
 	$(STUBDIR)/tchar.h \
 	$(STUBDIR)/winbase.h \
@@ -135,6 +147,9 @@ dependencies:
 include FILES_export_windows.gmk
 
 EXTRAFILES_java = \
+        sun/java2d/opengl/OGLContext/OGLContextCaps.java \
+        sun/java2d/d3d/D3DPaints/MultiGradient.java \
+        sun/java2d/d3d/D3DContext/D3DContextCaps.java \
 	java/lang/Integer.java
 
 FILES_java = $(FILES_export) $(FILES_export2) $(FILES_export3) \

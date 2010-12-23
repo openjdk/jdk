@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_DEOPTIMIZATION_HPP
+#define SHARE_VM_RUNTIME_DEOPTIMIZATION_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/frame.inline.hpp"
 
 class ProfileData;
 class vframeArray;
@@ -348,3 +354,5 @@ public:
   ~DeoptimizationMarker() { _is_active = false; }
   static bool is_active() { return _is_active; }
 };
+
+#endif // SHARE_VM_RUNTIME_DEOPTIMIZATION_HPP

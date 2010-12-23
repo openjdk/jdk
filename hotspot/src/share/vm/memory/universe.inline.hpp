@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP
+#define SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP
+
+#include "memory/universe.hpp"
+
 // Check whether an element of a typeArrayOop with the given type must be
 // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
 // strongly.
@@ -35,3 +40,5 @@ inline bool Universe::element_type_should_be_aligned(BasicType type) {
 inline bool Universe::field_type_should_be_aligned(BasicType type) {
   return type == T_DOUBLE || type == T_LONG;
 }
+
+#endif // SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP

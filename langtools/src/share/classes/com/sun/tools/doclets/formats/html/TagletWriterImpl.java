@@ -70,9 +70,9 @@ public class TagletWriterImpl extends TagletWriter {
         Tag[] deprs = doc.tags("deprecated");
         if (doc instanceof ClassDoc) {
             if (Util.isDeprecated((ProgramElementDoc) doc)) {
-                output.append("<STRONG>" +
+                output.append("<span class=\"strong\">" +
                     ConfigurationImpl.getInstance().
-                        getText("doclet.Deprecated") + "</STRONG>&nbsp;");
+                        getText("doclet.Deprecated") + "</span>&nbsp;");
                 if (deprs.length > 0) {
                     Tag[] commentTags = deprs[0].inlineTags();
                     if (commentTags.length > 0) {
@@ -82,30 +82,24 @@ public class TagletWriterImpl extends TagletWriter {
                         );
                     }
                 }
-                output.append("<p>");
             }
         } else {
             MemberDoc member = (MemberDoc) doc;
             if (Util.isDeprecated((ProgramElementDoc) doc)) {
-                output.append("<DD><STRONG>" +
+                output.append("<span class=\"strong\">" +
                     ConfigurationImpl.getInstance().
-                            getText("doclet.Deprecated") + "</STRONG>&nbsp;");
+                            getText("doclet.Deprecated") + "</span>&nbsp;");
                 if (deprs.length > 0) {
-                    output.append("<I>");
+                    output.append("<i>");
                     output.append(commentTagsToOutput(null, doc,
                         deprs[0].inlineTags(), false).toString());
-                    output.append("</I>");
+                    output.append("</i>");
                 }
-                if (member instanceof ExecutableMemberDoc) {
-                    output.append(DocletConstants.NL + "<P>" +
-                        DocletConstants.NL);
-                }
-                output.append("</DD>");
             } else {
                 if (Util.isDeprecated(member.containingClass())) {
-                    output.append("<DD><STRONG>" +
+                    output.append("<span class=\"strong\">" +
                     ConfigurationImpl.getInstance().
-                            getText("doclet.Deprecated") + "</STRONG>&nbsp;</DD>");
+                            getText("doclet.Deprecated") + "</span>&nbsp;");
                 }
             }
         }
@@ -124,8 +118,8 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public TagletOutput getParamHeader(String header) {
         StringBuffer result = new StringBuffer();
-        result.append("<DT>");
-        result.append("<STRONG>" +  header + "</STRONG></DT>");
+        result.append("<dt>");
+        result.append("<span class=\"strong\">" +  header + "</span></dt>");
         return new TagletOutputImpl(result.toString());
     }
 
@@ -133,8 +127,8 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput paramTagOutput(ParamTag paramTag, String paramName) {
-        TagletOutput result = new TagletOutputImpl("<DD><CODE>" + paramName + "</CODE>"
-         + " - " + htmlWriter.commentTagsToString(paramTag, null, paramTag.inlineTags(), false) + "</DD>");
+        TagletOutput result = new TagletOutputImpl("<dd><code>" + paramName + "</code>"
+         + " - " + htmlWriter.commentTagsToString(paramTag, null, paramTag.inlineTags(), false) + "</dd>");
         return result;
     }
 
@@ -142,11 +136,11 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput returnTagOutput(Tag returnTag) {
-        TagletOutput result = new TagletOutputImpl(DocletConstants.NL + "<DT>" +
-            "<STRONG>" + htmlWriter.configuration.getText("doclet.Returns") +
-            "</STRONG>" + "</DT>" + "<DD>" +
+        TagletOutput result = new TagletOutputImpl(DocletConstants.NL + "<dt>" +
+            "<span class=\"strong\">" + htmlWriter.configuration.getText("doclet.Returns") +
+            "</span>" + "</dt>" + "<dd>" +
             htmlWriter.commentTagsToString(returnTag, null, returnTag.inlineTags(),
-            false) + "</DD>");
+            false) + "</dd>");
         return result;
     }
 
@@ -168,7 +162,7 @@ public class TagletWriterImpl extends TagletWriter {
                 htmlWriter instanceof ClassWriterImpl) {
             //Automatically add link to constant values page for constant fields.
             result = addSeeHeader(result);
-            result += htmlWriter.getHyperLink(htmlWriter.relativePath +
+            result += htmlWriter.getHyperLinkString(htmlWriter.relativePath +
                 ConfigurationImpl.CONSTANTS_FILE_NAME
                 + "#" + ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName()
                 + "." + ((FieldDoc) holder).name(),
@@ -179,18 +173,19 @@ public class TagletWriterImpl extends TagletWriter {
             if ((SerializedFormBuilder.serialInclude(holder) &&
                       SerializedFormBuilder.serialInclude(((ClassDoc)holder).containingPackage()))) {
                 result = addSeeHeader(result);
-                result += htmlWriter.getHyperLink(htmlWriter.relativePath + "serialized-form.html",
+                result += htmlWriter.getHyperLinkString(htmlWriter.relativePath + "serialized-form.html",
                         ((ClassDoc)holder).qualifiedName(), htmlWriter.configuration.getText("doclet.Serialized_Form"), false);
             }
         }
-        return result.equals("") ? null : new TagletOutputImpl(result + "</DD>");
+        return result.equals("") ? null : new TagletOutputImpl(result + "</dd>");
     }
 
     private String addSeeHeader(String result) {
         if (result != null && result.length() > 0) {
             return result + ", " + DocletConstants.NL;
         } else {
-            return "<DT><STRONG>" + htmlWriter.configuration().getText("doclet.See_Also") + "</STRONG></DT><DD>";
+            return "<dt><span class=\"strong\">" +
+                    htmlWriter.configuration().getText("doclet.See_Also") + "</span></dt><dd>";
         }
      }
 
@@ -198,15 +193,15 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput simpleTagOutput(Tag[] simpleTags, String header) {
-        String result = "<DT><STRONG>" + header + "</STRONG></DT>" + DocletConstants.NL +
-            "  <DD>";
+        String result = "<dt><span class=\"strong\">" + header + "</span></dt>" + DocletConstants.NL +
+            "  <dd>";
         for (int i = 0; i < simpleTags.length; i++) {
             if (i > 0) {
                 result += ", ";
             }
             result += htmlWriter.commentTagsToString(simpleTags[i], null, simpleTags[i].inlineTags(), false);
         }
-        result += "</DD>" + DocletConstants.NL;
+        result += "</dd>" + DocletConstants.NL;
         return new TagletOutputImpl(result);
     }
 
@@ -214,24 +209,24 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput simpleTagOutput(Tag simpleTag, String header) {
-        return new TagletOutputImpl("<DT><STRONG>" + header + "</STRONG></DT>" + "  <DD>"
+        return new TagletOutputImpl("<dt><span class=\"strong\">" + header + "</span></dt>" + "  <dd>"
             + htmlWriter.commentTagsToString(simpleTag, null, simpleTag.inlineTags(), false)
-            + "</DD>" + DocletConstants.NL);
+            + "</dd>" + DocletConstants.NL);
     }
 
     /**
      * {@inheritDoc}
      */
     public TagletOutput getThrowsHeader() {
-        return new TagletOutputImpl(DocletConstants.NL + "<DT>" + "<STRONG>" +
-            htmlWriter.configuration().getText("doclet.Throws") + "</STRONG></DT>");
+        return new TagletOutputImpl(DocletConstants.NL + "<dt>" + "<span class=\"strong\">" +
+            htmlWriter.configuration().getText("doclet.Throws") + "</span></dt>");
     }
 
     /**
      * {@inheritDoc}
      */
     public TagletOutput throwsTagOutput(ThrowsTag throwsTag) {
-        String result = DocletConstants.NL + "<DD>";
+        String result = DocletConstants.NL + "<dd>";
         result += throwsTag.exceptionType() == null ?
             htmlWriter.codeText(throwsTag.exceptionName()) :
             htmlWriter.codeText(
@@ -243,7 +238,7 @@ public class TagletWriterImpl extends TagletWriter {
         if (text != null && text.toString().length() > 0) {
             result += " - " + text;
         }
-        result += "</DD>";
+        result += "</dd>";
         return new TagletOutputImpl(result);
     }
 
@@ -251,9 +246,9 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput throwsTagOutput(Type throwsType) {
-        return new TagletOutputImpl(DocletConstants.NL + "<DD>" +
+        return new TagletOutputImpl(DocletConstants.NL + "<dd>" +
             htmlWriter.codeText(htmlWriter.getLink(
-                new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER, throwsType))) + "</DD>");
+                new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER, throwsType))) + "</dd>");
     }
 
     /**

@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciMethodData.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciMethodData.hpp"
+#include "ci/ciUtilities.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/deoptimization.hpp"
+#include "utilities/copy.hpp"
 
 // ciMethodData
 

@@ -22,8 +22,23 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_collectedHeap.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/init.hpp"
+#include "services/heapDumper.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 
 #ifdef ASSERT

@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_ORDERACCESS_HPP
+#define SHARE_VM_RUNTIME_ORDERACCESS_HPP
+
+#include "memory/allocation.hpp"
+
 //                Memory Access Ordering Model
 //
 // This interface is based on the JSR-133 Cookbook for Compiler Writers
@@ -309,3 +314,5 @@ class OrderAccess : AllStatic {
   // don't another way to do the inline eassembly.
   static void StubRoutines_fence();
 };
+
+#endif // SHARE_VM_RUNTIME_ORDERACCESS_HPP

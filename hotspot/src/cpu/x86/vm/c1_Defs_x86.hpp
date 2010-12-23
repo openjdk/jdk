@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_C1_DEFS_X86_HPP
+#define CPU_X86_VM_C1_DEFS_X86_HPP
 
 // native word offsets from memory address (little endian)
 enum {
@@ -58,8 +61,8 @@ enum {
   pd_nof_xmm_regs_linearscan = pd_nof_xmm_regs_frame_map, // number of registers visible to linear scan
   pd_first_cpu_reg = 0,
   pd_last_cpu_reg = NOT_LP64(5) LP64_ONLY(11),
-  pd_first_byte_reg = 2,
-  pd_last_byte_reg = 5,
+  pd_first_byte_reg = NOT_LP64(2) LP64_ONLY(0),
+  pd_last_byte_reg = NOT_LP64(5) LP64_ONLY(11),
   pd_first_fpu_reg = pd_nof_cpu_regs_frame_map,
   pd_last_fpu_reg =  pd_first_fpu_reg + 7,
   pd_first_xmm_reg = pd_nof_cpu_regs_frame_map + pd_nof_fpu_regs_frame_map,
@@ -71,3 +74,5 @@ enum {
 enum {
   pd_float_saved_as_double = true
 };
+
+#endif // CPU_X86_VM_C1_DEFS_X86_HPP

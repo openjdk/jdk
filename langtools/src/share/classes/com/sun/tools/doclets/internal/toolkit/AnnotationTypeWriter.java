@@ -37,43 +37,122 @@ import com.sun.javadoc.*;
  * Do not use it as an API.
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface AnnotationTypeWriter {
 
     /**
-     * Write the header of the page.
-     * @param header the header to write.
+     * Get the header of the page.
+     *
+     * @param header the header string to write
+     * @return a content tree for the header documentation
      */
-    public void writeHeader(String header);
+    public Content getHeader(String header);
 
     /**
-     * Write the signature of the current annotation type.
+     * Get the annotation content header.
      *
-     * @param modifiers the modifiers for the signature.
+     * @return annotation content header that needs to be added to the documentation
      */
-    public void writeAnnotationTypeSignature(String modifiers);
+    public Content getAnnotationContentHeader();
+
+    /**
+     * Get the annotation information tree header.
+     *
+     * @return annotation information tree header that needs to be added to the documentation
+     */
+    public Content getAnnotationInfoTreeHeader();
+
+    /**
+     * Get the annotation information.
+     *
+     * @param annotationInfoTree content tree containing the annotation information
+     * @return a content tree for the annotation
+     */
+    public Content getAnnotationInfo(Content annotationInfoTree);
+
+    /**
+     * Add the signature of the current annotation type.
+     *
+     * @param modifiers the modifiers for the signature
+     * @param annotationInfoTree the annotation content tree to which the signature will be added
+     */
+    public void addAnnotationTypeSignature(String modifiers, Content annotationInfoTree);
 
     /**
      * Build the annotation type description.
+     *
+     * @param annotationInfoTree content tree to which the description will be added
      */
-    public void writeAnnotationTypeDescription();
+    public void addAnnotationTypeDescription(Content annotationInfoTree);
 
     /**
-     * Write the tag information for the current annotation type.
+     * Add the tag information for the current annotation type.
+     *
+     * @param annotationInfoTree content tree to which the tag information will be added
      */
-    public void writeAnnotationTypeTagInfo();
+    public void addAnnotationTypeTagInfo(Content annotationInfoTree);
 
     /**
-     * If this annotation type is deprecated, write the appropriate information.
+     * If this annotation is deprecated, add the appropriate information.
+     *
+     * @param annotationInfoTree content tree to which the deprecated information will be added
      */
-    public void writeAnnotationTypeDeprecationInfo();
+    public void addAnnotationTypeDeprecationInfo (Content annotationInfoTree);
 
     /**
-     * Write the footer of the page.
+     * Add the annotation type details marker.
+     *
+     * @param memberDetails the content tree representing member details marker
      */
-    public void writeFooter();
+    public void addAnnotationDetailsMarker(Content memberDetails);
+
+    /**
+     * Get the member tree header for the annotation type.
+     *
+     * @return a content tree for the member tree header
+     */
+    public Content getMemberTreeHeader();
+
+    /**
+     * Get the member tree.
+     *
+     * @param memberTree the content tree that will be modified and returned
+     * @return a content tree for the member
+     */
+    public Content getMemberTree(Content memberTree);
+
+    /**
+     * Get the member summary tree.
+     *
+     * @param memberTree the content tree that will be used to build the summary tree
+     * @return a content tree for the member summary
+     */
+    public Content getMemberSummaryTree(Content memberTree);
+
+    /**
+     * Get the member details tree.
+     *
+     * @param memberTree the content tree that will be used to build the details tree
+     * @return a content tree for the member details
+     */
+    public Content getMemberDetailsTree(Content memberTree);
+
+    /**
+     * Add the footer of the page.
+     *
+     * @param contentTree content tree to which the footer will be added
+     */
+    public void addFooter(Content contentTree);
+
+    /**
+     * Print the document.
+     *
+     * @param contentTree content tree that will be printed as a document
+     */
+    public void printDocument(Content contentTree);
 
     /**
      * Close the writer.
@@ -86,10 +165,4 @@ public interface AnnotationTypeWriter {
      * @return the AnnotationTypeDoc being documented.
      */
     public AnnotationTypeDoc getAnnotationTypeDoc();
-
-    /**
-     * Perform any operations that are necessary when the member summary
-     * finished building.
-     */
-    public void completeMemberSummaryBuild();
 }

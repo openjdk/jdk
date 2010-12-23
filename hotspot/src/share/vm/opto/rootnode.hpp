@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_ROOTNODE_HPP
+#define SHARE_VM_OPTO_ROOTNODE_HPP
+
+#include "opto/loopnode.hpp"
 
 //------------------------------RootNode---------------------------------------
 // The one-and-only before-all-else and after-all-else RootNode.  The RootNode
@@ -60,3 +65,5 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return 0; }
 };
+
+#endif // SHARE_VM_OPTO_ROOTNODE_HPP

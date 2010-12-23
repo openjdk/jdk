@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,24 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_fprofiler.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "code/vtableStubs.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/task.hpp"
+#include "runtime/vframe.hpp"
+#include "utilities/macros.hpp"
 
 // Static fields of FlatProfiler
 int               FlatProfiler::received_gc_ticks   = 0;

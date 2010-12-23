@@ -53,12 +53,13 @@ public class ClassValueTest {
         return "CV1:" + type.getName();
     }
     static int countForCV1;
-    static final ClassValue<String> CV1 = new ClassValue<String>() {
+    static final ClassValue<String> CV1 = new CV1();
+    private static class CV1 extends ClassValue<String> {
         protected String computeValue(Class<?> type) {
             countForCV1++;
             return nameForCV1(type);
         }
-    };
+    }
 
     static final Class[] CLASSES = {
         String.class,

@@ -22,8 +22,39 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_concurrentMarkSweepGeneration.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genMarkSweep.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/iterator.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#include "services/memoryService.hpp"
+#include "services/runtimeService.hpp"
 
 // statics
 CMSCollector* ConcurrentMarkSweepGeneration::_collector = NULL;
@@ -865,7 +896,7 @@ bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(size_t max_promoti
   size_t available = max_available();
   size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
-  if (PrintGC && Verbose) {
+  if (Verbose && PrintGCDetails) {
     gclog_or_tty->print_cr(
       "CMS: promo attempt is%s safe: available("SIZE_FORMAT") %s av_promo("SIZE_FORMAT"),"
       "max_promo("SIZE_FORMAT")",
@@ -1531,8 +1562,8 @@ bool CMSCollector::shouldConcurrentCollect() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   assert(gch->collector_policy()->is_two_generation_policy(),
          "You may want to check the correctness of the following");
-  if (gch->incremental_collection_will_fail()) {
-    if (PrintGCDetails && Verbose) {
+  if (gch->incremental_collection_will_fail(true /* consult_young */)) {
+    if (Verbose && PrintGCDetails) {
       gclog_or_tty->print("CMSCollector: collect because incremental collection will fail ");
     }
     return true;
@@ -1896,7 +1927,7 @@ void CMSCollector::decide_foreground_collection_type(
          "You may want to check the correctness of the following");
   // Inform cms gen if this was due to partial collection failing.
   // The CMS gen may use this fact to determine its expansion policy.
-  if (gch->incremental_collection_will_fail()) {
+  if (gch->incremental_collection_will_fail(false /* don't consult_young */)) {
     assert(!_cmsGen->incremental_collection_failed(),
            "Should have been noticed, reacted to and cleared");
     _cmsGen->set_incremental_collection_failed();
@@ -1905,7 +1936,7 @@ void CMSCollector::decide_foreground_collection_type(
     UseCMSCompactAtFullCollection &&
     ((_full_gcs_since_conc_gc >= CMSFullGCsBeforeCompaction) ||
      GCCause::is_user_requested_gc(gch->gc_cause()) ||
-     gch->incremental_collection_will_fail());
+     gch->incremental_collection_will_fail(true /* consult_young */));
   *should_start_over = false;
   if (clear_all_soft_refs && !*should_compact) {
     // We are about to do a last ditch collection attempt

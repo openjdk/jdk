@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKCACHEDECACHE_HPP
+#define SHARE_VM_SHARK_SHARKCACHEDECACHE_HPP
+
+#include "ci/ciMethod.hpp"
+#include "code/debugInfoRec.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkFunction.hpp"
+#include "shark/sharkStateScanner.hpp"
 
 // Class hierarchy:
 // - SharkStateScanner
@@ -415,3 +424,5 @@ class SharkOSREntryCacher : public SharkFunctionEntryCacher {
  private:
   llvm::Value* CreateAddressOfOSRBufEntry(int offset, const llvm::Type* type);
 };
+
+#endif // SHARE_VM_SHARK_SHARKCACHEDECACHE_HPP

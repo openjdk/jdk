@@ -28,6 +28,7 @@ package com.sun.tools.doclets.formats.html;
 import java.io.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
@@ -51,122 +52,102 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Write the annotation type member summary header for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
+     * {@inheritDoc}
      */
-    public void writeMemberSummaryHeader(ClassDoc classDoc) {
-        writer.println("<!-- =========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY =========== -->");
-        writer.println();
-        writer.printSummaryHeader(this, classDoc);
-    }
-
-    /**
-     * Write the annotation type member summary footer for the given class.
-     *
-     * @param classDoc the class the summary belongs to.
-     */
-    public void writeMemberSummaryFooter(ClassDoc classDoc) {
-        writer.printSummaryFooter(this, classDoc);
+    public Content getMemberSummaryHeader(ClassDoc classDoc,
+            Content memberSummaryTree) {
+        memberSummaryTree.addContent(
+                HtmlConstants.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY);
+        Content memberTree = writer.getMemberTreeHeader();
+        writer.addSummaryHeader(this, classDoc, memberTree);
+        return memberTree;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeInheritedMemberSummaryHeader(ClassDoc classDoc) {
-        //Not appliable.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeInheritedMemberSummary(ClassDoc classDoc,
-        ProgramElementDoc member, boolean isFirst, boolean isLast) {
-        //Not appliable.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeInheritedMemberSummaryFooter(ClassDoc classDoc) {
-        //Not appliable.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeHeader(ClassDoc classDoc, String header) {
-        writer.println();
-        writer.println("<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->");
-        writer.println();
-        writer.anchor("annotation_type_element_detail");
-        writer.printTableHeadingBackground(header);
-        writer.println();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeMemberHeader(MemberDoc member, boolean isFirst) {
-        if (! isFirst) {
-            writer.printMemberHeader();
-            writer.println("");
+    public void addAnnotationDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree) {
+        if (!writer.printedAnnotationHeading) {
+            memberDetailsTree.addContent(writer.getMarkerAnchor(
+                    "annotation_type_element_detail"));
+            Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
+                    writer.annotationTypeDetailsLabel);
+            memberDetailsTree.addContent(heading);
+            writer.printedAnnotationHeading = true;
         }
-        writer.anchor(member.name() + ((ExecutableMemberDoc) member).signature());
-        writer.h3();
-        writer.print(member.name());
-        writer.h3End();
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeSignature(MemberDoc member) {
-        writer.pre();
-        writer.writeAnnotationInfo(member);
-        printModifiers(member);
-        writer.printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
-            getType(member)));
-        print(' ');
+    public Content getAnnotationDocTreeHeader(MemberDoc member,
+            Content annotationDetailsTree) {
+        annotationDetailsTree.addContent(
+                writer.getMarkerAnchor(member.name() +
+                ((ExecutableMemberDoc) member).signature()));
+        Content annotationDocTree = writer.getMemberTreeHeader();
+        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
+        heading.addContent(member.name());
+        annotationDocTree.addContent(heading);
+        return annotationDocTree;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getSignature(MemberDoc member) {
+        Content pre = new HtmlTree(HtmlTag.PRE);
+        writer.addAnnotationInfo(member, pre);
+        addModifiers(member, pre);
+        Content link = new RawHtml(
+                writer.getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
+                getType(member))));
+        pre.addContent(link);
+        pre.addContent(writer.getSpace());
         if (configuration().linksource) {
-            writer.printSrcLink(member, member.name());
+            Content memberName = new StringContent(member.name());
+            writer.addSrcLink(member, memberName, pre);
         } else {
-            strong(member.name());
+            addName(member.name(), pre);
         }
-        writer.preEnd();
-        assert !writer.getMemberDetailsListPrinted();
+        return pre;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeComments(MemberDoc member) {
-        printComment(member);
+    public void addDeprecated(MemberDoc member, Content annotationDocTree) {
+        addDeprecatedInfo(member, annotationDocTree);
     }
 
     /**
-     * Write the tag output for the given member.
-     *
-     * @param member the member being documented.
+     * {@inheritDoc}
      */
-    public void writeTags(MemberDoc member) {
-        writer.printTags(member);
+    public void addComments(MemberDoc member, Content annotationDocTree) {
+        addComment(member, annotationDocTree);
     }
 
     /**
-     * Write the annotation type member footer.
+     * {@inheritDoc}
      */
-    public void writeMemberFooter() {
-        printMemberFooter();
+    public void addTags(MemberDoc member, Content annotationDocTree) {
+        writer.addTagsInfo(member, annotationDocTree);
     }
 
     /**
-     * Write the footer for the annotation type member documentation.
-     *
-     * @param classDoc the class that the annotation type member belong to.
+     * {@inheritDoc}
      */
-    public void writeFooter(ClassDoc classDoc) {
-        //No footer to write for annotation type member documentation
+    public Content getAnnotationDetails(Content annotationDetailsTree) {
+        return getMemberTree(annotationDetailsTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getAnnotationDoc(Content annotationDocTree,
+            boolean isLastContent) {
+        return getMemberTree(annotationDocTree, isLastContent);
     }
 
     /**
@@ -179,111 +160,118 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public void printSummaryLabel() {
-        writer.printText("doclet.Annotation_Type_Required_Member_Summary");
+    public void addSummaryLabel(Content memberTree) {
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+                writer.getResource("doclet.Annotation_Type_Required_Member_Summary"));
+        memberTree.addContent(label);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void printTableSummary() {
-        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+    public String getTableSummary() {
+        return configuration().getText("doclet.Member_Table_Summary",
                 configuration().getText("doclet.Annotation_Type_Required_Member_Summary"),
-                configuration().getText("doclet.annotation_type_required_members")));
+                configuration().getText("doclet.annotation_type_required_members"));
     }
 
-    public void printSummaryTableHeader(ProgramElementDoc member) {
+    /**
+     * {@inheritDoc}
+     */
+    public String getCaption() {
+        return configuration().getText("doclet.Annotation_Type_Required_Members");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
             configuration().getText("doclet.0_and_1",
                     configuration().getText("doclet.Annotation_Type_Required_Member"),
                     configuration().getText("doclet.Description"))
         };
-        writer.summaryTableHeader(header, "col");
+        return header;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void printSummaryAnchor(ClassDoc cd) {
-        writer.anchor("annotation_type_required_element_summary");
+    public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
+        memberTree.addContent(writer.getMarkerAnchor(
+                "annotation_type_required_element_summary"));
     }
 
     /**
      * {@inheritDoc}
      */
-    public void printInheritedSummaryAnchor(ClassDoc cd) {
-    }   // no such
-
-    /**
-     * {@inheritDoc}
-     */
-    public void printInheritedSummaryLabel(ClassDoc cd) {
-        // no such
+    public void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree) {
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.strong();
-        writer.printDocLink(context, (MemberDoc) member, member.name(), false);
-        writer.strongEnd();
+    public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void writeInheritedSummaryLink(ClassDoc cd,
-            ProgramElementDoc member) {
+    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+            Content tdSummary) {
+        Content strong = HtmlTree.STRONG(new RawHtml(
+                writer.getDocLink(context, (MemberDoc) member, member.name(), false)));
+        Content code = HtmlTree.CODE(strong);
+        tdSummary.addContent(code);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected void addInheritedSummaryLink(ClassDoc cd,
+            ProgramElementDoc member, Content linksTree) {
         //Not applicable.
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void printSummaryType(ProgramElementDoc member) {
+    protected void addSummaryType(ProgramElementDoc member, Content tdSummaryType) {
         MemberDoc m = (MemberDoc)member;
-        printModifierAndType(m, getType(m));
+        addModifierAndType(m, getType(m), tdSummaryType);
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void writeDeprecatedLink(ProgramElementDoc member) {
-        writer.printDocLink(LinkInfoImpl.CONTEXT_MEMBER,
-            (MemberDoc) member, ((MemberDoc)member).qualifiedName(), false);
+    protected Content getDeprecatedLink(ProgramElementDoc member) {
+        return writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER,
+                (MemberDoc) member, ((MemberDoc)member).qualifiedName());
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void printNavSummaryLink(ClassDoc cd, boolean link) {
+    protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            writer.printHyperLink("", "annotation_type_required_element_summary",
-                    configuration().getText("doclet.navAnnotationTypeRequiredMember"));
+            return writer.getHyperLink("", "annotation_type_required_element_summary",
+                    writer.getResource("doclet.navAnnotationTypeRequiredMember"));
         } else {
-            writer.printText("doclet.navAnnotationTypeRequiredMember");
+            return writer.getResource("doclet.navAnnotationTypeRequiredMember");
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    protected void printNavDetailLink(boolean link) {
+    protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            writer.printHyperLink("", "annotation_type_element_detail",
-                configuration().getText("doclet.navAnnotationTypeMember"));
+            liNav.addContent(writer.getHyperLink("", "annotation_type_element_detail",
+                    writer.getResource("doclet.navAnnotationTypeMember")));
         } else {
-            writer.printText("doclet.navAnnotationTypeMember");
+            liNav.addContent(writer.getResource("doclet.navAnnotationTypeMember"));
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeDeprecated(MemberDoc member) {
-        printDeprecated(member);
     }
 
     private Type getType(MemberDoc member) {

@@ -22,8 +22,12 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stubs.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeBlob.hpp"
+#include "code/stubs.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 
 
 // Implementation of StubQueue
