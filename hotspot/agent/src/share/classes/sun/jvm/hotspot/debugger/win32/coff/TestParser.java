@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class TestParser {
       COFFHeader header = file.getHeader();
       int numSections = header.getNumberOfSections();
       System.out.println(numSections + " sections detected.");
-      for (int i = 0; i < numSections; i++) {
-        SectionHeader secHeader = header.getSectionHeader(1 + i);
+      for (int i = 1; i <= numSections; i++) {
+        SectionHeader secHeader = header.getSectionHeader(i);
         System.out.println(secHeader.getName());
       }
 
