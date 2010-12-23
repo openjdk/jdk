@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKVALUE_HPP
+#define SHARE_VM_SHARK_SHARKVALUE_HPP
+
+#include "ci/ciType.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/llvmValue.hpp"
+#include "shark/sharkType.hpp"
 
 // Items on the stack and in local variables are tracked using
 // SharkValue objects.
@@ -330,3 +339,5 @@ inline SharkValue* SharkValue::create_phi(ciType*              type,
 inline SharkValue* SharkValue::address_constant(int bci) {
   return new SharkAddressValue(bci);
 }
+
+#endif // SHARE_VM_SHARK_SHARKVALUE_HPP

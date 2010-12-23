@@ -32,7 +32,7 @@ public class MsgAppletViewer_zh_CN extends ListResourceBundle {
         return new Object[][] {
             {"textframe.button.dismiss", "\u5173\u95ed"},
             {"appletviewer.tool.title", "\u5c0f\u7a0b\u5e8f\u67e5\u770b\u5668\uff1a{0}"},
-            {"appletviewer.menu.applet", "Applet"},
+            {"appletviewer.menu.applet", "\u5c0f\u7a0b\u5e8f"},
             {"appletviewer.menuitem.restart", "\u91cd\u65b0\u542f\u52a8"},
             {"appletviewer.menuitem.reload", "\u91cd\u65b0\u8f7d\u5165"},
             {"appletviewer.menuitem.stop", "\u505c\u6b62"},

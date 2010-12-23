@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_STUBROUTINES_X86_64_HPP
+#define CPU_X86_VM_STUBROUTINES_X86_64_HPP
+
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
@@ -113,3 +116,5 @@ class x86 {
     return _mxcsr_std;
   }
 };
+
+#endif // CPU_X86_VM_STUBROUTINES_X86_64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_DEPENDENCIES_HPP
+#define SHARE_VM_CODE_DEPENDENCIES_HPP
+
+#include "ci/ciKlass.hpp"
+#include "code/compressedStream.hpp"
+#include "code/nmethod.hpp"
+#include "utilities/growableArray.hpp"
 
 //** Dependencies represent assertions (approximate invariants) within
 // the class hierarchy.  An example is an assertion that a given
@@ -550,3 +558,5 @@ class DepChange : public StackObj {
 
   void print();
 };
+
+#endif // SHARE_VM_CODE_DEPENDENCIES_HPP

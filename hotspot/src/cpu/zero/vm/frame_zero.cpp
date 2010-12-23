@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,26 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_frame_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "code/scopeDesc.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/monitorChunk.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "vmreg_zero.inline.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#include "runtime/vframeArray.hpp"
+#endif
 
 #ifdef ASSERT
 void RegisterMap::check_location_valid() {

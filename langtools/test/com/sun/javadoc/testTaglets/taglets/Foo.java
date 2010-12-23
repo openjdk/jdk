@@ -50,9 +50,9 @@ public class Foo extends BaseTaglet {
      */
     public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
         ArrayList inlineTags = new ArrayList();
-        inlineTags.add(new TextTag(tag.holder(), "<DT><B>Foo:</B><DD>"));
+        inlineTags.add(new TextTag(tag.holder(), "<dt><span class=\"strong\">Foo:</span></dt><dd>"));
         inlineTags.addAll(Arrays.asList(tag.inlineTags()));
-        inlineTags.add(new TextTag(tag.holder(), "</DD>"));
+        inlineTags.add(new TextTag(tag.holder(), "</dd>"));
         return writer.commentTagsToOutput(tag,
                 (Tag[]) inlineTags.toArray(new Tag[] {}));
     }

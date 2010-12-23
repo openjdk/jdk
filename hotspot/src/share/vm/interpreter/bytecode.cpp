@@ -22,8 +22,15 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_bytecode.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/fieldType.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/signature.hpp"
 
 // Implementation of Bytecode
 

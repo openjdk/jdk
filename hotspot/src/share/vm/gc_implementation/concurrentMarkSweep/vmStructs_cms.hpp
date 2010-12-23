@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP
 
 #define VM_STRUCTS_CMS(nonstatic_field, \
                    volatile_nonstatic_field, \
@@ -78,3 +81,5 @@
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
   declare_constant(PermGen::ConcurrentMarkSweep)
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP

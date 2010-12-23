@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,31 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_management.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/compileBroker.hpp"
+#include "memory/iterator.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/os.hpp"
+#include "services/classLoadingService.hpp"
+#include "services/heapDumper.hpp"
+#include "services/lowMemoryDetector.hpp"
+#include "services/management.hpp"
+#include "services/memoryManager.hpp"
+#include "services/memoryPool.hpp"
+#include "services/memoryService.hpp"
+#include "services/runtimeService.hpp"
+#include "services/threadService.hpp"
 
 PerfVariable* Management::_begin_vm_creation_time = NULL;
 PerfVariable* Management::_end_vm_creation_time = NULL;

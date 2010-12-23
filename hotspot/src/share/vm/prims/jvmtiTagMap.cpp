@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,31 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiTagMap.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline2.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiTagMap.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/reflectionUtils.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/serviceUtil.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#endif
 
 // JvmtiTagHashmapEntry
 //

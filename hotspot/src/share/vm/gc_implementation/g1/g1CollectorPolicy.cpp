@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_g1CollectorPolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "utilities/debug.hpp"
 
 #define PREDICTIONS_VERBOSE 0
 
@@ -448,8 +458,8 @@ void G1CollectorPolicy::calculate_young_list_min_length() {
     double now_sec = os::elapsedTime();
     double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
     double alloc_rate_ms = predict_alloc_rate_ms();
-    int min_regions = (int) ceil(alloc_rate_ms * when_ms);
-    int current_region_num = (int) _g1->young_list()->length();
+    size_t min_regions = (size_t) ceil(alloc_rate_ms * when_ms);
+    size_t current_region_num = _g1->young_list()->length();
     _young_list_min_length = min_regions + current_region_num;
   }
 }
@@ -463,9 +473,13 @@ void G1CollectorPolicy::calculate_young_list_target_length() {
       _young_list_target_length = _young_list_fixed_length;
     else
       _young_list_target_length = _young_list_fixed_length / 2;
-
-    _young_list_target_length = MAX2(_young_list_target_length, (size_t)1);
   }
+
+  // Make sure we allow the application to allocate at least one
+  // region before we need to do a collection again.
+  size_t min_length = _g1->young_list()->length() + 1;
+  _young_list_target_length = MAX2(_young_list_target_length, min_length);
+  calculate_max_gc_locker_expansion();
   calculate_survivors_policy();
 }
 
@@ -558,7 +572,7 @@ void G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths) {
 
     // we should have at least one region in the target young length
     _young_list_target_length =
-        MAX2((size_t) 1, final_young_length + _recorded_survivor_regions);
+                              final_young_length + _recorded_survivor_regions;
 
     // let's keep an eye of how long we spend on this calculation
     // right now, I assume that we'll print it when we need it; we
@@ -607,8 +621,7 @@ void G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths) {
                            _young_list_min_length);
 #endif // TRACE_CALC_YOUNG_LENGTH
     // we'll do the pause as soon as possible by choosing the minimum
-    _young_list_target_length =
-      MAX2(_young_list_min_length, (size_t) 1);
+    _young_list_target_length = _young_list_min_length;
   }
 
   _rs_lengths_prediction = rs_lengths;
@@ -791,7 +804,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   _survivor_surv_rate_group->reset();
   calculate_young_list_min_length();
   calculate_young_list_target_length();
- }
+}
 
 void G1CollectorPolicy::record_before_bytes(size_t bytes) {
   _bytes_in_to_space_before_gc += bytes;
@@ -814,9 +827,9 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
       gclog_or_tty->print(" (%s)", full_young_gcs() ? "young" : "partial");
   }
 
-  assert(_g1->used_regions() == _g1->recalculate_used_regions(),
-         "sanity");
-  assert(_g1->used() == _g1->recalculate_used(), "sanity");
+  assert(_g1->used() == _g1->recalculate_used(),
+         err_msg("sanity, used: "SIZE_FORMAT" recalculate_used: "SIZE_FORMAT,
+                 _g1->used(), _g1->recalculate_used()));
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _all_stop_world_times_ms->add(s_w_t_ms);
@@ -2256,24 +2269,13 @@ void G1CollectorPolicy::print_yg_surv_rate_info() const {
 #endif // PRODUCT
 }
 
-bool
-G1CollectorPolicy::should_add_next_region_to_young_list() {
-  assert(in_young_gc_mode(), "should be in young GC mode");
-  bool ret;
-  size_t young_list_length = _g1->young_list()->length();
-  size_t young_list_max_length = _young_list_target_length;
-  if (G1FixedEdenSize) {
-    young_list_max_length -= _max_survivor_regions;
-  }
-  if (young_list_length < young_list_max_length) {
-    ret = true;
+void
+G1CollectorPolicy::update_region_num(bool young) {
+  if (young) {
     ++_region_num_young;
   } else {
-    ret = false;
     ++_region_num_tenured;
   }
-
-  return ret;
 }
 
 #ifndef PRODUCT
@@ -2300,6 +2302,21 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
   };
 }
 
+void G1CollectorPolicy::calculate_max_gc_locker_expansion() {
+  size_t expansion_region_num = 0;
+  if (GCLockerEdenExpansionPercent > 0) {
+    double perc = (double) GCLockerEdenExpansionPercent / 100.0;
+    double expansion_region_num_d = perc * (double) _young_list_target_length;
+    // We use ceiling so that if expansion_region_num_d is > 0.0 (but
+    // less than 1.0) we'll get 1.
+    expansion_region_num = (size_t) ceil(expansion_region_num_d);
+  } else {
+    assert(expansion_region_num == 0, "sanity");
+  }
+  _young_list_max_length = _young_list_target_length + expansion_region_num;
+  assert(_young_list_target_length <= _young_list_max_length, "post-condition");
+}
+
 // Calculates survivor space parameters.
 void G1CollectorPolicy::calculate_survivors_policy()
 {
@@ -2315,32 +2332,6 @@ void G1CollectorPolicy::calculate_survivors_policy()
     _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
         HeapRegion::GrainWords * _max_survivor_regions);
   }
-}
-
-bool
-G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
-                                                               word_size) {
-  assert(_g1->regions_accounted_for(), "Region leakage!");
-  double max_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-
-  size_t young_list_length = _g1->young_list()->length();
-  size_t young_list_max_length = _young_list_target_length;
-  if (G1FixedEdenSize) {
-    young_list_max_length -= _max_survivor_regions;
-  }
-  bool reached_target_length = young_list_length >= young_list_max_length;
-
-  if (in_young_gc_mode()) {
-    if (reached_target_length) {
-      assert( young_list_length > 0 && _g1->young_list()->length() > 0,
-              "invariant" );
-      return true;
-    }
-  } else {
-    guarantee( false, "should not reach here" );
-  }
-
-  return false;
 }
 
 #ifndef PRODUCT

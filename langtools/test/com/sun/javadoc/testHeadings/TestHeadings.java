@@ -47,80 +47,65 @@ public class TestHeadings extends JavadocTester {
     private static final String[][] TEST = {
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Class</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
-            " NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Class</th>" + NL + "<th class=\"colLast\" scope=\"col\"" +
+            ">Description</th>"
         },
 
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TH ALIGN=\"left\"><STRONG>Methods inherited from class " +            "java.lang.Object</STRONG></TH>"
+            "<h3>Methods inherited from class&nbsp;java.lang.Object</h3>"
         },
 
         // Class use documentation
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Package</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "Uses of <A HREF=\"../../pkg1/C1.html\" " +            "title=\"class in pkg1\">C1</A> in " +            "<A HREF=\"../../pkg2/package-summary.html\">pkg2</A></FONT></TH>"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
 
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Method and Description</TH>"
+            "<th class=\"colOne\" scope=\"col\">Method and Description</th>"
         },
 
         // Constant values
         {BUG_ID + FS + "constant-values.html",
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
-            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
-            " SCOPE=\"col\" NOWRAP>Constant Field</TH>" + NL +
-            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>Value</TH>"
+            "<th class=\"colFirst\" scope=\"col\">" +
+            "Modifier and Type</th>" + NL + "<th scope=\"col\">Constant Field</th>" + NL +
+            "<th class=\"colLast\" scope=\"col\">Value</th>"
         },
 
         // Serialized Form
         {BUG_ID + FS + "serialized-form.html",
-            "<TH ALIGN=\"center\"><FONT SIZE=\"+2\">" + NL +
-            "<STRONG>Package</STRONG> <STRONG>pkg1</STRONG></FONT></TH>"
+            "<h2 title=\"Package\">Package&nbsp;pkg1</h2>"
         },
         {BUG_ID + FS + "serialized-form.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<STRONG>Class <A HREF=\"pkg1/C1.html\" " +            "title=\"class in pkg1\">pkg1.C1</A> extends java.lang.Object " +            "implements Serializable</STRONG></FONT></TH>"
+            "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">" +
+            "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>"
         },
         {BUG_ID + FS + "serialized-form.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"1\"><FONT SIZE=\"+2\">" + NL +
-            "<STRONG>Serialized Fields</STRONG></FONT></TH>"
+            "<h3>Serialized Fields</h3>"
         },
 
         // Overview Frame
         {BUG_ID + FS + "overview-frame.html",
-            "<TH ALIGN=\"left\" NOWRAP><FONT size=\"+1\" " +            "CLASS=\"FrameTitleFont\">" + NL + "<STRONG>Test Files</STRONG></FONT></TH>"
+            "<h1 title=\"Test Files\" class=\"bar\">Test Files</h1>"
         },
         {BUG_ID + FS + "overview-frame.html",
-            "<TITLE>" + NL +
-            "Overview List" + NL +
-            "</TITLE>"
+            "<title>Overview List</title>"
         },
 
         // Overview Summary
         {BUG_ID + FS + "overview-summary.html",
-            "<TITLE>" + NL +
-            "Overview" + NL +
-            "</TITLE>"
+            "<title>Overview</title>"
         },
 
     };

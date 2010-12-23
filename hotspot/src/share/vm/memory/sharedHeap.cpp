@@ -22,8 +22,18 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_sharedHeap.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/sharedHeap.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/java.hpp"
+#include "services/management.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/workgroup.hpp"
 
 SharedHeap* SharedHeap::_sh;
 

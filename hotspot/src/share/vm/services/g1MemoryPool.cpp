@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_g1MemoryPool.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "services/g1MemoryPool.hpp"
 
 G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      const char* name,

@@ -37,7 +37,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.source.tree.*;
 
@@ -434,8 +434,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCTree> defs;
         public JavaFileObject sourcefile;
         public PackageSymbol packge;
-        public Scope namedImportScope;
-        public Scope starImportScope;
+        public ImportScope namedImportScope;
+        public StarImportScope starImportScope;
         public long flags;
         public Position.LineMap lineMap = null;
         public Map<JCTree, String> docComments = null;
@@ -445,8 +445,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                         List<JCTree> defs,
                         JavaFileObject sourcefile,
                         PackageSymbol packge,
-                        Scope namedImportScope,
-                        Scope starImportScope) {
+                        ImportScope namedImportScope,
+                        StarImportScope starImportScope) {
             this.packageAnnotations = packageAnnotations;
             this.pid = pid;
             this.defs = defs;

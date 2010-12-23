@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_threadLS_linux_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "thread_linux.inline.hpp"
 
 void ThreadLocalStorage::generate_code_for_get_thread() {
   // nothing to do
