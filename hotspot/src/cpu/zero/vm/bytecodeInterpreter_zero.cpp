@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_cppInterpreter_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "interp_masm_zero.hpp"
+#include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/bytecodeInterpreter.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/debug.hpp"
 
 #ifdef CC_INTERP
 

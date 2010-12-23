@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
+#define OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
+
 #include <stdio.h>
 #include <strings.h>
 
@@ -36,3 +39,5 @@ extern "C" {
         void gen_prologue(GEN_variant gen_var);
         void gen_epilogue(GEN_variant gen_var);
 }
+
+#endif // OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H

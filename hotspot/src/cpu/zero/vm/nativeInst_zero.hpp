@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,15 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_NATIVEINST_ZERO_HPP
+#define CPU_ZERO_VM_NATIVEINST_ZERO_HPP
+
+#include "asm/assembler.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/os.hpp"
+#include "utilities/top.hpp"
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -183,3 +192,5 @@ class NativeGeneralJump : public NativeInstruction {
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   ShouldNotCallThis();
 }
+
+#endif // CPU_ZERO_VM_NATIVEINST_ZERO_HPP

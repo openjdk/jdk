@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_GENERATEOOPMAP_HPP
+#define SHARE_VM_OOPS_GENERATEOOPMAP_HPP
+
+#include "interpreter/bytecodeStream.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/signature.hpp"
 
 // Forward definition
 class MethodOopMap;
@@ -557,3 +567,5 @@ class GeneratePairingInfo: public GenerateOopMap {
 
   // Call compute_map(CHECK) to generate info.
 };
+
+#endif // SHARE_VM_OOPS_GENERATEOOPMAP_HPP

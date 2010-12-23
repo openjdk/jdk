@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,8 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         if (swapNeeded) {
             t = MotifDnDConstants.Swapper.swap(t);
         }
-        long time = t;
+        long time = t & 0xffffffffL;
+             // with correction of (32-bit unsigned to 64-bit signed) implicit conversion.
 
         /* Discard events from the previous receiver. */
         if (targetEnterServerTime == XConstants.CurrentTime ||

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_verificationType.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/verificationType.hpp"
 
 VerificationType VerificationType::from_tag(u1 tag) {
   switch (tag) {

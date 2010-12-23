@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,9 @@
  *
  */
 
+#ifndef CPU_ZERO_VM_CPPINTERPRETERGENERATOR_ZERO_HPP
+#define CPU_ZERO_VM_CPPINTERPRETERGENERATOR_ZERO_HPP
+
  protected:
   MacroAssembler* assembler() const {
     return _masm;
@@ -35,3 +38,5 @@
     entry->set_entry_point(entry_point);
     return (address) entry;
   }
+
+#endif // CPU_ZERO_VM_CPPINTERPRETERGENERATOR_ZERO_HPP

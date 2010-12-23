@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_COMPILER_DISASSEMBLER_HPP
+#define SHARE_VM_COMPILER_DISASSEMBLER_HPP
+
+#include "runtime/globals.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 class decode_env;
 
@@ -47,7 +61,16 @@ class Disassembler {
   static bool load_library();
 
   // Machine dependent stuff
-  #include "incls/_disassembler_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "disassembler_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "disassembler_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "disassembler_zero.hpp"
+#endif
+
 
  public:
   static bool can_decode() {
@@ -57,3 +80,5 @@ class Disassembler {
   static void decode(nmethod* nm,                outputStream* st = NULL);
   static void decode(address begin, address end, outputStream* st = NULL);
 };
+
+#endif // SHARE_VM_COMPILER_DISASSEMBLER_HPP

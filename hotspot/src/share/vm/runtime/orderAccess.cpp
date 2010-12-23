@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_orderAccess.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/orderAccess.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/thread.hpp"
 
 void OrderAccess::StubRoutines_fence() {
   // Use a stub if it exists.  It may not exist during bootstrap so do

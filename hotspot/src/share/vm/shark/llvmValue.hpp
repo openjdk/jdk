@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_LLVMVALUE_HPP
+#define SHARE_VM_SHARK_LLVMVALUE_HPP
+
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkContext.hpp"
+#include "shark/sharkType.hpp"
 
 class LLVMValue : public AllStatic {
  public:
@@ -60,3 +67,5 @@ class LLVMValue : public AllStatic {
     return llvm::ConstantInt::get(SharkType::intptr_type(), value, false);
   }
 };
+
+#endif // SHARE_VM_SHARK_LLVMVALUE_HPP

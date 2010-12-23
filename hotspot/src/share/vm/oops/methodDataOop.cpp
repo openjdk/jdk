@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_methodDataOop.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/handles.inline.hpp"
 
 // ==================================================================
 // DataLayout

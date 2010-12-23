@@ -199,7 +199,7 @@ public abstract class MethodHandleImpl {
         return allocator;
     }
 
-    static final class AllocateObject<C> extends JavaMethodHandle {
+    static final class AllocateObject<C> extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
 
         private final Class<C> allocateClass;
@@ -207,7 +207,7 @@ public abstract class MethodHandleImpl {
 
         private AllocateObject(MethodHandle invoker,
                                Class<C> allocateClass, MethodHandle rawConstructor) {
-            super(invoker);
+            super(Access.TOKEN, invoker);
             this.allocateClass = allocateClass;
             this.rawConstructor = rawConstructor;
         }
@@ -237,7 +237,7 @@ public abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            return allocateClass.getSimpleName();
+            return addTypeString(allocateClass.getSimpleName(), this);
         }
         @SuppressWarnings("unchecked")
         private C allocate() throws InstantiationException {
@@ -245,52 +245,52 @@ public abstract class MethodHandleImpl {
         }
         private C invoke_V(Object... av) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, av);
+            rawConstructor.invokeExact((Object)obj, av);
             return obj;
         }
         private C invoke_L0() throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj);
+            rawConstructor.invokeExact((Object)obj);
             return obj;
         }
         private C invoke_L1(Object a0) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0);
+            rawConstructor.invokeExact((Object)obj, a0);
             return obj;
         }
         private C invoke_L2(Object a0, Object a1) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1);
+            rawConstructor.invokeExact((Object)obj, a0, a1);
             return obj;
         }
         private C invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2);
             return obj;
         }
         private C invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3);
             return obj;
         }
         private C invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4);
             return obj;
         }
         private C invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5);
             return obj;
         }
         private C invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6);
             return obj;
         }
         private C invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
             C obj = allocate();
-            rawConstructor.<void>invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6, a7);
+            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6, a7);
             return obj;
         }
         static MethodHandle[] makeInvokes() {
@@ -369,19 +369,19 @@ public abstract class MethodHandleImpl {
         return mhs[isSetter ? 1 : 0];
     }
 
-    static final class FieldAccessor<C,V> extends JavaMethodHandle {
+    static final class FieldAccessor<C,V> extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
         final Object base;  // for static refs only
         final long offset;
         final String name;
 
         public FieldAccessor(Access token, MemberName field, boolean isSetter) {
-            super(fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
+            super(Access.TOKEN, fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
             this.offset = (long) field.getVMIndex(token);
             this.name = field.getName();
             this.base = staticBase(field);
         }
-        public String toString() { return name; }
+        public String toString() { return addTypeString(name, this); }
 
         int getFieldI(C obj) { return unsafe.getInt(obj, offset); }
         void setFieldI(C obj, int x) { unsafe.putInt(obj, offset, x); }
@@ -560,7 +560,9 @@ public abstract class MethodHandleImpl {
     MethodHandle bindReceiver(Access token,
                               MethodHandle target, Object receiver) {
         Access.check(token);
-        if (target instanceof AdapterMethodHandle) {
+        if (target instanceof AdapterMethodHandle &&
+            ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
+            ) {
             Object info = MethodHandleNatives.getTargetInfo(target);
             if (info instanceof DirectMethodHandle) {
                 DirectMethodHandle dmh = (DirectMethodHandle) info;
@@ -908,11 +910,11 @@ public abstract class MethodHandleImpl {
         throw new UnsupportedOperationException("NYI");
     }
 
-    private static class GuardWithTest extends JavaMethodHandle {
+    private static class GuardWithTest extends BoundMethodHandle {
         private final MethodHandle test, target, fallback;
         private GuardWithTest(MethodHandle invoker,
                               MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            super(invoker);
+            super(Access.TOKEN, invoker);
             this.test = test;
             this.target = target;
             this.fallback = fallback;
@@ -946,57 +948,57 @@ public abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            return target.toString();
+            return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
-            if (test.<boolean>invokeExact(av))
-                return target.<Object>invokeExact(av);
-            return fallback.<Object>invokeExact(av);
+            if ((boolean) test.invokeExact(av))
+                return target.invokeExact(av);
+            return fallback.invokeExact(av);
         }
         private Object invoke_L0() throws Throwable {
-            if (test.<boolean>invokeExact())
-                return target.<Object>invokeExact();
-            return fallback.<Object>invokeExact();
+            if ((boolean) test.invokeExact())
+                return target.invokeExact();
+            return fallback.invokeExact();
         }
         private Object invoke_L1(Object a0) throws Throwable {
-            if (test.<boolean>invokeExact(a0))
-                return target.<Object>invokeExact(a0);
-            return fallback.<Object>invokeExact(a0);
+            if ((boolean) test.invokeExact(a0))
+                return target.invokeExact(a0);
+            return fallback.invokeExact(a0);
         }
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1))
-                return target.<Object>invokeExact(a0, a1);
-            return fallback.<Object>invokeExact(a0, a1);
+            if ((boolean) test.invokeExact(a0, a1))
+                return target.invokeExact(a0, a1);
+            return fallback.invokeExact(a0, a1);
         }
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2))
-                return target.<Object>invokeExact(a0, a1, a2);
-            return fallback.<Object>invokeExact(a0, a1, a2);
+            if ((boolean) test.invokeExact(a0, a1, a2))
+                return target.invokeExact(a0, a1, a2);
+            return fallback.invokeExact(a0, a1, a2);
         }
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3))
-                return target.<Object>invokeExact(a0, a1, a2, a3);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3))
+                return target.invokeExact(a0, a1, a2, a3);
+            return fallback.invokeExact(a0, a1, a2, a3);
         }
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4))
+                return target.invokeExact(a0, a1, a2, a3, a4);
+            return fallback.invokeExact(a0, a1, a2, a3, a4);
         }
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5))
+                return target.invokeExact(a0, a1, a2, a3, a4, a5);
+            return fallback.invokeExact(a0, a1, a2, a3, a4, a5);
         }
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5, a6))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5, a6))
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
+            return fallback.invokeExact(a0, a1, a2, a3, a4, a5, a6);
         }
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
-            if (test.<boolean>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7))
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
-            return fallback.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7))
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+            return fallback.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
         }
         static MethodHandle[] makeInvokes() {
             ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
@@ -1036,7 +1038,7 @@ public abstract class MethodHandleImpl {
         return GuardWithTest.make(token, test, target, fallback);
     }
 
-    private static class GuardWithCatch extends JavaMethodHandle {
+    private static class GuardWithCatch extends BoundMethodHandle {
         private final MethodHandle target;
         private final Class<? extends Throwable> exType;
         private final MethodHandle catcher;
@@ -1045,93 +1047,93 @@ public abstract class MethodHandleImpl {
         }
         public GuardWithCatch(MethodHandle invoker,
                               MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
-            super(invoker);
+            super(Access.TOKEN, invoker);
             this.target = target;
             this.exType = exType;
             this.catcher = catcher;
         }
         @Override
         public String toString() {
-            return target.toString();
+            return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
             try {
-                return target.<Object>invokeExact(av);
+                return target.invokeExact(av);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, av);
+                return catcher.invokeExact(t, av);
             }
         }
         private Object invoke_L0() throws Throwable {
             try {
-                return target.<Object>invokeExact();
+                return target.invokeExact();
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t);
+                return catcher.invokeExact(t);
             }
         }
         private Object invoke_L1(Object a0) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0);
+                return target.invokeExact(a0);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0);
+                return catcher.invokeExact(t, a0);
             }
         }
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1);
+                return target.invokeExact(a0, a1);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1);
+                return catcher.invokeExact(t, a0, a1);
             }
         }
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2);
+                return target.invokeExact(a0, a1, a2);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2);
+                return catcher.invokeExact(t, a0, a1, a2);
             }
         }
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3);
+                return target.invokeExact(a0, a1, a2, a3);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3);
+                return catcher.invokeExact(t, a0, a1, a2, a3);
             }
         }
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4);
+                return target.invokeExact(a0, a1, a2, a3, a4);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4);
             }
         }
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5);
+                return target.invokeExact(a0, a1, a2, a3, a4, a5);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5);
             }
         }
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6);
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
             }
         }
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
             try {
-                return target.<Object>invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
+                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
             } catch (Throwable t) {
                 if (!exType.isInstance(t))  throw t;
-                return catcher.<Object>invokeExact(t, a0, a1, a2, a3, a4, a5, a6, a7);
+                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6, a7);
             }
         }
         static MethodHandle[] makeInvokes() {
@@ -1217,21 +1219,24 @@ public abstract class MethodHandleImpl {
         if (target != null)
             name = MethodHandleNatives.getMethodName(target);
         if (name == null)
-            return "<unknown>";
-        return name.getName();
+            return "invoke" + target.type();
+        return name.getName() + target.type();
     }
 
-    public static String addTypeString(MethodHandle target) {
-        if (target == null)  return "null";
-        return target.toString() + target.type();
+    static String addTypeString(Object obj, MethodHandle target) {
+        String str = String.valueOf(obj);
+        if (target == null)  return str;
+        int paren = str.indexOf('(');
+        if (paren >= 0) str = str.substring(0, paren);
+        return str + target.type();
     }
 
-    public static void checkSpreadArgument(Object av, int n) {
+    static void checkSpreadArgument(Object av, int n) {
         if (av == null ? n != 0 : ((Object[])av).length != n)
             throw newIllegalArgumentException("Array is not of length "+n);
     }
 
-    public static void raiseException(int code, Object actual, Object required) {
+    static void raiseException(int code, Object actual, Object required) {
         String message;
         // disregard the identity of the actual object, if it is not a class:
         if (!(actual instanceof Class) && !(actual instanceof MethodType))
@@ -1256,5 +1261,10 @@ public abstract class MethodHandleImpl {
     public static MethodHandle getBootstrap(Access token, Class<?> callerClass) {
         Access.check(token);
         return MethodHandleNatives.getBootstrap(callerClass);
+    }
+
+    public static MethodHandle withTypeHandler(Access token, MethodHandle target, MethodHandle typeHandler) {
+        Access.check(token);
+        return AdapterMethodHandle.makeTypeHandler(token, target, typeHandler);
     }
 }

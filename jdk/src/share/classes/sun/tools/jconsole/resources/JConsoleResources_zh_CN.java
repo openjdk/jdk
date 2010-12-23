@@ -46,8 +46,6 @@ import static java.awt.event.KeyEvent.*;
  */
 public class JConsoleResources_zh_CN extends JConsoleResources {
 
-    private static final String cr = System.getProperty("line.separator");
-
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
      *
@@ -56,7 +54,7 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
      * @return the contents of this <code>ResourceBundle</code>.
      */
     protected Object[][] getContents0() {
-        return new Object[][] {
+        Object[][] temp = new Object[][] {
         // NOTE 1: The value strings in this file containing "{0}" are
         //         processed by the java.text.MessageFormat class.  Any
         //         single quotes appearing in these strings need to be
@@ -98,7 +96,7 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Attributes","\u5c5e\u6027"},
         {"Blank", "\u7a7a\u767d"},
         {"BlockedCount WaitedCount",
-             "\u963b\u585e\u603b\u6570\uff1a{0}  \u7b49\u5f85\u603b\u6570\uff1a {1}" + cr},
+             "\u963b\u585e\u603b\u6570\uff1a{0}  \u7b49\u5f85\u603b\u6570\uff1a {1}\n"},
         {"Boot class path","\u5f15\u5bfc\u7c7b\u8def\u5f84"},
         {"BorderedComponent.moreOrLessButton.toolTip", "\u5207\u6362\u4ee5\u663e\u793a\u8f83\u591a\u4fe1\u606f\u6216\u8f83\u5c11\u4fe1\u606f"},
         {"CPU Usage","CPU \u4f7f\u7528\u60c5\u51b5"},
@@ -268,21 +266,21 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Minimize All.mnemonic", 'M'},
         {"Minus Version", "\u8fd9\u662f {0} \u7248\u672c {1}"},
         {"Monitor locked",
-             "   - \u5df2\u9501\u5b9a {0}" + cr},
+             "   - \u5df2\u9501\u5b9a {0}\n"},
         {"Motif","\u4fee\u6539"},
         {"Name Build and Mode","{0}\uff08\u5185\u90e8\u7248\u672c {1}\u3001{2}\uff09"},
         {"Name and Build","{0}\uff08\u5185\u90e8\u7248\u672c {1}\uff09"},
         {"Name","\u540d\u79f0"},
         {"Name: ","\u540d\u79f0\uff1a "},
         {"Name State",
-             "\u540d\u79f0\uff1a {0}" + cr +
-             "\u72b6\u6001\uff1a {1}" + cr},
+             "\u540d\u79f0\uff1a {0}\n" +
+             "\u72b6\u6001\uff1a {1}\n"},
         {"Name State LockName",
-             "\u540d\u79f0\uff1a {0}" + cr +
-             "\u72b6\u6001\uff1a{1} \u5728 {2} \u4e0a" + cr},
+             "\u540d\u79f0\uff1a {0}\n" +
+             "\u72b6\u6001\uff1a{1} \u5728 {2} \u4e0a\n"},
         {"Name State LockName LockOwner",
-             "\u540d\u79f0\uff1a {0}" + cr +
-             "\u72b6\u6001\uff1a{1} \u5728 {2} \u4e0a\uff0c\u62e5\u6709\u8005\uff1a {3}" + cr},
+             "\u540d\u79f0\uff1a {0}\n" +
+             "\u72b6\u6001\uff1a{1} \u5728 {2} \u4e0a\uff0c\u62e5\u6709\u8005\uff1a {3}\n"},
         {"New Connection...", "\u65b0\u5efa\u8fde\u63a5..."},
         {"New Connection....mnemonic", 'N'},
         {"New value applied","\u5df2\u5e94\u7528\u65b0\u503c"},
@@ -348,7 +346,7 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Size Mb","{0} Mb"},
         {"Source","\u6e90"},
         {"Stack trace",
-             cr + "\u5806\u6808\u8ffd\u8e2a\uff1a " + cr},
+             "\n\u5806\u6808\u8ffd\u8e2a\uff1a \n"},
         {"Success:","\u6210\u529f\uff1a"},
         // Note: SummaryTab.headerDateTimeFormat can be one the following:
         // 1. A combination of two styles for date and time, using the
@@ -426,22 +424,29 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"plot", "\u7ed8\u56fe"},
         {"visualize","\u663e\u793a"},
         {"zz usage text",
-             "\u7528\u6cd5: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ...]" + cr +
-             cr +
-             "  -interval   \u5c06\u66f4\u65b0\u95f4\u9694\u65f6\u95f4\u8bbe\u7f6e\u4e3a n \u79d2\uff08\u9ed8\u8ba4\u503c\u4e3a 4 \u79d2\uff09" + cr +
-             "  -notile     \u6700\u521d\u4e0d\u5e73\u94fa\u663e\u793a\u7a97\u53e3\uff08\u5bf9\u4e8e\u4e24\u4e2a\u6216\u66f4\u591a\u8fde\u63a5\uff09" + cr +
-             "  -pluginpath \u6307\u5b9a jconsole \u7528\u4e8e\u67e5\u627e\u63d2\u4ef6\u7684\u8def\u5f84" + cr +
-             "  -version    \u8f93\u51fa\u7a0b\u5e8f\u7248\u672c" + cr +
-             cr +
-             "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)" + cr +
-             "  pid       \u76ee\u6807\u8fdb\u7a0b\u7684\u8fdb\u7a0b ID" + cr +
-             "  host      \u8fdc\u7a0b\u4e3b\u673a\u540d\u6216 IP \u5730\u5740" + cr +
-             "  port      \u7528\u4e8e\u8fdc\u7a0b\u8fde\u63a5\u7684\u7aef\u53e3\u53f7" + cr +
-             cr +
-             "  -J          \u5bf9\u6b63\u5728\u8fd0\u884c jconsole \u7684 Java \u865a\u62df\u673a\u6307\u5b9a" + cr +
+             "\u7528\u6cd5: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ...]\n\n" +
+             "  -interval   \u5c06\u66f4\u65b0\u95f4\u9694\u65f6\u95f4\u8bbe\u7f6e\u4e3a n \u79d2\uff08\u9ed8\u8ba4\u503c\u4e3a 4 \u79d2\uff09\n" +
+             "  -notile     \u6700\u521d\u4e0d\u5e73\u94fa\u663e\u793a\u7a97\u53e3\uff08\u5bf9\u4e8e\u4e24\u4e2a\u6216\u66f4\u591a\u8fde\u63a5\uff09\n" +
+             "  -pluginpath \u6307\u5b9a jconsole \u7528\u4e8e\u67e5\u627e\u63d2\u4ef6\u7684\u8def\u5f84\n" +
+             "  -version    \u8f93\u51fa\u7a0b\u5e8f\u7248\u672c\n\n" +
+             "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)\n" +
+             "  pid       \u76ee\u6807\u8fdb\u7a0b\u7684\u8fdb\u7a0b ID\n" +
+             "  host      \u8fdc\u7a0b\u4e3b\u673a\u540d\u6216 IP \u5730\u5740\n" +
+             "  port      \u7528\u4e8e\u8fdc\u7a0b\u8fde\u63a5\u7684\u7aef\u53e3\u53f7\n\n" +
+             "  -J          \u5bf9\u6b63\u5728\u8fd0\u884c jconsole \u7684 Java \u865a\u62df\u673a\u6307\u5b9a\n" +
              "            \u8f93\u5165\u53c2\u6570"},
         // END OF MATERIAL TO LOCALIZE
         };
+
+        String ls = System.getProperty("line.separator");
+        for(int i=0;i<temp.length;i++) {
+            if (temp[i][1] instanceof String){
+            temp[i][1] = temp[i][1].toString().replaceAll("\n",ls);
+            }
+        }
+
+        return temp;
+
     }
 
     public synchronized Object[][] getContents() {

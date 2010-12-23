@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
+#define SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
+
+#include "oops/objArrayKlass.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#endif
+
 void objArrayKlass::oop_follow_contents(oop obj, int index) {
   if (UseCompressedOops) {
     objarray_follow_contents<narrowOop>(obj, index);
@@ -87,3 +96,5 @@ void objArrayKlass::objarray_follow_contents(ParCompactionManager* cm, oop obj,
   }
 }
 #endif // #ifndef SERIALGC
+
+#endif // SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
