@@ -78,8 +78,6 @@
 # Attempts to set these variables for the JDK builds:           
 #    ALT_COMPILER_PATH
 #    ALT_BOOTDIR
-#    ALT_BINARY_PLUGS_PATH
-#    ALT_CLOSED_JDK_IMPORT_PATH
 #    Windows Only:
 #      ALT_UNIXCOMMAND_PATH
 #      ALT_DXSDK_PATH
@@ -302,28 +300,6 @@ fi
 if [ "${ALT_JDK_IMPORT_PATH}" = "" -a -d ${jdk_instances}/${importjdk} ] ; then
   ALT_JDK_IMPORT_PATH=${jdk_instances}/${importjdk}
   export ALT_JDK_IMPORT_PATH
-fi
-
-# Get the latest JDK binary plugs or build to import pre-built binaries
-if [ "${ALT_BINARY_PLUGS_PATH}" = "" ] ; then
-  binplugs=${jdk_instances}/openjdk-binary-plugs
-  jdkplugs=${jdk_instances}/${importjdk}
-  if [ -d ${binplugs} ] ; then
-    ALT_BINARY_PLUGS_PATH=${binplugs}
-    export ALT_BINARY_PLUGS_PATH
-  elif [  "${ALT_CLOSED_JDK_IMPORT_PATH}" = "" -a -d ${jdkplugs} ] ; then
-    ALT_CLOSED_JDK_IMPORT_PATH=${jdkplugs}
-    export ALT_CLOSED_JDK_IMPORT_PATH
-  fi
-  if [ "${ALT_BINARY_PLUGS_PATH}" = "" ] ; then
-    echo "WARNING: Missing ALT_BINARY_PLUGS_PATH: ${binplugs}"
-  fi
-fi
-if [ "${ALT_BINARY_PLUGS_PATH}" != "" -a ! -d "${ALT_BINARY_PLUGS_PATH}" ] ; then
-  echo "WARNING: Cannot access ALT_BINARY_PLUGS_PATH=${ALT_BINARY_PLUGS_PATH}"
-fi
-if [ "${ALT_CLOSED_JDK_IMPORT_PATH}" != "" -a ! -d "${ALT_CLOSED_JDK_IMPORT_PATH}" ] ; then
-  echo "WARNING: Cannot access ALT_CLOSED_JDK_IMPORT_PATH=${ALT_CLOSED_JDK_IMPORT_PATH}"
 fi
 
 # Export PATH setting

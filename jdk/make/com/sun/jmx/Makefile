@@ -42,12 +42,8 @@ include $(BUILDDIR)/common/Defs.gmk
 # within common included gmk files : that is why the following for loop
 # has been duplicated.
 
-# When building the openjdk, build snmp only if importing binary plugs,
-ifdef OPENJDK
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-    SUBDIRS = snmp
-  endif
-else
+# When building the openjdk, no snmp
+ifndef OPENJDK
   SUBDIRS = snmp
 endif
 

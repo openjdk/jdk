@@ -322,11 +322,6 @@ else
 endif
 
 #
-# Binary Plug rules and macros
-#
-include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
-
-#
 # Test rule
 #
 
