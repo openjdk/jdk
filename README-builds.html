@@ -64,7 +64,6 @@
                         <li><a href="#dependencies">Build Dependencies</a>
                             <ul>
                                 <li><a href="#bootjdk">Bootstrap JDK</a> </li>
-                                <li><a href="#binaryplugs">Binary Plugs</a> </li>
                                 <li><a href="#importjdk">Optional Import JDK</a> </li>
                                 <li><a href="#ant">Ant</a> </li>
                                 <li><a href="#cacerts">Certificate Authority File (cacert)</a> </li>
@@ -705,11 +704,6 @@
                     <tt><a href="#ALT_BOOTDIR">ALT_BOOTDIR</a></tt>.
                 </li>
                 <li>
-                    Install the
-                    <a href="#binaryplugs">Binary Plugs</a>, set
-                    <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>.
-                </li>
-                <li>
                     <a href="#importjdk">Optional Import JDK</a>, set
                     <tt><a href="#ALT_JDK_IMPORT_PATH">ALT_JDK_IMPORT_PATH</a></tt>.
                 </li>
@@ -762,11 +756,6 @@
                     Install the
                     <a href="#bootjdk">Bootstrap JDK</a>, set
                     <tt><a href="#ALT_BOOTDIR">ALT_BOOTDIR</a></tt>.
-                </li>
-                <li>
-                    Install the
-                    <a href="#binaryplugs">Binary Plugs</a>, set
-                    <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>.
                 </li>
                 <li>
                     <a href="#importjdk">Optional Import JDK</a>, set
@@ -856,11 +845,6 @@
                     <tt><a href="#ALT_BOOTDIR">ALT_BOOTDIR</a></tt>.
                 </li>
                 <li>
-                    Install the
-                    <a href="#binaryplugs">Binary Plugs</a>, set
-                    <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>..
-                </li>
-                <li>
                     <a href="#importjdk">Optional Import JDK</a>, set
                     <tt><a href="#ALT_JDK_IMPORT_PATH">ALT_JDK_IMPORT_PATH</a></tt>.
                 </li>
@@ -923,38 +907,6 @@
                     If you don't set
                     <tt><a href="#ALT_BOOTDIR">ALT_BOOTDIR</a></tt>
                     the makefiles will look in that location for a JDK it can use.
-            </blockquote>
-            <!-- ------------------------------------------------------ -->
-            <h4><a name="binaryplugs">Binary Plugs</a></h4>
-            <blockquote>
-                Not all of the source code that makes up the JDK is available
-                under an open-source license.
-                This is a temporary situation and these binary plugs will be
-                replaced with fully open source replacements as soon as possible.
-                So currently, in order to build a complete OpenJDK image,
-                you must first download and install the appropriate
-                binary plug bundles for the OpenJDK, go to the
-                <a href="http://openjdk.java.net" target="_blank">OpenJDK</a> site and select
-                the 
-                "<b>Bundles(7)</b>"
-                link and download the binaryplugs for
-                your particular platform.
-                The file downloaded is a jar file that must be extracted by running
-                the jar file with:
-                <blockquote>
-                    <pre>
-            <tt><b>java -jar jdk-7-ea-plug-b<i>nn</i>-<i>os</i>-<i>arch</i>-<i>dd</i>_<i>month</i>_<i>year</i>.jar</b></tt>
-                    </pre>
-                </blockquote>
-                A prompt will be issued for acceptance of these binary plug files.
-                During the OpenJDK build process these "binary plugs"
-                for the encumbered components will be copied into your
-                resulting OpenJDK binary build image.
-                These binary plug files are only for the purpose of
-                building an OpenJDK binary.
-                Make sure you set
-                <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>
-                to the root of this installation.
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="importjdk">Optional Import JDK</a></h4>
@@ -1601,14 +1553,6 @@
                     You should always install your own local Bootstrap JDK and
                     always set <tt>ALT_BOOTDIR</tt> explicitly.
                 </dd>
-                <dt><a name="ALT_BINARY_PLUGS_PATH"><tt>ALT_BINARY_PLUGS_PATH</tt></a></dt>
-                <dd>
-                    The location of the binary plugs installation.
-                    See <a href="#binaryplugs">Binary Plugs</a> for more information.
-                    You should always have a local copy of a
-                    recent Binary Plugs install image
-                    and set this variable to that location.
-                </dd>
                 <dt><a name="ALT_JDK_IMPORT_PATH"><tt>ALT_JDK_IMPORT_PATH</tt></a></dt>
                 <dd>
                     The location of a previously built JDK installation. 
@@ -1703,26 +1647,6 @@
                     and
                     <tt>windows-amd64</tt>.
                     Where each of these directories contain the import JDK image
-                    for that platform.
-                </dd>
-                <dt><a name="ALT_BUILD_BINARY_PLUGS_PATH"><tt>ALT_BUILD_BINARY_PLUGS_PATH</tt></a></dt>
-                <dd>
-                    These are useful in managing builds on multiple platforms.
-                    The default network location for all of the binary plug images
-                    for all platforms. 
-                    If <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>
-                    is not set, this directory will be used and should contain 
-                    the following directories:
-                    <tt>solaris-sparc</tt>,
-                    <tt>solaris-i586</tt>,
-                    <tt>solaris-sparcv9</tt>,
-                    <tt>solaris-amd64</tt>,
-                    <tt>linux-i586</tt>,
-                    <tt>linux-amd64</tt>,
-                    <tt>windows-i586</tt>,
-                    and
-                    <tt>windows-amd64</tt>.
-                    Where each of these directories contain the binary plugs image
                     for that platform.
                 </dd>
                 <dt><strong>Windows specific:</strong></dt>

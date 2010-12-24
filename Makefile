@@ -156,12 +156,6 @@ ifeq ($(BUILD_DEPLOY), true)
   clobber:: deploy-clobber
 endif
 
-ifeq ($(BUILD_JDK), true)
-  ifeq ($(BUNDLE_RULES_AVAILABLE), true)
-    generic_build_repo_series:: openjdk-binary-plugs-bundles
-  endif
-endif
-
 # The debug build, fastdebug or debug. Needs special handling.
 #  Note that debug builds do NOT do INSTALL steps, but must be done
 #  after the product build and before the INSTALL step of the product build.
@@ -301,7 +295,6 @@ ifneq ($(SKIP_OPENJDK_BUILD), true)
   ifeq ($(BUILD_JDK), true)
     ifeq ($(BUNDLE_RULES_AVAILABLE), true)
 
-OPENJDK_PLUGS=$(ABS_OUTPUTDIR)/$(OPENJDK_BINARY_PLUGS_INAME)
 OPENJDK_OUTPUTDIR=$(ABS_OUTPUTDIR)/open-output
 OPENJDK_BUILD_NAME \
   = openjdk-$(JDK_MINOR_VERSION)-$(BUILD_NUMBER)-$(PLATFORM)-$(ARCH)-$(BUNDLE_DATE)
@@ -330,7 +323,6 @@ openjdk_build:
 	  GENERATE_DOCS=false \
 	  ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR) \
 	  ALT_OUTPUTDIR=$(OPENJDK_OUTPUTDIR) \
-	  ALT_BINARY_PLUGS_PATH=$(OPENJDK_PLUGS) \
 	  ALT_BOOTDIR=$(OPENJDK_BOOTDIR) \
 	  ALT_JDK_IMPORT_PATH=$(OPENJDK_IMPORTJDK) \
 		product_build )
@@ -545,7 +537,7 @@ examples_help:
 "
 
 ################################################################
-# Source and binary plug bundling
+# Source bundling
 ################################################################
 ifeq ($(BUNDLE_RULES_AVAILABLE), true)
   include $(BUNDLE_RULES)
