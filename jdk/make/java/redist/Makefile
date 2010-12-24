@@ -272,17 +272,9 @@ $(LIB_LOCATION)/$(KERNEL_LOCATION)/Xusage.txt : $(HOTSPOT_KERNEL_PATH)/Xusage.tx
 	$(install-file)
 
 #
-# Specific to OpenJDK building
+# Specific to non-OpenJDK building
 #
-ifdef OPENJDK
-
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-    include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
-
-    build: import-binary-plugs
-  endif
-
-else # !OPENJDK
+ifndef OPENJDK
 
 INTERNAL_IMPORT_LIST += \
             $(LIBDIR)/security/US_export_policy.jar \

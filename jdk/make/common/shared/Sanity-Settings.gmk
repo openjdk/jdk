@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,8 @@ ifeq ($(PLATFORM),windows)
   ifneq ($(MSVCRNN_DLL),)
     ALL_SETTINGS+=$(call addAltSetting,MSVCRNN_DLL_PATH)
   endif
-  ALL_SETTINGS+=$(call addAltSetting,MSDEVTOOLS_PATH)
+  ALL_SETTINGS+=$(call addRequiredSetting,INCLUDE)
+  ALL_SETTINGS+=$(call addRequiredSetting,LIB)
 endif
 ALL_SETTINGS+=$(call addOptionalSetting,COMPILER_NAME)
 ALL_SETTINGS+=$(call addOptionalSetting,COMPILER_VERSION)
@@ -223,6 +224,7 @@ ifeq ($(PLATFORM),windows)
   ALL_SETTINGS+=$(call addAltSetting,DXSDK_PATH)
   ALL_SETTINGS+=$(call addAltSetting,DXSDK_INCLUDE_PATH)
   ALL_SETTINGS+=$(call addAltSetting,DXSDK_LIB_PATH)
+  ALL_SETTINGS+=$(call addAltSetting,WINDOWSSDKDIR)
   ifndef OPENJDK
     ALL_SETTINGS+=$(call addAltSetting,DEPLOY_MSSDK)
     ALL_SETTINGS+=$(call addAltSetting,INSTALL_MSSDK)
@@ -244,16 +246,7 @@ ifdef OPENJDK
   ALL_SETTINGS+=$(call addHeading,OpenJDK-specific settings)
   ALL_SETTINGS+=$(call addAltSetting,FREETYPE_HEADERS_PATH)
   ALL_SETTINGS+=$(call addAltSetting,FREETYPE_LIB_PATH)
-  ALL_SETTINGS+=$(call addHeading,OPENJDK Import Binary Plug Settings)
-  ALL_SETTINGS+=$(call addOptionalSetting,IMPORT_BINARY_PLUGS)
-  ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_JARFILE)
-  ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_PATH)
-  ALL_SETTINGS+=$(call addAltSetting,BUILD_BINARY_PLUGS_PATH)
-else 
-  ALL_SETTINGS+=$(call addHeading,OPENJDK Export Binary Plug Settings)
-  ALL_SETTINGS+=$(call addOptionalSetting,PLUG_EXPORT_DIRNAME)
 endif
-ALL_SETTINGS+=$(call addOptionalSetting,PLUG_LIBRARY_NAMES)
 
 ifdef OPENJDK
   ALL_SETTINGS+=$(call addHeading,Previous JDK Settings)
