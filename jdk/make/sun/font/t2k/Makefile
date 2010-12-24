@@ -23,8 +23,6 @@
 # questions.
 #
 
-# WARNING: Make sure the OPENJDK plugs are up-to-date, see make/common/internal/BinaryPlugs.gmk
-
 #
 # Makefile for building t2k rasteriser.
 #

@@ -246,16 +246,7 @@ ifdef OPENJDK
   ALL_SETTINGS+=$(call addHeading,OpenJDK-specific settings)
   ALL_SETTINGS+=$(call addAltSetting,FREETYPE_HEADERS_PATH)
   ALL_SETTINGS+=$(call addAltSetting,FREETYPE_LIB_PATH)
-  ALL_SETTINGS+=$(call addHeading,OPENJDK Import Binary Plug Settings)
-  ALL_SETTINGS+=$(call addOptionalSetting,IMPORT_BINARY_PLUGS)
-  ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_JARFILE)
-  ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_PATH)
-  ALL_SETTINGS+=$(call addAltSetting,BUILD_BINARY_PLUGS_PATH)
-else 
-  ALL_SETTINGS+=$(call addHeading,OPENJDK Export Binary Plug Settings)
-  ALL_SETTINGS+=$(call addOptionalSetting,PLUG_EXPORT_DIRNAME)
 endif
-ALL_SETTINGS+=$(call addOptionalSetting,PLUG_LIBRARY_NAMES)
 
 ifdef OPENJDK
   ALL_SETTINGS+=$(call addHeading,Previous JDK Settings)

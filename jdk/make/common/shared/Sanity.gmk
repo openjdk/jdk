@@ -183,7 +183,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-classpath \
 	sane-java_home \
 	sane-fonts \
-	sane-binary-plugs \
 	sane-variant \
 	sane-ld_library_path \
 	sane-ld_library_path_64 \
@@ -496,23 +495,6 @@ ifndef OPENJDK
 	   "" >> $(ERROR_FILE); \
 	fi \
 	fi
-endif
-
-######################################################
-# If building OPENJDK check pre-built binaries are
-# available for binary plug source components.
-######################################################
-ifdef OPENJDK
-sane-binary-plugs:
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-	@if [ ! -d "$(BINARY_PLUGS_PATH)" ]; then \
-	  $(ECHO) "WARNING: Can't locate pre-built libraries. \n" \
-	    "      Please check your access to \n" \
-	    "          $(BINARY_PLUGS_PATH) \n" \
-	    "      and/or check your value of ALT_BINARY_PLUGS_PATH. \n" \
-	   "" >> $(WARNING_FILE); \
-	fi
-  endif
 endif
 
 ######################################################
