@@ -85,7 +85,6 @@ sanity-all:: sanity-base \
     sane-classpath \
     sane-java_home \
     sane-fonts \
-    sane-binary-plugs \
     sane-variant \
     sane-ld_library_path \
     sane-ld_library_path_64 \
