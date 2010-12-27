@@ -101,6 +101,15 @@ public class Bits {
                 (1 << (x & wordmask));
     }
 
+    /** Exclude [start...end] from this set.
+     */
+    public void excludeFrom(int start) {
+        Bits temp = new Bits();
+        temp.sizeTo(bits.length);
+        temp.inclRange(0, start);
+        andSet(temp);
+    }
+
     /** Exclude x from this set.
      */
     public void excl(int x) {

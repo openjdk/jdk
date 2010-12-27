@@ -120,7 +120,7 @@ public class FilerImpl implements Filer {
 
     private final Options opts;
     private final DeclarationMaker declMaker;
-    private final com.sun.tools.apt.main.JavaCompiler comp;
+    private final com.sun.tools.apt.main.AptJavaCompiler comp;
 
     // Platform's default encoding
     private final static String DEFAULT_ENCODING =
@@ -177,7 +177,7 @@ public class FilerImpl implements Filer {
         opts = Options.instance(context);
         declMaker = DeclarationMaker.instance(context);
         bark = Bark.instance(context);
-        comp = com.sun.tools.apt.main.JavaCompiler.instance(context);
+        comp = com.sun.tools.apt.main.AptJavaCompiler.instance(context);
         roundOver = false;
         this.filesCreated = comp.getAggregateGenFiles();
 

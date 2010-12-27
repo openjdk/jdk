@@ -99,12 +99,6 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
   unsigned int hashValues[SymbolTable::symbol_alloc_batch_size];
   int names_count = 0;
 
-  // Side buffer for operands of variable-sized (InvokeDynamic) entries.
-  GrowableArray<int>* operands = NULL;
-#ifdef ASSERT
-  GrowableArray<int>* indy_instructions = new GrowableArray<int>(THREAD, 10);
-#endif
-
   // parsing  Index 0 is unused
   for (int index = 1; index < length; index++) {
     // Each of the following case guarantees one more byte in the stream
@@ -184,36 +178,20 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
                "Class file version does not support constant tag %u in class file %s"),
               tag, CHECK);
           }
-          if (!AllowTransitionalJSR292 && tag == JVM_CONSTANT_InvokeDynamicTrans) {
-            classfile_parse_error(
+          cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
+          u2 bootstrap_specifier_index = cfs->get_u2_fast();
+          u2 name_and_type_index = cfs->get_u2_fast();
+          if (tag == JVM_CONSTANT_InvokeDynamicTrans) {
+            if (!AllowTransitionalJSR292)
+              classfile_parse_error(
                 "This JVM does not support transitional InvokeDynamic tag %u in class file %s",
                 tag, CHECK);
+            cp->invoke_dynamic_trans_at_put(index, bootstrap_specifier_index, name_and_type_index);
+            break;
           }
-          bool trans_no_argc = AllowTransitionalJSR292 && (tag == JVM_CONSTANT_InvokeDynamicTrans);
-          cfs->guarantee_more(7, CHECK);  // bsm_index, nt, argc, ..., tag/access_flags
-          u2 bootstrap_method_index = cfs->get_u2_fast();
-          u2 name_and_type_index = cfs->get_u2_fast();
-          int argument_count = trans_no_argc ? 0 : cfs->get_u2_fast();
-          cfs->guarantee_more(2*argument_count + 1, CHECK);  // argv[argc]..., tag/access_flags
-          int argv_offset = constantPoolOopDesc::_indy_argv_offset;
-          int op_count = argv_offset + argument_count;  // bsm, nt, argc, argv[]...
-          int op_base = start_operand_group(operands, op_count, CHECK);
-          assert(argv_offset == 3, "else adjust next 3 assignments");
-          operands->at_put(op_base + constantPoolOopDesc::_indy_bsm_offset, bootstrap_method_index);
-          operands->at_put(op_base + constantPoolOopDesc::_indy_nt_offset, name_and_type_index);
-          operands->at_put(op_base + constantPoolOopDesc::_indy_argc_offset, argument_count);
-          for (int arg_i = 0; arg_i < argument_count; arg_i++) {
-            int arg = cfs->get_u2_fast();
-            operands->at_put(op_base + constantPoolOopDesc::_indy_argv_offset + arg_i, arg);
-          }
-          cp->invoke_dynamic_at_put(index, op_base, op_count);
-#ifdef ASSERT
-          // Record the steps just taken for later checking.
-          indy_instructions->append(index);
-          indy_instructions->append(bootstrap_method_index);
-          indy_instructions->append(name_and_type_index);
-          indy_instructions->append(argument_count);
-#endif //ASSERT
+          if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index)
+            _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
+          cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_Integer :
@@ -316,64 +294,12 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
     oopFactory::new_symbols(cp, names_count, names, lengths, indices, hashValues, CHECK);
   }
 
-  if (operands != NULL && operands->length() > 0) {
-    store_operand_array(operands, cp, CHECK);
-  }
-#ifdef ASSERT
-  // Re-assert the indy structures, now that assertion checking can work.
-  for (int indy_i = 0; indy_i < indy_instructions->length(); ) {
-    int index                  = indy_instructions->at(indy_i++);
-    int bootstrap_method_index = indy_instructions->at(indy_i++);
-    int name_and_type_index    = indy_instructions->at(indy_i++);
-    int argument_count         = indy_instructions->at(indy_i++);
-    assert(cp->check_invoke_dynamic_at(index,
-                                       bootstrap_method_index, name_and_type_index,
-                                       argument_count),
-           "indy structure is OK");
-  }
-#endif //ASSERT
-
   // Copy _current pointer of local copy back to stream().
 #ifdef ASSERT
   assert(cfs0->current() == old_current, "non-exclusive use of stream()");
 #endif
   cfs0->set_current(cfs1.current());
 }
-
-int ClassFileParser::start_operand_group(GrowableArray<int>* &operands, int op_count, TRAPS) {
-  if (operands == NULL) {
-    operands = new GrowableArray<int>(THREAD, 100);
-    int fillp_offset = constantPoolOopDesc::_multi_operand_buffer_fill_pointer_offset;
-    while (operands->length() <= fillp_offset)
-      operands->append(0);  // force op_base > 0, for an error check
-    DEBUG_ONLY(operands->at_put(fillp_offset, (int)badHeapWordVal));
-  }
-  int cnt_pos = operands->append(op_count);
-  int arg_pos = operands->length();
-  operands->at_grow(arg_pos + op_count - 1);  // grow to include the operands
-  assert(operands->length() == arg_pos + op_count, "");
-  int op_base = cnt_pos - constantPoolOopDesc::_multi_operand_count_offset;
-  return op_base;
-}
-
-void ClassFileParser::store_operand_array(GrowableArray<int>* operands, constantPoolHandle cp, TRAPS) {
-  // Collect the buffer of operands from variable-sized entries into a permanent array.
-  int arraylen = operands->length();
-  int fillp_offset = constantPoolOopDesc::_multi_operand_buffer_fill_pointer_offset;
-  assert(operands->at(fillp_offset) == (int)badHeapWordVal, "value unused so far");
-  operands->at_put(fillp_offset, arraylen);
-  cp->multi_operand_buffer_grow(arraylen, CHECK);
-  typeArrayOop operands_oop = cp->operands();
-  assert(operands_oop->length() == arraylen, "");
-  for (int i = 0; i < arraylen; i++) {
-    operands_oop->int_at_put(i, operands->at(i));
-  }
-  cp->set_operands(operands_oop);
-  // The fill_pointer is used only by constantPoolOop::copy_entry_to and friends,
-  // when constant pools need to be merged.  Make sure it is sane now.
-  assert(cp->multi_operand_buffer_fill_pointer() == arraylen, "");
-}
-
 
 bool inline valid_cp_range(int index, int length) { return (index > 0 && index < length); }
 
@@ -401,7 +327,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
   // first verification pass - validate cross references and fixup class and string constants
   for (index = 1; index < length; index++) {          // Index 0 is unused
-    switch (cp->tag_at(index).value()) {
+    jbyte tag = cp->tag_at(index).value();
+    switch (tag) {
       case JVM_CONSTANT_Class :
         ShouldNotReachHere();     // Only JVM_CONSTANT_ClassIndex should be present
         break;
@@ -543,35 +470,23 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         }
         break;
       case JVM_CONSTANT_InvokeDynamicTrans :
-        ShouldNotReachHere();  // this tag does not appear in the heap
       case JVM_CONSTANT_InvokeDynamic :
         {
-          int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
           int name_and_type_ref_index = cp->invoke_dynamic_name_and_type_ref_index_at(index);
-          check_property((bootstrap_method_ref_index == 0 && AllowTransitionalJSR292)
-                         ||
-                         (valid_cp_range(bootstrap_method_ref_index, length) &&
-                          (cp->tag_at(bootstrap_method_ref_index).is_method_handle())),
-                         "Invalid constant pool index %u in class file %s",
-                         bootstrap_method_ref_index,
-                         CHECK_(nullHandle));
           check_property(valid_cp_range(name_and_type_ref_index, length) &&
                          cp->tag_at(name_and_type_ref_index).is_name_and_type(),
                          "Invalid constant pool index %u in class file %s",
                          name_and_type_ref_index,
                          CHECK_(nullHandle));
-          int argc = cp->invoke_dynamic_argument_count_at(index);
-          for (int arg_i = 0; arg_i < argc; arg_i++) {
-            int arg = cp->invoke_dynamic_argument_index_at(index, arg_i);
-            check_property(valid_cp_range(arg, length) &&
-                           cp->tag_at(arg).is_loadable_constant() ||
-                           // temporary early forms of string and class:
-                           cp->tag_at(arg).is_klass_index() ||
-                           cp->tag_at(arg).is_string_index(),
+          if (tag == JVM_CONSTANT_InvokeDynamicTrans) {
+            int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
+            check_property(valid_cp_range(bootstrap_method_ref_index, length) &&
+                           cp->tag_at(bootstrap_method_ref_index).is_method_handle(),
                            "Invalid constant pool index %u in class file %s",
-                           arg,
+                           bootstrap_method_ref_index,
                            CHECK_(nullHandle));
           }
+          // bootstrap specifier index must be checked later, when BootstrapMethods attr is available
           break;
         }
       default:
@@ -2429,6 +2344,76 @@ void ClassFileParser::parse_classfile_signature_attribute(constantPoolHandle cp,
   k->set_generic_signature(cp->symbol_at(signature_index));
 }
 
+void ClassFileParser::parse_classfile_bootstrap_methods_attribute(constantPoolHandle cp, instanceKlassHandle k,
+                                                                  u4 attribute_byte_length, TRAPS) {
+  ClassFileStream* cfs = stream();
+  u1* current_start = cfs->current();
+
+  cfs->guarantee_more(2, CHECK);  // length
+  int attribute_array_length = cfs->get_u2_fast();
+
+  guarantee_property(_max_bootstrap_specifier_index < attribute_array_length,
+                     "Short length on BootstrapMethods in class file %s",
+                     CHECK);
+
+  // The attribute contains a counted array of counted tuples of shorts,
+  // represending bootstrap specifiers:
+  //    length*{bootstrap_method_index, argument_count*{argument_index}}
+  int operand_count = (attribute_byte_length - sizeof(u2)) / sizeof(u2);
+  // operand_count = number of shorts in attr, except for leading length
+
+  // The attribute is copied into a short[] array.
+  // The array begins with a series of short[2] pairs, one for each tuple.
+  int index_size = (attribute_array_length * 2);
+
+  typeArrayOop operands_oop = oopFactory::new_permanent_intArray(index_size + operand_count, CHECK);
+  typeArrayHandle operands(THREAD, operands_oop);
+  operands_oop = NULL; // tidy
+
+  int operand_fill_index = index_size;
+  int cp_size = cp->length();
+
+  for (int n = 0; n < attribute_array_length; n++) {
+    // Store a 32-bit offset into the header of the operand array.
+    assert(constantPoolOopDesc::operand_offset_at(operands(), n) == 0, "");
+    constantPoolOopDesc::operand_offset_at_put(operands(), n, operand_fill_index);
+
+    // Read a bootstrap specifier.
+    cfs->guarantee_more(sizeof(u2) * 2, CHECK);  // bsm, argc
+    u2 bootstrap_method_index = cfs->get_u2_fast();
+    u2 argument_count = cfs->get_u2_fast();
+    check_property(
+      valid_cp_range(bootstrap_method_index, cp_size) &&
+      cp->tag_at(bootstrap_method_index).is_method_handle(),
+      "bootstrap_method_index %u has bad constant type in class file %s",
+      CHECK);
+    operands->short_at_put(operand_fill_index++, bootstrap_method_index);
+    operands->short_at_put(operand_fill_index++, argument_count);
+
+    cfs->guarantee_more(sizeof(u2) * argument_count, CHECK);  // argv[argc]
+    for (int j = 0; j < argument_count; j++) {
+      u2 arg_index = cfs->get_u2_fast();
+      check_property(
+        valid_cp_range(arg_index, cp_size) &&
+        cp->tag_at(arg_index).is_loadable_constant(),
+        "argument_index %u has bad constant type in class file %s",
+        CHECK);
+      operands->short_at_put(operand_fill_index++, arg_index);
+    }
+  }
+
+  assert(operand_fill_index == operands()->length(), "exact fill");
+  assert(constantPoolOopDesc::operand_array_length(operands()) == attribute_array_length, "correct decode");
+
+  u1* current_end = cfs->current();
+  guarantee_property(current_end == current_start + attribute_byte_length,
+                     "Bad length on BootstrapMethods in class file %s",
+                     CHECK);
+
+  cp->set_operands(operands());
+}
+
+
 void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instanceKlassHandle k, TRAPS) {
   ClassFileStream* cfs = stream();
   // Set inner classes attribute to default sentinel
@@ -2438,6 +2423,7 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
   bool parsed_sourcefile_attribute = false;
   bool parsed_innerclasses_attribute = false;
   bool parsed_enclosingmethod_attribute = false;
+  bool parsed_bootstrap_methods_attribute = false;
   u1* runtime_visible_annotations = NULL;
   int runtime_visible_annotations_length = 0;
   u1* runtime_invisible_annotations = NULL;
@@ -2536,6 +2522,12 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
           classfile_parse_error("Invalid or out-of-bounds method index in EnclosingMethod attribute in class file %s", CHECK);
         }
         k->set_enclosing_method_indices(class_index, method_index);
+      } else if (tag == vmSymbols::tag_bootstrap_methods() &&
+                 _major_version >= Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+        if (parsed_bootstrap_methods_attribute)
+          classfile_parse_error("Multiple BootstrapMethods attributes in class file %s", CHECK);
+        parsed_bootstrap_methods_attribute = true;
+        parse_classfile_bootstrap_methods_attribute(cp, k, attribute_length, CHECK);
       } else {
         // Unknown attribute
         cfs->skip_u1(attribute_length, CHECK);
@@ -2551,6 +2543,11 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
                                                      runtime_invisible_annotations_length,
                                                      CHECK);
   k->set_class_annotations(annotations());
+
+  if (_max_bootstrap_specifier_index >= 0) {
+    guarantee_property(parsed_bootstrap_methods_attribute,
+                       "Missing BootstrapMethods attribute in class file %s", CHECK);
+  }
 }
 
 
@@ -2868,6 +2865,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                             PerfClassTraceTime::PARSE_CLASS);
 
   _has_finalizer = _has_empty_finalizer = _has_vanilla_constructor = false;
+  _max_bootstrap_specifier_index = -1;
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
     unsigned char* ptr = cfs->buffer();

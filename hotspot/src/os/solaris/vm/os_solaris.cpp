@@ -80,6 +80,7 @@
 // put OS-includes here
 # include <dlfcn.h>
 # include <errno.h>
+# include <exception>
 # include <link.h>
 # include <poll.h>
 # include <pthread.h>
@@ -1475,6 +1476,13 @@ sigset_t* os::Solaris::allowdebug_blocked_signals() {
   return &allowdebug_blocked_sigs;
 }
 
+
+void _handle_uncaught_cxx_exception() {
+  VMError err("An uncaught C++ exception");
+  err.report_and_die();
+}
+
+
 // First crack at OS-specific initialization, from inside the new thread.
 void os::initialize_thread() {
   int r = thr_main() ;
@@ -1564,6 +1572,7 @@ void os::initialize_thread() {
    // use the dynamic check for T2 libthread.
 
   os::Solaris::init_thread_fpu_state();
+  std::set_terminate(_handle_uncaught_cxx_exception);
 }
 
 

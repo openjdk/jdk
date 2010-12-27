@@ -30,6 +30,7 @@ import sun.jvm.hotspot.asm.*;
 import sun.jvm.hotspot.asm.sparc.*;
 import sun.jvm.hotspot.asm.x86.*;
 import sun.jvm.hotspot.asm.ia64.*;
+import sun.jvm.hotspot.asm.amd64.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
@@ -198,6 +199,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          cpuHelper = new SPARCHelper();
       } else if (cpu.equals("x86")) {
          cpuHelper = new X86Helper();
+      } else if (cpu.equals("amd64")) {
+         cpuHelper = new AMD64Helper();
       } else if (cpu.equals("ia64")) {
          cpuHelper = new IA64Helper();
       } else {
@@ -460,7 +463,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       return buf.toString();
    }
 
-   private String genListOfShort(int[] values) {
+   private String genListOfShort(short[] values) {
+      if (values == null || values.length == 0)  return "";
       Formatter buf = new Formatter(genHTML);
       buf.append('[');
       for (int i = 0; i < values.length; i++) {
@@ -594,9 +598,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                buf.cell(Integer.toString(cpool.getIntAt(index)));
                break;
 
+            case JVM_CONSTANT_InvokeDynamicTrans:
             case JVM_CONSTANT_InvokeDynamic:
                buf.cell("JVM_CONSTANT_InvokeDynamic");
-               buf.cell(genListOfShort(cpool.getMultiOperandsAt(index)));
+               buf.cell(genLowHighShort(cpool.getIntAt(index)) +
+                        genListOfShort(cpool.getBootstrapSpecifierAt(index)));
                break;
 
             default:

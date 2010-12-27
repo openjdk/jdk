@@ -48,32 +48,29 @@ public class TestClassTree extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><STRONG>ParentClass</STRONG></A><UL>"},
+            "<ul>" + NL + "<li type=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" " +
+            "title=\"class in pkg\"><span class=\"strong\">ParentClass</span></a>"},
 
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "Annotation Type Hierarchy" + NL + "</H2>" + NL + "<UL>" + NL +
-            "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/AnnotationType.html\" " +
-            "title=\"annotation in pkg\"><STRONG>AnnotationType</STRONG></A> " +
-            "(implements java.lang.annotation.Annotation)" + NL + "</UL>"},
+            "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>" + NL +
+            "<ul>" + NL + "<li type=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" " +
+            "title=\"annotation in pkg\"><span class=\"strong\">AnnotationType</span></a> " +
+            "(implements java.lang.annotation.Annotation)</li>" + NL + "</ul>"},
 
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "<H2>" + NL +
-            "Enum Hierarchy" + NL +
-            "</H2>" + NL +
-            "<UL>" + NL +
-            "<LI TYPE=\"circle\">java.lang.Object<UL>" + NL +
-            "<LI TYPE=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang.Comparable&lt;T&gt;, java.io.Serializable)" + NL +
-            "<UL>" + NL +
-            "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/Coin.html\" title=\"enum in pkg\"><STRONG>Coin</STRONG></A></UL>" + NL +
-            "</UL>" + NL +
-            "</UL>"
+            "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>" + NL + "<ul>" + NL +
+            "<li type=\"circle\">java.lang.Object" + NL + "<ul>" + NL +
+            "<li type=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang." +
+            "Comparable&lt;T&gt;, java.io.Serializable)" + NL + "<ul>" + NL +
+            "<li type=\"circle\">pkg.<a href=\"../pkg/Coin.html\" " +
+            "title=\"enum in pkg\"><span class=\"strong\">Coin</span></a></li>" + NL +
+            "</ul>" + NL + "</li>" + NL + "</ul>" + NL + "</li>" + NL + "</ul>"
         },
     };
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "<LI TYPE=\"circle\">class pkg.<A HREF=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><STRONG>ParentClass</STRONG></A><UL>"}
+            "<li type=\"circle\">class pkg.<a href=\"../pkg/ParentClass.html\" " +
+            "title=\"class in pkg\"><span class=\"strong\">ParentClass</span></a></li>"}
         };
 
     /**

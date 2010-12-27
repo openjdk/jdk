@@ -427,7 +427,10 @@ final class Filter {
                     }
                 } else {
                     // descriptor
-                    if (filter[i] != '-' &&
+                    // The underscore ("_") character is not allowed by
+                    // the LDAP specification. We allow it here to
+                    // tolerate the incorrect use in practice.
+                    if (filter[i] != '-' && filter[i] != '_' &&
                         !(filter[i] >= '0' && filter[i] <= '9') &&
                         !(filter[i] >= 'A' && filter[i] <= 'Z') &&
                         !(filter[i] >= 'a' && filter[i] <= 'z')) {
@@ -467,7 +470,10 @@ final class Filter {
                     break;
                 }
 
-                if (filter[i] != '-' &&
+                // The underscore ("_") character is not allowed by
+                // the LDAP specification. We allow it here to
+                // tolerate the incorrect use in practice.
+                if (filter[i] != '-' && filter[i] != '_' &&
                         !(filter[i] >= '0' && filter[i] <= '9') &&
                         !(filter[i] >= 'A' && filter[i] <= 'Z') &&
                         !(filter[i] >= 'a' && filter[i] <= 'z')) {
@@ -515,7 +521,10 @@ final class Filter {
                             }
                         } else {
                             // descriptor
-                            if (filter[j] != '-' &&
+                            // The underscore ("_") character is not allowed by
+                            // the LDAP specification. We allow it here to
+                            // tolerate the incorrect use in practice.
+                            if (filter[j] != '-' && filter[j] != '_' &&
                                 !(filter[j] >= '0' && filter[j] <= '9') &&
                                 !(filter[j] >= 'A' && filter[j] <= 'Z') &&
                                 !(filter[j] >= 'a' && filter[j] <= 'z')) {

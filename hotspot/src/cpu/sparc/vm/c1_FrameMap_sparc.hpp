@@ -155,4 +155,7 @@
   static bool is_caller_save_register (LIR_Opr  reg);
   static bool is_caller_save_register (Register r);
 
+  static int nof_caller_save_cpu_regs() { return pd_nof_caller_save_cpu_regs_frame_map; }
+  static int last_cpu_reg()             { return pd_last_cpu_reg;  }
+
 #endif // CPU_SPARC_VM_C1_FRAMEMAP_SPARC_HPP

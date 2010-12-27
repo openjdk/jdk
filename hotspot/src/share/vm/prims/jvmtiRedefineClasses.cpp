@@ -214,7 +214,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_Double:  // fall through
     case JVM_CONSTANT_Long:
     {
-      scratch_cp->copy_entry_to(scratch_i, *merge_cp_p, *merge_cp_length_p,
+      constantPoolOopDesc::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
 
       if (scratch_i != *merge_cp_length_p) {
@@ -239,7 +239,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_UnresolvedClass:  // fall through
     case JVM_CONSTANT_UnresolvedString:
     {
-      scratch_cp->copy_entry_to(scratch_i, *merge_cp_p, *merge_cp_length_p,
+      constantPoolOopDesc::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
 
       if (scratch_i != *merge_cp_length_p) {
@@ -1093,13 +1093,13 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       case JVM_CONSTANT_Long:
         // just copy the entry to *merge_cp_p, but double and long take
         // two constant pool entries
-        old_cp->copy_entry_to(old_i, *merge_cp_p, old_i, CHECK_0);
+        constantPoolOopDesc::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
         old_i++;
         break;
 
       default:
         // just copy the entry to *merge_cp_p
-        old_cp->copy_entry_to(old_i, *merge_cp_p, old_i, CHECK_0);
+        constantPoolOopDesc::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
         break;
       }
     } // end for each old_cp entry

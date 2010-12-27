@@ -26,7 +26,7 @@
 /*
  *
  *
- * (C) Copyright IBM Corp. 1998-2003 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2006 - All Rights Reserved
  *
  */
 
@@ -58,10 +58,6 @@ le_uint32 LigatureSubstitutionSubtable::process(GlyphIterator *glyphIterator, co
             TTGlyphID ligGlyph = SWAPW(ligTable->ligGlyph);
             le_uint16 comp;
 
-            if (filter != NULL && ! filter->accept(LE_SET_GLYPH(glyph, ligGlyph))) {
-                continue;
-            }
-
             for (comp = 0; comp < compCount; comp += 1) {
                 if (! glyphIterator->next()) {
                     break;
@@ -72,7 +68,7 @@ le_uint32 LigatureSubstitutionSubtable::process(GlyphIterator *glyphIterator, co
                 }
             }
 
-            if (comp == compCount) {
+            if (comp == compCount && (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, ligGlyph)))) {
                 GlyphIterator tempIterator(*glyphIterator);
                 TTGlyphID deletedGlyph = tempIterator.ignoresMarks()? 0xFFFE : 0xFFFF;
 
