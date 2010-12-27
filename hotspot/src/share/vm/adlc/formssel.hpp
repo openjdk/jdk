@@ -74,15 +74,16 @@ class ArchDesc;
 //------------------------------InstructForm-----------------------------------
 class InstructForm : public Form {
 private:
-  bool          _ideal_only;       // Not a user-defined instruction
+  bool           _ideal_only;       // Not a user-defined instruction
   // Members used for tracking CISC-spilling
-  uint          _cisc_spill_operand;// Which operand may cisc-spill
+  uint           _cisc_spill_operand;// Which operand may cisc-spill
   void           set_cisc_spill_operand(uint op_index) { _cisc_spill_operand = op_index; }
-  bool          _is_cisc_alternate;
+  bool           _is_cisc_alternate;
   InstructForm  *_cisc_spill_alternate;// cisc possible replacement
   const char    *_cisc_reg_mask_name;
   InstructForm  *_short_branch_form;
   bool           _is_short_branch;
+  bool           _is_mach_constant;   // true if Node is a MachConstantNode
   uint           _alignment;
 
 public:
@@ -94,6 +95,7 @@ public:
   Opcode        *_opcode;          // Encoding of the opcode for instruction
   char          *_size;            // Size of instruction
   InsEncode     *_insencode;       // Encoding class instruction belongs to
+  InsEncode     *_constant;        // Encoding class constant value belongs to
   Attribute     *_attribs;         // List of Attribute rules
   Predicate     *_predicate;       // Predicate test for this instruction
   FormDict       _effects;         // Dictionary of effect rules
@@ -250,6 +252,9 @@ public:
 
   bool                is_short_branch() { return _is_short_branch; }
   void                set_short_branch(bool val) { _is_short_branch = val; }
+
+  bool                    is_mach_constant() const { return _is_mach_constant;     }
+  void                set_is_mach_constant(bool x) {        _is_mach_constant = x; }
 
   InstructForm       *short_branch_form() { return _short_branch_form; }
   bool                has_short_branch_form() { return _short_branch_form != NULL; }

@@ -1841,7 +1841,7 @@ void GraphKit::uncommon_trap(int trap_request,
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
   // occurs here, the runtime will make sure an MDO exists.  There is
-  // no need to call method()->build_method_data() at this point.
+  // no need to call method()->ensure_method_data() at this point.
 
 #ifdef ASSERT
   if (!must_throw) {

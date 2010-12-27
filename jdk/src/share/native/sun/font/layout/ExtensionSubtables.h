@@ -53,7 +53,7 @@ struct ExtensionSubtable //: GlyphSubstitutionSubtable
     le_uint32 extensionOffset;
 
     le_uint32 process(const LookupProcessor *lookupProcessor, le_uint16 lookupType,
-                      GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+                      GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const;
 };
 
 U_NAMESPACE_END

@@ -55,13 +55,15 @@ public class TestTaglets extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST_4654308 = new String[][] {
-        {"4654308" + FS + "C.html", "<B>Foo:</B><DD>my only method is " +            "<A HREF=\"C.html#method()\"><CODE>here</CODE></A>"}
+        {"4654308" + FS + "C.html", "<span class=\"strong\">Foo:</span></dt>" +
+                 "<dd>my only method is <a href=\"C.html#method()\"><code>here" +
+                 "</code></a></dd></dl>"}
     };
     private static final String[][] NEGATED_TEST_4654308 = NO_TEST;
 
     private static final String[][] TEST_4767038 = new String[][] {
         {"4767038" + FS + "Child.html",
-            "&nbsp;This is the first sentence.</TD>"}
+            "This is the first sentence."}
     };
     private static final String[][] NEGATED_TEST_4767038 = NO_TEST;
 

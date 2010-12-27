@@ -31,6 +31,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate serialized form for serializable fields.
@@ -45,8 +46,6 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     ProgramElementDoc[] members = null;
 
     private boolean printedOverallAnchor = false;
-
-    private boolean printedFirstMember = false;
 
     public HtmlSerialFieldWriter(SubWriterHolderWriter writer,
                                     ClassDoc classdoc) {
@@ -69,109 +68,143 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         }
     }
 
-    public void writeHeader(String heading) {
-        if (! printedOverallAnchor) {
-            writer.anchor("serializedForm");
-            printedOverallAnchor = true;
-            writer.printTableHeadingBackground(heading);
-            writer.println();
-            if (heading.equals(
-                   configuration().getText("doclet.Serialized_Form_class"))) {
-                assert !writer.getMemberDetailsListPrinted();
+    /**
+     * Return the header for serializable fields section.
+     *
+     * @return a content tree for the header
+     */
+    public Content getSerializableFieldsHeader() {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
+        return ul;
+    }
+
+    /**
+     * Return the header for serializable fields content section.
+     *
+     * @param isLastContent true if the cotent being documented is the last content.
+     * @return a content tree for the header
+     */
+    public Content getFieldsContentHeader(boolean isLastContent) {
+        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        if (isLastContent)
+            li.addStyle(HtmlStyle.blockListLast);
+        else
+            li.addStyle(HtmlStyle.blockList);
+        return li;
+    }
+
+    /**
+     * Add serializable fields.
+     *
+     * @param heading the heading for the section
+     * @param serializableFieldsTree the tree to be added to the serializable fileds
+     *        content tree
+     * @return a content tree for the serializable fields content
+     */
+    public Content getSerializableFields(String heading, Content serializableFieldsTree) {
+        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        li.addStyle(HtmlStyle.blockList);
+        if (serializableFieldsTree.isValid()) {
+            if (!printedOverallAnchor) {
+                li.addContent(writer.getMarkerAnchor("serializedForm"));
+                printedOverallAnchor = true;
             }
-        } else {
-            writer.printTableHeadingBackground(heading);
-            writer.println();
+            Content headingContent = new StringContent(heading);
+            Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
+                    headingContent);
+            li.addContent(serialHeading);
+            li.addContent(serializableFieldsTree);
         }
+        return li;
     }
 
-    public void writeMemberHeader(ClassDoc fieldType, String fieldTypeStr,
-            String fieldDimensions, String fieldName) {
-        if (printedFirstMember) {
-            writer.printMemberHeader();
-        }
-        printedFirstMember = true;
-        writer.h3();
-        writer.print(fieldName);
-        writer.h3End();
-        writer.pre();
+    /**
+     * Add the member header.
+     *
+     * @param fieldsType the class document to be listed
+     * @param fieldTypeStr the string for the filed type to be documented
+     * @param fieldDimensions the dimensions of the field string to be added
+     * @param firldName name of the field to be added
+     * @param contentTree the content tree to which the member header will be added
+     */
+    public void addMemberHeader(ClassDoc fieldType, String fieldTypeStr,
+            String fieldDimensions, String fieldName, Content contentTree) {
+        Content nameContent = new RawHtml(fieldName);
+        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
+        contentTree.addContent(heading);
+        Content pre = new HtmlTree(HtmlTag.PRE);
         if (fieldType == null) {
-            writer.print(fieldTypeStr);
+            pre.addContent(fieldTypeStr);
         } else {
-            writer.printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_SERIAL_MEMBER,
-                fieldType));
+            Content fieldContent = new RawHtml(writer.getLink(new LinkInfoImpl(
+                    LinkInfoImpl.CONTEXT_SERIAL_MEMBER, fieldType)));
+            pre.addContent(fieldContent);
         }
-        print(fieldDimensions + ' ');
-        strong(fieldName);
-        writer.preEnd();
-        assert !writer.getMemberDetailsListPrinted();
+        pre.addContent(fieldDimensions + " ");
+        pre.addContent(fieldName);
+        contentTree.addContent(pre);
     }
 
     /**
-     * Write the deprecated information for this member.
+     * Add the deprecated information for this member.
      *
      * @param field the field to document.
+     * @param contentTree the tree to which the deprecated info will be added
      */
-    public void writeMemberDeprecatedInfo(FieldDoc field) {
-        printDeprecated(field);
+    public void addMemberDeprecatedInfo(FieldDoc field, Content contentTree) {
+        addDeprecatedInfo(field, contentTree);
     }
 
     /**
-     * Write the description text for this member.
+     * Add the description text for this member.
      *
      * @param field the field to document.
+     * @param contentTree the tree to which the deprecated info will be added
      */
-    public void writeMemberDescription(FieldDoc field) {
+    public void addMemberDescription(FieldDoc field, Content contentTree) {
         if (field.inlineTags().length > 0) {
-            writer.printMemberDetailsListStartTag();
-            writer.dd();
-            writer.printInlineComment(field);
-            writer.ddEnd();
+            writer.addInlineComment(field, contentTree);
         }
         Tag[] tags = field.tags("serial");
         if (tags.length > 0) {
-            writer.printMemberDetailsListStartTag();
-            writer.dd();
-            writer.printInlineComment(field, tags[0]);
-            writer.ddEnd();
+            writer.addInlineComment(field, tags[0], contentTree);
         }
     }
 
     /**
-     * Write the description text for this member represented by the tag.
+     * Add the description text for this member represented by the tag.
      *
-     * @param serialFieldTag the field to document (represented by tag).
+     * @param serialFieldTag the field to document (represented by tag)
+     * @param contentTree the tree to which the deprecated info will be added
      */
-    public void writeMemberDescription(SerialFieldTag serialFieldTag) {
+    public void addMemberDescription(SerialFieldTag serialFieldTag, Content contentTree) {
         String serialFieldTagDesc = serialFieldTag.description().trim();
         if (!serialFieldTagDesc.isEmpty()) {
-            writer.dl();
-            writer.dd();
-            writer.print(serialFieldTagDesc);
-            writer.ddEnd();
-            writer.dlEnd();
+            Content serialFieldContent = new RawHtml(serialFieldTagDesc);
+            Content div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
+            contentTree.addContent(div);
         }
     }
 
     /**
-     * Write the tag information for this member.
+     * Add the tag information for this member.
      *
      * @param field the field to document.
+     * @param contentTree the tree to which the member tags info will be added
      */
-    public void writeMemberTags(FieldDoc field) {
+    public void addMemberTags(FieldDoc field, Content contentTree) {
         TagletOutputImpl output = new TagletOutputImpl("");
         TagletWriter.genTagOuput(configuration().tagletManager, field,
-            configuration().tagletManager.getCustomTags(field),
+                configuration().tagletManager.getCustomTags(field),
                 writer.getTagletWriterInstance(false), output);
         String outputString = output.toString().trim();
+        Content dlTags = new HtmlTree(HtmlTag.DL);
         if (!outputString.isEmpty()) {
-            writer.printMemberDetailsListStartTag();
-            writer.dd();
-            writer.dl();
-            print(outputString);
-            writer.dlEnd();
-            writer.ddEnd();
+            Content tagContent = new RawHtml(outputString);
+            dlTags.addContent(tagContent);
         }
+        contentTree.addContent(dlTags);
     }
 
     /**
@@ -191,25 +224,5 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (field.tags("deprecated").length > 0)
             return true;
         return false;
-    }
-
-    public void writeMemberFooter() {
-        printMemberFooter();
-    }
-
-    /**
-     * Write the footer information. If the serilization overview section was
-     * printed, check for definition list and close list tag.
-     *
-     * @param heading the heading that was written.
-     */
-    public void writeFooter(String heading) {
-        if (printedOverallAnchor) {
-            if (heading.equals(
-                   configuration().getText("doclet.Serialized_Form_class"))) {
-                writer.printMemberDetailsListEndTag();
-                assert !writer.getMemberDetailsListPrinted();
-            }
-        }
     }
 }

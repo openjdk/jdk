@@ -45,10 +45,10 @@ public class TestConstructorIndent extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "<DL>" + NL + "<DD>This is just a simple constructor." + NL +
-            "<P>" + NL + "</DD>" + NL + "<DD><DL>" + NL + "<DT><STRONG>Parameters:</STRONG>" +
-            "</DT><DD><CODE>i</CODE> - a param.</DD></DL>" + NL +
-            "</DD>" + NL + "</DL>"
+        {BUG_ID + FS + "C.html", "<div class=\"block\">" +
+                 "This is just a simple constructor.</div>" + NL +
+                 "<dl><dt><span class=\"strong\">Parameters:</span></dt><dd>" +
+                 "<code>i</code> - a param.</dd></dl>"
         }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

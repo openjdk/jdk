@@ -51,6 +51,7 @@ classes/ProjectCreator.class: $(ProjectCreatorSources)
 
 !if ("$(Variant)" == "compiler2") || ("$(Variant)" == "tiered")
 
+!include $(WorkSpace)/make/windows/makefiles/compile.make
 !include $(WorkSpace)/make/windows/makefiles/adlc.make
 
 !endif

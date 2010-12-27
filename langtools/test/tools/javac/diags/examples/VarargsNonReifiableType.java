@@ -21,10 +21,8 @@
  * questions.
  */
 
-// key: compiler.warn.varargs.non.reifiable.type
-// options: -Xlint:varargs
-
-import java.util.*;
+// key: compiler.warn.unchecked.varargs.non.reifiable.type
+// options: -Xlint:unchecked
 
 class VarargsNonReifiableType<T> {
     void m(T... items) {

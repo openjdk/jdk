@@ -95,13 +95,14 @@ public abstract class AbstractBuilder {
      * Build the documentation, as specified by the given XML element.
      *
      * @param node the XML element that specifies which component to document.
+     * @param contentTree content tree to which the documentation will be added
      */
-    protected void build(XMLNode node) {
+    protected void build(XMLNode node, Content contentTree) {
         String component = node.name;
         try {
             invokeMethod("build" + component,
-                    new Class<?>[] { XMLNode.class },
-                    new Object[] { node });
+                    new Class<?>[]{XMLNode.class, Content.class},
+                    new Object[]{node, contentTree});
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
             configuration.root.printError("Unknown element: " + component);
@@ -111,8 +112,8 @@ public abstract class AbstractBuilder {
         } catch (Exception e) {
             e.printStackTrace();
             configuration.root.printError("Exception " +
-                e.getClass().getName() +
-                " thrown while processing element: " + component);
+                    e.getClass().getName() +
+                    " thrown while processing element: " + component);
             throw new DocletAbortException();
         }
     }
@@ -121,10 +122,11 @@ public abstract class AbstractBuilder {
      * Build the documentation, as specified by the children of the given XML element.
      *
      * @param node the XML element that specifies which components to document.
+     * @param contentTree content tree to which the documentation will be added
      */
-    protected void buildChildren(XMLNode node) {
-        for (XMLNode child: node.children)
-            build(child);
+    protected void buildChildren(XMLNode node, Content contentTree) {
+        for (XMLNode child : node.children)
+            build(child, contentTree);
     }
 
     /**
@@ -140,8 +142,7 @@ public abstract class AbstractBuilder {
             Object[] params)
     throws Exception {
         if (DEBUG) {
-            configuration.root.printError("DEBUG: " + this.getClass().getName()
-                + "." + methodName);
+            configuration.root.printError("DEBUG: " + this.getClass().getName() + "." + methodName);
         }
         Method method = this.getClass().getMethod(methodName, paramClasses);
         method.invoke(this, params);
