@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class DateFormatProviderImpl extends DateFormatProvider {
 
     static String[] datePattern = {
         "yyyy'\u5e74'M'\u6708'd'\u65e5'", // full date pattern
-        "yyyy/MM/dd", // long date pattern
+        "yyyy/MMM/dd", // long date pattern
         "yyyy/MM/dd", // medium date pattern
         "yy/MM/dd" // short date pattern
     };
@@ -68,7 +68,7 @@ public class DateFormatProviderImpl extends DateFormatProvider {
     public DateFormat getDateInstance(int style, Locale locale) {
         for (int i = 0; i < avail.length; i ++) {
             if (Utils.supportsLocale(avail[i], locale)) {
-                return new SimpleDateFormat(datePattern[style]+dialect[i], locale);
+                return new FooDateFormat(datePattern[style]+dialect[i], locale);
             }
         }
         throw new IllegalArgumentException("locale is not supported: "+locale);
@@ -77,7 +77,7 @@ public class DateFormatProviderImpl extends DateFormatProvider {
     public DateFormat getTimeInstance(int style, Locale locale) {
         for (int i = 0; i < avail.length; i ++) {
             if (Utils.supportsLocale(avail[i], locale)) {
-                return new SimpleDateFormat(timePattern[style]+dialect[i], locale);
+                return new FooDateFormat(timePattern[style]+dialect[i], locale);
             }
         }
         throw new IllegalArgumentException("locale is not supported: "+locale);
@@ -86,7 +86,7 @@ public class DateFormatProviderImpl extends DateFormatProvider {
     public DateFormat getDateTimeInstance(int dateStyle, int timeStyle, Locale locale) {
         for (int i = 0; i < avail.length; i ++) {
             if (Utils.supportsLocale(avail[i], locale)) {
-                return new SimpleDateFormat(
+                return new FooDateFormat(
                     datePattern[dateStyle]+" "+timePattern[timeStyle]+dialect[i], locale);
             }
         }
