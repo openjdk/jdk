@@ -30,16 +30,17 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.*;
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
 import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
-import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
-import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
@@ -207,8 +208,8 @@ public class Enter extends JCTree.Visitor {
         Env<AttrContext> localEnv = new Env<AttrContext>(tree, new AttrContext());
         localEnv.toplevel = tree;
         localEnv.enclClass = predefClassDef;
-        tree.namedImportScope = new Scope.ImportScope(tree.packge);
-        tree.starImportScope = new Scope.ImportScope(tree.packge);
+        tree.namedImportScope = new ImportScope(tree.packge);
+        tree.starImportScope = new StarImportScope(tree.packge);
         localEnv.info.scope = tree.namedImportScope;
         localEnv.info.lint = lint;
         return localEnv;

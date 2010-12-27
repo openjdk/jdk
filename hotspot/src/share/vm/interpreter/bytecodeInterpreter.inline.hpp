@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP
+#define SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP
+
+#include "interpreter/bytecodeInterpreter.hpp"
+#include "runtime/stubRoutines.hpp"
+
 // This file holds platform-independent bodies of inline functions for the C++ based interpreter
 
 #ifdef CC_INTERP
@@ -37,5 +43,16 @@
 #endif
 
 // Platform dependent data manipulation
-# include "incls/_bytecodeInterpreter_pd.inline.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "bytecodeInterpreter_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytecodeInterpreter_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytecodeInterpreter_zero.inline.hpp"
+#endif
+
 #endif // CC_INTERP
+
+#endif // SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP

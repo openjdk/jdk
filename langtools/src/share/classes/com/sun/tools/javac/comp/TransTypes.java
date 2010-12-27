@@ -719,7 +719,7 @@ public class TransTypes extends TreeTranslator {
                 tree.sym = ((MethodSymbol)tree.sym).
                     implemented((TypeSymbol)tree.sym.owner, types);
             }
-            tree.selected = cast(
+            tree.selected = coerce(
                 translate(tree.selected, erasure(tree.selected.type)),
                 erasure(tree.sym.owner.type));
         } else

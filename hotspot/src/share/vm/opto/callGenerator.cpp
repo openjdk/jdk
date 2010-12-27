@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_callGenerator.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciCPCache.hpp"
+#include "ci/ciMethodHandle.hpp"
+#include "classfile/javaClasses.hpp"
+#include "compiler/compileLog.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/parse.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
 
 CallGenerator::CallGenerator(ciMethod* method) {
   _method = method;

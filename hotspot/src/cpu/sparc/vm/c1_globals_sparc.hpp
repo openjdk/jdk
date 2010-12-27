@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_C1_GLOBALS_SPARC_HPP
+#define CPU_SPARC_VM_C1_GLOBALS_SPARC_HPP
+
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
 // Sets the default values for platform dependent flags used by the client compiler.
 // (see c1_globals.hpp)
 
@@ -61,3 +67,5 @@ define_pd_global(bool, CSEArrayLength,               true );
 define_pd_global(bool, TwoOperandLIRForm,            false);
 
 define_pd_global(intx, SafepointPollOffset,          0    );
+
+#endif // CPU_SPARC_VM_C1_GLOBALS_SPARC_HPP

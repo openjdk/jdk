@@ -4,7 +4,7 @@
 # specific values.
 #
 #  NGCMN      NGCMX       NGC      S0CMX     S0C     S1CMX     S1C       ECMX        EC      YGC   FGC 
-#    2176.0     7232.0     2176.0     64.0    192.0    192.0     64.0     6848.0     2048.0     1     0
+#    2176.0     7232.0     2176.0    192.0     64.0    192.0     64.0     6848.0     2048.0     1     0
 
 
 BEGIN	{

@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stringopts.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/callnode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/idealKit.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/stringopts.hpp"
+#include "opto/subnode.hpp"
 
 #define __ kit.
 

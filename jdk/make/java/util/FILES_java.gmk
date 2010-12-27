@@ -37,4 +37,5 @@ FILES_java = \
         sun/util/resources/TimeZoneNames_es.java \
         sun/util/resources/TimeZoneNames_fr.java \
         sun/util/resources/TimeZoneNames_it.java \
+        sun/util/resources/TimeZoneNames_pt_BR.java \
         sun/util/resources/TimeZoneNames_sv.java

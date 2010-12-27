@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_BCESCAPEANALYZER_HPP
+#define SHARE_VM_CI_BCESCAPEANALYZER_HPP
+
+#ifdef COMPILER2
+#include "ci/ciMethod.hpp"
+#include "ci/ciMethodData.hpp"
+#include "code/dependencies.hpp"
+#include "libadt/vectset.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/growableArray.hpp"
+#endif
 
 // This class implements a fast, conservative analysis of effect of methods
 // on the escape state of their arguments.  The analysis is at the bytecode
@@ -147,3 +159,5 @@ class BCEscapeAnalyzer : public ResourceObj {
   void dump();
 #endif
 };
+
+#endif // SHARE_VM_CI_BCESCAPEANALYZER_HPP

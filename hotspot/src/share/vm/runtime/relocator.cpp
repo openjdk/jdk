@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_relocator.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/stackMapTableFormat.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/relocator.hpp"
 
 #define MAX_METHOD_LENGTH  65535
 

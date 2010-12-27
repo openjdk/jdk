@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_MEMREGION_HPP
+#define SHARE_VM_MEMORY_MEMREGION_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // A very simple data structure representing a contigous region
 // region of address space.
@@ -104,3 +111,5 @@ public:
 
   void  operator delete(void* p) {} // nothing to do
 };
+
+#endif // SHARE_VM_MEMORY_MEMREGION_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_MARKOOP_INLINE_HPP
+#define SHARE_VM_OOPS_MARKOOP_INLINE_HPP
+
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/globals.hpp"
 
 // Should this header be preserved during GC?
 inline bool markOopDesc::must_be_preserved_with_bias(oop obj_containing_mark) const {
@@ -96,3 +104,5 @@ inline markOop markOopDesc::prototype_for_object(oop obj) {
 #endif
   return obj->klass()->klass_part()->prototype_header();
 }
+
+#endif // SHARE_VM_OOPS_MARKOOP_INLINE_HPP

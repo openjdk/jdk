@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_INTERPRETER_TEMPLATEINTERPRETERGENERATOR_HPP
+#define SHARE_VM_INTERPRETER_TEMPLATEINTERPRETERGENERATOR_HPP
 
 // This file contains the platform-independent parts
 // of the template interpreter generator.
@@ -84,8 +87,19 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
  public:
   TemplateInterpreterGenerator(StubQueue* _code);
 
-  #include "incls/_templateInterpreterGenerator_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "templateInterpreterGenerator_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "templateInterpreterGenerator_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "templateInterpreterGenerator_zero.hpp"
+#endif
+
 
 };
 
 #endif // !CC_INTERP
+
+#endif // SHARE_VM_INTERPRETER_TEMPLATEINTERPRETERGENERATOR_HPP

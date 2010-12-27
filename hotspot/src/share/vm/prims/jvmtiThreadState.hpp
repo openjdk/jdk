@@ -22,8 +22,15 @@
  *
  */
 
-#ifndef _JAVA_JVMTITHREADSTATE_H_
-#define _JAVA_JVMTITHREADSTATE_H_
+#ifndef SHARE_VM_PRIMS_JVMTITHREADSTATE_HPP
+#define SHARE_VM_PRIMS_JVMTITHREADSTATE_HPP
+
+#include "jvmtifiles/jvmti.h"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 // Forward Declarations
@@ -403,4 +410,4 @@ class RedefineVerifyMark : public StackObj {
   }
 };
 
-#endif   /* _JAVA_JVMTITHREADSTATE_H_ */
+#endif // SHARE_VM_PRIMS_JVMTITHREADSTATE_HPP

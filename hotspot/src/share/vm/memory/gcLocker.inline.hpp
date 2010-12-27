@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GCLOCKER_INLINE_HPP
+#define SHARE_VM_MEMORY_GCLOCKER_INLINE_HPP
+
+#include "memory/gcLocker.hpp"
 
 inline bool GC_locker::is_active() {
   return _lock_count > 0 || _jni_lock_count > 0;
@@ -70,3 +75,5 @@ inline void GC_locker::unlock_critical(JavaThread* thread) {
     }
   }
 }
+
+#endif // SHARE_VM_MEMORY_GCLOCKER_INLINE_HPP

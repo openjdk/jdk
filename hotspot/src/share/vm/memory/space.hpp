@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,29 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_SPACE_HPP
+#define SHARE_VM_MEMORY_SPACE_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/blockOffsetTable.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/iterator.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/watermark.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/prefetch.hpp"
+#include "utilities/workgroup.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -1107,3 +1130,5 @@ class ContigPermSpace: public OffsetTableContigSpace {
   ContigPermSpace(BlockOffsetSharedArray* sharedOffsetArray, MemRegion mr) :
     OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
+
+#endif // SHARE_VM_MEMORY_SPACE_HPP

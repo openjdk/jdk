@@ -6370,15 +6370,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * This method returns <code>true</code> for the following five
      * characters only:
      * <table>
-     * <tr><td><code>'\t'</code></td>            <td><code>'&#92;u0009'</code></td>
+     * <tr><td><code>'\t'</code></td>            <td><code>U+0009</code></td>
      *     <td><code>HORIZONTAL TABULATION</code></td></tr>
-     * <tr><td><code>'\n'</code></td>            <td><code>'&#92;u000A'</code></td>
+     * <tr><td><code>'\n'</code></td>            <td><code>U+000A</code></td>
      *     <td><code>NEW LINE</code></td></tr>
-     * <tr><td><code>'\f'</code></td>            <td><code>'&#92;u000C'</code></td>
+     * <tr><td><code>'\f'</code></td>            <td><code>U+000C</code></td>
      *     <td><code>FORM FEED</code></td></tr>
-     * <tr><td><code>'\r'</code></td>            <td><code>'&#92;u000D'</code></td>
+     * <tr><td><code>'\r'</code></td>            <td><code>U+000D</code></td>
      *     <td><code>CARRIAGE RETURN</code></td></tr>
-     * <tr><td><code>'&nbsp;'</code></td>  <td><code>'&#92;u0020'</code></td>
+     * <tr><td><code>'&nbsp;'</code></td>  <td><code>U+0020</code></td>
      *     <td><code>SPACE</code></td></tr>
      * </table>
      *
@@ -6462,15 +6462,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *      <code>LINE_SEPARATOR</code>, or <code>PARAGRAPH_SEPARATOR</code>)
      *      but is not also a non-breaking space (<code>'&#92;u00A0'</code>,
      *      <code>'&#92;u2007'</code>, <code>'&#92;u202F'</code>).
-     * <li> It is <code>'&#92;u0009'</code>, HORIZONTAL TABULATION.
-     * <li> It is <code>'&#92;u000A'</code>, LINE FEED.
-     * <li> It is <code>'&#92;u000B'</code>, VERTICAL TABULATION.
-     * <li> It is <code>'&#92;u000C'</code>, FORM FEED.
-     * <li> It is <code>'&#92;u000D'</code>, CARRIAGE RETURN.
-     * <li> It is <code>'&#92;u001C'</code>, FILE SEPARATOR.
-     * <li> It is <code>'&#92;u001D'</code>, GROUP SEPARATOR.
-     * <li> It is <code>'&#92;u001E'</code>, RECORD SEPARATOR.
-     * <li> It is <code>'&#92;u001F'</code>, UNIT SEPARATOR.
+     * <li> It is <code>'&#92;t'</code>, U+0009 HORIZONTAL TABULATION.
+     * <li> It is <code>'&#92;n'</code>, U+000A LINE FEED.
+     * <li> It is <code>'&#92;u000B'</code>, U+000B VERTICAL TABULATION.
+     * <li> It is <code>'&#92;f'</code>, U+000C FORM FEED.
+     * <li> It is <code>'&#92;r'</code>, U+000D CARRIAGE RETURN.
+     * <li> It is <code>'&#92;u001C'</code>, U+001C FILE SEPARATOR.
+     * <li> It is <code>'&#92;u001D'</code>, U+001D GROUP SEPARATOR.
+     * <li> It is <code>'&#92;u001E'</code>, U+001E RECORD SEPARATOR.
+     * <li> It is <code>'&#92;u001F'</code>, U+001F UNIT SEPARATOR.
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -6498,15 +6498,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *      {@link #LINE_SEPARATOR}, or {@link #PARAGRAPH_SEPARATOR})
      *      but is not also a non-breaking space (<code>'&#92;u00A0'</code>,
      *      <code>'&#92;u2007'</code>, <code>'&#92;u202F'</code>).
-     * <li> It is <code>'&#92;u0009'</code>, HORIZONTAL TABULATION.
-     * <li> It is <code>'&#92;u000A'</code>, LINE FEED.
-     * <li> It is <code>'&#92;u000B'</code>, VERTICAL TABULATION.
-     * <li> It is <code>'&#92;u000C'</code>, FORM FEED.
-     * <li> It is <code>'&#92;u000D'</code>, CARRIAGE RETURN.
-     * <li> It is <code>'&#92;u001C'</code>, FILE SEPARATOR.
-     * <li> It is <code>'&#92;u001D'</code>, GROUP SEPARATOR.
-     * <li> It is <code>'&#92;u001E'</code>, RECORD SEPARATOR.
-     * <li> It is <code>'&#92;u001F'</code>, UNIT SEPARATOR.
+     * <li> It is <code>'&#92;t'</code>, U+0009 HORIZONTAL TABULATION.
+     * <li> It is <code>'&#92;n'</code>, U+000A LINE FEED.
+     * <li> It is <code>'&#92;u000B'</code>, U+000B VERTICAL TABULATION.
+     * <li> It is <code>'&#92;f'</code>, U+000C FORM FEED.
+     * <li> It is <code>'&#92;r'</code>, U+000D CARRIAGE RETURN.
+     * <li> It is <code>'&#92;u001C'</code>, U+001C FILE SEPARATOR.
+     * <li> It is <code>'&#92;u001D'</code>, U+001D GROUP SEPARATOR.
+     * <li> It is <code>'&#92;u001E'</code>, U+001E RECORD SEPARATOR.
+     * <li> It is <code>'&#92;u001F'</code>, U+001F UNIT SEPARATOR.
      * </ul>
      * <p>
      *

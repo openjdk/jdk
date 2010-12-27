@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_INLINE_HPP
+
+#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+
 void ParCompactionManager::push_objarray(oop obj, size_t index)
 {
   ObjArrayTask task(obj, index);
@@ -39,3 +45,5 @@ void ParCompactionManager::push_region(size_t index)
 #endif
   region_stack()->push(index);
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_INLINE_HPP
