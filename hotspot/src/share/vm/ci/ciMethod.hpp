@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CIMETHOD_HPP
+#define SHARE_VM_CI_CIMETHOD_HPP
+
+#include "ci/ciFlags.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciObject.hpp"
+#include "ci/ciSignature.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "prims/methodHandles.hpp"
+#include "utilities/bitMap.hpp"
+
 class ciMethodBlocks;
 class MethodLiveness;
 class BitMap;
@@ -95,7 +106,7 @@ class ciMethod : public ciObject {
 
   void check_is_loaded() const                   { assert(is_loaded(), "not loaded"); }
 
-  void build_method_data(methodHandle h_m);
+  bool ensure_method_data(methodHandle h_m);
 
   void code_at_put(int bci, Bytecodes::Code code) {
     Bytecodes::check(code);
@@ -110,6 +121,7 @@ class ciMethod : public ciObject {
   ciSymbol* name() const                         { return _name; }
   ciInstanceKlass* holder() const                { return _holder; }
   ciMethodData* method_data();
+  ciMethodData* method_data_or_null();
 
   // Signature information.
   ciSignature* signature() const                 { return _signature; }
@@ -219,7 +231,7 @@ class ciMethod : public ciObject {
   bool has_unloaded_classes_in_signature();
   bool is_klass_loaded(int refinfo_index, bool must_be_resolved) const;
   bool check_call(int refinfo_index, bool is_static) const;
-  void build_method_data();  // make sure it exists in the VM also
+  bool ensure_method_data();  // make sure it exists in the VM also
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
 
   // JSR 292 support
@@ -269,3 +281,5 @@ class ciMethod : public ciObject {
     return MethodHandles::decode_method(get_oop(), receiver_limit_oop, flags);
   }
 };
+
+#endif // SHARE_VM_CI_CIMETHOD_HPP

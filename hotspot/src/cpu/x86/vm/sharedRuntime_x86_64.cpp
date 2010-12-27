@@ -22,8 +22,24 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharedRuntime_x86_64.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_x86.inline.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/vframeArray.hpp"
+#include "vmreg_x86.inline.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 DeoptimizationBlob *SharedRuntime::_deopt_blob;
 #ifdef COMPILER2

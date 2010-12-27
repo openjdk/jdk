@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_INLINE_HPP
+
+#include "gc_implementation/shared/markSweep.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "utilities/stack.inline.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#endif
 
 inline void MarkSweep::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
@@ -115,3 +125,5 @@ template <class T> inline void MarkSweep::KeepAliveClosure::do_oop_work(T* p) {
 #endif
   mark_and_push(p);
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_INLINE_HPP

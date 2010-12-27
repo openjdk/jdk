@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_REWRITER_HPP
+#define SHARE_VM_INTERPRETER_REWRITER_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/growableArray.hpp"
+
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices
 // pointing into the constant pool for better interpreter performance.
 
@@ -94,3 +101,5 @@ class Rewriter: public StackObj {
     _secondary_entry_tag = nth_bit(30)
   };
 };
+
+#endif // SHARE_VM_INTERPRETER_REWRITER_HPP

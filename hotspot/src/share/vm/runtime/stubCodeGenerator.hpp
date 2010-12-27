@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_STUBCODEGENERATOR_HPP
+#define SHARE_VM_RUNTIME_STUBCODEGENERATOR_HPP
+
+#include "asm/assembler.hpp"
+#include "memory/allocation.hpp"
 
 // All the basic framework for stubcode generation/debugging/printing.
 
@@ -119,3 +125,5 @@ class StubCodeMark: public StackObj {
   ~StubCodeMark();
 
 };
+
+#endif // SHARE_VM_RUNTIME_STUBCODEGENERATOR_HPP

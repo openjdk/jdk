@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_JFIELDIDWORKAROUND_HPP
+#define SHARE_VM_RUNTIME_JFIELDIDWORKAROUND_HPP
 
 class jfieldIDWorkaround: AllStatic {
   // This workaround is because JVMTI doesn't have distinct entry points
@@ -157,3 +160,5 @@ class jfieldIDWorkaround: AllStatic {
     }
   }
 };
+
+#endif // SHARE_VM_RUNTIME_JFIELDIDWORKAROUND_HPP

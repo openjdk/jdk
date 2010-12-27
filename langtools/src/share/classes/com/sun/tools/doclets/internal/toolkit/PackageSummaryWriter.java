@@ -36,6 +36,7 @@ import java.io.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
@@ -49,45 +50,70 @@ public interface PackageSummaryWriter {
     public abstract String getOutputFileName();
 
     /**
-     * Write the header for the package summary.
+     * Get the header for the summary.
+     *
+     * @param heading Package name.
+     * @return the header to be added to the content tree
      */
-    public abstract void writeSummaryHeader();
+    public abstract Content getPackageHeader(String heading);
 
     /**
-     * Write the footer for the package summary.
+     * Get the header for the package content.
+     *
+     * @return a content tree for the package content header
      */
-    public abstract void writeSummaryFooter();
+    public abstract Content getContentHeader();
 
     /**
-     * Write the table of classes in this package.
+     * Get the header for the package summary.
+     *
+     * @return a content tree with the package summary header
+     */
+    public abstract Content getSummaryHeader();
+
+    /**
+     * Adds the table of classes to the documentation tree.
      *
      * @param classes the array of classes to document.
      * @param label the label for this table.
+     * @param tableSummary the summary string for the table
+     * @param tableHeader array of table headers
+     * @param summaryContentTree the content tree to which the summaries will be added
      */
-    public abstract void writeClassesSummary(ClassDoc[] classes, String label, String tableSummary, String[] tableHeader);
+    public abstract void addClassesSummary(ClassDoc[] classes, String label,
+            String tableSummary, String[] tableHeader, Content summaryContentTree);
 
     /**
-     * Write the header for the summary.
+     * Adds the package description from the "packages.html" file to the documentation
+     * tree.
      *
-     * @param heading Package name.
+     * @param packageContentTree the content tree to which the package description
+     *                           will be added
      */
-    public abstract void writePackageHeader(String heading);
+    public abstract void addPackageDescription(Content packageContentTree);
 
     /**
-     * Print the package description from the "packages.html" file.
-     */
-    public abstract void writePackageDescription();
-
-    /**
-     * Print the tag information from the "packages.html" file.
-     */
-    public abstract void writePackageTags();
-
-    /**
-     * Write the footer for the summary.
+     * Adds the tag information from the "packages.html" file to the documentation
+     * tree.
      *
+     * @param packageContentTree the content tree to which the package tags will
+     *                           be added
      */
-    public abstract void writePackageFooter();
+    public abstract void addPackageTags(Content packageContentTree);
+
+    /**
+     * Adds the footer to the documentation tree.
+     *
+     * @param contentTree the tree to which the footer will be added
+     */
+    public abstract void addPackageFooter(Content contentTree);
+
+    /**
+     * Print the package summary document.
+     *
+     * @param contentTree the content tree that will be printed
+     */
+    public abstract void printDocument(Content contentTree);
 
     /**
      * Close the writer.

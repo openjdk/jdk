@@ -37,8 +37,8 @@ public class TestLinkToSerialForm extends JavadocTester {
 
     private static final String BUG_ID = "4521661";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "serialized-form.html", "<A NAME=\"pkg.C\">"},
-        {BUG_ID + FS + "pkg" + FS + "C.html", "<A HREF=\"../serialized-form.html#pkg.C\">"}
+        {BUG_ID + FS + "serialized-form.html", "<a name=\"pkg.C\">"},
+        {BUG_ID + FS + "pkg" + FS + "C.html", "<a href=\"../serialized-form.html#pkg.C\">"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =

@@ -33,7 +33,7 @@
 #include "LETypes.h"
 #include "OpenTypeUtilities.h"
 #include "OpenTypeTables.h"
-#include "Features.h"
+#include "ICUFeatures.h"
 #include "LESwaps.h"
 
 U_NAMESPACE_BEGIN

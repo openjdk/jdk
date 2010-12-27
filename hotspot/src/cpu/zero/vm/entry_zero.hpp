@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_ENTRY_ZERO_HPP
+#define CPU_ZERO_VM_ENTRY_ZERO_HPP
 
 class ZeroEntry {
  public:
@@ -72,3 +75,5 @@ class ZeroEntry {
     return byte_offset_of(ZeroEntry, _entry_point);
   }
 };
+
+#endif // CPU_ZERO_VM_ENTRY_ZERO_HPP

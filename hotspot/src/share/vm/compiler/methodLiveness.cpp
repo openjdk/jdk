@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#include "precompiled.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciMethodBlocks.hpp"
+#include "ci/ciStreams.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.inline.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 // The MethodLiveness class performs a simple liveness analysis on a method
 // in order to decide which locals are live (that is, will be used again) at
@@ -59,9 +69,6 @@
 //    a single set (_exception_exit), losing some information but simplifying the
 //    analysis.
 
-
-# include "incls/_precompiled.incl"
-# include "incls/_methodLiveness.cpp.incl"
 
 //--------------------------------------------------------------------------
 // The BitCounter class is used for counting the number of bits set in

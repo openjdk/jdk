@@ -27,7 +27,6 @@ package com.sun.tools.doclets.internal.toolkit.builders;
 
 import java.io.*;
 import java.util.*;
-
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -87,6 +86,11 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected MemberDoc currentMember;
 
+    /**
+     * The content that will be added to the serialized form documentation tree.
+     */
+    private Content contentTree;
+
     private SerializedFormBuilder(Configuration configuration) {
         super(configuration);
     }
@@ -117,7 +121,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         } catch (Exception e) {
             throw new DocletAbortException();
         }
-        build(LayoutParser.getInstance(configuration).parseXML(NAME));
+        build(LayoutParser.getInstance(configuration).parseXML(NAME), contentTree);
         writer.close();
     }
 
@@ -130,34 +134,44 @@ public class SerializedFormBuilder extends AbstractBuilder {
 
     /**
      * Build the serialized form.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param serializedTree content tree to which the documentation will be added
      */
-    public void buildSerializedForm(XMLNode node) throws Exception {
-        buildChildren(node);
+    public void buildSerializedForm(XMLNode node, Content serializedTree) throws Exception {
+        serializedTree = writer.getHeader(configuration.getText(
+                "doclet.Serialized_Form"));
+        buildChildren(node, serializedTree);
+        writer.addFooter(serializedTree);
+        writer.printDocument(serializedTree);
         writer.close();
     }
 
     /**
-     * Build the header.
+     * Build the serialized form summaries.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param serializedTree content tree to which the documentation will be added
      */
-    public void buildHeader(XMLNode node) {
-        writer.writeHeader(configuration.getText("doclet.Serialized_Form"));
-    }
-
-    /**
-     * Build the contents.
-     */
-    public void buildSerializedFormSummaries(XMLNode node) {
+    public void buildSerializedFormSummaries(XMLNode node, Content serializedTree) {
+        Content serializedSummariesTree = writer.getSerializedSummariesHeader();
         PackageDoc[] packages = configuration.packages;
         for (int i = 0; i < packages.length; i++) {
             currentPackage = packages[i];
-            buildChildren(node);
+            buildChildren(node, serializedSummariesTree);
         }
+        serializedTree.addContent(writer.getSerializedContent(
+                serializedSummariesTree));
     }
 
     /**
-     * Build the package serialized for for the current package being processed.
+     * Build the package serialized form for the current package being processed.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param serializedSummariesTree content tree to which the documentation will be added
      */
-    public void buildPackageSerializedForm(XMLNode node) {
+    public void buildPackageSerializedForm(XMLNode node, Content serializedSummariesTree) {
+        Content packageSerializedTree = writer.getPackageSerializedHeader();
         String foo = currentPackage.name();
         ClassDoc[] classes = currentPackage.allClasses(false);
         if (classes == null || classes.length == 0) {
@@ -169,14 +183,29 @@ public class SerializedFormBuilder extends AbstractBuilder {
         if (!serialClassFoundToDocument(classes)) {
             return;
         }
-        buildChildren(node);
+        buildChildren(node, packageSerializedTree);
+        serializedSummariesTree.addContent(packageSerializedTree);
     }
 
-    public void buildPackageHeader(XMLNode node) {
-        writer.writePackageHeader(Util.getPackageName(currentPackage));
+    /**
+     * Build the package header.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param packageSerializedTree content tree to which the documentation will be added
+     */
+    public void buildPackageHeader(XMLNode node, Content packageSerializedTree) {
+        packageSerializedTree.addContent(writer.getPackageHeader(
+                Util.getPackageName(currentPackage)));
     }
 
-    public void buildClassSerializedForm(XMLNode node) {
+    /**
+     * Build the class serialized form.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param packageSerializedTree content tree to which the documentation will be added
+     */
+    public void buildClassSerializedForm(XMLNode node, Content packageSerializedTree) {
+        Content classSerializedTree = writer.getClassSerializedHeader();
         ClassDoc[] classes = currentPackage.allClasses(false);
         Arrays.sort(classes);
         for (int j = 0; j < classes.length; j++) {
@@ -187,35 +216,293 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 if(!serialClassInclude(currentClass)) {
                     continue;
                 }
-                buildChildren(node);
+                Content classTree = writer.getClassHeader(currentClass);
+                buildChildren(node, classTree);
+                classSerializedTree.addContent(classTree);
             }
         }
-    }
-
-    public void buildClassHeader(XMLNode node) {
-        writer.writeClassHeader(currentClass);
+        packageSerializedTree.addContent(classSerializedTree);
     }
 
     /**
      * Build the serial UID information for the given class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classTree content tree to which the serial UID information will be added
      */
-    public void buildSerialUIDInfo(XMLNode node) {
+    public void buildSerialUIDInfo(XMLNode node, Content classTree) {
+        Content serialUidTree = writer.getSerialUIDInfoHeader();
         FieldDoc[] fields = currentClass.fields(false);
         for (int i = 0; i < fields.length; i++) {
             if (fields[i].name().equals("serialVersionUID") &&
                 fields[i].constantValueExpression() != null) {
-                writer.writeSerialUIDInfo(SERIAL_VERSION_UID_HEADER,
-                    fields[i].constantValueExpression());
-                return;
+                writer.addSerialUIDInfo(SERIAL_VERSION_UID_HEADER,
+                        fields[i].constantValueExpression(), serialUidTree);
+                break;
+            }
+        }
+        classTree.addContent(serialUidTree);
+    }
+
+    /**
+     * Build the summaries for the methods and fields.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classTree content tree to which the documentation will be added
+     */
+    public void buildClassContent(XMLNode node, Content classTree) {
+        Content classContentTree = writer.getClassContentHeader();
+        buildChildren(node, classContentTree);
+        classTree.addContent(classContentTree);
+    }
+
+    /**
+     * Build the summaries for the methods that belong to the given
+     * class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classContentTree content tree to which the documentation will be added
+     */
+    public void buildSerializableMethods(XMLNode node, Content classContentTree) {
+        Content serializableMethodTree = methodWriter.getSerializableMethodsHeader();
+        MemberDoc[] members = currentClass.serializationMethods();
+        int membersLength = members.length;
+        if (membersLength > 0) {
+            for (int i = 0; i < membersLength; i++) {
+                currentMember = members[i];
+                Content methodsContentTree = methodWriter.getMethodsContentHeader(
+                        (i == membersLength - 1));
+                buildChildren(node, methodsContentTree);
+                serializableMethodTree.addContent(methodsContentTree);
+            }
+        }
+        if (currentClass.serializationMethods().length > 0) {
+            classContentTree.addContent(methodWriter.getSerializableMethods(
+                    configuration.getText("doclet.Serialized_Form_methods"),
+                    serializableMethodTree));
+            if (currentClass.isSerializable() && !currentClass.isExternalizable()) {
+                if (currentClass.serializationMethods().length == 0) {
+                    Content noCustomizationMsg = methodWriter.getNoCustomizationMsg(
+                            configuration.getText(
+                            "doclet.Serializable_no_customization"));
+                    classContentTree.addContent(methodWriter.getSerializableMethods(
+                    configuration.getText("doclet.Serialized_Form_methods"),
+                    noCustomizationMsg));
+                }
             }
         }
     }
 
     /**
-     * Build the footer.
+     * Build the method sub header.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param methodsContentTree content tree to which the documentation will be added
      */
-    public void buildFooter(XMLNode node) {
-        writer.writeFooter();
+    public void buildMethodSubHeader(XMLNode node, Content methodsContentTree)  {
+        methodWriter.addMemberHeader((MethodDoc)currentMember, methodsContentTree);
+    }
+
+    /**
+     * Build the deprecated method description.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param methodsContentTree content tree to which the documentation will be added
+     */
+    public void buildDeprecatedMethodInfo(XMLNode node, Content methodsContentTree) {
+        methodWriter.addDeprecatedMemberInfo((MethodDoc) currentMember, methodsContentTree);
+    }
+
+    /**
+     * Build the information for the method.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param methodsContentTree content tree to which the documentation will be added
+     */
+    public void buildMethodInfo(XMLNode node, Content methodsContentTree)  {
+        if(configuration.nocomment){
+            return;
+        }
+        buildChildren(node, methodsContentTree);
+    }
+
+    /**
+     * Build method description.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param methodsContentTree content tree to which the documentation will be added
+     */
+    public void buildMethodDescription(XMLNode node, Content methodsContentTree) {
+        methodWriter.addMemberDescription((MethodDoc) currentMember, methodsContentTree);
+    }
+
+    /**
+     * Build the method tags.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param methodsContentTree content tree to which the documentation will be added
+     */
+    public void buildMethodTags(XMLNode node, Content methodsContentTree) {
+        methodWriter.addMemberTags((MethodDoc) currentMember, methodsContentTree);
+        MethodDoc method = (MethodDoc)currentMember;
+        if (method.name().compareTo("writeExternal") == 0
+                && method.tags("serialData").length == 0) {
+            if (configuration.serialwarn) {
+                configuration.getDocletSpecificMsg().warning(
+                        currentMember.position(), "doclet.MissingSerialDataTag",
+                        method.containingClass().qualifiedName(), method.name());
+            }
+        }
+    }
+
+    /**
+     * Build the field header.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classContentTree content tree to which the documentation will be added
+     */
+    public void buildFieldHeader(XMLNode node, Content classContentTree) {
+        if (currentClass.serializableFields().length > 0) {
+            buildFieldSerializationOverview(currentClass, classContentTree);
+        }
+    }
+
+    /**
+     * Build the serialization overview for the given class.
+     *
+     * @param classDoc the class to print the overview for.
+     * @param classContentTree content tree to which the documentation will be added
+     */
+    public void buildFieldSerializationOverview(ClassDoc classDoc, Content classContentTree) {
+        if (classDoc.definesSerializableFields()) {
+            FieldDoc serialPersistentField =
+                Util.asList(classDoc.serializableFields()).get(0);
+            // Check to see if there are inline comments, tags or deprecation
+            // information to be printed.
+            if (fieldWriter.shouldPrintOverview(serialPersistentField)) {
+                Content serializableFieldsTree = fieldWriter.getSerializableFieldsHeader();
+                Content fieldsOverviewContentTree = fieldWriter.getFieldsContentHeader(true);
+                fieldWriter.addMemberDeprecatedInfo(serialPersistentField,
+                        fieldsOverviewContentTree);
+                if (!configuration.nocomment) {
+                    fieldWriter.addMemberDescription(serialPersistentField,
+                            fieldsOverviewContentTree);
+                    fieldWriter.addMemberTags(serialPersistentField,
+                            fieldsOverviewContentTree);
+                }
+                serializableFieldsTree.addContent(fieldsOverviewContentTree);
+                classContentTree.addContent(fieldWriter.getSerializableFields(
+                        configuration.getText("doclet.Serialized_Form_class"),
+                        serializableFieldsTree));
+            }
+        }
+    }
+
+    /**
+     * Build the summaries for the fields that belong to the given class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classContentTree content tree to which the documentation will be added
+     */
+    public void buildSerializableFields(XMLNode node, Content classContentTree) {
+        MemberDoc[] members = currentClass.serializableFields();
+        int membersLength = members.length;
+        if (membersLength > 0) {
+            Content serializableFieldsTree = fieldWriter.getSerializableFieldsHeader();
+            for (int i = 0; i < membersLength; i++) {
+                currentMember = members[i];
+                if (!currentClass.definesSerializableFields()) {
+                    Content fieldsContentTree = fieldWriter.getFieldsContentHeader(
+                            (i == membersLength - 1));
+                    buildChildren(node, fieldsContentTree);
+                    serializableFieldsTree.addContent(fieldsContentTree);
+                }
+                else {
+                    buildSerialFieldTagsInfo(serializableFieldsTree);
+                }
+            }
+            classContentTree.addContent(fieldWriter.getSerializableFields(
+                    configuration.getText("doclet.Serialized_Form_fields"),
+                    serializableFieldsTree));
+        }
+    }
+
+    /**
+     * Build the field sub header.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param fieldsContentTree content tree to which the documentation will be added
+     */
+    public void buildFieldSubHeader(XMLNode node, Content fieldsContentTree) {
+        if (!currentClass.definesSerializableFields()) {
+            FieldDoc field = (FieldDoc) currentMember;
+            fieldWriter.addMemberHeader(field.type().asClassDoc(),
+                    field.type().typeName(), field.type().dimension(), field.name(),
+                    fieldsContentTree);
+        }
+    }
+
+    /**
+     * Build the field deprecation information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param fieldsContentTree content tree to which the documentation will be added
+     */
+    public void buildFieldDeprecationInfo(XMLNode node, Content fieldsContentTree) {
+        if (!currentClass.definesSerializableFields()) {
+            FieldDoc field = (FieldDoc)currentMember;
+            fieldWriter.addMemberDeprecatedInfo(field, fieldsContentTree);
+        }
+    }
+
+    /**
+     * Build the serial field tags information.
+     *
+     * @param serializableFieldsTree content tree to which the documentation will be added
+     */
+    public void buildSerialFieldTagsInfo(Content serializableFieldsTree) {
+        if(configuration.nocomment){
+            return;
+        }
+        FieldDoc field = (FieldDoc)currentMember;
+        // Process Serializable Fields specified as array of
+        // ObjectStreamFields. Print a member for each serialField tag.
+        // (There should be one serialField tag per ObjectStreamField
+        // element.)
+        SerialFieldTag[] tags = field.serialFieldTags();
+        Arrays.sort(tags);
+        int tagsLength = tags.length;
+        for (int i = 0; i < tagsLength; i++) {
+            Content fieldsContentTree = fieldWriter.getFieldsContentHeader(
+                    (i == tagsLength - 1));
+            fieldWriter.addMemberHeader(tags[i].fieldTypeDoc(),
+                    tags[i].fieldType(), "", tags[i].fieldName(), fieldsContentTree);
+            fieldWriter.addMemberDescription(tags[i], fieldsContentTree);
+            serializableFieldsTree.addContent(fieldsContentTree);
+        }
+    }
+
+    /**
+     * Build the field information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param fieldsContentTree content tree to which the documentation will be added
+     */
+    public void buildFieldInfo(XMLNode node, Content fieldsContentTree) {
+        if(configuration.nocomment){
+            return;
+        }
+        FieldDoc field = (FieldDoc)currentMember;
+        ClassDoc cd = field.containingClass();
+        // Process default Serializable field.
+        if ((field.tags("serial").length == 0) && ! field.isSynthetic()
+                && configuration.serialwarn) {
+            configuration.message.warning(field.position(),
+                    "doclet.MissingSerialTag", cd.qualifiedName(),
+                    field.name());
+        }
+        fieldWriter.addMemberDescription(field, fieldsContentTree);
+        fieldWriter.addMemberTags(field, fieldsContentTree);
     }
 
     /**
@@ -296,209 +583,5 @@ public class SerializedFormBuilder extends AbstractBuilder {
             }
         }
         return false;
-    }
-
-    /**
-     * Build the method header.
-     */
-    public void buildMethodHeader(XMLNode node) {
-        if (currentClass.serializationMethods().length > 0) {
-            methodWriter.writeHeader(
-                configuration.getText("doclet.Serialized_Form_methods"));
-            if (currentClass.isSerializable() && !currentClass.isExternalizable()) {
-                if (currentClass.serializationMethods().length == 0) {
-                    methodWriter.writeNoCustomizationMsg(
-                        configuration.getText(
-                            "doclet.Serializable_no_customization"));
-                }
-            }
-        }
-    }
-
-    /**
-     * Build the method sub header.
-     */
-    public void buildMethodSubHeader(XMLNode node)  {
-        methodWriter.writeMemberHeader((MethodDoc) currentMember);
-    }
-
-    /**
-     * Build the deprecated method description.
-     */
-    public void buildDeprecatedMethodInfo(XMLNode node) {
-        methodWriter.writeDeprecatedMemberInfo((MethodDoc) currentMember);
-    }
-
-    /**
-     * Build method tags.
-     */
-    public void buildMethodDescription(XMLNode node) {
-        methodWriter.writeMemberDescription((MethodDoc) currentMember);
-    }
-
-    /**
-     * Build the method tags.
-     */
-    public void buildMethodTags(XMLNode node) {
-        methodWriter.writeMemberTags((MethodDoc) currentMember);
-        MethodDoc method = (MethodDoc)currentMember;
-        if (method.name().compareTo("writeExternal") == 0
-            && method.tags("serialData").length == 0) {
-            if (configuration.serialwarn) {
-                configuration.getDocletSpecificMsg().warning(
-                    currentMember.position(), "doclet.MissingSerialDataTag",
-                    method.containingClass().qualifiedName(), method.name());
-            }
-        }
-    }
-
-    /**
-     * build the information for the method.
-     */
-    public void buildMethodInfo(XMLNode node)  {
-        if(configuration.nocomment){
-            return;
-        }
-        buildChildren(node);
-    }
-
-    /**
-     * Build the method footer.
-     */
-    public void buildMethodFooter(XMLNode node) {
-        methodWriter.writeMemberFooter();
-    }
-
-    /**
-     * Build the field header.
-     */
-    public void buildFieldHeader(XMLNode node) {
-        if (currentClass.serializableFields().length > 0) {
-            buildFieldSerializationOverview(currentClass);
-            fieldWriter.writeHeader(configuration.getText(
-                "doclet.Serialized_Form_fields"));
-        }
-    }
-
-    /**
-     * If possible, build the serialization overview for the given
-     * class.
-     *
-     * @param classDoc the class to print the overview for.
-     */
-    public void buildFieldSerializationOverview(ClassDoc classDoc) {
-        if (classDoc.definesSerializableFields()) {
-            FieldDoc serialPersistentField =
-                Util.asList(classDoc.serializableFields()).get(0);
-            // Check to see if there are inline comments, tags or deprecation
-            // information to be printed.
-            if (fieldWriter.shouldPrintOverview(serialPersistentField)) {
-                fieldWriter.writeHeader(
-                        configuration.getText("doclet.Serialized_Form_class"));
-                fieldWriter.writeMemberDeprecatedInfo(serialPersistentField);
-                if (!configuration.nocomment) {
-                    fieldWriter.writeMemberDescription(serialPersistentField);
-                    fieldWriter.writeMemberTags(serialPersistentField);
-                }
-                // Footer required to close the definition list tag
-                // for serialization overview.
-                fieldWriter.writeFooter(
-                        configuration.getText("doclet.Serialized_Form_class"));
-            }
-        }
-    }
-
-    /**
-     * Build the field sub header.
-     */
-    public void buildFieldSubHeader(XMLNode node) {
-        if (! currentClass.definesSerializableFields() ){
-            FieldDoc field = (FieldDoc) currentMember;
-            fieldWriter.writeMemberHeader(field.type().asClassDoc(),
-                field.type().typeName(), field.type().dimension(), field.name());
-        }
-    }
-
-    /**
-     * Build the field deprecation information.
-     */
-    public void buildFieldDeprecationInfo(XMLNode node) {
-        if (!currentClass.definesSerializableFields()) {
-            FieldDoc field = (FieldDoc)currentMember;
-            fieldWriter.writeMemberDeprecatedInfo(field);
-        }
-    }
-
-    /**
-     * Build the field information.
-     */
-    public void buildFieldInfo(XMLNode node) {
-        if(configuration.nocomment){
-            return;
-        }
-        FieldDoc field = (FieldDoc)currentMember;
-        ClassDoc cd = field.containingClass();
-        if (cd.definesSerializableFields()) {
-            // Process Serializable Fields specified as array of
-            // ObjectStreamFields. Print a member for each serialField tag.
-            // (There should be one serialField tag per ObjectStreamField
-            // element.)
-            SerialFieldTag[] tags = field.serialFieldTags();
-            Arrays.sort(tags);
-            for (int i = 0; i < tags.length; i++) {
-                fieldWriter.writeMemberHeader(tags[i].fieldTypeDoc(),
-                        tags[i].fieldType(), "", tags[i].fieldName());
-                fieldWriter.writeMemberDescription(tags[i]);
-
-            }
-        } else {
-
-            // Process default Serializable field.
-            if ((field.tags("serial").length == 0) && ! field.isSynthetic()
-                && configuration.serialwarn) {
-                configuration.message.warning(field.position(),
-                        "doclet.MissingSerialTag", cd.qualifiedName(),
-                        field.name());
-            }
-            fieldWriter.writeMemberDescription(field);
-            fieldWriter.writeMemberTags(field);
-        }
-    }
-
-    /**
-     * Build the field sub footer.
-     */
-    public void buildFieldSubFooter(XMLNode node) {
-        if (! currentClass.definesSerializableFields()) {
-            fieldWriter.writeMemberFooter();
-        }
-    }
-
-    /**
-     * Build the summaries for the methods that belong to the given
-     * class.
-     */
-    public void buildSerializableMethods(XMLNode node) {
-        MemberDoc[] members = currentClass.serializationMethods();
-        if (members.length > 0) {
-            for (int i = 0; i < members.length; i++) {
-                currentMember = members[i];
-                buildChildren(node);
-            }
-        }
-    }
-
-    /**
-     * Build the summaries for the fields that belong to the given
-     * class.
-     */
-    public void buildSerializableFields(XMLNode node) {
-        MemberDoc[] members = currentClass.serializableFields();
-        if (members.length > 0) {
-            for (int i = 0; i < members.length; i++) {
-                currentMember = members[i];
-                buildChildren(node);
-            }
-        }
     }
 }

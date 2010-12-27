@@ -22,8 +22,15 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_loopopts.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/subnode.hpp"
 
 //=============================================================================
 //------------------------------split_thru_phi---------------------------------

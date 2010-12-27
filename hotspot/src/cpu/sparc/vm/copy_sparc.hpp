@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_COPY_SPARC_HPP
+#define CPU_SPARC_VM_COPY_SPARC_HPP
 
 // Inline functions for memory copy and fill.
 
@@ -186,3 +189,5 @@ static void pd_zero_to_words(HeapWord* tohw, size_t count) {
 static void pd_zero_to_bytes(void* to, size_t count) {
   (void)memset(to, 0, count);
 }
+
+#endif // CPU_SPARC_VM_COPY_SPARC_HPP

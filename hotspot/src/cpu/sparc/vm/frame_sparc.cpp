@@ -22,8 +22,24 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_frame_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/monitorChunk.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "vmreg_sparc.inline.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#include "runtime/vframeArray.hpp"
+#endif
 
 void RegisterMap::pd_clear() {
   if (_thread->has_last_Java_frame()) {

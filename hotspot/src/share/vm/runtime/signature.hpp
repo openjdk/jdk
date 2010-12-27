@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_SIGNATURE_HPP
+#define SHARE_VM_RUNTIME_SIGNATURE_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/methodOop.hpp"
+#include "utilities/top.hpp"
 
 // SignatureIterators iterate over a Java signature (or parts of it).
 // (Syntax according to: "The Java Virtual Machine Specification" by
@@ -416,3 +423,5 @@ class SignatureVerifier : public StackObj {
     static ssize_t is_valid_type(const char*, ssize_t);
     static bool invalid_name_char(char);
 };
+
+#endif // SHARE_VM_RUNTIME_SIGNATURE_HPP
