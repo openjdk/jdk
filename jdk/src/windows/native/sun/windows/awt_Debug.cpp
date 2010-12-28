@@ -47,12 +47,21 @@ void * operator new(size_t size, const char * filename, int linenumber) {
     return ptr;
 }
 
+void * operator new[](size_t size, const char * filename, int linenumber) {
+    void * ptr = DMem_AllocateBlock(size, filename, linenumber);
+    if (ptr == NULL) {
+        throw std::bad_alloc();
+    }
+
+    return ptr;
+}
+
 #if _MSC_VER >= 1200
 void operator delete(void *ptr, const char*, int) {
     DASSERTMSG(FALSE, "This version of 'delete' should never get called!!!");
 }
 #endif
-void operator delete(void *ptr) {
+void operator delete(void *ptr) throw() {
     DMem_FreeBlock(ptr);
 }
 

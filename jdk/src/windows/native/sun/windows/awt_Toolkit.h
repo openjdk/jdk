@@ -110,7 +110,7 @@ class CriticalSection {
       private:
         const CriticalSection& critSec;
     };
-    friend Lock;
+    friend class Lock;
 
   private:
     CRITICAL_SECTION rep;
