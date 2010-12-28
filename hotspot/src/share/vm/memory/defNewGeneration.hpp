@@ -85,6 +85,7 @@ protected:
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
   void   preserve_mark_if_necessary(oop obj, markOop m);
+  void   preserve_mark(oop obj, markOop m);    // work routine used by the above
 
   // Together, these keep <object with a preserved mark, mark value> pairs.
   // They should always contain the same number of elements.
