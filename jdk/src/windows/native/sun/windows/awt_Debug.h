@@ -48,11 +48,14 @@
     };
 
     extern void * operator new(size_t size, const char * filename, int linenumber);
+    extern void * operator new[](size_t size, const char * filename, int linenumber);
+
 #if _MSC_VER >= 1200
     /* VC 6.0 is more strict about enforcing matching placement new & delete */
     extern void operator delete(void *ptr, const char*, int);
 #endif
-    extern void operator delete(void *ptr);
+
+    extern void operator delete(void *ptr) throw();
     extern void DumpClipRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist);
     extern void DumpUpdateRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist);
 
