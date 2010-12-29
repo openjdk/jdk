@@ -34,11 +34,16 @@
 #    Program.gmk may turn this down to 2 (building .exe's).
 #    Windows 64bit platforms are less likely to be warning free.
 #    Historically, Windows 32bit builds should be mostly warning free.
+#    VS2010 introduced a large number of security warnings that are off by
+#    default but will be turned back on with SHOW_ALL_WARNINGS=true.
 ifndef COMPILER_WARNING_LEVEL
   COMPILER_WARNING_LEVEL=3
 endif
 ifndef COMPILER_WARNINGS_FATAL
   COMPILER_WARNINGS_FATAL=false
+endif
+ifndef SHOW_ALL_WARNINGS
+  SHOW_ALL_WARNINGS = false
 endif
 
 # Windows should use parallel compilation for best build times
