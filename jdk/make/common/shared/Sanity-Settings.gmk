@@ -138,6 +138,7 @@ endif
 ALL_SETTINGS+=$(call addOptionalSetting,FASTDEBUG)
 ALL_SETTINGS+=$(call addRequiredSetting,COMPILER_WARNINGS_FATAL)
 ALL_SETTINGS+=$(call addOptionalSetting,COMPILER_WARNING_LEVEL)
+ALL_SETTINGS+=$(call addOptionalSetting,SHOW_ALL_WARNINGS)
 ALL_SETTINGS+=$(call addRequiredSetting,INCREMENTAL_BUILD)
 ALL_SETTINGS+=$(call addOptionalSetting,CC_HIGHEST_OPT)
 ALL_SETTINGS+=$(call addOptionalSetting,CC_HIGHER_OPT)
