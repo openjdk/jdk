@@ -191,7 +191,7 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
 
     fp_gdk_threads_enter();
 
-    const char *title = (*env)->GetStringUTFChars(env, jtitle, 0);
+    const char *title = jtitle == NULL? "": (*env)->GetStringUTFChars(env, jtitle, 0);
 
     if (mode == 1) {
         /* Save action */
@@ -212,7 +212,9 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
         }
     }
 
-    (*env)->ReleaseStringUTFChars(env, jtitle, title);
+    if (jtitle != NULL) {
+      (*env)->ReleaseStringUTFChars(env, jtitle, title);
+    }
 
     /* Set the directory */
     if (jdir != NULL) {
