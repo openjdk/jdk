@@ -133,7 +133,9 @@ public class WGLVolatileSurfaceManager
 
     @Override
     protected boolean isConfigValid(GraphicsConfiguration gc) {
-        return ((gc == null) || (gc == vImg.getGraphicsConfig()));
+        return ((gc == null) ||
+                ((gc instanceof WGLGraphicsConfig) &&
+                 (gc == vImg.getGraphicsConfig())));
     }
 
     @Override
