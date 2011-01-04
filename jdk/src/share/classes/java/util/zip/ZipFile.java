@@ -424,6 +424,8 @@ class ZipFile implements ZipConstants, Closeable {
      */
     private void releaseInflater(Inflater inf) {
         synchronized (inflaters) {
+            if (inf.ended())
+                return;
             inf.reset();
             inflaters.add(inf);
         }

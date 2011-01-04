@@ -382,6 +382,12 @@ class Inflater {
             throw new NullPointerException("Inflater has been closed");
     }
 
+    boolean ended() {
+        synchronized (zsRef) {
+            return zsRef.address() == 0;
+        }
+    }
+
     private native static void initIDs();
     private native static long init(boolean nowrap);
     private native static void setDictionary(long addr, byte[] b, int off,
