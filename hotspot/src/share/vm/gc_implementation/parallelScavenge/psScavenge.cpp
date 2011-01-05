@@ -694,6 +694,8 @@ void PSScavenge::clean_up_failed_promotion() {
 void PSScavenge::oop_promotion_failed(oop obj, markOop obj_mark) {
   _promotion_failed = true;
   if (obj_mark->must_be_preserved_for_promotion_failure(obj)) {
+    // Should use per-worker private stakcs hetre rather than
+    // locking a common pair of stacks.
     ThreadCritical tc;
     _preserved_oop_stack.push(obj);
     _preserved_mark_stack.push(obj_mark);

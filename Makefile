@@ -156,12 +156,6 @@ ifeq ($(BUILD_DEPLOY), true)
   clobber:: deploy-clobber
 endif
 
-ifeq ($(BUILD_JDK), true)
-  ifeq ($(BUNDLE_RULES_AVAILABLE), true)
-    generic_build_repo_series:: openjdk-binary-plugs-bundles
-  endif
-endif
-
 # The debug build, fastdebug or debug. Needs special handling.
 #  Note that debug builds do NOT do INSTALL steps, but must be done
 #  after the product build and before the INSTALL step of the product build.
@@ -301,7 +295,6 @@ ifneq ($(SKIP_OPENJDK_BUILD), true)
   ifeq ($(BUILD_JDK), true)
     ifeq ($(BUNDLE_RULES_AVAILABLE), true)
 
-OPENJDK_PLUGS=$(ABS_OUTPUTDIR)/$(OPENJDK_BINARY_PLUGS_INAME)
 OPENJDK_OUTPUTDIR=$(ABS_OUTPUTDIR)/open-output
 OPENJDK_BUILD_NAME \
   = openjdk-$(JDK_MINOR_VERSION)-$(BUILD_NUMBER)-$(PLATFORM)-$(ARCH)-$(BUNDLE_DATE)
@@ -330,7 +323,6 @@ openjdk_build:
 	  GENERATE_DOCS=false \
 	  ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR) \
 	  ALT_OUTPUTDIR=$(OPENJDK_OUTPUTDIR) \
-	  ALT_BINARY_PLUGS_PATH=$(OPENJDK_PLUGS) \
 	  ALT_BOOTDIR=$(OPENJDK_BOOTDIR) \
 	  ALT_JDK_IMPORT_PATH=$(OPENJDK_IMPORTJDK) \
 		product_build )
@@ -456,7 +448,6 @@ CACERTS_FILE.desc          = Location of certificates file
 DEVTOOLS_PATH.desc         = Directory containing zip and gnumake
 CUPS_HEADERS_PATH.desc     = Include directory location for CUPS header files
 DXSDK_PATH.desc            = Root directory of DirectX SDK
-MSDEVTOOLS_PATH.desc       = Root directory of VC++ tools (e.g. rc.exe)
 MSVCRT_DLL_PATH.desc       = Directory containing mscvrt.dll
 
 # Make variables to print out (description and value)
@@ -487,12 +478,10 @@ ifeq ($(PLATFORM), windows)
 
 VARIABLE_PRINTVAL_LIST +=       \
     DXSDK_PATH                  \
-    MSDEVTOOLS_PATH             \
     MSVCRT_DLL_PATH
 
 VARIABLE_CHECKDIR_LIST +=       \
     DXSDK_PATH                  \
-    MSDEVTOOLS_PATH             \
     MSVCRT_DLL_PATH
 
 endif
@@ -548,7 +537,7 @@ examples_help:
 "
 
 ################################################################
-# Source and binary plug bundling
+# Source bundling
 ################################################################
 ifeq ($(BUNDLE_RULES_AVAILABLE), true)
   include $(BUNDLE_RULES)
