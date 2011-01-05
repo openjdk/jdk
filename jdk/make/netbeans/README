@@ -93,7 +93,6 @@ Configuring
 
         make.options=\
             ALT_BOOTDIR=/home/me/bin/jdk1.6.0 \
-            ALT_BINARY_PLUGS_PATH=/home/me/bin/openjdk-binary-plugs \
             ALT_JDK_IMPORT_PATH=/home/me/bin/jdk1.7.0 \
             OPENJDK=true
 
