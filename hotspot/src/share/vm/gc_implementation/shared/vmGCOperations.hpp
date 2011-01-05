@@ -209,4 +209,15 @@ class VM_GenCollectForPermanentAllocation: public VM_GC_Operation {
   HeapWord* result() const       { return _res; }
 };
 
+class DTraceGCProbeMarker : public StackObj {
+public:
+  DTraceGCProbeMarker(bool full) {
+    VM_GC_Operation::notify_gc_begin(full);
+  }
+
+  ~DTraceGCProbeMarker() {
+    VM_GC_Operation::notify_gc_end();
+  }
+};
+
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_VMGCOPERATIONS_HPP
