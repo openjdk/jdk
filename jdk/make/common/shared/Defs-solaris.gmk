@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,6 @@ endif
 ifneq "$(origin ALT_COMPILER_PATH)" "undefined"
   COMPILER_PATH :=$(call PrefixPath,$(ALT_COMPILER_PATH))
 else
-  # Careful here, REQUIRED_COMPILER_VERSION may not be defined yet (see Defs-versions.gmk)
   # If the place where we keep a set of Sun Studio compilers doesn't exist,
   #  try and use /opt/SUNWspro, the default location for the SS compilers.
   #  (DirExists checks for this path twice, an automount double check)
