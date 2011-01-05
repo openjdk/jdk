@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ ifeq ($(PLATFORM), windows)
   CCC          = $(COMPILER_PATH)cl
   LIBEXE       = $(COMPILER_PATH)lib
   LINK         = $(COMPILER_PATH)link
-  RC           = $(MSDEVTOOLS_PATH)rc
-  RSC          = $(MSDEVTOOLS_PATH)rc
   LINK32       = $(LINK)
  
   # Fill in unknown values
@@ -47,7 +45,10 @@ ifeq ($(PLATFORM), windows)
 
   # Compiler version and type (Always get word after "Version")
   CC_VER  := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(SED) 's/.*\(Version.*\)/\1/' | $(NAWK) '{print $$2}')
-  
+
+  # The MSDEVTOOLS_PATH is for older compilers, place for rc, mt, etc.
+  _OTHER_TOOLS_PATH = $(MSDEVTOOLS_PATH)
+
   # SDK-64 and MSVC6 put REBASE.EXE in a different places - go figure...
   ifeq ($(ARCH_DATA_MODEL), 32)
     LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
@@ -56,43 +57,26 @@ ifeq ($(PLATFORM), windows)
       # This should be: CC_VER=13.10.3077 LINK_VER=7.10.3077
       COMPILER_NAME=Visual Studio .NET 2003 Professional C++
       COMPILER_VERSION=VS2003
+      RC         = $(_OTHER_TOOLS_PATH)rc
       REBASE     = $(COMPILER_PATH)../../Common7/Tools/Bin/rebase
       MTL        = $(COMPILER_PATH)../../Common7/Tools/Bin/midl
-      ifndef COMPILER_PATH
-	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
-      endif
     endif
     ifeq ($(CC_MAJORVER), 14)
       COMPILER_NAME=Visual Studio 8
       COMPILER_VERSION=VS2005
+      RC         = $(_OTHER_TOOLS_PATH)rc
       REBASE     = $(COMPILER_PATH)../../Common8/Tools/Bin/rebase
       MTL        = $(COMPILER_PATH)../../Common8/Tools/Bin/midl
-      MT         = $(MSDEVTOOLS_PATH)/mt
-      ifndef COMPILER_PATH
-	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
-      endif
+      MT         = $(_OTHER_TOOLS_PATH)/mt
     endif
     ifeq ($(CC_MAJORVER), 15)
       COMPILER_NAME=Visual Studio 9
       COMPILER_VERSION=VS2008
+      RC         = $(_OTHER_TOOLS_PATH)rc
       #rebase and midl moved out of Visual Studio into the SDK:
-      REBASE     = $(MSDEVTOOLS_PATH)/rebase
-      MTL        = $(MSDEVTOOLS_PATH)/midl.exe
-      MT         = $(MSDEVTOOLS_PATH)mt
-      ifndef COMPILER_PATH
-	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
-      endif
-    endif
-    ifeq ($(CC_MAJORVER), 16)
-      COMPILER_NAME=Visual Studio 10
-      COMPILER_VERSION=VS2010
-      #rebase and midl moved out of Visual Studio into the SDK:
-      REBASE     = $(MSDEVTOOLS_PATH)/rebase
-      MTL        = $(MSDEVTOOLS_PATH)/midl.exe
-      MT         = $(MSDEVTOOLS_PATH)mt
-      ifndef COMPILER_PATH
-	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
-      endif
+      REBASE     = $(_OTHER_TOOLS_PATH)/rebase
+      MTL        = $(_OTHER_TOOLS_PATH)/midl.exe
+      MT         = $(_OTHER_TOOLS_PATH)mt
     endif
   else
     # else ARCH_DATA_MODEL is 64
@@ -105,13 +89,15 @@ ifeq ($(PLATFORM), windows)
         # This should be: CC_VER=13.00.9337.7 LINK_VER=7.00.9337.7
         COMPILER_NAME=Microsoft Platform SDK - November 2001 Edition
         COMPILER_VERSION=VS2003
+        RC = $(_OTHER_TOOLS_PATH)rc
       endif
     endif
     ifeq ($(CC_MAJORVER), 14)
       ifeq ($(ARCH), amd64)
         #rebase and midl moved out of Visual Studio into the SDK:
-        REBASE     = $(MSDEVTOOLS_PATH)/rebase
-        MTL        = $(MSDEVTOOLS_PATH)/midl.exe
+        RC         = $(_OTHER_TOOLS_PATH)/rc
+        REBASE     = $(_OTHER_TOOLS_PATH)/rebase
+        MTL        = $(_OTHER_TOOLS_PATH)/midl.exe
         ifeq ($(CC_MICROVER), 30701)
           # This should be: CC_VER=14.00.30701 LINK_VER=8.00.30701
 	  # WARNING: it says 14, but it is such an early build it doesn't
@@ -135,24 +121,42 @@ ifeq ($(PLATFORM), windows)
       MT = $(MSSDK61)/Bin/X64/mt.exe
       MTL = $(MSSDK61)/Bin/X64/midl.exe
     endif
-    ifeq ($(CC_MAJORVER), 16)
-      COMPILER_NAME=Microsoft Visual Studio 10 (16.00.30319.01)
-      COMPILER_VERSION=VS2010
-      RC = $(MSDEVTOOLS_PATH)/Bin/x64/rc.exe
-      RSC = $(MSDEVTOOLS_PATH)/Bin/x64/rc.exe
-      MT = $(MSDEVTOOLS_PATH)/Bin/x64/mt.exe
-      MTL = $(MSDEVTOOLS_PATH)/Bin/X64/midl.exe
+  endif
+  
+  # The VS2010 compiler is the same one used on both 32bit and 64bit
+  ifeq ($(CC_MAJORVER), 16)
+    COMPILER_NAME=Microsoft Visual Studio 10 (16.00.30319.01)
+    COMPILER_VERSION=VS2010
+    ifeq ($(WINDOWSSDKDIR),)
+      WINDOWSSDKDIR := $(error WINDOWSSDKDIR cannot be empty here)
     endif
-    # This will cause problems if ALT_COMPILER_PATH is defined to ""
-    # which is a directive to use the PATH.
-    ifndef COMPILER_PATH
-      COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      _OTHER_TOOLS_BIN = $(WINDOWSSDKDIR)/Bin
+    else
+      ifeq ($(ARCH), ia64)
+        _OTHER_TOOLS_BIN = $(WINDOWSSDKDIR)/Bin/ia64
+      else
+        _OTHER_TOOLS_BIN = $(WINDOWSSDKDIR)/Bin/x64
+      endif
     endif
+    RC     = $(_OTHER_TOOLS_BIN)/rc.exe
+    REBASE = $(_OTHER_TOOLS_BIN)/rebase.exe
+    MT     = $(_OTHER_TOOLS_BIN)/mt.exe
+    MTL    = $(_OTHER_TOOLS_BIN)/midl.exe
+  endif
+  
+  # These variables can never be empty
+  ifndef COMPILER_PATH
+    COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
   endif
   ifndef COMPILER_VERSION
     COMPILER_VERSION := $(error COMPILER_VERSION cannot be empty here)
   endif
+  
   # Shared library generation flag
   SHARED_LIBRARY_FLAG = -LD
+  # RSC is always same as RC (Not sure who uses this RSC variable)
+  RSC = $(RC)
+
 endif
 

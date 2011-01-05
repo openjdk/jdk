@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,8 @@
 # Attempts to set these variables for the JDK builds:           
 #    ALT_COMPILER_PATH
 #    ALT_BOOTDIR
-#    ALT_BINARY_PLUGS_PATH
-#    ALT_CLOSED_JDK_IMPORT_PATH
 #    Windows Only:
 #      ALT_UNIXCOMMAND_PATH
-#      ALT_MSDEVTOOLS_PATH
 #      ALT_DXSDK_PATH
 #      ALT_MSVCRT_DLL_PATH
 #      ALT_MSVCR71_DLL_PATH
@@ -221,8 +218,6 @@ else
     # VisualStudio .NET 2003 VC++ 7.1 (VS71COMNTOOLS should be defined)
     vs_root=$(${cygpath} "${VS71COMNTOOLS}/../..")
     # Fill in PATH, LIB, and INCLUDE (unset all others to make sure)
-    msdev_root="${vs_root}/Common7/Tools"
-    msdevtools_path="${msdev_root}/bin"
     vc7_root="${vs_root}/Vc7"
     compiler_path="${vc7_root}/bin"
     platform_sdk="${vc7_root}/PlatformSDK"
@@ -260,12 +255,6 @@ else
     else
       compiler_path="${platform_sdk}/Bin/win64/x86/AMD64"
     fi
-    if [ "${ALT_MSDEVTOOLS_PATH}" != "" ] ; then
-      msdevtools_path=${ALT_MSDEVTOOLS_PATH}
-    else
-      msdevtools_path="${platform_sdk}/Bin/win64/x86/AMD64"
-    fi
-    msdevtools_path="${compiler_path}"
     # LIB and INCLUDE must use ; as a separator
     include4sdk="${platform_sdk}/Include"
     include4sdk="${include4sdk};${platform_sdk}/Include/crt/sys"
@@ -311,28 +300,6 @@ fi
 if [ "${ALT_JDK_IMPORT_PATH}" = "" -a -d ${jdk_instances}/${importjdk} ] ; then
   ALT_JDK_IMPORT_PATH=${jdk_instances}/${importjdk}
   export ALT_JDK_IMPORT_PATH
-fi
-
-# Get the latest JDK binary plugs or build to import pre-built binaries
-if [ "${ALT_BINARY_PLUGS_PATH}" = "" ] ; then
-  binplugs=${jdk_instances}/openjdk-binary-plugs
-  jdkplugs=${jdk_instances}/${importjdk}
-  if [ -d ${binplugs} ] ; then
-    ALT_BINARY_PLUGS_PATH=${binplugs}
-    export ALT_BINARY_PLUGS_PATH
-  elif [  "${ALT_CLOSED_JDK_IMPORT_PATH}" = "" -a -d ${jdkplugs} ] ; then
-    ALT_CLOSED_JDK_IMPORT_PATH=${jdkplugs}
-    export ALT_CLOSED_JDK_IMPORT_PATH
-  fi
-  if [ "${ALT_BINARY_PLUGS_PATH}" = "" ] ; then
-    echo "WARNING: Missing ALT_BINARY_PLUGS_PATH: ${binplugs}"
-  fi
-fi
-if [ "${ALT_BINARY_PLUGS_PATH}" != "" -a ! -d "${ALT_BINARY_PLUGS_PATH}" ] ; then
-  echo "WARNING: Cannot access ALT_BINARY_PLUGS_PATH=${ALT_BINARY_PLUGS_PATH}"
-fi
-if [ "${ALT_CLOSED_JDK_IMPORT_PATH}" != "" -a ! -d "${ALT_CLOSED_JDK_IMPORT_PATH}" ] ; then
-  echo "WARNING: Cannot access ALT_CLOSED_JDK_IMPORT_PATH=${ALT_CLOSED_JDK_IMPORT_PATH}"
 fi
 
 # Export PATH setting
