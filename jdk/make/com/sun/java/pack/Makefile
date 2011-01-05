@@ -155,6 +155,7 @@ ifdef MT
 	$(MT) /manifest $(OBJDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
 endif
 	$(CP) $(TEMPDIR)/unpack200$(EXE_SUFFIX) $(UNPACK_EXE)
+	@$(call binary_file_verification,$@)
 	$(install-module-file)
 
 ifeq ($(PLATFORM), windows) 

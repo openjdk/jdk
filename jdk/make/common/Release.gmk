@@ -836,11 +836,14 @@ else # PLATFORM
   endif
 endif # PLATFORM
 
-# Get list of all Elf files in the jre
-JRE_ELF_LIST=$(TEMPDIR)/jre-elf-files.list
-$(JRE_ELF_LIST):
-ifneq ($(PLATFORM), windows)
+# Get list of all binary (COFF or Elf) files in the jre
+JRE_BIN_LIST=$(TEMPDIR)/jre-bin-files.list
+$(JRE_BIN_LIST):
 	$(RM) $@
+ifeq ($(PLATFORM), windows)
+	$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*.exe \
+	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" > $@
+else
 	$(FIND) $(JRE_IMAGE_DIR)/lib -type f -name \*.$(LIB_SUFFIX) >> $@
 	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
@@ -848,9 +851,9 @@ endif
 
 # Post process the image (strips and mcs on Elf files we are shipping)
 #   (Note the jdk WILL want the jre image before this processing)
-process-image-jre:: $(JRE_ELF_LIST)
+process-image-jre:: $(JRE_BIN_LIST)
 ifneq ($(POST_STRIP_PROCESS), )
-	for f in `$(CAT) $(JRE_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JRE_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_STRIP_PROCESS) $${f}; \
 	  $(POST_STRIP_PROCESS) $${f}; \
@@ -858,14 +861,17 @@ ifneq ($(POST_STRIP_PROCESS), )
 	done
 endif
 ifneq ($(POST_MCS_PROCESS), )
-	for f in `$(CAT) $(JRE_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JRE_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_MCS_PROCESS) $${f}; \
 	  $(POST_MCS_PROCESS) $${f}; \
 	  $(CHMOD) go-w $${f}; \
 	done
 endif
-	$(RM) $(JRE_ELF_LIST)
+	@for f in `$(CAT) $(JRE_BIN_LIST)`; do \
+	  $(call binary_file_verification,$${f}); \
+	done
+	$(RM) $(JRE_BIN_LIST)
 
 ######################################################
 # JDK Image
@@ -1093,10 +1099,15 @@ trim-image-jdk::
 		  $(JDK_IMAGE_DIR)/bin/*/native_threads/$${t}$(EXE_SUFFIX); \
 	done
 
-# Get list of Elf files in the jdk
-JDK_ELF_LIST=$(TEMPDIR)/jdk-elf-files.list
-$(JDK_ELF_LIST):
-ifneq ($(PLATFORM), windows)
+# Get list of binary (COFF or Elf) files in the jdk
+JDK_BIN_LIST=$(TEMPDIR)/jdk-bin-files.list
+$(JDK_BIN_LIST):
+ifeq ($(PLATFORM), windows)
+	$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*.exe \
+	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" > $@
+	$(FIND) $(JDK_IMAGE_DIR)/bin -type f -name \*.exe \
+	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" >> $@
+else
 	$(RM) $@
 	$(FIND) $(JDK_IMAGE_DIR)/jre/lib -type f -name \*.$(LIB_SUFFIX) >> $@
 	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*$(EXE_SUFFIX)` \
@@ -1106,9 +1117,9 @@ ifneq ($(PLATFORM), windows)
 endif
 
 # Post process the image (strips and mcs on files we are shipping)
-process-image-jdk:: $(JDK_ELF_LIST)
+process-image-jdk:: $(JDK_BIN_LIST)
 ifneq ($(POST_STRIP_PROCESS), )
-	for f in `$(CAT) $(JDK_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JDK_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_STRIP_PROCESS) $${f}; \
 	  $(POST_STRIP_PROCESS) $${f}; \
@@ -1116,14 +1127,17 @@ ifneq ($(POST_STRIP_PROCESS), )
 	done
 endif
 ifneq ($(POST_MCS_PROCESS), )
-	for f in `$(CAT) $(JDK_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JDK_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_MCS_PROCESS) $${f}; \
 	  $(POST_MCS_PROCESS) $${f}; \
 	  $(CHMOD) go-w $${f}; \
 	done
 endif
-	$(RM) $(JDK_ELF_LIST)
+	@for f in `$(CAT) $(JDK_BIN_LIST)`; do \
+	  $(call binary_file_verification,$${f}); \
+	done
+	$(RM) $(JDK_BIN_LIST)
 
 ###################################################################
 # What do we compare against

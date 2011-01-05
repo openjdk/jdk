@@ -186,3 +186,20 @@ else
 endif
 HOTSPOT_SERVER_PATH:=$(call AltCheckValue,HOTSPOT_SERVER_PATH)
 
+# Special define for checking the binaries
+
+# Macro to check it's input file for banned dependencies and verify the
+#   binary built properly. Relies on process exit code.
+define binary_file_verification # binary_file
+( \
+  $(ECHO) "Checking for mapfile use in: $1" && \
+  if [ "`$(NM) -g -D $1 | $(EGREP) -v 'UNDEF' | $(EGREP) 'SUNWprivate'`" = "" ] ; then \
+    $(ECHO) "WARNING: File was not built with a mapfile: $1"; \
+  fi && \
+  $(ECHO) "Library loads for: $1" && \
+  $(LDD) $1 && \
+  $(ECHO) "RUNPATH for: $1" && \
+  ( $(DUMP) -L -v $1 | $(EGREP) 'NEEDED|RUNPATH|RPATH' ) \
+)
+endef
+
