@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -373,6 +373,9 @@ OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
 # Get platform specific settings
 # NB: OUTPUTDIR must be defined. Otherwise hotspot import detection will not work correctly
 # On other hand this must be included early as it provides platform specific defines such as FullPath
+include $(JDK_MAKE_SHARED_DIR)/Defs-versions.gmk
+
+# Get platform specific settings (defines COMPILER_PATH)
 include $(JDK_MAKE_SHARED_DIR)/Defs-$(PLATFORM).gmk
 
 # Components
@@ -608,24 +611,9 @@ else
   COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
 endif
 
-# Windows uses Microsoft compilers by default
-ifeq ($(PLATFORM), windows)
-  override CC_VERSION = msvc
-endif
-
-# Solaris uses Sun Studio compilers by default
-ifeq ($(PLATFORM), solaris)
-  override CC_VERSION = sun
-endif
-
-# Linux uses GNU compilers by default
-ifeq ($(PLATFORM), linux)
-  override CC_VERSION = gcc
-endif
-
-# Get the REQUIRED versions (needs CC_VERSION set)
-include $(JDK_MAKE_SHARED_DIR)/Defs-versions.gmk
-
-# Get the compiler specific settings
+# Get the compiler specific settings (will run the compiler to find out)
+#   NOTE: COMPILER_PATH must be set by this time.
+#   Up until we include this file, we don't know what specific compiler
+#   version is actually being used (i.e. what is in PATH or COMPILER_PATH).
 include $(JDK_MAKE_SHARED_DIR)/Compiler-$(CC_VERSION).gmk
 

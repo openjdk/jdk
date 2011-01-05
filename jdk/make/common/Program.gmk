@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -105,15 +105,6 @@ endif
 FILES_o = \
 	$(OBJDIR)/main.$(OBJECT_SUFFIX)
 
-# We either need to import (copy) binaries in, or build them
-ifneq ($(IMPORT_NATIVE_BINARIES),true)
-  COMPILE_IT=true
-else
-  COMPILE_IT=false
-endif
-
-ifeq ($(COMPILE_IT),true)
-
 $(ACTUAL_PROGRAM):: classes $(INIT) 
 
 #
@@ -191,19 +182,6 @@ $(ACTUAL_PROGRAM):: $(FILES_o)
 	$(install-module-file)
 
 endif # PLATFORM
-
-else  # COMPILE_IT
-
-$(ACTUAL_PROGRAM)::
-
-# Copies in the file from the JDK_IMPORT_PATH area
-$(ACTUAL_PROGRAM_DIR)/%: $(JDK_IMPORT_PATH)/jre/bin/%
-	@$(install-import-file)
-$(ACTUAL_PROGRAM_DIR)/%: $(JDK_IMPORT_PATH)/bin/%
-	@$(install-import-file)
-
-endif # COMPILE_IT
-
 
 clean:: 
 ifeq ($(PLATFORM), windows)
