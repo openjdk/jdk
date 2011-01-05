@@ -24,8 +24,10 @@
 // key: compiler.warn.type.parameter.on.polymorphic.signature
 // key: compiler.err.unreported.exception.need.to.catch.or.throw
 
-import java.dyn.InvokeDynamic;
+import java.dyn.MethodHandle;
 
 class TypeParameterOnPolymorphicSignature {
-    { InvokeDynamic.<void>call("",123); }
+    void test(MethodHandle mh) {
+        mh.<void>invokeExact("",123);
+    }
 }
