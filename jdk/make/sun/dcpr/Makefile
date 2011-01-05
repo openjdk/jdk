@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-
-# WARNING: Make sure the OPENJDK plugs are up-to-date, see make/common/internal/BinaryPlugs.gmk
 
 BUILDDIR = ../..
 MODULE  = java2d

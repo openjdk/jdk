@@ -33,6 +33,25 @@ class CMTask;
 typedef GenericTaskQueue<oop>            CMTaskQueue;
 typedef GenericTaskQueueSet<CMTaskQueue> CMTaskQueueSet;
 
+// Closure used by CM during concurrent reference discovery
+// and reference processing (during remarking) to determine
+// if a particular object is alive. It is primarily used
+// to determine if referents of discovered reference objects
+// are alive. An instance is also embedded into the
+// reference processor as the _is_alive_non_header field
+class G1CMIsAliveClosure: public BoolObjectClosure {
+  G1CollectedHeap* _g1;
+ public:
+  G1CMIsAliveClosure(G1CollectedHeap* g1) :
+    _g1(g1)
+  {}
+
+  void do_object(oop obj) {
+    ShouldNotCallThis();
+  }
+  bool do_object_b(oop obj);
+};
+
 // A generic CM bit map.  This is essentially a wrapper around the BitMap
 // class, with one bit per (1<<_shifter) HeapWords.
 
