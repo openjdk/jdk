@@ -1018,6 +1018,22 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSDEVTOOLS_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+  else
+    ifeq ($(wildcard $(REBASE)),)
+	@$(ECHO) "ERROR: Cannot find the REBASE utility from path: $(REBASE)\n" \
+	    "      This is normally obtained from the WINDOWSSDKDIR." \
+	    "" >> $(ERROR_FILE)
+    endif
+    ifeq ($(wildcard $(RC)),)
+	@$(ECHO) "ERROR: Cannot find the RC utility from path: $(RC)\n" \
+	    "      This is normally obtained from the WINDOWSSDKDIR." \
+	    "" >> $(ERROR_FILE)
+    endif
+    ifeq ($(wildcard $(DUMPBIN)),)
+	@$(ECHO) "ERROR: Cannot find the DUMPBIN utility from path: $(DUMPBIN)\n" \
+	    "      This is normally obtained from the WINDOWSSDKDIR." \
+	    "" >> $(ERROR_FILE)
+    endif
   endif
 endif
 
