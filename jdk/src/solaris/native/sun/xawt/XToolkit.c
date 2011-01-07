@@ -187,7 +187,9 @@ Java_java_awt_Component_initIDs
                          "()Ljava/awt/Point;");
 
     keyclass = (*env)->FindClass(env, "java/awt/event/KeyEvent");
-    DASSERT (keyclass != NULL);
+    if (JNU_IsNull(env, keyclass)) {
+        return;
+    }
 
     componentIDs.isProxyActive =
         (*env)->GetFieldID(env, keyclass, "isProxyActive",
@@ -715,8 +717,10 @@ Window get_xawt_root_shell(JNIEnv *env) {
   if (xawt_root_shell == None){
       if (classXRootWindow == NULL){
           jclass cls_tmp = (*env)->FindClass(env, "sun/awt/X11/XRootWindow");
-          classXRootWindow = (jclass)(*env)->NewGlobalRef(env, cls_tmp);
-          (*env)->DeleteLocalRef(env, cls_tmp);
+          if (!JNU_IsNull(env, cls_tmp)) {
+              classXRootWindow = (jclass)(*env)->NewGlobalRef(env, cls_tmp);
+              (*env)->DeleteLocalRef(env, cls_tmp);
+          }
       }
       if( classXRootWindow != NULL) {
           methodGetXRootWindow = (*env)->GetStaticMethodID(env, classXRootWindow, "getXRootWindow", "()J");

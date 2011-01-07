@@ -173,7 +173,7 @@ extern JavaVM *jvm;
 
 // Platform encoding is Unicode (UTF-16), re-define JNU_ functions
 // to proper JNI functions.
-#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<jchar*>(x), static_cast<jsize>(_tcslen(x)))
+#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<const jchar*>(x), static_cast<jsize>(_tcslen(x)))
 #define JNU_GetStringPlatformChars(env, x, y) reinterpret_cast<LPCWSTR>(env->GetStringChars(x, y))
 #define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<const jchar*>(y))
 
