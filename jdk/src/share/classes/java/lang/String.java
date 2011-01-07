@@ -2330,7 +2330,7 @@ public final class String
             int off = 0;
             int next = 0;
             boolean limited = limit > 0;
-            ArrayList<String> list = new ArrayList<String>();
+            ArrayList<String> list = new ArrayList<>();
             while ((next = indexOf(ch, off)) != -1) {
                 if (!limited || list.size() < limit - 1) {
                     list.add(substring(off, next));

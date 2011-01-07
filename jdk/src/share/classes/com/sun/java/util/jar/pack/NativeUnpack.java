@@ -170,8 +170,8 @@ class NativeUnpack {
 
     void run(InputStream inRaw, JarOutputStream jstream,
              ByteBuffer presetInput) throws IOException {
-        BufferedInputStream in = new BufferedInputStream(inRaw);
-        this.in = in;    // for readInputFn to see
+        BufferedInputStream in0 = new BufferedInputStream(inRaw);
+        this.in = in0;    // for readInputFn to see
         _verbose = _props.getInteger(Utils.DEBUG_VERBOSE);
         // Fix for BugId: 4902477, -unpack.modification.time = 1059010598000
         // TODO eliminate and fix in unpack.cpp
@@ -224,7 +224,7 @@ class NativeUnpack {
             if (_verbose > 0)
                 Utils.log.info("bytes consumed = "+consumed);
             if (presetInput == null &&
-                !Utils.isPackMagic(Utils.readMagic(in))) {
+                !Utils.isPackMagic(Utils.readMagic(in0))) {
                 break;
             }
             if (_verbose > 0 ) {

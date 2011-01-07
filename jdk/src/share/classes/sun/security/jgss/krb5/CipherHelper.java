@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -710,29 +710,21 @@ class CipherHelper {
      * where HMAC is on {16-byte confounder | plaintext | 16-byte token_header}
      * HMAC is not encrypted; it is appended at the end.
      */
-    void encryptData(WrapToken_v2 token, byte[] confounder, byte[] tokenHeader,
-        byte[] plaintext, int start, int len, int key_usage, OutputStream os)
-        throws GSSException, IOException {
+    byte[] encryptData(WrapToken_v2 token, byte[] confounder, byte[] tokenHeader,
+            byte[] plaintext, int start, int len, int key_usage)
+            throws GSSException {
 
-        byte[] ctext = null;
         switch (etype) {
-                case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
-                    ctext = aes128Encrypt(confounder, tokenHeader,
-                                plaintext, start, len, key_usage);
-                    break;
-                case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
-                    ctext = aes256Encrypt(confounder, tokenHeader,
-                                plaintext, start, len, key_usage);
-                    break;
-                default:
-                    throw new GSSException(GSSException.FAILURE, -1,
-                        "Unsupported etype: " + etype);
+            case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
+                return aes128Encrypt(confounder, tokenHeader,
+                            plaintext, start, len, key_usage);
+            case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
+                return aes256Encrypt(confounder, tokenHeader,
+                            plaintext, start, len, key_usage);
+            default:
+                throw new GSSException(GSSException.FAILURE, -1,
+                    "Unsupported etype: " + etype);
         }
-
-        // Krb5Token.debug("EncryptedData = " +
-        //              Krb5Token.getHexBytes(ctext) + "\n");
-        // Write to stream
-        os.write(ctext);
     }
 
     void encryptData(WrapToken token, byte[] confounder, byte[] plaintext,

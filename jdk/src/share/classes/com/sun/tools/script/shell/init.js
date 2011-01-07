@@ -311,9 +311,9 @@ function load(str) {
 	try {
 		engine.eval(reader);
 	} finally {
-		engine.put(engine.FILENAME, oldFilename);	
+		engine.put(engine.FILENAME, oldFilename);
+	        streamClose(stream);
 	}
-	streamClose(stream);
 }
 
 // file system utilities

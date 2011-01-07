@@ -84,18 +84,18 @@ public class ObjectStreamClass implements Serializable {
     private static class Caches {
         /** cache mapping local classes -> descriptors */
         static final ConcurrentMap<WeakClassKey,Reference<?>> localDescs =
-            new ConcurrentHashMap<WeakClassKey,Reference<?>>();
+            new ConcurrentHashMap<>();
 
         /** cache mapping field group/local desc pairs -> field reflectors */
         static final ConcurrentMap<FieldReflectorKey,Reference<?>> reflectors =
-            new ConcurrentHashMap<FieldReflectorKey,Reference<?>>();
+            new ConcurrentHashMap<>();
 
         /** queue for WeakReferences to local classes */
         private static final ReferenceQueue<Class<?>> localDescsQueue =
-            new ReferenceQueue<Class<?>>();
+            new ReferenceQueue<>();
         /** queue for WeakReferences to field reflectors keys */
         private static final ReferenceQueue<Class<?>> reflectorsQueue =
-            new ReferenceQueue<Class<?>>();
+            new ReferenceQueue<>();
     }
 
     /** class associated with this descriptor (if any) */
@@ -290,7 +290,7 @@ public class ObjectStreamClass implements Serializable {
         EntryFuture future = null;
         if (entry == null) {
             EntryFuture newEntry = new EntryFuture();
-            Reference<?> newRef = new SoftReference<EntryFuture>(newEntry);
+            Reference<?> newRef = new SoftReference<>(newEntry);
             do {
                 if (ref != null) {
                     Caches.localDescs.remove(key, ref);
@@ -329,7 +329,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             if (future.set(entry)) {
-                Caches.localDescs.put(key, new SoftReference<Object>(entry));
+                Caches.localDescs.put(key, new SoftReference<>(entry));
             } else {
                 // nested lookup call already set future
                 entry = future.get();
@@ -1130,7 +1130,7 @@ public class ObjectStreamClass implements Serializable {
     private ClassDataSlot[] getClassDataLayout0()
         throws InvalidClassException
     {
-        ArrayList<ClassDataSlot> slots = new ArrayList<ClassDataSlot>();
+        ArrayList<ClassDataSlot> slots = new ArrayList<>();
         Class<?> start = cl, end = cl;
 
         // locate closest non-serializable superclass
@@ -1566,7 +1566,7 @@ public class ObjectStreamClass implements Serializable {
 
         ObjectStreamField[] boundFields =
             new ObjectStreamField[serialPersistentFields.length];
-        Set<String> fieldNames = new HashSet<String>(serialPersistentFields.length);
+        Set<String> fieldNames = new HashSet<>(serialPersistentFields.length);
 
         for (int i = 0; i < serialPersistentFields.length; i++) {
             ObjectStreamField spf = serialPersistentFields[i];
@@ -1604,7 +1604,7 @@ public class ObjectStreamClass implements Serializable {
      */
     private static ObjectStreamField[] getDefaultSerialFields(Class<?> cl) {
         Field[] clFields = cl.getDeclaredFields();
-        ArrayList<ObjectStreamField> list = new ArrayList<ObjectStreamField>();
+        ArrayList<ObjectStreamField> list = new ArrayList<>();
         int mask = Modifier.STATIC | Modifier.TRANSIENT;
 
         for (int i = 0; i < clFields.length; i++) {
@@ -1855,8 +1855,8 @@ public class ObjectStreamClass implements Serializable {
             writeKeys = new long[nfields];
             offsets = new int[nfields];
             typeCodes = new char[nfields];
-            ArrayList<Class<?>> typeList = new ArrayList<Class<?>>();
-            Set<Long> usedKeys = new HashSet<Long>();
+            ArrayList<Class<?>> typeList = new ArrayList<>();
+            Set<Long> usedKeys = new HashSet<>();
 
 
             for (int i = 0; i < nfields; i++) {
@@ -2092,7 +2092,7 @@ public class ObjectStreamClass implements Serializable {
         EntryFuture future = null;
         if (entry == null) {
             EntryFuture newEntry = new EntryFuture();
-            Reference<?> newRef = new SoftReference<EntryFuture>(newEntry);
+            Reference<?> newRef = new SoftReference<>(newEntry);
             do {
                 if (ref != null) {
                     Caches.reflectors.remove(key, ref);
@@ -2118,7 +2118,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             future.set(entry);
-            Caches.reflectors.put(key, new SoftReference<Object>(entry));
+            Caches.reflectors.put(key, new SoftReference<>(entry));
         }
 
         if (entry instanceof FieldReflector) {

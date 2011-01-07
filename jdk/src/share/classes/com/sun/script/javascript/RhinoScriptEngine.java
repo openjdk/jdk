@@ -61,26 +61,43 @@ public final class RhinoScriptEngine extends AbstractScriptEngine
     private ScriptEngineFactory factory;
     private InterfaceImplementor implementor;
 
+    private static final int languageVersion = getLanguageVersion();
+    private static final int optimizationLevel = getOptimizationLevel();
     static {
         ContextFactory.initGlobal(new ContextFactory() {
             protected Context makeContext() {
                 Context cx = super.makeContext();
+                cx.setLanguageVersion(languageVersion);
+                cx.setOptimizationLevel(optimizationLevel);
                 cx.setClassShutter(RhinoClassShutter.getInstance());
                 cx.setWrapFactory(RhinoWrapFactory.getInstance());
                 return cx;
             }
-
-            public boolean hasFeature(Context cx, int feature) {
-                // we do not support E4X (ECMAScript for XML)!
-                if (feature == Context.FEATURE_E4X) {
-                    return false;
-                } else {
-                    return super.hasFeature(cx, feature);
-                }
-            }
         });
     }
 
+    private static final String RHINO_JS_VERSION = "rhino.js.version";
+    private static int getLanguageVersion() {
+        int version;
+        String tmp = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction(RHINO_JS_VERSION));
+        if (tmp != null) {
+            version = Integer.parseInt((String)tmp);
+        } else {
+            version = Context.VERSION_1_8;
+        }
+        return version;
+    }
+
+    private static final String RHINO_OPT_LEVEL = "rhino.opt.level";
+    private static int getOptimizationLevel() {
+        int optLevel = -1;
+        // disable optimizer under security manager, for now.
+        if (System.getSecurityManager() == null) {
+            optLevel = Integer.getInteger(RHINO_OPT_LEVEL, -1);
+        }
+        return optLevel;
+    }
 
     /**
      * Creates a new instance of RhinoScriptEngine
@@ -333,6 +350,7 @@ public final class RhinoScriptEngine extends AbstractScriptEngine
         return result instanceof Undefined ? null : result;
     }
 
+    /*
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("No file specified");
@@ -347,4 +365,5 @@ public final class RhinoScriptEngine extends AbstractScriptEngine
         engine.eval(r);
         System.out.println(engine.get("x"));
     }
+    */
 }

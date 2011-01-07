@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.jar.JarEntry;
@@ -81,7 +81,8 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
      * Get the set of options for the pack and unpack engines.
      * @return A sorted association of option key strings to option values.
      */
-    public SortedMap<String, String> properties() {
+    @SuppressWarnings("unchecked")
+    public SortedMap properties() {
         return props;
     }
 
@@ -225,9 +226,8 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
             props.setProperty(java.util.jar.Pack200.Unpacker.PROGRESS,"50");
             pkg.ensureAllClassFiles();
             // Now write out the files.
-            HashSet<Package.Class> classesToWrite = new HashSet<>(pkg.getClasses());
-            for (Iterator i = pkg.getFiles().iterator(); i.hasNext(); ) {
-                Package.File file = (Package.File) i.next();
+            Set<Package.Class> classesToWrite = new HashSet<>(pkg.getClasses());
+            for (Package.File file : pkg.getFiles()) {
                 String name = file.nameString;
                 JarEntry je = new JarEntry(Utils.getJarEntryName(name));
                 boolean deflate;

@@ -250,8 +250,7 @@ final class ProcessEnvironment extends HashMap<String,String>
                                    envblock.substring(eql+1,end));
         }
 
-        theCaseInsensitiveEnvironment
-            = new TreeMap<String,String>(nameComparator);
+        theCaseInsensitiveEnvironment = new TreeMap<>(nameComparator);
         theCaseInsensitiveEnvironment.putAll(theEnvironment);
     }
 
@@ -296,8 +295,7 @@ final class ProcessEnvironment extends HashMap<String,String>
     // Only for use by ProcessImpl.start()
     String toEnvironmentBlock() {
         // Sort Unicode-case-insensitively by name
-        List<Map.Entry<String,String>> list
-            = new ArrayList<Map.Entry<String,String>>(entrySet());
+        List<Map.Entry<String,String>> list = new ArrayList<>(entrySet());
         Collections.sort(list, entryComparator);
 
         StringBuilder sb = new StringBuilder(size()*30);

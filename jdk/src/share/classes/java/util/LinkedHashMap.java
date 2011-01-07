@@ -237,7 +237,7 @@ public class LinkedHashMap<K,V>
      * the chain.
      */
     void init() {
-        header = new Entry<K,V>(-1, null, null, null);
+        header = new Entry<>(-1, null, null, null);
         header.before = header.after = header;
     }
 
@@ -438,7 +438,7 @@ public class LinkedHashMap<K,V>
      */
     void createEntry(int hash, K key, V value, int bucketIndex) {
         HashMap.Entry<K,V> old = table[bucketIndex];
-        Entry<K,V> e = new Entry<K,V>(hash, key, value, old);
+        Entry<K,V> e = new Entry<>(hash, key, value, old);
         table[bucketIndex] = e;
         e.addBefore(header);
         size++;
