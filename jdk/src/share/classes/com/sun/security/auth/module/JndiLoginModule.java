@@ -184,7 +184,7 @@ public class JndiLoginModule implements LoginModule {
     private UnixNumericUserPrincipal UIDPrincipal;
     private UnixNumericGroupPrincipal GIDPrincipal;
     private LinkedList<UnixNumericGroupPrincipal> supplementaryGroups =
-                                new LinkedList<UnixNumericGroupPrincipal>();
+                                new LinkedList<>();
 
     // initial state
     private Subject subject;

@@ -76,7 +76,7 @@ public class SolarisLoginModule implements LoginModule {
     private SolarisNumericUserPrincipal UIDPrincipal;
     private SolarisNumericGroupPrincipal GIDPrincipal;
     private LinkedList<SolarisNumericGroupPrincipal> supplementaryGroups =
-                new LinkedList<SolarisNumericGroupPrincipal>();
+                new LinkedList<>();
 
     /**
      * Initialize this <code>LoginModule</code>.

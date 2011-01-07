@@ -658,8 +658,7 @@ public class KeyStoreLoginModule implements LoginModule {
                 throw new FailedLoginException(
                     "Unable to find X.509 certificate chain in keystore");
             } else {
-                LinkedList<Certificate> certList =
-                                new LinkedList<Certificate>();
+                LinkedList<Certificate> certList = new LinkedList<>();
                 for (int i=0; i < fromKeyStore.length; i++) {
                     certList.add(fromKeyStore[i]);
                 }

@@ -178,7 +178,7 @@ class SearchFirstMode extends LdapConfiguration {
     public SearchFirstMode() {
         super();
 
-        Map<String, String> options = new HashMap<String, String>(4);
+        Map<String, String> options = new HashMap<>(4);
         options.put("userProvider", "ldap://localhost:23456/dc=example,dc=com");
         options.put("userFilter",
             "(&(uid={USERNAME})(objectClass=inetOrgPerson))");
@@ -213,7 +213,7 @@ class AuthFirstMode extends LdapConfiguration {
     public AuthFirstMode() {
         super();
 
-        Map<String, String> options = new HashMap<String, String>(5);
+        Map<String, String> options = new HashMap<>(5);
         options.put("userProvider", "ldap://localhost:23456/dc=example,dc=com");
         options.put("authIdentity", "{USERNAME}");
         options.put("userFilter",
@@ -248,7 +248,7 @@ class AuthOnlyMode extends LdapConfiguration {
     public AuthOnlyMode() {
         super();
 
-        Map<String, String> options = new HashMap<String, String>(4);
+        Map<String, String> options = new HashMap<>(4);
         options.put("userProvider",
             "ldap://localhost:23456 ldap://localhost:23457");
         options.put("authIdentity",
