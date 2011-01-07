@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class JvmtiThreadState;
 class JvmtiGetLoadedClassesClosure;
 class ThreadStatistics;
 class ConcurrentLocksDump;
-class ParkEvent ;
+class ParkEvent;
 class Parker;
 
 class ciEnv;
@@ -170,7 +170,7 @@ class Thread: public ThreadShadow {
   //
 
   // suspend/resume lock: used for self-suspend
-  Monitor*    _SR_lock;
+  Monitor* _SR_lock;
 
  protected:
   enum SuspendFlags {
@@ -194,7 +194,7 @@ class Thread: public ThreadShadow {
  public:
   void enter_signal_handler() { _num_nested_signal++; }
   void leave_signal_handler() { _num_nested_signal--; }
-  bool is_inside_signal_handler() const  { return _num_nested_signal > 0; }
+  bool is_inside_signal_handler() const { return _num_nested_signal > 0; }
 
  private:
   // Debug tracing
@@ -215,7 +215,7 @@ class Thread: public ThreadShadow {
 
   public:
    void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
-    HandleMark* last_handle_mark() const          { return _last_handle_mark; }
+   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
   private:
 
   // debug support for checking if code does allow safepoints or not
@@ -227,11 +227,11 @@ class Thread: public ThreadShadow {
   //
   // The two classes No_Safepoint_Verifier and No_Allocation_Verifier are used to set these counters.
   //
-  NOT_PRODUCT(int _allow_safepoint_count;)       // If 0, thread allow a safepoint to happen
-  debug_only (int _allow_allocation_count;)      // If 0, the thread is allowed to allocate oops.
+  NOT_PRODUCT(int _allow_safepoint_count;)      // If 0, thread allow a safepoint to happen
+  debug_only (int _allow_allocation_count;)     // If 0, the thread is allowed to allocate oops.
 
   // Used by SkipGCALot class.
-  NOT_PRODUCT(bool _skip_gcalot;)                // Should we elide gc-a-lot?
+  NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
   // Record when GC is locked out via the GC_locker mechanism
   CHECK_UNHANDLED_OOPS_ONLY(int _gc_locked_out_count;)
@@ -242,24 +242,26 @@ class Thread: public ThreadShadow {
   friend class ThreadLocalStorage;
   friend class GC_locker;
 
-  ThreadLocalAllocBuffer _tlab;                  // Thread-local eden
+  ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
+  jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
+                                                // the Java heap
 
-  int   _vm_operation_started_count;             // VM_Operation support
-  int   _vm_operation_completed_count;           // VM_Operation support
+  int   _vm_operation_started_count;            // VM_Operation support
+  int   _vm_operation_completed_count;          // VM_Operation support
 
-  ObjectMonitor* _current_pending_monitor;       // ObjectMonitor this thread
-                                                 // is waiting to lock
-  bool _current_pending_monitor_is_from_java;    // locking is from Java code
+  ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
+                                                // is waiting to lock
+  bool _current_pending_monitor_is_from_java;   // locking is from Java code
 
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
 
   // Private thread-local objectmonitor list - a simple cache organized as a SLL.
  public:
-  ObjectMonitor * omFreeList ;
-  int omFreeCount ;                             // length of omFreeList
-  int omFreeProvision ;                         // reload chunk size
-  ObjectMonitor * omInUseList;                  // SLL to track monitors in circulation
+  ObjectMonitor* omFreeList;
+  int omFreeCount;                              // length of omFreeList
+  int omFreeProvision;                          // reload chunk size
+  ObjectMonitor* omInUseList;                   // SLL to track monitors in circulation
   int omInUseCount;                             // length of omInUseList
 
  public:
@@ -280,7 +282,6 @@ class Thread: public ThreadShadow {
   // Testers
   virtual bool is_VM_thread()       const            { return false; }
   virtual bool is_Java_thread()     const            { return false; }
-  // Remove this ifdef when C1 is ported to the compiler interface.
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
@@ -344,15 +345,15 @@ class Thread: public ThreadShadow {
   // Support for Unhandled Oop detection
 #ifdef CHECK_UNHANDLED_OOPS
  private:
-  UnhandledOops *_unhandled_oops;
+  UnhandledOops* _unhandled_oops;
  public:
-  UnhandledOops* unhandled_oops()               { return _unhandled_oops; }
+  UnhandledOops* unhandled_oops() { return _unhandled_oops; }
   // Mark oop safe for gc.  It may be stack allocated but won't move.
-  void allow_unhandled_oop(oop *op)              {
+  void allow_unhandled_oop(oop *op) {
     if (CheckUnhandledOops) unhandled_oops()->allow_unhandled_oop(op);
   }
   // Clear oops at safepoint so crashes point to unhandled oop violator
-  void clear_unhandled_oops()                   {
+  void clear_unhandled_oops() {
     if (CheckUnhandledOops) unhandled_oops()->clear_unhandled_oops();
   }
   bool is_gc_locked_out() { return _gc_locked_out_count > 0; }
@@ -390,6 +391,22 @@ class Thread: public ThreadShadow {
     if (UseTLAB) {
       tlab().initialize();
     }
+  }
+
+  jlong allocated_bytes()               { return _allocated_bytes; }
+  void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
+  void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
+  jlong cooked_allocated_bytes() {
+    jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
+    if (UseTLAB) {
+      size_t used_bytes = tlab().used_bytes();
+      if ((ssize_t)used_bytes > 0) {
+        // More-or-less valid tlab.  The load_acquire above should ensure
+        // that the result of the add is <= the instantaneous value
+        return allocated_bytes + used_bytes;
+      }
+    }
+    return allocated_bytes;
   }
 
   // VM operation support
@@ -489,8 +506,11 @@ public:
     return (_stack_base >= adr && adr >= (_stack_base - _stack_size));
   }
 
-  int     lgrp_id() const                 { return _lgrp_id; }
-  void    set_lgrp_id(int value)          { _lgrp_id = value; }
+  uintptr_t self_raw_id()                    { return _self_raw_id; }
+  void      set_self_raw_id(uintptr_t value) { _self_raw_id = value; }
+
+  int     lgrp_id() const        { return _lgrp_id; }
+  void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
   void print_on(outputStream* st) const;
@@ -502,7 +522,7 @@ public:
 #ifdef ASSERT
  private:
   // Deadlock detection support for Mutex locks. List of locks own by thread.
-  Monitor *_owned_locks;
+  Monitor* _owned_locks;
   // Mutex::set_owner_implementation is the only place where _owned_locks is modified,
   // thus the friendship
   friend class Mutex;
@@ -511,7 +531,7 @@ public:
  public:
   void print_owned_locks_on(outputStream* st) const;
   void print_owned_locks() const                 { print_owned_locks_on(tty);    }
-  Monitor * owned_locks() const                  { return _owned_locks;          }
+  Monitor* owned_locks() const                   { return _owned_locks;          }
   bool owns_locks() const                        { return owned_locks() != NULL; }
   bool owns_locks_but_compiled_lock() const;
 
@@ -538,7 +558,7 @@ public:
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size ); }
 
 #define TLAB_FIELD_OFFSET(name) \
-  static ByteSize tlab_##name##_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
+  static ByteSize tlab_##name##_offset()         { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
 
   TLAB_FIELD_OFFSET(start)
   TLAB_FIELD_OFFSET(end)
@@ -551,6 +571,8 @@ public:
   TLAB_FIELD_OFFSET(slow_allocations)
 
 #undef TLAB_FIELD_OFFSET
+
+  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes ); }
 
  public:
   volatile intptr_t _Stalled ;
