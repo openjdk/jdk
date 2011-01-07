@@ -226,7 +226,7 @@ static jint _exiting_out_of_mem = 0;
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              const char* message) {
-  if (Debugging || error_is_suppressed(file, line)) return;
+  if (Debugging) return;
 
   // We try to gather additional information for the first out of memory
   // error only; gathering additional data might cause an allocation and a
