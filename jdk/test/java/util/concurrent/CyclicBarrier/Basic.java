@@ -83,7 +83,7 @@ public class Basic {
     //----------------------------------------------------------------
     // Convenience methods for creating threads that call CyclicBarrier.await
     //----------------------------------------------------------------
-    private static abstract class Awaiter extends Thread {
+    private abstract static class Awaiter extends Thread {
         static AtomicInteger count = new AtomicInteger(1);
 
         {
@@ -417,14 +417,14 @@ public class Basic {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    static abstract class Fun { abstract void f() throws Throwable; }
+    abstract static class Fun { abstract void f() throws Throwable; }
     private static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }
             catch (Throwable t) {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
-    private static abstract class CheckedThread extends Thread {
+    private abstract static class CheckedThread extends Thread {
         abstract void realRun() throws Throwable;
         public void run() {
             try {realRun();} catch (Throwable t) {unexpected(t);}}}

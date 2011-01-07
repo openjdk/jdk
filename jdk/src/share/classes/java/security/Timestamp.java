@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package java.security;
 
-import java.io.Serializable;
+import java.io.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertPath;
 import java.security.cert.X509Extension;
 import java.util.Date;
+import java.util.List;
 
 /**
  * This class encapsulates information about a signed timestamp.
@@ -142,8 +144,20 @@ public final class Timestamp implements Serializable {
         StringBuffer sb = new StringBuffer();
         sb.append("(");
         sb.append("timestamp: " + timestamp);
-        sb.append("TSA: " + signerCertPath.getCertificates().get(0));
+        List<? extends Certificate> certs = signerCertPath.getCertificates();
+        if (!certs.isEmpty()) {
+            sb.append("TSA: " + certs.get(0));
+        } else {
+            sb.append("TSA: <empty>");
+        }
         sb.append(")");
         return sb.toString();
+    }
+
+    // Explicitly reset hash code value to -1
+    private void readObject(ObjectInputStream ois)
+        throws IOException, ClassNotFoundException {
+     ois.defaultReadObject();
+     myhash = -1;
     }
 }

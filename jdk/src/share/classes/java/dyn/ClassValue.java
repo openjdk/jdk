@@ -28,44 +28,78 @@ package java.dyn;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.lang.reflect.UndeclaredThrowableException;
 
 /**
  * Lazily associate a computed value with (potentially) every class.
  * @author John Rose, JSR 292 EG
  */
-public abstract class ClassValue<T> {
+public class ClassValue<T> {
     /**
      * Compute the given class's derived value for this {@code ClassValue}.
      * <p>
      * This method will be invoked within the first thread that accesses
-     * the value with the {@link #get}.
+     * the value with the {@link #get get} method.
      * <p>
      * Normally, this method is invoked at most once per class,
-     * but it may be invoked again in case of subsequent invocations
-     * of {@link #remove} followed by {@link #get}.
+     * but it may be invoked again if there has been a call to
+     * {@link #remove remove}.
+     * <p>
+     * If there is no override from a subclass, this method returns
+     * the result of applying the {@code ClassValue}'s {@code computeValue}
+     * method handle, which was supplied at construction time.
      *
-     * @return the computed value for this thread-local
+     * @return the newly computed value associated with this {@code ClassValue}, for the given class or interface
+     * @throws UndeclaredThrowableException if the {@code computeValue} method handle invocation throws something other than a {@code RuntimeException} or {@code Error}
+     * @throws UnsupportedOperationException if the {@code computeValue} method handle is null (subclasses must override)
      */
-    protected abstract T computeValue(Class<?> type);
+    protected T computeValue(Class<?> type) {
+        if (computeValue == null)
+            return null;
+        try {
+            return (T) (Object) computeValue.invokeGeneric(type);
+        } catch (Throwable ex) {
+            if (ex instanceof Error)             throw (Error) ex;
+            if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+            throw new UndeclaredThrowableException(ex);
+        }
+    }
+
+    private final MethodHandle computeValue;
 
     /**
      * Creates a new class value.
+     * Subclasses which use this constructor must override
+     * the {@link #computeValue computeValue} method,
+     * since the default {@code computeValue} method requires a method handle,
+     * which this constructor does not provide.
      */
     protected ClassValue() {
+        this.computeValue = null;
+    }
+
+    /**
+     * Creates a new class value, whose {@link #computeValue computeValue} method
+     * will return the result of {@code computeValue.invokeGeneric(type)}.
+     * @throws NullPointerException  if the method handle parameter is null
+     */
+    public ClassValue(MethodHandle computeValue) {
+        computeValue.getClass();  // trigger NPE if null
+        this.computeValue = computeValue;
     }
 
     /**
      * Returns the value for the given class.
      * If no value has yet been computed, it is obtained by
-     * by an invocation of the {@link #computeValue} method.
+     * by an invocation of the {@link #computeValue computeValue} method.
      * <p>
      * The actual installation of the value on the class
-     * is performed while the class's synchronization lock
-     * is held.  At that point, if racing threads have
+     * is performed atomically.
+     * At that point, if racing threads have
      * computed values, one is chosen, and returned to
      * all the racing threads.
      *
-     * @return the current thread's value of this thread-local
+     * @return the current value associated with this {@code ClassValue}, for the given class or interface
      */
     public T get(Class<?> type) {
         ClassValueMap map = getMap(type);
@@ -81,9 +115,16 @@ public abstract class ClassValue<T> {
     /**
      * Removes the associated value for the given class.
      * If this value is subsequently {@linkplain #get read} for the same class,
-     * its value will be reinitialized by invoking its {@link #computeValue} method.
+     * its value will be reinitialized by invoking its {@link #computeValue computeValue} method.
      * This may result in an additional invocation of the
-     * {@code computeValue} method for the given class.
+     * {@code computeValue computeValue} method for the given class.
+     * <p>
+     * If racing threads perform a combination of {@code get} and {@code remove} calls,
+     * the calls are serialized.
+     * A value produced by a call to {@code computeValue} will be discarded, if
+     * the corresponding {@code get} call was followed by a {@code remove} call
+     * before the {@code computeValue} could complete.
+     * In such a case, the {@code get} call will re-invoke {@code computeValue}.
      */
     public void remove(Class<?> type) {
         ClassValueMap map = getMap(type);
@@ -118,6 +159,7 @@ public abstract class ClassValue<T> {
             // Warm up the table with a null entry.
             map.preInitializeEntry(this);
         }
+        STORE_BARRIER.lazySet(0);
         // All stores pending from table expansion are completed.
         synchronized (map) {
             value = (T) map.initializeEntry(this, value);

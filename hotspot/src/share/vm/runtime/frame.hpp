@@ -254,10 +254,10 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   // Return the monitor owner and BasicLock for compiled synchronized
   // native methods so that biased locking can revoke the receiver's
-  // bias if necessary. Takes optional nmethod for this frame as
-  // argument to avoid performing repeated lookups in code cache.
-  BasicLock* compiled_synchronized_native_monitor      (nmethod* nm = NULL);
-  oop        compiled_synchronized_native_monitor_owner(nmethod* nm = NULL);
+  // bias if necessary.  This is also used by JVMTI's GetLocalInstance method
+  // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
+  BasicLock* get_native_monitor();
+  oop        get_native_receiver();
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)

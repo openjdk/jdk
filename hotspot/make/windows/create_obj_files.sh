@@ -107,8 +107,12 @@ case "${Platform_arch_model}" in
 	"x86_64") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} *x86_32*" ;;
 esac
 
+# Locate all source files in the given directory, excluding files in Src_Files_EXCLUDE.
 function findsrc {
-    $FIND ${1} \( -name \*.c -o -name \*.cpp -o -name \*.s \) -a \! \( -name ${Src_Files_EXCLUDE// / -o -name } \) | sed 's/.*\/\(.*\)/\1/';
+    $FIND ${1}/. ! -name . -prune \
+		-a \( -name \*.c -o -name \*.cpp -o -name \*.s \) \
+		-a \! \( -name ${Src_Files_EXCLUDE// / -o -name } \) \
+		| sed 's/.*\/\(.*\)/\1/';
 }
 
 Src_Files=

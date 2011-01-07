@@ -502,7 +502,7 @@ public class TreeInfo {
                 else super.visitVarDef(that);
             }
             public void visitTypeParameter(JCTypeParameter that) {
-                if (that.type.tsym == sym) result = that;
+                if (that.type != null && that.type.tsym == sym) result = that;
                 else super.visitTypeParameter(that);
             }
         }

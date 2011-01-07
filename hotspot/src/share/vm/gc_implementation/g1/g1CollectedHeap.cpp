@@ -1192,6 +1192,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     return false;
   }
 
+  DTraceGCProbeMarker gc_probe_marker(true /* full */);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -1389,7 +1390,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   }
 
   // Update the number of full collections that have been completed.
-  increment_full_collections_completed(false /* outer */);
+  increment_full_collections_completed(false /* concurrent */);
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
@@ -1768,6 +1769,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
   _into_cset_dirty_card_queue_set(false),
+  _is_alive_closure(this),
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
@@ -2061,7 +2063,8 @@ void G1CollectedHeap::ref_processing_init() {
                                          mr,    // span
                                          false, // Reference discovery is not atomic
                                          true,  // mt_discovery
-                                         NULL,  // is alive closure: need to fill this in for efficiency
+                                         &_is_alive_closure, // is alive closure
+                                                             // for efficiency
                                          ParallelGCThreads,
                                          ParallelRefProcEnabled,
                                          true); // Setting next fields of discovered
@@ -2176,8 +2179,13 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
      (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
 
-void G1CollectedHeap::increment_full_collections_completed(bool outer) {
+void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
   MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+
+  // We assume that if concurrent == true, then the caller is a
+  // concurrent thread that was joined the Suspendible Thread
+  // Set. If there's ever a cheap way to check this, we should add an
+  // assert here.
 
   // We have already incremented _total_full_collections at the start
   // of the GC, so total_full_collections() represents how many full
@@ -2192,17 +2200,18 @@ void G1CollectedHeap::increment_full_collections_completed(bool outer) {
   // behind the number of full collections started.
 
   // This is the case for the inner caller, i.e. a Full GC.
-  assert(outer ||
+  assert(concurrent ||
          (full_collections_started == _full_collections_completed + 1) ||
          (full_collections_started == _full_collections_completed + 2),
-         err_msg("for inner caller: full_collections_started = %u "
+         err_msg("for inner caller (Full GC): full_collections_started = %u "
                  "is inconsistent with _full_collections_completed = %u",
                  full_collections_started, _full_collections_completed));
 
   // This is the case for the outer caller, i.e. the concurrent cycle.
-  assert(!outer ||
+  assert(!concurrent ||
          (full_collections_started == _full_collections_completed + 1),
-         err_msg("for outer caller: full_collections_started = %u "
+         err_msg("for outer caller (concurrent cycle): "
+                 "full_collections_started = %u "
                  "is inconsistent with _full_collections_completed = %u",
                  full_collections_started, _full_collections_completed));
 
@@ -2212,7 +2221,7 @@ void G1CollectedHeap::increment_full_collections_completed(bool outer) {
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cyle is still in progress.
-  if (outer) {
+  if (concurrent) {
     _cmThread->clear_in_progress();
   }
 
@@ -3205,13 +3214,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     return false;
   }
 
+  DTraceGCProbeMarker gc_probe_marker(false /* full */);
+  ResourceMark rm;
+
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
 
   {
-    ResourceMark rm;
-
     // This call will decide whether this pause is an initial-mark
     // pause. If it is, during_initial_mark_pause() will return true
     // for the duration of this pause.
@@ -3950,8 +3960,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   // Now restore saved marks, if any.
   if (_objs_with_preserved_marks != NULL) {
     assert(_preserved_marks_of_objs != NULL, "Both or none.");
-    assert(_objs_with_preserved_marks->length() ==
-           _preserved_marks_of_objs->length(), "Both or none.");
     guarantee(_objs_with_preserved_marks->length() ==
               _preserved_marks_of_objs->length(), "Both or none.");
     for (int i = 0; i < _objs_with_preserved_marks->length(); i++) {
@@ -4046,7 +4054,10 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
 }
 
 void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
-  if (m != markOopDesc::prototype()) {
+  assert(evacuation_failed(), "Oversaving!");
+  // We want to call the "for_promotion_failure" version only in the
+  // case of a promotion failure.
+  if (m->must_be_preserved_for_promotion_failure(obj)) {
     if (_objs_with_preserved_marks == NULL) {
       assert(_preserved_marks_of_objs == NULL, "Both or none.");
       _objs_with_preserved_marks =
