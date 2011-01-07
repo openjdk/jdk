@@ -25,11 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Write the Constants Summary Page in HTML format.
@@ -76,67 +77,106 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void writeHeader() {
-        printHtmlHeader(configuration.getText("doclet.Constants_Summary"),
-            null, true);
-        printTop();
-        navLinks(true);
-        hr();
-
-        center();
-        h1(); printText("doclet.Constants_Summary"); h1End();
-        centerEnd();
-
-        hr(4, "noshade");
+    public Content getHeader() {
+        String label = configuration.getText("doclet.Constants_Summary");
+        Content bodyTree = getBody(true, getWindowTitle(label));
+        addTop(bodyTree);
+        addNavLinks(true, bodyTree);
+        return bodyTree;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeFooter() {
-        hr();
-        navLinks(false);
-        printBottom();
-        printBodyHtmlEnd();
+    public Content getContentsHeader() {
+        return new HtmlTree(HtmlTag.UL);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeContentsHeader() {
-        strong(configuration.getText("doclet.Contents"));
-        ul();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeContentsFooter() {
-        ulEnd();
-        println();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeLinkToPackageContent(PackageDoc pkg, String parsedPackageName, Set<String> printedPackageHeaders) {
+    public void addLinkToPackageContent(PackageDoc pkg, String parsedPackageName,
+            Set<String> printedPackageHeaders, Content contentListTree) {
         String packageName = pkg.name();
         //add link to summary
-        li();
+        Content link;
         if (packageName.length() == 0) {
-            printHyperLink("#" + DocletConstants.UNNAMED_PACKAGE_ANCHOR,
-                           DocletConstants.DEFAULT_PACKAGE_NAME);
+            link = getHyperLink("#" + DocletConstants.UNNAMED_PACKAGE_ANCHOR,
+                    "", defaultPackageLabel, "", "");
         } else {
-            printHyperLink("#" + parsedPackageName, parsedPackageName + ".*");
+            Content packageNameContent = getPackageLabel(parsedPackageName);
+            packageNameContent.addContent(".*");
+            link = getHyperLink("#" + parsedPackageName,
+                    "", packageNameContent, "", "");
             printedPackageHeaders.add(parsedPackageName);
         }
-        println();
+        contentListTree.addContent(HtmlTree.LI(link));
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeConstantMembersHeader(ClassDoc cd) {
+    public Content getContentsList(Content contentListTree) {
+        Content titleContent = getResource(
+                "doclet.Constants_Summary");
+        Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+                HtmlStyle.title, titleContent);
+        Content div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        Content headingContent = getResource(
+                "doclet.Contents");
+        div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
+                headingContent));
+        div.addContent(contentListTree);
+        return div;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getConstantSummaries() {
+        HtmlTree summariesDiv = new HtmlTree(HtmlTag.DIV);
+        summariesDiv.addStyle(HtmlStyle.constantValuesContainer);
+        return summariesDiv;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addPackageName(PackageDoc pkg, String parsedPackageName,
+            Content summariesTree) {
+        Content pkgNameContent;
+        if (parsedPackageName.length() == 0) {
+            summariesTree.addContent(getMarkerAnchor(
+                    DocletConstants.UNNAMED_PACKAGE_ANCHOR));
+            pkgNameContent = defaultPackageLabel;
+        } else {
+            summariesTree.addContent(getMarkerAnchor(
+                    parsedPackageName));
+            pkgNameContent = getPackageLabel(parsedPackageName);
+        }
+        Content headingContent = new StringContent(".*");
+        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+                pkgNameContent);
+        heading.addContent(headingContent);
+        summariesTree.addContent(heading);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Content getClassConstantHeader() {
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.addStyle(HtmlStyle.blockList);
+        return ul;
+    }
+
+    /**
+     * Get the table caption and header for the constant summary table
+     *
+     * @param cd classdoc to be documented
+     * @return constant members header content
+     */
+    public Content getConstantMembersHeader(ClassDoc cd) {
         //generate links backward only to public classes.
         String classlink = (cd.isPublic() || cd.isProtected())?
             getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, cd,
@@ -144,112 +184,120 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
             cd.qualifiedName();
         String name = cd.containingPackage().name();
         if (name.length() > 0) {
-            writeClassName(name + "." + classlink);
+            return getClassName(name + "." + classlink);
         } else {
-            writeClassName(classlink);
+            return getClassName(classlink);
         }
+    }
+
+    /**
+     * Get the class name in the table caption and the table header.
+     *
+     * @param classStr the class name to print.
+     * @return the table caption and header
+     */
+    protected Content getClassName(String classStr) {
+        Content table = HtmlTree.TABLE(0, 3, 0, constantsTableSummary,
+                getTableCaption(classStr));
+        table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));
+        return table;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void writeConstantMembersFooter(ClassDoc cd) {
-        tableFooter(false);
-        p();
-    }
-
-    /**
-     * Print the class name in the table heading.
-     * @param classStr the heading to print.
-     */
-    protected void writeClassName(String classStr) {
-        table(1, 3, 0, constantsTableSummary);
-        tableSubCaptionStart();
-        write(classStr);
-        tableCaptionEnd();
-        summaryTableHeader(constantsTableHeader, "col");
-    }
-
-    private void tableFooter(boolean isHeader) {
-        fontEnd();
-        if (isHeader) {
-            thEnd();
-        } else {
-            tdEnd();
-        }
-        trEnd();
-        tableEnd();
-        p();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writePackageName(PackageDoc pkg, String parsedPackageName) {
-        String pkgname;
-        if (parsedPackageName.length() == 0) {
-            anchor(DocletConstants.UNNAMED_PACKAGE_ANCHOR);
-            pkgname = DocletConstants.DEFAULT_PACKAGE_NAME;
-        } else {
-            anchor(parsedPackageName);
-            pkgname = parsedPackageName;
-        }
-        table(1, "100%", 3, 0);
-        trBgcolorStyle("#CCCCFF", "TableHeadingColor");
-        thAlign("left");
-        font("+2");
-        write(pkgname + ".*");
-        tableFooter(true);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeConstantMembers(ClassDoc cd, List<FieldDoc> fields) {
+    public void addConstantMembers(ClassDoc cd, List<FieldDoc> fields,
+            Content classConstantTree) {
         currentClassDoc = cd;
+        Content tbody = new HtmlTree(HtmlTag.TBODY);
         for (int i = 0; i < fields.size(); ++i) {
-            writeConstantMember(fields.get(i));
+            HtmlTree tr = new HtmlTree(HtmlTag.TR);
+            if (i%2 == 0)
+                tr.addStyle(HtmlStyle.altColor);
+            else
+                tr.addStyle(HtmlStyle.rowColor);
+            addConstantMember(fields.get(i), tr);
+            tbody.addContent(tr);
         }
+        Content table = getConstantMembersHeader(cd);
+        table.addContent(tbody);
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+        classConstantTree.addContent(li);
     }
 
-    private void writeConstantMember(FieldDoc member) {
-        trBgcolorStyle("white", "TableRowColor");
-        anchor(currentClassDoc.qualifiedName() + "." + member.name());
-        writeTypeColumn(member);
-        writeNameColumn(member);
-        writeValue(member);
-        trEnd();
+    /**
+     * Add the row for the constant summary table.
+     *
+     * @param member the field to be documented.
+     * @param trTree an htmltree object for the table row
+     */
+    private void addConstantMember(FieldDoc member, HtmlTree trTree) {
+        trTree.addContent(getTypeColumn(member));
+        trTree.addContent(getNameColumn(member));
+        trTree.addContent(getValue(member));
     }
 
-    private void writeTypeColumn(FieldDoc member) {
-        tdAlign("right");
-        font("-1");
-        code();
+    /**
+     * Get the type column for the constant summary table row.
+     *
+     * @param member the field to be documented.
+     * @return the type column of the constant table row
+     */
+    private Content getTypeColumn(FieldDoc member) {
+        Content anchor = getMarkerAnchor(currentClassDoc.qualifiedName() +
+                "." + member.name());
+        Content tdType = HtmlTree.TD(HtmlStyle.colFirst, anchor);
+        Content code = new HtmlTree(HtmlTag.CODE);
         StringTokenizer mods = new StringTokenizer(member.modifiers());
         while(mods.hasMoreTokens()) {
-            print(mods.nextToken() + "&nbsp;");
+            Content modifier = new StringContent(mods.nextToken());
+            code.addContent(modifier);
+            code.addContent(getSpace());
         }
-        printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY,
-            member.type()));
-        codeEnd();
-        fontEnd();
-        tdEnd();
+        Content type = new RawHtml(getLink(new LinkInfoImpl(
+                LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member.type())));
+        code.addContent(type);
+        tdType.addContent(code);
+        return tdType;
     }
 
-    private void writeNameColumn(FieldDoc member) {
-        tdAlign("left");
-        code();
-        printDocLink(LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member,
-            member.name(), false);
-        codeEnd();
-        tdEnd();
+    /**
+     * Get the name column for the constant summary table row.
+     *
+     * @param member the field to be documented.
+     * @return the name column of the constant table row
+     */
+    private Content getNameColumn(FieldDoc member) {
+        Content nameContent = new RawHtml(getDocLink(
+                LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member, member.name(), false));
+        Content code = HtmlTree.CODE(nameContent);
+        return HtmlTree.TD(code);
     }
 
-    private void writeValue(FieldDoc member) {
-        tdAlign("right");
-        code();
-        print(Util.escapeHtmlChars(member.constantValueExpression()));
-        codeEnd();
-        tdEnd();
+    /**
+     * Get the value column for the constant summary table row.
+     *
+     * @param member the field to be documented.
+     * @return the value column of the constant table row
+     */
+    private Content getValue(FieldDoc member) {
+        Content valueContent = new StringContent(member.constantValueExpression());
+        Content code = HtmlTree.CODE(valueContent);
+        return HtmlTree.TD(HtmlStyle.colLast, code);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addFooter(Content contentTree) {
+        addNavLinks(false, contentTree);
+        addBottom(contentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printDocument(Content contentTree) {
+        printHtmlDocument(null, true, contentTree);
     }
 }

@@ -35,6 +35,20 @@ class FileDispatcherImpl extends FileDispatcher
         Util.load();
     }
 
+    /**
+     * Indicates if the dispatcher should first advance the file position
+     * to the end of file when writing.
+     */
+    private final boolean append;
+
+    FileDispatcherImpl(boolean append) {
+        this.append = append;
+    }
+
+    FileDispatcherImpl() {
+        this(false);
+    }
+
     int read(FileDescriptor fd, long address, int len)
         throws IOException
     {
@@ -54,7 +68,7 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     int write(FileDescriptor fd, long address, int len) throws IOException {
-        return write0(fd, address, len);
+        return write0(fd, address, len, append);
     }
 
     int pwrite(FileDescriptor fd, long address, int len,
@@ -66,7 +80,7 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     long writev(FileDescriptor fd, long address, int len) throws IOException {
-        return writev0(fd, address, len);
+        return writev0(fd, address, len, append);
     }
 
     int force(FileDescriptor fd, boolean metaData) throws IOException {
@@ -116,13 +130,13 @@ class FileDispatcherImpl extends FileDispatcher
     static native long readv0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native int write0(FileDescriptor fd, long address, int len)
+    static native int write0(FileDescriptor fd, long address, int len, boolean append)
         throws IOException;
 
     static native int pwrite0(FileDescriptor fd, long address, int len,
                              long position) throws IOException;
 
-    static native long writev0(FileDescriptor fd, long address, int len)
+    static native long writev0(FileDescriptor fd, long address, int len, boolean append)
         throws IOException;
 
     static native int force0(FileDescriptor fd, boolean metaData)

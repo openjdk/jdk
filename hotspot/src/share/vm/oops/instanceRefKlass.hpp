@@ -89,6 +89,7 @@ class instanceRefKlass: public instanceKlass {
 
   static void release_and_notify_pending_list_lock(BasicLock *pending_list_basic_lock);
   static void acquire_pending_list_lock(BasicLock *pending_list_basic_lock);
+  static bool owns_pending_list_lock(JavaThread* thread);
 
   // Update non-static oop maps so 'referent', 'nextPending' and
   // 'discovered' will look like non-oops

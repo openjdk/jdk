@@ -85,6 +85,8 @@ FILES_2D_c = \
 	ScaledBlit.c \
 	FillRect.c \
 	FillSpans.c \
+	FillParallelogram.c \
+	DrawParallelogram.c \
 	DrawLine.c \
 	DrawRect.c \
 	DrawPolygons.c \

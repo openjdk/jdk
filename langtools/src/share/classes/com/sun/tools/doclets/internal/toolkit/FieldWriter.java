@@ -36,67 +36,80 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface FieldWriter {
 
     /**
-     * Write the header for the field documentation.
+     * Get the field details tree header.
      *
-     * @param classDoc the class that the fields belong to.
-     * @param header the header to write.
+     * @param classDoc the class being documented
+     * @param memberDetailsTree the content tree representing member details
+     * @return content tree for the field details header
      */
-    public void writeHeader(ClassDoc classDoc, String header);
+    public Content getFieldDetailsTreeHeader(ClassDoc classDoc,
+            Content memberDetailsTree);
 
     /**
-     * Write the field header for the given field.
+     * Get the field documentation tree header.
      *
-     * @param field the field being documented.
-     * @param isFirst the flag to indicate whether or not the field is the
-     *        first to be documented.
+     * @param field the constructor being documented
+     * @param fieldDetailsTree the content tree representing field details
+     * @return content tree for the field documentation header
      */
-    public void writeFieldHeader(FieldDoc field, boolean isFirst);
+    public Content getFieldDocTreeHeader(FieldDoc field,
+            Content fieldDetailsTree);
 
     /**
-     * Write the signature for the given field.
+     * Get the signature for the given field.
      *
-     * @param field the field being documented.
+     * @param field the field being documented
+     * @return content tree for the field signature
      */
-    public void writeSignature(FieldDoc field);
+    public Content getSignature(FieldDoc field);
 
     /**
-     * Write the deprecated output for the given field.
+     * Add the deprecated output for the given field.
      *
-     * @param field the field being documented.
+     * @param field the field being documented
+     * @param fieldDocTree content tree to which the deprecated information will be added
      */
-    public void writeDeprecated(FieldDoc field);
+    public void addDeprecated(FieldDoc field, Content fieldDocTree);
 
     /**
-     * Write the comments for the given field.
+     * Add the comments for the given field.
      *
-     * @param field the field being documented.
+     * @param field the field being documented
+     * @param fieldDocTree the content tree to which the comments will be added
      */
-    public void writeComments(FieldDoc field);
+    public void addComments(FieldDoc field, Content fieldDocTree);
 
     /**
-     * Write the tag output for the given field.
+     * Add the tags for the given field.
      *
-     * @param field the field being documented.
+     * @param field the field being documented
+     * @param fieldDocTree the content tree to which the tags will be added
      */
-    public void writeTags(FieldDoc field);
+    public void addTags(FieldDoc field, Content fieldDocTree);
 
     /**
-     * Write the field footer.
+     * Get the field details tree.
+     *
+     * @param memberDetailsTree the content tree representing member details
+     * @return content tree for the field details
      */
-    public void writeFieldFooter();
+    public Content getFieldDetails(Content memberDetailsTree);
 
     /**
-     * Write the footer for the field documentation.
+     * Get the field documentation.
      *
-     * @param classDoc the class that the fields belong to.
+     * @param fieldDocTree the content tree representing field documentation
+     * @param isLastContent true if the content to be added is the last content
+     * @return content tree for the field documentation
      */
-    public void writeFooter(ClassDoc classDoc);
+    public Content getFieldDoc(Content fieldDocTree, boolean isLastContent);
 
     /**
      * Close the writer.

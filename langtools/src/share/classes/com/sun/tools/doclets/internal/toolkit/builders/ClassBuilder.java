@@ -25,11 +25,11 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
+import java.io.*;
+import java.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.javadoc.*;
-import java.io.*;
-import java.util.*;
 
 /**
  * Builds the summary for a given class.
@@ -39,6 +39,7 @@ import java.util.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 public class ClassBuilder extends AbstractBuilder {
@@ -67,6 +68,11 @@ public class ClassBuilder extends AbstractBuilder {
      * Keep track of whether or not this classdoc is an enum.
      */
     private boolean isEnum = false;
+
+    /**
+     * The content tree for the class documentation.
+     */
+    private Content contentTree;
 
     /**
      * Construct a new ClassBuilder.
@@ -108,7 +114,7 @@ public class ClassBuilder extends AbstractBuilder {
      * {@inheritDoc}
      */
     public void build() throws IOException {
-        build(LayoutParser.getInstance(configuration).parseXML(ROOT));
+        build(LayoutParser.getInstance(configuration).parseXML(ROOT), contentTree);
     }
 
     /**
@@ -121,121 +127,159 @@ public class ClassBuilder extends AbstractBuilder {
      /**
       * Handles the &lt;ClassDoc> tag.
       *
-      * @param elements the XML elements that specify how to document a class.
+      * @param node the XML element that specifies which components to document
+      * @param contentTree the content tree to which the documentation will be added
       */
-     public void buildClassDoc(XMLNode node) throws Exception {
-        buildChildren(node);
-        writer.close();
-        copyDocFiles();
+     public void buildClassDoc(XMLNode node, Content contentTree) throws Exception {
+         String key;
+         if (isInterface) {
+             key =  "doclet.Interface";
+         } else if (isEnum) {
+             key = "doclet.Enum";
+         } else {
+             key =  "doclet.Class";
+         }
+         contentTree = writer.getHeader(configuration.getText(key) + " " +
+                 classDoc.name());
+         Content classContentTree = writer.getClassContentHeader();
+         buildChildren(node, classContentTree);
+         contentTree.addContent(classContentTree);
+         writer.addFooter(contentTree);
+         writer.printDocument(contentTree);
+         writer.close();
+         copyDocFiles();
      }
 
-
      /**
-      * Copy the doc files for the current ClassDoc if necessary.
+      * Build the class tree documentation.
+      *
+      * @param node the XML element that specifies which components to document
+      * @param classContentTree the content tree to which the documentation will be added
       */
+    public void buildClassTree(XMLNode node, Content classContentTree) {
+        writer.addClassTree(classContentTree);
+    }
+
+    /**
+     * Build the class information tree documentation.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classContentTree the content tree to which the documentation will be added
+     */
+    public void buildClassInfo(XMLNode node, Content classContentTree) {
+        Content classInfoTree = writer.getClassInfoTreeHeader();
+        buildChildren(node, classInfoTree);
+        classContentTree.addContent(writer.getClassInfo(classInfoTree));
+    }
+
+    /**
+     * Build the typeparameters of this class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildTypeParamInfo(XMLNode node, Content classInfoTree) {
+        writer.addTypeParamInfo(classInfoTree);
+    }
+
+    /**
+     * If this is an interface, list all super interfaces.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildSuperInterfacesInfo(XMLNode node, Content classInfoTree) {
+        writer.addSuperInterfacesInfo(classInfoTree);
+    }
+
+    /**
+     * If this is a class, list all interfaces implemented by this class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildImplementedInterfacesInfo(XMLNode node, Content classInfoTree) {
+        writer.addImplementedInterfacesInfo(classInfoTree);
+    }
+
+    /**
+     * List all the classes extend this one.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildSubClassInfo(XMLNode node, Content classInfoTree) {
+        writer.addSubClassInfo(classInfoTree);
+    }
+
+    /**
+     * List all the interfaces that extend this one.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildSubInterfacesInfo(XMLNode node, Content classInfoTree) {
+        writer.addSubInterfacesInfo(classInfoTree);
+    }
+
+    /**
+     * If this is an interface, list all classes that implement this interface.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildInterfaceUsageInfo(XMLNode node, Content classInfoTree) {
+        writer.addInterfaceUsageInfo(classInfoTree);
+    }
+
+    /**
+     * If this class is deprecated, build the appropriate information.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildDeprecationInfo (XMLNode node, Content classInfoTree) {
+        writer.addClassDeprecationInfo(classInfoTree);
+    }
+
+    /**
+     * If this is an inner class or interface, list the enclosing class or interface.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildNestedClassInfo (XMLNode node, Content classInfoTree) {
+        writer.addNestedClassInfo(classInfoTree);
+    }
+
+    /**
+     * Copy the doc files for the current ClassDoc if necessary.
+     */
      private void copyDocFiles() {
         PackageDoc containingPackage = classDoc.containingPackage();
         if((configuration.packages == null ||
                 Arrays.binarySearch(configuration.packages,
-                                    containingPackage) < 0) &&
-           ! containingPackagesSeen.contains(containingPackage.name())){
+                containingPackage) < 0) &&
+                ! containingPackagesSeen.contains(containingPackage.name())){
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
             Util.copyDocFiles(configuration,
-                Util.getPackageSourcePath(configuration,
+                    Util.getPackageSourcePath(configuration,
                     classDoc.containingPackage()) +
-                DirectoryManager.getDirectoryPath(classDoc.containingPackage())
+                    DirectoryManager.getDirectoryPath(classDoc.containingPackage())
                     + File.separator, DocletConstants.DOC_FILES_DIR_NAME, true);
             containingPackagesSeen.add(containingPackage.name());
         }
      }
 
     /**
-     * Build the header of the page.
-     */
-    public void buildClassHeader(XMLNode node) {
-        String key;
-        if (isInterface) {
-            key =  "doclet.Interface";
-        } else if (isEnum) {
-            key = "doclet.Enum";
-        } else {
-            key =  "doclet.Class";
-        }
-
-        writer.writeHeader(configuration.getText(key) + " " + classDoc.name());
-    }
-
-    /**
-     * Build the class tree documentation.
-     */
-    public void buildClassTree(XMLNode node) {
-        writer.writeClassTree();
-    }
-
-    /**
-     * If this is a class, list all interfaces
-     * implemented by this class.
-     */
-    public void buildImplementedInterfacesInfo(XMLNode node) {
-        writer.writeImplementedInterfacesInfo();
-    }
-
-    /**
-     * If this is an interface, list all super interfaces.
-     */
-    public void buildSuperInterfacesInfo(XMLNode node) {
-        writer.writeSuperInterfacesInfo();
-    }
-
-    /**
-     * List the parameters of this class.
-     */
-    public void buildTypeParamInfo(XMLNode node) {
-        writer.writeTypeParamInfo();
-    }
-
-    /**
-     * List all the classes extend this one.
-     */
-    public void buildSubClassInfo(XMLNode node) {
-        writer.writeSubClassInfo();
-    }
-
-    /**
-     * List all the interfaces that extend this one.
-     */
-    public void buildSubInterfacesInfo(XMLNode node) {
-        writer.writeSubInterfacesInfo();
-    }
-
-    /**
-     * If this is an interface, list all classes that implement this interface.
-     */
-    public void buildInterfaceUsageInfo (XMLNode node) {
-        writer.writeInterfaceUsageInfo();
-    }
-
-    /**
-     * If this is an inner class or interface, list the enclosing class or
-     * interface.
-     */
-    public void buildNestedClassInfo (XMLNode node) {
-        writer.writeNestedClassInfo();
-    }
-
-    /**
-     * If this class is deprecated, print the appropriate information.
-     */
-    public void buildDeprecationInfo (XMLNode node) {
-        writer.writeClassDeprecationInfo();
-    }
-
-    /**
      * Build the signature of the current class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
      */
-    public void buildClassSignature(XMLNode node) {
+    public void buildClassSignature(XMLNode node, Content classInfoTree) {
         StringBuffer modifiers = new StringBuffer(classDoc.modifiers() + " ");
         if (isEnum) {
             modifiers.append("enum ");
@@ -243,93 +287,111 @@ public class ClassBuilder extends AbstractBuilder {
             if ((index = modifiers.indexOf("abstract")) >= 0) {
                 modifiers.delete(index, index + (new String("abstract")).length());
                 modifiers = new StringBuffer(
-                    Util.replaceText(modifiers.toString(), "  ", " "));
+                        Util.replaceText(modifiers.toString(), "  ", " "));
             }
             if ((index = modifiers.indexOf("final")) >= 0) {
                 modifiers.delete(index, index + (new String("final")).length());
                 modifiers = new StringBuffer(
-                    Util.replaceText(modifiers.toString(), "  ", " "));
+                        Util.replaceText(modifiers.toString(), "  ", " "));
             }
         //} else if (classDoc.isAnnotationType()) {
             //modifiers.append("@interface ");
         } else if (! isInterface) {
             modifiers.append("class ");
         }
-        writer.writeClassSignature(modifiers.toString());
+        writer.addClassSignature(modifiers.toString(), classInfoTree);
     }
 
     /**
      * Build the class description.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
      */
-    public void buildClassDescription(XMLNode node) {
-       writer.writeClassDescription();
+    public void buildClassDescription(XMLNode node, Content classInfoTree) {
+       writer.addClassDescription(classInfoTree);
     }
 
     /**
      * Build the tag information for the current class.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
      */
-    public void buildClassTagInfo(XMLNode node) {
-       writer.writeClassTagInfo();
+    public void buildClassTagInfo(XMLNode node, Content classInfoTree) {
+       writer.addClassTagInfo(classInfoTree);
     }
 
     /**
-     * Build the contents of the page.
+     * Build the member summary contents of the page.
      *
-     * @param elements the XML elements that specify how a member summary is
-     *                 documented.
+     * @param node the XML element that specifies which components to document
+     * @param classContentTree the content tree to which the documentation will be added
      */
-    public void buildMemberSummary(XMLNode node) throws Exception {
+    public void buildMemberSummary(XMLNode node, Content classContentTree) throws Exception {
+        Content memberSummaryTree = writer.getMemberTreeHeader();
         configuration.getBuilderFactory().
-            getMemberSummaryBuilder(writer).buildChildren(node);
-        writer.completeMemberSummaryBuild();
+                getMemberSummaryBuilder(writer).buildChildren(node, memberSummaryTree);
+        classContentTree.addContent(writer.getMemberSummaryTree(memberSummaryTree));
+    }
+
+    /**
+     * Build the member details contents of the page.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classContentTree the content tree to which the documentation will be added
+     */
+    public void buildMemberDetails(XMLNode node, Content classContentTree) {
+        Content memberDetailsTree = writer.getMemberTreeHeader();
+        buildChildren(node, memberDetailsTree);
+        classContentTree.addContent(writer.getMemberDetailsTree(memberDetailsTree));
     }
 
     /**
      * Build the enum constants documentation.
      *
-     * @param elements the XML elements that specify how a enum constants are
-     *                 documented.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildEnumConstantsDetails(XMLNode node) throws Exception {
+    public void buildEnumConstantsDetails(XMLNode node,
+            Content memberDetailsTree) throws Exception {
         configuration.getBuilderFactory().
-            getEnumConstantsBuilder(writer).buildChildren(node);
+                getEnumConstantsBuilder(writer).buildChildren(node, memberDetailsTree);
     }
 
     /**
      * Build the field documentation.
      *
-     * @param elements the XML elements that specify how a field is documented.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildFieldDetails(XMLNode node) throws Exception {
+    public void buildFieldDetails(XMLNode node,
+            Content memberDetailsTree) throws Exception {
         configuration.getBuilderFactory().
-            getFieldBuilder(writer).buildChildren(node);
+                getFieldBuilder(writer).buildChildren(node, memberDetailsTree);
     }
 
     /**
      * Build the constructor documentation.
      *
-     * @param elements the XML elements that specify how to document a
-     * constructor.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildConstructorDetails(XMLNode node) throws Exception {
+    public void buildConstructorDetails(XMLNode node,
+            Content memberDetailsTree) throws Exception {
         configuration.getBuilderFactory().
-            getConstructorBuilder(writer).buildChildren(node);
+                getConstructorBuilder(writer).buildChildren(node, memberDetailsTree);
     }
 
     /**
      * Build the method documentation.
      *
-     * @param elements the XML elements that specify how a method is documented.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildMethodDetails(XMLNode node) throws Exception {
+    public void buildMethodDetails(XMLNode node,
+            Content memberDetailsTree) throws Exception {
         configuration.getBuilderFactory().
-                getMethodBuilder(writer).buildChildren(node);
-    }
-
-    /**
-     * Build the footer of the page.
-     */
-    public void buildClassFooter(XMLNode node) {
-        writer.writeFooter();
+                getMethodBuilder(writer).buildChildren(node, memberDetailsTree);
     }
 }
