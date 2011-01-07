@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2388,6 +2388,7 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+  void incr_allocated_bytes(Register var_size_in_bytes, int con_size_in_bytes, Register t1);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,

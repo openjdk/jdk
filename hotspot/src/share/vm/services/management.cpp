@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,12 +101,14 @@ void Management::init() {
     _optional_support.isCurrentThreadCpuTimeSupported = 0;
     _optional_support.isOtherThreadCpuTimeSupported = 0;
   }
+
   _optional_support.isBootClassPathSupported = 1;
   _optional_support.isObjectMonitorUsageSupported = 1;
 #ifndef SERVICES_KERNEL
   // This depends on the heap inspector
   _optional_support.isSynchronizerUsageSupported = 1;
 #endif // SERVICES_KERNEL
+  _optional_support.isThreadAllocatedMemorySupported = 1;
 }
 
 void Management::initialize(TRAPS) {
@@ -386,11 +388,6 @@ static MemoryPool* get_memory_pool_from_jobject(jobject obj, TRAPS) {
 
 static void validate_thread_id_array(typeArrayHandle ids_ah, TRAPS) {
   int num_threads = ids_ah->length();
-  // should be non-empty array
-  if (num_threads == 0) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Empty array of thread IDs");
-  }
 
   // Validate input thread IDs
   int i = 0;
@@ -402,11 +399,9 @@ static void validate_thread_id_array(typeArrayHandle ids_ah, TRAPS) {
                 "Invalid thread ID entry");
     }
   }
-
 }
 
 static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
-
   // check if the element of infoArray is of type ThreadInfo class
   klassOop threadinfo_klass = Management::java_lang_management_ThreadInfo_klass(CHECK);
   klassOop element_klass = objArrayKlass::cast(infoArray_h->klass())->element_klass();
@@ -414,7 +409,6 @@ static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "infoArray element type is not ThreadInfo class");
   }
-
 }
 
 
@@ -770,6 +764,45 @@ JVM_ENTRY(jlong, jmm_SetPoolThreshold(JNIEnv* env, jobject obj, jmmThresholdType
   return prev;
 JVM_END
 
+// Gets an array containing the amount of memory allocated on the Java
+// heap for a set of threads (in bytes).  Each element of the array is
+// the amount of memory allocated for the thread ID specified in the
+// corresponding entry in the given array of thread IDs; or -1 if the
+// thread does not exist or has terminated.
+JVM_ENTRY(void, jmm_GetThreadAllocatedMemory(JNIEnv *env, jlongArray ids,
+                                             jlongArray sizeArray))
+  // Check if threads is null
+  if (ids == NULL || sizeArray == NULL) {
+    THROW(vmSymbols::java_lang_NullPointerException());
+  }
+
+  ResourceMark rm(THREAD);
+  typeArrayOop ta = typeArrayOop(JNIHandles::resolve_non_null(ids));
+  typeArrayHandle ids_ah(THREAD, ta);
+
+  typeArrayOop sa = typeArrayOop(JNIHandles::resolve_non_null(sizeArray));
+  typeArrayHandle sizeArray_h(THREAD, sa);
+
+  // validate the thread id array
+  validate_thread_id_array(ids_ah, CHECK);
+
+  // sizeArray must be of the same length as the given array of thread IDs
+  int num_threads = ids_ah->length();
+  if (num_threads != sizeArray_h->length()) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "The length of the given long array does not match the length of "
+              "the given array of thread IDs");
+  }
+
+  MutexLockerEx ml(Threads_lock);
+  for (int i = 0; i < num_threads; i++) {
+    JavaThread* java_thread = find_java_thread_from_id(ids_ah->long_at(i));
+    if (java_thread != NULL) {
+      sizeArray_h->long_at_put(i, java_thread->cooked_allocated_bytes());
+    }
+  }
+JVM_END
+
 // Returns a java/lang/management/MemoryUsage object representing
 // the memory usage for the heap or non-heap memory.
 JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
@@ -834,6 +867,8 @@ JVM_LEAF(jboolean, jmm_GetBoolAttribute(JNIEnv *env, jmmBoolAttribute att))
     return ThreadService::is_thread_monitoring_contention();
   case JMM_THREAD_CPU_TIME:
     return ThreadService::is_thread_cpu_time_enabled();
+  case JMM_THREAD_ALLOCATED_MEMORY:
+    return ThreadService::is_thread_allocated_memory_enabled();
   default:
     assert(0, "Unrecognized attribute");
     return false;
@@ -851,6 +886,8 @@ JVM_ENTRY(jboolean, jmm_SetBoolAttribute(JNIEnv *env, jmmBoolAttribute att, jboo
     return ThreadService::set_thread_monitoring_contention(flag != 0);
   case JMM_THREAD_CPU_TIME:
     return ThreadService::set_thread_cpu_time_enabled(flag != 0);
+  case JMM_THREAD_ALLOCATED_MEMORY:
+    return ThreadService::set_thread_allocated_memory_enabled(flag != 0);
   default:
     assert(0, "Unrecognized attribute");
     return false;
@@ -1096,6 +1133,7 @@ static void do_thread_dump(ThreadDumpResult* dump_result,
 //               maxDepth == 0  requests no stack trace.
 //   infoArray - array of ThreadInfo objects
 //
+// QQQ - Why does this method return a value instead of void?
 JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jobjectArray infoArray))
   // Check if threads is null
   if (ids == NULL || infoArray == NULL) {
@@ -1159,7 +1197,6 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
     }
   } else {
     // obtain thread dump with the specific list of threads with stack trace
-
     do_thread_dump(&dump_result,
                    ids_ah,
                    num_threads,
@@ -1251,8 +1288,6 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       result_h->obj_at_put(index, NULL);
       continue;
     }
-
-
 
     ThreadStackTrace* stacktrace = ts->get_stack_trace();
     assert(stacktrace != NULL, "Must have a stack trace dumped");
@@ -1498,6 +1533,49 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     }
   }
   return -1;
+JVM_END
+
+// Gets an array containing the CPU times consumed by a set of threads
+// (in nanoseconds).  Each element of the array is the CPU time for the
+// thread ID specified in the corresponding entry in the given array
+// of thread IDs; or -1 if the thread does not exist or has terminated.
+// If user_sys_cpu_time = true, the sum of user level and system CPU time
+// for the given thread is returned; otherwise, only user level CPU time
+// is returned.
+JVM_ENTRY(void, jmm_GetThreadCpuTimesWithKind(JNIEnv *env, jlongArray ids,
+                                              jlongArray timeArray,
+                                              jboolean user_sys_cpu_time))
+  // Check if threads is null
+  if (ids == NULL || timeArray == NULL) {
+    THROW(vmSymbols::java_lang_NullPointerException());
+  }
+
+  ResourceMark rm(THREAD);
+  typeArrayOop ta = typeArrayOop(JNIHandles::resolve_non_null(ids));
+  typeArrayHandle ids_ah(THREAD, ta);
+
+  typeArrayOop tia = typeArrayOop(JNIHandles::resolve_non_null(timeArray));
+  typeArrayHandle timeArray_h(THREAD, tia);
+
+  // validate the thread id array
+  validate_thread_id_array(ids_ah, CHECK);
+
+  // timeArray must be of the same length as the given array of thread IDs
+  int num_threads = ids_ah->length();
+  if (num_threads != timeArray_h->length()) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "The length of the given long array does not match the length of "
+              "the given array of thread IDs");
+  }
+
+  MutexLockerEx ml(Threads_lock);
+  for (int i = 0; i < num_threads; i++) {
+    JavaThread* java_thread = find_java_thread_from_id(ids_ah->long_at(i));
+    if (java_thread != NULL) {
+      timeArray_h->long_at_put(i, os::thread_cpu_time((Thread*)java_thread,
+                                                      user_sys_cpu_time != 0));
+    }
+  }
 JVM_END
 
 // Returns a String array of all VM global flag names
@@ -2020,7 +2098,7 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetMemoryManagers,
   jmm_GetMemoryPoolUsage,
   jmm_GetPeakMemoryPoolUsage,
-  NULL,
+  jmm_GetThreadAllocatedMemory,
   jmm_GetMemoryUsage,
   jmm_GetLongAttribute,
   jmm_GetBoolAttribute,
@@ -2038,7 +2116,7 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetGCExtAttributeInfo,
   jmm_GetLastGCStat,
   jmm_GetThreadCpuTimeWithKind,
-  NULL,
+  jmm_GetThreadCpuTimesWithKind,
   jmm_DumpHeap0,
   jmm_FindDeadlockedThreads,
   jmm_SetVMGlobal,
