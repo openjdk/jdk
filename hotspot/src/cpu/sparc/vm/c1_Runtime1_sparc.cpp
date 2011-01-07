@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,7 +448,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // get the instance size
           __ ld(G5_klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes(), G1_obj_size);
+
           __ tlab_allocate(O0_obj, G1_obj_size, 0, G3_t1, slow_path);
+
           __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2);
           __ verify_oop(O0_obj);
           __ mov(O0, I0);
@@ -459,6 +461,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // get the instance size
           __ ld(G5_klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes(), G1_obj_size);
           __ eden_allocate(O0_obj, G1_obj_size, 0, G3_t1, G4_t2, slow_path);
+          __ incr_allocated_bytes(G1_obj_size, 0, G3_t1);
+
           __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2);
           __ verify_oop(O0_obj);
           __ mov(O0, I0);
@@ -573,6 +577,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ and3(G1_arr_size, ~MinObjAlignmentInBytesMask, G1_arr_size);
 
           __ eden_allocate(O0_obj, G1_arr_size, 0, G3_t1, O1_t2, slow_path);  // preserves G1_arr_size
+          __ incr_allocated_bytes(G1_arr_size, 0, G3_t1);
 
           __ initialize_header(O0_obj, G5_klass, G4_length, G3_t1, O1_t2);
           __ ldub(klass_lh, G3_t1, klass_lh_header_size_offset);
