@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4981811 4984465 5064492 6240171
+ * @bug 4981811 4984465 5064492 6240171 7000511
  * @summary Unit test for all constructors introduced by the formatter feature
  */
 
@@ -85,10 +85,8 @@ public class Constructors {
     }
 
     public static void main(String [] args) {
-
         // Formatter()
-        try {
-            Formatter f = new Formatter();
+        try (Formatter f = new Formatter()) {
             pass();
             out(f, StringBuilder.class);
             locale(f);
@@ -97,8 +95,7 @@ public class Constructors {
         }
 
         // Formatter(Appendable a)
-        try {
-            Formatter f = new Formatter((Appendable) null);
+        try (Formatter f = new Formatter((Appendable) null)) {
             pass();
             out(f, StringBuilder.class);
             locale(f);
@@ -107,8 +104,7 @@ public class Constructors {
         }
 
         // Formatter(Locale l)
-        try {
-            Formatter f = new Formatter((Locale) null);
+        try (Formatter f = new Formatter((Locale) null)) {
             pass();
             out(f, StringBuilder.class);
             locale(f, null);
@@ -117,8 +113,7 @@ public class Constructors {
         }
 
         // Formatter(Appendable a, Locale l)
-        try {
-            Formatter f = new Formatter((Appendable) null, (Locale) null);
+        try (Formatter f = new Formatter((Appendable) null, (Locale) null)) {
             pass();
             out(f, StringBuilder.class);
             locale(f, null);
@@ -127,8 +122,7 @@ public class Constructors {
         }
 
         // Formatter(String fileName)
-        try {
-            Formatter f = new Formatter("foo");
+        try (Formatter f = new Formatter("foo")) {
             pass();
             out(f, BufferedWriter.class);
             locale(f);
@@ -137,7 +131,7 @@ public class Constructors {
         }
 
         try {
-            Formatter f = new Formatter((String)null);
+            new Formatter((String)null);
             fail("new Formatter((String)null)");
         } catch (NullPointerException x) {
             pass();
@@ -146,8 +140,7 @@ public class Constructors {
         }
 
         // Formatter(String fileName, String csn)
-        try {
-            Formatter f = new Formatter("foo", "UTF-8");
+        try (Formatter f = new Formatter("foo", "UTF-8")) {
             pass();
             out(f, BufferedWriter.class);
             locale(f);
@@ -167,15 +160,14 @@ public class Constructors {
         try {
             new Formatter(".", "bar");
             fail("new Formatter(\".\", \"bar\")");
-        } catch (FileNotFoundException x) {
+        } catch (FileNotFoundException|UnsupportedEncodingException x) {
             pass();
         } catch (Exception x) {
             fail("new Formatter(\".\", \"bar\")", x);
         }
 
         // Formatter(String fileName, String csn, Locale l)
-        try {
-            Formatter f = new Formatter("foo", "ISO-8859-1", Locale.GERMANY);
+        try (Formatter f = new Formatter("foo", "ISO-8859-1", Locale.GERMANY)) {
             pass();
             out(f, BufferedWriter.class);
             locale(f, Locale.GERMANY);
@@ -183,8 +175,7 @@ public class Constructors {
             fail("new Formatter(\"foo\", \"ISO-8859-1\", Locale.GERMANY)", x);
         }
 
-        try {
-            Formatter f = new Formatter("foo", "ISO-8859-1", null);
+        try (Formatter f = new Formatter("foo", "ISO-8859-1", null)) {
             pass();
             locale(f, null);
             out(f, BufferedWriter.class);
@@ -193,8 +184,7 @@ public class Constructors {
         }
 
         // Formatter(File)
-        try {
-            Formatter f = new Formatter(new File("foo"));
+        try (Formatter f = new Formatter(new File("foo"))) {
             pass();
             locale(f);
             out(f, BufferedWriter.class);
@@ -203,7 +193,7 @@ public class Constructors {
         }
 
         try {
-            Formatter f = new Formatter((File)null);
+            new Formatter((File)null);
             fail("new Formatter((File)null)");
         } catch (NullPointerException x) {
             pass();
@@ -231,8 +221,7 @@ public class Constructors {
             fail("new Formatter((PrintStream) null)", x);
         }
 
-        try {
-            Formatter f = new Formatter(new PrintStream("foo"));
+        try (Formatter f = new Formatter(new PrintStream("foo"))) {
             pass();
             locale(f);
             out(f, PrintStream.class);
@@ -242,9 +231,8 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\")", x);
         }
 
-        try {
-            Formatter f = new Formatter(new PrintStream("foo"),
-                                        Locale.JAPANESE);
+        try (Formatter f = new Formatter(new PrintStream("foo"),
+                                         Locale.JAPANESE)) {
             pass();
             locale(f, Locale.JAPANESE);
             out(f, PrintStream.class);
@@ -254,12 +242,11 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\")", x);
         }
 
-        try {
+        try (PrintStream ps = new PrintStream("foo")) {
             // The cast here is necessary to avoid an ambiguity error
             // between Formatter(Appendable a, Locale l)
-            // and     Formatter(OutputStream os, String csn)
-            Formatter f = new Formatter(new PrintStream("foo"),
-                                        (String)null);
+            // and Formatter(OutputStream os, String csn)
+            new Formatter(ps, (String)null);
             fail("new Formatter(new PrintStream(\"foo\"), (String)null)");
         } catch (FileNotFoundException x) {
             fail("new Formatter(new PrintStream(\"foo\"), (String)null)", x);
@@ -271,12 +258,11 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\"), (String)null)", x);
         }
 
-        try {
-            // The cast here is necessary to avoid an ambiguity error
-            // between Formatter(Appendable a, Locale l)
-            // and     Formatter(OutputStream os, String csn)
-            Formatter f = new Formatter(new PrintStream("foo"),
-                                        (Locale)null);
+        // The cast here is necessary to avoid an ambiguity error
+        // between Formatter(Appendable a, Locale l)
+        // and  Formatter(OutputStream os, String csn)
+        try (Formatter f = new Formatter(new PrintStream("foo"),
+                                         (Locale)null)) {
             pass();
             locale(f, null);
             out(f, PrintStream.class);
@@ -286,9 +272,8 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\"), (Locale)null)", x);
         }
 
-        try {
-            Formatter f = new Formatter(new PrintStream("foo"),
-                                        Locale.KOREAN);
+        try (Formatter f = new Formatter(new PrintStream("foo"),
+                                         Locale.KOREAN)) {
             pass();
             locale(f, Locale.KOREAN);
             out(f, PrintStream.class);
@@ -298,9 +283,8 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\"), Locale.KOREAN)", x);
         }
 
-        try {
-            Formatter f = new Formatter(new PrintStream("foo"),
-                                        "UTF-16BE", null);
+        try (Formatter f = new Formatter(new PrintStream("foo"),
+                                         "UTF-16BE", null)) {
             pass();
             locale(f, null);
             out(f, BufferedWriter.class);
@@ -312,9 +296,8 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\"), \"UTF-16BE\", null");
         }
 
-        try {
-            Formatter f = new Formatter(new PrintStream("foo"),
-                                        "UTF-16BE", Locale.ITALIAN);
+        try (Formatter f = new Formatter(new PrintStream("foo"),
+                                         "UTF-16BE", Locale.ITALIAN)) {
             pass();
             locale(f, Locale.ITALIAN);
             out(f, BufferedWriter.class);
@@ -361,8 +344,7 @@ public class Constructors {
             fail("new Formatter((OutputStream) null)", x);
         }
 
-        try {
-            Formatter f = new Formatter((OutputStream) new PrintStream("foo"));
+        try (Formatter f = new Formatter((OutputStream) new PrintStream("foo"))) {
             pass();
             locale(f);
             out(f, BufferedWriter.class);
@@ -380,8 +362,8 @@ public class Constructors {
             fail("new Formatter((OutputStream) null, \"ISO-8859-1\")", x);
         }
 
-        try {
-            new Formatter((OutputStream) new PrintStream("foo"), null);
+        try (PrintStream ps = new PrintStream("foo")) {
+            new Formatter((OutputStream) ps, null);
             fail("new Formatter((OutputStream) new PrintStream(\"foo\"), null");
         } catch (NullPointerException x) {
             pass();
@@ -390,8 +372,8 @@ public class Constructors {
                  x);
         }
 
-        try {
-            new Formatter(new PrintStream("foo"), "bar");
+        try (PrintStream ps = new PrintStream("foo")) {
+            new Formatter(ps, "bar");
             fail("new Formatter(new PrintStream(\"foo\"), \"bar\")");
         } catch (UnsupportedEncodingException x) {
             pass();
@@ -399,8 +381,7 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\"), \"bar\")", x);
         }
 
-        try {
-            Formatter f = new Formatter(new PrintStream("foo"), "UTF-8");
+        try (Formatter f = new Formatter(new PrintStream("foo"), "UTF-8")) {
             pass();
             locale(f);
             out(f, BufferedWriter.class);
@@ -419,8 +400,8 @@ public class Constructors {
                  x);
         }
 
-        try {
-            new Formatter(new PrintStream("foo"), null, Locale.UK);
+        try (PrintStream ps = new PrintStream("foo")) {
+            new Formatter(ps, null, Locale.UK);
             fail("new Formatter(new PrintStream(\"foo\"), null, Locale.UK)");
         } catch (NullPointerException x) {
             pass();
@@ -429,8 +410,8 @@ public class Constructors {
                  x);
         }
 
-        try {
-            new Formatter(new PrintStream("foo"), "bar", Locale.UK);
+        try (PrintStream ps = new PrintStream("foo")) {
+            new Formatter(ps, "bar", Locale.UK);
             fail("new Formatter(new PrintStream(\"foo\"), \"bar\", Locale.UK)");
         } catch (UnsupportedEncodingException x) {
             pass();
@@ -439,9 +420,7 @@ public class Constructors {
                  x);
         }
 
-        try {
-            Formatter f
-                = new Formatter(new PrintStream("foo"), "UTF-8", Locale.UK);
+        try (Formatter f = new Formatter(new PrintStream("foo"), "UTF-8", Locale.UK)) {
             pass();
             out(f, BufferedWriter.class);
             locale(f, Locale.UK);
@@ -451,8 +430,7 @@ public class Constructors {
         }
 
         // PrintStream(String fileName)
-        try {
-            new PrintStream("foo");
+        try (PrintStream ps = new PrintStream("foo")) {
             pass();
         } catch (Exception x) {
             fail("new PrintStream(\"foo\")", x);
@@ -469,8 +447,7 @@ public class Constructors {
         }
 
         // PrintStream(File file)
-        try {
-            new PrintStream(new File("foo"));
+        try (PrintStream ps = new PrintStream(new File("foo"))) {
             pass();
         } catch (Exception x) {
             fail("new PrintStream(new File(\"foo\"))", x);
@@ -487,8 +464,7 @@ public class Constructors {
         }
 
         // PrintWriter(String fileName)
-        try {
-            new PrintWriter("foo");
+        try (PrintWriter pw = new PrintWriter("foo")) {
             pass();
         } catch (Exception x) {
             fail("new PrintWriter(\"foo\")", x);
@@ -505,8 +481,7 @@ public class Constructors {
         }
 
         // PrintWriter(File file)
-        try {
-            new PrintWriter(new File("foo"));
+        try (PrintWriter pw = new PrintWriter(new File("foo"))) {
             pass();
         } catch (Exception x) {
             fail("new PrintWriter(new File(\"foo\"))", x);
