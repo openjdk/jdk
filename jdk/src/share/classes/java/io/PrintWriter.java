@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package java.io;
 
+import java.util.Objects;
 import java.util.Formatter;
 import java.util.Locale;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * Prints formatted representations of objects to a text-output stream.  This
@@ -59,7 +63,7 @@ public class PrintWriter extends Writer {
      */
     protected Writer out;
 
-    private boolean autoFlush = false;
+    private final boolean autoFlush;
     private boolean trouble = false;
     private Formatter formatter;
     private PrintStream psOut = null;
@@ -68,7 +72,24 @@ public class PrintWriter extends Writer {
      * Line separator string.  This is the value of the line.separator
      * property at the moment that the stream was created.
      */
-    private String lineSeparator;
+    private final String lineSeparator;
+
+    /**
+     * Returns a charset object for the given charset name.
+     * @throws NullPointerException          is csn is null
+     * @throws UnsupportedEncodingException  if the charset is not supported
+     */
+    private static Charset toCharset(String csn)
+        throws UnsupportedEncodingException
+    {
+        Objects.nonNull(csn, "charsetName");
+        try {
+            return Charset.forName(csn);
+        } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
+            // UnsupportedEncodingException should be thrown
+            throw new UnsupportedEncodingException(csn);
+        }
+    }
 
     /**
      * Creates a new PrintWriter, without automatic line flushing.
@@ -164,6 +185,14 @@ public class PrintWriter extends Writer {
              false);
     }
 
+    /* Private constructor */
+    private PrintWriter(Charset charset, File file)
+        throws FileNotFoundException
+    {
+        this(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), charset)),
+             false);
+    }
+
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file name and charset.  This convenience constructor creates
@@ -200,8 +229,7 @@ public class PrintWriter extends Writer {
     public PrintWriter(String fileName, String csn)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        this(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), csn)),
-             false);
+        this(toCharset(csn), new File(fileName));
     }
 
     /**
@@ -272,8 +300,7 @@ public class PrintWriter extends Writer {
     public PrintWriter(File file, String csn)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        this(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), csn)),
-             false);
+        this(toCharset(csn), file);
     }
 
     /** Checks to make sure that the stream has not been closed */
