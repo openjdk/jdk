@@ -28,6 +28,8 @@ FOOFILES_JAVA = \
     DateFormatSymbolsProviderImpl.java \
     DecimalFormatSymbolsProviderImpl.java \
     NumberFormatProviderImpl.java \
+    FooDateFormat.java \
+    FooNumberFormat.java \
     Utils.java
 
 BARFILES_JAVA = \

@@ -137,41 +137,43 @@ void getALSAVersion(char* buffer, int len) {
         file = fopen(ALSA_VERSION_PROC_FILE, "r");
         ALSAVersionString[0] = 0;
         if (file) {
-            fgets(ALSAVersionString, ALSAVersionString_LENGTH, file);
-            // parse for version number
-            totalLen = strlen(ALSAVersionString);
-            inVersionString = FALSE;
-            len = 0;
-            curr = 0;
-            while (curr < totalLen) {
-                if (!inVersionString) {
-                    // is this char the beginning of a version string ?
-                    if (ALSAVersionString[curr] >= '0'
-                        && ALSAVersionString[curr] <= '9') {
-                        inVersionString = TRUE;
+            if (NULL != fgets(ALSAVersionString, ALSAVersionString_LENGTH, file)) {
+                // parse for version number
+                totalLen = strlen(ALSAVersionString);
+                inVersionString = FALSE;
+                len = 0;
+                curr = 0;
+                while (curr < totalLen) {
+                    if (!inVersionString) {
+                        // is this char the beginning of a version string ?
+                        if (ALSAVersionString[curr] >= '0'
+                            && ALSAVersionString[curr] <= '9') {
+                            inVersionString = TRUE;
+                        }
                     }
+                    if (inVersionString) {
+                        // the version string ends with white space
+                        if (ALSAVersionString[curr] <= 32) {
+                            break;
+                        }
+                        if (curr != len) {
+                            // copy this char to the beginning of the string
+                            ALSAVersionString[len] = ALSAVersionString[curr];
+                        }
+                        len++;
+                    }
+                    curr++;
                 }
-                if (inVersionString) {
-                    // the version string ends with white space
-                    if (ALSAVersionString[curr] <= 32) {
-                        break;
-                    }
-                    if (curr != len) {
-                        // copy this char to the beginning of the string
-                        ALSAVersionString[len] = ALSAVersionString[curr];
-                    }
-                    len++;
+                // remove trailing dots
+                while ((len > 0) && (ALSAVersionString[len - 1] == '.')) {
+                    len--;
                 }
-                curr++;
+                // null terminate
+                ALSAVersionString[len] = 0;
             }
-            // remove trailing dots
-            while ((len > 0) && (ALSAVersionString[len - 1] == '.')) {
-                len--;
-            }
-            // null terminate
-            ALSAVersionString[len] = 0;
+            fclose(file);
+            hasGottenALSAVersion = TRUE;
         }
-        hasGottenALSAVersion = TRUE;
     }
     strncpy(buffer, ALSAVersionString, len);
 }

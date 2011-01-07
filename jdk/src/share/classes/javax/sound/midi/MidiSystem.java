@@ -310,7 +310,7 @@ public class MidiSystem {
         } else {
             transmitter = device.getTransmitter();
         }
-        if (!(transmitter instanceof MidiDeviceReceiver)) {
+        if (!(transmitter instanceof MidiDeviceTransmitter)) {
             transmitter = new MidiDeviceTransmitterEnvelope(device, transmitter);
         }
         return transmitter;

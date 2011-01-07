@@ -32,6 +32,9 @@
 #include <alsa/asoundlib.h>
 #include "PlatformMidi.h"
 #include "PLATFORM_API_LinuxOS_ALSA_MidiUtils.h"
+#if defined(i586)
+#include <sys/utsname.h>
+#endif
 
 /*
  * Helper methods
@@ -73,9 +76,38 @@ char* MIDI_IN_GetErrorStr(INT32 err) {
     return (char*) getErrorStr(err);
 }
 
-
 INT32 MIDI_IN_GetNumDevices() {
+/* Workaround for 6842956: 32bit app on 64bit linux
+ * gets assertion failure trying to open midiIn ports.
+ * Untill the issue is fixed in ALSA
+ * (https://bugtrack.alsa-project.org/alsa-bug/view.php?id=4807)
+ * report no midi in devices in the configuration.
+ */
+#if defined(i586)
+    static int jre32onlinux64 = -1;
+    if (jre32onlinux64 < 0) {
+        jre32onlinux64 = 0;
+        /* The workaround may be disabled setting "JAVASOUND_ENABLE_MIDIIN"
+         * environment variable.
+         */
+        if (getenv("JAVASOUND_ENABLE_MIDIIN") == NULL) {
+            struct utsname u;
+            jre32onlinux64 = 0;
+            if (uname(&u) == 0) {
+                if (strstr(u.machine, "64") != NULL) {
+                    TRACE0("jre32 on linux64 detected - report no midiIn devices\n");
+                    jre32onlinux64 = 1;
+                }
+            }
+        }
+    }
+    if (jre32onlinux64) {
+        return 0;
+    }
+#endif
+
     TRACE0("MIDI_IN_GetNumDevices()\n");
+
     return getMidiDeviceCount(SND_RAWMIDI_STREAM_INPUT);
 }
 

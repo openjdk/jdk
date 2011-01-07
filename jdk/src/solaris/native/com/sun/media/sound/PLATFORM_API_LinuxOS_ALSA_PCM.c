@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
     int ret;
     int sampleSizeInBytes, significantBits, isSigned, isBigEndian, enc;
     int origSampleSizeInBytes, origSignificantBits;
-    int channels, minChannels, maxChannels;
+    unsigned int channels, minChannels, maxChannels;
     int rate, bitIndex;
 
     for (bitIndex = 0; bitIndex <= MAX_BIT_INDEX; bitIndex++) handledBits[bitIndex] = FALSE;
@@ -152,7 +152,6 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
             }
         }
         snd_pcm_hw_params_get_format_mask(hwParams, formatMask);
-#ifdef ALSA_PCM_NEW_HW_PARAMS_API
         if (ret == 0) {
             ret = snd_pcm_hw_params_get_channels_min(hwParams, &minChannels);
             if (ret != 0) {
@@ -165,13 +164,6 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
                 ERROR1("snd_pcm_hw_params_get_channels_max returned error %d\n", ret);
             }
         }
-#else
-        minChannels = snd_pcm_hw_params_get_channels_min(hwParams);
-        maxChannels = snd_pcm_hw_params_get_channels_max(hwParams);
-        if (minChannels > maxChannels) {
-            ERROR2("MinChannels=%d, maxChannels=%d\n", minChannels, maxChannels);
-        }
-#endif
 
         // since we queried the hw: device, for many soundcards, it will only
         // report the maximum number of channels (which is the only way to talk
@@ -222,7 +214,7 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
                                 } else {
                                     for (channels = minChannels; channels <= maxChannels; channels++) {
                                         DAUDIO_AddAudioFormat(creator, significantBits,
-                                                              (channels < 0)?-1:(sampleSizeInBytes * channels),
+                                                              sampleSizeInBytes * channels,
                                                               channels, rate,
                                                               enc, isSigned, isBigEndian);
                                     }
@@ -254,7 +246,7 @@ typedef struct tag_AlsaPcmInfo {
     snd_pcm_sw_params_t* swParams;
     int bufferSizeInBytes;
     int frameSize; // storage size in Bytes
-    int periods;
+    unsigned int periods;
     snd_pcm_uframes_t periodSize;
 #ifdef GET_POSITION_METHOD2
     // to be used exclusively by getBytePosition!
@@ -305,8 +297,8 @@ int setHWParams(AlsaPcmInfo* info,
                 int channels,
                 int bufferSizeInFrames,
                 snd_pcm_format_t format) {
-    unsigned int rrate;
-    int ret, dir, periods, periodTime;
+    unsigned int rrate, periodTime, periods;
+    int ret, dir;
     snd_pcm_uframes_t alsaBufferSizeInFrames = (snd_pcm_uframes_t) bufferSizeInFrames;
 
     /* choose all parameters */
@@ -335,12 +327,8 @@ int setHWParams(AlsaPcmInfo* info,
     }
     /* set the stream rate */
     rrate = (int) (sampleRate + 0.5f);
-#ifdef ALSA_PCM_NEW_HW_PARAMS_API
     dir = 0;
     ret = snd_pcm_hw_params_set_rate_near(info->handle, info->hwParams, &rrate, &dir);
-#else
-    ret = snd_pcm_hw_params_set_rate_near(info->handle, info->hwParams, rrate, 0);
-#endif
     if (ret < 0) {
         ERROR2("Rate %dHz not available for playback: %s\n", (int) (sampleRate+0.5f), snd_strerror(ret));
         return FALSE;
@@ -350,12 +338,7 @@ int setHWParams(AlsaPcmInfo* info,
         return FALSE;
     }
     /* set the buffer time */
-#ifdef ALSA_PCM_NEW_HW_PARAMS_API
-
     ret = snd_pcm_hw_params_set_buffer_size_near(info->handle, info->hwParams, &alsaBufferSizeInFrames);
-#else
-    ret = snd_pcm_hw_params_set_buffer_size_near(info->handle, info->hwParams, alsaBufferSizeInFrames);
-#endif
     if (ret < 0) {
         ERROR2("Unable to set buffer size to %d frames: %s\n",
                (int) alsaBufferSizeInFrames, snd_strerror(ret));
@@ -366,12 +349,7 @@ int setHWParams(AlsaPcmInfo* info,
     if (bufferSizeInFrames > 1024) {
         dir = 0;
         periodTime = DEFAULT_PERIOD_TIME;
-#ifdef ALSA_PCM_NEW_HW_PARAMS_API
         ret = snd_pcm_hw_params_set_period_time_near(info->handle, info->hwParams, &periodTime, &dir);
-#else
-        periodTime = snd_pcm_hw_params_set_period_time_near(info->handle, info->hwParams, periodTime, &dir);
-        ret = periodTime;
-#endif
         if (ret < 0) {
             ERROR2("Unable to set period time to %d: %s\n", DEFAULT_PERIOD_TIME, snd_strerror(ret));
             return FALSE;
@@ -380,12 +358,7 @@ int setHWParams(AlsaPcmInfo* info,
         /* set the period count for very small buffer sizes to 2 */
         dir = 0;
         periods = 2;
-#ifdef ALSA_PCM_NEW_HW_PARAMS_API
         ret = snd_pcm_hw_params_set_periods_near(info->handle, info->hwParams, &periods, &dir);
-#else
-        periods = snd_pcm_hw_params_set_periods_near(info->handle, info->hwParams, periods, &dir);
-        ret = periods;
-#endif
         if (ret < 0) {
             ERROR2("Unable to set period count to %d: %s\n", /*periods*/ 2, snd_strerror(ret));
             return FALSE;
@@ -421,12 +394,6 @@ int setSWParams(AlsaPcmInfo* info) {
         ERROR1("Unable to set avail min for playback: %s\n", snd_strerror(ret));
         return FALSE;
     }
-    /* align all transfers to 1 sample */
-    ret = snd_pcm_sw_params_set_xfer_align(info->handle, info->swParams, 1);
-    if (ret < 0) {
-        ERROR1("Unable to set transfer align: %s\n", snd_strerror(ret));
-        return FALSE;
-    }
     /* write the parameters to the playback device */
     ret = snd_pcm_sw_params(info->handle, info->swParams);
     if (ret < 0) {
@@ -448,7 +415,6 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
     int ret = 0;
     AlsaPcmInfo* info = NULL;
     /* snd_pcm_uframes_t is 64 bit on 64-bit systems */
-    snd_pcm_uframes_t alsaPeriodSize = 0;
     snd_pcm_uframes_t alsaBufferSizeInFrames = 0;
 
 
@@ -484,21 +450,13 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
                                 bufferSizeInBytes / frameSize,
                                 format)) {
                     info->frameSize = frameSize;
-#ifdef ALSA_PCM_NEW_HW_PARAMS_API
-                    ret = snd_pcm_hw_params_get_period_size(info->hwParams, &alsaPeriodSize, &dir);
-                    info->periodSize = (int) alsaPeriodSize;
+                    ret = snd_pcm_hw_params_get_period_size(info->hwParams, &info->periodSize, &dir);
                     if (ret < 0) {
                         ERROR1("ERROR: snd_pcm_hw_params_get_period: %s\n", snd_strerror(ret));
                     }
                     snd_pcm_hw_params_get_periods(info->hwParams, &(info->periods), &dir);
                     snd_pcm_hw_params_get_buffer_size(info->hwParams, &alsaBufferSizeInFrames);
                     info->bufferSizeInBytes = (int) alsaBufferSizeInFrames * frameSize;
-#else
-                    info->periodSize = snd_pcm_hw_params_get_period_size(info->hwParams, &dir);
-                    info->periods = snd_pcm_hw_params_get_periods(info->hwParams, &dir);
-                    info->bufferSizeInBytes = snd_pcm_hw_params_get_buffer_size(info->hwParams) * frameSize;
-                    ret = 0;
-#endif
                     TRACE3("  DAUDIO_Open: period size = %d frames, periods = %d. Buffer size: %d bytes.\n",
                            (int) info->periodSize, info->periods, info->bufferSizeInBytes);
                 }

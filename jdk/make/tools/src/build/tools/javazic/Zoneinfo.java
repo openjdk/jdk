@@ -222,6 +222,7 @@ class Zoneinfo {
         boolean continued = false;
         Zone zone = null;
         String l;
+        lineNum = 0;
 
         try {
             while ((line = in.readLine()) != null) {
