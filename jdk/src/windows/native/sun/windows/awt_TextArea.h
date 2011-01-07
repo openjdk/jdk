@@ -41,9 +41,6 @@
 
 class AwtTextArea : public AwtTextComponent {
 
-    // inner classes
-    class OleCallback;
-
 public:
 
     /* java.awt.TextArea fields ids */
@@ -89,36 +86,11 @@ public:
     static void _ReplaceText(void *param);
 
 protected:
-    INLINE static OleCallback& GetOleCallback() { return sm_oleCallback; }
-    void EditSetSel(CHARRANGE &cr);
-    void EditGetSel(CHARRANGE &cr);
-    LONG EditGetCharFromPos(POINT& pt);
-  private:
-    // RichEdit 1.0 control generates EN_CHANGE notifications not only
-    // on text changes, but also on any character formatting change.
-    // This flag is true when the latter case is detected.
-    BOOL    m_bIgnoreEnChange;
-
-    // RichEdit 1.0 control undoes a character formatting change
-    // if it is the latest. We don't create our own undo buffer,
-    // but just prohibit undo in case if the latest operation
-    // is a formatting change.
-    BOOL    m_bCanUndo;
-
-    HWND    m_hEditCtrl;
-    static WNDPROC sm_pDefWindowProc;
-
-    LONG    m_lHDeltaAccum;
-    LONG    m_lVDeltaAccum;
-
-
-    static OleCallback sm_oleCallback;
 
     /*****************************************************************
      * Inner class OleCallback declaration.
      */
-
-    class AwtTextArea::OleCallback : public IRichEditOleCallback {
+    class OleCallback : public IRichEditOleCallback {
     public:
         OleCallback();
 
@@ -143,7 +115,32 @@ protected:
                                     CHARRANGE FAR * pchrg, HMENU FAR * phmenu);
     private:
         ULONG             m_refs; // Reference count
-    };
+    };//OleCallback class
+
+    INLINE static OleCallback& GetOleCallback() { return sm_oleCallback; }
+    void EditSetSel(CHARRANGE &cr);
+    void EditGetSel(CHARRANGE &cr);
+    LONG EditGetCharFromPos(POINT& pt);
+  private:
+    // RichEdit 1.0 control generates EN_CHANGE notifications not only
+    // on text changes, but also on any character formatting change.
+    // This flag is true when the latter case is detected.
+    BOOL    m_bIgnoreEnChange;
+
+    // RichEdit 1.0 control undoes a character formatting change
+    // if it is the latest. We don't create our own undo buffer,
+    // but just prohibit undo in case if the latest operation
+    // is a formatting change.
+    BOOL    m_bCanUndo;
+
+    HWND    m_hEditCtrl;
+    static WNDPROC sm_pDefWindowProc;
+
+    LONG    m_lHDeltaAccum;
+    LONG    m_lVDeltaAccum;
+
+
+    static OleCallback sm_oleCallback;
 
 };
 

@@ -113,8 +113,8 @@ private:
      */
     static void ModalPerformActivation(HWND hWnd);
 
-    static void PopupAllDialogs(HWND dialog, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
-    static void PopupOneDialog(HWND dialog, HWND blocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
+    static void PopupBlockers(HWND blocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
+    static void PopupBlocker(HWND blocker, HWND nextBlocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
 
 public:
 

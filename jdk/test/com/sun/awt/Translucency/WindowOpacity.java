@@ -64,6 +64,7 @@ public class WindowOpacity
         boolean passed;
 
         Frame f = new Frame("Opacity test");
+        f.setUndecorated(true);
 
         passed = false;
         try {

@@ -54,7 +54,7 @@ static BOOL                     UpdateInstance(JNIEnv *env);
            InstanceAccess& operator=(const InstanceAccess&);
            InstanceAccess* operator&();
        };
-friend                          InstanceAccess;
+friend class InstanceAccess;
 
 private:
                                 Devices(int numElements);
