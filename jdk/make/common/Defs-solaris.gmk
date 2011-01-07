@@ -75,15 +75,6 @@ CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
 CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
 
 #
-# Default HPI libraries. Build will build only native unless
-# overriden at the make command line. This makes it convenient for
-# people doing, say, a pthreads port -- they can create a posix
-# directory here, and say "gnumake HPIS=posix" at the top
-# level.
-#
-HPIS = native
-
-#
 # Java default optimization (-x04/-O2) etc.  Applies to the VM.
 #
 ifndef OPTIMIZATION_LEVEL
