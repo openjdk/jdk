@@ -364,7 +364,7 @@ public class DriverManager {
      * @return the list of JDBC Drivers loaded by the caller's class loader
      */
     public static java.util.Enumeration<Driver> getDrivers() {
-        java.util.Vector<Driver> result = new java.util.Vector<Driver>();
+        java.util.Vector<Driver> result = new java.util.Vector<>();
         java.util.Vector drivers = null;
 
         if (!initialized) {

@@ -424,8 +424,7 @@ final class ServerHandshaker extends Handshaker {
                 " not enabled or not supported");
         }
 
-        handshakeHash.protocolDetermined(
-            selectedVersion.v >= ProtocolVersion.TLS12.v);
+        handshakeHash.protocolDetermined(selectedVersion);
         setVersion(selectedVersion);
 
         m1.protocolVersion = protocolVersion;

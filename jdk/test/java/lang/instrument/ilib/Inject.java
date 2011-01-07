@@ -107,7 +107,7 @@ public class Inject implements RuntimeConstants {
     class IndexedInjector implements TrackerInjector {
         int counter = 0;
         int tracker;
-        List<Info> infoList = new ArrayList<Info>();
+        List<Info> infoList = new ArrayList<>();
 
         public int stackSize(int currentSize) {
             return currentSize + 1;

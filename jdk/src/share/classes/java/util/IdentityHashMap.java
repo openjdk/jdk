@@ -1134,7 +1134,7 @@ public class IdentityHashMap<K,V>
             Object[] result = new Object[size];
             Iterator<Map.Entry<K,V>> it = iterator();
             for (int i = 0; i < size; i++)
-                result[i] = new AbstractMap.SimpleEntry<K,V>(it.next());
+                result[i] = new AbstractMap.SimpleEntry<>(it.next());
             return result;
         }
 
@@ -1146,7 +1146,7 @@ public class IdentityHashMap<K,V>
                     .newInstance(a.getClass().getComponentType(), size);
             Iterator<Map.Entry<K,V>> it = iterator();
             for (int i = 0; i < size; i++)
-                a[i] = (T) new AbstractMap.SimpleEntry<K,V>(it.next());
+                a[i] = (T) new AbstractMap.SimpleEntry<>(it.next());
             if (a.length > size)
                 a[size] = null;
             return a;

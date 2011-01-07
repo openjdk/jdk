@@ -144,7 +144,7 @@ public final
         // which implicitly requires that new java.lang.reflect
         // objects be fabricated for each reflective call on Class
         // objects.)
-        Constructor<T> res = new Constructor<T>(clazz,
+        Constructor<T> res = new Constructor<>(clazz,
                                                 parameterTypes,
                                                 exceptionTypes, modifiers, slot,
                                                 signature,

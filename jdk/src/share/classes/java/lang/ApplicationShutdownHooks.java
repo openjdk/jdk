@@ -47,7 +47,7 @@ class ApplicationShutdownHooks {
                     }
                 }
             );
-            hooks = new IdentityHashMap<Thread, Thread>();
+            hooks = new IdentityHashMap<>();
         } catch (IllegalStateException e) {
             // application shutdown hooks cannot be added if
             // shutdown is in progress.
