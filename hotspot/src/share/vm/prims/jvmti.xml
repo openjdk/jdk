@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -10697,7 +10697,7 @@ myInit() {
 	    <internallink id="mUTF">modified UTF-8</internallink> string.
 	  </description>
 	</param>
-        <param id="value">
+        <param id="value_ptr">
 	  <inbuf>
 	    <char/>
 	    <nullok>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,11 @@ void ThreadLocalAllocBuffer::accumulate_statistics() {
 void ThreadLocalAllocBuffer::make_parsable(bool retire) {
   if (end() != NULL) {
     invariants();
+
+    if (retire) {
+      myThread()->incr_allocated_bytes(used_bytes());
+    }
+
     CollectedHeap::fill_with_object(top(), hard_end(), retire);
 
     if (retire || ZeroTLAB) {  // "Reset" the TLAB
