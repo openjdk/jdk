@@ -24,7 +24,8 @@
  * @test
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
- * 4147315 4147317 4147552 4335196 4778440 5010672 6475525 6544471 6627549 6786276
+ * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
+ * 6786276
  * @summary test Locales
  */
 /*
@@ -895,17 +896,28 @@ test commented out pending API-change approval
     }
 
     /**
-     * @bug 4147317
-     * java.util.Locale.getISO3Language() works wrong for non ISO-3166 codes.
-     * Should throw an exception for unknown locales
+     * @bug 4147317 4940539
+     * java.util.Locale.getISO3Language() works wrong for non ISO-639 codes.
+     * Should throw an exception for unknown locales, except they have three
+     * letter language codes.
      */
     public void Test4147317() {
-        // Try with codes that are the wrong length but happen to match text
-        // at a valid offset in the mapping table
+        // Try a three letter language code, and check whether it is
+        // returned as is.
         Locale locale = new Locale("aaa", "CCC");
 
+        String result = locale.getISO3Language();
+        if (!result.equals("aaa")) {
+            errln("ERROR: getISO3Language() returns: " + result +
+                " for locale '" + locale + "' rather than returning it as is" );
+        }
+
+        // Try an invalid two letter language code, and check whether it
+        // throws a MissingResourceException.
+        locale = new Locale("zz", "CCC");
+
         try {
-            String result = locale.getISO3Language();
+            result = locale.getISO3Language();
 
             errln("ERROR: getISO3Language() returns: " + result +
                 " for locale '" + locale + "' rather than exception" );

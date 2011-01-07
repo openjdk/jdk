@@ -908,6 +908,14 @@ public class BasicSpinnerUI extends SpinnerUI
             int height = parent.getHeight();
 
             Insets insets = parent.getInsets();
+
+            if (nextButton == null && previousButton == null) {
+                setBounds(editor, insets.left,  insets.top, width - insets.left - insets.right,
+                        height - insets.top - insets.bottom);
+
+                return;
+            }
+
             Dimension nextD = preferredSize(nextButton);
             Dimension previousD = preferredSize(previousButton);
             int buttonsWidth = Math.max(nextD.width, previousD.width);
