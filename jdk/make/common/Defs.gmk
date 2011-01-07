@@ -271,10 +271,9 @@ DEMOSRCDIR          = $(SHARE_SRC)/demo
 # An attempt is made to generate unique enough directories for the
 # generated files to not have name collisisons. Most build units
 # defines PRODUCT (except Release.gmk), but then they may or may 
-# not define PACKAGE, THREADIR (only HPI uses this), PROGRAM, and 
-# LIBRARY. This code chunk attempts to generate a unique 
-# OBJDIR/CLASSHDRDIR for each build unit based on which of those 
-# values are set within each build unit.
+# not define PACKAGE, PROGRAM, and LIBRARY. This code attempts to
+# generate a unique OBJDIR/CLASSHDRDIR for each build unit based
+# on which of those values are set within each build unit.
 
 UNIQUE_LOCATION_STRING = tmp
 
@@ -296,10 +295,6 @@ ifneq ($(LIBRARY),)
   else
     UNIQUE_LOCATION_STRING += /$(LIBRARY)
   endif
-endif
-
-ifneq ($(THREADDIR),)
-  UNIQUE_LOCATION_STRING += /$(THREADDIR)
 endif
 
 #

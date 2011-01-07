@@ -222,7 +222,7 @@ ifeq ($(PLATFORM), windows)
 	@# Remove certain *.lib files
 	$(CD) $(JRE_MODULE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
-                  hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+                  awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	@# The Java Kernel JRE image ships with a special VM.  It is not included
 	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
@@ -415,8 +415,7 @@ endif # !windows
 trim-module-image-jdk::
 	@# Remove tools that should not be part of SDK.
 	for t in $(NOTJDKTOOLS); do \
-	    $(RM) $(JDK_MODULE_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX) \
-		  $(JDK_MODULE_IMAGE_DIR)/bin/*/native_threads/$${t}$(EXE_SUFFIX); \
+	    $(RM) $(JDK_MODULE_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX); \
 	done
 
 # Get list of Elf files in the jdk
