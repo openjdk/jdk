@@ -336,8 +336,8 @@ public class ProtectionDomain {
         int swag = 32;
         int vcap = 8;
         Enumeration<Permission> e;
-        List<Permission> pdVector = new ArrayList<Permission>(vcap);
-        List<Permission> plVector = new ArrayList<Permission>(swag);
+        List<Permission> pdVector = new ArrayList<>(vcap);
+        List<Permission> plVector = new ArrayList<>(swag);
 
         //
         // Build a vector of domain permissions for subsequent merge

@@ -121,7 +121,7 @@ public final class AccessControlContext {
                 this.context = null;
             }
         } else {
-            List<ProtectionDomain> v = new ArrayList<ProtectionDomain>(context.length);
+            List<ProtectionDomain> v = new ArrayList<>(context.length);
             for (int i =0; i< context.length; i++) {
                 if ((context[i] != null) &&  (!v.contains(context[i])))
                     v.add(context[i]);

@@ -569,7 +569,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
         // Don't call out.defaultWriteObject()
 
         // Write out Vector
-        Vector<Permission> permissions = new Vector<Permission>(perms.size());
+        Vector<Permission> permissions = new Vector<>(perms.size());
 
         synchronized (this) {
             permissions.addAll(perms);

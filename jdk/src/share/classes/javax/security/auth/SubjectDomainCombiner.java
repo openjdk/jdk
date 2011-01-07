@@ -48,7 +48,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
 
     private Subject subject;
     private WeakKeyValueMap<ProtectionDomain, ProtectionDomain> cachedPDs =
-                new WeakKeyValueMap<ProtectionDomain, ProtectionDomain>();
+                new WeakKeyValueMap<>();
     private Set<Principal> principalSet;
     private Principal[] principals;
 

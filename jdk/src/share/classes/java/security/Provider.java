@@ -437,7 +437,7 @@ public abstract class Provider extends Properties {
 
     private void readObject(ObjectInputStream in)
                 throws IOException, ClassNotFoundException {
-        Map<Object,Object> copy = new HashMap<Object,Object>();
+        Map<Object,Object> copy = new HashMap<>();
         for (Map.Entry<Object,Object> entry : super.entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
@@ -719,7 +719,7 @@ public abstract class Provider extends Properties {
         }
         if (serviceSet == null) {
             ensureLegacyParsed();
-            Set<Service> set = new LinkedHashSet<Service>();
+            Set<Service> set = new LinkedHashSet<>();
             if (serviceMap != null) {
                 set.addAll(serviceMap.values());
             }
@@ -1395,7 +1395,7 @@ public abstract class Provider extends Properties {
                     if (s != null) {
                         String[] classNames = s.split("\\|");
                         List<Class> classList =
-                            new ArrayList<Class>(classNames.length);
+                            new ArrayList<>(classNames.length);
                         for (String className : classNames) {
                             Class clazz = getKeyClass(className);
                             if (clazz != null) {

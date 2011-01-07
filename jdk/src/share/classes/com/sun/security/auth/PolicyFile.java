@@ -1180,7 +1180,7 @@ public class PolicyFile extends javax.security.auth.Policy {
             // Done
             return certs;
 
-        ArrayList<Certificate> userCertList = new ArrayList<Certificate>();
+        ArrayList<Certificate> userCertList = new ArrayList<>();
         i = 0;
         while (i < certs.length) {
             userCertList.add(certs[i]);
