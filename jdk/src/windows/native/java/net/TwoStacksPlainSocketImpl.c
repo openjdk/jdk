@@ -1032,21 +1032,20 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this
      * SO_BINDADDR isn't a socket option
      */
     if (opt == java_net_SocketOptions_SO_BINDADDR) {
-        SOCKET_ADDRESS him;
+        SOCKETADDRESS him;
         int len;
         int port;
         jobject iaObj;
         jclass iaCntrClass;
         jfieldID iaFieldID;
 
-        len = sizeof(struct sockaddr_in);
+        len = sizeof(him);
 
         if (fd == -1) {
             /* must be an IPV6 only socket. Case where both sockets are != -1
              * is handled in java
              */
             fd = getFD1 (env, this);
-            len = sizeof(struct SOCKADDR_IN6);
         }
 
         if (getsockname(fd, (struct sockaddr *)&him, &len) < 0) {
