@@ -1884,23 +1884,24 @@ public:
   void sethi(const AddressLiteral& addrlit, Register d);
   void patchable_sethi(const AddressLiteral& addrlit, Register d);
 
-  // compute the size of a sethi/set
-  static int  size_of_sethi( address a, bool worst_case = false );
-  static int  worst_case_size_of_set();
+  // compute the number of instructions for a sethi/set
+  static int  insts_for_sethi( address a, bool worst_case = false );
+  static int  worst_case_insts_for_set();
 
   // set may be either setsw or setuw (high 32 bits may be zero or sign)
 private:
   void internal_set(const AddressLiteral& al, Register d, bool ForceRelocatable);
+  static int insts_for_internal_set(intptr_t value);
 public:
   void set(const AddressLiteral& addrlit, Register d);
   void set(intptr_t value, Register d);
   void set(address addr, Register d, RelocationHolder const& rspec);
+  static int insts_for_set(intptr_t value) { return insts_for_internal_set(value); }
+
   void patchable_set(const AddressLiteral& addrlit, Register d);
   void patchable_set(intptr_t value, Register d);
   void set64(jlong value, Register d, Register tmp);
-
-  // Compute size of set64.
-  static int size_of_set64(jlong value);
+  static int insts_for_set64(jlong value);
 
   // sign-extend 32 to 64
   inline void signx( Register s, Register d ) { sra( s, G0, d); }

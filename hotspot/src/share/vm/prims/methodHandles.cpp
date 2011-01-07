@@ -111,7 +111,7 @@ bool MethodHandles::spot_check_entry_names() {
 //------------------------------------------------------------------------------
 // MethodHandles::generate_adapters
 //
-void MethodHandles::generate_adapters() {
+void MethodHandles::generate_adapters(TRAPS) {
   if (!EnableMethodHandles || SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
@@ -123,20 +123,20 @@ void MethodHandles::generate_adapters() {
     vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
-  g.generate();
+  g.generate(CHECK);
 }
 
 
 //------------------------------------------------------------------------------
 // MethodHandlesAdapterGenerator::generate
 //
-void MethodHandlesAdapterGenerator::generate() {
+void MethodHandlesAdapterGenerator::generate(TRAPS) {
   // Generate generic method handle adapters.
   for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
        ek < MethodHandles::_EK_LIMIT;
        ek = MethodHandles::EntryKind(1 + (int)ek)) {
     StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
-    MethodHandles::generate_method_handle_stub(_masm, ek);
+    MethodHandles::generate_method_handle_stub(_masm, ek, CHECK);
   }
 }
 
@@ -2644,6 +2644,11 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     } else {
       MethodHandles::set_enabled(true);
     }
+  }
+
+  // Generate method handles adapters if enabled.
+  if (MethodHandles::enabled()) {
+    MethodHandles::generate_adapters(CHECK);
   }
 }
 JVM_END
