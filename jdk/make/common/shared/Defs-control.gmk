@@ -76,12 +76,9 @@ SRC_BUNDLEDIR       = $(OUTPUTDIR)/source-bundles
 ABS_SRC_BUNDLEDIR   = $(ABS_OUTPUTDIR)/source-bundles
 BIN_BUNDLEDIR       = $(OUTPUTDIR)/bundles
 ABS_BIN_BUNDLEDIR   = $(ABS_OUTPUTDIR)/bundles
-JRL_BUNDLEDIR       = $(OUTPUTDIR)/java.net
-ABS_JRL_BUNDLEDIR   = $(ABS_OUTPUTDIR)/java.net
 
 dummy := $(shell $(MKDIR) -p $(BIN_BUNDLEDIR))
 dummy := $(shell $(MKDIR) -p $(SRC_BUNDLEDIR) )
-dummy := $(shell $(MKDIR) -p $(JRL_BUNDLEDIR) )
 
 TEMP_DIR = $(OUTPUTDIR)/tmp
 ABS_TEMP_DIR = $(ABS_OUTPUTDIR)/tmp
