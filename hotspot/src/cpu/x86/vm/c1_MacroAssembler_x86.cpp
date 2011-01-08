@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
     eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
+    incr_allocated_bytes(noreg, var_size_in_bytes, con_size_in_bytes, t1);
   }
 }
 
@@ -234,7 +235,7 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
 
 void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case) {
   assert(obj == rax, "obj must be in rax, for cmpxchg");
-  assert(obj != t1 && obj != t2 && t1 != t2, "registers must be different"); // XXX really?
+  assert_different_registers(obj, t1, t2); // XXX really?
   assert(header_size >= 0 && object_size >= header_size, "illegal sizes");
 
   try_allocate(obj, noreg, object_size * BytesPerWord, t1, t2, slow_case);
