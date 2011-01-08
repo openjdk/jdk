@@ -161,6 +161,7 @@ class CodeHeap : public CHeapObj {
   size_t max_capacity() const;
   size_t allocated_capacity() const;
   size_t unallocated_capacity() const            { return max_capacity() - allocated_capacity(); }
+  size_t largest_free_block() const;
 
   // Debugging
   void verify();

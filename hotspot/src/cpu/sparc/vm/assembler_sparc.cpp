@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.hpp"
 #include "assembler_sparc.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1327,37 +1328,38 @@ void MacroAssembler::patchable_sethi(const AddressLiteral& addrlit, Register d) 
 }
 
 
-int MacroAssembler::size_of_sethi(address a, bool worst_case) {
+int MacroAssembler::insts_for_sethi(address a, bool worst_case) {
 #ifdef _LP64
-  if (worst_case) return 7;
-  intptr_t iaddr = (intptr_t)a;
-  int hi32 = (int)(iaddr >> 32);
-  int lo32 = (int)(iaddr);
-  int inst_count;
-  if (hi32 == 0 && lo32 >= 0)
-    inst_count = 1;
-  else if (hi32 == -1)
-    inst_count = 2;
+  if (worst_case)  return 7;
+  intptr_t iaddr = (intptr_t) a;
+  int msb32 = (int) (iaddr >> 32);
+  int lsb32 = (int) (iaddr);
+  int count;
+  if (msb32 == 0 && lsb32 >= 0)
+    count = 1;
+  else if (msb32 == -1)
+    count = 2;
   else {
-    inst_count = 2;
-    if ( hi32 & 0x3ff )
-      inst_count++;
-    if ( lo32 & 0xFFFFFC00 ) {
-      if( (lo32 >> 20) & 0xfff ) inst_count += 2;
-      if( (lo32 >> 10) & 0x3ff ) inst_count += 2;
+    count = 2;
+    if (msb32 & 0x3ff)
+      count++;
+    if (lsb32 & 0xFFFFFC00 ) {
+      if ((lsb32 >> 20) & 0xfff)  count += 2;
+      if ((lsb32 >> 10) & 0x3ff)  count += 2;
     }
   }
-  return BytesPerInstWord * inst_count;
+  return count;
 #else
-  return BytesPerInstWord;
+  return 1;
 #endif
 }
 
-int MacroAssembler::worst_case_size_of_set() {
-  return size_of_sethi(NULL, true) + 1;
+int MacroAssembler::worst_case_insts_for_set() {
+  return insts_for_sethi(NULL, true) + 1;
 }
 
 
+// Keep in sync with MacroAssembler::insts_for_internal_set
 void MacroAssembler::internal_set(const AddressLiteral& addrlit, Register d, bool ForceRelocatable) {
   intptr_t value = addrlit.value();
 
@@ -1377,6 +1379,23 @@ void MacroAssembler::internal_set(const AddressLiteral& addrlit, Register d, boo
   if (ForceRelocatable || addrlit.rspec().type() != relocInfo::none || addrlit.low10() != 0) {
     add(d, addrlit.low10(), d, addrlit.rspec());
   }
+}
+
+// Keep in sync with MacroAssembler::internal_set
+int MacroAssembler::insts_for_internal_set(intptr_t value) {
+  // can optimize
+  if (-4096 <= value && value <= 4095) {
+    return 1;
+  }
+  if (inv_hi22(hi22(value)) == value) {
+    return insts_for_sethi((address) value);
+  }
+  int count = insts_for_sethi((address) value);
+  AddressLiteral al(value);
+  if (al.low10() != 0) {
+    count++;
+  }
+  return count;
 }
 
 void MacroAssembler::set(const AddressLiteral& al, Register d) {
@@ -1443,11 +1462,11 @@ void MacroAssembler::set64(jlong value, Register d, Register tmp) {
   }
 }
 
-int MacroAssembler::size_of_set64(jlong value) {
+int MacroAssembler::insts_for_set64(jlong value) {
   v9_dep();
 
-  int hi = (int)(value >> 32);
-  int lo = (int)(value & ~0);
+  int hi = (int) (value >> 32);
+  int lo = (int) (value & ~0);
   int count = 0;
 
   // (Matcher::isSimpleConstant64 knows about the following optimizations.)
@@ -4083,11 +4102,15 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   store_klass(t2, top);
   verify_oop(top);
 
+  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t1);
+  sub(top, t1, t1); // size of tlab's allocated portion
+  incr_allocated_bytes(t1, 0, t2);
+
   // refill the tlab with an eden allocation
   bind(do_refill);
   ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t1);
   sll_ptr(t1, LogHeapWordSize, t1);
-  // add object_size ??
+  // allocate new tlab, address returned in top
   eden_allocate(top, t1, 0, t2, t3, slow_case);
 
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_start_offset()));
@@ -4113,6 +4136,22 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   verify_tlab();
   br(Assembler::always, false, Assembler::pt, retry);
   delayed()->nop();
+}
+
+void MacroAssembler::incr_allocated_bytes(Register var_size_in_bytes,
+                                          int con_size_in_bytes,
+                                          Register t1) {
+  // Bump total bytes allocated by this thread
+  assert(t1->is_global(), "must be global reg"); // so all 64 bits are saved on a context switch
+  assert_different_registers(var_size_in_bytes, t1);
+  // v8 support has gone the way of the dodo
+  ldx(G2_thread, in_bytes(JavaThread::allocated_bytes_offset()), t1);
+  if (var_size_in_bytes->is_valid()) {
+    add(t1, var_size_in_bytes, t1);
+  } else {
+    add(t1, con_size_in_bytes, t1);
+  }
+  stx(t1, G2_thread, in_bytes(JavaThread::allocated_bytes_offset()));
 }
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {

@@ -192,7 +192,7 @@ class Compilation: public StackObj {
     return desired_max_code_buffer_size() / 10;
   }
 
-  static void setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
+  static bool setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 
   // timers
   static void print_timers();

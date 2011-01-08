@@ -245,7 +245,7 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
 }
 
 
-void Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
+bool Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
   // Preinitialize the consts section to some large size:
   int locs_buffer_size = 20 * (relocInfo::length_limit + sizeof(relocInfo));
   char* locs_buffer = NEW_RESOURCE_ARRAY(char, locs_buffer_size);
@@ -253,15 +253,20 @@ void Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
                                         locs_buffer_size / sizeof(relocInfo));
   code->initialize_consts_size(Compilation::desired_max_constant_size());
   // Call stubs + two deopt handlers (regular and MH) + exception handler
-  code->initialize_stubs_size((call_stub_estimate * LIR_Assembler::call_stub_size) +
-                              LIR_Assembler::exception_handler_size +
-                              2 * LIR_Assembler::deopt_handler_size);
+  int stub_size = (call_stub_estimate * LIR_Assembler::call_stub_size) +
+                   LIR_Assembler::exception_handler_size +
+                   (2 * LIR_Assembler::deopt_handler_size);
+  if (stub_size >= code->insts_capacity()) return false;
+  code->initialize_stubs_size(stub_size);
+  return true;
 }
 
 
 int Compilation::emit_code_body() {
   // emit code
-  setup_code_buffer(code(), allocator()->num_calls());
+  if (!setup_code_buffer(code(), allocator()->num_calls())) {
+    BAILOUT_("size requested greater than avail code buffer size", 0);
+  }
   code()->initialize_oop_recorder(env()->oop_recorder());
 
   _masm = new C1_MacroAssembler(code());
