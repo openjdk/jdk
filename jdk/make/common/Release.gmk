@@ -75,11 +75,6 @@ JTG_DOCS            = $(JDK_TOPDIR)/src/solaris/doc
 #We use this for man page header
 jdkversion := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
 
-# Text documents on windows use this suffix
-ifeq ($(PLATFORM), windows)
-  TEXT_SUFFIX = .txt
-endif
-
 # The base names of all the license and document files for the jdk and jre
 #   (These files get placed in the jdk and jre install images)
 ifdef OPENJDK
@@ -87,48 +82,24 @@ ifdef OPENJDK
   SHARE_JDK_DOC_SRC = $(JDK_TOPDIR)
   SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)
   # Same files for jdk and jre, no name changes
-  LICENSE_DOCLIST_JDK = LICENSE     ASSEMBLY_EXCEPTION
-  LICENSE_DOCLIST_JRE = LICENSE     ASSEMBLY_EXCEPTION
-  OTHER_DOCLIST_JDK   = THIRD_PARTY_README
-  OTHER_DOCLIST_JRE   = THIRD_PARTY_README
+  IMAGE_DOCLIST_JDK = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+  IMAGE_DOCLIST_JRE = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 else
   # Where to find these files
   SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
   SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
-  # Select the pre-release or FCS license version based on the build milestone.
-  LICENSE_VERSION=.pre
-  ifeq ($(MILESTONE), fcs)
-    LICENSE_VERSION=.fcs
-  endif
+  IMAGE_DOCLIST_JDK = COPYRIGHT README.html  THIRDPARTYLICENSEREADME.txt
+  IMAGE_DOCLIST_JRE = COPYRIGHT Welcome.html THIRDPARTYLICENSEREADME.txt
   ifeq ($(PLATFORM), windows)
-    LICENSE_DOCLIST_JDK = $(subst $(LICENSE_VERSION),,\
-		   $(shell $(CD) $(SHARE_JDK_DOC_SRC) && \
-		           $(LS) *LICENSE*$(LICENSE_VERSION)))
-    LICENSE_DOCLIST_JRE = $(subst $(LICENSE_VERSION),,\
-		   $(shell $(CD) $(SHARE_JRE_DOC_SRC) && \
-		           $(LS) *LICENSE*$(LICENSE_VERSION)))
+    IMAGE_DOCLIST_JRE += README.txt
   else
-    LICENSE_DOCLIST_JDK = $(subst $(LICENSE_VERSION),,\
-	         $(shell $(CD) $(SHARE_JDK_DOC_SRC) && \
-		         $(LS) *LICENSE*$(LICENSE_VERSION) | $(GREP) -v rtf))
-    LICENSE_DOCLIST_JRE = $(subst $(LICENSE_VERSION),,\
-	         $(shell $(CD) $(SHARE_JRE_DOC_SRC) && \
-		         $(LS) *LICENSE*$(LICENSE_VERSION) | $(GREP) -v rtf))
+    IMAGE_DOCLIST_JRE += README
   endif
-  OTHER_DOCLIST_JDK = COPYRIGHT README.html README_ja.html README_zh_CN.html
-  OTHER_DOCLIST_JRE = COPYRIGHT Welcome.html
-  JRE_NAMECHANGE_DOCLIST = README
 endif
 
 # Paths to these files we need
-JDK_LICENSES   = $(LICENSE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
-JDK64_LICENSES = $(LICENSE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%64)
-JDK_DOCFILES   = $(OTHER_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
-
-JRE_LICENSES   = $(LICENSE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
-JRE64_LICENSES = $(LICENSE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%64)
-JRE_DOCFILES   = $(OTHER_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
-JRE_DOCFILES  += $(JRE_NAMECHANGE_DOCLIST:%=$(JRE_IMAGE_DIR)/%$(TEXT_SUFFIX))
+JDK_DOCFILES   = $(IMAGE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
+JRE_DOCFILES   = $(IMAGE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
 
 # absolute directory names: note, these must exist prior to build
 # time - they are created in the main Makefile.
@@ -504,33 +475,12 @@ endef
 # JDK files
 $(JDK_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%
 	$(process-doc-file)
-# Removes LICENSE_VERSION or not
-ifdef LICENSE_VERSION
-$(JDK_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-$(JDK_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-else
-$(JDK_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%
-	$(process-doc-file)
-endif
 
 # JRE files 
 $(JRE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%
 	$(process-doc-file)
-# Add $(TEXT_SUFFIX) suffix
-ifdef TEXT_SUFFIX
-$(JRE_IMAGE_DIR)/%$(TEXT_SUFFIX): $(SHARE_JRE_DOC_SRC)/%
-	$(process-doc-file)
-endif
-# Removes LICENSE_VERSION or not
-ifdef LICENSE_VERSION
-$(JRE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-$(JRE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-else
-$(JRE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%
+ifeq ($(PLATFORM), windows)
+$(JRE_IMAGE_DIR)/README.txt: $(SHARE_JRE_DOC_SRC)/README
 	$(process-doc-file)
 endif
 
@@ -738,8 +688,7 @@ initial-image-jre-setup:
 	$(MKDIR) -p $(JRE_IMAGE_DIR)
 
 # 64-bit solaris jre image contains only the 64-bit add-on files.
-initial-image-jre-sol64:: initial-image-jre-setup \
-			  $(JRE_LICENSES) $(JRE64_LICENSES)
+initial-image-jre-sol64:: initial-image-jre-setup
 	@# Use tar instead of cp to preserve the symbolic links
 	for dir in bin lib ; do \
 	  ( $(CD) $(OUTPUTDIR) && \
@@ -760,7 +709,7 @@ initial-image-jre-sol64:: initial-image-jre-setup \
 # See "initial-image-jdk-setup" for an explanation of the rm of
 # drive names like C:
 initial-image-jre:: initial-image-jre-setup \
-		    $(JRE_LICENSES) $(JRE_DOCFILES) \
+		    $(JRE_DOCFILES) \
 		    $(RT_JAR) $(RESOURCES_JAR) $(JSSE_JAR) \
 		    $(BUILDMETAINDEX_JARFILE)
 	@# Copy in bin directory
@@ -911,8 +860,7 @@ initial-image-jdk64-bindemos:
 
 # Solaris 64 bit image is special
 initial-image-jdk-sol64:: initial-image-jdk-setup \
-			  initial-image-jdk64-bindemos \
-			  $(JDK_LICENSES) $(JDK64_LICENSES)
+			  initial-image-jdk64-bindemos
 
 # DB files to add
 ifdef OPENJDK
@@ -936,7 +884,7 @@ endif
 # Standard jdk image
 initial-image-jdk:: initial-image-jdk-setup \
 		    initial-image-jdk-db \
-		    $(JDK_LICENSES) $(JDK_DOCFILES)
+		    $(JDK_DOCFILES)
 	$(MKDIR) $(JDK_IMAGE_DIR)/lib
 	@#
 	@# Copy in the jars in lib that only belong in the JDK
