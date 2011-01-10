@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ public class TransTypes extends TreeTranslator {
     private boolean allowEnums;
     private Types types;
     private final Resolve resolve;
-    private final TypeAnnotations typeAnnotations;
 
     /**
      * Flag to indicate whether or not to generate bridge methods.
@@ -91,7 +90,6 @@ public class TransTypes extends TreeTranslator {
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
-        typeAnnotations = TypeAnnotations.instance(context);
     }
 
     /** A hashtable mapping bridge methods to the methods they override after
@@ -445,14 +443,12 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitClassDef(JCClassDecl tree) {
-        typeAnnotations.taFillAndLift(tree, true);
         translateClass(tree.sym);
         result = tree;
     }
 
     JCMethodDecl currentMethod = null;
     public void visitMethodDef(JCMethodDecl tree) {
-        tree.sym.typeAnnotations = tree.sym.typeAnnotations;
         JCMethodDecl previousMethod = currentMethod;
         try {
             currentMethod = tree;

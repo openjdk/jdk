@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,27 +169,11 @@ public class TreeMaker implements JCTree.Factory {
                                List<JCExpression> thrown,
                                JCBlock body,
                                JCExpression defaultValue) {
-        return MethodDef(
-                mods, name, restype, typarams, params,
-                null, thrown, body, defaultValue);
-    }
-
-    public JCMethodDecl MethodDef(JCModifiers mods,
-                               Name name,
-                               JCExpression restype,
-                               List<JCTypeParameter> typarams,
-                               List<JCVariableDecl> params,
-                               List<JCTypeAnnotation> receiver,
-                               List<JCExpression> thrown,
-                               JCBlock body,
-                               JCExpression defaultValue)
-    {
         JCMethodDecl tree = new JCMethodDecl(mods,
                                        name,
                                        restype,
                                        typarams,
                                        params,
-                                       receiver,
                                        thrown,
                                        body,
                                        defaultValue,
@@ -458,11 +442,7 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCTypeParameter TypeParameter(Name name, List<JCExpression> bounds) {
-        return TypeParameter(name, bounds, List.<JCTypeAnnotation>nil());
-    }
-
-    public JCTypeParameter TypeParameter(Name name, List<JCExpression> bounds, List<JCTypeAnnotation> annos) {
-        JCTypeParameter tree = new JCTypeParameter(name, bounds, annos);
+        JCTypeParameter tree = new JCTypeParameter(name, bounds);
         tree.pos = pos;
         return tree;
     }
@@ -485,12 +465,6 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCTypeAnnotation TypeAnnotation(JCTree annotationType, List<JCExpression> args) {
-        JCTypeAnnotation tree = new JCTypeAnnotation(annotationType, args);
-        tree.pos = pos;
-        return tree;
-    }
-
     public JCModifiers Modifiers(long flags, List<JCAnnotation> annotations) {
         JCModifiers tree = new JCModifiers(flags, annotations);
         boolean noFlags = (flags & (Flags.ModifierFlags | Flags.ANNOTATION)) == 0;
@@ -500,12 +474,6 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCModifiers Modifiers(long flags) {
         return Modifiers(flags, List.<JCAnnotation>nil());
-    }
-
-    public JCAnnotatedType AnnotatedType(List<JCTypeAnnotation> annotations, JCExpression underlyingType) {
-        JCAnnotatedType tree = new JCAnnotatedType(annotations, underlyingType);
-        tree.pos = pos;
-        return tree;
     }
 
     public JCErroneous Erroneous() {
@@ -821,7 +789,6 @@ public class TreeMaker implements JCTree.Factory {
                 Type(mtype.getReturnType()),
                 TypeParams(mtype.getTypeArguments()),
                 Params(mtype.getParameterTypes(), m),
-                null,
                 Types(mtype.getThrownTypes()),
                 body,
                 null,
