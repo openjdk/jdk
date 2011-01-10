@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,10 +207,6 @@ public class ClassReader implements Completer {
     /** The minor version number of the class file being read. */
     int minorVersion;
 
-    /** Switch: debug output for JSR 308-related operations.
-     */
-    boolean debugJSR308;
-
     /** A table to hold the constant pool indices for method parameter
      * names, as given in LocalVariableTable attributes.
      */
@@ -297,7 +293,6 @@ public class ClassReader implements Completer {
             : null;
 
         typevars = new Scope(syms.noSymbol);
-        debugJSR308 = options.isSet("TA:reader");
 
         lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
@@ -1128,20 +1123,6 @@ public class ClassReader implements Completer {
                 }
             },
 
-            // v51 attributes
-            new AttributeReader(names.RuntimeVisibleTypeAnnotations, V51, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
-                    attachTypeAnnotations(sym);
-                }
-            },
-
-            new AttributeReader(names.RuntimeInvisibleTypeAnnotations, V51, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
-                    attachTypeAnnotations(sym);
-                }
-            },
-
-
             // The following attributes for a Code attribute are not currently handled
             // StackMapTable
             // SourceDebugExtension
@@ -1351,17 +1332,6 @@ public class ClassReader implements Completer {
         }
     }
 
-    void attachTypeAnnotations(final Symbol sym) {
-        int numAttributes = nextChar();
-        if (numAttributes != 0) {
-            ListBuffer<TypeAnnotationProxy> proxies =
-                ListBuffer.lb();
-            for (int i = 0; i < numAttributes; i++)
-                proxies.append(readTypeAnnotation());
-            annotate.later(new TypeAnnotationCompleter(sym, proxies.toList()));
-        }
-    }
-
     /** Attach the default value for an annotation element.
      */
     void attachAnnotationDefault(final Symbol sym) {
@@ -1398,121 +1368,6 @@ public class ClassReader implements Completer {
         return new CompoundAnnotationProxy(t, pairs.toList());
     }
 
-    TypeAnnotationProxy readTypeAnnotation() {
-        CompoundAnnotationProxy proxy = readCompoundAnnotation();
-        TypeAnnotationPosition position = readPosition();
-
-        if (debugJSR308)
-            System.out.println("TA: reading: " + proxy + " @ " + position
-                    + " in " + log.currentSourceFile());
-
-        return new TypeAnnotationProxy(proxy, position);
-    }
-
-    TypeAnnotationPosition readPosition() {
-        byte tag = nextByte();
-
-        if (!TargetType.isValidTargetTypeValue(tag))
-            throw this.badClassFile("bad.type.annotation.value", tag);
-
-        TypeAnnotationPosition position = new TypeAnnotationPosition();
-        TargetType type = TargetType.fromTargetTypeValue(tag);
-
-        position.type = type;
-
-        switch (type) {
-        // type case
-        case TYPECAST:
-        case TYPECAST_GENERIC_OR_ARRAY:
-        // object creation
-        case INSTANCEOF:
-        case INSTANCEOF_GENERIC_OR_ARRAY:
-        // new expression
-        case NEW:
-        case NEW_GENERIC_OR_ARRAY:
-            position.offset = nextChar();
-            break;
-         // local variable
-        case LOCAL_VARIABLE:
-        case LOCAL_VARIABLE_GENERIC_OR_ARRAY:
-            int table_length = nextChar();
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
-
-            for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
-            }
-            break;
-         // method receiver
-        case METHOD_RECEIVER:
-            // Do nothing
-            break;
-        // type parameters
-        case CLASS_TYPE_PARAMETER:
-        case METHOD_TYPE_PARAMETER:
-            position.parameter_index = nextByte();
-            break;
-        // type parameter bounds
-        case CLASS_TYPE_PARAMETER_BOUND:
-        case CLASS_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY:
-        case METHOD_TYPE_PARAMETER_BOUND:
-        case METHOD_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY:
-            position.parameter_index = nextByte();
-            position.bound_index = nextByte();
-            break;
-         // wildcard
-        case WILDCARD_BOUND:
-        case WILDCARD_BOUND_GENERIC_OR_ARRAY:
-            position.wildcard_position = readPosition();
-            break;
-         // Class extends and implements clauses
-        case CLASS_EXTENDS:
-        case CLASS_EXTENDS_GENERIC_OR_ARRAY:
-            position.type_index = nextChar();
-            break;
-        // throws
-        case THROWS:
-            position.type_index = nextChar();
-            break;
-        case CLASS_LITERAL:
-        case CLASS_LITERAL_GENERIC_OR_ARRAY:
-            position.offset = nextChar();
-            break;
-        // method parameter: not specified
-        case METHOD_PARAMETER_GENERIC_OR_ARRAY:
-            position.parameter_index = nextByte();
-            break;
-        // method type argument: wasn't specified
-        case NEW_TYPE_ARGUMENT:
-        case NEW_TYPE_ARGUMENT_GENERIC_OR_ARRAY:
-        case METHOD_TYPE_ARGUMENT:
-        case METHOD_TYPE_ARGUMENT_GENERIC_OR_ARRAY:
-            position.offset = nextChar();
-            position.type_index = nextByte();
-            break;
-        // We don't need to worry abut these
-        case METHOD_RETURN_GENERIC_OR_ARRAY:
-        case FIELD_GENERIC_OR_ARRAY:
-            break;
-        case UNKNOWN:
-            break;
-        default:
-            throw new AssertionError("unknown type: " + position);
-        }
-
-        if (type.hasLocation()) {
-            int len = nextChar();
-            ListBuffer<Integer> loc = ListBuffer.lb();
-            for (int i = 0; i < len; i++)
-                loc = loc.append((int)nextByte());
-            position.location = loc.toList();
-        }
-
-        return position;
-    }
     Attribute readAttributeValue() {
         char c = (char) buf[bp++];
         switch (c) {
@@ -1819,45 +1674,6 @@ public class ClassReader implements Completer {
                 sym.attributes_field = ((sym.attributes_field == null)
                                         ? newList
                                         : newList.prependList(sym.attributes_field));
-            } finally {
-                currentClassFile = previousClassFile;
-            }
-        }
-    }
-
-    class TypeAnnotationCompleter extends AnnotationCompleter {
-
-        List<TypeAnnotationProxy> proxies;
-
-        TypeAnnotationCompleter(Symbol sym,
-                List<TypeAnnotationProxy> proxies) {
-            super(sym, List.<CompoundAnnotationProxy>nil());
-            this.proxies = proxies;
-        }
-
-        List<Attribute.TypeCompound> deproxyTypeCompoundList(List<TypeAnnotationProxy> proxies) {
-            ListBuffer<Attribute.TypeCompound> buf = ListBuffer.lb();
-            for (TypeAnnotationProxy proxy: proxies) {
-                Attribute.Compound compound = deproxyCompound(proxy.compound);
-                Attribute.TypeCompound typeCompound = new Attribute.TypeCompound(compound, proxy.position);
-                buf.add(typeCompound);
-            }
-            return buf.toList();
-        }
-
-        @Override
-        public void enterAnnotation() {
-            JavaFileObject previousClassFile = currentClassFile;
-            try {
-                currentClassFile = classFile;
-                List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
-              if (debugJSR308)
-              System.out.println("TA: reading: adding " + newList
-                      + " to symbol " + sym + " in " + log.currentSourceFile());
-                sym.typeAnnotations = ((sym.typeAnnotations == null)
-                                        ? newList
-                                        : newList.prependList(sym.typeAnnotations));
-
             } finally {
                 currentClassFile = previousClassFile;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ package com.sun.source.tree;
  * @since 1.6
  */
 public interface TreeVisitor<R,P> {
-//308    R visitAnnotatedType(AnnotatedTypeTree node, P p);
     R visitAnnotation(AnnotationTree node, P p);
     R visitMethodInvocation(MethodInvocationTree node, P p);
     R visitAssert(AssertTree node, P p);

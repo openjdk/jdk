@@ -52,7 +52,6 @@ compiler.misc.bad.const.pool.tag.at                     # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
-compiler.misc.bad.type.annotation.value
 compiler.misc.base.membership                           # UNUSED
 compiler.misc.ccf.found.later.version
 compiler.misc.ccf.unrecognized.attribute
