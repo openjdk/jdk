@@ -81,8 +81,7 @@ public abstract class Symbol implements Element {
      *  method to make sure that the class symbol is loaded.
      */
     public List<Attribute.Compound> getAnnotationMirrors() {
-        assert attributes_field != null;
-        return attributes_field;
+        return Assert.checkNonNull(attributes_field);
     }
 
     /** Fetch a particular annotation from a symbol. */
@@ -596,7 +595,7 @@ public abstract class Symbol implements Element {
         }
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
-            assert type.tag == TYPEVAR; // else override will be invoked
+            Assert.check(type.tag == TYPEVAR); // else override will be invoked
             return v.visitTypeParameter(this, p);
         }
 
@@ -670,8 +669,7 @@ public abstract class Symbol implements Element {
                 if (attributes_field.isEmpty())
                     attributes_field = package_info.attributes_field;
             }
-            assert attributes_field != null;
-            return attributes_field;
+            return Assert.checkNonNull(attributes_field);
         }
 
         /** A package "exists" if a type or package that exists has
@@ -768,8 +766,7 @@ public abstract class Symbol implements Element {
 
         public List<Attribute.Compound> getAnnotationMirrors() {
             if (completer != null) complete();
-            assert attributes_field != null;
-            return attributes_field;
+            return Assert.checkNonNull(attributes_field);
         }
 
         public Type erasure(Types types) {
@@ -1020,7 +1017,7 @@ public abstract class Symbol implements Element {
         }
 
         public void setData(Object data) {
-            assert !(data instanceof Env<?>) : this;
+            Assert.check(!(data instanceof Env<?>), this);
             this.data = data;
         }
 
@@ -1052,7 +1049,7 @@ public abstract class Symbol implements Element {
          */
         public MethodSymbol(long flags, Name name, Type type, Symbol owner) {
             super(MTH, flags, name, type, owner);
-            assert owner.type.tag != TYPEVAR : owner + "." + name;
+            if (owner.type.tag == TYPEVAR) Assert.error(owner + "." + name);
         }
 
         /** Clone this symbol with new owner.

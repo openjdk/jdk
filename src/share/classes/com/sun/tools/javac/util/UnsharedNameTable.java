@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class UnsharedNameTable extends Name.Table {
                     hashes[h] = firstTableEntry = element.next;
                 }
                 else {
-                    assert previousNonNullTableEntry != null : "previousNonNullTableEntry cannot be null here.";
+                    Assert.checkNonNull(previousNonNullTableEntry, "previousNonNullTableEntry cannot be null here.");
                     previousNonNullTableEntry.next = element.next;
                 }
             }
@@ -133,7 +133,7 @@ public class UnsharedNameTable extends Name.Table {
             hashes[h] = newEntry;
         }
         else {
-            assert previousNonNullTableEntry.next == null : "previousNonNullTableEntry.next must be null.";
+            Assert.checkNull(previousNonNullTableEntry.next, "previousNonNullTableEntry.next must be null.");
             previousNonNullTableEntry.next = newEntry;
         }
 

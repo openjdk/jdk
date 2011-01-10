@@ -2235,7 +2235,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitErroneous(JCErroneous that)         { visitTree(that); }
         public void visitLetExpr(LetExpr that)               { visitTree(that); }
 
-        public void visitTree(JCTree that)                   { assert false; }
+        public void visitTree(JCTree that)                   { Assert.error(); }
     }
 
 }

@@ -581,8 +581,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCVariableDecl lastParam = null;
         for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
             JCVariableDecl param = lastParam = l.head;
-            assert param.sym != null;
-            params.append(param.sym);
+            params.append(Assert.checkNonNull(param.sym));
         }
         m.params = params.toList();
 
@@ -699,7 +698,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
  *********************************************************************/
 
     Type attribImportType(JCTree tree, Env<AttrContext> env) {
-        assert completionEnabled;
+        Assert.check(completionEnabled);
         try {
             // To prevent deep recursion, suppress completion of some
             // types.
@@ -725,7 +724,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     return "annotate " + annotations + " onto " + s + " in " + s.owner;
                 }
                 public void enterAnnotation() {
-                    assert s.kind == PCK || s.attributes_field == null;
+                    Assert.check(s.kind == PCK || s.attributes_field == null);
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {
                         if (s.attributes_field != null &&
@@ -836,7 +835,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // Suppress some (recursive) MemberEnter invocations
         if (!completionEnabled) {
             // Re-install same completer for next time around and return.
-            assert (sym.flags() & Flags.COMPOUND) == 0;
+            Assert.check((sym.flags() & Flags.COMPOUND) == 0);
             sym.completer = this;
             return;
         }

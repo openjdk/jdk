@@ -1057,7 +1057,7 @@ public class Lower extends TreeTranslator {
             }
             // Otherwise replace the variable by its proxy.
             sym = proxies.lookup(proxyName(sym.name)).sym;
-            assert sym != null && (sym.flags_field & FINAL) != 0;
+            Assert.check(sym != null && (sym.flags_field & FINAL) != 0);
             tree = make.at(tree.pos).Ident(sym);
         }
         JCExpression base = (tree.getTag() == JCTree.SELECT) ? ((JCFieldAccess) tree).selected : null;
@@ -1208,7 +1208,7 @@ public class Lower extends TreeTranslator {
      */
     void makeAccessible(Symbol sym) {
         JCClassDecl cdef = classDef(sym.owner.enclClass());
-        assert cdef != null : "class def not found: " + sym + " in " + sym.owner;
+        if (cdef == null) Assert.error("class def not found: " + sym + " in " + sym.owner);
         if (sym.name == names.init) {
             cdef.defs = cdef.defs.prepend(
                 accessConstructorDef(cdef.pos, sym, accessConstrs.get(sym)));
@@ -1458,7 +1458,7 @@ public class Lower extends TreeTranslator {
             expr = make.Ident(var.sym).setType(resource.type);
             stats.add(var);
         } else {
-            assert resource instanceof JCExpression;
+            Assert.check(resource instanceof JCExpression);
             VarSymbol syntheticTwrVar =
             new VarSymbol(SYNTHETIC | FINAL,
                           makeSyntheticName(names.fromString("twrVar" +
@@ -1552,7 +1552,7 @@ public class Lower extends TreeTranslator {
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
             log.error(pos, "no.encl.instance.of.type.in.scope", c);
-            assert false;
+            Assert.error();
             return makeNull();
         }
         VarSymbol ot = ots.head;
@@ -1565,14 +1565,14 @@ public class Lower extends TreeTranslator {
                     log.error(pos,
                               "no.encl.instance.of.type.in.scope",
                               c);
-                    assert false; // should have been caught in Attr
+                    Assert.error(); // should have been caught in Attr
                     return tree;
                 }
                 ot = ots.head;
             } while (ot.owner != otc);
             if (otc.owner.kind != PCK && !otc.hasOuterInstance()) {
                 chk.earlyRefError(pos, c);
-                assert false; // should have been caught in Attr
+                Assert.error(); // should have been caught in Attr
                 return makeNull();
             }
             tree = access(make.at(pos).Select(tree, ot));
@@ -1610,7 +1610,7 @@ public class Lower extends TreeTranslator {
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
             log.error(pos, "no.encl.instance.of.type.in.scope", c);
-            assert false;
+            Assert.error();
             return makeNull();
         }
         VarSymbol ot = ots.head;
@@ -1623,7 +1623,7 @@ public class Lower extends TreeTranslator {
                     log.error(pos,
                         "no.encl.instance.of.type.in.scope",
                         c);
-                    assert false;
+                    Assert.error();
                     return tree;
                 }
                 ot = ots.head;
@@ -1640,9 +1640,9 @@ public class Lower extends TreeTranslator {
     JCStatement initField(int pos, Name name) {
         Scope.Entry e = proxies.lookup(name);
         Symbol rhs = e.sym;
-        assert rhs.owner.kind == MTH;
+        Assert.check(rhs.owner.kind == MTH);
         Symbol lhs = e.next().sym;
-        assert rhs.owner.owner == lhs.owner;
+        Assert.check(rhs.owner.owner == lhs.owner);
         make.at(pos);
         return
             make.Exec(
@@ -1655,9 +1655,9 @@ public class Lower extends TreeTranslator {
      */
     JCStatement initOuterThis(int pos) {
         VarSymbol rhs = outerThisStack.head;
-        assert rhs.owner.kind == MTH;
+        Assert.check(rhs.owner.kind == MTH);
         VarSymbol lhs = outerThisStack.tail.head;
-        assert rhs.owner.owner == lhs.owner;
+        Assert.check(rhs.owner.owner == lhs.owner);
         make.at(pos);
         return
             make.Exec(
@@ -1856,7 +1856,7 @@ public class Lower extends TreeTranslator {
     // where
         /** Create an attributed tree of the form left.name(). */
         private JCMethodInvocation makeCall(JCExpression left, Name name, List<JCExpression> args) {
-            assert left.type != null;
+            Assert.checkNonNull(left.type);
             Symbol funcsym = lookupMethod(make_pos, name, left.type,
                                           TreeInfo.types(args));
             return make.App(make.Select(left, funcsym), args);
@@ -2399,7 +2399,7 @@ public class Lower extends TreeTranslator {
                          names.valueOf,
                          tree.sym.type,
                          List.of(syms.stringType));
-        assert (valueOfSym.flags() & STATIC) != 0;
+        Assert.check((valueOfSym.flags() & STATIC) != 0);
         VarSymbol nameArgSym = valueOfSym.params.head;
         JCIdent nameVal = make.Ident(nameArgSym);
         JCStatement enum_ValueOf =
@@ -3416,7 +3416,7 @@ public class Lower extends TreeTranslator {
                 if (expression != null) { // expression for a "default" case is null
                     String labelExpr = (String) expression.type.constValue();
                     Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
-                    assert mapping == null;
+                    Assert.checkNull(mapping);
                     int hashCode = labelExpr.hashCode();
 
                     Set<String> stringSet = hashToString.get(hashCode);
@@ -3426,7 +3426,7 @@ public class Lower extends TreeTranslator {
                         hashToString.put(hashCode, stringSet);
                     } else {
                         boolean added = stringSet.add(labelExpr);
-                        assert added;
+                        Assert.check(added);
                     }
                 }
                 casePosition++;
@@ -3478,7 +3478,7 @@ public class Lower extends TreeTranslator {
             for(Map.Entry<Integer, Set<String>> entry : hashToString.entrySet()) {
                 int hashCode = entry.getKey();
                 Set<String> stringsWithHashCode = entry.getValue();
-                assert stringsWithHashCode.size() >= 1;
+                Assert.check(stringsWithHashCode.size() >= 1);
 
                 JCStatement elsepart = null;
                 for(String caseLabel : stringsWithHashCode ) {
@@ -3692,8 +3692,7 @@ public class Lower extends TreeTranslator {
                                          cdef.type,
                                          List.<Type>nil());
 
-        assert(ordinalSym != null);
-        assert(ordinalSym instanceof MethodSymbol);
+        Assert.check(ordinalSym instanceof MethodSymbol);
 
         JCStatement ret = make.Return(make.Ident(ordinalSymbol));
         cdef.defs = cdef.defs.append(make.MethodDef((MethodSymbol)ordinalSym,
@@ -3709,8 +3708,7 @@ public class Lower extends TreeTranslator {
                                    cdef.type,
                                    List.<Type>nil());
 
-        assert(nameSym != null);
-        assert(nameSym instanceof MethodSymbol);
+        Assert.check(nameSym instanceof MethodSymbol);
 
         JCStatement ret = make.Return(make.Ident(nameSymbol));
 
@@ -3761,8 +3759,7 @@ public class Lower extends TreeTranslator {
                                    cdef.type,
                                    List.of(cdef.sym.type));
 
-        assert(compareToSym != null);
-        assert(compareToSym instanceof MethodSymbol);
+        Assert.check(compareToSym instanceof MethodSymbol);
 
         JCMethodDecl compareToDecl = (JCMethodDecl) TreeInfo.declarationFor(compareToSym, cdef);
 

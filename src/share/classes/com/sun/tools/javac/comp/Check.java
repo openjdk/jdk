@@ -2397,7 +2397,7 @@ public class Check {
      */
     void checkNonCyclicElements(JCClassDecl tree) {
         if ((tree.sym.flags_field & ANNOTATION) == 0) return;
-        assert (tree.sym.flags_field & LOCKED) == 0;
+        Assert.check((tree.sym.flags_field & LOCKED) == 0);
         try {
             tree.sym.flags_field |= LOCKED;
             for (JCTree def : tree.defs) {

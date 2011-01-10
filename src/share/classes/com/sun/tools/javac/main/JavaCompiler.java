@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -848,7 +848,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 break;
 
             default:
-                assert false: "unknown compile policy";
+                Assert.error("unknown compile policy");
             }
         } catch (Abort ex) {
             if (devVerbose)
@@ -1066,7 +1066,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                                     classSymbols = classSymbols.prepend((ClassSymbol)sym);
                                 continue;
                             }
-                            assert sym.kind == Kinds.PCK;
+                            Assert.check(sym.kind == Kinds.PCK);
                             log.warning("proc.package.does.not.exist", nameStr);
                             pckSymbols = pckSymbols.prepend((PackageSymbol)sym);
                         } catch (CompletionFailure e) {
@@ -1086,8 +1086,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 if (c != this)
                     annotationProcessingOccurred = c.annotationProcessingOccurred = true;
                 // doProcessing will have handled deferred diagnostics
-                assert c.log.deferDiagnostics == false;
-                assert c.log.deferredDiagnostics.size() == 0;
+                Assert.check(c.log.deferDiagnostics == false
+                        && c.log.deferredDiagnostics.size() == 0);
                 return c;
             } finally {
                 procEnvImpl.close();
@@ -1324,7 +1324,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                         return;
                     List<JCTree> pdef = lower.translateTopLevelClass(env, env.tree, localMake);
                     if (pdef.head != null) {
-                        assert pdef.tail.isEmpty();
+                        Assert.check(pdef.tail.isEmpty());
                         results.add(new Pair<Env<AttrContext>, JCClassDecl>(env, (JCClassDecl)pdef.head));
                     }
                 }

@@ -122,15 +122,15 @@ public class TreeMaker implements JCTree.Factory {
     public JCCompilationUnit TopLevel(List<JCAnnotation> packageAnnotations,
                                       JCExpression pid,
                                       List<JCTree> defs) {
-        assert packageAnnotations != null;
+        Assert.checkNonNull(packageAnnotations);
         for (JCTree node : defs)
-            assert node instanceof JCClassDecl
+            Assert.check(node instanceof JCClassDecl
                 || node instanceof JCImport
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
                 || (node instanceof JCExpressionStatement
-                    && ((JCExpressionStatement)node).expr instanceof JCErroneous)
-                 : node.getClass().getSimpleName();
+                    && ((JCExpressionStatement)node).expr instanceof JCErroneous),
+                node.getClass().getSimpleName());
         JCCompilationUnit tree = new JCCompilationUnit(packageAnnotations, pid, defs,
                                      null, null, null, null);
         tree.pos = pos;
@@ -647,19 +647,14 @@ public class TreeMaker implements JCTree.Factory {
         }
         return tp.setType(t);
     }
-//where
-        private JCExpression Selectors(JCExpression base, Symbol sym, Symbol limit) {
-            if (sym == limit) return base;
-            else return Select(Selectors(base, sym.owner, limit), sym);
-        }
 
     /** Create a list of trees representing given list of types.
      */
     public List<JCExpression> Types(List<Type> ts) {
-        ListBuffer<JCExpression> types = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> lb = new ListBuffer<JCExpression>();
         for (List<Type> l = ts; l.nonEmpty(); l = l.tail)
-            types.append(Type(l.head));
-        return types.toList();
+            lb.append(Type(l.head));
+        return lb.toList();
     }
 
     /** Create a variable definition from a variable symbol and an initializer

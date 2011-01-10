@@ -242,9 +242,9 @@ public class ClassReader implements Completer {
         if (classes != null) return;
 
         if (definitive) {
-            assert packages == null || packages == syms.packages;
+            Assert.check(packages == null || packages == syms.packages);
             packages = syms.packages;
-            assert classes == null || classes == syms.classes;
+            Assert.check(classes == null || classes == syms.classes);
             classes = syms.classes;
         } else {
             packages = new HashMap<Name, PackageSymbol>();
@@ -530,7 +530,7 @@ public class ClassReader implements Completer {
         int index =  poolIdx[i];
         int len = getChar(index + 1);
         int start = index + 3;
-        assert buf[start] == '[' || buf[start + len - 1] != ';';
+        Assert.check(buf[start] == '[' || buf[start + len - 1] != ';');
         // by the above assertion, the following test can be
         // simplified to (buf[start] == '[')
         return (buf[start] == '[' || buf[start + len - 1] == ';')
@@ -1041,7 +1041,7 @@ public class ClassReader implements Completer {
                         readingClassAttr = true;
                         try {
                             ClassType ct1 = (ClassType)c.type;
-                            assert c == currentOwner;
+                            Assert.check(c == currentOwner);
                             ct1.typarams_field = readTypeParams(nextChar());
                             ct1.supertype_field = sigToType();
                             ListBuffer<Type> is = new ListBuffer<Type>();
@@ -1908,9 +1908,9 @@ public class ClassReader implements Completer {
         if (ct.interfaces_field == null)
             ct.interfaces_field = is.reverse();
 
-        if (fieldCount != nextChar()) assert false;
+        Assert.check(fieldCount == nextChar());
         for (int i = 0; i < fieldCount; i++) enterMember(c, readField());
-        if (methodCount != nextChar()) assert false;
+        Assert.check(methodCount == nextChar());
         for (int i = 0; i < methodCount; i++) enterMember(c, readMethod());
 
         typevars = typevars.leave();
@@ -2019,7 +2019,7 @@ public class ClassReader implements Completer {
     public ClassSymbol defineClass(Name name, Symbol owner) {
         ClassSymbol c = new ClassSymbol(0, name, owner);
         if (owner.kind == PCK)
-            assert classes.get(c.flatname) == null : c;
+            Assert.checkNull(classes.get(c.flatname), c);
         c.completer = this;
         return c;
     }
@@ -2159,9 +2159,9 @@ public class ClassReader implements Completer {
         if (classfile != null) {
             JavaFileObject previousClassFile = currentClassFile;
             try {
-                assert !filling :
-                    "Filling " + classfile.toUri() +
-                    " during " + previousClassFile;
+                if (filling) {
+                    Assert.error("Filling " + classfile.toUri() + " during " + previousClassFile);
+                }
                 currentClassFile = classfile;
                 if (verbose) {
                     printVerbose("loading", currentClassFile.toString());
@@ -2307,7 +2307,7 @@ public class ClassReader implements Completer {
     public PackageSymbol enterPackage(Name fullname) {
         PackageSymbol p = packages.get(fullname);
         if (p == null) {
-            assert !fullname.isEmpty() : "rootPackage missing!";
+            Assert.check(!fullname.isEmpty(), "rootPackage missing!");
             p = new PackageSymbol(
                 Convert.shortName(fullname),
                 enterPackage(Convert.packagePart(fullname)));

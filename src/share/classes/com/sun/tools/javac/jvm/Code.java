@@ -372,7 +372,7 @@ public class Code {
     }
 
     void postop() {
-        assert alive || state.stacksize == 0;
+        Assert.check(alive || state.stacksize == 0);
     }
 
     /** Emit a multinewarray instruction.
@@ -583,7 +583,7 @@ public class Code {
         case areturn:
         case ireturn:
         case freturn:
-            assert state.nlocks == 0;
+            Assert.check(state.nlocks == 0);
             state.pop(1);
             markDead();
             break;
@@ -604,7 +604,7 @@ public class Code {
             break;
         case lreturn:
         case dreturn:
-            assert state.nlocks == 0;
+            Assert.check(state.nlocks == 0);
             state.pop(2);
             markDead();
             break;
@@ -612,7 +612,7 @@ public class Code {
             state.push(state.stack[state.stacksize-1]);
             break;
         case return_:
-            assert state.nlocks == 0;
+            Assert.check(state.nlocks == 0);
             markDead();
             break;
         case arraylength:
@@ -1147,7 +1147,7 @@ public class Code {
         int pc = curPc();
         alive = true;
         this.state = state.dup();
-        assert state.stacksize <= max_stack;
+        Assert.check(state.stacksize <= max_stack);
         if (debugCode) System.err.println("entry point " + state);
         pendingStackMap = needStackMap;
         return pc;
@@ -1160,7 +1160,7 @@ public class Code {
         int pc = curPc();
         alive = true;
         this.state = state.dup();
-        assert state.stacksize <= max_stack;
+        Assert.check(state.stacksize <= max_stack);
         this.state.push(pushed);
         if (debugCode) System.err.println("entry point " + state);
         pendingStackMap = needStackMap;
@@ -1289,7 +1289,7 @@ public class Code {
         }
         frame.locals = new Type[localCount];
         for (int i=0, j=0; i<localsSize; i++, j++) {
-            assert(j < localCount);
+            Assert.check(j < localCount);
             frame.locals[j] = locals[i];
             if (width(locals[i]) > 1) i++;
         }
@@ -1435,8 +1435,8 @@ public class Code {
         boolean changed = false;
         State newState = state;
         for (; chain != null; chain = chain.next) {
-            assert state != chain.state;
-            assert target > chain.pc || state.stacksize == 0;
+            Assert.check(state != chain.state
+                    && (target > chain.pc || state.stacksize == 0));
             if (target >= cp) {
                 target = cp;
             } else if (get1(target) == goto_) {
@@ -1464,9 +1464,9 @@ public class Code {
                     fatcode = true;
                 else
                     put2(chain.pc + 1, target - chain.pc);
-                assert !alive ||
+                Assert.check(!alive ||
                     chain.state.stacksize == newState.stacksize &&
-                    chain.state.nlocks == newState.nlocks;
+                    chain.state.nlocks == newState.nlocks);
             }
             fixedPc = true;
             if (cp == target) {
@@ -1481,7 +1481,7 @@ public class Code {
                 }
             }
         }
-        assert !changed || state != newState;
+        Assert.check(!changed || state != newState);
         if (state != newState) {
             setDefined(newState.defined);
             state = newState;
@@ -1492,11 +1492,11 @@ public class Code {
     /** Resolve chain to point to current code pointer.
      */
     public void resolve(Chain chain) {
-        assert
+        Assert.check(
             !alive ||
             chain==null ||
             state.stacksize == chain.state.stacksize &&
-            state.nlocks == chain.state.nlocks;
+            state.nlocks == chain.state.nlocks);
         pendingJumps = mergeChains(chain, pendingJumps);
     }
 
@@ -1514,9 +1514,9 @@ public class Code {
         // recursive merge sort
         if (chain2 == null) return chain1;
         if (chain1 == null) return chain2;
-        assert
+        Assert.check(
             chain1.state.stacksize == chain2.state.stacksize &&
-            chain1.state.nlocks == chain2.state.nlocks;
+            chain1.state.nlocks == chain2.state.nlocks);
         if (chain1.pc < chain2.pc)
             return new Chain(
                 chain2.pc,
@@ -1631,7 +1631,7 @@ public class Code {
 
         void unlock(int register) {
             nlocks--;
-            assert locks[nlocks] == register;
+            Assert.check(locks[nlocks] == register);
             locks[nlocks] = -1;
         }
 
@@ -1673,7 +1673,7 @@ public class Code {
             stacksize--;
             Type result = stack[stacksize];
             stack[stacksize] = null;
-            assert result != null && width(result) == 1;
+            Assert.check(result != null && width(result) == 1);
             return result;
         }
 
@@ -1686,8 +1686,8 @@ public class Code {
             stacksize -= 2;
             Type result = stack[stacksize];
             stack[stacksize] = null;
-            assert stack[stacksize+1] == null;
-            assert result != null && width(result) == 2;
+            Assert.check(stack[stacksize+1] == null
+                    && result != null && width(result) == 2);
             return result;
         }
 
@@ -1712,8 +1712,8 @@ public class Code {
             case ARRAY:
                 int width = width(t);
                 Type old = stack[stacksize-width];
-                assert types.isSubtype(types.erasure(old),
-                                       types.erasure(t));
+                Assert.check(types.isSubtype(types.erasure(old),
+                                       types.erasure(t)));
                 stack[stacksize-width] = t;
                 break;
             default:
@@ -1739,8 +1739,8 @@ public class Code {
 
         State join(State other) {
             defined = defined.andSet(other.defined);
-            assert stacksize == other.stacksize;
-            assert nlocks == other.nlocks;
+            Assert.check(stacksize == other.stacksize
+                    && nlocks == other.nlocks);
             for (int i=0; i<stacksize; ) {
                 Type t = stack[i];
                 Type tother = other.stack[i];
@@ -1751,7 +1751,7 @@ public class Code {
                     error();
                 int w = width(result);
                 stack[i] = result;
-                if (w == 2) assert stack[i+1] == null;
+                if (w == 2) Assert.checkNull(stack[i+1]);
                 i += w;
             }
             return this;
@@ -1847,7 +1847,7 @@ public class Code {
             System.arraycopy(lvar, 0, new_lvar, 0, lvar.length);
             lvar = new_lvar;
         }
-        assert lvar[adr] == null;
+        Assert.checkNull(lvar[adr]);
         if (pendingJumps != null) resolvePending();
         lvar[adr] = new LocalVar(v);
         state.defined.excl(adr);
