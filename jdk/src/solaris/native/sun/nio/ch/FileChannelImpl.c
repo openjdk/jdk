@@ -35,48 +35,17 @@
 #include "nio_util.h"
 #include <dlfcn.h>
 
-static jfieldID chan_fd;        /* jobject 'fd' in sun.io.FileChannelImpl */
-
-#ifdef __solaris__
-typedef struct sendfilevec64 {
-    int     sfv_fd;         /* input fd */
-    uint_t  sfv_flag;       /* Flags. see below */
-    off64_t sfv_off;        /* offset to start reading from */
-    size_t  sfv_len;        /* amount of data */
-} sendfilevec_t;
-
-/* Function pointer for sendfilev on Solaris 8+ */
-typedef ssize_t sendfile_func(int fildes, const struct sendfilevec64 *vec,
-                              int sfvcnt, size_t *xferred);
-
-sendfile_func* my_sendfile_func = NULL;
-#endif
-
-#ifdef __linux__
+#if defined(__linux__) || defined(__solaris__)
 #include <sys/sendfile.h>
-
-/* Function pointer for sendfile64 on Linux 2.6 (and newer 2.4 kernels) */
-typedef ssize_t sendfile64_func(int out_fd, int in_fd, off64_t *offset, size_t count);
-
-sendfile64_func* my_sendfile64_func = NULL;
 #endif
+
+static jfieldID chan_fd;        /* jobject 'fd' in sun.io.FileChannelImpl */
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
     chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
-
-#ifdef __solaris__
-    if (dlopen("/usr/lib/libsendfile.so.1", RTLD_GLOBAL | RTLD_LAZY) != NULL) {
-        my_sendfile_func = (sendfile_func*) dlsym(RTLD_DEFAULT, "sendfilev64");
-    }
-#endif
-
-#ifdef __linux__
-    my_sendfile64_func = (sendfile64_func*) dlsym(RTLD_DEFAULT, "sendfile64");
-#endif
-
     return pageSize;
 }
 
@@ -178,22 +147,9 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jlong position, jlong count,
                                             jint dstFD)
 {
-#ifdef __linux__
-    jlong max = (jlong)java_lang_Integer_MAX_VALUE;
-    jlong n;
-
-    if (my_sendfile64_func == NULL) {
-        off_t offset;
-        if (position > max)
-            return IOS_UNSUPPORTED_CASE;
-        if (count > max)
-            count = max;
-        offset = (off_t)position;
-        n = sendfile(dstFD, srcFD, &offset, (size_t)count);
-    } else {
-        off64_t offset = (off64_t)position;
-        n = (*my_sendfile64_func)(dstFD, srcFD, &offset, (size_t)count);
-    }
+#if defined(__linux__)
+    off64_t offset = (off64_t)position;
+    jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
@@ -206,41 +162,37 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         return IOS_THROWN;
     }
     return n;
-#endif
+#elif defined (__solaris__)
+    sendfilevec64_t sfv;
+    size_t numBytes = 0;
+    jlong result;
 
-#ifdef __solaris__
-    if (my_sendfile_func == NULL) {
-        return IOS_UNSUPPORTED;
-    } else {
-        sendfilevec_t sfv;
-        size_t numBytes = 0;
-        jlong result;
+    sfv.sfv_fd = srcFD;
+    sfv.sfv_flag = 0;
+    sfv.sfv_off = (off64_t)position;
+    sfv.sfv_len = count;
 
-        sfv.sfv_fd = srcFD;
-        sfv.sfv_flag = 0;
-        sfv.sfv_off = (off64_t)position;
-        sfv.sfv_len = count;
+    result = sendfilev64(dstFD, &sfv, 1, &numBytes);
 
-        result = (*my_sendfile_func)(dstFD, &sfv, 1, &numBytes);
-
-        /* Solaris sendfilev() will return -1 even if some bytes have been
-         * transferred, so we check numBytes first.
-         */
-        if (numBytes > 0)
-            return numBytes;
-        if (result < 0) {
-            if (errno == EAGAIN)
-                return IOS_UNAVAILABLE;
-            if (errno == EOPNOTSUPP)
-                return IOS_UNSUPPORTED_CASE;
-            if ((errno == EINVAL) && ((ssize_t)count >= 0))
-                return IOS_UNSUPPORTED_CASE;
-            if (errno == EINTR)
-                return IOS_INTERRUPTED;
-            JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-            return IOS_THROWN;
-        }
-        return result;
+    /* Solaris sendfilev() will return -1 even if some bytes have been
+     * transferred, so we check numBytes first.
+     */
+    if (numBytes > 0)
+        return numBytes;
+    if (result < 0) {
+        if (errno == EAGAIN)
+            return IOS_UNAVAILABLE;
+        if (errno == EOPNOTSUPP)
+            return IOS_UNSUPPORTED_CASE;
+        if ((errno == EINVAL) && ((ssize_t)count >= 0))
+            return IOS_UNSUPPORTED_CASE;
+        if (errno == EINTR)
+            return IOS_INTERRUPTED;
+        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        return IOS_THROWN;
     }
+    return result;
+#else
+    return IOS_UNSUPPORTED_CASE;
 #endif
 }
