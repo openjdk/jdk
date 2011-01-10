@@ -1192,7 +1192,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     return false;
   }
 
-  DTraceGCProbeMarker gc_probe_marker(true /* full */);
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -3214,7 +3214,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     return false;
   }
 
-  DTraceGCProbeMarker gc_probe_marker(false /* full */);
+  SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
