@@ -148,6 +148,7 @@ class LinearScan : public CompilationResourceObj {
   IntervalList              _intervals;         // mapping from register number to interval
   IntervalList*             _new_intervals_from_allocation; // list with all intervals created during allocation when an existing interval is split
   IntervalArray*            _sorted_intervals;  // intervals sorted by Interval::from()
+  bool                      _needs_full_resort; // set to true if an Interval::from() is changed and _sorted_intervals must be resorted
 
   LIR_OpArray               _lir_ops;           // mapping from LIR_Op id to LIR_Op node
   BlockBeginArray           _block_of_op;       // mapping from LIR_Op id to the BlockBegin containing this instruction
