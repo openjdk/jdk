@@ -395,18 +395,23 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
 //
 // Generate an "entry" field for a method handle.
 // This determines how the method handle will respond to calls.
-void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek) {
+void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek, TRAPS) {
   // Here is the register state during an interpreted call,
   // as set up by generate_method_handle_interpreter_entry():
   // - G5: garbage temp (was MethodHandle.invoke methodOop, unused)
   // - G3: receiver method handle
   // - O5_savedSP: sender SP (must preserve)
 
-  Register O0_argslot = O0;
-  Register O1_scratch = O1;
-  Register O2_scratch = O2;
-  Register O3_scratch = O3;
-  Register G5_index   = G5;
+  const Register O0_argslot = O0;
+  const Register O1_scratch = O1;
+  const Register O2_scratch = O2;
+  const Register O3_scratch = O3;
+  const Register G5_index   = G5;
+
+  // Argument registers for _raise_exception.
+  const Register O0_code     = O0;
+  const Register O1_actual   = O1;
+  const Register O2_required = O2;
 
   guarantee(java_dyn_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
@@ -439,48 +444,36 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _raise_exception:
     {
       // Not a real MH entry, but rather shared code for raising an
-      // exception.  Extra local arguments are passed in scratch
-      // registers, as required type in O3, failing object (or NULL)
-      // in O2, failing bytecode type in O1.
+      // exception.  Since we use a C2I adapter to set up the
+      // interpreter state, arguments are expected in compiler
+      // argument registers.
+      methodHandle mh(raise_exception_method());
+      address c2i_entry = methodOopDesc::make_adapters(mh, CATCH);
 
       __ mov(O5_savedSP, SP);  // Cut the stack back to where the caller started.
 
-      // Push arguments as if coming from the interpreter.
-      Register O0_scratch = O0_argslot;
-      int stackElementSize = Interpreter::stackElementSize;
-
-      // Make space on the stack for the arguments and set Gargs
-      // correctly.
-      __ sub(SP, 4*stackElementSize, SP);  // Keep stack aligned.
-      __ add(SP, (frame::varargs_offset)*wordSize - 1*Interpreter::stackElementSize + STACK_BIAS + BytesPerWord, Gargs);
-
-      // void raiseException(int code, Object actual, Object required)
-      __ st(    O1_scratch, Address(Gargs, 2*stackElementSize));  // code
-      __ st_ptr(O2_scratch, Address(Gargs, 1*stackElementSize));  // actual
-      __ st_ptr(O3_scratch, Address(Gargs, 0*stackElementSize));  // required
-
-      Label no_method;
+      Label L_no_method;
       // FIXME: fill in _raise_exception_method with a suitable sun.dyn method
       __ set(AddressLiteral((address) &_raise_exception_method), G5_method);
       __ ld_ptr(Address(G5_method, 0), G5_method);
       __ tst(G5_method);
-      __ brx(Assembler::zero, false, Assembler::pn, no_method);
+      __ brx(Assembler::zero, false, Assembler::pn, L_no_method);
       __ delayed()->nop();
 
-      int jobject_oop_offset = 0;
+      const int jobject_oop_offset = 0;
       __ ld_ptr(Address(G5_method, jobject_oop_offset), G5_method);
       __ tst(G5_method);
-      __ brx(Assembler::zero, false, Assembler::pn, no_method);
+      __ brx(Assembler::zero, false, Assembler::pn, L_no_method);
       __ delayed()->nop();
 
       __ verify_oop(G5_method);
-      __ jump_indirect_to(G5_method_fie, O1_scratch);
+      __ jump_to(AddressLiteral(c2i_entry), O3_scratch);
       __ delayed()->nop();
 
       // If we get here, the Java runtime did not do its job of creating the exception.
       // Do something that is at least causes a valid throw from the interpreter.
-      __ bind(no_method);
-      __ unimplemented("_raise_exception no method");
+      __ bind(L_no_method);
+      __ unimplemented("call throw_WrongMethodType_entry");
     }
     break;
 
@@ -570,10 +563,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // Throw an exception.
       // For historical reasons, it will be IncompatibleClassChangeError.
       __ unimplemented("not tested yet");
-      __ ld_ptr(Address(O1_intf, java_mirror_offset), O3_scratch);  // required interface
-      __ mov(O0_klass, O2_scratch);  // bad receiver
-      __ jump_to(AddressLiteral(from_interpreted_entry(_raise_exception)), O0_argslot);
-      __ delayed()->mov(Bytecodes::_invokeinterface, O1_scratch);  // who is complaining?
+      __ ld_ptr(Address(O1_intf, java_mirror_offset), O2_required);  // required interface
+      __ mov(   O0_klass,                             O1_actual);    // bad receiver
+      __ jump_to(AddressLiteral(from_interpreted_entry(_raise_exception)), O3_scratch);
+      __ delayed()->mov(Bytecodes::_invokeinterface,  O0_code);      // who is complaining?
     }
     break;
 
@@ -663,11 +656,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ check_klass_subtype(O1_scratch, G5_klass, O0_argslot, O2_scratch, done);
 
       // If we get here, the type check failed!
-      __ ldsw(G3_amh_vmargslot, O0_argslot);  // reload argslot field
-      __ load_heap_oop(G3_amh_argument, O3_scratch);  // required class
-      __ ld_ptr(vmarg, O2_scratch);  // bad object
-      __ jump_to(AddressLiteral(from_interpreted_entry(_raise_exception)), O0_argslot);
-      __ delayed()->mov(Bytecodes::_checkcast, O1_scratch);  // who is complaining?
+      __ load_heap_oop(G3_amh_argument,        O2_required);  // required class
+      __ ld_ptr(       vmarg,                  O1_actual);    // bad object
+      __ jump_to(AddressLiteral(from_interpreted_entry(_raise_exception)), O3_scratch);
+      __ delayed()->mov(Bytecodes::_checkcast, O0_code);      // who is complaining?
 
       __ bind(done);
       // Get the new MH:

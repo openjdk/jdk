@@ -1746,9 +1746,6 @@ void Compile::ScheduleAndBundle() {
   // Walk backwards over each basic block, computing the needed alignment
   // Walk over all the basic blocks
   scheduling.DoScheduling();
-
-  // Clear the BufferBlob used for scheduling.
-  clear_scratch_buffer_blob();
 }
 
 //------------------------------ComputeLocalLatenciesForward-------------------

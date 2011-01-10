@@ -187,7 +187,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-classpath \
 	sane-java_home \
 	sane-fonts \
-	sane-binary-plugs \
 	sane-variant \
 	sane-ld_library_path \
 	sane-ld_library_path_64 \
@@ -500,23 +499,6 @@ ifndef OPENJDK
 	   "" >> $(ERROR_FILE); \
 	fi \
 	fi
-endif
-
-######################################################
-# If building OPENJDK check pre-built binaries are
-# available for binary plug source components.
-######################################################
-ifdef OPENJDK
-sane-binary-plugs:
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-	@if [ ! -d "$(BINARY_PLUGS_PATH)" ]; then \
-	  $(ECHO) "WARNING: Can't locate pre-built libraries. \n" \
-	    "      Please check your access to \n" \
-	    "          $(BINARY_PLUGS_PATH) \n" \
-	    "      and/or check your value of ALT_BINARY_PLUGS_PATH. \n" \
-	   "" >> $(WARNING_FILE); \
-	fi
-  endif
 endif
 
 ######################################################
@@ -1024,10 +1006,11 @@ ifeq ($(PLATFORM), solaris)
 endif
 
 ######################################################
-# Check for existence of MSDEVTOOLS_PATH on windows
+# Check for existence of the extra tools on windows
 ######################################################
 sane-msdevtools_path:
 ifeq ($(PLATFORM), windows)
+  ifneq ($(COMPILER_VERSION), VS2010)
 	@if [ "$(MSDEVTOOLS_PATH)" != "" -a ! -r "$(MSDEVTOOLS_PATH)" ]; then \
 	  $(ECHO) "ERROR: You do not have a valid MSDEVTOOLS_PATH setting. \n" \
 	    "      Please check your access to \n" \
@@ -1035,6 +1018,7 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSDEVTOOLS_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+  endif
 endif
 
 ######################################################
@@ -1443,10 +1427,24 @@ ifeq ($(PLATFORM), windows)
 endif
 
 ######################################################
-# Check for existence of INSTALL_MSSDK on windows
+# Check for existence of the MSSDK on windows
 ######################################################
 sane-install-mssdk_path:
 ifeq ($(PLATFORM), windows)
+  ifeq ($(COMPILER_VERSION), VS2010)
+	@if [ -z "$(WINDOWSSDKDIR)" ]; then \
+	  $(ECHO) "WARNING: Your WINDOWSSDKDIR setting is empty.\n" \
+	    "        It is recommended to set ALT_WINDOWSSDKDIR.\n" \
+	    "" >> $(WARNING_FILE) ; \
+	fi
+	@if [ ! -r "$(WINDOWSSDKDIR)" ]; then \
+	  $(ECHO) "ERROR: You do not have a valid WINDOWSSDKDIR setting. \n" \
+	    "      Please check your access to \n" \
+	    "          $(WINDOWSSDKDIR) \n" \
+	    "      and/or check your value of ALT_WINDOWSSDKDIR. \n" \
+	    "" >> $(ERROR_FILE) ; \
+	fi
+  endif
 	@if [ -z "$(INSTALL_MSSDK)" ]; then \
 	  $(ECHO) "WARNING: Your INSTALL_MSSDK setting is empty.\n" \
 	    "        It is recommended to set ALT_INSTALL_MSSDK.\n" \
