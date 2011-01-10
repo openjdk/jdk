@@ -67,7 +67,7 @@ const char *env_list[] = {
 // threads are blocked forever inside report_and_die().
 
 // Constructor for crashes
-VMError::VMError(Thread* thread, int sig, address pc, void* siginfo, void* context) {
+VMError::VMError(Thread* thread, unsigned int sig, address pc, void* siginfo, void* context) {
     _thread = thread;
     _id = sig;
     _pc   = pc;
@@ -322,28 +322,50 @@ void VMError::report(outputStream* st) {
 
   STEP(10, "(printing fatal error message)")
 
-     st->print_cr("#");
-     st->print_cr("# A fatal error has been detected by the Java Runtime Environment:");
+    st->print_cr("#");
+    if (should_report_bug(_id)) {
+      st->print_cr("# A fatal error has been detected by the Java Runtime Environment:");
+    } else {
+      st->print_cr("# There is insufficient memory for the Java "
+                   "Runtime Environment to continue.");
+    }
 
   STEP(15, "(printing type of error)")
 
      switch(_id) {
        case oom_error:
-         st->print_cr("#");
-         st->print("# java.lang.OutOfMemoryError: ");
          if (_size) {
-           st->print("requested ");
-           sprintf(buf,SIZE_FORMAT,_size);
+           st->print("# Native memory allocation (malloc) failed to allocate ");
+           jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
            st->print(buf);
            st->print(" bytes");
            if (_message != NULL) {
              st->print(" for ");
              st->print(_message);
            }
-           st->print_cr(". Out of swap space?");
+           st->cr();
          } else {
            if (_message != NULL)
+             st->print("# ");
              st->print_cr(_message);
+         }
+         // In error file give some solutions
+         if (_verbose) {
+           st->print_cr("# Possible reasons:");
+           st->print_cr("#   The system is out of physical RAM or swap space");
+           st->print_cr("#   In 32 bit mode, the process size limit was hit");
+           st->print_cr("# Possible solutions:");
+           st->print_cr("#   Reduce memory load on the system");
+           st->print_cr("#   Increase physical memory or swap space");
+           st->print_cr("#   Check if swap backing store is full");
+           st->print_cr("#   Use 64 bit Java on a 64 bit OS");
+           st->print_cr("#   Decrease Java heap size (-Xmx/-Xms)");
+           st->print_cr("#   Decrease number of Java threads");
+           st->print_cr("#   Decrease Java thread stack sizes (-Xss)");
+           st->print_cr("#   Set larger code cache with -XX:ReservedCodeCacheSize=");
+           st->print_cr("# This output file may be truncated or incomplete.");
+         } else {
+           return;  // that's enough for the screen
          }
          break;
        case internal_error:
@@ -361,7 +383,11 @@ void VMError::report(outputStream* st) {
        st->print(" (0x%x)", _id);                // signal number
        st->print(" at pc=" PTR_FORMAT, _pc);
      } else {
-       st->print("Internal Error");
+       if (should_report_bug(_id)) {
+         st->print("Internal Error");
+       } else {
+         st->print("Out of Memory Error");
+       }
        if (_filename != NULL && _lineno > 0) {
 #ifdef PRODUCT
          // In product mode chop off pathname?
@@ -393,12 +419,14 @@ void VMError::report(outputStream* st) {
 
   STEP(40, "(printing error message)")
 
-     // error message
-     if (_detail_msg) {
-       st->print_cr("#  %s: %s", _message ? _message : "Error", _detail_msg);
-     } else if (_message) {
-       st->print_cr("#  Error: %s", _message);
-     }
+     if (should_report_bug(_id)) {  // already printed the message.
+       // error message
+       if (_detail_msg) {
+         st->print_cr("#  %s: %s", _message ? _message : "Error", _detail_msg);
+       } else if (_message) {
+         st->print_cr("#  Error: %s", _message);
+       }
+    }
 
   STEP(50, "(printing Java version string)")
 
@@ -428,7 +456,9 @@ void VMError::report(outputStream* st) {
 
   STEP(65, "(printing bug submit message)")
 
-     if (_verbose) print_bug_submit_message(st, _thread);
+     if (should_report_bug(_id) && _verbose) {
+       print_bug_submit_message(st, _thread);
+     }
 
   STEP(70, "(printing thread)" )
 
@@ -906,7 +936,7 @@ void VMError::report_and_die() {
     OnError = NULL;
   }
 
-  static bool skip_bug_url = false;
+  static bool skip_bug_url = !should_report_bug(first_error->_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
 
@@ -919,7 +949,8 @@ void VMError::report_and_die() {
     static bool skip_os_abort = false;
     if (!skip_os_abort) {
       skip_os_abort = true;
-      os::abort();
+      bool dump_core = should_report_bug(first_error->_id);
+      os::abort(dump_core);
     }
 
     // if os::abort() doesn't abort, try os::die();
