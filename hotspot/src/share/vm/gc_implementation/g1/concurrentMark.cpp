@@ -31,6 +31,7 @@
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
@@ -1141,6 +1142,8 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     g1h->set_marking_complete(); // So bitmap clearing isn't confused
     return;
   }
+
+  SvcGCMarker sgcm(SvcGCMarker::OTHER);
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
