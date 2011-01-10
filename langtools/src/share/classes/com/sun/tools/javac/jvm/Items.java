@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.code.*;
-
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.Assert;
 
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 
@@ -387,7 +387,7 @@ public class Items {
 
         LocalItem(Type type, int reg) {
             super(Code.typecode(type));
-            assert reg >= 0;
+            Assert.check(reg >= 0);
             this.type = type;
             this.reg = reg;
         }
@@ -469,16 +469,16 @@ public class Items {
     class DynamicItem extends StaticItem {
         DynamicItem(Symbol member) {
             super(member);
-            assert member.owner == syms.invokeDynamicType.tsym;
+            Assert.check(member.owner == syms.invokeDynamicType.tsym);
         }
 
         Item load() {
-            assert false;
+            Assert.error();
             return null;
         }
 
         void store() {
-            assert false;
+            Assert.error();
         }
 
         Item invoke() {
@@ -620,7 +620,7 @@ public class Items {
                 ldc();
                 break;
             default:
-                assert false;
+                Assert.error();
             }
             return stackItem[typecode];
         }
@@ -716,7 +716,7 @@ public class Items {
         }
 
         void stash(int toscode) {
-            assert false;
+            Assert.error();
         }
 
         int width() {
@@ -784,7 +784,7 @@ public class Items {
         }
 
         void stash(int toscode) {
-            assert false;
+            Assert.error();
         }
 
         CondItem mkCond() {

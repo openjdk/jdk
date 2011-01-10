@@ -65,6 +65,7 @@ import com.sun.tools.javac.parser.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.FatalError;
@@ -1046,17 +1047,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Context next = new Context();
 
             Options options = Options.instance(context);
-            assert options != null;
+            Assert.checkNonNull(options);
             next.put(Options.optionsKey, options);
 
             PrintWriter out = context.get(Log.outKey);
-            assert out != null;
+            Assert.checkNonNull(out);
             next.put(Log.outKey, out);
 
             final boolean shareNames = true;
             if (shareNames) {
                 Names names = Names.instance(context);
-                assert names != null;
+                Assert.checkNonNull(names);
                 next.put(Names.namesKey, names);
             }
 
@@ -1069,18 +1070,18 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 next.put(TaskListener.class, tl);
 
             JavaFileManager jfm = context.get(JavaFileManager.class);
-            assert jfm != null;
+            Assert.checkNonNull(jfm);
             next.put(JavaFileManager.class, jfm);
             if (jfm instanceof JavacFileManager) {
                 ((JavacFileManager)jfm).setContext(next);
             }
 
             Names names = Names.instance(context);
-            assert names != null;
+            Assert.checkNonNull(names);
             next.put(Names.namesKey, names);
 
             Keywords keywords = Keywords.instance(context);
-            assert(keywords != null);
+            Assert.checkNonNull(keywords);
             next.put(Keywords.keywordsKey, keywords);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
@@ -1239,7 +1240,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             for (JCTree node : unit.defs) {
                 if (node.getTag() == JCTree.CLASSDEF) {
                     ClassSymbol sym = ((JCClassDecl) node).sym;
-                    assert sym != null;
+                    Assert.checkNonNull(sym);
                     classes = classes.prepend(sym);
                 }
             }

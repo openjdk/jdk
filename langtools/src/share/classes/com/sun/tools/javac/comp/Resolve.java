@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -679,7 +679,7 @@ public class Resolve {
                       boolean operator) {
         if (sym.kind == ERR) return bestSoFar;
         if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
-        assert sym.kind < AMBIGUOUS;
+        Assert.check(sym.kind < AMBIGUOUS);
         try {
             rawInstantiate(env, site, sym, argtypes, typeargtypes,
                                allowBoxing, useVarargs, Warner.noWarnings);

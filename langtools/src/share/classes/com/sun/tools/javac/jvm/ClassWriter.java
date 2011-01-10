@@ -219,11 +219,14 @@ public class ClassWriter extends ClassFile {
     /** Return flags as a string, separated by " ".
      */
     public static String flagNames(long flags) {
-        StringBuffer sbuf = new StringBuffer();
+        StringBuilder sbuf = new StringBuilder();
         int i = 0;
         long f = flags & StandardFlags;
         while (f != 0) {
-            if ((f & 1) != 0) sbuf.append(" " + flagName[i]);
+            if ((f & 1) != 0) {
+                sbuf.append(" ");
+                sbuf.append(flagName[i]);
+            }
             f = f >> 1;
             i++;
         }
@@ -376,7 +379,7 @@ public class ClassWriter extends ClassFile {
                              ? types.erasure(outer)
                              : outer);
             sigbuf.appendByte('.');
-            assert c.flatname.startsWith(c.owner.enclClass().flatname);
+            Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
             sigbuf.appendName(rawOuter
                               ? c.flatname.subName(c.owner.enclClass().flatname.getByteLength()+1,c.flatname.getByteLength())
                               : c.name);
@@ -416,7 +419,7 @@ public class ClassWriter extends ClassFile {
     /** Return signature of given type
      */
     Name typeSig(Type type) {
-        assert sigbuf.length == 0;
+        Assert.check(sigbuf.length == 0);
         //- System.out.println(" ? " + type);
         assembleSig(type);
         Name n = sigbuf.toName(names);
@@ -466,7 +469,7 @@ public class ClassWriter extends ClassFile {
         int i = 1;
         while (i < pool.pp) {
             Object value = pool.pool[i];
-            assert value != null;
+            Assert.checkNonNull(value);
             if (value instanceof Pool.Method)
                 value = ((Pool.Method)value).m;
             else if (value instanceof Pool.Variable)
@@ -529,7 +532,7 @@ public class ClassWriter extends ClassFile {
                 poolbuf.appendByte(CONSTANT_Class);
                 poolbuf.appendChar(pool.put(xClassName(type)));
             } else {
-                assert false : "writePool " + value;
+                Assert.error("writePool " + value);
             }
             i++;
         }
@@ -798,7 +801,7 @@ public class ClassWriter extends ClassFile {
                 databuf.appendByte('Z');
                 break;
             case CLASS:
-                assert value instanceof String;
+                Assert.check(value instanceof String);
                 databuf.appendByte('s');
                 value = names.fromString(value.toString()); // CONSTANT_Utf8
                 break;
@@ -1015,11 +1018,11 @@ public class ClassWriter extends ClassFile {
                 Code.LocalVar var = code.varBuffer[i];
 
                 // write variable info
-                assert var.start_pc >= 0;
-                assert var.start_pc <= code.cp;
+                Assert.check(var.start_pc >= 0
+                        && var.start_pc <= code.cp);
                 databuf.appendChar(var.start_pc);
-                assert var.length >= 0;
-                assert (var.start_pc + var.length) <= code.cp;
+                Assert.check(var.length >= 0
+                        && (var.start_pc + var.length) <= code.cp);
                 databuf.appendChar(var.length);
                 VarSymbol sym = var.sym;
                 databuf.appendChar(pool.put(sym.name));
@@ -1051,7 +1054,7 @@ public class ClassWriter extends ClassFile {
                 databuf.appendChar(pool.put(typeSig(sym.type)));
                 databuf.appendChar(var.reg);
             }
-            assert count == nGenericVars;
+            Assert.check(count == nGenericVars);
             endAttr(alenIdx);
             acount++;
         }
@@ -1122,7 +1125,7 @@ public class ClassWriter extends ClassFile {
             }
             break;
         case JSR202: {
-            assert code.stackMapBuffer == null;
+            Assert.checkNull(code.stackMapBuffer);
             for (int i=0; i<nframes; i++) {
                 if (debugstackmap) System.out.print("  " + i + ":");
                 StackMapTableFrame frame = code.stackMapTableBuffer[i];
@@ -1462,7 +1465,7 @@ public class ClassWriter extends ClassFile {
      */
     public void writeClassFile(OutputStream out, ClassSymbol c)
         throws IOException, PoolOverflow, StringOverflow {
-        assert (c.flags() & COMPOUND) == 0;
+        Assert.check((c.flags() & COMPOUND) == 0);
         databuf.reset();
         poolbuf.reset();
         sigbuf.reset();
@@ -1499,7 +1502,7 @@ public class ClassWriter extends ClassFile {
             case MTH: if ((e.sym.flags() & HYPOTHETICAL) == 0) methodsCount++;
                       break;
             case TYP: enterInner((ClassSymbol)e.sym); break;
-            default : assert false;
+            default : Assert.error();
             }
         }
         databuf.appendChar(fieldsCount);
@@ -1515,7 +1518,7 @@ public class ClassWriter extends ClassFile {
         for (List<Type> l = interfaces; !sigReq && l.nonEmpty(); l = l.tail)
             sigReq = l.head.allparams().length() != 0;
         if (sigReq) {
-            assert source.allowGenerics();
+            Assert.check(source.allowGenerics());
             int alenIdx = writeAttr(names.Signature);
             if (typarams.length() != 0) assembleParamsSig(typarams);
             assembleSig(supertype);

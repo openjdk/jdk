@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,6 @@ import java.lang.reflect.*;
  * or deletion without notice.
  */
 public class Main {
-
-    static {
-        ClassLoader loader = Main.class.getClassLoader();
-        if (loader != null)
-            loader.setPackageAssertionStatus("com.sun.tools.javac", true);
-    }
 
     /** Unsupported command line interface.
      * @param args   The command line parameters.

@@ -708,7 +708,7 @@ public class Flow extends TreeScanner {
 
         lint = lint.augment(tree.sym.attributes_field);
 
-        assert pendingExits.isEmpty();
+        Assert.check(pendingExits.isEmpty());
 
         try {
             boolean isInitialConstructor =
@@ -746,7 +746,7 @@ public class Flow extends TreeScanner {
                 PendingExit exit = exits.head;
                 exits = exits.tail;
                 if (exit.thrown == null) {
-                    assert exit.tree.getTag() == JCTree.RETURN;
+                    Assert.check(exit.tree.getTag() == JCTree.RETURN);
                     if (isInitialConstructor) {
                         inits = exit.inits;
                         for (int i = firstadr; i < nextadr; i++)

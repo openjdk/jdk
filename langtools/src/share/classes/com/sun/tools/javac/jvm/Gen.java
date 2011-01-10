@@ -500,7 +500,7 @@ public class Gen extends JCTree.Visitor {
                 }
                 break;
             default:
-                assert false;
+                Assert.error();
             }
         }
         // Insert any instance initializers into all constructors.
@@ -857,7 +857,7 @@ public class Gen extends JCTree.Visitor {
             pts = pts.tail;
         }
         // require lists be of same length
-        assert pts.isEmpty();
+        Assert.check(pts.isEmpty());
     }
 
 /* ************************************************************************
@@ -1111,7 +1111,7 @@ public class Gen extends JCTree.Visitor {
 
     public void visitSwitch(JCSwitch tree) {
         int limit = code.nextreg;
-        assert tree.selector.type.tag != CLASS;
+        Assert.check(tree.selector.type.tag != CLASS);
         int startpcCrt = genCrt ? code.curPc() : 0;
         Item sel = genExpr(tree.selector, syms.intType);
         List<JCCase> cases = tree.cases;
@@ -1148,7 +1148,7 @@ public class Gen extends JCTree.Visitor {
                     if (hi < val) hi = val;
                     nlabels++;
                 } else {
-                    assert defaultIndex == -1;
+                    Assert.check(defaultIndex == -1);
                     defaultIndex = i;
                 }
                 l = l.tail;
@@ -1290,7 +1290,7 @@ public class Gen extends JCTree.Visitor {
         syncEnv.info.finalize = new GenFinalizer() {
             void gen() {
                 genLast();
-                assert syncEnv.info.gaps.length() % 2 == 0;
+                Assert.check(syncEnv.info.gaps.length() % 2 == 0);
                 syncEnv.info.gaps.append(code.curPc());
             }
             void genLast() {
@@ -1329,10 +1329,10 @@ public class Gen extends JCTree.Visitor {
                                       tryEnv.info.cont,
                                       jsrState);
                     }
-                    assert tryEnv.info.gaps.length() % 2 == 0;
+                    Assert.check(tryEnv.info.gaps.length() % 2 == 0);
                     tryEnv.info.gaps.append(code.curPc());
                 } else {
-                    assert tryEnv.info.gaps.length() % 2 == 0;
+                    Assert.check(tryEnv.info.gaps.length() % 2 == 0);
                     tryEnv.info.gaps.append(code.curPc());
                     genLast();
                 }
@@ -1640,14 +1640,14 @@ public class Gen extends JCTree.Visitor {
 
     public void visitBreak(JCBreak tree) {
         Env<GenContext> targetEnv = unwind(tree.target, env);
-        assert code.state.stacksize == 0;
+        Assert.check(code.state.stacksize == 0);
         targetEnv.info.addExit(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
     }
 
     public void visitContinue(JCContinue tree) {
         Env<GenContext> targetEnv = unwind(tree.target, env);
-        assert code.state.stacksize == 0;
+        Assert.check(code.state.stacksize == 0);
         targetEnv.info.addCont(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
     }
@@ -1720,7 +1720,7 @@ public class Gen extends JCTree.Visitor {
     public void visitNewClass(JCNewClass tree) {
         // Enclosing instances or anonymous classes should have been eliminated
         // by now.
-        assert tree.encl == null && tree.def == null;
+        Assert.check(tree.encl == null && tree.def == null);
 
         code.emitop2(new_, makeRef(tree.pos(), tree.type));
         code.emitop0(dup);
@@ -1902,7 +1902,7 @@ public class Gen extends JCTree.Visitor {
                 genNullCheck(tree.pos());
                 break;
             default:
-                assert false;
+                Assert.error();
             }
         }
     }
@@ -1977,7 +1977,7 @@ public class Gen extends JCTree.Visitor {
             items.makeMemberItem(getStringBufferAppend(tree, t), false).invoke();
         }
         Symbol getStringBufferAppend(JCTree tree, Type t) {
-            assert t.constValue() == null;
+            Assert.checkNull(t.constValue());
             Symbol method = stringBufferAppend.get(t);
             if (method == null) {
                 method = rs.resolveInternalMethod(tree.pos(),
@@ -2120,7 +2120,7 @@ public class Gen extends JCTree.Visitor {
         Symbol sym = tree.sym;
 
         if (tree.name == names._class) {
-            assert target.hasClassLiterals();
+            Assert.check(target.hasClassLiterals());
             code.emitop2(ldc2, makeRef(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class Bits {
     /** Include x in this set.
      */
     public void incl(int x) {
-        assert x >= 0;
+        Assert.check(x >= 0);
         sizeTo((x >>> wordshift) + 1);
         bits[x >>> wordshift] = bits[x >>> wordshift] |
             (1 << (x & wordmask));
@@ -113,7 +113,7 @@ public class Bits {
     /** Exclude x from this set.
      */
     public void excl(int x) {
-        assert x >= 0;
+        Assert.check(x >= 0);
         sizeTo((x >>> wordshift) + 1);
         bits[x >>> wordshift] = bits[x >>> wordshift] &
             ~(1 << (x & wordmask));
@@ -169,7 +169,7 @@ public class Bits {
      *  Delight" by Henry S. Warren Jr. (figure 5-13)
      */
     private static int trailingZeroBits(int x) {
-        assert wordlen == 32;
+        Assert.check(wordlen == 32);
         if (x == 0) return 32;
         int n = 1;
         if ((x & 0xffff) == 0) { n += 16; x >>>= 16; }

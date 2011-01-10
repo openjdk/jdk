@@ -180,7 +180,7 @@ public class TransTypes extends TreeTranslator {
             parameters = parameters.tail;
         }
         Type parameter = parameters.head;
-        assert varargsElement != null || args.length() == 1;
+        Assert.check(varargsElement != null || args.length() == 1);
         if (varargsElement != null) {
             while (args.nonEmpty()) {
                 args.head = translate(args.head, varargsElement);
@@ -594,7 +594,7 @@ public class TransTypes extends TreeTranslator {
         if (tree.varargsElement != null)
             tree.varargsElement = types.erasure(tree.varargsElement);
         else
-            assert tree.args.length() == argtypes.length();
+            Assert.check(tree.args.length() == argtypes.length());
         tree.args = translateArgs(tree.args, argtypes, tree.varargsElement);
 
         // Insert casts of method invocation results as needed.

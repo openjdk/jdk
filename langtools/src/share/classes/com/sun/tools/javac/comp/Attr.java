@@ -563,7 +563,7 @@ public class Attr extends JCTree.Visitor {
             if (bound != null && bound.tsym instanceof ClassSymbol) {
                 ClassSymbol c = (ClassSymbol)bound.tsym;
                 if ((c.flags_field & COMPOUND) != 0) {
-                    assert (c.flags_field & UNATTRIBUTED) != 0 : c;
+                    Assert.check((c.flags_field & UNATTRIBUTED) != 0, c);
                     attribClass(typaram.pos(), c);
                 }
             }
@@ -1434,7 +1434,7 @@ public class Attr extends JCTree.Visitor {
             localEnv.info.varArgs = false;
             Type mtype = attribExpr(tree.meth, localEnv, mpt);
             if (localEnv.info.varArgs)
-                assert mtype.isErroneous() || tree.varargsElement != null;
+                Assert.check(mtype.isErroneous() || tree.varargsElement != null);
 
             // Compute the result type.
             Type restype = mtype.getReturnType();
@@ -1667,7 +1667,7 @@ public class Attr extends JCTree.Visitor {
                         typeargtypes,
                         localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
-                    assert tree.constructorType.isErroneous() || tree.varargsElement != null;
+                    Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
             }
 
             if (cdef != null) {
@@ -1727,7 +1727,7 @@ public class Attr extends JCTree.Visitor {
                 Symbol sym = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes,
                     typeargtypes, true, tree.varargsElement != null);
-                assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
+                Assert.check(sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous());
                 tree.constructor = sym;
                 if (tree.constructor.kind > ERRONEOUS) {
                     tree.constructorType =  syms.errType;
@@ -2961,7 +2961,7 @@ public class Attr extends JCTree.Visitor {
                 extending, implementing, List.<JCTree>nil());
 
             ClassSymbol c = (ClassSymbol)a.getUpperBound().tsym;
-            assert (c.flags() & COMPOUND) != 0;
+            Assert.check((c.flags() & COMPOUND) != 0);
             cd.sym = c;
             c.sourcefile = env.toplevel.sourcefile;
 
@@ -3093,7 +3093,7 @@ public class Attr extends JCTree.Visitor {
     /** Finish the attribution of a class. */
     private void attribClassBody(Env<AttrContext> env, ClassSymbol c) {
         JCClassDecl tree = (JCClassDecl)env.tree;
-        assert c == tree.sym;
+        Assert.check(c == tree.sym);
 
         // Validate annotations
         chk.validateAnnotations(tree.mods.annotations, c);
@@ -3134,12 +3134,9 @@ public class Attr extends JCTree.Visitor {
 
         tree.type = c.type;
 
-        boolean assertsEnabled = false;
-        assert assertsEnabled = true;
-        if (assertsEnabled) {
-            for (List<JCTypeParameter> l = tree.typarams;
-                 l.nonEmpty(); l = l.tail)
-                assert env.info.scope.lookup(l.head.name).scope != null;
+        for (List<JCTypeParameter> l = tree.typarams;
+             l.nonEmpty(); l = l.tail) {
+             Assert.checkNonNull(env.info.scope.lookup(l.head.name).scope);
         }
 
         // Check that a generic class doesn't extend Throwable
