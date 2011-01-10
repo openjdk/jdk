@@ -315,6 +315,15 @@ size_t CodeHeap::allocated_capacity() const {
   return l;
 }
 
+size_t CodeHeap::largest_free_block() const {
+  size_t len = 0;
+  for (FreeBlock* b = _freelist; b != NULL; b = b->link()) {
+    if (b->length() > len)
+      len = b->length();
+  }
+  return size(len);
+}
+
 // Free list management
 
 FreeBlock *CodeHeap::following_block(FreeBlock *b) {

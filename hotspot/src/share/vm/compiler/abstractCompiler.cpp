@@ -33,6 +33,7 @@ void AbstractCompiler::initialize_runtimes(initializer f, volatile int* state) {
     bool do_initialization = false;
     {
       ThreadInVMfromNative tv(thread);
+      ResetNoHandleMark rnhm;
       MutexLocker only_one(CompileThread_lock, thread);
       if ( *state == uninitialized) {
         do_initialization = true;
@@ -53,6 +54,7 @@ void AbstractCompiler::initialize_runtimes(initializer f, volatile int* state) {
       // To in_vm so we can use the lock
 
       ThreadInVMfromNative tv(thread);
+      ResetNoHandleMark rnhm;
       MutexLocker only_one(CompileThread_lock, thread);
       assert(*state == initializing, "wrong state");
       *state = initialized;

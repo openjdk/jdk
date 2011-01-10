@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3393,21 +3393,21 @@ void TemplateTable::_new() {
     __ delayed()->st_ptr(RnewTopValue, G2_thread, in_bytes(JavaThread::tlab_top_offset()));
 
     if (allow_shared_alloc) {
-    // Check if tlab should be discarded (refill_waste_limit >= free)
-    __ ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), RtlabWasteLimitValue);
-    __ sub(RendValue, RoldTopValue, RfreeValue);
+      // Check if tlab should be discarded (refill_waste_limit >= free)
+      __ ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), RtlabWasteLimitValue);
+      __ sub(RendValue, RoldTopValue, RfreeValue);
 #ifdef _LP64
-    __ srlx(RfreeValue, LogHeapWordSize, RfreeValue);
+      __ srlx(RfreeValue, LogHeapWordSize, RfreeValue);
 #else
-    __ srl(RfreeValue, LogHeapWordSize, RfreeValue);
+      __ srl(RfreeValue, LogHeapWordSize, RfreeValue);
 #endif
-    __ cmp(RtlabWasteLimitValue, RfreeValue);
-    __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, slow_case); // tlab waste is small
-    __ delayed()->nop();
+      __ cmp(RtlabWasteLimitValue, RfreeValue);
+      __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, slow_case); // tlab waste is small
+      __ delayed()->nop();
 
-    // increment waste limit to prevent getting stuck on this slow path
-    __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
-    __ st_ptr(RtlabWasteLimitValue, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
+      // increment waste limit to prevent getting stuck on this slow path
+      __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
+      __ st_ptr(RtlabWasteLimitValue, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
     } else {
       // No allocation in the shared eden.
       __ br(Assembler::always, false, Assembler::pt, slow_case);
@@ -3445,6 +3445,9 @@ void TemplateTable::_new() {
     __ cmp(RoldTopValue, RnewTopValue);
     __ brx(Assembler::notEqual, false, Assembler::pn, retry);
     __ delayed()->nop();
+
+    // bump total bytes allocated by this thread
+    __ incr_allocated_bytes(Roffset, 0, G1_scratch);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {

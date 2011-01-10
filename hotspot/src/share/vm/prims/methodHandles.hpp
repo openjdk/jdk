@@ -294,11 +294,11 @@ class MethodHandles: AllStatic {
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
   // Generate MethodHandles adapters.
-  static void generate_adapters();
+  static void generate_adapters(TRAPS);
 
   // Called from InterpreterGenerator and MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm);
-  static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek);
+  static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek, TRAPS);
 
   // argument list parsing
   static int argument_slot(oop method_type, int arg);
@@ -530,7 +530,7 @@ class MethodHandlesAdapterGenerator : public StubCodeGenerator {
 public:
   MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
 
-  void generate();
+  void generate(TRAPS);
 };
 
 #endif // SHARE_VM_PRIMS_METHODHANDLES_HPP
