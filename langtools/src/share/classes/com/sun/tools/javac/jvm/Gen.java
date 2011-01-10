@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1682,7 +1682,6 @@ public class Gen extends JCTree.Visitor {
  *************************************************************************/
 
     public void visitApply(JCMethodInvocation tree) {
-        setTypeAnnotationPositions(tree.pos);
         // Generate code for method.
         Item m = genExpr(tree.meth, methodType);
         // Generate code for all arguments, where the expected types are
@@ -1718,48 +1717,10 @@ public class Gen extends JCTree.Visitor {
         result = items.makeStackItem(pt);
     }
 
-    private void setTypeAnnotationPositions(int treePos) {
-        MethodSymbol meth = code.meth;
-
-        for (Attribute.TypeCompound ta : meth.typeAnnotations) {
-            if (ta.position.pos == treePos) {
-                ta.position.offset = code.cp;
-                ta.position.lvarOffset = new int[] { code.cp };
-                ta.position.isValidOffset = true;
-            }
-        }
-
-        if (code.meth.getKind() != ElementKind.CONSTRUCTOR
-                && code.meth.getKind() != ElementKind.STATIC_INIT)
-            return;
-
-        for (Attribute.TypeCompound ta : meth.owner.typeAnnotations) {
-            if (ta.position.pos == treePos) {
-                ta.position.offset = code.cp;
-                ta.position.lvarOffset = new int[] { code.cp };
-                ta.position.isValidOffset = true;
-            }
-        }
-
-        ClassSymbol clazz = meth.enclClass();
-        for (Symbol s : new com.sun.tools.javac.model.FilteredMemberList(clazz.members())) {
-            if (!s.getKind().isField())
-                continue;
-            for (Attribute.TypeCompound ta : s.typeAnnotations) {
-                if (ta.position.pos == treePos) {
-                    ta.position.offset = code.cp;
-                    ta.position.lvarOffset = new int[] { code.cp };
-                    ta.position.isValidOffset = true;
-                }
-            }
-        }
-    }
-
     public void visitNewClass(JCNewClass tree) {
         // Enclosing instances or anonymous classes should have been eliminated
         // by now.
         assert tree.encl == null && tree.def == null;
-        setTypeAnnotationPositions(tree.pos);
 
         code.emitop2(new_, makeRef(tree.pos(), tree.type));
         code.emitop0(dup);
@@ -1774,7 +1735,6 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitNewArray(JCNewArray tree) {
-        setTypeAnnotationPositions(tree.pos);
 
         if (tree.elems != null) {
             Type elemtype = types.elemtype(tree.type);
@@ -2104,7 +2064,6 @@ public class Gen extends JCTree.Visitor {
         }
 
     public void visitTypeCast(JCTypeCast tree) {
-        setTypeAnnotationPositions(tree.pos);
         result = genExpr(tree.expr, tree.clazz.type).load();
         // Additional code is only needed if we cast to a reference type
         // which is not statically a supertype of the expression's type.
@@ -2121,8 +2080,6 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        setTypeAnnotationPositions(tree.pos);
-
         genExpr(tree.expr, tree.expr.type).load();
         code.emitop2(instanceof_, makeRef(tree.pos(), tree.clazz.type));
         result = items.makeStackItem(syms.booleanType);
@@ -2164,15 +2121,9 @@ public class Gen extends JCTree.Visitor {
 
         if (tree.name == names._class) {
             assert target.hasClassLiterals();
-            setTypeAnnotationPositions(tree.pos);
             code.emitop2(ldc2, makeRef(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;
-        } else if (tree.name == names.TYPE) {
-            // Set the annotation positions for primitive class literals
-            // (e.g. int.class) which have been converted to TYPE field
-            // access on the corresponding boxed type (e.g. Integer.TYPE).
-            setTypeAnnotationPositions(tree.pos);
         }
 
         Symbol ssym = TreeInfo.symbol(tree.selected);

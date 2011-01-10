@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1084,11 +1084,6 @@ public class Check {
                 // otherwise validate the rest of the expression
                 tree.selected.accept(this);
             }
-        }
-
-        @Override
-        public void visitAnnotatedType(JCAnnotatedType tree) {
-            tree.underlyingType.accept(this);
         }
 
         /** Default visitor method: do nothing.
@@ -2239,14 +2234,6 @@ public class Check {
             validateAnnotation(a, s);
     }
 
-    /** Check the type annotations
-     */
-    public void validateTypeAnnotations(List<JCTypeAnnotation> annotations, boolean isTypeParameter) {
-        if (skipAnnotations) return;
-        for (JCTypeAnnotation a : annotations)
-            validateTypeAnnotation(a, isTypeParameter);
-    }
-
     /** Check an annotation of a symbol.
      */
     public void validateAnnotation(JCAnnotation a, Symbol s) {
@@ -2259,15 +2246,6 @@ public class Check {
             if (!isOverrider(s))
                 log.error(a.pos(), "method.does.not.override.superclass");
         }
-    }
-
-    public void validateTypeAnnotation(JCTypeAnnotation a, boolean isTypeParameter) {
-        if (a.type == null)
-            throw new AssertionError("annotation tree hasn't been attributed yet: " + a);
-        validateAnnotationTree(a);
-
-        if (!isTypeAnnotation(a, isTypeParameter))
-            log.error(a.pos(), "annotation.type.not.applicable");
     }
 
     /** Is s a method symbol that overrides a method in a superclass? */
@@ -2284,25 +2262,6 @@ public class Check {
                 if (!e.sym.isStatic() && m.overrides(e.sym, owner, types, true))
                     return true;
             }
-        }
-        return false;
-    }
-
-    /** Is the annotation applicable to type annotations */
-    boolean isTypeAnnotation(JCTypeAnnotation a, boolean isTypeParameter) {
-        Attribute.Compound atTarget =
-            a.annotationType.type.tsym.attribute(syms.annotationTargetType.tsym);
-        if (atTarget == null) return true;
-        Attribute atValue = atTarget.member(names.value);
-        if (!(atValue instanceof Attribute.Array)) return true; // error recovery
-        Attribute.Array arr = (Attribute.Array) atValue;
-        for (Attribute app : arr.values) {
-            if (!(app instanceof Attribute.Enum)) return true; // recovery
-            Attribute.Enum e = (Attribute.Enum) app;
-            if (!isTypeParameter && e.value.name == names.TYPE_USE)
-                return true;
-            else if (isTypeParameter && e.value.name == names.TYPE_PARAMETER)
-                return true;
         }
         return false;
     }
