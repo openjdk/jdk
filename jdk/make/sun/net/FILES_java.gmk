@@ -100,6 +100,7 @@ FILES_java = \
 	sun/net/www/protocol/http/NegotiateAuthentication.java \
 	sun/net/www/protocol/http/Negotiator.java \
 	sun/net/www/protocol/http/ntlm/NTLMAuthentication.java \
+	sun/net/www/protocol/http/ntlm/NTLMAuthenticationCallback.java \
 	sun/net/www/protocol/http/spnego/NegotiatorImpl.java \
 	sun/net/www/protocol/http/spnego/NegotiateCallbackHandler.java \
 	sun/net/www/protocol/http/logging/HttpLogFormatter.java \
