@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,7 +547,7 @@ public class JavacParser implements Parser {
                 null);
             break;
         default:
-            assert false;
+            Assert.error();
         }
         if (t == errorTree)
             t = F.at(pos).Erroneous();
@@ -724,7 +724,7 @@ public class JavacParser implements Parser {
                 topOpPos = posStack[top];
             }
         }
-        assert top == 0;
+        Assert.check(top == 0);
         t = odStack[0];
 
         if (t.getTag() == JCTree.PLUS) {

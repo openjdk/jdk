@@ -309,6 +309,6 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitTree(JCTree tree) {
-        assert false;
+        Assert.error();
     }
 }

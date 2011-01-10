@@ -240,8 +240,7 @@ public abstract class Attribute implements AnnotationValue {
         public VarSymbol value;
         public Enum(Type type, VarSymbol value) {
             super(type);
-            assert value != null;
-            this.value = value;
+            this.value = Assert.checkNonNull(value);
         }
         public void accept(Visitor v) { v.visitEnum(this); }
         public String toString() {

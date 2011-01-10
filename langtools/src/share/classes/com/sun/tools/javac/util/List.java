@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         // return this.prependList(xs.tail).prepend(xs.head);
         List<A> result = this;
         List<A> rev = xs.reverse();
-        assert rev != xs;
+        Assert.check(rev != xs);
         // since xs.reverse() returned a new list, we can reuse the
         // individual List objects, instead of allocating new ones.
         while (rev.nonEmpty()) {

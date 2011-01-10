@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class Type implements PrimitiveType {
      */
     public Type constType(Object constValue) {
         final Object value = constValue;
-        assert tag <= BOOLEAN;
+        Assert.check(tag <= BOOLEAN);
         return new Type(tag, tsym) {
                 @Override
                 public Object constValue() {
@@ -202,13 +202,13 @@ public class Type implements PrimitiveType {
      * The constant value of this type, converted to String
      */
     public String stringValue() {
-        assert constValue() != null;
+        Object cv = Assert.checkNonNull(constValue());
         if (tag == BOOLEAN)
-            return ((Integer) constValue()).intValue() == 0 ? "false" : "true";
+            return ((Integer) cv).intValue() == 0 ? "false" : "true";
         else if (tag == CHAR)
-            return String.valueOf((char) ((Integer) constValue()).intValue());
+            return String.valueOf((char) ((Integer) cv).intValue());
         else
-            return constValue().toString();
+            return cv.toString();
     }
 
     /**
@@ -428,9 +428,8 @@ public class Type implements PrimitiveType {
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym) {
             super(WILDCARD, tsym);
-            assert(type != null);
+            this.type = Assert.checkNonNull(type);
             this.kind = kind;
-            this.type = type;
         }
         public WildcardType(WildcardType t, TypeVar bound) {
             this(t.type, t.kind, t.tsym, bound);
@@ -1021,9 +1020,8 @@ public class Type implements PrimitiveType {
                             Type lower,
                             WildcardType wildcard) {
             super(name, owner, lower);
-            assert lower != null;
+            this.lower = Assert.checkNonNull(lower);
             this.bound = upper;
-            this.lower = lower;
             this.wildcard = wildcard;
         }
 

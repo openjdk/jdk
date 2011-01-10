@@ -445,7 +445,7 @@ public class TreeInfo {
     public static int finalizerPos(JCTree tree) {
         if (tree.getTag() == JCTree.TRY) {
             JCTry t = (JCTry) tree;
-            assert t.finalizer != null;
+            Assert.checkNonNull(t.finalizer);
             return firstStatPos(t.finalizer);
         } else if (tree.getTag() == JCTree.SYNCHRONIZED) {
             return endPos(((JCSynchronized) tree).body);
