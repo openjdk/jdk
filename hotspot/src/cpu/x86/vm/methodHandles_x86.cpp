@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,7 +390,7 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
 //
 // Generate an "entry" field for a method handle.
 // This determines how the method handle will respond to calls.
-void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek, TRAPS) {
+void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek) {
   // Here is the register state during an interpreted call,
   // as set up by generate_method_handle_interpreter_entry():
   // - rbx: garbage temp (was MethodHandle.invoke methodOop, unused)
@@ -451,8 +451,9 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // exception.  Since we use a C2I adapter to set up the
       // interpreter state, arguments are expected in compiler
       // argument registers.
-      methodHandle mh(raise_exception_method());
-      address c2i_entry = methodOopDesc::make_adapters(mh, CHECK);
+      assert(raise_exception_method(), "must be set");
+      address c2i_entry = raise_exception_method()->get_c2i_entry();
+      assert(c2i_entry, "method must be linked");
 
       const Register rdi_pc = rax;
       __ pop(rdi_pc);  // caller PC
