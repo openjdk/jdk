@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,16 @@
 #    Program.gmk may turn this down to 2 (building .exe's).
 #    Windows 64bit platforms are less likely to be warning free.
 #    Historically, Windows 32bit builds should be mostly warning free.
+#    VS2010 introduced a large number of security warnings that are off by
+#    default but will be turned back on with SHOW_ALL_WARNINGS=true.
 ifndef COMPILER_WARNING_LEVEL
   COMPILER_WARNING_LEVEL=3
 endif
 ifndef COMPILER_WARNINGS_FATAL
   COMPILER_WARNINGS_FATAL=false
+endif
+ifndef SHOW_ALL_WARNINGS
+  SHOW_ALL_WARNINGS = false
 endif
 
 # Windows should use parallel compilation for best build times
@@ -80,13 +85,20 @@ override INCREMENTAL_BUILD = false
 #         their own variable assigned with :=, then use FullPath.
 #
 
-# Use FullPath to get C:/ style non-spaces path. Never ends with a /!
 ifdef USING_CYGWIN
+# All possible drive letters
+drives=a b c d e f g h i j k l m n o p q r s t v u w x y z
+# Convert /cygdrive/ paths to the mixed style without an exec of cygpath
+#   Must be a path with no spaces.
+define MixedPath
+$(patsubst /%,c:/cygwin/%,$(sort $(filter-out /cygdrive/%,$(foreach drive,$(drives),$(patsubst /cygdrive/$(drive)/%,$(drive):/%,$1)))))
+endef
+# Use FullPath to get C:/ style non-spaces path. Never ends with a /!
 # We assume cygpath is available in the search path
 #    NOTE: Use of 'pwd' with CYGWIN will not get you a mixed style path!
 CYGPATH_CMD=cygpath -a -s -m
 define FullPath
-$(shell $(CYGPATH_CMD) $1 2> $(DEV_NULL))
+$(if $(word 2,$1),$(shell $(CYGPATH_CMD) $1 2> $(DEV_NULL)),$(call MixedPath,$(realpath $(subst ",,$1))))
 endef
 define OptFullPath
 $(shell if [ "$1" != "" -a -d "$1" ]; then $(CYGPATH_CMD) "$1" 2> $(DEV_NULL); else echo "$1"; fi)
@@ -228,29 +240,125 @@ else
   _dx_sdk_dir :=$(call FullPath,$(xDXSDK_DIR))
 endif
 
-# Compilers, SDK, and Visual Studio (MSDEV) [32bit is different from 64bit]
-ifeq ($(ARCH_DATA_MODEL), 32)
-  # Try looking in MSVCDIR or MSVCDir area first 
-  # (set by vcvars32.bat for VC .NET, not defined in the VC 2008/2010)
-  ifdef MSVCDIR
-    xMSVCDIR  :="$(subst \,/,$(MSVCDIR))"
-    _msvc_dir :=$(call FullPath,$(xMSVCDIR))
+# Use of the Visual Studio compilers requires certain env variables be set:
+#   PATH should include the path to cl.exe
+#   INCLUDE should be defined
+#   LIB     should be defined
+#   LIBPATH should be defined
+#   VS100COMNTOOLS should be defined
+#   WINDOWSSDKDIR should be defined
+#     The 7.0a path is from VS2010 Pro, the 7.1 path is the standalone SDK.
+#     For 64bit either will work for us.
+#     If a developer chooses to install the standalone SDK in some other
+#     location, then they need to set WINDOWSSDKDIR.
+#
+# Compilers for 64bit may be from the free SDK, or Visual Studio Professional.
+#   The free Express compilers don't contain 64 bit compilers, which is why
+#   you instead need the SDK.
+#   Release enginering will use VS2010 Pro, so the frequency of testing of
+#     SDK based builds will depend entirely on individual usage.
+
+# We only need to do this once
+ifndef VS2010_EXISTS
+  # The 2 key paths we need are WINDOWSSDKDIR and VS100COMNTOOLS.
+  #   If not defined try to see if default location exists.
+  #   If defined make sure that the path has no spaces.
+  #   Finally, export path with no spaces so logic minimizes FullPath calls.
+  ifndef WINDOWSSDKDIR
+    # The 7.0a SDK is the second choice.
+    xWINDOWSSDKDIR :="$(_program_files32)/Microsoft SDKs/Windows/v7.0a/"
+    fWINDOWSSDKDIR :=$(call FullPath,$(xWINDOWSSDKDIR))
+    # The 7.1 SDK is the second choice.
+    ifeq ($(fWINDOWSSDKDIR),)
+      xWINDOWSSDKDIR :="$(_program_files32)/Microsoft SDKs/Windows/v7.1/"
+      fWINDOWSSDKDIR :=$(call FullPath,$(xWINDOWSSDKDIR))
+    endif
   else
-    ifdef MSVCDir
-      xMSVCDIR  :="$(subst \,/,$(MSVCDir))"
-      _msvc_dir :=$(call FullPath,$(xMSVCDIR))
+    ifneq ($(word 2,$(WINDOWSSDKDIR)),)
+      xWINDOWSSDKDIR :="$(subst \,/,$(WINDOWSSDKDIR))"
+      fWINDOWSSDKDIR :=$(call FullPath,$(xWINDOWSSDKDIR))
+    else
+      fWINDOWSSDKDIR :=$(WINDOWSSDKDIR)
     endif
   endif
-  # If we still don't have it, look for VSnnCOMNTOOLS (newest first),
-  # set by installer?
-  ifeq ($(_msvc_dir),)
-    ifdef VS100COMNTOOLS  # /Common/Tools directory, use ../../Vc
+  ifneq ($(fWINDOWSSDKDIR),)
+    WINDOWSSDKDIR  :=$(fWINDOWSSDKDIR)/
+  endif
+  ifndef VS100COMNTOOLS
+    xVS100COMNTOOLS :="$(_program_files32)/Microsoft Visual Studio 10.0/Common7/Tools/"
+    fVS100COMNTOOLS :=$(call FullPath,$(xVS100COMNTOOLS))
+  else
+    ifneq ($(word 2,$(VS100COMNTOOLS)),)
       xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
-      _vs100tools     :=$(call FullPath,$(xVS100COMNTOOLS))
-    endif
-    ifneq ($(_vs100tools),)
-      _msvc_dir   :=$(_vs100tools)/../../Vc
+      fVS100COMNTOOLS :=$(call FullPath,$(xVS100COMNTOOLS))
     else
+      fVS100COMNTOOLS :=$(xVS100COMNTOOLS)
+    endif
+  endif
+  ifneq ($(fVS100COMNTOOLS),)
+    VS100COMNTOOLS :=$(fVS100COMNTOOLS)/
+  endif
+  # Check to see that both exist
+  ifeq ($(WINDOWSSDKDIR),)
+    _vs2010_message := No WINDOWSSDKDIR found on system. $(_vs2010_message)
+    VS2010_EXISTS   := false
+  endif
+  ifeq ($(VS100COMNTOOLS),)
+    _vs2010_message := No VS100COMNTOOLS found on system. $(_vs2010_message)
+    VS2010_EXISTS   := false
+  endif
+  ifeq ($(VS2010_EXISTS),false)
+    x:=$(warning WARNING: No VS2010 available. $(_vs2010_message))
+    VS100COMNTOOLS :=
+    WINDOWSSDKDIR  :=
+  else
+    VS2010_EXISTS := true
+    _msvc_dir     :=$(VS100COMNTOOLS)/../../Vc
+  endif
+  export VS2010_EXISTS
+  export VS100COMNTOOLS
+  export WINDOWSSDKDIR
+endif
+
+# Setup for VS2010 is simple, others logic is historic
+ifeq ($(VS2010_EXISTS),true)
+  
+  # VS2010 Compiler root directory
+  _msvc_dir :=$(VS100COMNTOOLS)/../../Vc
+  # SDK root directory
+  _ms_sdk   :=$(WINDOWSSDKDIR)
+  # Compiler bin directory and redist directory
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    _compiler_bin :=$(_msvc_dir)/Bin
+    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC100.CRT)
+  endif
+  ifeq ($(ARCH_DATA_MODEL), 64)
+    _compiler_bin :=$(_msvc_dir)/bin/amd64
+    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x64/Microsoft.VC100.CRT)
+  endif
+  ifeq ($(_redist_sdk),)
+    _redist_sdk   :=$(_system_root)/system32
+  endif
+
+else # Not VS2010
+
+  # Compilers, SDK, and Visual Studio (MSDEV) [32bit is different from 64bit]
+  ifeq ($(ARCH_DATA_MODEL), 32)
+
+    # Try looking in MSVCDIR or MSVCDir area first 
+    # (set by vcvars32.bat for VC .NET, not defined in the VC 2008/2010)
+    ifdef MSVCDIR
+      xMSVCDIR  :="$(subst \,/,$(MSVCDIR))"
+      _msvc_dir :=$(call FullPath,$(xMSVCDIR))
+    else
+      ifdef MSVCDir
+        xMSVCDIR  :="$(subst \,/,$(MSVCDir))"
+        _msvc_dir :=$(call FullPath,$(xMSVCDIR))
+      endif
+    endif
+    # If we still don't have it, look for VSnnCOMNTOOLS (newest first),
+    # set by installer?
+    ifeq ($(_msvc_dir),)
       ifdef VS90COMNTOOLS  # /Common/Tools directory, use ../../Vc
         xVS90COMNTOOLS :="$(subst \,/,$(VS90COMNTOOLS))"
         _vs90tools     :=$(call FullPath,$(xVS90COMNTOOLS))
@@ -275,46 +383,38 @@ ifeq ($(ARCH_DATA_MODEL), 32)
         endif
       endif
     endif
-  endif
-  ifneq ($(_msvc_dir),)
-    _compiler_bin :=$(_msvc_dir)/Bin
-    # Assume PlatformSDK is in VS71 (will be empty if VS90)
-    _ms_sdk       :=$(call FullPath,$(_msvc_dir)/PlatformSDK)
-    # Assume VS100, then VS90, then VS80, then VS71
-    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC100.CRT)
-    ifeq ($(_redist_sdk),)
-      ifneq ($(VS100COMNTOOLS),)
-        _redist_sdk  :=c:/windows/system32
-      else
-        _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC90.CRT)
+  
+    ifneq ($(_msvc_dir),)
+      _compiler_bin :=$(_msvc_dir)/Bin
+      # Assume PlatformSDK is in VS71 (will be empty if VS90)
+      _ms_sdk       :=$(call FullPath,$(_msvc_dir)/PlatformSDK)
+      _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC90.CRT)
+      ifeq ($(_redist_sdk),)
+        _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC80.CRT)
         ifeq ($(_redist_sdk),)
-          _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC80.CRT)
-          ifeq ($(_redist_sdk),)
-            _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
-          endif
+          _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
         endif
       endif
     endif
   endif
-endif
 
-# The Microsoft Platform SDK installed by itself
-ifneq ($(_program_files),)
-  _PSDK :="$(_program_files)/Microsoft SDKs/Windows/v6.1/"
-  _psdk :=$(call FullPath,$(xMSSDK61))
-  ifeq ($(_psdk),)
-    xPSDK  :="$(_program_files)/Microsoft Platform SDK"
-    _psdk  :=$(call FullPath,$(xPSDK))
+  # The Microsoft Platform SDK installed by itself
+  ifneq ($(_program_files),)
+    _PSDK :="$(_program_files)/Microsoft SDKs/Windows/v6.1/"
+    _psdk :=$(call FullPath,$(xMSSDK61))
     ifeq ($(_psdk),)
-      xPSDK  :="$(_program_files)/Microsoft SDK"
-      _psdk :=$(call FullPath,$(xMSSDK))
+      xPSDK  :="$(_program_files)/Microsoft Platform SDK"
+      _psdk  :=$(call FullPath,$(xPSDK))
+      ifeq ($(_psdk),)
+        xPSDK  :="$(_program_files)/Microsoft SDK"
+        _psdk :=$(call FullPath,$(xMSSDK))
+      endif
     endif
   endif
-endif
 
-# If no SDK found yet, look in other places
-ifeq ($(_ms_sdk),)
-  ifdef MSSDK
+  # If no SDK found yet, look in other places
+  ifeq ($(_ms_sdk),)
+    ifdef MSSDK
     xMSSDK  :="$(subst \,/,$(MSSDK))"
     _ms_sdk :=$(call FullPath,$(xMSSDK))
   else
@@ -322,56 +422,13 @@ ifeq ($(_ms_sdk),)
       xMSSDK  :="$(subst \,/,$(MSSdk))"
       _ms_sdk :=$(call FullPath,$(xMSSDK))
     else
-      _ms_sdk :=$(_psdk)
+        _ms_sdk :=$(_psdk)
+      endif
     endif
   endif
-endif
-
-# Compilers for 64bit may be from the free SDK, or Visual Studio Professional
-# The free Express compilers don't contain 64 bit compilers, which is why
-# you instead need the SDK.
-# So for VS2010 based builds, either VS2010 Pro with the 7.0a SDK, or
-# the Windows 7.1 standalone SDK with compilers may be used.
-# Release enginering will use VS2010 Pro, so the frequency of testing of
-# SDK based builds will depend entirely on individual usage.
-ifeq ($(ARCH_DATA_MODEL), 64)
-  ifdef VS100COMNTOOLS  # /Common7/Tools directory, use ../../Vc
-    # VS2010 default location is used when building 64 bit using the 7.1 SDK
-    # This is safe to hardwire as the SDK installer won't let you change it
-    # and the VS2010 variable is only used if the compilers are from the SDK
-    xVS2010 :="$(_program_files32)/Microsoft Visual Studio 10.0/"
-    VS2010 :=$(call FullPath,$(xVS2010))
-    xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
-    _vs100tools     :=$(call FullPath,$(xVS100COMNTOOLS))
-  endif
-  ifneq ($(_vs100tools),)
-    _compiler_bin :=$(_vs100tools)/../../Vc/bin/amd64
-    x_redist_sdk   :=$(_vs100tools)/../../Vc/redist/x64/Microsoft.VC100.CRT
-    _redist_sdk    :=$(call FullPath,$(x_redist_sdk))
-    # The SDK doesn't have the redist directory, but the DLL is installed
-    # into the windows directory.
-    ifeq ($(_redist_sdk),)
-      _redist_sdk   :=c:/windows/system32
-    endif
-    # Not currently using MSSDK7n, but maybe we can make use of it for
-    # doing default location lookup to find some SDK tools that presently
-    # require the developer to explicitly set the path.
-    # The 7.0a path is from VS2010 Pro, the 7.1 path is the standalone SDK.
-    # Either will work for us.
-    # If a developer chooses to install the standalone SDK in some other
-    # location, then this will fail to find it, which won't matter so long as
-    # we aren't using this variable. If we do they'd still need to set the
-    # ALT_MSDEVTOOLS_PATH as now.
-    # %WindowsSdkDir% could be referenced instead but the SDK installer
-    # doesn't set it and in the case of the VS2010 compilers,
-    # you can't change this location in the installer anyway.
-    xMSSDK7n      :="$(_program_files32)/Microsoft SDKs/Windows/v7.0a/"
-    MSSDK7n       :=$(call FullPath,$(xMSSDK7n))
-    ifeq ($(MSSDK7n),)
-      xMSSDK7n      :="$(_program_files32)/Microsoft SDKs/Windows/v7.1/"
-      MSSDK7n       :=$(call FullPath,$(xMSSDK7n))
-    endif
-  else
+  
+  # Compilers for 64bit may be from the free SDK, or Visual Studio Professional.
+  ifeq ($(ARCH_DATA_MODEL), 64)
     xVS2008 :="$(_program_files32)/Microsoft Visual Studio 9.0/"
     VS2008 :=$(call FullPath,$(xVS2008))
     ifneq ($(VS2008),)
@@ -391,7 +448,8 @@ ifeq ($(ARCH_DATA_MODEL), 64)
       endif
     endif
   endif
-endif
+
+endif # VS2010_EXISTS
 
 # Location on system where jdk installs might be
 ifneq ($(_program_files),)
@@ -509,7 +567,7 @@ MSVCRT_DLL_PATH:=$(call AltCheckValue,MSVCRT_DLL_PATH)
 ifeq ($(ARCH_DATA_MODEL), 32)
   _NEEDS_MSVCRNN = true
 else
-  ifneq ($(VS2010),)
+  ifeq ($(VS2010_EXISTS),true)
     _NEEDS_MSVCRNN = true
   else 
     ifneq ($(VS2008),)

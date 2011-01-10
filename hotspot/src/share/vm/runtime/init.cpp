@@ -125,9 +125,6 @@ jint init_globals() {
   javaClasses_init();  // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
 
-  // Generate MethodHandles adapters.
-  MethodHandles::generate_adapters();
-
   // Although we'd like to, we can't easily do a heap verify
   // here because the main thread isn't yet a JavaThread, so
   // its TLAB may not be made parseable from the usual interfaces.
