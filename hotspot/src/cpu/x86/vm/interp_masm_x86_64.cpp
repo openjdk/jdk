@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -855,7 +855,7 @@ void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
 // Set the method data pointer for the current bcp.
 void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  Label zero_continue;
+  Label set_mdp;
   push(rax);
   push(rbx);
 
@@ -863,21 +863,17 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   // Test MDO to avoid the call if it is NULL.
   movptr(rax, Address(rbx, in_bytes(methodOopDesc::method_data_offset())));
   testptr(rax, rax);
-  jcc(Assembler::zero, zero_continue);
-
+  jcc(Assembler::zero, set_mdp);
   // rbx: method
   // r13: bcp
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::bcp_to_di), rbx, r13);
   // rax: mdi
-
+  // mdo is guaranteed to be non-zero here, we checked for it before the call.
   movptr(rbx, Address(rbx, in_bytes(methodOopDesc::method_data_offset())));
-  testptr(rbx, rbx);
-  jcc(Assembler::zero, zero_continue);
   addptr(rbx, in_bytes(methodDataOopDesc::data_offset()));
-  addptr(rbx, rax);
-  movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), rbx);
-
-  bind(zero_continue);
+  addptr(rax, rbx);
+  bind(set_mdp);
+  movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), rax);
   pop(rbx);
   pop(rax);
 }
