@@ -26,6 +26,9 @@
 include $(JDK_TOPDIR)/make/docs/CORE_PKGS.gmk
 include $(JDK_TOPDIR)/make/docs/NON_CORE_PKGS.gmk
 
+# What jdk version are we building
+THIS_JDK_VERSION := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
+
 #
 # Perform release engineering tasks.
 #
@@ -71,9 +74,6 @@ ifeq ($(PLATFORM), solaris)
 endif
 
 JTG_DOCS            = $(JDK_TOPDIR)/src/solaris/doc
-
-#We use this for man page header
-jdkversion := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
 
 # The base names of all the license and document files for the jdk and jre
 #   (These files get placed in the jdk and jre install images)
@@ -185,7 +185,7 @@ for manbase in $(MANBASEDIRS:%=%/$(MAN1SUBDIR)) ; do \
         $(MKDIR) -p $1/man/$${ja_dir}/man1; \
         $(CAT) $${manbase}/ja/$${manpage} \
           | $(NATIVE2ASCII) -encoding $(JA_SOURCE_ENCODING) \
-          | $(SED) 's/@@VERSION@@/$(jdkversion)/g' \
+          | $(SED) 's/@@VERSION@@/$(THIS_JDK_VERSION)/g' \
           | $(NATIVE2ASCII) -reverse -encoding $${ja_encoding} \
             > $1/man/$${ja_dir}/man1/$${manpage}; \
       done; \
@@ -215,6 +215,7 @@ images images-clobber \
 initial-image-jre initial-image-jdk \
 initial-image-jre-sol64 initial-image-jdk-sol64 \
 trim-image-jre trim-image-jdk \
+identify-image-jre identify-image-jdk \
 process-image-jre process-image-jdk \
 compare-image \
 sec-files sec-files-win jgss-files ::
@@ -224,11 +225,12 @@ sec-files sec-files-win jgss-files ::
 images:: sanity-images post-sanity-images  \
 	 $(INITIAL_IMAGE_JRE) $(INITIAL_IMAGE_JDK) \
 	 trim-image-jre trim-image-jdk \
+         identify-image-jre identify-image-jdk \
 	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files
 
 # Don't use these
-image-jre:: initial-image-jre trim-image-jre process-image-jre
-image-jdk:: initial-image-jdk trim-image-jdk process-image-jdk
+image-jre:: initial-image-jre trim-image-jre identify-image-jre process-image-jre
+image-jdk:: initial-image-jdk trim-image-jdk identify-image-jdk process-image-jdk
 
 #
 # Sources we ship in the SDK.
@@ -1088,6 +1090,45 @@ endif
 	$(RM) $(JDK_BIN_LIST)
 
 ###################################################################
+# What did we build
+###################################################################
+
+# The jdk text info file that lives at the root of the install image.
+
+JDK_INFO_FILE = $(JDK_IMAGE_DIR)/release
+JRE_INFO_FILE = $(JRE_IMAGE_DIR)/release
+
+# Common way to emit a line into the release or info file
+define info-file-item # name value
+$(PRINTF) "%s=\"%s\"\n" $1 $2 >> $@
+endef
+
+# Values to emit
+MINIMUM_OS_NAME    := $(REQUIRED_OS_NAME)
+MINIMUM_OS_VERSION := $(REQUIRED_OS_VERSION)
+MINIMUM_OS_ARCH    := $(ARCH)
+
+$(JDK_INFO_FILE): FRC
+	$(prep-target)
+	$(call info-file-item, "JAVA_VERSION", "$(THIS_JDK_VERSION)")
+	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
+	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+
+# Create release file to identify this image
+identify-image-jdk:: $(JDK_INFO_FILE)
+
+$(JRE_INFO_FILE): FRC
+	$(prep-target)
+	$(call info-file-item, "JAVA_VERSION", "$(THIS_JDK_VERSION)")
+	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
+	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+
+# Create release file to identify this image
+identify-image-jre:: $(JRE_INFO_FILE)
+
+###################################################################
 # What do we compare against
 ###################################################################
 
@@ -1240,6 +1281,7 @@ images images-clobber::
         initial-image-jre-setup \
 	trim-image-jre trim-image-jdk \
 	process-image-jre process-image-jdk \
+	identify-image-jre identify-image-jdk \
 	install-previous-jre install-previous-jdk \
 	compare-image-jre compare-image-jdk \
 	compare-image compare-image-clobber \
