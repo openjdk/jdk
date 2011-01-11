@@ -91,7 +91,7 @@ div.example {
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a name="e.style">style</a> (<a href="#e.property">property</a> | <a href="#e.defaultsProperty">defaultsProperty</a> | <a href="#e.state">state</a> | <a href="#e.font">font</a> | <a href="#e.graphicsUtils">graphicsUtils</a> |
-                 <a href="#e.insets">insets</a> | <a href="#e.painter">painter</a> | <a href="#e.imagePainter">imagePainter</a> | <a href="#e.opaque">opaque</a> | (<a href="#beansPersistance">%beansPersistance;</a>) |
+                 <a href="#e.insets">insets</a> | <a href="#e.painter">painter</a> | <a href="#e.imagePainter">imagePainter</a> | <a href="#e.opaque">opaque</a> | (<a href="#ee.beansPersistance">%beansPersistance;</a>) |
                  <a href="#e.imageIcon">imageIcon</a>)*>
 &lt;!ATTLIST style
           <a href="#style.id">id</a>              ID          #IMPLIED
@@ -250,8 +250,8 @@ div.example {
     <p>
       Defines the font for the current <a href="#e.state">state</a>,
       or <a href="#e.style">style</a>. You must
-      specify either an <a href="#state.idref">idref</a> or a
-      <a href="#state.name">name</a> and <a href="#state.size">size</a>.
+      specify either an <a href="#font.idref">idref</a> or a
+      <a href="#font.name">name</a> and <a href="#font.size">size</a>.
     </p>
     <p>
       The following example creates a style with a Font of
@@ -797,7 +797,7 @@ div.example {
           <a href="#imagePainter.path">path</a>                  CDATA          #REQUIRED
           <a href="#imagePainter.sourceInsets">sourceInsets</a>          CDATA          #IMPLIED
           <a href="#imagePainter.destinationInsets">destinationInsets</a>     CDATA          #IMPLIED
-          <a href="#imagePainter.paintCenter">paintCenter</a>           (true|false)   "true"
+          <a href="#imagePainter.painterCenter">paintCenter</a>           (true|false)   "true"
           <a href="#imagePainter.stretch">stretch</a>               (true|false)   "true"
           <a href="#imagePainter.center">center</a>                (true|false)   "false"
 &gt;
