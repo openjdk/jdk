@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,12 +269,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
 #ifndef CC_INTERP
   // Interpreter profiling operations
-  void set_method_data_pointer() { set_method_data_pointer_offset(noreg); }
+  void set_method_data_pointer();
   void set_method_data_pointer_for_bcp();
-  void set_method_data_pointer_offset(Register mdi_reg);
   void test_method_data_pointer(Label& zero_continue);
   void verify_method_data_pointer();
-  void test_invocation_counter_for_mdp(Register invocation_count, Register cur_bcp, Register Rtmp, Label &profile_continue);
+  void test_invocation_counter_for_mdp(Register invocation_count, Register Rtmp, Label &profile_continue);
 
   void set_mdp_data_at(int constant, Register value);
   void increment_mdp_data_at(Address counter, Register bumped_count,

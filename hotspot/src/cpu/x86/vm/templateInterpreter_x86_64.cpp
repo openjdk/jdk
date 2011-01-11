@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1383,20 +1383,8 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     if (ProfileInterpreter) {
       // We have decided to profile this method in the interpreter
       __ bind(profile_method);
-
-      __ call_VM(noreg,
-                 CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method),
-                 r13, true);
-
-      __ movptr(rbx, Address(rbp, method_offset)); // restore methodOop
-      __ movptr(rax, Address(rbx,
-                             in_bytes(methodOopDesc::method_data_offset())));
-      __ movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize),
-                rax);
-      __ test_method_data_pointer(rax, profile_method_continue);
-      __ addptr(rax, in_bytes(methodDataOopDesc::data_offset()));
-      __ movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize),
-              rax);
+      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
+      __ set_method_data_pointer_for_bcp();
       __ jmp(profile_method_continue);
     }
     // Handle overflow of counter and compile method
