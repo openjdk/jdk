@@ -2253,12 +2253,14 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread,  oop object) {
 
 void JvmtiExport::cleanup_thread(JavaThread* thread) {
   assert(JavaThread::current() == thread, "thread is not current");
+  MutexLocker mu(JvmtiThreadState_lock);
 
-
-  // This has to happen after the thread state is removed, which is
-  // why it is not in post_thread_end_event like its complement
-  // Maybe both these functions should be rolled into the posts?
-  JvmtiEventController::thread_ended(thread);
+  if (thread->jvmti_thread_state() != NULL) {
+    // This has to happen after the thread state is removed, which is
+    // why it is not in post_thread_end_event like its complement
+    // Maybe both these functions should be rolled into the posts?
+    JvmtiEventController::thread_ended(thread);
+  }
 }
 
 void JvmtiExport::oops_do(OopClosure* f) {
