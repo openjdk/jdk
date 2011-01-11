@@ -809,7 +809,7 @@ class JavaThread: public Thread {
   //
   // _vm_exited is a special value to cover the case of a JavaThread
   // executing native code after the VM itself is terminated.
-  TerminatedTypes       _terminated;
+  volatile TerminatedTypes _terminated;
   // suspend/resume support
   volatile bool         _suspend_equivalent;     // Suspend equivalent condition
   jint                  _in_deopt_handler;       // count of deoptimization

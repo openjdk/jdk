@@ -31,6 +31,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -1699,7 +1700,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     tlab().make_parsable(true);  // retire TLAB
   }
 
-  if (jvmti_thread_state() != NULL) {
+  if (JvmtiEnv::environments_might_exist()) {
     JvmtiExport::cleanup_thread(this);
   }
 
