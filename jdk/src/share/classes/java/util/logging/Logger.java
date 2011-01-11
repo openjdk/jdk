@@ -1426,7 +1426,7 @@ public class Logger {
                 // we didn't have a previous parent
                 ref = manager.new LoggerWeakRef(this);
             }
-            ref.setParentRef(new WeakReference<>(parent));
+            ref.setParentRef(new WeakReference<Logger>(parent));
             parent.kids.add(ref);
 
             // As a result of the reparenting, the effective level
