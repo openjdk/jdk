@@ -2569,6 +2569,12 @@ public class JavacParser implements Parser {
             } else {
                 pos = S.pos();
                 List<JCTypeParameter> typarams = typeParametersOpt();
+                // if there are type parameters but no modifiers, save the start
+                // position of the method in the modifiers.
+                if (typarams.nonEmpty() && mods.pos == Position.NOPOS) {
+                    mods.pos = pos;
+                    storeEnd(mods, pos);
+                }
                 Name name = S.name();
                 pos = S.pos();
                 JCExpression type;
