@@ -288,8 +288,8 @@ ifndef VS2010_EXISTS
     xVS100COMNTOOLS :="$(_program_files32)/Microsoft Visual Studio 10.0/Common7/Tools/"
     fVS100COMNTOOLS :=$(call FullPath,$(xVS100COMNTOOLS))
   else
+    xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
     ifneq ($(word 2,$(VS100COMNTOOLS)),)
-      xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
       fVS100COMNTOOLS :=$(call FullPath,$(xVS100COMNTOOLS))
     else
       fVS100COMNTOOLS :=$(xVS100COMNTOOLS)
