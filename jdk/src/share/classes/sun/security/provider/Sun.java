@@ -55,7 +55,7 @@ public final class Sun extends Provider {
             SunEntries.putEntries(this);
         } else {
             // use LinkedHashMap to preserve the order of the PRNGs
-            Map<Object, Object> map = new LinkedHashMap<Object, Object>();
+            Map<Object, Object> map = new LinkedHashMap<>();
             SunEntries.putEntries(map);
             AccessController.doPrivileged(new PutAllAction(this, map));
         }

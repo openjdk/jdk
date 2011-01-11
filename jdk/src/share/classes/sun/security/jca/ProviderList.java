@@ -96,7 +96,7 @@ public final class ProviderList {
         if (providerList.getProvider(p.getName()) != null) {
             return providerList;
         }
-        List<ProviderConfig> list = new ArrayList<ProviderConfig>
+        List<ProviderConfig> list = new ArrayList<>
                                     (Arrays.asList(providerList.configs));
         int n = list.size();
         if ((position < 0) || (position > n)) {
@@ -160,7 +160,7 @@ public final class ProviderList {
      * Return a new ProviderList parsed from the java.security Properties.
      */
     private ProviderList() {
-        List<ProviderConfig> configList = new ArrayList<ProviderConfig>();
+        List<ProviderConfig> configList = new ArrayList<>();
         for (int i = 1; true; i++) {
             String entry = Security.getProperty("security.provider." + i);
             if (entry == null) {
@@ -200,7 +200,7 @@ public final class ProviderList {
      * possible recursion and deadlock during verification.
      */
     ProviderList getJarList(String[] jarClassNames) {
-        List<ProviderConfig> newConfigs = new ArrayList<ProviderConfig>();
+        List<ProviderConfig> newConfigs = new ArrayList<>();
         for (String className : jarClassNames) {
             ProviderConfig newConfig = new ProviderConfig(className);
             for (ProviderConfig config : configs) {
@@ -356,7 +356,7 @@ public final class ProviderList {
      */
     @Deprecated
     public List<Service> getServices(String type, List<String> algorithms) {
-        List<ServiceId> ids = new ArrayList<ServiceId>();
+        List<ServiceId> ids = new ArrayList<>();
         for (String alg : algorithms) {
             ids.add(new ServiceId(type, alg));
         }

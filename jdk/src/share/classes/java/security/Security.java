@@ -659,7 +659,7 @@ public final class Security {
     }
 
     // Map containing cached Spi Class objects of the specified type
-    private static final Map<String,Class> spiMap = new ConcurrentHashMap<>();
+    private static final Map<String, Class> spiMap = new ConcurrentHashMap<>();
 
     /**
      * Return the Class object for the given engine type

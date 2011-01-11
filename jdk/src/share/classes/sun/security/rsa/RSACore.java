@@ -215,11 +215,11 @@ public final class RSACore {
     // value suggested by Paul Kocher (quoted by NSS)
     private final static int BLINDING_MAX_REUSE = 50;
 
-    // cache for blinding parameters. Map<BigInteger,BlindingParameters>
+    // cache for blinding parameters. Map<BigInteger, BlindingParameters>
     // use a weak hashmap so that cached values are automatically cleared
     // when the modulus is GC'ed
-    private final static Map<BigInteger,BlindingParameters> blindingCache =
-                new WeakHashMap<BigInteger,BlindingParameters>();
+    private final static Map<BigInteger, BlindingParameters> blindingCache =
+                new WeakHashMap<>();
 
     /**
      * Set of blinding parameters for a given RSA key.
