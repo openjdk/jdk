@@ -4104,7 +4104,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
 
   ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t1);
   sub(top, t1, t1); // size of tlab's allocated portion
-  incr_allocated_bytes(t1, 0, t2);
+  incr_allocated_bytes(t1, t2, t3);
 
   // refill the tlab with an eden allocation
   bind(do_refill);
@@ -4138,19 +4138,14 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   delayed()->nop();
 }
 
-void MacroAssembler::incr_allocated_bytes(Register var_size_in_bytes,
-                                          int con_size_in_bytes,
-                                          Register t1) {
+void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,
+                                          Register t1, Register t2) {
   // Bump total bytes allocated by this thread
   assert(t1->is_global(), "must be global reg"); // so all 64 bits are saved on a context switch
-  assert_different_registers(var_size_in_bytes, t1);
+  assert_different_registers(size_in_bytes.register_or_noreg(), t1, t2);
   // v8 support has gone the way of the dodo
   ldx(G2_thread, in_bytes(JavaThread::allocated_bytes_offset()), t1);
-  if (var_size_in_bytes->is_valid()) {
-    add(t1, var_size_in_bytes, t1);
-  } else {
-    add(t1, con_size_in_bytes, t1);
-  }
+  add(t1, ensure_simm13_or_reg(size_in_bytes, t2), t1);
   stx(t1, G2_thread, in_bytes(JavaThread::allocated_bytes_offset()));
 }
 

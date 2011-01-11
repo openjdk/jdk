@@ -3447,7 +3447,8 @@ void TemplateTable::_new() {
     __ delayed()->nop();
 
     // bump total bytes allocated by this thread
-    __ incr_allocated_bytes(Roffset, 0, G1_scratch);
+    // RoldTopValue and RtopAddr are dead, so can use G1 and G3
+    __ incr_allocated_bytes(Roffset, G1_scratch, G3_scratch);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
