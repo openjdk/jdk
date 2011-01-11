@@ -70,7 +70,7 @@ import sun.swing.SwingUtilities2;
  * will render a solid color as specified in the associated text component
  * in the <code>SelectionColor</code> property.  This can easily be changed
  * by reimplementing the
- * <a href="#getSelectionHighlighter">getSelectionHighlighter</a>
+ * {@link #getSelectionPainter getSelectionPainter}
  * method.
  * <p>
  * A customized caret appearance can be achieved by reimplementing

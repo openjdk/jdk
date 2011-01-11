@@ -33,9 +33,7 @@ import java.util.EventListener;
  * in the AWT.
  * <p>
  * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/events/internalframelistener.html">How to Write an Internal Frame Listener</a>
- * in <em>The Java Tutorial</em> and
- * <a href="http://www.awl.com/cp/javaseries/jcl1_2.html">The Java Class Libraries (update)</a>
- * for further documentation.
+ * in <em>The Java Tutorial</em> for further documentation.
  *
  * @see java.awt.event.WindowListener
  *
