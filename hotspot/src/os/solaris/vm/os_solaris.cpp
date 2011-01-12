@@ -1884,10 +1884,9 @@ void os::set_error_file(const char *logfile) {}
 
 const char* os::dll_file_extension() { return ".so"; }
 
-const char* os::get_temp_directory() {
-  const char *prop = Arguments::get_property("java.io.tmpdir");
-  return prop == NULL ? "/tmp" : prop;
-}
+// This must be hard coded because it's the system's temporary
+// directory not the java application's temp directory, ala java.io.tmpdir.
+const char* os::get_temp_directory() { return "/tmp"; }
 
 static bool file_exists(const char* filename) {
   struct stat statbuf;
