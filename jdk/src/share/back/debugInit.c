@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,27 +133,60 @@ set_event_notification(jvmtiEventMode mode, EventIndex ei)
     return error;
 }
 
+typedef struct {
+    int major;
+    int minor;
+} version_type;
+
+typedef struct {
+    version_type runtime;
+    version_type compiletime;
+} compatible_versions_type;
+
+/*
+ * List of explicitly compatible JVMTI versions, specified as
+ * { runtime version, compile-time version } pairs. -1 is a wildcard.
+ */
+static int nof_compatible_versions = 3;
+static compatible_versions_type compatible_versions_list[] = {
+    /*
+     * FIXUP: Allow version 0 to be compatible with anything
+     * Special check for FCS of 1.0.
+     */
+    { {  0, -1 }, { -1, -1 } },
+    { { -1, -1 }, {  0, -1 } },
+    /*
+     * 1.2 is runtime compatible with 1.1 -- just make sure to check the
+     * version before using any new 1.2 features
+     */
+    { {  1,  1 }, {  1,  2 } }
+};
+
+
 /* Logic to determine JVMTI version compatibility */
 static jboolean
 compatible_versions(jint major_runtime,     jint minor_runtime,
                     jint major_compiletime, jint minor_compiletime)
 {
-#if 1 /* FIXUP: We allow version 0 to be compatible with anything */
-    /* Special check for FCS of 1.0. */
-    if ( major_runtime == 0 || major_compiletime == 0 ) {
-        return JNI_TRUE;
+    /*
+     * First check to see if versions are explicitly compatible via the
+     * list specified above.
+     */
+    int i;
+    for (i = 0; i < nof_compatible_versions; ++i) {
+        version_type runtime = compatible_versions_list[i].runtime;
+        version_type comptime = compatible_versions_list[i].compiletime;
+
+        if ((major_runtime     == runtime.major  || runtime.major  == -1) &&
+            (minor_runtime     == runtime.minor  || runtime.minor  == -1) &&
+            (major_compiletime == comptime.major || comptime.major == -1) &&
+            (minor_compiletime == comptime.minor || comptime.minor == -1)) {
+            return JNI_TRUE;
+        }
     }
-#endif
-    /* Runtime major version must match. */
-    if ( major_runtime != major_compiletime ) {
-        return JNI_FALSE;
-    }
-    /* Runtime minor version must be >= the version compiled with. */
-    if ( minor_runtime < minor_compiletime ) {
-        return JNI_FALSE;
-    }
-    /* Assumed compatible */
-    return JNI_TRUE;
+
+    return major_runtime == major_compiletime &&
+           minor_runtime >= minor_compiletime;
 }
 
 /* OnLoad startup:

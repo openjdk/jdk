@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@ enum {
     JVMTI_VERSION_1   = 0x30010000,
     JVMTI_VERSION_1_0 = 0x30010000,
     JVMTI_VERSION_1_1 = 0x30010100,
+    JVMTI_VERSION_1_2 = 0x30010200,
 
-    JVMTI_VERSION = 0x30000000 + (1 * 0x10000) + (1 * 0x100) + 102  /* version: 1.1.102 */
+    JVMTI_VERSION = 0x30000000 + (1 * 0x10000) + (2 * 0x100) + 1  /* version: 1.2.1 */
 };
 
 JNIEXPORT jint JNICALL
@@ -1774,6 +1775,12 @@ typedef struct jvmtiInterface_1_ {
     jobject object,
     jlong* size_ptr);
 
+  /*   155 : Get Local Instance */
+  jvmtiError (JNICALL *GetLocalInstance) (jvmtiEnv* env,
+    jthread thread,
+    jint depth,
+    jobject* value_ptr);
+
 } jvmtiInterface_1;
 
 struct _jvmtiEnv {
@@ -2029,6 +2036,12 @@ struct _jvmtiEnv {
             jint slot,
             jobject* value_ptr) {
     return functions->GetLocalObject(this, thread, depth, slot, value_ptr);
+  }
+
+  jvmtiError GetLocalInstance(jthread thread,
+            jint depth,
+            jobject* value_ptr) {
+    return functions->GetLocalInstance(this, thread, depth, value_ptr);
   }
 
   jvmtiError GetLocalInt(jthread thread,
@@ -2518,3 +2531,4 @@ struct _jvmtiEnv {
 #endif /* __cplusplus */
 
 #endif /* !_JAVA_JVMTI_H_ */
+
