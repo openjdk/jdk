@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3856,13 +3856,15 @@ private:
   size_t _next_marked_bytes;
   OopsInHeapRegionClosure *_cl;
 public:
-  RemoveSelfPointerClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* cl) :
-    _g1(g1), _cm(_g1->concurrent_mark()),  _prev_marked_bytes(0),
+  RemoveSelfPointerClosure(G1CollectedHeap* g1, HeapRegion* hr,
+                           OopsInHeapRegionClosure* cl) :
+    _g1(g1), _hr(hr), _cm(_g1->concurrent_mark()),  _prev_marked_bytes(0),
     _next_marked_bytes(0), _cl(cl) {}
 
   size_t prev_marked_bytes() { return _prev_marked_bytes; }
   size_t next_marked_bytes() { return _next_marked_bytes; }
 
+  // <original comment>
   // The original idea here was to coalesce evacuated and dead objects.
   // However that caused complications with the block offset table (BOT).
   // In particular if there were two TLABs, one of them partially refined.
@@ -3871,15 +3873,24 @@ public:
   // of TLAB_2. If the last object of the TLAB_1 and the first object
   // of TLAB_2 are coalesced, then the cards of the unrefined part
   // would point into middle of the filler object.
-  //
   // The current approach is to not coalesce and leave the BOT contents intact.
+  // </original comment>
+  //
+  // We now reset the BOT when we start the object iteration over the
+  // region and refine its entries for every object we come across. So
+  // the above comment is not really relevant and we should be able
+  // to coalesce dead objects if we want to.
   void do_object(oop obj) {
+    HeapWord* obj_addr = (HeapWord*) obj;
+    assert(_hr->is_in(obj_addr), "sanity");
+    size_t obj_size = obj->size();
+    _hr->update_bot_for_object(obj_addr, obj_size);
     if (obj->is_forwarded() && obj->forwardee() == obj) {
       // The object failed to move.
       assert(!_g1->is_obj_dead(obj), "We should not be preserving dead objs.");
       _cm->markPrev(obj);
       assert(_cm->isPrevMarked(obj), "Should be marked!");
-      _prev_marked_bytes += (obj->size() * HeapWordSize);
+      _prev_marked_bytes += (obj_size * HeapWordSize);
       if (_g1->mark_in_progress() && !_g1->is_obj_ill(obj)) {
         _cm->markAndGrayObjectIfNecessary(obj);
       }
@@ -3901,7 +3912,7 @@ public:
     } else {
       // The object has been either evacuated or is dead. Fill it with a
       // dummy object.
-      MemRegion mr((HeapWord*)obj, obj->size());
+      MemRegion mr((HeapWord*)obj, obj_size);
       CollectedHeap::fill_with_object(mr);
       _cm->clearRangeBothMaps(mr);
     }
@@ -3921,10 +3932,13 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   HeapRegion* cur = g1_policy()->collection_set();
   while (cur != NULL) {
     assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
+    assert(!cur->isHumongous(), "sanity");
 
-    RemoveSelfPointerClosure rspc(_g1h, cl);
     if (cur->evacuation_failed()) {
       assert(cur->in_collection_set(), "bad CS");
+      RemoveSelfPointerClosure rspc(_g1h, cur, cl);
+
+      cur->reset_bot();
       cl->set_region(cur);
       cur->object_iterate(&rspc);
 
@@ -3987,15 +4001,6 @@ void G1CollectedHeap::drain_evac_failure_scan_stack() {
      _evac_failure_closure->set_region(heap_region_containing(obj));
      obj->oop_iterate_backwards(_evac_failure_closure);
   }
-}
-
-void G1CollectedHeap::handle_evacuation_failure(oop old) {
-  markOop m = old->mark();
-  // forward to self
-  assert(!old->is_forwarded(), "precondition");
-
-  old->forward_to(old);
-  handle_evacuation_failure_common(old, m);
 }
 
 oop
