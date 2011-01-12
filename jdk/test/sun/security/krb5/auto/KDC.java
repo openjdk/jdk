@@ -132,7 +132,7 @@ public class KDC {
     // Principal db. principal -> pass. A case-insensitive TreeMap is used
     // so that even if the client provides a name with different case, the KDC
     // can still locate the principal and give back correct salt.
-    private TreeMap<String,char[]> passwords = new TreeMap<String,char[]>
+    private TreeMap<String,char[]> passwords = new TreeMap<>
             (String.CASE_INSENSITIVE_ORDER);
 
     // Realm name
@@ -142,9 +142,9 @@ public class KDC {
     // Service port number
     private int port;
     // The request/response job queue
-    private BlockingQueue<Job> q = new ArrayBlockingQueue<Job>(100);
+    private BlockingQueue<Job> q = new ArrayBlockingQueue<>(100);
     // Options
-    private Map<Option,Object> options = new HashMap<Option,Object>();
+    private Map<Option,Object> options = new HashMap<>();
 
     private Thread thread1, thread2, thread3;
     DatagramSocket u1 = null;
@@ -537,7 +537,7 @@ public class KDC {
         }
     }
 
-    private Map<String,String> policies = new HashMap<String,String>();
+    private Map<String,String> policies = new HashMap<>();
 
     public void setPolicy(String rule, String value) {
         if (value == null) {
@@ -760,7 +760,7 @@ public class KDC {
     private byte[] processAsReq(byte[] in) throws Exception {
         ASReq asReq = new ASReq(in);
         int[] eTypes = null;
-        List<PAData> outPAs = new ArrayList<PAData>();
+        List<PAData> outPAs = new ArrayList<>();
 
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
