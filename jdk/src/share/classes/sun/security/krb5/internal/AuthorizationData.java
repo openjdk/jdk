@@ -99,8 +99,7 @@ public class AuthorizationData implements Cloneable {
      * @exception IOException if an I/O error occurs while reading encoded data.
      */
     public AuthorizationData(DerValue der) throws Asn1Exception, IOException {
-        Vector<AuthorizationDataEntry> v =
-                new Vector<AuthorizationDataEntry>();
+        Vector<AuthorizationDataEntry> v = new Vector<>();
         if (der.getTag() != DerValue.tag_Sequence) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }

@@ -528,7 +528,7 @@ public class Config {
                 }
                 })));
                 String Line;
-                Vector<String> v = new Vector<String> ();
+                Vector<String> v = new Vector<>();
                 String previous = null;
                 while ((Line = br.readLine()) != null) {
                     // ignore comments and blank line in the configuration file.
@@ -589,7 +589,7 @@ public class Config {
             throw new KrbException("I/O error while reading" +
                         " configuration file.");
         }
-        Hashtable<String,Object> table = new Hashtable<String,Object> ();
+        Hashtable<String,Object> table = new Hashtable<>();
         for (int i = 0; i < v.size(); i++) {
             String line = v.elementAt(i).trim();
             if (line.equalsIgnoreCase("[realms]")) {
@@ -598,7 +598,7 @@ public class Config {
                     if ((count == v.size()) ||
                         (v.elementAt(count).startsWith("["))) {
                         Hashtable<String,Hashtable<String,Vector<String>>> temp =
-                            new Hashtable<String,Hashtable<String,Vector<String>>>();
+                            new Hashtable<>();
                         temp = parseRealmField(v, i + 1, count);
                         table.put("realms", temp);
                         i = count - 1;
@@ -611,7 +611,7 @@ public class Config {
                     if ((count == v.size()) ||
                         (v.elementAt(count).startsWith("["))) {
                         Hashtable<String,Hashtable<String,Vector<String>>> temp =
-                            new Hashtable<String,Hashtable<String,Vector<String>>>();
+                            new Hashtable<>();
                         temp = parseRealmField(v, i + 1, count);
                         table.put("capaths", temp);
                         i = count - 1;
@@ -729,7 +729,7 @@ public class Config {
      * Parses key-value pairs under a stanza name.
      */
     private Hashtable<String,String>  parseField(Vector<String> v, int start, int end) {
-        Hashtable<String,String> table = new Hashtable<String,String> ();
+        Hashtable<String,String> table = new Hashtable<>();
         String line;
         for (int i = start; i < end; i++) {
             line = v.elementAt(i);
@@ -751,7 +751,7 @@ public class Config {
      * information for the realm given within a pair of braces.
      */
     private Hashtable<String,Hashtable<String,Vector<String>>> parseRealmField(Vector<String> v, int start, int end) {
-        Hashtable<String,Hashtable<String,Vector<String>>> table = new Hashtable<String,Hashtable<String,Vector<String>>> ();
+        Hashtable<String,Hashtable<String,Vector<String>>> table = new Hashtable<>();
         String line;
         for (int i = start; i < end; i++) {
             line = v.elementAt(i).trim();
@@ -791,10 +791,9 @@ public class Config {
      * Parses key-value pairs within each braces under [realms].
      */
     private Hashtable<String,Vector<String>> parseRealmFieldEx(Vector<String> v, int start, int end) {
-        Hashtable<String,Vector<String>> table =
-                new Hashtable<String,Vector<String>> ();
-        Vector<String> keyVector = new Vector<String> ();
-        Vector<String> nameVector = new Vector<String> ();
+        Hashtable<String,Vector<String>> table = new Hashtable<>();
+        Vector<String> keyVector = new Vector<>();
+        Vector<String> nameVector = new Vector<>();
         String line = "";
         String key;
         for (int i = start; i < end; i++) {
@@ -899,7 +898,7 @@ public class Config {
             }
             st = new StringTokenizer(default_enctypes, delim);
             int len = st.countTokens();
-            ArrayList<Integer> ls = new ArrayList<Integer> (len);
+            ArrayList<Integer> ls = new ArrayList<>(len);
             int type;
             for (int i = 0; i < len; i++) {
                 type = getType(st.nextToken());
