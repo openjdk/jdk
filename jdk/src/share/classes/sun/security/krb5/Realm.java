@@ -359,12 +359,12 @@ public class Realm implements Cloneable {
         }
 
         String tempTarget = null, tempRealm = null;
-        Stack<String> iStack = new Stack<String> ();
+        Stack<String> iStack = new Stack<>();
 
         /*
          * I don't expect any more than a handful of intermediaries.
          */
-        Vector<String> tempList = new Vector<String> (8, 8);
+        Vector<String> tempList = new Vector<>(8, 8);
 
         /*
          * The initiator at first location.

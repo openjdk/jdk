@@ -77,7 +77,7 @@ public class LastReq {
      */
 
     public LastReq(DerValue encoding) throws Asn1Exception, IOException {
-        Vector<LastReqEntry> v= new Vector<LastReqEntry> ();
+        Vector<LastReqEntry> v= new Vector<>();
         if (encoding.getTag() != DerValue.tag_Sequence) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }

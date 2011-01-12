@@ -157,7 +157,7 @@ public class KrbCredInfo {
      * @exception IOException if an I/O error occurs while reading encoded data.
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
-        Vector<DerValue> v = new Vector<DerValue> ();
+        Vector<DerValue> v = new Vector<>();
         v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), key.asn1Encode()));
         if (prealm != null)
             v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), prealm.asn1Encode()));

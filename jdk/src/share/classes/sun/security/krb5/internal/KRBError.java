@@ -260,7 +260,7 @@ public class KRBError implements java.io.Serializable {
     private void parsePAData(byte[] data)
             throws IOException, Asn1Exception {
         DerValue derPA = new DerValue(data);
-        List<PAData> paList = new ArrayList<PAData>();
+        List<PAData> paList = new ArrayList<>();
         while (derPA.data.available() > 0) {
             // read the PA-DATA
             DerValue tmp = derPA.data.getDerValue();
