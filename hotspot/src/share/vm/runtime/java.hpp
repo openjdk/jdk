@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
   bool _partially_initialized;
 
   bool _thread_park_blocker;
+  bool _post_vm_init_hook_enabled;
 
   bool is_valid() const {
     return (_major != 0 || _partially_initialized);
@@ -113,14 +114,15 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   JDK_Version() : _major(0), _minor(0), _micro(0), _update(0),
                   _special(0), _build(0), _partially_initialized(false),
-                  _thread_park_blocker(false) {}
+                  _thread_park_blocker(false), _post_vm_init_hook_enabled(false) {}
 
   JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t micro = 0,
               uint8_t update = 0, uint8_t special = 0, uint8_t build = 0,
-              bool thread_park_blocker = false) :
+              bool thread_park_blocker = false, bool post_vm_init_hook_enabled = false) :
       _major(major), _minor(minor), _micro(micro), _update(update),
       _special(special), _build(build), _partially_initialized(false),
-      _thread_park_blocker(thread_park_blocker) {}
+      _thread_park_blocker(thread_park_blocker),
+      _post_vm_init_hook_enabled(post_vm_init_hook_enabled) {}
 
   // Returns the current running JDK version
   static JDK_Version current() { return _current; }
@@ -143,6 +145,9 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   bool supports_thread_park_blocker() const {
     return _thread_park_blocker;
+  }
+  bool post_vm_init_hook_enabled() const {
+    return _post_vm_init_hook_enabled;
   }
 
   // Performs a full ordering comparison using all fields (update, build, etc.)
