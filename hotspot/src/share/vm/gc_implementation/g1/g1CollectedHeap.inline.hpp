@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,12 @@ inline bool G1CollectedHeap::obj_in_cs(oop obj) {
 // assumptions of this method (and other related ones).
 inline HeapWord*
 G1CollectedHeap::allocate_from_cur_alloc_region(HeapRegion* cur_alloc_region,
-                                                size_t word_size) {
-  assert_heap_locked_and_not_at_safepoint();
+                                                size_t word_size,
+                                                bool with_heap_lock) {
+  assert_not_at_safepoint();
+  assert(with_heap_lock == Heap_lock->owned_by_self(),
+         "with_heap_lock and Heap_lock->owned_by_self() should be a tautology");
   assert(cur_alloc_region != NULL, "pre-condition of the method");
-  assert(cur_alloc_region == _cur_alloc_region, "pre-condition of the method");
   assert(cur_alloc_region->is_young(),
          "we only support young current alloc regions");
   assert(!isHumongous(word_size), "allocate_from_cur_alloc_region() "
@@ -76,20 +78,24 @@ G1CollectedHeap::allocate_from_cur_alloc_region(HeapRegion* cur_alloc_region,
   assert(!cur_alloc_region->is_empty(),
          err_msg("region ["PTR_FORMAT","PTR_FORMAT"] should not be empty",
                  cur_alloc_region->bottom(), cur_alloc_region->end()));
-  // This allocate method does BOT updates and we don't need them in
-  // the young generation. This will be fixed in the near future by
-  // CR 6994297.
-  HeapWord* result = cur_alloc_region->allocate(word_size);
+  HeapWord* result = cur_alloc_region->par_allocate_no_bot_updates(word_size);
   if (result != NULL) {
     assert(is_in(result), "result should be in the heap");
-    Heap_lock->unlock();
 
+    if (with_heap_lock) {
+      Heap_lock->unlock();
+    }
+    assert_heap_not_locked();
     // Do the dirtying after we release the Heap_lock.
     dirty_young_block(result, word_size);
     return result;
   }
 
-  assert_heap_locked();
+  if (with_heap_lock) {
+    assert_heap_locked();
+  } else {
+    assert_heap_not_locked();
+  }
   return NULL;
 }
 
@@ -97,31 +103,27 @@ G1CollectedHeap::allocate_from_cur_alloc_region(HeapRegion* cur_alloc_region,
 // assumptions of this method (and other related ones).
 inline HeapWord*
 G1CollectedHeap::attempt_allocation(size_t word_size) {
-  assert_heap_locked_and_not_at_safepoint();
+  assert_heap_not_locked_and_not_at_safepoint();
   assert(!isHumongous(word_size), "attempt_allocation() should not be called "
          "for humongous allocation requests");
 
   HeapRegion* cur_alloc_region = _cur_alloc_region;
   if (cur_alloc_region != NULL) {
     HeapWord* result = allocate_from_cur_alloc_region(cur_alloc_region,
-                                                      word_size);
+                                                   word_size,
+                                                   false /* with_heap_lock */);
+    assert_heap_not_locked();
     if (result != NULL) {
-      assert_heap_not_locked();
       return result;
     }
-
-    assert_heap_locked();
-
-    // Since we couldn't successfully allocate into it, retire the
-    // current alloc region.
-    retire_cur_alloc_region(cur_alloc_region);
   }
 
-  // Try to get a new region and allocate out of it
-  HeapWord* result = replace_cur_alloc_region_and_allocate(word_size,
-                                                     false, /* at_safepoint */
-                                                     true,  /* do_dirtying */
-                                                     false  /* can_expand */);
+  // Our attempt to allocate lock-free failed as the current
+  // allocation region is either NULL or full. So, we'll now take the
+  // Heap_lock and retry.
+  Heap_lock->lock();
+
+  HeapWord* result = attempt_allocation_locked(word_size);
   if (result != NULL) {
     assert_heap_not_locked();
     return result;
@@ -143,6 +145,45 @@ G1CollectedHeap::retire_cur_alloc_region_common(HeapRegion* cur_alloc_region) {
   g1_policy()->add_region_to_incremental_cset_lhs(cur_alloc_region);
   _summary_bytes_used += cur_alloc_region->used();
   _cur_alloc_region = NULL;
+}
+
+inline HeapWord*
+G1CollectedHeap::attempt_allocation_locked(size_t word_size) {
+  assert_heap_locked_and_not_at_safepoint();
+  assert(!isHumongous(word_size), "attempt_allocation_locked() "
+         "should not be called for humongous allocation requests");
+
+  // First, reread the current alloc region and retry the allocation
+  // in case somebody replaced it while we were waiting to get the
+  // Heap_lock.
+  HeapRegion* cur_alloc_region = _cur_alloc_region;
+  if (cur_alloc_region != NULL) {
+    HeapWord* result = allocate_from_cur_alloc_region(
+                                                  cur_alloc_region, word_size,
+                                                  true /* with_heap_lock */);
+    if (result != NULL) {
+      assert_heap_not_locked();
+      return result;
+    }
+
+    // We failed to allocate out of the current alloc region, so let's
+    // retire it before getting a new one.
+    retire_cur_alloc_region(cur_alloc_region);
+  }
+
+  assert_heap_locked();
+  // Try to get a new region and allocate out of it
+  HeapWord* result = replace_cur_alloc_region_and_allocate(word_size,
+                                                     false, /* at_safepoint */
+                                                     true,  /* do_dirtying */
+                                                     false  /* can_expand */);
+  if (result != NULL) {
+    assert_heap_not_locked();
+    return result;
+  }
+
+  assert_heap_locked();
+  return NULL;
 }
 
 // It dirties the cards that cover the block so that so that the post
