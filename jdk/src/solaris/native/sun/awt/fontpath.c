@@ -502,6 +502,13 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
 #ifdef __linux__        /* There's no headless build on linux ... */
     if (!AWTIsHeadless()) { /* .. so need to call a function to check */
 #endif
+      /* Using the X11 font path to locate font files is now a fallback
+       * useful only if fontconfig failed, or is incomplete. So we could
+       * remove this code completely and the consequences should be rare
+       * and non-fatal. If this happens, then the calling Java code can
+       * be modified to no longer require that the AWT lock (the X11GE)
+       * be initialised prior to calling this code.
+       */
     AWT_LOCK();
     if (isDisplayLocal(env)) {
         x11dirs = getX11FontPath();
@@ -527,7 +534,7 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
     return path;
 }
 
-JNIEXPORT jstring JNICALL Java_sun_awt_X11FontManager_getFontPath
+JNIEXPORT jstring JNICALL Java_sun_awt_X11FontManager_getFontPathNative
 (JNIEnv *env, jobject thiz, jboolean noType1) {
     jstring ret;
     static char *ptr = NULL; /* retain result across calls */
@@ -537,71 +544,6 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11FontManager_getFontPath
     }
     ret = (*env)->NewStringUTF(env, ptr);
     return ret;
-}
-
-/*
- * In general setting the font path in a remote display situation is
- * problematic. But for Solaris->Solaris the paths needed by the JRE should
- * also be available to the server, although we have no way to check this
- * for sure.
- * So set the font path if we think its safe to do so:
- * All Solaris X servers at least back to 2.6 and up to Solaris 10
- * define the exact same vendor string.
- * The version number for Solaris 2.6 is 3600, for 2.7 is 3610 and
- * for Solaris 8 6410
- * we want to set the font path only for 2.8 and onwards. Earlier releases
- * are unlikely to have the right fonts and can't install "all locales"
- * as needed to be sure. Also Solaris 8 is the earliest release supported
- * by 1.5.
- */
-#ifndef HEADLESS
-static int isSunXServer() {
-#ifdef __solaris__
-  return ((strncmp(ServerVendor(awt_display), "Sun Microsystems, Inc.", 22) == 0) ||
-          (strncmp(ServerVendor(awt_display), "Oracle Corporation", 18) == 0) &&
-          VendorRelease(awt_display) >= 6410);
-#else
-  return 0;
-#endif /* __solaris__ */
-}
-
-/* Avoid re-doing work for every call to setNativeFontPath */
-static int doSetFontPath = -1;
-static int shouldSetXFontPath(JNIEnv *env) {
-  if (doSetFontPath == -1) {
-     doSetFontPath =
-       awt_display != NULL && (isDisplayLocal(env) || isSunXServer());
-  }
-  return doSetFontPath;
-}
-#endif /* !HEADLESS */
-
-JNIEXPORT void JNICALL Java_sun_font_X11FontManager_setNativeFontPath
-(JNIEnv *env, jclass obj, jstring theString) {
-#ifdef HEADLESS
-    return;
-#else
-    fDirRecord fDir;
-    const char *theChars;
-
-    if (awt_display == NULL) {
-        return;
-    }
-    AWT_LOCK();
-    if (shouldSetXFontPath(env)) {
-        theChars = (*env)->GetStringUTFChars (env, theString, 0);
-        fDir.num = 1;
-        fDir.name[0] = theChars;
-        /* printf ("Registering the font path here %s \n", theChars ); */
-        AddFontsToX11FontPath ( &fDir );
-        if (theChars) {
-            (*env)->ReleaseStringUTFChars (env,
-                                           theString, (const char*)theChars);
-        }
-    }
-    AWT_UNLOCK();
-
-#endif
 }
 
 #include <dlfcn.h>
