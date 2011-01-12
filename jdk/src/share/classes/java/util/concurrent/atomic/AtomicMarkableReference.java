@@ -38,8 +38,8 @@ package java.util.concurrent.atomic;
 /**
  * An {@code AtomicMarkableReference} maintains an object reference
  * along with a mark bit, that can be updated atomically.
- * <p>
- * <p> Implementation note. This implementation maintains markable
+ *
+ * <p>Implementation note: This implementation maintains markable
  * references by creating internal objects representing "boxed"
  * [reference, boolean] pairs.
  *
@@ -47,17 +47,21 @@ package java.util.concurrent.atomic;
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
  */
-public class AtomicMarkableReference<V>  {
+public class AtomicMarkableReference<V> {
 
-    private static class ReferenceBooleanPair<T> {
-        private final T reference;
-        private final boolean bit;
-        ReferenceBooleanPair(T r, boolean i) {
-            reference = r; bit = i;
+    private static class Pair<T> {
+        final T reference;
+        final boolean mark;
+        private Pair(T reference, boolean mark) {
+            this.reference = reference;
+            this.mark = mark;
+        }
+        static <T> Pair<T> of(T reference, boolean mark) {
+            return new Pair<T>(reference, mark);
         }
     }
 
-    private final AtomicReference<ReferenceBooleanPair<V>>  atomicRef;
+    private volatile Pair<V> pair;
 
     /**
      * Creates a new {@code AtomicMarkableReference} with the given
@@ -67,7 +71,7 @@ public class AtomicMarkableReference<V>  {
      * @param initialMark the initial mark
      */
     public AtomicMarkableReference(V initialRef, boolean initialMark) {
-        atomicRef = new AtomicReference<ReferenceBooleanPair<V>> (new ReferenceBooleanPair<V>(initialRef, initialMark));
+        pair = Pair.of(initialRef, initialMark);
     }
 
     /**
@@ -76,7 +80,7 @@ public class AtomicMarkableReference<V>  {
      * @return the current value of the reference
      */
     public V getReference() {
-        return atomicRef.get().reference;
+        return pair.reference;
     }
 
     /**
@@ -85,7 +89,7 @@ public class AtomicMarkableReference<V>  {
      * @return the current value of the mark
      */
     public boolean isMarked() {
-        return atomicRef.get().bit;
+        return pair.mark;
     }
 
     /**
@@ -97,9 +101,9 @@ public class AtomicMarkableReference<V>  {
      * @return the current value of the reference
      */
     public V get(boolean[] markHolder) {
-        ReferenceBooleanPair<V> p = atomicRef.get();
-        markHolder[0] = p.bit;
-        return p.reference;
+        Pair<V> pair = this.pair;
+        markHolder[0] = pair.mark;
+        return pair.reference;
     }
 
     /**
@@ -122,13 +126,8 @@ public class AtomicMarkableReference<V>  {
                                      V       newReference,
                                      boolean expectedMark,
                                      boolean newMark) {
-        ReferenceBooleanPair<V> current = atomicRef.get();
-        return  expectedReference == current.reference &&
-            expectedMark == current.bit &&
-            ((newReference == current.reference && newMark == current.bit) ||
-             atomicRef.weakCompareAndSet(current,
-                                     new ReferenceBooleanPair<V>(newReference,
-                                                              newMark)));
+        return compareAndSet(expectedReference, newReference,
+                             expectedMark, newMark);
     }
 
     /**
@@ -147,13 +146,13 @@ public class AtomicMarkableReference<V>  {
                                  V       newReference,
                                  boolean expectedMark,
                                  boolean newMark) {
-        ReferenceBooleanPair<V> current = atomicRef.get();
-        return  expectedReference == current.reference &&
-            expectedMark == current.bit &&
-            ((newReference == current.reference && newMark == current.bit) ||
-             atomicRef.compareAndSet(current,
-                                     new ReferenceBooleanPair<V>(newReference,
-                                                              newMark)));
+        Pair<V> current = pair;
+        return
+            expectedReference == current.reference &&
+            expectedMark == current.mark &&
+            ((newReference == current.reference &&
+              newMark == current.mark) ||
+             casPair(current, Pair.of(newReference, newMark)));
     }
 
     /**
@@ -163,9 +162,9 @@ public class AtomicMarkableReference<V>  {
      * @param newMark the new value for the mark
      */
     public void set(V newReference, boolean newMark) {
-        ReferenceBooleanPair<V> current = atomicRef.get();
-        if (newReference != current.reference || newMark != current.bit)
-            atomicRef.set(new ReferenceBooleanPair<V>(newReference, newMark));
+        Pair<V> current = pair;
+        if (newReference != current.reference || newMark != current.mark)
+            this.pair = Pair.of(newReference, newMark);
     }
 
     /**
@@ -182,11 +181,32 @@ public class AtomicMarkableReference<V>  {
      * @return true if successful
      */
     public boolean attemptMark(V expectedReference, boolean newMark) {
-        ReferenceBooleanPair<V> current = atomicRef.get();
-        return  expectedReference == current.reference &&
-            (newMark == current.bit ||
-             atomicRef.compareAndSet
-             (current, new ReferenceBooleanPair<V>(expectedReference,
-                                                newMark)));
+        Pair<V> current = pair;
+        return
+            expectedReference == current.reference &&
+            (newMark == current.mark ||
+             casPair(current, Pair.of(expectedReference, newMark)));
+    }
+
+    // Unsafe mechanics
+
+    private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
+    private static final long pairOffset =
+        objectFieldOffset(UNSAFE, "pair", AtomicMarkableReference.class);
+
+    private boolean casPair(Pair<V> cmp, Pair<V> val) {
+        return UNSAFE.compareAndSwapObject(this, pairOffset, cmp, val);
+    }
+
+    static long objectFieldOffset(sun.misc.Unsafe UNSAFE,
+                                  String field, Class<?> klazz) {
+        try {
+            return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
+        } catch (NoSuchFieldException e) {
+            // Convert Exception to corresponding Error
+            NoSuchFieldError error = new NoSuchFieldError(field);
+            error.initCause(e);
+            throw error;
+        }
     }
 }

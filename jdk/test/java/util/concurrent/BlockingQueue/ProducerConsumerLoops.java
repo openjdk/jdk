@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile ProducerConsumerLoops.java
+ * @compile -source 1.5 ProducerConsumerLoops.java
  * @run main/timeout=3600 ProducerConsumerLoops
  * @summary  multiple producers and consumers using blocking queues
  */
@@ -87,35 +87,11 @@ public class ProducerConsumerLoops {
             throw new Error();
    }
 
-    static final class LTQasSQ<T> extends LinkedTransferQueue<T> {
-        LTQasSQ() { super(); }
-        public void put(T x) {
-            try { super.transfer(x); }
-            catch (InterruptedException ex) { throw new Error(); }
-        }
-        private final static long serialVersionUID = 42;
-    }
-
-    static final class HalfSyncLTQ<T> extends LinkedTransferQueue<T> {
-        HalfSyncLTQ() { super(); }
-        public void put(T x) {
-            if (ThreadLocalRandom.current().nextBoolean())
-                super.put(x);
-            else {
-                try { super.transfer(x); }
-                catch (InterruptedException ex) { throw new Error(); }
-            }
-        }
-        private final static long serialVersionUID = 42;
-    }
-
     static void oneTest(int pairs, int iters) throws Exception {
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
-        oneRun(new LTQasSQ<Integer>(), pairs, iters);
-        oneRun(new HalfSyncLTQ<Integer>(), pairs, iters);
         oneRun(new PriorityBlockingQueue<Integer>(), pairs, iters);
         oneRun(new SynchronousQueue<Integer>(), pairs, iters);
 
@@ -126,11 +102,11 @@ public class ProducerConsumerLoops {
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY, true), pairs, iters);
     }
 
-    static abstract class Stage implements Runnable {
+    abstract static class Stage implements Runnable {
         final int iters;
         final BlockingQueue<Integer> queue;
         final CyclicBarrier barrier;
-        Stage (BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
+        Stage(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
             queue = q;
             barrier = b;
             this.iters = iters;
