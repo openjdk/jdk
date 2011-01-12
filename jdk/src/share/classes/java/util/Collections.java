@@ -1452,10 +1452,10 @@ public class Collections {
              * when o is a Map.Entry, and calls o.setValue.
              */
             public boolean containsAll(Collection<?> coll) {
-                Iterator<?> it = coll.iterator();
-                while (it.hasNext())
-                    if (!contains(it.next())) // Invokes safe contains() above
+                for (Object e : coll) {
+                    if (!contains(e)) // Invokes safe contains() above
                         return false;
+                }
                 return true;
             }
             public boolean equals(Object o) {

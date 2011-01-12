@@ -52,15 +52,16 @@ public class Basic {
         check(phaser.isTerminated());
         int unarriverParties = phaser.getUnarrivedParties();
         int registeredParties = phaser.getRegisteredParties();
-        equal(phaser.arrive(), -1);
-        equal(phaser.arriveAndDeregister(), -1);
-        equal(phaser.arriveAndAwaitAdvance(), -1);
-        equal(phaser.bulkRegister(10), -1);
-        equal(phaser.getPhase(), -1);
-        equal(phaser.register(), -1);
+        int phase = phaser.getPhase();
+        check(phase < 0);
+        equal(phase, phaser.arrive());
+        equal(phase, phaser.arriveAndDeregister());
+        equal(phase, phaser.arriveAndAwaitAdvance());
+        equal(phase, phaser.bulkRegister(10));
+        equal(phase, phaser.register());
         try {
-            equal(phaser.awaitAdvanceInterruptibly(0), -1);
-            equal(phaser.awaitAdvanceInterruptibly(0, 10, SECONDS), -1);
+            equal(phase, phaser.awaitAdvanceInterruptibly(0));
+            equal(phase, phaser.awaitAdvanceInterruptibly(0, 10, SECONDS));
         } catch (Exception ie) {
             unexpected(ie);
         }
@@ -94,10 +95,9 @@ public class Basic {
             }
             int phase = atTheStartingGate.getPhase();
             equal(phase, atTheStartingGate.arrive());
-            int AwaitPhase = atTheStartingGate.awaitAdvanceInterruptibly(phase,
-                                                        10,
-                                                        SECONDS);
-            if (expectNextPhase) check(AwaitPhase == (phase + 1));
+            int awaitPhase = atTheStartingGate.awaitAdvanceInterruptibly
+                (phase, 10, SECONDS);
+            if (expectNextPhase) check(awaitPhase == (phase + 1));
 
             pass();
         } catch (Throwable t) {
@@ -271,18 +271,19 @@ public class Basic {
         // Phaser is terminated while threads are waiting
         //----------------------------------------------------------------
         try {
-            Phaser phaser = new Phaser(3);
-            Iterator<Awaiter> awaiters = awaiterIterator(phaser);
             for (int i = 0; i < 4; i++) {
+                Phaser phaser = new Phaser(3);
+                Iterator<Awaiter> awaiters = awaiterIterator(phaser);
                 Arriver a1 = awaiters.next(); a1.start();
                 Arriver a2 = awaiters.next(); a2.start();
                 toTheStartingGate();
                 while (phaser.getArrivedParties() < 2) Thread.yield();
+                equal(0, phaser.getPhase());
                 phaser.forceTermination();
                 a1.join();
                 a2.join();
-                check(a1.phase == -1);
-                check(a2.phase == -1);
+                equal(0 + Integer.MIN_VALUE, a1.phase);
+                equal(0 + Integer.MIN_VALUE, a2.phase);
                 int arrivedParties = phaser.getArrivedParties();
                 checkTerminated(phaser);
                 equal(phaser.getArrivedParties(), arrivedParties);
