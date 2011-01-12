@@ -120,13 +120,6 @@ public class MToolkit extends UNIXToolkit implements Runnable {
                              getDefaultConfiguration());
         }
 
-        /* Add font properties font directories to the X11 font path.
-         * Its called here *after* the X connection has been initialised
-         * and when we know that MToolkit is the one that will be used,
-         * since XToolkit doesn't need the X11 font path set
-         */
-        X11FontManager.getInstance().setNativeFontPath();
-
         motifdnd = ((Boolean)java.security.AccessController.doPrivileged(
             new GetBooleanAction("awt.dnd.motifdnd"))).booleanValue();
     }
