@@ -175,6 +175,10 @@ endif
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 include $(BUILDDIR)/common/Library.gmk
 
+COMPILEFONTCONFIG_FLAGS =
+ifdef ALT_COMPILEFONTCONFIG_FLAGS
+  COMPILEFONTCONFIG_FLAGS += $(ALT_COMPILEFONTCONFIG_FLAGS)
+endif
 build: fontconfigs
 
 
@@ -406,7 +410,7 @@ COMPILEFONTCONFIG_JARFILE = $(BUILDTOOLJARDIR)/compilefontconfig.jar
 $(LIBDIR)/%.bfc: $(FONTCONFIGS_SRC)/$(FONTCONFIGS_SRC_PREFIX)%.properties \
     $(COMPILEFONTCONFIG_JARFILE)
 	$(prep-target)
-	$(BOOT_JAVA_CMD) -jar $(COMPILEFONTCONFIG_JARFILE) $< $@
+	$(BOOT_JAVA_CMD) -jar $(COMPILEFONTCONFIG_JARFILE) $(COMPILEFONTCONFIG_FLAGS) $< $@
 	$(install-module-file)
 	$(call chmod-file, 444)
 	@$(java-vm-cleanup)

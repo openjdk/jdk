@@ -340,7 +340,7 @@ tagObjectWithTraceInfo(jvmtiEnv *jvmti, jobject object, TraceInfo *tinfo)
 }
 
 /* Java Native Method for Object.<init> */
-static void
+static void JNICALL
 HEAP_TRACKER_native_newobj(JNIEnv *env, jclass klass, jthread thread, jobject o)
 {
     TraceInfo *tinfo;
@@ -353,7 +353,7 @@ HEAP_TRACKER_native_newobj(JNIEnv *env, jclass klass, jthread thread, jobject o)
 }
 
 /* Java Native Method for newarray */
-static void
+static void JNICALL
 HEAP_TRACKER_native_newarr(JNIEnv *env, jclass klass, jthread thread, jobject a)
 {
     TraceInfo *tinfo;

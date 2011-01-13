@@ -671,8 +671,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
         if (timeout >= 0) {
           /* has connection been established? */
           optlen = sizeof(connect_rv);
-          if (JVM_GetSockOpt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                             &optlen) <0) {
+          if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
+                         &optlen) <0) {
             connect_rv = WSAGetLastError();
           }
 

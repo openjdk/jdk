@@ -59,7 +59,7 @@ public class DistinctSeeds {
             }
         }
         final int threadCount = 2;
-        List<RandomCollector> collectors = new ArrayList<RandomCollector>();
+        List<RandomCollector> collectors = new ArrayList<>();
         List<Thread> threads = new ArrayList<Thread>();
         for (int i = 0; i < threadCount; i++) {
             RandomCollector r = new RandomCollector();

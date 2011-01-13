@@ -58,20 +58,20 @@ import java.util.Set;
  * It is also possible to perform numeric shaping explicitly using instances
  * of <code>NumericShaper</code>, as this code snippet demonstrates:<br>
  * <blockquote><pre>
- *   char[] text = ...;
- *   // shape all EUROPEAN digits (except zero) to ARABIC digits
- *   NumericShaper shaper = NumericShaper.getShaper(NumericShaper.ARABIC);
- *   shaper.shape(text, start, count);
+ * char[] text = ...;
+ * // shape all EUROPEAN digits (except zero) to ARABIC digits
+ * NumericShaper shaper = NumericShaper.getShaper(NumericShaper.ARABIC);
+ * shaper.shape(text, start, count);
  *
- *   // shape European digits to ARABIC digits if preceding text is Arabic, or
- *   // shape European digits to TAMIL digits if preceding text is Tamil, or
- *   // leave European digits alone if there is no preceding text, or
- *   // preceding text is neither Arabic nor Tamil
- *   NumericShaper shaper =
- *      NumericShaper.getContextualShaper(NumericShaper.ARABIC |
- *                                              NumericShaper.TAMIL,
- *                                              NumericShaper.EUROPEAN);
- *   shaper.shape(text, start, count);
+ * // shape European digits to ARABIC digits if preceding text is Arabic, or
+ * // shape European digits to TAMIL digits if preceding text is Tamil, or
+ * // leave European digits alone if there is no preceding text, or
+ * // preceding text is neither Arabic nor Tamil
+ * NumericShaper shaper =
+ *     NumericShaper.getContextualShaper(NumericShaper.ARABIC |
+ *                                         NumericShaper.TAMIL,
+ *                                       NumericShaper.EUROPEAN);
+ * shaper.shape(text, start, count);
  * </pre></blockquote>
  *
  * <p><b>Bit mask- and enum-based Unicode ranges</b></p>
@@ -98,6 +98,37 @@ import java.util.Set;
  * from/to {@code NumericShaper.ARABIC}.  If any unmappable range
  * values are specified, such as {@code NumericShaper.Range.BALINESE},
  * those ranges are ignored.
+ *
+ * <p><b>Decimal Digits Precedence</b></p>
+ *
+ * <p>A Unicode range may have more than one set of decimal digits. If
+ * multiple decimal digits sets are specified for the same Unicode
+ * range, one of the sets will take precedence as follows.
+ *
+ * <table border=1 cellspacing=3 cellpadding=0 summary="NumericShaper constants precedence.">
+ *    <tr>
+ *       <th class="TableHeadingColor">Unicode Range</th>
+ *       <th class="TableHeadingColor"><code>NumericShaper</code> Constants</th>
+ *       <th class="TableHeadingColor">Precedence</th>
+ *    </tr>
+ *    <tr>
+ *       <td rowspan="2">Arabic</td>
+ *       <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}<br>
+ *           {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}</td>
+ *       <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}</td>
+ *    </tr>
+ *    <tr>
+ *       <td>{@link NumericShaper.Range#ARABIC}<br>
+ *           {@link NumericShaper.Range#EASTERN_ARABIC}</td>
+ *       <td>{@link NumericShaper.Range#EASTERN_ARABIC}</td>
+ *    </tr>
+ *    <tr>
+ *       <td>Tai Tham</td>
+ *       <td>{@link NumericShaper.Range#TAI_THAM_HORA}<br>
+ *           {@link NumericShaper.Range#TAI_THAM_THAM}</td>
+ *       <td>{@link NumericShaper.Range#TAI_THAM_THAM}</td>
+ *    </tr>
+ * </table>
  *
  * @since 1.4
  */

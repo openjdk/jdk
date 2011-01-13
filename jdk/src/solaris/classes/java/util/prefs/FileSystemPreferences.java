@@ -354,7 +354,7 @@ class FileSystemPreferences extends AbstractPreferences {
      * log against that map.  The resulting map is then written back
      * to the disk.
      */
-    final List<Change> changeLog = new ArrayList<Change>();
+    final List<Change> changeLog = new ArrayList<>();
 
     /**
      * Represents a change to a preference.
@@ -507,7 +507,7 @@ class FileSystemPreferences extends AbstractPreferences {
         });
         if (newNode) {
             // These 2 things guarantee node will get wrtten at next flush/sync
-            prefsCache = new TreeMap<String, String>();
+            prefsCache = new TreeMap<>();
             nodeCreate = new NodeCreate();
             changeLog.add(nodeCreate);
         }
@@ -550,7 +550,7 @@ class FileSystemPreferences extends AbstractPreferences {
             loadCache();
         } catch(Exception e) {
             // assert lastSyncTime == 0;
-            prefsCache = new TreeMap<String, String>();
+            prefsCache = new TreeMap<>();
         }
     }
 
@@ -567,7 +567,7 @@ class FileSystemPreferences extends AbstractPreferences {
             AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Void>() {
                 public Void run() throws BackingStoreException {
-                    Map<String, String> m = new TreeMap<String, String>();
+                    Map<String, String> m = new TreeMap<>();
                     long newLastSyncTime = 0;
                     try {
                         newLastSyncTime = prefsFile.lastModified();
@@ -581,7 +581,7 @@ class FileSystemPreferences extends AbstractPreferences {
                             prefsFile.renameTo( new File(
                                                     prefsFile.getParentFile(),
                                                   "IncorrectFormatPrefs.xml"));
-                            m = new TreeMap<String, String>();
+                            m = new TreeMap<>();
                         } else if (e instanceof FileNotFoundException) {
                         getLogger().warning("Prefs file removed in background "
                                            + prefsFile.getPath());
@@ -646,7 +646,7 @@ class FileSystemPreferences extends AbstractPreferences {
         return AccessController.doPrivileged(
             new PrivilegedAction<String[]>() {
                 public String[] run() {
-                    List<String> result = new ArrayList<String>();
+                    List<String> result = new ArrayList<>();
                     File[] dirContents = dir.listFiles();
                     if (dirContents != null) {
                         for (int i = 0; i < dirContents.length; i++)
@@ -794,7 +794,7 @@ class FileSystemPreferences extends AbstractPreferences {
         } else if (lastSyncTime != 0 && !dir.exists()) {
             // This node was removed in the background.  Playback any changes
             // against a virgin (empty) Map.
-            prefsCache = new TreeMap<String, String>();
+            prefsCache = new TreeMap<>();
             replayChanges();
         }
         if (!changeLog.isEmpty()) {

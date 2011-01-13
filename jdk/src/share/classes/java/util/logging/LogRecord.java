@@ -85,8 +85,7 @@ public class LogRecord implements java.io.Serializable {
     private static final AtomicInteger nextThreadId
         = new AtomicInteger(MIN_SEQUENTIAL_THREAD_ID);
 
-    private static final ThreadLocal<Integer> threadIds
-        = new ThreadLocal<Integer>();
+    private static final ThreadLocal<Integer> threadIds = new ThreadLocal<>();
 
     /**
      * @serial Logging message level
