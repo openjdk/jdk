@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -575,7 +575,11 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
 
 int MachCallRuntimeNode::ret_addr_offset() {
 #ifdef _LP64
-  return NativeFarCall::instruction_size;  // farcall; delay slot
+  if (MacroAssembler::is_far_target(entry_point())) {
+    return NativeFarCall::instruction_size;
+  } else {
+    return NativeCall::instruction_size;
+  }
 #else
   return NativeCall::instruction_size;  // call; delay slot
 #endif
@@ -941,7 +945,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
 #endif
 }
 
-void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocType rtype, bool preserve_g2 = false, bool force_far_call = false) {
+void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocType rtype, bool preserve_g2 = false) {
   // The method which records debug information at every safepoint
   // expects the call to be the first instruction in the snippet as
   // it creates a PcDesc structure which tracks the offset of a call
@@ -963,20 +967,7 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocTyp
   int startpos = __ offset();
 #endif /* ASSERT */
 
-#ifdef _LP64
-  // Calls to the runtime or native may not be reachable from compiled code,
-  // so we generate the far call sequence on 64 bit sparc.
-  // This code sequence is relocatable to any address, even on LP64.
-  if ( force_far_call ) {
-    __ relocate(rtype);
-    AddressLiteral dest(entry_point);
-    __ jumpl_to(dest, O7, O7);
-  }
-  else
-#endif
-  {
-     __ call((address)entry_point, rtype);
-  }
+  __ call((address)entry_point, rtype);
 
   if (preserve_g2)   __ delayed()->mov(G2, L7);
   else __ delayed()->nop();
@@ -2507,7 +2498,7 @@ encode %{
     // CALL directly to the runtime
     // The user of this is responsible for ensuring that R_L7 is empty (killed).
     emit_call_reloc(cbuf, $meth$$method, relocInfo::runtime_call_type,
-                    /*preserve_g2=*/true, /*force far call*/true);
+                    /*preserve_g2=*/true);
   %}
 
   enc_class preserve_SP %{
