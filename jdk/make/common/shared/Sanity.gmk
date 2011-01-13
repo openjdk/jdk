@@ -1476,25 +1476,6 @@ ifeq ($(PLATFORM), windows)
 endif
 
 ######################################################
-# Check for existence of INSTALL_MSIVAL2 on windows
-######################################################
-sane-install-msival2_path:
-ifeq ($(PLATFORM), windows)
-	@if [ -z "$(INSTALL_MSIVAL2)" ]; then \
-	  $(ECHO) "WARNING: Your INSTALL_MSIVAL2 setting is empty.\n" \
-	    "        It is recommended to set ALT_INSTALL_MSIVAL2.\n" \
-	    "" >> $(WARNING_FILE) ; \
-	fi
-	@if [ ! -r "$(INSTALL_MSIVAL2)" ]; then \
-	  $(ECHO) "ERROR: You do not have a valid INSTALL_MSIVAL2 setting. \n" \
-	    "      Please check your access to \n" \
-	    "          $(INSTALL_MSIVAL2) \n" \
-	    "      and/or check your value of ALT_INSTALL_MSIVAL2. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-endif
-
-######################################################
 # Check the GNU C++ compiler for OJI plugin
 ######################################################
 sane-gcc-compiler:

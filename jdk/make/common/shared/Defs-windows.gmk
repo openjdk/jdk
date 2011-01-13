@@ -641,15 +641,6 @@ else
 endif
 INSTALL_MSSDK:=$(call AltCheckSpaces,INSTALL_MSSDK)
 
-# INSTALL_MSIVAL2: Installation of MsiVal2 for this platform (for install)
-ifdef ALT_INSTALL_MSIVAL2
-  xALT_INSTALL_MSIVAL2 :="$(subst \,/,$(ALT_INSTALL_MSIVAL2))"
-  INSTALL_MSIVAL2      :=$(call FullPath,$(xALT_INSTALL_MSIVAL2))
-else
-  INSTALL_MSIVAL2      :=$(_program_files32)/MsiVal2
-endif
-INSTALL_MSIVAL2:=$(call AltCheckSpaces,INSTALL_MSIVAL2)
-
 # WSCRIPT: path to wscript.exe (used in creating install bundles)
 ifdef ALT_WSCRIPT
   xALT_WSCRIPT :="$(subst \,/,$(ALT_WSCRIPT))"
@@ -684,43 +675,6 @@ else
   CABARC  :=$(call FileExists,$(_CABARC1),$(_CABARC2))
 endif
 CABARC:=$(call AltCheckSpaces,CABARC)
-
-# MSIVAL2: path to msival2.exe (used in validating install msi files)
-ifdef ALT_MSIVAL2
-  xALT_MSIVAL2 :="$(subst \,/,$(ALT_MSIVAL2))"
-  MSIVAL2  =$(xALT_MSIVAL2)
-else
-  _MSIVAL2_1 :=$(INSTALL_MSIVAL2)/msival2.exe
-  _MSIVAL2_2 :=$(DEVTOOLS_PATH)msival2.exe
-  MSIVAL2    :=$(call FileExists,$(_MSIVAL2_1),$(_MSIVAL2_2))
-endif
-MSIVAL2:=$(call AltCheckSpaces,MSIVAL2)
-# suppress msival2 checks, as it hangs jprt builds
-ifdef SKIP_MSIVAL2
-  MSIVAL2    := $(ECHO)
-endif
-
-# LOGOCUB: path to cub file for (used in validating install msi files)
-ifdef ALT_LOGOCUB
-  xALT_LOGOCUB :="$(subst \,/,$(ALT_LOGOCUB))"
-  LOGOCUB  =$(xALT_LOGOCUB)
-else
-  _LOGOCUB1 :=$(INSTALL_MSIVAL2)/logo.cub
-  _LOGOCUB2 :=$(DEVTOOLS_PATH)logo.cub
-  LOGOCUB   :=$(call FileExists,$(_LOGOCUB1),$(_LOGOCUB2))
-endif
-LOGOCUB:=$(call AltCheckSpaces,LOGOCUB)
-
-# MSITRAN: path to msitran.exe (used in creating install bundles and sponsors)
-ifdef ALT_MSITRAN
-  xALT_MSITRAN :="$(subst \,/,$(ALT_MSITRAN))"
-  MSITRAN  =$(xALT_MSITRAN)
-else
-  _MSITRAN1 :=$(INSTALL_MSSDK)/Bin/msitran.exe
-  _MSITRAN2 :=$(DEVTOOLS_PATH)msitran.exe
-  MSITRAN   :=$(call FileExists,$(_MSITRAN1),$(_MSITRAN2))
-endif
-MSITRAN:=$(call AltCheckSpaces,MSITRAN)
 
 # MSICERT: path to msicert.exe (used in creating install bundles)
 ifdef ALT_MSICERT
