@@ -3478,6 +3478,7 @@ void CMSCollector::checkpointRootsInitial(bool asynch) {
   assert(_collectorState == InitialMarking, "Wrong collector state");
   check_correct_thread_executing();
   TraceCMSMemoryManagerStats tms(_collectorState);
+
   ReferenceProcessor* rp = ref_processor();
   SpecializationStats::clear();
   assert(_restart_addr == NULL, "Control point invariant");
@@ -5940,11 +5941,6 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   }
   rp->verify_no_references_recorded();
   assert(!rp->discovery_enabled(), "should have been disabled");
-
-  // JVMTI object tagging is based on JNI weak refs. If any of these
-  // refs were cleared then JVMTI needs to update its maps and
-  // maybe post ObjectFrees to agents.
-  JvmtiExport::cms_ref_processing_epilogue();
 }
 
 #ifndef PRODUCT
@@ -6305,6 +6301,7 @@ void CMSCollector::do_CMS_operation(CMS_op_type op) {
 
   switch (op) {
     case CMS_op_checkpointRootsInitial: {
+      SvcGCMarker sgcm(SvcGCMarker::OTHER);
       checkpointRootsInitial(true);       // asynch
       if (PrintGC) {
         _cmsGen->printOccupancy("initial-mark");
@@ -6312,6 +6309,7 @@ void CMSCollector::do_CMS_operation(CMS_op_type op) {
       break;
     }
     case CMS_op_checkpointRootsFinal: {
+      SvcGCMarker sgcm(SvcGCMarker::OTHER);
       checkpointRootsFinal(true,    // asynch
                            false,   // !clear_all_soft_refs
                            false);  // !init_mark_was_synchronous
