@@ -39,7 +39,7 @@ public class KtabCheck {
     public static void main(String[] args) throws Exception {
         System.out.println("Checking " + Arrays.toString(args));
         KeyTab ktab = KeyTab.getInstance(args[0]);
-        Set<String> expected = new HashSet<String>();
+        Set<String> expected = new HashSet<>();
         for (int i=1; i<args.length; i += 2) {
             expected.add(args[i]+":"+args[i+1]);
         }

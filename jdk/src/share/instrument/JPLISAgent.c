@@ -209,7 +209,7 @@ createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr) {
     *agent_ptr = NULL;
     jnierror = (*vm)->GetEnv(  vm,
                                (void **) &jvmtienv,
-                               JVMTI_VERSION);
+                               JVMTI_VERSION_1_1);
     if ( jnierror != JNI_OK ) {
         initerror = JPLIS_INIT_ERROR_CANNOT_CREATE_NATIVE_AGENT;
     } else {
@@ -990,7 +990,7 @@ retransformableEnvironment(JPLISAgent * agent) {
     }
     jnierror = (*agent->mJVM)->GetEnv(  agent->mJVM,
                                (void **) &retransformerEnv,
-                               JVMTI_VERSION);
+                               JVMTI_VERSION_1_1);
     if ( jnierror != JNI_OK ) {
         return NULL;
     }
