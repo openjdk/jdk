@@ -150,7 +150,7 @@ public class KDCReq {
             if (subsubDer.getTag() != DerValue.tag_SequenceOf) {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
             }
-            Vector<PAData> v = new Vector<PAData>();
+            Vector<PAData> v = new Vector<>();
             while (subsubDer.getData().available() > 0) {
                 v.addElement(new PAData(subsubDer.getData().getDerValue()));
             }

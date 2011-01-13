@@ -31,71 +31,63 @@
  * http://creativecommons.org/licenses/publicdomain
  */
 
+/*
+ * @test
+ * @summary stress test for arrivals in a tiered phaser
+ * @run main TieredArriveLoops 300
+ */
 import java.util.*;
 import java.util.concurrent.*;
 
-/*
- * @test
- * @bug 6805775 6815766
- * @summary Check weak consistency of concurrent queue iterators
- */
+public class TieredArriveLoops {
+    final long testDurationMillisDefault = 10L * 1000L;
+    final long testDurationMillis;
+    final long quittingTimeNanos;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
-public class IteratorWeakConsistency {
-
-    void test(String[] args) throws Throwable {
-        test(new LinkedBlockingQueue());
-        test(new LinkedBlockingQueue(20));
-        test(new LinkedBlockingDeque());
-        test(new LinkedBlockingDeque(20));
-        test(new ConcurrentLinkedDeque());
-        test(new ConcurrentLinkedQueue());
-        test(new LinkedTransferQueue());
-        // Other concurrent queues (e.g. ArrayBlockingQueue) do not
-        // currently have weakly consistent iterators.
-        // As of 2010-09, ArrayBlockingQueue passes this test, but
-        // does not fully implement weak consistency.
-        test(new ArrayBlockingQueue(20));
+    TieredArriveLoops(String[] args) {
+        testDurationMillis = (args.length > 0) ?
+            Long.valueOf(args[0]) : testDurationMillisDefault;
+        quittingTimeNanos = System.nanoTime() +
+            testDurationMillis * 1000L * 1000L;
     }
 
-    void test(Queue q) {
-        // TODO: make this more general
-        try {
-            for (int i = 0; i < 10; i++)
-                q.add(i);
-            Iterator it = q.iterator();
-            q.poll();
-            q.poll();
-            q.poll();
-            q.remove(7);
-            List list = new ArrayList();
-            while (it.hasNext())
-                list.add(it.next());
-            equal(list, Arrays.asList(0, 3, 4, 5, 6, 8, 9));
-            check(! list.contains(null));
-            System.out.printf("%s: %s%n",
-                              q.getClass().getSimpleName(),
-                              list);
-        } catch (Throwable t) { unexpected(t); }
-
-        try {
-            q.clear();
-            q.add(1);
-            q.add(2);
-            q.add(3);
-            q.add(4);
-            Iterator it = q.iterator();
-            it.next();
-            q.remove(2);
-            q.remove(1);
-            q.remove(3);
-            boolean found4 = false;
-            while (it.hasNext()) {
-                found4 |= it.next().equals(4);
+    Runnable runner(final Phaser p) {
+        return new CheckedRunnable() { public void realRun() {
+            int prevPhase = p.register();
+            while (!p.isTerminated()) {
+                int phase = p.awaitAdvance(p.arrive());
+                if (phase < 0)
+                    return;
+                equal(phase, (prevPhase + 1) & Integer.MAX_VALUE);
+                int ph = p.getPhase();
+                check(ph < 0 || ph == phase);
+                prevPhase = phase;
             }
-            check(found4);
-        } catch (Throwable t) { unexpected(t); }
+        }};
+    }
 
+    void test(String[] args) throws Throwable {
+        final Phaser parent = new Phaser();
+        final Phaser child1 = new Phaser(parent);
+        final Phaser child2 = new Phaser(parent);
+
+        Thread t1 = new Thread(runner(child1));
+        Thread t2 = new Thread(runner(child2));
+        t1.start();
+        t2.start();
+
+        for (int prevPhase = 0, phase; ; prevPhase = phase) {
+            phase = child2.getPhase();
+            check(phase >= prevPhase);
+            if (System.nanoTime() - quittingTimeNanos > 0) {
+                System.err.printf("phase=%d%n", phase);
+                child1.forceTermination();
+                break;
+            }
+        }
+
+        t1.join();
+        t2.join();
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -109,9 +101,17 @@ public class IteratorWeakConsistency {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        new IteratorWeakConsistency().instanceMain(args);}
+        new TieredArriveLoops(args).instanceMain(args);}
     public void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
+
+    abstract class CheckedRunnable implements Runnable {
+        protected abstract void realRun() throws Throwable;
+
+        public final void run() {
+            try {realRun();} catch (Throwable t) {unexpected(t);}
+        }
+    }
 }

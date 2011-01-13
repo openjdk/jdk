@@ -466,6 +466,7 @@ public class URLClassPath {
      */
     private static class Loader implements Closeable {
         private final URL base;
+        private JarFile jarfile; // if this points to a jar file
 
         /*
          * Creates a new Loader for the specified URL.
@@ -530,6 +531,17 @@ public class URLClassPath {
                 }
                 uc = url.openConnection();
                 InputStream in = uc.getInputStream();
+                if (uc instanceof JarURLConnection) {
+                    /* JarURLConnection.getInputStream() returns a separate
+                     * instance on each call. So we have to close this here.
+                     * The jar file cache will keep the file open.
+                     * Also, need to remember the jar file so it can be closed
+                     * in a hurry.
+                     */
+                    JarURLConnection juc = (JarURLConnection)uc;
+                    jarfile = juc.getJarFile();
+                    in.close();
+                }
             } catch (Exception e) {
                 return null;
             }
@@ -559,7 +571,11 @@ public class URLClassPath {
          * close this loader and release all resources
          * method overridden in sub-classes
          */
-        public void close () throws IOException {}
+        public void close () throws IOException {
+            if (jarfile != null) {
+                jarfile.close();
+            }
+        }
 
         /*
          * Returns the local class path for this loader, or null if none.

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6399443
+ * @run main/othervm AutoShutdown
  * @summary Check for auto-shutdown and gc of singleThreadExecutors
  * @author Martin Buchholz
  */

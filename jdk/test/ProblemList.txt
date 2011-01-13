@@ -734,8 +734,8 @@ java/util/concurrent/locks/Lock/TimedAcquireLeak.java		generic-all
 # Fails on solaris-sparc -server (Set not equal to copy. 1)
 java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
 
-# Need to be marked othervm, or changed to be samevm safe
-java/util/WeakHashMap/GCDuringIteration.java			generic-all
+# Fails on solaris-sparc, see 7011857
+java/util/concurrent/Phaser/FickleRegister.java			solaris-sparc
 
 ############################################################################
 
