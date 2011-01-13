@@ -1907,7 +1907,7 @@ jint G1CollectedHeap::initialize() {
 
   ReservedSpace heap_rs(max_byte_size + pgs->max_size(),
                         HeapRegion::GrainBytes,
-                        false /*ism*/, addr);
+                        UseLargePages, addr);
 
   if (UseCompressedOops) {
     if (addr != NULL && !heap_rs.is_reserved()) {
@@ -1916,13 +1916,13 @@ jint G1CollectedHeap::initialize() {
       // Try again to reserver heap higher.
       addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
       ReservedSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
-                             false /*ism*/, addr);
+                             UseLargePages, addr);
       if (addr != NULL && !heap_rs0.is_reserved()) {
         // Failed to reserve at specified address again - give up.
         addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
         assert(addr == NULL, "");
         ReservedSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
-                               false /*ism*/, addr);
+                               UseLargePages, addr);
         heap_rs = heap_rs1;
       } else {
         heap_rs = heap_rs0;
