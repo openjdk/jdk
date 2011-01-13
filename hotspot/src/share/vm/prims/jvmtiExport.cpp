@@ -2253,12 +2253,14 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread,  oop object) {
 
 void JvmtiExport::cleanup_thread(JavaThread* thread) {
   assert(JavaThread::current() == thread, "thread is not current");
+  MutexLocker mu(JvmtiThreadState_lock);
 
-
-  // This has to happen after the thread state is removed, which is
-  // why it is not in post_thread_end_event like its complement
-  // Maybe both these functions should be rolled into the posts?
-  JvmtiEventController::thread_ended(thread);
+  if (thread->jvmti_thread_state() != NULL) {
+    // This has to happen after the thread state is removed, which is
+    // why it is not in post_thread_end_event like its complement
+    // Maybe both these functions should be rolled into the posts?
+    JvmtiEventController::thread_ended(thread);
+  }
 }
 
 void JvmtiExport::oops_do(OopClosure* f) {
@@ -2357,15 +2359,6 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   return result;
 }
 #endif // SERVICES_KERNEL
-
-// CMS has completed referencing processing so may need to update
-// tag maps.
-void JvmtiExport::cms_ref_processing_epilogue() {
-  if (JvmtiEnv::environments_might_exist()) {
-    JvmtiTagMap::cms_ref_processing_epilogue();
-  }
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2536,36 +2529,20 @@ NoJvmtiVMObjectAllocMark::~NoJvmtiVMObjectAllocMark() {
   }
 };
 
-JvmtiGCMarker::JvmtiGCMarker(bool full) : _full(full), _invocation_count(0) {
-  assert(Thread::current()->is_VM_thread(), "wrong thread");
-
+JvmtiGCMarker::JvmtiGCMarker() {
   // if there aren't any JVMTI environments then nothing to do
   if (!JvmtiEnv::environments_might_exist()) {
     return;
   }
 
-  if (ForceFullGCJVMTIEpilogues) {
-    // force 'Full GC' was done semantics for JVMTI GC epilogues
-    _full = true;
-  }
-
-  // GarbageCollectionStart event posted from VM thread - okay because
-  // JVMTI is clear that the "world is stopped" and callback shouldn't
-  // try to call into the VM.
   if (JvmtiExport::should_post_garbage_collection_start()) {
     JvmtiExport::post_garbage_collection_start();
   }
 
-  // if "full" is false it probably means this is a scavenge of the young
-  // generation. However it could turn out that a "full" GC is required
-  // so we record the number of collections so that it can be checked in
-  // the destructor.
-  if (!_full) {
-    _invocation_count = Universe::heap()->total_full_collections();
+  if (SafepointSynchronize::is_at_safepoint()) {
+    // Do clean up tasks that need to be done at a safepoint
+    JvmtiEnvBase::check_for_periodic_clean_up();
   }
-
-  // Do clean up tasks that need to be done at a safepoint
-  JvmtiEnvBase::check_for_periodic_clean_up();
 }
 
 JvmtiGCMarker::~JvmtiGCMarker() {
@@ -2578,21 +2555,5 @@ JvmtiGCMarker::~JvmtiGCMarker() {
   if (JvmtiExport::should_post_garbage_collection_finish()) {
     JvmtiExport::post_garbage_collection_finish();
   }
-
-  // we might have initially started out doing a scavenge of the young
-  // generation but could have ended up doing a "full" GC - check the
-  // GC count to see.
-  if (!_full) {
-    _full = (_invocation_count != Universe::heap()->total_full_collections());
-  }
-
-  // Full collection probably means the perm generation has been GC'ed
-  // so we clear the breakpoint cache.
-  if (_full) {
-    JvmtiCurrentBreakpoints::gc_epilogue();
-  }
-
-  // Notify heap/object tagging support
-  JvmtiTagMap::gc_epilogue(_full);
 }
 #endif // JVMTI_KERNEL

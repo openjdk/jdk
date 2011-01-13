@@ -356,9 +356,6 @@ class JvmtiExport : public AllStatic {
 
   // SetNativeMethodPrefix support
   static char** get_all_native_method_prefixes(int* count_ptr);
-
-  // call after CMS has completed referencing processing
-  static void cms_ref_processing_epilogue() KERNEL_RETURN;
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It
@@ -492,54 +489,10 @@ class NoJvmtiVMObjectAllocMark : public StackObj {
 
 // Base class for reporting GC events to JVMTI.
 class JvmtiGCMarker : public StackObj {
- private:
-  bool _full;                           // marks a "full" GC
-  unsigned int _invocation_count;       // GC invocation count
- protected:
-  JvmtiGCMarker(bool full) KERNEL_RETURN;       // protected
-  ~JvmtiGCMarker() KERNEL_RETURN;               // protected
-};
-
-
-// Support class used to report GC events to JVMTI. The class is stack
-// allocated and should be placed in the doit() implementation of all
-// vm operations that do a stop-the-world GC for failed allocation.
-//
-// Usage :-
-//
-// void VM_GenCollectForAllocation::doit() {
-//   JvmtiGCForAllocationMarker jgcm;
-//   :
-// }
-//
-// If jvmti is not enabled the constructor and destructor is essentially
-// a no-op (no overhead).
-//
-class JvmtiGCForAllocationMarker : public JvmtiGCMarker {
  public:
-  JvmtiGCForAllocationMarker() : JvmtiGCMarker(false) {
-  }
+  JvmtiGCMarker() KERNEL_RETURN;
+  ~JvmtiGCMarker() KERNEL_RETURN;
 };
-
-// Support class used to report GC events to JVMTI. The class is stack
-// allocated and should be placed in the doit() implementation of all
-// vm operations that do a "full" stop-the-world GC. This class differs
-// from JvmtiGCForAllocationMarker in that this class assumes that a
-// "full" GC will happen.
-//
-// Usage :-
-//
-// void VM_GenCollectFull::doit() {
-//   JvmtiGCFullMarker jgcm;
-//   :
-// }
-//
-class JvmtiGCFullMarker : public JvmtiGCMarker {
- public:
-  JvmtiGCFullMarker() : JvmtiGCMarker(true) {
-  }
-};
-
 
 // JvmtiHideSingleStepping is a helper class for hiding
 // internal single step events.
