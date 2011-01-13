@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import sun.net.SocksProxy;
 import sun.net.www.ParseUtil;
 /* import org.ietf.jgss.*; */
 
@@ -397,6 +398,11 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 // Use getHostString() to avoid reverse lookups
                 server = ((InetSocketAddress) p.address()).getHostString();
                 serverPort = ((InetSocketAddress) p.address()).getPort();
+                if (p instanceof SocksProxy) {
+                    if (((SocksProxy)p).protocolVersion() == 4) {
+                        useV4 = true;
+                    }
+                }
 
                 // Connects to the SOCKS server
                 try {
@@ -700,6 +706,11 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 // Use getHostString() to avoid reverse lookups
                 server = ((InetSocketAddress) p.address()).getHostString();
                 serverPort = ((InetSocketAddress) p.address()).getPort();
+                if (p instanceof SocksProxy) {
+                    if (((SocksProxy)p).protocolVersion() == 4) {
+                        useV4 = true;
+                    }
+                }
 
                 // Connects to the SOCKS server
                 try {

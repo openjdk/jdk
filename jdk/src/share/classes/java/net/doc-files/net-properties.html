@@ -127,10 +127,15 @@ of proxies.</P>
 	are specified. If SOCKS is supported by a Java SE implementation, the
 	following properties will be used:</P>
 	<UL>
-		<LI><P><B>socksProxyHost</B> (default: &lt;non&gt;)<BR>
+		<LI><P><B>socksProxyHost</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.</P>
 		<LI><P><B>socksProxyPort</B> (default: 1080)<BR>
 	        The port number of the proxy server.</P>
+                <LI><P><B>socksProxyVersion</B> (default: 5)<BR>
+                The version of the SOCKS protocol supported by the server. The
+                default is <code>5</code> indicating SOCKS V5, alternatively
+                <code>4</code> can be specified for SOCKS V4. Setting the property
+                to values other than these leads to unspecified behavior.</P>
 		<LI><P><B>java.net.socks.username</B> (default: &lt;none&gt;)<BR>
 	        Username to use if the SOCKSv5 server asks for authentication
 	        and no java.net.Authenticator instance was found.</P>

@@ -70,7 +70,7 @@ public class PrintStream extends FilterOutputStream
     private OutputStreamWriter charOut;
 
     /**
-     * nonNull is explicitly delcared here so as not to create an extra
+     * nonNull is explicitly declared here so as not to create an extra
      * dependency on java.util.Objects.nonNull. PrintStream is loaded
      * early during system initialization.
      */
