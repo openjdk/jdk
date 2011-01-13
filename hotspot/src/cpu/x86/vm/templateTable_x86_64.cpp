@@ -3254,6 +3254,8 @@ void TemplateTable::_new() {
 
     // if someone beat us on the allocation, try again, otherwise continue
     __ jcc(Assembler::notEqual, retry);
+
+    __ incr_allocated_bytes(r15_thread, rdx, 0);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {

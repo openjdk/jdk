@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ sanity-all:: sanity-base \
     sane-classpath \
     sane-java_home \
     sane-fonts \
-    sane-binary-plugs \
     sane-variant \
     sane-ld_library_path \
     sane-ld_library_path_64 \

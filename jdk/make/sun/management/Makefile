@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,8 @@ MGMT_LIB_SRC = $(SHARE_SRC)/lib/management
 
 all build:: properties aclfile jmxremotefiles
 
-# When building the openjdk, build snmp only if importing binary plugs,
-ifdef OPENJDK
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-    SUBDIRS = snmp
-  endif
-else
+# When building the openjdk, no snmp
+ifndef OPENJDK
   SUBDIRS = snmp
 endif
 SUBDIRS += jmxremote
