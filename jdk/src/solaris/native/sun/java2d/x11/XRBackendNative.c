@@ -31,6 +31,21 @@
 
 #include <X11/extensions/Xrender.h>
 
+/* On Solaris 10 updates 8, 9, the render.h file defines these
+ * protocol values but does not define the structs in Xrender.h.
+ * Thus in order to get these always defined on Solaris 10
+ * we will undefine the symbols if we have determined via the
+ * makefiles that Xrender.h is lacking the structs. This will
+ * trigger providing our own definitions as on earlier updates.
+ * We could assume that *all* Solaris 10 update versions will lack the updated
+ * Xrender.h and do this based solely on O/S being any 5.10 version, but this
+ * could still change and we'd be broken again as we'd be re-defining them.
+ */
+#ifdef SOLARIS10_NO_XRENDER_STRUCTS
+#undef X_RenderCreateLinearGradient
+#undef X_RenderCreateRadialGradient
+#endif
+
 #ifndef X_RenderCreateLinearGradient
 typedef struct _XLinearGradient {
     XPointFixed p1;
