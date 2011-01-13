@@ -33,6 +33,7 @@ FILES_java = \
 	sun/net/ProgressEvent.java \
 	sun/net/ProgressListener.java \
 	sun/net/ProgressMeteringPolicy.java \
+	sun/net/SocksProxy.java \
 	sun/net/TelnetInputStream.java \
 	sun/net/TelnetOutputStream.java \
 	sun/net/TelnetProtocolException.java \
